@@ -1388,8 +1388,10 @@ test("theme uses the Host Signal design direction", () => {
 });
 
 test("Cloudflare Pages build publishes the install route itself", () => {
-  assert.match(packageJson.scripts.build, /vitepress build \./);
-  assert.match(packageJson.scripts.build, /cp install\.sh \.vitepress\/dist\/install\.sh/);
+  assert.match(packageJson.scripts.build, /npm run verify/);
+  assert.match(packageJson.scripts.build, /npm run build:site/);
+  assert.match(packageJson.scripts["build:site"], /vitepress build \./);
+  assert.match(packageJson.scripts["build:site"], /cp install\.sh \.vitepress\/dist\/install\.sh/);
   assert.doesNotMatch(pagesWorkflow, /deploy-pages|upload-pages-artifact|github-pages|configure-pages/);
   assert.match(siteReadme, /## Cloudflare Pages/);
   assert.match(siteReadme, /Root directory: site/);
@@ -1776,10 +1778,10 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.doesNotMatch(packageJson.scripts.test, /sync:tools-docs/);
   assert.doesNotMatch(packageJson.scripts.build, /sync:tools-docs/);
   assert.equal(packageJson.scripts["sync:tools-docs"], undefined);
-  assert.match(packageJson.scripts.test, /check:routes/);
-  assert.match(packageJson.scripts.build, /check:routes/);
-  assert.match(packageJson.scripts.test, /help:check/);
-  assert.match(packageJson.scripts.build, /help:check/);
+  assert.match(packageJson.scripts.test, /npm run verify/);
+  assert.match(packageJson.scripts.build, /npm run verify/);
+  assert.match(packageJson.scripts.verify, /check:routes/);
+  assert.match(packageJson.scripts.verify, /help:check/);
   assert.match(checkDocRoutesScript, /Missing docs route source files/);
   assert.doesNotMatch(lwcLocalShell, /cd \.\.\/glade-tools/);
   assert.doesNotMatch(localTesting, /cd \.\.\/glade-tools/);

@@ -52,14 +52,22 @@ type Server struct {
 	warming  bool
 	ready    bool
 
+	activityMu  sync.Mutex
+	activity    sync.WaitGroup
+	closing     bool
+	closeOnce   sync.Once
+	closeErr    error
+	serveCancel context.CancelFunc
+
 	runOnce      sync.Once
 	runAdmission chan struct{}
 	runExecution chan struct{}
 	runRequestV1 func(context.Context, RunRequestV1) (testreport.Run, watch.TestSelection, *ClassShardPlanV1, error)
 
-	captureScopeFn      func(watch.Scope) (watch.Snapshot, error)
-	newBackendWatcherFn func(context.Context, watch.Config, watch.Snapshot) (watch.BackendWatcher, watch.Backend, error)
-	afterWatchUpdateFn  func()
+	captureScopeFn         func(watch.Scope) (watch.Snapshot, error)
+	newBackendWatcherFn    func(context.Context, watch.Config, watch.Snapshot) (watch.BackendWatcher, watch.Backend, error)
+	afterWatchUpdateFn     func()
+	waitRuntimeCacheWorkFn func()
 }
 
 func NewServer(cfg ServerConfig) (*Server, error) {
@@ -125,6 +133,9 @@ func NewServer(cfg ServerConfig) (*Server, error) {
 }
 
 func (s *Server) startWarm(log io.Writer) {
+	if !s.beginActivity() {
+		return
+	}
 	s.warmMu.Lock()
 	s.warming = true
 	s.warmMu.Unlock()
@@ -132,13 +143,19 @@ func (s *Server) startWarm(log io.Writer) {
 		fmt.Fprintln(log, "glade test serve: warming test runtime...")
 	}
 	go func() {
-		s.daemon.Warm()
+		defer s.endActivity()
+		warmErr := s.daemon.Warm()
 		s.warmMu.Lock()
 		s.warming = false
-		s.ready = true
+		s.ready = warmErr == nil
+		s.warmErr = warmErr
 		s.warmMu.Unlock()
 		if log != nil {
-			fmt.Fprintln(log, "glade test serve: runtime ready")
+			if warmErr != nil {
+				fmt.Fprintf(log, "glade test serve: warm failed: %v\n", warmErr)
+			} else {
+				fmt.Fprintln(log, "glade test serve: runtime ready")
+			}
 		}
 		close(s.warmDone)
 	}()
@@ -164,8 +181,24 @@ func (s *Server) status() (ready, warming bool) {
 
 func (s *Server) ListenAndServe(ctx context.Context, log io.Writer) error {
 	defer s.Close()
+	serveCtx, cancelServe := context.WithCancel(ctx)
+	s.activityMu.Lock()
+	if s.closing {
+		s.activityMu.Unlock()
+		cancelServe()
+		return net.ErrClosed
+	}
+	s.serveCancel = cancelServe
+	s.activityMu.Unlock()
+	defer cancelServe()
 	if s.watchOn {
-		go s.watchLoop(ctx, s.daemon.Root())
+		if !s.beginActivity() {
+			return net.ErrClosed
+		}
+		go func() {
+			defer s.endActivity()
+			s.watchLoop(serveCtx, s.daemon.Root())
+		}()
 	}
 	if !s.ready && !s.warming {
 		s.startWarm(log)
@@ -179,7 +212,15 @@ func (s *Server) ListenAndServe(ctx context.Context, log io.Writer) error {
 		removeServeSocket(s.socket, s.pidRoot, s.defaultSocket)
 		return fmt.Errorf("restrict test server socket: %w", err)
 	}
+	s.activityMu.Lock()
+	if s.closing {
+		s.activityMu.Unlock()
+		_ = listener.Close()
+		removeServeSocket(s.socket, s.pidRoot, s.defaultSocket)
+		return net.ErrClosed
+	}
 	s.listener = listener
+	s.activityMu.Unlock()
 	if err := writePID(s.pidRoot, filepath.Base(s.pidPath), s.pidPath); err != nil {
 		_ = listener.Close()
 		removeServeSocket(s.socket, s.pidRoot, s.defaultSocket)
@@ -194,19 +235,28 @@ func (s *Server) ListenAndServe(ctx context.Context, log io.Writer) error {
 	defer signal.Stop(sigCh)
 
 	errCh := make(chan error, 1)
+	if !s.beginActivity() {
+		return net.ErrClosed
+	}
 	go func() {
+		defer s.endActivity()
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				if errors.Is(err, net.ErrClosed) || ctx.Err() != nil {
+				if errors.Is(err, net.ErrClosed) || serveCtx.Err() != nil {
 					errCh <- nil
 				} else {
 					errCh <- err
 				}
 				return
 			}
+			if !s.beginActivity() {
+				_ = conn.Close()
+				continue
+			}
 			go func() {
-				if err := s.serveConn(ctx, conn); err != nil && log != nil {
+				defer s.endActivity()
+				if err := s.serveConn(serveCtx, conn); err != nil && log != nil {
 					fmt.Fprintf(log, "glade test serve: connection error: %v\n", err)
 				}
 			}()
@@ -214,7 +264,7 @@ func (s *Server) ListenAndServe(ctx context.Context, log io.Writer) error {
 	}()
 
 	select {
-	case <-ctx.Done():
+	case <-serveCtx.Done():
 		_ = listener.Close()
 		return nil
 	case err := <-errCh:
@@ -228,15 +278,45 @@ func (s *Server) ListenAndServe(ctx context.Context, log io.Writer) error {
 }
 
 func (s *Server) Close() error {
-	if s.listener != nil {
-		_ = s.listener.Close()
+	s.closeOnce.Do(func() {
+		s.activityMu.Lock()
+		s.closing = true
+		listener := s.listener
+		cancelServe := s.serveCancel
+		s.activityMu.Unlock()
+		if cancelServe != nil {
+			cancelServe()
+		}
+		if listener != nil {
+			_ = listener.Close()
+		}
+		s.activity.Wait()
+		waitRuntimeCacheWork := s.waitRuntimeCacheWorkFn
+		if waitRuntimeCacheWork == nil {
+			waitRuntimeCacheWork = apextest.WaitForRuntimeCacheWork
+		}
+		waitRuntimeCacheWork()
+		removeServeSocket(s.socket, s.pidRoot, s.defaultSocket)
+		if s.pidRoot != nil {
+			_ = s.pidRoot.Remove(filepath.Base(s.pidPath))
+			s.closeErr = s.pidRoot.Close()
+		}
+	})
+	return s.closeErr
+}
+
+func (s *Server) beginActivity() bool {
+	s.activityMu.Lock()
+	defer s.activityMu.Unlock()
+	if s.closing {
+		return false
 	}
-	removeServeSocket(s.socket, s.pidRoot, s.defaultSocket)
-	if s.pidRoot != nil {
-		_ = s.pidRoot.Remove(filepath.Base(s.pidPath))
-		_ = s.pidRoot.Close()
-	}
-	return nil
+	s.activity.Add(1)
+	return true
+}
+
+func (s *Server) endActivity() {
+	s.activity.Done()
 }
 
 func (s *Server) serveConn(ctx context.Context, conn net.Conn) error {

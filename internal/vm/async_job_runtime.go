@@ -688,7 +688,7 @@ func (vm *VM) testAsyncStaticFieldSnapshot() map[string]map[string]Value {
 }
 func (vm *VM) restoreStaticFieldSnapshot(snapshot map[string]map[string]Value) {
 	for className, fields := range snapshot {
-		class, ok := vm.Classes[className]
+		class, ok := vm.ensureMutableClass(className)
 		if !ok {
 			continue
 		}
@@ -700,7 +700,7 @@ func (vm *VM) restoreStaticFieldSnapshot(snapshot map[string]map[string]Value) {
 			field.Value = value
 			class.StaticFields[fieldName] = field
 		}
-		vm.Classes[className] = class
+		vm.storeMutableClassAtAlias(className, class)
 	}
 	vm.invalidateStaticValueRefs()
 }

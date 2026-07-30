@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -28,7 +29,9 @@ import (
 	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/semanticcache"
 	"github.com/glade-sh/glade/internal/sobject"
+	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/trace"
@@ -59,6 +62,7 @@ type Options struct {
 	MethodDurationMS           map[string]int64
 	PerfCounters               bool
 	PreRunPhaseDurations       PreRunPhaseDurations
+	BuildArtifacts             *typesys.BuildArtifacts
 	SourceDigests              *typesys.SourceDigestSet
 	Progress                   func(TestProgress)
 }
@@ -253,6 +257,19 @@ type runExecution struct {
 }
 
 func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cases []TestCase) testreport.Run {
+	return runCasesContextWithSemanticGateHooks(ctx, index, opts, cases, semanticGateHooks{})
+}
+
+// semanticGateHooks exists only to make the semantic identity-to-analysis
+// boundary deterministic in package tests. It is passed with one run and is
+// deliberately not process-global, so concurrent callers cannot observe a
+// test hook from another run.
+type semanticGateHooks struct {
+	afterIdentity func()
+	afterAnalysis func()
+}
+
+func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Index, opts Options, cases []TestCase, hooks semanticGateHooks) testreport.Run {
 	runState := runExecution{
 		diskCacheEnabled: useDiskRuntimeCache(opts),
 		counters:         newRunPerfCounters(opts.PerfCounters),
@@ -273,24 +290,45 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 		runState.counters.phases.discoverNS.Store(opts.PreRunPhaseDurations.Discover.Nanoseconds())
 	}
 	started := time.Now()
+	if snapshotErr := validateBuildArtifacts(index, opts.BuildArtifacts); snapshotErr != nil {
+		return compileErrorRun(cases, snapshotErr, started, opts)
+	}
+	if opts.BuildArtifacts != nil {
+		// An attached artifact is authoritative. Do not let a caller provide a
+		// digest set from another build, which would key semantic or runtime
+		// caches with a source generation different from the index.
+		opts.SourceDigests = opts.BuildArtifacts.SourceDigests
+	}
 	emitProgress := opts.Progress != nil
 	if cases == nil {
 		cases = Discover(index, opts)
 	}
 	sources := newSourceCache()
+	if err := sources.seedBuildArtifacts(index, opts.BuildArtifacts); err != nil {
+		return compileErrorRun(cases, err, started, opts)
+	}
+	var generation runtimeGeneration
+	var generationErr error
+	opts.SourceDigests, generationErr = authoritativeRuntimeSourceDigests(index, opts.SourceDigests)
+	if generationErr == nil {
+		generation, generationErr = prepareRuntimeGeneration(index, opts.SourceDigests, sources)
+	}
+	if generationErr != nil {
+		return compileErrorRun(cases, generationErr, started, opts)
+	}
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
-	if compileErr := semanticCompileError(index, opts.SourceDigests); compileErr != nil {
+	if compileErr := semanticCompileErrorWithHooks(ctx, index, opts.BuildArtifacts, opts.SourceDigests, sources, generation, hooks, !opts.NoDiskCache && diskCacheEnabled(), runState.counters); compileErr != nil {
 		return compileErrorRun(cases, compileErr, started, opts)
 	}
 	var runtimeKey runtimeCacheKey
 	var runtime runtimeExecutionView
 	var runtimeErr error
 	if runState.counters.enabled {
-		runtimeKey, runtime, runtimeErr = runtimeFromIndexForExecutionWithSourceDigestsAndPerf(index, opts.SourceDigests, sources, runState.diskCacheEnabled, runState.counters)
+		runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationAndPerfProjected(index, opts.SourceDigests, sources, &generation, runState.diskCacheEnabled, runState.counters, runtimeExecutionProjection)
 	} else {
-		runtimeKey, runtime, runtimeErr = runtimeFromIndexForExecutionWithSourceDigests(index, opts.SourceDigests, sources, runState.diskCacheEnabled)
+		runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationProjected(index, opts.SourceDigests, sources, &generation, runtimeExecutionProjection, runState.diskCacheEnabled)
 	}
 	if runtimeErr != nil {
 		return compileErrorRun(cases, runtimeErr, started, opts)
@@ -299,12 +337,12 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	if runState.counters.enabled {
 		testCompileStarted = time.Now()
 	}
-	setups, setupErrors, setupInvokePrograms, setupInvokeErrors, setupSourceErr := compileTestSetupsCached(index, runtimeKey, testCaseClassSet(cases), sources)
+	setups, setupErrors, setupInvokePrograms, setupInvokeErrors, setupSourceErr := compileTestSetupsCached(index, opts.SourceDigests, runtimeKey, testCaseClassSet(cases), sources)
 	if setupSourceErr != nil {
 		return compileErrorRun(cases, setupSourceErr, started, opts)
 	}
 	triggerErrors := runtime.TriggerErrors
-	testMethods, testMethodErrors, testInvokePrograms, testInvokeErrors, testSourceErr := compileTestsCached(index, runtimeKey, cases, sources)
+	testMethods, testMethodErrors, testInvokePrograms, testInvokeErrors, testSourceErr := compileTestsCached(index, opts.SourceDigests, runtimeKey, cases, sources)
 	if testSourceErr != nil {
 		return compileErrorRun(cases, testSourceErr, started, opts)
 	}
@@ -400,7 +438,6 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 			})
 		}
 	}
-	var reportStarted time.Time
 	if noSetupFastPath(setups, setupErrors, setupInvokeErrors) && allClassesHaveSingleMethod(suiteIndexes) {
 		for i := range planned {
 			if results[i].Status != "" {
@@ -418,13 +455,14 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	}
 	runTestPlansWithSetups(ctx, order, suiteIndexes, planned, results, baseMachine, baseRuntimeErr, setups, setupErrors, setupInvokePrograms, setupInvokeErrors, triggerErrors, org, opts, runState.counters)
 assemble:
-	if runState.counters.enabled {
-		reportStarted = time.Now()
-	}
 	for className, indexes := range suiteIndexes {
 		for _, index := range indexes {
 			suites[className] = append(suites[className], results[index])
 		}
+	}
+	var reportStarted time.Time
+	if runState.counters.enabled {
+		reportStarted = time.Now()
 	}
 
 	run := testreport.Run{
@@ -509,9 +547,33 @@ func indexCompileError(diagnostics []diagnostic.Diagnostic) error {
 }
 
 var (
-	semaDiagnosticsCacheMu sync.RWMutex
-	semaDiagnosticsCache   = make(map[runtimeCacheKey][]diagnostic.Diagnostic)
+	semaDiagnosticsCacheMu   sync.RWMutex
+	semaDiagnosticsCache     = make(map[runtimeCacheKey][]diagnostic.Diagnostic)
+	semanticResults          = semanticcache.NewManager(semanticcache.Limits{MaxEntries: 8, MaxBytes: 512 << 20})
+	snapshotValidationHookMu sync.RWMutex
+	snapshotValidationHook   func(string)
 )
+
+func setSnapshotValidationHookForTesting(hook func(string)) func() {
+	snapshotValidationHookMu.Lock()
+	previous := snapshotValidationHook
+	snapshotValidationHook = hook
+	snapshotValidationHookMu.Unlock()
+	return func() {
+		snapshotValidationHookMu.Lock()
+		snapshotValidationHook = previous
+		snapshotValidationHookMu.Unlock()
+	}
+}
+
+func invokeSnapshotValidationHook(stage string) {
+	snapshotValidationHookMu.RLock()
+	hook := snapshotValidationHook
+	snapshotValidationHookMu.RUnlock()
+	if hook != nil {
+		hook(stage)
+	}
+}
 
 // semanticCompileError runs the same non-performance semantic analysis used
 // by `glade check` (sema.AnalyzeWithOptions with SuppressPerformanceDiagnostics)
@@ -522,22 +584,350 @@ var (
 // separate/divergent check. The result is cached by the same source-digest
 // identity used by the runtime compile caches, since semantic analysis is
 // otherwise repeated on every call with unchanged sources.
-func semanticCompileError(index typesys.Index, digests *typesys.SourceDigestSet) error {
-	key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
-	semaDiagnosticsCacheMu.RLock()
-	diagnostics, ok := semaDiagnosticsCache[key]
-	semaDiagnosticsCacheMu.RUnlock()
-	if !ok {
-		result := sema.AnalyzeWithOptions(semanticAnalysisIndex(index), sema.AnalyzeOptions{
-			Diagnostics:                    true,
-			SuppressPerformanceDiagnostics: true,
+
+func semanticCompileErrorWithHooks(ctx context.Context, index typesys.Index, artifacts *typesys.BuildArtifacts, digests *typesys.SourceDigestSet, sources *sourceCache, generation runtimeGeneration, hooks semanticGateHooks, cacheAllowed bool, counters ...*runPerfCounters) error {
+	if artifacts != nil {
+		digests = artifacts.SourceDigests
+	}
+	validateGeneration := func() error {
+		if artifacts != nil {
+			return validateCapturedBuildGeneration(index, artifacts)
+		}
+		return validateRuntimeGeneration(sources)
+	}
+	if err := validateGeneration(); err != nil {
+		key := generation.key
+		rememberRuntimeCacheRoot(index, key)
+		evictSnapshotCaches(key)
+		return err
+	}
+	if artifacts != nil {
+		invokeSnapshotValidationHook("semantic_after_initial_validation")
+	}
+	perfCounters := perfCounterFor(counters)
+	var keyStarted time.Time
+	if perfCounters.enabled {
+		keyStarted = time.Now()
+	}
+	key := generation.key
+	rememberRuntimeCacheRoot(index, key)
+	if hooks.afterIdentity != nil {
+		hooks.afterIdentity()
+	}
+	if perfCounters.enabled {
+		perfCounters.phases.semanticKeyNS.Add(time.Since(keyStarted).Nanoseconds())
+	}
+	var gateStarted time.Time
+	if perfCounters.enabled {
+		gateStarted = time.Now()
+	}
+	analyzeOptions := sema.AnalyzeOptions{
+		Diagnostics:                    true,
+		SuppressPerformanceDiagnostics: true,
+		BuildArtifacts:                 artifacts,
+	}
+	if artifacts == nil {
+		analyzeOptions.CapturedSource = generation.source.capturedSource
+	}
+	analysisIndex := semanticAnalysisIndex(index)
+	var diagnostics []diagnostic.Diagnostic
+	if artifacts == nil {
+		semaDiagnosticsCacheMu.RLock()
+		cached, ok := semaDiagnosticsCache[key]
+		semaDiagnosticsCacheMu.RUnlock()
+		if ok && cacheAllowed {
+			diagnostics = cached
+			if perfCounters.enabled {
+				perfCounters.phases.semanticMemoryCacheHits.Add(1)
+			}
+		} else {
+			if perfCounters.enabled {
+				perfCounters.phases.semanticCacheMisses.Add(1)
+				perfCounters.phases.semanticBuilds.Add(1)
+				perfCounters.phases.semanticAnalyses.Add(1)
+			}
+			result := sema.AnalyzeWithOptions(analysisIndex, analyzeOptions)
+			if hooks.afterAnalysis != nil {
+				hooks.afterAnalysis()
+			}
+			diagnostics = result.Diagnostics
+			if err := validateGeneration(); err != nil {
+				evictSnapshotCaches(key)
+				return err
+			}
+			if cacheAllowed {
+				semaDiagnosticsCacheMu.Lock()
+				semaDiagnosticsCache[key] = diagnostics
+				semaDiagnosticsCacheMu.Unlock()
+			}
+		}
+	} else {
+		identity, identityErr := semanticcache.IdentityForBuild(analysisIndex, artifacts, analyzeOptions)
+		if identityErr != nil {
+			return identityErr
+		}
+		cachePath := semanticResultCachePath(identity)
+		result, access, cacheErr := semanticResults.GetOrCompute(ctx, semanticcache.Request{
+			Identity:     identity,
+			ProjectRoot:  index.Project.Root,
+			RelativePath: cachePath,
+			NoDisk:       !cacheAllowed,
+			BypassMemory: !cacheAllowed,
+		}, func() (sema.Result, error) {
+			if perfCounters.enabled {
+				perfCounters.phases.semanticCacheMisses.Add(1)
+				perfCounters.phases.semanticBuilds.Add(1)
+				perfCounters.phases.semanticAnalyses.Add(1)
+			}
+			analyzed := sema.AnalyzeWithOptions(analysisIndex, analyzeOptions)
+			if hooks.afterAnalysis != nil {
+				hooks.afterAnalysis()
+			}
+			invokeSnapshotValidationHook("semantic_before_cache_publication")
+			if err := validateGeneration(); err != nil {
+				return sema.Result{}, err
+			}
+			return analyzed, nil
 		})
+		if cacheErr != nil {
+			if perfCounters.enabled {
+				perfCounters.phases.semanticErrors.Add(1)
+			}
+			semanticResults.Evict(identity)
+			evictSnapshotCaches(key)
+			return cacheErr
+		}
+		if perfCounters.enabled {
+			perfCounters.recordSemanticCache(identity, access)
+			switch access.Source {
+			case semanticcache.SourceMemory:
+				perfCounters.phases.semanticMemoryCacheHits.Add(1)
+			case semanticcache.SourceDisk:
+				perfCounters.phases.semanticDiskCacheHits.Add(1)
+			}
+		}
 		diagnostics = result.Diagnostics
-		semaDiagnosticsCacheMu.Lock()
-		semaDiagnosticsCache[key] = diagnostics
-		semaDiagnosticsCacheMu.Unlock()
+		if cacheAllowed {
+			semaDiagnosticsCacheMu.Lock()
+			semaDiagnosticsCache[key] = append([]diagnostic.Diagnostic(nil), diagnostics...)
+			semaDiagnosticsCacheMu.Unlock()
+		}
+	}
+	if artifacts != nil {
+		invokeSnapshotValidationHook("semantic_before_cache_return")
+	}
+	if err := validateGeneration(); err != nil {
+		evictSnapshotCaches(key)
+		return err
+	}
+	if perfCounters.enabled {
+		perfCounters.phases.semanticGateNS.Add(time.Since(gateStarted).Nanoseconds())
 	}
 	return indexCompileError(diagnostics)
+}
+
+func semanticResultCachePath(identity semanticcache.Identity) string {
+	return filepath.Join(".glade", "semantic", "result-"+identity.OptionsFingerprint+".json")
+}
+
+func rememberRuntimeCacheRoot(index typesys.Index, key runtimeCacheKey) {
+	root := strings.TrimSpace(index.Project.Root)
+	if root == "" {
+		return
+	}
+	runtimeCacheRootMu.Lock()
+	runtimeCacheRoots[key] = filepath.Clean(root)
+	runtimeCacheRootMu.Unlock()
+}
+
+func evictSnapshotCaches(key runtimeCacheKey) {
+	runtimeCacheMu.Lock()
+	delete(runtimeCache, key)
+	runtimeCacheMu.Unlock()
+	semaDiagnosticsCacheMu.Lock()
+	delete(semaDiagnosticsCache, key)
+	semaDiagnosticsCacheMu.Unlock()
+	prefix := string(key) + "|"
+	setupCacheMu.Lock()
+	for cacheKey := range setupCache {
+		if strings.HasPrefix(cacheKey, prefix) {
+			delete(setupCache, cacheKey)
+		}
+	}
+	setupCacheMu.Unlock()
+	testCacheMu.Lock()
+	for cacheKey := range testCache {
+		if strings.HasPrefix(cacheKey, prefix) {
+			delete(testCache, cacheKey)
+		}
+	}
+	testCacheMu.Unlock()
+	runtimeCacheRootMu.Lock()
+	root := runtimeCacheRoots[key]
+	delete(runtimeCacheRoots, key)
+	runtimeCacheRootMu.Unlock()
+	if root != "" {
+		_ = startupcache.Clear(root, startupcache.SubdirTest)
+	}
+}
+
+// validateBuildArtifacts proves that an attached source arena and its digest
+// set describe this exact index. A caller that supplies an artifact requests a
+// closed snapshot: missing or differently-resolved logical occurrences must
+// never fall back to the current filesystem.
+func validateBuildArtifacts(index typesys.Index, artifacts *typesys.BuildArtifacts) error {
+	if artifacts == nil {
+		return nil
+	}
+	if artifacts.Sources == nil {
+		return incompleteSourceSnapshotError("build artifacts are missing sources")
+	}
+	if artifacts.SourceDigests == nil {
+		return incompleteSourceSnapshotError("build artifacts are missing digests")
+	}
+	if artifacts.ApexMetadataInputs == nil {
+		return incompleteSourceSnapshotError("build artifacts are missing Apex metadata inputs")
+	}
+	seen := make(map[string]bool)
+	for _, typ := range index.Types {
+		if !typ.HasSourceSnapshot() {
+			continue
+		}
+		key := sourceSnapshotValidationKey(typ.File, typ.SourceRoot, typ.Namespace, typ.Version, typ.Dependency, typ.SourceNamespaceRemaps)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		if source, ok := artifacts.SourceForType(typ); !ok {
+			return incompleteSourceSnapshotError("missing type source " + typ.File)
+		} else if err := validateArtifactDigest(typ.File, source.Digest(), artifacts.SourceDigests); err != nil {
+			return err
+		}
+		if _, ok := artifacts.ApexMetadataForType(typ); !ok {
+			return incompleteSourceSnapshotError("missing Apex metadata input " + typ.File + "-meta.xml")
+		}
+	}
+	for _, trigger := range index.Triggers {
+		if !trigger.HasSourceSnapshot() {
+			continue
+		}
+		key := sourceSnapshotValidationKey(trigger.File, trigger.SourceRoot, trigger.Namespace, trigger.Version, trigger.Dependency, trigger.SourceNamespaceRemaps)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		if source, ok := artifacts.SourceForTrigger(trigger); !ok {
+			return incompleteSourceSnapshotError("missing trigger source " + trigger.File)
+		} else if err := validateArtifactDigest(trigger.File, source.Digest(), artifacts.SourceDigests); err != nil {
+			return err
+		}
+		if _, ok := artifacts.ApexMetadataForTrigger(trigger); !ok {
+			return incompleteSourceSnapshotError("missing Apex metadata input " + trigger.File + "-meta.xml")
+		}
+	}
+	return nil
+}
+
+// validateCapturedBuildGeneration validates all source and Apex metadata
+// inputs against an artifact snapshot. It is intentionally separate from the
+// compiler source cache: callers use it immediately before cache returns and
+// publications, while compilation consumes the captured arena bytes.
+func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.BuildArtifacts) error {
+	if artifacts == nil {
+		return nil
+	}
+	if err := validateBuildArtifacts(index, artifacts); err != nil {
+		return err
+	}
+	seen := make(map[string]bool)
+	validate := func(file, occurrence string, metadata typesys.ApexMetadataInput, metadataOK bool) error {
+		if seen[occurrence] {
+			return nil
+		}
+		seen[occurrence] = true
+		if !metadataOK {
+			return incompleteSourceSnapshotError("missing Apex metadata input " + file + "-meta.xml")
+		}
+		expected, ok := artifacts.SourceDigests.Digest(file)
+		if !ok {
+			return incompleteSourceSnapshotError("missing digest for " + file)
+		}
+		data, err := os.ReadFile(file) // #nosec G304 -- source path is bound to a BuildArtifacts occurrence.
+		if err != nil {
+			return sourceSnapshotMismatch(file, expected, nil, err)
+		}
+		actual := sha256.Sum256(data)
+		if actual != expected {
+			return sourceSnapshotMismatch(file, expected, &actual, nil)
+		}
+		return validateApexMetadataInput(file+"-meta.xml", metadata)
+	}
+	for _, typ := range index.Types {
+		if typ.HasSourceSnapshot() {
+			metadata, ok := artifacts.ApexMetadataForType(typ)
+			occurrence := sourceSnapshotValidationKey(typ.File, typ.SourceRoot, typ.Namespace, typ.Version, typ.Dependency, typ.SourceNamespaceRemaps)
+			if err := validate(typ.File, occurrence, metadata, ok); err != nil {
+				return err
+			}
+		}
+	}
+	for _, trigger := range index.Triggers {
+		if trigger.HasSourceSnapshot() {
+			metadata, ok := artifacts.ApexMetadataForTrigger(trigger)
+			occurrence := sourceSnapshotValidationKey(trigger.File, trigger.SourceRoot, trigger.Namespace, trigger.Version, trigger.Dependency, trigger.SourceNamespaceRemaps)
+			if err := validate(trigger.File, occurrence, metadata, ok); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func validateApexMetadataInput(path string, expected typesys.ApexMetadataInput) error {
+	data, err := os.ReadFile(path) // #nosec G304 -- fixed metadata companion for an indexed Apex source.
+	if err != nil {
+		if os.IsNotExist(err) && !expected.Present {
+			return nil
+		}
+		return sourceSnapshotMismatch(path, expected.Digest, nil, err)
+	}
+	actual := sha256.Sum256(data)
+	if !expected.Present || actual != expected.Digest {
+		return sourceSnapshotMismatch(path, expected.Digest, &actual, nil)
+	}
+	return nil
+}
+
+func sourceSnapshotMismatch(file string, expected [sha256.Size]byte, actual *[sha256.Size]byte, cause error) error {
+	mismatch := &SourceSnapshotMismatchError{File: file, ExpectedSHA256: hex.EncodeToString(expected[:]), Cause: cause}
+	if actual != nil {
+		mismatch.ActualSHA256 = hex.EncodeToString(actual[:])
+	}
+	return mismatch
+}
+
+func sourceSnapshotValidationKey(file, root, namespace, version string, dependency bool, remaps []namespaceremap.Rule) string {
+	return strings.Join([]string{file, root, namespace, version, strconv.FormatBool(dependency), namespaceremap.Fingerprint(remaps)}, "\x00")
+}
+
+func validateArtifactDigest(file string, actual [sha256.Size]byte, digests *typesys.SourceDigestSet) error {
+	expected, ok := digests.Digest(file)
+	if !ok {
+		return incompleteSourceSnapshotError("missing digest for " + file)
+	}
+	if expected == actual {
+		return nil
+	}
+	return &SourceSnapshotMismatchError{
+		File:           file,
+		ExpectedSHA256: hex.EncodeToString(expected[:]),
+		ActualSHA256:   hex.EncodeToString(actual[:]),
+		Cause:          errors.New("source snapshot digest does not match its captured source"),
+	}
+}
+
+func incompleteSourceSnapshotError(reason string) error {
+	return &SourceSnapshotMismatchError{File: "build artifacts", Cause: errors.New("source snapshot is incomplete: " + reason)}
 }
 
 // semanticAnalysisIndex returns a copy of index whose Objects/Fields slices
@@ -632,21 +1022,38 @@ type testCompileCacheEntry struct {
 }
 
 var (
-	runtimeCacheMu sync.RWMutex
-	runtimeCache   = make(map[runtimeCacheKey]runtimeCacheEntry)
-	setupCacheMu   sync.RWMutex
-	setupCache     = make(map[string]setupCompileCacheEntry)
-	testCacheMu    sync.RWMutex
-	testCache      = make(map[string]testCompileCacheEntry)
+	runtimeCacheMu     sync.RWMutex
+	runtimeCache       = make(map[runtimeCacheKey]runtimeCacheEntry)
+	runtimeCacheRootMu sync.Mutex
+	runtimeCacheRoots  = make(map[runtimeCacheKey]string)
+	setupCacheMu       sync.RWMutex
+	setupCache         = make(map[string]setupCompileCacheEntry)
+	testCacheMu        sync.RWMutex
+	testCache          = make(map[string]testCompileCacheEntry)
 )
 
 func runtimeKey(index typesys.Index) runtimeCacheKey {
-	return runtimeKeyWithSourceDigests(index, nil, os.ReadFile)
+	return runtimeContentKey(index, nil)
 }
 
 // RuntimeContentKey returns the exact key used by compiled-runtime caches.
 func RuntimeContentKey(index typesys.Index, digests *typesys.SourceDigestSet) string {
-	return string(runtimeKeyWithSourceDigests(index, digests, os.ReadFile))
+	return string(runtimeContentKey(index, digests))
+}
+
+func runtimeContentKey(index typesys.Index, digests *typesys.SourceDigestSet) runtimeCacheKey {
+	sources := newSourceCache()
+	resolvedDigests, err := authoritativeRuntimeSourceDigests(index, digests)
+	if err == nil {
+		if generation, generationErr := prepareRuntimeGeneration(index, resolvedDigests, sources); generationErr == nil {
+			return generation.key
+		}
+	}
+	// RuntimeContentKey predates generation validation and cannot return an
+	// error. Preserve its deterministic fallback for incomplete or concurrently
+	// changing inputs; runtime construction still rejects those inputs before
+	// cache lookup or publication.
+	return runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
 }
 
 func runtimeKeyWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error)) runtimeCacheKey {
@@ -668,12 +1075,12 @@ func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha25
 	}
 	seenFiles := make(map[string]bool)
 	for _, typ := range index.Types {
-		if typ.File != "" {
+		if typ.HasSourceSnapshot() && typ.File != "" {
 			seenFiles[typ.File] = true
 		}
 	}
 	for _, trigger := range index.Triggers {
-		if trigger.File != "" {
+		if trigger.HasSourceSnapshot() && trigger.File != "" {
 			seenFiles[trigger.File] = true
 		}
 	}
@@ -735,9 +1142,11 @@ func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha25
 		write(typ.SourceRoot)
 		write(typ.Version)
 		write(typ.EffectiveAPIVersion)
-		write(fmt.Sprintf("dependency:%t artifact:%t", typ.Dependency, typ.Artifact))
+		write(fmt.Sprintf("dependency:%t artifact:%t sourceBacked:%t", typ.Dependency, typ.Artifact, typ.HasSourceSnapshot()))
 		write(namespaceremap.Fingerprint(typ.SourceNamespaceRemaps))
-		writeFileBody(typ.File)
+		if typ.HasSourceSnapshot() {
+			writeFileBody(typ.File)
+		}
 	}
 	for _, trig := range index.Triggers {
 		write(trig.File)
@@ -746,9 +1155,84 @@ func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha25
 		write(trig.SourceRoot)
 		write(trig.Version)
 		write(trig.EffectiveAPIVersion)
-		write(fmt.Sprintf("dependency:%t", trig.Dependency))
+		write(fmt.Sprintf("dependency:%t sourceBacked:%t", trig.Dependency, trig.HasSourceSnapshot()))
 		write(namespaceremap.Fingerprint(trig.SourceNamespaceRemaps))
-		writeFileBody(trig.File)
+		if trig.HasSourceSnapshot() {
+			writeFileBody(trig.File)
+		}
+	}
+	return runtimeCacheKey(hex.EncodeToString(h.Sum(nil)))
+}
+
+type runtimeMetadataAuthority string
+
+const (
+	runtimeMetadataAuthorityLegacy   runtimeMetadataAuthority = "legacy-live"
+	runtimeMetadataAuthorityArtifact runtimeMetadataAuthority = "build-artifacts"
+)
+
+type runtimeMetadataGeneration struct {
+	authority   runtimeMetadataAuthority
+	inputs      map[string]typesys.ApexMetadataInput
+	apiVersions map[string]string
+}
+
+type runtimeSourceInput struct {
+	digest [sha256.Size]byte
+	raw    string
+}
+
+type runtimeSourceGeneration struct {
+	inputs map[string]runtimeSourceInput
+}
+
+func (generation runtimeSourceGeneration) capturedSource(file string) (string, bool) {
+	input, ok := generation.inputs[file]
+	return input.raw, ok
+}
+
+type runtimeGeneration struct {
+	source   runtimeSourceGeneration
+	metadata runtimeMetadataGeneration
+	key      runtimeCacheKey
+}
+
+func runtimeKeyWithSourceGeneration(index typesys.Index, generation runtimeSourceGeneration) runtimeCacheKey {
+	lookup := func(file string) ([sha256.Size]byte, bool) {
+		input, ok := generation.inputs[file]
+		return input.digest, ok
+	}
+	readCaptured := func(file string) ([]byte, error) {
+		input, ok := generation.inputs[file]
+		if !ok {
+			return nil, os.ErrNotExist
+		}
+		return []byte(input.raw), nil
+	}
+	return runtimeKeyWithDigestLookup(index, lookup, readCaptured)
+}
+
+func runtimeKeyWithMetadataGeneration(base runtimeCacheKey, generation runtimeMetadataGeneration) runtimeCacheKey {
+	h := fnv.New128a()
+	write := func(value string) {
+		_, _ = h.Write([]byte(value))
+		_, _ = h.Write([]byte{0})
+	}
+	write("apextest-runtime-metadata-v1")
+	write(string(base))
+	write(string(generation.authority))
+	paths := make([]string, 0, len(generation.inputs))
+	for path := range generation.inputs {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+	for _, path := range paths {
+		input := generation.inputs[path]
+		write(path)
+		write(strconv.FormatBool(input.Present))
+		_, _ = h.Write(input.Digest[:])
+		_, _ = h.Write([]byte{0})
+		write(generation.apiVersions[strings.TrimSuffix(path, "-meta.xml")])
 	}
 	return runtimeCacheKey(hex.EncodeToString(h.Sum(nil)))
 }
@@ -892,31 +1376,49 @@ func recheckMemoryRuntimeProjectionAfterInvalidObservation[T any](key runtimeCac
 	return projected, true
 }
 
-func authoritativeRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) *typesys.SourceDigestSet {
+func authoritativeRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) (*typesys.SourceDigestSet, error) {
 	if digests == nil {
-		return nil
+		return nil, nil
 	}
 	seen := make(map[string]bool)
 	complete := true
+	var mismatch error
 	check := func(file string) {
 		if file == "" || seen[file] {
 			return
 		}
 		seen[file] = true
-		if _, ok := digests.Digest(file); !ok {
+		supplied, ok := digests.Digest(file)
+		if !ok {
 			complete = false
+			return
+		}
+		expected, indexOK := index.SourceDigest(file)
+		if !indexOK {
+			complete = false
+			return
+		}
+		if supplied != expected && mismatch == nil {
+			mismatch = sourceSnapshotMismatch(file, expected, &supplied, errors.New("source digest does not match the index generation"))
 		}
 	}
 	for _, typ := range index.Types {
-		check(typ.File)
+		if typ.HasSourceSnapshot() {
+			check(typ.File)
+		}
 	}
 	for _, trigger := range index.Triggers {
-		check(trigger.File)
+		if trigger.HasSourceSnapshot() {
+			check(trigger.File)
+		}
 	}
 	if !complete {
-		return nil
+		return nil, incompleteSourceSnapshotError("missing digest for a source-backed index occurrence")
 	}
-	return digests
+	if mismatch != nil {
+		return nil, mismatch
+	}
+	return digests, nil
 }
 
 func preloadRuntimeSources(index typesys.Index, sources *sourceCache) error {
@@ -930,16 +1432,130 @@ func preloadRuntimeSources(index typesys.Index, sources *sourceCache) error {
 		return err
 	}
 	for _, typ := range index.Types {
+		if !typ.HasSourceSnapshot() {
+			continue
+		}
 		if err := preload(typ.File); err != nil {
 			return err
 		}
 	}
 	for _, trigger := range index.Triggers {
+		if !trigger.HasSourceSnapshot() {
+			continue
+		}
 		if err := preload(trigger.File); err != nil {
 			return err
 		}
 	}
 	return sources.sourceSnapshotError()
+}
+
+func validateRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) error {
+	if digests == nil {
+		return nil
+	}
+	seen := make(map[string]bool)
+	validate := func(file string) error {
+		if file == "" || seen[file] {
+			return nil
+		}
+		seen[file] = true
+		expected, ok := digests.Digest(file)
+		if !ok {
+			return incompleteSourceSnapshotError("missing digest for " + file)
+		}
+		data, err := os.ReadFile(file) // #nosec G304 -- indexed source path.
+		if err != nil {
+			return sourceSnapshotMismatch(file, expected, nil, err)
+		}
+		actual := sha256.Sum256(data)
+		if actual != expected {
+			return sourceSnapshotMismatch(file, expected, &actual, nil)
+		}
+		return nil
+	}
+	for _, typ := range index.Types {
+		if typ.HasSourceSnapshot() {
+			if err := validate(typ.File); err != nil {
+				return err
+			}
+		}
+	}
+	for _, trigger := range index.Triggers {
+		if trigger.HasSourceSnapshot() {
+			if err := validate(trigger.File); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func validateDigestGeneration(index typesys.Index, digests *typesys.SourceDigestSet) error {
+	if err := validateRuntimeSourceDigests(index, digests); err != nil {
+		return err
+	}
+	if digests == nil {
+		return nil
+	}
+	for _, typ := range index.Types {
+		if !typ.HasSourceSnapshot() {
+			continue
+		}
+		input, ok := index.ApexMetadataForType(typ)
+		if !ok {
+			return incompleteSourceSnapshotError("missing Apex metadata input " + typ.File + "-meta.xml")
+		}
+		if err := validateApexMetadataInput(typ.File+"-meta.xml", input); err != nil {
+			return err
+		}
+	}
+	for _, trigger := range index.Triggers {
+		if !trigger.HasSourceSnapshot() {
+			continue
+		}
+		input, ok := index.ApexMetadataForTrigger(trigger)
+		if !ok {
+			return incompleteSourceSnapshotError("missing Apex metadata input " + trigger.File + "-meta.xml")
+		}
+		if err := validateApexMetadataInput(trigger.File+"-meta.xml", input); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateRuntimeGeneration(sources *sourceCache) error {
+	// Source and companion metadata bytes both come from the immutable
+	// per-invocation generation captured in sources. Revalidate that one
+	// authority at every cache return and publication boundary.
+	return sources.validateCapturedSourceGenerationRaw()
+}
+
+func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache) (runtimeGeneration, error) {
+	if sources == nil {
+		return runtimeGeneration{}, fmt.Errorf("source cache is nil")
+	}
+	sources.configureNamespaceRemaps(index.Types, index.Triggers)
+	sources.bindSourceDigests(digests)
+	source, err := sources.prepareSourceGeneration(index, digests)
+	if err != nil {
+		return runtimeGeneration{}, err
+	}
+	metadata, err := sources.prepareMetadataGeneration(index)
+	if err != nil {
+		return runtimeGeneration{}, err
+	}
+	sources.generationValidator = func() error { return validateRuntimeGeneration(sources) }
+	if err := sources.validateCapturedSourceGeneration(); err != nil {
+		return runtimeGeneration{}, err
+	}
+	base := runtimeKeyWithSourceGeneration(index, source)
+	return runtimeGeneration{
+		source:   source,
+		metadata: metadata,
+		key:      runtimeKeyWithMetadataGeneration(base, metadata),
+	}, nil
 }
 
 func runtimeFromIndex(index typesys.Index, sources *sourceCache, useDiskCache ...bool) (runtimeCacheKey, runtimeCacheEntry) {
@@ -956,25 +1572,71 @@ func runtimeFromIndexForExecutionWithSourceDigests(index typesys.Index, digests 
 }
 
 func runtimeFromIndexWithSourceDigestsProjected[T any](index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, project func(runtimeCacheEntry) (T, bool), useDiskCache ...bool) (runtimeCacheKey, T, error) {
+	return runtimeFromIndexWithPreparedGenerationProjected(index, digests, sources, nil, project, useDiskCache...)
+}
+
+func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, prepared *runtimeGeneration, project func(runtimeCacheEntry) (T, bool), useDiskCache ...bool) (runtimeCacheKey, T, error) {
 	var zero T
-	digests = authoritativeRuntimeSourceDigests(index, digests)
+	var err error
+	digests, err = authoritativeRuntimeSourceDigests(index, digests)
+	if err != nil {
+		key := runtimeKeyWithSourceDigests(index, nil, os.ReadFile)
+		rememberRuntimeCacheRoot(index, key)
+		evictSnapshotCaches(key)
+		return key, zero, err
+	}
 	if sources == nil {
 		sources = newSourceCache()
 	}
-	sources.configureNamespaceRemaps(index.Types, index.Triggers)
-	sources.bindSourceDigests(digests)
+	var generation runtimeGeneration
+	if prepared == nil {
+		generation, err = prepareRuntimeGeneration(index, digests, sources)
+		if err != nil {
+			key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
+			rememberRuntimeCacheRoot(index, key)
+			evictSnapshotCaches(key)
+			return key, zero, err
+		}
+	} else {
+		generation = *prepared
+	}
+	if err := sources.validateCapturedSourceGeneration(); err != nil {
+		key := generation.key
+		rememberRuntimeCacheRoot(index, key)
+		evictSnapshotCaches(key)
+		return key, zero, err
+	}
+	invokeSnapshotValidationHook("runtime_after_initial_validation")
 	diskCacheAllowed := diskCacheEnabled()
 	if len(useDiskCache) > 0 {
 		diskCacheAllowed = useDiskCache[0]
 	}
-	key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
+	key := generation.key
+	rememberRuntimeCacheRoot(index, key)
 	if cached, ok := validMemoryRuntimeProjection(key, project); ok {
+		invokeSnapshotValidationHook("runtime_before_memory_cache_return")
+		if err := sources.validateCapturedSourceGeneration(); err != nil {
+			evictSnapshotCaches(key)
+			return key, zero, err
+		}
 		return key, cached, nil
 	}
 
+	var lookupInput *startupcache.ValidatedInput
 	if diskCacheAllowed {
-		if diskEntry, ok := tryLoadDiskRuntimeWithSourceDigests(index, digests, key); ok {
+		lookupInput, _ = validatedDiskRuntimeInput(index, digests)
+		if diskEntry, ok := tryLoadDiskRuntimeWithValidatedInput(index, key, lookupInput); ok {
 			if projected, projectOK := project(diskEntry); projectOK {
+				invokeSnapshotValidationHook("runtime_before_disk_cache_return")
+				if err := sources.validateCapturedSourceGeneration(); err != nil {
+					evictSnapshotCaches(key)
+					return key, zero, err
+				}
+				invokeSnapshotValidationHook("runtime_before_memory_cache_publication")
+				if err := sources.validateCapturedSourceGeneration(); err != nil {
+					evictSnapshotCaches(key)
+					return key, zero, err
+				}
 				runtimeCacheMu.Lock()
 				runtimeCache[key] = diskEntry
 				runtimeCacheMu.Unlock()
@@ -1015,11 +1677,23 @@ func runtimeFromIndexWithSourceDigestsProjected[T any](index typesys.Index, dige
 	if !projectOK {
 		return key, zero, fmt.Errorf("compiled runtime payload cannot be cloned safely")
 	}
+	invokeSnapshotValidationHook("runtime_before_memory_cache_publication")
+	if err := sources.validateCapturedSourceGeneration(); err != nil {
+		evictSnapshotCaches(key)
+		return key, zero, err
+	}
 	runtimeCacheMu.Lock()
 	runtimeCache[key] = entry
 	runtimeCacheMu.Unlock()
 	if diskCacheAllowed {
-		persistDiskRuntime(index, digests, key, org, entry)
+		invokeSnapshotValidationHook("runtime_before_disk_cache_publication")
+		if err := sources.validateCapturedSourceGeneration(); err != nil {
+			evictSnapshotCaches(key)
+			return key, zero, err
+		}
+		if publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput); ok {
+			persistDiskRuntimeWithValidatedInput(index, key, org, entry, publicationInput)
+		}
 	}
 	return key, projected, nil
 }
@@ -1038,24 +1712,72 @@ func runtimeFromIndexForExecutionWithSourceDigestsAndPerf(index typesys.Index, d
 }
 
 func runtimeFromIndexWithSourceDigestsAndPerfProjected[T any](index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters, project func(runtimeCacheEntry) (T, bool)) (runtimeCacheKey, T, error) {
+	return runtimeFromIndexWithPreparedGenerationAndPerfProjected(index, digests, sources, nil, diskCacheAllowed, counters, project)
+}
+
+func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, prepared *runtimeGeneration, diskCacheAllowed bool, counters *runPerfCounters, project func(runtimeCacheEntry) (T, bool)) (runtimeCacheKey, T, error) {
 	var zero T
-	digests = authoritativeRuntimeSourceDigests(index, digests)
+	var err error
+	digests, err = authoritativeRuntimeSourceDigests(index, digests)
+	if err != nil {
+		key := runtimeKeyWithSourceDigests(index, nil, os.ReadFile)
+		rememberRuntimeCacheRoot(index, key)
+		evictSnapshotCaches(key)
+		return key, zero, err
+	}
 	if sources == nil {
 		sources = newSourceCache()
 	}
-	sources.configureNamespaceRemaps(index.Types, index.Triggers)
-	sources.bindSourceDigests(digests)
+	var generation runtimeGeneration
+	if prepared == nil {
+		generation, err = prepareRuntimeGeneration(index, digests, sources)
+		if err != nil {
+			key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
+			rememberRuntimeCacheRoot(index, key)
+			evictSnapshotCaches(key)
+			return key, zero, err
+		}
+	} else {
+		generation = *prepared
+	}
+	if err := sources.validateCapturedSourceGeneration(); err != nil {
+		key := generation.key
+		rememberRuntimeCacheRoot(index, key)
+		evictSnapshotCaches(key)
+		return key, zero, err
+	}
+	invokeSnapshotValidationHook("runtime_after_initial_validation")
 	keyStarted := time.Now()
-	key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
+	key := generation.key
+	rememberRuntimeCacheRoot(index, key)
 	counters.phases.runtimeKeyNS.Add(time.Since(keyStarted).Nanoseconds())
 	if cached, ok := validMemoryRuntimeProjection(key, project); ok {
+		invokeSnapshotValidationHook("runtime_before_memory_cache_return")
+		if err := sources.validateCapturedSourceGeneration(); err != nil {
+			evictSnapshotCaches(key)
+			return key, zero, err
+		}
 		counters.phases.memoryCacheHits.Add(1)
 		return key, cached, nil
 	}
 
+	var lookupInput *startupcache.ValidatedInput
 	if diskCacheAllowed {
-		if diskEntry, ok := tryLoadDiskRuntimeWithPerf(index, digests, key, counters); ok {
+		lookupStarted := time.Now()
+		lookupInput, _ = validatedDiskRuntimeInput(index, digests)
+		counters.phases.cacheValidateNS.Add(time.Since(lookupStarted).Nanoseconds())
+		if diskEntry, ok := tryLoadDiskRuntimeWithPerfValidatedInput(index, key, lookupInput, counters); ok {
 			if projected, projectOK := project(diskEntry); projectOK {
+				invokeSnapshotValidationHook("runtime_before_disk_cache_return")
+				if err := sources.validateCapturedSourceGeneration(); err != nil {
+					evictSnapshotCaches(key)
+					return key, zero, err
+				}
+				invokeSnapshotValidationHook("runtime_before_memory_cache_publication")
+				if err := sources.validateCapturedSourceGeneration(); err != nil {
+					evictSnapshotCaches(key)
+					return key, zero, err
+				}
 				runtimeCacheMu.Lock()
 				runtimeCache[key] = diskEntry
 				runtimeCacheMu.Unlock()
@@ -1108,17 +1830,32 @@ func runtimeFromIndexWithSourceDigestsAndPerfProjected[T any](index typesys.Inde
 		restored:                     restored,
 		executionProjectionValidated: true,
 	}
-	entry.patchAuthority = newRuntimePatchAuthority(index, key, digests, sources, entry, org)
+	entry.patchAuthority = newRuntimePatchAuthorityWithPerf(index, key, digests, sources, entry, org, counters)
 	counters.phases.projectCompileNS.Add(time.Since(authorityStarted).Nanoseconds())
 	projected, projectOK := project(entry)
 	if !projectOK {
 		return key, zero, fmt.Errorf("compiled runtime payload cannot be cloned safely")
 	}
+	invokeSnapshotValidationHook("runtime_before_memory_cache_publication")
+	if err := sources.validateCapturedSourceGeneration(); err != nil {
+		evictSnapshotCaches(key)
+		return key, zero, err
+	}
 	runtimeCacheMu.Lock()
 	runtimeCache[key] = entry
 	runtimeCacheMu.Unlock()
 	if diskCacheAllowed {
-		persistDiskRuntimeWithPerf(index, digests, key, org, entry, counters)
+		invokeSnapshotValidationHook("runtime_before_disk_cache_publication")
+		if err := sources.validateCapturedSourceGeneration(); err != nil {
+			evictSnapshotCaches(key)
+			return key, zero, err
+		}
+		publicationStarted := time.Now()
+		publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput)
+		counters.phases.cacheValidateNS.Add(time.Since(publicationStarted).Nanoseconds())
+		if ok {
+			persistDiskRuntimeWithPerfValidatedInput(index, key, org, entry, publicationInput, counters)
+		}
 	}
 	return key, projected, nil
 }
@@ -1179,16 +1916,34 @@ func allClassesHaveSingleMethod(classIndexes map[string][]int) bool {
 	return true
 }
 
-func compileTestSetupsCached(index typesys.Index, baseKey runtimeCacheKey, selectedClasses map[string]bool, sources *sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error, error) {
+func compileTestSetupsCached(index typesys.Index, digests *typesys.SourceDigestSet, baseKey runtimeCacheKey, selectedClasses map[string]bool, sources *sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error, error) {
 	key := string(baseKey) + "|setup|" + classSetKey(selectedClasses)
 	setupCacheMu.RLock()
 	if cached, ok := setupCache[key]; ok {
 		setupCacheMu.RUnlock()
+		invokeSnapshotValidationHook("setup_before_cache_return")
+		if err := validateRuntimeSourceDigests(index, digests); err != nil {
+			evictSnapshotCaches(baseKey)
+			return nil, nil, nil, nil, err
+		}
+		if err := sources.validateCapturedSourceGeneration(); err != nil {
+			evictSnapshotCaches(baseKey)
+			return nil, nil, nil, nil, err
+		}
 		return cached.Methods, cached.Errors, cached.Programs, cached.ProgramErrs, nil
 	}
 	setupCacheMu.RUnlock()
 	methods, errs, programs, programErrs := compileTestSetupMethodsForClasses(index, selectedClasses, sources)
 	if err := sources.sourceSnapshotError(); err != nil {
+		return methods, errs, programs, programErrs, err
+	}
+	invokeSnapshotValidationHook("setup_before_cache_publication")
+	if err := validateRuntimeSourceDigests(index, digests); err != nil {
+		evictSnapshotCaches(baseKey)
+		return methods, errs, programs, programErrs, err
+	}
+	if err := sources.validateCapturedSourceGeneration(); err != nil {
+		evictSnapshotCaches(baseKey)
 		return methods, errs, programs, programErrs, err
 	}
 	setupCacheMu.Lock()
@@ -1197,17 +1952,35 @@ func compileTestSetupsCached(index typesys.Index, baseKey runtimeCacheKey, selec
 	return methods, errs, programs, programErrs, nil
 }
 
-func compileTestsCached(index typesys.Index, baseKey runtimeCacheKey, cases []TestCase, sources *sourceCache) (map[string]vm.Method, map[string]error, map[string]ir.Program, map[string]error, error) {
+func compileTestsCached(index typesys.Index, digests *typesys.SourceDigestSet, baseKey runtimeCacheKey, cases []TestCase, sources *sourceCache) (map[string]vm.Method, map[string]error, map[string]ir.Program, map[string]error, error) {
 	key := string(baseKey) + "|tests|" + caseSetKey(cases)
 	testCacheMu.RLock()
 	if cached, ok := testCache[key]; ok {
 		testCacheMu.RUnlock()
+		invokeSnapshotValidationHook("test_before_cache_return")
+		if err := validateRuntimeSourceDigests(index, digests); err != nil {
+			evictSnapshotCaches(baseKey)
+			return nil, nil, nil, nil, err
+		}
+		if err := sources.validateCapturedSourceGeneration(); err != nil {
+			evictSnapshotCaches(baseKey)
+			return nil, nil, nil, nil, err
+		}
 		return cached.Methods, cached.MethodErrs, cached.Programs, cached.ProgramErrs, nil
 	}
 	testCacheMu.RUnlock()
 	methods, methodErrs := compileTestMethods(cases, sources)
 	programs, programErrs := compileTestInvokePrograms(cases)
 	if err := sources.sourceSnapshotError(); err != nil {
+		return methods, methodErrs, programs, programErrs, err
+	}
+	invokeSnapshotValidationHook("test_before_cache_publication")
+	if err := validateRuntimeSourceDigests(index, digests); err != nil {
+		evictSnapshotCaches(baseKey)
+		return methods, methodErrs, programs, programErrs, err
+	}
+	if err := sources.validateCapturedSourceGeneration(); err != nil {
+		evictSnapshotCaches(baseKey)
 		return methods, methodErrs, programs, programErrs, err
 	}
 	testCacheMu.Lock()
@@ -1300,6 +2073,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 		classIndexes[className] = append(classIndexes[className], i)
 	}
 	if parallelism <= 1 || len(planned) <= 1 {
+		var methodWindowStarted time.Time
 		for i, plan := range planned {
 			if results[i].Status != "" {
 				continue
@@ -1309,6 +2083,9 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 			}
 			caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
 			cloneOrg := len(planned) > 1 || plan.SetupShared
+			if methodWindowStarted.IsZero() {
+				methodWindowStarted = startMethodWindow(counters)
+			}
 			results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, nil, counters)
 			if caseCancel != nil {
 				caseCancel()
@@ -1317,6 +2094,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 				reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
 			}
 		}
+		recordMethodWindow(methodWindowStarted, counters)
 		return
 	}
 	if opts.ParallelMethods && len(classOrder) == 1 && len(planned) > 1 {
@@ -1328,6 +2106,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 	}
 	sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS, counters)
 	jobs := make(chan string)
+	methodWindow := methodWindowTimer{counters: counters}
 	var wg sync.WaitGroup
 	for worker := 0; worker < parallelism; worker++ {
 		wg.Add(1)
@@ -1341,6 +2120,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 						continue
 					}
 					plan := planned[i]
+					methodWindow.dispatch()
 					if emitProgress {
 						reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 					}
@@ -1362,6 +2142,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 	}
 	close(jobs)
 	wg.Wait()
+	methodWindow.join()
 }
 
 func runNoSetupJournalPlans(ctx context.Context, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) {
@@ -1384,13 +2165,16 @@ func runNoSetupJournalPlans(ctx context.Context, planned []testCasePlan, results
 	}
 	if parallelism <= 1 || len(classOrder) <= 1 {
 		journal := storage.NewIsolationJournal(&org)
+		methodWindow := methodWindowTimer{counters: counters}
 		for _, className := range classOrder {
 			methodIndexes := append([]int(nil), classIndexes[className]...)
 			sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS, counters)
 			for _, i := range methodIndexes {
+				methodWindow.dispatch()
 				runJournaledNoSetupPlan(ctx, i, planned, results, journal, 0, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, emitProgress)
 			}
 		}
+		methodWindow.join()
 		return
 	}
 	if parallelism > len(classOrder) {
@@ -1398,6 +2182,7 @@ func runNoSetupJournalPlans(ctx context.Context, planned []testCasePlan, results
 	}
 	sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS, counters)
 	jobs := make(chan string)
+	methodWindow := methodWindowTimer{counters: counters}
 	var wg sync.WaitGroup
 	for worker := 0; worker < parallelism; worker++ {
 		wg.Add(1)
@@ -1409,6 +2194,7 @@ func runNoSetupJournalPlans(ctx context.Context, planned []testCasePlan, results
 				methodIndexes := append([]int(nil), classIndexes[className]...)
 				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS, counters)
 				for _, i := range methodIndexes {
+					methodWindow.dispatch()
 					runJournaledNoSetupPlan(ctx, i, planned, results, journal, 0, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, emitProgress)
 				}
 			}
@@ -1419,6 +2205,27 @@ func runNoSetupJournalPlans(ctx context.Context, planned []testCasePlan, results
 	}
 	close(jobs)
 	wg.Wait()
+	methodWindow.join()
+}
+
+type methodWindowTimer struct {
+	counters *runPerfCounters
+	once     sync.Once
+	started  time.Time
+}
+
+func (t *methodWindowTimer) dispatch() {
+	if t == nil || t.counters == nil || !t.counters.enabled {
+		return
+	}
+	t.once.Do(func() { t.started = time.Now() })
+}
+
+func (t *methodWindowTimer) join() {
+	if t == nil || t.started.IsZero() {
+		return
+	}
+	recordMethodWindow(t.started, t.counters)
 }
 
 func runJournaledNoSetupPlan(ctx context.Context, i int, planned []testCasePlan, results []testreport.Case, journal *storage.IsolationJournal, setupRandom uint64, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, counters *runPerfCounters, emitProgress bool) {
@@ -1432,7 +2239,7 @@ func runJournaledNoSetupPlan(ctx context.Context, i int, planned []testCasePlan,
 	caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
 	mark := journal.Mark()
 	results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, *journal.Org(), setupRandom, opts, false, journal, counters)
-	if rollbackErr := journal.Rollback(mark); rollbackErr != nil && results[i].Problem == nil {
+	if rollbackErr := rollbackJournal(journal, mark, counters); rollbackErr != nil && results[i].Problem == nil {
 		results[i].Status = testreport.StatusFail
 		results[i].Problem = problem("InternalError", rollbackErr.Error(), plan.TestCase)
 	}
@@ -1443,6 +2250,16 @@ func runJournaledNoSetupPlan(ctx context.Context, i int, planned []testCasePlan,
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
 	}
+}
+
+func rollbackJournal(journal *storage.IsolationJournal, mark storage.IsolationMark, counters *runPerfCounters) error {
+	if counters == nil || !counters.enabled {
+		return journal.Rollback(mark)
+	}
+	started := time.Now()
+	err := journal.Rollback(mark)
+	counters.phases.rollbackNS.Add(time.Since(started).Nanoseconds())
+	return err
 }
 
 func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndexes map[string][]int, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) {
@@ -1489,7 +2306,16 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 	if counters != nil && counters.enabled && len(opts.ClassDurationMS) > 0 {
 		counters.phases.historyApplyNS.Add(time.Since(historyStarted).Nanoseconds())
 	}
-	defer dispatcher.close()
+	defer func() {
+		if counters == nil || !counters.enabled {
+			dispatcher.close()
+			return
+		}
+		teardownStarted := time.Now()
+		dispatcher.close()
+		counters.phases.teardownNS.Add(time.Since(teardownStarted).Nanoseconds())
+	}()
+	methodWindow := methodWindowTimer{counters: counters}
 	var wg sync.WaitGroup
 	for worker := 0; worker < parallelism; worker++ {
 		wg.Add(1)
@@ -1523,7 +2349,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					if extra := adaptiveBudgets[className]; extra > methodParallelism {
 						methodParallelism = extra
 					}
-					runClassMethodIndexes(ctx, methodIndexes, planned, results, setupOrg, setupErr, setupRandom, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, methodParallelism)
+					runClassMethodIndexes(ctx, methodIndexes, planned, results, setupOrg, setupErr, setupRandom, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, methodParallelism, &methodWindow)
 					dispatcher.recordObserved(className, time.Since(classStart).Milliseconds())
 					continue
 				}
@@ -1547,6 +2373,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					if emitProgress {
 						reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 					}
+					methodWindow.dispatch()
 					caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
 					cloneOrg := len(methodIndexes) > 1 || plan.SetupShared
 					var mark storage.IsolationMark
@@ -1560,7 +2387,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					}
 					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, caseJournal, counters)
 					if caseJournal != nil {
-						if rollbackErr := caseJournal.Rollback(mark); rollbackErr != nil && results[i].Problem == nil {
+						if rollbackErr := rollbackJournal(caseJournal, mark, counters); rollbackErr != nil && results[i].Problem == nil {
 							results[i].Status = testreport.StatusFail
 							results[i].Problem = problem("InternalError", rollbackErr.Error(), plan.TestCase)
 						}
@@ -1578,6 +2405,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 		}()
 	}
 	wg.Wait()
+	methodWindow.join()
 }
 
 var apexMergeDMLPattern = regexp.MustCompile(`(?i)\bmerge\s+(?:new\s+)?[A-Za-z_][A-Za-z0-9_]*`)
@@ -1743,7 +2571,7 @@ func sortMethodIndexes(indexes []int, planned []testCasePlan, methodDurationMS m
 	})
 }
 
-func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCasePlan, results []testreport.Case, setupOrg storage.OrgState, setupErr error, setupRandom uint64, setupShared bool, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, counters *runPerfCounters, parallelism int) {
+func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCasePlan, results []testreport.Case, setupOrg storage.OrgState, setupErr error, setupRandom uint64, setupShared bool, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, counters *runPerfCounters, parallelism int, methodWindow *methodWindowTimer) {
 	emitProgress := opts.Progress != nil
 	if parallelism <= 1 {
 		parallelism = 1
@@ -1775,6 +2603,7 @@ func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCas
 					continue
 				}
 				plan := planned[i]
+				methodWindow.dispatch()
 				plan.SetupErr = setupErr
 				plan.SetupOrg = workerOrg
 				plan.SetupRandom = setupRandom
@@ -1792,7 +2621,7 @@ func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCas
 				}
 				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, caseJournal, counters)
 				if caseJournal != nil {
-					if rollbackErr := caseJournal.Rollback(mark); rollbackErr != nil && results[i].Problem == nil {
+					if rollbackErr := rollbackJournal(caseJournal, mark, counters); rollbackErr != nil && results[i].Problem == nil {
 						results[i].Status = testreport.StatusFail
 						results[i].Problem = problem("InternalError", rollbackErr.Error(), plan.TestCase)
 					}
@@ -1823,6 +2652,7 @@ func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, result
 		parallelism = len(planned)
 	}
 	jobs := make(chan int)
+	methodWindow := methodWindowTimer{counters: counters}
 	var wg sync.WaitGroup
 	for worker := 0; worker < parallelism; worker++ {
 		wg.Add(1)
@@ -1833,6 +2663,7 @@ func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, result
 					continue
 				}
 				plan := planned[i]
+				methodWindow.dispatch()
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 				}
@@ -1857,6 +2688,7 @@ func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, result
 	}
 	close(jobs)
 	wg.Wait()
+	methodWindow.join()
 }
 
 func reportProgress(opts Options, progress TestProgress) {
@@ -2116,7 +2948,7 @@ func cloneRuntimeMachine(machine *vm.VM, counters ...*runPerfCounters) *vm.VM {
 func cloneRuntimeMachineFor(machine *vm.VM, className, phase string, counters *runPerfCounters) *vm.VM {
 	recordCloneReason(className, phase, "vm-runtime", counters)
 	started := time.Now()
-	clone := machine.CloneRuntime(nil)
+	clone := machine.CloneRuntimeFrozenShared(nil)
 	recordCloneRuntimeMachineDuration(time.Since(started), counters)
 	return clone
 }
@@ -2153,8 +2985,18 @@ func methodMapValues(methods map[string]vm.Method) []vm.Method {
 // index and installs them into the VM. It is used by non-test runtimes that need
 // the same supported Apex subset as the local test runner.
 func RegisterProjectRuntime(machine *vm.VM, index typesys.Index) error {
+	return RegisterProjectRuntimeWithSourceDigests(machine, index, nil)
+}
+
+// RegisterProjectRuntimeWithSourceDigests installs a project runtime only
+// after the supplied index generation remains valid. A nil digest set keeps
+// the documented legacy live-read behavior.
+func RegisterProjectRuntimeWithSourceDigests(machine *vm.VM, index typesys.Index, digests *typesys.SourceDigestSet) error {
 	sources := newSourceCache()
-	_, runtime := runtimeFromIndex(index, sources)
+	_, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
+	if err != nil {
+		return err
+	}
 	methods := runtime.Methods
 	classes := runtime.Classes
 	triggers := runtime.Triggers
@@ -2170,8 +3012,18 @@ func RegisterProjectRuntime(machine *vm.VM, index typesys.Index) error {
 // lazily when a class is first used, matching request-scoped Apex behavior while
 // avoiding eager setup in unrelated project code.
 func RegisterProjectRuntimeForRequest(machine *vm.VM, index typesys.Index) error {
+	return RegisterProjectRuntimeForRequestWithSourceDigests(machine, index, nil)
+}
+
+// RegisterProjectRuntimeForRequestWithSourceDigests compiles a request-scoped
+// runtime from an explicit immutable source generation. A nil digest set keeps
+// the documented legacy live-read behavior of RegisterProjectRuntimeForRequest.
+func RegisterProjectRuntimeForRequestWithSourceDigests(machine *vm.VM, index typesys.Index, digests *typesys.SourceDigestSet) error {
 	sources := newSourceCache()
-	_, runtime := runtimeFromIndex(index, sources)
+	_, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
+	if err != nil {
+		return err
+	}
 	return RegisterCompiledProjectRuntimeForRequest(machine, compiledProjectRuntimeFromEntry(runtime))
 }
 
@@ -2304,6 +3156,10 @@ type sourceCache struct {
 	rawFiles             map[string]string
 	apiVersions          map[string]string
 	fileRemaps           map[string][]namespaceremap.Rule
+	capturedFiles        map[string][sha256.Size]byte
+	capturedMetadata     map[string]typesys.ApexMetadataInput
+	metadataAuthority    runtimeMetadataAuthority
+	generationValidator  func() error
 }
 
 // SourceSnapshotMismatchError reports that an authoritative source snapshot no
@@ -2352,15 +3208,292 @@ func (cache *sourceCache) bindSourceDigests(digests *typesys.SourceDigestSet) {
 		return
 	}
 	cache.mu.Lock()
-	cache.apiVersions = make(map[string]string)
 	if cache.expectedDigests != digests || cache.expectedDigestLookup != nil {
 		cache.files = make(map[string]string)
 		cache.rawFiles = make(map[string]string)
+		cache.apiVersions = make(map[string]string)
+		cache.capturedFiles = nil
+		cache.capturedMetadata = nil
+		cache.metadataAuthority = ""
 		cache.snapshotErr = nil
+	}
+	// Legacy runtime builds intentionally refresh sidecar metadata on each
+	// binding. Artifact-backed builds retain every captured API version,
+	// including the empty version, so no live sidecar fallback can alter that
+	// snapshot.
+	if cache.metadataAuthority != runtimeMetadataAuthorityArtifact {
+		cache.apiVersions = make(map[string]string)
 	}
 	cache.expectedDigests = digests
 	cache.expectedDigestLookup = nil
 	cache.mu.Unlock()
+}
+
+// seedBuildArtifacts binds the runtime source cache to the exact raw source
+// occurrences that produced index. These bytes remain authoritative for
+// runtime compilation; validateCapturedSourceGeneration separately proves the
+// filesystem has not moved on before a cached runtime can be reused.
+func (cache *sourceCache) seedBuildArtifacts(index typesys.Index, artifacts *typesys.BuildArtifacts) error {
+	if cache == nil || artifacts == nil {
+		return nil
+	}
+	if err := validateBuildArtifacts(index, artifacts); err != nil {
+		return err
+	}
+	cache.bindSourceDigests(artifacts.SourceDigests)
+	rawFiles := make(map[string]string)
+	apiVersions := make(map[string]string)
+	capturedFiles := make(map[string][sha256.Size]byte)
+	capturedMetadata := make(map[string]typesys.ApexMetadataInput)
+	seedType := func(typ typesys.TypeSymbol) error {
+		if !typ.HasSourceSnapshot() {
+			return nil
+		}
+		source, ok := artifacts.SourceForType(typ)
+		if !ok {
+			return incompleteSourceSnapshotError("missing type source " + typ.File)
+		}
+		rawFiles[typ.File] = source.RawString()
+		capturedFiles[typ.File] = source.Digest()
+		metadata, ok := artifacts.ApexMetadataForType(typ)
+		if !ok {
+			return incompleteSourceSnapshotError("missing Apex metadata input " + typ.File + "-meta.xml")
+		}
+		capturedMetadata[typ.File+"-meta.xml"] = metadata
+		apiVersions[typ.File] = typ.EffectiveAPIVersion
+		return nil
+	}
+	for _, typ := range index.Types {
+		if err := seedType(typ); err != nil {
+			return err
+		}
+	}
+	for _, trigger := range index.Triggers {
+		if !trigger.HasSourceSnapshot() {
+			continue
+		}
+		source, ok := artifacts.SourceForTrigger(trigger)
+		if !ok {
+			return incompleteSourceSnapshotError("missing trigger source " + trigger.File)
+		}
+		rawFiles[trigger.File] = source.RawString()
+		capturedFiles[trigger.File] = source.Digest()
+		metadata, ok := artifacts.ApexMetadataForTrigger(trigger)
+		if !ok {
+			return incompleteSourceSnapshotError("missing Apex metadata input " + trigger.File + "-meta.xml")
+		}
+		capturedMetadata[trigger.File+"-meta.xml"] = metadata
+		apiVersions[trigger.File] = trigger.EffectiveAPIVersion
+	}
+	cache.mu.Lock()
+	if cache.rawFiles == nil {
+		cache.rawFiles = make(map[string]string)
+	}
+	for file, source := range rawFiles {
+		cache.rawFiles[file] = source
+	}
+	for file, version := range apiVersions {
+		cache.apiVersions[file] = version
+	}
+	cache.capturedFiles = capturedFiles
+	cache.capturedMetadata = capturedMetadata
+	cache.metadataAuthority = runtimeMetadataAuthorityArtifact
+	cache.snapshotErr = nil
+	cache.mu.Unlock()
+	return nil
+}
+
+func sourceBackedRuntimeFiles(index typesys.Index) []string {
+	seen := make(map[string]bool)
+	files := make([]string, 0, len(index.Types)+len(index.Triggers))
+	appendFile := func(file string) {
+		if file == "" || seen[file] {
+			return
+		}
+		seen[file] = true
+		files = append(files, file)
+	}
+	for _, typ := range index.Types {
+		if typ.HasSourceSnapshot() {
+			appendFile(typ.File)
+		}
+	}
+	for _, trigger := range index.Triggers {
+		if trigger.HasSourceSnapshot() {
+			appendFile(trigger.File)
+		}
+	}
+	sort.Strings(files)
+	return files
+}
+
+func (cache *sourceCache) prepareSourceGeneration(index typesys.Index, digests *typesys.SourceDigestSet) (runtimeSourceGeneration, error) {
+	if cache == nil {
+		return runtimeSourceGeneration{}, fmt.Errorf("source cache is nil")
+	}
+	files := sourceBackedRuntimeFiles(index)
+	cache.mu.RLock()
+	artifact := cache.metadataAuthority == runtimeMetadataAuthorityArtifact
+	cache.mu.RUnlock()
+	if artifact {
+		generation := cache.sourceGeneration()
+		for _, file := range files {
+			if _, ok := generation.inputs[file]; !ok {
+				return runtimeSourceGeneration{}, incompleteSourceSnapshotError("missing captured source " + file)
+			}
+		}
+		return generation, nil
+	}
+
+	rawFiles := make(map[string]string, len(files))
+	capturedFiles := make(map[string][sha256.Size]byte, len(files))
+	for _, file := range files {
+		data, err := os.ReadFile(file) // #nosec G304 -- indexed source path captured for one runtime invocation.
+		if err != nil {
+			if expected, ok := digestForFile(digests, file); ok {
+				return runtimeSourceGeneration{}, sourceSnapshotMismatch(file, expected, nil, err)
+			}
+			return runtimeSourceGeneration{}, err
+		}
+		actual := sha256.Sum256(data)
+		if expected, ok := digestForFile(digests, file); ok && expected != actual {
+			return runtimeSourceGeneration{}, sourceSnapshotMismatch(file, expected, &actual, nil)
+		}
+		rawFiles[file] = string(data)
+		capturedFiles[file] = actual
+	}
+
+	cache.mu.Lock()
+	cache.files = make(map[string]string)
+	cache.rawFiles = rawFiles
+	cache.capturedFiles = capturedFiles
+	cache.snapshotErr = nil
+	cache.mu.Unlock()
+	return cache.sourceGeneration(), nil
+}
+
+func digestForFile(digests *typesys.SourceDigestSet, file string) ([sha256.Size]byte, bool) {
+	if digests == nil {
+		return [sha256.Size]byte{}, false
+	}
+	return digests.Digest(file)
+}
+
+func (cache *sourceCache) sourceGeneration() runtimeSourceGeneration {
+	if cache == nil {
+		return runtimeSourceGeneration{}
+	}
+	cache.mu.RLock()
+	defer cache.mu.RUnlock()
+	generation := runtimeSourceGeneration{inputs: make(map[string]runtimeSourceInput, len(cache.capturedFiles))}
+	for file, digest := range cache.capturedFiles {
+		raw, ok := cache.rawFiles[file]
+		if !ok {
+			continue
+		}
+		generation.inputs[file] = runtimeSourceInput{digest: digest, raw: raw}
+	}
+	return generation
+}
+
+func (cache *sourceCache) prepareMetadataGeneration(index typesys.Index) (runtimeMetadataGeneration, error) {
+	if cache == nil {
+		return runtimeMetadataGeneration{}, fmt.Errorf("source cache is nil")
+	}
+	cache.mu.RLock()
+	artifact := cache.metadataAuthority == runtimeMetadataAuthorityArtifact
+	cache.mu.RUnlock()
+	if artifact {
+		return cache.metadataGeneration(), nil
+	}
+
+	inputs := make(map[string]typesys.ApexMetadataInput)
+	apiVersions := make(map[string]string)
+	for _, file := range sourceBackedRuntimeFiles(index) {
+		path := file + "-meta.xml"
+		data, err := os.ReadFile(path) // #nosec G304 -- fixed companion of an indexed Apex source.
+		if err != nil {
+			if !os.IsNotExist(err) {
+				return runtimeMetadataGeneration{}, &SourceSnapshotMismatchError{File: path, Cause: err}
+			}
+			inputs[path] = typesys.ApexMetadataInput{}
+			apiVersions[file] = ""
+			continue
+		}
+		inputs[path] = typesys.ApexMetadataInput{Present: true, Digest: sha256.Sum256(data)}
+		apiVersions[file] = apiVersionFromApexMetadata(data)
+	}
+
+	cache.mu.Lock()
+	cache.capturedMetadata = inputs
+	cache.apiVersions = apiVersions
+	cache.metadataAuthority = runtimeMetadataAuthorityLegacy
+	cache.snapshotErr = nil
+	cache.mu.Unlock()
+	return cache.metadataGeneration(), nil
+}
+
+func (cache *sourceCache) metadataGeneration() runtimeMetadataGeneration {
+	if cache == nil {
+		return runtimeMetadataGeneration{}
+	}
+	cache.mu.RLock()
+	defer cache.mu.RUnlock()
+	generation := runtimeMetadataGeneration{
+		authority:   cache.metadataAuthority,
+		inputs:      make(map[string]typesys.ApexMetadataInput, len(cache.capturedMetadata)),
+		apiVersions: make(map[string]string, len(cache.apiVersions)),
+	}
+	for path, input := range cache.capturedMetadata {
+		generation.inputs[path] = input
+	}
+	for file, version := range cache.apiVersions {
+		generation.apiVersions[file] = version
+	}
+	return generation
+}
+
+// validateCapturedSourceGeneration prevents an older BuildArtifacts snapshot
+// from returning an in-memory or disk runtime after its source generation has
+// changed on disk. It deliberately reads the current physical files while
+// compilation itself continues to use the captured arena bytes.
+func (cache *sourceCache) validateCapturedSourceGeneration() error {
+	if cache != nil && cache.generationValidator != nil {
+		return cache.generationValidator()
+	}
+	return cache.validateCapturedSourceGenerationRaw()
+}
+
+func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
+	if cache == nil {
+		return nil
+	}
+	cache.mu.RLock()
+	files := make(map[string][sha256.Size]byte, len(cache.capturedFiles))
+	for file, digest := range cache.capturedFiles {
+		files[file] = digest
+	}
+	metadata := make(map[string]typesys.ApexMetadataInput, len(cache.capturedMetadata))
+	for path, input := range cache.capturedMetadata {
+		metadata[path] = input
+	}
+	cache.mu.RUnlock()
+	for file, expected := range files {
+		data, err := os.ReadFile(file) // #nosec G304 -- source path is bound to a BuildArtifacts occurrence.
+		if err != nil {
+			return cache.recordSnapshotMismatch(file, expected, nil, err)
+		}
+		actual := sha256.Sum256(data)
+		if actual != expected {
+			return cache.recordSnapshotMismatch(file, expected, &actual, nil)
+		}
+	}
+	for path, expected := range metadata {
+		if err := validateApexMetadataInput(path, expected); err != nil {
+			return err
+		}
+	}
+	return cache.sourceSnapshotError()
 }
 
 func (cache *sourceCache) bindSourceDigestLookup(lookup func(string) ([sha256.Size]byte, bool)) {
@@ -2371,6 +3504,9 @@ func (cache *sourceCache) bindSourceDigestLookup(lookup func(string) ([sha256.Si
 	cache.files = make(map[string]string)
 	cache.rawFiles = make(map[string]string)
 	cache.apiVersions = make(map[string]string)
+	cache.capturedFiles = nil
+	cache.capturedMetadata = nil
+	cache.metadataAuthority = ""
 	cache.snapshotErr = nil
 	cache.expectedDigests = nil
 	cache.expectedDigestLookup = lookup
@@ -2431,6 +3567,17 @@ func (cache *sourceCache) retainedRawSource(file string) (string, bool) {
 	return source, ok
 }
 
+func (cache *sourceCache) hasArtifactCapturedSource(file string) bool {
+	if cache == nil {
+		return false
+	}
+	cache.mu.RLock()
+	_, ok := cache.capturedFiles[file]
+	artifact := cache.metadataAuthority == runtimeMetadataAuthorityArtifact
+	cache.mu.RUnlock()
+	return artifact && ok
+}
+
 func (cache *sourceCache) apexAPIVersion(file string) string {
 	if cache == nil {
 		return apiVersionForApexFile(file)
@@ -2466,14 +3613,14 @@ func (cache *sourceCache) configureNamespaceRemaps(types []typesys.TypeSymbol, t
 	defer cache.mu.Unlock()
 	fileRemaps := make(map[string][]namespaceremap.Rule)
 	for _, typ := range types {
-		if typ.File == "" || len(typ.SourceNamespaceRemaps) == 0 {
+		if !typ.HasSourceSnapshot() || typ.File == "" || len(typ.SourceNamespaceRemaps) == 0 {
 			continue
 		}
 		fileRemaps[typ.File] = append([]namespaceremap.Rule(nil), typ.SourceNamespaceRemaps...)
 	}
 	for _, triggers := range triggerSets {
 		for _, trigger := range triggers {
-			if trigger.File == "" || len(trigger.SourceNamespaceRemaps) == 0 {
+			if !trigger.HasSourceSnapshot() || trigger.File == "" || len(trigger.SourceNamespaceRemaps) == 0 {
 				continue
 			}
 			fileRemaps[trigger.File] = append([]namespaceremap.Rule(nil), trigger.SourceNamespaceRemaps...)
@@ -2882,6 +4029,9 @@ func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[
 	programErrs := make(map[string]error)
 	sources := sourceCacheFor(caches)
 	for _, typ := range index.Types {
+		if !typ.HasSourceSnapshot() {
+			continue
+		}
 		if typ.Dependency {
 			continue
 		}
@@ -3549,7 +4699,7 @@ func referencedSyntheticFieldSetReferences(org *storage.OrgState, index typesys.
 	fileHasNonTestType := make(map[string]bool)
 	fileHasTestTopLevelType := make(map[string]bool)
 	for _, typ := range index.Types {
-		if typ.File == "" {
+		if !typ.HasSourceSnapshot() || typ.File == "" {
 			continue
 		}
 		if typ.IsTest && typeNameMatchesFileBase(typ.Name, typ.File) {
@@ -3564,7 +4714,7 @@ func referencedSyntheticFieldSetReferences(org *storage.OrgState, index typesys.
 	seenRefs := make(map[string]bool)
 	var refs []syntheticFieldSetReference
 	for _, typ := range index.Types {
-		if typ.File == "" || seenFiles[typ.File] {
+		if !typ.HasSourceSnapshot() || typ.File == "" || seenFiles[typ.File] {
 			continue
 		}
 		seenFiles[typ.File] = true
@@ -4714,7 +5864,7 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 	generator := storage.NewIDGenerator(map[string]string{"ApexClass": "01p"})
 	sources := sourceCacheFor(caches)
 	for _, typ := range index.Types {
-		if typ.Kind != apexast.DeclarationClass || strings.Contains(typ.Name, ".") {
+		if !typ.HasSourceSnapshot() || typ.Kind != apexast.DeclarationClass || strings.Contains(typ.Name, ".") {
 			continue
 		}
 		id, err := generator.Next("ApexClass")

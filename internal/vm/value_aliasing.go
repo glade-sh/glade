@@ -242,6 +242,36 @@ type methodReturnAliasMutation struct {
 	refreshNestedCollections bool
 }
 
+type methodReturnAliasMutationCollector struct {
+	first    methodReturnAliasMutation
+	hasFirst bool
+	many     []methodReturnAliasMutation
+}
+
+func (collector *methodReturnAliasMutationCollector) append(mutation methodReturnAliasMutation, capacityHint int) {
+	if !collector.hasFirst {
+		collector.first = mutation
+		collector.hasFirst = true
+		return
+	}
+	if collector.many == nil {
+		if capacityHint < 2 {
+			capacityHint = 2
+		}
+		collector.many = make([]methodReturnAliasMutation, 0, capacityHint)
+		collector.many = append(collector.many, collector.first)
+	}
+	collector.many = append(collector.many, mutation)
+}
+
+func (collector *methodReturnAliasMutationCollector) single() (methodReturnAliasMutation, bool) {
+	return collector.first, collector.hasFirst && len(collector.many) == 0
+}
+
+func (collector *methodReturnAliasMutationCollector) batch() []methodReturnAliasMutation {
+	return collector.many
+}
+
 type methodReturnAliasTargetKey struct {
 	ref  uint64
 	kind ValueKind
@@ -559,7 +589,7 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 	clear(seen)
 	defer aliasRefSetPool.Put(seenPtr)
 	locations.forEach(func(location staticFieldRef) {
-		class, ok := vm.Classes[location.ClassName]
+		class, ok := vm.ensureMutableClass(location.ClassName)
 		if !ok || class.StaticFields == nil {
 			return
 		}
@@ -571,7 +601,7 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 		if replaced, hint, ok := vm.replaceStaticAliasUsingDirectChildIndex(field.Value, location, previousAlias, updated); ok {
 			field.Value = replaced
 			class.StaticFields[location.FieldName] = field
-			vm.Classes[location.ClassName] = class
+			vm.storeMutableClassAtAlias(location.ClassName, class)
 			vm.rememberStaticAliasUpdateRefs(previousAlias, updated, location)
 			vm.rememberStaticAliasDirectChildHint(previousAlias, updated, location, hint)
 			return
@@ -579,7 +609,7 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 		if replaced, hint, ok := vm.replaceStaticAliasUsingChildHint(field.Value, location, previousAlias, updated); ok {
 			field.Value = replaced
 			class.StaticFields[location.FieldName] = field
-			vm.Classes[location.ClassName] = class
+			vm.storeMutableClassAtAlias(location.ClassName, class)
 			vm.rememberStaticAliasUpdateRefs(previousAlias, updated, location)
 			vm.rememberStaticAliasChildHint(previousAlias, updated, location, hint)
 			return
@@ -594,7 +624,7 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 		previousFieldValue := field.Value
 		field.Value = replaced
 		class.StaticFields[location.FieldName] = field
-		vm.Classes[location.ClassName] = class
+		vm.storeMutableClassAtAlias(location.ClassName, class)
 		if wasTopLevelAlias {
 			vm.rememberAdditionalStaticValueRefsInField(previousFieldValue, updated, location)
 		} else {
@@ -736,7 +766,7 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 		}
 	}()
 	locations.forEach(func(location staticFieldRef) {
-		class, ok := vm.Classes[location.ClassName]
+		class, ok := vm.ensureMutableClass(location.ClassName)
 		if !ok || class.StaticFields == nil {
 			return
 		}
@@ -763,7 +793,7 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 			previousFieldValue := field.Value
 			field.Value = updated
 			class.StaticFields[location.FieldName] = field
-			vm.Classes[location.ClassName] = class
+			vm.storeMutableClassAtAlias(location.ClassName, class)
 			vm.rememberAdditionalStaticValueRefsInField(previousFieldValue, updated, location)
 			recordFieldPerf(true)
 			changedAny = true
@@ -772,7 +802,7 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 		if replaced, hint, ok := vm.replaceStaticAliasUsingDirectChildIndex(field.Value, location, previous, updated); ok {
 			field.Value = replaced
 			class.StaticFields[location.FieldName] = field
-			vm.Classes[location.ClassName] = class
+			vm.storeMutableClassAtAlias(location.ClassName, class)
 			vm.rememberStaticAliasUpdateRefs(previous, updated, location)
 			vm.rememberStaticAliasDirectChildHint(previous, updated, location, hint)
 			recordFieldPerf(true)
@@ -782,7 +812,7 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 		if replaced, hint, ok := vm.replaceStaticAliasUsingChildHint(field.Value, location, previous, updated); ok {
 			field.Value = replaced
 			class.StaticFields[location.FieldName] = field
-			vm.Classes[location.ClassName] = class
+			vm.storeMutableClassAtAlias(location.ClassName, class)
 			vm.rememberStaticAliasUpdateRefs(previous, updated, location)
 			vm.rememberStaticAliasChildHint(previous, updated, location, hint)
 			recordFieldPerf(true)
@@ -802,7 +832,7 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 		}
 		field.Value = replaced
 		class.StaticFields[location.FieldName] = field
-		vm.Classes[location.ClassName] = class
+		vm.storeMutableClassAtAlias(location.ClassName, class)
 		vm.rememberStaticAliasUpdateRefs(previous, updated, location)
 		if hintOK {
 			vm.rememberStaticAliasChildHint(previous, updated, location, hint)
@@ -1455,6 +1485,7 @@ func (vm *VM) rememberStaticValueRefsInField(value Value, location staticFieldRe
 	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
 		return
 	}
+	location = vm.canonicalStaticFieldLocation(location)
 	vm.forgetStaticValueRefsInField(location)
 	vm.collectStaticFieldValueRefsInField(value, location)
 }
@@ -1462,6 +1493,7 @@ func (vm *VM) replaceStaticValueRefsInField(previous, value Value, location stat
 	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
 		return
 	}
+	location = vm.canonicalStaticFieldLocation(location)
 	if sameStaticCollectionWriteback(previous, value) {
 		vm.forgetStaticAliasDirectChildrenInField(location)
 		return
@@ -1475,6 +1507,7 @@ func (vm *VM) rememberAdditionalStaticValueRefsInField(previous, value Value, lo
 	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
 		return
 	}
+	location = vm.canonicalStaticFieldLocation(location)
 	if sameStaticCollectionWriteback(previous, value) {
 		vm.collectAdditionalStaticFieldValueRefsInField(value, location)
 		return
@@ -1490,6 +1523,7 @@ func (vm *VM) rememberStaticAliasUpdateRefs(previous aliasSnapshot, updated Valu
 	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
 		return
 	}
+	location = vm.canonicalStaticFieldLocation(location)
 	vm.forgetStaticAliasChildHintsInField(location)
 	if previous.valid() && updated.Ref == previous.ref && updated.Kind == previous.kind {
 		seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
@@ -1521,6 +1555,7 @@ func (vm *VM) forgetStaticValueRefsInField(location staticFieldRef) {
 	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
 		return
 	}
+	location = vm.canonicalStaticFieldLocation(location)
 	vm.forgetStaticAliasChildHintsInField(location)
 	vm.forgetStaticAliasDirectChildrenInField(location)
 	for ref := range vm.staticValueRefFields {
@@ -1635,14 +1670,38 @@ func (vm *VM) collectStaticValueRefs() (map[uint64]bool, map[uint64]staticFieldR
 	refs := make(map[uint64]bool)
 	fields := make(map[uint64]staticFieldRefSet)
 	seen := make(map[uint64]bool)
+	seenLocations := make(map[staticFieldRef]bool)
 	for className, class := range vm.Classes {
 		for fieldName, field := range class.StaticFields {
-			location := staticFieldRef{ClassName: className, FieldName: fieldName}
+			location := canonicalStaticFieldLocationForClass(class, className, fieldName)
+			if seenLocations[location] {
+				continue
+			}
+			seenLocations[location] = true
 			clearRefSeen(seen)
 			collectStaticFieldValueRefs(field.Value, refs, fields, location, seen)
 		}
 	}
 	return refs, fields
+}
+
+func canonicalStaticFieldLocationForClass(class Class, fallbackClassName, fieldName string) staticFieldRef {
+	className := runtimeClassName(class)
+	if strings.TrimSpace(className) == "" {
+		className = fallbackClassName
+	}
+	return staticFieldRef{ClassName: className, FieldName: fieldName}
+}
+
+func (vm *VM) canonicalStaticFieldLocation(location staticFieldRef) staticFieldRef {
+	if vm == nil || strings.TrimSpace(location.ClassName) == "" {
+		return location
+	}
+	class, ok := vm.Classes[location.ClassName]
+	if !ok {
+		return location
+	}
+	return canonicalStaticFieldLocationForClass(class, location.ClassName, location.FieldName)
 }
 
 type aliasContainmentCacheKey struct {
@@ -1651,34 +1710,34 @@ type aliasContainmentCacheKey struct {
 	ValueType    string
 	PreviousRef  uint64
 	PreviousKind ValueKind
-	MutationSeq  uint64
+}
+
+const aliasContainmentCacheMaxEntries = 16_384
+
+func (vm *VM) advanceAliasContainmentMutation() {
+	if vm != nil {
+		vm.aliasContainmentMutationSeq++
+	}
 }
 
 func (vm *VM) recordCollectionMutation(ref uint64) {
-	if vm == nil || ref == 0 {
+	if vm == nil {
 		return
 	}
-	if vm.collectionRefMutationSeq == nil {
-		vm.collectionRefMutationSeq = make(map[uint64]uint64)
+	vm.advanceAliasContainmentMutation()
+	if ref == 0 {
+		return
 	}
-	vm.collectionRefMutationSeq[ref] = vm.collectionMutationSeq
 	recorder := vm.perfRecorder
 	if recorder != nil {
 		recorder.recordScopeAliasMutationEpoch(vm.collectionMutationSeq)
 	}
-	if len(vm.aliasContainmentCache) > 16384 {
+	if len(vm.aliasContainmentCache) > aliasContainmentCacheMaxEntries {
 		if recorder != nil {
 			recorder.recordScopeAliasContainmentCacheClear(len(vm.aliasContainmentCache))
 		}
 		clear(vm.aliasContainmentCache)
 	}
-}
-
-func (vm *VM) collectionRefMutationVersion(ref uint64) uint64 {
-	if vm == nil || ref == 0 || vm.collectionRefMutationSeq == nil {
-		return 0
-	}
-	return vm.collectionRefMutationSeq[ref]
 }
 
 func (vm *VM) valueContainsAliasRefCached(value Value, previous aliasSnapshot, seen map[uint64]bool) bool {
@@ -1703,10 +1762,11 @@ func (vm *VM) valueContainsAliasRefCached(value Value, previous aliasSnapshot, s
 				ValueType:    firstAliasContainmentType(value),
 				PreviousRef:  previous.ref,
 				PreviousKind: previous.kind,
-				MutationSeq:  vm.collectionRefMutationVersion(value.Ref),
 			}
-			if vm != nil && vm.aliasContainmentCache != nil && vm.aliasContainmentCache[cacheKey] {
-				return false
+			if vm != nil && vm.aliasContainmentCache != nil {
+				if mutationSeq, ok := vm.aliasContainmentCache[cacheKey]; ok && mutationSeq == vm.aliasContainmentMutationSeq {
+					return false
+				}
 			}
 		}
 	}
@@ -1786,13 +1846,14 @@ func (vm *VM) valueContainsAliasRefCachedWithProbe(value Value, previous aliasSn
 				ValueType:    firstAliasContainmentType(value),
 				PreviousRef:  previous.ref,
 				PreviousKind: previous.kind,
-				MutationSeq:  vm.collectionRefMutationVersion(value.Ref),
 			}
-			if vm != nil && vm.aliasContainmentCache != nil && vm.aliasContainmentCache[cacheKey] {
-				if probe != nil {
-					probe.containmentCacheHits++
+			if vm != nil && vm.aliasContainmentCache != nil {
+				if mutationSeq, ok := vm.aliasContainmentCache[cacheKey]; ok && mutationSeq == vm.aliasContainmentMutationSeq {
+					if probe != nil {
+						probe.containmentCacheHits++
+					}
+					return false
 				}
-				return false
 			}
 			if probe != nil {
 				probe.containmentCacheMisses++
@@ -1868,9 +1929,16 @@ func (vm *VM) rememberAliasContainmentMiss(key aliasContainmentCacheKey) {
 		return
 	}
 	if vm.aliasContainmentCache == nil {
-		vm.aliasContainmentCache = make(map[aliasContainmentCacheKey]bool)
+		vm.aliasContainmentCache = make(map[aliasContainmentCacheKey]uint64)
 	}
-	vm.aliasContainmentCache[key] = true
+	if _, exists := vm.aliasContainmentCache[key]; !exists &&
+		len(vm.aliasContainmentCache) >= aliasContainmentCacheMaxEntries {
+		if recorder := vm.perfRecorder; recorder != nil {
+			recorder.recordScopeAliasContainmentCacheClear(len(vm.aliasContainmentCache))
+		}
+		clear(vm.aliasContainmentCache)
+	}
+	vm.aliasContainmentCache[key] = vm.aliasContainmentMutationSeq
 }
 
 func cacheableAliasContainmentKind(kind ValueKind) bool {

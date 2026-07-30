@@ -3027,6 +3027,7 @@ func constructedTypeName(text string) string {
 
 type semaLocal struct {
 	name       string
+	key        string
 	typeName   string
 	start      int
 	scopeStart int
@@ -3034,14 +3035,15 @@ type semaLocal struct {
 }
 
 type semaScopeModel struct {
-	base   map[string]string
-	locals []semaLocal
+	base      map[string]string
+	locals    []semaLocal
+	canonical *semaCanonicalNames
 }
 
 func (s semaScopeModel) localVisibleAt(name string, pos int) bool {
-	key := normalizeName(name)
+	key := s.canonicalName(name)
 	for _, local := range s.locals {
-		if normalizeName(local.name) == key && pos >= local.start && pos <= local.scopeEnd {
+		if s.localKey(local) == key && pos >= local.start && pos <= local.scopeEnd {
 			return true
 		}
 	}
@@ -3049,7 +3051,7 @@ func (s semaScopeModel) localVisibleAt(name string, pos int) bool {
 }
 
 func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, base map[string]string, model *semaTypeMemberView) (semaScopeModel, []diagnostic.Diagnostic) {
-	scopes := semaScopeModel{base: base}
+	scopes := semaScopeModel{base: base, canonical: a.canonicalNames}
 	var diagnostics []diagnostic.Diagnostic
 	diagnostics = append(diagnostics, declareSemaParameters(typ, member, body, bodyOffset, source, &scopes)...)
 	for _, match := range enhancedForLocalPattern.FindAllStringSubmatchIndex(body, -1) {
@@ -3168,6 +3170,7 @@ func declareSemaParameters(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 		seen[key] = param
 		scopes.locals = append(scopes.locals, semaLocal{
 			name:       name,
+			key:        scopes.canonicalName(name),
 			typeName:   param.Type,
 			start:      -1,
 			scopeStart: 0,
@@ -3190,7 +3193,8 @@ func parameterNameRange(param, _ apexast.Parameter, source string) *diagnostic.R
 }
 
 func (s *semaScopeModel) declareLocal(typ typesys.TypeSymbol, member typesys.MemberSymbol, name, typeName string, start, scopeStart, scopeEnd, bodyOffset int, source string, nameStart, nameEnd int) []diagnostic.Diagnostic {
-	if existing, exists := s.conflictingLocal(name, scopeStart, scopeEnd); exists {
+	key := s.canonicalName(name)
+	if existing, exists := s.conflictingLocalKey(key, scopeStart, scopeEnd); exists {
 		if existing.start == start {
 			return nil
 		}
@@ -3202,14 +3206,17 @@ func (s *semaScopeModel) declareLocal(typ typesys.TypeSymbol, member typesys.Mem
 			Range:    semaRange(source, bodyOffset+nameStart, bodyOffset+nameEnd),
 		}}
 	}
-	s.locals = append(s.locals, semaLocal{name: name, typeName: typeName, start: start, scopeStart: scopeStart, scopeEnd: scopeEnd})
+	s.locals = append(s.locals, semaLocal{name: name, key: key, typeName: typeName, start: start, scopeStart: scopeStart, scopeEnd: scopeEnd})
 	return nil
 }
 
 func (s semaScopeModel) conflictingLocal(name string, scopeStart, scopeEnd int) (semaLocal, bool) {
-	key := normalizeName(name)
+	return s.conflictingLocalKey(s.canonicalName(name), scopeStart, scopeEnd)
+}
+
+func (s semaScopeModel) conflictingLocalKey(key string, scopeStart, scopeEnd int) (semaLocal, bool) {
 	for _, local := range s.locals {
-		if normalizeName(local.name) != key {
+		if s.localKey(local) != key {
 			continue
 		}
 		// Same block, or an existing parent scope that encloses this declaration.
@@ -3218,4 +3225,18 @@ func (s semaScopeModel) conflictingLocal(name string, scopeStart, scopeEnd int) 
 		}
 	}
 	return semaLocal{}, false
+}
+
+func (s semaScopeModel) canonicalName(name string) string {
+	if s.canonical == nil {
+		return normalizeName(name)
+	}
+	return s.canonical.canonical(name)
+}
+
+func (s semaScopeModel) localKey(local semaLocal) string {
+	if local.key != "" {
+		return local.key
+	}
+	return s.canonicalName(local.name)
 }

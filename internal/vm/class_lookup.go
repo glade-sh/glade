@@ -3,6 +3,7 @@ package vm
 import (
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -12,10 +13,25 @@ type runtimeClassNameCacheKey struct {
 	Name      string
 }
 
+type frozenClassLookup struct {
+	generation uint64
+	keys       map[string]string
+}
+
 var (
 	runtimeClassNameCacheMu sync.RWMutex
 	runtimeClassNameCache   = make(map[runtimeClassNameCacheKey]string)
 )
+
+const (
+	// Managed-package runtimes exercise tens of thousands of distinct raw
+	// type-name spellings per worker. Keep the overlay above that working set
+	// while retaining explicit memory bounds for pathological inputs.
+	maxClassLookupNameCacheEntries = 64 << 10
+	maxClassLookupNameCacheBytes   = 8 << 20
+)
+
+var nextClassLookupGeneration atomic.Uint64
 
 func (vm *VM) classNamespace(className string) string {
 	if vm.classNamespaceCache == nil {
@@ -585,51 +601,159 @@ func (vm *VM) lookupClass(typeName string) (Class, bool) {
 		return Class{}, false
 	}
 	if cached, ok := vm.classLookupNameCache[typeName]; ok {
-		if !cached.OK {
-			return Class{}, false
+		if cached.Generation == vm.classLookupGeneration {
+			vm.recordClassLookupHit()
+			if !cached.OK {
+				return Class{}, false
+			}
+			class, ok := vm.Classes[cached.Alias]
+			if ok {
+				return class, true
+			}
 		}
-		class, ok := vm.Classes[cached.Alias]
+		vm.deleteClassLookupNameCache(typeName)
+	}
+	vm.recordClassLookupMiss()
+	if frozen := vm.frozenClassLookup; frozen != nil {
+		alias, ok := frozen.keys[typeName]
+		if !ok {
+			alias, ok = foldLookupStringMap(frozen.keys, typeName)
+		}
 		if ok {
-			return class, true
-		}
-		delete(vm.classLookupNameCache, typeName)
-	}
-	if class, ok := vm.Classes[typeName]; ok {
-		vm.storeClassLookupNameCache(typeName, typeName, true)
-		return class, true
-	}
-	if vm.sharedClassLookupKeys != nil {
-		if key, ok := foldLookupStringMap(vm.sharedClassLookupKeys, typeName); ok {
-			if class, ok := vm.Classes[key]; ok {
-				vm.storeClassLookupNameCache(typeName, key, true)
+			if class, ok := vm.Classes[alias]; ok {
+				vm.storeClassLookupNameCache(typeName, alias, true)
 				return class, true
 			}
 		}
 		vm.storeClassLookupNameCache(typeName, "", false)
 		return Class{}, false
 	}
+	if class, ok := vm.Classes[typeName]; ok {
+		vm.storeClassLookupNameCache(typeName, typeName, true)
+		return class, true
+	}
 	if vm.classLookup == nil {
 		vm.rebuildClassLookup()
 	}
 	if class, ok := foldLookupClassMap(vm.classLookup, typeName); ok {
+		if alias := vm.liveClassAlias(class); alias != "" {
+			vm.storeClassLookupNameCache(typeName, alias, true)
+		}
 		return class, true
 	}
+	vm.storeClassLookupNameCache(typeName, "", false)
 	return Class{}, false
 }
 
+func (vm *VM) liveClassAlias(class Class) string {
+	for _, alias := range []string{runtimeClassName(class), class.Name} {
+		candidate, ok := vm.Classes[alias]
+		if !ok {
+			continue
+		}
+		if strings.EqualFold(candidate.Name, class.Name) &&
+			strings.EqualFold(candidate.Namespace, class.Namespace) &&
+			candidate.Dependency == class.Dependency {
+			return alias
+		}
+	}
+	return ""
+}
+
 func (vm *VM) storeClassLookupNameCache(typeName, alias string, ok bool) {
+	// A fresh, unfrozen VM has no reusable class generation. Retaining lookup
+	// results there only adds per-request allocations. Registration or a
+	// post-freeze structural change assigns a private generation; frozen
+	// runtimes resolve through their shared immutable lookup above.
+	if vm.classLookupGeneration == 0 {
+		return
+	}
+	retainedBytes := len(typeName) + len(alias)
+	if retainedBytes > maxClassLookupNameCacheBytes {
+		return
+	}
 	if vm.classLookupNameCache == nil {
 		vm.classLookupNameCache = make(map[string]classLookupNameResult)
 	}
-	vm.classLookupNameCache[typeName] = classLookupNameResult{Alias: alias, OK: ok}
+	if existing, exists := vm.classLookupNameCache[typeName]; exists {
+		vm.classLookupNameBytes -= len(typeName) + len(existing.Alias)
+	} else {
+		for len(vm.classLookupNameCache) >= maxClassLookupNameCacheEntries ||
+			vm.classLookupNameBytes+retainedBytes > maxClassLookupNameCacheBytes {
+			if len(vm.classLookupNameOrder) == 0 {
+				break
+			}
+			oldest := vm.classLookupNameOrder[0]
+			vm.classLookupNameOrder[0] = ""
+			vm.classLookupNameOrder = vm.classLookupNameOrder[1:]
+			if _, exists := vm.classLookupNameCache[oldest]; exists {
+				vm.deleteClassLookupNameCache(oldest)
+				vm.recordClassLookupEviction()
+			}
+		}
+		vm.classLookupNameOrder = append(vm.classLookupNameOrder, typeName)
+	}
+	vm.classLookupNameCache[typeName] = classLookupNameResult{
+		Alias:      alias,
+		Generation: vm.classLookupGeneration,
+		OK:         ok,
+	}
+	vm.classLookupNameBytes += retainedBytes
+	vm.updateClassLookupNameCacheGauges()
 }
 
-// FreezeClassLookup builds the shared, immutable canonical-key -> live Classes
-// key index so subsequent CloneRuntime calls can share it by pointer instead of
-// rebuilding a per-clone classLookup. Call it once on a base machine after all
-// class/method registration is complete and before cloning per-test runtimes.
-// Any later registration on a clone transparently falls back via
-// unshareClassLookup.
+func (vm *VM) deleteClassLookupNameCache(typeName string) {
+	existing, ok := vm.classLookupNameCache[typeName]
+	if !ok {
+		return
+	}
+	delete(vm.classLookupNameCache, typeName)
+	vm.classLookupNameBytes -= len(typeName) + len(existing.Alias)
+	if vm.classLookupNameBytes < 0 {
+		vm.classLookupNameBytes = 0
+	}
+	vm.updateClassLookupNameCacheGauges()
+}
+
+func (vm *VM) resetClassLookupNameCache() {
+	vm.classLookupNameCache = nil
+	vm.classLookupNameOrder = nil
+	vm.classLookupNameBytes = 0
+	vm.classLookupNameStats = classLookupNameCacheStats{}
+}
+
+func (vm *VM) recordClassLookupHit() {
+	vm.classLookupNameStats.Hits++
+	if vm.classLookupPerf != nil {
+		vm.classLookupPerf.hits.Add(1)
+	}
+}
+
+func (vm *VM) recordClassLookupMiss() {
+	vm.classLookupNameStats.Misses++
+	if vm.classLookupPerf != nil {
+		vm.classLookupPerf.misses.Add(1)
+	}
+}
+
+func (vm *VM) recordClassLookupEviction() {
+	vm.classLookupNameStats.Evictions++
+	if vm.classLookupPerf != nil {
+		vm.classLookupPerf.evictions.Add(1)
+	}
+}
+
+func (vm *VM) updateClassLookupNameCacheGauges() {
+	vm.classLookupNameStats.Entries = len(vm.classLookupNameCache)
+	vm.classLookupNameStats.RetainedBytes = vm.classLookupNameBytes
+	vm.classLookupPerf.recordGauge(len(vm.classLookupNameCache), vm.classLookupNameBytes)
+}
+
+// FreezeClassLookup binds the immutable canonical-key -> live Classes key
+// results to one runtime generation. Subsequent CloneRuntime calls share that
+// exact artifact by pointer instead of rebuilding a per-clone classLookup.
+// Later registration invalidates the frozen artifact and starts a private
+// generation with a bounded result overlay.
 func (vm *VM) FreezeClassLookup() {
 	if vm == nil {
 		return
@@ -653,11 +777,13 @@ func (vm *VM) FreezeClassLookup() {
 			put(canonicalClassLookupKey(class.Namespace+"."+class.Name), alias, class, true)
 		}
 	}
-	vm.sharedClassLookupKeys = keys
+	generation := nextClassLookupGeneration.Add(1)
+	vm.frozenClassLookup = &frozenClassLookup{generation: generation, keys: keys}
 	vm.sharedClassCopyPlan = buildClassCopyPlan(vm.Classes)
+	vm.classLookupGeneration = generation
 	vm.classNameSearchEntries()
 	vm.rebuildTopLevelClassLookup()
-	vm.classLookupNameCache = nil
+	vm.resetClassLookupNameCache()
 	vm.classLookup = nil
 }
 
@@ -688,14 +814,14 @@ func classLookupKeyWins(candidateRank int, candidateNS string, currentRank int, 
 	return strings.ToLower(strings.TrimSpace(candidateNS)) < strings.ToLower(strings.TrimSpace(currentNS))
 }
 
-// unshareClassLookup reverts a VM from the shared frozen index back to a private
-// legacy classLookup. Registration mutators call this so the shared base index
-// is never modified; per-test clones never register, so they keep sharing.
+// unshareClassLookup invalidates the frozen generation for this VM and rebuilds
+// the structural index privately. Registration mutators call this so the shared
+// base generation is never modified; ordinary per-test clones keep sharing it.
 func (vm *VM) unshareClassLookup() {
-	if vm == nil || vm.sharedClassLookupKeys == nil {
+	if vm == nil || vm.frozenClassLookup == nil {
 		return
 	}
-	vm.sharedClassLookupKeys = nil
+	vm.frozenClassLookup = nil
 	vm.sharedClassCopyPlan = nil
 	vm.rebuildClassLookup()
 }
@@ -710,6 +836,7 @@ func (vm *VM) storeClassAliases(class Class) {
 	if existing, exists := vm.Classes[class.Name]; !exists || shouldReplaceShortClassAlias(existing, class) {
 		vm.Classes[class.Name] = class
 	}
+	vm.classLookupGeneration = nextClassLookupGeneration.Add(1)
 	vm.resetClassAccessCaches()
 	vm.enumLookup = nil
 	vm.enumSuffixLookup = nil
@@ -750,7 +877,7 @@ func (vm *VM) storeClassValue(class Class) {
 	// access caches. Class structure (name/namespace/access) is unchanged, so
 	// those caches remain valid. Only fall back to the rebuild path when a name
 	// would be newly introduced.
-	if vm.sharedClassLookupKeys != nil && vm.updateExistingClassValue(class) {
+	if vm.frozenClassLookup != nil && vm.updateExistingClassValue(class) {
 		return
 	}
 	vm.unshareClassLookup()
@@ -862,9 +989,9 @@ func (vm *VM) rebuildTopLevelClassLookup() map[string]topLevelClassLookup {
 }
 
 func (vm *VM) rebuildClassLookup() {
-	vm.sharedClassLookupKeys = nil
+	vm.frozenClassLookup = nil
 	vm.sharedClassCopyPlan = nil
-	vm.classLookupNameCache = nil
+	vm.classLookupGeneration = nextClassLookupGeneration.Add(1)
 	vm.resetClassAccessCaches()
 	vm.classLookup = make(map[string]Class, len(vm.Classes)*2)
 	ranks := make(map[string]int, len(vm.Classes)*2)
@@ -894,7 +1021,7 @@ func (vm *VM) resetClassAccessCaches() {
 	vm.namespaceClassLookup = make(map[string]map[string]namespaceClassLookup)
 	vm.classNamespaceCache = make(map[string]string)
 	vm.classForAccessCache = make(map[classForAccessKey]classForAccessLookup)
-	vm.classLookupNameCache = nil
+	vm.resetClassLookupNameCache()
 	vm.nestedTypeHierarchyCache = nil
 	vm.topLevelTypeCache = nil
 	vm.topLevelClassLookup = nil

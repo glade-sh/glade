@@ -387,7 +387,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 		value = coerced
 	}
-	methodReturnAliasMutations := make([]methodReturnAliasMutation, 0, len(method.Params)+1)
+	methodReturnAliasMutations := methodReturnAliasMutationCollector{}
 	for _, param := range method.Params {
 		updated, ok := frame[param.Name]
 		if !ok {
@@ -398,12 +398,12 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 		previous := paramSnapshots[param.Name]
 		if valueAliasSnapshotMatch(previous, updated) {
-			methodReturnAliasMutations = append(methodReturnAliasMutations, methodReturnAliasMutation{
+			methodReturnAliasMutations.append(methodReturnAliasMutation{
 				previous:                 previous,
 				original:                 paramOriginals[param.Name],
 				updated:                  updated,
 				refreshNestedCollections: vm.collectionMutationSeq != collectionMutationSeqBefore,
-			})
+			}, len(method.Params)+1)
 			continue
 		}
 		for _, arg := range args {
@@ -418,21 +418,32 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	}
 	if receiver.Kind != ValueNull {
 		if updated, ok := frame["this"]; ok && valueAliasSnapshotMatch(receiverSnapshot, updated) {
-			methodReturnAliasMutations = append(methodReturnAliasMutations, methodReturnAliasMutation{
+			methodReturnAliasMutations.append(methodReturnAliasMutation{
 				previous:                 receiverSnapshot,
 				original:                 receiverOriginal,
 				updated:                  updated,
 				refreshNestedCollections: vm.collectionMutationSeq != collectionMutationSeqBefore,
-			})
+			}, len(method.Params)+1)
 		}
 	}
-	if vm.tryPropagateMethodReturnAliasSnapshotMutationsToScope(caller, methodReturnAliasMutations) {
-		for _, mutation := range methodReturnAliasMutations {
+	if mutation, ok := methodReturnAliasMutations.single(); ok {
+		if vm.propagateMethodReturnAliasSnapshotMutationToScope(
+			caller,
+			mutation.previous,
+			mutation.original,
+			mutation.updated,
+			mutation.refreshNestedCollections,
+		) {
+			vm.propagateAliasSnapshotToStatics(mutation.previous, mutation.updated)
+			vm.propagateUpdatedValueAliases(caller, mutation.updated)
+		}
+	} else if batch := methodReturnAliasMutations.batch(); vm.tryPropagateMethodReturnAliasSnapshotMutationsToScope(caller, batch) {
+		for _, mutation := range batch {
 			vm.propagateAliasSnapshotToStatics(mutation.previous, mutation.updated)
 			vm.propagateUpdatedValueAliases(caller, mutation.updated)
 		}
 	} else {
-		for _, mutation := range methodReturnAliasMutations {
+		for _, mutation := range batch {
 			if !vm.propagateMethodReturnAliasSnapshotMutationToScope(
 				caller,
 				mutation.previous,

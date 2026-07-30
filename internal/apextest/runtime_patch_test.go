@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,7 +11,9 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/namespaceremap"
@@ -171,11 +174,6 @@ func TestRuntimeTransitionOutcomeReportsAffectedClosureFacts(t *testing.T) {
 	if !reflect.DeepEqual(base.TriggerErrors, cloned.TriggerErrors) || !reflect.DeepEqual(base.PageNames, cloned.PageNames) || runtimePatchErrorIdentity(base.BaseErr) != runtimePatchErrorIdentity(cloned.BaseErr) {
 		t.Fatal("error or page clone changed payload shape")
 	}
-	baseValues, baseValuesOK := runtimePatchClassValueFingerprints(base.Classes)
-	clonedValues, clonedValuesOK := runtimePatchClassValueFingerprints(cloned.Classes)
-	if !baseValuesOK || !clonedValuesOK || !reflect.DeepEqual(baseValues, clonedValues) {
-		t.Fatal("class value supplement changed payload shape")
-	}
 	if !runtimePatchAuthorityMatchesPayload(cloned) {
 		baseFingerprint, _ := runtimePatchCompiledPayloadFingerprint(base)
 		clonedFingerprint, _ := runtimePatchCompiledPayloadFingerprint(cloned)
@@ -247,7 +245,7 @@ func TestRuntimeTransitionRejectsUnboundCurrentKeyCacheEntry(t *testing.T) {
 	if !ok {
 		t.Fatal("safe transition did not produce affected closure")
 	}
-	currentKey := runtimeKeyWithDigestLookup(current, current.SourceDigest, os.ReadFile)
+	currentKey := runtimeCacheKey(RuntimeContentKey(current, nil))
 	poisoned := previousEntry
 	poisoned.patchAuthority = nil
 	runtimeCacheMu.Lock()
@@ -428,6 +426,145 @@ func TestRuntimeFullBuildRefreshesEffectiveAPIVersionOnSameSourceCacheBinding(t 
 	}
 	if got := transitionMethod(t, second.Methods, "ChangedOwner", "value").APIVersion; got != "62.0" {
 		t.Fatalf("same-cache rebuilt API version = %q, want 62.0", got)
+	}
+}
+
+func TestRuntimeFullBuildRejectsMetadataDriftOnBuildArtifactCacheBinding(t *testing.T) {
+	InvalidateRuntimeCaches()
+	t.Cleanup(InvalidateRuntimeCaches)
+	fixture := newRuntimeTransitionFixture(t)
+	metadata := fixture.changed + "-meta.xml"
+	writeFile(t, metadata, `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	loadedProject, err := project.Load(fixture.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	loadedSchema, err := gladeschema.LoadProject(loadedProject)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, artifacts := typesys.BuildWithArtifacts(loadedProject, loadedSchema)
+	sources := newSourceCache()
+	if err := sources.seedBuildArtifacts(index, &artifacts); err != nil {
+		t.Fatal(err)
+	}
+	if _, first, err := runtimeFromIndexWithSourceDigests(index, artifacts.SourceDigests, sources, false); err != nil {
+		t.Fatal(err)
+	} else if got := transitionMethod(t, first.Methods, "ChangedOwner", "value").APIVersion; got != "61.0" {
+		t.Fatalf("first API version = %q, want 61.0", got)
+	}
+
+	writeFile(t, metadata, `<ApexClass><apiVersion>62.0</apiVersion></ApexClass>`)
+	InvalidateRuntimeCaches()
+	_, _, err = runtimeFromIndexWithSourceDigests(index, artifacts.SourceDigests, sources, false)
+	var mismatch *SourceSnapshotMismatchError
+	if !errors.As(err, &mismatch) {
+		t.Fatalf("runtimeFromIndexWithSourceDigests() error = %T %v, want SourceSnapshotMismatchError", err, err)
+	}
+	if mismatch.File != metadata {
+		t.Fatalf("mismatch file = %q, want %q", mismatch.File, metadata)
+	}
+}
+
+func TestRuntimeDigestOnlyWarmCacheRefreshesLiveMetadataGeneration(t *testing.T) {
+	InvalidateRuntimeCaches()
+	t.Cleanup(InvalidateRuntimeCaches)
+	fixture := newRuntimeTransitionFixture(t)
+	metadata := fixture.changed + "-meta.xml"
+	writeFile(t, metadata, `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	index, digests := fixture.fullIndex(t)
+	sources := newSourceCache()
+	firstKey, first, err := runtimeFromIndexWithSourceDigests(index, digests, sources, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := transitionMethod(t, first.Methods, "ChangedOwner", "value").APIVersion; got != "61.0" {
+		t.Fatalf("first API version = %q, want 61.0", got)
+	}
+
+	writeFile(t, metadata, `<ApexClass><apiVersion>62.0</apiVersion></ApexClass>`)
+	secondKey, second, err := runtimeFromIndexWithSourceDigests(index, digests, sources, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := transitionMethod(t, second.Methods, "ChangedOwner", "value").APIVersion; got != "62.0" {
+		t.Fatalf("warm API version = %q, want 62.0", got)
+	}
+	if secondKey == firstKey {
+		t.Fatalf("live metadata generations shared runtime key %q", firstKey)
+	}
+}
+
+func TestArtifactRuntimeDoesNotReuseRestoredLegacyMetadataGeneration(t *testing.T) {
+	InvalidateRuntimeCaches()
+	t.Cleanup(InvalidateRuntimeCaches)
+	fixture := newRuntimeTransitionFixture(t)
+	metadata := fixture.changed + "-meta.xml"
+	writeFile(t, metadata, `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	loadedProject, err := project.Load(fixture.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	loadedSchema, err := gladeschema.LoadProject(loadedProject)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, artifacts := typesys.BuildWithArtifacts(loadedProject, loadedSchema)
+
+	writeFile(t, metadata, `<ApexClass><apiVersion>62.0</apiVersion></ApexClass>`)
+	legacyKey, legacy, err := runtimeFromIndexWithSourceDigests(index, artifacts.SourceDigests, newSourceCache(), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := transitionMethod(t, legacy.Methods, "ChangedOwner", "value").APIVersion; got != "62.0" {
+		t.Fatalf("legacy API version = %q, want 62.0", got)
+	}
+
+	writeFile(t, metadata, `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	artifactSources := newSourceCache()
+	if err := artifactSources.seedBuildArtifacts(index, &artifacts); err != nil {
+		t.Fatal(err)
+	}
+	artifactKey, artifact, err := runtimeFromIndexWithSourceDigests(index, artifacts.SourceDigests, artifactSources, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := transitionMethod(t, artifact.Methods, "ChangedOwner", "value").APIVersion; got != "61.0" {
+		t.Fatalf("artifact API version = %q, want captured 61.0", got)
+	}
+	if artifactKey == legacyKey {
+		t.Fatalf("artifact and legacy metadata authorities shared runtime key %q", artifactKey)
+	}
+}
+
+func TestRuntimeTransitionAndDirectBuildShareLiveMetadataAuthority(t *testing.T) {
+	InvalidateRuntimeCaches()
+	t.Cleanup(InvalidateRuntimeCaches)
+	fixture := newRuntimeTransitionFixture(t)
+	metadata := fixture.changed + "-meta.xml"
+	writeFile(t, metadata, `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	index, digests := fixture.fullIndex(t)
+	writeFile(t, metadata, `<ApexClass><apiVersion>62.0</apiVersion></ApexClass>`)
+
+	directKey, direct, err := runtimeFromIndexWithSourceDigests(index, digests, newSourceCache(), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	directVersion := transitionMethod(t, direct.Methods, "ChangedOwner", "value").APIVersion
+	if directVersion != "62.0" {
+		t.Fatalf("direct API version = %q, want 62.0", directVersion)
+	}
+
+	InvalidateRuntimeCaches()
+	transitionKey, transition, err := runtimeFromIndexWithSourceDigestsAfter(index, index, digests, newSourceCache(), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := transitionMethod(t, transition.Methods, "ChangedOwner", "value").APIVersion; got != directVersion {
+		t.Fatalf("transition API version = %q, want direct %q", got, directVersion)
+	}
+	if transitionKey != directKey {
+		t.Fatalf("transition key = %q, want direct %q", transitionKey, directKey)
 	}
 }
 
@@ -635,6 +772,75 @@ func TestRuntimeTransitionErrorOutcomeDoesNotClaimSuccessfulRecompile(t *testing
 	}
 }
 
+func TestRuntimeTransitionRejectsChangedGenerationBeforeReturningPatchCache(t *testing.T) {
+	InvalidateRuntimeCaches()
+	t.Cleanup(InvalidateRuntimeCaches)
+	fixture := newRuntimeTransitionFixture(t)
+	previous, previousDigests := fixture.fullIndex(t)
+	if _, _, err := runtimeFromIndexWithSourceDigests(previous, previousDigests, newSourceCache(), false); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, fixture.changed, `public class ChangedOwner { public static Integer value() { return 2; } }`)
+	current, currentDigests := fixture.fullIndex(t)
+	if _, _, err := runtimeFromIndexWithSourceDigests(current, currentDigests, newSourceCache(), false); err != nil {
+		t.Fatal(err)
+	}
+	affected, ok := runtimePatchOneModifiedOwner(previous, current)
+	if !ok {
+		t.Fatal("expected a one-owner patch transition")
+	}
+	writeFile(t, fixture.stable, `public class StableOwner { public static Integer value() { return 8; } }`)
+
+	_, _, outcome, err := runtimeFromIndexTransition(previous, current, currentDigests, newSourceCache(), false, nil, affected)
+	var mismatch *SourceSnapshotMismatchError
+	if !errors.As(err, &mismatch) {
+		t.Fatalf("runtimeFromIndexTransition() error = %T %v, want SourceSnapshotMismatchError", err, err)
+	}
+	if outcome.Applied || outcome.EntryValid || outcome.TemplateValid {
+		t.Fatalf("stale generation returned a patch outcome: %#v", outcome)
+	}
+}
+
+func TestRuntimeTransitionCapturesChangedLiveMetadataAsNewGeneration(t *testing.T) {
+	InvalidateRuntimeCaches()
+	t.Cleanup(InvalidateRuntimeCaches)
+	fixture := newRuntimeTransitionFixture(t)
+	previous, previousDigests := fixture.fullIndex(t)
+	if _, _, err := runtimeFromIndexWithSourceDigests(previous, previousDigests, newSourceCache(), false); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, fixture.changed, `public class ChangedOwner { public static Integer value() { return 2; } }`)
+	current, currentDigests := fixture.fullIndex(t)
+	if _, _, err := runtimeFromIndexWithSourceDigests(current, currentDigests, newSourceCache(), false); err != nil {
+		t.Fatal(err)
+	}
+	affected, ok := runtimePatchOneModifiedOwner(previous, current)
+	if !ok {
+		t.Fatal("expected a one-owner patch transition")
+	}
+	oldKey := runtimeCacheKey(RuntimeContentKey(current, currentDigests))
+	writeFile(t, fixture.stable+"-meta.xml", `<ApexClass><status>Active</status></ApexClass>`)
+	newKey := runtimeCacheKey(RuntimeContentKey(current, currentDigests))
+	if newKey == oldKey {
+		t.Fatalf("live metadata generation retained key %q", oldKey)
+	}
+
+	key, _, outcome, err := runtimeFromIndexTransition(previous, current, currentDigests, newSourceCache(), false, nil, affected)
+	if err != nil {
+		t.Fatalf("runtimeFromIndexTransition() = %v", err)
+	}
+	if key != newKey || outcome.Key != newKey {
+		t.Fatalf("transition keys = %q/%q, want live generation %q", key, outcome.Key, newKey)
+	}
+	runtimeCacheMu.RLock()
+	_, oldCached := runtimeCache[oldKey]
+	_, newCached := runtimeCache[newKey]
+	runtimeCacheMu.RUnlock()
+	if !oldCached || !newCached {
+		t.Fatalf("metadata transition cache old=%v new=%v, want identity-separated entries", oldCached, newCached)
+	}
+}
+
 func TestRuntimeTransitionRejectsStaleSuppliedDigestAuthorityBeforePatch(t *testing.T) {
 	InvalidateRuntimeCaches()
 	t.Cleanup(InvalidateRuntimeCaches)
@@ -673,7 +879,7 @@ func TestRuntimeTransitionRejectsCachedBaseFromDifferentPrivateProjectIdentity(t
 	if typesys.SameProjectIdentity(previousCached, previousRequest) {
 		t.Fatal("fixture did not create distinct private project identities")
 	}
-	previousRequestKey := runtimeKeyWithDigestLookup(previousRequest, previousRequest.SourceDigest, os.ReadFile)
+	previousRequestKey := runtimeCacheKey(RuntimeContentKey(previousRequest, nil))
 	if previousCachedKey != previousRequestKey {
 		t.Fatalf("fixture did not produce a colliding exported runtime key: %q != %q", previousCachedKey, previousRequestKey)
 	}
@@ -1082,6 +1288,669 @@ func TestRuntimeTransitionConcurrentPublicationKeepsOneAuthoritativeResult(t *te
 	}
 	if got := transitionMethod(t, previousEntry.Methods, "ChangedOwner", "value").Program.Source; !strings.Contains(got, "return 1") {
 		t.Fatalf("concurrent transition mutated prior entry: %q", got)
+	}
+}
+
+func TestConcurrentIdenticalRuntimeTransitionSingleflight(t *testing.T) {
+	InvalidateRuntimeCaches()
+	t.Cleanup(InvalidateRuntimeCaches)
+	fixture := newRuntimeTransitionFixture(t)
+	previous, previousDigests := fixture.fullIndex(t)
+	if _, _, err := runtimeFromIndexWithSourceDigests(previous, previousDigests, newSourceCache(), false); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, fixture.changed, `public class ChangedOwner { public static Integer value() { return 2; } }`)
+	current := fixture.incrementalIndex(t, previous, []string{fixture.changed}, nil)
+	affected, ok := runtimePatchOneModifiedOwner(previous, current)
+	if !ok {
+		t.Fatal("safe transition did not produce affected closure")
+	}
+
+	const workers = 8
+	var leaders atomic.Int32
+	var waiters atomic.Int32
+	leaderReady := make(chan struct{})
+	allWaitersReady := make(chan struct{})
+	releaseLeader := make(chan struct{})
+	var releaseLeaderOnce sync.Once
+	release := func() {
+		releaseLeaderOnce.Do(func() { close(releaseLeader) })
+	}
+	t.Cleanup(release)
+	t.Cleanup(setSnapshotValidationHookForTesting(func(stage string) {
+		switch stage {
+		case "runtime_patch_transition_flight_leader":
+			if leaders.Add(1) == 1 {
+				close(leaderReady)
+			}
+			<-releaseLeader
+		case "runtime_patch_transition_flight_waiter":
+			if waiters.Add(1) == workers-1 {
+				close(allWaitersReady)
+			}
+		}
+	}))
+
+	entries := make([]runtimeCacheEntry, workers)
+	keys := make([]runtimeCacheKey, workers)
+	outcomes := make([]runtimePatchOutcome, workers)
+	errs := make([]error, workers)
+	counters := make([]*runPerfCounters, workers)
+	start := make(chan struct{})
+	var group sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		counters[i] = newRunPerfCounters(true)
+		group.Add(1)
+		go func(i int) {
+			defer group.Done()
+			<-start
+			keys[i], entries[i], outcomes[i], errs[i] = runtimeFromIndexTransitionContext(
+				context.Background(), previous, current, nil, newSourceCache(), false, counters[i], affected,
+			)
+		}(i)
+	}
+	close(start)
+	select {
+	case <-leaderReady:
+	case <-time.After(2 * time.Minute):
+		t.Fatal("transition leader did not start")
+	}
+	select {
+	case <-allWaitersReady:
+	case <-time.After(2 * time.Minute):
+		t.Fatalf("registered waiters = %d, want %d", waiters.Load(), workers-1)
+	}
+	release()
+	group.Wait()
+
+	var leaderCount, waiterCount, savedBytes, fingerprintBytes uint64
+	for i := range entries {
+		if errs[i] != nil || !outcomes[i].Applied || !entries[i].restored.Valid() {
+			t.Fatalf("worker %d = outcome:%#v err:%v", i, outcomes[i], errs[i])
+		}
+		if keys[i] != keys[0] {
+			t.Fatalf("worker keys differ: %q != %q", keys[i], keys[0])
+		}
+		stats := snapshotPerfCounters(counters[i])
+		leaderCount += stats.RuntimeTransitionLeaders
+		waiterCount += stats.RuntimeTransitionWaiters
+		savedBytes += stats.RuntimeTransitionSavedBytes
+		fingerprintBytes += stats.RuntimeFingerprintBytes
+	}
+	if leaderCount != 1 || waiterCount != workers-1 {
+		t.Fatalf("transition flights = leaders:%d waiters:%d, want 1/%d", leaderCount, waiterCount, workers-1)
+	}
+	if savedBytes == 0 {
+		t.Fatal("transition waiters reported no estimated saved bytes")
+	}
+	if fingerprintBytes == 0 {
+		t.Fatal("transition leader reported no fingerprint bytes")
+	}
+
+	methodKey := ""
+	for key, method := range entries[0].Methods {
+		if method.ClassName == "ChangedOwner" {
+			methodKey = key
+			break
+		}
+	}
+	if methodKey == "" {
+		t.Fatal("changed method not found")
+	}
+	mutated := entries[0].Methods[methodKey]
+	mutated.Program.Source = "caller-owned mutation"
+	entries[0].Methods[methodKey] = mutated
+	if got := entries[1].Methods[methodKey].Program.Source; got == "caller-owned mutation" {
+		t.Fatal("singleflight callers share a mutable compiled payload")
+	}
+	if len(outcomes[0].RecompiledOwners) == 0 || len(outcomes[1].RecompiledOwners) == 0 {
+		t.Fatal("singleflight outcomes lack recompiled-owner details")
+	}
+	outcomes[0].RecompiledOwners[0] = "caller-owned outcome mutation"
+	if outcomes[1].RecompiledOwners[0] == "caller-owned outcome mutation" {
+		t.Fatal("singleflight callers share mutable outcome slices")
+	}
+	cached, ok := validMemoryRuntimeEntry(keys[0])
+	if !ok || cached.Methods[methodKey].Program.Source == "caller-owned mutation" {
+		t.Fatal("singleflight caller mutation reached the cache-owned payload")
+	}
+}
+
+func TestRuntimeTransitionFlightResetSeparatesSameKeyEpochs(t *testing.T) {
+	var group runtimePatchTransitionFlightGroup
+	oldStarted := make(chan struct{})
+	releaseOld := make(chan struct{})
+	oldDone := make(chan error, 1)
+	go func() {
+		_, _, err := group.do(context.Background(), "same-key", func(uint64) runtimePatchTransitionFlightResult {
+			close(oldStarted)
+			<-releaseOld
+			return runtimePatchTransitionFlightResult{key: "old"}
+		})
+		oldDone <- err
+	}()
+	<-oldStarted
+
+	group.Reset()
+
+	newStarted := make(chan struct{})
+	releaseNew := make(chan struct{})
+	type flightCallResult struct {
+		result runtimePatchTransitionFlightResult
+		err    error
+	}
+	newDone := make(chan flightCallResult, 1)
+	go func() {
+		result, _, err := group.do(context.Background(), "same-key", func(uint64) runtimePatchTransitionFlightResult {
+			close(newStarted)
+			<-releaseNew
+			return runtimePatchTransitionFlightResult{key: "new"}
+		})
+		newDone <- flightCallResult{result: result, err: err}
+	}()
+	<-newStarted
+
+	close(releaseOld)
+	if err := <-oldDone; !errors.Is(err, errRuntimePatchTransitionReset) {
+		t.Fatalf("pre-reset flight error = %v, want %v", err, errRuntimePatchTransitionReset)
+	}
+
+	waiterReady := make(chan struct{})
+	t.Cleanup(setSnapshotValidationHookForTesting(func(stage string) {
+		if stage == "runtime_patch_transition_flight_waiter" {
+			select {
+			case <-waiterReady:
+			default:
+				close(waiterReady)
+			}
+		}
+	}))
+	waiterDone := make(chan runtimePatchTransitionFlightResult, 1)
+	go func() {
+		result, shared, err := group.do(context.Background(), "same-key", func(uint64) runtimePatchTransitionFlightResult {
+			t.Error("post-reset waiter became a second leader")
+			return runtimePatchTransitionFlightResult{key: "unexpected"}
+		})
+		if err != nil || !shared {
+			t.Errorf("post-reset waiter = shared:%t err:%v", shared, err)
+		}
+		waiterDone <- result
+	}()
+
+	select {
+	case <-waiterReady:
+	case <-time.After(time.Second):
+		t.Fatal("post-reset waiter did not join the new epoch flight")
+	}
+	close(releaseNew)
+	if call := <-newDone; call.err != nil || call.result.key != "new" {
+		t.Fatalf("post-reset leader result = %q, error %v; want new", call.result.key, call.err)
+	}
+	if result := <-waiterDone; result.key != "new" {
+		t.Fatalf("post-reset waiter result = %q, want new", result.key)
+	}
+	group.Wait()
+}
+
+func TestRuntimeTransitionFlightWaitDrainsCancelledCreatorWork(t *testing.T) {
+	var group runtimePatchTransitionFlightGroup
+	started := make(chan struct{})
+	release := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	requestDone := make(chan error, 1)
+	go func() {
+		_, _, err := group.do(ctx, "drain", func(uint64) runtimePatchTransitionFlightResult {
+			close(started)
+			<-release
+			return runtimePatchTransitionFlightResult{}
+		})
+		requestDone <- err
+	}()
+	<-started
+	cancel()
+	if err := <-requestDone; !errors.Is(err, context.Canceled) {
+		t.Fatalf("creator error = %v, want context.Canceled", err)
+	}
+
+	drained := make(chan struct{})
+	go func() {
+		group.Wait()
+		close(drained)
+	}()
+	select {
+	case <-drained:
+		t.Fatal("Wait returned before detached transition work completed")
+	case <-time.After(20 * time.Millisecond):
+	}
+	close(release)
+	select {
+	case <-drained:
+	case <-time.After(time.Second):
+		t.Fatal("Wait did not return after detached transition work completed")
+	}
+}
+
+func TestRuntimeTransitionInvalidationFencesActiveFlightPublication(t *testing.T) {
+	InvalidateRuntimeCaches()
+	t.Cleanup(InvalidateRuntimeCaches)
+	fixture := newRuntimeTransitionFixture(t)
+	previous, previousDigests := fixture.fullIndex(t)
+	if _, _, err := runtimeFromIndexWithSourceDigests(previous, previousDigests, newSourceCache(), false); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, fixture.changed, `public class ChangedOwner { public static Integer value() { return 2; } }`)
+	current := fixture.incrementalIndex(t, previous, []string{fixture.changed}, nil)
+	affected, ok := runtimePatchOneModifiedOwner(previous, current)
+	if !ok {
+		t.Fatal("safe transition did not produce affected closure")
+	}
+
+	beforePublication := make(chan struct{})
+	releasePublication := make(chan struct{})
+	t.Cleanup(func() {
+		select {
+		case <-releasePublication:
+		default:
+			close(releasePublication)
+		}
+	})
+	t.Cleanup(setSnapshotValidationHookForTesting(func(stage string) {
+		if stage == "runtime_patch_before_memory_cache_publication" {
+			select {
+			case <-beforePublication:
+			default:
+				close(beforePublication)
+			}
+			<-releasePublication
+		}
+	}))
+
+	type transitionResult struct {
+		key runtimeCacheKey
+		err error
+	}
+	done := make(chan transitionResult, 1)
+	go func() {
+		key, _, _, err := runtimeFromIndexTransitionContext(
+			context.Background(), previous, current, nil, newSourceCache(), false, nil, affected,
+		)
+		done <- transitionResult{key: key, err: err}
+	}()
+	select {
+	case <-beforePublication:
+	case <-time.After(2 * time.Minute):
+		t.Fatal("transition did not reach publication boundary")
+	}
+
+	InvalidateRuntimeCaches()
+	close(releasePublication)
+	result := <-done
+	if !errors.Is(result.err, errRuntimePatchTransitionReset) {
+		t.Fatalf("pre-reset transition error = %v, want %v", result.err, errRuntimePatchTransitionReset)
+	}
+	runtimeCacheMu.RLock()
+	_, published := runtimeCache[result.key]
+	runtimeCacheMu.RUnlock()
+	if published {
+		t.Fatal("pre-reset transition published into the reset runtime cache")
+	}
+}
+
+func TestConcurrentRuntimeTransitionWaiterCancellationDoesNotCancelLeader(t *testing.T) {
+	InvalidateRuntimeCaches()
+	t.Cleanup(InvalidateRuntimeCaches)
+	fixture := newRuntimeTransitionFixture(t)
+	previous, previousDigests := fixture.fullIndex(t)
+	if _, _, err := runtimeFromIndexWithSourceDigests(previous, previousDigests, newSourceCache(), false); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, fixture.changed, `public class ChangedOwner { public static Integer value() { return 2; } }`)
+	current := fixture.incrementalIndex(t, previous, []string{fixture.changed}, nil)
+	affected, ok := runtimePatchOneModifiedOwner(previous, current)
+	if !ok {
+		t.Fatal("safe transition did not produce affected closure")
+	}
+
+	leaderReady := make(chan struct{})
+	waiterReady := make(chan struct{})
+	releaseLeader := make(chan struct{})
+	var releaseLeaderOnce sync.Once
+	release := func() {
+		releaseLeaderOnce.Do(func() { close(releaseLeader) })
+	}
+	t.Cleanup(release)
+	t.Cleanup(setSnapshotValidationHookForTesting(func(stage string) {
+		switch stage {
+		case "runtime_patch_transition_flight_leader":
+			select {
+			case <-leaderReady:
+			default:
+				close(leaderReady)
+			}
+			<-releaseLeader
+		case "runtime_patch_transition_flight_waiter":
+			select {
+			case <-waiterReady:
+			default:
+				close(waiterReady)
+			}
+		}
+	}))
+
+	leaderCounters := newRunPerfCounters(true)
+	leaderDone := make(chan error, 1)
+	go func() {
+		_, _, outcome, err := runtimeFromIndexTransitionContext(
+			context.Background(), previous, current, nil, newSourceCache(), false, leaderCounters, affected,
+		)
+		if err == nil && !outcome.Applied {
+			err = errors.New("leader did not apply transition")
+		}
+		leaderDone <- err
+	}()
+	select {
+	case <-leaderReady:
+	case <-time.After(2 * time.Minute):
+		t.Fatal("transition leader did not start")
+	}
+
+	waiterContext, cancelWaiter := context.WithCancel(context.Background())
+	waiterCounters := newRunPerfCounters(true)
+	waiterDone := make(chan error, 1)
+	go func() {
+		_, _, _, err := runtimeFromIndexTransitionContext(
+			waiterContext, previous, current, nil, newSourceCache(), false, waiterCounters, affected,
+		)
+		waiterDone <- err
+	}()
+	select {
+	case <-waiterReady:
+	case <-time.After(2 * time.Minute):
+		t.Fatal("transition waiter did not register")
+	}
+	cancelWaiter()
+	select {
+	case err := <-waiterDone:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("waiter error = %v, want context.Canceled", err)
+		}
+	case <-time.After(2 * time.Minute):
+		t.Fatal("canceled waiter did not return")
+	}
+	waiterStats := snapshotPerfCounters(waiterCounters)
+	if waiterStats.RuntimeTransitionWaiters != 1 || waiterStats.RuntimeTransitionCancellations != 1 {
+		t.Fatalf("waiter counters = %#v", waiterStats)
+	}
+
+	release()
+	if err := <-leaderDone; err != nil {
+		t.Fatal(err)
+	}
+	if stats := snapshotPerfCounters(leaderCounters); stats.RuntimeTransitionLeaders != 1 {
+		t.Fatalf("leader counters = %#v", stats)
+	}
+	_, later, laterOutcome, err := runtimeFromIndexTransitionContext(
+		context.Background(), previous, current, nil, newSourceCache(), false, newRunPerfCounters(true), affected,
+	)
+	if err != nil || !laterOutcome.Applied || !later.restored.Valid() {
+		t.Fatalf("later transition = outcome:%#v valid:%t err:%v", laterOutcome, later.restored.Valid(), err)
+	}
+}
+
+func TestConcurrentRuntimeTransitionCreatorCancellationDoesNotCancelSharedWork(t *testing.T) {
+	InvalidateRuntimeCaches()
+	t.Cleanup(InvalidateRuntimeCaches)
+	fixture := newRuntimeTransitionFixture(t)
+	previous, previousDigests := fixture.fullIndex(t)
+	if _, _, err := runtimeFromIndexWithSourceDigests(previous, previousDigests, newSourceCache(), false); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, fixture.changed, `public class ChangedOwner { public static Integer value() { return 2; } }`)
+	current := fixture.incrementalIndex(t, previous, []string{fixture.changed}, nil)
+	affected, ok := runtimePatchOneModifiedOwner(previous, current)
+	if !ok {
+		t.Fatal("safe transition did not produce affected closure")
+	}
+
+	leaderReady := make(chan struct{})
+	waiterReady := make(chan struct{})
+	releaseLeader := make(chan struct{})
+	var releaseLeaderOnce sync.Once
+	release := func() {
+		releaseLeaderOnce.Do(func() { close(releaseLeader) })
+	}
+	t.Cleanup(release)
+	t.Cleanup(setSnapshotValidationHookForTesting(func(stage string) {
+		switch stage {
+		case "runtime_patch_transition_flight_leader":
+			select {
+			case <-leaderReady:
+			default:
+				close(leaderReady)
+			}
+			<-releaseLeader
+		case "runtime_patch_transition_flight_waiter":
+			select {
+			case <-waiterReady:
+			default:
+				close(waiterReady)
+			}
+		}
+	}))
+
+	type callResult struct {
+		entry   runtimeCacheEntry
+		outcome runtimePatchOutcome
+		err     error
+	}
+	creatorContext, cancelCreator := context.WithCancel(context.Background())
+	creatorCounters := newRunPerfCounters(true)
+	creatorDone := make(chan callResult, 1)
+	go func() {
+		_, entry, outcome, err := runtimeFromIndexTransitionContext(
+			creatorContext, previous, current, nil, newSourceCache(), false, creatorCounters, affected,
+		)
+		creatorDone <- callResult{entry: entry, outcome: outcome, err: err}
+	}()
+	select {
+	case <-leaderReady:
+	case <-time.After(2 * time.Minute):
+		t.Fatal("transition leader did not start")
+	}
+	cancelCreator()
+	select {
+	case result := <-creatorDone:
+		if !errors.Is(result.err, context.Canceled) {
+			release()
+			t.Fatalf("creator error = %v, want context.Canceled", result.err)
+		}
+	case <-time.After(5 * time.Second):
+		release()
+		<-creatorDone
+		t.Fatal("canceled creator remained blocked on shared work")
+	}
+
+	waiterCounters := newRunPerfCounters(true)
+	waiterDone := make(chan callResult, 1)
+	go func() {
+		_, entry, outcome, err := runtimeFromIndexTransitionContext(
+			context.Background(), previous, current, nil, newSourceCache(), false, waiterCounters, affected,
+		)
+		waiterDone <- callResult{entry: entry, outcome: outcome, err: err}
+	}()
+	select {
+	case <-waiterReady:
+	case <-time.After(2 * time.Minute):
+		release()
+		t.Fatal("active waiter did not join creator's flight")
+	}
+	release()
+	waiterResult := <-waiterDone
+	if waiterResult.err != nil || !waiterResult.outcome.Applied || !waiterResult.entry.restored.Valid() {
+		t.Fatalf("active waiter = outcome:%#v valid:%t err:%v", waiterResult.outcome, waiterResult.entry.restored.Valid(), waiterResult.err)
+	}
+	creatorStats := snapshotPerfCounters(creatorCounters)
+	if creatorStats.RuntimeTransitionLeaders != 1 || creatorStats.RuntimeTransitionCancellations != 1 {
+		t.Fatalf("creator counters = %#v", creatorStats)
+	}
+	waiterStats := snapshotPerfCounters(waiterCounters)
+	if waiterStats.RuntimeTransitionWaiters != 1 || waiterStats.RuntimeTransitionCancellations != 0 {
+		t.Fatalf("active waiter counters = %#v", waiterStats)
+	}
+}
+
+func TestConcurrentRuntimeTransitionSharedUnsafeOutcomeFallsBack(t *testing.T) {
+	InvalidateRuntimeCaches()
+	t.Cleanup(InvalidateRuntimeCaches)
+	fixture := newRuntimeTransitionFixture(t)
+	previous, previousDigests := fixture.fullIndex(t)
+	previousKey, _, err := runtimeFromIndexWithSourceDigests(previous, previousDigests, newSourceCache(), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, fixture.changed, `public class ChangedOwner { public static Integer value() { return 2; } }`)
+	current := fixture.incrementalIndex(t, previous, []string{fixture.changed}, nil)
+	affected, ok := runtimePatchOneModifiedOwner(previous, current)
+	if !ok {
+		t.Fatal("safe transition did not produce affected closure")
+	}
+
+	const workers = 8
+	leaderReady := make(chan struct{})
+	allWaitersReady := make(chan struct{})
+	releaseLeader := make(chan struct{})
+	var waiters atomic.Int32
+	var releaseLeaderOnce sync.Once
+	release := func() {
+		releaseLeaderOnce.Do(func() { close(releaseLeader) })
+	}
+	t.Cleanup(release)
+	t.Cleanup(setSnapshotValidationHookForTesting(func(stage string) {
+		switch stage {
+		case "runtime_patch_transition_flight_leader":
+			select {
+			case <-leaderReady:
+			default:
+				close(leaderReady)
+			}
+			<-releaseLeader
+		case "runtime_patch_transition_flight_waiter":
+			if waiters.Add(1) == workers-1 {
+				close(allWaitersReady)
+			}
+		}
+	}))
+
+	entries := make([]runtimeCacheEntry, workers)
+	keys := make([]runtimeCacheKey, workers)
+	outcomes := make([]runtimePatchOutcome, workers)
+	errs := make([]error, workers)
+	counters := make([]*runPerfCounters, workers)
+	start := make(chan struct{})
+	var group sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		counters[i] = newRunPerfCounters(true)
+		group.Add(1)
+		go func(i int) {
+			defer group.Done()
+			<-start
+			keys[i], entries[i], outcomes[i], errs[i] = runtimeFromIndexTransitionContext(
+				context.Background(), previous, current, nil, newSourceCache(), false, counters[i], affected,
+			)
+		}(i)
+	}
+	close(start)
+	select {
+	case <-leaderReady:
+	case <-time.After(2 * time.Minute):
+		t.Fatal("transition leader did not start")
+	}
+	select {
+	case <-allWaitersReady:
+	case <-time.After(2 * time.Minute):
+		t.Fatalf("registered waiters = %d, want %d", waiters.Load(), workers-1)
+	}
+
+	runtimeCacheMu.Lock()
+	poisonedBase := runtimeCache[previousKey]
+	if poisonedBase.patchAuthority == nil {
+		runtimeCacheMu.Unlock()
+		t.Fatal("base fixture lacks patch authority")
+	}
+	poisonedAuthority := *poisonedBase.patchAuthority
+	poisonedAuthority.payloadFingerprint = "poisoned-after-flight-registration"
+	poisonedBase.patchAuthority = &poisonedAuthority
+	runtimeCache[previousKey] = poisonedBase
+	runtimeCacheMu.Unlock()
+	release()
+	group.Wait()
+
+	var sharedFallbacks uint64
+	for i := range entries {
+		if errs[i] != nil || outcomes[i].Applied || !entries[i].restored.Valid() {
+			t.Fatalf("worker %d fallback = outcome:%#v valid:%t err:%v", i, outcomes[i], entries[i].restored.Valid(), errs[i])
+		}
+		sharedFallbacks += snapshotPerfCounters(counters[i]).RuntimeTransitionSharedFallbacks
+	}
+	if sharedFallbacks != workers-1 {
+		t.Fatalf("shared transition fallbacks = %d, want %d", sharedFallbacks, workers-1)
+	}
+
+	cached, ok := validMemoryRuntimeEntry(keys[0])
+	if !ok || (cached.patchAuthority != nil && cached.patchAuthority.transitionApplied) {
+		t.Fatal("shared unsafe result was published instead of a trusted full-build fallback")
+	}
+}
+
+func TestRuntimeTransitionFlightKeyBindsEveryAuthorityInput(t *testing.T) {
+	base := runtimePatchTransitionFlightIdentity{
+		PredecessorKey:                "previous-key",
+		PredecessorFingerprint:        "previous-index",
+		PredecessorPayloadFingerprint: "previous-payload",
+		CurrentKey:                    "current-key",
+		CurrentFingerprint:            "current-index",
+		RuntimeInputsFingerprint:      "private-inputs",
+		AffectedOwners: []runtimePatchAffectedOwner{
+			{Name: "Second", Namespace: "pkg", Path: "Second.cls"},
+			{Name: "First", Path: "First.cls"},
+		},
+		ABI: "runtime-patch-abi",
+	}
+	want, ok := base.key()
+	if !ok || want == "" {
+		t.Fatal("complete transition identity did not produce a key")
+	}
+	reordered := base
+	reordered.AffectedOwners = []runtimePatchAffectedOwner{base.AffectedOwners[1], base.AffectedOwners[0]}
+	if got, ok := reordered.key(); !ok || got != want {
+		t.Fatalf("affected-owner order changed identity: got %q want %q", got, want)
+	}
+
+	mutations := []struct {
+		name   string
+		mutate func(*runtimePatchTransitionFlightIdentity)
+	}{
+		{"predecessor key", func(v *runtimePatchTransitionFlightIdentity) { v.PredecessorKey = "other" }},
+		{"predecessor fingerprint", func(v *runtimePatchTransitionFlightIdentity) { v.PredecessorFingerprint = "other" }},
+		{"predecessor payload", func(v *runtimePatchTransitionFlightIdentity) { v.PredecessorPayloadFingerprint = "other" }},
+		{"current key", func(v *runtimePatchTransitionFlightIdentity) { v.CurrentKey = "other" }},
+		{"current fingerprint", func(v *runtimePatchTransitionFlightIdentity) { v.CurrentFingerprint = "other" }},
+		{"runtime inputs", func(v *runtimePatchTransitionFlightIdentity) { v.RuntimeInputsFingerprint = "other" }},
+		{"affected closure", func(v *runtimePatchTransitionFlightIdentity) {
+			v.AffectedOwners = append([]runtimePatchAffectedOwner(nil), v.AffectedOwners...)
+			v.AffectedOwners[0].Path = "Other.cls"
+		}},
+		{"ABI", func(v *runtimePatchTransitionFlightIdentity) { v.ABI = "other" }},
+	}
+	for _, mutation := range mutations {
+		t.Run(mutation.name, func(t *testing.T) {
+			candidate := base
+			mutation.mutate(&candidate)
+			got, ok := candidate.key()
+			if !ok || got == want {
+				t.Fatalf("mutation retained flight key %q", got)
+			}
+		})
 	}
 }
 

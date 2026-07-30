@@ -47,6 +47,16 @@ func (vm *VM) lookupStaticFieldForReceiver(typeName, fieldName string, preferDep
 					break
 				}
 				if field, ok := vm.lookupFieldInMapWithOptions(class.StaticFields, fieldName, preferDependency); ok {
+					if vm.sharedStaticClasses && staticFieldValueMayMutate(field) {
+						class, ok = vm.ensureMutableClass(runtimeClassName(class))
+						if !ok {
+							return Field{}, "", false
+						}
+						field, ok = vm.lookupFieldInMapWithOptions(class.StaticFields, fieldName, preferDependency)
+						if !ok {
+							return Field{}, "", false
+						}
+					}
 					if field.Value.Kind == "" {
 						field.Value = defaultValue(field.Type, field.InitialValue)
 					}

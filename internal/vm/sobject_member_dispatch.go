@@ -33,6 +33,7 @@ func (vm *VM) callSObjectFieldAddError(path []string, args []Value) (Value, bool
 		return Null, true, err
 	}
 	addSObjectError(&root, message, []string{field})
+	vm.advanceAliasContainmentMutation()
 	if err := vm.storeReceiver(path[0], root); err != nil {
 		return Null, true, err
 	}
@@ -416,6 +417,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, err
 		}
 		addSObjectError(&receiver, message, fields)
+		vm.advanceAliasContainmentMutation()
 		return Null, true, nil
 	case "hasErrors":
 		if len(args) != 0 {
@@ -533,7 +535,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 				}
 			}
 		}
-		setExplicitSObjectField(&receiver, actualField, value)
+		vm.setExplicitSObjectFieldValue(&receiver, actualField, value)
 		markSetSObjectField(&receiver, actualField)
 		markUserSetSObjectField(&receiver, actualField)
 		markQueriedSObjectField(&receiver, actualField)
@@ -568,7 +570,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if relationshipName == "" {
 			return Null, true, fmt.Errorf("SObject.putSObject relationship name is blank")
 		}
-		setExplicitSObjectField(&receiver, relationshipName, args[1])
+		vm.setExplicitSObjectFieldValue(&receiver, relationshipName, args[1])
 		markQueriedSObjectField(&receiver, relationshipName)
 		vm.propagateAliasSnapshotToScope(vm.Globals, previousReceiver, receiver)
 		vm.propagateAliasSnapshotToStatics(previousReceiver, receiver)
@@ -600,6 +602,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			delete(receiver.Fields, field)
 		}
 		delete(receiver.Fields, sobjectExplicitFieldsField)
+		vm.advanceAliasContainmentMutation()
 		return Null, true, nil
 	case "getPopulatedFieldsAsMap":
 		if len(args) != 0 {
@@ -712,6 +715,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 				receiver.Fields[field] = fieldValue
 			}
 		}
+		vm.advanceAliasContainmentMutation()
 		return result, true, nil
 	case "setOptions":
 		if len(args) != 1 || !isDatabaseDMLOptionsValue(args[0]) {
@@ -721,6 +725,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			receiver.Fields = make(map[string]Value)
 		}
 		receiver.Fields[sobjectDMLOptionsField] = cloneValue(args[0])
+		vm.advanceAliasContainmentMutation()
 		return Null, true, nil
 	case "getOptions":
 		if len(args) != 0 {

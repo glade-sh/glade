@@ -154,6 +154,28 @@ func BenchmarkParallelRestoredRuntimeModes(b *testing.B) {
 	}
 }
 
+func BenchmarkRestoredRuntimeStructuralValidation(b *testing.B) {
+	for _, owners := range []int{1, 4096} {
+		entry := runtimeStructuralAllocationFixture(owners, true)
+		b.Run(fmt.Sprintf("walk/owners-%d", owners), func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				if !validateRuntimeCacheEntryStructure(entry) {
+					b.Fatal("valid restored runtime rejected")
+				}
+			}
+		})
+		b.Run(fmt.Sprintf("clone-oracle/owners-%d", owners), func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				if _, ok := cloneRuntimeCacheEntryChecked(entry); !ok {
+					b.Fatal("valid restored runtime rejected")
+				}
+			}
+		})
+	}
+}
+
 func BenchmarkRunTestSuite(b *testing.B) {
 	for _, tests := range []int{100, 500, 1000} {
 		b.Run(fmt.Sprintf("methods=%d/setup=false", tests), func(b *testing.B) {

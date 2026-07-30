@@ -69,6 +69,61 @@ func sObjectDescribeOptionsValue(name string) Value {
 	return Value{Kind: ValueObject, Type: "Schema.SObjectDescribeOptions", Text: name}
 }
 
+// overlaySObjectDescribe returns a request-local describe root. Schema leaf
+// values are immutable. Mutable Apex collections remain shared here and are
+// copied by privateDescribeCollection at their public getter boundary.
+func overlaySObjectDescribe(template Value, nameOverride, optionOverride string) Value {
+	out := template
+	out.Ref = newValueRef()
+	if template.Fields != nil {
+		out.Fields = make(map[string]Value, len(template.Fields))
+		for name, value := range template.Fields {
+			out.Fields[name] = value
+		}
+	}
+	if nameOverride != "" {
+		out.Fields["name"] = String(nameOverride)
+	}
+	if optionOverride != "" {
+		out.Fields["sObjectDescribeOption"] = sObjectDescribeOptionsValue(optionOverride)
+	}
+	return out
+}
+
+// privateDescribeCollection copies collection storage without cloning
+// immutable schema elements. Schema object members that expose another
+// collection call this helper again, so every Apex-mutable branch becomes
+// private before it can be changed.
+func privateDescribeCollection(value Value) Value {
+	switch value.Kind {
+	case ValueList:
+		out := value
+		out.Ref = newValueRef()
+		out.List = append([]Value(nil), value.List...)
+		return out
+	case ValueSet:
+		out := value
+		out.Ref = newValueRef()
+		out.Set = append([]Value(nil), value.Set...)
+		return out
+	case ValueMap:
+		out := value
+		out.Ref = newValueRef()
+		out.Map = make(map[string]Value, len(value.Map))
+		for key, item := range value.Map {
+			out.Map[key] = item
+		}
+		out.MapKeys = make(map[string]Value, len(value.MapKeys))
+		for key, item := range value.MapKeys {
+			out.MapKeys[key] = item
+		}
+		out.MapOrder = append([]string(nil), value.MapOrder...)
+		return out
+	default:
+		return value
+	}
+}
+
 func (c *childRelationshipCache) load(key string) ([]Value, bool) {
 	if c == nil {
 		return nil, false

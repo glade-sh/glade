@@ -34,12 +34,25 @@ type Index struct {
 	Diagnostics           []diagnostic.Diagnostic           `json:"diagnostics,omitempty"`
 	projectIdentity       string
 	sourceDigests         *SourceDigestSet
+	apexMetadataInputs    map[sourceOccurrenceKey]ApexMetadataInput
 }
 
 type ProjectInfo struct {
 	Root             string `json:"root"`
 	Namespace        string `json:"namespace,omitempty"`
 	SourceAPIVersion string `json:"sourceApiVersion,omitempty"`
+}
+
+// ApexMetadataForType returns the companion metadata identity retained in this
+// index generation for a logical Apex occurrence.
+func (i Index) ApexMetadataForType(typ TypeSymbol) (ApexMetadataInput, bool) {
+	input, ok := i.apexMetadataInputs[sourceOccurrenceKeyForMetadata(SourceMetadata{RequestedPath: typ.File, Root: typ.SourceRoot, Namespace: typ.Namespace, Version: typ.Version, Dependency: typ.Dependency, NamespaceRemaps: typ.SourceNamespaceRemaps})]
+	return input, ok
+}
+
+func (i Index) ApexMetadataForTrigger(trigger TriggerSymbol) (ApexMetadataInput, bool) {
+	input, ok := i.apexMetadataInputs[sourceOccurrenceKeyForMetadata(SourceMetadata{RequestedPath: trigger.File, Root: trigger.SourceRoot, Namespace: trigger.Namespace, Version: trigger.Version, Dependency: trigger.Dependency, NamespaceRemaps: trigger.SourceNamespaceRemaps})]
+	return input, ok
 }
 
 type TypeSymbol struct {
@@ -54,16 +67,28 @@ type TypeSymbol struct {
 	SourceRoot            string                  `json:"sourceRoot,omitempty"`
 	Version               string                  `json:"version,omitempty"`
 	EffectiveAPIVersion   string                  `json:"effectiveApiVersion,omitempty"`
-	Dependency            bool                    `json:"dependency,omitempty"`
-	Artifact              bool                    `json:"artifact,omitempty"`
-	Modifiers             []string                `json:"modifiers,omitempty"`
-	Annotations           []apexast.Annotation    `json:"annotations,omitempty"`
-	TypeParameters        []string                `json:"typeParameters,omitempty"`
-	IsTest                bool                    `json:"isTest,omitempty"`
-	SuperClass            string                  `json:"superClass,omitempty"`
-	Interfaces            []string                `json:"interfaces,omitempty"`
-	Range                 diagnostic.Range        `json:"range"`
-	Members               []MemberSymbol          `json:"members,omitempty"`
+	// SourceBacked marks a symbol parsed from an Apex source occurrence held by
+	// BuildArtifacts. Generated metadata and serialized artifact types may have
+	// a File for diagnostics without having a readable Apex source snapshot.
+	SourceBacked   bool                 `json:"sourceBacked,omitempty"`
+	Dependency     bool                 `json:"dependency,omitempty"`
+	Artifact       bool                 `json:"artifact,omitempty"`
+	Modifiers      []string             `json:"modifiers,omitempty"`
+	Annotations    []apexast.Annotation `json:"annotations,omitempty"`
+	TypeParameters []string             `json:"typeParameters,omitempty"`
+	IsTest         bool                 `json:"isTest,omitempty"`
+	SuperClass     string               `json:"superClass,omitempty"`
+	Interfaces     []string             `json:"interfaces,omitempty"`
+	Range          diagnostic.Range     `json:"range"`
+	Members        []MemberSymbol       `json:"members,omitempty"`
+}
+
+// HasSourceSnapshot reports whether this symbol requires an Apex source
+// occurrence in BuildArtifacts. SourceBacked is authoritative for newly built
+// indexes. The suffix fallback preserves safe incremental behavior for index
+// snapshots serialized before SourceBacked was introduced.
+func (s TypeSymbol) HasSourceSnapshot() bool {
+	return s.SourceBacked || (!s.Artifact && strings.EqualFold(filepath.Ext(s.File), ".cls"))
 }
 
 type MemberSymbol struct {
@@ -86,11 +111,20 @@ type TriggerSymbol struct {
 	SourceRoot            string                `json:"sourceRoot,omitempty"`
 	Version               string                `json:"version,omitempty"`
 	EffectiveAPIVersion   string                `json:"effectiveApiVersion,omitempty"`
-	ObjectName            string                `json:"objectName"`
-	Events                []string              `json:"events,omitempty"`
-	File                  string                `json:"file"`
-	Dependency            bool                  `json:"dependency,omitempty"`
-	Range                 diagnostic.Range      `json:"range"`
+	// SourceBacked has the same source-arena contract as TypeSymbol.
+	SourceBacked bool             `json:"sourceBacked,omitempty"`
+	ObjectName   string           `json:"objectName"`
+	Events       []string         `json:"events,omitempty"`
+	File         string           `json:"file"`
+	Dependency   bool             `json:"dependency,omitempty"`
+	Range        diagnostic.Range `json:"range"`
+}
+
+// HasSourceSnapshot reports whether this trigger requires an Apex source
+// occurrence in BuildArtifacts. The suffix fallback supports older index
+// snapshots that predate SourceBacked.
+func (s TriggerSymbol) HasSourceSnapshot() bool {
+	return s.SourceBacked || strings.EqualFold(filepath.Ext(s.File), ".trigger")
 }
 
 type DependencyInfo struct {
@@ -213,7 +247,9 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 	appendDataWeaveScriptResourceSymbols(&idx, p)
 	appendProjectSymbols(&idx, parser, p, false, p.Namespace, "", seenTypes, sources)
 	artifacts.SourceDigests = sources.sourceDigestSet()
+	artifacts.ApexMetadataInputs = capturedApexMetadataInputs(idx, sources)
 	idx.sourceDigests = artifacts.SourceDigests
+	idx.apexMetadataInputs = sources.apexMetadataInputSet()
 
 	sort.Slice(idx.Types, func(i, j int) bool {
 		if idx.Types[i].Namespace == idx.Types[j].Namespace {
@@ -228,6 +264,36 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 		return idx.Triggers[i].Namespace < idx.Triggers[j].Namespace
 	})
 	return idx, artifacts
+}
+
+func capturedApexMetadataInputs(idx Index, sources *WorkspaceSources) map[string]ApexMetadataInput {
+	inputs := make(map[string]ApexMetadataInput)
+	captureType := func(typ TypeSymbol) {
+		file := typ.File
+		if file == "" {
+			return
+		}
+		if _, seen := inputs[file]; seen {
+			return
+		}
+		if input, ok := sources.apexMetadataForMetadata(SourceMetadata{
+			RequestedPath: file, Root: typ.SourceRoot, Namespace: typ.Namespace,
+			Version: typ.Version, Dependency: typ.Dependency, NamespaceRemaps: typ.SourceNamespaceRemaps,
+		}); ok {
+			inputs[file] = input
+		}
+	}
+	for _, typ := range idx.Types {
+		if typ.HasSourceSnapshot() {
+			captureType(typ)
+		}
+	}
+	for _, trigger := range idx.Triggers {
+		if trigger.HasSourceSnapshot() {
+			captureType(TypeSymbol{File: trigger.File, SourceRoot: trigger.SourceRoot, Namespace: trigger.Namespace, Version: trigger.Version, Dependency: trigger.Dependency, SourceNamespaceRemaps: trigger.SourceNamespaceRemaps})
+		}
+	}
+	return inputs
 }
 
 func appendPackageShimSymbols(idx *Index, parser *apexast.Parser, shim project.PackageShim, seenTypes map[string][]seenTypeSymbol, sources *WorkspaceSources) {
@@ -345,6 +411,7 @@ func appendProjectSymbols(idx *Index, parser *apexast.Parser, p project.Project,
 	for _, file := range projectSymbolFiles(parser, p, dependency, namespace, version, sourceRemaps, sources) {
 		if file.Source != nil {
 			sources.record(*file.Source)
+			sources.recordApexMetadata(*file.Source, file.Metadata)
 		}
 		if !dependency {
 			idx.Diagnostics = append(idx.Diagnostics, file.Diagnostics...)
@@ -513,6 +580,54 @@ type projectSymbolFile struct {
 	Types       []TypeSymbol
 	Triggers    []TriggerSymbol
 	Source      *WorkspaceSource
+	Metadata    ApexMetadataInput
+}
+
+var (
+	apexMetadataCaptureHookMu sync.RWMutex
+	apexMetadataCaptureHook   func(string)
+)
+
+func setApexMetadataCaptureHookForTesting(hook func(string)) func() {
+	apexMetadataCaptureHookMu.Lock()
+	previous := apexMetadataCaptureHook
+	apexMetadataCaptureHook = hook
+	apexMetadataCaptureHookMu.Unlock()
+	return func() {
+		apexMetadataCaptureHookMu.Lock()
+		apexMetadataCaptureHook = previous
+		apexMetadataCaptureHookMu.Unlock()
+	}
+}
+
+func captureApexMetadataInput(path, fallback string) (ApexMetadataInput, string) {
+	data, err := os.ReadFile(path + "-meta.xml") // #nosec G304 -- fixed metadata companion for an indexed Apex source.
+	input := ApexMetadataInput{}
+	effective := fallback
+	if err == nil {
+		input = ApexMetadataInput{Present: true, Digest: sha256.Sum256(data)}
+		effective = project.EffectiveSourceAPIVersionFromMetadata(data, fallback)
+	}
+	apexMetadataCaptureHookMu.RLock()
+	hook := apexMetadataCaptureHook
+	apexMetadataCaptureHookMu.RUnlock()
+	if hook != nil {
+		hook(path)
+	}
+	return input, effective
+}
+
+func sourceStillMatches(path string, expected [sha256.Size]byte) bool {
+	data, err := os.ReadFile(path) // #nosec G304 -- source just captured for this index occurrence.
+	return err == nil && sha256.Sum256(data) == expected
+}
+
+func metadataStillMatches(path string, expected ApexMetadataInput) bool {
+	data, err := os.ReadFile(path + "-meta.xml")
+	if err != nil {
+		return !expected.Present && os.IsNotExist(err)
+	}
+	return expected.Present && sha256.Sum256(data) == expected.Digest
 }
 
 func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) []projectSymbolFile {
@@ -593,8 +708,13 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root, fallbackAPIVe
 		return out
 	}
 	out.Source = &source
+	var effectiveAPIVersion string
+	out.Metadata, effectiveAPIVersion = captureApexMetadataInput(path, fallbackAPIVersion)
+	if !sourceStillMatches(path, source.Digest()) || !metadataStillMatches(path, out.Metadata) {
+		out.Diagnostics = append(out.Diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADETYPE001", Message: "Apex source changed while capturing companion metadata", File: path})
+		return out
+	}
 	normalized := source.NormalizedString()
-	effectiveAPIVersion := project.EffectiveSourceAPIVersion(path, fallbackAPIVersion)
 	file := parser.ParseSource(path, normalized)
 	out.Diagnostics = append(out.Diagnostics, file.Diagnostics...)
 	if hasBlockingParserDiagnostic(file.Diagnostics) {
@@ -609,6 +729,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root, fallbackAPIVe
 				sym.SourceRoot = root
 				sym.Version = version
 				sym.EffectiveAPIVersion = effectiveAPIVersion
+				sym.SourceBacked = true
 				sym.Dependency = dependency
 				out.Types = append(out.Types, sym)
 			}
@@ -620,6 +741,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root, fallbackAPIVe
 				SourceRoot:            root,
 				Version:               version,
 				EffectiveAPIVersion:   effectiveAPIVersion,
+				SourceBacked:          true,
 				ObjectName:            decl.ObjectName,
 				Events:                decl.Events,
 				File:                  path,
@@ -1199,9 +1321,11 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		Dependencies:          previous.Dependencies,
 		projectIdentity:       previous.projectIdentity,
 		sourceDigests:         previous.sourceDigests,
+		apexMetadataInputs:    cloneApexMetadataInputs(previous.apexMetadataInputs),
 	}
 	for path := range deleted {
 		idx.sourceDigests = idx.sourceDigests.withoutSource(path)
+		idx.apexMetadataInputs = cloneApexMetadataInputsWithoutSource(idx.apexMetadataInputs, path)
 	}
 	identityPathByRequestedKey := make(map[string]string)
 	ambiguousIdentity := false
@@ -1239,7 +1363,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 	}
 	for _, typ := range previous.Types {
 		key := cleanFilePath(typ.File)
-		isSource := !typ.Artifact && typ.File != "" && strings.HasSuffix(strings.ToLower(typ.File), ".cls")
+		isSource := typ.HasSourceSnapshot()
 		if !deleted[key] && isSource {
 			recordFileIdentity(key, typ.File)
 		}
@@ -1260,7 +1384,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 	}
 	for _, trigger := range previous.Triggers {
 		key := cleanFilePath(trigger.File)
-		isSource := trigger.File != "" && strings.HasSuffix(strings.ToLower(trigger.File), ".trigger")
+		isSource := trigger.HasSourceSnapshot()
 		if !deleted[key] && isSource {
 			recordFileIdentity(key, trigger.File)
 		}
@@ -1340,7 +1464,17 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		}
 		idx.sourceDigests = idx.sourceDigests.withSourceDigest(path, data)
 		metadata := changedSource.owner.metadata
-		effectiveAPIVersion := project.EffectiveSourceAPIVersion(path, metadata.apiVersion)
+		capturedMetadata, effectiveAPIVersion := captureApexMetadataInput(path, metadata.apiVersion)
+		if !sourceStillMatches(path, sha256.Sum256(data)) {
+			return Index{}, false
+		}
+		if !metadataStillMatches(path, capturedMetadata) {
+			return Index{}, false
+		}
+		if idx.apexMetadataInputs == nil {
+			idx.apexMetadataInputs = make(map[sourceOccurrenceKey]ApexMetadataInput)
+		}
+		idx.apexMetadataInputs[sourceOccurrenceKeyForMetadata(SourceMetadata{RequestedPath: path, Root: metadata.root, Namespace: metadata.namespace, Version: metadata.version, Dependency: metadata.dependency, NamespaceRemaps: metadata.namespaceRemaps})] = capturedMetadata
 		source := project.NormalizeApexNamespaceTokens(string(data), metadata.namespace)
 		source = namespaceremap.ApplySource(metadata.namespaceRemaps, source)
 		parser := apexast.NewParser()
@@ -1357,6 +1491,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 					sym.SourceRoot = metadata.root
 					sym.Version = metadata.version
 					sym.EffectiveAPIVersion = effectiveAPIVersion
+					sym.SourceBacked = true
 					sym.Dependency = metadata.dependency
 					key := namespaceTypeKey(sym.Namespace, sym.Name)
 					if _, exists := seenTypes[key]; exists {
@@ -1375,6 +1510,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 					SourceRoot:            metadata.root,
 					Version:               metadata.version,
 					EffectiveAPIVersion:   effectiveAPIVersion,
+					SourceBacked:          true,
 					ObjectName:            decl.ObjectName,
 					Events:                decl.Events,
 					File:                  path,
@@ -1447,6 +1583,26 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 	return idx, true
 }
 
+func cloneApexMetadataInputs(in map[sourceOccurrenceKey]ApexMetadataInput) map[sourceOccurrenceKey]ApexMetadataInput {
+	out := make(map[sourceOccurrenceKey]ApexMetadataInput, len(in))
+	for key, value := range in {
+		out[key] = value
+	}
+	return out
+}
+
+func cloneApexMetadataInputsWithoutSource(in map[sourceOccurrenceKey]ApexMetadataInput, path string) map[sourceOccurrenceKey]ApexMetadataInput {
+	cleaned := cleanFilePath(path)
+	out := make(map[sourceOccurrenceKey]ApexMetadataInput, len(in))
+	for key, value := range in {
+		if cleanFilePath(key.requestedPath) == cleaned {
+			continue
+		}
+		out[key] = value
+	}
+	return out
+}
+
 func (idx Index) HasErrors() bool {
 	for _, diag := range idx.Diagnostics {
 		if diag.Severity == diagnostic.Error {
@@ -1511,6 +1667,7 @@ func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent str
 		OwnerName:      ownerName,
 		NestingDepth:   nestingDepth,
 		File:           path,
+		SourceBacked:   true,
 		Modifiers:      decl.Modifiers,
 		Annotations:    decl.Annotations,
 		TypeParameters: append([]string(nil), decl.TypeParameters...),

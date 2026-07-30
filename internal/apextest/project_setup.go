@@ -25,7 +25,7 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 	sources := sourceCacheFor(caches)
 	sources.configureNamespaceRemaps(index.Types, index.Triggers)
 	knownTypes := knownTypeNames(index.Types)
-	sourceBackedTypes := sourceBackedTypeNames(index.Types)
+	sourceMembers := sourceBackedRuntimeMemberSignatures(index.Types)
 	methodsByClass := projectMethodsByClass(methods)
 	for _, typ := range index.Types {
 		if include != nil && !include(typ) {
@@ -34,7 +34,11 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface && typ.Kind != apexast.DeclarationEnum {
 			continue
 		}
-		if typ.Artifact && strings.TrimSpace(typ.File) == "" && !sourceBackedTypes[typeNamespaceNameKey(typ.Namespace, typ.Name)] {
+		if !typ.HasSourceSnapshot() {
+			if !typ.Artifact {
+				out = append(out, passiveRuntimeClassFromTypeSymbol(typ, typeSymbolRuntimeName(typ)))
+				continue
+			}
 			class := vm.Class{
 				Name:         typ.Name,
 				Namespace:    typ.Namespace,
@@ -51,7 +55,7 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 				class.Methods[methodShortName(method.Name)+methodParamKey(method.Params)] = method
 			}
 			for _, member := range typ.Members {
-				if member.Kind == apexast.DeclarationConstructor {
+				if member.Kind == apexast.DeclarationConstructor && !sourceBackedRuntimeMemberProvided(sourceMembers, typ, member) {
 					class.Constructors = append(class.Constructors, artifactUnsupportedConstructor(typ, member))
 				}
 			}
@@ -168,7 +172,7 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 	}
 	sources := sourceCacheFor(caches)
 	sources.configureNamespaceRemaps(index.Types, index.Triggers)
-	sourceBackedTypes := sourceBackedTypeNames(index.Types)
+	sourceMembers := sourceBackedRuntimeMemberSignatures(index.Types)
 	var jobs []methodCompileJob
 	var syntheticResults []methodCompileResult
 	for _, typ := range index.Types {
@@ -178,9 +182,12 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface {
 			continue
 		}
-		if typ.Artifact && strings.TrimSpace(typ.File) == "" && !sourceBackedTypes[typeNamespaceNameKey(typ.Namespace, typ.Name)] {
+		if !typ.HasSourceSnapshot() {
+			if !typ.Artifact {
+				continue
+			}
 			for _, member := range typ.Members {
-				if member.Kind != apexast.DeclarationMethod {
+				if member.Kind != apexast.DeclarationMethod || sourceBackedRuntimeMemberProvided(sourceMembers, typ, member) {
 					continue
 				}
 				method := vm.Method{
@@ -218,7 +225,7 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 				Member:     member,
 				File:       typ.File,
 				Source:     source,
-				APIVersion: sources.apexAPIVersion(typ.File),
+				APIVersion: runtimeTypeAPIVersion(typ, sources),
 				Dependency: typ.Dependency,
 			})
 		}
@@ -287,6 +294,13 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 	return out
 }
 
+func runtimeTypeAPIVersion(typ typesys.TypeSymbol, sources *sourceCache) string {
+	if sources.hasArtifactCapturedSource(typ.File) {
+		return typ.EffectiveAPIVersion
+	}
+	return sources.apexAPIVersion(typ.File)
+}
+
 const capturedPackageNoLocalBody = "captured package member has no local body; add a project.packageShims entry or run this behavior in Salesforce"
 
 func artifactMethodParams(params []apexast.Parameter) []vm.Param {
@@ -311,14 +325,48 @@ func artifactUnsupportedConstructor(typ typesys.TypeSymbol, member typesys.Membe
 	}
 }
 
-func sourceBackedTypeNames(types []typesys.TypeSymbol) map[string]bool {
-	out := make(map[string]bool)
+func sourceBackedRuntimeMemberSignatures(types []typesys.TypeSymbol) map[string]map[string]bool {
+	out := make(map[string]map[string]bool)
 	for _, typ := range types {
-		if strings.TrimSpace(typ.File) != "" {
-			out[typeNamespaceNameKey(typ.Namespace, typ.Name)] = true
+		if !typ.HasSourceSnapshot() {
+			continue
+		}
+		typeKey := typeNamespaceNameKey(typ.Namespace, typ.Name)
+		for _, member := range typ.Members {
+			if !member.HasBody || (member.Kind != apexast.DeclarationMethod && member.Kind != apexast.DeclarationConstructor) {
+				continue
+			}
+			if out[typeKey] == nil {
+				out[typeKey] = make(map[string]bool)
+			}
+			out[typeKey][runtimeMemberSignatureKey(member)] = true
 		}
 	}
 	return out
+}
+
+func sourceBackedRuntimeMemberProvided(sourceMembers map[string]map[string]bool, typ typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	return sourceMembers[typeNamespaceNameKey(typ.Namespace, typ.Name)][runtimeMemberSignatureKey(member)]
+}
+
+func runtimeMemberSignatureKey(member typesys.MemberSymbol) string {
+	var b strings.Builder
+	b.WriteString(fmt.Sprint(member.Kind))
+	b.WriteByte('\x00')
+	b.WriteString(normalizedRuntimeMemberType(member.Name))
+	b.WriteByte('\x00')
+	b.WriteString(normalizedRuntimeMemberType(member.Type))
+	b.WriteByte('\x00')
+	b.WriteString(fmt.Sprint(hasModifier(member.Modifiers, "static")))
+	for _, param := range member.Parameters {
+		b.WriteByte('\x00')
+		b.WriteString(normalizedRuntimeMemberType(param.Type))
+	}
+	return b.String()
+}
+
+func normalizedRuntimeMemberType(value string) string {
+	return strings.ToLower(strings.Join(strings.Fields(value), ""))
 }
 
 func typeNamespaceNameKey(namespace, name string) string {
@@ -335,6 +383,10 @@ func apiVersionForApexFile(file string) string {
 	if err != nil {
 		return ""
 	}
+	return apiVersionFromApexMetadata(data)
+}
+
+func apiVersionFromApexMetadata(data []byte) string {
 	match := apexMetaAPIVersionPattern.FindSubmatch(data)
 	if len(match) != 2 {
 		return ""
@@ -370,6 +422,9 @@ func compileProjectTriggers(index typesys.Index, caches ...*sourceCache) ([]vm.T
 	sources := sourceCacheFor(caches)
 	sources.configureNamespaceRemaps(index.Types, index.Triggers)
 	for _, trigger := range index.Triggers {
+		if !trigger.HasSourceSnapshot() {
+			continue
+		}
 		source, err := sources.read(trigger.File)
 		if err != nil {
 			errs = append(errs, err)
@@ -457,7 +512,7 @@ func projectReferencedStandardFieldCacheKey(index typesys.Index, cache *sourceCa
 	write(fmt.Sprint(len(index.Types)))
 	seenFiles := make(map[string]bool)
 	for _, typ := range index.Types {
-		if typ.File == "" || typ.Dependency || seenFiles[typ.File] {
+		if !typ.HasSourceSnapshot() || typ.File == "" || typ.Dependency || seenFiles[typ.File] {
 			continue
 		}
 		seenFiles[typ.File] = true

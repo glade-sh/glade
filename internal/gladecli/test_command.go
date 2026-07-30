@@ -148,6 +148,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	var perfRunStarted time.Time
 	var perfSnapshot apextest.PerfCounters
 	var historyWriteNS int64
+	var perfExecution runPerfExecution
 	parsed, err := flagparse.New("glade test").
 		String("project", "p").
 		String("filter", "f").
@@ -499,6 +500,14 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	default:
 		testOpts.Parallelism = 1
 	}
+	perfExecution = runPerfExecution{
+		Arguments:            append([]string{"test"}, args...),
+		RequestedParallelism: parallelismOverride,
+		EffectiveParallelism: testOpts.Parallelism,
+		ParallelMethods:      testOpts.ParallelMethods,
+		GoMaxProcs:           runtime.GOMAXPROCS(0),
+		DiskCachePolicy:      apextest.ResolveDiskRuntimeCachePolicy(testOpts).Reason,
+	}
 	effectiveShardCount := shardCount
 	if writeClassShardsDir != "" && effectiveShardCount <= 0 {
 		effectiveShardCount = testOpts.Parallelism
@@ -516,6 +525,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		noServe = true
 	}
 	if !noServe && !watchMode && !daemonMode && !debug {
+		perfExecution.ExecutionMode = "server"
 		request := testdaemon.NewRunRequestV1(testOpts, changedSince, effectiveShardCount, shardIndex, writeClassShardsDir != "")
 		if response, used, err := tryTestServerRequest(ctx, root, connectMode, request); used || err != nil {
 			if err != nil {
@@ -568,11 +578,13 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	}
 
 	if daemonMode {
+		perfExecution.ExecutionMode = "daemon"
 		daemon, err := testdaemon.New(root)
 		if err != nil {
 			return testreport.Run{}, err
 		}
 		if watchMode {
+			perfExecution.ExecutionMode = "watch"
 			return runWatchTestsDaemon(ctx, root, daemon, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 		}
 		request := testdaemon.NewRunRequestV1(testOpts, changedSince, effectiveShardCount, shardIndex, writeClassShardsDir != "")
@@ -603,7 +615,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			}
 			stopProfile = nil
 		}
-		if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath, apextest.PerfCounters{}, 0, 0); err != nil {
+		if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath, apextest.PerfCounters{}, 0, 0, perfExecution); err != nil {
 			return result, err
 		}
 		if err := maybeWriteCLIDurationHistory(durationHistoryWritePath, result, durationHistory); err != nil {
@@ -632,10 +644,15 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if perfEnabled {
 		perfRunStarted = time.Now()
 	}
-	loadedProject, index, preRunPhases, err := loadTestIndexWithPerfPhases(root, perfEnabled)
+	perfExecution.ExecutionMode = "local"
+	generation, err := loadTestIndexWithPerfPhases(root, perfEnabled)
 	if err != nil {
 		return testreport.Run{}, err
 	}
+	loadedProject := generation.Project
+	index := generation.Index
+	buildArtifacts := generation.Artifacts
+	preRunPhases := generation.Phases
 	if perfEnabled {
 		testOpts.PreRunPhaseDurations = preRunPhases
 	}
@@ -654,6 +671,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 	}
 	if watchMode {
+		perfExecution.ExecutionMode = "watch"
 		return runWatchTests(ctx, root, loadedProject, index, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 	}
 	var result testreport.Run
@@ -695,6 +713,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			if progressReporter != nil {
 				progressReporter.setTotal(len(cases))
 			}
+			testOpts.BuildArtifacts = &buildArtifacts
+			testOpts.SourceDigests = buildArtifacts.SourceDigests
 			result = apextest.RunCasesContext(ctx, index, testOpts, cases)
 			if perfEnabled {
 				perfSnapshot = apextest.SnapshotPerfCounters()
@@ -733,6 +753,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			if progressReporter != nil {
 				progressReporter.setTotal(len(cases))
 			}
+			testOpts.BuildArtifacts = &buildArtifacts
+			testOpts.SourceDigests = buildArtifacts.SourceDigests
 			result = apextest.RunCasesContext(ctx, index, testOpts, cases)
 			if perfEnabled {
 				perfSnapshot = apextest.SnapshotPerfCounters()
@@ -779,7 +801,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 	}
 	if perfEnabled {
-		if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath, perfSnapshot, totalMS, historyWriteNS); err != nil {
+		if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath, perfSnapshot, totalMS, historyWriteNS, perfExecution); err != nil {
 			return result, err
 		}
 	}
@@ -807,35 +829,59 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	}
 }
 
-func loadTestIndexWithPerfPhases(root string, enabled bool) (project.Project, typesys.Index, apextest.PreRunPhaseDurations, error) {
+// testBuildGeneration is one immutable input snapshot for a local one-shot
+// test run. Keeping these values together prevents a type index from being
+// analyzed or executed with source artifacts from a different build.
+type testBuildGeneration struct {
+	Project   project.Project
+	Index     typesys.Index
+	Artifacts typesys.BuildArtifacts
+	Phases    apextest.PreRunPhaseDurations
+}
+
+func loadTestIndexWithPerfPhases(root string, enabled bool) (testBuildGeneration, error) {
 	if !enabled {
-		p, index, err := loadProjectIndex(root)
-		return p, index, apextest.PreRunPhaseDurations{}, err
+		p, err := project.Load(root)
+		if err != nil {
+			return testBuildGeneration{}, err
+		}
+		s, schemaErr := gladeschema.LoadProject(p)
+		if schemaErr != nil {
+			index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
+			index.Diagnostics = append(index.Diagnostics, diagnostic.Diagnostic{
+				Severity: diagnostic.Error,
+				Code:     "GLADESCHEMA001",
+				Message:  fmt.Sprintf("metadata schema load failed: %v", schemaErr),
+			})
+			return testBuildGeneration{Project: p, Index: index, Artifacts: artifacts}, nil
+		}
+		index, artifacts := typesys.BuildWithArtifacts(p, s)
+		return testBuildGeneration{Project: p, Index: index, Artifacts: artifacts}, nil
 	}
 	var phases apextest.PreRunPhaseDurations
 	started := time.Now()
 	p, err := project.Load(root)
 	phases.ProjectLoad = time.Since(started)
 	if err != nil {
-		return project.Project{}, typesys.Index{}, phases, err
+		return testBuildGeneration{Phases: phases}, err
 	}
 	started = time.Now()
 	s, schemaErr := gladeschema.LoadProject(p)
 	phases.SchemaLoad = time.Since(started)
 	started = time.Now()
 	if schemaErr != nil {
-		index := typesys.Build(p, gladeschema.Schema{})
+		index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
 		phases.IndexBuild = time.Since(started)
 		index.Diagnostics = append(index.Diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
 			Code:     "GLADESCHEMA001",
 			Message:  fmt.Sprintf("metadata schema load failed: %v", schemaErr),
 		})
-		return p, index, phases, nil
+		return testBuildGeneration{Project: p, Index: index, Artifacts: artifacts, Phases: phases}, nil
 	}
-	index := typesys.Build(p, s)
+	index, artifacts := typesys.BuildWithArtifacts(p, s)
 	phases.IndexBuild = time.Since(started)
-	return p, index, phases, nil
+	return testBuildGeneration{Project: p, Index: index, Artifacts: artifacts, Phases: phases}, nil
 }
 
 func preRunPerfSnapshot(phases apextest.PreRunPhaseDurations) apextest.PerfCounters {
@@ -1625,6 +1671,7 @@ type runPerfSummary struct {
 	StartupMS       int64                 `json:"startupMs"`
 	TotalMS         int64                 `json:"totalMs"`
 	HistoryWriteNS  int64                 `json:"historyWriteNs"`
+	Execution       runPerfExecution      `json:"execution"`
 	Summary         testreport.Summary    `json:"summary"`
 	ApexPerf        apextest.PerfCounters `json:"apexPerf"`
 	ClassDurations  map[string]int64      `json:"classDurations,omitempty"`
@@ -1632,6 +1679,16 @@ type runPerfSummary struct {
 	TopSlowClasses  []runPerfClass        `json:"topSlowClasses,omitempty"`
 	CPUProfilePath  string                `json:"cpuProfilePath,omitempty"`
 	MemProfilePath  string                `json:"memProfilePath,omitempty"`
+}
+
+type runPerfExecution struct {
+	Arguments            []string                              `json:"arguments"`
+	RequestedParallelism int                                   `json:"requestedParallelism"`
+	EffectiveParallelism int                                   `json:"effectiveParallelism"`
+	ParallelMethods      bool                                  `json:"parallelMethods"`
+	GoMaxProcs           int                                   `json:"gomaxprocs"`
+	DiskCachePolicy      apextest.DiskRuntimeCachePolicyReason `json:"diskCachePolicy"`
+	ExecutionMode        string                                `json:"executionMode"`
 }
 
 type runPerfClass struct {
@@ -1687,7 +1744,7 @@ func startCLIProfiler(cpuProfilePath, memProfilePath string) (func() error, erro
 	}, nil
 }
 
-func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpuProfilePath, memProfilePath string, counters apextest.PerfCounters, totalMS, historyWriteNS int64) error {
+func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpuProfilePath, memProfilePath string, counters apextest.PerfCounters, totalMS, historyWriteNS int64, execution runPerfExecution) error {
 	if strings.TrimSpace(perfJSONPath) == "" {
 		return nil
 	}
@@ -1696,11 +1753,11 @@ func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpu
 	ok := summary.Failed == 0 && summary.Errors == 0
 	phases := counters.Phases
 	discoverMS := phases.DiscoverNS / int64(time.Millisecond)
-	compileMS := (phases.ProjectCompileNS + phases.TestCompileNS) / int64(time.Millisecond)
-	startupNS := phases.ProjectLoadNS + phases.SchemaLoadNS + phases.IndexBuildNS + phases.DiscoverNS + phases.RuntimeKeyNS +
+	compileMS := (phases.SemanticGateNS + phases.ProjectCompileNS + phases.TestCompileNS) / int64(time.Millisecond)
+	startupNS := phases.ProjectLoadNS + phases.SchemaLoadNS + phases.IndexBuildNS + phases.DiscoverNS + phases.SemanticKeyNS + phases.SemanticGateNS + phases.RuntimeKeyNS +
 		phases.CacheValidateNS + phases.CacheDecodeNS + phases.CacheEncodeNS + phases.OrgBuildNS + phases.ProjectCompileNS + phases.TestCompileNS
 	perf := runPerfSummary{
-		SchemaVersion:   "1.0",
+		SchemaVersion:   "1.1",
 		Command:         "test",
 		GeneratedAt:     time.Now().UTC().Format(time.RFC3339),
 		Project:         absRoot,
@@ -1712,6 +1769,7 @@ func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpu
 		StartupMS:       startupNS / int64(time.Millisecond),
 		TotalMS:         totalMS,
 		HistoryWriteNS:  historyWriteNS,
+		Execution:       execution,
 		Summary:         summary,
 		ApexPerf:        counters,
 		ClassDurations:  runClassDurations(result),

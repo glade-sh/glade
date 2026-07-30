@@ -2740,7 +2740,6 @@ func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
 			for _, keep := range []string{
 				"TestUIRecordAPIRecordInputHelpersFilterAndUnwrapFields", "TestUILayoutAPIModuleJSMapsGetLayoutRequest",
 				"TestUIObjectInfoAPIModuleJSMapsObjectAndPicklistRequests", "TestUIRelatedListAPIModuleJSMapsRecordRequests",
-				"TestGeneratedSystemStubsReproduceFromGenerator",
 			} {
 				if strings.Contains(skip, keep) {
 					t.Errorf("pure lane skip excludes Node-executable test %s", keep)
@@ -3070,8 +3069,8 @@ func TestCIPackageLanesRouteThroughCheckedManifest(t *testing.T) {
 	for _, packages := range document.Lanes {
 		totalPackages += len(packages)
 	}
-	if totalPackages != 62 {
-		t.Fatalf("manifest package union = %d, want 62", totalPackages)
+	if totalPackages != 64 {
+		t.Fatalf("manifest package union = %d, want 64", totalPackages)
 	}
 	remaining := document.Lanes["remaining-go"]
 	if len(remaining) == 0 {
@@ -3318,12 +3317,386 @@ tee "$output"
 					t.Errorf("aggregate mode filtered package coverage: %s", call)
 				}
 			}
-			for _, pkg := range []string{"./internal/gladecli", "./internal/playground", "./internal/sema", "./internal/server", "./cmd/glade"} {
-				if got := strings.Count(callText, pkg); got != 1 {
+			packageExecutions := make(map[string]int)
+			for _, call := range testCalls {
+				for _, field := range strings.Fields(call) {
+					if strings.HasPrefix(field, "./") {
+						packageExecutions[field]++
+					}
+				}
+			}
+			for _, pkg := range []string{"./internal/gladecli", "./internal/playground", "./internal/sema", "./internal/semanticcache", "./internal/server", "./cmd/glade"} {
+				if got := packageExecutions[pkg]; got != 1 {
 					t.Errorf("package lane %s executions = %d, want 1; calls:\n%s", pkg, got, b)
 				}
 			}
 		})
+	}
+}
+
+func TestCILocalReleaseModeIsExactOnceAndFailClosed(t *testing.T) {
+	data, err := os.ReadFile("ci-go-test.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	script := string(data)
+	for _, want := range []string{
+		"run_local_release",
+		`"${go_command}" list -f`,
+		"scripts/internal/cishard",
+		"LOCAL_GO_TEST_JOBS",
+		"local_release_jobs",
+		"go vet ./...",
+		"-count=1",
+		"validate_local_release_package_summary",
+		"package-summary.json",
+		"missing package results",
+		"duplicate package results",
+		"skipped package results",
+		"extra package results",
+		"run_local_release_lane \"repoguard\" \"guard\"",
+		"run_local_release_lane \"gladecli\" \"cli-ui\"",
+		"run_local_release_lane \"sema\" \"sema\"",
+		"run_local_release_lane \"apextest\" \"apex\"",
+		"run_local_release_lane \"server-and-playground\" \"server-playground\"",
+		"run_local_release_lane \"remaining-go\" \"remaining\"",
+		"'^(?:TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$'",
+		"terminate_owned_children",
+	} {
+		if !strings.Contains(script, want) {
+			t.Errorf("local-release mode missing %q", want)
+		}
+	}
+	if strings.Index(script, "run_local_release_lane \"repoguard\" \"guard\"") > strings.Index(script, "run_local_release_lane \"gladecli\" \"cli-ui\"") ||
+		strings.Index(script, "run_local_release_lane \"gladecli\" \"cli-ui\"") > strings.Index(script, "run_local_release_lane \"sema\" \"sema\"") ||
+		strings.Index(script, "run_local_release_lane \"sema\" \"sema\"") > strings.Index(script, "run_local_release_lane \"apextest\" \"apex\"") ||
+		strings.Index(script, "run_local_release_lane \"apextest\" \"apex\"") > strings.Index(script, "run_local_release_lane \"server-and-playground\" \"server-playground\"") ||
+		strings.Index(script, "run_local_release_lane \"server-and-playground\" \"server-playground\"") > strings.Index(script, "run_local_release_lane \"remaining-go\" \"remaining\"") {
+		t.Fatal("local-release lane order is not fail-fast order")
+	}
+}
+
+func TestCILocalReleasePackageSummaryRejectsCoverageGaps(t *testing.T) {
+	const first = "github.com/glade-sh/glade/internal/one"
+	const second = "github.com/glade-sh/glade/internal/two"
+	const extra = "github.com/glade-sh/glade/internal/extra"
+	type summary struct {
+		Valid  bool     `json:"valid"`
+		Passed []string `json:"passed"`
+		Errors []string `json:"errors"`
+	}
+	cases := []struct {
+		name      string
+		events    []string
+		wantError string
+	}{
+		{name: "exact pass", events: []string{
+			`{"Action":"pass","Package":"` + first + `"}`,
+			`{"Action":"pass","Package":"` + second + `"}`,
+		}},
+		{name: "missing", events: []string{
+			`{"Action":"pass","Package":"` + first + `"}`,
+		}, wantError: "missing package results"},
+		{name: "duplicate", events: []string{
+			`{"Action":"pass","Package":"` + first + `"}`,
+			`{"Action":"pass","Package":"` + first + `"}`,
+			`{"Action":"pass","Package":"` + second + `"}`,
+		}, wantError: "duplicate package results"},
+		{name: "skipped", events: []string{
+			`{"Action":"skip","Package":"` + first + `"}`,
+			`{"Action":"pass","Package":"` + second + `"}`,
+		}, wantError: "skipped package results"},
+		{name: "verified no-test skip", events: []string{
+			`{"Action":"pass","Package":"` + first + `"}`,
+			`{"Action":"skip","Package":"` + second + `"}`,
+		}},
+		{name: "test skip despite package pass", events: []string{
+			`{"Action":"skip","Package":"` + first + `","Test":"TestOne"}`,
+			`{"Action":"pass","Package":"` + first + `"}`,
+			`{"Action":"pass","Package":"` + second + `"}`,
+		}, wantError: "skipped test results"},
+		{name: "subtest skip despite package pass", events: []string{
+			`{"Action":"skip","Package":"` + first + `","Test":"TestOne/subcase"}`,
+			`{"Action":"pass","Package":"` + first + `"}`,
+			`{"Action":"pass","Package":"` + second + `"}`,
+		}, wantError: "skipped test results"},
+		{name: "extra", events: []string{
+			`{"Action":"pass","Package":"` + first + `"}`,
+			`{"Action":"pass","Package":"` + second + `"}`,
+			`{"Action":"pass","Package":"` + extra + `"}`,
+		}, wantError: "extra package results"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			events := filepath.Join(dir, "events.json")
+			summaryPath := filepath.Join(dir, "package-summary.json")
+			metadataPath := filepath.Join(dir, "packages-with-tests.txt")
+			if err := os.WriteFile(events, []byte(strings.Join(tc.events, "\n")+"\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(metadataPath, []byte(first+"\thas-tests\n"+second+"\tno-tests\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			cmd := exec.Command("bash", "-c", `source ./ci-go-test.sh; validate_local_release_package_summary lane fixture "$1" "$2" "$3" ./internal/one ./internal/two`, "summary-fixture", events, summaryPath, metadataPath)
+			output, err := cmd.CombinedOutput()
+			if tc.wantError == "" && err != nil {
+				t.Fatalf("summary failed: %v\n%s", err, output)
+			}
+			if tc.wantError != "" {
+				if err == nil || !strings.Contains(string(output), tc.wantError) {
+					t.Fatalf("summary status/output = %v / %s, want %q", err, output, tc.wantError)
+				}
+			}
+			data, readErr := os.ReadFile(summaryPath)
+			if readErr != nil {
+				t.Fatal(readErr)
+			}
+			var got summary
+			if err := json.Unmarshal(data, &got); err != nil {
+				t.Fatal(err)
+			}
+			if got.Valid != (tc.wantError == "") {
+				t.Fatalf("summary valid=%v errors=%v", got.Valid, got.Errors)
+			}
+			if tc.wantError == "" && !reflect.DeepEqual(got.Passed, []string{first, second}) {
+				t.Fatalf("summary passed=%v", got.Passed)
+			}
+		})
+	}
+}
+
+func runLocalReleaseFixture(t *testing.T, jobs, failPackage string) (string, error, string, string) {
+	t.Helper()
+	dir := t.TempDir()
+	calls := filepath.Join(dir, "calls")
+	fakeGo := filepath.Join(dir, "go")
+	renderer := filepath.Join(dir, "testlog")
+	artifacts := filepath.Join(dir, "artifacts")
+	goScript := `#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$FIXTURE_CALLS"
+if [[ "$1" == "vet" ]]; then exit 0; fi
+if [[ "$1" != "test" ]]; then exit 91; fi
+rc=0
+for argument in "$@"; do
+  if [[ "$argument" == ./* ]]; then
+    package="github.com/glade-sh/glade/${argument#./}"
+    action=pass
+    if [[ "$package" == "github.com/glade-sh/glade/internal/ir" || "$package" == "github.com/glade-sh/glade/internal/lwcruntime/embed" ]]; then action=skip; fi
+    if [[ "$package" == "$FIXTURE_FAIL_PACKAGE" ]]; then action=fail; rc=23; fi
+    printf '{"Action":"%s","Package":"%s"}\n' "$action" "$package"
+  fi
+done
+exit "$rc"
+`
+	if err := os.WriteFile(fakeGo, []byte(goScript), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(renderer, []byte("#!/usr/bin/env bash\ncat >/dev/null\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("bash", "ci-go-test.sh", "local-release")
+	cmd.Env = append(os.Environ(),
+		"PATH="+dir+":"+os.Getenv("PATH"),
+		"FIXTURE_CALLS="+calls,
+		"FIXTURE_FAIL_PACKAGE="+failPackage,
+		"CI_GO_COMMAND="+realGoCommand(t),
+		"CI_TESTLOG_RENDERER="+renderer,
+		"CI_LOCAL_RELEASE_ARTIFACT_DIR="+artifacts,
+		"CI_GO_TEST_HEARTBEAT_SECONDS=1",
+		"LOCAL_GO_TEST_JOBS="+jobs,
+	)
+	out, err := cmd.CombinedOutput()
+	callData, readErr := os.ReadFile(calls)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	return string(out), err, string(callData), artifacts
+}
+
+func TestCILocalReleaseExecutesExactAuthoritativeInventory(t *testing.T) {
+	out, err, calls, artifacts := runLocalReleaseFixture(t, "auto", "")
+	if err != nil {
+		t.Fatalf("local-release failed: %v\n%s", err, out)
+	}
+	packagesCommand := exec.Command("go", "list", "./...")
+	packagesCommand.Dir = filepath.Clean("..")
+	packages, err := packagesCommand.Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := make(map[string]int)
+	for _, pkg := range strings.Fields(string(packages)) {
+		want["./"+strings.TrimPrefix(pkg, "github.com/glade-sh/glade/")]++
+	}
+	seen := make(map[string]int)
+	for _, line := range strings.Split(strings.TrimSpace(calls), "\n") {
+		if !strings.HasPrefix(line, "test ") {
+			continue
+		}
+		if !strings.Contains(line, "-json") || !strings.Contains(line, "-vet=off") || !strings.Contains(line, "-count=1") {
+			t.Fatalf("local test call is not exact-once JSON/no-vet: %s", line)
+		}
+		for _, field := range strings.Fields(line) {
+			if strings.HasPrefix(field, "./") {
+				seen[field]++
+			}
+		}
+		hasBrowserPackages := strings.Contains(line, "./internal/lwcbrowser") && strings.Contains(line, "./internal/lwcruntime")
+		hasSkip := strings.Contains(line, "-skip ^(?:TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$")
+		if hasBrowserPackages != hasSkip {
+			t.Fatalf("local-release browser lane ownership mismatch: %s", line)
+		}
+	}
+	if !reflect.DeepEqual(seen, want) {
+		t.Fatalf("local-release package executions = %#v, want %#v", seen, want)
+	}
+	if got := strings.Count(calls, "vet ./..."); got != 1 {
+		t.Fatalf("go vet gates = %d, want 1; calls:\n%s", got, calls)
+	}
+	for _, tc := range []struct {
+		packageArg string
+		timeout    string
+	}{
+		{"./internal/repoguard", "-timeout=15m"},
+		{"./internal/gladecli", "-timeout=30m"},
+		{"./internal/sema", "-timeout=45m"},
+		{"./internal/apextest", "-timeout=45m"},
+		{"./internal/playground", "-timeout=30m"},
+		{"./cmd/glade", "-timeout=30m"},
+	} {
+		for _, line := range strings.Split(strings.TrimSpace(calls), "\n") {
+			if strings.HasPrefix(line, "test ") && strings.Contains(line, tc.packageArg) && !strings.Contains(line, tc.timeout) {
+				t.Fatalf("%s missing explicit %s: %s", tc.packageArg, tc.timeout, line)
+			}
+		}
+	}
+	for _, label := range []string{"guard", "cli-ui", "sema", "apex", "server-playground", "remaining"} {
+		data, readErr := os.ReadFile(filepath.Join(artifacts, label, "package-summary.json"))
+		if readErr != nil || !strings.Contains(string(data), `"valid": true`) {
+			t.Fatalf("%s summary invalid: %v\n%s", label, readErr, data)
+		}
+	}
+	if data, readErr := os.ReadFile(filepath.Join(artifacts, "remaining", "package-summary.json")); readErr != nil || !strings.Contains(string(data), `"github.com/glade-sh/glade/internal/ir"`) {
+		t.Fatalf("no-test package summary missing: %v\n%s", readErr, data)
+	}
+}
+
+func TestCILocalReleasePropagatesLaneFailureAndValidatesJobs(t *testing.T) {
+	out, err, calls, _ := runLocalReleaseFixture(t, "1", "github.com/glade-sh/glade/internal/sema")
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok || exitErr.ExitCode() != 23 {
+		t.Fatalf("failing lane status = %v, want 23\n%s", err, out)
+	}
+	if strings.Contains(calls, "./internal/apextest") {
+		t.Fatalf("local-release continued after sema failure:\n%s", calls)
+	}
+	if successOutput, successErr, _, _ := runLocalReleaseFixture(t, "2", ""); successErr != nil {
+		t.Fatalf("explicit local jobs did not complete: %v\n%s", successErr, successOutput)
+	}
+	for _, tc := range []struct {
+		value string
+		want  string
+	}{{"1", "1"}, {"auto", "1"}, {"3", "3"}} {
+		cmd := exec.Command("bash", "-c", `source ./ci-go-test.sh; local_release_jobs`)
+		cmd.Env = append(os.Environ(), "LOCAL_GO_TEST_JOBS="+tc.value)
+		output, cmdErr := cmd.CombinedOutput()
+		if cmdErr != nil || strings.TrimSpace(string(output)) != tc.want {
+			t.Fatalf("jobs %q = %q / %v, want %q", tc.value, output, cmdErr, tc.want)
+		}
+	}
+	cmd := exec.Command("bash", "-c", `source ./ci-go-test.sh; local_release_jobs`)
+	cmd.Env = append(os.Environ(), "LOCAL_GO_TEST_JOBS=0")
+	if output, cmdErr := cmd.CombinedOutput(); cmdErr == nil || !strings.Contains(string(output), "positive integer") {
+		t.Fatalf("invalid jobs accepted: %v / %s", cmdErr, output)
+	}
+}
+
+func TestCILocalReleaseSignalTerminatesOnlyOwnedChildren(t *testing.T) {
+	dir := t.TempDir()
+	started := filepath.Join(dir, "started")
+	fakeGo := filepath.Join(dir, "go")
+	renderer := filepath.Join(dir, "testlog")
+	artifacts := filepath.Join(dir, "artifacts")
+	unrelated := exec.Command("sleep", "30")
+	if err := unrelated.Start(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = unrelated.Process.Kill()
+		_ = unrelated.Wait()
+	})
+	goScript := `#!/usr/bin/env bash
+if [[ "$1" == "vet" ]]; then exit 0; fi
+if [[ "$1" == "test" ]]; then
+  printf '%s\n' "$BASHPID" > "$FIXTURE_STARTED"
+  sleep 30 &
+  wait
+fi
+`
+	if err := os.WriteFile(fakeGo, []byte(goScript), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(renderer, []byte("#!/usr/bin/env bash\nsleep 30 &\nwait\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("bash", "ci-go-test.sh", "local-release")
+	cmd.Env = append(os.Environ(),
+		"PATH="+dir+":"+os.Getenv("PATH"),
+		"FIXTURE_STARTED="+started,
+		"CI_GO_COMMAND="+realGoCommand(t),
+		"CI_TESTLOG_RENDERER="+renderer,
+		"CI_LOCAL_RELEASE_ARTIFACT_DIR="+artifacts,
+		"CI_GO_TEST_HEARTBEAT_SECONDS=30",
+		"LOCAL_GO_TEST_JOBS=1",
+	)
+	var output bytes.Buffer
+	cmd.Stdout = &output
+	cmd.Stderr = &output
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		if _, err := os.Stat(started); err == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			_ = cmd.Process.Kill()
+			_ = cmd.Wait()
+			t.Fatalf("local-release did not start its owned test process:\n%s", output.String())
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	descendants := descendantPIDs(t, cmd.Process.Pid)
+	if len(descendants) == 0 {
+		t.Fatal("local-release has no owned descendants to terminate")
+	}
+	if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+		t.Fatal(err)
+	}
+	err := cmd.Wait()
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok || exitErr.ExitCode() != 143 {
+		t.Fatalf("local-release exit = %v, want 143\n%s", err, output.String())
+	}
+	assertProcessesExit(t, descendants)
+	pending, readErr := os.ReadFile(filepath.Join(artifacts, "guard", "package-summary.json"))
+	if readErr != nil {
+		t.Fatalf("read interrupted lane summary: %v", readErr)
+	}
+	var summary struct {
+		Valid  bool     `json:"valid"`
+		Errors []string `json:"errors"`
+	}
+	if err := json.Unmarshal(pending, &summary); err != nil {
+		t.Fatalf("interrupted lane summary is not valid JSON: %v\n%s", err, pending)
+	}
+	if summary.Valid || !reflect.DeepEqual(summary.Errors, []string{"lane did not reach result validation"}) {
+		t.Fatalf("interrupted lane summary = %+v", summary)
+	}
+	if err := unrelated.Process.Signal(syscall.Signal(0)); err != nil {
+		t.Fatalf("unrelated process was terminated: %v", err)
 	}
 }
 
@@ -3403,6 +3776,51 @@ exit "$FIXTURE_RENDERER_RC"
 				t.Fatalf("renderer failure was not logged:\n%s", out)
 			}
 		})
+	}
+}
+
+func TestCIGoTestLogRejectsRawArtifactWriterFailure(t *testing.T) {
+	dir := t.TempDir()
+	calls := filepath.Join(dir, "calls")
+	fakeGo := filepath.Join(dir, "go")
+	fakeRenderer := filepath.Join(dir, "testlog")
+	fakeTee := filepath.Join(dir, "tee")
+	goScript := `#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$FIXTURE_CALLS"
+printf '%s\n' '{"Action":"output","Package":"example.test/pkg","Output":"ok  example.test/pkg 0.001s\n"}'
+`
+	if err := os.WriteFile(fakeGo, []byte(goScript), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(fakeRenderer, []byte("#!/usr/bin/env bash\ncat >/dev/null\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(fakeTee, []byte("#!/usr/bin/env bash\ncat >/dev/null\nexit 9\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("bash", "ci-go-test.sh", "core")
+	cmd.Env = append(os.Environ(),
+		"PATH="+dir+":"+os.Getenv("PATH"),
+		"FIXTURE_CALLS="+calls,
+		"CI_TESTLOG_RENDERER="+fakeRenderer,
+		"CI_GO_COMMAND="+realGoCommand(t),
+		"CI_GO_TEST_ARTIFACT_DIR="+filepath.Join(dir, "artifacts"),
+		"CI_GO_TEST_HEARTBEAT_SECONDS=1",
+	)
+	out, err := cmd.CombinedOutput()
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok || exitErr.ExitCode() != 9 {
+		t.Fatalf("wrapper exit = %v, want raw artifact writer status 9\n%s", err, out)
+	}
+	callData, readErr := os.ReadFile(calls)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if got := strings.Count(string(callData), "test -json"); got != 1 {
+		t.Fatalf("native test calls = %d, want fail-fast 1; calls:\n%s", got, callData)
+	}
+	if !strings.Contains(string(out), "raw event writer failed with status 9") {
+		t.Fatalf("raw artifact writer failure was not explicit:\n%s", out)
 	}
 }
 

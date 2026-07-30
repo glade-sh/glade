@@ -22,15 +22,29 @@ type Daemon struct {
 	// updateMu serializes every index/graph writer. A writer snapshots after
 	// acquiring it, so no other writer can publish before that snapshot is
 	// replaced and no generation retry is necessary.
-	updateMu         sync.Mutex
-	project          project.Project
-	index            typesys.Index
-	graph            *watch.RefGraph
+	updateMu sync.Mutex
+	daemonGeneration
 	tryUpdateIndexFn func(typesys.Index, []string, []string, project.Project) (typesys.Index, bool, error)
 	loadProjectFn    func(string) (project.Project, error)
 	buildIndexFn     func(project.Project) (typesys.Index, error)
 	captureScopeFn   func(watch.Scope) (watch.Snapshot, error)
 	refreshGraphFn   func(*watch.RefGraph, typesys.Index, []watch.Change) (*watch.RefGraph, error)
+	warmRuntimeFn    func(context.Context, typesys.Index, *typesys.BuildArtifacts) error
+	// runGenerationFn is a per-daemon test seam for proving a run receives one
+	// complete immutable generation. Production leaves it nil.
+	runGenerationFn func(context.Context, daemonGeneration, apextest.Options) testreport.Run
+}
+
+// daemonGeneration is the complete immutable state consumed by each daemon
+// operation. Writers replace it under mu; readers copy it while holding a
+// read lock so project scope, index, artifacts, and selection graph cannot be
+// observed from different generations.
+type daemonGeneration struct {
+	serial    uint64
+	project   project.Project
+	index     typesys.Index
+	artifacts typesys.BuildArtifacts
+	graph     *watch.RefGraph
 }
 
 // WatchStateDriftError reports an ordinary input change while a watcher and
@@ -47,15 +61,13 @@ func (e *WatchStateDriftError) Error() string {
 }
 
 func New(root string) (*Daemon, error) {
-	p, index, err := loadProjectState(root)
+	p, index, artifacts, err := loadProjectGeneration(root)
 	if err != nil {
 		return nil, err
 	}
 	return &Daemon{
 		root:             root,
-		project:          p,
-		index:            index,
-		graph:            watch.BuildReferenceGraph(index),
+		daemonGeneration: daemonGeneration{serial: 1, project: p, index: index, artifacts: artifacts, graph: watch.BuildReferenceGraph(index)},
 		tryUpdateIndexFn: typesys.TryUpdateApexFilesCheckedWithLoadedProject,
 		loadProjectFn:    loadProject,
 		buildIndexFn:     buildProjectIndex,
@@ -63,6 +75,7 @@ func New(root string) (*Daemon, error) {
 		refreshGraphFn: func(graph *watch.RefGraph, index typesys.Index, changes []watch.Change) (*watch.RefGraph, error) {
 			return graph.Refreshed(index, changes), nil
 		},
+		warmRuntimeFn: apextest.WarmRuntimeWithBuildArtifacts,
 	}, nil
 }
 
@@ -74,25 +87,29 @@ func (d *Daemon) Root() string {
 // Published indices are immutable; updates replace the complete value.
 func (d *Daemon) IndexSnapshot() typesys.Index {
 	d.mu.RLock()
-	index := d.index
+	generation := d.daemonGeneration
 	d.mu.RUnlock()
-	return index
+	return generation.index
 }
 
 // WatchScopeSnapshot returns an owned scope derived from the project paired
 // with the currently published index and graph.
 func (d *Daemon) WatchScopeSnapshot(requestedRoot string) watch.Scope {
 	d.mu.RLock()
-	scope := watch.ProjectScope(requestedRoot, d.project)
+	generation := d.daemonGeneration
 	d.mu.RUnlock()
-	return scope
+	return watch.ProjectScope(requestedRoot, generation.project)
 }
 
-func (d *Daemon) Warm() {
+func (d *Daemon) Warm() error {
+	// Keep the captured generation published until its warming run finishes.
+	// That prevents a stale warm from publishing semantic or runtime entries
+	// after a source update has paired a new generation.
 	d.mu.RLock()
-	index := d.index
-	d.mu.RUnlock()
-	apextest.WarmRuntime(index)
+	generation := d.daemonGeneration
+	defer d.mu.RUnlock()
+	artifacts := generation.artifacts
+	return d.warmRuntimeFn(context.Background(), generation.index, &artifacts)
 }
 
 func (d *Daemon) RunFilter(filter string) testreport.Run {
@@ -101,20 +118,20 @@ func (d *Daemon) RunFilter(filter string) testreport.Run {
 
 func (d *Daemon) RunOptions(opts apextest.Options) testreport.Run {
 	d.mu.RLock()
-	index := d.index
+	generation := d.daemonGeneration
 	d.mu.RUnlock()
-	return apextest.Run(index, opts)
+	return d.runGeneration(context.Background(), generation, opts)
 }
 
 func (d *Daemon) RunSelectionContext(ctx context.Context, opts apextest.Options, selection watch.TestSelection) testreport.Run {
 	d.mu.RLock()
-	index := d.index
+	generation := d.daemonGeneration
 	d.mu.RUnlock()
 	selectedOpts, ok := watch.ApplyTestSelection(opts, selection)
 	if !ok {
 		return testreport.Run{Name: "glade test"}
 	}
-	return apextest.RunContext(ctx, index, selectedOpts)
+	return d.runGeneration(ctx, generation, selectedOpts)
 }
 
 func (d *Daemon) RunChangedSince(ref string) (testreport.Run, watch.TestSelection, error) {
@@ -127,15 +144,14 @@ func (d *Daemon) RunChangedSinceOptions(ref string, opts apextest.Options) (test
 		return testreport.Run{}, watch.TestSelection{}, err
 	}
 	d.mu.RLock()
-	index := d.index
-	graph := d.graph
+	generation := d.daemonGeneration
 	d.mu.RUnlock()
-	selection := watch.SelectAffectedTestsWithRefGraph(index, changes, graph)
+	selection := watch.SelectAffectedTestsWithRefGraph(generation.index, changes, generation.graph)
 	selectedOpts, ok := watch.ApplyTestSelection(opts, selection)
 	if !ok {
 		return testreport.Run{Name: "glade test"}, selection, nil
 	}
-	return apextest.Run(index, selectedOpts), selection, nil
+	return d.runGeneration(context.Background(), generation, selectedOpts), selection, nil
 }
 
 func (d *Daemon) SelectAffected(changes []watch.Change) watch.TestSelection {
@@ -148,10 +164,24 @@ func (d *Daemon) SelectAffected(changes []watch.Change) watch.TestSelection {
 // until the selected run starts so a later update cannot change its meaning.
 func (d *Daemon) SnapshotSelection(changes []watch.Change) (typesys.Index, watch.TestSelection) {
 	d.mu.RLock()
-	index := d.index
-	graph := d.graph
+	generation := d.daemonGeneration
 	d.mu.RUnlock()
-	return index, watch.SelectAffectedTestsWithRefGraph(index, changes, graph)
+	return generation.index, watch.SelectAffectedTestsWithRefGraph(generation.index, changes, generation.graph)
+}
+
+func optionsForGeneration(opts apextest.Options, generation daemonGeneration) apextest.Options {
+	artifacts := generation.artifacts
+	opts.BuildArtifacts = &artifacts
+	opts.SourceDigests = artifacts.SourceDigests
+	return opts
+}
+
+func (d *Daemon) runGeneration(ctx context.Context, generation daemonGeneration, opts apextest.Options) testreport.Run {
+	opts = optionsForGeneration(opts, generation)
+	if d.runGenerationFn != nil {
+		return d.runGenerationFn(ctx, generation, opts)
+	}
+	return apextest.RunContext(ctx, generation.index, opts)
 }
 
 func optionsForSelection(opts apextest.Options, selection watch.TestSelection) (apextest.Options, bool) {
@@ -207,12 +237,11 @@ func (d *Daemon) tryUpdateChangesLocked(changes []watch.Change, currentScope *wa
 		}
 	}
 	d.mu.RLock()
-	previous := d.index
-	previousGraph := d.graph
+	previous := d.daemonGeneration
 	d.mu.RUnlock()
 	var baseline watch.Snapshot
 	baselineCaptured := false
-	if currentScope != nil && typesys.RequiresAuthoritativeApexRebuild(previous, changed, deleted) {
+	if currentScope != nil && typesys.RequiresAuthoritativeApexRebuild(previous.index, changed, deleted) {
 		var err error
 		baseline, err = d.captureScopeFn(*currentScope)
 		if err != nil {
@@ -224,11 +253,14 @@ func (d *Daemon) tryUpdateChangesLocked(changes []watch.Change, currentScope *wa
 	if err != nil {
 		return false, err
 	}
-	index, exact, err := d.tryUpdateIndexFn(previous, changed, deleted, p)
+	index, exact, err := d.tryUpdateIndexFn(previous.index, changed, deleted, p)
 	if err != nil {
 		return false, err
 	}
-	var graph *watch.RefGraph
+	var (
+		graph     *watch.RefGraph
+		artifacts typesys.BuildArtifacts
+	)
 	if !exact {
 		if currentScope != nil {
 			if !baselineCaptured {
@@ -242,7 +274,7 @@ func (d *Daemon) tryUpdateChangesLocked(changes []watch.Change, currentScope *wa
 				}
 			}
 		}
-		if !typesys.MatchesProjectIdentity(previous, p) {
+		if !typesys.MatchesProjectIdentity(previous.index, p) {
 			return false, nil
 		}
 		if currentScope != nil {
@@ -251,13 +283,13 @@ func (d *Daemon) tryUpdateChangesLocked(changes []watch.Change, currentScope *wa
 				return false, nil
 			}
 		}
-		index, err = d.buildIndexFn(p)
+		index, artifacts, err = d.buildGeneration(p, previous)
 		if err != nil {
 			return false, err
 		}
-		graphChanges, digestCoverage := watch.AuthoritativeApexGraphChanges(previous, index)
-		if allowAuthoritativeGraphRefresh && digestCoverage && watch.CanRefreshAuthoritativeFallbackGraph(previous, index, graphChanges) {
-			graph, err = d.refreshGraphFn(previousGraph, index, graphChanges)
+		graphChanges, digestCoverage := watch.AuthoritativeApexGraphChanges(previous.index, index)
+		if allowAuthoritativeGraphRefresh && digestCoverage && watch.CanRefreshAuthoritativeFallbackGraph(previous.index, index, graphChanges) {
+			graph, err = d.refreshGraphFn(previous.graph, index, graphChanges)
 			if err != nil {
 				return false, err
 			}
@@ -276,12 +308,12 @@ func (d *Daemon) tryUpdateChangesLocked(changes []watch.Change, currentScope *wa
 	}
 	if exact {
 		graph = watch.BuildReferenceGraph(index)
+		artifacts, err = typesys.RefreshBuildArtifacts(index, &previous.artifacts)
+		if err != nil {
+			return false, err
+		}
 	}
-	d.mu.Lock()
-	d.project = p
-	d.index = index
-	d.graph = graph
-	d.mu.Unlock()
+	d.publishGeneration(daemonGeneration{serial: previous.serial + 1, project: p, index: index, artifacts: artifacts, graph: graph})
 	return true, nil
 }
 
@@ -321,7 +353,7 @@ func (d *Daemon) ReloadPreparedStable(previous watch.Scope, capture func(watch.S
 	if authoritativeScope := watch.ProjectScopeWithPrevious(d.root, p, previous); !reflect.DeepEqual(scope, authoritativeScope) {
 		return &WatchStateDriftError{}
 	}
-	index, err := d.buildIndexFn(p)
+	index, artifacts, err := d.buildGeneration(p, d.snapshotGeneration())
 	if err != nil {
 		return err
 	}
@@ -333,11 +365,8 @@ func (d *Daemon) ReloadPreparedStable(previous watch.Scope, capture func(watch.S
 	if changes := watch.DiffSnapshots(baseline, proof); len(changes) != 0 {
 		return &WatchStateDriftError{Path: changes[0].Path}
 	}
-	d.mu.Lock()
-	d.project = p
-	d.index = index
-	d.graph = graph
-	d.mu.Unlock()
+	previousGeneration := d.snapshotGeneration()
+	d.publishGeneration(daemonGeneration{serial: previousGeneration.serial + 1, project: p, index: index, artifacts: artifacts, graph: graph})
 	return nil
 }
 
@@ -351,16 +380,13 @@ func (d *Daemon) reloadLocked(prepare func(project.Project) error) error {
 			return err
 		}
 	}
-	index, err := d.buildIndexFn(p)
+	index, artifacts, err := d.buildGeneration(p, d.snapshotGeneration())
 	if err != nil {
 		return err
 	}
 	graph := watch.BuildReferenceGraph(index)
-	d.mu.Lock()
-	d.project = p
-	d.index = index
-	d.graph = graph
-	d.mu.Unlock()
+	previousGeneration := d.snapshotGeneration()
+	d.publishGeneration(daemonGeneration{serial: previousGeneration.serial + 1, project: p, index: index, artifacts: artifacts, graph: graph})
 	return nil
 }
 
@@ -370,12 +396,17 @@ func loadIndex(root string) (typesys.Index, error) {
 }
 
 func loadProjectState(root string) (project.Project, typesys.Index, error) {
+	p, index, _, err := loadProjectGeneration(root)
+	return p, index, err
+}
+
+func loadProjectGeneration(root string) (project.Project, typesys.Index, typesys.BuildArtifacts, error) {
 	p, err := loadProject(root)
 	if err != nil {
-		return project.Project{}, typesys.Index{}, err
+		return project.Project{}, typesys.Index{}, typesys.BuildArtifacts{}, err
 	}
-	index, err := buildProjectIndex(p)
-	return p, index, err
+	index, artifacts, err := buildProjectArtifacts(p)
+	return p, index, artifacts, err
 }
 
 func loadProject(root string) (project.Project, error) {
@@ -390,11 +421,48 @@ func loadProject(root string) (project.Project, error) {
 }
 
 func buildProjectIndex(p project.Project) (typesys.Index, error) {
+	index, _, err := buildProjectArtifacts(p)
+	return index, err
+}
+
+func buildProjectArtifacts(p project.Project) (typesys.Index, typesys.BuildArtifacts, error) {
 	s, err := schema.LoadProject(p)
 	if err != nil {
-		return typesys.Index{}, err
+		return typesys.Index{}, typesys.BuildArtifacts{}, err
 	}
-	return typesys.Build(p, s), nil
+	index, artifacts := typesys.BuildWithArtifacts(p, s)
+	if err := typesys.ValidateBuildGeneration(index, &artifacts); err != nil {
+		return typesys.Index{}, typesys.BuildArtifacts{}, err
+	}
+	return index, artifacts, nil
+}
+
+func (d *Daemon) snapshotGeneration() daemonGeneration {
+	d.mu.RLock()
+	generation := d.daemonGeneration
+	d.mu.RUnlock()
+	return generation
+}
+
+func (d *Daemon) publishGeneration(generation daemonGeneration) {
+	d.mu.Lock()
+	d.daemonGeneration = generation
+	d.mu.Unlock()
+}
+
+func (d *Daemon) buildGeneration(p project.Project, previous daemonGeneration) (typesys.Index, typesys.BuildArtifacts, error) {
+	if d.buildIndexFn == nil || reflect.ValueOf(d.buildIndexFn).Pointer() == reflect.ValueOf(buildProjectIndex).Pointer() {
+		return buildProjectArtifacts(p)
+	}
+	index, err := d.buildIndexFn(p)
+	if err != nil {
+		return typesys.Index{}, typesys.BuildArtifacts{}, err
+	}
+	artifacts, err := typesys.RefreshBuildArtifacts(index, &previous.artifacts)
+	if err != nil {
+		return typesys.Index{}, typesys.BuildArtifacts{}, err
+	}
+	return index, artifacts, nil
 }
 
 func canIncrementalIndex(changes []watch.Change) bool {

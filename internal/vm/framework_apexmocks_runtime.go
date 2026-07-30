@@ -562,6 +562,7 @@ func (vm *VM) frameworkMatcherMatchesMutable(matcher *Value, arg Value) (bool, b
 		return arg.Kind == ValueList, true, nil
 	case "anyobject", "isnotnull":
 		if isArgumentCaptorAnyObjectType(matcher.Type) && matcher.Fields != nil {
+			vm.advanceAliasContainmentMutation()
 			matcher.Fields["value"] = arg
 		}
 		return arg.Kind != ValueNull, true, nil
@@ -1014,6 +1015,7 @@ func (vm *VM) callFrameworkArgumentCaptorAnyObjectMember(receiver Value, method 
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("framework_ArgumentCaptor.AnyObject.matches expects 1 argument")
 		}
+		vm.advanceAliasContainmentMutation()
 		receiver.Fields["value"] = args[0]
 		vm.propagateValueMutationToScope(vm.Globals, receiver, receiver)
 		vm.propagateValueMutationToStatics(receiver, receiver)
@@ -1034,6 +1036,7 @@ func (vm *VM) callFrameworkArgumentCaptorAnyObjectMember(receiver Value, method 
 		if !ok {
 			value = Null
 		}
+		vm.advanceAliasContainmentMutation()
 		captured.List = append(captured.List, value)
 		captor.Fields["argumentsCaptured"] = captured
 		receiver.Fields["captor"] = captor
@@ -1251,7 +1254,7 @@ func frameworkInvocationMethod(invocation Value) (Value, bool) {
 }
 func (vm *VM) frameworkMethodCountRecorderStatic(name string) (Value, bool) {
 	for _, className := range []string{"fflib_MethodCountRecorder", "framework_MethodCountRecorder"} {
-		class, ok := vm.Classes[className]
+		class, ok := vm.ensureMutableClass(className)
 		if !ok {
 			continue
 		}
@@ -1266,17 +1269,18 @@ func (vm *VM) frameworkMethodCountRecorderStatic(name string) (Value, bool) {
 func (vm *VM) setFrameworkMethodCountRecorderStatic(name string, value Value) {
 	updated := false
 	for _, className := range []string{"fflib_MethodCountRecorder", "framework_MethodCountRecorder"} {
-		class, ok := vm.Classes[className]
+		class, ok := vm.ensureMutableClass(className)
 		if !ok {
 			continue
 		}
+		vm.advanceAliasContainmentMutation()
 		found := false
 		for fieldName, field := range class.StaticFields {
 			if strings.EqualFold(fieldName, name) {
 				vm.captureFrameworkMethodCountRecorderRollback(fieldName, field.Value)
 				field.Value = value
 				class.StaticFields[fieldName] = field
-				vm.rememberStaticValueRefsInField(value, staticFieldRef{ClassName: class.Name, FieldName: fieldName})
+				vm.rememberStaticValueRefsInField(value, canonicalStaticFieldLocationForClass(class, class.Name, fieldName))
 				found = true
 				break
 			}
@@ -1286,9 +1290,8 @@ func (vm *VM) setFrameworkMethodCountRecorderStatic(name string, value Value) {
 				class.StaticFields = make(map[string]Field)
 			}
 			class.StaticFields[name] = Field{Name: name, Type: value.Type, Static: true, Value: value, InitialValue: value}
-			vm.rememberStaticValueRefsInField(value, staticFieldRef{ClassName: class.Name, FieldName: name})
+			vm.rememberStaticValueRefsInField(value, canonicalStaticFieldLocationForClass(class, class.Name, name))
 		}
-		vm.Classes[class.Name] = class
 		vm.storeClassValue(class)
 		updated = true
 	}

@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 	"unsafe"
+
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func TestDurationNanosecondsClampsNegativeDurations(t *testing.T) {
@@ -175,5 +177,67 @@ func TestAnalyzePerfCountersConcurrentDistinctOutputs(t *testing.T) {
 	first.TotalNS = 1
 	if !reflect.DeepEqual(second, secondAfterCalls) {
 		t.Fatalf("mutating first output changed second output\n before: %#v\n  after: %#v", secondAfterCalls, second)
+	}
+}
+
+func TestAnalyzeOptionsFingerprintCoversEveryOptionField(t *testing.T) {
+	fields := reflect.VisibleFields(reflect.TypeOf(AnalyzeOptions{}))
+	gotNames := make([]string, 0, len(fields))
+	for _, field := range fields {
+		gotNames = append(gotNames, field.Name)
+	}
+	wantNames := []string{
+		"Diagnostics",
+		"ExportTypes",
+		"SuppressPerformanceDiagnostics",
+		"PerfCounters",
+		"BuildArtifacts",
+		"CapturedSource",
+	}
+	if !reflect.DeepEqual(gotNames, wantNames) {
+		t.Fatalf("AnalyzeOptions fields changed; classify every new field in AnalyzeOptionsFingerprint\nwant: %v\n got: %v", wantNames, gotNames)
+	}
+
+	base := AnalyzeOptionsFingerprint(AnalyzeOptions{})
+	for _, tc := range []struct {
+		name string
+		opts AnalyzeOptions
+	}{
+		{name: "diagnostics", opts: AnalyzeOptions{Diagnostics: true}},
+		{name: "export types", opts: AnalyzeOptions{ExportTypes: true}},
+		{name: "performance diagnostics", opts: AnalyzeOptions{SuppressPerformanceDiagnostics: true}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := AnalyzeOptionsFingerprint(tc.opts); got == base {
+				t.Fatalf("behavior-affecting option did not change fingerprint: %q", got)
+			}
+		})
+	}
+
+	instrumented := AnalyzeOptions{
+		PerfCounters:   &PerfCounters{Enabled: true},
+		BuildArtifacts: &typesys.BuildArtifacts{},
+		CapturedSource: func(string) (string, bool) { return "", false },
+	}
+	if got := AnalyzeOptionsFingerprint(instrumented); got != base {
+		t.Fatalf("request transport or instrumentation changed fingerprint\nbase: %s\n got: %s", base, got)
+	}
+}
+
+func TestAnalyzeOptionsFingerprintIsStable(t *testing.T) {
+	opts := AnalyzeOptions{
+		Diagnostics:                    true,
+		ExportTypes:                    true,
+		SuppressPerformanceDiagnostics: true,
+	}
+	const want = "009b9f699f5eee6dba2ab4eff186ab640b33535f061cf97338331e7254f50556"
+	if got := AnalyzeOptionsFingerprint(opts); got != want {
+		t.Fatalf("AnalyzeOptionsFingerprint() = %q, want %q", got, want)
+	}
+}
+
+func TestSemanticABIIsVersioned(t *testing.T) {
+	if SemanticABI == "" {
+		t.Fatal("SemanticABI must not be empty")
 	}
 }

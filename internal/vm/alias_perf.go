@@ -11,9 +11,30 @@ type PerfCounters struct {
 	Enabled              bool                    `json:"enabled,omitempty"`
 	StaticAlias          StaticAliasPerfCounters `json:"staticAlias,omitempty"`
 	ScopeAlias           ScopeAliasPerfCounters  `json:"scopeAlias,omitzero"`
+	ClassLookup          ClassLookupPerfCounters `json:"classLookup,omitempty"`
 	StaticAliasTopFields []StaticAliasFieldPerf  `json:"staticAliasTopFields,omitempty"`
 	DML                  DMLPerfCounters         `json:"dml,omitempty"`
 }
+
+type ClassLookupPerfCounters struct {
+	Hits   uint64 `json:"hits,omitempty"`
+	Misses uint64 `json:"misses,omitempty"`
+	// Entries and RetainedBytes are peak bounded-overlay gauges across the run.
+	Entries       uint64 `json:"entries,omitempty"`
+	Evictions     uint64 `json:"evictions,omitempty"`
+	RetainedBytes uint64 `json:"retainedBytes,omitempty"`
+}
+
+type classLookupPerfShard struct {
+	hits          atomic.Uint64
+	misses        atomic.Uint64
+	entries       atomic.Uint64
+	evictions     atomic.Uint64
+	retainedBytes atomic.Uint64
+	_             [24]byte
+}
+
+const classLookupPerfShardCount = 64
 
 type ScopeAliasPerfCounters struct {
 	Calls                     uint64 `json:"calls,omitempty"`
@@ -55,10 +76,12 @@ type StaticAliasFieldPerf struct {
 }
 
 type DMLPerfCounters struct {
-	RollbackPoints         uint64 `json:"rollbackPoints,omitempty"`
-	SnapshotRollbackPoints uint64 `json:"snapshotRollbackPoints,omitempty"`
-	JournalRollbackPoints  uint64 `json:"journalRollbackPoints,omitempty"`
-	TemporaryJournalPoints uint64 `json:"temporaryJournalPoints,omitempty"`
+	RollbackPoints          uint64 `json:"rollbackPoints,omitempty"`
+	SnapshotRollbackPoints  uint64 `json:"snapshotRollbackPoints,omitempty"`
+	JournalRollbackPoints   uint64 `json:"journalRollbackPoints,omitempty"`
+	TemporaryJournalPoints  uint64 `json:"temporaryJournalPoints,omitempty"`
+	RecordConversions       uint64 `json:"recordConversions,omitempty"`
+	TraceRecordPreparations uint64 `json:"traceRecordPreparations,omitempty"`
 }
 
 // PerfRecorder is an opaque, concurrency-safe aggregation session. A runtime
@@ -94,11 +117,17 @@ type PerfRecorder struct {
 		replacementNS             atomic.Int64
 		durationNS                atomic.Int64
 	}
+	classLookup struct {
+		next   atomic.Uint64
+		shards [classLookupPerfShardCount]classLookupPerfShard
+	}
 	dml struct {
-		rollbackPoints         atomic.Uint64
-		snapshotRollbackPoints atomic.Uint64
-		journalRollbackPoints  atomic.Uint64
-		temporaryJournalPoints atomic.Uint64
+		rollbackPoints          atomic.Uint64
+		snapshotRollbackPoints  atomic.Uint64
+		journalRollbackPoints   atomic.Uint64
+		temporaryJournalPoints  atomic.Uint64
+		recordConversions       atomic.Uint64
+		traceRecordPreparations atomic.Uint64
 	}
 }
 
@@ -116,8 +145,47 @@ func (recorder *PerfRecorder) Snapshot() PerfCounters {
 		Enabled:              true,
 		StaticAlias:          recorder.snapshotStaticAlias(),
 		ScopeAlias:           recorder.snapshotScopeAlias(),
+		ClassLookup:          recorder.snapshotClassLookup(),
 		StaticAliasTopFields: recorder.snapshotStaticAliasTopFields(20),
 		DML:                  recorder.snapshotDML(),
+	}
+}
+
+func (recorder *PerfRecorder) snapshotClassLookup() ClassLookupPerfCounters {
+	var snapshot ClassLookupPerfCounters
+	for index := range recorder.classLookup.shards {
+		shard := &recorder.classLookup.shards[index]
+		snapshot.Hits += shard.hits.Load()
+		snapshot.Misses += shard.misses.Load()
+		snapshot.Evictions += shard.evictions.Load()
+		snapshot.Entries = max(snapshot.Entries, shard.entries.Load())
+		snapshot.RetainedBytes = max(snapshot.RetainedBytes, shard.retainedBytes.Load())
+	}
+	return snapshot
+}
+
+func (recorder *PerfRecorder) newClassLookupPerfShard() *classLookupPerfShard {
+	if recorder == nil {
+		return nil
+	}
+	index := recorder.classLookup.next.Add(1) - 1
+	return &recorder.classLookup.shards[index%classLookupPerfShardCount]
+}
+
+func (shard *classLookupPerfShard) recordGauge(entries, retainedBytes int) {
+	if shard == nil {
+		return
+	}
+	recordAtomicMaximum(&shard.entries, uint64(max(entries, 0)))
+	recordAtomicMaximum(&shard.retainedBytes, uint64(max(retainedBytes, 0)))
+}
+
+func recordAtomicMaximum(counter *atomic.Uint64, candidate uint64) {
+	for {
+		current := counter.Load()
+		if candidate <= current || counter.CompareAndSwap(current, candidate) {
+			return
+		}
 	}
 }
 
@@ -330,10 +398,22 @@ func staticAliasPerfValueShape(value Value) (string, int) {
 
 func (recorder *PerfRecorder) snapshotDML() DMLPerfCounters {
 	return DMLPerfCounters{
-		RollbackPoints:         recorder.dml.rollbackPoints.Load(),
-		SnapshotRollbackPoints: recorder.dml.snapshotRollbackPoints.Load(),
-		JournalRollbackPoints:  recorder.dml.journalRollbackPoints.Load(),
-		TemporaryJournalPoints: recorder.dml.temporaryJournalPoints.Load(),
+		RollbackPoints:          recorder.dml.rollbackPoints.Load(),
+		SnapshotRollbackPoints:  recorder.dml.snapshotRollbackPoints.Load(),
+		JournalRollbackPoints:   recorder.dml.journalRollbackPoints.Load(),
+		TemporaryJournalPoints:  recorder.dml.temporaryJournalPoints.Load(),
+		RecordConversions:       recorder.dml.recordConversions.Load(),
+		TraceRecordPreparations: recorder.dml.traceRecordPreparations.Load(),
+	}
+}
+
+func (vm *VM) recordDMLRecordConversion(tracePreparation bool) {
+	if vm == nil || vm.perfRecorder == nil {
+		return
+	}
+	vm.perfRecorder.dml.recordConversions.Add(1)
+	if tracePreparation {
+		vm.perfRecorder.dml.traceRecordPreparations.Add(1)
 	}
 }
 

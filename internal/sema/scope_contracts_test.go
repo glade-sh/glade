@@ -54,6 +54,37 @@ public class Probe {
 	}
 }
 
+func TestDuplicateLocalCanonicalKeyPreservesDiagnosticSpellingAndOffset(t *testing.T) {
+	t.Parallel()
+	source := `
+public class Probe {
+  void run() {
+    String value = 'a';
+    String Value = 'b';
+  }
+}
+`
+	result := analyzeScopeProject(t, source)
+	for _, diag := range result.Diagnostics {
+		if diag.Code != "GLADESEMA014" || !strings.Contains(diag.Message, `"Value"`) {
+			continue
+		}
+		if diag.Range == nil {
+			t.Fatal("duplicate local diagnostic has no range")
+		}
+		start := diag.Range.Start.Offset
+		end := diag.Range.End.Offset
+		if start < 0 || end > len(source) || start >= end {
+			t.Fatalf("duplicate local diagnostic range = %d:%d for source length %d", start, end, len(source))
+		}
+		if got := source[start:end]; got != "Value" {
+			t.Fatalf("duplicate local diagnostic source = %q, want Value", got)
+		}
+		return
+	}
+	t.Fatalf("missing duplicate local diagnostic with original spelling: %#v", result.Diagnostics)
+}
+
 func TestParentBlockRedeclarationIsRejected(t *testing.T) {
 	t.Parallel()
 	result := analyzeScopeProject(t, `

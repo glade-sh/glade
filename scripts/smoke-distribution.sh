@@ -3,7 +3,12 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP="$(mktemp -d)"
-DIST_DIR="${TMP}/release-dist"
+if [[ -n "${DIST_DIR:-}" ]]; then
+	provided_dist=true
+else
+	provided_dist=false
+	DIST_DIR="${TMP}/release-dist"
+fi
 
 cleanup() {
 	rm -rf "${TMP}"
@@ -11,7 +16,9 @@ cleanup() {
 trap cleanup EXIT
 
 cd "${ROOT}"
-DIST_DIR="${DIST_DIR}" VERSION=smoke "${ROOT}/scripts/release-build.sh" >"${TMP}/release-build.out"
+if [[ "${provided_dist}" != true ]]; then
+	DIST_DIR="${DIST_DIR}" VERSION=smoke "${ROOT}/scripts/release-build.sh" >"${TMP}/release-build.out"
+fi
 
 python3 - "${DIST_DIR}" "${TMP}" <<'PY'
 import hashlib
@@ -96,7 +103,8 @@ def validate_archive_members(path, name):
 
 manifest = load(dist / "release-manifest.json")
 require(manifest.get("schemaVersion") == 2, "root manifest schema must be 2")
-require(manifest.get("version") == "smoke", "root manifest version must be smoke")
+version = manifest.get("version")
+require(isinstance(version, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]*", version), "root manifest version is invalid")
 assets = manifest.get("assets")
 require(isinstance(assets, list) and len(assets) == 1, "root manifest must contain exactly one asset")
 manifest_asset = assets[0]
@@ -131,19 +139,19 @@ require(verification.get("parserSmoke") == "passed", "manifest parser verificati
 for path in (
     dist / f"release-manifest-{asset_os}-{asset_arch}.json",
     dist / "latest" / "release-manifest.json",
-    dist / "smoke" / "release-manifest.json",
+    dist / version / "release-manifest.json",
 ):
     require(load(path) == manifest, f"manifest copy differs: {path}")
 
 index = load(dist / "index.json")
 require(index.get("schemaVersion") == 1, "release index schema must be 1")
-require(index.get("latest") == "smoke", "release index latest must be smoke")
+require(index.get("latest") == version, "release index latest differs from manifest version")
 versions = index.get("versions")
 require(isinstance(versions, list) and len(versions) == 1, "release index must contain exactly one version")
 entry = versions[0]
-require(isinstance(entry, dict) and entry.get("version") == "smoke", "release index version must be smoke")
+require(isinstance(entry, dict) and entry.get("version") == version, "release index version differs from manifest version")
 reference = entry.get("manifest")
-require(reference == "https://downloads.glade.sh/smoke/release-manifest.json", "release index manifest reference is invalid")
+require(reference == f"https://downloads.glade.sh/{version}/release-manifest.json", "release index manifest reference is invalid")
 
 archive = dist / archive_name
 require(archive.is_file(), "manifest-described archive is missing")
@@ -153,7 +161,7 @@ archive_checksum_name = checksum_line(dist / f"{archive_name}.sha256", archive_n
 sums_checksum_name = checksum_line(dist / "SHA256SUMS.txt", archive_name, expected)
 require(archive_checksum_name == sums_checksum_name, "checksum files name the archive differently")
 
-version_dir = dist / "smoke"
+version_dir = dist / version
 for name in (archive_name, f"{archive_name}.sha256", "SHA256SUMS.txt"):
     root_copy = dist / name
     version_copy = version_dir / name
@@ -214,6 +222,29 @@ HASH_BEFORE="$(shasum -a 256 "${GLADE}" | awk '{print $1}')"
 ACTUAL_VERSION="$("${GLADE}" version 2>&1)"
 if [[ "${ACTUAL_VERSION}" != "${VERSION_OUTPUT}" ]]; then
 	echo "release binary version output differs from manifest" >&2
+	exit 1
+fi
+ACTUAL_DOCTOR=""
+if ! ACTUAL_DOCTOR="$("${GLADE}" doctor --json 2>&1)"; then
+	echo "release binary doctor parser verification failed" >&2
+	printf '%s\n' "${ACTUAL_DOCTOR}" >&2
+	exit 1
+fi
+if ! ACTUAL_DOCTOR="${ACTUAL_DOCTOR}" python3 - <<'PY'
+import json
+import os
+
+try:
+    doctor = json.loads(os.environ["ACTUAL_DOCTOR"])
+except json.JSONDecodeError:
+    raise SystemExit(1)
+
+if not isinstance(doctor, dict) or doctor.get("status") != "passed" or doctor.get("exitCode") != 0 or doctor.get("parserOK") is not True:
+    raise SystemExit(1)
+PY
+then
+	echo "release binary doctor parser verification failed" >&2
+	printf '%s\n' "${ACTUAL_DOCTOR}" >&2
 	exit 1
 fi
 "${ROOT}/scripts/smoke-runtime.sh" "${GLADE}"

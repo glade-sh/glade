@@ -73,9 +73,9 @@ func TestScopeAliasPerfRecordsContainmentCacheClearAndEvictedEntries(t *testing.
 	t.Cleanup(ResetPerfCounters)
 
 	machine := New(nil)
-	machine.aliasContainmentCache = make(map[aliasContainmentCacheKey]bool, 16385)
+	machine.aliasContainmentCache = make(map[aliasContainmentCacheKey]uint64, 16385)
 	for i := 0; i < 16385; i++ {
-		machine.aliasContainmentCache[aliasContainmentCacheKey{ValueRef: uint64(i + 1)}] = true
+		machine.aliasContainmentCache[aliasContainmentCacheKey{ValueRef: uint64(i + 1)}] = 0
 	}
 	machine.collectionMutationSeq = 1
 	machine.recordCollectionMutation(1)

@@ -140,18 +140,17 @@ func (d *Daemon) runRequestV1WithProgress(
 	options.Progress = progress
 
 	d.mu.RLock()
-	index := d.index
-	graph := d.graph
+	generation := d.daemonGeneration
 	d.mu.RUnlock()
 	if err := ctx.Err(); err != nil {
 		return testreport.Run{}, watch.TestSelection{}, nil, err
 	}
-	selectorRun, selectorFailed := exactSelectorFailureV1(index, options)
+	selectorRun, selectorFailed := exactSelectorFailureV1(generation.index, options)
 	if err := ctx.Err(); err != nil {
 		return testreport.Run{}, watch.TestSelection{}, nil, err
 	}
 	if selectorFailed {
-		selectorRun.Dependencies = append([]typesys.DependencyInfo(nil), index.Dependencies...)
+		selectorRun.Dependencies = append([]typesys.DependencyInfo(nil), generation.index.Dependencies...)
 		return selectorRun, watch.TestSelection{}, nil, nil
 	}
 
@@ -167,7 +166,7 @@ func (d *Daemon) runRequestV1WithProgress(
 		if err := ctx.Err(); err != nil {
 			return testreport.Run{}, watch.TestSelection{}, nil, err
 		}
-		selection = watch.SelectAffectedTestsWithRefGraph(index, changes, graph)
+		selection = watch.SelectAffectedTestsWithRefGraph(generation.index, changes, generation.graph)
 		if err := ctx.Err(); err != nil {
 			return testreport.Run{}, watch.TestSelection{}, nil, err
 		}
@@ -176,7 +175,7 @@ func (d *Daemon) runRequestV1WithProgress(
 			return testreport.Run{}, watch.TestSelection{}, nil, err
 		}
 		if !ok {
-			run := testreport.Run{Name: "glade test", Dependencies: append([]typesys.DependencyInfo(nil), index.Dependencies...)}
+			run := testreport.Run{Name: "glade test", Dependencies: append([]typesys.DependencyInfo(nil), generation.index.Dependencies...)}
 			if request.ReturnClassShards {
 				if err := ctx.Err(); err != nil {
 					return testreport.Run{}, watch.TestSelection{}, nil, err
@@ -195,7 +194,7 @@ func (d *Daemon) runRequestV1WithProgress(
 	if err := ctx.Err(); err != nil {
 		return testreport.Run{}, watch.TestSelection{}, nil, err
 	}
-	cases := apextest.Discover(index, options)
+	cases := apextest.Discover(generation.index, options)
 	if err := ctx.Err(); err != nil {
 		return testreport.Run{}, watch.TestSelection{}, nil, err
 	}
@@ -209,7 +208,7 @@ func (d *Daemon) runRequestV1WithProgress(
 		}
 		return testreport.Run{
 			Name:         "glade test",
-			Dependencies: append([]typesys.DependencyInfo(nil), index.Dependencies...),
+			Dependencies: append([]typesys.DependencyInfo(nil), generation.index.Dependencies...),
 		}, selection, &plan, nil
 	}
 	if request.ShardCount > 0 {
@@ -228,8 +227,8 @@ func (d *Daemon) runRequestV1WithProgress(
 	if setProgressTotal != nil {
 		setProgressTotal(len(cases))
 	}
-	run := apextest.RunCasesContext(ctx, index, options, cases)
-	run.Dependencies = append(run.Dependencies, index.Dependencies...)
+	run := apextest.RunCasesContext(ctx, generation.index, optionsForGeneration(options, generation), cases)
+	run.Dependencies = append(run.Dependencies, generation.index.Dependencies...)
 	return run, selection, nil, nil
 }
 

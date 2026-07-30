@@ -3,15 +3,19 @@ package testdaemon
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/watch"
@@ -1057,6 +1061,155 @@ private class WarmTwoTest {
 	second := daemon.RunFilter("WarmTwoTest")
 	if got := second.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("second summary = %#v", got)
+	}
+}
+
+func TestDaemonConcurrentRunsKeepOneGenerationPairedInternally(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	helperPath := filepath.Join(root, "force-app/main/default/classes/GenerationHelper.cls")
+	testPath := filepath.Join(root, "force-app/main/default/classes/GenerationTest.cls")
+	writeFile(t, helperPath, `public class GenerationHelper { public static Integer value() { return 1; } }`)
+	writeFile(t, testPath, `@IsTest private class GenerationTest { @IsTest static void passes() { System.assertEquals(1, GenerationHelper.value()); } }`)
+
+	projectA := project.Project{Root: root, Namespace: "generation_a", ApexFiles: []string{helperPath, testPath}}
+	indexA, artifactsA := typesys.BuildWithArtifacts(projectA, schema.Schema{})
+	writeFile(t, helperPath, `public class GenerationHelper { public static Integer value() { return 2; } }`)
+	projectB := project.Project{Root: root, Namespace: "generation_b", ApexFiles: []string{helperPath, testPath}}
+	indexB, artifactsB := typesys.BuildWithArtifacts(projectB, schema.Schema{})
+
+	d, err := New(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	change := []watch.Change{{Path: helperPath, Op: watch.ChangeModified, Kind: watch.FileKindApexClass, Name: "GenerationHelper"}}
+	newGeneration := func(serial uint64, p project.Project, index typesys.Index, artifacts typesys.BuildArtifacts) daemonGeneration {
+		return daemonGeneration{serial: serial, project: p, index: index, artifacts: artifacts, graph: watch.BuildReferenceGraph(index)}
+	}
+	generationA := newGeneration(1, projectA, indexA, artifactsA)
+	generationB := newGeneration(2, projectB, indexB, artifactsB)
+	d.publishGeneration(generationA)
+
+	var assertionErr error
+	var assertionMu sync.Mutex
+	assertGeneration := func(generation daemonGeneration, opts apextest.Options) testreport.Run {
+		assertionMu.Lock()
+		defer assertionMu.Unlock()
+		if assertionErr != nil {
+			return testreport.Run{}
+		}
+		if generation.serial == 0 || generation.project.Namespace != generation.index.Project.Namespace {
+			assertionErr = fmt.Errorf("serial/project/index mismatch: serial=%d project=%q index=%q", generation.serial, generation.project.Namespace, generation.index.Project.Namespace)
+			return testreport.Run{}
+		}
+		if opts.BuildArtifacts == nil || opts.BuildArtifacts.SourceDigests != generation.artifacts.SourceDigests {
+			assertionErr = fmt.Errorf("serial %d received artifacts from another generation", generation.serial)
+			return testreport.Run{}
+		}
+		var helper typesys.TypeSymbol
+		for _, typ := range generation.index.Types {
+			if typ.Name == "GenerationHelper" {
+				helper = typ
+				break
+			}
+		}
+		expectedDigest, hasDigest := generation.artifacts.SourceDigests.Digest(helperPath)
+		if source, ok := generation.artifacts.SourceForType(helper); !ok || !hasDigest || source.Digest() != expectedDigest {
+			assertionErr = fmt.Errorf("serial %d index/artifacts mismatch", generation.serial)
+			return testreport.Run{}
+		}
+		selection := watch.SelectAffectedTestsWithRefGraph(generation.index, change, generation.graph)
+		if selection.Mode != watch.SelectionDirect || !reflect.DeepEqual(selection.TestClasses, []string{"GenerationTest"}) {
+			assertionErr = fmt.Errorf("serial %d index/graph selection = %#v", generation.serial, selection)
+			return testreport.Run{}
+		}
+		if !reflect.DeepEqual(opts.SelectedClasses, []string{"GenerationTest"}) {
+			assertionErr = fmt.Errorf("serial %d result selection = %#v", generation.serial, opts.SelectedClasses)
+			return testreport.Run{}
+		}
+		return testreport.Run{Name: fmt.Sprintf("generation-%d-%s", generation.serial, generation.project.Namespace)}
+	}
+	d.runGenerationFn = func(_ context.Context, generation daemonGeneration, opts apextest.Options) testreport.Run {
+		return assertGeneration(generation, opts)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var workers sync.WaitGroup
+	for worker := 0; worker < 4; worker++ {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			for iteration := 0; iteration < 100; iteration++ {
+				run := d.RunSelectionContext(ctx, apextest.Options{NoDiskCache: true}, watch.TestSelection{Mode: watch.SelectionDirect, TestClasses: []string{"GenerationTest"}})
+				if !strings.HasPrefix(run.Name, "generation-") {
+					assertionMu.Lock()
+					if assertionErr == nil {
+						assertionErr = fmt.Errorf("run did not retain its captured generation: %#v", run)
+					}
+					assertionMu.Unlock()
+					return
+				}
+			}
+		}()
+	}
+	for serial := uint64(3); serial < 303; serial++ {
+		if serial%2 == 0 {
+			generation := generationA
+			generation.serial = serial
+			d.publishGeneration(generation)
+		} else {
+			generation := generationB
+			generation.serial = serial
+			d.publishGeneration(generation)
+		}
+	}
+	workers.Wait()
+	assertionMu.Lock()
+	err = assertionErr
+	assertionMu.Unlock()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDaemonWarmBlocksGenerationPublicationUntilCapturedGenerationCompletes(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	path := filepath.Join(root, "force-app/main/default/classes/WarmTest.cls")
+	writeFile(t, path, "@IsTest private class WarmTest { @IsTest static void passes() {} }")
+	d, err := New(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	started := make(chan struct{})
+	release := make(chan struct{})
+	d.warmRuntimeFn = func(context.Context, typesys.Index, *typesys.BuildArtifacts) error {
+		close(started)
+		<-release
+		return nil
+	}
+	warmDone := make(chan struct{})
+	go func() {
+		d.Warm()
+		close(warmDone)
+	}()
+	<-started
+
+	writeFile(t, path, "@IsTest private class WarmTest { @IsTest static void changed() {} }")
+	updateDone := make(chan error, 1)
+	go func() {
+		updateDone <- d.UpdateChanges([]watch.Change{{Path: path, Op: watch.ChangeModified, Kind: watch.FileKindApexClass, Name: "WarmTest"}})
+	}()
+	select {
+	case err := <-updateDone:
+		t.Fatalf("UpdateChanges published while the captured warm generation was active: %v", err)
+	case <-time.After(100 * time.Millisecond):
+	}
+	close(release)
+	<-warmDone
+	if err := <-updateDone; err != nil {
+		t.Fatalf("UpdateChanges() = %v", err)
 	}
 }
 

@@ -4931,8 +4931,12 @@ func TestFrameworkRecordMethodInvocationInitializesNilStaticMap(t *testing.T) {
 	qm.Fields["methodArgTypes"] = List()
 	invocation.Fields["qm"] = qm
 	invocation.Fields["methodArg"] = Object("fflib_MethodArgValues")
+	beforeMutation := machine.aliasContainmentMutationSeq
 	if err := machine.frameworkRecordMethodInvocation(invocation); err != nil {
 		t.Fatal(err)
+	}
+	if machine.aliasContainmentMutationSeq == beforeMutation {
+		t.Fatal("framework method recorder did not invalidate alias containment")
 	}
 	value, ok := machine.frameworkMethodCountRecorderStatic("methodArgumentsByTypeName")
 	if !ok || value.Kind != ValueMap || len(value.Map) != 1 {
@@ -5022,12 +5026,16 @@ func TestFrameworkArgumentCaptorMatcherStoresMatchedArgument(t *testing.T) {
 	methodArg.Fields["argValues"] = List(records)
 	captorMatcher := Object("framework_ArgumentCaptor.AnyObject")
 
+	beforeMutation := machine.aliasContainmentMutationSeq
 	matched, handled, err := machine.frameworkMatchesAllArgs(methodArg, List(captorMatcher))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !handled || !matched {
 		t.Fatalf("matched=%v handled=%v, want true true", matched, handled)
+	}
+	if machine.aliasContainmentMutationSeq == beforeMutation {
+		t.Fatal("framework argument captor did not invalidate alias containment")
 	}
 	captured := captorMatcher.Fields["value"]
 	if captured.Kind != ValueList || len(captured.List) != 1 {
@@ -5054,12 +5062,16 @@ func TestFrameworkSObjectUnitOfWorkHandleRegisterTypeFastPath(t *testing.T) {
 		uow.Fields[field] = Map()
 	}
 
+	beforeMutation := machine.aliasContainmentMutationSeq
 	_, handled, err := machine.callFrameworkSObjectUnitOfWorkMember(uow, "handleRegisterType", []Value{sObjectTypeToken("Account")}, &Result{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !handled {
 		t.Fatal("handleRegisterType was not handled")
+	}
+	if machine.aliasContainmentMutationSeq == beforeMutation {
+		t.Fatal("handleRegisterType did not invalidate alias containment")
 	}
 	if got := uow.Fields["m_newListByType"].Map[mapKey(String("Account"))]; got.Kind != ValueList {
 		t.Fatalf("new list kind = %v, want list", got.Kind)
@@ -5118,10 +5130,14 @@ func TestFrameworkSObjectUnitOfWorkSendEmailWorkFastPath(t *testing.T) {
 	email := Object("Messaging.SingleEmailMessage")
 	email.Fields["plainTextBody"] = String("body")
 
+	beforeMutation := machine.aliasContainmentMutationSeq
 	if _, handled, err := machine.callFrameworkSObjectUnitOfWorkMember(emailWork, "registerEmail", []Value{email}, &Result{}); err != nil {
 		t.Fatal(err)
 	} else if !handled {
 		t.Fatal("registerEmail was not handled")
+	}
+	if machine.aliasContainmentMutationSeq == beforeMutation {
+		t.Fatal("registerEmail did not invalidate alias containment")
 	}
 	if got := emailWork.Fields["emails"]; got.Kind != ValueList || len(got.List) != 1 {
 		t.Fatalf("emails = %#v, want one registered email", got)

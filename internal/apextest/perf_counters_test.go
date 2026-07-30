@@ -1,12 +1,15 @@
 package apextest
 
 import (
+	"context"
 	"encoding/json"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -82,13 +85,131 @@ func TestPerfCountersCapturePhaseDurations(t *testing.T) {
 	}
 }
 
+func TestPerfCountersCaptureSemanticAndExecutionPhaseAccounting(t *testing.T) {
+	counters := newRunPerfCounters(true)
+	counters.phases.semanticKeyNS.Add((2 * time.Millisecond).Nanoseconds())
+	counters.phases.semanticGateNS.Add((3 * time.Millisecond).Nanoseconds())
+	counters.phases.semanticMemoryCacheHits.Add(1)
+	counters.phases.semanticDiskCacheHits.Add(0)
+	counters.phases.semanticCacheMisses.Add(2)
+	counters.phases.methodWindowNS.Add((5 * time.Millisecond).Nanoseconds())
+	counters.phases.rollbackNS.Add((7 * time.Millisecond).Nanoseconds())
+	counters.phases.teardownNS.Add((11 * time.Millisecond).Nanoseconds())
+
+	got := snapshotPerfCounters(counters).Phases
+	if got.SemanticKeyNS != (2*time.Millisecond).Nanoseconds() || got.SemanticGateNS != (3*time.Millisecond).Nanoseconds() {
+		t.Fatalf("semantic phase accounting = %#v", got)
+	}
+	if got.SemanticMemoryCacheHits != 1 || got.SemanticDiskCacheHits != 0 || got.SemanticCacheMisses != 2 {
+		t.Fatalf("semantic cache provenance = %#v", got)
+	}
+	if got.MethodWindowNS != (5*time.Millisecond).Nanoseconds() || got.RollbackNS != (7*time.Millisecond).Nanoseconds() || got.TeardownNS != (11*time.Millisecond).Nanoseconds() {
+		t.Fatalf("execution phase accounting = %#v", got)
+	}
+
+	data, err := json.Marshal(snapshotPerfCounters(counters))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, field := range []string{"semanticKeyNs", "semanticGateNs", "semanticMemoryCacheHits", "semanticDiskCacheHits", "semanticCacheMisses", "methodWindowNs", "rollbackNs", "teardownNs"} {
+		if !strings.Contains(string(data), field) {
+			t.Fatalf("counter JSON missing %s: %s", field, data)
+		}
+	}
+}
+
+func TestPerfCountersDoNotRecordDetailedPhasesWhenDisabled(t *testing.T) {
+	counters := newRunPerfCounters(false)
+	recordRunDuration(time.Millisecond, counters)
+
+	if got := snapshotPerfCounters(counters).Phases; got != (RunnerPhasePerfCounters{}) {
+		t.Fatalf("disabled detailed phases = %#v, want zero", got)
+	}
+}
+
+func TestRunPerfCountersRecordSemanticAndWorkerBoundaries(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/PerfBoundaryTest.cls"), `
+@isTest
+private class PerfBoundaryTest {
+  @isTest static void passes() { System.assertEquals(2, 1 + 1); }
+}
+`)
+	run := Run(loadTestIndex(t, root), Options{NoDiskCache: true, Parallelism: 1, PerfCounters: true})
+	if summary := run.Summary(); summary.Passed != 1 {
+		t.Fatalf("summary = %#v", summary)
+	}
+	phases := SnapshotPerfCounters().Phases
+	if phases.SemanticKeyNS <= 0 || phases.SemanticGateNS <= 0 || phases.SemanticCacheMisses != 1 {
+		t.Fatalf("semantic accounting = %#v", phases)
+	}
+	if phases.SemanticMemoryCacheHits != 0 || phases.SemanticDiskCacheHits != 0 {
+		t.Fatalf("semantic cache provenance = %#v", phases)
+	}
+	if phases.MethodWindowNS <= 0 || phases.RollbackNS <= 0 {
+		t.Fatalf("worker boundary accounting = %#v", phases)
+	}
+	if phases.TeardownNS != 0 {
+		t.Fatalf("result assembly was recorded as teardown: %#v", phases)
+	}
+	classLookup := SnapshotPerfCounters().VMPerf.ClassLookup
+	if classLookup.Hits == 0 || classLookup.Misses == 0 {
+		t.Fatalf("class lookup accounting = %#v, want runtime hits and misses", classLookup)
+	}
+}
+
+func TestRunTestPlansDoesNotOpenWorkerWindowForPrecompletedCases(t *testing.T) {
+	counters := newRunPerfCounters(true)
+	planned := []testCasePlan{{TestCase: TestCase{ClassName: "SkippedTest", MethodName: "skipped"}}}
+	results := []testreport.Case{{Status: testreport.StatusUnsupported}}
+
+	runTestPlans(context.Background(), planned, results, nil, nil, nil, Options{Parallelism: 1}, counters)
+
+	if got := snapshotPerfCounters(counters).Phases.MethodWindowNS; got != 0 {
+		t.Fatalf("MethodWindowNS = %d, want zero without a dispatched case", got)
+	}
+}
+
+func TestRunPerfCountersRecordPostJoinDispatcherTeardown(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/PerfTeardownTest.cls"), `
+@isTest
+private class PerfTeardownTest {
+  @testSetup static void setup() { System.assertEquals(1, 1); }
+  @isTest static void passes() { System.assertEquals(2, 1 + 1); }
+}
+`)
+	run := Run(loadTestIndex(t, root), Options{NoDiskCache: true, Parallelism: 1, PerfCounters: true})
+	if summary := run.Summary(); summary.Passed != 1 {
+		t.Fatalf("summary = %#v", summary)
+	}
+	if got := SnapshotPerfCounters().Phases.TeardownNS; got <= 0 {
+		t.Fatalf("TeardownNS = %d, want post-join dispatcher cleanup", got)
+	}
+}
+
 func TestPerfCountersIncludeStorageAndVMStats(t *testing.T) {
 	ResetPerfCounters()
 	t.Cleanup(ResetPerfCounters)
 	counters := newRunPerfCounters(true)
 
 	recordStorageCloneRollbackSnapshot(counters)
-	counters.captureVMPerf(vm.NewPerfRecorder().Snapshot())
+	counters.captureVMPerf(vm.PerfCounters{
+		Enabled: true,
+		ClassLookup: vm.ClassLookupPerfCounters{
+			Hits:          2,
+			Misses:        3,
+			Entries:       4,
+			Evictions:     5,
+			RetainedBytes: 6,
+		},
+	})
 
 	stats := snapshotPerfCounters(counters)
 	if stats.StorageCloneStats.CloneRollbackSnapshotCalls == 0 {
@@ -96,6 +217,15 @@ func TestPerfCountersIncludeStorageAndVMStats(t *testing.T) {
 	}
 	if !stats.VMPerf.Enabled {
 		t.Fatalf("vm perf counters not marked enabled: %#v", stats.VMPerf)
+	}
+	if got := stats.VMPerf.ClassLookup; got != (vm.ClassLookupPerfCounters{
+		Hits:          2,
+		Misses:        3,
+		Entries:       4,
+		Evictions:     5,
+		RetainedBytes: 6,
+	}) {
+		t.Fatalf("class lookup perf counters = %+v", got)
 	}
 }
 

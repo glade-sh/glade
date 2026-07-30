@@ -49,6 +49,53 @@ func TestParallelMethodDiskRuntimeGuardRemainsEnabled(t *testing.T) {
 	}
 }
 
+func TestDiskRuntimePublicationRejectsChangedValidatedInputGeneration(t *testing.T) {
+	root := t.TempDir()
+	configPath := filepath.Join(root, "sfdx-project.json")
+	if err := os.WriteFile(configPath, []byte(`{"packageDirectories":[],"sourceApiVersion":"64.0"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	beforeInfo, err := os.Stat(configPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index := typesys.Index{Project: typesys.ProjectInfo{Root: root}}
+	lookup, err := validatedDiskRuntimeInput(index, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(configPath, []byte(`{"packageDirectories":[],"sourceApiVersion":"65.0"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(configPath, beforeInfo.ModTime(), beforeInfo.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+
+	if publication, ok := validatedDiskRuntimeInputForPublication(index, nil, lookup); ok || publication != nil {
+		t.Fatalf("publication proof = %#v, %t, want changed generation rejection", publication, ok)
+	}
+}
+
+func TestDiskRuntimePublicationAcceptsUnchangedValidatedInputGeneration(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "sfdx-project.json"), []byte(`{"packageDirectories":[]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	index := typesys.Index{Project: typesys.ProjectInfo{Root: root}}
+	lookup, err := validatedDiskRuntimeInput(index, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	publication, ok := validatedDiskRuntimeInputForPublication(index, nil, lookup)
+	if !ok || publication == nil {
+		t.Fatalf("publication proof = %#v, %t, want accepted unchanged generation", publication, ok)
+	}
+	if publication.Digest() != lookup.Digest() {
+		t.Fatalf("publication digest = %q, want lookup digest %q", publication.Digest(), lookup.Digest())
+	}
+}
+
 func TestDiskRuntimeCachePolicyReportsWhyCacheIsUnavailable(t *testing.T) {
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)

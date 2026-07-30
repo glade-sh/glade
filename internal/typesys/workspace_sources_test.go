@@ -37,6 +37,157 @@ func TestBuildWithArtifactsMatchesBuild(t *testing.T) {
 	}
 }
 
+func TestRefreshBuildArtifactsReusesOnlyExactUnchangedOccurrences(t *testing.T) {
+	root := t.TempDir()
+	first := filepath.Join(root, "First.cls")
+	second := filepath.Join(root, "Second.cls")
+	writeFile(t, first, "public class First {}")
+	writeFile(t, second, "public class Second {}")
+	proj := project.Project{Root: root, ApexFiles: []string{first, second}}
+	index, previous := BuildWithArtifacts(proj, schema.Schema{})
+
+	refreshed, err := RefreshBuildArtifacts(index, &previous)
+	if err != nil {
+		t.Fatalf("RefreshBuildArtifacts() = %v", err)
+	}
+	if refreshed.Sources == previous.Sources {
+		t.Fatal("RefreshBuildArtifacts retained the previous mutable source arena")
+	}
+	if got := refreshed.Sources.Stats().PhysicalReadAttempts; got != 0 {
+		t.Fatalf("unchanged refresh read %d physical sources, want 0", got)
+	}
+	if err := ValidateBuildGeneration(index, &refreshed); err != nil {
+		t.Fatalf("ValidateBuildGeneration(refreshed) = %v", err)
+	}
+}
+
+func TestRefreshBuildArtifactsReadsChangedOccurrenceAndDropsDeletedOccurrence(t *testing.T) {
+	root := t.TempDir()
+	first := filepath.Join(root, "First.cls")
+	second := filepath.Join(root, "Second.cls")
+	writeFile(t, first, "public class First {}")
+	writeFile(t, second, "public class Second {}")
+	previousIndex, previous := BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{first, second}}, schema.Schema{})
+	_ = previousIndex
+
+	writeFile(t, first, "public class First { public void changed() {} }")
+	index, _ := BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{first}}, schema.Schema{})
+	refreshed, err := RefreshBuildArtifacts(index, &previous)
+	if err != nil {
+		t.Fatalf("RefreshBuildArtifacts() = %v", err)
+	}
+	if got := refreshed.Sources.Stats().PhysicalReadAttempts; got != 1 {
+		t.Fatalf("changed refresh physical reads = %d, want 1", got)
+	}
+	if got := len(refreshed.Sources.All()); got != 1 {
+		t.Fatalf("refreshed occurrences = %d, want deleted occurrence removed", got)
+	}
+	if err := ValidateBuildGeneration(index, &refreshed); err != nil {
+		t.Fatalf("ValidateBuildGeneration(refreshed) = %v", err)
+	}
+}
+
+func TestRefreshBuildArtifactsPreservesAliasAndRemapOccurrences(t *testing.T) {
+	root := t.TempDir()
+	physical := filepath.Join(root, "Shared.cls")
+	alias := filepath.Join(root, "Alias.cls")
+	writeFile(t, physical, "public class Shared { String value = 'Base__Item__c'; }")
+	if err := os.Symlink(physical, alias); err != nil {
+		t.Fatal(err)
+	}
+	remaps := []namespaceremap.Rule{{From: "Base", To: "runtime"}}
+	project := project.Project{Root: root, Namespace: "runtime", NamespaceRemaps: remaps, ApexFiles: []string{physical, alias}}
+	index, previous := BuildWithArtifacts(project, schema.Schema{})
+
+	refreshed, err := RefreshBuildArtifacts(index, &previous)
+	if err != nil {
+		t.Fatalf("RefreshBuildArtifacts() = %v", err)
+	}
+	if got := refreshed.Sources.Stats().PhysicalReadAttempts; got != 0 {
+		t.Fatalf("alias refresh read %d physical sources, want 0", got)
+	}
+	if got := refreshed.Sources.Stats().PhysicalSources; got != 1 {
+		t.Fatalf("alias refresh physical sources = %d, want 1", got)
+	}
+	if got := len(refreshed.Sources.All()); got != 2 {
+		t.Fatalf("alias refresh occurrences = %d, want 2", got)
+	}
+	if err := ValidateBuildGeneration(index, &refreshed); err != nil {
+		t.Fatalf("ValidateBuildGeneration(refreshed) = %v", err)
+	}
+}
+
+func TestRefreshBuildArtifactsRecanonicalizesRetargetedSameContentAlias(t *testing.T) {
+	root := t.TempDir()
+	first := filepath.Join(root, "first", "Shared.cls")
+	second := filepath.Join(root, "second", "Shared.cls")
+	alias := filepath.Join(root, "Alias.cls")
+	contents := "public class Shared {}"
+	writeFile(t, first, contents)
+	writeFile(t, second, contents)
+	if err := os.Symlink(first, alias); err != nil {
+		t.Fatal(err)
+	}
+	index, previous := BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{alias}}, schema.Schema{})
+
+	if err := os.Remove(alias); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(second, alias); err != nil {
+		t.Fatal(err)
+	}
+	refreshed, err := RefreshBuildArtifacts(index, &previous)
+	if err != nil {
+		t.Fatalf("RefreshBuildArtifacts() = %v", err)
+	}
+	sources := refreshed.Sources.All()
+	if len(sources) != 1 {
+		t.Fatalf("refreshed sources = %#v, want one", sources)
+	}
+	if got, want := sources[0].Metadata().PhysicalPath, canonicalPhysicalPath(second); got != want {
+		t.Fatalf("refreshed physical path = %q, want retargeted %q", got, want)
+	}
+	if got, want := refreshed.SourceDigests.requested[alias], canonicalPhysicalPath(second); got != want {
+		t.Fatalf("refreshed digest alias = %q, want retargeted %q", got, want)
+	}
+	if got := refreshed.Sources.Stats().PhysicalReadAttempts; got != 1 {
+		t.Fatalf("retargeted alias refresh reads = %d, want 1", got)
+	}
+	if err := ValidateBuildGeneration(index, &refreshed); err != nil {
+		t.Fatalf("ValidateBuildGeneration(refreshed) = %v", err)
+	}
+}
+
+func TestRefreshBuildArtifactsFailsClosedForReadErrorAndIncompleteGeneration(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Missing.cls")
+	writeFile(t, path, "public class Missing {}")
+	index, _ := BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := RefreshBuildArtifacts(index, nil); err == nil {
+		t.Fatal("RefreshBuildArtifacts accepted a missing source")
+	}
+
+	index.sourceDigests = nil
+	if _, err := RefreshBuildArtifacts(index, nil); err == nil {
+		t.Fatal("RefreshBuildArtifacts accepted an incomplete generation")
+	}
+}
+
+func TestRefreshBuildArtifactsRejectsSourceChangedAfterIndexCapture(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "ChangedAfterBuild.cls")
+	writeFile(t, path, "public class ChangedAfterBuild {}")
+	index, _ := BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	writeFile(t, path, "public class ChangedAfterBuild { public void drifted() {} }")
+
+	if _, err := RefreshBuildArtifacts(index, nil); err == nil {
+		t.Fatal("RefreshBuildArtifacts accepted a source changed after index capture")
+	}
+}
+
 func TestWorkspaceSourcesPreservesRawNormalizedDigestAndMetadata(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "UsesTokens.cls")

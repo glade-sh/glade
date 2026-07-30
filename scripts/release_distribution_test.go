@@ -296,6 +296,13 @@ func TestReleaseBuildSharedPlatformAndDefaultModes(t *testing.T) {
 			t.Fatalf("shared payload artifact %s: info=%v err=%v", path, info, err)
 		}
 	}
+	payloadBytes := mustReadFile(t, payload)
+	if len(payloadBytes) < 10 {
+		t.Fatalf("shared payload gzip header is too short: %d bytes", len(payloadBytes))
+	}
+	if payloadBytes[8] != 0 {
+		t.Fatalf("shared payload gzip extra flags = %d, want 0 for the deterministic release compression level", payloadBytes[8])
+	}
 	secondSharedDist := filepath.Join(root, "shared-dist-second")
 	runReleaseBuildFixture(t, root, script, npmLog, secondSharedDist, "shared-payload", false, nil)
 	secondPayloadSHA := filepath.Join(secondSharedDist, "glade-shared-payload.tar.gz.sha256")

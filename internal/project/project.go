@@ -21,6 +21,14 @@ func EffectiveSourceAPIVersion(path, fallback string) string {
 	if err != nil {
 		return fallback
 	}
+	return EffectiveSourceAPIVersionFromMetadata(data, fallback)
+}
+
+// EffectiveSourceAPIVersionFromMetadata derives the effective API version
+// from already-captured companion metadata bytes. Callers building an
+// immutable source generation use this to avoid rereading a sidecar after its
+// identity has been recorded.
+func EffectiveSourceAPIVersionFromMetadata(data []byte, fallback string) string {
 	var metadata struct {
 		APIVersion string `xml:"apiVersion"`
 	}

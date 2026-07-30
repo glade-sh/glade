@@ -214,10 +214,11 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "check",
 		Description: "Run semantic checks over a project.",
-		Usage:       []string{"glade check [--project <root>] [--format text|json|sarif|github] [--output <path>] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--progress|--progress-json|--no-progress]"},
+		Usage:       []string{"glade check [--project <root>] [--format text|json|sarif|github] [--output <path>] [--no-cache] [--cpu-profile <path>] [--mem-profile <path>] [--perf-json <path>] [--progress|--progress-json|--no-progress]"},
 		Flags: append(projectProgressFlags("Write semantic result as JSON."),
 			FlagHelp{Name: "--format", Value: "<mode>", Description: "Output format: text, json, sarif, or github."},
 			FlagHelp{Name: "--output", Value: "<path>", Description: "Write the selected output format to a file."},
+			FlagHelp{Name: "--no-cache", Description: "Skip semantic cache reads and writes for this run."},
 			FlagHelp{Name: "--cpu-profile", Value: "<path>", Description: "Write a CPU profile for this check run."},
 			FlagHelp{Name: "--mem-profile", Value: "<path>", Description: "Write a heap profile after this check run."},
 			FlagHelp{Name: "--perf-json", Value: "<path>", Description: "Write opt-in check performance counters as JSON."},

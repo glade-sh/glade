@@ -82,6 +82,192 @@ func TestRuntimeExecutionProjectionRejectsUncloneableAuthoritylessPayload(t *tes
 	}
 }
 
+func TestRuntimeStructuralValidatorMatchesCloneOracle(t *testing.T) {
+	validTemplate := vm.NewRestoredRuntimeTemplate(storage.NewOrgState(), vm.New(nil))
+	cyclicExpr := ir.Expr{Kind: ir.ExprUnary, Operator: "-"}
+	cyclicExpr.Left = &cyclicExpr
+	deepExpr := ir.Expr{Kind: ir.ExprLiteral}
+	for range 600 {
+		nested := deepExpr
+		deepExpr = ir.Expr{Kind: ir.ExprUnary, Operator: "-", Left: &nested}
+	}
+
+	deepInstruction := ir.Instruction{Op: ir.OpReturn}
+	for range 300 {
+		nested := deepInstruction
+		deepInstruction = ir.Instruction{Op: ir.OpReturn, Init: &nested}
+	}
+
+	cyclicFields := make(map[string]vm.Value)
+	cyclicValue := vm.Value{Fields: cyclicFields}
+	cyclicFields["self"] = cyclicValue
+	deepValue := vm.Value{Text: "leaf"}
+	for range 300 {
+		deepValue = vm.Value{List: []vm.Value{deepValue}}
+	}
+
+	sharedFields := map[string]vm.Value{"name": {Text: "shared"}}
+	tests := []struct {
+		name                string
+		entry               runtimeCacheEntry
+		structurallyInvalid bool
+	}{
+		{name: "nil payload", entry: runtimeCacheEntry{restored: validTemplate}},
+		{name: "empty payload", entry: runtimeCacheEntry{
+			Methods:   map[string]vm.Method{},
+			Classes:   []vm.Class{},
+			Triggers:  []vm.Trigger{},
+			PageNames: []string{},
+			restored:  validTemplate,
+		}},
+		{name: "valid complete payload", entry: runtimeCacheEntry{
+			Methods: map[string]vm.Method{"Generic.run": {
+				Name: "run",
+				Program: ir.Program{Instructions: []ir.Instruction{{
+					Op:   ir.OpReturn,
+					Expr: ir.Expr{Kind: ir.ExprLiteral},
+				}}},
+			}},
+			Classes: []vm.Class{{
+				Name: "Generic",
+				Fields: map[string]vm.Field{
+					"First":  {Value: vm.Value{Fields: sharedFields}},
+					"Second": {Value: vm.Value{Fields: sharedFields}},
+				},
+			}},
+			Triggers:  []vm.Trigger{{Name: "GenericTrigger", Program: ir.Program{Instructions: []ir.Instruction{{Op: ir.OpReturn}}}}},
+			PageNames: []string{"GenericPage"},
+			restored:  validTemplate,
+		}},
+		{name: "cyclic method expression", entry: runtimeCacheEntry{
+			Methods: map[string]vm.Method{"Generic.run": {
+				Name:    "run",
+				Program: ir.Program{Instructions: []ir.Instruction{{Op: ir.OpReturn, Expr: cyclicExpr}}},
+			}},
+			restored: validTemplate,
+		}},
+		{name: "excessive expression depth", structurallyInvalid: true, entry: runtimeCacheEntry{
+			Methods: map[string]vm.Method{"Generic.run": {
+				Name:    "run",
+				Program: ir.Program{Instructions: []ir.Instruction{{Op: ir.OpReturn, Expr: deepExpr}}},
+			}},
+			restored: validTemplate,
+		}},
+		{name: "cyclic trigger expression", entry: runtimeCacheEntry{
+			Triggers: []vm.Trigger{{
+				Name:    "GenericTrigger",
+				Program: ir.Program{Instructions: []ir.Instruction{{Op: ir.OpReturn, Expr: cyclicExpr}}},
+			}},
+			restored: validTemplate,
+		}},
+		{name: "excessive instruction depth", entry: runtimeCacheEntry{
+			Methods:  map[string]vm.Method{"Generic.run": {Name: "run", Program: ir.Program{Instructions: []ir.Instruction{deepInstruction}}}},
+			restored: validTemplate,
+		}},
+		{name: "cyclic field value", entry: runtimeCacheEntry{
+			Classes:  []vm.Class{{Name: "Generic", Fields: map[string]vm.Field{"Cycle": {Value: cyclicValue}}}},
+			restored: validTemplate,
+		}},
+		{name: "cyclic field initial value", entry: runtimeCacheEntry{
+			Classes:  []vm.Class{{Name: "Generic", Fields: map[string]vm.Field{"Cycle": {InitialValue: cyclicValue}}}},
+			restored: validTemplate,
+		}},
+		{name: "excessive field value depth", entry: runtimeCacheEntry{
+			Classes:  []vm.Class{{Name: "Generic", Fields: map[string]vm.Field{"Deep": {Value: deepValue}}}},
+			restored: validTemplate,
+		}},
+		{name: "cyclic field getter expression", entry: runtimeCacheEntry{
+			Classes: []vm.Class{{Name: "Generic", Fields: map[string]vm.Field{"Cycle": {
+				Getter: &vm.Method{
+					Name:    "getCycle",
+					Program: ir.Program{Instructions: []ir.Instruction{{Op: ir.OpReturn, Expr: cyclicExpr}}},
+				},
+			}}}},
+			restored: validTemplate,
+		}},
+		{name: "invalid restored template", entry: runtimeCacheEntry{}},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, cloneOK := cloneRuntimeCacheEntryChecked(tc.entry)
+			want := tc.entry.restored.Valid() && cloneOK
+			if tc.structurallyInvalid {
+				want = false
+			}
+			if got := validateRuntimeCacheEntryStructure(tc.entry); got != want {
+				t.Fatalf("validateRuntimeCacheEntryStructure() = %t, want %t", got, want)
+			}
+		})
+	}
+}
+
+func TestRuntimeValueStructuralValidatorMatchesCloneOracleForGeneratedValues(t *testing.T) {
+	for i := 0; i < 10_000; i++ {
+		value := vm.Value{Text: string(rune('a' + i%26))}
+		for depth := 0; depth < i%17; depth++ {
+			switch depth % 3 {
+			case 0:
+				value = vm.Value{Fields: map[string]vm.Value{"nested": value}}
+			case 1:
+				value = vm.Value{List: []vm.Value{value}}
+			default:
+				value = vm.Value{Map: map[string]vm.Value{"nested": value}, MapOrder: []string{"nested"}}
+			}
+		}
+		if i%97 == 0 {
+			fields := make(map[string]vm.Value)
+			value = vm.Value{Fields: fields}
+			fields["cycle"] = value
+		}
+		_, cloneOK := runtimePatchCloneValue(value, make(map[runtimePatchValueContainerIdentity]bool), 0)
+		if got := runtimePatchValueStructurallyValid(value); got != cloneOK {
+			t.Fatalf("generated value %d validation = %t, clone oracle = %t", i, got, cloneOK)
+		}
+	}
+}
+
+func TestRuntimeStructuralValidationAllocationDoesNotScaleWithPayload(t *testing.T) {
+	for _, nested := range []bool{false, true} {
+		small := runtimeStructuralAllocationFixture(1, nested)
+		large := runtimeStructuralAllocationFixture(4096, nested)
+		measure := func(entry runtimeCacheEntry) float64 {
+			return testing.AllocsPerRun(100, func() {
+				if !validateRuntimeCacheEntryStructure(entry) {
+					panic("valid structural fixture rejected")
+				}
+			})
+		}
+		smallAllocs := measure(small)
+		largeAllocs := measure(large)
+		t.Logf("structural validation allocations (nested=%t): 1 compiled owner %.1f, 4096 compiled owners %.1f", nested, smallAllocs, largeAllocs)
+		if largeAllocs > smallAllocs {
+			t.Fatalf("structural validation allocations scale with payload (nested=%t): small %.1f, large %.1f", nested, smallAllocs, largeAllocs)
+		}
+	}
+}
+
+func runtimeStructuralAllocationFixture(owners int, nested bool) runtimeCacheEntry {
+	entry := runtimeExecutionAllocationFixture(owners)
+	if !nested {
+		return entry
+	}
+	for key, method := range entry.Methods {
+		child := ir.Expr{Kind: ir.ExprLiteral}
+		method.Program = ir.Program{Instructions: []ir.Instruction{{
+			Op:   ir.OpReturn,
+			Expr: ir.Expr{Kind: ir.ExprUnary, Operator: "-", Left: &child},
+		}}}
+		entry.Methods[key] = method
+	}
+	for i := range entry.Classes {
+		entry.Classes[i].Fields = map[string]vm.Field{
+			"Nested": {Value: vm.Value{Fields: map[string]vm.Value{"leaf": {Text: "value"}}}},
+		}
+	}
+	return entry
+}
+
 func TestRuntimeExecutionCacheHitDoesNotCloneUnusedCompiledPayload(t *testing.T) {
 	InvalidateRuntimeCaches()
 	t.Cleanup(InvalidateRuntimeCaches)

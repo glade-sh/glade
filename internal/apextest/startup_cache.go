@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -16,7 +15,7 @@ import (
 
 var disableDiskCache atomic.Bool
 
-const testRuntimeCacheABI = "apextest-runtime-v5"
+const testRuntimeCacheABI = "apextest-runtime-v6"
 
 func DisableDiskCacheForTesting() func() {
 	wasDisabled := disableDiskCache.Load()
@@ -50,12 +49,23 @@ func tryLoadDiskRuntimeWithSourceDigests(index typesys.Index, digests *typesys.S
 	if !diskCacheEnabled() {
 		return runtimeCacheEntry{}, false
 	}
+	input, err := validatedDiskRuntimeInput(index, digests)
+	if err != nil {
+		return runtimeCacheEntry{}, false
+	}
+	return tryLoadDiskRuntimeWithValidatedInput(index, key, input)
+}
+
+func tryLoadDiskRuntimeWithValidatedInput(index typesys.Index, key runtimeCacheKey, input *startupcache.ValidatedInput) (runtimeCacheEntry, bool) {
+	if !diskCacheEnabled() {
+		return runtimeCacheEntry{}, false
+	}
 	root := strings.TrimSpace(index.Project.Root)
 	if root == "" {
 		return runtimeCacheEntry{}, false
 	}
 	root = filepath.Clean(root)
-	entry, err := startupcache.ReadFreshRuntimeWithSourceDigests(root, startupcache.SubdirTest, startupcache.Version, testRuntimeCacheABI, string(key), digests)
+	entry, err := startupcache.ReadFreshRuntimeWithValidatedInput(root, startupcache.SubdirTest, startupcache.Version, testRuntimeCacheABI, string(key), input)
 	if err != nil || entry == nil {
 		return runtimeCacheEntry{}, false
 	}
@@ -66,12 +76,23 @@ func tryLoadDiskRuntimeWithPerf(index typesys.Index, digests *typesys.SourceDige
 	if !diskCacheEnabled() {
 		return runtimeCacheEntry{}, false
 	}
+	input, err := validatedDiskRuntimeInput(index, digests)
+	if err != nil {
+		return runtimeCacheEntry{}, false
+	}
+	return tryLoadDiskRuntimeWithPerfValidatedInput(index, key, input, counters)
+}
+
+func tryLoadDiskRuntimeWithPerfValidatedInput(index typesys.Index, key runtimeCacheKey, input *startupcache.ValidatedInput, counters *runPerfCounters) (runtimeCacheEntry, bool) {
+	if !diskCacheEnabled() {
+		return runtimeCacheEntry{}, false
+	}
 	root := strings.TrimSpace(index.Project.Root)
 	if root == "" {
 		return runtimeCacheEntry{}, false
 	}
 	root = filepath.Clean(root)
-	entry, stats, err := startupcache.ReadFreshRuntimeWithSourceDigestsAndStats(root, startupcache.SubdirTest, startupcache.Version, testRuntimeCacheABI, string(key), digests)
+	entry, stats, err := startupcache.ReadFreshRuntimeWithValidatedInputAndStats(root, startupcache.SubdirTest, startupcache.Version, testRuntimeCacheABI, string(key), input)
 	counters.phases.cacheValidateNS.Add(stats.ValidationNS)
 	counters.phases.cacheDecodeNS.Add(stats.DecodeNS)
 	if err != nil || entry == nil {
@@ -84,20 +105,34 @@ func persistDiskRuntime(index typesys.Index, digests *typesys.SourceDigestSet, k
 	if !diskCacheEnabled() {
 		return
 	}
+	input, err := validatedDiskRuntimeInput(index, digests)
+	if err != nil {
+		return
+	}
+	persistDiskRuntimeWithValidatedInput(index, key, org, entry, input)
+}
+
+func persistDiskRuntimeWithValidatedInput(index typesys.Index, key runtimeCacheKey, org storage.OrgState, entry runtimeCacheEntry, input *startupcache.ValidatedInput) {
+	if !diskCacheEnabled() {
+		return
+	}
 	root := strings.TrimSpace(index.Project.Root)
 	if root == "" {
 		return
 	}
-	p, err := project.Load(root)
-	if err != nil {
+	canonicalRoot, err := filepath.Abs(root)
+	if err != nil || input == nil || filepath.Clean(canonicalRoot) != input.ProjectRoot() {
 		return
 	}
-	cacheEntry := startupcache.NewEntryWithSourceDigests(root, p, index, digests, org, startupcache.CompiledRuntime{
+	cacheEntry, err := startupcache.NewEntryWithValidatedInput(input, org, startupcache.CompiledRuntime{
 		Methods:   entry.Methods,
 		Classes:   entry.Classes,
 		Triggers:  entry.Triggers,
 		PageNames: entry.PageNames,
 	})
+	if err != nil {
+		return
+	}
 	cacheEntry.RuntimeABI = testRuntimeCacheABI
 	cacheEntry.RuntimeKey = string(key)
 	_ = startupcache.Write(&cacheEntry, startupcache.SubdirTest)
@@ -107,24 +142,57 @@ func persistDiskRuntimeWithPerf(index typesys.Index, digests *typesys.SourceDige
 	if !diskCacheEnabled() {
 		return
 	}
+	input, err := validatedDiskRuntimeInput(index, digests)
+	if err != nil {
+		return
+	}
+	persistDiskRuntimeWithPerfValidatedInput(index, key, org, entry, input, counters)
+}
+
+func persistDiskRuntimeWithPerfValidatedInput(index typesys.Index, key runtimeCacheKey, org storage.OrgState, entry runtimeCacheEntry, input *startupcache.ValidatedInput, counters *runPerfCounters) {
+	if !diskCacheEnabled() {
+		return
+	}
 	root := strings.TrimSpace(index.Project.Root)
 	if root == "" {
 		return
 	}
-	p, err := project.Load(root)
-	if err != nil {
+	canonicalRoot, err := filepath.Abs(root)
+	if err != nil || input == nil || filepath.Clean(canonicalRoot) != input.ProjectRoot() {
 		return
 	}
-	cacheEntry := startupcache.NewEntryWithSourceDigests(root, p, index, digests, org, startupcache.CompiledRuntime{
+	cacheEntry, err := startupcache.NewEntryWithValidatedInput(input, org, startupcache.CompiledRuntime{
 		Methods:   entry.Methods,
 		Classes:   entry.Classes,
 		Triggers:  entry.Triggers,
 		PageNames: entry.PageNames,
 	})
+	if err != nil {
+		return
+	}
 	cacheEntry.RuntimeABI = testRuntimeCacheABI
 	cacheEntry.RuntimeKey = string(key)
 	stats, _ := startupcache.WriteWithStats(&cacheEntry, startupcache.SubdirTest)
 	counters.phases.cacheEncodeNS.Add(stats.EncodeNS)
+}
+
+func validatedDiskRuntimeInput(index typesys.Index, digests *typesys.SourceDigestSet) (*startupcache.ValidatedInput, error) {
+	root := strings.TrimSpace(index.Project.Root)
+	if root == "" {
+		return nil, nil
+	}
+	return startupcache.ValidateInputWithSourceDigests(filepath.Clean(root), digests)
+}
+
+func validatedDiskRuntimeInputForPublication(index typesys.Index, digests *typesys.SourceDigestSet, lookup *startupcache.ValidatedInput) (*startupcache.ValidatedInput, bool) {
+	if lookup == nil {
+		return nil, false
+	}
+	current, err := validatedDiskRuntimeInput(index, digests)
+	if err != nil || current == nil || current.Digest() != lookup.Digest() {
+		return nil, false
+	}
+	return current, true
 }
 
 func runtimeCacheEntryFromStartup(entry startupcache.Entry) (runtimeCacheEntry, bool) {
@@ -182,13 +250,10 @@ func runtimeCacheEntryFromStartupWithPerf(entry startupcache.Entry, counters *ru
 }
 
 func validateRestoredRuntimeEntry(entry runtimeCacheEntry) (runtimeCacheEntry, bool) {
-	if !entry.restored.Valid() {
-		return runtimeCacheEntry{}, false
-	}
 	// Disk payloads are decoded and rebuilt outside the in-memory compiler
 	// boundary. Validate their complete structure exactly once before they can
 	// be published for narrow runner projections. The marker is not serialized.
-	if _, ok := cloneRuntimeCacheEntryChecked(entry); !ok {
+	if !validateRuntimeCacheEntryStructure(entry) {
 		return runtimeCacheEntry{}, false
 	}
 	entry.executionProjectionValidated = true
@@ -527,7 +592,7 @@ func projectReferencedApexFiles(index typesys.Index) []string {
 	seen := make(map[string]bool)
 	var files []string
 	for _, typ := range index.Types {
-		if typ.File == "" || typ.Dependency || seen[typ.File] {
+		if !typ.HasSourceSnapshot() || typ.File == "" || typ.Dependency || seen[typ.File] {
 			continue
 		}
 		seen[typ.File] = true

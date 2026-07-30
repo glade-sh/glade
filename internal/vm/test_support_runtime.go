@@ -308,7 +308,7 @@ func (vm *VM) stubQueryRowFromMap(objectName string, fields Value) (Value, error
 		if key.Kind != ValueString || strings.TrimSpace(key.Text) == "" {
 			return Null, fmt.Errorf("Test.createStubQueryRow field names must be strings")
 		}
-		setExplicitSObjectField(&row, key.Text, fieldValue)
+		vm.setExplicitSObjectFieldValue(&row, key.Text, fieldValue)
 		markQueriedSObjectField(&row, key.Text)
 	}
 	return row, nil
@@ -360,14 +360,14 @@ func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
 				if err != nil {
 					return Null, err
 				}
-				setExplicitSObjectField(&record, lookupField, value)
+				vm.setExplicitSObjectFieldValue(&record, lookupField, value)
 				continue
 			}
 			value, err := vm.testLoadDataFieldValue(objectName, fieldName, raw)
 			if err != nil {
 				return Null, fmt.Errorf("Test.loadData row %d %s.%s: %w", rowIndex+2, objectName, fieldName, err)
 			}
-			setExplicitSObjectField(&record, fieldName, value)
+			vm.setExplicitSObjectFieldValue(&record, fieldName, value)
 		}
 		out.List = append(out.List, record)
 	}

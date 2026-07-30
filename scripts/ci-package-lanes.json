@@ -8,7 +8,8 @@
       "github.com/glade-sh/glade/internal/gladecli"
     ],
     "sema": [
-      "github.com/glade-sh/glade/internal/sema"
+      "github.com/glade-sh/glade/internal/sema",
+      "github.com/glade-sh/glade/internal/semanticcache"
     ],
     "server-and-playground": [
       "github.com/glade-sh/glade/internal/playground",
@@ -72,6 +73,7 @@
       "github.com/glade-sh/glade/internal/vm",
       "github.com/glade-sh/glade/internal/watch",
       "github.com/glade-sh/glade/scripts",
+      "github.com/glade-sh/glade/scripts/internal/cicache",
       "github.com/glade-sh/glade/scripts/internal/cishard",
       "github.com/glade-sh/glade/scripts/internal/testlog"
     ]

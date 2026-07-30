@@ -2,6 +2,7 @@ package vm
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -1054,6 +1055,295 @@ func TestSetOrgTrustedSchemaStampDoesNotHideDefinitionMutation(t *testing.T) {
 	secondDescribe := machine.describeSObjectValue(name, definition)
 	if got := secondDescribe.Fields["label"].Text; got != "Runtime Account" {
 		t.Fatalf("second Account label = %q, want Runtime Account", got)
+	}
+}
+
+func TestSetOrgDirectSchemaMapMutationClearsRelationshipCaches(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Parent__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Parent__c",
+		Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+	}}
+	org.Objects["Child__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Child__c",
+		Fields: map[string]storage.Field{
+			"Parent__c": {
+				APIName:               "Parent__c",
+				Type:                  storage.FieldReference,
+				ReferenceTo:           []string{"Parent__c"},
+				RelationshipName:      "Parent__r",
+				ChildRelationshipName: "OldChildren__r",
+			},
+		},
+	}}
+	template := storage.NewRuntimeTemplate(org)
+	PrimeRuntimeTemplateSchema(&template)
+	clone := template.CloneRuntimeOrg()
+
+	machine := New(nil)
+	machine.SetOrg(&clone)
+	if got, ok := machine.jsonSObjectChildRelationshipType("Parent__c", "OldChildren__r"); !ok || got != "List<Child__c>" {
+		t.Fatalf("initial relationship = %q, %v, want List<Child__c>, true", got, ok)
+	}
+
+	child := clone.Objects["Child__c"]
+	field := child.Definition.Fields["Parent__c"]
+	field.ChildRelationshipName = "NewChildren__r"
+	child.Definition.Fields["Parent__c"] = field
+	clone.Objects["Child__c"] = child
+	machine.SetOrg(&clone)
+
+	if _, ok := machine.jsonSObjectChildRelationshipType("Parent__c", "OldChildren__r"); ok {
+		t.Fatal("stale relationship survived direct schema mutation")
+	}
+	if got, ok := machine.jsonSObjectChildRelationshipType("Parent__c", "NewChildren__r"); !ok || got != "List<Child__c>" {
+		t.Fatalf("new relationship = %q, %v, want List<Child__c>, true", got, ok)
+	}
+}
+
+func TestSetOrgSamePointerClearsFieldDescribeCacheAfterLabelMutation(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Thing__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Thing__c",
+		Fields: map[string]storage.Field{
+			"Status__c": {
+				APIName: "Status__c",
+				Label:   "Old Label",
+				Type:    storage.FieldString,
+			},
+		},
+	}}
+
+	machine := New(nil)
+	machine.SetOrg(&org)
+	firstDescribe, err := machine.describeFieldValue("Thing__c", "Status__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := firstDescribe.Fields["label"].Text; got != "Old Label" {
+		t.Fatalf("first field label = %q, want Old Label", got)
+	}
+
+	thing := org.Objects["Thing__c"]
+	field := thing.Definition.Fields["Status__c"]
+	field.Label = "New Label"
+	thing.Definition.Fields["Status__c"] = field
+	org.Objects["Thing__c"] = thing
+	machine.SetOrg(&org)
+
+	secondDescribe, err := machine.describeFieldValue("Thing__c", "Status__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := secondDescribe.Fields["label"].Text; got != "New Label" {
+		t.Fatalf("second field label = %q, want New Label", got)
+	}
+}
+
+func TestSetOrgUsesRuntimeSchemaStampOnlyAfterClearingSharedCaches(t *testing.T) {
+	org := storage.NewOrgState()
+	org.RuntimeSchemaStamp = "precomputed-runtime-schema"
+	org.Objects["Thing__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Thing__c",
+		Fields: map[string]storage.Field{
+			"Status__c": {
+				APIName: "Status__c",
+				Label:   "Old Label",
+				Type:    storage.FieldString,
+			},
+		},
+	}}
+
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if got := machine.metadataCacheStamp; got != "precomputed-runtime-schema" {
+		t.Fatalf("metadata cache stamp = %q, want precomputed runtime schema stamp", got)
+	}
+	firstDescribe, err := machine.describeFieldValue("Thing__c", "Status__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := firstDescribe.Fields["label"].Text; got != "Old Label" {
+		t.Fatalf("first field label = %q, want Old Label", got)
+	}
+
+	thing := org.Objects["Thing__c"]
+	field := thing.Definition.Fields["Status__c"]
+	field.Label = "New Label"
+	thing.Definition.Fields["Status__c"] = field
+	org.Objects["Thing__c"] = thing
+	machine.SetOrg(&org)
+
+	secondDescribe, err := machine.describeFieldValue("Thing__c", "Status__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := secondDescribe.Fields["label"].Text; got != "New Label" {
+		t.Fatalf("second field label = %q, want New Label", got)
+	}
+}
+
+func TestSetOrgSamePointerClearsDescribeCacheAfterSameLengthRecordTypeMutation(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Thing__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Thing__c",
+		Fields:  map[string]storage.Field{},
+		RecordTypes: []storage.RecordTypeInfo{{
+			ID:            "012000000000001",
+			DeveloperName: "Old_Type",
+			Name:          "Old Type",
+			Active:        true,
+			Available:     true,
+		}},
+	}}
+
+	machine := New(nil)
+	machine.SetOrg(&org)
+	name, definition, ok := machine.describeObjectDefinition("Thing__c")
+	if !ok {
+		t.Fatal("Thing__c definition not found")
+	}
+	firstDescribe := machine.describeSObjectValue(name, definition)
+	firstByName := firstDescribe.Fields["recordTypeInfosByName"]
+	if _, ok := firstByName.Map[mapKey(String("Old Type"))]; !ok {
+		t.Fatal("initial record type name Old Type not found")
+	}
+
+	thing := org.Objects["Thing__c"]
+	thing.Definition.RecordTypes[0].DeveloperName = "New_Type"
+	thing.Definition.RecordTypes[0].Name = "New Type"
+	org.Objects["Thing__c"] = thing
+	machine.SetOrg(&org)
+
+	name, definition, ok = machine.describeObjectDefinition("Thing__c")
+	if !ok {
+		t.Fatal("Thing__c definition not found after mutation")
+	}
+	secondDescribe := machine.describeSObjectValue(name, definition)
+	secondByName := secondDescribe.Fields["recordTypeInfosByName"]
+	if _, ok := secondByName.Map[mapKey(String("Old Type"))]; ok {
+		t.Fatal("stale record type name Old Type survived same-length mutation")
+	}
+	recordType, ok := secondByName.Map[mapKey(String("New Type"))]
+	if !ok {
+		t.Fatal("updated record type name New Type not found")
+	}
+	if got := recordType.Fields["developerName"].Text; got != "New_Type" {
+		t.Fatalf("updated developer name = %q, want New_Type", got)
+	}
+}
+
+func TestSetOrgDifferentPointerClearsFieldDescribeCacheWithEqualPartialStamp(t *testing.T) {
+	orgWithLabel := func(label string) storage.OrgState {
+		org := storage.NewOrgState()
+		org.Objects["Thing__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+			APIName: "Thing__c",
+			Fields: map[string]storage.Field{
+				"Status__c": {
+					APIName: "Status__c",
+					Label:   label,
+					Type:    storage.FieldString,
+				},
+			},
+		}}
+		return org
+	}
+	first := orgWithLabel("Old Label")
+	second := orgWithLabel("New Label")
+
+	machine := New(nil)
+	machine.SetOrg(&first)
+	firstDescribe, err := machine.describeFieldValue("Thing__c", "Status__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := firstDescribe.Fields["label"].Text; got != "Old Label" {
+		t.Fatalf("first field label = %q, want Old Label", got)
+	}
+
+	machine.SetOrg(&second)
+	secondDescribe, err := machine.describeFieldValue("Thing__c", "Status__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := secondDescribe.Fields["label"].Text; got != "New Label" {
+		t.Fatalf("second field label = %q, want New Label", got)
+	}
+}
+
+func TestSetOrgDifferentPointerClearsDescribeCacheWithEqualRecordTypeCount(t *testing.T) {
+	orgWithRecordType := func(name, developerName string) storage.OrgState {
+		org := storage.NewOrgState()
+		org.Objects["Thing__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+			APIName: "Thing__c",
+			Fields:  map[string]storage.Field{},
+			RecordTypes: []storage.RecordTypeInfo{{
+				ID:            "012000000000001",
+				DeveloperName: developerName,
+				Name:          name,
+				Active:        true,
+				Available:     true,
+			}},
+		}}
+		return org
+	}
+	first := orgWithRecordType("Old Type", "Old_Type")
+	second := orgWithRecordType("New Type", "New_Type")
+
+	machine := New(nil)
+	machine.SetOrg(&first)
+	name, definition, ok := machine.describeObjectDefinition("Thing__c")
+	if !ok {
+		t.Fatal("first Thing__c definition not found")
+	}
+	firstDescribe := machine.describeSObjectValue(name, definition)
+	if _, ok := firstDescribe.Fields["recordTypeInfosByName"].Map[mapKey(String("Old Type"))]; !ok {
+		t.Fatal("initial record type name Old Type not found")
+	}
+
+	machine.SetOrg(&second)
+	name, definition, ok = machine.describeObjectDefinition("Thing__c")
+	if !ok {
+		t.Fatal("second Thing__c definition not found")
+	}
+	secondDescribe := machine.describeSObjectValue(name, definition)
+	secondByName := secondDescribe.Fields["recordTypeInfosByName"]
+	if _, ok := secondByName.Map[mapKey(String("Old Type"))]; ok {
+		t.Fatal("stale record type name Old Type survived different-pointer switch")
+	}
+	recordType, ok := secondByName.Map[mapKey(String("New Type"))]
+	if !ok {
+		t.Fatal("updated record type name New Type not found")
+	}
+	if got := recordType.Fields["developerName"].Text; got != "New_Type" {
+		t.Fatalf("updated developer name = %q, want New_Type", got)
+	}
+}
+
+func BenchmarkSetOrgSchemaStampFailClosed(b *testing.B) {
+	org := storage.NewOrgState()
+	for objectIndex := 0; objectIndex < 200; objectIndex++ {
+		objectName := fmt.Sprintf("Object%d__c", objectIndex)
+		fields := make(map[string]storage.Field, 20)
+		for fieldIndex := 0; fieldIndex < 20; fieldIndex++ {
+			fieldName := fmt.Sprintf("Field%d__c", fieldIndex)
+			fields[fieldName] = storage.Field{APIName: fieldName, Type: storage.FieldString}
+		}
+		org.Objects[objectName] = storage.ObjectState{Definition: storage.ObjectDefinition{
+			APIName: objectName,
+			Fields:  fields,
+		}}
+	}
+	template := storage.NewRuntimeTemplate(org)
+	PrimeRuntimeTemplateSchema(&template)
+	clone := template.CloneRuntimeOrg()
+	machine := New(nil)
+	machine.SetOrg(&clone)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		machine.SetOrg(&clone)
 	}
 }
 

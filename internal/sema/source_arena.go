@@ -41,16 +41,24 @@ type semaSourceResult struct {
 // phase. An attached build artifact is authoritative: a miss never falls back
 // to the filesystem.
 type semaSources struct {
-	artifacts *typesys.BuildArtifacts
-	fallback  map[string]semaSourceResult
-	recorder  *perfRecorder
+	artifacts      *typesys.BuildArtifacts
+	capturedSource func(string) (string, bool)
+	fallback       map[string]semaSourceResult
+	facts          map[string]*sourceFacts
+	recorder       *perfRecorder
 }
 
 func newSemaSources(artifacts *typesys.BuildArtifacts, recorder *perfRecorder) *semaSources {
+	return newSemaSourcesWithCaptured(artifacts, nil, recorder)
+}
+
+func newSemaSourcesWithCaptured(artifacts *typesys.BuildArtifacts, capturedSource func(string) (string, bool), recorder *perfRecorder) *semaSources {
 	return &semaSources{
-		artifacts: artifacts,
-		fallback:  make(map[string]semaSourceResult),
-		recorder:  recorder,
+		artifacts:      artifacts,
+		capturedSource: capturedSource,
+		fallback:       make(map[string]semaSourceResult),
+		facts:          make(map[string]*sourceFacts),
+		recorder:       recorder,
 	}
 }
 
@@ -62,6 +70,20 @@ func (s *semaSources) normalizedForType(typ typesys.TypeSymbol) (string, bool) {
 func (s *semaSources) rawForType(typ typesys.TypeSymbol) (string, bool) {
 	text, ok := s.forType(typ)
 	return text.raw, ok
+}
+
+func (s *semaSources) factsForType(typ typesys.TypeSymbol) (*sourceFacts, bool) {
+	text, ok := s.forType(typ)
+	if !ok {
+		return nil, false
+	}
+	key := semaSourceCacheKey(typ.File, typ.Namespace, typ.SourceNamespaceRemaps)
+	if facts, exists := s.facts[key]; exists {
+		return facts, true
+	}
+	facts := newSourceFacts(text.normalized)
+	s.facts[key] = facts
+	return facts, true
 }
 
 func (s *semaSources) normalizedForTrigger(trigger typesys.TriggerSymbol) (string, bool) {
@@ -99,6 +121,22 @@ func (s *semaSources) forOccurrence(file, namespace string, remaps []namespacere
 			s.miss()
 		}
 		return result.text, result.ok
+	}
+	if s.capturedSource != nil {
+		raw, ok := s.capturedSource(file)
+		if !ok {
+			s.miss()
+			s.fallback[key] = semaSourceResult{}
+			return semaSourceText{}, false
+		}
+		normalized := project.NormalizeApexNamespaceTokens(raw, namespace)
+		if len(remaps) > 0 {
+			normalized = namespaceremap.ApplySource(remaps, normalized)
+		}
+		text := semaSourceText{raw: raw, normalized: normalized}
+		s.fallback[key] = semaSourceResult{text: text, ok: true}
+		s.hit()
+		return text, true
 	}
 	s.miss()
 	if s.recorder != nil {

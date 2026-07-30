@@ -650,10 +650,7 @@ func (vm *VM) setObjectFieldValue(object *Value, name string, value Value) {
 		return
 	}
 	vm.markCollectionRefsEscaped(value)
-	if object.Fields == nil {
-		object.Fields = make(map[string]Value)
-	}
-	object.Fields[name] = value
+	vm.setGraphFieldValue(object, name, value)
 	if object.Kind != ValueObject || vm.isSObjectLikeType(object.Type) {
 		return
 	}
@@ -665,6 +662,22 @@ func (vm *VM) setObjectFieldValue(object *Value, name string, value Value) {
 			object.Fields[candidate] = value
 		}
 	}
+}
+
+func (vm *VM) setGraphFieldValue(object *Value, name string, value Value) {
+	if object == nil {
+		return
+	}
+	vm.advanceAliasContainmentMutation()
+	if object.Fields == nil {
+		object.Fields = make(map[string]Value)
+	}
+	object.Fields[name] = value
+}
+
+func (vm *VM) setExplicitSObjectFieldValue(object *Value, name string, value Value) {
+	vm.advanceAliasContainmentMutation()
+	setExplicitSObjectField(object, name, value)
 }
 
 func (vm *VM) distinctExactReceiverFields(typeName, left, right string) bool {
@@ -2527,6 +2540,14 @@ func (vm *VM) assign(name string, value Value) error {
 }
 
 func (vm *VM) writeStaticFieldValue(owner, memberName string, class Class, field Field, value Value) {
+	if vm.sharedStaticClasses {
+		if mutable, ok := vm.ensureMutableClass(owner); ok {
+			class = mutable
+			if current, found := vm.lookupFieldInMap(class.StaticFields, memberName); found {
+				field = current
+			}
+		}
+	}
 	previous := field.Value
 	sameStaticCollection := sameStaticCollectionWriteback(previous, value)
 	if !sameStaticCollection {
@@ -2539,11 +2560,8 @@ func (vm *VM) writeStaticFieldValue(owner, memberName string, class Class, field
 	fieldKey := vm.staticFieldWritebackKey(owner, memberName, field)
 	class.StaticFields[fieldKey] = field
 	vm.storeClassValue(class)
-	className := class.Name
-	if className == "" {
-		className = owner
-	}
-	vm.replaceStaticValueRefsInField(previous, value, staticFieldRef{ClassName: className, FieldName: fieldKey})
+	location := canonicalStaticFieldLocationForClass(class, owner, fieldKey)
+	vm.replaceStaticValueRefsInField(previous, value, location)
 }
 
 func (vm *VM) assignPath(root Value, parts []string, value Value) error {
@@ -2567,7 +2585,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		for i := len(parents) - 1; i >= 0; i-- {
 			parent := parents[i]
 			if parent.object.Kind == ValueObject && parent.object.Fields != nil {
-				parent.object.Fields[parent.field] = updated
+				vm.setGraphFieldValue(&parent.object, parent.field, updated)
 			}
 			updated = parent.object
 		}
@@ -2618,10 +2636,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		}
 		if !ok || next.Kind != ValueObject {
 			if generated, generatedOK := vm.generatedPlatformInstanceField(current, part); generatedOK && generated.Kind == ValueObject {
-				if current.Fields == nil {
-					current.Fields = make(map[string]Value)
-				}
-				current.Fields[part] = generated
+				vm.setGraphFieldValue(&current, part, generated)
 				parents = append(parents, pathParent{object: current, field: part})
 				current = generated
 				continue
@@ -2644,7 +2659,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	}
 	if vm.isSObjectLikeType(current.Type) && vm.sObjectParentRelationshipField(current.Type, fieldName) {
 		vm.markCollectionRefsEscaped(value)
-		setExplicitSObjectField(&current, fieldName, value)
+		vm.setExplicitSObjectFieldValue(&current, fieldName, value)
 		markSetSObjectField(&current, fieldName)
 		markUserSetSObjectField(&current, fieldName)
 		markQueriedSObjectField(&current, fieldName)
@@ -2656,7 +2671,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			relationshipName := vm.parentRelationshipNameForReferenceField(definition, fieldDef)
 			if relationshipName != "" {
 				vm.markCollectionRefsEscaped(value)
-				setExplicitSObjectField(&current, relationshipName, value)
+				vm.setExplicitSObjectFieldValue(&current, relationshipName, value)
 				markSetSObjectField(&current, relationshipName)
 				markUserSetSObjectField(&current, relationshipName)
 				markQueriedSObjectField(&current, relationshipName)
@@ -2693,7 +2708,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			if vm.activeSetters[key] > 0 {
 				if vm.isSObjectLikeType(current.Type) {
 					vm.markCollectionRefsEscaped(value)
-					setExplicitSObjectField(&current, actualName, value)
+					vm.setExplicitSObjectFieldValue(&current, actualName, value)
 					markSetSObjectField(&current, actualName)
 					markUserSetSObjectField(&current, actualName)
 					markQueriedSObjectField(&current, actualName)
@@ -2723,7 +2738,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		}
 		if vm.isSObjectLikeType(current.Type) {
 			vm.markCollectionRefsEscaped(value)
-			setExplicitSObjectField(&current, actualName, value)
+			vm.setExplicitSObjectFieldValue(&current, actualName, value)
 			markSetSObjectField(&current, actualName)
 			markUserSetSObjectField(&current, actualName)
 			markQueriedSObjectField(&current, actualName)
@@ -2742,11 +2757,8 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		if err != nil {
 			return fmt.Errorf("%s.%s: %w", current.Type, fieldName, err)
 		}
-		if current.Fields == nil {
-			current.Fields = make(map[string]Value)
-		}
 		vm.markCollectionRefsEscaped(coerced)
-		current.Fields[actualName] = coerced
+		vm.setGraphFieldValue(&current, actualName, coerced)
 		syncDatabaseOptionAliasField(&current, actualName, coerced)
 		propagate(current)
 		return nil
@@ -2765,7 +2777,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		}
 	}
 	vm.markCollectionRefsEscaped(value)
-	setExplicitSObjectField(&current, resolvedField, value)
+	vm.setExplicitSObjectFieldValue(&current, resolvedField, value)
 	markSetSObjectField(&current, resolvedField)
 	markUserSetSObjectField(&current, resolvedField)
 	markQueriedSObjectField(&current, resolvedField)

@@ -97,9 +97,10 @@ type semaTypeMemberState struct {
 }
 
 type semaTypeMemberView struct {
-	state    *semaTypeMemberState
-	current  map[string]typeMembers
-	hydrated map[string]typeMembers
+	state     *semaTypeMemberState
+	current   map[string]typeMembers
+	hydrated  map[string]typeMembers
+	canonical *semaCanonicalNames
 }
 
 func newSemaTypeMemberState(base *semaTypeMemberModel) *semaTypeMemberState {
@@ -115,8 +116,9 @@ func newSemaTypeMemberStateWithPlatform(base, platform *semaTypeMemberModel) *se
 
 func (s *semaTypeMemberState) view() *semaTypeMemberView {
 	return &semaTypeMemberView{
-		state:    s,
-		hydrated: make(map[string]typeMembers),
+		state:     s,
+		hydrated:  make(map[string]typeMembers),
+		canonical: newSemaCanonicalNames(semaAnalysisCanonicalNameLimit),
 	}
 }
 
@@ -148,6 +150,17 @@ func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
 func (v *semaTypeMemberView) get(key string) typeMembers {
 	members, _ := v.lookup(key)
 	return members
+}
+
+func (v *semaTypeMemberView) lookupName(name string) (typeMembers, bool) {
+	return v.lookup(v.canonicalName(name))
+}
+
+func (v *semaTypeMemberView) canonicalName(name string) string {
+	if v == nil || v.canonical == nil {
+		return normalizeName(name)
+	}
+	return v.canonical.canonical(name)
 }
 
 func (v *semaTypeMemberView) storeHydrated(key string, members typeMembers) {
@@ -2283,18 +2296,18 @@ func resolveNestedTypeName(model *semaTypeMemberView, owner, typeName string) st
 	if strings.Contains(typeName, ".") {
 		if owner != "" {
 			candidate := owner + "." + typeName
-			if _, ok := model.lookup(normalizeName(candidate)); ok {
+			if _, ok := model.lookupName(candidate); ok {
 				return candidate
 			}
 		}
 		ownerParts := strings.Split(owner, ".")
 		for i := len(ownerParts) - 1; i > 0; i-- {
 			candidate := strings.Join(append(append([]string{}, ownerParts[:i]...), typeName), ".")
-			if _, ok := model.lookup(normalizeName(candidate)); ok {
+			if _, ok := model.lookupName(candidate); ok {
 				return candidate
 			}
 		}
-		if _, ok := model.lookup(normalizeName(typeName)); ok {
+		if _, ok := model.lookupName(typeName); ok {
 			return typeName
 		}
 		return semaCanonicalPlatformAlias(typeName)
@@ -2304,26 +2317,26 @@ func resolveNestedTypeName(model *semaTypeMemberView, owner, typeName string) st
 		return typeName
 	}
 	if semaIsCustomAPIName(typeName) {
-		if _, ok := model.lookup(normalizeName(typeName)); ok {
+		if _, ok := model.lookupName(typeName); ok {
 			return typeName
 		}
 	}
 	if namespace := semaOwnerTypeNamespace(model, owner); namespace != "" {
 		if namespaced, ok := semaProjectNamespacedAPIName(namespace, typeName); ok {
-			if _, exists := model.lookup(normalizeName(namespaced)); exists {
+			if _, exists := model.lookupName(namespaced); exists {
 				return namespaced
 			}
 		}
 	}
 	if owner != "" {
 		candidate := owner + "." + typeName
-		if _, ok := model.lookup(normalizeName(candidate)); ok {
+		if _, ok := model.lookupName(candidate); ok {
 			return candidate
 		}
 	}
 	for i := len(ownerParts) - 1; i > 0; i-- {
 		candidate := strings.Join(append(append([]string{}, ownerParts[:i]...), typeName), ".")
-		if _, ok := model.lookup(normalizeName(candidate)); ok {
+		if _, ok := model.lookupName(candidate); ok {
 			return candidate
 		}
 	}
@@ -2342,7 +2355,7 @@ func resolveNestedTypeName(model *semaTypeMemberView, owner, typeName string) st
 func resolveNestedTypeNameFromSuperclasses(model *semaTypeMemberView, owner, typeName string) string {
 	seen := make(map[string]bool)
 	for current := owner; current != ""; {
-		key := normalizeName(current)
+		key := model.canonicalName(current)
 		if key == "" || seen[key] {
 			break
 		}
@@ -2352,7 +2365,7 @@ func resolveNestedTypeNameFromSuperclasses(model *semaTypeMemberView, owner, typ
 			break
 		}
 		candidate := members.superClass + "." + typeName
-		if _, ok := model.lookup(normalizeName(candidate)); ok {
+		if _, ok := model.lookupName(candidate); ok {
 			return candidate
 		}
 		current = members.superClass

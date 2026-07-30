@@ -193,13 +193,21 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 			return Null, err
 		}
 	}
-	records, _, recordsErr := vm.recordsFromValue(args[0])
-	if recordsErr != nil {
-		return Null, recordsErr
+	var traceRecords []storage.Record
+	if traceIsEnabled(result) {
+		var recordsErr error
+		traceRecords, _, recordsErr = vm.recordsFromValueForTrace(args[0])
+		if recordsErr != nil {
+			return Null, recordsErr
+		}
+	} else if vm.Org == nil {
+		if _, _, recordsErr := vm.recordsFromValue(args[0]); recordsErr != nil {
+			return Null, recordsErr
+		}
 	}
 	results, err := vm.applyDML(op, args[0], allOrNone, externalIDField, dmlOptions, result)
 	appendDurationTraceLazy(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), func() map[string]any {
-		return vm.traceDMLArgs(op, records, len(records))
+		return vm.traceDMLArgs(op, traceRecords, len(traceRecords))
 	})
 	if err != nil {
 		return Null, err
@@ -724,7 +732,7 @@ func (vm *VM) treeSaveOne(root Value, result *Result) (Value, error) {
 				return Null, err
 			}
 			if _, _, ok := objectFieldValue(child, group.lookupField); !ok {
-				setExplicitSObjectField(&child, group.lookupField, platformScalar("Id", string(parentID)))
+				vm.setExplicitSObjectFieldValue(&child, group.lookupField, platformScalar("Id", string(parentID)))
 			}
 			childOperation := "insert"
 			if id := sObjectIDFromFields(child.Fields); id != "" {
@@ -4795,9 +4803,17 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result
 	if err != nil {
 		return err
 	}
-	records, _, recordsErr := vm.recordsFromValue(value)
-	if recordsErr != nil {
-		return recordsErr
+	var traceRecords []storage.Record
+	if traceIsEnabled(result) {
+		var recordsErr error
+		traceRecords, _, recordsErr = vm.recordsFromValueForTrace(value)
+		if recordsErr != nil {
+			return recordsErr
+		}
+	} else if vm.Org == nil {
+		if _, _, recordsErr := vm.recordsFromValue(value); recordsErr != nil {
+			return recordsErr
+		}
 	}
 	traceStart, traceStartedAt = traceSpanStart(result)
 	results, err := vm.applyDML(op, value, true, externalIDField, dml.Options{}, result)
@@ -4805,7 +4821,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result
 		return err
 	}
 	appendDurationTraceLazy(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), func() map[string]any {
-		return vm.traceDMLArgs(op, records, len(records))
+		return vm.traceDMLArgs(op, traceRecords, len(traceRecords))
 	})
 	for _, dmlResult := range results {
 		if !dmlResult.Success {
@@ -4847,6 +4863,16 @@ func maxOrgIDSequences(left, right map[string]uint64) map[string]uint64 {
 	return out
 }
 func (vm *VM) recordsFromValue(value Value) ([]storage.Record, []*Value, error) {
+	vm.recordDMLRecordConversion(false)
+	return vm.recordsFromValueUnchecked(value)
+}
+
+func (vm *VM) recordsFromValueForTrace(value Value) ([]storage.Record, []*Value, error) {
+	vm.recordDMLRecordConversion(true)
+	return vm.recordsFromValueUnchecked(value)
+}
+
+func (vm *VM) recordsFromValueUnchecked(value Value) ([]storage.Record, []*Value, error) {
 	if value.Kind == ValueList {
 		records := make([]storage.Record, 0, len(value.List))
 		targets := make([]*Value, 0, len(value.List))

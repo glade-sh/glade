@@ -3,6 +3,9 @@ package typesys
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -66,8 +69,18 @@ func (s WorkspaceSource) Metadata() SourceMetadata {
 // BuildArtifacts contains reusable artifacts produced while building a type
 // index. Consumers should treat the contained source arena as read-only.
 type BuildArtifacts struct {
-	Sources       *WorkspaceSources
-	SourceDigests *SourceDigestSet
+	Sources            *WorkspaceSources
+	SourceDigests      *SourceDigestSet
+	ApexMetadataInputs map[string]ApexMetadataInput
+}
+
+// ApexMetadataInput records the presence and raw digest of the companion
+// metadata file that determined an Apex source's effective API version.
+// Present=false is meaningful: adding a sidecar after the build changes the
+// generation just as editing one does.
+type ApexMetadataInput struct {
+	Present bool
+	Digest  [sha256.Size]byte
 }
 
 // SourceDigestSet is an immutable, compact snapshot of the exact raw source
@@ -76,6 +89,255 @@ type SourceDigestSet struct {
 	physical  map[string][sha256.Size]byte
 	requested map[string]string
 	absolute  map[string]string
+}
+
+// SourceSnapshotMismatchError reports that a source generation changed after
+// an index captured its source and companion metadata inputs.
+type SourceSnapshotMismatchError struct {
+	File           string
+	ExpectedSHA256 string
+	ActualSHA256   string
+	Cause          error
+}
+
+func (e *SourceSnapshotMismatchError) Error() string {
+	if e == nil {
+		return "source snapshot mismatch"
+	}
+	message := fmt.Sprintf("source snapshot mismatch for %s: expected sha256 %s", e.File, e.ExpectedSHA256)
+	if e.ActualSHA256 != "" {
+		return message + ", got " + e.ActualSHA256
+	}
+	if e.Cause != nil {
+		return message + ": " + e.Cause.Error()
+	}
+	return message
+}
+
+func (e *SourceSnapshotMismatchError) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.Cause
+}
+
+// ValidateBuildGeneration proves that every source and Apex metadata input
+// retained in artifacts still matches the physical project before a consumer
+// uses the index for semantic analysis or cache publication.
+func ValidateBuildGeneration(index Index, artifacts *BuildArtifacts) error {
+	if artifacts == nil {
+		return incompleteSourceSnapshotError("build artifacts are missing")
+	}
+	if artifacts.Sources == nil {
+		return incompleteSourceSnapshotError("build artifacts are missing sources")
+	}
+	if artifacts.SourceDigests == nil {
+		return incompleteSourceSnapshotError("build artifacts are missing digests")
+	}
+	if artifacts.ApexMetadataInputs == nil {
+		return incompleteSourceSnapshotError("build artifacts are missing Apex metadata inputs")
+	}
+	seen := make(map[sourceOccurrenceKey]bool)
+	validateType := func(typ TypeSymbol) error {
+		if !typ.HasSourceSnapshot() {
+			return nil
+		}
+		metadata := SourceMetadata{RequestedPath: typ.File, Root: typ.SourceRoot, Namespace: typ.Namespace, Version: typ.Version, Dependency: typ.Dependency, NamespaceRemaps: typ.SourceNamespaceRemaps}
+		key := sourceOccurrenceKeyForMetadata(metadata)
+		if seen[key] {
+			return nil
+		}
+		seen[key] = true
+		source, ok := artifacts.SourceForType(typ)
+		if !ok {
+			return incompleteSourceSnapshotError("missing type source " + typ.File)
+		}
+		if err := validateSourceDigest(typ.File, source.Digest(), artifacts.SourceDigests); err != nil {
+			return err
+		}
+		input, ok := artifacts.ApexMetadataForType(typ)
+		if !ok {
+			return incompleteSourceSnapshotError("missing Apex metadata input " + typ.File + "-meta.xml")
+		}
+		return validateLiveSourceAndMetadata(typ.File, source.Digest(), input)
+	}
+	for _, typ := range index.Types {
+		if err := validateType(typ); err != nil {
+			return err
+		}
+	}
+	for _, trigger := range index.Triggers {
+		if !trigger.HasSourceSnapshot() {
+			continue
+		}
+		typ := TypeSymbol{File: trigger.File, SourceRoot: trigger.SourceRoot, Namespace: trigger.Namespace, Version: trigger.Version, Dependency: trigger.Dependency, SourceNamespaceRemaps: trigger.SourceNamespaceRemaps, SourceBacked: true}
+		if err := validateType(typ); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// RefreshBuildArtifacts builds a new immutable source arena for index. It
+// reuses an earlier source only when the full logical occurrence, physical
+// alias, and raw digest still match index. Every other occurrence is read
+// again, so callers never pair an incremental index with a stale source view.
+func RefreshBuildArtifacts(index Index, previous *BuildArtifacts) (BuildArtifacts, error) {
+	if index.sourceDigests == nil || index.apexMetadataInputs == nil {
+		return BuildArtifacts{}, incompleteSourceSnapshotError("index generation is incomplete")
+	}
+	artifacts := BuildArtifacts{Sources: NewWorkspaceSources()}
+	seen := make(map[sourceOccurrenceKey]bool)
+	refresh := func(metadata SourceMetadata) error {
+		key := sourceOccurrenceKeyForMetadata(metadata)
+		if seen[key] {
+			return nil
+		}
+		seen[key] = true
+		input, ok := index.apexMetadataInputs[key]
+		if !ok {
+			return incompleteSourceSnapshotError("missing Apex metadata input " + metadata.RequestedPath + "-meta.xml")
+		}
+		expected, ok := index.sourceDigests.Digest(metadata.RequestedPath)
+		if !ok {
+			return incompleteSourceSnapshotError("missing digest for " + metadata.RequestedPath)
+		}
+		currentPhysicalPath := canonicalPhysicalPath(metadata.RequestedPath)
+		if previous != nil && previous.Sources != nil {
+			if source, ok := previous.Sources.sourceForMetadata(metadata); ok && source.Digest() == expected && source.metadata.PhysicalPath == index.sourceDigests.requested[metadata.RequestedPath] && source.metadata.PhysicalPath == currentPhysicalPath {
+				artifacts.Sources.adopt(source, input)
+				return nil
+			}
+		}
+		source, err := artifacts.Sources.load(metadata)
+		if err != nil {
+			return err
+		}
+		if source.Digest() != expected {
+			actual := source.Digest()
+			return sourceSnapshotMismatch(metadata.RequestedPath, expected, &actual, errors.New("source changed after index capture"))
+		}
+		artifacts.Sources.record(source)
+		artifacts.Sources.recordApexMetadata(source, input)
+		return nil
+	}
+	for _, typ := range index.Types {
+		if !typ.HasSourceSnapshot() {
+			continue
+		}
+		if err := refresh(SourceMetadata{RequestedPath: typ.File, Root: typ.SourceRoot, Namespace: typ.Namespace, Version: typ.Version, Dependency: typ.Dependency, NamespaceRemaps: typ.SourceNamespaceRemaps}); err != nil {
+			return BuildArtifacts{}, err
+		}
+	}
+	for _, trigger := range index.Triggers {
+		if !trigger.HasSourceSnapshot() {
+			continue
+		}
+		if err := refresh(SourceMetadata{RequestedPath: trigger.File, Root: trigger.SourceRoot, Namespace: trigger.Namespace, Version: trigger.Version, Dependency: trigger.Dependency, NamespaceRemaps: trigger.SourceNamespaceRemaps}); err != nil {
+			return BuildArtifacts{}, err
+		}
+	}
+	artifacts.SourceDigests = artifacts.Sources.sourceDigestSet()
+	artifacts.ApexMetadataInputs = capturedApexMetadataInputs(index, artifacts.Sources)
+	if err := ValidateBuildGeneration(index, &artifacts); err != nil {
+		return BuildArtifacts{}, err
+	}
+	return artifacts, nil
+}
+
+// ValidateSourceGeneration validates an index against an explicit digest set.
+// A nil digest set is the documented legacy live-read mode. Any nonnil set
+// must contain every source-backed occurrence in index.
+func ValidateSourceGeneration(index Index, digests *SourceDigestSet) error {
+	if digests == nil {
+		return nil
+	}
+	seen := make(map[sourceOccurrenceKey]bool)
+	validate := func(typ TypeSymbol) error {
+		if !typ.HasSourceSnapshot() {
+			return nil
+		}
+		metadata := SourceMetadata{RequestedPath: typ.File, Root: typ.SourceRoot, Namespace: typ.Namespace, Version: typ.Version, Dependency: typ.Dependency, NamespaceRemaps: typ.SourceNamespaceRemaps}
+		key := sourceOccurrenceKeyForMetadata(metadata)
+		if seen[key] {
+			return nil
+		}
+		seen[key] = true
+		expected, ok := digests.Digest(typ.File)
+		if !ok {
+			return incompleteSourceSnapshotError("missing digest for " + typ.File)
+		}
+		input, ok := index.ApexMetadataForType(typ)
+		if !ok {
+			return incompleteSourceSnapshotError("missing Apex metadata input " + typ.File + "-meta.xml")
+		}
+		return validateLiveSourceAndMetadata(typ.File, expected, input)
+	}
+	for _, typ := range index.Types {
+		if err := validate(typ); err != nil {
+			return err
+		}
+	}
+	for _, trigger := range index.Triggers {
+		if !trigger.HasSourceSnapshot() {
+			continue
+		}
+		typ := TypeSymbol{File: trigger.File, SourceRoot: trigger.SourceRoot, Namespace: trigger.Namespace, Version: trigger.Version, Dependency: trigger.Dependency, SourceNamespaceRemaps: trigger.SourceNamespaceRemaps, SourceBacked: true}
+		if err := validate(typ); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateSourceDigest(file string, actual [sha256.Size]byte, digests *SourceDigestSet) error {
+	expected, ok := digests.Digest(file)
+	if !ok {
+		return incompleteSourceSnapshotError("missing digest for " + file)
+	}
+	if expected == actual {
+		return nil
+	}
+	return sourceSnapshotMismatch(file, expected, &actual, errors.New("source snapshot digest does not match its captured source"))
+}
+
+func validateLiveSourceAndMetadata(file string, expected [sha256.Size]byte, metadata ApexMetadataInput) error {
+	data, err := os.ReadFile(file) // #nosec G304 -- file is bound to an immutable source occurrence.
+	if err != nil {
+		return sourceSnapshotMismatch(file, expected, nil, err)
+	}
+	actual := sha256.Sum256(data)
+	if actual != expected {
+		return sourceSnapshotMismatch(file, expected, &actual, nil)
+	}
+	return validateApexMetadataGeneration(file+"-meta.xml", metadata)
+}
+
+func validateApexMetadataGeneration(path string, expected ApexMetadataInput) error {
+	data, err := os.ReadFile(path) // #nosec G304 -- fixed sidecar of an indexed Apex source.
+	if err != nil {
+		if os.IsNotExist(err) && !expected.Present {
+			return nil
+		}
+		return sourceSnapshotMismatch(path, expected.Digest, nil, err)
+	}
+	actual := sha256.Sum256(data)
+	if !expected.Present || actual != expected.Digest {
+		return sourceSnapshotMismatch(path, expected.Digest, &actual, nil)
+	}
+	return nil
+}
+
+func sourceSnapshotMismatch(file string, expected [sha256.Size]byte, actual *[sha256.Size]byte, cause error) error {
+	mismatch := &SourceSnapshotMismatchError{File: file, ExpectedSHA256: hex.EncodeToString(expected[:]), Cause: cause}
+	if actual != nil {
+		mismatch.ActualSHA256 = hex.EncodeToString(actual[:])
+	}
+	return mismatch
+}
+
+func incompleteSourceSnapshotError(reason string) error {
+	return &SourceSnapshotMismatchError{File: "build artifacts", Cause: errors.New("source snapshot is incomplete: " + reason)}
 }
 
 // Digest returns the raw-byte SHA-256 digest captured for path. Lookup uses
@@ -220,6 +482,30 @@ func (a BuildArtifacts) SourceForTrigger(trigger TriggerSymbol) (WorkspaceSource
 	})
 }
 
+// ApexMetadataForType returns the exact companion metadata identity captured
+// with typ's logical source occurrence.
+func (a BuildArtifacts) ApexMetadataForType(typ TypeSymbol) (ApexMetadataInput, bool) {
+	if a.Sources == nil {
+		return ApexMetadataInput{}, false
+	}
+	return a.Sources.apexMetadataForMetadata(SourceMetadata{
+		RequestedPath: typ.File, Root: typ.SourceRoot, Namespace: typ.Namespace,
+		Version: typ.Version, Dependency: typ.Dependency, NamespaceRemaps: typ.SourceNamespaceRemaps,
+	})
+}
+
+// ApexMetadataForTrigger returns the exact companion metadata identity
+// captured with trigger's logical source occurrence.
+func (a BuildArtifacts) ApexMetadataForTrigger(trigger TriggerSymbol) (ApexMetadataInput, bool) {
+	if a.Sources == nil {
+		return ApexMetadataInput{}, false
+	}
+	return a.Sources.apexMetadataForMetadata(SourceMetadata{
+		RequestedPath: trigger.File, Root: trigger.SourceRoot, Namespace: trigger.Namespace,
+		Version: trigger.Version, Dependency: trigger.Dependency, NamespaceRemaps: trigger.SourceNamespaceRemaps,
+	})
+}
+
 // WorkspaceSourceStats reports source-arena work for one index build.
 type WorkspaceSourceStats struct {
 	PhysicalReadAttempts uint64
@@ -236,6 +522,7 @@ type WorkspaceSources struct {
 	physical             map[string]*physicalSource
 	logical              map[logicalSourceKey]*logicalSource
 	occurrence           map[sourceOccurrenceKey]WorkspaceSource
+	apexMetadata         map[sourceOccurrenceKey]ApexMetadataInput
 	all                  []WorkspaceSource
 	physicalReadAttempts uint64
 }
@@ -272,11 +559,47 @@ func newWorkspaceSources(readFile func(string) ([]byte, error)) *WorkspaceSource
 		readFile = os.ReadFile
 	}
 	return &WorkspaceSources{
-		readFile:   readFile,
-		physical:   make(map[string]*physicalSource),
-		logical:    make(map[logicalSourceKey]*logicalSource),
-		occurrence: make(map[sourceOccurrenceKey]WorkspaceSource),
+		readFile:     readFile,
+		physical:     make(map[string]*physicalSource),
+		logical:      make(map[logicalSourceKey]*logicalSource),
+		occurrence:   make(map[sourceOccurrenceKey]WorkspaceSource),
+		apexMetadata: make(map[sourceOccurrenceKey]ApexMetadataInput),
 	}
+}
+
+func (s *WorkspaceSources) recordApexMetadata(source WorkspaceSource, input ApexMetadataInput) {
+	if s == nil {
+		return
+	}
+	s.mu.Lock()
+	if s.apexMetadata == nil {
+		s.apexMetadata = make(map[sourceOccurrenceKey]ApexMetadataInput)
+	}
+	s.apexMetadata[sourceOccurrenceKeyForMetadata(source.metadata)] = input
+	s.mu.Unlock()
+}
+
+func (s *WorkspaceSources) apexMetadataForMetadata(metadata SourceMetadata) (ApexMetadataInput, bool) {
+	if s == nil {
+		return ApexMetadataInput{}, false
+	}
+	s.mu.Lock()
+	input, ok := s.apexMetadata[sourceOccurrenceKeyForMetadata(metadata)]
+	s.mu.Unlock()
+	return input, ok
+}
+
+func (s *WorkspaceSources) apexMetadataInputSet() map[sourceOccurrenceKey]ApexMetadataInput {
+	if s == nil {
+		return nil
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make(map[sourceOccurrenceKey]ApexMetadataInput, len(s.apexMetadata))
+	for key, value := range s.apexMetadata {
+		out[key] = value
+	}
+	return out
 }
 
 // NewWorkspaceSources creates an empty source arena backed by os.ReadFile.
@@ -346,6 +669,40 @@ func (s *WorkspaceSources) record(source WorkspaceSource) {
 	s.all = append(s.all, source)
 	s.occurrence[sourceOccurrenceKeyForMetadata(source.metadata)] = source
 	s.mu.Unlock()
+}
+
+// adopt records a previously captured immutable logical source in this fresh
+// arena without reading the physical file again. Callers must have proved the
+// occurrence and digest match their target generation.
+func (s *WorkspaceSources) adopt(source WorkspaceSource, input ApexMetadataInput) {
+	if s == nil {
+		return
+	}
+	physicalPath := source.metadata.PhysicalPath
+	if physicalPath == "" {
+		physicalPath = canonicalPhysicalPath(source.metadata.RequestedPath)
+	}
+	logicalKey := logicalSourceKey{
+		physicalPath:     physicalPath,
+		namespace:        source.metadata.Namespace,
+		remapFingerprint: sourceRemapFingerprint(source.metadata.NamespaceRemaps),
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.physical[physicalPath]; !ok {
+		ready := make(chan struct{})
+		close(ready)
+		s.physical[physicalPath] = &physicalSource{ready: ready, raw: source.raw, digest: source.digest}
+	}
+	if _, ok := s.logical[logicalKey]; !ok {
+		ready := make(chan struct{})
+		close(ready)
+		s.logical[logicalKey] = &logicalSource{ready: ready, normalized: source.normalized}
+	}
+	key := sourceOccurrenceKeyForMetadata(source.metadata)
+	s.occurrence[key] = source
+	s.apexMetadata[key] = input
+	s.all = append(s.all, source)
 }
 
 func (s *WorkspaceSources) sourceForMetadata(metadata SourceMetadata) (WorkspaceSource, bool) {

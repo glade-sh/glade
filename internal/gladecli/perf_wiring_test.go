@@ -400,12 +400,12 @@ func TestRunTestPerfJSONPreservesLegacyShapeAndDerivesDurationsFromPhases(t *tes
 	if got := int64(requireJSONNumber(t, perf, "discoverMs")); got != discoverMS {
 		t.Fatalf("discoverMs = %d, want discoverNs/1ms = %d", got, discoverMS)
 	}
-	compileNS := int64(requireJSONNumber(t, phases, "projectCompileNs")) + int64(requireJSONNumber(t, phases, "testCompileNs"))
+	compileNS := int64(requireJSONNumber(t, phases, "semanticGateNs")) + int64(requireJSONNumber(t, phases, "projectCompileNs")) + int64(requireJSONNumber(t, phases, "testCompileNs"))
 	if got, want := int64(requireJSONNumber(t, perf, "compileMs")), compileNS/int64(time.Millisecond); got != want {
 		t.Fatalf("compileMs = %d, want (projectCompileNs+testCompileNs)/1ms = %d", got, want)
 	}
 	startupPhaseKeys := []string{
-		"projectLoadNs", "schemaLoadNs", "indexBuildNs", "discoverNs", "runtimeKeyNs",
+		"projectLoadNs", "schemaLoadNs", "indexBuildNs", "discoverNs", "semanticKeyNs", "semanticGateNs", "runtimeKeyNs",
 		"cacheValidateNs", "cacheDecodeNs", "cacheEncodeNs", "orgBuildNs", "projectCompileNs", "testCompileNs",
 	}
 	var startupNS int64

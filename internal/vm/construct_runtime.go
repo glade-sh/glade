@@ -330,7 +330,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			delete(object.Fields, sobjectExplicitFieldsField)
 			for field, value := range namedArgs {
 				if isSObjectCtor {
-					setExplicitSObjectField(&object, field, value)
+					vm.setExplicitSObjectFieldValue(&object, field, value)
 				} else {
 					object.Fields[field] = value
 				}
@@ -378,7 +378,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			delete(object.Fields, sobjectExplicitFieldsField)
 			for field, value := range namedArgs {
 				if isSObjectCtor {
-					setExplicitSObjectField(&object, field, value)
+					vm.setExplicitSObjectFieldValue(&object, field, value)
 				} else {
 					object.Fields[field] = value
 				}
@@ -1021,7 +1021,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		if explicitField {
 			value = coerceSObjectFieldRuntimeValue(value, definition.Fields[field])
-			setExplicitSObjectField(&object, field, value)
+			vm.setExplicitSObjectFieldValue(&object, field, value)
 		} else {
 			object.Fields[field] = value
 		}
