@@ -47,12 +47,12 @@ Start the LWC dev shell from a Salesforce-shaped project:
 glade dev lwc --project . --open
 ```
 
-The command opens the workbench at the printed base URL. `/lwc` opens the same
-workbench for stable links. It lists and filters available LWCs, lets you place
-components onto a draft page, and lists component, record page, app page, home
-page, tab, action, utility, Flow, and configured community routes discovered
+The command opens the Workbench Console at the printed base URL; `/lwc` is the
+stable link. Component Lab filters exposed LWCs and edits preview properties,
+page context, and form factor. Page Workbench groups component, record, app,
+home, tab, action, utility, Flow, and configured community routes discovered
 from LWC bundle metadata, FlexiPages, custom tabs, quick actions, and context
-presets.
+presets. `/lwc/builder` remains the draft page composer.
 Use a named context when a page needs record, app, tab, form-factor, or state
 values:
 
@@ -90,7 +90,7 @@ The startup output still prints raw routes for scripts and browser bookmarks:
 ```text
 LWC dev shell: http://127.0.0.1:8080
 Selected context accountRecord: http://127.0.0.1:8080/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page
-Routes:
+Routes: 12 available
   /lwc
   /lwc/preview/component/c/contextProbe
   /lwc/preview/cmp/c/actionProbe?c__name=value
@@ -99,10 +99,7 @@ Routes:
   /lwc/preview/home/Custom_Home
   /lwc/preview/tab/Lwc_Probe
   /lwc/preview/utility/Support_Utility
-  /lwc/preview/flow/Membership_Flow
-  /lwc/preview/action/Account/001000000000001AAA/Update_Status
-  /lwc/preview/action/global/Global_Status
-  /lwc/preview/community/Partner_Portal/Account
+  ... 4 routes omitted. Open /lwc for home or /lwc/builder for the page builder; use --ready-file or /lightning/local/context.json for the complete list.
 Watching ... for lwc, flexipage, tab, Visualforce, Apex, and static resource changes.
 ```
 
@@ -270,7 +267,24 @@ costs; they do not replace Salesforce validation. CPU and heap profiles capture
 the lifetime of the local command and may also profile daemon or watch mode;
 they are written when that command exits and cannot be used with `--connect`.
 `--perf-json` is for a local one-shot run and cannot be combined with daemon,
-watch, or connect modes.
+watch, watch-once, connect, wizard, last-failed, or shard-plan-only modes.
+
+Check performance JSON reports the project and semantic cache provenance.
+`semanticCache.source` records whether the exact result came from memory, disk,
+or build; related fields report waits, safe-miss reasons, retained bytes, and
+evictions. Check counters also cover physical source reads, reused logical
+views, allocations, and garbage collection.
+
+Test performance JSON adds an `execution` object with invocation arguments,
+requested and effective parallelism, method-parallel policy, `GOMAXPROCS`, disk
+cache policy, and execution mode. Its remaining counters cover cache phases
+and slow classes or methods. These versioned local artifacts contain project
+paths and, for tests, command arguments, so review them before sharing.
+
+`glade check` and the test semantic gate store exact results under
+`.glade/semantic/`. Use `glade check --no-cache` or test `--no-cache` to bypass
+semantic cache reads, writes, and memory reuse. Immutable source-generation
+validation still runs before any cached result is published or returned.
 
 ## Run a Performance Risk Scan
 
@@ -315,6 +329,34 @@ methods in the remaining classes. It never exceeds the requested parallelism.
 ```bash
 glade test --project . --parallelism 8 --json
 ```
+
+## Split and Balance Test Suites
+
+Use an exact class file when a wrapper already owns selection. It contains one
+class per line; blank lines and lines beginning with `#` are ignored:
+
+```bash
+glade test --project . --class-file test-classes.txt
+```
+
+Run one deterministic shard, or write balanced class lists for separate
+workers:
+
+```bash
+glade test --project . --shard-count 4 --shard-index 0
+glade test --project . \
+  --shard-count 4 \
+  --duration-history .glade/test-durations.json \
+  --write-class-shards reports/test-shards
+```
+
+An unfiltered, unsharded run maintains `.glade/test-durations.json`. Duration
+history balances later shards; the assignment is deterministic for the same
+selected classes, shard count, and history. `--write-class-shards` writes
+`shard-NNN.txt` files and exits without running tests. Use `--test-timeout 2m`
+to override the five-minute per-test default. On a memory-constrained host,
+`--gc-aggressive` reduces heap growth at the cost of more frequent garbage
+collection.
 
 ## Run Tests Affected By Local Changes
 
@@ -400,9 +442,17 @@ Editing a trigger instead falls back to the full suite:
 ### Startup cache and warm runs
 
 Large projects pay a startup cost to build local org state and compile project
-helpers before the first test runs. `glade test` can persist that harness in
-`.glade/test/startup.meta.json` plus a hashed `startup.payload.<sha256>.gob`
-and reload it on later runs when fingerprint checks pass.
+helpers before the first test runs. Eligible `glade test` modes can persist
+that harness in `.glade/test/startup.meta.json` plus a hashed
+`startup.payload.<sha256>.gob` and reload it when fingerprint checks pass.
+One-shot parallel-method runs with more than one effective worker deliberately
+bypass restored-runtime disk caching to protect isolation; `glade test
+--wizard` prints the effective policy.
+
+Semantic analysis is independent. `glade check` and `glade test` can reuse an
+exact result under `.glade/semantic/` from memory, disk, or build even when the
+restored-runtime payload is bypassed. Source, companion metadata, schema,
+dependencies, analyzer and platform ABIs, and options must all match.
 
 **Read [TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md) for the full rules** —
 what is cached, when it is written, how freshness works, and when a bad cache
@@ -415,13 +465,15 @@ Quick reference:
 | Run tests affected by changed files | `glade test changed --project . --since HEAD` |
 | Rerun the last failed tests | `glade test failed --project .` |
 | Pick the next loop command | `glade test --project . --wizard` |
-| Delete on-disk cache | `glade test clear-cache --project .` |
-| One run without disk cache | `glade test --project . --no-cache` |
+| Delete startup and semantic caches | `glade test clear-cache --project .` |
+| One run without startup or semantic cache reuse | `glade test --project . --no-cache` |
 | Fastest repeated CLI loops | `glade test serve --project .` (see below) |
 
-Clear the cache after `git pull`, branch switches, Glade upgrades, or whenever
-tests behave as if old project state is still loaded. Use `--no-cache` while
-debugging harness or org-inference issues.
+Clear the caches after `git pull`, branch switches, Glade upgrades, or whenever
+tests behave as if old project state is still loaded. `--no-cache` bypasses the
+startup and semantic caches, including semantic memory reuse, while debugging
+harness, org-inference, or analysis issues. A separately running test server
+keeps its own memory until stopped or restarted.
 
 For the fastest repeated loops, start a persistent test server in one terminal:
 

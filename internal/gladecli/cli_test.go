@@ -1788,7 +1788,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "test flag help",
 			args: []string{"test", "--help"},
-			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "--no-cache", "--connect", "--daemon", "--cpu-profile", "--mem-profile", "--perf-json"},
+			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "startup and semantic caches", "--no-cache", "Bypass startup and semantic caches", "--connect", "--daemon", "--debounce", "--watch-backend", "--gc-aggressive", "--cpu-profile", "--mem-profile", "--perf-json"},
 		},
 		{
 			name: "test serve help",
@@ -1803,7 +1803,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help check",
 			args: []string{"help", "check"},
-			want: []string{"Usage:", "glade check", "--project <root>", "--progress-json", "--cpu-profile", "--mem-profile", "--perf-json", "Examples:"},
+			want: []string{"Usage:", "glade check", "--project <root>", "--no-cache", "Bypass semantic disk and memory caching", "--progress-json", "--cpu-profile", "--mem-profile", "--perf-json", "Examples:"},
 		},
 		{
 			name: "schema subcommand help",

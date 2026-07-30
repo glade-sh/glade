@@ -46,12 +46,13 @@ glade dev lwc --project . --target record-page --object Account --record 0010000
 ## Expected output
 
 Glade prints a local URL and opens the Workbench Console when `--open` is set.
-The console shows route discovery, a preview canvas, editable context, debug
-panes for Apex, LDS, network calls, navigation/events, and runtime issues, and
-local data service behavior. Builder record pages search objects and records
-from the active local DB, while app and home page contexts stay record-free.
-Builder mobile preview uses the main canvas viewport control instead of a
-permanent side-by-side phone panel.
+Component Lab filters exposed LWCs, reads target metadata and `@api`
+properties, edits page context and preview properties, and switches form
+factors. Page Workbench groups discovered routes. The debug dock records
+Console, Apex, LDS Cache, Network, Events, Issues, and recent save or rebuild
+runs. Builder record pages search the active local DB, while app and home page
+contexts stay record-free. Startup prints at most eight routes; use a ready file
+or `/lightning/local/context.json` for the complete list.
 
 ## Common wrong turn
 

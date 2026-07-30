@@ -3,8 +3,9 @@
 `glade plugins lock` records exact plugin state for repeatable CI runs.
 
 ::: tip Default registry
-The default public registry serves the three first-party packages at `0.2.9`.
-Its URL is `https://plugins.glade.sh/index.json`.
+The default public registry serves the three first-party packages. Its URL is
+`https://plugins.glade.sh/index.json`; `glade plugins available` shows the
+current published versions.
 Direct archives and local links remain available for offline, private, and
 development use.
 :::

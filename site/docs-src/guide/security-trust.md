@@ -18,9 +18,9 @@ release assets.
 
 | Gate | What it checks |
 | --- | --- |
-| OpenSSF Scorecard | Repository posture; public badge after the repository is public. |
+| [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/glade-sh/glade) | Published repository-posture results. |
 | govulncheck | Reachable Go vulnerabilities in modules and the Go standard library. |
-| CodeQL | GitHub code scanning for Go with the security-extended query suite. The `go/allocation-size-overflow` query is excluded because it does not complete within the CI job limit on this codebase. |
+| CodeQL | GitHub code scanning for Go with the security-extended query suite. Pull-request and full-branch runs apply checked, context-specific exclusions for queries that do not complete within the job limit. |
 | gosec | Go source-pattern findings uploaded as SARIF. |
 | npm audit | High-severity production dependency findings in packaged JavaScript. |
 | Dependency Review | Pull requests that add vulnerable dependencies. |
@@ -45,13 +45,14 @@ CycloneDX attestation must verify before any platform asset is uploaded.
 Verify a downloaded archive:
 
 ```bash
-curl -L -o glade.tar.gz "$GLADE_RELEASE_URL"
+GLADE_ARCHIVE=glade_vX.Y.Z_linux_amd64.tar.gz
+curl -L -o "$GLADE_ARCHIVE" "$GLADE_RELEASE_URL"
 curl -L -o SHA256SUMS.txt "$GLADE_CHECKSUMS_URL"
-shasum -a 256 -c SHA256SUMS.txt
-gh attestation verify glade.tar.gz -R glade-sh/glade
-gh attestation verify glade.tar.gz -R glade-sh/glade \
+grep -F "  ./$GLADE_ARCHIVE" SHA256SUMS.txt | shasum -a 256 -c -
+gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
+gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
   --predicate-type https://cyclonedx.org/bom
-tar -xzf glade.tar.gz
+tar -xzf "$GLADE_ARCHIVE"
 ./glade doctor
 ```
 
@@ -72,7 +73,8 @@ project source to a hosted Glade service.
 
 ## Local storage
 
-Glade can write project state under `.glade/`, `glade.yml`, SQLite databases
+Glade can write project state under `.glade/`, including private local caches
+under `.glade/test/` and `.glade/semantic/`, plus `glade.yml`, SQLite databases
 named by `--db`, plugin files, editor integration files, and LWC toolchain data
 under the OS user data directory.
 

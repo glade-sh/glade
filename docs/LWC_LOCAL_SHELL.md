@@ -32,10 +32,12 @@ glade db seed --db .glade/envs/lwc-preview.sqlite --project . data/lwc-preview-d
 glade dev lwc --project . --db .glade/envs/lwc-preview.sqlite --open
 ```
 
-The printed base URL opens the LWC home page at `/`. The same home page is
-also available at `/lwc` for stable links. It groups formal tabs, app pages,
-record pages, direct components, utilities, flows, and community routes. Use
-`/lwc/builder` or the **Open builder** link when you want to compose a draft
+The printed base URL opens the Workbench Console at `/`; `/lwc` is the stable
+link. Component Lab filters exposed LWCs, reads target metadata and `@api`
+properties, edits preview properties and page context, and switches desktop,
+tablet, and phone form factors. Page Workbench groups formal tabs, app pages,
+record pages, direct components, utilities, flows, actions, and community
+routes. Use `/lwc/builder` or the **Open builder** link to compose a draft
 app, home, record, tab, URL-addressable, quick-action, or community page
 context. The builder lists and filters available LWCs, lets you drag or add
 target-compatible components into canvas regions, switches page layouts, keeps
@@ -55,9 +57,11 @@ Use `--port` for the common localhost shortcut when you want a fixed port:
 glade dev lwc --project . --port 8080 --open
 ```
 
-The ready file includes `url`, `selectedUrl`, `selectedContext`, and the route
-list. The startup banner lists the same routes and watches LWC, FlexiPage,
-custom tab, Visualforce, Apex, and static resource changes.
+The ready file includes `url`, `selectedUrl`, `selectedContext`, and the
+complete route list. The startup banner prints the route count and at most
+eight routes, then reports how many were omitted. Use the ready file or
+`/lightning/local/context.json` for the complete list. The server watches LWC,
+FlexiPage, custom tab, Visualforce, Apex, and static resource changes.
 
 The VS Code extension does not manage this server yet. Start, stop, and route
 selection stay in the terminal while this preview feature is still being
@@ -393,6 +397,14 @@ common local development loops:
   `@salesforce/site/Id`, and `@salesforce/site/activeLanguages` from the active
   local community context. Missing IDs export empty strings and report
   `GLADELWC102`.
+- `experience/cmsDeliveryApi` deterministic managed-content reads from the
+  active local community context. Hosted delivery, personalization, and cache
+  behavior remain Salesforce checks.
+- `experience/cmsEditorApi` and `experience/blockBuilderApi` local context and
+  selection reads. Mutations reject explicitly with `GLADELWC094` and
+  `GLADELWC093`.
+- `lightning/uiLearningPlatformApi` is an explicit hosted-only boundary.
+  Learning item and program calls reject with `GLADELWC095`.
 - `@salesforce/apexContinuation` as a simulated local continuation helper for
   Promise-shaped controller flows. Hosted servlet continuation scheduling stays
   Salesforce-only.
@@ -594,7 +606,7 @@ This is local development support, not a hosted Salesforce replacement.
 | LDS/UI API | Selected LDS/UI API shims use local schema and local records, including batch records, optional fields, batch object info, create-default field layouts, REST layout field sections, picklists, related-list rows, mutation refresh, and matching record-wire re-emits. Full UI API, profile layout assignment, non-field layout widgets, permissions, record edit flows, broad cross-adapter coalescing, and hosted validation parity are not complete. |
 | Apex controllers | Supported local Apex executes in the Glade VM. Unsupported Apex surfaces return diagnostics instead of calling Salesforce. |
 | Navigation | `CurrentPageReference`, `Navigate`, and `GenerateUrl` cover supported local page targets, including quick action, URL-addressable component, and configured community routes. Full router history, full console navigation, named app behavior, full Experience Cloud routing, and hosted URL generation remain limited. Console workspace APIs are approximated and marked with `GLADELWC072`. |
-| Experience Cloud | Community routes provide local site context, base path, IDs, guest flag, language, supported `comm__*` PageReferences, and a theme-layout boundary. Menus, managed content delivery, personalization, builder data sources, auth flows, and exact hosted Experience Cloud chrome remain Salesforce checks. |
+| Experience Cloud | Community routes provide local site context, base path, IDs, guest flag, language, supported `comm__*` PageReferences, a theme-layout boundary, and deterministic managed-content reads. Menus, hosted delivery and caching, personalization, builder mutations and data sources, auth flows, and exact hosted Experience Cloud chrome remain Salesforce checks. |
 | Visualforce Lightning Out | Shared runtime services can mount LWCs through Lightning Out pages. Exact hosted lifecycle timing and every Lightning Out edge remain outside the local contract. |
 
 Use Salesforce for live auth, hosted permissions, org-only services, exact

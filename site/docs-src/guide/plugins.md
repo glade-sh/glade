@@ -10,10 +10,10 @@ Glade plugins are standalone executables installed and run through
 
 ::: tip Default registry
 The default public registry at `https://plugins.glade.sh/index.json` serves
-`@glade/compat`, `@glade/orgpackage`, and `@glade/performance` at `0.2.9`.
-Base Glade install and local Apex workflows do not require plugins. Direct
-archives and local links remain available for offline, private, and development
-use.
+`@glade/compat`, `@glade/orgpackage`, and `@glade/performance`.
+`glade plugins available` shows the current published versions. Base Glade
+install and local Apex workflows do not require plugins. Direct archives and
+local links remain available for offline, private, and development use.
 :::
 
 ## First-party plugins

@@ -7,10 +7,23 @@ Use this runbook to cut and publish a Glade release with predictable output.
 From the repo root:
 
 ```bash
+npm ci --prefix site
+npm ci --prefix third_party/lwc
 scripts/release-check.sh
 ```
 
-If a command fails, stop and fix before tagging.
+Install both lockfile-pinned dependency sets before the long gate. The site
+proof needs the VitePress toolchain. LWC integration tests need the checked
+compiler/runtime toolchain; the release summary rejects their intentional
+dependency-missing skips instead of treating them as proof.
+
+The command runs `git diff --check`, the exact-once site release proof, the
+checked local Go release lanes, and product smoke tests. The site proof writes
+`site/.vitepress/release-check.json`. Go lanes default to serial execution for
+bounded memory use and write raw events plus a validated
+`package-summary.json` under `ci-artifacts/local-release/`. Package discovery
+or lane ownership drift fails closed. If a command fails, stop and fix before
+tagging.
 Run the first project check from [INSTALL.md](INSTALL.md) on one real SFDX
 project before tagging.
 When a release also ships first-party plugin archives, run the matching tools

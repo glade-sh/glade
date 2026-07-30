@@ -1286,6 +1286,9 @@ Usage:
   glade test daemon status|stop [--project <root>]
   glade test clear-cache [--project <root>]
 
+Cache control:
+  clear-cache removes the project-local startup and semantic caches.
+
 Common flags:
   --project <root>          Project root. Defaults to current directory.
   --filter <pattern>        Run matching test classes or methods.
@@ -1298,7 +1301,7 @@ Common flags:
   --write-class-shards <dir> Write class shard files and exit.
   --connect                 Require a running test server (see serve).
   --no-serve                Do not auto-connect to a running test server.
-  --no-cache                Skip the on-disk startup cache for this run.
+  --no-cache                Bypass startup and semantic caches for this run.
   --last-failed             Rerun tests that failed in the last completed run.
   --ui                      Open the TUI on the test board.
   --wizard                  Print daily test loop command suggestions.
@@ -1318,10 +1321,13 @@ Common flags:
   --watch-once              Run one watch cycle and exit.
   --changed-since <ref>     Select tests affected since a git ref.
   --since <ref>             Git ref for glade test changed (default HEAD).
+  --debounce <dur>          Watch debounce interval (default 500ms).
+  --watch-backend <mode>    Watch backend: auto, native, or poll.
   --parallel-methods        Run test methods in parallel (default).
   --no-parallel-methods     Force serial method execution within a class.
   --parallelism <n>         Worker count (default: GOMAXPROCS).
   --test-timeout <dur>      Per-test timeout (default 5m, e.g. 30s, 2m).
+  --gc-aggressive           Reduce heap growth on memory-constrained hosts.
   --limit-mode <mode>       Use strict or permissive governor limits.
 
 Serve flags:

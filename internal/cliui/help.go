@@ -218,7 +218,7 @@ var commandReferences = []CommandHelp{
 		Flags: append(projectProgressFlags("Write semantic result as JSON."),
 			FlagHelp{Name: "--format", Value: "<mode>", Description: "Output format: text, json, sarif, or github."},
 			FlagHelp{Name: "--output", Value: "<path>", Description: "Write the selected output format to a file."},
-			FlagHelp{Name: "--no-cache", Description: "Skip semantic cache reads and writes for this run."},
+			FlagHelp{Name: "--no-cache", Description: "Bypass semantic disk and memory caching for this run."},
 			FlagHelp{Name: "--cpu-profile", Value: "<path>", Description: "Write a CPU profile for this check run."},
 			FlagHelp{Name: "--mem-profile", Value: "<path>", Description: "Write a heap profile after this check run."},
 			FlagHelp{Name: "--perf-json", Value: "<path>", Description: "Write opt-in check performance counters as JSON."},
@@ -306,7 +306,7 @@ var commandReferences = []CommandHelp{
 			{Name: "failed", Description: "Rerun tests that failed in the last run."},
 			{Name: "serve", Description: "Keep the local test runtime warm over a socket."},
 			{Name: "daemon", Description: "Show or stop the persistent test server."},
-			{Name: "clear-cache", Description: "Remove the startup cache for a project."},
+			{Name: "clear-cache", Description: "Remove the startup and semantic caches for a project."},
 		},
 		Flags: []FlagHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
@@ -316,7 +316,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--class-file", Value: "<path>", Description: "Read exact test class names, one per line."},
 			{Name: "--connect", Description: "Require a running test server."},
 			{Name: "--no-serve", Description: "Do not auto-connect to a running test server."},
-			{Name: "--no-cache", Description: "Skip the on-disk startup cache."},
+			{Name: "--no-cache", Description: "Bypass startup and semantic caches for this run."},
 			{Name: "--last-failed", Description: "Rerun tests that failed in the last completed run."},
 			{Name: "--ui", Description: "Open the TUI on the test board."},
 			{Name: "--wizard", Description: "Print daily test loop command suggestions."},
@@ -1115,7 +1115,7 @@ Common flags:
   --filter <pattern>        Run matching test classes or methods.
   --connect                 Require a running test server (see serve).
   --no-serve                Do not auto-connect to a running test server.
-  --no-cache                Skip the on-disk startup cache for this run.
+  --no-cache                Bypass startup and semantic caches for this run.
   --last-failed             Rerun tests that failed in the last completed run.
   --ui                      Open the TUI on the test board.
   --wizard                  Print daily test loop command suggestions.
@@ -1142,8 +1142,9 @@ Common flags:
 Startup cache (.glade/test/startup.meta.json):
   Written after a cold harness build with a hashed startup.payload.<sha256>.gob.
   Loaded when file/config/package fingerprints still match. Does not store test
-  results. A stale cache can hide new code — use clear-cache after git pull or
-  Glade upgrades, and --no-cache to debug.
+  results. The exact semantic result cache lives separately under
+  .glade/semantic/. Use clear-cache after git pull or Glade upgrades, and
+  --no-cache to bypass both cache systems while debugging.
   See docs/TEST_STARTUP_CACHE.md for freshness rules and recovery.
 
 Examples:

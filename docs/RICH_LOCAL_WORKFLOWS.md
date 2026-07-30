@@ -33,8 +33,11 @@ glade test serve --project .
 glade test --project . --filter TrailAccessTest
 ```
 
-Use `--no-cache` when a run must neither read nor write the on-disk startup
-cache. A serial method run can use that cache without the persistent server.
+Semantic-result reuse is independent of the restored-runtime payload. Exact
+results under `.glade/semantic/` can still be reused while the runtime payload
+is bypassed. Use `--no-cache` when a run must bypass both the startup and
+semantic caches, including semantic memory reuse. A serial method run can use
+the startup cache without the persistent server.
 
 ## Terminal UI
 

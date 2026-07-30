@@ -11,7 +11,12 @@ Install the bundled extension from a Glade release:
 ```bash
 glade editor doctor vscode
 glade editor install vscode --force
+glade editor doctor vscode --editor cursor
+glade editor install vscode --editor windsurf --force
 ```
+
+Omit `--editor` for VS Code. Cursor and Windsurf use the same bundled VSIX
+through their own install targets.
 
 The VSIX lives in the release archive at
 `share/glade/editor/vscode-glade.vsix`. For extension development, package from
@@ -25,8 +30,8 @@ glade editor install vscode --force
 ```
 
 Open an SFDX project. The extension adds one `Glade` Activity Bar and a
-`Glade: Open Home` command. The sidebar includes Start Here, Local Runs, Data
-Environments, Local Org, Exec & SOQL, Debug, and Plugins views.
+`Glade: Open Home` command. The sidebar includes Start Here, Tests, Data
+Environments, Data Browser, Apex & SOQL, and optional Debug and Plugins views.
 
 Glade keeps a separate local workflow with `glade.*` command ids, a `Glade Apex`
 Test Explorer controller, and CodeLens labels that include `Local`. It does not
@@ -45,28 +50,30 @@ Open the Glade Activity Bar and start in **Start Here**.
 Use **Glade: Open Home** when you want the daily hub. The first tab groups run,
 data, debug, Salesforce, and ship actions. The state tab shows project root,
 active Glade org, active data environment, Salesforce target, tests, watch
-state, and plugin findings.
+state, and plugin reports.
 
 1. Confirm the SFDX root and active local data environment.
 2. Click **Run local proof** before pushing work to a scratch org.
-3. Use **Data Environments** to clone, seed, reset, inspect, and export local state.
-4. Use org-backed tools for deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
+3. Create or start the Glade org when you need the supported local Salesforce
+   API routes. It is separate from the active SQLite data environment.
+4. Use Glade Home to clone, seed, reset, inspect, and export local state.
+5. Use org-backed tools for deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
 
 Glade actions are local. Salesforce actions stay org-backed.
 
 ## Native VS Code Features
 
 Glade uses one Activity Bar item and one Status Bar item. The sidebar shows
-Start Here, Local Runs, Data Environments, Local Org, Exec & SOQL, Debug, and
-Plugins.
+Start Here, Tests, Data Environments, Data Browser, Apex & SOQL, and optional
+Debug and Plugins views.
 
 Local Apex tests appear in the native VS Code Testing view under `Glade Apex`.
 Glade does not add a second Apex Tests sidebar tree. Breakpoints stay in the
 normal editor gutter and debug state stays in VS Code Run and Debug.
 
 The Status Bar shows short local state, such as `Glade: dev`,
-`Glade: dev 18ms`, `Glade: dev no DB`, or `Glade: plugin 2 findings`.
-Details stay in the tooltip: project root, active DB, plugin finding counts,
+`Glade: dev 18ms`, `Glade: dev no DB`, or `Glade: plugin 2 reports`.
+Details stay in the tooltip: project root, active DB, plugin report counts,
 and last command. Click it to switch data, inspect local data, run local proof,
 manage plugins, or open output.
 
@@ -84,9 +91,12 @@ glade dev lwc --project . --open
 glade dev vf --project . --port 8080
 ```
 
-LWC routes use `/lwc/preview/...`. Visualforce routes use `/apex/<Page>`.
-Visualforce-backed LWC tab routes resolve through the LWC shell and then open
-the Visualforce page.
+The LWC Workbench Console has Component Lab for exposed components, editable
+properties, page context, and form factors, plus Page Workbench for discovered
+tab, app, home, record, Flow, action, utility, and community routes. Its debug
+dock records Console, Apex, LDS Cache, Network, Events, Issues, and recent save
+or rebuild runs. Raw routes use `/lwc/preview/...`; Visualforce routes use
+`/apex/<Page>`.
 
 ## Plugin actions and findings
 
@@ -96,8 +106,8 @@ The extension reads installed and linked plugins through:
 glade plugins list --json
 ```
 
-Installed plugins may declare editor actions for Start Here, Local Runs, Local
-Org, Debug, or Plugins views. Linked local plugins work the same way
+Installed plugins may declare editor actions for Start Here, Tests, Data
+Browser, Debug, or Plugins views. Linked local plugins work the same way
 after `glade plugins link --exec <plugin-executable>`.
 
 When a plugin action declares `output: "glade.findings.v1"`, the extension can
@@ -148,7 +158,8 @@ Execute anonymous Apex persists successful DML to the active environment:
 glade exec --project PROJECT_ROOT --db ACTIVE_DB --log-out reports/exec.log "insert new Account(Name='local');"
 ```
 
-The Local Org view can inspect, seed, reset, and export the active DB.
+Data Browser inspects the active DB. Glade Home carries seed, reset, export,
+and environment-management actions.
 
 ## Debug
 

@@ -37,13 +37,14 @@ CycloneDX attestation before uploading the platform assets. Use this path when a
 laptop policy needs pinned proof:
 
 ```bash
-curl -L -o glade.tar.gz "$GLADE_RELEASE_URL"
+GLADE_ARCHIVE=glade_vX.Y.Z_linux_amd64.tar.gz
+curl -L -o "$GLADE_ARCHIVE" "$GLADE_RELEASE_URL"
 curl -L -o SHA256SUMS.txt "$GLADE_CHECKSUMS_URL"
-shasum -a 256 -c SHA256SUMS.txt
-gh attestation verify glade.tar.gz -R glade-sh/glade
-gh attestation verify glade.tar.gz -R glade-sh/glade \
+grep -F "  ./$GLADE_ARCHIVE" SHA256SUMS.txt | shasum -a 256 -c -
+gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
+gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
   --predicate-type https://cyclonedx.org/bom
-tar -xzf glade.tar.gz
+tar -xzf "$GLADE_ARCHIVE"
 ./glade version
 ./glade doctor
 ```
@@ -75,11 +76,13 @@ path, check the editor install path and install the bundled extension:
 ```bash
 glade editor doctor vscode
 glade editor install vscode --force
+glade editor doctor vscode --editor cursor
+glade editor install vscode --editor windsurf --force
 ```
 
 Open an SFDX project in VS Code. The extension adds Glade Home, a Glade
 Activity Bar, native Test Explorer entries, local CodeLens actions, DAP debug
-launches, named local data environments, Exec & SOQL scratch buffers, and a
+launches, named local data environments, Apex & SOQL scratch buffers, and a
 Plugins view for linked and installed plugin actions. See [EDITOR.md](EDITOR.md).
 
 ## Shell Completion
@@ -226,8 +229,9 @@ Download the archive for your platform from the release artifacts, verify the
 checksum, and place the binary on your `PATH`.
 
 ```bash
-shasum -a 256 -c SHA256SUMS.txt
-tar -xzf glade_VERSION_linux_amd64.tar.gz
+GLADE_ARCHIVE=glade_vX.Y.Z_linux_amd64.tar.gz
+grep -F "  ./$GLADE_ARCHIVE" SHA256SUMS.txt | shasum -a 256 -c -
+tar -xzf "$GLADE_ARCHIVE"
 install -m 0755 glade ~/.local/bin/glade
 glade version
 ```
@@ -256,13 +260,14 @@ Use a release artifact:
 
 ```yaml
 - run: |
-    curl -L -o glade.tar.gz "$GLADE_RELEASE_URL"
+    GLADE_ARCHIVE=glade_vX.Y.Z_linux_amd64.tar.gz
+    curl -L -o "$GLADE_ARCHIVE" "$GLADE_RELEASE_URL"
     curl -L -o SHA256SUMS.txt "$GLADE_CHECKSUMS_URL"
-    shasum -a 256 -c SHA256SUMS.txt
-    gh attestation verify glade.tar.gz -R glade-sh/glade
-    gh attestation verify glade.tar.gz -R glade-sh/glade \
+    grep -F "  ./$GLADE_ARCHIVE" SHA256SUMS.txt | shasum -a 256 -c -
+    gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
+    gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
       --predicate-type https://cyclonedx.org/bom
-    tar -xzf glade.tar.gz
+    tar -xzf "$GLADE_ARCHIVE"
     install -m 0755 glade ~/.local/bin/glade
     glade version
     glade doctor

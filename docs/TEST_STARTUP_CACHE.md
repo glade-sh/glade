@@ -26,19 +26,24 @@ All test-runtime artifacts live under `.glade/test/` in the project root:
 
 | File | Purpose |
 | ---- | ------- |
-| `startup.meta.json` | Cache header with freshness manifest and payload hash |
+| `startup.meta.json` | Opaque binary header with freshness manifest, checksum, and payload hash |
 | `startup.payload.<sha256>.gob` | Gob-encoded org and compiled runtime payload |
 | `serve.sock` | Unix socket for `glade test serve` (when a server is running) |
 | `serve.pid` | PID file for the running test server |
+
+The header keeps the historical `.json` suffix for path compatibility, but it
+is a bounded, checksummed binary header. It is a private implementation
+artifact. Do not parse or edit it.
 
 `.glade/` is gitignored by default. Do not commit these files.
 
 `glade dap` uses a **separate** cache at `.glade/dap/startup.json`. Clearing or
 changing the test cache does not affect DAP.
 
-## Three warm layers
+## Warm runtime layers and semantic results
 
-Glade can keep state warm at three levels. They are related but independent.
+Glade can keep test runtime state warm at three levels. They are related but
+independent.
 
 1. **Disk cache (`startup.meta.json` plus payload)** — survives across CLI
    invocations and terminal restarts. Loaded on the next `glade test` when
@@ -50,6 +55,13 @@ Glade can keep state warm at three levels. They are related but independent.
 
 A fast run might use disk cache only. A faster loop uses `glade test serve`. The
 slowest path is a cold harness build with no disk hit.
+
+Semantic analysis has a separate exact-result cache under `.glade/semantic/`.
+Both `glade check` and the test semantic gate can reuse it from memory, disk, or
+build a new result. Reuse requires exact project source, companion metadata,
+schema, dependency, semantic ABI, platform ABI, and analysis-option identity.
+Mismatch, corruption, or an incomplete source generation cannot be accepted as
+current.
 
 ## When the disk cache is created
 
@@ -64,16 +76,20 @@ full cold harness build completes:
 Creation is skipped when:
 
 - `--no-cache` is set on the run.
+- A one-shot run uses parallel methods with more than one effective worker.
+  That mode deliberately bypasses restored-runtime disk caching to protect test
+  isolation. `glade test --wizard` prints the effective policy.
 - A fresh split cache was already loaded for this harness build (no rewrite on
   every run).
 
-The first test run on a large project is therefore slow: it pays the cold cost
-and writes the cache for later runs.
+The first eligible test run on a large project pays the cold cost and writes
+the cache for later eligible runs. Use `glade test serve` for the fastest
+repeated commands from separate terminals.
 
 ## When the disk cache is loaded
 
-On each `glade test` run (unless `--no-cache` or a running test server handles
-the request), Glade:
+On each run whose effective cache policy allows restored-runtime disk reuse
+(unless `--no-cache` or a running test server handles the request), Glade:
 
 1. Reads `startup.meta.json` if it exists.
 2. Verifies the cache version, manifest schema, and platform ABI.
@@ -84,8 +100,10 @@ the request), Glade:
 6. If missing, corrupt, stale, wrong version, or hash-mismatched, performs a
    cold build and may write a new cache.
 
-Legacy `startup.gob` files are read only when no split header exists. Corrupt
-payloads or legacy gob files are ignored and trigger a cold rebuild.
+Legacy `startup.gob` files are read only when no split header exists. Malformed,
+oversized, checksum-invalid, or corrupt headers and payloads are ignored and
+trigger a cold rebuild. Payload writes are streamed to a content-addressed
+temporary file and activated atomically.
 
 ## Freshness: how the cache stays up to date
 
@@ -158,8 +176,9 @@ file additions, deletions, renames, and branch-like directory replacements are
 rejected by rebuilding the current set.
 
 **Running test server after `clear-cache`.** `glade test clear-cache` removes
-the header, payload, and legacy gob files. A `glade test serve` process that is
-already running keeps its in-memory warm state until you restart it.
+the project-local startup and semantic caches and resets caches in the current
+CLI process. A separate `glade test serve` process that is already running
+keeps its in-memory warm state until you restart it.
 
 **Glade upgrades.** Cache version, manifest schema, runtime ABI, and platform ABI
 changes are safe misses. An old cache is rebuilt rather than decoded as current.
@@ -175,10 +194,10 @@ treat the cache as suspect.
 ## Commands
 
 ```bash
-# Delete the on-disk startup cache
+# Delete the project-local startup and semantic caches
 glade test clear-cache --project .
 
-# One run without reading or writing the startup cache (also skips test-server auto-connect)
+# Bypass startup and semantic caches for one run (also skips test-server auto-connect)
 glade test --project . --no-cache --class MyTest
 
 # Force a local harness build even if a test server is running
@@ -224,10 +243,10 @@ even when a server is running.
 
 ## In-process warm (`--daemon`)
 
-`glade test --daemon --watch` keeps the index and reference graph warm inside one
-CLI process. It does not replace the disk cache or the test server. Use it for a
-single long watch session; use `glade test serve` when separate terminal
-invocations should stay warm.
+`glade test --daemon --watch` keeps the index and reference graph warm inside
+one CLI process. It does not replace the startup cache, semantic cache, or test
+server. Use it for a single long watch session; use `glade test serve` when
+separate terminal invocations should stay warm.
 
 ## Related docs
 

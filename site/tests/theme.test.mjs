@@ -23,8 +23,10 @@ const ciWorkflow = await readFile(new URL("../../.github/workflows/ci.yml", impo
 const releaseWorkflow = await readFile(new URL("../../.github/workflows/release.yml", import.meta.url), "utf8");
 const securityWorkflow = await readFile(new URL("../../.github/workflows/security.yml", import.meta.url), "utf8").catch(() => "");
 const agentGuide = await readFile(new URL("../../AGENTS.md", import.meta.url), "utf8");
+const repoGitignore = await readFile(new URL("../../.gitignore", import.meta.url), "utf8");
 const repoReadme = await readFile(new URL("../../README.md", import.meta.url), "utf8");
 const repoSecurityPolicy = await readFile(new URL("../../SECURITY.md", import.meta.url), "utf8").catch(() => "");
+const repoSecurityTrust = await readFile(new URL("../../docs/SECURITY_TRUST.md", import.meta.url), "utf8").catch(() => "");
 const repoCompatibility = await readFile(new URL("../../docs/COMPATIBILITY.md", import.meta.url), "utf8");
 const repoApexLanguageCompatibility = await readFile(new URL("../../docs/APEX_LANGUAGE_COMPATIBILITY.md", import.meta.url), "utf8").catch(() => "");
 const repoDocsIndex = await readFile(new URL("../../docs/README.md", import.meta.url), "utf8");
@@ -33,9 +35,15 @@ const repoCompatibilityDashboard = await readFile(new URL("../../docs/COMPATIBIL
 const repoLwcSupport = await readFile(new URL("../../docs/LWC_SUPPORT.md", import.meta.url), "utf8");
 const releaseNotes = await readFile(new URL("../../docs/RELEASE_NOTES.md", import.meta.url), "utf8");
 const repoInstallDocs = await readFile(new URL("../../docs/INSTALL.md", import.meta.url), "utf8");
+const repoEditorDocs = await readFile(new URL("../../docs/EDITOR.md", import.meta.url), "utf8");
 const repoLocalTesting = await readFile(new URL("../../docs/LOCAL_TESTING.md", import.meta.url), "utf8");
+const repoTestStartupCache = await readFile(new URL("../../docs/TEST_STARTUP_CACHE.md", import.meta.url), "utf8");
+const repoCIArtifacts = await readFile(new URL("../../docs/CI_ARTIFACTS.md", import.meta.url), "utf8");
+const repoReleasePolicy = await readFile(new URL("../../docs/RELEASE_POLICY.md", import.meta.url), "utf8");
 const repoPlugins = await readFile(new URL("../../docs/PLUGINS.md", import.meta.url), "utf8");
 const repoDistributionWorkflow = await readFile(new URL("../../docs/DISTRIBUTION_WORKFLOW.md", import.meta.url), "utf8");
+const checkCommandImplementation = await readFile(new URL("../../internal/gladecli/cli.go", import.meta.url), "utf8");
+const testCommandImplementation = await readFile(new URL("../../internal/gladecli/test_command.go", import.meta.url), "utf8");
 const storageSchema = await readFile(new URL("../../docs/storage-schema.md", import.meta.url), "utf8");
 const highlight = await readFile(new URL("../docs-src/public/js/highlight.js", import.meta.url), "utf8");
 const homeScript = await readFile(new URL("../docs-src/public/js/home.js", import.meta.url), "utf8");
@@ -49,6 +57,7 @@ const securityTrust = await readFile(new URL("../docs-src/guide/security-trust.m
 const quickstart = await readFile(new URL("../docs-src/guide/quickstart.md", import.meta.url), "utf8");
 const cliReference = await readFile(new URL("../docs-src/guide/cli-reference.md", import.meta.url), "utf8");
 const localTesting = await readFile(new URL("../docs-src/guide/local-testing.md", import.meta.url), "utf8");
+const testStartupCache = await readFile(new URL("../docs-src/guide/test-startup-cache.md", import.meta.url), "utf8");
 const affectedTests = await readFile(new URL("../docs-src/guide/affected-tests.md", import.meta.url), "utf8");
 const playground = await readFile(new URL("../docs-src/guide/playground.md", import.meta.url), "utf8");
 const workflowsIndex = await readFile(new URL("../docs-src/guide/workflows.md", import.meta.url), "utf8").catch(() => "");
@@ -89,6 +98,7 @@ const firstPartyPlugins = await readFile(new URL("../docs-src/guide/plugins/firs
 const pluginInstallManage = await readFile(new URL("../docs-src/guide/plugins/install-manage.md", import.meta.url), "utf8");
 const pluginLockCi = await readFile(new URL("../docs-src/guide/plugins/lock-ci.md", import.meta.url), "utf8");
 const maintainerIndex = await readFile(new URL("../docs-src/maintainer/index.md", import.meta.url), "utf8").catch(() => "");
+const maintainerRelease = await readFile(new URL("../docs-src/maintainer/release.md", import.meta.url), "utf8").catch(() => "");
 const extendRuntime = await readFile(new URL("../docs-src/maintainer/extend-runtime.md", import.meta.url), "utf8").catch(() => "");
 const gladeToolsMaintainer = await readFile(new URL("../docs-src/maintainer/glade-tools.md", import.meta.url), "utf8").catch(() => "");
 const pluginRuntime = await readFile(new URL("../docs-src/maintainer/plugin-runtime.md", import.meta.url), "utf8").catch(() => "");
@@ -155,7 +165,17 @@ test("release notes cover the latest stable release", () => {
   assert.match(releaseNotes, /bounded to five minutes/);
 });
 
-test("v0.2.9 docs describe the live registry and release safety", () => {
+test("unreleased notes describe the merged correctness-preserving performance work", () => {
+  const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
+  assert.ok(unreleased, "release notes should contain an Unreleased section");
+  assert.doesNotMatch(unreleased[1], /No changes yet\./);
+  assert.match(unreleased[1], /semantic result cache/i);
+  assert.match(unreleased[1], /Salesforce correctness/i);
+  assert.match(unreleased[1], /release check/i);
+  assert.doesNotMatch(releaseNotes, /profiled large [A-Z]{2} test methods/);
+});
+
+test("current docs describe the live registry and release safety", () => {
   for (const publicPage of [index, plugins, firstPartyPlugins, pluginInstallManage, pluginLockCi, testerFieldGuide]) {
     assert.doesNotMatch(publicPage, /registry (?:commands (?:are )?)?is (?:still )?preview|registry is not live yet|once the registry .* serves|until the registry is published/i);
   }
@@ -163,7 +183,7 @@ test("v0.2.9 docs describe the live registry and release safety", () => {
   assert.match(firstPartyPlugins, /https:\/\/plugins\.glade\.sh\/index\.json/);
   assert.match(firstPartyPlugins, /Common command roots/);
   assert.match(firstPartyPlugins, /registry row are authoritative for[\s\S]*complete command-root list/);
-  assert.match(pluginInstallManage, /Direct archives and local links remain available for offline, private, and development use/);
+  assert.match(pluginInstallManage, /Direct archives and local links remain available for offline, private,\s+and development use/);
   assert.match(repoPlugins, /The default public registry is `https:\/\/plugins\.glade\.sh\/index\.json`/);
   assert.match(repoPlugins, /only regular files and directories/);
   assert.match(repoPlugins, /Representative command roots/);
@@ -172,9 +192,13 @@ test("v0.2.9 docs describe the live registry and release safety", () => {
   assert.match(repoDistributionWorkflow, /conditional create/i);
   assert.match(repoDistributionWorkflow, /mutable pointers last/i);
   assert.doesNotMatch(repoDistributionWorkflow, /wrangler r2 object put glade-downloads\/vX\.Y\.Z\//);
+  for (const registryDocs of [repoPlugins, plugins, firstPartyPlugins, pluginInstallManage, pluginLockCi]) {
+    assert.match(registryDocs, /glade plugins available/);
+    assert.doesNotMatch(registryDocs, /at `\d+\.\d+\.\d+`/);
+  }
 });
 
-test("v0.2.9 docs expose local performance artifacts without weakening Salesforce validation", () => {
+test("current docs expose local performance artifacts without weakening Salesforce validation", () => {
   for (const testDocs of [repoLocalTesting, localTesting, cliReference]) {
     assert.match(testDocs, /--cpu-profile/);
     assert.match(testDocs, /--mem-profile/);
@@ -184,6 +208,99 @@ test("v0.2.9 docs expose local performance artifacts without weakening Salesforc
   assert.doesNotMatch(repoLocalTesting, /only the edited file is re-scanned, never the whole project/);
   assert.match(repoLocalTesting, /authoritative rebuild/i);
   assert.match(repoLocalTesting, /unsafe paths and symlink escapes are\s+rejected/i);
+  const checkPerfSummary = checkCommandImplementation.match(/type checkPerfSummary struct \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const testPerfSummary = testCommandImplementation.match(/type runPerfSummary struct \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.doesNotMatch(checkPerfSummary, /\bExecution\b|\bArguments\b/);
+  assert.match(testPerfSummary, /\bExecution\b/);
+  for (const testDocs of [repoLocalTesting, localTesting]) {
+    assert.match(testDocs, /Check performance JSON reports[\s\S]*project and semantic cache provenance/i);
+    assert.match(testDocs, /Test performance JSON adds[\s\S]*invocation arguments[\s\S]*effective parallelism/i);
+  }
+});
+
+test("semantic cache docs match the live local cache contract", () => {
+  for (const testDocs of [repoLocalTesting, localTesting, cliReference]) {
+    assert.match(testDocs, /\.glade\/semantic\//);
+    assert.match(testDocs, /memory, disk, or build/i);
+    assert.match(testDocs, /--no-cache[\s\S]*semantic cache/i);
+  }
+  for (const cacheDocs of [repoTestStartupCache, testStartupCache]) {
+    assert.match(cacheDocs, /binary header/i);
+    assert.match(cacheDocs, /historical `\.json` suffix/i);
+    assert.match(cacheDocs, /clear-cache[\s\S]*startup and semantic caches/i);
+    assert.match(cacheDocs, /--no-cache[\s\S]*startup and semantic caches/i);
+  }
+});
+
+test("test docs expose deterministic sharding and duration balancing", () => {
+  for (const testDocs of [repoLocalTesting, localTesting, cliReference, workflowApexTests]) {
+    assert.match(testDocs, /--class-file/);
+    assert.match(testDocs, /--shard-count/);
+    assert.match(testDocs, /--shard-index/);
+    assert.match(testDocs, /--duration-history/);
+    assert.match(testDocs, /--write-class-shards/);
+    assert.match(testDocs, /--test-timeout/);
+  }
+});
+
+test("LWC docs describe the current workbench and hosted service boundaries", () => {
+  for (const lwcDocs of [repoLwcSupport, lwcLocalShell, workflowLwcPreview, moduleLwcPreview, supportMap]) {
+    assert.match(lwcDocs, /Component Lab/);
+    assert.match(lwcDocs, /Page Workbench/);
+  }
+  for (const lwcDocs of [repoLwcSupport, lwcLocalShell]) {
+    assert.match(lwcDocs, /experience\/cmsDeliveryApi/);
+    assert.match(lwcDocs, /experience\/cmsEditorApi/);
+    assert.match(lwcDocs, /experience\/blockBuilderApi/);
+    assert.match(lwcDocs, /lightning\/uiLearningPlatformApi/);
+    assert.match(lwcDocs, /GLADELWC093/);
+    assert.match(lwcDocs, /GLADELWC094/);
+    assert.match(lwcDocs, /GLADELWC095/);
+  }
+  assert.match(repoLocalTesting, /Routes: 12 available/);
+  assert.match(repoLocalTesting, /4 routes omitted/);
+});
+
+test("site release docs distinguish fast checks from exact release proof", () => {
+  for (const releaseDocs of [siteReadme, maintainerRelease]) {
+    assert.match(releaseDocs, /npm test/);
+    assert.match(releaseDocs, /npm run test:release/);
+    assert.match(releaseDocs, /npm run release:check/);
+  }
+  assert.equal(packageJson.scripts.test, "npm run verify && npm run test:unit");
+  assert.equal(packageJson.scripts["test:release"], "node --test scripts/release-check.test.mjs");
+  assert.equal(packageJson.scripts["release:check"], "node scripts/release-check.mjs");
+  assert.match(maintainerRelease, /\.vitepress\/release-check\.json/);
+  assert.match(maintainerRelease, /exactly once/i);
+});
+
+test("repository release proof artifacts and measurement wrapper are documented", () => {
+  for (const releaseDocs of [repoCIArtifacts, repoReleasePolicy, repoDistributionWorkflow, maintainerRelease]) {
+    assert.match(releaseDocs, /ci-artifacts\/local-release/);
+    assert.match(releaseDocs, /package-summary\.json/);
+  }
+  for (const releaseDocs of [repoDistributionWorkflow, maintainerRelease]) {
+    assert.match(releaseDocs, /npm ci --prefix site/);
+    assert.match(releaseDocs, /npm ci --prefix third_party\/lwc/);
+  }
+  assert.match(repoGitignore, /^\/ci-artifacts\/$/m);
+  for (const releaseDocs of [repoReleasePolicy, maintainerRelease]) {
+    assert.match(releaseDocs, /scripts\/perf-release-check\.sh/);
+    assert.match(releaseDocs, /release-check\.json/);
+  }
+});
+
+test("manual archive verification preserves the checksummed asset name", () => {
+  for (const installDocs of [repoInstallDocs, installation, repoSecurityPolicy, repoSecurityTrust, securityTrust]) {
+    assert.match(installDocs, /GLADE_ARCHIVE/);
+    assert.match(installDocs, /grep -F/);
+    assert.doesNotMatch(installDocs, /glade\.tar\.gz/);
+  }
+});
+
+test("site readme points to the real docs landing route", () => {
+  assert.match(siteReadme, /docs at\s+`\/guide\/overview`/);
+  assert.doesNotMatch(siteReadme, /docs at `\/guide\/`/);
 });
 
 test("repo compatibility CLI surface matches contributor guide inventory", () => {
@@ -566,8 +683,8 @@ test("security trust surface is public, checked, and release-backed", () => {
   assert.match(repoReadme, /Security workflow/);
   assert.match(repoReadme, /https:\/\/github\.com\/glade-sh\/glade\/actions\/workflows\/security\.yml\/badge\.svg\?branch=main/);
   assert.match(repoReadme, /https:\/\/github\.com\/glade-sh\/glade\/actions\/workflows\/security\.yml/);
-  assert.doesNotMatch(repoReadme, /api\.scorecard\.dev/);
-  assert.doesNotMatch(repoReadme, /scorecard\.dev\/viewer/);
+  assert.match(repoReadme, /api\.scorecard\.dev\/projects\/github\.com\/glade-sh\/glade\/badge/);
+  assert.match(repoReadme, /scorecard\.dev\/viewer\/\?uri=github\.com\/glade-sh\/glade/);
   assert.match(repoReadme, /\[Security & Trust\]\(docs\/SECURITY_TRUST\.md\)/);
   assert.match(repoReadme, /\[Security policy\]\(SECURITY\.md\)/);
 
@@ -580,7 +697,7 @@ test("security trust surface is public, checked, and release-backed", () => {
   assert.match(config, /\{ text: 'Security & Trust', link: '\/guide\/security-trust' \}/);
   assert.match(securityTrust, /^# Security & Trust/m);
   assert.match(securityTrust, /OpenSSF Scorecard/);
-  assert.match(securityTrust, /after the repository is public/);
+  assert.match(securityTrust, /Published repository-posture results/);
   assert.match(securityTrust, /govulncheck/);
   assert.match(securityTrust, /CodeQL/);
   assert.match(securityTrust, /gosec/);
@@ -1606,19 +1723,19 @@ test("preview surfaces are labeled in public and repo docs", () => {
 
 test("LWC local shell docs describe Workbench Console workflow", () => {
   assert.match(lwcLocalShell, /Workbench Console/);
-  assert.match(lwcLocalShell, /route discovery/);
-  assert.match(lwcLocalShell, /preview canvas/);
-  assert.match(lwcLocalShell, /editable context/);
-  assert.match(lwcLocalShell, /debug\s+panes[\s\S]*Apex[\s\S]*LDS[\s\S]*network calls[\s\S]*navigation\/events[\s\S]*runtime issues/);
-  assert.match(lwcLocalShell, /mobile preview[\s\S]*main canvas/i);
-  assert.match(lwcLocalShell, /does not reserve a side-by-side phone panel/i);
+  assert.match(lwcLocalShell, /Component Lab/);
+  assert.match(lwcLocalShell, /Page Workbench/);
+  assert.match(lwcLocalShell, /edits preview properties and page context/);
+  assert.match(lwcLocalShell, /debug dock[\s\S]*Console[\s\S]*Apex[\s\S]*LDS Cache[\s\S]*Network[\s\S]*Events[\s\S]*Issues/);
+  assert.match(lwcLocalShell, /desktop,[\s\S]*tablet,[\s\S]*phone form factors/);
   assert.match(workflowLwcPreview, /Workbench Console/);
-  assert.match(workflowLwcPreview, /debug\s+panes[\s\S]*network calls[\s\S]*navigation\/events/);
-  assert.match(workflowLwcPreview, /mobile preview[\s\S]*main canvas/i);
-  assert.match(workflowLwcPreview, /permanent side-by-side phone panel/i);
+  assert.match(workflowLwcPreview, /Component Lab/);
+  assert.match(workflowLwcPreview, /Page Workbench/);
+  assert.match(workflowLwcPreview, /debug dock[\s\S]*LDS Cache[\s\S]*Network[\s\S]*Issues/);
   assert.match(repoLwcSupport, /local shell UI is the Workbench Console/);
-  assert.match(repoLwcSupport, /component, record page, builder, tab, and\s+app contexts/);
-  assert.match(repoLwcSupport, /Apex, LDS, navigation,\s+PageReference, and runtime issues/);
+  assert.match(repoLwcSupport, /Component Lab/);
+  assert.match(repoLwcSupport, /Page Workbench/);
+  assert.match(repoLwcSupport, /Console, Apex, LDS Cache, Network,\s+Events, and Issues/);
 });
 
 test("enterprise workflow docs expose current report commands", () => {
@@ -1701,7 +1818,7 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(testerFieldGuide, /glade dev vf --project \. --addr 127\.0\.0\.1:8080/);
   assert.match(testerFieldGuide, /glade dev lwc --project \. --open/);
   assert.match(testerFieldGuide, /Glade Home/);
-  assert.match(testerFieldGuide, /Exec & SOQL scratch\s+buffers/);
+  assert.match(testerFieldGuide, /Apex & SOQL scratch\s+buffers/);
   assert.match(testerFieldGuide, /exact hosted Visualforce\s+behavior/);
   assert.doesNotMatch(testerFieldGuide, /Visualforce rendering path/);
   assert.match(testerFieldGuide, /Useful first-run feedback includes:/);
@@ -1710,16 +1827,20 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(installation, /^## Install VS Code Extension/m);
   assert.match(installation, /glade editor doctor vscode/);
   assert.match(installation, /glade editor install vscode --force/);
+  assert.match(installation, /glade editor doctor vscode --editor cursor/);
+  assert.match(installation, /glade editor install vscode --editor windsurf --force/);
   assert.match(installation, /glade update --dry-run/);
   assert.match(installation, /glade update/);
   assert.match(installation, /share\/glade\/editor\/vscode-glade\.vsix/);
   assert.match(installation, /Glade Home/);
-  assert.match(installation, /Exec & SOQL scratch buffers/);
+  assert.match(installation, /Apex & SOQL scratch buffers/);
   assert.match(installation, /\[Editor, LSP, and DAP\]\(\/guide\/editor\)/);
   assert.match(installation, /For a first project run, use the \[Tester field guide\]\(\/guide\/tester-field-guide\)\./);
   assert.match(editor, /^## VS Code Extension/m);
   assert.match(editor, /`Glade: Open Home` command/);
-  assert.match(editor, /Exec & SOQL/);
+  assert.match(editor, /Data Browser/);
+  assert.match(editor, /Apex & SOQL/);
+  assert.match(editor, /Cursor and Windsurf/);
   assert.match(editor, /Click \*\*Run local proof\*\*/);
   assert.match(editor, /^## Plugin actions and findings/m);
   assert.match(editor, /glade test --project PROJECT_ROOT --json --class CLASS_NAME --method METHOD_NAME/);
@@ -1730,6 +1851,9 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.doesNotMatch(editor, new RegExp("<" + "root>|<" + "Class>|<" + "Method>|<" + "active-db>"));
   assert.match(editor, /Glade Activity Bar/);
   assert.doesNotMatch(editor, /Click \*\*Run local check\*\*/);
+  assert.match(repoEditorDocs, /"className": "\$\{input:testClass\}"/);
+  assert.match(repoEditorDocs, /"methodName": "\$\{input:testMethod\}"/);
+  assert.doesNotMatch(repoEditorDocs, /debug all tests|debug one test class/i);
   assert.match(ciArtifacts, /mkdir -p reports/);
   assert.match(plugins, /Most Glade work does not require plugins\./);
   assert.match(plugins, /Use plugins when you need a first-party extension that stays outside the base runtime\./);
@@ -1759,7 +1883,7 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.doesNotMatch(firstPartyPlugins, /glade plugins install @glade\/compat/);
   assert.match(firstPartyPlugins, /@glade\/orgpackage/);
   assert.match(firstPartyPlugins, /glade package capture --target-org packaging/);
-  assert.match(pluginInstallManage, /Direct archives and local links remain available for offline, private, and development use/);
+  assert.match(pluginInstallManage, /Direct archives and local links remain available for offline, private,\s+and development use/);
   assert.doesNotMatch(pluginInstallManage, /glade plugins install @glade\/compat/);
   assert.match(pluginInstallManage, /glade plugins install @glade\/orgpackage/);
   assert.match(pluginLockCi, /^# Plugin lock files and CI/m);
