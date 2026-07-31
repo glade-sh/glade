@@ -2131,7 +2131,8 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 					Range:    &member.Range,
 				})
 			}
-			if !hasModifier(member.Modifiers, "override") && hasOverridden && !hasModifier(overridden.Modifiers, "abstract") && !objectFallback {
+			abstractOverrideNotRequired := hasModifier(overridden.Modifiers, "abstract") && !typeUsesAPIVersionAtLeast(typ, 66)
+		if !hasModifier(member.Modifiers, "override") && hasOverridden && !abstractOverrideNotRequired && !objectFallback {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
 					Code:     "GLADESEMA016",
