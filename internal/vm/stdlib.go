@@ -111,14 +111,22 @@ func decimalPlainText(value Value) string {
 
 func decimalScale(value Value) int {
 	text := decimalPlainText(value)
-	if exponent := strings.IndexAny(text, "eE"); exponent >= 0 {
-		text = text[:exponent]
+	expVal := 0
+	if expIdx := strings.IndexAny(text, "eE"); expIdx >= 0 {
+		expStr := text[expIdx+1:]
+		if expStr != "" {
+			expParsed, err := strconv.Atoi(expStr)
+			if err == nil {
+				expVal = expParsed
+			}
+		}
+		text = text[:expIdx]
 	}
 	dot := strings.IndexByte(text, '.')
 	if dot < 0 {
-		return 0
+		return -expVal
 	}
-	return len(text) - dot - 1
+	return (len(text) - dot - 1) - expVal
 }
 
 func decimalPrecision(value Value) int {
@@ -279,13 +287,28 @@ func roundRatToScale(callee string, rat *big.Rat, scaleValue int64, mode string)
 }
 
 func ratFixedText(rat *big.Rat, scaleValue int64) string {
-	if scaleValue < 0 {
-		if rat.IsInt() {
-			return rat.Num().String()
-		}
-		return rat.FloatString(0)
+	if scaleValue >= 0 {
+		return rat.FloatString(int(scaleValue))
 	}
-	return rat.FloatString(int(scaleValue))
+	numStr := rat.Num().String()
+	sign := ""
+	if len(numStr) > 0 && numStr[0] == '-' {
+		sign = "-"
+		numStr = numStr[1:]
+	}
+	stripped := strings.TrimRight(numStr, "0")
+	if stripped == "" {
+		stripped = "0"
+	}
+	exponent := len(numStr) - 1
+	if stripped == "0" {
+		exponent = int(-scaleValue)
+	}
+	mantissa := stripped
+	if len(mantissa) > 1 {
+		mantissa = mantissa[:1] + "." + mantissa[1:]
+	}
+	return sign + mantissa + "E+" + strconv.Itoa(exponent)
 }
 
 func roundScaledRat(callee string, value *big.Rat, mode string) (*big.Int, error) {

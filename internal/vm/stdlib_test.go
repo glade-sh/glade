@@ -5438,3 +5438,47 @@ System.assert(fields.contains(User.Email));
 		t.Fatal(err)
 	}
 }
+
+func TestExecDecimalNegativeScalePreservesObservableText(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal d = Decimal.valueOf('125').setScale(-1, RoundingMode.HALF_UP);
+System.assertEquals(130, d);
+System.assertEquals(-1, d.scale());
+System.assertEquals(2, d.precision());
+System.assertEquals('1.3E+2', String.valueOf(d));
+System.assertEquals('130', d.toPlainString());
+
+Decimal d2 = Decimal.valueOf('125').setScale(-2, RoundingMode.HALF_UP);
+System.assertEquals(100, d2);
+System.assertEquals(-2, d2.scale());
+System.assertEquals(1, d2.precision());
+System.assertEquals('1E+2', String.valueOf(d2));
+System.assertEquals('100', d2.toPlainString());
+
+Decimal neg = Decimal.valueOf('-125').setScale(-1, RoundingMode.HALF_UP);
+System.assertEquals(-130, neg);
+System.assertEquals(-1, neg.scale());
+System.assertEquals(2, neg.precision());
+System.assertEquals('-1.3E+2', String.valueOf(neg));
+System.assertEquals('-130', neg.toPlainString());
+
+	Decimal chained = Decimal.valueOf('125').setScale(-1, RoundingMode.HALF_UP).setScale(1, RoundingMode.HALF_UP);
+System.assertEquals(130.0, chained);
+System.assertEquals(-1, Decimal.valueOf('125').setScale(-1, RoundingMode.HALF_UP).stripTrailingZeros().scale());
+
+Decimal zero = Decimal.valueOf('0').setScale(-1);
+System.assertEquals(0, zero);
+System.assertEquals(-1, zero.scale());
+System.assertEquals(1, zero.precision());
+System.assertEquals('0E+1', String.valueOf(zero));
+System.assertEquals('0', zero.toPlainString());
+System.assertEquals(0, zero.stripTrailingZeros().scale());
+System.assertEquals('0', String.valueOf(zero.stripTrailingZeros()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
