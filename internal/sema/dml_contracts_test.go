@@ -135,6 +135,24 @@ public class Probe {
 	}
 }
 
+func TestDMLContractsRejectStandardFieldWithoutExternalIDOrIDLookup(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() { Account value = new Account(); upsert value Name; } }`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA034") {
+		t.Fatalf("expected upsert field contract diagnostic for Account.Name: %#v", result.Diagnostics)
+	}
+}
+
+func TestDMLContractsAllowUpsertStandardIDLookupField(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() { Lead l = new Lead(); upsert l Email; } }`,
+	})
+	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA034") {
+		t.Fatalf("standard idLookup field Lead.Email was rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestDMLContractsResolveUnqualifiedUpsertSelectorsAgainstNamespacedSchema(t *testing.T) {
 	for _, test := range []struct {
 		name           string

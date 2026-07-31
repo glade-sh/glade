@@ -1188,20 +1188,30 @@ func (a *Analyzer) semaUpsertSelectorAllowed(operandType, selector string) bool 
 	if fieldName == "" {
 		return false
 	}
-	foundObject := false
+	fieldSchemaFound := false
 	for _, object := range a.queryDeclaredObjects {
 		if !semaProjectReferencedSchemaAPINamesMatch(a.namespace, object.Name, objectName) {
 			continue
 		}
-		foundObject = true
 		for _, field := range object.Fields {
-			if semaProjectReferencedSchemaAPINamesMatch(a.namespace, field.Name, fieldName) &&
-				(field.ExternalID || field.IDLookup) {
+			if semaProjectReferencedSchemaAPINamesMatch(a.namespace, field.Name, fieldName) {
+				fieldSchemaFound = true
+				if field.ExternalID || field.IDLookup {
+					return true
+				}
+			}
+		}
+	}
+	if provider := semaStandardSObjectFieldProviderFor(objectName); provider != nil && provider.hasFields() {
+		field, ok := provider.lookup(fieldName)
+		if ok {
+			fieldSchemaFound = true
+			if field.ExternalID || field.IDLookup {
 				return true
 			}
 		}
 	}
-	if foundObject {
+	if fieldSchemaFound {
 		return false
 	}
 	// Do not infer a selector capability from a field name. An unavailable
