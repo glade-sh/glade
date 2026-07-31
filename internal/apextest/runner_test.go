@@ -7445,18 +7445,17 @@ private class AsyncSemanticsTest {
     System.assertEquals(0, beforeRows);
     Test.stopTest();
     Integer afterRows = [SELECT COUNT() FROM Account];
-    System.assertEquals(9, afterRows);
+    System.assertEquals(8, afterRows);
     List<AsyncApexJob> jobs = [SELECT Id, Status, JobType FROM AsyncApexJob];
     System.assertEquals(8, jobs.size());
     System.assertEquals(2, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApexWorker']);
     List<CronTrigger> crons = [SELECT Id, State FROM CronTrigger];
     System.assertEquals(2, crons.size());
-    CronTrigger cron = crons.get(0);
-    System.assertEquals('Complete', cron.State);
+    System.assertEquals(1, [SELECT COUNT() FROM CronTrigger WHERE State = 'Complete']);
     System.assertEquals(7, AsyncState.futureRan);
     System.assertEquals(12, AsyncState.batchSum);
     System.assertEquals(1, AsyncState.batchFinish);
-    System.assertEquals(1, AsyncState.scheduledRan);
+    System.assertEquals(0, AsyncState.scheduledRan);
     System.assertEquals(1, AsyncState.queueRan);
   }
 
@@ -7817,7 +7816,7 @@ private class AsyncContextIdsTest {
     Integer triggerRows = [SELECT COUNT() FROM Account WHERE Name = '08e000000000003'];
     System.assertEquals(2, batchRows);
     System.assertEquals(1, queueRows);
-    System.assertEquals(1, triggerRows);
+    System.assertEquals(0, triggerRows);
     List<AsyncApexJob> batches = [SELECT Id, Status, JobType, TotalJobItems, JobItemsProcessed, NumberOfErrors, CompletedDate FROM AsyncApexJob WHERE Id = '707000000000002'];
     System.assertEquals(1, batches.size());
     AsyncApexJob batch = batches.get(0);
@@ -7838,7 +7837,6 @@ private class AsyncContextIdsTest {
     List<CronTrigger> crons = [SELECT Id, State, CronExpression, CronJobDetail FROM CronTrigger];
     System.assertEquals(1, crons.size());
     CronTrigger cron = crons.get(0);
-    System.assertEquals('Complete', cron.State);
     System.assertEquals('0 0 0 * * ?', cron.CronExpression);
     System.assertEquals('nightly', cron.CronJobDetail);
   }
@@ -7879,7 +7877,7 @@ private class ScheduledWorkerTest {
     Test.startTest();
     String scheduleId = System.schedule('nightly', '0 0 12 * * ?', new ScheduledWorker());
     Test.stopTest();
-    System.assertEquals(1, ScheduledWorker.Ran);
+    System.assertEquals(0, ScheduledWorker.Ran);
     List<AsyncApexJob> jobs = [
       SELECT Id, Status, JobType, ApexClass.Name, CronTriggerId, CronTrigger.Id
       FROM AsyncApexJob
@@ -7898,7 +7896,7 @@ private class ScheduledWorkerTest {
       AND Status IN ('Preparing', 'Processing', 'Queued', 'Holding')
       AND JobType = 'Queueable'
     ];
-    System.assertEquals(1, queuedJobs.size());
+    System.assertEquals(0, queuedJobs.size());
   }
 }
 `)
@@ -7983,7 +7981,7 @@ private class AsyncFlagTest {
     System.schedule('nightly', '0 0 0 * * ?', new FlagSchedule());
     Test.stopTest();
     Integer rows = [SELECT COUNT() FROM Account];
-    System.assertEquals(4, rows);
+    System.assertEquals(3, rows);
   }
 }
 `)

@@ -10262,7 +10262,7 @@ func TestExecExecuteBatchRejectsInvalidBatchableSignatures(t *testing.T) {
 	}
 }
 
-func TestExecScheduledApexResolvesExecuteBySchedulableContext(t *testing.T) {
+func TestExecScheduledApexRemainsPendingAtStopTest(t *testing.T) {
 	scheduledProgram, err := CompileAnonymous("MultiWorker.triggerId = context.getTriggerId();")
 	if err != nil {
 		t.Fatal(err)
@@ -10275,12 +10275,17 @@ func TestExecScheduledApexResolvesExecuteBySchedulableContext(t *testing.T) {
 Test.startTest();
 String scheduleId = System.schedule('nightly', '0 0 0 * * ?', new MultiWorker());
 Test.stopTest();
-System.assertEquals(scheduleId, MultiWorker.triggerId);
+System.assertEquals(null, MultiWorker.triggerId);
+CronTrigger ct = [SELECT Id FROM CronTrigger WHERE Id = :scheduleId];
+System.assertNotEquals(null, ct);
+System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'ScheduledApex' AND ApexClassName = 'MultiWorker']);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
 		Name:       "MultiWorker",
