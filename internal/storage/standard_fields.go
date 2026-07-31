@@ -744,6 +744,22 @@ func mergeStandardObjectDefinition(definition *ObjectDefinition, features []stri
 		mergeStandardFields(definition, entry.FeatureFields[feature])
 		mergeStandardRecordTypes(definition, entry.FeatureRecordTypes[feature])
 	}
+	enrichStandardFieldsFromV2Describe(definition)
+}
+
+func enrichStandardFieldsFromV2Describe(definition *ObjectDefinition) {
+	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	if err != nil || !ok {
+		return
+	}
+	v2Fields := describeFieldMap(describe.Fields)
+	for _, v2Field := range v2Fields {
+		if existingName, ok := ResolveFieldName(*definition, "", v2Field.APIName); ok {
+			existing := definition.Fields[existingName]
+			enrichStandardField(&existing, v2Field)
+			definition.Fields[existingName] = existing
+		}
+	}
 }
 
 func mergeStandardSObjectStubFields(definition *ObjectDefinition, features []string) {
