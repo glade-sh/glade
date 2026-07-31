@@ -344,14 +344,14 @@ func TestAnnotationContractsAllowZeroParameterInvocableMethod(t *testing.T) {
 	}
 }
 
-func TestNamespaceAccessibleIsAPIVersionGatedAndAllowsPublicInterfaces(t *testing.T) {
+func TestNamespaceAccessibleMemberIsAPIVersionGatedOnInterfaceOwner(t *testing.T) {
 	source := `@NamespaceAccessible public interface Probe { @NamespaceAccessible void run(); }`
 	for _, test := range []struct {
 		apiVersion string
 		wantError  bool
 	}{
 		{apiVersion: "49.0", wantError: false},
-		{apiVersion: "50.0", wantError: false},
+		{apiVersion: "50.0", wantError: true},
 	} {
 		t.Run(test.apiVersion, func(t *testing.T) {
 			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, test.apiVersion)
