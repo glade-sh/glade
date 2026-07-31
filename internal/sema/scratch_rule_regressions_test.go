@@ -95,6 +95,12 @@ func TestScratchBackedInheritanceRuleRegressions(t *testing.T) {
 	)
 }
 
+func TestScratchBackedInheritanceContractsRuleRegressions(t *testing.T) {
+	runScratchBackedRuleCases(t, "inheritance-contracts",
+		"APEX-ABSTRACT-IMPLEMENTATION-MISSING-OVERRIDE",
+	)
+}
+
 func TestScratchBackedQueryRuleRegressions(t *testing.T) {
 	runScratchBackedRuleCases(t, "query",
 		"APEX-AUDIT-AGGREGATE-FUNCTION-IN-WHERE",
@@ -209,6 +215,7 @@ const scratchBackedRuleCasesJSON = `[
 {"id":"APEX-AUDIT-AGGREGATE-QUERY-WRONG-TYPE","area":"query","apiVersion":66,"sourceKind":"class","source":"public class ProbeAggregateType { public void run() { List<Account> values = [SELECT COUNT(Id) total FROM Account]; } }","dependencies":[],"projectFiles":[],"oracle":"reject"},
 {"id":"APEX-AUDIT-ANYTYPE-PSEUDO-TYPE-PARAMETER","area":"types","apiVersion":66,"sourceKind":"class","source":"public class ProbeAnyTypeParam { public void run(AnyType value) {} }","dependencies":[],"projectFiles":[],"oracle":"reject"},
 {"id":"APEX-AUDIT-BARE-RETURN-FROM-NONVOID","area":"declarations","apiVersion":66,"sourceKind":"class","source":"public class ProbeBareReturn { public Integer run() { return; } }","dependencies":[],"projectFiles":[],"oracle":"reject"},
+{"id":"APEX-ABSTRACT-IMPLEMENTATION-MISSING-OVERRIDE","area":"inheritance-contracts","apiVersion":67,"sourceKind":"class","source":"public class OracleAbstractChild extends OracleAbstractBase { public String value() { return 'value'; } }","dependencies":[{"path":"force-app/main/default/classes/OracleAbstractBase.cls","content":"public abstract class OracleAbstractBase { public abstract String value(); }"}],"projectFiles":[],"oracle":"reject"},
 {"id":"APEX-AUDIT-BATCHABLE-NARROWER-EXECUTE-SCOPE","area":"inheritance","apiVersion":66,"sourceKind":"class","source":"public class ProbeBatchNarrowScope implements Database.Batchable<SObject> { public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator([SELECT Id FROM Account]); } public void execute(Database.BatchableContext context, List<Account> scope) {} public void finish(Database.BatchableContext context) {} }","dependencies":[],"projectFiles":[],"oracle":"accept"},
 {"id":"APEX-AUDIT-CONSTRUCTOR-THIS-NOT-FIRST","area":"declarations","apiVersion":66,"sourceKind":"class","source":"public class ProbeCtorThisOrder { public ProbeCtorThisOrder() { Integer value = 1; this(value); } public ProbeCtorThisOrder(Integer value) {} }","dependencies":[],"projectFiles":[],"oracle":"reject"},
 {"id":"APEX-AUDIT-DIAMOND-LIST-CONSTRUCTION","area":"declarations","apiVersion":66,"sourceKind":"class","source":"public class ProbeDiamondList { public void run() { List<String> values = new List<>(); } }","dependencies":[],"projectFiles":[],"oracle":"reject"},
@@ -279,7 +286,7 @@ func TestScratchBackedRuleCatalogHasExpectedSize(t *testing.T) {
 	if err := json.Unmarshal([]byte(scratchBackedRuleCasesJSON), &cases); err != nil {
 		t.Fatal(err)
 	}
-	if len(cases) != 68 {
-		t.Fatalf("scratch-backed rule cases = %d, want 68", len(cases))
+	if len(cases) != 69 {
+		t.Fatalf("scratch-backed rule cases = %d, want 69", len(cases))
 	}
 }
