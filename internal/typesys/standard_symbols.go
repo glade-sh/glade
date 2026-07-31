@@ -1467,6 +1467,19 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	}, Properties: []StandardPropertySpec{{Name: "controllervalues", Type: "Map<String,Integer>"}}},
 	{Name: "industriesNlpSvc.NlpResponse", Properties: []StandardPropertySpec{{Name: "summarizationResult", Type: "industriesNlpSvc.NlpSummarizationResult"}, {Name: "errors", Type: "List<String>"}}},
 	{Name: "industriesNlpSvc.NlpSummarizationResult", Properties: []StandardPropertySpec{{Name: "summary", Type: "String"}}},
+	{Name: "StatusCode", Properties: []StandardPropertySpec{
+		{Name: "PRINCIPAL_NOT_ASSIGNED", Type: "StatusCode", Static: true},
+		{Name: "PRINCIPAL_NOT_CONFIGURED", Type: "StatusCode", Static: true},
+		{Name: "PRINCIPAL_UNAUTHENTICATED", Type: "StatusCode", Static: true},
+		{Name: "COMMERCE_SEARCH_RULES_SYNC_FAILED", Type: "StatusCode", Static: true},
+	}},
+	{Name: "Quiddity", Properties: []StandardPropertySpec{
+		{Name: "RUN_INTEGRATION_TESTS", Type: "Quiddity", Static: true},
+	}},
+	{Name: "String", Methods: []StandardMethodSpec{
+		{Name: "template", ReturnType: "String"},
+		{Name: "template", ReturnType: "String", Parameters: []string{"Map"}},
+	}},
 }
 
 func standardAssertMethods() []StandardMethodSpec {

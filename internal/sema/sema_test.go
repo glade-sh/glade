@@ -5705,6 +5705,72 @@ public class UsesSObjectClone {
 	}
 }
 
+func TestAnalyzeStatusCodePrincipalEnumValues(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesPrincipalStatusCodes.cls"), `
+public class UsesPrincipalStatusCodes {
+  public void run() {
+    StatusCode a = StatusCode.PRINCIPAL_NOT_ASSIGNED;
+    StatusCode b = StatusCode.PRINCIPAL_NOT_CONFIGURED;
+    StatusCode c = StatusCode.PRINCIPAL_UNAUTHENTICATED;
+    StatusCode d = StatusCode.COMMERCE_SEARCH_RULES_SYNC_FAILED;
+    System.StatusCode sa = System.StatusCode.PRINCIPAL_NOT_ASSIGNED;
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesPrincipalStatusCodes.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected StatusCode principal diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeQuiddityRunIntegrationTests(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesQuiddityRunIT.cls"), `
+public class UsesQuiddityRunIT {
+  public void run() {
+    Quiddity q = Quiddity.RUN_INTEGRATION_TESTS;
+    System.Quiddity sq = System.Quiddity.RUN_INTEGRATION_TESTS;
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesQuiddityRunIT.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected Quiddity RUN_INTEGRATION_TESTS diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeStringTemplateNoArgs(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesStringTemplate.cls"), `
+public class UsesStringTemplate {
+  public void run(String input) {
+    String result = input.template();
+    String result2 = 'literal'.template();
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesStringTemplate.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected String.template() diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeAssertClassMethods(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
