@@ -184,9 +184,9 @@ glade test --project . --wizard
 LWC and Visualforce preview have their own workflow and product pages.
 
 - [Preview LWC locally](/guide/workflows/lwc-preview)
-- [LWC preview](/guide/modules/lwc-preview)
+- [LWC preview](/guide/modules#lwc-preview)
 - [Preview Visualforce locally](/guide/workflows/visualforce-preview)
-- [Visualforce preview](/guide/modules/visualforce-preview)
+- [Visualforce preview](/guide/modules#visualforce-preview)
 
 ## Warm startup across CLI runs
 

@@ -1,4 +1,4 @@
-# Add Glade to CI
+# Troubleshoot Glade CI setup
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Guided help</p>

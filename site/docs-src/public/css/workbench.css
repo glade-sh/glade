@@ -1,0 +1,263 @@
+.glade-cm-workbench,
+.home-workbench {
+  --surface: #10191e;
+  --surface-raised: #14232a;
+  --surface-active: #1b2f38;
+  --surface-inset: #081014;
+  --terminal: #05090b;
+  --line: #26363d;
+  --line-strong: #38505a;
+  --text: #f3f7f5;
+  --text-muted: #a9b8ad;
+  --text-subtle: #7f9187;
+  --text-inverse: #061009;
+  --success-text: #dfffd1;
+  --danger-text: #ffd8d5;
+  --warning-text: #ffe7a6;
+  --glade: #9be870;
+  --glade-strong: #b7ff8a;
+  --glade-muted: rgba(155, 232, 112, 0.14);
+  --glade-line: rgba(155, 232, 112, 0.42);
+  --success: #9be870;
+  --warning: #f5c95f;
+  --danger: #ff6b61;
+  --info: #7db7ff;
+  --vp-c-text-1: var(--text);
+  --vp-c-text-2: var(--text-muted);
+  --vp-c-text-3: var(--text-subtle);
+  --vp-c-brand-1: var(--glade);
+  --vp-c-brand-2: var(--glade-strong);
+  --glade-accent: var(--glade);
+  --glade-moss: var(--glade);
+  --glade-lichen: var(--glade-strong);
+  --glade-border: var(--line);
+  --glade-border-strong: var(--line-strong);
+  --glade-surface: rgba(16, 25, 30, 0.92);
+  --glade-surface-solid: var(--surface);
+  --glade-surface-soft: rgba(255, 255, 255, 0.04);
+  --glade-code-bg: var(--terminal);
+  --glade-code-header: var(--surface-inset);
+  --glade-code-border: var(--line);
+  --glade-code-text: var(--text);
+  --glade-code-muted: var(--text-muted);
+  --glade-code-line: #70858e;
+  --glade-command-bg: var(--terminal);
+  --glade-command-text: var(--text);
+  --glade-command-muted: var(--text-muted);
+  --glade-state-supported: var(--success);
+  --glade-state-partial: var(--warning);
+  --glade-state-failed: var(--danger);
+  --glade-state-info: var(--info);
+  --glade-action-bg: var(--glade);
+  --glade-action-text: var(--text-inverse);
+  --glade-home-surface: var(--surface);
+  --glade-home-surface-soft: #0b1215;
+  --glade-home-panel: var(--surface-raised);
+  --glade-home-border: var(--line);
+}
+
+.glade-cm-editor .cm-gutters {
+  color: #7f9187;
+}
+/* --- command palette --- */
+
+
+.workbench-page .home-workbench {
+  width: 100%;
+  max-width: 100%;
+  margin: 24px 0 40px;
+}
+
+.glade-cm-workbench {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  margin: 28px 0 34px;
+  border: 1px solid var(--glade-home-border);
+  border-radius: 8px;
+  background: var(--terminal);
+  box-shadow: var(--glade-home-shadow);
+  overflow: hidden;
+}
+
+.glade-cm-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--glade-code-border);
+  background: var(--surface-inset);
+  padding: 18px;
+}
+
+.glade-cm-head .home-eyebrow {
+  margin-bottom: 8px;
+}
+
+.glade-cm-head a {
+  flex: 0 0 auto;
+  color: var(--glade);
+  font-size: var(--fs-ui);
+  font-weight: 760;
+  text-decoration: none;
+}
+
+.glade-cm-support {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin: -16px 0 0;
+  border-bottom: 1px solid var(--glade-code-border);
+  background: color-mix(in srgb, var(--glade) 7%, var(--surface-inset));
+  color: var(--text-muted);
+  font-size: var(--fs-label);
+  line-height: 1.4;
+  padding: 10px 18px;
+}
+
+.glade-cm-support span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.glade-cm-support div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.vp-doc .glade-cm-support code {
+  border: 1px solid rgba(155,232,112,0.24);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface-inset));
+  color: var(--warning-text);
+  font-family: var(--vp-font-family-mono);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 5px 7px;
+  white-space: nowrap;
+}
+
+.glade-cm-editor {
+  min-width: 0;
+  padding: 0 0 4px;
+}
+
+.glade-cm-editor .cm-editor {
+  min-height: 430px;
+  border: 0;
+  background: var(--terminal);
+}
+
+.glade-cm-editor .cm-scroller {
+  min-height: 430px;
+  font-family: var(--vp-font-family-mono);
+}
+
+.glade-cm-editor .cm-tooltip-autocomplete {
+  min-width: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.glade-cm-editor .cm-tooltip-autocomplete ul {
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+}
+
+.glade-completion-info {
+  display: grid;
+  gap: 7px;
+  max-width: 340px;
+  padding: 10px;
+}
+
+.glade-completion-info strong {
+  color: var(--vp-c-text-1);
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.glade-completion-info p {
+  margin: 0;
+  color: var(--vp-c-text-2);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.glade-completion-status {
+  width: max-content;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 760;
+  line-height: 1;
+  padding: 3px 7px;
+}
+
+.glade-completion-status-supported {
+  background: color-mix(in srgb, var(--glade-state-supported) 15%, transparent);
+  color: var(--glade-state-supported);
+}
+
+.glade-completion-status-partial,
+.glade-completion-status-stub {
+  background: color-mix(in srgb, var(--glade-state-partial) 15%, transparent);
+  color: var(--glade-state-partial);
+}
+
+.glade-completion-status-unsupported {
+  background: color-mix(in srgb, var(--glade-state-failed) 15%, transparent);
+  color: var(--glade-state-failed);
+}
+
+.glade-completion-status-unknown {
+  background: color-mix(in srgb, var(--glade-state-info) 14%, transparent);
+  color: var(--glade-state-info);
+}
+
+.glade-cm-proof {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  border-top: 1px solid var(--glade-code-border);
+  background: var(--surface-inset);
+  color: var(--text-muted);
+  font-size: var(--fs-label);
+  line-height: 1.45;
+  padding: 13px 18px;
+}
+
+.glade-cm-proof strong {
+  color: var(--vp-c-text-1);
+  font-weight: 760;
+}
+
+@media (max-width: 700px) {
+  .workbench-page .home-workbench {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .glade-cm-head {
+    display: grid;
+    align-items: start;
+    gap: 12px;
+  }
+
+  .glade-cm-support {
+    align-items: start;
+    justify-content: flex-start;
+  }
+
+  .glade-cm-editor .cm-editor,
+  .glade-cm-editor .cm-scroller {
+    min-height: 360px;
+  }
+}

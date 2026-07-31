@@ -20,6 +20,6 @@ Use Salesforce for hosted rendering proof.
 
 ## Related workflows
 
-- [Visualforce preview module](/guide/modules/visualforce-preview)
+- [Visualforce preview module](/guide/modules#visualforce-preview)
 - [Visualforce preview workflow](/guide/workflows/visualforce-preview)
-- [LWC preview module](/guide/modules/lwc-preview)
+- [LWC preview module](/guide/modules#lwc-preview)

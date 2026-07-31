@@ -1,4 +1,4 @@
-# Add Glade to CI
+# CI reports and artifacts
 
 Glade writes machine-readable check results and saved test reports for CI.
 

@@ -50,7 +50,7 @@ Salesforce log.
 
 ## Deeper reference
 
-- [Debug and profile](/guide/modules/debug-profile)
-- [Editor and workbench](/guide/modules/editor)
+- [Debug and profile](/guide/modules#debug-and-profile)
+- [Editor and workbench](/guide/modules#editor-and-workbench)
 - [Debug with breakpoints](/help/debug-apex-vscode)
 - [Anonymous Apex scratch](/help/anonymous-apex-scratch)

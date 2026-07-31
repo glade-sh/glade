@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 const siteRoot = resolve(new URL("..", import.meta.url).pathname);
 const screenshotRoot = resolve(siteRoot, "docs-src/public/help/screenshots");
 const helpRoot = resolve(siteRoot, "docs-src/help");
-const captureReadmePath = resolve(screenshotRoot, "README.md");
+const captureReadmePath = resolve(siteRoot, "HELP_SCREENSHOT_CAPTURE.md");
 const minWidth = 900;
 const minHeight = 500;
 const maxWidth = 2200;

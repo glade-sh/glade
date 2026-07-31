@@ -26,8 +26,10 @@ Then check the binary:
 
 ```bash
 glade version
-glade doctor   # confirm: "Ready."
 ```
+
+`glade doctor` is project-aware. Run it after initializing Glade inside a
+Salesforce DX project, as shown in [First Project Run](#first-project-run).
 
 ## Security verification
 
@@ -37,16 +39,23 @@ CycloneDX attestation before uploading the platform assets. Use this path when a
 laptop policy needs pinned proof:
 
 ```bash
-GLADE_ARCHIVE=glade_vX.Y.Z_linux_amd64.tar.gz
-curl -L -o "$GLADE_ARCHIVE" "$GLADE_RELEASE_URL"
-curl -L -o SHA256SUMS.txt "$GLADE_CHECKSUMS_URL"
-grep -F "  ./$GLADE_ARCHIVE" SHA256SUMS.txt | shasum -a 256 -c -
+GLADE_MANIFEST_URL=https://downloads.glade.sh/latest/release-manifest.json
+GLADE_VERSION="$(curl -fsSL "$GLADE_MANIFEST_URL" | sed -nE 's/^[[:space:]]*"version": "(v[^"]+)",?$/\1/p')"
+[ -n "$GLADE_VERSION" ] || { echo "could not resolve the stable Glade version" >&2; exit 1; }
+case "$(uname -s)" in Darwin) GLADE_OS=darwin ;; Linux) GLADE_OS=linux ;; *) echo "unsupported operating system" >&2; exit 1 ;; esac
+case "$(uname -m)" in arm64|aarch64) GLADE_ARCH=arm64 ;; x86_64|amd64) GLADE_ARCH=amd64 ;; *) echo "unsupported architecture" >&2; exit 1 ;; esac
+GLADE_ARCHIVE="glade_${GLADE_VERSION}_${GLADE_OS}_${GLADE_ARCH}.tar.gz"
+GLADE_BASE="https://downloads.glade.sh/${GLADE_VERSION}"
+curl -fLO "${GLADE_BASE}/${GLADE_ARCHIVE}"
+curl -fLO "${GLADE_BASE}/SHA256SUMS.txt"
+GLADE_CHECKSUM_LINE="$(grep "  \./${GLADE_ARCHIVE}$" SHA256SUMS.txt)"
+[ -n "$GLADE_CHECKSUM_LINE" ] || { echo "checksum entry not found" >&2; exit 1; }
+if command -v shasum >/dev/null 2>&1; then printf '%s\n' "$GLADE_CHECKSUM_LINE" | shasum -a 256 -c -; else printf '%s\n' "$GLADE_CHECKSUM_LINE" | sha256sum -c -; fi
 gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
 gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
   --predicate-type https://cyclonedx.org/bom
 tar -xzf "$GLADE_ARCHIVE"
 ./glade version
-./glade doctor
 ```
 
 Download the matching `*.sbom.json` release asset when your review process
@@ -60,7 +69,6 @@ Use the same installer path for upgrades:
 glade update --dry-run
 GLADE_UPDATE_ALLOW_SHELL=1 glade update
 glade version
-glade doctor
 ```
 
 `glade update` prints the exact installer command before it runs. It updates the
@@ -136,7 +144,6 @@ git clone https://github.com/glade-sh/glade.git
 cd glade
 go build -o glade ./cmd/glade
 ./glade version
-./glade doctor   # confirm: "Ready."
 ```
 
 Run the locally built binary against an SFDX project. No Salesforce org login is
@@ -152,7 +159,6 @@ During development, run commands directly from source without creating a binary:
 
 ```bash
 go run ./cmd/glade version
-go run ./cmd/glade doctor
 go run ./cmd/glade check --project path/to/sfdx-project
 ```
 
@@ -169,10 +175,10 @@ Run parse/check/tests against an SFDX project without connecting to an org:
 
 ```bash
 cd path/to/sfdx-project
-glade doctor
 glade init --project . --yes
 glade config validate --project .
 glade config show --project .
+glade doctor
 glade check --project .
 glade test --project . --json
 ```
@@ -209,7 +215,7 @@ local archive install path, and author contract are documented in
 Run a focused class or only tests affected by changes since a git ref:
 
 ```bash
-glade test --project . --class RefinementServiceTest --json
+glade test --project . --class <YourTestClass> --json
 glade test changed --project . --since origin/main --json --no-progress
 mkdir -p reports
 glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
@@ -260,10 +266,16 @@ Use a release artifact:
 
 ```yaml
 - run: |
-    GLADE_ARCHIVE=glade_vX.Y.Z_linux_amd64.tar.gz
-    curl -L -o "$GLADE_ARCHIVE" "$GLADE_RELEASE_URL"
-    curl -L -o SHA256SUMS.txt "$GLADE_CHECKSUMS_URL"
-    grep -F "  ./$GLADE_ARCHIVE" SHA256SUMS.txt | shasum -a 256 -c -
+    GLADE_MANIFEST_URL=https://downloads.glade.sh/latest/release-manifest.json
+    GLADE_VERSION="$(curl -fsSL "$GLADE_MANIFEST_URL" | sed -nE 's/^[[:space:]]*"version": "(v[^"]+)",?$/\1/p')"
+    [ -n "$GLADE_VERSION" ] || { echo "could not resolve the stable Glade version" >&2; exit 1; }
+    GLADE_ARCHIVE="glade_${GLADE_VERSION}_linux_amd64.tar.gz"
+    GLADE_BASE="https://downloads.glade.sh/${GLADE_VERSION}"
+    curl -fLO "${GLADE_BASE}/${GLADE_ARCHIVE}"
+    curl -fLO "${GLADE_BASE}/SHA256SUMS.txt"
+    GLADE_CHECKSUM_LINE="$(grep "  \./${GLADE_ARCHIVE}$" SHA256SUMS.txt)"
+    [ -n "$GLADE_CHECKSUM_LINE" ] || { echo "checksum entry not found" >&2; exit 1; }
+    printf '%s\n' "$GLADE_CHECKSUM_LINE" | sha256sum -c -
     gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
     gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
       --predicate-type https://cyclonedx.org/bom

@@ -3,7 +3,11 @@ import { readdir, readFile } from "node:fs/promises";
 import { test } from "node:test";
 import vm from "node:vm";
 
-const css = await readFile(new URL("../.vitepress/theme/custom.css", import.meta.url), "utf8");
+const baseCss = await readFile(new URL("../.vitepress/theme/custom.css", import.meta.url), "utf8");
+const homeCss = await readFile(new URL("../docs-src/public/css/home.css", import.meta.url), "utf8");
+const workbenchCss = await readFile(new URL("../docs-src/public/css/workbench.css", import.meta.url), "utf8");
+const css = [baseCss, homeCss, workbenchCss].join("\n");
+const tokensCss = await readFile(new URL("../.vitepress/theme/styles/tokens.css", import.meta.url), "utf8");
 const index = await readFile(new URL("../docs-src/index.md", import.meta.url), "utf8");
 const theme = await readFile(new URL("../.vitepress/theme/index.ts", import.meta.url), "utf8");
 const docsEnhancer = await readFile(new URL("../.vitepress/theme/DocsEnhancer.vue", import.meta.url), "utf8");
@@ -49,13 +53,13 @@ const highlight = await readFile(new URL("../docs-src/public/js/highlight.js", i
 const homeScript = await readFile(new URL("../docs-src/public/js/home.js", import.meta.url), "utf8");
 const ciArtifacts = await readFile(new URL("../docs-src/guide/ci-artifacts.md", import.meta.url), "utf8");
 const automation = await readFile(new URL("../docs-src/guide/automation.md", import.meta.url), "utf8");
-const configuration = await readFile(new URL("../docs-src/guide/configuration.md", import.meta.url), "utf8");
-const guideErrors = await readFile(new URL("../docs-src/guide/errors.md", import.meta.url), "utf8");
+const configuration = await readFile(new URL("../docs-src/reference/config.md", import.meta.url), "utf8");
+const guideErrors = await readFile(new URL("../docs-src/reference/errors.md", import.meta.url), "utf8");
 const installation = await readFile(new URL("../docs-src/guide/installation.md", import.meta.url), "utf8");
 const overview = await readFile(new URL("../docs-src/guide/overview.md", import.meta.url), "utf8");
 const securityTrust = await readFile(new URL("../docs-src/guide/security-trust.md", import.meta.url), "utf8").catch(() => "");
 const quickstart = await readFile(new URL("../docs-src/guide/quickstart.md", import.meta.url), "utf8");
-const cliReference = await readFile(new URL("../docs-src/guide/cli-reference.md", import.meta.url), "utf8");
+const cliReference = await readFile(new URL("../docs-src/reference/cli.md", import.meta.url), "utf8");
 const localTesting = await readFile(new URL("../docs-src/guide/local-testing.md", import.meta.url), "utf8");
 const testStartupCache = await readFile(new URL("../docs-src/guide/test-startup-cache.md", import.meta.url), "utf8");
 const affectedTests = await readFile(new URL("../docs-src/guide/affected-tests.md", import.meta.url), "utf8");
@@ -68,14 +72,14 @@ const workflowVisualforcePreview = await readFile(new URL("../docs-src/guide/wor
 const workflowLocalData = await readFile(new URL("../docs-src/guide/workflows/local-data.md", import.meta.url), "utf8").catch(() => "");
 const workflowCi = await readFile(new URL("../docs-src/guide/workflows/ci.md", import.meta.url), "utf8").catch(() => "");
 const modulesIndex = await readFile(new URL("../docs-src/guide/modules.md", import.meta.url), "utf8").catch(() => "");
-const moduleApexRuntime = await readFile(new URL("../docs-src/guide/modules/apex-runtime.md", import.meta.url), "utf8").catch(() => "");
-const moduleTestRunner = await readFile(new URL("../docs-src/guide/modules/test-runner.md", import.meta.url), "utf8").catch(() => "");
-const moduleLocalOrgData = await readFile(new URL("../docs-src/guide/modules/local-org-data.md", import.meta.url), "utf8").catch(() => "");
-const moduleLwcPreview = await readFile(new URL("../docs-src/guide/modules/lwc-preview.md", import.meta.url), "utf8").catch(() => "");
-const moduleVisualforcePreview = await readFile(new URL("../docs-src/guide/modules/visualforce-preview.md", import.meta.url), "utf8").catch(() => "");
-const moduleDebugProfile = await readFile(new URL("../docs-src/guide/modules/debug-profile.md", import.meta.url), "utf8").catch(() => "");
-const moduleEditor = await readFile(new URL("../docs-src/guide/modules/editor.md", import.meta.url), "utf8").catch(() => "");
-const modulePlugins = await readFile(new URL("../docs-src/guide/modules/plugins.md", import.meta.url), "utf8").catch(() => "");
+const moduleApexRuntime = await readFile(new URL("../docs-src/guide/modules.md", import.meta.url), "utf8").catch(() => "");
+const moduleTestRunner = moduleApexRuntime;
+const moduleLocalOrgData = moduleApexRuntime;
+const moduleLwcPreview = moduleApexRuntime;
+const moduleVisualforcePreview = moduleApexRuntime;
+const moduleDebugProfile = moduleApexRuntime;
+const moduleEditor = moduleApexRuntime;
+const modulePlugins = moduleApexRuntime;
 const referenceCli = await readFile(new URL("../docs-src/reference/cli.md", import.meta.url), "utf8").catch(() => "");
 const referenceConfig = await readFile(new URL("../docs-src/reference/config.md", import.meta.url), "utf8").catch(() => "");
 const referenceErrors = await readFile(new URL("../docs-src/reference/errors.md", import.meta.url), "utf8").catch(() => "");
@@ -112,7 +116,7 @@ const helpChangedTestsBeforePr = await readFile(new URL("../docs-src/help/change
 const helpGladeOrgSfDataImport = await readFile(new URL("../docs-src/help/glade-org-sf-data-import.md", import.meta.url), "utf8").catch(() => "");
 const helpProfileApexDebugLog = await readFile(new URL("../docs-src/help/profile-apex-debug-log.md", import.meta.url), "utf8").catch(() => "");
 const helpCiSetup = await readFile(new URL("../docs-src/help/ci-setup.md", import.meta.url), "utf8").catch(() => "");
-const helpScreenshotReadme = await readFile(new URL("../docs-src/public/help/screenshots/README.md", import.meta.url), "utf8").catch(() => "");
+const helpScreenshotReadme = await readFile(new URL("../HELP_SCREENSHOT_CAPTURE.md", import.meta.url), "utf8").catch(() => "");
 const captureHelpScreenshotsScript = await readFile(new URL("../scripts/capture-help-screenshots.sh", import.meta.url), "utf8").catch(() => "");
 const captureHelpScreenshotTargetScript = await readFile(new URL("../scripts/capture-help-screenshot-target.sh", import.meta.url), "utf8").catch(() => "");
 const checkHelpScreenshotsScript = await readFile(new URL("../scripts/check-help-screenshots.mjs", import.meta.url), "utf8").catch(() => "");
@@ -147,14 +151,14 @@ const siteCopy = [
   ...siteSourceFiles.map(([, contents]) => contents)
 ].join("\n");
 
-test("home page names the latest stable release from release notes", () => {
+test("home page links the latest stable release from release notes", () => {
   const releaseMatch = releaseNotes.match(/^## (v\d+\.\d+\.\d+) - /m);
   assert.ok(releaseMatch, "release notes should name the latest release");
   const latestRelease = releaseMatch[1];
 
-  assert.match(index, new RegExp(`<span class="home-release-version">${latestRelease}</span>`));
+  assert.match(index, new RegExp(`<a class="home-release-version" href="https://github.com/glade-sh/glade/releases/tag/${latestRelease}">${latestRelease}</a>`));
   assert.match(index, /Latest stable release/);
-  assert.match(index, /Latest stable release:<span class="home-release-version">/);
+  assert.match(index, /Latest stable release: <a class="home-release-version"/);
   assert.doesNotMatch(index, /Latest stable release[\s\S]*0\.0\.0-dev/);
 });
 
@@ -179,7 +183,6 @@ test("current docs describe the live registry and release safety", () => {
   for (const publicPage of [index, plugins, firstPartyPlugins, pluginInstallManage, pluginLockCi, testerFieldGuide]) {
     assert.doesNotMatch(publicPage, /registry (?:commands (?:are )?)?is (?:still )?preview|registry is not live yet|once the registry .* serves|until the registry is published/i);
   }
-  assert.match(index, /The default public registry serves the first-party plugin catalog/);
   assert.match(firstPartyPlugins, /https:\/\/plugins\.glade\.sh\/index\.json/);
   assert.match(firstPartyPlugins, /Common command roots/);
   assert.match(firstPartyPlugins, /registry row are authoritative for[\s\S]*complete command-root list/);
@@ -293,7 +296,8 @@ test("repository release proof artifacts and measurement wrapper are documented"
 test("manual archive verification preserves the checksummed asset name", () => {
   for (const installDocs of [repoInstallDocs, installation, repoSecurityPolicy, repoSecurityTrust, securityTrust]) {
     assert.match(installDocs, /GLADE_ARCHIVE/);
-    assert.match(installDocs, /grep -F/);
+    assert.match(installDocs, /GLADE_CHECKSUM_LINE/);
+    assert.match(installDocs, /grep "  \\.\/\$\{GLADE_ARCHIVE\}\$"/);
     assert.doesNotMatch(installDocs, /glade\.tar\.gz/);
   }
 });
@@ -315,23 +319,23 @@ test("repo compatibility CLI surface matches contributor guide inventory", () =>
 });
 
 test("theme defines complete light and dark color tokens", () => {
-  assert.match(css, /html:not\(\.dark\)\s*\{[\s\S]*--vp-c-bg:/);
+  assert.match(tokensCss, /html:not\(\.dark\)\s*\{[\s\S]*--bg:/);
   assert.match(css, /\.dark\s*\{[\s\S]*--vp-c-bg:/);
-  assert.match(css, /--glade-bg-grid-line:/);
+  assert.match(tokensCss + css, /--glade-bg-grid-line:/);
   assert.match(css, /--glade-code-bg:/);
-  assert.match(css, /--glade-nav-bg: var\(--bg\);/);
+  assert.match(tokensCss + css, /--glade-nav-bg:/);
 });
 
-test("site is dark-only and does not render the appearance switch", () => {
-  assert.match(config, /appearance: 'force-dark'/);
-  assert.doesNotMatch(config, /appearance: 'dark'/);
-  assert.doesNotMatch(css, /VPNavBarAppearance|VPSwitchAppearance/);
+test("site exposes system, light, and dark appearance selection", () => {
+  assert.match(config, /appearance: true/);
+  assert.doesNotMatch(config, /force-dark/);
+  assert.match(tokensCss, /html:not\(\.dark\)/);
 });
 
-test("social share metadata exposes a raster preview card", () => {
+test("social share metadata exposes a raster preview card and route identity", () => {
   assert.equal(socialCardPng.toString("ascii", 1, 4), "PNG");
   assert.ok(socialCardPng.length > 10_000, "social card should be a real raster asset");
-  assert.match(config, /\['meta', \{ property: 'og:url', content: 'https:\/\/glade\.sh\/' \}\]/);
+  assert.match(config, /const canonical = `https:\/\/glade\.sh\$\{route\}`/);
   assert.match(config, /\['meta', \{ property: 'og:site_name', content: 'Glade' \}\]/);
   assert.match(config, /\['meta', \{ property: 'og:image', content: 'https:\/\/glade\.sh\/social-card\.png' \}\]/);
   assert.match(config, /\['meta', \{ property: 'og:image:secure_url', content: 'https:\/\/glade\.sh\/social-card\.png' \}\]/);
@@ -340,23 +344,25 @@ test("social share metadata exposes a raster preview card", () => {
   assert.match(config, /\['meta', \{ property: 'og:image:height', content: '630' \}\]/);
   assert.match(config, /\['meta', \{ property: 'og:image:alt', content: 'Glade local Apex runtime social preview' \}\]/);
   assert.match(config, /\['meta', \{ name: 'twitter:card', content: 'summary_large_image' \}\]/);
-  assert.match(config, /\['meta', \{ name: 'twitter:title', content: 'Glade — Local Apex runtime for SFDX projects' \}\]/);
-  assert.match(config, /\['meta', \{ name: 'twitter:description', content: 'Run supported Apex checks before the Salesforce round trip\.' \}\]/);
+  assert.match(config, /\['meta', \{ name: 'twitter:title', content: title \}\]/);
+  assert.match(config, /\['meta', \{ name: 'twitter:description', content: description \}\]/);
   assert.match(config, /\['meta', \{ name: 'twitter:image', content: 'https:\/\/glade\.sh\/social-card\.png' \}\]/);
   assert.match(config, /\['meta', \{ name: 'twitter:image:alt', content: 'Glade local Apex runtime social preview' \}\]/);
   const imageTags = config.match(/\['meta', \{ (?:property|name): '(?:og|twitter):image[^']*', content: '[^']+' \}\]/g) || [];
   assert.ok(imageTags.every((tag) => !tag.includes("logo-mark.svg")));
 });
 
-test("vite config keeps dev and preview tunnel output clean", () => {
+test("vite config keeps dev and preview tunnel output clean and route-scopes scripts", () => {
   assert.match(config, /const tunnelAllowedHosts = \[/);
   assert.ok(config.includes("'.ngrok-free.app'"));
   assert.ok(config.includes("'.ngrok.app'"));
   assert.ok(config.includes("'.ngrok.io'"));
   assert.match(config, /server:\s*\{[\s\S]*allowedHosts: tunnelAllowedHosts/);
   assert.match(config, /preview:\s*\{[\s\S]*allowedHosts: tunnelAllowedHosts/);
-  assert.match(config, /\['script', \{ defer: true, src: '\/js\/highlight\.js' \}\]/);
-  assert.match(config, /\['script', \{ defer: true, src: '\/js\/home\.js' \}\]/);
+  assert.doesNotMatch(config, /src: '\/js\/home\.js'/);
+  assert.match(docsEnhancer, /loadScript\('\/js\/highlight\.js'\)/);
+  assert.match(docsEnhancer, /route\.path === '\/' \|\| route\.path === '\/guide\/workbench'/);
+  assert.match(docsEnhancer, /loadScript\('\/js\/home\.js'\)/);
   assert.match(config, /rollupOptions:\s*\{[\s\S]*onwarn\(warning, warn\)/);
   assert.match(config, /warning\.code === 'INVALID_ANNOTATION'/);
   assert.match(config, /@vueuse\/core/);
@@ -371,180 +377,56 @@ test("home page keeps marketing icons out of the first proof", () => {
   assert.deepEqual(numericEntities.filter((entity) => entity !== "&#10;"), []);
 });
 
-test("home page uses a static local proof and final go-live workflow copy", () => {
-  assert.doesNotMatch(index, /name: "Glade"/);
-  assert.doesNotMatch(index, /^hero:/m);
+test("homepage has four task-oriented bands and one explicit Salesforce boundary", () => {
   assert.equal((index.match(/<h1>/g) || []).length, 1);
-  assert.match(index, /<h1>Local Apex runtime for SFDX projects<\/h1>/);
-  assert.match(index, /class="[^"]*\bhome-hero-shell\b[^"]*"/);
-  assert.match(index, /class="home-type-eyebrow"[\s\S]*Run, test, and debug Apex locally/);
-  assert.doesNotMatch(index, /class="home-lead"/);
-  assert.match(index, /class="home-deck"[\s\S]*Run supported Apex checks, focused tests, SOQL\/DML, triggers, and anonymous Apex against local project state\. Debug supported paths from VS Code\. Check human and AI-generated changes before the org round trip\. Salesforce remains the validation gate\./);
-  assert.match(index, /href="\/guide\/installation"[^>]*data-demo-link[^>]*>Install Glade<\/a>/);
-  assert.match(index, /href="\/guide\/quickstart"[\s\S]*>Run your first local check<\/a>/);
-  assert.match(index, /No Salesforce org login required for supported local checks\./);
-  assert.doesNotMatch(index, /release gate|pre-gate|deploy gate|org gate/);
-  const homeLoopStart = index.indexOf('<div class="home-loop-visual"');
-  const homeLoopEnd = index.indexOf("</section>", homeLoopStart);
-  assert.ok(homeLoopStart > -1);
-  assert.ok(homeLoopEnd > homeLoopStart);
-  const homeLoopBlock = index.slice(homeLoopStart, homeLoopEnd);
-  assert.doesNotMatch(homeLoopBlock, /\n\s*\n/);
-  assert.match(homeLoopBlock, /aria-label="Project loop command and diagnostic"/);
-  assert.match(index, /<strong>Project loop<\/strong>/);
-  assert.match(homeLoopBlock, /Local check/);
-  assert.doesNotMatch(index, /AI edit check|Proof now/);
-  assert.doesNotMatch(homeLoopBlock, /data-home-loop|home-loop-stage|home-loop-trace|home-loop-tabs|home-loop-badge-row/);
-  assert.doesNotMatch(homeLoopBlock, /glade test|glade exec|2 passed|Quote total verified/);
-  assert.match(homeLoopBlock, /class="home-loop-command"[\s\S]*glade check --project \. --no-progress/);
-  assert.match(homeLoopBlock, /class="home-loop-result-status"[\s\S]*<span class="home-loop-mark warn" aria-hidden="true">!<\/span>[\s\S]*Diagnostic/);
-  assert.match(homeLoopBlock, /Cannot resolve variable renewalQuote/);
-  assert.match(homeLoopBlock, /RenewalQuoteService\.cls:42/);
-  assert.match(index, /class="home-loop-mark warn" aria-hidden="true">!<\/span>/);
-  assert.doesNotMatch(homeLoopBlock, /class="home-loop-mark" aria-hidden="true">✓<\/span>/);
-  assert.doesNotMatch(homeLoopBlock, /class="home-loop-mark" aria-hidden="true">›<\/span>/);
-  assert.match(index, /class="home-loop-metric-proof"><strong>0<\/strong>deploys<\/span>/);
-  assert.doesNotMatch(index, /OpportunityRenewalServiceTest/);
-  assert.doesNotMatch(index, /reprice-renewals\.apex/);
-  assert.doesNotMatch(index, /rebuild\.apex/);
+  assert.match(index, /<h1>Run and test Salesforce Apex locally\.<\/h1>/);
+  assert.match(index, /Local runtime for Salesforce DX projects/);
+  assert.match(index, /without an org login/);
+  assert.match(index, /href="\/guide\/installation"[^>]*>Install Glade<\/a>/);
+  assert.match(index, /href="\/guide\/quickstart"[^>]*>Run your first local check<\/a>/);
+  assert.match(index, /Example local output/);
   assert.match(index, /aria-label="Daily local workflow"/);
-  assert.match(index, /<p class="home-eyebrow">Daily local workflow<\/p>/);
-  assert.match(index, /<h2 class="home-h2">One local loop for CLI, VS Code, AI, and CI\.<\/h2>/);
-  assert.match(index, /class="home-command-grid"[\s\S]*<h3>CLI<\/h3>[\s\S]*Check source, run focused tests, execute anonymous Apex, and inspect SOQL\/DML behavior from your terminal\./);
-  assert.match(index, /class="home-command-grid"[\s\S]*<h3>VS Code<\/h3>[\s\S]*Open Glade Home for local proof, data, debug, and ship actions\. Run local tests from Test Explorer and CodeLens\./);
-  assert.match(index, /class="home-command-grid"[\s\S]*<h3>AI-assisted changes<\/h3>[\s\S]*Give agents a small local contract: run a check, quote the diagnostic, fix the smallest source change, and rerun the same command\./);
-  assert.match(index, /class="home-command-grid"[\s\S]*<h3>CI<\/h3>[\s\S]*Use JSON, SARIF, JUnit, stable exit codes, affected-test selection, and saved run artifacts in pull request workflows\./);
-  assert.doesNotMatch(index, /<h3>Check<\/h3>[\s\S]*glade check --project \. --no-progress/);
-  assert.doesNotMatch(index, /<h3>Test<\/h3>[\s\S]*RefinementServiceTest/);
-  assert.doesNotMatch(index, /<h3>Exec<\/h3>[\s\S]*check-renewal-total/);
-  assert.doesNotMatch(index, /class="home-proof-strip"/);
-  assert.doesNotMatch(index, /class="[^"]*\bhome-editor-demo\b[^"]*"/);
-  assert.doesNotMatch(index, /data-editor-demo/);
-  assert.doesNotMatch(index, /data-static-editor-code/);
-  assert.doesNotMatch(index, /Autocomplete suggestions/);
-  assert.doesNotMatch(index, /Apex autocomplete with local support labels/);
-  assert.doesNotMatch(index, /data-apex-editor/);
-  assert.doesNotMatch(index, /<textarea/);
-  assert.doesNotMatch(index, /data-completion-menu/);
-  assert.match(index, /class="home-support-preview"/);
-  assert.match(index, /data-generated-support-preview/);
-  assert.match(index, /<header class="home-support-preview-header">[\s\S]*<h3>What runs locally<\/h3>[\s\S]*<p>Examples from the checked capability map\.<\/p>[\s\S]*<\/header>/);
-  assert.match(index, /class="home-capability-list"/);
+  assert.match(index, /aria-label="What runs locally"/);
+  assert.match(index, /Know the boundary before you rely on a result\./);
+  assert.match(index, /Supported paths run locally\. Use Salesforce for hosted services, deployment, and final production validation\./);
   assert.equal((index.match(/class="home-capability-row"/g) || []).length, 3);
-  assert.match(index, /Database\.insert/);
-  assert.match(index, /Schema\.DescribeSObjectResult/);
-  assert.match(index, /Answers\.findSimilar/);
-  assert.doesNotMatch(index, /Capability preview/);
-  assert.doesNotMatch(index, /Generated from checked Glade capability rows/);
-  assert.match(index, /<a href="\/guide\/support-map">What runs locally<\/a>/);
-  assert.doesNotMatch(index, /Run checks before the org round trip\./);
-  assert.doesNotMatch(index, /Run Glade before the org round trip/);
-  assert.doesNotMatch(index, /Edit Apex -&gt; glade check\/test locally/);
-  assert.match(index, /Runs locally/);
-  assert.match(index, /Runs with limits/);
-  assert.match(index, /Requires Salesforce/);
-  assert.match(index, /Check what runs locally before relying on it\./);
-  assert.match(index, /Glade lists local behavior in three groups: runs locally, runs with limits, and requires Salesforce\./);
-  assert.match(index, /Apex parse \+ semantic checks/);
-  assert.match(index, /Local Salesforce API routes/);
-  assert.match(index, /Visualforce and LWC local shells remain preview features\./);
-  assert.match(index, /aria-label="Local data and playground"/);
-  assert.match(index, /<h2 class="home-h2">Local data without a scratch org<\/h2>/);
-  assert.match(index, /Run anonymous Apex, SOQL, DML, triggers, local API routes, and playground examples against local project state\./);
-  assert.match(index, /glade playground --project \. --open/);
-  assert.match(index, /glade server --project \. --db \.glade\/refinement-local\.sqlite --addr 127\.0\.0\.1:8080/);
-  assert.match(index, /glade db seed --db \.glade\/refinement-local\.sqlite --project \. data\/file-rows\.json/);
-  assert.match(index, /aria-label="Optional plugins"/);
-  assert.match(index, /<h2 class="home-h2">Optional plugins<\/h2>/);
-  assert.match(index, /The base runtime stays focused on local Apex workflows\. Add plugins only when a project needs capability reports, advisory scans, or custom local checks\./);
-  assert.match(index, /Base Glade workflows do not require plugins\. The default public registry serves the first-party plugin catalog\./);
-  assert.match(index, /glade plugins list/);
-  assert.match(index, /glade plugins install @glade\/performance/);
-  assert.match(index, /glade plugins install @glade\/orgpackage/);
-  assert.match(index, /See first-party plugin install and lock-file docs\./);
-  assert.doesNotMatch(index, /glade plugins link --exec \.\/glade-plugin-quality/);
-  assert.doesNotMatch(index, /glade plugins install @glade\/compat/);
-  assert.doesNotMatch(index, /authoring, and marketplace docs/);
-  assert.match(index, /aria-label="Salesforce validation boundary"/);
-  assert.match(index, /<h2 class="home-h2">Salesforce remains the validation gate\.<\/h2>/);
-  assert.match(index, /Use Salesforce for live auth, hosted service engines, deploy and retrieve, exact Lightning Experience behavior, Streaming, Pub\/Sub, GraphQL, and exact production governor accounting\./);
-  assert.doesNotMatch(index, /Developer loop and CI gate/);
-  assert.doesNotMatch(index, /class="home-info-list"/);
-  assert.match(index, /Supported paths run locally\. Unsupported platform services fail with named diagnostics\. Salesforce remains the validation gate\./);
-  assert.match(index, /curl -fsSL https:\/\/glade\.sh\/install\.sh \| sh/);
-  assert.match(index, /glade doctor/);
-  assert.match(index, /glade check --project \./);
-  assert.match(index, /aria-label="Copy install command"/);
-  const workflowIndex = index.indexOf('aria-label="Daily local workflow"');
-  const previewIndex = index.indexOf('data-generated-support-preview');
-  const runsIndex = index.indexOf('aria-label="What runs locally"');
-  const dataIndex = index.indexOf('aria-label="Local data and playground"');
-  const pluginIndex = index.indexOf('aria-label="Optional plugins"');
-  const boundaryIndex = index.indexOf('aria-label="Salesforce validation boundary"');
-  assert.ok(workflowIndex > homeLoopEnd);
-  assert.ok(previewIndex > workflowIndex);
-  assert.ok(runsIndex > previewIndex);
-  assert.ok(dataIndex > runsIndex);
-  assert.ok(pluginIndex > dataIndex);
-  assert.ok(boundaryIndex > pluginIndex);
-  assert.doesNotMatch(index, /class="[^"]*\bhome-workbench\b[^"]*"/);
-  assert.doesNotMatch(index, /data-scenario-workbench/);
-  assert.doesNotMatch(index, /class="home-workflow-tab/);
-  assert.doesNotMatch(index, /data-scenario-id=/);
-  assert.doesNotMatch(index, /data-output-tab=/);
-  assert.doesNotMatch(index, /home-support-map/);
-  assert.doesNotMatch(index, /Capability[\s\S]*Local support[\s\S]*Boundary/);
-  assert.doesNotMatch(index, /home-next-card/);
-  assert.doesNotMatch(index, /Feature Arcade/);
-  assert.doesNotMatch(index, /mock REST/i);
-  assert.doesNotMatch(index, /0 diagnostics/);
-  assert.match(config, /message: 'Glade is local-first Apex tooling\.'/);
-  assert.match(config, /copyright: 'Released by the Glade project\.'/);
-  assert.match(config, /\{ text: 'Playground', link: '\/guide\/playground' \}/);
-  assert.match(config, /\{ text: 'What runs locally', link: '\/guide\/support-map' \}/);
-  assert.match(config, /\{ text: 'Use VS Code', link: '\/guide\/editor' \}/);
-  assert.match(config, /\{ text: 'sf target orgs', link: '\/guide\/glade-orgs' \}/);
-  assert.match(config, /\{ text: 'What is Glade\?', link: '\/guide\/overview' \}/);
-  assert.match(config, /\{ text: 'Install', link: '\/guide\/installation' \}/);
-  assert.match(config, /\{ text: 'Tester field guide', link: '\/guide\/tester-field-guide' \}/);
-  assert.match(config, /\{ text: 'AI-assisted Apex', link: '\/guide\/ai-assisted-apex' \}/);
-  assert.match(config, /\{ text: 'Execute anonymous Apex and SOQL', link: '\/guide\/workbench' \}/);
-  assert.doesNotMatch(config, /\{ text: 'Coverage', link: '\/guide\/workbench' \}/);
-  assert.doesNotMatch(config, /\{ text: 'Capability map', link: '\/guide\/support-map' \}/);
+  assert.match(index, /Checksums, SBOM, and attestations/);
+  assert.match(index, /data-copy-text="curl -fsSL https:\/\/glade\.sh\/install\.sh \| sh&#10;glade doctor&#10;glade check --project \./);
+  assert.doesNotMatch(index, /home-data-section|home-plugin-section|data-scenario-workbench/);
 });
 
-test("docs navigation exposes workflows modules and references as separate trails", () => {
+test("navigation exposes five top-level tasks and route-scoped sidebars", () => {
   function assertConfigLink(text, link) {
     const escapedText = text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const escapedLink = link.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     assert.match(config, new RegExp(`\\{ text: '${escapedText}', link: '${escapedLink}' \\}`));
   }
 
+  assertConfigLink("Docs", "/guide/");
+  assertConfigLink("Install", "/guide/installation");
   assertConfigLink("Workflows", "/guide/workflows");
-  assertConfigLink("Product areas", "/guide/modules");
   assertConfigLink("Reference", "/reference/cli");
+  assertConfigLink("Support & trust", "/guide/support-map");
   assertConfigLink("Run Apex tests", "/guide/workflows/apex-tests");
   assertConfigLink("Debug Apex", "/guide/workflows/debug-apex");
   assertConfigLink("Preview LWC", "/guide/workflows/lwc-preview");
   assertConfigLink("Preview Visualforce", "/guide/workflows/visualforce-preview");
   assertConfigLink("Work with local data", "/guide/workflows/local-data");
   assertConfigLink("Add Glade to CI", "/guide/workflows/ci");
-  assertConfigLink("Apex runtime", "/guide/modules/apex-runtime");
-  assertConfigLink("Test runner", "/guide/modules/test-runner");
-  assertConfigLink("Local org and data", "/guide/modules/local-org-data");
-  assertConfigLink("LWC preview", "/guide/modules/lwc-preview");
-  assertConfigLink("Visualforce preview", "/guide/modules/visualforce-preview");
-  assertConfigLink("Debug and profile", "/guide/modules/debug-profile");
-  assertConfigLink("Editor and workbench", "/guide/modules/editor");
-  assertConfigLink("Plugins", "/guide/modules/plugins");
+  assertConfigLink("Capability overview", "/guide/modules");
+  assertConfigLink("Capability explorer", "/guide/workbench");
   assertConfigLink("CLI reference", "/reference/cli");
-  assertConfigLink("Config reference", "/reference/config");
+  assertConfigLink("Configuration", "/reference/config");
   assertConfigLink("Error codes", "/reference/errors");
   assertConfigLink("Apex language compatibility", "/reference/apex-language-compatibility");
   assertConfigLink("Apex support map", "/reference/apex-support");
   assertConfigLink("LWC support matrix", "/reference/lwc-support");
   assertConfigLink("Visualforce support matrix", "/reference/visualforce-support");
   assertConfigLink("Local API routes", "/reference/local-api-routes");
+  for (const prefix of ["/guide/", "/reference/", "/help/", "/maintainer/"]) {
+    assert.match(config, new RegExp(`'${prefix.replaceAll("/", "\\/")}': \\[`));
+  }
+  assert.doesNotMatch(config, /text: 'Product areas'/);
 });
 
 test("new docs pages use clear page roles and link to deeper references", () => {
@@ -555,10 +437,10 @@ test("new docs pages use clear page roles and link to deeper references", () => 
 
   assert.match(workflowApexTests, /^# Run Apex tests/m);
   assert.match(workflowApexTests, /glade test --project \./);
-  assert.match(workflowApexTests, /\[Test runner\]\(\/guide\/modules\/test-runner\)/);
+  assert.match(workflowApexTests, /\[Test runner\]\(\/guide\/modules#test-runner\)/);
   assert.match(workflowDebugApex, /^# Debug Apex/m);
   assert.match(workflowDebugApex, /glade dap --project/);
-  assert.match(workflowDebugApex, /\[Debug and profile\]\(\/guide\/modules\/debug-profile\)/);
+  assert.match(workflowDebugApex, /\[Debug and profile\]\(\/guide\/modules#debug-and-profile\)/);
   assert.match(workflowLwcPreview, /^# Preview LWC locally/m);
   assert.match(workflowLwcPreview, /glade dev lwc --project \. --open/);
   assert.match(workflowLwcPreview, /\[LWC support matrix\]\(\/reference\/lwc-support\)/);
@@ -566,17 +448,17 @@ test("new docs pages use clear page roles and link to deeper references", () => 
   assert.match(workflowVisualforcePreview, /glade dev vf --project \./);
   assert.match(workflowVisualforcePreview, /\[Visualforce support matrix\]\(\/reference\/visualforce-support\)/);
   assert.match(workflowLocalData, /^# Work with local data/m);
-  assert.match(workflowCi, /^# Add Glade to CI/m);
+  assert.match(workflowCi, /^# Glade CI quickstart/m);
 
-  assert.match(modulesIndex, /^# Product areas/m);
-  assert.match(moduleApexRuntime, /^# Apex runtime/m);
-  assert.match(moduleTestRunner, /^# Test runner/m);
-  assert.match(moduleLocalOrgData, /^# Local org and data/m);
-  assert.match(moduleLwcPreview, /^# LWC preview/m);
-  assert.match(moduleVisualforcePreview, /^# Visualforce preview/m);
-  assert.match(moduleDebugProfile, /^# Debug and profile/m);
-  assert.match(moduleEditor, /^# Editor and workbench/m);
-  assert.match(modulePlugins, /^# Plugins/m);
+  assert.match(modulesIndex, /^# How Glade works/m);
+  assert.match(moduleApexRuntime, /^## Apex runtime/m);
+  assert.match(moduleTestRunner, /^## Test runner/m);
+  assert.match(moduleLocalOrgData, /^## Local org and data/m);
+  assert.match(moduleLwcPreview, /^## LWC preview/m);
+  assert.match(moduleVisualforcePreview, /^## Visualforce preview/m);
+  assert.match(moduleDebugProfile, /^## Debug and profile/m);
+  assert.match(moduleEditor, /^## Editor and workbench/m);
+  assert.match(modulePlugins, /^## Plugins/m);
 
   assert.match(referenceCli, /^# CLI reference/m);
   assert.match(referenceConfig, /^# Config reference/m);
@@ -621,20 +503,14 @@ test("Apex language compatibility docs publish the checked identifier contract",
   assert.match(referenceErrors, /If it reports an unknown code, use the detailed guide/);
 });
 
-test("site copy is task-first and names local capabilities plainly", () => {
-  assert.match(index, /<h1>Local Apex runtime for SFDX projects<\/h1>/);
-  assert.match(index, /Run, test, and debug Apex locally/);
-  assert.match(index, /Debug supported paths from VS Code/);
-  assert.match(index, /Check human and AI-generated changes before the org round trip/);
-  assert.match(index, /Unsupported platform services fail with named diagnostics\./);
+test("public copy states the local Apex outcome and its Salesforce boundary", () => {
+  assert.match(index, /<h1>Run and test Salesforce Apex locally\.<\/h1>/);
+  assert.match(index, /checks source and runs supported Apex tests, SOQL\/DML, and debug flows/);
   assert.match(index, /Run your first local check/);
-  assert.match(index, /No Salesforce org login required for supported local checks\./);
-  assert.match(index, /Salesforce remains the validation gate\./);
+  assert.match(index, /No Salesforce org login is required for supported local checks\./);
   assert.match(index, /What runs locally/);
   assert.match(index, /One local loop for CLI, VS Code, AI, and CI\./);
   assert.match(index, /Daily local workflow/);
-  assert.match(index, /Optional plugins/);
-  assert.match(index, /Local data without a scratch org/);
   assert.match(index, /Project loop/);
   assert.match(index, /Diagnostic/);
   for (const stale of [
@@ -649,7 +525,7 @@ test("site copy is task-first and names local capabilities plainly", () => {
   ]) {
     assert.doesNotMatch(siteCopy, stale);
   }
-  assert.match(index, /Anonymous Apex/);
+  assert.match(index, /anonymous Apex/);
   assert.match(workbench, /Type Apex expressions and see whether the API runs locally, runs with limits, or requires Salesforce\./);
   assert.match(workbench, /Use the editor as a live capability map: type a dot, read the label, and see the boundary before you depend on an API\./);
   assert.match(workbench, /Capability cards/);
@@ -657,7 +533,7 @@ test("site copy is task-first and names local capabilities plainly", () => {
   assert.match(workbench, /Local result/);
   assert.match(codeMirrorWorkbench, /Try capability-backed autocomplete\./);
   assert.match(codeMirrorWorkbench, /Type a dot after/);
-  assert.match(config, /description: 'Local Apex checks and focused tests before the Salesforce validation gate\.'/);
+  assert.match(config, /description: 'Run and test supported Salesforce Apex locally from a Salesforce DX project\.'/);
   assert.match(config, /\{ text: 'What runs locally', link: '\/guide\/support-map' \}/);
   assert.match(supportMap, /## Area details/);
   assert.match(supportMap, /## Capability claims/);
@@ -679,7 +555,7 @@ test("site copy is task-first and names local capabilities plainly", () => {
   assert.equal((cliReference.match(/auto-connect through `\.glade\/test\/serve\.sock` unless `--no-serve` is set\./g) || []).length, 1);
 });
 
-test("security trust surface is public, checked, and release-backed", () => {
+test("security and release trust claims stay linked to repository proof", () => {
   assert.match(repoReadme, /Security workflow/);
   assert.match(repoReadme, /https:\/\/github\.com\/glade-sh\/glade\/actions\/workflows\/security\.yml\/badge\.svg\?branch=main/);
   assert.match(repoReadme, /https:\/\/github\.com\/glade-sh\/glade\/actions\/workflows\/security\.yml/);
@@ -694,7 +570,8 @@ test("security trust surface is public, checked, and release-backed", () => {
   assert.match(repoSecurityPolicy, /Local laptop behavior/);
   assert.match(repoSecurityPolicy, /Glade does not require a Salesforce org login for supported local checks\./);
 
-  assert.match(config, /\{ text: 'Security & Trust', link: '\/guide\/security-trust' \}/);
+  assert.match(config, /\{ text: 'Support & trust', link: '\/guide\/support-map' \}/);
+  assert.match(config, /\{ text: 'Security & trust', link: '\/guide\/security-trust' \}/);
   assert.match(securityTrust, /^# Security & Trust/m);
   assert.match(securityTrust, /OpenSSF Scorecard/);
   assert.match(securityTrust, /Published repository-posture results/);
@@ -741,7 +618,7 @@ test("security trust surface is public, checked, and release-backed", () => {
   assert.match(installation, /gh attestation verify/);
 });
 
-test("guided help articles are a small screenshot-backed set", () => {
+test("guided help routes remain task-oriented and evidence-backed", () => {
   const articles = [
     helpFirstLocalCheck,
     helpRunOneApexTest,
@@ -754,9 +631,10 @@ test("guided help articles are a small screenshot-backed set", () => {
     helpCiSetup
   ];
 
-  assert.match(config, /\{ text: 'Help', link: '\/help\/' \}/);
-  assert.match(config, /text: 'Guided help'/);
-  assert.match(helpIndex, /^# Guided Help/m);
+  assert.match(config, /'\/help\/': \[/);
+  assert.match(config, /\{ text: 'Help overview', link: '\/help\/' \}/);
+  assert.match(helpIndex, /^# Guided help/m);
+  assert.match(helpIndex, /class="docs-route-grid"/);
   assert.equal(articles.length, 9);
 
   for (const article of articles) {
@@ -1086,7 +964,7 @@ test("workbench completion info exposes support status labels", () => {
   assert.match(css, /\.glade-completion-status-unsupported\s*\{/);
 });
 
-test("home script powers the local workbench demo", () => {
+test("workbench assets and controls are route-scoped and keyboard accessible", () => {
   assert.doesNotMatch(index, /src: \/js\/highlight\.js/);
   assert.doesNotMatch(index, /src: \/js\/home\.js/);
   assert.doesNotMatch(workbench, /src: \/js\/highlight\.js/);
@@ -1106,7 +984,8 @@ test("home script powers the local workbench demo", () => {
   assert.doesNotMatch(homeScript, /initHomeLoop|setHomeLoopState|animateHomeLoop|easeHomeLoop/);
   assert.doesNotMatch(homeScript, /data-home-loop|homeLoopStates|homeLoopLabels|homeLoopActiveNodes/);
   assert.doesNotMatch(homeScript, /requestAnimationFrame|manualHomeLoopUntil/);
-  assert.match(homeScript, /hideHomeSearch/);
+  assert.doesNotMatch(homeScript, /hideHomeSearch/);
+  assert.match(docsEnhancer, /route\.path === '\/' \|\| route\.path === '\/guide\/workbench'/);
   assert.match(homeScript, /copyLabel \+ " copied to clipboard"/);
   assert.match(homeScript, /function initWorkbenchDemo\(\)/);
   assert.match(homeScript, /var scenarios = \{/);
@@ -1117,7 +996,7 @@ test("home script powers the local workbench demo", () => {
   assert.match(homeScript, /glade debug profile --log logs\/apex-debug\.log/);
 });
 
-test("home local loop styles stay quiet and responsive", () => {
+test("homepage layout uses the shared responsive design system", () => {
   assert.match(highlight, /\.join\(""\)/);
   assert.match(highlight, /window\.gladeHighlightCodeBlock = highlightCodeBlock/);
   assert.match(highlight, /window\.gladeHighlightAllCodeBlocks = highlightAllCodeBlocks/);
@@ -1174,7 +1053,7 @@ test("home local loop styles stay quiet and responsive", () => {
   assert.match(css, /\.home-completion-status-limited\s*\{/);
   assert.match(css, /\.home-completion-status-salesforce\s*\{/);
   assert.match(css, /\.home-install-strip code\s*\{[\s\S]*overflow-wrap: anywhere;/);
-  assert.match(css, /body:has\(\.VPHome\) \.VPNavBarSearch\s*\{[\s\S]*display: none;[\s\S]*pointer-events: none;/);
+  assert.doesNotMatch(css, /body:has\(\.VPHome\) \.VPNavBarSearch\s*\{[\s\S]*display: none;[\s\S]*pointer-events: none;/);
   assert.match(css, /\.VPNavBarSearch\s*\{[\s\S]*opacity: 0\.92;/);
   assert.match(css, /--glade-action-bg: var\(--glade\);/);
   assert.match(css, /@media \(max-width: 1120px\)\s*\{[\s\S]*\.home-hero-shell\s*\{[\s\S]*grid-template-columns: 1fr;[\s\S]*gap: 24px;[\s\S]*padding-bottom: 12px;/);
@@ -1190,7 +1069,7 @@ test("home local loop styles stay quiet and responsive", () => {
   assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-loop-result\s*\{[\s\S]*margin-top: 10px;[\s\S]*padding: 12px;/);
   assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-command-grid\s*\{[\s\S]*grid-template-columns: 1fr;/);
   assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-loop-metrics\s*\{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);[\s\S]*margin-top: 12px;[\s\S]*padding-top: 10px;/);
-  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-loop-metrics span\s*\{[\s\S]*font-size: 10px;[\s\S]*padding: 5px;/);
+  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-loop-metrics span\s*\{[\s\S]*font-size: 12px;[\s\S]*padding: 5px;/);
   assert.doesNotMatch(css, /margin-inline: calc\(var\(--glade-page-gutter\) \* -0\.5\);/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*transition-duration: 0\.001ms !important;/);
   assert.match(css, /\.workbench-page \.home-workbench\s*\{[\s\S]*width: 100%;[\s\S]*max-width: 100%;/);
@@ -1234,8 +1113,8 @@ test("apex highlighter calls out platform and qualified types", () => {
   assert.doesNotMatch(apexLanguageModule, /function\(variableName\)/);
 });
 
-test("interactive capability map carries autocomplete and workflow examples", () => {
-  assert.match(workbench, /^# Interactive capability map/m);
+test("capability explorer exposes supported APIs and an accessible workflow demo", () => {
+  assert.match(workbench, /^# Capability explorer/m);
   assert.match(workbench, /data-coverage-workbench/);
   assert.match(workbench, /class="coverage-workbench-cards"/);
   assert.match(workbench, /Database\.insert/);
@@ -1261,7 +1140,7 @@ test("interactive capability map carries autocomplete and workflow examples", ()
   assert.match(workbench, /data-cli-output/);
   assert.match(workbench, /aria-label="Copy workbench JSON command"/);
   assert.match(workbench, /Copy JSON command/);
-  assert.match(workbench, /Shortcuts: 1-4 switch jobs · R run · C copy/);
+  assert.doesNotMatch(workbench, /Shortcuts: 1-4 switch jobs · R run · C copy/);
   assert.match(homeScript, /function highlightCommandOutput/);
   assert.match(homeScript, /function highlightJsonOutput/);
   assert.match(homeScript, /function highlightTraceOutput/);
@@ -1361,7 +1240,7 @@ test("docs code blocks and tables fill their content lane cleanly", () => {
   assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.vp-doc table\s*\{[\s\S]*display: block;[\s\S]*overflow-x: auto;/);
 });
 
-test("theme uses the Host Signal design direction", () => {
+test("theme uses bundled fonts, readable type, and task-oriented navigation", () => {
   assert.match(packageJson.devDependencies["@fontsource-variable/host-grotesk"], /^\^5\./);
   assert.match(packageJson.devDependencies["@fontsource/monaspace-argon"], /^\^5\./);
   assert.equal(packageJson.devDependencies["@fontsource/apfel-grotezk"], undefined);
@@ -1394,7 +1273,7 @@ test("theme uses the Host Signal design direction", () => {
   assert.match(css, /--lh-ui: 1\.35;/);
   assert.match(css, /--lh-body: 1\.65;/);
   assert.match(css, /--lh-code: 1\.6;/);
-  assert.match(css, /--vp-sidebar-width: 220px;/);
+  assert.match(css, /--vp-sidebar-width: 264px;/);
   assert.match(css, /--vp-layout-max-width: 1360px;/);
   assert.match(css, /--glade-page-max: 1280px;/);
   assert.match(css, /--bg: #070b0d;/);
@@ -1416,7 +1295,7 @@ test("theme uses the Host Signal design direction", () => {
   assert.match(css, /\.VPNavBar > \.wrapper > \.container\s*\{[\s\S]*width: var\(--glade-shell-width\);[\s\S]*margin-inline: auto;[\s\S]*padding-inline: 0;/);
   assert.match(css, /\.VPNavBarTitle\s*\{[\s\S]*height: var\(--vp-nav-height\);[\s\S]*align-items: center;[\s\S]*margin-right: 24px;/);
   assert.match(css, /body:has\(\.VPHome\) \.VPNavBarTitle\s*\{[\s\S]*margin-left: 0;[\s\S]*margin-right: clamp\(40px, 6vw, 84px\);/);
-  assert.match(css, /body:has\(\.VPHome\) \.VPNavBarSearch\s*\{[\s\S]*display: none;/);
+  assert.doesNotMatch(css, /body:has\(\.VPHome\) \.VPNavBarSearch\s*\{[\s\S]*display: none;/);
   assert.match(css, /\.VPNavBar > \.wrapper > \.container > \.title\s*\{[\s\S]*align-items: center;[\s\S]*padding-left: 0;/);
   assert.match(css, /body:not\(:has\(\.VPHome\)\) \.VPNavBar > \.wrapper > \.container > \.title\s*\{[\s\S]*padding-left: 24px;/);
   assert.match(css, /\.VPNavBar > \.wrapper > \.container > \.content\s*\{[\s\S]*padding-right: 0;/);
@@ -1434,7 +1313,7 @@ test("theme uses the Host Signal design direction", () => {
   assert.match(css, /body:not\(:has\(\.VPHome\)\) \.VPNavBar\.has-sidebar \.content-body\s*\{[\s\S]*justify-content: flex-start;[\s\S]*gap: 18px;/);
   assert.match(css, /body:not\(:has\(\.VPHome\)\) \.VPNavBar\.has-sidebar \.VPNavBarMenu\s*\{[\s\S]*margin-left: auto;/);
   assert.match(css, /\.VPNavBarSearch\s*\{[\s\S]*width: clamp\(220px, 26vw, 420px\);/);
-  assert.match(css, /@media \(max-width: 980px\)\s*\{[\s\S]*\.VPNavBarSearch\s*\{[\s\S]*display: none !important;/);
+  assert.doesNotMatch(css, /@media \(max-width: 980px\)\s*\{[\s\S]*\.VPNavBarSearch\s*\{[\s\S]*display: none !important;/);
   assert.match(css, /\.VPHome \.VPHero\s*\{[\s\S]*display: none !important;/);
   assert.match(css, /\.home-hero-shell\s*\{[\s\S]*grid-template-columns: minmax\(500px, 1fr\) minmax\(360px, 560px\);/);
   assert.match(css, /\.home-hero-shell\s*\{[\s\S]*gap: var\(--space-14\);/);
@@ -1449,20 +1328,18 @@ test("theme uses the Host Signal design direction", () => {
   assert.doesNotMatch(css, /\.VPHero \.name\s*\{[\s\S]*border-radius: 999px;/);
   assert.doesNotMatch(css, /\.VPHero \.text\s*\{[\s\S]*font-weight: 740/);
   assert.match(css, /\.vp-doc h1\s*\{[\s\S]*font-family: var\(--vp-font-family-base\);[\s\S]*font-style: normal;/);
-  assert.match(config, /title: 'Glade - Local Apex Runtime for SFDX Projects'/);
-  assert.match(config, /description: 'Local Apex checks and focused tests before the Salesforce validation gate\.'/);
-  assert.match(config, /\['meta', \{ property: 'og:title', content: 'Glade — Local Apex runtime for SFDX projects' \}\]/);
-  assert.match(config, /\['meta', \{ property: 'og:description', content: 'Run supported Apex checks before the Salesforce round trip\.' \}\]/);
-  assert.match(config, /\['meta', \{ property: 'og:type', content: 'website' \}\]/);
-  assert.match(config, /Local Apex runtime for SFDX projects/);
-  assert.match(index, /<h1>Local Apex runtime for SFDX projects<\/h1>/);
-  assert.match(config, /Local Apex Runtime for SFDX Projects/);
+  assert.match(config, /title: 'Glade'/);
+  assert.match(config, /description: 'Run and test supported Salesforce Apex locally from a Salesforce DX project\.'/);
+  assert.match(config, /\['meta', \{ property: 'og:title', content: title \}\]/);
+  assert.match(config, /\['meta', \{ property: 'og:description', content: description \}\]/);
+  assert.match(config, /\['meta', \{ property: 'og:type', content: type \}\]/);
+  assert.match(index, /<h1>Run and test Salesforce Apex locally\.<\/h1>/);
   assert.match(config, /siteTitle: 'Glade'/);
-  assert.match(config, /Salesforce validation gate/);
+  assert.match(config, /supported local paths, and the boundary with Salesforce/);
   assert.match(config, /lastUpdated: false/);
   assert.match(config, /\['link', \{ rel: 'icon', type: 'image\/svg\+xml', href: '\/logo-mark\.svg' \}\]/);
   assert.match(config, /\{ text: 'Workflows', link: '\/guide\/workflows' \}/);
-  assert.match(config, /\{ text: 'Product areas', link: '\/guide\/modules' \}/);
+  assert.match(config, /\{ text: 'Support & trust', link: '\/guide\/support-map' \}/);
   assert.match(config, /\{ text: 'Reference', link: '\/reference\/cli' \}/);
   assert.match(config, /\{ text: 'What is Glade\?', link: '\/guide\/overview' \}/);
   assert.match(config, /text: 'What is Glade\?'/);
@@ -1471,8 +1348,8 @@ test("theme uses the Host Signal design direction", () => {
   assert.match(config, /text: 'What runs locally'/);
   assert.doesNotMatch(config, /text: 'Capability map'/);
   assert.doesNotMatch(config, /text: 'Coverage workbench'/);
-  assert.match(config, /text: 'Workflows',\n\s+collapsed: false,/);
-  assert.match(config, /text: 'Product areas',\n\s+collapsed: false,/);
+  assert.match(config, /text: 'Workflows',\n\s+collapsed: true,/);
+  assert.match(config, /text: 'How Glade works',\n\s+collapsed: true,/);
   assert.match(config, /text: 'Run Apex tests'/);
   assert.match(config, /text: 'Debug Apex'/);
   assert.match(config, /text: 'Affected tests'/);
@@ -1481,7 +1358,7 @@ test("theme uses the Host Signal design direction", () => {
   assert.match(config, /text: 'Preview Visualforce'/);
   assert.match(config, /text: 'Use VS Code'/);
   assert.match(config, /text: 'Execute anonymous Apex and SOQL'/);
-  assert.match(config, /text: 'Editor and workbench'/);
+  assert.match(config, /text: 'Capability explorer'/);
   assert.match(config, /text: 'Automation and JSON'/);
   assert.match(config, /text: 'Error codes'/);
   assert.match(config, /text: 'Reports and package artifacts'/);
@@ -1531,13 +1408,13 @@ test("Cloudflare Pages build publishes the install route itself", () => {
   assert.doesNotMatch(siteReadme, /GitHub Pages/);
 });
 
-test("mobile nav screen keeps a visible touch surface", () => {
+test("mobile navigation keeps menu and search controls available", () => {
   assert.match(css, /--vp-nav-screen-bg-color: var\(--glade-nav-bg\);/);
   assert.doesNotMatch(css, /\.VPNav,\s*\n\.VPNavBar\.has-sidebar \.content/);
   assert.match(css, /\.VPNavBar\.screen-open,\s*\n\.VPNavScreen\s*\{[\s\S]*background-color: var\(--glade-nav-bg\) !important;/);
   assert.match(css, /\.VPNavScreen\s*\{[\s\S]*z-index: var\(--vp-z-index-nav\);[\s\S]*backdrop-filter: blur\(16px\);[\s\S]*pointer-events: auto;/);
   assert.match(css, /\.VPNavScreen \.container\s*\{[\s\S]*background: transparent;/);
-  assert.match(css, /@media \(max-width: 980px\)\s*\{[\s\S]*\.VPNavBarSearch\s*\{[\s\S]*display: none !important;/);
+  assert.doesNotMatch(css, /@media \(max-width: 980px\)\s*\{[\s\S]*\.VPNavBarSearch\s*\{[\s\S]*display: none !important;/);
 });
 
 test("docs shell uses a dedicated docs header and stronger navigation states", () => {
@@ -1565,7 +1442,7 @@ test("docs shell uses a dedicated docs header and stronger navigation states", (
   assert.match(css, /\.docs-command-filter input:focus-visible\s*\{[\s\S]*outline: 2px solid var\(--glade-focus-ring\);/);
 });
 
-test("support docs summarize the checked compatibility artifacts", () => {
+test("guide landing, quickstart, and support map explain the current product", () => {
   assert.match(overview, /^# What is Glade\?/m);
   assert.match(overview, /class="docs-intro"/);
   assert.match(overview, /class="docs-route-grid"/);
@@ -1583,16 +1460,16 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(overview, /## Capability claims/);
   assert.doesNotMatch(overview, /## Support claims/);
   assert.doesNotMatch(overview, /full Visualforce rendering or PDF generation/);
-  assert.match(quickstart, /^# Quickstart: Check and Test an SFDX Project/m);
+  assert.match(quickstart, /^# Run your first local Apex check/m);
   assert.match(quickstart, /class="docs-intro"/);
-  assert.match(quickstart, /This path installs Glade, checks the project, and runs one focused test\./);
+  assert.match(quickstart, /This path installs Glade, checks the project, and runs its discovered local tests\./);
   assert.match(quickstart, /For VS Code, CI, and report workflows/);
   assert.doesNotMatch(quickstart, /in a few minutes|small evaluation with VS Code, AI/);
   assert.match(quickstart, /If `glade` is not found/);
   assert.match(quickstart, /zero diagnostics and exit code `0`/);
   assert.match(quickstart, /\[Tester field guide\]\(\/guide\/tester-field-guide\)/);
   assert.match(quickstart, /glade check --project \./);
-  assert.match(quickstart, /glade test --project \. --class RefinementServiceTest/);
+  assert.match(quickstart, /glade test --project \. --class <YourTestClass>/);
   assert.doesNotMatch(quickstart, /--filter/);
   assert.match(quickstart, /glade test changed --project \. --since origin\/main/);
   assert.match(quickstart, /exact hosted Visualforce\s+behavior/);
@@ -1651,7 +1528,7 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(css, /\.docs-support-legend\s*\{[\s\S]*position: static;[\s\S]*display: flex;[\s\S]*flex-wrap: wrap;[\s\S]*gap: 4px;[\s\S]*padding: 4px 6px;/);
   assert.doesNotMatch(css, /\.docs-support-legend\s*\{[\s\S]*position: sticky;/);
   assert.match(css, /\.docs-support-legend-card\s*\{[\s\S]*display: inline-flex;[\s\S]*align-items: center;[\s\S]*padding: 0;/);
-  assert.match(installation, /glade test --project \. --class RefinementServiceTest --method testRefinesFileRow --json/);
+  assert.match(installation, /glade test --project \. --class <YourTestClass> --method <yourTestMethod> --json/);
   assert.match(cliReference, /id="cli-command-filter"/);
   assert.match(cliReference, /class="docs-command-card"/);
   assert.match(cliReference, /--class RefinementServiceTest --method testRefinesFileRow/);
@@ -1702,7 +1579,7 @@ test("AI-assisted Apex guide gives agents a Glade TDD contract", () => {
   assert.match(testerFieldGuide, /\[AI-assisted Apex\]\(\/guide\/ai-assisted-apex\)/);
 });
 
-test("preview surfaces are labeled in public and repo docs", () => {
+test("preview labels stay in the workflows and support reference", () => {
   assert.match(workflowLwcPreview, /preview routes/i);
   assert.match(workflowLwcPreview, /glade dev lwc --project \. --open/);
   assert.match(moduleLwcPreview, /The LWC shell is a local preview surface/);
@@ -1714,7 +1591,7 @@ test("preview surfaces are labeled in public and repo docs", () => {
   assert.match(lwcLocalShell, /"phase3BaseComponents"/);
   assert.match(supportMap, /`lightning\/refresh`/);
   assert.match(supportMap, /packaged SLDS 2 and classic SLDS assets/);
-  assert.match(index, /Visualforce and LWC local shells remain preview features\./);
+  assert.doesNotMatch(index, /Visualforce and LWC local shells remain preview features\./);
   assert.match(repoReadme, /Visualforce preview feature[\s\S]*glade dev vf/);
   assert.match(repoCompatibility, /Visualforce dev rendering \| preview feature/i);
   assert.match(repoLwcSupport, /Direct component shell \| Preview feature/i);
@@ -1748,7 +1625,7 @@ test("enterprise workflow docs expose current report commands", () => {
   assert.match(enterpriseWorkflows, /Compatibility and support-map generation remain plugin-owned/);
 });
 
-test("cli reference documents current code intelligence commands", () => {
+test("detailed CLI examples remain in reference and workflow pages", () => {
   assert.match(cliReference, /## `glade update`/);
   assert.match(cliReference, /glade update --dry-run/);
   assert.match(cliReference, /GLADE_UPDATE_ALLOW_SHELL=1 glade update/);
@@ -1784,7 +1661,7 @@ test("cli reference documents current code intelligence commands", () => {
   assert.match(cliReference, /\[Use Glade as an sf target\]\(\/guide\/glade-orgs\)/);
   assert.match(gladeOrgs, /glade org create refinement-local\n```/);
   assert(gladeOrgs.indexOf("glade org create refinement-local") < gladeOrgs.indexOf("--db .glade/orgs/refinement-local.sqlite"));
-  assert.match(index, /glade org create refinement-local<\/code><\/pre>/);
+  assert.doesNotMatch(index, /glade org create refinement-local/);
   assert.match(gladeOrgs, /sf data import tree -p \.\/data\/fileRowsImport\.json -o refinement-local/);
   assert.match(gladeOrgs, /It is not a real scratch\s+org/);
   assert.match(gladeOrgs, /Bulk API v1 CSV insert and upsert baseline/);
@@ -1805,7 +1682,7 @@ test("ci docs create reports directory before report outputs", () => {
   assert.ok(mkdirIndex < sarifIndex);
 });
 
-test("public launch docs avoid stale public routes and registry promises", () => {
+test("route and content checks enforce the public documentation contract", () => {
   assert.match(siteReadme, /https:\/\/glade\.sh\/guide\/support-map/);
   assert.doesNotMatch(siteReadme, /https:\/\/glade\.sh\/docs\/guide\//);
   assert.match(testerFieldGuide, /^# Tester field guide/m);
@@ -1824,7 +1701,7 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(testerFieldGuide, /Useful first-run feedback includes:/);
   assert.match(testerFieldGuide, /default public plugin registry serves the three first-party packages/);
   assert.match(ciArtifacts, /fetch-depth: 0/);
-  assert.match(installation, /^## Install VS Code Extension/m);
+  assert.match(installation, /^## Editor and CI \{#editor-and-ci\}/m);
   assert.match(installation, /glade editor doctor vscode/);
   assert.match(installation, /glade editor install vscode --force/);
   assert.match(installation, /glade editor doctor vscode --editor cursor/);
@@ -1835,7 +1712,7 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(installation, /Glade Home/);
   assert.match(installation, /Apex & SOQL scratch buffers/);
   assert.match(installation, /\[Editor, LSP, and DAP\]\(\/guide\/editor\)/);
-  assert.match(installation, /For a first project run, use the \[Tester field guide\]\(\/guide\/tester-field-guide\)\./);
+  assert.match(installation, /Continue with the \[first project run\]\(#first-project-run\)/);
   assert.match(editor, /^## VS Code Extension/m);
   assert.match(editor, /`Glade: Open Home` command/);
   assert.match(editor, /Data Browser/);
@@ -1906,7 +1783,8 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(packageJson.scripts.build, /npm run verify/);
   assert.match(packageJson.scripts.verify, /check:routes/);
   assert.match(packageJson.scripts.verify, /help:check/);
-  assert.match(checkDocRoutesScript, /Missing docs route source files/);
+  assert.match(checkDocRoutesScript, /Route contract failed/);
+  assert.match(checkDocRoutesScript, /Markdown source has no public-route classification/);
   assert.doesNotMatch(lwcLocalShell, /cd \.\.\/glade-tools/);
   assert.doesNotMatch(localTesting, /cd \.\.\/glade-tools/);
   assert.match(lwcLocalShell, /maintainer\/glade-tools/);
