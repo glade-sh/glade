@@ -49,7 +49,7 @@ func jsonFromValue(value Value, suppressObjectNulls bool) any {
 			seen := map[string]bool{}
 			for _, key := range orderedJSONMapKeys(value) {
 				item, ok := value.Map[key]
-				if !ok {
+				if !ok || seen[key] {
 					continue
 				}
 				out = append(out, orderedJSONField{name: mapStoredKey(value, key).String(), value: jsonFromValue(item, suppressObjectNulls)})
@@ -98,7 +98,7 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 			seen := map[string]bool{}
 			for _, key := range orderedJSONMapKeys(value) {
 				item, ok := value.Map[key]
-				if !ok {
+				if !ok || seen[key] {
 					continue
 				}
 				name := mapStoredKey(value, key).String()
@@ -480,31 +480,7 @@ func isImplicitFalseIsDeleted(value Value, field string, item Value) bool {
 }
 
 func orderedJSONMapKeys(value Value) []string {
-	for _, names := range [][]string{
-		{"parameters", "failureReason", "failureCode", "trigger", "status", "completed", "started", "source", "providerId", "id"},
-		{"messageParams", "messageTemplate"},
-		{"type", "password", "username"},
-	} {
-		if !jsonMapHasAnyNamedKey(value, names) {
-			continue
-		}
-		var out []string
-		seen := map[string]bool{}
-		for _, name := range names {
-			key := mapKey(String(name))
-			if _, ok := value.Map[key]; ok {
-				out = append(out, key)
-				seen[key] = true
-			}
-		}
-		for _, key := range value.MapOrder {
-			if !seen[key] {
-				out = append(out, key)
-			}
-		}
-		return out
-	}
-	return value.MapOrder
+	return reverseMapOrder(value.MapOrder)
 }
 
 func jsonObjectMap(raw any) (map[string]any, bool) {
@@ -552,13 +528,12 @@ func jsonObjectFields(raw any) ([]orderedJSONField, bool) {
 	return out, true
 }
 
-func jsonMapHasAnyNamedKey(value Value, names []string) bool {
-	for _, name := range names {
-		if _, ok := value.Map[mapKey(String(name))]; ok {
-			return true
-		}
+func reverseMapOrder(order []string) []string {
+	reversed := make([]string, len(order))
+	for i, key := range order {
+		reversed[len(reversed)-1-i] = key
 	}
-	return false
+	return reversed
 }
 
 func (vm *VM) jsonSerializableFieldNames(typeName string) []string {

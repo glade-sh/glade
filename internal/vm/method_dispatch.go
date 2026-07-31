@@ -3310,7 +3310,7 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			delete(receiver.Map, key)
 			delete(receiver.MapKeys, key)
 			if len(receiver.MapOrder) > 0 {
-				filtered := receiver.MapOrder[:0]
+				filtered := make([]string, 0, len(receiver.MapOrder))
 				for _, orderedKey := range receiver.MapOrder {
 					if orderedKey != key {
 						filtered = append(filtered, orderedKey)

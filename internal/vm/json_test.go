@@ -2441,16 +2441,16 @@ Map<String,Object> primitive = new Map<String,Object>();
 primitive.put('n', null);
 primitive.put('a', 1);
 primitive.put('b', 2);
-System.assertEquals('{"n":null,"a":1,"b":2}', JSON.serialize(primitive));
+System.assertEquals('{"b":2,"a":1,"n":null}', JSON.serialize(primitive));
 String expectedPretty = '{' + '\n' +
-	'  "n" : null,' + '\n' +
+	'  "b" : 2,' + '\n' +
 	'  "a" : 1,' + '\n' +
-	'  "b" : 2' + '\n' +
+	'  "n" : null' + '\n' +
 	'}';
 System.assertEquals(expectedPretty, JSON.serializePretty(primitive));
 
 Map<String,Integer> stringKeys = (Map<String,Integer>)JSON.deserialize('{"b":null,"a":1}', Map<String,Integer>.class);
-System.assertEquals('{"b":null,"a":1}', JSON.serialize(stringKeys));
+System.assertEquals('{"a":1,"b":null}', JSON.serialize(stringKeys));
 Map<String,Integer> duplicateTypedMap = (Map<String,Integer>)JSON.deserialize('{"a":"bad","a":1}', Map<String,Integer>.class);
 System.assertEquals('{"a":1}', JSON.serialize(duplicateTypedMap));
 
@@ -2594,7 +2594,7 @@ items.add(null);
 root.put('items', items);
 root.put('webhooks', new List<String>{ 'DatasetScanMatchesChanged' });
 String compact = JSON.serialize(root, true);
-System.assertEquals('{"name":"Acme","scriptName":"X","missing":null,"items":[1,null],"webhooks":["DatasetScanMatchesChanged"]}', compact);
+System.assertEquals('{"webhooks":["DatasetScanMatchesChanged"],"items":[1,null],"missing":null,"scriptName":"X","name":"Acme"}', compact);
 String pretty = JSON.serializePretty(root, true);
 System.assert(pretty.contains('  "items" : [ 1, null ]'));
 System.assert(pretty.contains('  "scriptName" : "X"'));
@@ -2611,7 +2611,7 @@ gen.writeObjectField('root', root);
 gen.writeRawField('raw', '{"ok":true}');
 gen.writeEndObject();
 String generated = gen.getAsString();
-System.assert(generated.contains('  "root": {"name":"Acme","scriptName":"X","missing":null,"items":[1,null],"webhooks":["DatasetScanMatchesChanged"]}'));
+System.assert(generated.contains('  "root": {"webhooks":["DatasetScanMatchesChanged"],"items":[1,null],"missing":null,"scriptName":"X","name":"Acme"}'));
 System.assert(generated.contains('"raw": {"ok":true}'));
 System.assert(gen.isClosed());
 `)
@@ -2786,6 +2786,84 @@ System.assertEquals('LeadSource', decoded.rows.get(0).sfField);
 	}); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONSerializeMapMutationOrder(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> m = new Map<String,Object>();
+m.put('n', null);
+m.put('a', 1);
+m.put('b', 2);
+// 1. initial keySet() order
+List<String> keys = new List<String>(m.keySet());
+System.assertEquals(3, keys.size());
+System.assertEquals('n', keys[0]);
+System.assertEquals('a', keys[1]);
+System.assertEquals('b', keys[2]);
+// 5. JSON is reverse Map order
+System.assertEquals('{"b":2,"a":1,"n":null}', JSON.serialize(m));
+// 2. update does not move a key
+m.put('a', 10);
+List<String> keys2 = new List<String>(m.keySet());
+System.assertEquals('n', keys2[0]);
+System.assertEquals('a', keys2[1]);
+System.assertEquals('b', keys2[2]);
+System.assertEquals('{"b":2,"a":10,"n":null}', JSON.serialize(m));
+// 3. remove deletes it from keySet()
+m.remove('a');
+List<String> afterRemove = new List<String>(m.keySet());
+System.assertEquals(2, afterRemove.size());
+System.assertEquals('n', afterRemove[0]);
+System.assertEquals('b', afterRemove[1]);
+// 4. reinsert moves it to the end
+m.put('a', 10);
+List<String> keys3 = new List<String>(m.keySet());
+System.assertEquals(3, keys3.size());
+System.assertEquals('n', keys3[0]);
+System.assertEquals('b', keys3[1]);
+System.assertEquals('a', keys3[2]);
+System.assertEquals('{"a":10,"b":2,"n":null}', JSON.serialize(m));
+// 6. clear() followed by put('b',20), put('a',10)
+m.clear();
+m.put('b', 20);
+m.put('a', 10);
+List<String> afterClear = new List<String>(m.keySet());
+System.assertEquals(2, afterClear.size());
+System.assertEquals('b', afterClear[0]);
+System.assertEquals('a', afterClear[1]);
+System.assertEquals('{"a":10,"b":20}', JSON.serialize(m));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONSerializeMapLegacySpecialKeysReverseInsertionOrder(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> m = new Map<String,Object>();
+m.put('parameters', new List<String>{'one'});
+m.put('failureReason', 'bad');
+m.put('failureCode', 'Unauthorized');
+m.put('trigger', 'Manual');
+m.put('status', 'Failed');
+m.put('completed', 'done');
+m.put('started', 'start');
+m.put('source', 'Caqh');
+m.put('providerId', 'provider');
+m.put('id', 'id');
+System.assertEquals('{"id":"id","providerId":"provider","source":"Caqh","started":"start","completed":"done","status":"Failed","trigger":"Manual","failureCode":"Unauthorized","failureReason":"bad","parameters":["one"]}', JSON.serialize(m));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
