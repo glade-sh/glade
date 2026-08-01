@@ -39,6 +39,4 @@ func TestStandardPlatformSymbolOverlaysSystemShape(t *testing.T) {
 	stringClass := requireStandardSymbol(t, symbols, "String")
 	// Existing hand-written overload must remain after the overlay merge.
 	requireStandardMethod(t, stringClass, "template", []string{"Map<String,Object>"}, false)
-	// Overlay adds the no-arg System.String.template() overload.
-	requireStandardMethod(t, stringClass, "template", nil, false)
 }

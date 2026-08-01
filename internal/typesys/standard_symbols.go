@@ -1477,7 +1477,6 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "RUN_INTEGRATION_TESTS", Type: "Quiddity", Static: true},
 	}},
 	{Name: "String", Methods: []StandardMethodSpec{
-		{Name: "template", ReturnType: "String"},
 		{Name: "template", ReturnType: "String", Parameters: []string{"Map"}},
 	}},
 }

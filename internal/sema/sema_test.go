@@ -5750,26 +5750,6 @@ public class UsesQuiddityRunIT {
 	}
 }
 
-func TestAnalyzeStringTemplateNoArgs(t *testing.T) {
-	t.Parallel()
-	root := t.TempDir()
-	writeSemaFile(t, filepath.Join(root, "UsesStringTemplate.cls"), `
-public class UsesStringTemplate {
-  public void run(String input) {
-    String result = input.template();
-    String result2 = 'literal'.template();
-  }
-}
-`)
-	index := typesys.Build(project.Project{
-		Root:      root,
-		ApexFiles: []string{filepath.Join(root, "UsesStringTemplate.cls")},
-	}, schema.Schema{})
-	result := Analyze(index)
-	if result.HasErrors() {
-		t.Fatalf("unexpected String.template() diagnostics: %#v", result.Diagnostics)
-	}
-}
 
 func TestAnalyzeAssertClassMethods(t *testing.T) {
 	t.Parallel()

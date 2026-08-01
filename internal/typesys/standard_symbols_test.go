@@ -973,10 +973,6 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	quiddity := requireStandardSymbol(t, symbols, "Quiddity")
 	requireStandardProperty(t, quiddity, "RUN_INTEGRATION_TESTS", "Quiddity")
 
-	stringSym := requireStandardSymbol(t, symbols, "String")
-	requireStandardMethod(t, stringSym, "template", []string{}, false)
-	requireStandardMethodType(t, stringSym, "template", "String")
-
 	typeClass := requireStandardSymbol(t, symbols, "Type")
 	requireStandardMethod(t, typeClass, "isAssignableFrom", []string{"Type"}, false)
 
@@ -1066,7 +1062,6 @@ func TestStandardPlatformSymbolsKeepCoreStringMethodTypes(t *testing.T) {
 	requireStandardMethodType(t, stringType, "split", "List<String>")
 	requireStandardMethodType(t, stringType, "toLowerCase", "String")
 	requireStandardMethodType(t, stringType, "isNotBlank", "Boolean")
-	requireStandardMethodReturn(t, stringType, "template", nil, "String", false)
 	requireStandardMethodReturn(t, stringType, "template", []string{"Map"}, "String", false)
 }
 
