@@ -3452,6 +3452,15 @@ func formatString(pattern string, args []Value, display func(Value) (string, err
 }
 
 func formatStringTokenCached(token string, args []Value, display func(Value) (string, error), cache map[int]string) (string, error) {
+	if index, formatType, typed, err := formatStringTypedTokenParts(token); typed {
+		if err != nil {
+			return "", err
+		}
+		if index >= len(args) {
+			return "{" + strconv.Itoa(index) + "}", nil
+		}
+		return formatStringTypedToken(formatType, args[index])
+	}
 	index, ok, err := formatStringTokenIndex(token)
 	if err != nil {
 		return "", err
@@ -3491,8 +3500,14 @@ func formatStringToken(token string, args []Value, display func(Value) (string, 
 	if token == "" {
 		return "", fmt.Errorf("String.format empty argument index")
 	}
-	if strings.Contains(token, ",") {
-		return "", unsupportedCallError("String.format MessageFormat typed format elements")
+	if index, formatType, typed, err := formatStringTypedTokenParts(token); typed {
+		if err != nil {
+			return "", err
+		}
+		if index >= len(args) {
+			return "{" + strconv.Itoa(index) + "}", nil
+		}
+		return formatStringTypedToken(formatType, args[index])
 	}
 	index, err := strconv.Atoi(token)
 	if err != nil || index < 0 {
@@ -3502,6 +3517,47 @@ func formatStringToken(token string, args []Value, display func(Value) (string, 
 		return "{" + token + "}", nil
 	}
 	return display(args[index])
+}
+
+func formatStringTypedTokenParts(token string) (int, string, bool, error) {
+	comma := strings.IndexByte(token, ',')
+	if comma < 0 {
+		return 0, "", false, nil
+	}
+	indexToken := strings.TrimSpace(token[:comma])
+	if indexToken == "" {
+		return 0, "", true, fmt.Errorf("String.format empty argument index")
+	}
+	index, err := strconv.Atoi(indexToken)
+	if err != nil || index < 0 {
+		return 0, "", true, fmt.Errorf("String.format invalid argument index %q", token)
+	}
+	formatToken := strings.TrimSpace(token[comma+1:])
+	if styleComma := strings.IndexByte(formatToken, ','); styleComma >= 0 {
+		formatToken = strings.TrimSpace(formatToken[:styleComma])
+	}
+	if formatToken == "" {
+		return 0, "", true, newExceptionError("StringException", fmt.Sprintf("Bad argument syntax: [at pattern index %d] %q", comma, token+"}"))
+	}
+	switch strings.ToLower(formatToken) {
+	case "number", "date", "time", "choice":
+	default:
+		return 0, "", true, newExceptionError("StringException", fmt.Sprintf("Unknown format type %q", formatToken))
+	}
+	return index, formatToken, true, nil
+}
+
+func formatStringTypedToken(formatType string, value Value) (string, error) {
+	switch strings.ToLower(formatType) {
+	case "number":
+		return "", newExceptionError("StringException", "Cannot format given Object as a Number")
+	case "date", "time":
+		return "", newExceptionError("StringException", "Cannot format given Object (java.lang.String) as a Date")
+	case "choice":
+		return "", newExceptionError("StringException", fmt.Sprintf("'%s' is not a Number", value.String()))
+	default:
+		return "", newExceptionError("StringException", fmt.Sprintf("Unknown format type %q", formatType))
+	}
 }
 
 func stringAbbreviate(text string, args []Value) (string, error) {

@@ -1795,6 +1795,124 @@ System.assertEquals(11, xml11Escaped.indexOf('&#31;'));
 	}
 }
 
+func TestExecStringFormatTypedElementsAPI67(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Object> numberArgs = new List<Object>{ 2 };
+Boolean caughtNumber = false;
+try {
+  String.format('{0,number}', numberArgs);
+} catch (StringException e) {
+  caughtNumber = true;
+  System.assertEquals('Cannot format given Object as a Number', e.getMessage());
+}
+System.assert(caughtNumber);
+
+List<Object> dateArgs = new List<Object>{ Datetime.newInstance(2024, 1, 2, 3, 4, 5) };
+Boolean caughtDate = false;
+try {
+  String.format('{0,date,yyyy-MM-dd}', dateArgs);
+} catch (StringException e) {
+  caughtDate = true;
+  System.assertEquals('Cannot format given Object (java.lang.String) as a Date', e.getMessage());
+}
+System.assert(caughtDate);
+
+Boolean caughtChoice = false;
+try {
+  String.format('{0,choice,0#none|1#one|1<many}', numberArgs);
+} catch (StringException e) {
+  caughtChoice = true;
+  System.assertEquals('''2'' is not a Number', e.getMessage());
+}
+System.assert(caughtChoice);
+
+Boolean caughtNullChoice = false;
+try {
+  String.format('{0,choice,0#none|1#one|1<many}', new List<Object>{ null });
+} catch (StringException e) {
+  caughtNullChoice = true;
+  System.assertEquals('''null'' is not a Number', e.getMessage());
+}
+System.assert(caughtNullChoice);
+
+Boolean caughtUnknown = false;
+try {
+  String.format('{0,unknown}', numberArgs);
+} catch (StringException e) {
+  caughtUnknown = true;
+  System.assertEquals('Unknown format type "unknown"', e.getMessage());
+}
+System.assert(caughtUnknown);
+
+Boolean caughtUppercaseNumber = false;
+try {
+  String.format('{0,NUMBER}', numberArgs);
+} catch (StringException e) {
+  caughtUppercaseNumber = true;
+  System.assertEquals('Cannot format given Object as a Number', e.getMessage());
+}
+System.assert(caughtUppercaseNumber);
+
+System.assertEquals('Ada', String.format('{0}', new List<String>{ 'Ada' }));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringFormatMissingKnownTypeUsesUntypedPlaceholder(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('{3}', String.format('{3,number}', new List<Object>{ '2' }));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringFormatMissingUnknownTypeStillValidatesType(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+  String.format('{3,unknown}', new List<Object>{ '2' });
+} catch (StringException e) {
+  caught = true;
+  System.assertEquals('Unknown format type "unknown"', e.getMessage());
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringFormatEmptyTypeUsesBadArgumentSyntax(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+  String.format('{0,}', new List<Object>{ '2' });
+} catch (StringException e) {
+  caught = true;
+  System.assertEquals('Bad argument syntax: [at pattern index 1] "0,}"', e.getMessage());
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	tests := []struct {
 		method string
@@ -1829,8 +1947,8 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	if _, err := stringStatic("String.format", []Value{String("{0}"), String("x")}); err == nil {
 		t.Fatal("String.format expected bad argument error")
 	}
-	if _, err := stringStatic("String.format", []Value{String("{0,number,#.00}"), List(Int(42))}); err == nil || !strings.Contains(err.Error(), "MessageFormat typed format elements") {
-		t.Fatalf("String.format expected typed format unsupported error, got %v", err)
+	if _, err := stringStatic("String.format", []Value{String("{0,number,#.00}"), List(Int(42))}); err == nil || err.Error() != "Cannot format given Object as a Number" {
+		t.Fatalf("String.format expected typed number StringException, got %v", err)
 	}
 	if _, err := stringStatic("String.format", []Value{String("{0"), List(Int(42))}); err == nil || !strings.Contains(err.Error(), "unmatched") {
 		t.Fatalf("String.format expected unmatched brace error, got %v", err)
