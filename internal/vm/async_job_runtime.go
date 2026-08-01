@@ -655,6 +655,9 @@ func (vm *VM) nextDrainableAsyncJobIndex(jobs []AsyncJob, startIndex int) int {
 	return -1
 }
 func (vm *VM) asyncJobDue(job AsyncJob) bool {
+	if vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining && job.Kind == "Queueable" {
+		return true
+	}
 	return job.NotBefore.IsZero() || !job.NotBefore.After(vm.fakeNow)
 }
 func (vm *VM) staticFieldSnapshot() map[string]map[string]Value {
