@@ -149,6 +149,35 @@ System.assertEquals('\\$1\\\\x', Matcher.quoteReplacement('$1\\x'));
 	}
 }
 
+func TestExecPatternRejectsNonSalesforceSurface(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+	}{
+		{name: "compile overload", source: `Pattern.compile('a', 2);`},
+		{name: "CASE_INSENSITIVE", source: `Integer flag = Pattern.CASE_INSENSITIVE;`},
+		{name: "COMMENTS", source: `Integer flag = Pattern.COMMENTS;`},
+		{name: "MULTILINE", source: `Integer flag = Pattern.MULTILINE;`},
+		{name: "LITERAL", source: `Integer flag = Pattern.LITERAL;`},
+		{name: "DOTALL", source: `Integer flag = Pattern.DOTALL;`},
+		{name: "UNICODE_CASE", source: `Integer flag = Pattern.UNICODE_CASE;`},
+		{name: "UNIX_LINES", source: `Integer flag = Pattern.UNIX_LINES;`},
+		{name: "CANON_EQ", source: `Integer flag = Pattern.CANON_EQ;`},
+		{name: "UNICODE_CHARACTER_CLASS", source: `Integer flag = Pattern.UNICODE_CHARACTER_CLASS;`},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Execute(program, nil); err == nil {
+				t.Fatalf("expected non-Salesforce Pattern API to be rejected")
+			}
+		})
+	}
+}
+
 func TestExecPatternCompileThrowsPatternSyntaxException(t *testing.T) {
 	program, err := CompileAnonymous(`
 try {
@@ -343,7 +372,7 @@ func TestExecPatternSupportsJavaUnicodeAliasesAndClassFlag(t *testing.T) {
 				t.Fatal(err)
 			}
 			if got.Kind != ValueBool || got.Bool != tc.want {
-				compiled, compileErr := compileRegexp2Source("Pattern.matches", tc.pattern, 0)
+				compiled, compileErr := compileRegexp2Source("Pattern.matches", tc.pattern)
 				t.Fatalf("Pattern.matches(%q, %q) compiled %q err %v = %#v, want %v", tc.pattern, tc.input, compiled, compileErr, got, tc.want)
 			}
 		})
@@ -674,39 +703,24 @@ System.assertEquals('beta.gamma', limited[1]);
 	}
 }
 
-func TestExecPatternFlagsSubset(t *testing.T) {
+func TestExecPatternSupportsInlineFlags(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals(2, Pattern.CASE_INSENSITIVE);
-System.assertEquals(8, Pattern.MULTILINE);
-System.assertEquals(16, Pattern.LITERAL);
-System.assertEquals(32, Pattern.DOTALL);
-System.assertEquals(64, Pattern.UNICODE_CASE);
-System.assertEquals(256, Pattern.UNICODE_CHARACTER_CLASS);
-
 Pattern inline = Pattern.compile('(?i)abc');
 System.assert(inline.matcher('ABC').matches());
 
 String dotallInput = String.fromCharArray(new List<Integer>{65,10,66});
-Pattern flags = Pattern.compile('a.b', Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.UNICODE_CASE);
-Matcher flagsMatcher = flags.matcher(dotallInput);
-System.assert(flagsMatcher.find());
-System.assertEquals(dotallInput, flagsMatcher.group());
+Pattern dotall = Pattern.compile('(?is)a.b');
+Matcher dotallMatcher = dotall.matcher(dotallInput);
+System.assert(dotallMatcher.find());
+System.assertEquals(dotallInput, dotallMatcher.group());
+
 String multilineInput = String.fromCharArray(new List<Integer>{120,120,10,65,66,67,10,121,121});
-Pattern multiline = Pattern.compile('^abc$', Pattern.CASE_INSENSITIVE + Pattern.MULTILINE);
+Pattern multiline = Pattern.compile('(?im)^abc$');
 Matcher multilineMatcher = multiline.matcher(multilineInput);
 System.assert(multilineMatcher.find());
 System.assertEquals('ABC', multilineMatcher.group());
 
-Pattern literal = Pattern.compile('a.b', Pattern.LITERAL);
-System.assertEquals('a.b', literal.pattern());
-Matcher literalMatcher = literal.matcher('xx a.b axb 9');
-System.assert(literalMatcher.find());
-System.assertEquals('a.b', literalMatcher.group());
-literalMatcher.usePattern(Pattern.compile('[0-9]+'));
-System.assert(literalMatcher.find());
-System.assertEquals('9', literalMatcher.group());
-
-Pattern unicodeClass = Pattern.compile('\\w+', Pattern.UNICODE_CHARACTER_CLASS);
+Pattern unicodeClass = Pattern.compile('(?U)\\w+');
 System.assert(unicodeClass.matcher('Ω').matches());
 `)
 	if err != nil {
@@ -714,36 +728,6 @@ System.assert(unicodeClass.matcher('Ω').matches());
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestExecPatternCompileRejectsUnsupportedFlags(t *testing.T) {
-	tests := []struct {
-		name   string
-		source string
-		want   string
-	}{
-		{name: "comments", source: `Pattern.compile('a b', Pattern.COMMENTS);`, want: "unsupported regex flags COMMENTS"},
-		{name: "unixLines", source: `Pattern.compile('^a$', Pattern.UNIX_LINES);`, want: "unsupported regex flags UNIX_LINES"},
-		{name: "canonEq", source: `Pattern.compile('a', Pattern.CANON_EQ);`, want: "unsupported regex flags CANON_EQ"},
-		{name: "unknown", source: `Pattern.compile('a', 1024);`, want: "unsupported regex flags unknown flags 0x400"},
-		{name: "negative", source: `Pattern.compile('a', -1);`, want: "negative regex flags"},
-	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			program, err := CompileAnonymous(tc.source)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = Execute(program, nil)
-			if err == nil || !strings.Contains(err.Error(), tc.want) {
-				t.Fatalf("expected %q error, got %v", tc.want, err)
-			}
-			var runtimeErr *RuntimeError
-			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
-				t.Fatalf("expected UnsupportedFeature runtime error, got %T %v", err, err)
-			}
-		})
 	}
 }
 

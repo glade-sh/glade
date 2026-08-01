@@ -1522,6 +1522,29 @@ func hasGeneratedEnumValuesMethod(spec StandardSymbolSpec, typeName string) bool
 	return false
 }
 
+func TestStandardPlatformSymbolsDoNotExposeJavaPatternFlags(t *testing.T) {
+	pattern := requireStandardSymbol(t, StandardPlatformSymbols(), "Pattern")
+	requireStandardMethod(t, pattern, "compile", []string{"String"}, true)
+	requireNoStandardMethod(t, pattern, "compile", []string{"String", "Integer"}, true)
+	for _, name := range []string{
+		"CASE_INSENSITIVE",
+		"COMMENTS",
+		"MULTILINE",
+		"LITERAL",
+		"DOTALL",
+		"UNICODE_CASE",
+		"UNIX_LINES",
+		"CANON_EQ",
+		"UNICODE_CHARACTER_CLASS",
+	} {
+		for _, member := range pattern.Members {
+			if member.Kind == apexast.DeclarationProperty && strings.EqualFold(member.Name, name) {
+				t.Fatalf("unexpected Pattern.%s property: %#v", name, member)
+			}
+		}
+	}
+}
+
 func requireStandardSymbol(t *testing.T, symbols []TypeSymbol, name string) TypeSymbol {
 	t.Helper()
 	for _, symbol := range symbols {

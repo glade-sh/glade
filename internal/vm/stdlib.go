@@ -820,39 +820,18 @@ func int32FromFloat(name string, value float64) (int32, error) {
 	return int32(value), nil
 }
 
-const (
-	patternFlagUnixLines             int64 = 1
-	patternFlagCaseInsensitive       int64 = 2
-	patternFlagComments              int64 = 4
-	patternFlagMultiline             int64 = 8
-	patternFlagLiteral               int64 = 16
-	patternFlagDotall                int64 = 32
-	patternFlagUnicodeCase           int64 = 64
-	patternFlagCanonEq               int64 = 128
-	patternFlagUnicodeCharacterClass int64 = 256
-)
-
-const patternSupportedFlags = patternFlagCaseInsensitive | patternFlagMultiline | patternFlagLiteral | patternFlagDotall | patternFlagUnicodeCase | patternFlagUnicodeCharacterClass
-
 func patternCompile(args []Value) (Value, error) {
-	if len(args) != 1 && len(args) != 2 {
-		return Null, fmt.Errorf("Pattern.compile expects regex String and optional Integer flags")
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, fmt.Errorf("Pattern.compile expects regex String")
 	}
-	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
-		return Null, fmt.Errorf("Pattern.compile expects regex String and optional Integer flags")
-	}
-	flags := int64(0)
-	if len(args) == 2 {
-		flags = args[1].Int
-	}
-	regexp2Source, _, err := compileRegexp2Pattern("Pattern.compile", args[0].Text, flags)
+	regexp2Source, _, err := compileRegexp2Pattern("Pattern.compile", args[0].Text)
 	if err != nil {
 		return Null, err
 	}
 	pattern := Object("Pattern")
 	pattern.Fields["source"] = args[0]
 	pattern.Fields["regexp2Source"] = String(regexp2Source)
-	if regexpSource, lookaheadSource, backreferencePairs, err := compilePatternSourceWithMetadata("Pattern.compile", args[0].Text, flags); err == nil {
+	if regexpSource, lookaheadSource, backreferencePairs, err := compilePatternSourceWithMetadata("Pattern.compile", args[0].Text); err == nil {
 		if _, err := regexp.Compile(regexpSource); err == nil {
 			pattern.Fields["regexpSource"] = String(regexpSource)
 			if lookaheadSource != "" {
@@ -865,7 +844,6 @@ func patternCompile(args []Value) (Value, error) {
 			}
 		}
 	}
-	pattern.Fields["flags"] = Int(flags)
 	return pattern, nil
 }
 
@@ -881,7 +859,7 @@ func patternMatches(args []Value) (Value, error) {
 	if err != nil {
 		return Null, err
 	}
-	plan, err := compileRegexp2PlanForInput("Pattern.matches", pattern, 0, input)
+	plan, err := compileRegexp2PlanForInput("Pattern.matches", pattern, input)
 	if err != nil {
 		return Null, err
 	}
@@ -924,11 +902,6 @@ func matcherQuoteReplacement(args []Value) (Value, error) {
 	}
 	quoted := strings.NewReplacer(`\`, `\\`, `$`, `\$`).Replace(args[0].Text)
 	return String(quoted), nil
-}
-
-func compilePatternSource(callee, source string, flags int64) (string, error) {
-	regexpSource, _, _, err := compilePatternSourceWithMetadata(callee, source, flags)
-	return regexpSource, err
 }
 
 type regexNegativeLookaheadAssertion struct {
@@ -977,44 +950,27 @@ func compilePatternMatchesSource(source string) (string, []string, []regexNegati
 	return regexpSource, positiveLookaheads, negativeLookaheads, nil
 }
 
-func compilePatternSourceWithMetadata(callee, source string, flags int64) (string, string, string, error) {
-	if flags < 0 {
-		return "", "", "", unsupportedCallError(callee + " negative regex flags")
-	}
-	if unsupported := flags &^ patternSupportedFlags; unsupported != 0 {
-		return "", "", "", unsupportedCallError(callee + " " + unsupportedPatternFlagsFeature(unsupported))
-	}
+func compilePatternSourceWithMetadata(callee, source string) (string, string, string, error) {
 	regexpSource := source
 	lookaheadSource := ""
 	backreferencePairs := ""
-	if flags&patternFlagLiteral != 0 {
-		regexpSource = regexp.QuoteMeta(source)
-	} else {
-		converted, err := javaRegexQuoteEscapesToGo(source)
-		if err != nil {
-			return "", "", "", unsupportedCallError(callee + " " + err.Error())
-		}
-		regexpSource = converted
-		regexpSource, backreferencePairs = rewriteJavaNumericBackreferences(regexpSource)
-		regexpSource = stripFixedCountPossessiveQuantifiers(regexpSource)
-		if stripped, lookahead, ok := stripTerminalPositiveLookahead(regexpSource); ok {
-			regexpSource = stripped
-			lookaheadSource = stripFixedCountPossessiveQuantifiers(lookahead)
-		}
-		if feature := unsupportedJavaRegexFeature(regexpSource); feature != "" {
-			return "", "", "", unsupportedCallError(callee + " " + feature)
-		}
-		if lookaheadSource != "" {
-			if feature := unsupportedJavaRegexFeature(lookaheadSource); feature != "" {
-				return "", "", "", unsupportedCallError(callee + " " + feature)
-			}
-		}
+	converted, err := javaRegexQuoteEscapesToGo(source)
+	if err != nil {
+		return "", "", "", unsupportedCallError(callee + " " + err.Error())
 	}
-	prefix := patternFlagPrefix(flags)
-	if prefix != "" {
-		regexpSource = prefix + regexpSource
-		if lookaheadSource != "" {
-			lookaheadSource = prefix + lookaheadSource
+	regexpSource = converted
+	regexpSource, backreferencePairs = rewriteJavaNumericBackreferences(regexpSource)
+	regexpSource = stripFixedCountPossessiveQuantifiers(regexpSource)
+	if stripped, lookahead, ok := stripTerminalPositiveLookahead(regexpSource); ok {
+		regexpSource = stripped
+		lookaheadSource = stripFixedCountPossessiveQuantifiers(lookahead)
+	}
+	if feature := unsupportedJavaRegexFeature(regexpSource); feature != "" {
+		return "", "", "", unsupportedCallError(callee + " " + feature)
+	}
+	if lookaheadSource != "" {
+		if feature := unsupportedJavaRegexFeature(lookaheadSource); feature != "" {
+			return "", "", "", unsupportedCallError(callee + " " + feature)
 		}
 	}
 	return regexpSource, lookaheadSource, backreferencePairs, nil
@@ -1110,47 +1066,6 @@ func decodeRegexBackreferencePairs(encoded string) []regexBackreferencePair {
 		pairs = append(pairs, regexBackreferencePair{group: group, matchGroup: matchGroup})
 	}
 	return pairs
-}
-
-func patternFlagPrefix(flags int64) string {
-	var enabled strings.Builder
-	if flags&patternFlagCaseInsensitive != 0 {
-		enabled.WriteByte('i')
-	}
-	if flags&patternFlagMultiline != 0 {
-		enabled.WriteByte('m')
-	}
-	if flags&patternFlagDotall != 0 {
-		enabled.WriteByte('s')
-	}
-	if enabled.Len() == 0 {
-		return ""
-	}
-	return "(?" + enabled.String() + ")"
-}
-
-func unsupportedPatternFlagsFeature(flags int64) string {
-	names := []string{}
-	if flags&patternFlagUnixLines != 0 {
-		names = append(names, "UNIX_LINES")
-	}
-	if flags&patternFlagComments != 0 {
-		names = append(names, "COMMENTS")
-	}
-	if flags&patternFlagCanonEq != 0 {
-		names = append(names, "CANON_EQ")
-	}
-	if flags&patternFlagUnicodeCharacterClass != 0 {
-		names = append(names, "UNICODE_CHARACTER_CLASS")
-	}
-	known := patternFlagUnixLines | patternFlagComments | patternFlagCanonEq | patternFlagUnicodeCharacterClass
-	if unknown := flags &^ (patternSupportedFlags | known); unknown != 0 {
-		names = append(names, fmt.Sprintf("unknown flags 0x%x", unknown))
-	}
-	if len(names) == 0 {
-		return "unsupported regex flags"
-	}
-	return "unsupported regex flags " + strings.Join(names, ",")
 }
 
 func patternRegexpSource(pattern Value) (string, error) {
@@ -2570,14 +2485,10 @@ func stringRegexSplit(text string, args []Value) ([]string, error) {
 }
 
 func splitRegex(name, pattern, text string, limit int64) ([]string, error) {
-	return splitRegexWithFlags(name, pattern, 0, text, limit)
-}
-
-func splitRegexWithFlags(name, pattern string, flags int64, text string, limit int64) ([]string, error) {
 	if pattern == "" {
 		return splitStringCharacters(text, limit), nil
 	}
-	return splitRegexRegexp2WithFlags(name, pattern, flags, text, limit)
+	return splitRegexRegexp2(name, pattern, text, limit)
 }
 
 func splitStringCharacters(text string, limit int64) []string {
@@ -2692,7 +2603,7 @@ func patternSplitValue(pattern Value, args []Value) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return splitRegexWithFlags("Pattern.split", source, patternFlags(pattern), args[0].Text, limit)
+	return splitRegex("Pattern.split", source, args[0].Text, limit)
 }
 
 func unsupportedJavaRegexFeature(source string) string {

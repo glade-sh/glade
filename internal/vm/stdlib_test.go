@@ -2125,7 +2125,7 @@ func TestExecPatternMatchesSupportsVariablePossessiveQuantifier(t *testing.T) {
 				t.Fatal(err)
 			}
 			if got.Kind != ValueBool || got.Bool != tc.want {
-				compiled, compileErr := compileRegexp2Source("Pattern.matches", tc.pattern, 0)
+				compiled, compileErr := compileRegexp2Source("Pattern.matches", tc.pattern)
 				t.Fatalf("Pattern.matches(%q, %q) compiled %q err %v = %#v, want %v", tc.pattern, tc.input, compiled, compileErr, got, tc.want)
 			}
 		})

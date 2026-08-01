@@ -51,8 +51,8 @@ func (g *graphemeBoundaryTable) isBoundaryByte(pos int) bool {
 	return g.boundaryBytes[pos]
 }
 
-func compileRegexp2PlanForInput(callee, source string, flags int64, input string) (*regexp2Plan, error) {
-	regexp2Source, err := compileRegexp2Source(callee, source, flags)
+func compileRegexp2PlanForInput(callee, source, input string) (*regexp2Plan, error) {
+	regexp2Source, err := compileRegexp2Source(callee, source)
 	if err != nil {
 		return nil, err
 	}
