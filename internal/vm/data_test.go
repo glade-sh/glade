@@ -14515,7 +14515,7 @@ System.assertEquals(true, caught);
 func TestExecExceptionGetInaccessibleFieldsDefaultsEmpty(t *testing.T) {
 	program, err := CompileAnonymous(`
 try {
-	throw new NoAccessException('blocked');
+	throw new InaccessibleFieldsException('blocked');
 } catch (Exception e) {
 	Map<String, Set<String>> fields = e.getInaccessibleFields();
 	System.assert(fields != null);
@@ -14525,7 +14525,9 @@ try {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
+	machine := New(nil)
+	registerCustomException(t, machine, "InaccessibleFieldsException")
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

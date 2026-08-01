@@ -4228,7 +4228,7 @@ System.assertNotEquals(null, inventory.processInput(null));
 System.assertEquals(data, inventory.getInventory(data));
 System.assertEquals(data, inventory.getPricing(data));
 System.assertEquals(data, inventory.getInventoryAndPricing(data));
-System.assertEquals(data, inventory.handleInventoryPricingServiceException(new Exception('local'), data));
+System.assertEquals(data, inventory.handleInventoryPricingServiceException(new PlatformHarnessException('local'), data));
 System.assertNotEquals(null, inventory.createResponse(data));
 
 System.assertEquals(0, new CommerceDxSampleapp.CommerceDx_Inventory().calculateInventoryLevel('webstore', 'event'));
@@ -4265,7 +4265,9 @@ System.assertEquals(true, new ime_mrm.EventManagementSubjectApi().getSubjectAssi
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(nil).Execute(program); err != nil {
+	machine := New(nil)
+	registerCustomException(t, machine, "PlatformHarnessException")
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -4363,8 +4365,7 @@ System.assertEquals('READ_WRITE', String.valueOf(System.getApplicationReadWriteM
 	if err != nil {
 		t.Fatal(err)
 	}
-	machine := New(nil)
-	if _, err := machine.Execute(program); err != nil {
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -5264,7 +5265,7 @@ System.assertEquals('Bonjour', System.Label.Greeting);
 	}
 }
 
-func TestExecSystemLabelMethodsLimitsAsyncAndTargetExceptionConstructors(t *testing.T) {
+func TestExecSystemLabelMethodsLimitsAsyncAndRuntimeExceptionTypes(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(1.2, Decimal.valueOf('1.25').divide(Decimal.valueOf('1'), 1, RoundingMode.valueOf('HALF_DOWN')));
 System.assertEquals('Hello', System.Label.get('', 'Greeting'));
@@ -5274,22 +5275,38 @@ System.assert(!System.Label.translationExists('pkg', 'Greeting', 'es'));
 System.assertEquals(0, Limits.getAsyncCalls());
 System.assert(Limits.getLimitAsyncCalls() > 0);
 
-Exception invalidNoMessage = new InvalidParameterValueException();
-Exception invalidCause = new InvalidParameterValueException(new Exception('cause'));
-Exception invalidMessage = new InvalidParameterValueException('bad value');
-System.assertEquals('System.InvalidParameterValueException', invalidNoMessage.getTypeName());
-System.assertEquals('cause', invalidCause.getCause().getMessage());
-System.assertEquals('bad value', invalidMessage.getMessage());
+try {
+    Auth.AuthToken.getAccessToken('provider', 'local');
+    System.assert(false, 'expected getAccessToken to reject an invalid ID');
+} catch (Exception e) {
+    System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+    System.assertEquals('Invalid ID', e.getMessage());
+}
 
-Exception noAccess = new NoAccessException('blocked', new Exception('root'));
-Exception noData = new NoDataFoundException('missing', new Exception('root'));
-Exception npe = new NullPointerException('null value', new Exception('root'));
-System.assertEquals('blocked', noAccess.getMessage());
-System.assertEquals('missing', noData.getMessage());
-System.assertEquals('null value', npe.getMessage());
-System.assertEquals('root', noAccess.getCause().getMessage());
-System.assertEquals('root', noData.getCause().getMessage());
-System.assertEquals('root', npe.getCause().getMessage());
+try {
+    Crypto.signWithCertificate('RSA-SHA999', Blob.valueOf('data'), 'cert');
+    System.assert(false, 'expected signWithCertificate to reject an unsupported algorithm');
+} catch (Exception e) {
+    System.assertEquals('System.NoDataFoundException', e.getTypeName());
+    System.assertEquals('unsupported signature algorithm "RSA-SHA999"', e.getMessage());
+}
+
+try {
+    Date.valueOf();
+    System.assert(false, 'expected Date.valueOf to reject missing arguments');
+} catch (Exception e) {
+    System.assertEquals('System.NullPointerException', e.getTypeName());
+    System.assertEquals('Date.valueOf expects String', e.getMessage());
+}
+
+Auth.JWT parsed = Auth.JWTUtil.parseJWTFromStringWithoutValidation('eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwYXJzZWQtaXNzdWUiLCJzdWIiOiJwYXJzZWQtc3ViaiIsImF1ZCI6InBhcnNlZC1hdWQiLCJyb2xlcyI6WyJhZG1pbiIsInVzZXIiXSwibmJmIjoxMjMsImV4cCI6NDU2fQ.c2lnbmF0dXJl');
+try {
+    parsed.getNbfClockSkew();
+    System.assert(false, 'expected parsed JWT access to be rejected');
+} catch (Exception e) {
+    System.assertEquals('System.NoAccessException', e.getTypeName());
+    System.assertEquals('method is not available for a parsed JWT', e.getMessage());
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -9548,7 +9565,7 @@ func TestExecFailedBatchChunkRollsBackChunkDML(t *testing.T) {
 Integer value = scope.get(0);
 insert new Account(Name = 'chunk-' + value);
 if (value == 2) {
-	throw new Exception('second chunk failed');
+	throw new BatchFailureException('second chunk failed');
 }
 `)
 	if err != nil {
@@ -9571,6 +9588,7 @@ System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'chunk-2']);
 	org := testDataOrg()
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	registerCustomException(t, machine, "BatchFailureException")
 	if err := machine.RegisterClass(Class{
 		Name:       "BatchWorker",
 		Interfaces: []string{"Database.Batchable<Integer>"},
@@ -11130,7 +11148,7 @@ func TestExecFailedBatchRecordsProcessedChunksBeforeError(t *testing.T) {
 	}
 	executeProgram, err := CompileAnonymous(`
 if ([SELECT COUNT() FROM Account WHERE Name = 'chunk ran'] > 0) {
-	throw new Exception('second chunk failed');
+	throw new BatchFailureException('second chunk failed');
 }
 insert new Account(Name = 'chunk ran');
 `)
@@ -11164,6 +11182,7 @@ System.assertNotEquals(null, job.CompletedDate);
 	org := testDataOrg()
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	registerCustomException(t, machine, "BatchFailureException")
 	if err := machine.RegisterClass(Class{
 		Name:       "BatchWorker",
 		Interfaces: []string{"Database.Batchable<SObject>"},
@@ -11185,7 +11204,7 @@ func TestExecFailedBatchPublishesBatchApexErrorEventTrigger(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	executeProgram, err := CompileAnonymous(`throw new Exception('batch failed');`)
+	executeProgram, err := CompileAnonymous(`throw new BatchFailureException('batch failed');`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -11224,6 +11243,7 @@ System.assertEquals('EXECUTE', logged.Description);
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	registerCustomException(t, machine, "BatchFailureException")
 	if err := machine.RegisterClass(Class{
 		Name:       "BatchWorker",
 		Interfaces: []string{"Database.Batchable<SObject>"},
@@ -11260,7 +11280,7 @@ func TestExecFailedBatchFinishRecordsFailedJobCounts(t *testing.T) {
 	}
 	finishProgram, err := CompileAnonymous(`
 insert new Account(Name = 'finish before failure');
-throw new Exception('finish failed');
+throw new BatchFailureException('finish failed');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -11294,6 +11314,7 @@ System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'finish before 
 	org := testDataOrg()
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	registerCustomException(t, machine, "BatchFailureException")
 	if err := machine.RegisterClass(Class{
 		Name:       "BatchWorker",
 		Interfaces: []string{"Database.Batchable<SObject>"},

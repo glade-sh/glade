@@ -13,11 +13,15 @@ type StandardSymbolSpec struct {
 	Name             string
 	Kind             apexast.DeclarationKind
 	SuperClass       string
+	Modifiers        []string
 	Interfaces       []string
 	Constructors     [][]string
 	ConstructorSpecs []StandardConstructorSpec
-	Methods          []StandardMethodSpec
-	Properties       []StandardPropertySpec
+	// ReplaceConstructors makes this standard-platform spec authoritative for
+	// source-visible constructors, including an intentional empty set.
+	ReplaceConstructors bool
+	Methods             []StandardMethodSpec
+	Properties          []StandardPropertySpec
 }
 
 type StandardConstructorSpec struct {
@@ -261,12 +265,14 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 			superClass = ""
 		}
 		sym := TypeSymbol{
-			Kind:       kind,
-			Name:       spec.Name,
-			File:       "<standard-platform>",
-			Dependency: true,
-			SuperClass: superClass,
-			Interfaces: append([]string(nil), spec.Interfaces...),
+			Kind:                      kind,
+			Name:                      spec.Name,
+			File:                      "<standard-platform>",
+			Dependency:                true,
+			ConstructorsAuthoritative: spec.ReplaceConstructors,
+			SuperClass:                superClass,
+			Modifiers:                 append([]string(nil), spec.Modifiers...),
+			Interfaces:                append([]string(nil), spec.Interfaces...),
 		}
 		if namespace, localName, ok := splitStandardSymbolName(spec.Name); ok {
 			sym.Namespace = namespace
@@ -347,9 +353,16 @@ func mergeStandardSymbolSpecs(specs []StandardSymbolSpec) []StandardSymbolSpec {
 		if existing.SuperClass == "" {
 			existing.SuperClass = spec.SuperClass
 		}
+		existing.Modifiers = appendUniqueStandardStrings(existing.Modifiers, spec.Modifiers)
 		existing.Interfaces = appendUniqueStandardStrings(existing.Interfaces, spec.Interfaces)
-		existing.Constructors = appendUniqueStandardConstructors(existing.Constructors, spec.Constructors)
-		existing.ConstructorSpecs = appendUniqueStandardConstructorSpecs(existing.ConstructorSpecs, spec.ConstructorSpecs)
+		if spec.ReplaceConstructors {
+			existing.ReplaceConstructors = true
+			existing.Constructors = append([][]string(nil), spec.Constructors...)
+			existing.ConstructorSpecs = append([]StandardConstructorSpec(nil), spec.ConstructorSpecs...)
+		} else if !existing.ReplaceConstructors {
+			existing.Constructors = appendUniqueStandardConstructors(existing.Constructors, spec.Constructors)
+			existing.ConstructorSpecs = appendUniqueStandardConstructorSpecs(existing.ConstructorSpecs, spec.ConstructorSpecs)
+		}
 		existing.Methods = appendUniqueStandardMethods(existing.Methods, spec.Methods)
 		existing.Properties = appendUniqueStandardProperties(existing.Properties, spec.Properties)
 	}
@@ -1231,6 +1244,11 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 }
 
 var standardPlatformSymbolOverlays = []StandardSymbolSpec{
+	{Name: "Exception", Modifiers: []string{"abstract"}, ReplaceConstructors: true},
+	{Name: "InvalidParameterValueException", SuperClass: "Exception", ReplaceConstructors: true},
+	{Name: "NoAccessException", SuperClass: "Exception", Constructors: [][]string{{}}, ReplaceConstructors: true},
+	{Name: "NoDataFoundException", SuperClass: "Exception", Constructors: [][]string{{}}, ReplaceConstructors: true},
+	{Name: "NullPointerException", SuperClass: "Exception", Constructors: [][]string{{}}, ReplaceConstructors: true},
 	{Name: "Cache.CacheBuilder", Kind: apexast.DeclarationInterface},
 	{Name: "CommerceExtension.ResolutionStrategy", Kind: apexast.DeclarationInterface},
 	{Name: "Finalizer", Kind: apexast.DeclarationInterface},

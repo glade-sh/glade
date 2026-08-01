@@ -277,10 +277,11 @@ func TestStatementContractsAllowLoopAndExceptionControls(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{
 		"Probe.cls": `
+public class ControlException extends Exception {}
 public class Probe {
   public void run() {
     while (true) { break; }
-    try { throw new Exception(); } catch (Exception error) { System.debug(error); }
+    try { throw new ControlException(); } catch (Exception error) { System.debug(error); }
   }
 }`,
 	})

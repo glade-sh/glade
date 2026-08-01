@@ -175,6 +175,9 @@ func semaPlatformConstructorSignatures(typeName string) ([][]string, bool) {
 			params = append(params, signature)
 		}
 		if len(params) == 0 {
+			if typ.ConstructorsAuthoritative {
+				return [][]string{}, true
+			}
 			return nil, false
 		}
 		return params, true

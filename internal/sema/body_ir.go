@@ -1975,6 +1975,9 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 	namedArgTypes := irCallNamedArgTypes(a, expr.NamedArgs, scope, model, typ.Name)
 	if semaExplicitPlatformQualifiedName(typeName) {
 		if params, ok := semaPlatformConstructorSignatures(resolvedTypeName); ok {
+			if len(params) == 0 {
+				return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("no matching %s constructor with %d argument(s)", typeName, len(expr.Args)+len(expr.NamedArgs)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
+			}
 			if len(namedArgTypes) == 0 && semaArgsMatchAny(params, argTypes, model) {
 				return nil
 			}
@@ -1986,6 +1989,9 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 		return nil
 	}
 	if len(target.constructors) == 0 {
+		if target.constructorsAuthoritative {
+			return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("no matching %s constructor with %d argument(s)", typeName, len(expr.Args)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
+		}
 		if len(expr.Args) == 0 || a.allowsInheritedExceptionConstructor(resolvedTypeName, expr.Args, scope, model, typ.Name) {
 			return nil
 		}
@@ -2015,7 +2021,7 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 		}
 		return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("ambiguous %s constructor with %d argument(s)", typeName, len(expr.Args)+len(expr.NamedArgs)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
 	}
-	if a.allowsInheritedExceptionConstructor(resolvedTypeName, expr.Args, scope, model, typ.Name) {
+	if !target.constructorsAuthoritative && a.allowsInheritedExceptionConstructor(resolvedTypeName, expr.Args, scope, model, typ.Name) {
 		return nil
 	}
 	return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("no matching %s constructor with %d argument(s)", typeName, len(expr.Args)+len(expr.NamedArgs)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}

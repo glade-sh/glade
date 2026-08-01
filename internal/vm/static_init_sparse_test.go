@@ -59,7 +59,7 @@ func TestStaticInitializationStateUsesOneCanonicalAliasKey(t *testing.T) {
 }
 
 func TestStaticInitializerFailureRemovesSparseState(t *testing.T) {
-	fail, err := CompileAnonymous("throw new Exception('broken');")
+	fail, err := CompileAnonymous("Date.valueOf();")
 	if err != nil {
 		t.Fatal(err)
 	}

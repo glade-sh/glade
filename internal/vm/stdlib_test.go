@@ -2887,7 +2887,7 @@ System.assert(fieldsCaught, 'JSONException.getInaccessibleFields should throw');
 
 Boolean causeCaught = false;
 try {
-	e.initCause(new Exception('root'));
+	e.initCause(new RootCauseException('root'));
 } catch (Exception ex) {
 	causeCaught = true;
 	System.assertEquals('System.NullPointerException', ex.getTypeName());
@@ -2897,7 +2897,9 @@ System.assert(causeCaught, 'JSONException.initCause should throw');
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
+	machine := New(nil)
+	registerCustomException(t, machine, "RootCauseException")
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -3021,6 +3023,27 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		"VisualforceException",
 		"XmlException",
 	}
+	runtimeProbes := map[string]struct {
+		call    string
+		message string
+	}{
+		"InvalidParameterValueException": {
+			call:    "Auth.AuthToken.getAccessToken('provider', 'local');",
+			message: "Invalid ID",
+		},
+		"NoAccessException": {
+			call:    "Auth.JWT parsed = Auth.JWTUtil.parseJWTFromStringWithoutValidation('eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwYXJzZWQtaXNzdWUiLCJzdWIiOiJwYXJzZWQtc3ViaiIsImF1ZCI6InBhcnNlZC1hdWQiLCJyb2xlcyI6WyJhZG1pbiIsInVzZXIiXSwibmJmIjoxMjMsImV4cCI6NDU2fQ.c2lnbmF0dXJl'); parsed.getNbfClockSkew();",
+			message: "method is not available for a parsed JWT",
+		},
+		"NoDataFoundException": {
+			call:    "Crypto.signWithCertificate('RSA-SHA999', Blob.valueOf('data'), 'cert');",
+			message: `unsupported signature algorithm "RSA-SHA999"`,
+		},
+		"NullPointerException": {
+			call:    "Date.valueOf();",
+			message: "Date.valueOf expects String",
+		},
+	}
 	var source strings.Builder
 	source.WriteString("Type exceptionType = Type.forName('Exception');\n")
 	source.WriteString("System.assertEquals(null, Type.forName('ImaginaryException'));\n")
@@ -3046,11 +3069,28 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		source.WriteString("Exception e")
 		source.WriteString(string(rune('A' + i/26)))
 		source.WriteString(string(rune('A' + i%26)))
-		source.WriteString(" = new ")
-		source.WriteString(name)
-		source.WriteString("('")
-		source.WriteString(name)
-		source.WriteString(" message');\n")
+		if probe, ok := runtimeProbes[name]; ok {
+			source.WriteString(" = null;\ntry {\n")
+			source.WriteString(probe.call)
+			source.WriteString("\nSystem.assert(false, 'expected ")
+			source.WriteString(name)
+			source.WriteString(" runtime exception');\n} catch (Exception caught")
+			source.WriteString(string(rune('A' + i/26)))
+			source.WriteString(string(rune('A' + i%26)))
+			source.WriteString(") { e")
+			source.WriteString(string(rune('A' + i/26)))
+			source.WriteString(string(rune('A' + i%26)))
+			source.WriteString(" = caught")
+			source.WriteString(string(rune('A' + i/26)))
+			source.WriteString(string(rune('A' + i%26)))
+			source.WriteString("; }\n")
+		} else {
+			source.WriteString(" = new ")
+			source.WriteString(name)
+			source.WriteString("('")
+			source.WriteString(name)
+			source.WriteString(" message');\n")
+		}
 		source.WriteString("System.assertEquals('System.")
 		source.WriteString(name)
 		source.WriteString("', e")
@@ -3060,8 +3100,12 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		source.WriteString("System.assertEquals('System.")
 		source.WriteString(name)
 		source.WriteString(": ")
-		source.WriteString(name)
-		source.WriteString(" message', e")
+		message := name + " message"
+		if probe, ok := runtimeProbes[name]; ok {
+			message = probe.message
+		}
+		source.WriteString(message)
+		source.WriteString("', e")
 		source.WriteString(string(rune('A' + i/26)))
 		source.WriteString(string(rune('A' + i%26)))
 		source.WriteString(".toString());\n")

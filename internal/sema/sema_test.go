@@ -1999,6 +1999,18 @@ func TestSemaPlatformConstructorSignaturesUseStandardSymbols(t *testing.T) {
 			name: "System.HttpRequest",
 			want: [][]string{{}},
 		},
+		{
+			name: "System.Exception",
+			want: [][]string{},
+		},
+		{
+			name: "System.InvalidParameterValueException",
+			want: [][]string{},
+		},
+		{
+			name: "System.NoAccessException",
+			want: [][]string{{}},
+		},
 	} {
 		got, ok := semaPlatformConstructorSignatures(tc.name)
 		if !ok {
@@ -7178,6 +7190,7 @@ public class AffiliationTestData {
 func TestAnalyzeSObjectAddErrorAndTriggerStaticFlags(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "HandlerException.cls"), `public class HandlerException extends Exception {}`)
 	writeSemaFile(t, filepath.Join(root, "Handler.cls"), `
 public class Handler {
   public void run(List<Affiliation__c> affiliations) {
@@ -7185,14 +7198,14 @@ public class Handler {
       affiliation.addError('bad');
       affiliation.IsPrimaryContact__c.addError('bad');
       if (trigger.isInsert) {
-        affiliation.addError(new Exception('bad'), false);
+        affiliation.addError(new HandlerException('bad'), false);
       }
     }
   }
 }
 `)
 	index := typesys.Build(
-		project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Handler.cls")}},
+		project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "HandlerException.cls"), filepath.Join(root, "Handler.cls")}},
 		schema.Schema{Objects: []schema.Object{{
 			Name: "Affiliation__c",
 			Fields: []schema.Field{{

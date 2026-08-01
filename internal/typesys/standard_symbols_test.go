@@ -3,6 +3,7 @@ package typesys
 import (
 	"encoding/json"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 
@@ -399,14 +400,36 @@ func TestStandardPlatformSymbolsIncludeAsyncMethodShapeRows(t *testing.T) {
 	requireNoStandardSymbol(t, symbols, "System.isQueueable")
 }
 
-func TestStandardPlatformSymbolsIncludeBaseExceptionConstructors(t *testing.T) {
+func TestStandardPlatformSymbolsMatchAPI67ExceptionConstructorVisibility(t *testing.T) {
 	symbols := StandardPlatformSymbols()
+	want := map[string][]string{
+		"Exception":                      {},
+		"InvalidParameterValueException": {},
+		"NoAccessException":              {""},
+		"NoDataFoundException":           {""},
+		"NullPointerException":           {""},
+	}
+	for name, expected := range want {
+		t.Run(name, func(t *testing.T) {
+			actual := standardConstructorSignatures(requireStandardSymbol(t, symbols, name))
+			sort.Strings(expected)
+			if len(actual) != len(expected) || strings.Join(actual, "\x00") != strings.Join(expected, "\x00") {
+				t.Fatalf("%s constructors = %#v, want exactly %#v", name, actual, expected)
+			}
+		})
+	}
 
 	exception := requireStandardSymbol(t, symbols, "Exception")
-	requireStandardConstructor(t, exception, []string{})
-	requireStandardConstructor(t, exception, []string{"Exception"})
-	requireStandardConstructor(t, exception, []string{"String"})
-	requireStandardConstructor(t, exception, []string{"String", "Exception"})
+	if !hasModifier(exception.Modifiers, "abstract") || !exception.ConstructorsAuthoritative {
+		t.Fatalf("Exception platform metadata = modifiers:%#v constructorsAuthoritative:%v", exception.Modifiers, exception.ConstructorsAuthoritative)
+	}
+	encoded, err := json.Marshal(exception)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(encoded), "constructorsAuthoritative") || strings.Contains(string(encoded), "__glade_") {
+		t.Fatalf("internal constructor metadata leaked into symbol JSON: %s", encoded)
+	}
 }
 
 func TestStandardPlatformSymbolsSelectOptionHasOnlyDocumentedConstructors(t *testing.T) {
@@ -541,20 +564,36 @@ func TestStandardPlatformSymbolsIncludeLabelLimitsDecimalAndTargetExceptionShape
 	requireStandardMethodType(t, limits, "getLimitAsyncCalls", "Integer")
 
 	invalidParameter := requireStandardSymbol(t, symbols, "InvalidParameterValueException")
-	requireStandardConstructor(t, invalidParameter, []string{})
-	requireStandardConstructor(t, invalidParameter, []string{"Exception"})
-	requireStandardConstructor(t, invalidParameter, []string{"String"})
+	if got := standardConstructorSignatures(invalidParameter); len(got) != 0 {
+		t.Fatalf("InvalidParameterValueException constructors = %#v, want none", got)
+	}
 
 	for _, name := range []string{"NoAccessException", "NoDataFoundException", "NullPointerException"} {
 		exceptionType := requireStandardSymbol(t, symbols, name)
-		requireStandardConstructor(t, exceptionType, []string{"Exception"})
-		requireStandardConstructor(t, exceptionType, []string{"String"})
-		requireStandardConstructor(t, exceptionType, []string{"String", "Exception"})
+		if got := standardConstructorSignatures(exceptionType); len(got) != 1 || got[0] != "" {
+			t.Fatalf("%s constructors = %#v, want only zero-argument constructor", name, got)
+		}
 	}
 
 	touchHandled := requireStandardSymbol(t, symbols, "TouchHandledException")
 	requireStandardConstructor(t, touchHandled, []string{})
 	requireStandardConstructor(t, touchHandled, []string{"String", "Exception"})
+}
+
+func standardConstructorSignatures(symbol TypeSymbol) []string {
+	var signatures []string
+	for _, member := range symbol.Members {
+		if member.Kind != apexast.DeclarationConstructor {
+			continue
+		}
+		params := make([]string, len(member.Parameters))
+		for i, parameter := range member.Parameters {
+			params[i] = parameter.Type
+		}
+		signatures = append(signatures, strings.Join(params, ","))
+	}
+	sort.Strings(signatures)
+	return signatures
 }
 
 func TestStandardPlatformSymbolsIncludeServiceBackedSystemAndStdlibShapes(t *testing.T) {
