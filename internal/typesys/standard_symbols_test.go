@@ -1301,6 +1301,21 @@ func TestStandardPlatformSymbolsResolveInvocableActionDTOReferences(t *testing.T
 	requireStandardMethodType(t, err, "getMessage", "String")
 }
 
+func TestStandardPlatformSymbolsInvocableActionDTOCloneShapes(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	for _, name := range []string{
+		"Invocable.Action.AdditionalAttribute",
+		"Invocable.Action.DescribeResult",
+		"Invocable.Action.GenericType",
+		"Invocable.Action.InputParameter",
+		"Invocable.Action.OutputParameter",
+		"Invocable.Action.PicklistValue",
+	} {
+		symbol := requireStandardSymbol(t, symbols, name)
+		requireStandardMethodReturn(t, symbol, "clone", []string{}, "Object", false)
+	}
+}
+
 func TestStandardPlatformSymbolsIncludeDomXmlNodeInsertBefore(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 	xmlNode := requireStandardSymbol(t, symbols, "Dom.XmlNode")

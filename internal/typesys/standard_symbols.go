@@ -1293,6 +1293,7 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "isStandard", ReturnType: "Boolean"},
 	}},
 	{Name: "Invocable.Action.AdditionalAttribute", Methods: []StandardMethodSpec{
+		{Name: "clone", ReturnType: "Object"},
 		{Name: "getApexClass", ReturnType: "String"},
 		{Name: "getDataType", ReturnType: "String"},
 		{Name: "getIsCollection", ReturnType: "Boolean"},
@@ -1307,6 +1308,7 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "getValueAsStringList", ReturnType: "List<String>"},
 	}},
 	{Name: "Invocable.Action.DescribeResult", Methods: []StandardMethodSpec{
+		{Name: "clone", ReturnType: "Object"},
 		{Name: "getAction", ReturnType: "Invocable.Action"},
 		{Name: "getAllowsTransactionControl", ReturnType: "Boolean"},
 		{Name: "getCapabilityTypes", ReturnType: "List<String>"},
@@ -1329,12 +1331,14 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "getType", ReturnType: "String"},
 	}},
 	{Name: "Invocable.Action.GenericType", Methods: []StandardMethodSpec{
+		{Name: "clone", ReturnType: "Object"},
 		{Name: "getDescription", ReturnType: "String"},
 		{Name: "getLabel", ReturnType: "String"},
 		{Name: "getName", ReturnType: "String"},
 		{Name: "getSuperType", ReturnType: "String"},
 	}},
 	{Name: "Invocable.Action.InputParameter", Methods: []StandardMethodSpec{
+		{Name: "clone", ReturnType: "Object"},
 		{Name: "getAdditionalAttributes", ReturnType: "List<Invocable.Action.AdditionalAttribute>"},
 		{Name: "getApexClass", ReturnType: "String"},
 		{Name: "getByteLength", ReturnType: "Integer"},
@@ -1353,6 +1357,7 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "getType", ReturnType: "String"},
 	}},
 	{Name: "Invocable.Action.OutputParameter", Methods: []StandardMethodSpec{
+		{Name: "clone", ReturnType: "Object"},
 		{Name: "getAdditionalAttributes", ReturnType: "List<Invocable.Action.AdditionalAttribute>"},
 		{Name: "getApexClass", ReturnType: "String"},
 		{Name: "getDescription", ReturnType: "String"},
@@ -1364,6 +1369,7 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "getType", ReturnType: "String"},
 	}},
 	{Name: "Invocable.Action.PicklistValue", Methods: []StandardMethodSpec{
+		{Name: "clone", ReturnType: "Object"},
 		{Name: "getActive", ReturnType: "Boolean"},
 		{Name: "getDefaultValue", ReturnType: "Boolean"},
 		{Name: "getLabel", ReturnType: "String"},
