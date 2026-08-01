@@ -3816,17 +3816,18 @@ handler.handlePredictionResponse(new NLPPredictions.PredictionResponseContextImp
 
 func TestExecBusinessHoursRecordBackedWeekSchedule(t *testing.T) {
 	program, err := CompileAnonymous(`
+Id businessHoursId = '01m000000000001AAA';
 Datetime mondayNine = Datetime.newInstanceGmt(2026, 6, 15, 16, 0, 0);
-System.assertEquals(true, BusinessHours.isWithin('01m000000000001AAA', mondayNine));
-Datetime mondayTen = BusinessHours.add('01m000000000001AAA', mondayNine, 60 * 60 * 1000);
+System.assertEquals(true, BusinessHours.isWithin(businessHoursId, mondayNine));
+Datetime mondayTen = BusinessHours.add(businessHoursId, mondayNine, 60 * 60 * 1000);
 System.assertEquals(Datetime.newInstanceGmt(2026, 6, 15, 17, 0, 0), mondayTen);
-System.assertEquals(mondayTen, BusinessHours.nextStartDate('01m000000000001AAA', mondayTen));
-Datetime mondayEleven = BusinessHours.addGmt('01m000000000001AAA', mondayTen, 60 * 60 * 1000);
+System.assertEquals(mondayTen, BusinessHours.nextStartDate(businessHoursId, mondayTen));
+Datetime mondayEleven = BusinessHours.addGmt(businessHoursId, mondayTen, 60 * 60 * 1000);
 System.assertEquals(Datetime.newInstanceGmt(2026, 6, 15, 18, 0, 0), mondayEleven);
-System.assertEquals(60 * 60 * 1000, BusinessHours.diff('01m000000000001AAA', mondayNine, mondayTen));
+System.assertEquals(60 * 60 * 1000, BusinessHours.diff(businessHoursId, mondayNine, mondayTen));
 Datetime saturday = Datetime.newInstanceGmt(2026, 6, 20, 16, 0, 0);
-System.assertEquals(false, BusinessHours.isWithin('01m000000000001AAA', saturday));
-System.assertEquals(Datetime.newInstanceGmt(2026, 6, 22, 16, 0, 0), BusinessHours.nextStartDate('01m000000000001AAA', saturday));
+System.assertEquals(false, BusinessHours.isWithin(businessHoursId, saturday));
+System.assertEquals(Datetime.newInstanceGmt(2026, 6, 22, 16, 0, 0), BusinessHours.nextStartDate(businessHoursId, saturday));
 `)
 	if err != nil {
 		t.Fatal(err)

@@ -52,6 +52,22 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 	}
 }
 
+func TestStandardPlatformSymbolsBusinessHoursUseIdSignatures(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	businessHours := requireStandardSymbol(t, symbols, "BusinessHours")
+
+	for _, method := range []struct {
+		name   string
+		params []string
+	}{{"add", []string{"Id", "Datetime", "Long"}},
+		{"addGmt", []string{"Id", "Datetime", "Long"}},
+		{"diff", []string{"Id", "Datetime", "Datetime"}},
+		{"isWithin", []string{"Id", "Datetime"}},
+		{"nextStartDate", []string{"Id", "Datetime"}}} {
+		requireStandardMethod(t, businessHours, method.name, method.params, true)
+	}
+}
+
 func TestStandardPlatformSymbolsTypeConnectApiCollectionProperties(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 
