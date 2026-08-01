@@ -619,7 +619,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Auth.JWT constructor expects 0 arguments")
 		}
-		jwt := Object("Auth.JWT")
+		jwt := newAuthJWT()
 		for field, value := range namedArgs {
 			jwt.Fields[field] = value
 		}

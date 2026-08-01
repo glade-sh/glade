@@ -427,7 +427,8 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 		strings.EqualFold(callee, "Auth.AuthToken.refreshAccessToken"),
 		strings.EqualFold(callee, "Auth.AuthToken.revokeAccess"),
 		strings.EqualFold(callee, "Auth.CommunitiesUtil.isGuestUser"),
-		strings.EqualFold(callee, "Auth.SessionManagement.getCurrentSession"):
+		strings.EqualFold(callee, "Auth.SessionManagement.getCurrentSession"),
+		strings.EqualFold(callee, "Auth.JWTUtil.parseJWTFromStringWithoutValidation"):
 		return "", false
 	}
 	switch callee {

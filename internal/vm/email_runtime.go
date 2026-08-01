@@ -61,6 +61,7 @@ func newSingleEmailMessage() Value {
 	} {
 		message.Fields[field] = Null
 	}
+	message.Fields["customHeaders"] = typedMap("Map<String,String>")
 	message.Fields["unsubscribeUrls"] = List()
 	for _, field := range []string{
 		"saveAsActivity", "treatBodiesAsTemplate", "treatTargetObjectAsRecipient",
@@ -303,6 +304,25 @@ func emailFieldStrings(message Value, field string) []string {
 	}
 	return nil
 }
+
+func emailFieldStringMap(message Value, field string) map[string]string {
+	_, value, _ := objectFieldValue(message, field)
+	if value.Kind != ValueMap {
+		return nil
+	}
+	out := make(map[string]string, len(value.Map))
+	for key, item := range value.Map {
+		name := value.MapKeys[key]
+		if name.Kind != ValueString {
+			name = valueFromMapKey(key)
+		}
+		if name.Kind == ValueString {
+			out[name.Text] = stringValue(item)
+		}
+	}
+	return out
+}
+
 func (vm *VM) captureEmail(message Value, sendOptions Value) CapturedEmail {
 	captured := CapturedEmail{Kind: message.Type}
 	switch message.Type {
@@ -323,6 +343,7 @@ func (vm *VM) captureEmail(message Value, sendOptions Value) CapturedEmail {
 		captured.ReplyTo = emailFieldString(message, "replyTo")
 		captured.SenderDisplayName = emailFieldString(message, "senderDisplayName")
 		captured.Charset = emailFieldString(message, "charset")
+		captured.CustomHeaders = emailFieldStringMap(message, "customHeaders")
 		captured.OrgWideEmailAddressID = emailFieldString(message, "orgWideEmailAddressId")
 		captured.OptOutPolicy = emailFieldString(message, "optOutPolicy")
 		captured.EmailPriority = emailFieldString(message, "emailPriority")
@@ -1266,6 +1287,16 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 		}
 		receiver.Fields[emailMessageFieldName(method)] = value
 		return Null, receiver, true, true, nil
+	case "setCustomHeaders":
+		if len(args) != 1 || (args[0].Kind != ValueMap && args[0].Kind != ValueNull) {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.setCustomHeaders expects Map<String,String>")
+		}
+		if args[0].Kind == ValueNull {
+			receiver.Fields["customHeaders"] = typedMap("Map<String,String>")
+		} else {
+			receiver.Fields["customHeaders"] = cloneValue(args[0])
+		}
+		return Null, receiver, true, true, nil
 	case "setSaveAsActivity", "setTreatBodiesAsTemplate", "setTreatTargetObjectAsRecipient", "setUseSignature", "setBccSender", "setOneClickPost":
 		if len(args) != 1 || args[0].Kind != ValueBool {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects Boolean", method)
@@ -1282,7 +1313,7 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 		"getSubject", "getPlainTextBody", "getHtmlBody", "getReplyTo", "getSenderDisplayName",
 		"getCharset", "getInReplyTo", "getReferences", "getOrgWideEmailAddressId",
 		"getTargetObjectId", "getTemplateId", "getTemplateName", "getWhatId", "getOptOutPolicy", "getEmailPriority",
-		"getUnsubscribeComment", "getUnsubscribeUrls",
+		"getUnsubscribeComment", "getUnsubscribeUrls", "getCustomHeaders",
 		"getSaveAsActivity", "getTreatBodiesAsTemplate", "getTreatTargetObjectAsRecipient", "getUseSignature", "getBccSender", "getOneClickPost":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects 0 arguments", method)

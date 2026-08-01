@@ -2070,6 +2070,11 @@ platformStaticCall:
 		return Null, unsupportedCallError(callee + " local platform event after-commit delivery surface")
 	case "IntegrationTest.commitTestOnly":
 		return Null, unsupportedCallError(callee + " local IntegrationTest developer preview service surface")
+	case "Auth.JWTUtil.parseJWTFromStringWithoutValidation":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Auth.JWTUtil.parseJWTFromStringWithoutValidation expects String")
+		}
+		return parseJWTFromStringWithoutValidation(args[0].Text)
 	case "Request.getCurrent", "System.Request.getCurrent", "RequestImpl.getCurrent":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)

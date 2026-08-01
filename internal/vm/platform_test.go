@@ -5792,8 +5792,14 @@ System.assertEquals(false, inbound.plainTextBodyIsTruncated);
 Messaging.ActionResult actionResult = new Messaging.ActionResult.Builder().withSuccess(true).withMessage('ok').build();
 System.assert(actionResult.isSuccess());
 System.assertEquals('ok', actionResult.getMessage());
-Messaging.ActionableNotification actionable = new Messaging.ActionableNotification.Builder().withActionIdentifier('open').build();
+Messaging.ActionableNotification actionable = new Messaging.ActionableNotification.Builder()
+	.withActionIdentifier('open')
+	.withTargetId('001000000000001AAA')
+	.withTargetPageRef('/lightning/r/Account/001000000000001AAA/view')
+	.build();
 System.assertEquals('open', actionable.getActionIdentifier());
+System.assertEquals('001000000000001AAA', actionable.getTargetId());
+System.assertEquals('/lightning/r/Account/001000000000001AAA/view', actionable.getTargetPageRef());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5803,6 +5809,96 @@ System.assertEquals('open', actionable.getActionIdentifier());
 	vm.SetOrg(&org)
 	if _, err := vm.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecAuthJWTDeterministicValuesAndParse(t *testing.T) {
+	program, err := CompileAnonymous(`
+Auth.JWT defaults = new Auth.JWT();
+System.assertEquals(30, defaults.getNbfClockSkew());
+System.assertEquals(300, defaults.getValidityLength());
+
+Auth.JWT jwt = new Auth.JWT();
+jwt.setIss('issuer');
+jwt.setSub('subject');
+jwt.setAud('audience');
+jwt.setNbfClockSkew(30);
+jwt.setValidityLength(120);
+jwt.setAdditionalClaims(new Map<String,Object>{'scope' => 'read', 'active' => true});
+System.assertEquals('issuer', jwt.getIss());
+System.assertEquals('subject', jwt.getSub());
+System.assertEquals('audience', jwt.getAud());
+System.assertEquals(30, jwt.getNbfClockSkew());
+System.assertEquals(120, jwt.getValidityLength());
+System.assertEquals('read', jwt.getAdditionalClaims().get('scope'));
+System.assertEquals(true, jwt.getAdditionalClaims().get('active'));
+Map<String,Object> serialized = (Map<String,Object>)JSON.deserializeUntyped(jwt.toJSONString());
+System.assertEquals('issuer', serialized.get('iss'));
+System.assertEquals('subject', serialized.get('sub'));
+System.assertEquals('audience', serialized.get('aud'));
+System.assertEquals(1777723200, serialized.get('iat'));
+System.assertEquals(1777723170, serialized.get('nbf'));
+System.assertEquals(1777723320, serialized.get('exp'));
+System.assertEquals(36, ((String)serialized.get('jti')).length());
+System.assertEquals(false, serialized.containsKey('nbfClockSkew'));
+System.assertEquals(false, serialized.containsKey('validityLength'));
+System.assertEquals('read', serialized.get('scope'));
+
+Auth.JWT parsed = Auth.JWTUtil.parseJWTFromStringWithoutValidation('eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwYXJzZWQtaXNzdWUiLCJzdWIiOiJwYXJzZWQtc3ViaiIsImF1ZCI6InBhcnNlZC1hdWQiLCJzY29wZSI6InJlYWQiLCJyb2xlcyI6WyJhZG1pbiIsInVzZXIiXSwibmJmIjoxMjMsImV4cCI6NDU2fQ.c2lnbmF0dXJl');
+System.assertEquals('parsed-issue', parsed.getIss());
+System.assertEquals('parsed-subj', parsed.getSub());
+System.assertEquals('parsed-aud', parsed.getAud());
+System.assertEquals('read', parsed.getAdditionalClaims().get('scope'));
+System.assertEquals('["admin","user"]', parsed.getAdditionalClaims().get('roles'));
+System.assertEquals(Datetime.newInstanceGmt(1970, 1, 1, 0, 2, 3), parsed.getAdditionalClaims().get('nbf'));
+System.assertEquals(Datetime.newInstanceGmt(1970, 1, 1, 0, 7, 36), parsed.getAdditionalClaims().get('exp'));
+
+Integer noAccessCount = 0;
+try { parsed.getNbfClockSkew(); } catch (NoAccessException expected) { noAccessCount++; }
+try { parsed.getValidityLength(); } catch (NoAccessException expected) { noAccessCount++; }
+try { parsed.setNbfClockSkew(30); } catch (NoAccessException expected) { noAccessCount++; }
+try { parsed.setValidityLength(120); } catch (NoAccessException expected) { noAccessCount++; }
+System.assertEquals(4, noAccessCount);
+
+String validationType;
+try {
+	Auth.JWTUtil.parseJWTFromStringWithoutValidation('a.b.c');
+} catch (Exception expected) {
+	validationType = expected.getTypeName();
+}
+System.assertEquals('Auth.JWTValidationException', validationType);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMessagingSingleEmailCustomHeaders(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+email.setToAddresses(new List<String>{'recipient@example.test'});
+email.setPlainTextBody('body');
+email.setCustomHeaders(new Map<String,String>{'X-Trace' => 'trace-1', 'X-Mode' => 'local'});
+System.assertEquals('trace-1', email.getCustomHeaders().get('X-Trace'));
+System.assertEquals('local', email.customheaders.get('X-Mode'));
+Messaging.sendEmail(new List<Messaging.Email>{email});
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.CapturedEmails) != 1 {
+		t.Fatalf("captured emails = %#v", result.CapturedEmails)
+	}
+	if got := result.CapturedEmails[0].CustomHeaders; got["X-Trace"] != "trace-1" || got["X-Mode"] != "local" {
+		t.Fatalf("captured custom headers = %#v", got)
 	}
 }
 

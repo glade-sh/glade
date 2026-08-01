@@ -3154,30 +3154,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return Bool(false), receiver, false, true, nil
 		}
 	case "Auth.JWT":
-		switch method {
-		case "setIss":
-			if len(args) != 1 {
-				return Null, receiver, false, true, fmt.Errorf("Auth.JWT.setIss expects 1 argument")
-			}
-			receiver.Fields["iss"] = args[0]
-			return Null, receiver, true, true, nil
-		case "toJSONString":
-			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Auth.JWT.toJSONString expects 0 arguments")
-			}
-			fields := make(map[string]any, len(receiver.Fields))
-			for field, value := range receiver.Fields {
-				if strings.HasPrefix(field, "__") || value.Kind == ValueNull {
-					continue
-				}
-				fields[field] = jsonFromValue(value, true)
-			}
-			data, err := jsonMarshalNoEscape(fields)
-			if err != nil {
-				return Null, receiver, false, true, err
-			}
-			return String(string(data)), receiver, false, true, nil
-		}
+		return vm.callAuthJWTMember(receiver, method, args)
 	case "Metadata.DeployContainer":
 		switch method {
 		case "addMetadata":

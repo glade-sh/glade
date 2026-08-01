@@ -138,6 +138,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"System.getApplicationReadWriteMode", "System.getQuiddityShortCode", "System.requestVersion",
 		"System.abortJob", "System.attachFinalizer", "System.isRunningTest",
 		"IntegrationTest.commitTestOnly",
+		"Auth.JWTUtil.parseJWTFromStringWithoutValidation",
 		"Test.isRunningTest", "System.currentPageReference", "System.setPassword", "System.enqueueJob", "System.schedule",
 		"Limits.getQueries", "Limits.getLimitQueries", "Limits.getQueryRows", "Limits.getLimitQueryRows",
 		"Limits.getDmlStatements", "Limits.getLimitDmlStatements", "Limits.getDMLStatements", "Limits.getLimitDMLStatements",
