@@ -74,7 +74,7 @@ layout: home
   <div class="home-capability-list">
     <div class="home-capability-row"><code>Database.insert</code><span class="home-completion-status home-completion-status-supported">Runs locally</span></div>
     <div class="home-capability-row"><code>Schema.DescribeSObjectResult</code><span class="home-completion-status home-completion-status-limited">Runs with limits</span></div>
-    <div class="home-capability-row"><code>Answers.findSimilar</code><span class="home-completion-status home-completion-status-salesforce">Requires Salesforce</span></div>
+    <div class="home-capability-row"><code>Answers.findSimilar</code><span class="home-completion-status home-completion-status-supported">Runs locally</span></div>
   </div>
   <a href="/guide/support-map">What runs locally</a>
 </div>

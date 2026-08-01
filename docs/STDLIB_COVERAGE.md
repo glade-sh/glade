@@ -7,7 +7,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Area | API | Status | Notes |
 | --- | --- | --- | --- |
 | AccessLevel | `AccessLevel.withPermissionSetId(String)` | `supported` | Creates a local permission-set-scoped user-mode token used by supported SOQL and DML permission checks. |
-| Answers | `Answers.findSimilar(Question)` | `unsupported` | Zone similar-question search requires Answers service data and returns a stable UnsupportedFeature diagnostic locally. |
+| Answers | `Answers.findSimilar(Question)` | `supported` | Returns a deterministic empty `List<Id>` locally. Glade does not perform hosted Answers similarity search. |
 | ApexPages | `ApexPages.Message` | `supported` | Constructor, getters, add/get/has message state, and Visualforce action reset behavior are modeled. |
 | ApexPages | `ApexPages.addMessage` | `supported` | Stores page messages on the VM instance. |
 | ApexPages | `ApexPages.addMessage(ApexPages.Message)` | `supported` | Stores page messages on the VM instance. |

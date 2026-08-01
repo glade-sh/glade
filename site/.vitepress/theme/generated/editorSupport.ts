@@ -125,9 +125,9 @@ export const editorSupportCatalog = {
           "apply": "findSimilar()",
           "type": "method",
           "detail": "Answers API",
-          "status": "unsupported",
-          "statusLabel": "Requires Salesforce",
-          "info": "Zone similar-question search requires Answers service data and returns a stable UnsupportedFeature diagnostic locally.",
+          "status": "supported",
+          "statusLabel": "Runs locally",
+          "info": "Returns a deterministic empty `List<Id>` locally. Glade does not perform hosted Answers similarity search.",
           "signature": "findSimilar(Question)",
           "source": "docs/STDLIB_COVERAGE.md"
         }
@@ -3337,9 +3337,9 @@ export const editorSupportCatalog = {
       "apply": "Answers",
       "type": "class",
       "detail": "Hosted API",
-      "status": "unsupported",
-      "statusLabel": "Requires Salesforce",
-      "info": "Requires Salesforce"
+      "status": "supported",
+      "statusLabel": "Runs locally",
+      "info": "Deterministic empty list, hosted search not performed"
     }
   ],
   "demoReceivers": {
