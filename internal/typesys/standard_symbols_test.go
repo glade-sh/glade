@@ -52,6 +52,43 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 	}
 }
 
+func TestUserProfilesSetPhotoUsesIntegerFourthParameter(t *testing.T) {
+	var productSpec *StandardSymbolSpec
+	for i := range productNamespaceSymbolSpecs {
+		if strings.EqualFold(productNamespaceSymbolSpecs[i].Name, "ConnectApi.UserProfiles") {
+			productSpec = &productNamespaceSymbolSpecs[i]
+			break
+		}
+	}
+	if productSpec == nil {
+		t.Fatal("missing product namespace ConnectApi.UserProfiles symbol spec")
+	}
+
+	var rawInteger, rawObject bool
+	for _, method := range productSpec.Methods {
+		if !strings.EqualFold(method.Name, "setPhoto") || !method.Static {
+			continue
+		}
+		switch strings.Join(method.Parameters, ",") {
+		case "String,String,String,Integer":
+			rawInteger = true
+		case "String,String,String,Object":
+			rawObject = true
+		}
+	}
+	if !rawInteger {
+		t.Fatal("product namespace ConnectApi.UserProfiles.setPhoto is missing the Integer overload")
+	}
+	if rawObject {
+		t.Fatal("product namespace ConnectApi.UserProfiles.setPhoto retains the stale Object overload")
+	}
+
+	userProfiles := requireStandardSymbol(t, StandardPlatformSymbols(), "ConnectApi.UserProfiles")
+	requireStandardMethod(t, userProfiles, "setPhoto", []string{"String", "String", "ConnectApi.BinaryInput"}, true)
+	requireStandardMethod(t, userProfiles, "setPhoto", []string{"String", "String", "String", "Integer"}, true)
+	requireNoStandardMethod(t, userProfiles, "setPhoto", []string{"String", "String", "String", "Object"}, true)
+}
+
 func TestGeneratedSystemStubSymbolsBusinessHoursUseIdSignatures(t *testing.T) {
 	var businessHours *StandardSymbolSpec
 	for i := range systemStubSymbolSpecs {
