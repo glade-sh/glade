@@ -14,6 +14,22 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+func validateAuthTokenArguments(args []Value, count int) error {
+	for i := 0; i < count; i++ {
+		if args[i].Kind == ValueNull || (args[i].Kind == ValueString && args[i].Text == "") {
+			return newExceptionError("System.InvalidParameterValueException", "Argument cannot be null or empty.")
+		}
+	}
+	return nil
+}
+
+func validateAuthTokenID(value Value) error {
+	if value.Kind != ValueString || validateApexID(value.Text) != nil {
+		return newExceptionError("System.InvalidParameterValueException", "Invalid ID")
+	}
+	return nil
+}
+
 func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, result *Result) (Value, error) {
 	vm.markRootCollectionRefsEscaped(args...)
 	for _, value := range namedArgs {
@@ -2263,30 +2279,46 @@ platformStaticCall:
 		if len(args) != 2 {
 			return Null, fmt.Errorf("Auth.AuthToken.getAccessToken expects 2 arguments")
 		}
-		return String("local-auth-token"), nil
+		if err := validateAuthTokenArguments(args, len(args)); err != nil {
+			return Null, err
+		}
+		if err := validateAuthTokenID(args[0]); err != nil {
+			return Null, err
+		}
+		return Null, unsupportedCallError(callee)
 	case "Auth.AuthToken.getAccessTokenMap":
 		if len(args) != 2 {
 			return Null, fmt.Errorf("Auth.AuthToken.getAccessTokenMap expects 2 arguments")
 		}
-		tokens := typedMap("Map<String,String>")
-		tokens.Map[mapKey(String("access_token"))] = String("local-auth-token")
-		tokens.Map[mapKey(String("refresh_token"))] = String("local-refresh-token")
-		tokens.Map[mapKey(String("token_type"))] = String("Bearer")
-		return tokens, nil
+		if err := validateAuthTokenArguments(args, len(args)); err != nil {
+			return Null, err
+		}
+		if err := validateAuthTokenID(args[0]); err != nil {
+			return Null, err
+		}
+		return Null, unsupportedCallError(callee)
 	case "Auth.AuthToken.refreshAccessToken":
 		if len(args) != 3 {
 			return Null, fmt.Errorf("Auth.AuthToken.refreshAccessToken expects 3 arguments")
 		}
-		refresh := Object("Auth.OAuthRefreshResult")
-		refresh.Fields["accessToken"] = String("local-auth-token")
-		refresh.Fields["refreshToken"] = String("local-refresh-token")
-		refresh.Fields["error"] = Null
-		return refresh, nil
+		if err := validateAuthTokenArguments(args, len(args)); err != nil {
+			return Null, err
+		}
+		if err := validateAuthTokenID(args[0]); err != nil {
+			return Null, err
+		}
+		return Null, unsupportedCallError(callee)
 	case "Auth.AuthToken.revokeAccess":
 		if len(args) != 4 {
 			return Null, fmt.Errorf("Auth.AuthToken.revokeAccess expects 4 arguments")
 		}
-		return Bool(true), nil
+		if err := validateAuthTokenArguments(args, 2); err != nil {
+			return Null, err
+		}
+		if err := validateAuthTokenID(args[0]); err != nil {
+			return Null, err
+		}
+		return Bool(args[2].Kind == ValueNull), nil
 	case "Auth.SessionManagement.getCurrentSession":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Auth.SessionManagement.getCurrentSession expects 0 arguments")

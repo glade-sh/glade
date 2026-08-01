@@ -348,7 +348,7 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		case "getaccesstokenmap":
 			return semaCollectionSignature{returnType: "Map<String,String>", params: [][]string{{"String", "String"}}}, true
 		case "refreshaccesstoken":
-			return semaCollectionSignature{returnType: "Auth.OAuthRefreshResult", params: [][]string{{"String", "String", "String"}}}, true
+			return semaCollectionSignature{returnType: "Map<String,String>", params: [][]string{{"String", "String", "String"}}}, true
 		case "revokeaccess":
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"String", "String", "String", "String"}}}, true
 		}

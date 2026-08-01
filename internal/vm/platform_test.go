@@ -3077,25 +3077,145 @@ System.assertEquals('https://local.example/services/auth/sso/local?startURL=/sta
 	}
 }
 
-func TestExecAuthTokenDeterministicLocalFamily(t *testing.T) {
+func TestExecAuthTokenRejectsInvalidIDs(t *testing.T) {
 	program, err := CompileAnonymous(`
-String accessToken = Auth.AuthToken.getAccessToken('provider', 'local');
-System.assertEquals('local-auth-token', accessToken);
-Map<String,String> accessTokenMap = Auth.AuthToken.getAccessTokenMap('provider', 'local');
-System.assertEquals('local-auth-token', accessTokenMap.get('access_token'));
-System.assertEquals('local-refresh-token', accessTokenMap.get('refresh_token'));
-System.assertEquals('Bearer', accessTokenMap.get('token_type'));
-Auth.OAuthRefreshResult refresh = Auth.AuthToken.refreshAccessToken('provider', 'local', accessToken);
-System.assertEquals('local-auth-token', refresh.accessToken);
-System.assertEquals('local-refresh-token', refresh.refreshToken);
-System.assertEquals(null, refresh.error);
-System.assertEquals(true, Auth.AuthToken.revokeAccess('provider', 'local', 'user', 'remote'));
+try {
+  Auth.AuthToken.getAccessToken('provider', 'local');
+  System.assert(false, 'expected getAccessToken to reject an invalid ID');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Invalid ID', e.getMessage());
+}
+try {
+  Auth.AuthToken.getAccessTokenMap('provider', 'local');
+  System.assert(false, 'expected getAccessTokenMap to reject an invalid ID');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Invalid ID', e.getMessage());
+}
+try {
+  Auth.AuthToken.refreshAccessToken('provider', 'local', 'token');
+  System.assert(false, 'expected refreshAccessToken to reject an invalid ID');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Invalid ID', e.getMessage());
+}
+try {
+  Auth.AuthToken.revokeAccess('provider', 'local', 'user', 'remote');
+  System.assert(false, 'expected revokeAccess to reject an invalid ID');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Invalid ID', e.getMessage());
+}
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecAuthTokenRejectsNullAndEmptyArguments(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+  Auth.AuthToken.getAccessToken(null, 'provider');
+  System.assert(false, 'expected getAccessToken to reject null');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Argument cannot be null or empty.', e.getMessage());
+}
+try {
+  Auth.AuthToken.getAccessTokenMap('', 'provider');
+  System.assert(false, 'expected getAccessTokenMap to reject empty');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Argument cannot be null or empty.', e.getMessage());
+}
+try {
+  Auth.AuthToken.refreshAccessToken('provider', 'local', null);
+  System.assert(false, 'expected refreshAccessToken to reject null');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Argument cannot be null or empty.', e.getMessage());
+}
+try {
+  Auth.AuthToken.revokeAccess('provider', 'local', null, 'remote');
+  System.assert(false, 'expected revokeAccess to reject an invalid ID before null user');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Invalid ID', e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAuthTokenRefreshAccessTokenCompilesAsMap(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+  Map<String,String> refresh = Auth.AuthToken.refreshAccessToken('provider', 'local', 'token');
+  System.assertEquals(null, refresh);
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Invalid ID', e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAuthTokenValidIDUsesUnsupportedHostedPath(t *testing.T) {
+	machine := New(nil)
+	for _, tc := range []struct {
+		callee string
+		args   []Value
+	}{
+		{callee: "Auth.AuthToken.getAccessToken", args: []Value{String("005000000000001"), String("provider")}},
+		{callee: "Auth.AuthToken.getAccessTokenMap", args: []Value{String("005000000000001"), String("provider")}},
+		{callee: "Auth.AuthToken.refreshAccessToken", args: []Value{String("005000000000001"), String("provider"), String("token")}},
+	} {
+		if _, err := machine.call(tc.callee, tc.args, nil, &Result{}); err == nil {
+			t.Fatalf("%s unexpectedly returned local success", tc.callee)
+		} else {
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "`+tc.callee+`"` {
+				t.Fatalf("%s error = %#v, want unsupported hosted path", tc.callee, err)
+			}
+		}
+	}
+}
+
+func TestAuthTokenRevokeAccessReturnsObservedBoolean(t *testing.T) {
+	machine := New(nil)
+	for _, test := range []struct {
+		name string
+		args []Value
+		want bool
+	}{
+		{name: "third-null", args: []Value{String("005000000000001"), String("provider"), Null, String("remote")}, want: true},
+		{name: "third-empty", args: []Value{String("005000000000001"), String("provider"), String(""), String("remote")}, want: false},
+		{name: "fourth-null", args: []Value{String("005000000000001"), String("provider"), String("005000000000001AAA"), Null}, want: false},
+		{name: "fourth-empty", args: []Value{String("005000000000001"), String("provider"), String("005000000000001AAA"), String("")}, want: false},
+		{name: "arbitrary", args: []Value{String("005000000000001"), String("provider"), String("005000000000001AAA"), String("remote")}, want: false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := machine.call("Auth.AuthToken.revokeAccess", test.args, nil, &Result{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.Kind != ValueBool || got.Bool != test.want {
+				t.Fatalf("result = %#v, want Boolean(%t)", got, test.want)
+			}
+		})
 	}
 }
 
