@@ -365,11 +365,13 @@ func roundingModeStatic(args []Value) (Value, error) {
 	if len(args) != 1 || args[0].Kind != ValueString {
 		return Null, fmt.Errorf("RoundingMode.valueOf expects String")
 	}
-	mode := args[0].Text
-	if !isDecimalRoundingModeName(mode) {
-		return Null, fmt.Errorf("unsupported Decimal rounding mode %q", mode)
+	input := args[0].Text
+	mode, ok := canonicalDecimalRoundingModeName(input)
+	if !ok {
+		return Null, fmt.Errorf("unsupported Decimal rounding mode %q", input)
 	}
-	return Value{Kind: ValueObject, Type: "RoundingMode", Text: mode}, nil
+	value, _ := namedEnumStaticValue("RoundingMode", roundingModeNames, "RoundingMode."+mode)
+	return value, nil
 }
 
 var stringMemberMethodNames = []string{

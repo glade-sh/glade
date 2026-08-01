@@ -3694,11 +3694,7 @@ var generatedPlatformUnsupportedConstructors = []string{
 	"Schema.SObjectType",
 }
 
-var loggingLevelNames = []string{"NONE", "ERROR", "WARN", "INFO", "DEBUG", "FINE", "FINER", "FINEST"}
-
 var apexPagesSeverityNames = []string{"CONFIRM", "INFO", "WARNING", "ERROR", "FATAL"}
-
-var triggerOperationNames = []string{"BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_DELETE", "AFTER_INSERT", "AFTER_UPDATE", "AFTER_DELETE", "AFTER_UNDELETE"}
 
 var metadataDeployStatusNames = []string{"Succeeded", "SUCCEEDED", "Failed", "FAILED", "InProgress", "INPROGRESS", "Pending", "PENDING", "Canceling", "CANCELING", "Canceled", "CANCELED"}
 

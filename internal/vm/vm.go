@@ -2366,6 +2366,9 @@ func builtinEnumStaticValue(typeName, memberName string) (Value, bool) {
 	if rest, ok := stripLeadingSystemNamespace(typeName); ok {
 		typeName = rest
 	}
+	if canonical, names, ok := coreEnumSpec(typeName); ok {
+		return namedEnumStaticValue(canonical, names, canonical+"."+memberName)
+	}
 	switch {
 	case strings.EqualFold(typeName, "AccessLevel"):
 		for _, known := range []string{"USER_MODE", "SYSTEM_MODE"} {

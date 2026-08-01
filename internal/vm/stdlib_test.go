@@ -3309,19 +3309,19 @@ func TestExecLoggingLevelEnumEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals('INFO', LoggingLevel.INFO.name());
 System.assertEquals('INFO', LoggingLevel.INFO.toString());
-System.assertEquals(3, LoggingLevel.INFO.ordinal());
+System.assertEquals(6, LoggingLevel.INFO.ordinal());
 System.assertEquals('INFO', System.LoggingLevel.INFO.name());
 System.debug(System.LoggingLevel.INFO, 'system qualified level');
 System.LoggingLevel qualifiedLevel = System.LoggingLevel.WARN;
 System.assertEquals('WARN', qualifiedLevel.name());
-System.assertEquals(2, qualifiedLevel.ordinal());
+System.assertEquals(7, qualifiedLevel.ordinal());
 System.debug(qualifiedLevel, 'qualified variable level');
 List<LoggingLevel> levels = LoggingLevel.values();
-System.assertEquals(8, levels.size());
+System.assertEquals(9, levels.size());
 LoggingLevel firstLevel = levels.get(0);
-LoggingLevel lastLevel = levels.get(7);
+LoggingLevel lastLevel = levels.get(8);
 System.assertEquals('NONE', firstLevel.name());
-System.assertEquals('FINEST', lastLevel.name());
+System.assertEquals('ERROR', lastLevel.name());
 System.debug(LoggingLevel.ERROR, LoggingLevel.WARN);
 `)
 	if err != nil {

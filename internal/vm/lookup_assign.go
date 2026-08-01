@@ -1190,8 +1190,6 @@ func storageFieldTypeName(field storage.Field) string {
 	}
 }
 
-var roundingModeNames = []string{"UP", "DOWN", "CEILING", "FLOOR", "HALF_UP", "HALF_DOWN", "HALF_EVEN", "UNNECESSARY"}
-
 func isDecimalRoundingModeName(name string) bool {
 	_, ok := canonicalDecimalRoundingModeName(name)
 	return ok

@@ -2646,7 +2646,7 @@ System.assertEquals(null, parser.getCurrentToken());
 System.assertEquals(null, parser.getCurrentName());
 System.assertEquals('START_OBJECT', JSONToken.START_OBJECT.name());
 System.assertEquals('START_OBJECT', JSONToken.START_OBJECT.toString());
-System.assertEquals(0, JSONToken.START_OBJECT.ordinal());
+System.assertEquals(1, JSONToken.START_OBJECT.ordinal());
 System.assertEquals(JSONToken.VALUE_NUMBER_FLOAT, JSONToken.VALUE_NUMBER_FLOAT);
 `)
 	if err != nil {

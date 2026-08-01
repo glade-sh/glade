@@ -90,8 +90,6 @@ var schemaFieldDescribeOptionNames = []string{"DEFAULT", "FULL_DESCRIBE"}
 
 var schemaSObjectDescribeOptionNames = []string{"DEFAULT", "DEFERRED", "FULL"}
 
-var accessTypeNames = []string{"CREATABLE", "READABLE", "UPDATABLE", "UPSERTABLE"}
-
 func schemaSOAPTypeStaticValue(name string) (Value, bool) {
 	if value, ok := namedEnumStaticValue("Schema.SOAPType", schemaSOAPTypeNames, name); ok {
 		return value, true
@@ -1033,6 +1031,10 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 	if method != "values" && method != "valueOf" {
 		return Null, false, nil
 	}
+	if canonical, names, ok := coreEnumSpec(typeName); ok {
+		value, err := callNamedEnumStaticMember(canonical, names, method, args)
+		return value, true, err
+	}
 	if value, handled, err := vm.callGeneratedPlatformEnumStaticMember(typeName, method, args); handled || err != nil {
 		return value, handled, err
 	}
@@ -1253,6 +1255,9 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	receiverType := receiver.Type
 	if rest, ok := stripLeadingSystemNamespace(receiverType); ok {
 		receiverType = rest
+	}
+	if canonical, names, ok := coreEnumSpec(receiverType); ok {
+		return callNamedEnumMember(canonical, names, receiver, method, args)
 	}
 	if receiverType == "JSONToken" {
 		if method == "equals" {
