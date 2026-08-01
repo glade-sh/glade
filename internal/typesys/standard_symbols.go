@@ -826,7 +826,6 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "IntegrationTest", Methods: []StandardMethodSpec{{Name: "commitTestOnly", ReturnType: "void", Static: true}}},
 	{Name: "URL", Constructors: [][]string{{"URL", "String"}}, Methods: []StandardMethodSpec{{Name: "getSalesforceBaseUrl", ReturnType: "URL", Static: true}, {Name: "toExternalForm", ReturnType: "String"}}},
 	{Name: "PageReference", Constructors: [][]string{{"String"}, {"SObject"}}, Methods: []StandardMethodSpec{{Name: "getUrl", ReturnType: "String"}, {Name: "setRedirect", ReturnType: "PageReference", Parameters: []string{"Boolean"}}, {Name: "getParameters", ReturnType: "Map<String,String>"}, {Name: "setCookies", ReturnType: "void", Parameters: []string{"List<Cookie>"}}}},
-	{Name: "SelectOption", Constructors: [][]string{{"String", "String"}, {"String", "String", "Boolean"}, {"String", "String", "Boolean", "Boolean"}}},
 	{Name: "Search", Methods: []StandardMethodSpec{
 		{Name: "query", ReturnType: "List<List<SObject>>", Parameters: []string{"String"}, Static: true},
 		{Name: "query", ReturnType: "List<List<SObject>>", Parameters: []string{"String", "AccessLevel"}, Static: true},

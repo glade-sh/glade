@@ -409,6 +409,47 @@ func TestStandardPlatformSymbolsIncludeBaseExceptionConstructors(t *testing.T) {
 	requireStandardConstructor(t, exception, []string{"String", "Exception"})
 }
 
+func TestStandardPlatformSymbolsSelectOptionHasOnlyDocumentedConstructors(t *testing.T) {
+	selectOption := requireStandardSymbol(t, StandardPlatformSymbols(), "SelectOption")
+	want := [][]string{{"String", "String"}, {"String", "String", "Boolean"}}
+	var got [][]string
+	for _, member := range selectOption.Members {
+		if member.Kind != apexast.DeclarationConstructor {
+			continue
+		}
+		params := make([]string, len(member.Parameters))
+		for i, parameter := range member.Parameters {
+			params[i] = parameter.Type
+		}
+		got = append(got, params)
+	}
+	if len(got) != len(want) {
+		t.Fatalf("SelectOption constructors = %#v, want exactly %#v", got, want)
+	}
+	for _, params := range want {
+		found := false
+		for _, candidate := range got {
+			if len(candidate) != len(params) {
+				continue
+			}
+			match := true
+			for i := range params {
+				if !strings.EqualFold(candidate[i], params[i]) {
+					match = false
+					break
+				}
+			}
+			if match {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("SelectOption constructors = %#v, missing %#v", got, params)
+		}
+	}
+}
+
 func TestStandardPlatformSymbolsCorrectInboundEmailAndUnsupportedOperationExceptionShapes(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 

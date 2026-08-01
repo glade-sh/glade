@@ -3217,10 +3217,8 @@ Type exceptionType = Type.forName('Exception');
 Type dmlType = Type.forName('DmlException');
 System.assert(exceptionType.isAssignableFrom(dmlType));
 System.assert(!dmlType.isAssignableFrom(exceptionType));
-Type systemExceptionType = Type.forName('System', 'Exception');
-Type systemDmlType = Type.forName('System', 'DmlException');
-System.assert(systemExceptionType.isAssignableFrom(dmlType));
-System.assert(exceptionType.isAssignableFrom(systemDmlType));
+System.assertEquals(null, Type.forName('System', 'Exception'));
+System.assertEquals(null, Type.forName('System', 'DmlException'));
 
 Type markerType = Type.forName('Marker');
 Type childType = Type.forName('Child');
@@ -3568,12 +3566,12 @@ Type accountWithNullNamespace = Type.forName(null, 'Account');
 System.assertEquals('Account', accountWithNullNamespace.getName());
 Type stringType = Type.forName('String');
 System.assertEquals('String', stringType.getName());
-System.assertEquals('System.String', Type.forName('System.String').getName());
+System.assertEquals(null, Type.forName('System.String'));
 Type systemStringType = Type.forName('System', 'String');
-System.assertEquals('System.String', systemStringType.getName());
+System.assertEquals(null, systemStringType);
 System.assertEquals(null, Type.forName('System', 'DefinitelyMissing'));
 Type systemDmlType = Type.forName('System', 'DmlException');
-System.assertEquals('System.DmlException', systemDmlType.getName());
+System.assertEquals(null, systemDmlType);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3583,7 +3581,7 @@ System.assertEquals('System.DmlException', systemDmlType.getName());
 	}
 }
 
-func TestTypeForNameAcceptsPlatformStringObjects(t *testing.T) {
+func TestTypeForNameRejectsSystemNamespaceAndNonStringArguments(t *testing.T) {
 	machine := New(nil)
 	result := &Result{}
 	value, err := machine.call("Type.forName", []Value{platformScalar("String", "Account")}, nil, result)
@@ -3597,8 +3595,8 @@ func TestTypeForNameAcceptsPlatformStringObjects(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if value.Kind != ValueObject || value.Type != "Type" || typeValueName(value) != "System.String" {
-		t.Fatalf("Type.forName platform namespace string = %#v", value)
+	if value.Kind != ValueNull {
+		t.Fatalf("Type.forName invalid platform namespace string = %#v, want null", value)
 	}
 	if _, err := machine.call("Type.forName", []Value{Int(1)}, nil, result); err == nil || !strings.Contains(err.Error(), "Type.forName expects String") {
 		t.Fatalf("Type.forName integer error = %v", err)
@@ -4110,10 +4108,9 @@ System.assertEquals(null, packaged);
 	}
 }
 
-func TestExecTypeNewInstanceAllowsDottedBuiltins(t *testing.T) {
+func TestExecTypeForNameRejectsQualifiedSystemBuiltinFallback(t *testing.T) {
 	program, err := CompileAnonymous(`
-Object exceptionValue = Type.forName('System.AssertException').newInstance();
-System.assertEquals('System.AssertException', exceptionValue.toString());
+System.assertEquals(null, Type.forName('System.AssertException'));
 `)
 	if err != nil {
 		t.Fatal(err)

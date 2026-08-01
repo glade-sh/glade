@@ -788,8 +788,8 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		return result, nil
 	case "SelectOption":
-		if len(args) < 2 || len(args) > 4 || len(namedArgs) != 0 {
-			return Null, fmt.Errorf("SelectOption constructor expects value, label[, disabled[, escapeItem]]")
+		if len(args) < 2 || len(args) > 3 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("SelectOption constructor expects value, label[, disabled]")
 		}
 		value, err := vm.coerceAssignable("String", args[0])
 		if err != nil {
@@ -806,12 +806,6 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 				return Null, fmt.Errorf("SelectOption constructor disabled expects Boolean")
 			}
 			disabled = args[2]
-		}
-		if len(args) == 4 {
-			if args[3].Kind != ValueBool {
-				return Null, fmt.Errorf("SelectOption constructor escapeItem expects Boolean")
-			}
-			escapeItem = args[3]
 		}
 		return newSelectOption(value, label, disabled, escapeItem), nil
 	case "ApexPages.StandardController":
