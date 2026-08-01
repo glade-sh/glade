@@ -52,6 +52,47 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 	}
 }
 
+func TestGeneratedSystemStubSymbolsBusinessHoursUseIdSignatures(t *testing.T) {
+	var businessHours *StandardSymbolSpec
+	for i := range systemStubSymbolSpecs {
+		if strings.EqualFold(systemStubSymbolSpecs[i].Name, "BusinessHours") {
+			businessHours = &systemStubSymbolSpecs[i]
+			break
+		}
+	}
+	if businessHours == nil {
+		t.Fatal("missing generated BusinessHours symbol spec")
+	}
+
+	for _, want := range []struct {
+		name   string
+		params []string
+	}{{"add", []string{"Id", "Datetime", "Long"}},
+		{"addGmt", []string{"Id", "Datetime", "Long"}},
+		{"diff", []string{"Id", "Datetime", "Datetime"}},
+		{"isWithin", []string{"Id", "Datetime"}},
+		{"nextStartDate", []string{"Id", "Datetime"}}} {
+		found := false
+		for _, method := range businessHours.Methods {
+			if !strings.EqualFold(method.Name, want.name) {
+				continue
+			}
+			found = true
+			if len(method.ParameterSpecs) != len(want.params) {
+				t.Fatalf("generated BusinessHours.%s params = %#v, want %#v", want.name, method.ParameterSpecs, want.params)
+			}
+			for i, param := range method.ParameterSpecs {
+				if !strings.EqualFold(param.Type, want.params[i]) {
+					t.Fatalf("generated BusinessHours.%s parameter %d = %q, want %q", want.name, i, param.Type, want.params[i])
+				}
+			}
+		}
+		if !found {
+			t.Fatalf("missing generated BusinessHours.%s method", want.name)
+		}
+	}
+}
+
 func TestStandardPlatformSymbolsBusinessHoursUseIdSignatures(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 	businessHours := requireStandardSymbol(t, symbols, "BusinessHours")
@@ -65,6 +106,8 @@ func TestStandardPlatformSymbolsBusinessHoursUseIdSignatures(t *testing.T) {
 		{"isWithin", []string{"Id", "Datetime"}},
 		{"nextStartDate", []string{"Id", "Datetime"}}} {
 		requireStandardMethod(t, businessHours, method.name, method.params, true)
+		staleParams := append([]string{"String"}, method.params[1:]...)
+		requireNoStandardMethod(t, businessHours, method.name, staleParams, true)
 	}
 }
 
