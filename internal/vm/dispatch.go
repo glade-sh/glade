@@ -776,10 +776,7 @@ platformStaticCall:
 		cursor.Fields["Query"] = args[0]
 		return cursor, nil
 	case "Security.stripInaccessible":
-		if len(args) == 4 {
-			return Null, unsupportedCallError("Security.stripInaccessible permission-set-scoped access checks")
-		}
-		if len(args) != 2 && len(args) != 3 {
+		if len(args) < 2 || len(args) > 4 {
 			return Null, fmt.Errorf("Security.stripInaccessible expects AccessType, records, and optional enforceRootObjectCRUD")
 		}
 		if args[0].Kind != ValueObject || args[0].Type != "AccessType" {
@@ -788,14 +785,22 @@ platformStaticCall:
 		if args[1].Kind != ValueList {
 			return Null, fmt.Errorf("Security.stripInaccessible expects List<SObject>")
 		}
-		if len(args) == 3 && args[2].Kind != ValueBool {
+		if len(args) >= 3 && args[2].Kind != ValueBool {
 			return Null, fmt.Errorf("Security.stripInaccessible expects Boolean enforceRootObjectCRUD")
 		}
+		scopedPermissionSetID := ""
+		if len(args) == 4 && args[3].Kind != ValueNull {
+			var ok bool
+			scopedPermissionSetID, ok = typedIDValueText(args[3])
+			if !ok {
+				return Null, fmt.Errorf("Security.stripInaccessible expects Id permissionSetId")
+			}
+		}
 		enforceRootObjectCRUD := true
-		if len(args) == 3 {
+		if len(args) >= 3 {
 			enforceRootObjectCRUD = args[2].Bool
 		}
-		records, removedFields, modifiedIndexes, err := vm.stripInaccessibleRecords(args[0].Text, args[1], enforceRootObjectCRUD)
+		records, removedFields, modifiedIndexes, err := vm.stripInaccessibleRecords(args[0].Text, args[1], enforceRootObjectCRUD, scopedPermissionSetID)
 		if err != nil {
 			return Null, err
 		}

@@ -4195,16 +4195,136 @@ System.assertEquals('CREATABLE', AccessType.CREATABLE.name());
 	}
 }
 
-func TestExecSecurityStripInaccessiblePermissionSetScopedUnsupported(t *testing.T) {
+func TestExecSecurityStripInaccessiblePermissionSetScoped(t *testing.T) {
 	program, err := CompileAnonymous(`
-Id permissionSetId = '0PS000000000001';
-Security.stripInaccessible(AccessType.READABLE, new List<Account>{ new Account(Name = 'Acme') }, true, permissionSetId);
+PermissionSet ps = new PermissionSet(Name = 'ScopedStrip', Label = 'Scoped Strip');
+insert ps;
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Contact', PermissionsRead = true, PermissionsCreate = true);
+insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Account', Field = 'Account.Name', PermissionsEdit = true);
+insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Contact', Field = 'Contact.LastName', PermissionsEdit = true);
+
+Account source = new Account(Name = 'Acme', Secret__c = 'Hidden');
+insert source;
+insert new Contact(AccountId = source.Id, LastName = 'Child', Email = 'hidden@example.invalid');
+Account row = [
+	SELECT Id, Name, Description, Secret__c, (SELECT Id, LastName, Email FROM Contacts)
+	FROM Account
+	WHERE Id = :source.Id
+];
+
+// A non-null local scope models the enabled ApexUserModeWithPermset scratch-org path.
+SObjectAccessDecision decision = Security.stripInaccessible(
+	AccessType.CREATABLE,
+	new List<Account>{ row },
+	false,
+	ps.Id
+);
+List<Account> stripped = (List<Account>) decision.getRecords();
+Map<String, Set<String>> removed = decision.getRemovedFields();
+System.assertEquals('Acme', stripped[0].Name, 'allowed root field');
+System.assert(removed.get('Account').contains('Description'), 'selected absent root field reported');
+System.assert(removed.get('Account').contains('Secret__c'), 'populated root field reported');
+System.assertEquals(1, decision.getModifiedIndexes().size(), 'root modified index');
+System.assertEquals('Child', stripped[0].Contacts[0].LastName, 'allowed recursive field');
+System.assert(removed.get('Contact').contains('Email'));
+Boolean secretStripped = false;
+try {
+	String ignoredSecret = stripped[0].Secret__c;
+} catch (SObjectException e) {
+	secretStripped = e.getMessage().contains('without querying the requested field');
+}
+System.assert(secretStripped, 'populated root field stripped');
+Boolean emailStripped = false;
+emailStripped = !stripped[0].Contacts[0].getPopulatedFieldsAsMap().containsKey('Email');
+System.assert(emailStripped, 'recursive field stripped');
+System.assert(removed.get('Contact').contains('Email'), 'recursive field reported');
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), `unsupported call "Security.stripInaccessible permission-set-scoped access checks"`) {
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
+	account := org.Objects["Account"]
+	account.Definition.Fields["Secret__c"] = storage.Field{APIName: "Secret__c", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSecurityStripInaccessiblePermissionSetScopedEnforcesRootCRUD(t *testing.T) {
+	program, err := CompileAnonymous(`
+PermissionSet ps = new PermissionSet(Name = 'ScopedReadOnly', Label = 'Scoped Read Only');
+insert ps;
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
+Boolean caught = false;
+try {
+	Security.stripInaccessible(
+		AccessType.CREATABLE,
+		new List<Account>{ new Account(Name = 'Acme') },
+		true,
+		ps.Id
+	);
+} catch (NoAccessException e) {
+	caught = e.getMessage().containsIgnoreCase('no access to entity: Account');
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "Account")
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSecurityStripInaccessibleFourArgumentBooleanDiagnostic(t *testing.T) {
+	machine := New(nil)
+	accessType := Object("AccessType")
+	_, err := machine.call("Security.stripInaccessible", []Value{
+		accessType,
+		List(Object("Account")),
+		String("not a Boolean"),
+		Null,
+	}, nil, &Result{})
+	if err == nil || err.Error() != "Security.stripInaccessible expects Boolean enforceRootObjectCRUD" {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestExecSecurityStripInaccessibleNullPermissionSetUsesUnscopedPath(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account row = new Account(Name = 'Acme', Secret__c = 'Hidden');
+SObjectAccessDecision decision = Security.stripInaccessible(
+		AccessType.CREATABLE,
+		new List<Account>{ row },
+		false,
+		null
+);
+List<Account> stripped = (List<Account>) decision.getRecords();
+System.assertEquals('Acme', stripped[0].Name);
+System.assertEquals(null, stripped[0].Secret__c);
+System.assert(decision.getRemovedFields().get('Account').contains('Secret__c'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := stripInaccessibleTestOrg()
+	machine.SetOrg(&org)
+	machine.executionUser = stripInaccessibleTestUser()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
