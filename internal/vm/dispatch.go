@@ -951,7 +951,10 @@ platformStaticCall:
 	case "Approval.process":
 		return vm.executeApprovalProcess(args)
 	case "Answers.findSimilar":
-		return Null, unsupportedCallError(callee + " local Answers zone search surface")
+		if len(args) != 1 {
+			return Null, fmt.Errorf("Answers.findSimilar expects Question")
+		}
+		return typedList("List<Id>"), nil
 	case "Database.merge":
 		return vm.executeDatabaseMerge(args, result)
 	case "Limits.getQueries", "Limits.getLimitQueries", "Limits.getQueryRows", "Limits.getLimitQueryRows",

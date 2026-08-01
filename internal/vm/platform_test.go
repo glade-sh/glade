@@ -414,11 +414,6 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "Approval.ProcessWorkitemRequest.setAction local approval process metadata"`,
 		},
 		{
-			name: "answers find similar api",
-			src:  `Answers.findSimilar(new Question(Title = 'Acme'));`,
-			want: `unsupported call "Answers.findSimilar local Answers zone search surface"`,
-		},
-		{
 			name: "auth oauth api",
 			src:  `Auth.JWTUtil.validateJWTWithKeysEndpoint('token', 'https://example.invalid/keys');`,
 			want: `unsupported call "Auth.JWTUtil.validateJWTWithKeysEndpoint local authentication token/cloud API surface"`,
@@ -550,6 +545,19 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 				t.Fatalf("error = (%q, %q), want %q", runtimeErr.Message, err.Error(), tc.want)
 			}
 		})
+	}
+}
+
+func TestExecAnswersFindSimilarDeterministicMock(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Id> similarQuestions = Answers.findSimilar(new Question(Title = 'Acme'));
+System.assertEquals(0, similarQuestions.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
