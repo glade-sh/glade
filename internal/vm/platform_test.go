@@ -2402,6 +2402,34 @@ System.assertNotEquals(null, page);
 	}
 }
 
+func TestExecConnectApiChatterUsersFollowingsCorpusOverloadsReturnDeterministicPages(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.FollowingPage byUser = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId());
+ConnectApi.FollowingPage byPage = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), 0);
+ConnectApi.FollowingPage byPageSize = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), 0, 10);
+ConnectApi.FollowingPage byFilter = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), 'People');
+ConnectApi.FollowingPage byFilterPage = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), 'People', 0);
+ConnectApi.FollowingPage byFilterPageSize = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), 'People', 0, 10);
+
+System.assertEquals(0, byUser.total);
+System.assertEquals(0, byUser.following.size());
+System.assertEquals('/services/data/vXX.X/connect/followings', byUser.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl, byPage.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl, byPageSize.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl, byFilter.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl, byFilterPage.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl, byFilterPageSize.currentPageUrl);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecConnectApiNamedCredentialsPrimaryFlow(t *testing.T) {
 	program, err := CompileAnonymous(`
 ConnectApi.ExternalCredentialInput externalInput = new ConnectApi.ExternalCredentialInput();
@@ -2500,6 +2528,50 @@ System.assertNotEquals(null, item.contentNodes);
 System.assertEquals(true, item.contentNodes.containsKey('title'));
 ConnectApi.ManagedContentNodeValue title = item.contentNodes.get('title');
 System.assertEquals('Local managed content home-hero', title.value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConnectApiManagedContentCorpusOverloadsReturnConsistentContent(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.ManagedContentVersionCollection five =
+	ConnectApi.ManagedContent.getAllManagedContent(null, 0, 1, 'en_US', 'News');
+ConnectApi.ManagedContentVersionCollection six =
+	ConnectApi.ManagedContent.getAllManagedContent(null, 0, 1, 'en_US', 'News', false);
+List<String> keys = new List<String>{ 'home-hero' };
+ConnectApi.ManagedContentVersionCollection byKeys =
+	ConnectApi.ManagedContent.getManagedContentByContentKeys(null, keys, 0, 1, 'en_US', 'News', false);
+
+System.assertEquals(1, five.items.size());
+System.assertEquals(1, six.items.size());
+System.assertEquals(1, byKeys.items.size());
+System.assertEquals('News', five.items[0].contentKey);
+System.assertEquals('News', six.items[0].contentKey);
+System.assertEquals('home-hero', byKeys.items[0].contentKey);
+System.assertEquals('Local managed content News', five.items[0].title);
+System.assertEquals(five.items[0].title, six.items[0].title);
+System.assertEquals('Local managed content home-hero', byKeys.items[0].contentNodes.get('title').value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConnectApiUserProfilesSetPhotoCorpusOverloadsAreLocalNoOps(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.UserProfiles.setPhoto(null, UserInfo.getUserId(),
+		new ConnectApi.BinaryInput(Blob.valueOf('bytes'), 'image/png', 'avatar.png'));
+ConnectApi.UserProfiles.setPhoto(null, UserInfo.getUserId(), '069000000000001', null);
 `)
 	if err != nil {
 		t.Fatal(err)

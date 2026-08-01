@@ -2062,10 +2062,7 @@ platformStaticCall:
 	case "ConnectApi.Organization.getSettings":
 		return vm.connectAPIOrganizationSettings(args)
 	case "ConnectApi.ChatterUsers.getFollowings", "System.ConnectApi.ChatterUsers.getFollowings":
-		if vm.testContext != nil && vm.testContext.SeeAllDataSet && !vm.testContext.SeeAllData {
-			return Null, newExceptionError("UnsupportedOperationException", "ConnectApi.ChatterUsers.getFollowings requires SeeAllData=true in local tests")
-		}
-		return Object("ConnectApi.FollowingPage"), nil
+		return vm.connectAPIChatterUsersGetFollowings(args)
 	case "ConnectApi.Communities.getCommunity", "System.ConnectApi.Communities.getCommunity":
 		return vm.connectAPICommunity(args)
 	case "ConnectApi.Communities.getCommunities", "System.ConnectApi.Communities.getCommunities":

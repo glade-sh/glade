@@ -4,6 +4,20 @@ import (
 	"fmt"
 )
 
+func (vm *VM) connectAPIChatterUsersGetFollowings(args []Value) (Value, error) {
+	if len(args) < 2 || len(args) > 5 {
+		return Null, fmt.Errorf("ConnectApi.ChatterUsers.getFollowings expects 2-5 arguments")
+	}
+	if vm.testContext != nil && vm.testContext.SeeAllDataSet && !vm.testContext.SeeAllData {
+		return Null, newExceptionError("UnsupportedOperationException", "ConnectApi.ChatterUsers.getFollowings requires SeeAllData=true in local tests")
+	}
+	page := Object("ConnectApi.FollowingPage")
+	page.Fields["currentPageUrl"] = String("/services/data/vXX.X/connect/followings")
+	page.Fields["following"] = typedList("List<ConnectApi.Subscription>")
+	page.Fields["total"] = Int(0)
+	return page, nil
+}
+
 func (vm *VM) connectAPIChatterPostFeedElement(args []Value) (Value, error) {
 	if len(args) < 2 || len(args) > 4 {
 		return Null, fmt.Errorf("ConnectApi.ChatterFeeds.postFeedElement expects 2-4 arguments")
