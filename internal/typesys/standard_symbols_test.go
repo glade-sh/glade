@@ -89,7 +89,7 @@ func TestUserProfilesSetPhotoUsesIntegerFourthParameter(t *testing.T) {
 	requireNoStandardMethod(t, userProfiles, "setPhoto", []string{"String", "String", "String", "Object"}, true)
 }
 
-func TestGeneratedSystemStubSymbolsBusinessHoursUseIdSignatures(t *testing.T) {
+func TestGeneratedSystemStubSymbolsBusinessHoursUseApi67Signatures(t *testing.T) {
 	var businessHours *StandardSymbolSpec
 	for i := range systemStubSymbolSpecs {
 		if strings.EqualFold(systemStubSymbolSpecs[i].Name, "BusinessHours") {
@@ -106,8 +106,8 @@ func TestGeneratedSystemStubSymbolsBusinessHoursUseIdSignatures(t *testing.T) {
 		params []string
 	}{{"add", []string{"Id", "Datetime", "Long"}},
 		{"addGmt", []string{"Id", "Datetime", "Long"}},
-		{"diff", []string{"Id", "Datetime", "Datetime"}},
-		{"isWithin", []string{"Id", "Datetime"}},
+		{"diff", []string{"String", "Datetime", "Datetime"}},
+		{"isWithin", []string{"String", "Datetime"}},
 		{"nextStartDate", []string{"Id", "Datetime"}}} {
 		found := false
 		for _, method := range businessHours.Methods {
@@ -130,7 +130,7 @@ func TestGeneratedSystemStubSymbolsBusinessHoursUseIdSignatures(t *testing.T) {
 	}
 }
 
-func TestStandardPlatformSymbolsBusinessHoursUseIdSignatures(t *testing.T) {
+func TestStandardPlatformSymbolsBusinessHoursUseApi67Signatures(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 	businessHours := requireStandardSymbol(t, symbols, "BusinessHours")
 
@@ -139,11 +139,15 @@ func TestStandardPlatformSymbolsBusinessHoursUseIdSignatures(t *testing.T) {
 		params []string
 	}{{"add", []string{"Id", "Datetime", "Long"}},
 		{"addGmt", []string{"Id", "Datetime", "Long"}},
-		{"diff", []string{"Id", "Datetime", "Datetime"}},
-		{"isWithin", []string{"Id", "Datetime"}},
+		{"diff", []string{"String", "Datetime", "Datetime"}},
+		{"isWithin", []string{"String", "Datetime"}},
 		{"nextStartDate", []string{"Id", "Datetime"}}} {
 		requireStandardMethod(t, businessHours, method.name, method.params, true)
-		staleParams := append([]string{"String"}, method.params[1:]...)
+		staleType := "String"
+		if method.params[0] == "String" {
+			staleType = "Id"
+		}
+		staleParams := append([]string{staleType}, method.params[1:]...)
 		requireNoStandardMethod(t, businessHours, method.name, staleParams, true)
 	}
 }

@@ -3731,6 +3731,7 @@ var platformTypes = []string{
 	"AsyncApexJob",
 	"BatchApexErrorEvent",
 	"BrandTemplate",
+	"BusinessHours",
 	"Cache",
 	"Cache.CacheBuilder",
 	"Cache.Org",

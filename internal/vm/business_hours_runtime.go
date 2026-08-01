@@ -84,7 +84,7 @@ func (vm *VM) businessHoursAdd(callee string, args []Value) (Value, error) {
 
 func (vm *VM) businessHoursDiff(args []Value) (Value, error) {
 	if len(args) != 3 || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueObject || args[2].Type != "Datetime" {
-		return Null, fmt.Errorf("BusinessHours.diff expects Id, Datetime, Datetime")
+		return Null, fmt.Errorf("BusinessHours.diff expects String, Datetime, Datetime")
 	}
 	id, err := businessHoursIDArgument("BusinessHours.diff", args[0])
 	if err != nil {
@@ -107,7 +107,7 @@ func (vm *VM) businessHoursDiff(args []Value) (Value, error) {
 
 func (vm *VM) businessHoursIsWithin(args []Value) (Value, error) {
 	if len(args) != 2 || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
-		return Null, fmt.Errorf("BusinessHours.isWithin expects Id, Datetime")
+		return Null, fmt.Errorf("BusinessHours.isWithin expects String, Datetime")
 	}
 	id, err := businessHoursIDArgument("BusinessHours.isWithin", args[0])
 	if err != nil {

@@ -862,8 +862,8 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "BusinessHours", Methods: []StandardMethodSpec{
 		{Name: "add", ReturnType: "Datetime", Parameters: []string{"Id", "Datetime", "Long"}, Static: true},
 		{Name: "addGmt", ReturnType: "Datetime", Parameters: []string{"Id", "Datetime", "Long"}, Static: true},
-		{Name: "diff", ReturnType: "Long", Parameters: []string{"Id", "Datetime", "Datetime"}, Static: true},
-		{Name: "isWithin", ReturnType: "Boolean", Parameters: []string{"Id", "Datetime"}, Static: true},
+		{Name: "diff", ReturnType: "Long", Parameters: []string{"String", "Datetime", "Datetime"}, Static: true},
+		{Name: "isWithin", ReturnType: "Boolean", Parameters: []string{"String", "Datetime"}, Static: true},
 		{Name: "nextStartDate", ReturnType: "Datetime", Parameters: []string{"Id", "Datetime"}, Static: true},
 	}},
 	{Name: "Question", SuperClass: "SObject", Constructors: [][]string{{}}, Properties: []StandardPropertySpec{{Name: "Title", Type: "String"}, {Name: "CommunityId", Type: "Id"}}},
