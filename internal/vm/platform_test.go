@@ -6926,12 +6926,16 @@ System.assertEquals(1, UninstallScript.count);
 	}
 	onUninstall, err := CompileAnonymous(`
 System.assertNotEquals(null, context);
+System.assertEquals('00D000000000001', String.valueOf(context.organizationId()));
 UninstallScript.count++;
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	org := testDataOrg()
+	org.OrgID = "00D000000000001"
+	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
 		Name:       "UninstallScript",

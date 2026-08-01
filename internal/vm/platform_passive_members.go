@@ -877,6 +877,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return Null, receiver, false, true, nil
 		}
+	case "UninstallContext":
+		if method != "organizationId" {
+			break
+		}
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("UninstallContext.organizationId expects 0 arguments")
+		}
+		if value, ok := receiver.Fields["organizationId"]; ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
 	case "AggregateResult":
 		switch method {
 		case "get":

@@ -652,6 +652,7 @@ func (vm *VM) testUninstall(args []Value, result *Result) (Value, error) {
 		return Null, fmt.Errorf("Test.testUninstall expects UninstallHandler")
 	}
 	context := Object("UninstallContext")
+	context.Fields["organizationId"] = platformScalar("Id", vm.orgID())
 	method, ok, ambiguous := vm.resolveInstanceMethodForArgs(handler.Type, "onUninstall", []Value{context})
 	if ambiguous {
 		return Null, vm.ambiguousOverloadError(handler.Type+".onUninstall", []Value{context})
