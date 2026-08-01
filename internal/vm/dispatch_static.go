@@ -242,7 +242,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Packaging.getCurrentPackageId",
 		"NLPPredictions.FAQPrediction.predict",
 		"RequestImpl.getCurrent", "UIRequest.getCurrent",
-		"Auth.AuthToken.revokeAccess", "Auth.SessionManagement.getCurrentSession",
+		"Auth.AuthToken.getAccessToken", "Auth.AuthToken.getAccessTokenMap", "Auth.AuthToken.refreshAccessToken", "Auth.AuthToken.revokeAccess", "Auth.SessionManagement.getCurrentSession",
 		"Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.CommunitiesUtil.isGuestUser",
 		"Messaging.sendEmail", "Messaging.renderStoredEmailTemplate",
 		"Messaging.reserveSingleEmailCapacity", "Messaging.reserveMassEmailCapacity",

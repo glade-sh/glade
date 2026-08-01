@@ -2254,9 +2254,32 @@ platformStaticCall:
 			return Null, fmt.Errorf("TrailblazerIdentity.splunkLog expects source and message")
 		}
 		return Null, nil
-	case "Auth.AuthToken.revokeAccess":
+	case "Auth.AuthToken.getAccessToken":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("Auth.AuthToken.getAccessToken expects 2 arguments")
+		}
+		return String("local-auth-token"), nil
+	case "Auth.AuthToken.getAccessTokenMap":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("Auth.AuthToken.getAccessTokenMap expects 2 arguments")
+		}
+		tokens := typedMap("Map<String,String>")
+		tokens.Map[mapKey(String("access_token"))] = String("local-auth-token")
+		tokens.Map[mapKey(String("refresh_token"))] = String("local-refresh-token")
+		tokens.Map[mapKey(String("token_type"))] = String("Bearer")
+		return tokens, nil
+	case "Auth.AuthToken.refreshAccessToken":
 		if len(args) != 3 {
-			return Null, fmt.Errorf("Auth.AuthToken.revokeAccess expects 3 arguments")
+			return Null, fmt.Errorf("Auth.AuthToken.refreshAccessToken expects 3 arguments")
+		}
+		refresh := Object("Auth.OAuthRefreshResult")
+		refresh.Fields["accessToken"] = String("local-auth-token")
+		refresh.Fields["refreshToken"] = String("local-refresh-token")
+		refresh.Fields["error"] = Null
+		return refresh, nil
+	case "Auth.AuthToken.revokeAccess":
+		if len(args) != 4 {
+			return Null, fmt.Errorf("Auth.AuthToken.revokeAccess expects 4 arguments")
 		}
 		return Bool(true), nil
 	case "Auth.SessionManagement.getCurrentSession":

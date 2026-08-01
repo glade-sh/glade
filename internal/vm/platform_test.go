@@ -3059,7 +3059,6 @@ System.assert(passwordless.success);
 System.assertEquals('/passwordless', passwordless.redirect.getUrl());
 System.assertEquals('local-verification', UserManagement.verifyRegisterVerificationMethod('12345', Auth.VerificationMethod.EMAIL));
 System.assert(UserManagement.verifyVerificationMethod('ada@example.invalid', '12345', Auth.VerificationMethod.EMAIL).success);
-System.assertEquals(true, Auth.AuthToken.revokeAccess('provider', 'user', 'token'));
 System.assert(Auth.SessionManagement.getCurrentSession().get('SessionId').contains('session'));
 Auth.AuthConfiguration config = new Auth.AuthConfiguration('https://local.example', '/start');
 System.assertEquals(0, config.getAuthProviders().size());
@@ -3075,6 +3074,46 @@ System.assertEquals('https://local.example/services/auth/sso/local?startURL=/sta
 	machine := New(nil)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecAuthTokenDeterministicLocalFamily(t *testing.T) {
+	program, err := CompileAnonymous(`
+String accessToken = Auth.AuthToken.getAccessToken('provider', 'local');
+System.assertEquals('local-auth-token', accessToken);
+Map<String,String> accessTokenMap = Auth.AuthToken.getAccessTokenMap('provider', 'local');
+System.assertEquals('local-auth-token', accessTokenMap.get('access_token'));
+System.assertEquals('local-refresh-token', accessTokenMap.get('refresh_token'));
+System.assertEquals('Bearer', accessTokenMap.get('token_type'));
+Auth.OAuthRefreshResult refresh = Auth.AuthToken.refreshAccessToken('provider', 'local', accessToken);
+System.assertEquals('local-auth-token', refresh.accessToken);
+System.assertEquals('local-refresh-token', refresh.refreshToken);
+System.assertEquals(null, refresh.error);
+System.assertEquals(true, Auth.AuthToken.revokeAccess('provider', 'local', 'user', 'remote'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAuthTokenDispatchRequiresExactArities(t *testing.T) {
+	machine := New(nil)
+	for _, test := range []struct {
+		callee string
+		args   []Value
+		want   string
+	}{
+		{callee: "Auth.AuthToken.getAccessToken", args: []Value{String("provider")}, want: "expects 2 arguments"},
+		{callee: "Auth.AuthToken.getAccessTokenMap", args: []Value{String("provider")}, want: "expects 2 arguments"},
+		{callee: "Auth.AuthToken.refreshAccessToken", args: []Value{String("provider")}, want: "expects 3 arguments"},
+		{callee: "Auth.AuthToken.revokeAccess", args: []Value{String("provider")}, want: "expects 4 arguments"},
+	} {
+		if _, err := machine.call(test.callee, test.args, nil, &Result{}); err == nil || !strings.Contains(err.Error(), test.want) {
+			t.Fatalf("%s error = %v, want %q", test.callee, err, test.want)
+		}
 	}
 }
 

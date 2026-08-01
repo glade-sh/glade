@@ -422,13 +422,16 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 	}
 	switch {
 	case strings.EqualFold(callee, "Auth.AuthConfiguration.getAuthProviderSsoUrl"),
+		strings.EqualFold(callee, "Auth.AuthToken.getAccessToken"),
+		strings.EqualFold(callee, "Auth.AuthToken.getAccessTokenMap"),
+		strings.EqualFold(callee, "Auth.AuthToken.refreshAccessToken"),
 		strings.EqualFold(callee, "Auth.AuthToken.revokeAccess"),
 		strings.EqualFold(callee, "Auth.CommunitiesUtil.isGuestUser"),
 		strings.EqualFold(callee, "Auth.SessionManagement.getCurrentSession"):
 		return "", false
 	}
 	switch callee {
-	case "Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.AuthToken.revokeAccess", "Auth.CommunitiesUtil.isGuestUser", "Auth.SessionManagement.getCurrentSession":
+	case "Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.AuthToken.getAccessToken", "Auth.AuthToken.getAccessTokenMap", "Auth.AuthToken.refreshAccessToken", "Auth.AuthToken.revokeAccess", "Auth.CommunitiesUtil.isGuestUser", "Auth.SessionManagement.getCurrentSession":
 		return "", false
 	case "Canvas.Test.mockRenderContext", "Canvas.Test.testCanvasLifecycle",
 		"Continuation.getResponse", "Test.invokeContinuationMethod", "Test.setContinuationResponse":
