@@ -1701,6 +1701,7 @@ func TestSObjectResourceShape(t *testing.T) {
 func TestSObjectDescribePayloadIncludesCommonMetadataShape(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
+	account.Definition.EnableSearch = true
 	account.Definition.Label = "Account"
 	account.Definition.PluralLabel = "Accounts"
 	account.Definition.Fields["Id"] = storage.Field{APIName: "Id", Label: "Account ID", Type: storage.FieldID, Required: true}
@@ -1808,6 +1809,33 @@ func TestSObjectDescribePayloadIncludesCommonMetadataShape(t *testing.T) {
 	cold, ok := values[1].(map[string]any)
 	if !ok || cold["value"] != "Cold" || cold["label"] != "Cold" || cold["active"] != false || cold["defaultValue"] != false {
 		t.Fatalf("cold picklist value = %#v", values[1])
+	}
+}
+
+func TestDescribePayloadSearchabilityUsesObjectDefinition(t *testing.T) {
+	account, ok := storage.StandardObjectDefinition("Account")
+	if !ok {
+		t.Fatal("Account standard definition missing")
+	}
+
+	for _, tc := range []struct {
+		name       string
+		definition storage.ObjectDefinition
+		want       bool
+	}{
+		{name: "default custom object", definition: storage.ObjectDefinition{APIName: "Default__c"}, want: false},
+		{name: "enabled custom object", definition: storage.ObjectDefinition{APIName: "Enabled__c", EnableSearch: true}, want: true},
+		{name: "Account", definition: account, want: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			searchable, ok := describePayload(tc.definition, nil)["searchable"].(bool)
+			if !ok {
+				t.Fatalf("searchable payload value has wrong type: %#v", describePayload(tc.definition, nil)["searchable"])
+			}
+			if searchable != tc.want {
+				t.Fatalf("searchable = %v, want %v", searchable, tc.want)
+			}
+		})
 	}
 }
 
