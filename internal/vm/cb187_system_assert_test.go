@@ -2,40 +2,21 @@ package vm
 
 import "testing"
 
-func TestCB187AssertExceptionQueryOnlyProcedures(t *testing.T) {
+func TestCB187AssertExceptionRejectsOnlyGetInaccessibleFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 Exception assertion = new AssertException('failed assertion');
-String expectedMessage = 'Procedure is only valid for System.QueryException';
-
-Boolean fieldsCaught = false;
+Boolean caught = false;
 try {
 	assertion.getInaccessibleFields();
 } catch (Exception e) {
-	fieldsCaught = true;
+	caught = true;
 	System.assertEquals('System.TypeException', e.getTypeName());
-	System.assertEquals(expectedMessage, e.getMessage());
+	System.assertEquals('Procedure is only valid for System.QueryException', e.getMessage());
 }
-System.assert(fieldsCaught, 'AssertException.getInaccessibleFields should throw');
+System.assert(caught, 'AssertException.getInaccessibleFields should throw');
 
-Boolean causeCaught = false;
-try {
-	assertion.getCause();
-} catch (Exception e) {
-	causeCaught = true;
-	System.assertEquals('System.TypeException', e.getTypeName());
-	System.assertEquals(expectedMessage, e.getMessage());
-}
-System.assert(causeCaught, 'AssertException.getCause should throw');
-
-Boolean initCaught = false;
-try {
-	assertion.initCause(new QueryException('cause'));
-} catch (Exception e) {
-	initCaught = true;
-	System.assertEquals('System.TypeException', e.getTypeName());
-	System.assertEquals(expectedMessage, e.getMessage());
-}
-System.assert(initCaught, 'AssertException.initCause should throw');
+Exception query = new QueryException('failed query');
+System.assertNotEquals(null, query.getInaccessibleFields());
 `)
 	if err != nil {
 		t.Fatal(err)

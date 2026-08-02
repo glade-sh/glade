@@ -14556,28 +14556,19 @@ System.assertEquals(true, caught);
 	}
 }
 
-func TestExecExceptionGetInaccessibleFieldsRequiresQueryException(t *testing.T) {
+func TestExecDmlExceptionGetInaccessibleFieldsRequiresQueryException(t *testing.T) {
 	program, err := CompileAnonymous(`
 try {
-	throw new InaccessibleFieldsException('blocked');
+    new DmlException('blocked').getInaccessibleFields();
 } catch (Exception e) {
-	Boolean fieldsCaught = false;
-	try {
-		e.getInaccessibleFields();
-	} catch (Exception procedureError) {
-		fieldsCaught = true;
-		System.assertEquals('System.TypeException', procedureError.getTypeName());
-		System.assertEquals('Procedure is only valid for System.QueryException', procedureError.getMessage());
-	}
-	System.assert(fieldsCaught, 'custom exceptions should reject getInaccessibleFields');
+	System.assertEquals('System.TypeException', e.getTypeName());
+	System.assertEquals('Procedure is only valid for System.QueryException', e.getMessage());
 }
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	machine := New(nil)
-	registerCustomException(t, machine, "InaccessibleFieldsException")
-	if _, err := machine.Execute(program); err != nil {
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

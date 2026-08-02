@@ -2715,9 +2715,9 @@ System.assertEquals('System.QueryException:bad query', caught);
 	}
 }
 
-func TestExecQueryExceptionCauseStdlibMethods(t *testing.T) {
+func TestExecCoreExceptionCauseStdlibMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
-Exception wrapperError = new QueryException('outer');
+Exception wrapperError = new DmlException('outer');
 System.assertEquals(null, wrapperError.getCause());
 Exception cause = new QueryException('root cause');
 Exception returned = wrapperError.initCause(cause);
@@ -2725,7 +2725,7 @@ System.assert(wrapperError.equals(returned));
 Exception recovered = wrapperError.getCause();
 System.assertEquals('System.QueryException', recovered.getTypeName());
 System.assertEquals('root cause', recovered.getMessage());
-Exception constructedCause = new QueryException('wrapped', cause);
+Exception constructedCause = new DmlException('wrapped', cause);
 System.assertEquals('wrapped', constructedCause.getMessage());
 System.assertEquals('root cause', constructedCause.getCause().getMessage());
 
@@ -2740,7 +2740,7 @@ try {
 System.assert(repeatCaught, 'repeat initCause should throw');
 System.assertEquals('root cause', wrapperError.getCause().getMessage());
 
-Exception nullable = new QueryException('nullable');
+Exception nullable = new DmlException('nullable');
 nullable.initCause(null);
 System.assertEquals(null, nullable.getCause());
 Boolean nullRepeatCaught = false;
@@ -2752,7 +2752,7 @@ try {
 }
 System.assert(nullRepeatCaught, 'null cause initialization should count');
 
-Exception self = new QueryException('self');
+Exception self = new DmlException('self');
 Boolean selfCaught = false;
 try {
 	self.initCause(self);
@@ -2771,7 +2771,7 @@ System.assert(selfCaught, 'self cause should throw');
 	}
 }
 
-func TestExecJSONExceptionRejectsQueryExceptionOnlyProcedures(t *testing.T) {
+func TestExecJSONExceptionKeepsSpecificUnsupportedExceptionMembers(t *testing.T) {
 	program, err := CompileAnonymous(`
 Exception e = new JSONException('bad json');
 
@@ -2781,7 +2781,6 @@ try {
 } catch (Exception ex) {
 	fieldsCaught = true;
 	System.assertEquals('System.TypeException', ex.getTypeName());
-	System.assertEquals('Procedure is only valid for System.QueryException', ex.getMessage());
 }
 System.assert(fieldsCaught, 'JSONException.getInaccessibleFields should throw');
 
@@ -2790,8 +2789,7 @@ try {
 	e.initCause(new RootCauseException('root'));
 } catch (Exception ex) {
 	causeCaught = true;
-	System.assertEquals('System.TypeException', ex.getTypeName());
-	System.assertEquals('Procedure is only valid for System.QueryException', ex.getMessage());
+	System.assertEquals('System.NullPointerException', ex.getTypeName());
 }
 System.assert(causeCaught, 'JSONException.initCause should throw');
 `)
@@ -2810,15 +2808,7 @@ func TestExecCustomExceptionInheritsCoreConstructors(t *testing.T) {
 Exception cause = new QueryException('root');
 AppException wrapped = new AppException('wrapped', cause);
 System.assertEquals('wrapped', wrapped.getMessage());
-Boolean causeCaught = false;
-try {
-	wrapped.getCause();
-} catch (Exception e) {
-	causeCaught = true;
-	System.assertEquals('System.TypeException', e.getTypeName());
-	System.assertEquals('Procedure is only valid for System.QueryException', e.getMessage());
-}
-System.assert(causeCaught, 'custom exceptions should reject getCause');
+System.assertEquals('root', wrapped.getCause().getMessage());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3018,7 +3008,7 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		source.WriteString(string(rune('A' + i/26)))
 		source.WriteString(string(rune('A' + i%26)))
 		source.WriteString(".toString());\n")
-		if name == "QueryException" {
+		if name != "JSONException" {
 			source.WriteString("System.assertEquals(0, e")
 			source.WriteString(string(rune('A' + i/26)))
 			source.WriteString(string(rune('A' + i%26)))

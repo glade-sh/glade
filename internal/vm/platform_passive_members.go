@@ -229,13 +229,6 @@ func canvasContextJSON(receiver Value) (string, error) {
 	return string(raw), nil
 }
 
-func queryExceptionProcedureError(receiver Value) error {
-	if builtinExceptionTypeMatches(receiver.Type, "QueryException") {
-		return nil
-	}
-	return newExceptionError("System.TypeException", "Procedure is only valid for System.QueryException")
-}
-
 func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Value, result *Result) (value Value, updated Value, mutated bool, handled bool, err error) {
 	defer func() {
 		if mutated {
@@ -571,16 +564,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getInaccessibleFields expects 0 arguments", receiver.Type)
 			}
-			if err := queryExceptionProcedureError(receiver); err != nil {
-				return Null, receiver, false, true, err
+			if exceptionTypeName(receiver.Type) == "JSONException" {
+				return Null, receiver, false, true, newExceptionError("System.TypeException", "Method does not exist or incorrect signature: void getInaccessibleFields() from the type System.JSONException")
+			}
+			if !builtinExceptionTypeMatches(receiver.Type, "QueryException") {
+				return Null, receiver, false, true, newExceptionError("System.TypeException", "Procedure is only valid for System.QueryException")
 			}
 			return Map(), receiver, false, true, nil
 		case "getCause":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getCause expects 0 arguments", receiver.Type)
-			}
-			if err := queryExceptionProcedureError(receiver); err != nil {
-				return Null, receiver, false, true, err
 			}
 			if cause, ok := receiver.Fields["__cause"]; ok {
 				return cause, receiver, false, true, nil
@@ -590,8 +583,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 1 {
 				return Null, receiver, false, true, fmt.Errorf("%s.initCause expects 1 argument", receiver.Type)
 			}
-			if err := queryExceptionProcedureError(receiver); err != nil {
-				return Null, receiver, false, true, err
+			if exceptionTypeName(receiver.Type) == "JSONException" {
+				return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
 			}
 			if args[0].Kind != ValueNull && (args[0].Kind != ValueObject || !isExceptionType(args[0].Type)) {
 				return Null, receiver, false, true, fmt.Errorf("%s.initCause expects Exception", receiver.Type)
