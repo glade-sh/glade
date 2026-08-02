@@ -166,7 +166,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 							}
 							continue
 						}
-						if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, classMembers.name, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "class"); handled {
+						if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, lookupName, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "class"); handled {
 							diagnostics = append(diagnostics, platformDiagnostics...)
 							continue
 						}

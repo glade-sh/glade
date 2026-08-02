@@ -888,7 +888,7 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		case "changepassword":
 			return semaCollectionSignature{returnType: "PageReference", params: [][]string{{"String", "String"}, {"String", "String", "String"}}}, true
 		case "validatepassword":
-			return semaCollectionSignature{returnType: "void", params: [][]string{{"User", "String", "String"}}}, true
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"SObject", "String", "String"}}}, true
 		case "createexternaluser":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{"User", "String", "String"}, {"User", "String", "String", "Boolean"}}}, true
 		case "createportaluser":
@@ -930,7 +930,7 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		case "setmock":
 			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "Object"}, {"Type", "Object"}}}, true
 		case "setcurrentpagereference", "setcurrentpage":
-			return semaCollectionSignature{returnType: "void", params: [][]string{{"PageReference"}}}, true
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"PageReference"}, {"Object"}}}, true
 		}
 	case "apexpages":
 		switch method {

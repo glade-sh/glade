@@ -617,6 +617,60 @@ private class PageTokenTest {
 	}
 }
 
+func TestAnalyzeAPI67PlatformStaticCallsAcceptBroadObjectSignatures(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	classPath := filepath.Join(root, "API67PlatformCalls.cls")
+	writeSemaFile(t, classPath, `
+public class API67PlatformCalls {
+  public void run() {
+    Object order = DataSource.Order.get('cb70', 'cb70', (DataSource.OrderDirection)null);
+    Site.validatePassword(new Account(), 'cb70', 'cb70');
+    Test.setCurrentPage((Object)null);
+    Test.setCurrentPage((PageReference)null);
+    Test.setCurrentPageReference((Object)null);
+    Test.setCurrentPageReference((PageReference)null);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("API 67 platform calls should analyze: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeAPI67PlatformCallChecksRetainNegativeControls(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	classPath := filepath.Join(root, "API67PlatformNegativeControls.cls")
+	writeSemaFile(t, classPath, `
+public class API67PlatformNegativeControls {
+  public void run() {
+    List<String> values = new List<String>();
+    values.get(0, 1);
+    Database.SaveResult.isSuccess();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
+
+	result := Analyze(index)
+	var collectionArity, staticAccess bool
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA023" && strings.Contains(diag.Message, `invalid collection call "get"`) {
+			collectionArity = true
+		}
+		if diag.Code == "GLADESEMA027" && strings.Contains(diag.Message, "instance method called through a type") {
+			staticAccess = true
+		}
+	}
+	if !collectionArity || !staticAccess {
+		t.Fatalf("negative platform call controls were not preserved: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzePlatformAPIInterfacesRequireContracts(t *testing.T) {
 	t.Parallel()
 	index := typesys.Index{
