@@ -945,7 +945,7 @@ asyncResult.id = deploymentId;
 asyncResult.done = true;
 asyncResult.state = 'Succeeded';
 System.assertEquals((String)deploymentId, (String)asyncResult.id);
-System.assertEquals(2, container.metadata.size());
+System.assertEquals(2, container.getMetadata().size());
 System.assertEquals(1, item.values.size());
 System.assertEquals('Enabled__c', ((Metadata.CustomMetadataValue)item.values[0]).field);
 Feature__mdt cfg = Feature__mdt.getInstance('Default');

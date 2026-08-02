@@ -423,7 +423,7 @@ func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, er
 		return Null, unsupportedCallError("Metadata.Operations.enqueueDeployment deploy callback invocation")
 	}
 	deploymentID := "0Af000000000001"
-	items := args[0].Fields["metadata"]
+	items := args[0].Fields["components"]
 	if items.Kind == ValueNull || (items.Kind == ValueList && len(items.List) == 0) {
 		vm.recordMetadataDeployment(deploymentID, nil)
 		appendTrace(result, "apex.metadata.deploy.enqueue", "apex.metadata", map[string]any{
@@ -434,7 +434,7 @@ func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, er
 		return platformScalar("Id", deploymentID), nil
 	}
 	if items.Kind != ValueList {
-		return Null, fmt.Errorf("Metadata.DeployContainer.metadata must be a list")
+		return Null, fmt.Errorf("Metadata.DeployContainer.components must be a list")
 	}
 	if vm.Org == nil {
 		return Null, unsupportedCallError("Metadata.Operations.enqueueDeployment requires org storage for local metadata mutation")
@@ -1455,6 +1455,7 @@ func metadataDeployResultObject(deploymentID string, items []Value) Value {
 	result.Fields["numberTestErrors"] = Int(0)
 	result.Fields["numberTestsCompleted"] = Int(0)
 	result.Fields["checkOnly"] = Bool(false)
+	result.Fields["messages"] = List()
 	details := metadataDeployDetailsObject()
 	successes := make([]Value, 0, len(items))
 	for _, item := range items {
@@ -1477,6 +1478,7 @@ func metadataDeployFailureResultObject(deploymentID string, items []Value, faile
 	result.Fields["numberTestErrors"] = Int(0)
 	result.Fields["numberTestsCompleted"] = Int(0)
 	result.Fields["checkOnly"] = Bool(false)
+	result.Fields["messages"] = List()
 	details := metadataDeployDetailsObject()
 	details.Fields["componentFailures"] = List(metadataDeployFailureMessage(failedItem, err))
 	result.Fields["details"] = details

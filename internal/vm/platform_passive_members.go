@@ -3165,28 +3165,28 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 1 {
 				return Null, receiver, false, true, fmt.Errorf("Metadata.DeployContainer.addMetadata expects metadata")
 			}
-			values := receiver.Fields["metadata"]
+			values := receiver.Fields["components"]
 			if values.Kind != ValueList {
 				values = List()
 			}
 			values.List = append(values.List, args[0])
-			receiver.Fields["metadata"] = values
+			receiver.Fields["components"] = values
 			return Null, receiver, true, true, nil
 		case "getMetadata":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Metadata.DeployContainer.getMetadata expects 0 arguments")
 			}
-			values := receiver.Fields["metadata"]
+			values := receiver.Fields["components"]
 			if values.Kind != ValueList {
 				values = typedList("List<Metadata.Metadata>")
-				receiver.Fields["metadata"] = values
+				receiver.Fields["components"] = values
 			}
 			return values, receiver, false, true, nil
 		case "removeMetadata":
 			if len(args) != 1 {
 				return Null, receiver, false, true, fmt.Errorf("Metadata.DeployContainer.removeMetadata expects metadata")
 			}
-			values := receiver.Fields["metadata"]
+			values := receiver.Fields["components"]
 			if values.Kind != ValueList {
 				return Bool(false), receiver, false, true, nil
 			}
@@ -3200,13 +3200,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 				filtered.List = append(filtered.List, item)
 			}
-			receiver.Fields["metadata"] = filtered
+			receiver.Fields["components"] = filtered
 			return Bool(removed), receiver, removed, true, nil
 		case "removeMetadataByFullName":
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("Metadata.DeployContainer.removeMetadataByFullName expects fullName String")
 			}
-			values := receiver.Fields["metadata"]
+			values := receiver.Fields["components"]
 			if values.Kind != ValueList {
 				return Bool(false), receiver, false, true, nil
 			}
@@ -3221,7 +3221,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 				filtered.List = append(filtered.List, item)
 			}
-			receiver.Fields["metadata"] = filtered
+			receiver.Fields["components"] = filtered
 			return Bool(removed), receiver, removed, true, nil
 		}
 	case "Messaging.SendEmailResult":

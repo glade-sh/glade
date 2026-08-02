@@ -646,7 +646,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("Metadata.DeployContainer constructor expects 0 arguments")
 		}
 		container := Object("Metadata.DeployContainer")
-		container.Fields["metadata"] = typedList("List<Metadata.Metadata>")
+		container.Fields["components"] = typedList("List<Metadata.Metadata>")
 		for field, value := range namedArgs {
 			container.Fields[field] = value
 		}
@@ -733,6 +733,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		result.Fields["numberTestErrors"] = Int(0)
 		result.Fields["numberTestsCompleted"] = Int(0)
 		result.Fields["checkOnly"] = Bool(false)
+		result.Fields["messages"] = List()
 		result.Fields["details"] = metadataDeployDetailsObject()
 		for field, value := range namedArgs {
 			result.Fields[field] = value

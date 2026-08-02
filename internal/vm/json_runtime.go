@@ -538,6 +538,7 @@ func reverseMapOrder(order []string) []string {
 
 func (vm *VM) jsonSerializableFieldNames(typeName string) []string {
 	var fields []string
+	seen := make(map[string]struct{})
 	var visit func(string)
 	visit = func(name string) {
 		class, ok := vm.lookupClass(name)
@@ -547,7 +548,14 @@ func (vm *VM) jsonSerializableFieldNames(typeName string) []string {
 		if class.SuperClass != "" {
 			visit(class.SuperClass)
 		}
-		fields = append(fields, class.FieldOrder...)
+		for _, field := range class.FieldOrder {
+			key := strings.ToLower(field)
+			if _, ok := seen[key]; ok {
+				continue
+			}
+			seen[key] = struct{}{}
+			fields = append(fields, field)
+		}
 	}
 	visit(typeName)
 	return fields

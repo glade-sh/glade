@@ -2384,7 +2384,15 @@ platformStaticCall:
 			return Null, fmt.Errorf("Auth.SessionManagement.getCurrentSession expects 0 arguments")
 		}
 		session := typedMap("Map<String,String>")
-		session.Map[mapKey(String("SessionId"))] = String(vm.currentUserInfoField("Id", "005-local-user") + "-session")
+		for _, key := range []string{
+			"NumSecondsValid", "LastModifiedDate", "CreatedDate", "LoginGeoId",
+			"LoginHistoryId", "LoginDomain", "LogoutUrl", "ParentId", "SessionId",
+			"SessionSecurityLevel", "SourceIp", "LoginSubType", "LoginType", "UserType",
+			"SessionType", "Username", "UsersId",
+		} {
+			session.Map[mapKey(String(key))] = Null
+		}
+		session.Map[mapKey(String("SessionId"))] = String("local-session")
 		return session, nil
 	case "Auth.AuthConfiguration.getAuthProviderSsoUrl":
 		if len(args) != 3 {
@@ -2613,6 +2621,9 @@ platformStaticCall:
 	case "UserProvisioning.ConnectorTestUtil.createConnectedApp":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("UserProvisioning.ConnectorTestUtil.createConnectedApp expects connected app name")
+		}
+		if vm.testContext == nil {
+			return Null, newExceptionError("System.TypeException", "Cannot call test methods in non-test context")
 		}
 		app := Object("ConnectedApplication")
 		app.Fields["Id"] = platformScalar("Id", "0SO000000000001")
