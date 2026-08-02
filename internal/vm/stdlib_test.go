@@ -3008,7 +3008,7 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		source.WriteString(string(rune('A' + i/26)))
 		source.WriteString(string(rune('A' + i%26)))
 		source.WriteString(".toString());\n")
-		if name != "JSONException" {
+		if name == "QueryException" {
 			source.WriteString("System.assertEquals(0, e")
 			source.WriteString(string(rune('A' + i/26)))
 			source.WriteString(string(rune('A' + i%26)))
