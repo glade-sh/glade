@@ -2948,11 +2948,51 @@ System.assertEquals('Success', (String)response.status);
 	}
 }
 
+func TestExecApexPagesActionInvokeUnboundOrdinaryExpression(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.Action action = new ApexPages.Action('{!save}');
+System.assertEquals('{!save}', action.getExpression());
+System.assertEquals(null, action.invoke());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesActionInvokeUsesBoundInvoker(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.Action action = new ApexPages.Action('{!save}');
+PageReference invoked = action.invoke();
+System.assertEquals('/apex/Done', invoked.getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetCurrentPageURL("/apex/Edit")
+	var gotExpression, gotPageURL string
+	machine.SetVisualforceActionInvoker(func(expression, pageURL string) (Value, error) {
+		gotExpression = expression
+		gotPageURL = pageURL
+		return newPageReference("/apex/Done"), nil
+	})
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if gotExpression != "{!save}" || gotPageURL != "/apex/Edit" {
+		t.Fatalf("invoker args = (%q, %q)", gotExpression, gotPageURL)
+	}
+}
+
 func TestExecPlatformHelperTailUnsupportedFences(t *testing.T) {
 	cases := []string{
 		`System.changeOwnPassword('old', 'new', 'new');`,
 		`ConnectApi.Payments.authorize(null);`,
-		`new ApexPages.Action('{!save}').invoke();`,
 		`functions.Function.get('fn').invoke(null);`,
 	}
 	for _, source := range cases {

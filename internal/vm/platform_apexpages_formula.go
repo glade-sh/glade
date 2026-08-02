@@ -203,7 +203,7 @@ func (vm *VM) callApexPagesActionMember(receiver Value, method string, args []Va
 			value, err := vm.vfActionInvoker(expression, pageReferenceURL(vm.CurrentPage()).Text)
 			return value, receiver, false, true, err
 		}
-		return Null, receiver, false, true, unsupportedCallError("ApexPages.Action.invoke requires bound Visualforce controller lifecycle")
+		return Null, receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
