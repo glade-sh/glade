@@ -408,8 +408,8 @@ func newDatabaseDMLOptions() Value {
 	options.Fields["LocaleOptions"] = Null
 	options.Fields["localizeErrors"] = Bool(false)
 	options.Fields["LocalizeErrors"] = options.Fields["localizeErrors"]
-	options.Fields["optAllOrNone"] = Bool(false)
-	options.Fields["OptAllOrNone"] = options.Fields["optAllOrNone"]
+	options.Fields["optAllOrNone"] = Null
+	options.Fields["OptAllOrNone"] = Null
 	return options
 }
 

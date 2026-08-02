@@ -13694,7 +13694,7 @@ System.assert(!upsertUpdate.isCreated());
 func TestExecDatabaseDMLOptionsHeaderRuntimeBreadth(t *testing.T) {
 	program, err := CompileAnonymous(`
 Database.DMLOptions opts = new Database.DMLOptions();
-System.assertEquals(false, opts.optAllOrNone, 'default optAllOrNone');
+System.assertEquals(null, opts.optAllOrNone, 'default optAllOrNone');
 opts.OptAllOrNone = false;
 opts.AllowFieldTruncation = true;
 opts.LocalizeErrors = true;
