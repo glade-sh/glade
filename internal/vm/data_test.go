@@ -5538,6 +5538,26 @@ System.assertEquals(SObjectDescribeOptions.DEFERRED, deferredDescribe.getSObject
 	}
 }
 
+func TestExecDescribeSObjectResultEqualityUsesSObjectIdentity(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeSObjectResult first = Account.SObjectType.getDescribe();
+Schema.DescribeSObjectResult second = Account.SObjectType.getDescribe();
+System.assertEquals(first, second);
+System.assertEquals(first.hashCode(), second.hashCode());
+System.assertNotEquals(first, Contact.SObjectType.getDescribe());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeSObjectResultMergeableUsesObjectMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeSObjectResult describe = Mergeable__c.SObjectType.getDescribe();

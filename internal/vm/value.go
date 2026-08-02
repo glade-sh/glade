@@ -408,6 +408,9 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 		}
 		return true
 	case ValueObject:
+		if isDescribeSObjectResultType(v.Type) || isDescribeSObjectResultType(other.Type) {
+			return isDescribeSObjectResultType(v.Type) && isDescribeSObjectResultType(other.Type) && describeSObjectResultIdentityEqual(v, other)
+		}
 		if strings.EqualFold(v.Type, "Type") && strings.EqualFold(other.Type, "Type") {
 			leftType := typeValueText(v)
 			rightType := typeValueText(other)
@@ -1001,6 +1004,12 @@ func sObjectTypeTokenEqual(left, right Value) bool {
 		return false
 	}
 	return strings.EqualFold(schemaTokenObjectKey(leftObject.Text), schemaTokenObjectKey(rightObject.Text))
+}
+
+func describeSObjectResultIdentityEqual(left, right Value) bool {
+	leftType, leftOK := left.Fields["sObjectType"]
+	rightType, rightOK := right.Fields["sObjectType"]
+	return leftOK && rightOK && schemaTokenIdentityEqual(leftType, rightType)
 }
 
 func containsValue(values []Value, needle Value) bool {

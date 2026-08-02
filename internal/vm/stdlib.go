@@ -3914,6 +3914,13 @@ func valueHashCode(value Value) int32 {
 		}
 		return hash
 	case ValueObject:
+		if isDescribeSObjectResultType(value.Type) {
+			if sObjectType, ok := value.Fields["sObjectType"]; ok && sObjectType.Kind == ValueObject && strings.EqualFold(sObjectType.Type, "Schema.SObjectType") {
+				if objectName, ok := sObjectType.Fields["object"]; ok && objectName.Kind == ValueString {
+					return javaStringHashCode(strings.ToLower(sObjectType.Type) + ":" + schemaTokenObjectKey(objectName.Text))
+				}
+			}
+		}
 		if value.Type == "Type" {
 			if typeName := typeValueText(value); typeName != "" {
 				return javaStringHashCode(typeName)
