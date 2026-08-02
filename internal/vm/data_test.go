@@ -14554,14 +14554,20 @@ System.assertEquals(true, caught);
 	}
 }
 
-func TestExecExceptionGetInaccessibleFieldsDefaultsEmpty(t *testing.T) {
+func TestExecExceptionGetInaccessibleFieldsRequiresQueryException(t *testing.T) {
 	program, err := CompileAnonymous(`
 try {
 	throw new InaccessibleFieldsException('blocked');
 } catch (Exception e) {
-	Map<String, Set<String>> fields = e.getInaccessibleFields();
-	System.assert(fields != null);
-	System.assertEquals(0, fields.size());
+	Boolean fieldsCaught = false;
+	try {
+		e.getInaccessibleFields();
+	} catch (Exception procedureError) {
+		fieldsCaught = true;
+		System.assertEquals('System.TypeException', procedureError.getTypeName());
+		System.assertEquals('Procedure is only valid for System.QueryException', procedureError.getMessage());
+	}
+	System.assert(fieldsCaught, 'custom exceptions should reject getInaccessibleFields');
 }
 `)
 	if err != nil {
