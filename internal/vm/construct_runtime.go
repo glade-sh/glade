@@ -303,13 +303,13 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		frameworkUOWRuntime := vm.isSObjectUnitOfWorkRuntimeType(typeName)
 		isSObjectCtor := vm.isSObjectType(typeName)
 		object := Object(typeName)
-		initializeGeneratedPlatformValue(&object)
 		if !passiveDTO {
 			for field, value := range namedArgs {
 				object.Fields[field] = value
 			}
 		}
 		vm.initializeFields(&object, typeName)
+		initializeGeneratedPlatformValue(&object)
 		if isSObjectCtor {
 			vm.initializeSObjectSchemaDefaults(&object, typeName)
 		}

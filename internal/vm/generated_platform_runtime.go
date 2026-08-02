@@ -337,6 +337,9 @@ func initializeGeneratedPlatformValue(object *Value) {
 	if object == nil || object.Kind != ValueObject {
 		return
 	}
+	if strings.EqualFold(object.Type, "Metadata.DeployResult") {
+		object.Fields["messages"] = List()
+	}
 	if strings.EqualFold(object.Type, "Database.QueryLocator") || strings.EqualFold(object.Type, "QueryLocator") {
 		object.Fields["Records"] = List()
 		object.Fields["Query"] = String("")
