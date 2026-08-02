@@ -84,11 +84,11 @@ func soapTypeForStorageField(field storage.Field) string {
 
 var schemaSOAPTypeNames = []string{"ID", "STRING", "BOOLEAN", "INTEGER", "DOUBLE", "DATE", "DATETIME", "TIME", "BASE64BINARY", "ANYTYPE"}
 
-var schemaDisplayTypeNames = []string{"ADDRESS", "ANYTYPE", "BASE64", "BOOLEAN", "COMBOBOX", "COMPLEXVALUE", "CURRENCY", "DATACATEGORYGROUPREFERENCE", "DATE", "DATETIME", "DOUBLE", "EMAIL", "ENCRYPTEDSTRING", "FLOATARRAY", "ID", "INTEGER", "JSON", "LOCATION", "LONG", "MULTIPICKLIST", "PERCENT", "PHONE", "PICKLIST", "REFERENCE", "SOBJECT", "STRING", "TEXTAREA", "TEXTARRAY", "TIME", "URL"}
+var schemaDisplayTypeNames = []string{"STRING", "BOOLEAN", "DOUBLE", "INTEGER", "PERCENT", "CURRENCY", "DATE", "DATETIME", "TIME", "PICKLIST", "MULTIPICKLIST", "DATACATEGORYGROUPREFERENCE", "BASE64", "ID", "REFERENCE", "TEXTAREA", "PHONE", "COMBOBOX", "URL", "EMAIL", "ANYTYPE", "LOCATION", "ENCRYPTEDSTRING", "COMPLEXVALUE", "ADDRESS", "SOBJECT", "LONG", "JSON", "FLOATARRAY", "TEXTARRAY"}
 
 var schemaFieldDescribeOptionNames = []string{"DEFAULT", "FULL_DESCRIBE"}
 
-var schemaSObjectDescribeOptionNames = []string{"DEFAULT", "DEFERRED", "FULL"}
+var schemaSObjectDescribeOptionNames = []string{"DEFAULT", "FULL", "DEFERRED"}
 
 func schemaSOAPTypeStaticValue(name string) (Value, bool) {
 	if value, ok := namedEnumStaticValue("Schema.SOAPType", schemaSOAPTypeNames, name); ok {

@@ -111,6 +111,81 @@ try {
 	}
 }
 
+func TestExecAPI67SchemaEnumDeclarationOrder(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> displayTypeNames = new List<String>{
+    'STRING', 'BOOLEAN', 'DOUBLE', 'INTEGER', 'PERCENT', 'CURRENCY',
+    'DATE', 'DATETIME', 'TIME', 'PICKLIST', 'MULTIPICKLIST',
+    'DATACATEGORYGROUPREFERENCE', 'BASE64', 'ID', 'REFERENCE', 'TEXTAREA',
+    'PHONE', 'COMBOBOX', 'URL', 'EMAIL', 'ANYTYPE', 'LOCATION',
+    'ENCRYPTEDSTRING', 'COMPLEXVALUE', 'ADDRESS', 'SOBJECT', 'LONG', 'JSON',
+    'FLOATARRAY', 'TEXTARRAY'
+};
+List<Schema.DisplayType> displayTypes = Schema.DisplayType.values();
+System.assertEquals(displayTypeNames.size(), displayTypes.size());
+for (Integer index = 0; index < displayTypeNames.size(); index++) {
+    String expected = displayTypeNames.get(index);
+    Schema.DisplayType value = displayTypes.get(index);
+    Schema.DisplayType exact = Schema.DisplayType.valueOf(expected);
+    Schema.DisplayType lower = Schema.DisplayType.valueOf(expected.toLowerCase());
+    System.assertEquals(expected, value.name());
+    System.assertEquals(expected, value.toString());
+    System.assertEquals(expected, String.valueOf(value));
+    System.assertEquals(index, value.ordinal());
+    System.assert(value.equals(exact));
+    System.assert(value.equals(lower));
+    System.assert(exact.equals(lower));
+    Integer hash = value.hashCode();
+    System.assertEquals(hash, value.hashCode());
+    System.assertEquals(hash, exact.hashCode());
+    System.assertEquals(hash, lower.hashCode());
+}
+
+List<String> optionNames = new List<String>{'DEFAULT', 'FULL', 'DEFERRED'};
+List<Schema.SObjectDescribeOptions> qualifiedOptions = Schema.SObjectDescribeOptions.values();
+List<SObjectDescribeOptions> unqualifiedOptions = SObjectDescribeOptions.values();
+System.assertEquals(optionNames.size(), qualifiedOptions.size());
+System.assertEquals(optionNames.size(), unqualifiedOptions.size());
+for (Integer index = 0; index < optionNames.size(); index++) {
+    String expected = optionNames.get(index);
+    Schema.SObjectDescribeOptions qualified = qualifiedOptions.get(index);
+    Schema.SObjectDescribeOptions qualifiedExact = Schema.SObjectDescribeOptions.valueOf(expected);
+    Schema.SObjectDescribeOptions qualifiedLower = Schema.SObjectDescribeOptions.valueOf(expected.toLowerCase());
+    System.assertEquals(expected, qualified.name(), 'qualified name');
+    System.assertEquals(expected, qualified.toString(), 'qualified toString');
+    System.assertEquals(expected, String.valueOf(qualified), 'qualified String.valueOf');
+    System.assertEquals(index, qualified.ordinal());
+    System.assert(qualified.equals(qualifiedExact));
+    System.assert(qualified.equals(qualifiedLower));
+    System.assert(qualifiedExact.equals(qualifiedLower));
+    Integer qualifiedHash = qualified.hashCode();
+    System.assertEquals(qualifiedHash, qualified.hashCode());
+    System.assertEquals(qualifiedHash, qualifiedExact.hashCode());
+    System.assertEquals(qualifiedHash, qualifiedLower.hashCode());
+
+    SObjectDescribeOptions unqualified = unqualifiedOptions.get(index);
+    SObjectDescribeOptions unqualifiedExact = SObjectDescribeOptions.valueOf(expected);
+    SObjectDescribeOptions unqualifiedLower = SObjectDescribeOptions.valueOf(expected.toLowerCase());
+    System.assertEquals(expected, unqualified.name(), 'unqualified name');
+    System.assertEquals(expected, unqualified.toString(), 'unqualified toString');
+    System.assertEquals(index, unqualified.ordinal());
+    System.assert(unqualified.equals(unqualifiedExact));
+    System.assert(unqualified.equals(unqualifiedLower));
+    System.assert(unqualifiedExact.equals(unqualifiedLower));
+    Integer unqualifiedHash = unqualified.hashCode();
+    System.assertEquals(unqualifiedHash, unqualified.hashCode());
+    System.assertEquals(unqualifiedHash, unqualifiedExact.hashCode());
+    System.assertEquals(unqualifiedHash, unqualifiedLower.hashCode());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecUserEnumHelpersRetainDeclarationOrder(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<CB74UserEnum.Mode> values = CB74UserEnum.Mode.values();
