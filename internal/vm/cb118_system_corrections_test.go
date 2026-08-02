@@ -125,6 +125,18 @@ System.assertEquals('[null,null,null,null,null,60.0,-154.0]', JSON.serialize(new
 	}
 }
 
+func TestCB118DirectDoubleValueOfRoundUsesHalfUp(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(3, Double.valueOf('2.5').round());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCB118DoubleRoundUsesHalfUp(t *testing.T) {
 	program, err := CompileAnonymous(`
 Double value = Double.valueOf('2.5');

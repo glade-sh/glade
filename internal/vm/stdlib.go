@@ -677,11 +677,17 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		if args[0].Kind == ValueNull {
 			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 		}
+		tagDouble := func(value Value) Value {
+			if callee == "Double.valueOf" {
+				value.Static = "Double"
+			}
+			return value
+		}
 		switch args[0].Kind {
 		case ValueDecimal:
-			return args[0], nil
+			return tagDouble(args[0]), nil
 		case ValueInt:
-			return Decimal(float64(args[0].Int)), nil
+			return tagDouble(Decimal(float64(args[0].Int))), nil
 		case ValueString:
 			text := strings.TrimSpace(args[0].Text)
 			parsed, err := strconv.ParseFloat(text, 64)
@@ -693,7 +699,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 			}
 			value := Decimal(parsed)
 			value.Text = text
-			return value, nil
+			return tagDouble(value), nil
 		default:
 			return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s expects String or numeric argument", callee))
 		}
