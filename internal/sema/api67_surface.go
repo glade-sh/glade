@@ -19,6 +19,17 @@ var semaAPI67PatternFlags = map[string]struct{}{
 	"unicode_character_class": {},
 }
 
+var semaAPI67RejectedPlatformConstructors = map[string]struct{}{
+	"approval":                    {},
+	"queueableduplicatesignature": {},
+}
+
+func semaAPI67RejectedPlatformConstructor(typeName string) bool {
+	typeName = semaCanonicalPlatformAlias(strings.TrimSpace(typeName))
+	_, rejected := semaAPI67RejectedPlatformConstructors[normalizeName(typeName)]
+	return rejected
+}
+
 // semaAPI67RejectedPlatformType identifies names that are present only through
 // permissive namespace or runtime fallbacks, not through the Salesforce API.
 func semaAPI67RejectedPlatformType(typeName string) bool {
@@ -79,6 +90,14 @@ func semaAPI67RejectedPlatformCall(receiverType, method, receiverMode string) bo
 		return method == "getparameters" || (method == "getparametersasjson" && receiverMode == "class")
 	case "canvas.lifecyclehandler":
 		return true
+	case "connectapi":
+		if receiverMode != "class" {
+			return false
+		}
+		switch method {
+		case "geterror", "geterrormessage", "geterrortypename", "getresult", "issuccess":
+			return true
+		}
 	}
 	return false
 }

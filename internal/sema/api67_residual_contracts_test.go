@@ -97,3 +97,38 @@ func TestAPI67ResidualPreservesCanonicalSurfaces(t *testing.T) {
 		})
 	}
 }
+
+func TestCB68RejectsThreeAcquiredNonSurfaces(t *testing.T) {
+	tests := map[string]string{
+		"Approval constructor":                    `new Approval();`,
+		"QueueableDuplicateSignature constructor": `new QueueableDuplicateSignature();`,
+		"ConnectApi.getError":                     `ConnectApi.getError();`,
+		"ConnectApi.getErrorMessage":              `ConnectApi.getErrorMessage();`,
+		"ConnectApi.getErrorTypeName":             `ConnectApi.getErrorTypeName();`,
+		"ConnectApi.getResult":                    `ConnectApi.getResult();`,
+		"ConnectApi.isSuccess":                    `ConnectApi.isSuccess();`,
+	}
+	for name, source := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := AnalyzeAnonymous(typesys.Index{}, source)
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA028") {
+				t.Fatalf("accepted acquired non-Salesforce surface %q: %#v", source, result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestCB68PreservesNeighboringValidPlatformSurfaces(t *testing.T) {
+	for name, source := range map[string]string{
+		"Approval.process":                    `Approval.ProcessResult result = Approval.process(new Approval.ProcessSubmitRequest());`,
+		"QueueableDuplicateSignature builder": `QueueableDuplicateSignature signature = QueueableDuplicateSignature.builder().addString('job').build();`,
+		"ConnectApi real type":                `ConnectApi.OrganizationSettings settings = ConnectApi.Organization.getSettings();`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := AnalyzeAnonymous(typesys.Index{}, source)
+			if result.HasErrors() {
+				t.Fatalf("rejected valid neighboring platform surface: %#v", result.Diagnostics)
+			}
+		})
+	}
+}
