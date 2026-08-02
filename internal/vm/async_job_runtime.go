@@ -648,7 +648,7 @@ func (vm *VM) nextDrainableAsyncJobIndex(jobs []AsyncJob, startIndex int) int {
 		startIndex = len(jobs)
 	}
 	for i := startIndex; i < len(jobs); i++ {
-		if !jobs[i].Deferred && vm.asyncJobDue(jobs[i]) && jobs[i].Kind != "ScheduledApex" {
+		if !jobs[i].Deferred && vm.asyncJobDue(jobs[i]) {
 			return i
 		}
 	}

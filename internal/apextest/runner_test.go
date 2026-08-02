@@ -7328,6 +7328,52 @@ private class FinalizerJobTest {
 	}
 }
 
+func TestRunDrainsTopLevelScheduledJobAtStopTest(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `
+<CustomObject>
+  <label>Account</label>
+  <pluralLabel>Accounts</pluralLabel>
+  <sharingModel>ReadWrite</sharingModel>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Name.field-meta.xml"), `
+<CustomField>
+  <fullName>Name</fullName>
+  <label>Name</label>
+  <type>Text</type>
+</CustomField>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ScheduledWorker.cls"), `
+public class ScheduledWorker implements Schedulable {
+  public void execute(SchedulableContext sc) {
+    insert new Account(Name = 'scheduled');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ScheduledWorkerTest.cls"), `
+@isTest
+private class ScheduledWorkerTest {
+  @isTest static void stopTestDrainsScheduledJob() {
+    Test.startTest();
+    System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
+    Test.stopTest();
+    System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'scheduled']);
+    System.assertEquals(1, [SELECT COUNT() FROM CronTrigger WHERE State = 'Complete']);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		if run.Suites[0].Cases[0].Problem != nil {
+			t.Logf("problem=%#v", *run.Suites[0].Cases[0].Problem)
+		}
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
 func TestRunDrainsFutureBatchScheduleAndChainedQueueables(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -7445,17 +7491,17 @@ private class AsyncSemanticsTest {
     System.assertEquals(0, beforeRows);
     Test.stopTest();
     Integer afterRows = [SELECT COUNT() FROM Account];
-    System.assertEquals(8, afterRows);
+    System.assertEquals(9, afterRows);
     List<AsyncApexJob> jobs = [SELECT Id, Status, JobType FROM AsyncApexJob];
     System.assertEquals(8, jobs.size());
     System.assertEquals(2, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApexWorker']);
     List<CronTrigger> crons = [SELECT Id, State FROM CronTrigger];
     System.assertEquals(2, crons.size());
-    System.assertEquals(1, [SELECT COUNT() FROM CronTrigger WHERE State = 'Complete']);
+    System.assertEquals(2, [SELECT COUNT() FROM CronTrigger WHERE State = 'Complete']);
     System.assertEquals(7, AsyncState.futureRan);
     System.assertEquals(12, AsyncState.batchSum);
     System.assertEquals(1, AsyncState.batchFinish);
-    System.assertEquals(0, AsyncState.scheduledRan);
+    System.assertEquals(1, AsyncState.scheduledRan);
     System.assertEquals(1, AsyncState.queueRan);
   }
 
@@ -7816,7 +7862,7 @@ private class AsyncContextIdsTest {
     Integer triggerRows = [SELECT COUNT() FROM Account WHERE Name = '08e000000000003'];
     System.assertEquals(2, batchRows);
     System.assertEquals(1, queueRows);
-    System.assertEquals(0, triggerRows);
+    System.assertEquals(1, triggerRows);
     List<AsyncApexJob> batches = [SELECT Id, Status, JobType, TotalJobItems, JobItemsProcessed, NumberOfErrors, CompletedDate FROM AsyncApexJob WHERE Id = '707000000000002'];
     System.assertEquals(1, batches.size());
     AsyncApexJob batch = batches.get(0);
@@ -7877,7 +7923,7 @@ private class ScheduledWorkerTest {
     Test.startTest();
     String scheduleId = System.schedule('nightly', '0 0 12 * * ?', new ScheduledWorker());
     Test.stopTest();
-    System.assertEquals(0, ScheduledWorker.Ran);
+    System.assertEquals(1, ScheduledWorker.Ran);
     List<AsyncApexJob> jobs = [
       SELECT Id, Status, JobType, ApexClass.Name, CronTriggerId, CronTrigger.Id
       FROM AsyncApexJob
@@ -7896,7 +7942,7 @@ private class ScheduledWorkerTest {
       AND Status IN ('Preparing', 'Processing', 'Queued', 'Holding')
       AND JobType = 'Queueable'
     ];
-    System.assertEquals(0, queuedJobs.size());
+    System.assertEquals(1, queuedJobs.size());
   }
 }
 `)
@@ -7981,7 +8027,7 @@ private class AsyncFlagTest {
     System.schedule('nightly', '0 0 0 * * ?', new FlagSchedule());
     Test.stopTest();
     Integer rows = [SELECT COUNT() FROM Account];
-    System.assertEquals(3, rows);
+    System.assertEquals(4, rows);
   }
 }
 `)
