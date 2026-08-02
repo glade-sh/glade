@@ -5788,6 +5788,7 @@ func TestExecStandardObjectDescribeMapDoesNotSynthesizeMissingNameField(t *testi
 System.assertEquals(null, Event.SObjectType.getDescribe().fields.getMap().get('Name'));
 System.assertEquals('Subject', Event.SObjectType.getDescribe().fields.getMap().get('Subject').getDescribe().getName());
 System.assertEquals('Name', Account.SObjectType.getDescribe().fields.getMap().get('Name').getDescribe().getName());
+System.assertEquals(false, Account.Name.getDescribe().isNillable());
 `)
 	if err != nil {
 		t.Fatal(err)

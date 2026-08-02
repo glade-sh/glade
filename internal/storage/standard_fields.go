@@ -1061,6 +1061,7 @@ func markFieldRequired(definition *ObjectDefinition, fieldName string) {
 	}
 	field := definition.Fields[resolved]
 	field.Required = true
+	field.Nillable = BoolFlag(false)
 	definition.Fields[resolved] = field
 }
 
