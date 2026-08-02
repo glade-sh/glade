@@ -19,6 +19,28 @@ var semaAPI67PatternFlags = map[string]struct{}{
 	"unicode_character_class": {},
 }
 
+var semaAPI67ReadOnlyPlatformFields = map[string]struct{}{
+	"messaging.emailfileattachment.id":          {},
+	"messaging.singleemailmessage.templatename": {},
+	"messaging.singleemailmessage.usermail":     {},
+}
+
+func semaAPI67ReadOnlyPlatformField(path string) bool {
+	path = strings.TrimSpace(path)
+	dot := strings.LastIndexByte(path, '.')
+	if dot <= 0 || dot >= len(path)-1 {
+		return false
+	}
+	receiver := semaCanonicalPlatformAlias(strings.TrimSpace(path[:dot]))
+	field := normalizeName(path[dot+1:])
+	key := normalizeName(receiver + "." + field)
+	if _, readOnly := semaAPI67ReadOnlyPlatformFields[key]; readOnly {
+		return true
+	}
+	_, readOnly := semaAPI67ReadOnlyPlatformFields["messaging."+key]
+	return readOnly
+}
+
 var semaAPI67RejectedPlatformConstructors = map[string]struct{}{
 	"approval":                    {},
 	"queueableduplicatesignature": {},

@@ -2545,6 +2545,10 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 			continue
 		}
 		field, found := semaResolveFieldPath(model, receiverType, fieldName)
+		if found && !semaProjectTypeShadowsPlatform(model, receiverType) && semaAPI67ReadOnlyPlatformField(field.owner+"."+field.member.Name) {
+			diagnostics = append(diagnostics, unsupportedLocalFeatureDiagnostic(typ, member, receiver+"."+fieldName, bodyOffset+match[2], bodyOffset+match[5], source))
+			continue
+		}
 		if found && hasModifier(field.member.Modifiers, "static") {
 			diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, receiver+"."+fieldName, "static fields cannot be accessed through an instance", bodyOffset+match[2], bodyOffset+match[5], source))
 		}
