@@ -172,7 +172,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"QuickAction.performQuickAction", "QuickAction.performQuickActions",
 		"String.valueOf", "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty",
 		"String.join", "String.format", "String.getCommonPrefix", "String.getLevenshteinDistance",
-		"String.stripAll", "String.fromCharArray", "String.escapeSingleQuotes",
+		"String.fromCharArray", "String.escapeSingleQuotes",
 		"Integer.valueOf", "Long.valueOf", "Decimal.valueOf", "Double.valueOf", "Boolean.valueOf",
 		"RoundingMode.valueOf", "Id.valueOf", "AccessLevel.withPermissionSetId",
 		"AsyncInfo.getCurrentQueueableStackDepth", "AsyncInfo.getMaximumQueueableStackDepth",

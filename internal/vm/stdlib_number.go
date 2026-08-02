@@ -20,7 +20,7 @@ func callIntegerMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, fmt.Errorf("Integer.%s expects 0 arguments", method)
 		}
 		return receiver, receiver, false, true, nil
-	case "doubleValue", "decimalValue":
+	case "decimalValue":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Integer.%s expects 0 arguments", method)
 		}

@@ -2059,7 +2059,7 @@ func TestSemaPlatformConstructorSignaturesUseStandardSymbols(t *testing.T) {
 		},
 		{
 			name: "System.InvalidParameterValueException",
-			want: [][]string{},
+			want: [][]string{{"String", "String"}},
 		},
 		{
 			name: "System.NoAccessException",

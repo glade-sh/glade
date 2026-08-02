@@ -76,6 +76,20 @@ func semaAPI67RejectedPlatformCall(receiverType, method, receiverMode string) bo
 	base, _ := semaGenericBaseAndArgs(receiverType)
 	base = normalizeName(base)
 	switch base {
+	case "id":
+		return method == "to18"
+	case "integer":
+		return method == "doublevalue"
+	case "map":
+		return method == "containsvalue"
+	case "set":
+		return method == "deepclone"
+	case "string":
+		switch method {
+		case "commonprefix", "escapexml10", "escapexml11", "lastindexofany", "lastordinalindexof", "ordinalindexof", "removeignorecase", "replaceignorecase", "replaceonce", "rotate", "strip", "stripall", "stripend", "stripstart", "striptoempty", "striptonull", "unescapexml10", "unescapexml11":
+			return true
+		}
+		return false
 	case "iterator":
 		return method == "remove"
 	case "matcher":
@@ -96,6 +110,28 @@ func semaAPI67RejectedPlatformCall(receiverType, method, receiverMode string) bo
 		}
 		switch method {
 		case "geterror", "geterrormessage", "geterrortypename", "getresult", "issuccess":
+			return true
+		}
+	}
+	return false
+}
+
+func semaAPI67RejectedPlatformCallArgs(receiverType, method string, argTypes []string) bool {
+	if strings.EqualFold(receiverType, "String") && strings.EqualFold(method, "join") {
+		if len(argTypes) != 2 {
+			return true
+		}
+		base, _ := semaGenericBaseAndArgs(argTypes[0])
+		return !strings.EqualFold(base, "List") && !strings.EqualFold(base, "Set")
+	}
+	if !strings.EqualFold(method, "pow") && !strings.EqualFold(method, "valueOf") {
+		return false
+	}
+	if !strings.EqualFold(receiverType, "Math") && !strings.EqualFold(receiverType, "Decimal") {
+		return false
+	}
+	for _, argType := range argTypes {
+		if strings.EqualFold(argType, "Decimal") {
 			return true
 		}
 	}

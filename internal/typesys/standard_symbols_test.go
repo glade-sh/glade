@@ -404,7 +404,7 @@ func TestStandardPlatformSymbolsMatchAPI67ExceptionConstructorVisibility(t *test
 	symbols := StandardPlatformSymbols()
 	want := map[string][]string{
 		"Exception":                      {},
-		"InvalidParameterValueException": {},
+		"InvalidParameterValueException": {"String,String"},
 		"NoAccessException":              {""},
 		"NoDataFoundException":           {""},
 		"NullPointerException":           {""},
@@ -564,8 +564,8 @@ func TestStandardPlatformSymbolsIncludeLabelLimitsDecimalAndTargetExceptionShape
 	requireStandardMethodType(t, limits, "getLimitAsyncCalls", "Integer")
 
 	invalidParameter := requireStandardSymbol(t, symbols, "InvalidParameterValueException")
-	if got := standardConstructorSignatures(invalidParameter); len(got) != 0 {
-		t.Fatalf("InvalidParameterValueException constructors = %#v, want none", got)
+	if got := standardConstructorSignatures(invalidParameter); len(got) != 1 || got[0] != "String,String" {
+		t.Fatalf("InvalidParameterValueException constructors = %#v, want String,String", got)
 	}
 
 	for _, name := range []string{"NoAccessException", "NoDataFoundException", "NullPointerException"} {

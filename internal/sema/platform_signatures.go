@@ -47,7 +47,7 @@ func semaCollectionMethodSignature(receiverType, method string) (semaCollectionS
 		case "contains":
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{args[0]}}}, true
 		case "equals":
-			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"List<" + args[0] + ">"}}}, true
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"Object"}}}, true
 		case "remove":
 			return semaCollectionSignature{returnType: args[0], params: [][]string{{"Integer"}}}, true
 		case "set":
@@ -81,7 +81,7 @@ func semaCollectionMethodSignature(receiverType, method string) (semaCollectionS
 		case "isempty":
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
 		case "equals":
-			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"Set<" + args[0] + ">"}}}, true
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"Object"}}}, true
 		case "tostring":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
 		case "clone":
@@ -126,10 +126,7 @@ func semaCollectionMethodSignature(receiverType, method string) (semaCollectionS
 			return semaCollectionSignature{returnType: "List<" + args[1] + ">"}, true
 		case "size", "hashcode":
 			return semaCollectionSignature{returnType: "Integer"}, true
-		case "containskey", "containsvalue", "isempty":
-			if method == "containsvalue" {
-				return semaCollectionSignature{returnType: "Boolean", params: [][]string{{args[1]}}}, true
-			}
+		case "containskey", "isempty":
 			if method == "containskey" {
 				return semaCollectionSignature{returnType: "Boolean", params: [][]string{{args[0]}}}, true
 			}
@@ -338,8 +335,34 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 	}
 	if strings.EqualFold(receiverType, "System") {
 		switch method {
+		case "equals":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"Object", "Object"}}}, true
 		case "hashcode":
 			return semaCollectionSignature{returnType: "Integer", params: [][]string{{"Object"}}}, true
+		}
+	}
+	if strings.EqualFold(receiverType, "Approval") {
+		switch method {
+		case "islocked":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"Id"}, {"List<Id>"}, {"SObject"}, {"List<SObject>"}}}, true
+		case "lock", "unlock":
+			return semaCollectionSignature{returnType: "Object", params: [][]string{{"Id"}, {"Id", "Boolean"}, {"List<Id>"}, {"List<Id>", "Boolean"}, {"SObject"}, {"SObject", "Boolean"}, {"List<SObject>"}, {"List<SObject>", "Boolean"}}}, true
+		}
+	}
+	if strings.EqualFold(receiverType, "Database") {
+		switch method {
+		case "getcursor":
+			return semaCollectionSignature{returnType: "Database.Cursor", params: [][]string{{"String"}, {"String", "Object"}, {"String", "AccessLevel"}}}, true
+		case "getpaginationcursor":
+			return semaCollectionSignature{returnType: "Database.PaginationCursor", params: [][]string{{"String"}, {"String", "Object"}, {"String", "AccessLevel"}}}, true
+		}
+	}
+	if strings.EqualFold(receiverType, "Site") {
+		switch method {
+		case "createexternaluser", "createportaluser":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"Object", "String"}, {"Object", "String", "String"}, {"Object", "String", "String", "Boolean"}}}, true
+		case "forgotpassword":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"String"}, {"String", "String"}}}, true
 		}
 	}
 	if strings.EqualFold(receiverType, "Auth.AuthToken") {
@@ -502,8 +525,10 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "Long", params: [][]string{{}}}, true
 		case "date", "dategmt":
 			return semaCollectionSignature{returnType: "Date", params: [][]string{{}}}, true
-		case "format", "formatgmt":
+		case "format":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}, {"String"}, {"String", "String"}}}, true
+		case "formatgmt":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"String"}}}, true
 		}
 	case "date":
 		switch method {
@@ -533,6 +558,9 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		case "longvalue":
 			return semaCollectionSignature{returnType: "Long", params: [][]string{{}}}, true
 		case "doublevalue":
+			if receiverBase == "integer" {
+				break
+			}
 			return semaCollectionSignature{returnType: "Double", params: [][]string{{}}}, true
 		case "decimalvalue":
 			return semaCollectionSignature{returnType: "Decimal", params: [][]string{{}}}, true
@@ -610,6 +638,8 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		}
 	case "string":
 		switch method {
+		case "join":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"List<Object>", "String"}, {"Set<Object>", "String"}}}, true
 		case "getchars":
 			return semaCollectionSignature{returnType: "List<Integer>", params: [][]string{{}}}, true
 		case "fromchararray":

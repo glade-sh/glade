@@ -17,7 +17,7 @@ import (
 func callStdlibMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	switch receiver.Kind {
 	case ValueInt:
-		method = canonicalStdlibMemberName(method, "format", "intValue", "longValue", "doubleValue", "decimalValue")
+		method = canonicalStdlibMemberName(method, "format", "intValue", "longValue", "decimalValue")
 		return callIntegerMember(receiver, method, args)
 	case ValueString:
 		method = canonicalStdlibMemberName(method, stringStdlibMethodNames...)
@@ -30,7 +30,7 @@ func callStdlibMember(receiver Value, method string, args []Value) (Value, Value
 		method = canonicalStdlibMemberName(method, "add", "addAll", "clear", "clone", "contains", "deepClone", "get", "getSObjectType", "isEmpty", "iterator", "remove", "set", "size", "sort")
 		return callListStdlibMember(receiver, method, args)
 	case ValueSet:
-		method = canonicalStdlibMemberName(method, "add", "addAll", "clear", "clone", "contains", "containsAll", "deepClone", "isEmpty", "iterator", "remove", "removeAll", "retainAll", "size")
+		method = canonicalStdlibMemberName(method, "add", "addAll", "clear", "clone", "contains", "containsAll", "isEmpty", "iterator", "remove", "removeAll", "retainAll", "size")
 		return callSetStdlibMember(receiver, method, args)
 	case ValueMap:
 		method = canonicalStdlibMemberName(method, "clear", "clone", "containsKey", "deepClone", "get", "isEmpty", "keySet", "put", "putAll", "remove", "size", "values")
@@ -57,25 +57,25 @@ func canonicalStdlibMemberName(method string, known ...string) string {
 
 var stringStdlibMethodNames = []string{
 	"abbreviate", "capitalize", "center", "charAt", "codePointAt", "codePointBefore", "codePointCount",
-	"commonPrefix", "compareTo", "contains", "containsAny", "containsIgnoreCase", "containsNone",
+	"compareTo", "contains", "containsAny", "containsIgnoreCase", "containsNone",
 	"containsOnly", "containsWhitespace", "countMatches", "deleteWhitespace", "difference", "endsWith",
 	"endsWithIgnoreCase", "equals", "equalsIgnoreCase", "escapeCsv", "escapeEcmaScript", "escapeHtml3",
-	"escapeHtml4", "escapeJava", "escapeUnicode", "escapeXml", "escapeXml10", "escapeXml11", "format",
+	"escapeHtml4", "escapeJava", "escapeUnicode", "escapeXml", "format",
 	"getChars", "getLevenshteinDistance", "hashCode", "indexOf", "indexOfAny", "indexOfAnyBut",
 	"indexOfChar", "indexOfDifference", "indexOfIgnoreCase",
 	"isAllLowerCase", "isAllUpperCase", "isAlpha", "isAlphaSpace", "isAlphanumeric", "isAlphanumericSpace",
 	"isAsciiPrintable", "isBlank", "isEmpty", "isNotBlank", "isNotEmpty", "isNumeric", "isNumericSpace",
-	"isWhitespace", "lastIndexOf", "lastIndexOfAny", "lastIndexOfChar", "lastIndexOfIgnoreCase",
-	"lastOrdinalIndexOf", "left", "leftPad", "length", "mid", "normalizeSpace", "offsetByCodePoints",
-	"ordinalIndexOf", "overlay", "remove", "removeEnd", "removeEndIgnoreCase",
-	"removeIgnoreCase", "removeStart", "removeStartIgnoreCase", "repeat", "replace", "replaceAll",
-	"replaceFirst", "replaceIgnoreCase", "replaceOnce", "reverse", "right", "rightPad", "rotate", "split",
-	"splitByCharacterType", "splitByCharacterTypeCamelCase", "startsWith", "startsWithIgnoreCase", "strip",
-	"stripEnd", "stripHtmlTags", "stripStart", "stripToEmpty", "stripToNull", "substring", "substringAfter",
+	"isWhitespace", "lastIndexOf", "lastIndexOfChar", "lastIndexOfIgnoreCase",
+	"left", "leftPad", "length", "mid", "normalizeSpace", "offsetByCodePoints",
+	"overlay", "remove", "removeEnd", "removeEndIgnoreCase",
+	"removeStart", "removeStartIgnoreCase", "repeat", "replace", "replaceAll",
+	"replaceFirst", "reverse", "right", "rightPad", "split",
+	"splitByCharacterType", "splitByCharacterTypeCamelCase", "startsWith", "startsWithIgnoreCase",
+	"stripHtmlTags", "substring", "substringAfter",
 	"substringAfterLast", "substringBefore", "substringBeforeLast", "substringBetween", "swapCase",
 	"toCharArray", "toLowerCase", "toString", "toUpperCase", "trim", "uncapitalize", "unescapeCsv",
 	"unescapeEcmaScript", "unescapeHtml3", "unescapeHtml4", "unescapeJava", "unescapeUnicode",
-	"unescapeXml", "unescapeXml10", "unescapeXml11", "valueOf",
+	"unescapeXml", "valueOf",
 }
 
 func decimalRoundingMode(value Value) (string, error) {
@@ -383,7 +383,6 @@ var stringMemberMethodNames = []string{
 	"containsNone",
 	"indexOfAny",
 	"indexOfAnyBut",
-	"lastIndexOfAny",
 	"containsWhitespace",
 	"countMatches",
 	"escapeCsv",
@@ -393,11 +392,7 @@ var stringMemberMethodNames = []string{
 	"unescapeHtml3",
 	"unescapeHtml4",
 	"escapeXml",
-	"escapeXml10",
-	"escapeXml11",
 	"unescapeXml",
-	"unescapeXml10",
-	"unescapeXml11",
 	"escapeJava",
 	"unescapeJava",
 	"escapeEcmaScript",
@@ -415,16 +410,11 @@ var stringMemberMethodNames = []string{
 	"uncapitalize",
 	"indexOf",
 	"lastIndexOf",
-	"ordinalIndexOf",
-	"lastOrdinalIndexOf",
 	"replace",
-	"replaceOnce",
-	"replaceIgnoreCase",
 	"replaceAll",
 	"replaceFirst",
 	"template",
 	"remove",
-	"removeIgnoreCase",
 	"removeStart",
 	"removeStartIgnoreCase",
 	"removeEnd",
@@ -455,11 +445,9 @@ var stringMemberMethodNames = []string{
 	"mid",
 	"reverse",
 	"overlay",
-	"rotate",
 	"swapCase",
 	"abbreviate",
 	"difference",
-	"commonPrefix",
 	"getLevenshteinDistance",
 	"splitByCharacterType",
 	"splitByCharacterTypeCamelCase",
@@ -469,12 +457,7 @@ var stringMemberMethodNames = []string{
 	"substringBeforeLast",
 	"substringBetween",
 	"deleteWhitespace",
-	"strip",
-	"stripStart",
-	"stripEnd",
 	"stripHtmlTags",
-	"stripToNull",
-	"stripToEmpty",
 	"normalizeSpace",
 	"isWhitespace",
 	"isAlpha",
@@ -601,8 +584,6 @@ func stringStatic(callee string, args []Value) (Value, error) {
 			return Null, err
 		}
 		return Int(int64(distance)), nil
-	case "String.stripAll":
-		return stringStaticStripAll(args)
 	case "String.fromCharArray":
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, fmt.Errorf("String.fromCharArray expects List<Integer>")
@@ -3982,17 +3963,6 @@ func (vm *VM) callIdMember(receiver Value, method string, args []Value) (Value, 
 			return String(idText), true, nil
 		}
 		return String(idText[:15]), true, nil
-	case "to18":
-		if len(args) != 0 {
-			return Null, true, fmt.Errorf("Id.to18 expects 0 arguments")
-		}
-		if err := validateApexID(idText); err != nil {
-			return Null, true, err
-		}
-		if len(idText) == 18 {
-			return String(idText), true, nil
-		}
-		return String(apexIDTo18(idText)), true, nil
 	case "getsobjecttype":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Id.getSObjectType expects 0 arguments")
@@ -4041,7 +4011,7 @@ func displayIDText(text string) string {
 
 func idMemberReceiver(value Value, method string) bool {
 	switch strings.ToLower(method) {
-	case "equals", "to15", "to18", "getsobjecttype":
+	case "equals", "to15", "getsobjecttype":
 	default:
 		return false
 	}

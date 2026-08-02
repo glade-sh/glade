@@ -17,6 +17,7 @@ func TestAPI67StandardExceptionConstructorVisibility(t *testing.T) {
 		{name: "InvalidParameterValueException", arguments: "'message'", wantErrors: true},
 		{name: "InvalidParameterValueException", arguments: "cause", wantErrors: true},
 		{name: "InvalidParameterValueException", arguments: "'message', cause", wantErrors: true},
+		{name: "InvalidParameterValueException", arguments: "'message', 'type'", wantErrors: false},
 		{name: "NoAccessException", arguments: "", wantErrors: false},
 		{name: "NoAccessException", arguments: "'message'", wantErrors: true},
 		{name: "NoAccessException", arguments: "cause", wantErrors: true},

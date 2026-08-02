@@ -1249,7 +1249,7 @@ func materializeTypedNullCollection(value Value) (Value, bool) {
 
 func mapLikeMemberName(method string) bool {
 	switch canonicalCollectionMemberName("Map", method) {
-	case "put", "putAll", "get", "containsKey", "containsValue", "keySet", "values", "remove", "clear", "size", "isEmpty", "clone", "deepClone":
+	case "put", "putAll", "get", "containsKey", "keySet", "values", "remove", "clear", "size", "isEmpty", "clone", "deepClone":
 		return true
 	default:
 		return false
@@ -1297,9 +1297,9 @@ func canonicalCollectionMemberName(collection, method string) string {
 	case "List":
 		known = []string{"add", "addAll", "addToRelationship", "getAddedToRelationship", "getMarkedForDeletion", "markForDelete", "size", "isEmpty", "get", "contains", "indexOf", "clone", "deepClone", "iterator", "sort", "remove", "clear", "set", "getSObjectType"}
 	case "Set":
-		known = []string{"add", "addAll", "size", "isEmpty", "contains", "containsAll", "remove", "clear", "removeAll", "retainAll", "clone", "deepClone", "iterator"}
+		known = []string{"add", "addAll", "size", "isEmpty", "contains", "containsAll", "remove", "clear", "removeAll", "retainAll", "clone", "iterator"}
 	case "Map":
-		known = []string{"put", "putAll", "get", "containsKey", "containsValue", "keySet", "values", "remove", "clear", "size", "isEmpty", "clone", "deepClone"}
+		known = []string{"put", "putAll", "get", "containsKey", "keySet", "values", "remove", "clear", "size", "isEmpty", "clone", "deepClone"}
 	}
 	for _, candidate := range known {
 		if strings.EqualFold(method, candidate) {
@@ -1343,7 +1343,7 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable",
 		"getTabs", "isSelected", "getSObjectName", "isCustom", "getIconUrl", "getIcons",
 		"getContentType", "getHeight", "getTheme", "getWidth",
-		"to15", "to18", "getSObjectType",
+		"to15", "getSObjectType",
 		"toStartOfMonth", "toEndOfMonth", "format", "formatGmt", "toString",
 		"date", "dateGmt", "time", "timeGmt", "year", "month", "day", "getTime",
 		"addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds", "addMilliseconds",
@@ -3108,11 +3108,6 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		cloned.Ref = newValueRef()
 		cloned.Set = append([]Value(nil), receiver.Set...)
 		return cloned, true, nil
-	case "deepClone":
-		if len(args) != 0 {
-			return Null, true, unsupportedCallError("Set.deepClone with preserve options")
-		}
-		return cloneValue(receiver), true, nil
 	case "iterator":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Set.iterator expects 0 arguments")
@@ -3288,16 +3283,6 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			}
 		}
 		return Bool(ok), true, nil
-	case "containsValue":
-		if len(args) != 1 {
-			return Null, true, fmt.Errorf("Map.containsValue expects 1 argument")
-		}
-		for _, value := range receiver.Map {
-			if value.Equal(args[0]) {
-				return Bool(true), true, nil
-			}
-		}
-		return Bool(false), true, nil
 	case "remove":
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("Map.remove expects 1 argument")

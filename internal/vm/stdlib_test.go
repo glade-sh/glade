@@ -1517,8 +1517,6 @@ System.assertEquals('abcdefg...', alphabet.abbreviate(10));
 System.assertEquals('...ijklmn...', alphabet.abbreviate(8, 12));
 String machine = 'i am a machine';
 System.assertEquals('robot', machine.difference('i am a robot'));
-String interstate = 'interstate';
-System.assertEquals('interst', interstate.commonPrefix('interstellar'));
 List<String> prefixes = new List<String>();
 prefixes.add('flower');
 prefixes.add('flow');
@@ -1557,38 +1555,12 @@ System.assertEquals('42', camel.get(2));
 String edge = 'abΩcdΩef';
 System.assertEquals(1, edge.indexOfAny('bΩ'));
 System.assertEquals(2, edge.indexOfAny('Ω'));
-System.assertEquals(7, edge.lastIndexOfAny('Ωf'));
 System.assertEquals(4, edge.indexOfAnyBut('abΩc'));
-String repeated = 'one fish two fish red fish';
-System.assertEquals(13, repeated.ordinalIndexOf('fish', 2));
-System.assertEquals(9, repeated.lastOrdinalIndexOf('two', 1));
-System.assertEquals(-1, repeated.ordinalIndexOf('fish', 0));
 String overlaySource = 'abcdef';
 System.assertEquals('abZZef', overlaySource.overlay('ZZ', 2, 4));
 System.assertEquals('XXabcdef', overlaySource.overlay('XX', -2, 0));
-System.assertEquals('cdefab', overlaySource.rotate(-2));
-System.assertEquals('efabcd', overlaySource.rotate(2));
 String mixed = 'The Ω42';
 System.assertEquals('tHE ω42', mixed.swapCase());
-String stripSource = '  abc  ';
-System.assertEquals('abc', stripSource.strip());
-System.assertEquals('abc  ', stripSource.stripStart());
-System.assertEquals('  abc', stripSource.stripEnd());
-String blankStrip = '   ';
-System.assertEquals(null, blankStrip.stripToNull());
-System.assertEquals('', blankStrip.stripToEmpty());
-String yxy = 'xyabczy';
-System.assertEquals('abc', yxy.strip('xyz'));
-List<String> stripItems = new List<String>();
-stripItems.add('  one  ');
-stripItems.add('  two');
-List<String> strippedItems = String.stripAll(stripItems);
-System.assertEquals('one', strippedItems.get(0));
-System.assertEquals('two', strippedItems.get(1));
-String caseSource = 'Force FORCE force';
-System.assertEquals('Force force', caseSource.replaceOnce('FORCE ', ''));
-System.assertEquals('Cloud Cloud Cloud', caseSource.replaceIgnoreCase('force', 'Cloud'));
-System.assertEquals('  ', caseSource.removeIgnoreCase('force'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1641,33 +1613,17 @@ System.assertEquals('&notarealentity;&apos;', unknownHtml.unescapeHtml4());
 System.assertEquals('&notarealentity;&apos;', unknownHtml.unescapeHtml3());
 System.assertEquals(namedHtml, namedHtml.unescapeXml());
 System.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml());
-System.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml10());
-System.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml11());
 System.assertEquals('"<>&', escapedHtmlCore.unescapeXml());
 String escapedXmlApos = '&apos;';
 String xmlApos = escapedXmlApos.unescapeXml();
 System.assertEquals(39, xmlApos.codePointAt(0));
-String escapedXmlNumeric = '&#65;&#x41;';
-System.assertEquals('AA', escapedXmlNumeric.unescapeXml10());
-System.assertEquals('&#31;', '&#31;'.unescapeXml10());
-String xml11Restricted = '&#31;'.unescapeXml11();
-System.assertEquals(31, xml11Restricted.codePointAt(0));
-String xml10AllowedWhitespace = '&#9;&#10;&#13;';
-System.assertEquals(3, xml10AllowedWhitespace.unescapeXml10().length());
-String xml11LowControl = '&#1;';
-System.assertEquals(1, xml11LowControl.unescapeXml11().codePointAt(0));
 String replacementEntity = '&#xFFFD;';
 String replacementValue = replacementEntity.unescapeXml();
 System.assertEquals(65533, replacementValue.codePointAt(0));
-String malformedXml = '&#xZZ;&copy;';
-System.assertEquals('&#xZZ;&copy;', malformedXml.unescapeXml11());
 String invalidXmlNumeric = '&#0;&#x0;&#xD800;&#55296;&#x110000;&#+65;&#x+41;';
 System.assertEquals(invalidXmlNumeric, invalidXmlNumeric.unescapeXml());
-System.assertEquals('AZ', '&#65;&#x5a;'.unescapeXml11());
 String replaceEmpty = 'abc';
 System.assertEquals('abc', replaceEmpty.replace('', 'x'));
-System.assertEquals('abc', replaceEmpty.replaceOnce('', 'x'));
-System.assertEquals('abc', replaceEmpty.replaceIgnoreCase('', 'x'));
 System.assertEquals('abc', replaceEmpty.remove(''));
 System.assert(String.isBlank(null));
 System.assert(!String.isNotBlank(null));
@@ -1676,39 +1632,6 @@ System.assert(!String.isNotBlank('$RecordType.Name'));
 System.assertEquals('', String.escapeSingleQuotes(''));
 System.assertEquals('001000000000001AAA', String.escapeSingleQuotes((Id)'001000000000001AAA'));
 System.assertEquals(null, String.escapeSingleQuotes(null));
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := Execute(program, nil); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestExecStringStdlibXMLVersionEscapes(t *testing.T) {
-	program, err := CompileAnonymous(`
-String xml10Invalid = String.fromCharArray(new List<Integer>{65, 1, 66, 0, 67});
-System.assertEquals('ABC', xml10Invalid.escapeXml10());
-String xml10Control = String.fromCharArray(new List<Integer>{65, 127, 66, 133, 67});
-String xml10Escaped = xml10Control.escapeXml10();
-System.assertEquals(65, xml10Escaped.codePointAt(0));
-System.assertEquals(38, xml10Escaped.charAt(1));
-System.assertEquals(35, xml10Escaped.charAt(2));
-System.assertEquals(66, xml10Escaped.charAt(7));
-System.assertEquals(133, xml10Escaped.codePointAt(8));
-String xml11Control = String.fromCharArray(new List<Integer>{65, 0, 1, 66, 31, 67, 133});
-String xml11Escaped = xml11Control.escapeXml11();
-System.assertEquals(65, xml11Escaped.codePointAt(0));
-System.assertEquals(38, xml11Escaped.charAt(1));
-System.assertEquals(35, xml11Escaped.charAt(2));
-System.assertEquals(66, xml11Escaped.charAt(5));
-System.assertEquals(38, xml11Escaped.charAt(6));
-System.assertEquals(35, xml11Escaped.charAt(7));
-System.assertEquals(67, xml11Escaped.charAt(11));
-System.assertEquals(133, xml11Escaped.codePointAt(12));
-String xmlMarkup = '<a attr=''q''>&"';
-System.assertEquals('&lt;a attr=&apos;q&apos;&gt;&amp;&quot;', xmlMarkup.escapeXml10());
-System.assertEquals('&lt;a attr=&apos;q&apos;&gt;&amp;&quot;', xmlMarkup.escapeXml11());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1771,21 +1694,6 @@ System.assertEquals('...mnopq...', 'abcdefghijklmnopqrstuvwxyz'.abbreviate(12, 1
 System.assertEquals('abXXef', 'abcdef'.overlay('XX', 4, 2));
 System.assertEquals('abcdefZZ', 'abcdef'.overlay('ZZ', 99, 100));
 System.assertEquals('aZ 9ω', 'Az 9Ω'.swapCase());
-
-String xml10Boundary = String.fromCharArray(new List<Integer>{9, 10, 13, 31, 32, 55295, 57344, 65533, 128512});
-String xml10Escaped = xml10Boundary.escapeXml10();
-System.assertEquals(8, xml10Escaped.length());
-System.assertEquals(9, xml10Escaped.codePointAt(0));
-System.assertEquals(32, xml10Escaped.codePointAt(3));
-System.assertEquals(55295, xml10Escaped.codePointAt(4));
-System.assertEquals(62976, xml10Escaped.codePointAt(7));
-String xml11Boundary = String.fromCharArray(new List<Integer>{0, 1, 8, 9, 10, 13, 31, 32});
-String xml11Escaped = xml11Boundary.escapeXml11();
-System.assertEquals(0, xml11Escaped.indexOf('&#1;'));
-System.assertEquals(4, xml11Escaped.indexOf('&#8;'));
-String tabChar = String.fromCharArray(new List<Integer>{9});
-System.assertEquals(8, xml11Escaped.indexOf(tabChar));
-System.assertEquals(11, xml11Escaped.indexOf('&#31;'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1926,14 +1834,8 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 		{method: "codePointCount", args: []Value{Int(1), Int(0)}},
 		{method: "splitByCharacterType", args: []Value{String("x")}},
 		{method: "overlay", args: []Value{String("x"), Int(0)}},
-		{method: "rotate", args: []Value{String("1")}},
 		{method: "swapCase", args: []Value{String("x")}},
-		{method: "strip", args: []Value{Int(1)}},
-		{method: "stripToNull", args: []Value{String("x")}},
-		{method: "stripToEmpty", args: []Value{String("x")}},
-		{method: "ordinalIndexOf", args: []Value{String("a")}},
 		{method: "replace", args: []Value{Null, String("x")}},
-		{method: "replaceOnce", args: []Value{String("a"), Null}},
 		{method: "remove", args: []Value{Null}},
 		{method: "escapeHtml4", args: []Value{Null}},
 		{method: "unescapeXml", args: []Value{Null}},
@@ -1955,9 +1857,6 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	}
 	if _, err := stringStatic("String.fromCharArray", []Value{List(String("x"))}); err == nil {
 		t.Fatal("String.fromCharArray expected bad argument error")
-	}
-	if _, err := stringStatic("String.stripAll", []Value{List(Int(1))}); err == nil {
-		t.Fatal("String.stripAll expected bad argument error")
 	}
 	if _, err := stringStatic("String.getLevenshteinDistance", []Value{String("a"), String("b"), Int(-1)}); err == nil {
 		t.Fatal("String.getLevenshteinDistance expected bad threshold error")
@@ -2575,10 +2474,8 @@ System.assertEquals('001B000001DVM9tIAH', String.valueOf(valid));
 System.assertEquals('id=001B000001DVM9tIAH', 'id=' + valid);
 System.assertEquals('Account', Id.valueOf('001B000001DVM9t').getSObjectType().getDescribe().getName());
 System.assertEquals('001B000001DVM9t', valid.to15());
-System.assertEquals('001B000001DVM9tIAH', valid.to18());
 Id longId = Id.valueOf('001B000001DVM9tIAH');
 System.assertEquals('001B000001DVM9t', longId.to15());
-System.assertEquals('001B000001DVM9tIAH', longId.to18());
 System.assertEquals('001B000001DVM9tIAH', restored.toString());
 System.assertEquals('001B000001DVM9tIAH', restoredLowerChecksum.toString());
 List<String> ids = new List<String>{valid};
@@ -2710,7 +2607,6 @@ Map<String,Integer> counts = new Map<String,Integer>();
 System.assert(counts.isEmpty());
 System.assertEquals(null, counts.put('a', 1));
 System.assert(counts.containsKey('a'));
-System.assert(counts.containsValue(1));
 System.assertEquals(1, counts.remove('a'));
 System.assertEquals(null, counts.remove('missing'));
 System.assert(counts.isEmpty());
@@ -3959,7 +3855,6 @@ func TestExecIDMembersAreCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id accountId = Id.valueOf('001B000001DVM9t');
 System.assertEquals('001B000001DVM9t', accountId.to15());
-System.assertEquals('001B000001DVM9tIAH', accountId.TO18());
 System.assertEquals('Account', accountId.getSobjectType().getDescribe().getName());
 Object boxedId = accountId;
 System.assertEquals('Account', boxedId.getSOBJECTTYPE().getDescribe().getName());
@@ -4241,7 +4136,6 @@ System.assertEquals('2.25', x.format());
 System.assertEquals('', 'abc'.left(-1));
 System.assertEquals('', 'abc'.right(-1));
 System.assertEquals('10.00', Decimal.valueOf('10').setScale(2).toPlainString());
-System.assertEquals(42.0, i.doubleValue());
 System.assertEquals(12, d.intValue());
 System.assertEquals(12, d.longValue());
 System.assertEquals(3000000000, bigLong.longValue());
@@ -4772,7 +4666,6 @@ System.assert(counts.isEmpty());
 System.assertEquals(null, counts.put('a', 1));
 System.assertEquals(1, counts.put('a', 2));
 System.assert(!counts.isEmpty());
-System.assert(counts.containsValue(2));
 Set<String> keys = counts.keySet();
 System.assert(keys.contains('a'));
 List<Integer> values = counts.values();
@@ -4854,11 +4747,6 @@ Set<String> setClone = fromList.clone();
 setClone.add('c');
 System.assertEquals(2, fromList.size());
 System.assertEquals(3, setClone.size());
-Set<String> setDeep = fromList.deepClone();
-setDeep.remove('a');
-System.assert(fromList.contains('a'));
-System.assert(!setDeep.contains('a'));
-
 Map<String,Integer> counts = new Map<String,Integer>();
 counts.put('b', 2);
 counts.put('a', 1);
@@ -5232,11 +5120,6 @@ func TestExecCollectionStdlibIteratorErrors(t *testing.T) {
 			want: "unsupported call \"List.sort for non-primitive comparable values\"",
 		},
 		{
-			name: "set deepClone options unsupported",
-			body: "Set<Account> accounts = new Set<Account>{new Account(Id = '001B000001DVM9tIAH')}; accounts.deepClone(true);",
-			want: "unsupported call \"Set.deepClone with preserve options\"",
-		},
-		{
 			name: "map deepClone options unsupported",
 			body: "Map<Id, Account> accounts = new Map<Id, Account>(); accounts.deepClone(true, true, true);",
 			want: "unsupported call \"Map.deepClone with preserve options\"",
@@ -5278,15 +5161,6 @@ Account clonedMapped = clonedById.get(acme.Id);
 System.assertEquals('Acme', originalMapped.Name);
 System.assertEquals('Mapped Clone', clonedMapped.Name);
 
-Set<Account> originalSet = new Set<Account>{acme};
-Set<Account> clonedSet = originalSet.deepClone();
-Iterator<Account> clonedIt = clonedSet.iterator();
-Account clonedFromSet = clonedIt.next();
-clonedFromSet.Name = 'Set Clone';
-Iterator<Account> originalIt = originalSet.iterator();
-Account originalFromSet = originalIt.next();
-System.assertEquals('Acme', originalFromSet.Name);
-System.assertEquals('Set Clone', clonedFromSet.Name);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5387,12 +5261,10 @@ Map<String, String> labels = new Map<String, String>();
 labels.put(null, 'nil');
 labels.put('blank', null);
 System.assert(labels.containsKey(null));
-System.assert(labels.containsValue(null));
 System.assertEquals('nil', labels.get(null));
 Set<String> nullKeys = labels.keySet();
 System.assert(nullKeys.contains(null));
 System.assertEquals(null, labels.remove('blank'));
-System.assert(!labels.containsValue(null));
 labels.clear();
 System.assert(labels.isEmpty());
 

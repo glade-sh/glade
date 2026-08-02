@@ -1369,7 +1369,7 @@ Map<Account, String> byAccount = new Map<Account, String>();
 byAccount.put(a, 'seen');
 insert a;
 List<String> ids = new List<String>{a.Id};
-System.assertEquals(a.Id.to18(), ids[0]);
+System.assertEquals(String.valueOf(a.Id), ids[0]);
 for (Account key : byAccount.keySet()) {
     System.assertEquals(a.Id, key.Id);
 }
@@ -1476,7 +1476,7 @@ Account a = new Account(Name = 'Acme', Job_Text__c = jobId);
 insert a;
 List<Account> rows = [SELECT Id, Job_Text__c FROM Account WHERE Job_Text__c = :jobId];
 System.assertEquals(1, rows.size());
-System.assertEquals(jobId.to18(), rows[0].Job_Text__c);
+System.assertEquals(String.valueOf(jobId), rows[0].Job_Text__c);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -16975,7 +16975,7 @@ for (Account newer : Trigger.new) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Before');
 insert a;
-Account updateRecord = new Account(Id = (Id)a.Id.to18(), Name = 'After');
+Account updateRecord = new Account(Id = (Id)String.valueOf(a.Id), Name = 'After');
 update updateRecord;
 `)
 	if err != nil {

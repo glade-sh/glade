@@ -1069,7 +1069,7 @@ platformStaticCall:
 			return Null, err
 		}
 		return String(formatted), nil
-	case "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty", "String.join", "String.getCommonPrefix", "String.getLevenshteinDistance", "String.stripAll", "String.fromCharArray", "String.escapeSingleQuotes", "String.toLowerCase", "String.toUpperCase":
+	case "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty", "String.join", "String.getCommonPrefix", "String.getLevenshteinDistance", "String.fromCharArray", "String.escapeSingleQuotes", "String.toLowerCase", "String.toUpperCase":
 		return stringStatic(callee, args)
 	case "Integer.valueOf", "Long.valueOf", "Decimal.valueOf", "Double.valueOf":
 		return numericStatic(callee, args)
