@@ -1140,6 +1140,19 @@ func parseDateParseText(text string) (time.Time, error) {
 	return parseDateText(text)
 }
 
+func parseDateObjectText(text string) (time.Time, error) {
+	text = strings.TrimSpace(text)
+	for _, layout := range []string{"1/2/2006", "01/02/2006", "1/2/06", "01/02/06"} {
+		if value, err := time.Parse(layout, text); err == nil {
+			if err := validateDateParts(value.Year(), int(value.Month()), value.Day()); err != nil {
+				return time.Time{}, err
+			}
+			return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC), nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("unsupported Date object value %q", text)
+}
+
 func formatPlatformDatetime(value time.Time) string {
 	utc := value.UTC()
 	ms := utc.Nanosecond() / int(time.Millisecond)
@@ -1751,7 +1764,12 @@ func httpSetHeader(receiver Value, name string, value Value) {
 	if !ok || headers.Kind != ValueMap {
 		headers = Map()
 	}
-	headers.Map[mapKey(String(strings.ToLower(name)))] = value
+	key := mapKey(String(strings.ToLower(name)))
+	headers.Map[key] = value
+	if headers.MapKeys == nil {
+		headers.MapKeys = make(map[string]Value)
+	}
+	headers.MapKeys[key] = String(name)
 	receiver.Fields["headers"] = headers
 }
 
@@ -1775,6 +1793,10 @@ func httpHeaderKeys(receiver Value) Value {
 	for rawKey := range headers.Map {
 		decoded := valueFromMapKey(rawKey)
 		if decoded.Kind == ValueString {
+			if original, ok := headers.MapKeys[rawKey]; ok && original.Kind == ValueString {
+				keys = append(keys, original.Text)
+				continue
+			}
 			keys = append(keys, decoded.Text)
 		}
 	}
@@ -2418,7 +2440,19 @@ func finiteDecimalResult(callee string, value float64) (Value, error) {
 	if math.IsInf(value, 0) || math.IsNaN(value) {
 		return Null, fmt.Errorf("%s result must be finite", callee)
 	}
-	return Decimal(value), nil
+	result := Decimal(value)
+	result.Text = doubleDisplayText(value)
+	return result, nil
+}
+
+func doubleDisplayText(value float64) string {
+	if value == 0 {
+		return "0.0"
+	}
+	if math.Trunc(value) == value {
+		return strconv.FormatFloat(value, 'f', 1, 64)
+	}
+	return strconv.FormatFloat(value, 'f', -1, 64)
 }
 
 func isMathNumeric(value Value) bool {
@@ -2443,7 +2477,7 @@ func builtinEnumStaticValue(typeName, memberName string) (Value, bool) {
 	case strings.EqualFold(typeName, "AccessLevel"):
 		for _, known := range []string{"USER_MODE", "SYSTEM_MODE"} {
 			if strings.EqualFold(memberName, known) {
-				return Value{Kind: ValueObject, Type: "AccessLevel", Text: known}, true
+				return accessLevelValue(known), true
 			}
 		}
 	case strings.EqualFold(typeName, "AccessType"):
@@ -2656,8 +2690,12 @@ func newCookie(args []Value) (Value, error) {
 
 func newLocation(latitude, longitude Value) Value {
 	location := Object("Location")
-	location.Fields["latitude"] = Decimal(numericFloat(latitude))
-	location.Fields["longitude"] = Decimal(numericFloat(longitude))
+	latitudeValue := Decimal(numericFloat(latitude))
+	latitudeValue.Text = doubleDisplayText(latitudeValue.Decimal)
+	longitudeValue := Decimal(numericFloat(longitude))
+	longitudeValue.Text = doubleDisplayText(longitudeValue.Decimal)
+	location.Fields["latitude"] = latitudeValue
+	location.Fields["longitude"] = longitudeValue
 	return location
 }
 

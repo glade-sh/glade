@@ -3612,7 +3612,7 @@ Account decoded = JSON.deserializeStrict('{"Name":"Acme","NoSuchField__c":"x"}',
 	machine := New(nil)
 	org := testDataOrg()
 	machine.SetOrg(&org)
-	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "unknown field") {
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "No such column 'NoSuchField__c' on sobject of type Account") {
 		t.Fatalf("err = %v", err)
 	}
 }
@@ -4741,7 +4741,7 @@ try {
 	PageReference.forResource('MissingStaticResource');
 } catch (Exception e) {
 	caught = true;
-	System.assertEquals('System.VisualforceException', e.getTypeName());
+		System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
 }
 System.assert(caught);
 `)
@@ -12928,7 +12928,13 @@ System.assertEquals('2027-05-02', String.valueOf(nextYear));
 Date parsedDate = Date.valueOf('2026-05-04');
 System.assertEquals(2, d.daysBetween(parsedDate));
 Object parsedDateObjectText = '2026-05-04';
-System.assertEquals(parsedDate, Date.valueOf(parsedDateObjectText));
+String parsedDateObjectTextError = '';
+try {
+	Date.valueOf(parsedDateObjectText);
+} catch (TypeException e) {
+	parsedDateObjectTextError = e.getMessage();
+}
+System.assertEquals('Invalid date: 2026-05-04', parsedDateObjectTextError);
 Object parsedDateObject = parsedDate;
 System.assertEquals(parsedDate, Date.valueOf(parsedDateObject));
 Object nullDateObject = null;
@@ -14272,7 +14278,7 @@ System.assertEquals('GET', req.getMethod());
 System.assertEquals('yes', req.getHeader('x-test'));
 System.assertEquals(true, req.getCompressed());
 System.assertEquals(1, req.getHeaderKeys().size());
-System.assert(req.getHeaderKeys().contains('x-test'));
+System.assert(req.getHeaderKeys().contains('X-Test'));
 System.assertEquals(5000, req.getTimeout());
 Http h = new Http();
 HttpResponse res = h.send(req);
@@ -14283,7 +14289,7 @@ res.setHeader('Content-Type', 'text/plain');
 System.assertEquals('Created', res.getStatus());
 System.assertEquals('text/plain', res.getHeader('content-type'));
 System.assertEquals(1, res.getHeaderKeys().size());
-System.assert(res.getHeaderKeys().contains('content-type'));
+System.assert(res.getHeaderKeys().contains('Content-Type'));
 Blob bodyBlob = res.getBodyAsBlob();
 System.assertEquals('6f6b', EncodingUtil.convertToHex(bodyBlob));
 System.assertEquals(1, Limits.getCallouts());
@@ -14382,7 +14388,7 @@ req.setHeader('Accept', 'application/json');
 System.assertEquals('second', req.getHeader('X-TEST'));
 System.assertEquals(null, req.getHeader('Missing'));
 System.assertEquals(2, req.getHeaderKeys().size());
-System.assertEquals('accept', req.getHeaderKeys().get(0));
+System.assertEquals('Accept', req.getHeaderKeys().get(0));
 System.assertEquals('x-test', req.getHeaderKeys().get(1));
 req.setBody('');
 System.assertEquals('', req.getBody());

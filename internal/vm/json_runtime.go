@@ -761,20 +761,41 @@ func jsonNumberStartLineColumn(source string, endOffset int64, number string) (i
 	if start < 0 {
 		start = 0
 	}
-	line := 1
-	column := 1
-	for i, r := range source {
-		if i >= start {
-			break
-		}
-		if r == '\n' {
-			line++
-			column = 1
+	if boundary := jsonNumberErrorBoundary(source, start); boundary >= 0 {
+		return sourceLineColumn(source, boundary)
+	}
+	return sourceLineColumn(source, start)
+}
+
+func jsonNumberErrorBoundary(source string, end int) int {
+	if end <= 0 {
+		return -1
+	}
+	inString := false
+	escaped := false
+	boundary := -1
+	for index, char := range source[:end] {
+		if inString {
+			switch {
+			case escaped:
+				escaped = false
+			case char == '\\':
+				escaped = true
+			case char == '"':
+				inString = false
+			}
 			continue
 		}
-		column++
+		if char == '"' {
+			inString = true
+			continue
+		}
+		switch char {
+		case ',':
+			boundary = index
+		}
 	}
-	return line, column
+	return boundary
 }
 
 func decodeJSONValueForDeserialize(text string, strict bool) (any, error) {
@@ -1036,7 +1057,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 					continue
 				}
 				if !jsonAllowedFieldContains(allowed, key) && !vm.jsonStrictAllowsRelationshipPayload(typeName, key, fields[key]) {
-					if typedObjectIsSObject && len(fields) == 1 {
+					if typedObjectIsSObject {
 						return Null, newExceptionError("JSONException", fmt.Sprintf("No such column '%s' on sobject of type %s", key, typeName))
 					}
 					return Null, newExceptionError("JSONException", fmt.Sprintf("JSON.deserializeStrict found unknown field %q for %s", key, typeName))

@@ -62,6 +62,9 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, fmt.Errorf("Decimal.round expects optional RoundingMode")
 		}
 		mode := "HALF_EVEN"
+		if len(args) == 0 && strings.EqualFold(receiver.Static, "Double") {
+			mode = "HALF_UP"
+		}
 		if len(args) == 1 {
 			parsedMode, err := decimalRoundingMode(args[0])
 			if err != nil {

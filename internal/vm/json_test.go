@@ -602,18 +602,10 @@ try {
 System.assert(caught);
 
 JSONGenerator pendingGen = JSON.createGenerator(false);
-pendingGen.writeStartObject();
-pendingGen.writeFieldName('x');
-caught = false;
-try {
-	pendingGen.getAsString();
-} catch (JSONException e) {
-	caught = true;
-	System.assertEquals('System.JSONException', e.getTypeName());
-	System.assert(e.getMessage().contains('JSONGenerator cannot close with open JSON containers'));
-}
-System.assert(caught);
-pendingGen.writeString('ok');
+	pendingGen.writeStartObject();
+	pendingGen.writeFieldName('x');
+	System.assertEquals('{"x":', pendingGen.getAsString());
+	pendingGen.writeString('ok');
 pendingGen.writeEndObject();
 System.assertEquals('{"x":"ok"}', pendingGen.getAsString());
 `)

@@ -112,6 +112,9 @@ func (v Value) String() string {
 	case ValueMap:
 		return mapString(v.Map)
 	case ValueObject:
+		if strings.EqualFold(v.Type, "AccessLevel") {
+			return accessLevelString(v)
+		}
 		if stubbedType, ok := stubProxyTypeName(v); ok {
 			return fmt.Sprintf("%s__sfdc_ApexStub:%d", stubbedType, v.Ref)
 		}
@@ -149,6 +152,82 @@ func (v Value) String() string {
 	default:
 		return fmt.Sprintf("<%s>", v.Kind)
 	}
+}
+
+func accessLevelValue(mode string) Value {
+	system := Object("AccessLevel")
+	system.Text = "SYSTEM_MODE"
+	user := Object("AccessLevel")
+	user.Text = "USER_MODE"
+	system.Fields["SYSTEM_MODE"] = system
+	system.Fields["USER_MODE"] = user
+	system.Fields["currentAccessPermissions"] = String("SYSTEM_MODE")
+	system.Fields["permSetId"] = Null
+	user.Fields["SYSTEM_MODE"] = system
+	user.Fields["USER_MODE"] = user
+	user.Fields["currentAccessPermissions"] = String("USER_MODE")
+	user.Fields["permSetId"] = Null
+	if strings.EqualFold(mode, "USER_MODE") {
+		return user
+	}
+	return system
+}
+
+func accessLevelClone(value Value) Value {
+	root := Object("AccessLevel")
+	root.Text = strings.ToUpper(strings.TrimSpace(value.Text))
+	system := Object("AccessLevel")
+	system.Text = "SYSTEM_MODE"
+	user := Object("AccessLevel")
+	user.Text = "USER_MODE"
+	root.Fields["SYSTEM_MODE"] = system
+	root.Fields["USER_MODE"] = root
+	root.Fields["currentAccessPermissions"] = String(root.Text)
+	root.Fields["permSetId"] = Null
+	system.Fields["SYSTEM_MODE"] = root
+	system.Fields["USER_MODE"] = user
+	system.Fields["currentAccessPermissions"] = String("SYSTEM_MODE")
+	system.Fields["permSetId"] = Null
+	user.Fields["SYSTEM_MODE"] = root
+	user.Fields["USER_MODE"] = user
+	user.Fields["currentAccessPermissions"] = String("USER_MODE")
+	user.Fields["permSetId"] = Null
+	if permissionSetID, ok := value.Fields["permissionSetId"]; ok {
+		root.Fields["permissionSetId"] = cloneValue(permissionSetID)
+	}
+	return root
+}
+
+func accessLevelString(value Value) string {
+	return accessLevelObjectString(value, make(map[uint64]bool))
+}
+
+func accessLevelObjectString(value Value, seen map[uint64]bool) string {
+	if value.Ref != 0 {
+		if seen[value.Ref] {
+			return "(already output)"
+		}
+		seen[value.Ref] = true
+		defer delete(seen, value.Ref)
+	}
+	return "AccessLevel:[SYSTEM_MODE=" + accessLevelFieldString(value.Fields["SYSTEM_MODE"], seen) +
+		", USER_MODE=" + accessLevelFieldString(value.Fields["USER_MODE"], seen) +
+		", currentAccessPermissions=" + accessLevelFieldString(value.Fields["currentAccessPermissions"], seen) +
+		", permSetId=" + accessLevelPermissionSetDisplay(value) + "]"
+}
+
+func accessLevelFieldString(value Value, seen map[uint64]bool) string {
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "AccessLevel") {
+		return accessLevelObjectString(value, seen)
+	}
+	return value.String()
+}
+
+func accessLevelPermissionSetDisplay(value Value) string {
+	if permissionSetID, ok := value.Fields["permissionSetId"]; ok {
+		return permissionSetID.String()
+	}
+	return "null"
 }
 
 func objectFieldsString(v Value, seen map[uint64]bool) (string, bool) {
@@ -942,6 +1021,33 @@ func valuesString(values []Value) string {
 		out += value.String()
 	}
 	return out + "]"
+}
+
+func apexCollectionString(value Value) string {
+	parts := make([]string, 0)
+	switch value.Kind {
+	case ValueList:
+		parts = make([]string, 0, len(value.List))
+		for _, item := range value.List {
+			parts = append(parts, item.String())
+		}
+		return "(" + strings.Join(parts, ", ") + ")"
+	case ValueSet:
+		parts = make([]string, 0, len(value.Set))
+		for _, item := range value.Set {
+			parts = append(parts, item.String())
+		}
+		return "{" + strings.Join(parts, ", ") + "}"
+	case ValueMap:
+		keys := sortedMapKeys(value.Map)
+		parts = make([]string, 0, len(keys))
+		for _, key := range keys {
+			parts = append(parts, valueFromMapKey(key).String()+"="+value.Map[key].String())
+		}
+		return "{" + strings.Join(parts, ", ") + "}"
+	default:
+		return value.String()
+	}
 }
 
 func mapString(values map[string]Value) string {

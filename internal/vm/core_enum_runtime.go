@@ -33,6 +33,11 @@ var api67CoreEnumOrders = map[string][]string{
 		"BEFORE_INSERT", "AFTER_INSERT", "BEFORE_UPDATE", "AFTER_UPDATE", "BEFORE_DELETE",
 		"AFTER_DELETE", "AFTER_UNDELETE",
 	},
+	"XmlTag": {
+		"START_ELEMENT", "END_ELEMENT", "PROCESSING_INSTRUCTION", "CHARACTERS", "COMMENT", "SPACE",
+		"START_DOCUMENT", "END_DOCUMENT", "ENTITY_REFERENCE", "ATTRIBUTE", "DTD", "CDATA",
+		"NAMESPACE", "NOTATION_DECLARATION", "ENTITY_DECLARATION",
+	},
 }
 
 func coreEnumSpec(typeName string) (string, []string, bool) {
@@ -52,3 +57,4 @@ var triggerOperationNames = api67CoreEnumOrders["TriggerOperation"]
 var jsonTokenNames = api67CoreEnumOrders["JSONToken"]
 var roundingModeNames = api67CoreEnumOrders["RoundingMode"]
 var accessTypeNames = api67CoreEnumOrders["AccessType"]
+var xmlTagNames = api67CoreEnumOrders["XmlTag"]

@@ -837,7 +837,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if _, value, ok := objectFieldValue(receiver, "Id"); ok {
 			sourceID = cloneValue(value)
 		}
-		cloned.Fields[sobjectCloneMarkerField] = Bool(true)
+		cloned.Fields[sobjectCloneMarkerField] = Bool(sourceID.Kind != ValueNull)
 		cloned.Fields[sobjectCloneSourceIDField] = sourceID
 		preserveID := len(args) > 0 && args[0].Bool
 		if !preserveID {

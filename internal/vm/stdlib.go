@@ -3820,6 +3820,9 @@ func callObjectMember(receiver Value, method string, args []Value) (Value, bool,
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Object.toString expects 0 arguments")
 		}
+		if receiver.Kind == ValueList || receiver.Kind == ValueSet || receiver.Kind == ValueMap {
+			return String(apexCollectionString(receiver)), true, nil
+		}
 		return String(receiver.String()), true, nil
 	case "equals":
 		if len(args) != 1 {
@@ -3834,6 +3837,9 @@ func callObjectMember(receiver Value, method string, args []Value) (Value, bool,
 	case "clone":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Object.clone expects 0 arguments")
+		}
+		if receiver.Kind == ValueObject && strings.EqualFold(receiver.Type, "AccessLevel") {
+			return accessLevelClone(receiver), true, nil
 		}
 		return cloneValue(receiver), true, nil
 	default:

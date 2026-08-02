@@ -2502,7 +2502,7 @@ right.add(1);
 System.assert(left.equals(right));
 System.assert(left.Equals(right));
 System.assertEquals(left.hashCode(), right.hashCode());
-System.assertEquals('List[1]', left.toString());
+System.assertEquals('(1)', left.toString());
 
 URL base = URL.getOrgDomainUrl();
 System.assertEquals('https://local.glade.example', base.toExternalForm());
@@ -4272,7 +4272,13 @@ system.assertEquals(8.0, math.Pow(2, 3));
 SYSTEM.ASSERTEQUALS(3.0, MATH.sqrt(9));
 System.assertEquals(4, database.CountQuery('SELECT count() FROM Account'));
 System.assertEquals(Date.today(), date.TODAY());
-System.assertEquals(Date.newInstance(2026, 5, 7), Date.ValueOf((Object)'2026-05-07'));
+String dateValueOfObjectError = '';
+try {
+	Date.ValueOf((Object)'2026-05-07');
+} catch (TypeException e) {
+	dateValueOfObjectError = e.getMessage();
+}
+System.assertEquals('Invalid date: 2026-05-07', dateValueOfObjectError);
 System.assertEquals('INFO', logginglevel.info.name());
 System.assertEquals('ERROR', logginglevel.ERROR.name());
 System.assertEquals('HALF_UP', roundingmode.half_up.name());
@@ -4752,7 +4758,7 @@ counts.put('b', 2);
 counts.put('a', 1);
 Map<String,Integer> copiedCounts = new Map<String,Integer>(counts);
 System.assertEquals(counts, copiedCounts);
-System.assertEquals('Map{a=1, b=2}', copiedCounts.toString());
+System.assertEquals('{a=1, b=2}', copiedCounts.toString());
 List<Integer> orderedValues = copiedCounts.values();
 System.assertEquals(2, orderedValues.get(0));
 System.assertEquals(1, orderedValues.get(1));
@@ -5180,7 +5186,7 @@ System.assertEquals(true, flags.get(2));
 Map<String,Object> shape = new Map<String,Object>();
 shape.put('b', new List<Integer>{2, 3});
 shape.put('a', null);
-System.assertEquals('Map{a=null, b=List[2, 3]}', shape.toString());
+System.assertEquals('{a=null, b=List[2, 3]}', shape.toString());
 `)
 	if err != nil {
 		t.Fatal(err)

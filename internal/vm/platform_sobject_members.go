@@ -39,6 +39,9 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 			return text, nil
 		}
 	}
+	if strings.EqualFold(value.Type, "AccessLevel") {
+		return accessLevelString(value), nil
+	}
 	if strings.EqualFold(value.Type, "String") {
 		if text, err := platformScalarText(value, "String"); err == nil {
 			return text, nil

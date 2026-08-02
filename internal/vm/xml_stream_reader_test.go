@@ -44,7 +44,7 @@ XmlStreamReader reader = new XmlStreamReader('<root/>');
 reader.SETCOALESCING(true);
 reader.setNamespaceAware(false);
 System.assertEquals('', reader.getLocation());
-System.assertEquals('1.0', reader.getVersion());
+System.assertEquals(null, reader.getVersion());
 System.assertEquals(1, reader.NeXtTaG());
 System.assertEquals(null, reader.getAttributeValue('', 'missing'));
 System.assertEquals(null, reader.getAttributeLocalName(99));

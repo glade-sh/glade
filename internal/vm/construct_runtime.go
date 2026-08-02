@@ -1002,6 +1002,13 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 	}
 	object := Object(objectType)
+	if exceptionTypeName(objectType) == "QueryException" {
+		stack := vm.rawStackFrames()
+		if vm.currentMethod.Name == "" && len(stack) > 0 {
+			stack[len(stack)-1].Symbol = "AnonymousBlock"
+		}
+		object = annotateException(object, stack)
+	}
 	if definition.APIName != "" {
 		vm.initializeSObjectSchemaDefaults(&object, objectType)
 	}

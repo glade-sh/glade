@@ -649,6 +649,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("%s.getStackTraceString expects 0 arguments", receiver.Type)
 			}
 			if stack, ok := receiver.Fields["__stackTrace"]; ok {
+				if stack.Kind == ValueString {
+					if cause, ok := receiver.Fields["__cause"]; ok && cause.Kind == ValueObject {
+						if causeStack, ok := cause.Fields["__stackTrace"]; ok && causeStack.Kind == ValueString && causeStack.Text != "" {
+							return String(stack.Text + "\nCaused by\n" + causeStack.Text), receiver, false, true, nil
+						}
+					}
+				}
 				return stack, receiver, false, true, nil
 			}
 			if exceptionTypeName(receiver.Type) == "JSONException" {

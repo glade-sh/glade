@@ -1091,7 +1091,7 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("AccessLevel.withPermissionSetId expects String")
 		}
-		value := Value{Kind: ValueObject, Type: "AccessLevel", Text: "USER_MODE", Fields: map[string]Value{}}
+		value := accessLevelValue("USER_MODE")
 		value.Fields["permissionSetId"] = args[0]
 		return value, nil
 	case "RoundingMode.valueOf":
@@ -1193,7 +1193,11 @@ platformStaticCall:
 		} else {
 			return Null, newExceptionError("System.TypeException", "Date.valueOf expects String")
 		}
-		date, err := parseDateText(text)
+		parse := parseDateText
+		if args[0].Kind == ValueString && strings.EqualFold(args[0].Static, "Object") {
+			parse = parseDateObjectText
+		}
+		date, err := parse(text)
 		if err != nil {
 			return Null, newExceptionError("System.TypeException", "Invalid date: "+text)
 		}
@@ -1290,7 +1294,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("AsyncInfo.getCurrentQueueableStackDepth expects 0 arguments")
 		}
 		if vm.currentAsyncKind != "Queueable" {
-			return Null, newExceptionError("System.AsyncException", "getCurrentQueueableStackDepth is not allowed outside a Queueable or Finalizer execution")
+			return Null, newExceptionError("System.AsyncException", "getCurrentQueueableStackDepth is not allowed outside a Queueable of Finalizer execution")
 		}
 		if vm.currentQueueableDepth > 0 {
 			return Int(int64(vm.currentQueueableDepth)), nil
@@ -3698,7 +3702,7 @@ func (vm *VM) pageReferenceForResource(args []Value) (Value, error) {
 		return newPageReference("/resource"), nil
 	}
 	if vm.Org != nil && !vm.staticResourceExists(resourceName) {
-		return Null, newExceptionError("VisualforceException", fmt.Sprintf("Static Resource named %s does not exist.", resourceName))
+		return Null, newExceptionError("System.InvalidParameterValueException", "Static Resource does not exist")
 	}
 	url := "/resource/" + resourceName
 	if len(args) == 2 {

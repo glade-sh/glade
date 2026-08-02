@@ -428,7 +428,7 @@ func xmlStreamReaderCurrentString(receiver Value, method string) Value {
 			return String(target.Text)
 		}
 	case "getVersion":
-		return String("1.0")
+		return Null
 	}
 	return String("")
 }
@@ -475,11 +475,7 @@ func xmlStreamReaderEventName(kind string) string {
 }
 
 func canonicalXmlTagName(name string) (string, bool) {
-	for _, known := range []string{
-		"ATTRIBUTE", "CDATA", "CHARACTERS", "COMMENT", "DTD", "END_DOCUMENT", "END_ELEMENT",
-		"ENTITY_DECLARATION", "ENTITY_REFERENCE", "NAMESPACE", "NOTATION_DECLARATION",
-		"PROCESSING_INSTRUCTION", "SPACE", "START_DOCUMENT", "START_ELEMENT",
-	} {
+	for _, known := range xmlTagNames {
 		if strings.EqualFold(name, known) {
 			return known, true
 		}

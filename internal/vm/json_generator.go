@@ -477,7 +477,7 @@ func jsonGeneratorFinish(receiver Value) (Value, error) {
 	}
 	stack := jsonGeneratorStack(updated)
 	if len(stack.List) > 0 {
-		return updated, jsonGeneratorException("JSONGenerator cannot close with open JSON containers")
+		return updated, nil
 	}
 	updated.Fields["stack"] = stack
 	updated.Fields["closed"] = Bool(true)
