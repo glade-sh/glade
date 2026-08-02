@@ -267,20 +267,10 @@ func sObjectFieldMapCanonicalSize(value Value) (int, bool) {
 	return len(seen), true
 }
 
-const fieldSetMapMarker = "__glade_field_set_map"
+const fieldSetMapRuntime = "fieldsetmap"
 
 func isFieldSetMapValue(value Value) bool {
-	if value.Kind != ValueMap {
-		return false
-	}
-	if strings.ReplaceAll(value.Type, " ", "") == "Map<String,Schema.FieldSet>" {
-		return true
-	}
-	if value.MapKeys == nil {
-		return false
-	}
-	marker, ok := value.MapKeys[fieldSetMapMarker]
-	return ok && marker.Kind == ValueBool && marker.Bool
+	return value.Kind == ValueMap && strings.EqualFold(value.Runtime, fieldSetMapRuntime)
 }
 
 func fieldSetMapCanonicalKeySet(value Value) (Value, bool) {

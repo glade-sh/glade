@@ -14,6 +14,7 @@ System.assertEquals(1, describe.fieldSets.getMap().size());
 System.assertEquals(2, describe.getRecordTypeInfos().size());
 System.assertEquals(SObjectDescribeOptions.DEFERRED, describe.getSObjectDescribeOption());
 System.assertEquals(null, describe.getDataTranslationEnabled());
+System.assertEquals(false, describe.isSearchable());
 
 Schema.DescribeFieldResult text = Probe__c.Text__c.getDescribe();
 System.assertEquals(80, text.getLength());
@@ -104,6 +105,30 @@ System.assertEquals(null, options.LocaleOptions);
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCB117FieldSetMapCanonicalizationSurvivesWidening(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeSObjectResult describe = Probe__c.SObjectType.getDescribe();
+Map<String, Schema.FieldSet> typed = describe.fieldSets.getMap();
+System.assertEquals(1, typed.size());
+System.assertEquals(1, typed.keySet().size());
+System.assertEquals(1, typed.values().size());
+
+Map<String, Object> widened = typed;
+System.assertEquals(1, widened.size());
+System.assertEquals(1, widened.keySet().size());
+System.assertEquals(1, widened.values().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := cb117DescribeOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)

@@ -1155,7 +1155,7 @@ func (vm *VM) fieldSetMapValue(objectName string, definition storage.ObjectDefin
 	fieldSets := Object("Schema.FieldSetMap")
 	m := Map()
 	m.Type = "Map<String,Schema.FieldSet>"
-	m.MapKeys[fieldSetMapMarker] = Bool(true)
+	m.Runtime = fieldSetMapRuntime
 	if vm.Org == nil {
 		fieldSets.Fields["map"] = m
 		return fieldSets
