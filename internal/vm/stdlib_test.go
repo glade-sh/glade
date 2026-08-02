@@ -2344,6 +2344,9 @@ System.assertEquals('hello', Crypto.decryptWithManagedIV('AES256', key, encrypte
 Blob cbc = Crypto.encryptWithManagedIV('AES256-CBC', key, Blob.valueOf('hello'));
 System.assertEquals(32, cbc.size());
 System.assertEquals('hello', Crypto.decryptWithManagedIV('AES256-CBC', key, cbc).toString());
+Blob gcm = Crypto.encryptWithManagedIV('AES256-GCM', key, Blob.valueOf('hello'), Blob.valueOf('aad'));
+System.assertEquals(34, gcm.size());
+System.assertEquals('hello', Crypto.decryptWithManagedIV('AES256-GCM', key, gcm, Blob.valueOf('aad')).toString());
 Blob signature = Crypto.sign('RSA-SHA512', Blob.valueOf('hello'), Blob.valueOf('private'));
 System.assert(Crypto.verify('RSA-SHA512', Blob.valueOf('hello'), signature, Blob.valueOf('public')));
 System.assert(!Crypto.verify('RSA-SHA512', Blob.valueOf('changed'), signature, Blob.valueOf('public')));

@@ -419,6 +419,7 @@ var systemNamespaceTypes = []string{
 	"Double",
 	"Boolean",
 	"Id",
+	"Schema",
 	"Pattern",
 	"Math",
 	"Date",

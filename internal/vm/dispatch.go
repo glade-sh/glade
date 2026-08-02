@@ -1722,7 +1722,29 @@ platformStaticCall:
 		return platformScalar("Blob", string(clearText)), nil
 	case "Crypto.encryptWithManagedIV":
 		if len(args) == 4 {
-			return Null, unsupportedCallError("Crypto.encryptWithManagedIV local authenticated-data managed-IV AES surface")
+			key, err := blobStringArg("Crypto.encryptWithManagedIV privateKey", args[1:2])
+			if err != nil {
+				return Null, err
+			}
+			clearText, err := blobStringArg("Crypto.encryptWithManagedIV clearText", args[2:3])
+			if err != nil {
+				return Null, err
+			}
+			additionalData, err := blobStringArg("Crypto.encryptWithManagedIV additionalData", args[3:4])
+			if err != nil {
+				return Null, err
+			}
+			managed := managedIV([]byte(key), []byte(clearText))
+			iv := managed[:12]
+			cipherText, err := encryptAESGCM(args[0].Text, []byte(key), iv, []byte(clearText), []byte(additionalData))
+			if err != nil {
+				return Null, newExceptionError("System.InvalidParameterValueException", err.Error())
+			}
+			envelope := make([]byte, 1+len(iv)+len(cipherText))
+			envelope[0] = byte(len(iv))
+			copy(envelope[1:], iv)
+			copy(envelope[1+len(iv):], cipherText)
+			return platformScalar("Blob", string(envelope)), nil
 		}
 		if len(args) != 3 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Crypto.encryptWithManagedIV expects algorithm, privateKey Blob, and clearText Blob")
@@ -1743,7 +1765,30 @@ platformStaticCall:
 		return platformScalar("Blob", string(append(append([]byte{}, iv...), cipherText...))), nil
 	case "Crypto.decryptWithManagedIV":
 		if len(args) == 4 {
-			return Null, unsupportedCallError("Crypto.decryptWithManagedIV local authenticated-data managed-IV AES surface")
+			key, err := blobStringArg("Crypto.decryptWithManagedIV privateKey", args[1:2])
+			if err != nil {
+				return Null, err
+			}
+			cipherEnvelope, err := blobStringArg("Crypto.decryptWithManagedIV cipherText", args[2:3])
+			if err != nil {
+				return Null, err
+			}
+			additionalData, err := blobStringArg("Crypto.decryptWithManagedIV additionalData", args[3:4])
+			if err != nil {
+				return Null, err
+			}
+			if len(cipherEnvelope) < 1 {
+				return Null, newExceptionError("System.InvalidParameterValueException", "cipherText must include managed IV")
+			}
+			ivLength := int(cipherEnvelope[0])
+			if ivLength != 12 || len(cipherEnvelope) < 1+ivLength {
+				return Null, newExceptionError("System.InvalidParameterValueException", "cipherText must include a 12-byte managed IV")
+			}
+			clearText, err := decryptAESGCM(args[0].Text, []byte(key), []byte(cipherEnvelope[1:1+ivLength]), []byte(cipherEnvelope[1+ivLength:]), []byte(additionalData))
+			if err != nil {
+				return Null, newExceptionError("System.InvalidParameterValueException", err.Error())
+			}
+			return platformScalar("Blob", string(clearText)), nil
 		}
 		if len(args) != 3 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Crypto.decryptWithManagedIV expects algorithm, privateKey Blob, and cipherText Blob")
@@ -2252,6 +2297,9 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Process.SparkPlugApi.describePlugin expects class name String")
 		}
+		if !localSparkPlugIsRegistered(args[0].Text) {
+			return Null, newExceptionError("System.NoDataFoundException", fmt.Sprintf("SparkPlug plugin %q was not found", args[0].Text))
+		}
 		result := Object("Process.SparkPlugApi.SparkPlugDescribeResult")
 		result.Fields["className"] = args[0]
 		return result, nil
@@ -2263,6 +2311,9 @@ platformStaticCall:
 	case "Process.SparkPlugApi.invokePluginWithJson":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 			return Null, fmt.Errorf("Process.SparkPlugApi.invokePluginWithJson expects class name and parameters JSON Strings")
+		}
+		if !localSparkPlugIsRegistered(args[0].Text) {
+			return Null, newExceptionError("System.NoDataFoundException", fmt.Sprintf("SparkPlug plugin %q was not found", args[0].Text))
 		}
 		return String("{}"), nil
 	case "TrailblazerIdentity.generateUserEmailVerificationToken":

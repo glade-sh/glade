@@ -464,16 +464,6 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "Crypto.generateSelfSignedCertificate local key, certificate, encryption, and random surfaces"`,
 		},
 		{
-			name: "crypto managed iv authenticated data encrypt",
-			src:  `Crypto.encryptWithManagedIV('AES256', Blob.valueOf('0123456789abcdef0123456789abcdef'), Blob.valueOf('hello'), Blob.valueOf('aad'));`,
-			want: `unsupported call "Crypto.encryptWithManagedIV local authenticated-data managed-IV AES surface"`,
-		},
-		{
-			name: "crypto managed iv authenticated data decrypt",
-			src:  `Crypto.decryptWithManagedIV('AES256', Blob.valueOf('0123456789abcdef0123456789abcdef'), Blob.valueOf('cipher'), Blob.valueOf('aad'));`,
-			want: `unsupported call "Crypto.decryptWithManagedIV local authenticated-data managed-IV AES surface"`,
-		},
-		{
 			name: "system password reset",
 			src:  `System.resetPassword('005000000000001', true);`,
 			want: `unsupported call "System.resetPassword local password/admin mutation surface"`,
@@ -1706,6 +1696,11 @@ System.assert(many.get(0).isSuccess());
 System.assert(many.get(1).isSuccess());
 Database.SaveResult userMode = EventBus.publishWithAccessLevel(new Account(Name = 'User'), AccessLevel.USER_MODE);
 System.assert(userMode.isSuccess());
+Database.SaveResult callbackUserMode = EventBus.publishWithAccessLevel(new Account(Name = 'Callback user'), null, AccessLevel.SYSTEM_MODE);
+System.assert(callbackUserMode.isSuccess());
+List<Database.SaveResult> listUserMode = EventBus.publishWithAccessLevel(new List<Account>{new Account(Name = 'List user')}, AccessLevel.USER_MODE);
+System.assertEquals(1, listUserMode.size());
+System.assert(listUserMode.get(0).isSuccess());
 List<Database.SaveResult> callbackResults = EventBus.publishWithAccessLevel(new List<Account>{new Account(Name = 'Callback')}, null, AccessLevel.SYSTEM_MODE);
 System.assertEquals(1, callbackResults.size());
 System.assert(callbackResults.get(0).isSuccess());
@@ -11834,7 +11829,7 @@ System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username =
   System.assertEquals(false, UserInfo.isMultiCurrencyOrganization());
   TimeZone tz = UserInfo.getTimeZone();
   System.assertEquals('UTC', tz.getID());
-  System.assertEquals('UTC', tz.getDisplayName());
+  System.assertEquals('(GMT+00:00) Coordinated Universal Time (UTC)', tz.getDisplayName());
 }
 System.assertEquals('system', UserInfo.getUserId());
 System.runAs(new User(Id = '005-user-b', FirstName = 'Ada', LastName = 'Trail', Name = 'Ada Trail', Email = 'ada@example.test', Permissions = new List<String>{'CanRunLocal'})) {
@@ -11890,7 +11885,7 @@ Datetime winter = Datetime.valueOfGmt('2024-02-29T23:05:06Z');
 Datetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
 TimeZone tz = UserInfo.getTimeZone();
 System.assertEquals('America/Los_Angeles', tz.getID());
-System.assertEquals('America/Los_Angeles', tz.getDisplayName());
+System.assertEquals('(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)', tz.getDisplayName());
 System.assertEquals(-28800000, tz.getOffset(winter));
 System.assertEquals(-25200000, tz.getOffset(summer));
 System.assertEquals('2024-02-29 15:05:06 -0800 PST', winter.format('yyyy-MM-dd HH:mm:ss Z z'));
@@ -12477,6 +12472,18 @@ func TestExecPlatformCallbackDefaultHarnesses(t *testing.T) {
 System.assert(Process.SparkPlugApi.describePlugin('LocalPlugin') != null);
 System.assertEquals(0, Process.SparkPlugApi.describePlugins().size());
 System.assertEquals('{}', Process.SparkPlugApi.invokePluginWithJson('LocalPlugin', '{}'));
+try {
+  Process.SparkPlugApi.describePlugin('CB63Missing');
+  System.assert(false, 'expected missing plugin description to fail');
+} catch (NoDataFoundException e) {
+  System.assert(e.getMessage().contains('CB63Missing'));
+}
+try {
+  Process.SparkPlugApi.invokePluginWithJson('CB63Missing', '{}');
+  System.assert(false, 'expected missing plugin invocation to fail');
+} catch (NoDataFoundException e) {
+  System.assert(e.getMessage().contains('CB63Missing'));
+}
 System.assertEquals('local-email-verification-token', TrailblazerIdentity.generateUserEmailVerificationToken('00D000000000001', UserInfo.getUserId(), 'local@example.invalid'));
 System.assertEquals(0, TrailblazerIdentity.getUserOrgInfo(new List<String>{'local@example.invalid'}).size());
 TrailblazerIdentity.splunkLog('local', 'message');
@@ -13174,61 +13181,79 @@ System.assertEquals(Time.newInstance(12, 34, 56, 789), Time.valueOf('12:34:56.78
 TimeZone utc = TimeZone.getTimeZone('UTC');
 System.assertEquals('UTC', utc.getID());
 System.assertEquals('UTC', utc.toString());
-System.assertEquals('UTC', utc.getDisplayName());
+System.assertEquals('(GMT+00:00) Coordinated Universal Time (UTC)', utc.getDisplayName());
 System.assertEquals(0, utc.getOffset(gmt));
 TimeZone offset = TimeZone.getTimeZone('GMT+05:30');
 System.assertEquals('GMT+05:30', offset.getID());
+System.assertEquals('(GMT+05:30) Pacific Standard Time (GMT+05:30)', offset.getDisplayName());
 System.assertEquals(19800000, offset.getOffset(gmt));
 TimeZone west = TimeZone.getTimeZone('UTC-02:00');
 System.assertEquals('GMT-02:00', west.getID());
+System.assertEquals('(GMT-02:00) Pacific Standard Time (GMT-02:00)', west.getDisplayName());
 System.assertEquals(-7200000, west.getOffset(gmt));
 TimeZone edge = TimeZone.getTimeZone('GMT+14:00');
-System.assertEquals('GMT+14:00', edge.getDisplayName());
+System.assertEquals('(GMT+14:00) Pacific Standard Time (GMT+14:00)', edge.getDisplayName());
 System.assertEquals(50400000, edge.getOffset(gmt));
 TimeZone pacific = TimeZone.getTimeZone('America/Los_Angeles');
 System.assertEquals('America/Los_Angeles', pacific.getID());
 System.assertEquals('America/Los_Angeles', pacific.toString());
-System.assertEquals('America/Los_Angeles', pacific.getDisplayName());
-System.assertEquals('PST', pacific.getDisplayName(false));
-System.assertEquals('PDT', pacific.getDisplayName(true));
+System.assertEquals('(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)', pacific.getDisplayName());
 System.assertEquals(-28800000, pacific.getOffset(gmt));
 Datetime summerNoon = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
 System.assertEquals(-25200000, pacific.getOffset(summerNoon));
 TimeZone eastern = TimeZone.getTimeZone('America/New_York');
 System.assertEquals('America/New_York', eastern.getID());
-System.assertEquals('America/New_York', eastern.getDisplayName());
+System.assertEquals('(GMT-04:00) Eastern Daylight Time (America/New_York)', eastern.getDisplayName());
 System.assertEquals(-18000000, eastern.getOffset(gmt));
 System.assertEquals(-14400000, eastern.getOffset(summerNoon));
 TimeZone central = TimeZone.getTimeZone('America/Chicago');
 System.assertEquals('America/Chicago', central.getID());
-System.assertEquals('America/Chicago', central.getDisplayName());
+System.assertEquals('(GMT-05:00) Central Daylight Time (America/Chicago)', central.getDisplayName());
 System.assertEquals(-21600000, central.getOffset(gmt));
 System.assertEquals(-18000000, central.getOffset(summerNoon));
 TimeZone mountain = TimeZone.getTimeZone('America/Denver');
 System.assertEquals('America/Denver', mountain.getID());
-System.assertEquals('America/Denver', mountain.getDisplayName());
+System.assertEquals('(GMT-06:00) Mountain Daylight Time (America/Denver)', mountain.getDisplayName());
 System.assertEquals(-25200000, mountain.getOffset(gmt));
 System.assertEquals(-21600000, mountain.getOffset(summerNoon));
+TimeZone panama = TimeZone.getTimeZone('America/Panama');
+System.assertEquals('America/Panama', panama.getID());
+System.assertEquals('(GMT-05:00) Eastern Standard Time (America/Panama)', panama.getDisplayName());
+System.assertEquals(-18000000, panama.getOffset(gmt));
+System.assertEquals(-18000000, panama.getOffset(summerNoon));
 TimeZone london = TimeZone.getTimeZone('Europe/London');
 System.assertEquals('Europe/London', london.getID());
-System.assertEquals('Europe/London', london.getDisplayName());
+System.assertEquals('(GMT+01:00) British Summer Time (Europe/London)', london.getDisplayName());
 System.assertEquals(0, london.getOffset(gmt));
 System.assertEquals(3600000, london.getOffset(summerNoon));
 TimeZone berlin = TimeZone.getTimeZone('Europe/Berlin');
 System.assertEquals('Europe/Berlin', berlin.getID());
-System.assertEquals('Europe/Berlin', berlin.getDisplayName());
+System.assertEquals('(GMT+02:00) Central European Summer Time (Europe/Berlin)', berlin.getDisplayName());
 System.assertEquals(3600000, berlin.getOffset(gmt));
 System.assertEquals(7200000, berlin.getOffset(summerNoon));
 TimeZone tokyo = TimeZone.getTimeZone('Asia/Tokyo');
 System.assertEquals('Asia/Tokyo', tokyo.getID());
-System.assertEquals('Asia/Tokyo', tokyo.getDisplayName());
-System.assertEquals('JST', tokyo.getDisplayName(false));
-System.assertEquals('JST', tokyo.getDisplayName(true));
+System.assertEquals('(GMT+09:00) Japan Standard Time (Asia/Tokyo)', tokyo.getDisplayName());
 System.assertEquals(32400000, tokyo.getOffset(gmt));
 System.assertEquals(32400000, tokyo.getOffset(summerNoon));
+TimeZone hoChiMinh = TimeZone.getTimeZone('Asia/Ho_Chi_Minh');
+System.assertEquals('Asia/Ho_Chi_Minh', hoChiMinh.getID());
+System.assertEquals('(GMT+07:00) Indochina Time (Asia/Ho_Chi_Minh)', hoChiMinh.getDisplayName());
+System.assertEquals(25200000, hoChiMinh.getOffset(gmt));
+System.assertEquals(25200000, hoChiMinh.getOffset(summerNoon));
+TimeZone honolulu = TimeZone.getTimeZone('Pacific/Honolulu');
+System.assertEquals('Pacific/Honolulu', honolulu.getID());
+System.assertEquals('(GMT-10:00) Hawaii-Aleutian Standard Time (Pacific/Honolulu)', honolulu.getDisplayName());
+System.assertEquals(-36000000, honolulu.getOffset(gmt));
+System.assertEquals(-36000000, honolulu.getOffset(summerNoon));
+TimeZone pagoPago = TimeZone.getTimeZone('Pacific/Pago_Pago');
+System.assertEquals('Pacific/Pago_Pago', pagoPago.getID());
+System.assertEquals('(GMT-11:00) Samoa Standard Time (Pacific/Pago_Pago)', pagoPago.getDisplayName());
+System.assertEquals(-39600000, pagoPago.getOffset(gmt));
+System.assertEquals(-39600000, pagoPago.getOffset(summerNoon));
 TimeZone sydney = TimeZone.getTimeZone('Australia/Sydney');
 System.assertEquals('Australia/Sydney', sydney.getID());
-System.assertEquals('Australia/Sydney', sydney.getDisplayName());
+System.assertEquals('(GMT+10:00) Australian Eastern Standard Time (Australia/Sydney)', sydney.getDisplayName());
 System.assertEquals(39600000, sydney.getOffset(gmt));
 System.assertEquals(36000000, sydney.getOffset(summerNoon));
 `)
@@ -13237,6 +13262,18 @@ System.assertEquals(36000000, sydney.getOffset(summerNoon));
 	}
 	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecTimeZoneGetDisplayNameBooleanIsUnsupported(t *testing.T) {
+	program, err := CompileAnonymous(`TimeZone zone = TimeZone.getTimeZone('UTC'); zone.getDisplayName(false);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = New(nil).Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "TimeZone.getDisplayName locale/style overloads"` {
+		t.Fatalf("err = %#v, want UnsupportedFeature for Boolean overload", err)
 	}
 }
 

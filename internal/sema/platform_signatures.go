@@ -101,8 +101,6 @@ func semaCollectionMethodSignature(receiverType, method string) (semaCollectionS
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
 		case "next":
 			return semaCollectionSignature{returnType: args[0], params: [][]string{{}}}, true
-		case "remove":
-			return semaCollectionSignature{returnType: "void", params: [][]string{{}}}, true
 		}
 	case "map":
 		if len(args) == 0 {

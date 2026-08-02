@@ -1444,27 +1444,29 @@ func fixedTimeZone(id string) (Value, error) {
 }
 
 type modeledTimeZone struct {
-	id             string
-	standardOffset time.Duration
-	daylightOffset time.Duration
-	standardLabel  string
-	daylightLabel  string
-	daylightRule   string
+	id                  string
+	standardOffset      time.Duration
+	daylightOffset      time.Duration
+	standardLabel       string
+	daylightLabel       string
+	standardDisplayName string
+	daylightDisplayName string
+	daylightRule        string
 }
 
 var supportedNamedTimeZones = map[string]modeledTimeZone{
-	"America/Los_Angeles": {id: "America/Los_Angeles", standardOffset: -8 * time.Hour, daylightOffset: -7 * time.Hour, standardLabel: "PST", daylightLabel: "PDT", daylightRule: "us"},
-	"America/New_York":    {id: "America/New_York", standardOffset: -5 * time.Hour, daylightOffset: -4 * time.Hour, standardLabel: "EST", daylightLabel: "EDT", daylightRule: "us"},
-	"America/Chicago":     {id: "America/Chicago", standardOffset: -6 * time.Hour, daylightOffset: -5 * time.Hour, standardLabel: "CST", daylightLabel: "CDT", daylightRule: "us"},
-	"America/Denver":      {id: "America/Denver", standardOffset: -7 * time.Hour, daylightOffset: -6 * time.Hour, standardLabel: "MST", daylightLabel: "MDT", daylightRule: "us"},
-	"America/Panama":      {id: "America/Panama", standardOffset: -5 * time.Hour, standardLabel: "EST"},
-	"Europe/London":       {id: "Europe/London", standardOffset: 0, daylightOffset: time.Hour, standardLabel: "GMT", daylightLabel: "BST", daylightRule: "europe"},
-	"Europe/Berlin":       {id: "Europe/Berlin", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", daylightRule: "europe"},
-	"Asia/Ho_Chi_Minh":    {id: "Asia/Ho_Chi_Minh", standardOffset: 7 * time.Hour, standardLabel: "ICT"},
-	"Asia/Tokyo":          {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST"},
-	"Pacific/Honolulu":    {id: "Pacific/Honolulu", standardOffset: -10 * time.Hour, standardLabel: "HST"},
-	"Pacific/Pago_Pago":   {id: "Pacific/Pago_Pago", standardOffset: -11 * time.Hour, standardLabel: "SST"},
-	"Australia/Sydney":    {id: "Australia/Sydney", standardOffset: 10 * time.Hour, daylightOffset: 11 * time.Hour, standardLabel: "AEST", daylightLabel: "AEDT", daylightRule: "sydney"},
+	"America/Los_Angeles": {id: "America/Los_Angeles", standardOffset: -8 * time.Hour, daylightOffset: -7 * time.Hour, standardLabel: "PST", daylightLabel: "PDT", standardDisplayName: "Pacific Standard Time", daylightDisplayName: "Pacific Daylight Time", daylightRule: "us"},
+	"America/New_York":    {id: "America/New_York", standardOffset: -5 * time.Hour, daylightOffset: -4 * time.Hour, standardLabel: "EST", daylightLabel: "EDT", standardDisplayName: "Eastern Standard Time", daylightDisplayName: "Eastern Daylight Time", daylightRule: "us"},
+	"America/Chicago":     {id: "America/Chicago", standardOffset: -6 * time.Hour, daylightOffset: -5 * time.Hour, standardLabel: "CST", daylightLabel: "CDT", standardDisplayName: "Central Standard Time", daylightDisplayName: "Central Daylight Time", daylightRule: "us"},
+	"America/Denver":      {id: "America/Denver", standardOffset: -7 * time.Hour, daylightOffset: -6 * time.Hour, standardLabel: "MST", daylightLabel: "MDT", standardDisplayName: "Mountain Standard Time", daylightDisplayName: "Mountain Daylight Time", daylightRule: "us"},
+	"America/Panama":      {id: "America/Panama", standardOffset: -5 * time.Hour, standardLabel: "EST", standardDisplayName: "Eastern Standard Time"},
+	"Europe/London":       {id: "Europe/London", standardOffset: 0, daylightOffset: time.Hour, standardLabel: "GMT", daylightLabel: "BST", standardDisplayName: "Greenwich Mean Time", daylightDisplayName: "British Summer Time", daylightRule: "europe"},
+	"Europe/Berlin":       {id: "Europe/Berlin", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
+	"Asia/Ho_Chi_Minh":    {id: "Asia/Ho_Chi_Minh", standardOffset: 7 * time.Hour, standardLabel: "ICT", standardDisplayName: "Indochina Time"},
+	"Asia/Tokyo":          {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST", standardDisplayName: "Japan Standard Time"},
+	"Pacific/Honolulu":    {id: "Pacific/Honolulu", standardOffset: -10 * time.Hour, standardLabel: "HST", standardDisplayName: "Hawaii-Aleutian Standard Time"},
+	"Pacific/Pago_Pago":   {id: "Pacific/Pago_Pago", standardOffset: -11 * time.Hour, standardLabel: "SST", standardDisplayName: "Samoa Standard Time"},
+	"Australia/Sydney":    {id: "Australia/Sydney", standardOffset: 10 * time.Hour, daylightOffset: 11 * time.Hour, standardLabel: "AEST", daylightLabel: "AEDT", standardDisplayName: "Australian Eastern Standard Time", daylightDisplayName: "Australian Eastern Daylight Time", daylightRule: "sydney"},
 }
 
 func supportedNamedTimeZone(id string) (modeledTimeZone, bool) {
@@ -1504,17 +1506,34 @@ func timeZoneOffsetMillis(receiver Value, instant time.Time) (Value, error) {
 	return offsetValue, nil
 }
 
-func timeZoneDisplayName(receiver Value, daylight bool) Value {
-	locationValue := receiver.Fields["location"]
-	if locationValue.Kind == ValueString && locationValue.Text != "" && locationValue.Text != "UTC" {
-		if location, ok := supportedNamedTimeZone(locationValue.Text); ok {
-			if daylight && location.daylightLabel != "" {
-				return String(location.daylightLabel)
-			}
-			return String(location.standardLabel)
-		}
+func (vm *VM) timeZoneDisplayName(receiver Value) Value {
+	idValue := receiver.Fields["id"]
+	if idValue.Kind != ValueString {
+		return idValue
 	}
-	return receiver.Fields["id"]
+	offset := time.Duration(0)
+	longName := "Pacific Standard Time"
+	locationValue := receiver.Fields["location"]
+	if locationValue.Kind == ValueString && locationValue.Text != "" {
+		if locationValue.Text == "UTC" {
+			longName = "Coordinated Universal Time"
+		} else if location, ok := supportedNamedTimeZone(locationValue.Text); ok {
+			offset, longName = location.displayNameAt(vm.fakeNow)
+		}
+	} else if offsetValue := receiver.Fields["offsetMillis"]; offsetValue.Kind == ValueInt {
+		offset = time.Duration(offsetValue.Int) * time.Millisecond
+	}
+	return String(fmt.Sprintf("(GMT%s) %s (%s)", formatTimeZoneDisplayOffset(offset), longName, idValue.Text))
+}
+
+func formatTimeZoneDisplayOffset(offset time.Duration) string {
+	sign := "+"
+	if offset < 0 {
+		sign = "-"
+		offset = -offset
+	}
+	totalMinutes := int(offset / time.Minute)
+	return fmt.Sprintf("%s%02d:%02d", sign, totalMinutes/60, totalMinutes%60)
 }
 
 func (zone modeledTimeZone) offsetAt(instant time.Time) (time.Duration, string) {
@@ -1522,6 +1541,14 @@ func (zone modeledTimeZone) offsetAt(instant time.Time) (time.Duration, string) 
 		return zone.standardOffset, zone.standardLabel
 	}
 	return zone.daylightOffset, zone.daylightLabel
+}
+
+func (zone modeledTimeZone) displayNameAt(instant time.Time) (time.Duration, string) {
+	offset, _ := zone.offsetAt(instant)
+	if zone.daylightRule != "" && zone.isDaylight(instant.UTC()) && zone.daylightDisplayName != "" {
+		return offset, zone.daylightDisplayName
+	}
+	return offset, zone.standardDisplayName
 }
 
 func (zone modeledTimeZone) instantFromLocal(year int, month time.Month, day, hour, minute, second, millisecond int) time.Time {
@@ -2140,6 +2167,48 @@ func managedIV(privateKey, clearText []byte) []byte {
 	iv := make([]byte, aes.BlockSize)
 	copy(iv, sum[:aes.BlockSize])
 	return iv
+}
+
+func encryptAESGCM(algorithm string, privateKey, initializationVector, clearText, additionalData []byte) ([]byte, error) {
+	if normalizeCryptoAlgorithm(algorithm) != "AES256GCM" {
+		return nil, fmt.Errorf("Crypto.encryptWithManagedIV authenticated data only supports AES256-GCM")
+	}
+	if len(privateKey) != 32 {
+		return nil, fmt.Errorf("Crypto.encryptWithManagedIV AES256-GCM privateKey expects 32 bytes, got %d", len(privateKey))
+	}
+	block, err := aes.NewCipher(privateKey)
+	if err != nil {
+		return nil, err
+	}
+	aead, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	if len(initializationVector) != aead.NonceSize() {
+		return nil, fmt.Errorf("Crypto.encryptWithManagedIV AES256-GCM initializationVector expects %d bytes, got %d", aead.NonceSize(), len(initializationVector))
+	}
+	return aead.Seal(nil, initializationVector, clearText, additionalData), nil
+}
+
+func decryptAESGCM(algorithm string, privateKey, initializationVector, cipherText, additionalData []byte) ([]byte, error) {
+	if normalizeCryptoAlgorithm(algorithm) != "AES256GCM" {
+		return nil, fmt.Errorf("Crypto.decryptWithManagedIV authenticated data only supports AES256-GCM")
+	}
+	if len(privateKey) != 32 {
+		return nil, fmt.Errorf("Crypto.decryptWithManagedIV AES256-GCM privateKey expects 32 bytes, got %d", len(privateKey))
+	}
+	block, err := aes.NewCipher(privateKey)
+	if err != nil {
+		return nil, err
+	}
+	aead, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	if len(initializationVector) != aead.NonceSize() {
+		return nil, fmt.Errorf("Crypto.decryptWithManagedIV AES256-GCM initializationVector expects %d bytes, got %d", aead.NonceSize(), len(initializationVector))
+	}
+	return aead.Open(nil, initializationVector, cipherText, additionalData)
 }
 
 func localCryptoSignature(algorithm string, input []byte) ([]byte, error) {

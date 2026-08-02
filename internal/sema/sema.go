@@ -3044,8 +3044,14 @@ func (a *Analyzer) hasKnown(name string) bool {
 	if name == "" {
 		return true
 	}
-	if _, ok := a.known[a.canonicalName(name)]; ok {
+	if reference, ok := a.known[a.canonicalName(name)]; ok {
+		if semaAPI67RejectedPlatformType(name) && reference.Kind == TypePlatform {
+			return false
+		}
 		return true
+	}
+	if semaAPI67RejectedPlatformType(name) {
+		return false
 	}
 	canonical := semaCanonicalPlatformAlias(name)
 	if !strings.EqualFold(canonical, name) {

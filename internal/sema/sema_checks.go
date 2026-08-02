@@ -2696,6 +2696,9 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	if semaProjectTypeShadowsPlatform(model, receiverType) {
 		return nil, false
 	}
+	if semaAPI67RejectedPlatformCall(receiverType, method, receiverMode) {
+		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, start, end, source)}, true
+	}
 	if strings.EqualFold(receiverType, "System") && strings.EqualFold(method, "runAs") && len(args) == 1 {
 		return nil, true
 	}

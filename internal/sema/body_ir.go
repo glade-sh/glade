@@ -1018,6 +1018,9 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 		}
 		switch inst.Op {
 		case ir.OpDeclare:
+			if semaAPI67RejectedPlatformType(inst.Type) && !semaProjectTypeShadowsPlatform(model, inst.Type) {
+				diagnostics = append(diagnostics, unsupportedLocalFeatureDiagnostic(typ, member, inst.Type, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(inst.Type)), source))
+			}
 			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, inst.Expr, scope, inst.Pos, bodyOffset, source, model, constructability)...)
 			diagnostics = append(diagnostics, a.checkIRAssignmentType(typ, member, inst.Type, inst.Name, inst.Expr, scope, inst.Pos, bodyOffset, source, model, "initializes")...)
 			if !scope.declare(inst.Name, resolveNestedTypeReference(model, typ.Name, inst.Type)) {
@@ -1386,6 +1389,13 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 		if semaExprAtSwitchWhenLabel(source, bodyOffset+pos, expr.Name) {
 			return nil
 		}
+		fieldReceiver := expr.Name
+		if dot := strings.LastIndexByte(fieldReceiver, '.'); dot > 0 {
+			fieldReceiver = fieldReceiver[:dot]
+		}
+		if semaAPI67RejectedPlatformField(expr.Name) && !semaProjectTypeShadowsPlatform(model, fieldReceiver) {
+			return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, expr.Name, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Name)), source)}
+		}
 		if diag, ok := a.irVariableDiagnostic(typ, member, expr.Name, *scope, model, bodyOffset+pos, source); ok {
 			diagnostics = append(diagnostics, diag)
 		} else if !a.irVariableKnown(expr.Name, *scope, model, typ.Name) && !isLikelyTypeReference(expr.Name) {
@@ -1497,6 +1507,12 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if expr.Callee == "" || expr.Callee == "this" || expr.Callee == "super" || skipSemaCall(expr.Callee) {
 		return nil
 	}
+	// Keep this pre-resolution guard for rejected qualified platform receivers.
+	// The later platform path is shared, but unknown dotted receivers can exit
+	// through permissive fallback before it is reached.
+	if receiver, method, ok := splitSemaMethodPath(expr.Callee); ok && !scope.hasNonFieldBinding(receiver) && !semaProjectTypeShadowsPlatform(model, receiver) && semaAPI67RejectedPlatformCall(receiver, method, "class") {
+		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiver+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
+	}
 	receiverType := typ.Name
 	method := expr.Callee
 	explicitReceiver := false
@@ -1592,6 +1608,11 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 				}
 			}
 		}
+	}
+	// Instance receivers can bypass checkIRPlatformCall through its permissive
+	// fallback after IR infers their platform type, so guard that path here.
+	if !semaProjectTypeShadowsPlatform(model, receiverType) && semaAPI67RejectedPlatformCall(receiverType, method, receiverMode) {
+		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
 	}
 	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), receiverMode)
 	if !explicitReceiver {

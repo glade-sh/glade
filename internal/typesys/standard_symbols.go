@@ -829,6 +829,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "EventBus", Methods: []StandardMethodSpec{
 		{Name: "publishWithAccessLevel", ReturnType: "Database.SaveResult", Parameters: []string{"SObject", "AccessLevel"}, Static: true},
 		{Name: "publishWithAccessLevel", ReturnType: "Database.SaveResult", Parameters: []string{"SObject", "Object", "AccessLevel"}, Static: true},
+		{Name: "publishWithAccessLevel", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<SObject>", "AccessLevel"}, Static: true},
 		{Name: "publishWithAccessLevel", ReturnType: "List<Database.SaveResult>", Parameters: []string{"List<SObject>", "Object", "AccessLevel"}, Static: true},
 	}},
 	{Name: "Version", Constructors: [][]string{{"Integer", "Integer"}, {"Integer", "Integer", "Integer"}}, Methods: []StandardMethodSpec{{Name: "compareTo", ReturnType: "Integer", Parameters: []string{"Version"}}}},
@@ -1218,7 +1219,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "Comparator", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "compare", ReturnType: "Integer", Parameters: []string{"Object", "Object"}}}},
 	{Name: "Comparable", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "compareTo", ReturnType: "Integer", Parameters: []string{"Object"}}}},
 	{Name: "Database.Batchable", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "start", ReturnType: "Iterable", Parameters: []string{"Database.BatchableContext"}}, {Name: "execute", ReturnType: "void", Parameters: []string{"Database.BatchableContext", "List<Object>"}}, {Name: "finish", ReturnType: "void", Parameters: []string{"Database.BatchableContext"}}}},
-	{Name: "Database.BatchableContext", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "getChildJobId", ReturnType: "Id"}, {Name: "getJobId", ReturnType: "Id"}}},
+	{Name: "Database.BatchableContext", Kind: apexast.DeclarationInterface, ReplaceConstructors: true, Methods: []StandardMethodSpec{{Name: "getChildJobId", ReturnType: "Id"}, {Name: "getJobId", ReturnType: "Id"}}},
 	{Name: "Database.Stateful", Kind: apexast.DeclarationInterface},
 	{Name: "HttpCalloutMock", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "respond", ReturnType: "HttpResponse", Parameters: []string{"HttpRequest"}}}},
 	{Name: "Iterable", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "iterator", ReturnType: "Iterator"}}},
