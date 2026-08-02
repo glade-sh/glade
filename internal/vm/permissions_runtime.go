@@ -215,6 +215,17 @@ func fieldPermissionObjectMethod(method string) string {
 	}
 }
 func (vm *VM) stripInaccessibleRecords(accessType string, records Value, enforceRootObjectCRUD bool, scopedPermissionSetID string) (Value, Value, Value, error) {
+	if scopedPermissionSetID != "" {
+		resolved := false
+		if vm != nil && vm.Org != nil {
+			if state, ok := vm.Org.Objects["PermissionSet"]; ok {
+				_, _, resolved = storage.LookupRecordByID(state.Records, storage.ID(scopedPermissionSetID))
+			}
+		}
+		if !resolved {
+			return Null, Null, Null, newExceptionError("NoDataFoundException", fmt.Sprintf("Invalid permission set id: %s", scopedPermissionSetID))
+		}
+	}
 	out := cloneValue(records)
 	out.Type = records.Type
 	removedFields := Map()

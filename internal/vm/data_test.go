@@ -4328,6 +4328,35 @@ System.assert(decision.getRemovedFields().get('Account').contains('Secret__c'));
 	}
 }
 
+func TestExecSecurityStripInaccessibleInvalidPermissionSetID(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id invalidPermissionSetId = '0PS000000000404';
+Boolean caught = false;
+try {
+	Security.stripInaccessible(
+		AccessType.READABLE,
+		new List<Account>{ new Account(Name = 'Acme') },
+		false,
+		invalidPermissionSetId
+	);
+} catch (NoDataFoundException e) {
+	caught = e.getMessage() == 'Invalid permission set id: 0PS000000000404';
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "Account")
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSecurityStripInaccessibleTracksRemovedFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Account> rows = [SELECT Id, Name, Secret__c FROM Account];
