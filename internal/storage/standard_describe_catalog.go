@@ -22,6 +22,7 @@ type standardDescribeObject struct {
 	Label              string                              `json:"label"`
 	LabelPlural        string                              `json:"labelPlural"`
 	KeyPrefix          string                              `json:"keyPrefix"`
+	Mergeable          *bool                               `json:"mergeable"`
 	Triggerable        *bool                               `json:"triggerable"`
 	Fields             []standardDescribeField             `json:"fields"`
 	ChildRelationships []standardDescribeChildRelationship `json:"childRelationships"`

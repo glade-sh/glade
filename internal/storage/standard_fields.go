@@ -2,6 +2,7 @@ package storage
 
 import (
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -723,6 +724,7 @@ func StandardObjectDefinition(objectName string) (ObjectDefinition, bool) {
 func mergeStandardObjectDefinition(definition *ObjectDefinition, features []string) {
 	entry, ok := standardObjectCatalogEntryForName(definition.APIName)
 	if !ok {
+		enrichStandardDescribeMetadataFromV2(definition)
 		return
 	}
 	if definition.APIName == "" {
@@ -753,6 +755,21 @@ func mergeStandardObjectDefinition(definition *ObjectDefinition, features []stri
 	enrichStandardFieldsFromV2Describe(definition)
 }
 
+func enrichStandardDescribeMetadataFromV2(definition *ObjectDefinition) {
+	if definition == nil {
+		return
+	}
+	canonical, ok := standardDescribeCatalogCanonicalName(definition.APIName)
+	if !ok {
+		return
+	}
+	describe, ok, err := lookupStandardDescribeCatalogV2(canonical)
+	if err != nil || !ok {
+		return
+	}
+	enrichStandardDescribeMetadata(definition, describe)
+}
+
 func enrichStandardFieldsFromV2Describe(definition *ObjectDefinition) {
 	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
 	if err != nil || !ok {
@@ -766,6 +783,20 @@ func enrichStandardFieldsFromV2Describe(definition *ObjectDefinition) {
 			definition.Fields[existingName] = existing
 		}
 	}
+	enrichStandardDescribeMetadata(definition, describe)
+}
+
+func enrichStandardDescribeMetadata(definition *ObjectDefinition, describe standardDescribeObject) {
+	if definition == nil || describe.Mergeable == nil {
+		return
+	}
+	if definition.Metadata == nil {
+		definition.Metadata = make(map[string]string)
+	}
+	if _, explicit := definition.Metadata["mergeable"]; explicit {
+		return
+	}
+	definition.Metadata["mergeable"] = strconv.FormatBool(*describe.Mergeable)
 }
 
 func mergeStandardSObjectStubFields(definition *ObjectDefinition, features []string) {

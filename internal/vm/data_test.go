@@ -5510,7 +5510,8 @@ System.assertEquals('Account', describe.getLocalName());
 System.assertEquals(0, describe.getFieldSets().getMap().size());
 System.assertEquals(false, describe.isFeedEnabled());
 System.assertEquals(false, Schema.SObjectType.User.isFeedEnabled());
-System.assertEquals(false, describe.isMergeable());
+System.assertEquals(true, describe.isMergeable());
+System.assertEquals(false, Case.SObjectType.getDescribe().isMergeable());
 System.assertEquals(true, describe.isMruEnabled());
 System.assertEquals(true, describe.isUndeletable());
 System.assertEquals(false, describe.isDeprecatedAndHidden());
@@ -5530,6 +5531,7 @@ System.assertEquals(SObjectDescribeOptions.DEFERRED, deferredDescribe.getSObject
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Case")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
