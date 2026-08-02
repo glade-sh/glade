@@ -1260,6 +1260,9 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "StatusCode", EnumHashBase: standardEnumHashBase(674160322)},
 	{Name: "Metadata.StatusCode", EnumHashBase: standardEnumHashBase(-369369150)},
 	{Name: "Exception", Modifiers: []string{"abstract"}, ReplaceConstructors: true},
+	// Package.Version is a platform value type; API 67 exposes no Apex
+	// constructor even though the generated stub includes a default one.
+	{Name: "Package.Version", ReplaceConstructors: true},
 	{Name: "InvalidParameterValueException", SuperClass: "Exception", ReplaceConstructors: true},
 	{Name: "NoAccessException", SuperClass: "Exception", Constructors: [][]string{{}}, ReplaceConstructors: true},
 	{Name: "NoDataFoundException", SuperClass: "Exception", Constructors: [][]string{{}}, ReplaceConstructors: true},
