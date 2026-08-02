@@ -1229,13 +1229,24 @@ func dmlResultsFromSObjectErrors(records []storage.Record, values []Value) []dml
 	return results
 }
 
-func databaseErrorsList(result dml.Result) Value {
+func databaseErrorsList(result dml.Result, resultType string) Value {
 	errors := dmlResultErrors(result)
+	if errors == nil && databaseResultTypeReturnsNullErrors(resultType) {
+		return Null
+	}
 	values := make([]Value, 0, len(errors))
 	for _, err := range errors {
 		values = append(values, databaseErrorValue(err))
 	}
 	return List(values...)
+}
+
+func databaseResultTypeReturnsNullErrors(resultType string) bool {
+	switch resultType {
+	case "Database.EmptyRecycleBinResult", "Database.MergeResult", "Database.UndeleteResult":
+		return true
+	}
+	return false
 }
 
 func dmlResultErrors(result dml.Result) []dml.Error {

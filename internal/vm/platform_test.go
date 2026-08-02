@@ -13854,7 +13854,7 @@ System.assert(merged.isSuccess());
 System.assertEquals(master.Id, merged.getId());
 System.assertEquals(duplicate.Id, merged.getMergedRecordIds().get(0));
 System.assertEquals(child.Id, merged.getUpdatedRelatedIds().get(0));
-System.assertEquals(0, merged.getErrors().size());
+System.assertEquals(null, merged.getErrors());
 
 Database.UndeleteResult activeUndelete = Database.undelete(base, false);
 System.assert(!activeUndelete.isSuccess());
@@ -13995,7 +13995,7 @@ System.assertEquals(0, deleted.getErrors().size());
 Database.UndeleteResult restored = Database.undelete(a, false);
 System.assert(restored.isSuccess());
 System.assertEquals(a.Id, restored.getId());
-System.assertEquals(0, restored.getErrors().size());
+System.assertEquals(null, restored.getErrors());
 `)
 	if err != nil {
 		t.Fatal(err)

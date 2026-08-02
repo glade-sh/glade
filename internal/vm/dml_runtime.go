@@ -226,7 +226,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 		if op == "upsert" {
 			row.Fields["created"] = Bool(dmlResult.Created)
 		}
-		row.Fields["errors"] = databaseErrorsList(dmlResult)
+		row.Fields["errors"] = databaseErrorsList(dmlResult, resultType)
 		values = append(values, row)
 	}
 	if args[0].Kind == ValueList {
@@ -653,7 +653,7 @@ func (vm *VM) executeDatabaseRecordAction(op string, args []Value, result *Resul
 		row.Fields["success"] = Bool(dmlResult.Success)
 		row.Fields["id"] = databaseResultIDValue(dmlResult.ID)
 		row.Fields["error"] = String(dmlResult.Error)
-		row.Fields["errors"] = databaseErrorsList(dmlResult)
+		row.Fields["errors"] = databaseErrorsList(dmlResult, resultType)
 		values = append(values, row)
 	}
 	if args[0].Kind == ValueList {
@@ -869,7 +869,7 @@ func databaseNestedSaveResult(results []dml.Result, relationships []Value) Value
 		row.Fields["success"] = Bool(results[0].Success)
 		row.Fields["id"] = databaseResultIDValue(results[0].ID)
 		row.Fields["error"] = String(results[0].Error)
-		row.Fields["errors"] = databaseErrorsList(results[0])
+		row.Fields["errors"] = databaseErrorsList(results[0], "Database.NestedSaveResult")
 	}
 	row.Fields["relationshipSaveResults"] = List(relationships...)
 	return row
@@ -1412,7 +1412,7 @@ func (vm *VM) mergeResultValue(listInput bool, duplicates []storage.Record, resu
 			updatedRelatedIDs.List = append(updatedRelatedIDs.List, String(string(id)))
 		}
 		row.Fields["updatedRelatedIds"] = updatedRelatedIDs
-		row.Fields["errors"] = databaseErrorsList(dmlResult)
+		row.Fields["errors"] = databaseErrorsList(dmlResult, "Database.MergeResult")
 		values = append(values, row)
 	}
 	if listInput {

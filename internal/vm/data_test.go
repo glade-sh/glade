@@ -11027,6 +11027,7 @@ Database.RelationshipSaveResult relationship = result.getRelationshipSaveResults
 System.assertEquals('Contacts', relationship.getRelationshipName());
 System.assertEquals(2, relationship.getSaveResults().size());
 System.assert(relationship.getSaveResults()[0].isSuccess());
+System.assertEquals(0, relationship.getErrors().size());
 
 List<Account> accounts = [SELECT Id, Name FROM Account WHERE Name = 'Tree Parent'];
 System.assertEquals(1, accounts.size());
@@ -12543,12 +12544,47 @@ func TestExecDatabaseEmptyRecycleBinResult(t *testing.T) {
 Account a = new Account(Name = 'Acme');
 insert a;
 delete a;
-Database.EmptyRecycleBinResult result = Database.emptyRecycleBin(a, false);
-System.assert(result.isSuccess());
-System.assertEquals(a.Id, result.getId());
-System.assertEquals(0, result.getErrors().size());
+	Database.EmptyRecycleBinResult result = Database.emptyRecycleBin(a, false);
+	System.assert(result.isSuccess());
+	System.assertEquals(a.Id, result.getId());
+System.assertEquals(null, result.getErrors());
 List<Account> rows = [SELECT Id FROM Account WHERE Id = :a.Id ALL ROWS];
 System.assertEquals(0, rows.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseSuccessfulResultErrorsNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account recycle = new Account(Name = 'RecycleNull');
+insert recycle;
+delete recycle;
+Database.EmptyRecycleBinResult emptied = Database.emptyRecycleBin(recycle, false);
+System.assert(emptied.isSuccess());
+System.assertEquals(null, emptied.getErrors());
+
+Account restore = new Account(Name = 'RestoreNull');
+insert restore;
+delete restore;
+Database.UndeleteResult restored = Database.undelete(restore, false);
+System.assert(restored.isSuccess());
+System.assertEquals(null, restored.getErrors());
+
+Account master2 = new Account(Name = 'MasterNull');
+insert master2;
+Account duplicate2 = new Account(Name = 'DupNull');
+insert duplicate2;
+Database.MergeResult merged = Database.merge(master2, duplicate2, false);
+System.assert(merged.isSuccess());
+System.assertEquals(null, merged.getErrors());
 `)
 	if err != nil {
 		t.Fatal(err)
