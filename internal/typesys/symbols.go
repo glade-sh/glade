@@ -81,6 +81,7 @@ type TypeSymbol struct {
 	// closes an intentionally empty or narrowed constructor set without
 	// exposing a synthetic Apex modifier through symbol JSON.
 	ConstructorsAuthoritative bool             `json:"-"`
+	EnumHashBase              *int64           `json:"-"` // measured platform enum family identity seed
 	SuperClass                string           `json:"superClass,omitempty"`
 	Interfaces                []string         `json:"interfaces,omitempty"`
 	Range                     diagnostic.Range `json:"range"`

@@ -885,6 +885,7 @@ type generatedPlatformType struct {
 	Name             string
 	Kind             apexast.DeclarationKind
 	SuperClass       string
+	EnumHashBase     *int64
 	Fields           map[string]Field
 	FieldOrder       []string
 	StaticFields     map[string]Field

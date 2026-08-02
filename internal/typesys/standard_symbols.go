@@ -13,6 +13,7 @@ type StandardSymbolSpec struct {
 	Name             string
 	Kind             apexast.DeclarationKind
 	SuperClass       string
+	EnumHashBase     *int64 // stable platform enum family hash seed, when acquired
 	Modifiers        []string
 	Interfaces       []string
 	Constructors     [][]string
@@ -54,6 +55,10 @@ func standardEnumProperties(typeName string, names ...string) []StandardProperty
 		props = append(props, StandardPropertySpec{Name: name, Type: typeName, Static: true})
 	}
 	return props
+}
+
+func standardEnumHashBase(value int64) *int64 {
+	return &value
 }
 
 var (
@@ -270,6 +275,7 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 			File:                      "<standard-platform>",
 			Dependency:                true,
 			ConstructorsAuthoritative: spec.ReplaceConstructors,
+			EnumHashBase:              spec.EnumHashBase,
 			SuperClass:                superClass,
 			Modifiers:                 append([]string(nil), spec.Modifiers...),
 			Interfaces:                append([]string(nil), spec.Interfaces...),
@@ -352,6 +358,9 @@ func mergeStandardSymbolSpecs(specs []StandardSymbolSpec) []StandardSymbolSpec {
 		}
 		if existing.SuperClass == "" {
 			existing.SuperClass = spec.SuperClass
+		}
+		if spec.EnumHashBase != nil {
+			existing.EnumHashBase = spec.EnumHashBase
 		}
 		existing.Modifiers = appendUniqueStandardStrings(existing.Modifiers, spec.Modifiers)
 		existing.Interfaces = appendUniqueStandardStrings(existing.Interfaces, spec.Interfaces)
@@ -1245,6 +1254,11 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 }
 
 var standardPlatformSymbolOverlays = []StandardSymbolSpec{
+	// API 67 platform enum hashes use a stable family seed plus declaration
+	// ordinal. Keep the seeds on the merged type metadata, not on members.
+	{Name: "Schema.SoapType", EnumHashBase: standardEnumHashBase(884834318)},
+	{Name: "StatusCode", EnumHashBase: standardEnumHashBase(674160322)},
+	{Name: "Metadata.StatusCode", EnumHashBase: standardEnumHashBase(-369369150)},
 	{Name: "Exception", Modifiers: []string{"abstract"}, ReplaceConstructors: true},
 	{Name: "InvalidParameterValueException", SuperClass: "Exception", ReplaceConstructors: true},
 	{Name: "NoAccessException", SuperClass: "Exception", Constructors: [][]string{{}}, ReplaceConstructors: true},
@@ -1493,12 +1507,6 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	}, Properties: []StandardPropertySpec{{Name: "controllervalues", Type: "Map<String,Integer>"}}},
 	{Name: "industriesNlpSvc.NlpResponse", Properties: []StandardPropertySpec{{Name: "summarizationResult", Type: "industriesNlpSvc.NlpSummarizationResult"}, {Name: "errors", Type: "List<String>"}}},
 	{Name: "industriesNlpSvc.NlpSummarizationResult", Properties: []StandardPropertySpec{{Name: "summary", Type: "String"}}},
-	{Name: "StatusCode", Properties: []StandardPropertySpec{
-		{Name: "PRINCIPAL_NOT_ASSIGNED", Type: "StatusCode", Static: true},
-		{Name: "PRINCIPAL_NOT_CONFIGURED", Type: "StatusCode", Static: true},
-		{Name: "PRINCIPAL_UNAUTHENTICATED", Type: "StatusCode", Static: true},
-		{Name: "COMMERCE_SEARCH_RULES_SYNC_FAILED", Type: "StatusCode", Static: true},
-	}},
 	{Name: "Quiddity", Properties: []StandardPropertySpec{
 		{Name: "RUN_INTEGRATION_TESTS", Type: "Quiddity", Static: true},
 	}},

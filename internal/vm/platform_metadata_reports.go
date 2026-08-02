@@ -1251,7 +1251,7 @@ func roundingModeValues(args []Value) (Value, error) {
 }
 
 func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value, bool, error) {
-	method = canonicalStdlibMemberName(method, "equals", "name", "ordinal", "toString")
+	method = canonicalStdlibMemberName(method, "equals", "hashCode", "name", "ordinal", "toString")
 	receiverType := receiver.Type
 	if rest, ok := stripLeadingSystemNamespace(receiverType); ok {
 		receiverType = rest
@@ -1282,6 +1282,9 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 		default:
 			return Null, false, nil
 		}
+	}
+	if generated, ok := generatedPlatformTypes()[strings.ToLower(receiverType)]; ok && generated.Kind == apexast.DeclarationEnum && generated.EnumHashBase != nil {
+		return callGeneratedPlatformEnumMember(generated, receiver, method, args)
 	}
 	if receiver.Type == "ApexPages.Severity" {
 		return callNamedEnumMember("ApexPages.Severity", apexPagesSeverityNames, receiver, method, args)
@@ -1378,7 +1381,7 @@ func callManagedEnumMember(receiver Value, method string, args []Value) (Value, 
 }
 
 func callGeneratedPlatformEnumMember(generated generatedPlatformType, receiver Value, method string, args []Value) (Value, bool, error) {
-	method = canonicalStdlibMemberName(method, "equals", "name", "ordinal", "toString")
+	method = canonicalStdlibMemberName(method, "equals", "hashCode", "name", "ordinal", "toString")
 	if method == "equals" {
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("%s.equals expects 1 argument", receiver.Type)
@@ -1392,12 +1395,16 @@ func callGeneratedPlatformEnumMember(generated generatedPlatformType, receiver V
 	case "name", "toString":
 		return String(receiver.Text), true, nil
 	case "ordinal":
-		for i, name := range generatedPlatformEnumNames(generated) {
-			if strings.EqualFold(name, receiver.Text) {
-				return Int(int64(i)), true, nil
-			}
+		return Int(int64(generatedPlatformEnumOrdinal(generated, receiver.Text))), true, nil
+	case "hashCode":
+		if generated.EnumHashBase == nil {
+			return Null, false, nil
 		}
-		return Int(-1), true, nil
+		ordinal := generatedPlatformEnumOrdinal(generated, receiver.Text)
+		if ordinal < 0 {
+			return Int(-1), true, nil
+		}
+		return Int(*generated.EnumHashBase + int64(ordinal)), true, nil
 	default:
 		return Null, false, nil
 	}
