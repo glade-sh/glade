@@ -1475,7 +1475,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	desc.Fields["digits"] = Int(int64(describeFieldDigits(field)))
 	desc.Fields["byteLength"] = Int(int64(describeFieldByteLength(field)))
 	desc.Fields["htmlFormatted"] = Bool(describeFieldIsHTMLFormatted(field))
-	desc.Fields["dataTranslationEnabled"] = Bool(false)
+	desc.Fields["dataTranslationEnabled"] = Null
 	desc.Fields["filteredLookupInfo"] = filteredLookupInfoValue(definition, field.FilteredLookupInfo)
 	if defaultValue, ok := storage.DefaultValueForField(field); ok {
 		desc.Fields["defaultValue"] = vmValueFromStorage(defaultValue)
@@ -1990,7 +1990,7 @@ func completeDescribeFieldResultDefaults(desc *Value) {
 		"cascadeDelete":                Bool(false),
 		"controller":                   Null,
 		"controllerValues":             typedMap("Map<String,Integer>"),
-		"dataTranslationEnabled":       Bool(false),
+		"dataTranslationEnabled":       Null,
 		"defaultedOnCreate":            Bool(false),
 		"defaultValue":                 Null,
 		"defaultValueFormula":          Null,

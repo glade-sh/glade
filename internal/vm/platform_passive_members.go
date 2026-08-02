@@ -1582,7 +1582,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if value, ok := receiver.Fields["dataTranslationEnabled"]; ok {
 				return value, receiver, false, true, nil
 			}
-			return Bool(false), receiver, false, true, nil
+			return Null, receiver, false, true, nil
 		case "isSortable":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isSortable expects 0 arguments")

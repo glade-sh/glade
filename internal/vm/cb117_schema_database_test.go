@@ -77,6 +77,7 @@ System.assertEquals(null, Probe__c.Checkbox__c.getDescribe().getDefaultValueForm
 System.assertEquals(0, Probe__c.Number__c.getDescribe().getDigits());
 System.assertEquals(false, Probe__c.Number__c.getDescribe().isGroupable());
 System.assertEquals(false, Probe__c.DateTime__c.getDescribe().isGroupable());
+System.assertEquals(null, Probe__c.Text__c.getDescribe().getDataTranslationEnabled());
 `)
 	if err != nil {
 		t.Fatal(err)
