@@ -141,6 +141,7 @@ type DescribeSObjectResult struct {
 	PluralLabel     string                         `json:"pluralLabel,omitempty"`
 	KeyPrefix       string                         `json:"keyPrefix,omitempty"`
 	SharingModel    string                         `json:"sharingModel,omitempty"`
+	EnableSearch    bool                           `json:"enableSearch,omitempty"`
 	Metadata        map[string]string              `json:"metadata,omitempty"`
 	Fields          map[string]DescribeFieldResult `json:"fields,omitempty"`
 	Relationships   []storage.Relationship         `json:"relationships,omitempty"`
@@ -221,6 +222,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			PluralLabel:  object.PluralLabel,
 			KeyPrefix:    prefixes[object.Name],
 			SharingModel: object.SharingModel,
+			EnableSearch: object.EnableSearch,
 			Fields:       make(map[string]DescribeFieldResult, len(object.Fields)),
 		}
 		if strings.HasSuffix(object.Name, "__mdt") {
@@ -412,6 +414,9 @@ func mergeSchemaObject(base, overlay schema.Object) schema.Object {
 	if overlay.CustomSettingsType != "" {
 		base.CustomSettingsType = overlay.CustomSettingsType
 	}
+	if overlay.EnableSearch {
+		base.EnableSearch = true
+	}
 	if overlay.NameField.Type != "" || overlay.NameField.Label != "" || overlay.NameField.DisplayFormat != "" {
 		base.NameField = overlay.NameField
 	}
@@ -531,6 +536,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 		PluralLabel:     describe.PluralLabel,
 		KeyPrefix:       describe.KeyPrefix,
 		SharingModel:    describe.SharingModel,
+		EnableSearch:    describe.EnableSearch,
 		Fields:          make(map[string]storage.Field, len(describe.Fields)),
 		Relations:       append([]storage.Relationship(nil), describe.Relationships...),
 		RecordTypes:     make([]storage.RecordTypeInfo, 0, len(describe.RecordTypes)),
@@ -613,6 +619,7 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 		PluralLabel:     definition.PluralLabel,
 		KeyPrefix:       definition.KeyPrefix,
 		SharingModel:    definition.SharingModel,
+		EnableSearch:    definition.EnableSearch,
 		Fields:          make(map[string]DescribeFieldResult, len(definition.Fields)),
 		Relationships:   append([]storage.Relationship(nil), definition.Relations...),
 		RecordTypes:     make([]DescribeRecordTypeInfo, 0, len(definition.RecordTypes)),

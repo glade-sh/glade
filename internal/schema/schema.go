@@ -24,6 +24,7 @@ type Object struct {
 	PluralLabel        string           `json:"pluralLabel,omitempty"`
 	SharingModel       string           `json:"sharingModel,omitempty"`
 	CustomSettingsType string           `json:"customSettingsType,omitempty"`
+	EnableSearch       bool             `json:"enableSearch,omitempty"`
 	Triggerable        *bool            `json:"triggerable,omitempty"`
 	NameField          NameField        `json:"nameField,omitempty"`
 	Fields             []Field          `json:"fields,omitempty"`
@@ -148,6 +149,7 @@ type customObjectXML struct {
 	PluralLabel        string              `xml:"pluralLabel"`
 	SharingModel       string              `xml:"sharingModel"`
 	CustomSettingsType string              `xml:"customSettingsType"`
+	EnableSearch       bool                `xml:"enableSearch"`
 	NameField          nameFieldXML        `xml:"nameField"`
 	Fields             []customFieldXML    `xml:"fields"`
 	RecordTypes        []recordTypeXML     `xml:"recordTypes"`
@@ -405,6 +407,9 @@ func mergeObjectMetadata(dst *Object, src Object) {
 	if dst.CustomSettingsType == "" {
 		dst.CustomSettingsType = src.CustomSettingsType
 	}
+	if src.EnableSearch {
+		dst.EnableSearch = true
+	}
 	if dst.NameField == (NameField{}) {
 		dst.NameField = src.NameField
 	}
@@ -614,6 +619,7 @@ func loadObject(path string, p project.Project) (Object, error) {
 		PluralLabel:        raw.PluralLabel,
 		SharingModel:       raw.SharingModel,
 		CustomSettingsType: strings.TrimSpace(raw.CustomSettingsType),
+		EnableSearch:       raw.EnableSearch,
 		NameField: NameField{
 			Label:         strings.TrimSpace(raw.NameField.Label),
 			Type:          strings.TrimSpace(raw.NameField.Type),

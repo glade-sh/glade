@@ -135,6 +135,26 @@ System.assertEquals(1, widened.values().size());
 	}
 }
 
+func TestCB117SearchabilityUsesObjectMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(false, Default__c.SObjectType.getDescribe().isSearchable());
+System.assertEquals(true, Enabled__c.SObjectType.getDescribe().isSearchable());
+System.assertEquals(true, Account.SObjectType.getDescribe().isSearchable());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Default__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Default__c"}}
+	org.Objects["Enabled__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Enabled__c", EnableSearch: true}}
+	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func cb117DescribeOrg() storage.OrgState {
 	org := storage.NewOrgState()
 	org.Objects["Probe__c"] = storage.ObjectState{

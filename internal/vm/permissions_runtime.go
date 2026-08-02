@@ -83,7 +83,12 @@ func storagePermissionValueMatches(value storage.Value, permission string) bool 
 }
 func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	if method == "isSearchable" {
-		return !isCustomObjectLikeName(objectName)
+		if vm != nil {
+			if _, definition, ok := vm.describeObjectDefinition(objectName); ok {
+				return vm.describePreparedDefinition(objectName, definition).EnableSearch
+			}
+		}
+		return true
 	}
 	if method == "isQueryable" {
 		return true

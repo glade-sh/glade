@@ -12,3 +12,13 @@ func TestCB117CustomObjectStandardDescribeFields(t *testing.T) {
 		}
 	}
 }
+
+func TestCB117StandardObjectSearchabilityRemainsEnabled(t *testing.T) {
+	definition, ok := StandardObjectDefinition("Account")
+	if !ok {
+		t.Fatal("Account standard definition missing")
+	}
+	if !definition.EnableSearch {
+		t.Fatal("standard Account searchability defaulted false")
+	}
+}

@@ -36,3 +36,25 @@ func TestCB117BuildDescribeRegistryPreservesAPI67FieldTypes(t *testing.T) {
 		t.Fatalf("external id was not exposed as an id lookup: %#v", describe.Fields["External__c"])
 	}
 }
+
+func TestCB117BuildDescribeRegistryCarriesObjectSearchability(t *testing.T) {
+	registry := BuildDescribeRegistry(schema.Schema{Objects: []schema.Object{
+		{Name: "Default__c"},
+		{Name: "Enabled__c", EnableSearch: true},
+	}})
+
+	defaultDescribe, err := registry.Describe("Default__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if defaultDescribe.EnableSearch {
+		t.Fatal("custom object without enableSearch defaulted to searchable")
+	}
+	enabledDescribe, err := registry.Describe("Enabled__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !enabledDescribe.EnableSearch {
+		t.Fatal("explicitly enabled custom object lost enableSearch")
+	}
+}

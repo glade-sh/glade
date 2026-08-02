@@ -20,6 +20,9 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	if definition == nil {
 		return
 	}
+	if _, ok := standardObjectCatalogEntryForName(definition.APIName); ok {
+		definition.EnableSearch = true
+	}
 	featureSignature := canonicalFeatureSignature(features)
 	if standardFieldsOverlayApplied(*definition, featureSignature) {
 		if standardReadOnlyFlagsNeedRepair(definition) {
