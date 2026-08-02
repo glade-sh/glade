@@ -5148,6 +5148,34 @@ System.assertEquals(0, table.rows);
 	}
 }
 
+func TestExecComponentApexPageBlockTableDispatchesComponentLookup(t *testing.T) {
+	program, err := CompileAnonymous(`
+Component.Apex.PageBlockTable concreteComponent = new Component.Apex.PageBlockTable();
+ApexPages.Component component = concreteComponent;
+System.assertEquals(null, component.getComponentById('missing'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecComponentApexPageBlockTableLookupRejectsZeroArguments(t *testing.T) {
+	program, err := CompileAnonymous(`
+Component.Apex.PageBlockTable concreteComponent = new Component.Apex.PageBlockTable();
+ApexPages.Component component = concreteComponent;
+component.getComponentById();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err == nil {
+		t.Fatal("expected getComponentById without an id to fail")
+	}
+}
+
 func TestExecVisualEditorDynamicPickListRows(t *testing.T) {
 	program, err := CompileAnonymous(`
 VisualEditor.DataRow row = new VisualEditor.DataRow('Template', 'a01000000000001');

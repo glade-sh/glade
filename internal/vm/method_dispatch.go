@@ -1001,6 +1001,16 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 			return value, true, err
 		}
 	}
+	if componentApexRuntimeType(receiver.Type) {
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+			if mutated {
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
+			}
+			return value, true, err
+		}
+	}
 	if _, classExists := vm.lookupClass(receiver.Type); classExists && !strings.EqualFold(receiver.Runtime, "System.Cookie") {
 		dispatchType := runtimeObjectType(receiver)
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, method, args)

@@ -702,6 +702,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if strings.EqualFold(receiver.Type, "Dom.XmlNode") {
 		return callDomXmlNodeMember(receiver, method, args)
 	}
+	if componentApexRuntimeType(receiver.Type) {
+		if value, updated, mutated, handled, err := callApexPagesComponentMember(receiver, method, args); handled || err != nil {
+			return value, updated, mutated, handled, err
+		}
+	}
 	switch receiver.Type {
 	case "eventbus.SuccessResult", "eventbus.FailureResult", "EventBus.SuccessResult", "EventBus.FailureResult":
 		switch method {
