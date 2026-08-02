@@ -169,6 +169,140 @@ func runScratchBackedRuleCases(t *testing.T, area string, ids ...string) {
 	}
 }
 
+func TestAPI67ReleaseLanguageRuleRegressions(t *testing.T) {
+	// These product-owned copies are bound to the Salesforce API 67 oracle
+	// recorded by the glade-tools Apex language-rule catalog.
+	for _, rule := range api67ReleaseLanguageRuleCases {
+		rule := rule
+		t.Run(rule.ID, func(t *testing.T) {
+			result := analyzeScratchBackedRuleCase(t, rule)
+			gotReject := result.HasErrors()
+			wantReject := rule.Oracle == "reject"
+			if gotReject != wantReject {
+				t.Fatalf("API %d %s result rejected=%v, want %v; diagnostics=%#v", rule.APIVersion, rule.SourceKind, gotReject, wantReject, result.Diagnostics)
+			}
+		})
+	}
+}
+
+var api67ReleaseLanguageRuleCases = []scratchBackedRuleCase{
+	{
+		ID:         "APEX-RELEASE-GETTER-SELF-ASSIGNMENT",
+		Area:       "properties",
+		APIVersion: 67,
+		SourceKind: "class",
+		Source:     `public class Probe { public Integer Value { get { Value = 1; return Value; } } }`,
+		Oracle:     "reject",
+	},
+	{
+		ID:         "APEX-RELEASE-GETTER-EXTERNAL-ASSIGNMENT",
+		Area:       "properties",
+		APIVersion: 67,
+		SourceKind: "class",
+		Source:     `public class Probe { public Integer Value { get { return 1; } } public static void run() { new Probe().Value = 2; } }`,
+		Oracle:     "reject",
+	},
+	{
+		ID:         "APEX-RELEASE-BACKSLASH-ESCAPED-ANNOTATION",
+		Area:       "annotations",
+		APIVersion: 67,
+		SourceKind: "class",
+		Source: `public class Probe {
+    @InvocableVariable(
+        Required=false
+        Label='Email From Org-Wide Id'
+        Description='The Salesforce Id of the Organization-Wide email address to use as the "From" in emails. If this isn\'t set, the email address of the user sending the email is used instead.'
+    )
+    public String emailFromOrgWideId;
+}`,
+		Oracle: "accept",
+	},
+	{
+		ID:         "APEX-RELEASE-SIBLING-FOR-INITIALIZER-SCOPES",
+		Area:       "statements",
+		APIVersion: 67,
+		SourceKind: "class",
+		Source:     `public class Probe { public static void run(Map<Id, Integer> firstById, Map<Id, Integer> secondById) { for (Integer index = 0; index < firstById.size(); index++) { Integer ignored = index; } for (Id cartId : firstById.keySet()) { Integer firstValue = firstById.get(cartId); if (firstValue != null) { System.debug(firstValue); } } Integer dmlOperations = Limits.getQueries(); for (Id cartId : secondById.keySet()) { Integer secondValue = secondById.get(cartId); if (secondValue != null) { System.debug(secondValue); } } System.debug(dmlOperations); } }`,
+		Oracle:     "accept",
+	},
+	{
+		ID:         "APEX-RELEASE-STATIC-METHOD-HIDING",
+		Area:       "inheritance",
+		APIVersion: 67,
+		SourceKind: "class",
+		Source:     `public class ProbeStaticChild extends ProbeStaticBase { public static Integer size() { return 2; } }`,
+		Dependencies: []scratchBackedSourceFile{{
+			Path:    "force-app/main/default/classes/ProbeStaticBase.cls",
+			Content: `public virtual class ProbeStaticBase { public static Integer size() { return 1; } }`,
+		}},
+		Oracle: "accept",
+	},
+	{
+		ID:         "APEX-RELEASE-STATIC-GETTER-SELF-ASSIGNMENT",
+		Area:       "properties",
+		APIVersion: 67,
+		SourceKind: "class",
+		Source:     `public class Probe { public static Probe Instance { get { if (Instance == null) { Instance = new Probe(); } return Instance; } } }`,
+		Oracle:     "reject",
+	},
+	{
+		ID:         "APEX-RELEASE-NESTED-INTERFACE-INSTANCEOF",
+		Area:       "type-contracts",
+		APIVersion: 67,
+		SourceKind: "class",
+		Source:     `public class Probe { private class Implementation implements ProbeContract { public void calculate() { } } public static Boolean run() { ProbeContract calculator = new Implementation(); return calculator instanceof Implementation; } }`,
+		Dependencies: []scratchBackedSourceFile{{
+			Path:    "force-app/main/default/classes/ProbeContract.cls",
+			Content: `public interface ProbeContract { void calculate(); }`,
+		}},
+		Oracle: "accept",
+	},
+	{
+		ID:         "APEX-RELEASE-STANDARD-RELATIONSHIP-TRAVERSAL",
+		Area:       "soql",
+		APIVersion: 67,
+		SourceKind: "class",
+		Source:     `public class Probe { public static void run() { List<Contact> rows = [SELECT Account.Name FROM Contact]; } }`,
+		Oracle:     "accept",
+	},
+	{
+		ID:         "APEX-RELEASE-STATIC-INHERITED-INSTANCE-NAME",
+		Area:       "inheritance",
+		APIVersion: 67,
+		SourceKind: "class",
+		Source:     `public class ProbeStaticChild extends ProbeInstanceBase { private static Integer size() { return 2; } }`,
+		Dependencies: []scratchBackedSourceFile{{
+			Path:    "force-app/main/default/classes/ProbeInstanceBase.cls",
+			Content: `public virtual class ProbeInstanceBase { public virtual Integer size() { return 1; } }`,
+		}},
+		Oracle: "accept",
+	},
+	{
+		ID:         "APEX-RELEASE-INTERFACE-INSTANCEOF-IMPLEMENTATION",
+		Area:       "type-contracts",
+		APIVersion: 67,
+		SourceKind: "class",
+		Source:     `public class Probe { public interface Contract { } public class Implementation implements Contract { } public static Boolean run(Contract value) { return value instanceof Implementation; } }`,
+		Oracle:     "accept",
+	},
+	{
+		ID:         "APEX-RELEASE-MERGE-ACCOUNT-ID-COLLECTION",
+		Area:       "dml",
+		APIVersion: 67,
+		SourceKind: "class",
+		Source:     `public class Probe { public static void run(Id masterId, List<Id> duplicateIds) { merge new Account(Id = masterId) new List<Id>(duplicateIds); } }`,
+		Oracle:     "accept",
+	},
+	{
+		ID:         "APEX-RELEASE-FINALLY-RETURN-REACHABILITY",
+		Area:       "statements",
+		APIVersion: 67,
+		SourceKind: "class",
+		Source:     `public class Probe { public static String run() { try { return 'try'; } catch (Exception ex) { return 'catch'; } finally { System.debug('flush'); } return 'fallback'; } }`,
+		Oracle:     "reject",
+	},
+}
+
 func scratchBackedRuleAreaCount(cases []scratchBackedRuleCase, area string) int {
 	count := 0
 	for _, rule := range cases {
