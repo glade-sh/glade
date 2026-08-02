@@ -2639,7 +2639,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.%s expects 0 arguments", method)
 			}
 			field := methodDescribeBoolField(method)
-			if value, ok := receiver.Fields[field]; ok && value.Kind == ValueBool {
+			if value, ok := receiver.Fields[field]; ok {
 				return value, receiver, false, true, nil
 			}
 			return Bool(false), receiver, false, true, nil

@@ -266,6 +266,86 @@ func sObjectFieldMapCanonicalSize(value Value) (int, bool) {
 	}
 	return len(seen), true
 }
+
+const fieldSetMapMarker = "__glade_field_set_map"
+
+func isFieldSetMapValue(value Value) bool {
+	if value.Kind != ValueMap {
+		return false
+	}
+	if strings.ReplaceAll(value.Type, " ", "") == "Map<String,Schema.FieldSet>" {
+		return true
+	}
+	if value.MapKeys == nil {
+		return false
+	}
+	marker, ok := value.MapKeys[fieldSetMapMarker]
+	return ok && marker.Kind == ValueBool && marker.Bool
+}
+
+func fieldSetMapCanonicalKeySet(value Value) (Value, bool) {
+	if !isFieldSetMapValue(value) {
+		return Null, false
+	}
+	out := Set()
+	out.Type = "Set<String>"
+	seen := map[string]bool{}
+	for _, rawKey := range orderedValueMapKeys(value) {
+		item := value.Map[rawKey]
+		name, ok := fieldSetMapCanonicalName(item)
+		if !ok || seen[strings.ToLower(name)] {
+			continue
+		}
+		seen[strings.ToLower(name)] = true
+		out.Set = append(out.Set, String(name))
+	}
+	return out, true
+}
+
+func fieldSetMapCanonicalValues(value Value) (Value, bool) {
+	if !isFieldSetMapValue(value) {
+		return Null, false
+	}
+	out := List()
+	out.Type = "List<Schema.FieldSet>"
+	seen := map[string]bool{}
+	for _, rawKey := range orderedValueMapKeys(value) {
+		item := value.Map[rawKey]
+		name, ok := fieldSetMapCanonicalName(item)
+		if !ok || seen[strings.ToLower(name)] {
+			continue
+		}
+		seen[strings.ToLower(name)] = true
+		out.List = append(out.List, item)
+	}
+	return out, true
+}
+
+func fieldSetMapCanonicalSize(value Value) (int, bool) {
+	if !isFieldSetMapValue(value) {
+		return 0, false
+	}
+	seen := map[string]bool{}
+	for _, item := range value.Map {
+		name, ok := fieldSetMapCanonicalName(item)
+		if ok {
+			seen[strings.ToLower(name)] = true
+		}
+	}
+	return len(seen), true
+}
+
+func fieldSetMapCanonicalName(value Value) (string, bool) {
+	if value.Kind != ValueObject || !strings.EqualFold(value.Type, "Schema.FieldSet") {
+		return "", false
+	}
+	name, ok := value.Fields["name"]
+	if !ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "" {
+		return "", false
+	}
+	return name.Text, true
+}
+
 func sObjectFieldMapCanonicalFieldName(value Value) (string, bool) {
 	if value.Kind != ValueObject || !strings.EqualFold(value.Type, "Schema.SObjectField") {
 		return "", false

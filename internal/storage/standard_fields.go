@@ -424,7 +424,10 @@ func standardFieldsForObject(objectName string) []Field {
 	case stringsHasSuffixFold(objectName, "__c"):
 		return []Field{
 			{APIName: "Name", Label: "Name", Type: FieldString},
+			{APIName: "IsDeleted", Label: "Deleted", Type: FieldBoolean, DefaultValue: "false", Required: true, Nillable: BoolFlag(false), DefaultedOnCreate: BoolFlag(true), Createable: BoolFlag(false), Updateable: BoolFlag(false), Filterable: BoolFlag(true), Groupable: BoolFlag(true), Sortable: BoolFlag(true), Aggregatable: BoolFlag(false), Permissionable: BoolFlag(false)},
 			{APIName: "LastActivityDate", Label: "Last Activity", Type: FieldDate, DisplayType: "DATE", Createable: BoolFlag(false), Updateable: BoolFlag(false), Permissionable: BoolFlag(false)},
+			{APIName: "LastReferencedDate", Label: "Last Referenced Date", Type: FieldDateTime, DisplayType: "DATETIME", Nillable: BoolFlag(true), Createable: BoolFlag(false), Updateable: BoolFlag(false), Filterable: BoolFlag(true), Groupable: BoolFlag(false), Sortable: BoolFlag(true), Aggregatable: BoolFlag(true), Permissionable: BoolFlag(false)},
+			{APIName: "LastViewedDate", Label: "Last Viewed Date", Type: FieldDateTime, DisplayType: "DATETIME", Nillable: BoolFlag(true), Createable: BoolFlag(false), Updateable: BoolFlag(false), Filterable: BoolFlag(true), Groupable: BoolFlag(false), Sortable: BoolFlag(true), Aggregatable: BoolFlag(true), Permissionable: BoolFlag(false)},
 			{APIName: "RecordTypeId", Label: "Record Type ID", Type: FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},
 		}
 	default:

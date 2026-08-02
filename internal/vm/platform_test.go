@@ -13631,7 +13631,7 @@ opts.DuplicateRuleHeader.RunAsCurrentUser = true;
 opts.AssignmentRuleHeader.UseDefaultRule = true;
 opts.AssignmentRuleHeader.AssignmentRuleId = '01Q000000000001';
 Object locale = opts.LocaleOptions;
-System.assertNotEquals(null, locale);
+System.assertEquals(null, locale);
 
 Object copied = opts.clone();
 System.assertEquals(false, copied.OptAllOrNone, 'cloned OptAllOrNone');
@@ -13785,7 +13785,7 @@ System.assertEquals(0, merged.getErrors().size());
 Database.UndeleteResult activeUndelete = Database.undelete(base, false);
 System.assert(!activeUndelete.isSuccess());
 System.assertEquals(inserted.getId(), activeUndelete.getId());
-System.assertEquals('ENTITY_IS_NOT_DELETED', activeUndelete.getErrors().get(0).getStatusCode());
+System.assertEquals('UNDELETE_FAILED', activeUndelete.getErrors().get(0).getStatusCode());
 
 Account recycle = new Account(Name = 'Recycle');
 insert recycle;
@@ -13913,7 +13913,7 @@ insert a;
 Database.UndeleteResult active = Database.undelete(a, false);
 System.assert(!active.isSuccess());
 System.assertEquals(a.Id, active.getId());
-System.assertEquals('ENTITY_IS_NOT_DELETED', active.getErrors().get(0).getStatusCode());
+System.assertEquals('UNDELETE_FAILED', active.getErrors().get(0).getStatusCode());
 Database.DeleteResult deleted = Database.delete(a, false);
 System.assert(deleted.isSuccess());
 System.assertEquals(a.Id, deleted.getId());
@@ -14001,7 +14001,7 @@ System.assert(restored.isSuccess());
 System.assertEquals(deleted.Id, restored.getId());
 System.assert(!activeResult.isSuccess());
 System.assertEquals(active.Id, activeResult.getId());
-System.assertEquals('ENTITY_IS_NOT_DELETED', activeResult.getErrors().get(0).getStatusCode());
+System.assertEquals('UNDELETE_FAILED', activeResult.getErrors().get(0).getStatusCode());
 System.assert(!missingResult.isSuccess());
 System.assertEquals('001999999999999', missingResult.getId());
 System.assertEquals('ENTITY_IS_DELETED', missingResult.getErrors().get(0).getStatusCode());
@@ -14019,7 +14019,7 @@ try {
 } catch (DmlException e) {
 	caught = true;
 	System.assert(e.getMessage().contains('Database.undelete failed'));
-	System.assert(e.getMessage().contains('not deleted'));
+	System.assert(e.getMessage().contains('recycle bin'));
 }
 System.assert(caught);
 List<Account> rolledBack = [SELECT Id, IsDeleted FROM Account WHERE Id = :deleted.Id ALL ROWS];

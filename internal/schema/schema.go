@@ -52,6 +52,7 @@ type Field struct {
 	Label                         string             `json:"label,omitempty"`
 	InlineHelpText                string             `json:"inlineHelpText,omitempty"`
 	Type                          string             `json:"type,omitempty"`
+	DisplayFormat                 string             `json:"displayFormat,omitempty"`
 	Length                        int                `json:"length,omitempty"`
 	Precision                     int                `json:"precision,omitempty"`
 	Scale                         int                `json:"scale,omitempty"`
@@ -164,6 +165,7 @@ type customFieldXML struct {
 	Label                 string             `xml:"label"`
 	InlineHelpText        string             `xml:"inlineHelpText"`
 	Type                  string             `xml:"type"`
+	DisplayFormat         string             `xml:"displayFormat"`
 	Length                int                `xml:"length"`
 	Precision             int                `xml:"precision"`
 	Scale                 int                `xml:"scale"`
@@ -674,6 +676,7 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		Label:                         raw.Label,
 		InlineHelpText:                strings.TrimSpace(raw.InlineHelpText),
 		Type:                          raw.Type,
+		DisplayFormat:                 strings.TrimSpace(raw.DisplayFormat),
 		Length:                        raw.Length,
 		Precision:                     raw.Precision,
 		Scale:                         raw.Scale,

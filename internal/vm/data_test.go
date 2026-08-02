@@ -5514,14 +5514,14 @@ System.assertEquals(false, describe.isMergeable());
 System.assertEquals(true, describe.isMruEnabled());
 System.assertEquals(true, describe.isUndeletable());
 System.assertEquals(false, describe.isDeprecatedAndHidden());
-System.assertEquals(false, describe.getDataTranslationEnabled());
+System.assertEquals(null, describe.getDataTranslationEnabled());
 System.assertEquals(null, describe.getDefaultImplementation());
 System.assertEquals(false, describe.getHasSubtypes());
 System.assertEquals(null, describe.getImplementedBy());
 System.assertEquals(null, describe.getImplementsInterfaces());
 System.assertEquals(false, describe.getIsInterface());
 System.assertEquals(Account.SObjectType, describe.getSobjectType());
-System.assertEquals(SObjectDescribeOptions.FULL, describe.getSObjectDescribeOption());
+System.assertEquals(SObjectDescribeOptions.DEFERRED, describe.getSObjectDescribeOption());
 Schema.DescribeSObjectResult deferredDescribe = Account.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED);
 System.assertEquals(SObjectDescribeOptions.DEFERRED, deferredDescribe.getSObjectDescribeOption());
 `)
@@ -5909,13 +5909,13 @@ func TestExecDescribeFieldNumericAndTextMetadata(t *testing.T) {
 Schema.DescribeFieldResult amount = Account.Amount__c.getDescribe();
 System.assertEquals(12, amount.getPrecision());
 System.assertEquals(2, amount.getScale());
-System.assertEquals(12, amount.getDigits());
+System.assertEquals(0, amount.getDigits());
 System.assertEquals(0, amount.getLength());
 System.assert(!amount.isHtmlFormatted());
 System.assert(amount.isSortable());
 Schema.DescribeFieldResult notes = Account.Notes__c.getDescribe();
 System.assertEquals(1024, notes.getLength());
-System.assertEquals(1024, notes.getByteLength());
+System.assertEquals(3072, notes.getByteLength());
 System.assertEquals(1024, Schema.SObjectType.Account.fields.Notes__c.getLength());
 System.assertEquals(0, notes.getPrecision());
 System.assertEquals(0, notes.getScale());
@@ -5948,7 +5948,7 @@ System.assertEquals('External Id Help', external.getInlineHelpText());
 System.assertEquals('External_Id__c', external.getLocalName());
 System.assertEquals(Account.External_Id__c, external.getSObjectField());
 System.assertEquals(null, external.getReferenceTargetField());
-System.assertEquals(0, external.getRelationshipOrder());
+System.assertEquals(null, external.getRelationshipOrder());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -7625,7 +7625,7 @@ System.assertNotEquals(null, individual.getRecordTypeId());
 func TestExecSObjectTypeRecordTypeInfosByNameForCustomObject(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String,Object> byName = Schema.SObjectType.Batch__c.getRecordTypeInfosByName();
-System.assertEquals(3, byName.size());
+System.assertEquals(4, byName.size());
 Object scheduled = byName.get('Scheduled Batch');
 System.assertEquals('Scheduled Batch', scheduled.getName());
 System.assertEquals('Scheduled', scheduled.getDeveloperName());
@@ -8616,7 +8616,7 @@ System.assertEquals('Coupon', product.RecordType.Name);
 func TestExecSObjectTypeRecordTypeInfosByNameEmptyForCustomObject(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String,Object> byName = Schema.SObjectType.Batch__c.getRecordTypeInfosByName();
-System.assertEquals(0, byName.size());
+System.assertEquals(1, byName.size());
 System.assertEquals(null, byName.get('Scheduled Batch'));
 `)
 	if err != nil {
@@ -14732,7 +14732,7 @@ System.assertEquals(3, partial.size());
 System.assertEquals('REQUIRED_FIELD_MISSING', partial.get(0).getErrors().get(0).getStatusCode());
 System.assertEquals('Name', partial.get(0).getErrors().get(0).getFields().get(0));
 System.assertEquals('DUPLICATE_VALUE', partial.get(1).getErrors().get(0).getStatusCode());
-System.assertEquals('Code__c', partial.get(1).getErrors().get(0).getFields().get(0));
+System.assertEquals(0, partial.get(1).getErrors().get(0).getFields().size());
 System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', partial.get(2).getErrors().get(0).getStatusCode());
 System.assertEquals('Name', partial.get(2).getErrors().get(0).getFields().get(0));
 
@@ -14751,7 +14751,7 @@ try {
 	System.assertEquals(null, e.getDmlId(0));
 	System.assertEquals(1, e.getDmlIndex(1));
 	System.assertEquals('DUPLICATE_VALUE', e.getDmlStatusCode(1));
-	System.assertEquals('Code__c', e.getDmlFields(1).get(0));
+	System.assertEquals(0, e.getDmlFields(1).size());
 	System.assertEquals(2, e.getDmlIndex(2));
 	System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', e.getDmlStatusCode(2));
 	System.assertEquals('Name', e.getDmlFields(2).get(0));

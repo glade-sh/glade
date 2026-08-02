@@ -404,8 +404,8 @@ func newDatabaseDMLOptions() Value {
 	options.Fields["DuplicateRuleHeader"] = options.Fields["duplicateRuleHeader"]
 	options.Fields["emailHeader"] = newDatabaseHeaderObject("Database.EmailHeader")
 	options.Fields["EmailHeader"] = options.Fields["emailHeader"]
-	options.Fields["localeOptions"] = Object("Database.LocaleOptions")
-	options.Fields["LocaleOptions"] = options.Fields["localeOptions"]
+	options.Fields["localeOptions"] = Null
+	options.Fields["LocaleOptions"] = Null
 	options.Fields["localizeErrors"] = Bool(false)
 	options.Fields["LocalizeErrors"] = options.Fields["localizeErrors"]
 	options.Fields["optAllOrNone"] = Bool(false)
@@ -1045,7 +1045,11 @@ func databaseCursorFetch(receiver Value, method string, args []Value, deleted bo
 	}
 	out := Object("Database.CursorFetchResult")
 	out.Fields["records"] = page
-	out.Fields["nextIndex"] = Int(int64(end))
+	nextIndex := end
+	if end >= len(records.List) {
+		nextIndex = 0
+	}
+	out.Fields["nextIndex"] = Int(int64(nextIndex))
 	out.Fields["numDeletedRecords"] = Int(0)
 	out.Fields["done"] = Bool(end >= len(records.List))
 	return out, receiver, false, true, nil

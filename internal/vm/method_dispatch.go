@@ -3316,6 +3316,9 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if out, ok := vm.sObjectFieldMapCanonicalKeySet(receiver); ok {
 			return out, true, nil
 		}
+		if out, ok := fieldSetMapCanonicalKeySet(receiver); ok {
+			return out, true, nil
+		}
 		out := Set()
 		for _, rawKey := range orderedValueMapKeys(receiver) {
 			out.Set = append(out.Set, mapStoredKey(receiver, rawKey))
@@ -3334,6 +3337,9 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if out, ok := sObjectFieldMapCanonicalValues(receiver); ok {
 			return out, true, nil
 		}
+		if out, ok := fieldSetMapCanonicalValues(receiver); ok {
+			return out, true, nil
+		}
 		out := List()
 		for _, key := range orderedValueMapKeys(receiver) {
 			out.List = append(out.List, receiver.Map[key])
@@ -3349,12 +3355,18 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if size, ok := sObjectFieldMapCanonicalSize(receiver); ok {
 			return Int(int64(size)), true, nil
 		}
+		if size, ok := fieldSetMapCanonicalSize(receiver); ok {
+			return Int(int64(size)), true, nil
+		}
 		return Int(int64(len(receiver.Map))), true, nil
 	case "isEmpty":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Map.isEmpty expects 0 arguments")
 		}
 		if size, ok := sObjectFieldMapCanonicalSize(receiver); ok {
+			return Bool(size == 0), true, nil
+		}
+		if size, ok := fieldSetMapCanonicalSize(receiver); ok {
 			return Bool(size == 0), true, nil
 		}
 		return Bool(len(receiver.Map) == 0), true, nil
