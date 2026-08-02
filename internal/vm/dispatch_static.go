@@ -312,7 +312,6 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"sfsqlquery.SqlTester.clearMocks", "sfsqlquery.SqlTester.enqueueMockRows", "sfsqlquery.SqlTester.setMockRows", "sfsqlquery.SqlTester.setMockMetadata",
 		"sfsqlquery.SqlTester.isRunningTest", "sfsqlquery.QueryHandle.create", "sfsqlquery.SqlStatement.create",
 		"WebServiceCallout.invoke",
-		"Address.newInstance",
 		"CURRENCY.newInstance",
 		"Collator.getInstance",
 		"Test.setCreatedDate", "Test.setFixedSearchResults", "Test.startTest", "Test.stopTest", "Test.getStandardPricebookId",

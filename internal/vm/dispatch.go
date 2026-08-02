@@ -1894,6 +1894,9 @@ platformStaticCall:
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Schema.SObjectField") {
 			return Null, jsonDeserializeException("Type cannot be serialized")
 		}
+		if isIteratorValue(args[0]) {
+			return Null, jsonDeserializeException("Apex Type unsupported in JSON: system.ListIterator")
+		}
 		data, err := jsonMarshalNoEscape(vm.jsonFromValueForSerialize(args[0], suppressNulls))
 		if err != nil {
 			return Null, jsonDeserializeException("%s", err.Error())
@@ -1909,6 +1912,9 @@ platformStaticCall:
 		}
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Schema.SObjectField") {
 			return Null, jsonDeserializeException("Type cannot be serialized")
+		}
+		if isIteratorValue(args[0]) {
+			return Null, jsonDeserializeException("Apex Type unsupported in JSON: system.ListIterator")
 		}
 		data, err := jsonMarshalNoEscapeIndent(vm.jsonFromValueForSerialize(args[0], suppressNulls), "", "  ")
 		if err != nil {
@@ -2900,11 +2906,6 @@ platformStaticCall:
 			return Null, fmt.Errorf("Location.newInstance expects latitude and longitude")
 		}
 		return newLocation(args[0], args[1]), nil
-	case "Address.newInstance":
-		if len(args) != 0 {
-			return Null, fmt.Errorf("Address.newInstance expects 0 arguments")
-		}
-		return Object("Address"), nil
 	case "Location.getDistance":
 		if len(args) != 3 || args[0].Kind != ValueObject || args[1].Kind != ValueObject || args[2].Kind != ValueString {
 			return Null, fmt.Errorf("Location.getDistance expects two Locations and unit String")

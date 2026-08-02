@@ -8947,28 +8947,6 @@ System.assertEquals('Austin', queriedAddress.getCity());
 	}
 }
 
-func TestExecAddressFluentSettersPopulateComponents(t *testing.T) {
-	program, err := CompileAnonymous(`
-Address address = Address.newInstance()
-    .withStreet('12 Lake Road')
-    .withCity('Port Alsworth')
-    .withState('Alaska')
-    .withPostalCode('99653')
-    .withCountry('United States');
-System.assertEquals('12 Lake Road', address.getStreet());
-System.assertEquals('Port Alsworth', address.getCity());
-System.assertEquals('Alaska', address.getState());
-System.assertEquals('99653', address.getPostalCode());
-System.assertEquals('United States', address.getCountry());
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := Execute(program, nil); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestExecNamespacedAddressClassWinsOverPlatformAddressForUnqualifiedStaticCall(t *testing.T) {
 	newInstanceProgram, err := CompileAnonymous(`
 Address address = new Address();
@@ -8981,8 +8959,6 @@ return address;
 	runProgram, err := CompileAnonymous(`
 Address custom = Address.newInstance();
 System.assertEquals('custom', custom.Street);
-System.Address platformAddress = System.Address.newInstance();
-System.assertEquals(null, platformAddress.getStreet());
 `)
 	if err != nil {
 		t.Fatal(err)
