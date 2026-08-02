@@ -6770,6 +6770,13 @@ func TestConstructBareRuntimeVersionDoesNotResolveToGeneratedNestedType(t *testi
 	}
 }
 
+func TestConstructPackageVersionRejectsConstruction(t *testing.T) {
+	machine := New(nil)
+	if _, err := machine.constructValue("Package.Version", []Value{Int(1), Int(19)}, nil, &Result{}); err == nil {
+		t.Fatal("Package.Version construction succeeded, want Salesforce API 67 rejection")
+	}
+}
+
 func TestConstructBareStandardSObjectDoesNotResolveToGeneratedNestedType(t *testing.T) {
 	machine := New(nil)
 	if err := machine.RegisterClass(Class{Name: "ConnectApi.Task"}); err != nil {

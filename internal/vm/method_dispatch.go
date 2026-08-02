@@ -1356,7 +1356,7 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"to15", "getSObjectType",
 		"toStartOfMonth", "toEndOfMonth", "format", "formatGmt", "toString",
 		"date", "dateGmt", "time", "timeGmt", "year", "month", "day", "getTime",
-		"addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds", "addMilliseconds",
+		"addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds",
 		"daysBetween", "monthsBetween", "isSameDay", "dayOfYear", "daysInMonth", "isLeapYear",
 		"equals", "hashCode", "newInstance", "isAssignableFrom", "getNamespace", "getPackageName",
 		"send", "toExternalForm", "getProtocol", "getHost", "getAuthority",

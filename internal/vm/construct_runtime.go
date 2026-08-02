@@ -624,7 +624,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			jwt.Fields[field] = value
 		}
 		return jwt, nil
-	case "Version", "Package.Version":
+	case "Package.Version":
+		return Null, fmt.Errorf("Package.Version cannot be constructed")
+	case "Version":
 		if len(args) != 2 && len(args) != 3 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("Version constructor expects major, minor[, patch]")
 		}

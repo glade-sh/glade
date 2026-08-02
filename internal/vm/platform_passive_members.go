@@ -2077,6 +2077,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				if method == "toString" {
 					return String(t.UTC().Format("2006-01-02 15:04:05")), receiver, false, true, nil
 				}
+				if method == "formatGmt" {
+					return Null, receiver, false, true, fmt.Errorf("Datetime.formatGmt expects pattern String")
+				}
 				if method == "format" {
 					_, _, local, _, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), t)
 					if !ok {
@@ -2172,7 +2175,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				t = t.UTC()
 			}
 			return platformScalar("Time", formatPlatformTimeWithMillis(t.Hour(), t.Minute(), t.Second(), t.Nanosecond()/int(time.Millisecond))), receiver, false, true, nil
-		case "addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds", "addMilliseconds":
+		case "addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds":
 			if len(args) != 1 || args[0].Kind != ValueInt {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects Integer", method)
 			}
@@ -2197,8 +2200,6 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				t = t.Add(time.Duration(amount) * time.Minute)
 			case "addSeconds":
 				t = t.Add(time.Duration(amount) * time.Second)
-			case "addMilliseconds":
-				t = t.Add(time.Duration(amount) * time.Millisecond)
 			}
 			return platformScalar("Datetime", formatPlatformDatetime(t)), receiver, false, true, nil
 		case "year", "month", "day", "hour", "minute", "second", "millisecond", "dayOfYear",

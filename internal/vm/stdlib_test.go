@@ -4235,9 +4235,6 @@ System.assertEquals('1.2', new Version(1, 2).toString());
 System.assertEquals(0, new Version(1, 95).compareTo(new Version(1, 95, 16)));
 System.assertEquals(0, new Version(1, 95, 16).compareTo(new Version(1, 95)));
 System.assert(new Version(1, 24).compareTo(new Version(1, 95, 16)) < 0);
-Package.Version packageVersion = new Package.Version(1, 19);
-System.assertEquals('1.19', packageVersion.toString());
-System.assertEquals(0, packageVersion.compareTo(new Package.Version(1, 19, 7)));
 `)
 	if err != nil {
 		t.Fatal(err)

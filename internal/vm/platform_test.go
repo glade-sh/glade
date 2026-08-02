@@ -13233,9 +13233,6 @@ System.assertEquals('2024-02-29 23:59:58', parsedGmt.formatGmt('yyyy-MM-dd HH:mm
 Datetime fractionalGmt = Datetime.valueOfGmt('2024-02-29T23:59:58.250Z');
 System.assertEquals('2024-02-29 23:59:58', fractionalGmt.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals(0, fractionalGmt.millisecond());
-Datetime plusMillis = fractionalGmt.addMilliseconds(750);
-System.assertEquals('2024-02-29 23:59:58.750', plusMillis.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'));
-System.assertEquals(750, plusMillis.millisecond());
 
 Time clock = Time.newInstance(23, 59, 58, 250);
 System.assertEquals(23, clock.hour());
@@ -13397,10 +13394,10 @@ System.assertEquals(0, localValue.millisecond());
 
 func TestExecDatetimePatternFormatting(t *testing.T) {
 	program, err := CompileAnonymous(`
-Datetime stamp = Datetime.newInstanceGmt(2024, 2, 29, 23, 5, 6).addMilliseconds(250);
-System.assertEquals('2024-02-29 23:05:06.250 +0000 UTC', stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS Z z'));
+Datetime stamp = Datetime.newInstanceGmt(2024, 2, 29, 23, 5, 6);
+System.assertEquals('2024-02-29 23:05:06.000 +0000 UTC', stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS Z z'));
 System.assertEquals('Thu, Feb 29 2024 11:05 PM', stamp.formatGmt('EEE, MMM d yyyy h:mm a'));
-System.assertEquals('2024-03-01 04:35:06.250 +0530 GMT+05:30', stamp.format('yyyy-MM-dd HH:mm:ss.SSS Z z', 'GMT+05:30'));
+System.assertEquals('2024-03-01 04:35:06.000 +0530 GMT+05:30', stamp.format('yyyy-MM-dd HH:mm:ss.SSS Z z', 'GMT+05:30'));
 System.assertEquals('2024-02-29T21:05:06', stamp.format('yyyy-MM-dd''T''HH:mm:ss', 'UTC-02:00'));
 System.assertEquals('2024-03-01 13:05:06 +1400 GMT+14:00', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'GMT+14:00'));
 System.assertEquals('2024-02-29 15:05:06 -0800 PST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Los_Angeles'));
@@ -14202,30 +14199,20 @@ System.assertEquals('USER_MODE', scoped.name());
 	}
 }
 
-func TestExecRunAsPackageVersionScopesTestContext(t *testing.T) {
-	program, err := CompileAnonymous(`
-Package.Version v = new Package.Version(1, 2, 3);
-System.runAs(v) {
-	System.assertEquals('1.2.3', String.valueOf(v));
-}
-System.runAs(new User(Id = '005000000000999'), v) {
-	System.assertEquals('005000000000999', UserInfo.getUserId());
-}
-System.assertEquals('system', UserInfo.getUserId());
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	machine := New(nil)
-	machine.EnableTestContext()
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
-	}
-	if machine.testContext.PackageRunAsDepth != 0 {
-		t.Fatalf("PackageRunAsDepth = %d, want restored 0", machine.testContext.PackageRunAsDepth)
-	}
-	if machine.testContext.CurrentPackageVersion.Kind != "" {
-		t.Fatalf("CurrentPackageVersion = %#v, want restored zero value", machine.testContext.CurrentPackageVersion)
+func TestExecDatetimeRejectsAPI67UnsupportedShapes(t *testing.T) {
+	for name, source := range map[string]string{
+		"formatGmt without pattern": `Datetime value = Datetime.newInstanceGmt(2026, 8, 2, 1, 2, 3); value.formatGmt();`,
+		"addMilliseconds":            `Datetime value = Datetime.newInstanceGmt(2026, 8, 2, 1, 2, 3); value.addMilliseconds(1);`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			program, err := CompileAnonymous(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Execute(program, nil); err == nil {
+				t.Fatal("API 67-rejected Datetime shape executed locally")
+			}
+		})
 	}
 }
 

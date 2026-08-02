@@ -1623,7 +1623,7 @@ public class UsesDates {
     Datetime stampFromParts = Datetime.newInstance(today, Time.newInstance(1, 2, 3, 0));
     Datetime gmtStamp = Datetime.newInstanceGmt(2026, 5, 7, 1, 2, 3);
     Datetime parsedStamp = Datetime.valueOfGmt('2026-05-07T01:02:03Z');
-    Datetime later = stamp.addDays(1).addHours(2).addMinutes(3).addSeconds(4).addMilliseconds(5);
+    Datetime later = stamp.addDays(1).addHours(2).addMinutes(3).addSeconds(4);
     Date localDate = later.date();
     Date gmtDate = later.dateGmt();
     Time localTime = later.time();

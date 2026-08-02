@@ -48,14 +48,18 @@ func TestPackageVersionClassShapesMatchAPI67(t *testing.T) {
 		})
 	}
 
-	rejected := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
-		"CB102_Constructor.cls": `public class CB102_Constructor {
-    public static void run() {
-        Object sink = new Package.Version();
-    }
-}`,
-	}, "67.0")
-	if !rejected.HasErrors() {
-		t.Fatal("API 67 accepted rejected Package.Version zero-argument constructor")
+	for name, source := range map[string]string{
+		"zero-argument":  `Object sink = new Package.Version();`,
+		"two-argument":   `Object sink = new Package.Version(1, 95);`,
+		"three-argument": `Object sink = new Package.Version(1, 95, 16);`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			rejected := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+				"CB102_Constructor.cls": "public class CB102_Constructor { public static void run() { " + source + " } }",
+			}, "67.0")
+			if !rejected.HasErrors() {
+				t.Fatalf("API 67 accepted rejected Package.Version %s constructor", name)
+			}
+		})
 	}
 }
