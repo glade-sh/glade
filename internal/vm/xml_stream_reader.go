@@ -28,6 +28,7 @@ func newXmlStreamReader(text string) (Value, error) {
 	reader.Fields["index"] = Int(0)
 	reader.Fields["coalescing"] = Bool(false)
 	reader.Fields["namespaceAware"] = Bool(true)
+	reader.Fields["version"] = xmlStreamReaderDeclaredVersion(tokens)
 	return reader, nil
 }
 
@@ -428,9 +429,42 @@ func xmlStreamReaderCurrentString(receiver Value, method string) Value {
 			return String(target.Text)
 		}
 	case "getVersion":
+		if version, ok := receiver.Fields["version"]; ok {
+			return version
+		}
 		return Null
 	}
 	return String("")
+}
+
+func xmlStreamReaderDeclaredVersion(tokens []Value) Value {
+	for _, token := range tokens {
+		if token.Kind != ValueObject {
+			continue
+		}
+		target, targetOK := token.Fields["piTarget"]
+		data, dataOK := token.Fields["piData"]
+		if !targetOK || target.Kind != ValueString || target.Text != "xml" || !dataOK || data.Kind != ValueString {
+			continue
+		}
+		declaration := strings.TrimSpace(data.Text)
+		if !strings.HasPrefix(declaration, "version") {
+			continue
+		}
+		declaration = strings.TrimSpace(strings.TrimPrefix(declaration, "version"))
+		if !strings.HasPrefix(declaration, "=") {
+			continue
+		}
+		declaration = strings.TrimSpace(strings.TrimPrefix(declaration, "="))
+		if len(declaration) < 2 || (declaration[0] != '\'' && declaration[0] != '"') {
+			continue
+		}
+		end := strings.IndexByte(declaration[1:], declaration[0])
+		if end >= 0 {
+			return String(declaration[1 : end+1])
+		}
+	}
+	return Null
 }
 
 func xmlStreamReaderBoolNoArgs(receiver Value, args []Value, method string, value bool) (Value, Value, bool, bool, error) {

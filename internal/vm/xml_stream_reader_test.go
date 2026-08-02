@@ -38,6 +38,19 @@ System.assertEquals('child', reader.getLocalName());
 	}
 }
 
+func TestExecXmlStreamReaderReturnsDeclaredVersion(t *testing.T) {
+	program, err := CompileAnonymous(`
+XmlStreamReader reader = new XmlStreamReader('<?xml version="1.0"?><root/>');
+System.assertEquals('1.0', reader.getVersion());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecXmlStreamReaderSafeDefaultsAndCaseInsensitiveMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 XmlStreamReader reader = new XmlStreamReader('<root/>');
