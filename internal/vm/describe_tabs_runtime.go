@@ -205,6 +205,11 @@ func (vm *VM) schemaDescribeDataCategoryGroups(sobjects Value) Value {
 	}
 	return out
 }
+
+func (vm *VM) hasDataCategoryMetadata() bool {
+	return vm != nil && vm.Org != nil && len(vm.Org.Metadata.DataCategoryGroups) > 0
+}
+
 func (vm *VM) schemaDescribeDataCategoryGroupStructures(pairs Value, topCategoriesOnly bool) Value {
 	out := typedList("List<Schema.DescribeDataCategoryGroupStructureResult>")
 	if vm.Org == nil {

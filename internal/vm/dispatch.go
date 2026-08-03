@@ -2027,6 +2027,12 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, fmt.Errorf("Schema.describeDataCategoryGroups expects List<String>")
 		}
+		if len(args[0].List) > 0 && !vm.hasDataCategoryMetadata() {
+			return Null, newExceptionError(
+				"System.InvalidParameterValueException",
+				"No data category groups are configured for this org",
+			)
+		}
 		describes := vm.schemaDescribeDataCategoryGroups(args[0])
 		appendTraceLazy(result, "apex.describe.dataCategoryGroups", "apex.describe", func() map[string]any {
 			return vm.traceDescribeArgs("describeDataCategoryGroups", map[string]any{
@@ -2037,6 +2043,12 @@ platformStaticCall:
 	case "Schema.describeDataCategoryGroupStructures":
 		if len(args) != 2 || args[0].Kind != ValueList || args[1].Kind != ValueBool {
 			return Null, fmt.Errorf("Schema.describeDataCategoryGroupStructures expects List<Schema.DataCategoryGroupSobjectTypePair> and Boolean")
+		}
+		if len(args[0].List) > 0 && !vm.hasDataCategoryMetadata() {
+			return Null, newExceptionError(
+				"System.NullPointerException",
+				"No data category groups are configured for this org",
+			)
 		}
 		describes := vm.schemaDescribeDataCategoryGroupStructures(args[0], args[1].Bool)
 		appendTraceLazy(result, "apex.describe.dataCategoryGroupStructures", "apex.describe", func() map[string]any {
