@@ -432,6 +432,79 @@ func TestStandardPlatformSymbolsMatchAPI67ExceptionConstructorVisibility(t *test
 	}
 }
 
+func TestStandardPlatformSymbolsMatchAPI67ReportsConstructorVisibility(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	// API 67 rejects no-arg constructors on these 29 Reports types.
+	hiddenNoArg := []string{
+		"reports.AggregateColumn",
+		"reports.DetailColumn",
+		"reports.Dimension",
+		"reports.FilterOperator",
+		"reports.FilterValue",
+		"reports.GroupingColumn",
+		"reports.GroupingValue",
+		"reports.ReportCurrency",
+		"reports.ReportDataCell",
+		"reports.ReportDescribeResult",
+		"reports.ReportDetailRow",
+		"reports.ReportDivisionInfo",
+		"reports.ReportExtendedMetadata",
+		"reports.ReportFact",
+		"reports.ReportFactWithDetails",
+		"reports.ReportFactWithSummaries",
+		"reports.ReportInstance",
+		"reports.ReportInstanceAttributes",
+		"reports.ReportResults",
+		"reports.ReportScopeInfo",
+		"reports.ReportScopeValue",
+		"reports.ReportTypeColumn",
+		"reports.ReportTypeColumnCategory",
+		"reports.ReportTypeMetadata",
+		"reports.StandardDateFilterDuration",
+		"reports.StandardDateFilterDurationGroup",
+		"reports.StandardFilterInfo",
+		"reports.StandardFilterInfoPicklist",
+		"reports.SummaryValue",
+	}
+	for _, name := range hiddenNoArg {
+		sym := requireStandardSymbol(t, symbols, name)
+		sigs := standardConstructorSignatures(sym)
+		if len(sigs) != 0 {
+			t.Fatalf("%s constructors = %#v, want no constructors", name, sigs)
+		}
+	}
+
+	// The eight permitted no-arg Report constructors remain accepted.
+	permittedNoArg := []string{
+		"reports.BucketField",
+		"reports.BucketFieldValue",
+		"reports.ReportCsf",
+		"reports.ReportFilter",
+		"reports.ReportManager",
+		"reports.ReportMetadata",
+		"reports.ReportType",
+		"reports.SortColumn",
+	}
+	for _, name := range permittedNoArg {
+		sym := requireStandardSymbol(t, symbols, name)
+		sigs := standardConstructorSignatures(sym)
+		if len(sigs) == 0 {
+			t.Fatalf("%s has no constructors, want at least no-arg constructor", name)
+		}
+		hasNoArg := false
+		for _, sig := range sigs {
+			if sig == "" {
+				hasNoArg = true
+				break
+			}
+		}
+		if !hasNoArg {
+			t.Fatalf("%s constructors = %#v, missing no-arg constructor", name, sigs)
+		}
+	}
+}
+
 func TestStandardPlatformSymbolsSelectOptionHasOnlyDocumentedConstructors(t *testing.T) {
 	selectOption := requireStandardSymbol(t, StandardPlatformSymbols(), "SelectOption")
 	want := [][]string{{"String", "String"}, {"String", "String", "Boolean"}}

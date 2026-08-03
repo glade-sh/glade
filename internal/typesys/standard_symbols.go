@@ -1537,6 +1537,38 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "join", ReturnType: "String", Parameters: []string{"Set<Object>", "String"}, Static: true},
 		{Name: "template", ReturnType: "String", Parameters: []string{"Map"}},
 	}},
+	// API 67 rejects no-arg constructors on these 29 Reports
+	// types. They are returned by runtime methods; Apex code cannot
+	// instantiate them directly.
+	{Name: "reports.AggregateColumn", ReplaceConstructors: true},
+	{Name: "reports.DetailColumn", ReplaceConstructors: true},
+	{Name: "reports.Dimension", ReplaceConstructors: true},
+	{Name: "reports.FilterOperator", ReplaceConstructors: true},
+	{Name: "reports.FilterValue", ReplaceConstructors: true},
+	{Name: "reports.GroupingColumn", ReplaceConstructors: true},
+	{Name: "reports.GroupingValue", ReplaceConstructors: true},
+	{Name: "reports.ReportCurrency", ReplaceConstructors: true},
+	{Name: "reports.ReportDataCell", ReplaceConstructors: true},
+	{Name: "reports.ReportDescribeResult", ReplaceConstructors: true},
+	{Name: "reports.ReportDetailRow", ReplaceConstructors: true},
+	{Name: "reports.ReportDivisionInfo", ReplaceConstructors: true},
+	{Name: "reports.ReportExtendedMetadata", ReplaceConstructors: true},
+	{Name: "reports.ReportFact", ReplaceConstructors: true},
+	{Name: "reports.ReportFactWithDetails", ReplaceConstructors: true},
+	{Name: "reports.ReportFactWithSummaries", ReplaceConstructors: true},
+	{Name: "reports.ReportInstance", ReplaceConstructors: true},
+	{Name: "reports.ReportInstanceAttributes", ReplaceConstructors: true},
+	{Name: "reports.ReportResults", ReplaceConstructors: true},
+	{Name: "reports.ReportScopeInfo", ReplaceConstructors: true},
+	{Name: "reports.ReportScopeValue", ReplaceConstructors: true},
+	{Name: "reports.ReportTypeColumn", ReplaceConstructors: true},
+	{Name: "reports.ReportTypeColumnCategory", ReplaceConstructors: true},
+	{Name: "reports.ReportTypeMetadata", ReplaceConstructors: true},
+	{Name: "reports.StandardDateFilterDuration", ReplaceConstructors: true},
+	{Name: "reports.StandardDateFilterDurationGroup", ReplaceConstructors: true},
+	{Name: "reports.StandardFilterInfo", ReplaceConstructors: true},
+	{Name: "reports.StandardFilterInfoPicklist", ReplaceConstructors: true},
+	{Name: "reports.SummaryValue", ReplaceConstructors: true},
 }
 
 func standardAssertMethods() []StandardMethodSpec {
