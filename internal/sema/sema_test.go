@@ -11111,6 +11111,30 @@ public class SOQL {
 	}
 }
 
+func TestAnalyzeNestedPlatformInterfaceImplementation(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "CB112_MessagingNotificationHandlerTest.cls"), `
+public class CB112_MessagingNotificationHandlerTest {
+  public class NotificationHandler implements Messaging.NotificationActionHandler {
+    public Messaging.ActionResult executeAction(Messaging.ActionableNotification notification) {
+      return null;
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "CB112_MessagingNotificationHandlerTest.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA017" {
+			t.Fatalf("nested platform interface implementation was rejected: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzePlatformOverrideSignatures(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

@@ -810,6 +810,13 @@ function applyGeneratedCompatibilityOverrides(specs) {
 		inboundEmailHandler.constructors = [];
 	}
 
+	const notificationActionHandler = byName.get("messaging.notificationactionhandler");
+	if (notificationActionHandler) {
+		notificationActionHandler.kind = "DeclarationInterface";
+		notificationActionHandler.superClass = "";
+		notificationActionHandler.constructors = [];
+	}
+
 	const unsupportedOperationException = byName.get("unsupportedoperationexception");
 	if (unsupportedOperationException) {
 		unsupportedOperationException.superClass = "Exception";

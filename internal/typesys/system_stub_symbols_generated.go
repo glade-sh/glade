@@ -114469,11 +114469,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 	},
 	{
-		Name:       "Messaging.NotificationActionHandler",
-		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
+		Name: "Messaging.NotificationActionHandler",
+		Kind: apexast.DeclarationInterface,
 		Methods: []StandardMethodSpec{
 			{Name: "executeAction", ReturnType: "Messaging.ActionResult", ParameterSpecs: []StandardParameterSpec{{Name: "param1", Type: "Messaging.ActionableNotification"}}},
 		},
