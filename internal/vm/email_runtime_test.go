@@ -9,10 +9,10 @@ import (
 func TestExecMessagingSingleEmailMessageGettersCanonicalize15CharacterIDs(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage();
-message.setOrgWideEmailAddressId(Id.valueOf('0D2000000000001'));
-message.setTargetObjectId(Id.valueOf('003000000000001'));
-message.setTemplateId(Id.valueOf('00X000000000001'));
-message.setWhatId(Id.valueOf('001000000000001'));
+message.setOrgWideEmailAddressId('0D2000000000001');
+message.setTargetObjectId('003000000000001');
+message.setTemplateId('00X000000000001');
+message.setWhatId('001000000000001');
 System.assertEquals('0D2000000000001CAA', String.valueOf(message.getOrgWideEmailAddressId()));
 System.assertEquals('003000000000001AAA', String.valueOf(message.getTargetObjectId()));
 System.assertEquals('00X000000000001EAA', String.valueOf(message.getTemplateId()));

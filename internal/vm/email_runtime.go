@@ -1284,6 +1284,8 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 		value := args[0]
 		if idText, ok := typedIDValueText(value); ok {
 			value = String(displayIDText(idText))
+		} else if value.Kind == ValueString && singleEmailIDSetter(method) {
+			value = String(displayIDText(value.Text))
 		}
 		receiver.Fields[emailMessageFieldName(method)] = value
 		return Null, receiver, true, true, nil
@@ -1326,6 +1328,15 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 		return receiver.Fields[emailMessageFieldName(method)], receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
+	}
+}
+
+func singleEmailIDSetter(method string) bool {
+	switch method {
+	case "setOrgWideEmailAddressId", "setTargetObjectId", "setTemplateId", "setWhatId":
+		return true
+	default:
+		return false
 	}
 }
 func callMassEmailMessageMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
