@@ -70,6 +70,33 @@ public class VoidExpressionAssignment {
 	}
 }
 
+func TestPublicCorpusRejectsVoidMethodAsArgumentValue(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "VoidExpressionArgument.cls"), `
+public class VoidExpressionArgument {
+  public void doNothing() {}
+  public String getValue() { return 'value'; }
+  public void consume(Object value) {}
+  public void run() {
+    consume(doNothing());
+    consume(getValue());
+    doNothing();
+  }
+}
+`)
+	result := analyzePublicCorpusFiles(t, root, "VoidExpressionArgument.cls")
+	var argumentDiagnostics []string
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA009" {
+			argumentDiagnostics = append(argumentDiagnostics, diag.Message)
+		}
+	}
+	if len(argumentDiagnostics) != 1 || argumentDiagnostics[0] != `method "run" has no matching overload for call "consume" with 1 argument(s)` {
+		t.Fatalf("void argument diagnostics = %#v, want one diagnostic for invalid argument; all diagnostics = %#v", argumentDiagnostics, result.Diagnostics)
+	}
+}
+
 func TestPublicCorpusNestedFluentReturnKeepsOwnerType(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

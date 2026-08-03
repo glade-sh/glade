@@ -1763,6 +1763,9 @@ func semaConversionScore(paramType, argType string, model *semaTypeMemberView) i
 	}
 	paramType = semaCanonicalAssignableType(paramType)
 	argType = semaCanonicalAssignableType(argType)
+	if strings.EqualFold(argType, "void") {
+		return -1
+	}
 	if strings.EqualFold(paramType, argType) {
 		return 1000
 	}
