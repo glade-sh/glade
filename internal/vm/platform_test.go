@@ -10743,6 +10743,48 @@ System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'Schedu
 	}
 }
 
+func TestExecScheduledApexWithExplicitFutureYearRemainsQueuedAtStopTest(t *testing.T) {
+	scheduledProgram, err := CompileAnonymous("ScheduledWorker.triggerId = context.getTriggerId();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+String scheduleId = System.schedule('far-future', '0 0 0 1 1 ? 2050', new ScheduledWorker());
+Test.stopTest();
+System.assertEquals(null, ScheduledWorker.triggerId);
+CronTrigger ct = [SELECT Id, State FROM CronTrigger WHERE Id = :scheduleId];
+System.assertEquals('Waiting', ct.State);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "ScheduledWorker",
+		Interfaces: []string{"Schedulable"},
+		StaticFields: map[string]Field{
+			"triggerId": {Name: "triggerId", Type: "String", Static: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{
+		Name:      "ScheduledWorker.execute",
+		ClassName: "ScheduledWorker",
+		Params:    []Param{{Name: "context", Type: "SchedulableContext"}},
+		Program:   scheduledProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecScheduledApexCronJobDetailUsesScheduledApexType(t *testing.T) {
 	program, err := CompileAnonymous(`
 String scheduleId = System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
