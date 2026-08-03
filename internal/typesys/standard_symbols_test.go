@@ -133,6 +133,34 @@ func TestGeneratedSystemStubSymbolsBusinessHoursUseApi67Signatures(t *testing.T)
 	}
 }
 
+func TestGeneratedSystemStubSymbolsSystemDebugUsesSalesforceSignatures(t *testing.T) {
+	var system *StandardSymbolSpec
+	for i := range systemStubSymbolSpecs {
+		if strings.EqualFold(systemStubSymbolSpecs[i].Name, "System") {
+			system = &systemStubSymbolSpecs[i]
+			break
+		}
+	}
+	if system == nil {
+		t.Fatal("missing generated System symbol spec")
+	}
+	for _, method := range system.Methods {
+		if !strings.EqualFold(method.Name, "debug") || !method.Static {
+			continue
+		}
+		params := method.ParameterSpecs
+		if len(params) == 0 && len(method.Parameters) > 0 {
+			params = make([]StandardParameterSpec, len(method.Parameters))
+			for i, typ := range method.Parameters {
+				params[i].Type = typ
+			}
+		}
+		if len(params) == 2 && strings.EqualFold(params[0].Type, "Object") && strings.EqualFold(params[1].Type, "Object") {
+			t.Fatalf("generated System.debug retains Salesforce-invalid Object,Object overload: %#v", method)
+		}
+	}
+}
+
 func TestStandardPlatformSymbolsBusinessHoursUseApi67Signatures(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 	businessHours := requireStandardSymbol(t, symbols, "BusinessHours")

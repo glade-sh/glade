@@ -143856,7 +143856,6 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "changeOwnPassword", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "oldPassword", Type: "String"}, {Name: "newPassword", Type: "String"}}, Static: true},
 			{Name: "currentPageReference", ReturnType: "PageReference", Static: true},
 			{Name: "currentTimeMillis", ReturnType: "Long", Static: true},
-			{Name: "debug", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "logLevel", Type: "Object"}, {Name: "o", Type: "Object"}}, Static: true},
 			{Name: "debug", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "o", Type: "Object"}}, Static: true},
 			{Name: "enqueueJob", ReturnType: "Id", ParameterSpecs: []StandardParameterSpec{{Name: "queueable", Type: "Object"}, {Name: "delay", Type: "Integer"}}, Static: true},
 			{Name: "enqueueJob", ReturnType: "Id", ParameterSpecs: []StandardParameterSpec{{Name: "queueable", Type: "Object"}, {Name: "asyncoptions", Type: "Object"}}, Static: true},
