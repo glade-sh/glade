@@ -396,7 +396,7 @@ func databaseAsyncLocatorValue(value Value) Value {
 
 func newDatabaseDMLOptions() Value {
 	options := Object("Database.DMLOptions")
-	options.Fields["allowFieldTruncation"] = Bool(false)
+	options.Fields["allowFieldTruncation"] = Null
 	options.Fields["AllowFieldTruncation"] = options.Fields["allowFieldTruncation"]
 	options.Fields["assignmentRuleHeader"] = newDatabaseHeaderObject("Database.AssignmentRuleHeader")
 	options.Fields["AssignmentRuleHeader"] = options.Fields["assignmentRuleHeader"]
@@ -406,7 +406,7 @@ func newDatabaseDMLOptions() Value {
 	options.Fields["EmailHeader"] = options.Fields["emailHeader"]
 	options.Fields["localeOptions"] = Null
 	options.Fields["LocaleOptions"] = Null
-	options.Fields["localizeErrors"] = Bool(false)
+	options.Fields["localizeErrors"] = Null
 	options.Fields["LocalizeErrors"] = options.Fields["localizeErrors"]
 	options.Fields["optAllOrNone"] = Null
 	options.Fields["OptAllOrNone"] = Null
