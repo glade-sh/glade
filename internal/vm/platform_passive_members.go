@@ -4416,7 +4416,7 @@ func (vm *VM) generatedPlatformPassiveDTOShape(generated generatedPlatformType) 
 			if method.IsStatic && strings.EqualFold(method.Name, "builder") && strings.HasSuffix(method.ReturnType, ".Builder") {
 				continue
 			}
-			if !method.IsStatic && (hasPrefixFold(method.Name, "get") || hasPrefixFold(method.Name, "is")) {
+			if !method.IsStatic && (hasPrefixFold(apexMethodMemberName(method.Name), "get") || hasPrefixFold(apexMethodMemberName(method.Name), "is")) {
 				hasDataShape = true
 			}
 			if generatedPlatformPassiveDTOMethod(method) {
