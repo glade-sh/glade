@@ -1575,6 +1575,20 @@ System.assert(base.getAsMap().containsKey('fullName'));
 	}
 }
 
+func TestMetadataDeployMessageProblemTypeUsesEnumType(t *testing.T) {
+	typ, ok := generatedPlatformTypes()["metadata.deploymessage"]
+	if !ok {
+		t.Fatal("missing generated Metadata.DeployMessage type")
+	}
+	field, ok := typ.Fields["problemType"]
+	if !ok {
+		t.Fatal("missing generated Metadata.DeployMessage.problemType field")
+	}
+	if field.Type != "Metadata.DeployProblemType" {
+		t.Fatalf("Metadata.DeployMessage.problemType field type = %q, want Metadata.DeployProblemType", field.Type)
+	}
+}
+
 func TestExecMetadataDeploymentUnsupportedItemType(t *testing.T) {
 	program, err := CompileAnonymous(`
 Metadata.DeployContainer container = new Metadata.DeployContainer();

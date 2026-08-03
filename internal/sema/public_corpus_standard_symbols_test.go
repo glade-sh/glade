@@ -52,6 +52,22 @@ public class PublicCorpusSymbols {
 	assertNoDiagnosticContaining(t, result, "GLADESEMA018", "errorStatusCode")
 }
 
+func TestPublicCorpusMetadataDeployProblemTypeAssignment(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "MetadataDeployProblemType.cls"), `
+public class MetadataDeployProblemType {
+  public void deployMessage() {
+    Metadata.DeployMessage message = new Metadata.DeployMessage();
+    message.problemType = Metadata.DeployProblemType.Info;
+    System.assertEquals(Metadata.DeployProblemType.Info, message.problemType);
+  }
+}
+`)
+	result := analyzeStandardSymbolProject(root, filepath.Join(root, "MetadataDeployProblemType.cls"))
+	assertNoDiagnosticContaining(t, result, "GLADESEMA018", "problemType")
+}
+
 func TestPublicCorpusSObjectFieldDirectBooleanAccessors(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

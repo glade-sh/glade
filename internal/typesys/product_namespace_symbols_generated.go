@@ -233,7 +233,7 @@ var productNamespaceSymbolSpecs = []StandardSymbolSpec{
 			{Name: "fileName", Type: "String"},
 			{Name: "fullName", Type: "String"},
 			{Name: "problem", Type: "String"},
-			{Name: "problemType", Type: "String"},
+			{Name: "problemType", Type: "Metadata.DeployProblemType"},
 			{Name: "success", Type: "Boolean"},
 		},
 	},
