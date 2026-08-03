@@ -115,6 +115,9 @@ func (v Value) String() string {
 		if strings.EqualFold(v.Type, "AccessLevel") {
 			return accessLevelString(v)
 		}
+		if text, ok := databaseDTOString(v, make(map[uint64]bool)); ok {
+			return text
+		}
 		if stubbedType, ok := stubProxyTypeName(v); ok {
 			return fmt.Sprintf("%s__sfdc_ApexStub:%d", stubbedType, v.Ref)
 		}
@@ -234,6 +237,9 @@ func objectFieldsString(v Value, seen map[uint64]bool) (string, bool) {
 	if v.Kind != ValueObject || len(v.Fields) == 0 {
 		return "", false
 	}
+	if text, ok := databaseDTOString(v, seen); ok {
+		return text, true
+	}
 	if v.Ref != 0 {
 		if seen[v.Ref] {
 			return fmt.Sprintf("%s:{...}", v.Type), true
@@ -251,6 +257,79 @@ func objectFieldsString(v Value, seen map[uint64]bool) (string, bool) {
 		parts = append(parts, key+"="+valueStringWithSeen(v.Fields[key], seen))
 	}
 	return fmt.Sprintf("%s:{%s}", v.Type, strings.Join(parts, ", ")), true
+}
+
+func databaseDTOString(v Value, seen map[uint64]bool) (string, bool) {
+	switch strings.ToLower(v.Type) {
+	case "database.assignmentruleheader", "assignmentruleheader":
+		return "AssignmentRuleHeader:[AssignmentRuleId=" + databaseDTOFieldString(v, "AssignmentRuleId") +
+			", UseDefaultRule=" + databaseDTOFieldString(v, "UseDefaultRule") + "]", true
+	case "database.duplicateruleheader", "duplicateruleheader":
+		return "DuplicateRuleHeader:[AllowSave=" + databaseDTOFieldString(v, "AllowSave") +
+			", RunAsCurrentUser=" + databaseDTOFieldString(v, "RunAsCurrentUser") + "]", true
+	case "database.emailheader", "emailheader":
+		return "EmailHeader:[TriggerAutoResponseEmail=" + databaseDTOFieldString(v, "TriggerAutoResponseEmail") +
+			", TriggerOtherEmail=" + databaseDTOFieldString(v, "TriggerOtherEmail") +
+			", TriggerUserEmail=" + databaseDTOFieldString(v, "TriggerUserEmail") + "]", true
+	case "database.dmloptions", "dmloptions":
+		return "DMLOptions:[AllowFieldTruncation=" + databaseDTOOuterFieldString(v, "AllowFieldTruncation") +
+			", AssignmentRuleHeader=" + databaseDTOOuterFieldString(v, "AssignmentRuleHeader") +
+			", DuplicateRuleHeader=" + databaseDTOOuterFieldString(v, "DuplicateRuleHeader") +
+			", EmailHeader=" + databaseDTOOuterFieldString(v, "EmailHeader") +
+			", LocaleOptions=" + databaseDTOOuterFieldString(v, "LocaleOptions") +
+			", LocalizeErrors=" + databaseDTOOuterFieldString(v, "LocalizeErrors") +
+			", OptAllOrNone=" + databaseDTOOuterFieldString(v, "OptAllOrNone") + "]", true
+	default:
+		return "", false
+	}
+}
+
+func databaseDTOField(v Value, field string) (Value, bool) {
+	if value, ok := v.Fields[field]; ok {
+		return value, true
+	}
+	for name, value := range v.Fields {
+		if strings.EqualFold(name, field) {
+			return value, true
+		}
+	}
+	return Null, false
+}
+
+func databaseDTOFieldString(v Value, field string) string {
+	value, ok := databaseDTOField(v, field)
+	if !ok {
+		return "null"
+	}
+	return value.String()
+}
+
+func databaseDTOOuterFieldString(v Value, field string) string {
+	value, ok := databaseDTOField(v, field)
+	if !ok || value.Kind == ValueNull {
+		return "null"
+	}
+	if value.Kind == ValueObject {
+		if databaseDTOObjectIsDefault(value) {
+			return "null"
+		}
+		if text, ok := databaseDTOString(value, make(map[uint64]bool)); ok {
+			return text
+		}
+	}
+	return value.String()
+}
+
+func databaseDTOObjectIsDefault(v Value) bool {
+	if v.Kind != ValueObject || len(v.Fields) == 0 {
+		return false
+	}
+	for _, value := range v.Fields {
+		if value.Kind != ValueNull {
+			return false
+		}
+	}
+	return true
 }
 
 func valueStringWithSeen(v Value, seen map[uint64]bool) string {

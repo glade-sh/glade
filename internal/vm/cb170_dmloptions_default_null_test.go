@@ -7,6 +7,10 @@ import (
 func TestCB170NewDMLOptionsOptAllOrNoneDefaultsToNull(t *testing.T) {
 	program, err := CompileAnonymous(`
 Database.DMLOptions opts = new Database.DMLOptions();
+System.assertEquals('DMLOptions:[AllowFieldTruncation=null, AssignmentRuleHeader=null, DuplicateRuleHeader=null, EmailHeader=null, LocaleOptions=null, LocalizeErrors=null, OptAllOrNone=null]', String.valueOf(opts), 'Salesforce DMLOptions display');
+System.assertEquals('AssignmentRuleHeader:[AssignmentRuleId=null, UseDefaultRule=null]', String.valueOf(opts.AssignmentRuleHeader), 'Salesforce AssignmentRuleHeader display');
+System.assertEquals('DuplicateRuleHeader:[AllowSave=null, RunAsCurrentUser=null]', String.valueOf(opts.DuplicateRuleHeader), 'Salesforce DuplicateRuleHeader display');
+System.assertEquals('EmailHeader:[TriggerAutoResponseEmail=null, TriggerOtherEmail=null, TriggerUserEmail=null]', String.valueOf(opts.EmailHeader), 'Salesforce EmailHeader display');
 System.assertEquals(null, opts.optAllOrNone, 'default optAllOrNone lower');
 System.assertEquals(null, opts.OptAllOrNone, 'default OptAllOrNone upper');
 System.assertEquals(null, opts.allowFieldTruncation, 'default allowFieldTruncation lower');
