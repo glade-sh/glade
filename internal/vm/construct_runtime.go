@@ -3591,6 +3591,7 @@ var builtinExceptionParents = map[string]string{
 	"NoSuchElementException":          "Exception",
 	"NullPointerException":            "Exception",
 	"PatternSyntaxException":          "IllegalArgumentException",
+	"ProcedureException":              "Exception",
 	"QueryException":                  "Exception",
 	"RequiredFeatureMissingException": "Exception",
 	"SearchException":                 "Exception",

@@ -6,6 +6,26 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+func TestExecMessagingSingleEmailMessageGettersCanonicalize15CharacterIDs(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage();
+message.setOrgWideEmailAddressId(Id.valueOf('0D2000000000001'));
+message.setTargetObjectId(Id.valueOf('003000000000001'));
+message.setTemplateId(Id.valueOf('00X000000000001'));
+message.setWhatId(Id.valueOf('001000000000001'));
+System.assertEquals('0D2000000000001CAA', String.valueOf(message.getOrgWideEmailAddressId()));
+System.assertEquals('003000000000001AAA', String.valueOf(message.getTargetObjectId()));
+System.assertEquals('00X000000000001EAA', String.valueOf(message.getTemplateId()));
+System.assertEquals('001000000000001AAA', String.valueOf(message.getWhatId()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMessagingRenderStoredEmailTemplateFullLocalAttachments(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage withBody = Messaging.renderStoredEmailTemplate(

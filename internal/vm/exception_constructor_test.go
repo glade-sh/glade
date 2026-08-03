@@ -2,6 +2,18 @@ package vm
 
 import "testing"
 
+func TestExecProcedureExceptionGetTypeNameIsSystemQualified(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('System.ProcedureException', new ProcedureException().getTypeName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func registerCustomException(t *testing.T, machine *VM, name string) {
 	t.Helper()
 	if err := machine.RegisterClass(Class{Name: name, SuperClass: "Exception"}); err != nil {

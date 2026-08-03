@@ -1283,7 +1283,7 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 		}
 		value := args[0]
 		if idText, ok := typedIDValueText(value); ok {
-			value = String(idText)
+			value = String(displayIDText(idText))
 		}
 		receiver.Fields[emailMessageFieldName(method)] = value
 		return Null, receiver, true, true, nil
