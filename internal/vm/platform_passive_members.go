@@ -3233,6 +3233,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			receiver.Fields["components"] = filtered
 			return Bool(removed), receiver, removed, true, nil
 		}
+	case "Metadata.DeployCallbackContext":
+		if method != "getCallbackJobId" {
+			break
+		}
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Metadata.DeployCallbackContext.getCallbackJobId expects 0 arguments")
+		}
+		if jobID, ok := receiver.Fields["__callbackJobId"]; ok {
+			return jobID, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
 	case "Messaging.SendEmailResult":
 		switch method {
 		case "isSuccess":

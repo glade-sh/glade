@@ -420,7 +420,12 @@ func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, er
 		return Null, fmt.Errorf("Metadata.Operations.enqueueDeployment expects DeployContainer and DeployCallback")
 	}
 	if args[1].Kind != ValueNull {
-		return Null, unsupportedCallError("Metadata.Operations.enqueueDeployment deploy callback invocation")
+		if args[1].Kind != ValueObject || !vm.typeAssignableTo(args[1].Type, "Metadata.DeployCallback") {
+			return Null, fmt.Errorf("Metadata.Operations.enqueueDeployment expects DeployCallback or null")
+		}
+		if _, err := vm.metadataDeploymentCallbackMethod(args[1]); err != nil {
+			return Null, err
+		}
 	}
 	deploymentID := "0Af000000000001"
 	items := args[0].Fields["components"]
@@ -431,6 +436,9 @@ func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, er
 			"components":   0,
 			"success":      true,
 		})
+		if err := vm.invokeMetadataDeploymentCallback(args[1], deploymentID, result); err != nil {
+			return Null, err
+		}
 		return platformScalar("Id", deploymentID), nil
 	}
 	if items.Kind != ValueList {
@@ -456,6 +464,9 @@ func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, er
 				"success":      false,
 				"error":        err.Error(),
 			})
+			if callbackErr := vm.invokeMetadataDeploymentCallback(args[1], deploymentID, result); callbackErr != nil {
+				return Null, callbackErr
+			}
 			return platformScalar("Id", deploymentID), nil
 		}
 	}
@@ -467,7 +478,43 @@ func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, er
 		"components":   len(items.List),
 		"success":      true,
 	})
+	if err := vm.invokeMetadataDeploymentCallback(args[1], deploymentID, result); err != nil {
+		return Null, err
+	}
 	return platformScalar("Id", deploymentID), nil
+}
+
+func (vm *VM) metadataDeploymentCallbackMethod(callback Value) (Method, error) {
+	method, ok, ambiguous := vm.resolveInstanceMethodForArgs(
+		callback.Type,
+		"handleResult",
+		[]Value{Object("Metadata.DeployResult"), Object("Metadata.DeployCallbackContext")},
+	)
+	if ambiguous {
+		return Method{}, vm.ambiguousOverloadError(callback.Type+".handleResult", []Value{Object("Metadata.DeployResult"), Object("Metadata.DeployCallbackContext")})
+	}
+	if !ok {
+		return Method{}, fmt.Errorf("Metadata.DeployCallback %s has no handleResult method", callback.Type)
+	}
+	return method, nil
+}
+
+func (vm *VM) invokeMetadataDeploymentCallback(callback Value, deploymentID string, result *Result) error {
+	if callback.Kind == ValueNull {
+		return nil
+	}
+	method, err := vm.metadataDeploymentCallbackMethod(callback)
+	if err != nil {
+		return err
+	}
+	deployResult, ok := vm.metadataDeploys[deploymentID]
+	if !ok {
+		return fmt.Errorf("Metadata.Operations.enqueueDeployment missing local result %s", deploymentID)
+	}
+	context := Object("Metadata.DeployCallbackContext")
+	context.Fields["__callbackJobId"] = platformScalar("Id", deploymentID)
+	_, err = vm.callMethodWithReceiver(method, callback, []Value{cloneMetadataDeployResult(deployResult), context}, result)
+	return err
 }
 
 func (vm *VM) metadataCheckDeployStatus(args []Value, result *Result) (Value, error) {
