@@ -299,6 +299,14 @@ func databaseDTOString(v Value, seen map[uint64]bool) (string, bool) {
 			";isSendNotificationEmail=" + databaseDTOBooleanString(v, "sendNotificationEmail") + ";]", true
 	case "database.querylocator", "querylocator":
 		return "Database.QueryLocator[Query=" + databaseDTOFieldString(v, "Query") + "]", true
+	case "schema.recordtypeinfo", "recordtypeinfo":
+		return "Schema.RecordTypeInfo[getDeveloperName=" + databaseDTOFieldString(v, "developerName") +
+			";getName=" + databaseDTOFieldString(v, "name") +
+			";getRecordTypeId=" + databaseDTOFieldString(v, "recordTypeId") +
+			";isActive=" + databaseDTOBooleanString(v, "active") +
+			";isAvailable=" + databaseDTOBooleanString(v, "available") +
+			";isDefaultRecordTypeMapping=" + databaseDTOBooleanString(v, "defaultRecordTypeMapping") +
+			";isMaster=" + databaseDTOBooleanString(v, "master") + ";]", true
 	default:
 		return "", false
 	}

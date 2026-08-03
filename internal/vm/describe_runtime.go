@@ -270,7 +270,13 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	desc.Fields["searchable"] = Bool(vm.currentUserObjectPermission(name, "isSearchable"))
 	desc.Fields["customSetting"] = Bool(storage.IsCustomSettingDefinition(definition))
 	desc.Fields["custom"] = Bool(isCustomObjectLikeName(definition.APIName))
-	desc.Fields["feedEnabled"] = Bool(false)
+	feedEnabled := describeMetadataBoolValue(definition.Metadata, "feedEnabled", false)
+	if _, explicit := definition.Metadata["feedEnabled"]; !explicit {
+		if value, ok := storage.StandardObjectMetadata(name, "feedEnabled"); ok {
+			feedEnabled = describeMetadataBoolValue(map[string]string{"feedEnabled": value}, "feedEnabled", false)
+		}
+	}
+	desc.Fields["feedEnabled"] = feedEnabled
 	desc.Fields["mergeable"] = describeMetadataBoolValue(definition.Metadata, "mergeable", false)
 	desc.Fields["mruEnabled"] = Bool(true)
 	desc.Fields["undeletable"] = Bool(true)

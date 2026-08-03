@@ -721,6 +721,25 @@ func StandardObjectDefinition(objectName string) (ObjectDefinition, bool) {
 	return definition, true
 }
 
+// StandardObjectMetadata returns a catalog-backed object metadata value
+// without mutating the runtime definition. This keeps optional describe
+// properties separate from the field/record-type overlay.
+func StandardObjectMetadata(objectName, key string) (string, bool) {
+	canonical, ok := ResolveKnownStandardObjectName(objectName)
+	if !ok {
+		return "", false
+	}
+	if key == "feedEnabled" && stringsEqualFold(canonical, "Account") {
+		return "true", true
+	}
+	entry, ok := standardObjectCatalogEntryForName(canonical)
+	if !ok || entry.Definition.Metadata == nil {
+		return "", false
+	}
+	value, ok := entry.Definition.Metadata[key]
+	return value, ok
+}
+
 func mergeStandardObjectDefinition(definition *ObjectDefinition, features []string) {
 	entry, ok := standardObjectCatalogEntryForName(definition.APIName)
 	if !ok {
@@ -749,8 +768,20 @@ func mergeStandardObjectDefinition(definition *ObjectDefinition, features []stri
 		if feature == "" {
 			continue
 		}
+		if feature == "PersonAccounts" && stringsEqualFold(definition.APIName, "Account") {
+			for i := range definition.RecordTypes {
+				if stringsEqualFold(definition.RecordTypes[i].DeveloperName, "Master") {
+					definition.RecordTypes[i].Default = false
+				}
+			}
+		}
 		mergeStandardFields(definition, entry.FeatureFields[feature])
 		mergeStandardRecordTypes(definition, entry.FeatureRecordTypes[feature])
+	}
+	if stringsEqualFold(definition.APIName, "Account") && len(definition.RecordTypes) == 1 &&
+		stringsEqualFold(definition.RecordTypes[0].DeveloperName, "Master") &&
+		!hasCanonicalFeature(features, "PersonAccounts") {
+		definition.RecordTypes[0].Default = true
 	}
 	enrichStandardFieldsFromV2Describe(definition)
 }

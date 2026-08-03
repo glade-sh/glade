@@ -5508,7 +5508,7 @@ func TestExecDescribeSObjectResultStubBackedAccessors(t *testing.T) {
 Schema.DescribeSObjectResult describe = Account.SObjectType.getDescribe();
 System.assertEquals('Account', describe.getLocalName());
 System.assertEquals(0, describe.getFieldSets().getMap().size());
-System.assertEquals(false, describe.isFeedEnabled());
+System.assertEquals(true, describe.isFeedEnabled());
 System.assertEquals(false, Schema.SObjectType.User.isFeedEnabled());
 System.assertEquals(true, describe.isMergeable());
 System.assertEquals(false, Case.SObjectType.getDescribe().isMergeable());

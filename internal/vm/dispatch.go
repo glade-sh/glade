@@ -1023,6 +1023,9 @@ platformStaticCall:
 		if args[0].Kind == ValueNull {
 			return Value{Kind: ValueNull, Type: "String"}, nil
 		}
+		if args[0].Kind == ValueMap {
+			return String(apexCollectionString(args[0])), nil
+		}
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Date") {
 			text, err := stringValueOfDate(args[0])
 			if err != nil {
