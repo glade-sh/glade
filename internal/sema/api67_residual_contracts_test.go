@@ -98,6 +98,17 @@ func TestAPI67ResidualPreservesCanonicalSurfaces(t *testing.T) {
 	}
 }
 
+func TestAPI67ResidualRejectsRemovedSiteURLHelpers(t *testing.T) {
+	for _, method := range []string{"getCurrentSiteUrl", "getCustomWebAddress", "getPrefix"} {
+		t.Run(method, func(t *testing.T) {
+			result := AnalyzeAnonymous(typesys.Index{}, "Site."+method+"();")
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA028") {
+				t.Fatalf("accepted removed Site.%s: %#v", method, result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestCB68RejectsThreeAcquiredNonSurfaces(t *testing.T) {
 	tests := map[string]string{
 		"Approval constructor":                    `new Approval();`,

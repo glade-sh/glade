@@ -134,6 +134,14 @@ func semaAPI67RejectedPlatformCall(receiverType, method, receiverMode string) bo
 		case "geterror", "geterrormessage", "geterrortypename", "getresult", "issuccess":
 			return true
 		}
+	case "site":
+		// These legacy Site URL helpers were removed from Salesforce after
+		// API version 29.0. Keep the generated legacy shape for evidence and
+		// versioned catalogs, but reject calls in the current API boundary.
+		switch method {
+		case "getcurrentsiteurl", "getcustomwebaddress", "getprefix":
+			return true
+		}
 	}
 	return false
 }
