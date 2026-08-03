@@ -246,9 +246,11 @@ func (vm *VM) executeDatabaseAsyncDML(op string, args []Value, result *Result) (
 	dmlArgs := []Value{args[0]}
 	if len(args) >= 2 {
 		if isDatabaseAllowCalloutsValue(args[1]) {
-			return Null, unsupportedCallError("Database." + op + "Async AllowCallouts overload local async callout surface")
-		}
-		if isAsyncDMLCallbackCandidate(args[1]) {
+			if len(args) != 3 || !isDatabaseAccessLevelValue(args[2]) {
+				return Null, fmt.Errorf("Database.%sAsync AllowCallouts overload expects AccessLevel", op)
+			}
+			dmlArgs = append(dmlArgs, args[2])
+		} else if isAsyncDMLCallbackCandidate(args[1]) {
 			if err := vm.validateAsyncDMLCallbackValue(op, args[1]); err != nil {
 				return Null, err
 			}
