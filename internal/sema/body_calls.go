@@ -1859,6 +1859,9 @@ func semaNumericConversionScore(paramType, argType string) int {
 func semaAssignableToType(paramType, argType string, model *semaTypeMemberView) bool {
 	paramType = semaCanonicalAssignableType(paramType)
 	argType = semaCanonicalAssignableType(argType)
+	if strings.EqualFold(argType, "void") {
+		return false
+	}
 	if strings.EqualFold(argType, "Database.QueryResult") {
 		return semaDynamicQueryResultAssignableTo(paramType, model)
 	}
