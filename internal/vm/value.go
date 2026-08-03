@@ -279,6 +279,26 @@ func databaseDTOString(v Value, seen map[uint64]bool) (string, bool) {
 			", LocaleOptions=" + databaseDTOOuterFieldString(v, "LocaleOptions") +
 			", LocalizeErrors=" + databaseDTOOuterFieldString(v, "LocalizeErrors") +
 			", OptAllOrNone=" + databaseDTOOuterFieldString(v, "OptAllOrNone") + "]", true
+	case "database.leadconvert", "leadconvert":
+		return "Database.LeadConvert[getAccountId=" + databaseDTOFieldString(v, "accountId") +
+			";getAccountRecord=" + databaseDTOFieldString(v, "accountRecord") +
+			";getBypassAccountDedupeCheck=" + databaseDTOFieldString(v, "bypassAccountDedupeCheck") +
+			";getBypassContactDedupeCheck=" + databaseDTOFieldString(v, "bypassContactDedupeCheck") +
+			";getContactId=" + databaseDTOFieldString(v, "contactId") +
+			";getContactRecord=" + databaseDTOFieldString(v, "contactRecord") +
+			";getConvertedStatus=" + databaseDTOFieldString(v, "convertedStatus") +
+			";getLeadId=" + databaseDTOFieldString(v, "leadId") +
+			";getOpportunityId=" + databaseDTOFieldString(v, "opportunityId") +
+			";getOpportunityName=" + databaseDTOFieldString(v, "opportunityName") +
+			";getOpportunityRecord=" + databaseDTOFieldString(v, "opportunityRecord") +
+			";getOwnerId=" + databaseDTOFieldString(v, "ownerId") +
+			";getRelatedPersonAccountId=" + databaseDTOFieldString(v, "relatedPersonAccountId") +
+			";getRelatedPersonAccountRecord=" + databaseDTOFieldString(v, "relatedPersonAccountRecord") +
+			";isDoNotCreateOpportunity=" + databaseDTOBooleanString(v, "doNotCreateOpportunity") +
+			";isOverwriteLeadSource=" + databaseDTOBooleanString(v, "overwriteLeadSource") +
+			";isSendNotificationEmail=" + databaseDTOBooleanString(v, "sendNotificationEmail") + ";]", true
+	case "database.querylocator", "querylocator":
+		return "Database.QueryLocator[Query=" + databaseDTOFieldString(v, "Query") + "]", true
 	default:
 		return "", false
 	}
@@ -300,6 +320,14 @@ func databaseDTOFieldString(v Value, field string) string {
 	value, ok := databaseDTOField(v, field)
 	if !ok {
 		return "null"
+	}
+	return value.String()
+}
+
+func databaseDTOBooleanString(v Value, field string) string {
+	value, ok := databaseDTOField(v, field)
+	if !ok || value.Kind == ValueNull {
+		return "false"
 	}
 	return value.String()
 }

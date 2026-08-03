@@ -33,3 +33,21 @@ System.assertEquals(null, opts.EmailHeader.TriggerUserEmail, 'default user email
 		t.Fatal(err)
 	}
 }
+
+func TestCB236DatabaseDTODisplayContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.LeadConvert convert = new Database.LeadConvert();
+System.assertEquals('Database.LeadConvert[getAccountId=null;getAccountRecord=null;getBypassAccountDedupeCheck=null;getBypassContactDedupeCheck=null;getContactId=null;getContactRecord=null;getConvertedStatus=null;getLeadId=null;getOpportunityId=null;getOpportunityName=null;getOpportunityRecord=null;getOwnerId=null;getRelatedPersonAccountId=null;getRelatedPersonAccountRecord=null;isDoNotCreateOpportunity=false;isOverwriteLeadSource=false;isSendNotificationEmail=false;]', String.valueOf(convert), 'Salesforce LeadConvert display');
+Database.QueryLocator locator = Database.getQueryLocator('SELECT Id FROM Account LIMIT 1');
+System.assertEquals('Database.QueryLocator[Query=SELECT Id FROM Account LIMIT 1]', String.valueOf(locator), 'Salesforce QueryLocator display');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
