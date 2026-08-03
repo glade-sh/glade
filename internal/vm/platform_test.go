@@ -9049,37 +9049,6 @@ System.assertEquals(true, rows.get(0).get('IsDeleted'));
 	}
 }
 
-func TestExecDatabaseAsyncDMLAllowCalloutsOverloadsMirrorLocalDML(t *testing.T) {
-	program, err := CompileAnonymous(`
-Database.SaveResult inserted = Database.insertAsync(new Account(Name = 'AllowCallouts object insert'), Database.AllowCallouts.ALLOW, AccessLevel.SYSTEM_MODE);
-System.assert(inserted.isSuccess());
-List<Database.SaveResult> insertedMany = Database.insertAsync(new List<Account>{new Account(Name = 'AllowCallouts list insert')}, Database.AllowCallouts.ALLOW, AccessLevel.SYSTEM_MODE);
-System.assertEquals(1, insertedMany.size());
-System.assert(insertedMany.get(0).isSuccess());
-
-Database.SaveResult updated = Database.updateAsync(new Account(Id = inserted.getId(), Name = 'AllowCallouts object update'), Database.AllowCallouts.ALLOW, AccessLevel.SYSTEM_MODE);
-System.assert(updated.isSuccess());
-List<Database.SaveResult> updatedMany = Database.updateAsync(new List<Account>{new Account(Id = insertedMany.get(0).getId(), Name = 'AllowCallouts list update')}, Database.AllowCallouts.ALLOW, AccessLevel.SYSTEM_MODE);
-System.assertEquals(1, updatedMany.size());
-System.assert(updatedMany.get(0).isSuccess());
-
-Database.DeleteResult deleted = Database.deleteAsync(new Account(Id = inserted.getId()), Database.AllowCallouts.ALLOW, AccessLevel.SYSTEM_MODE);
-System.assert(deleted.isSuccess());
-List<Database.DeleteResult> deletedMany = Database.deleteAsync(new List<Account>{new Account(Id = insertedMany.get(0).getId())}, Database.AllowCallouts.ALLOW, AccessLevel.SYSTEM_MODE);
-System.assertEquals(1, deletedMany.size());
-System.assert(deletedMany.get(0).isSuccess());
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	machine := New(nil)
-	org := testDataOrg()
-	machine.SetOrg(&org)
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestExecDatabaseAsyncDMLRejectsNonCallbackBeforeMutation(t *testing.T) {
 	program, err := CompileAnonymous(`
 Database.insertAsync(new Account(Name = 'Bad Callback'), new Account(Name = 'Not Callback'));

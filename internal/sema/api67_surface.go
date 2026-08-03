@@ -73,6 +73,8 @@ func semaAPI67RejectedPlatformType(typeName string) bool {
 	case "messaging.sendemailoptions",
 		"system.messaging.sendemailoptions",
 		"system.messaging.singleemailmessage",
+		"database.allowcallouts",
+		"system.database.allowcallouts",
 		"database.lockresult",
 		"database.unlockresult",
 		"system.database.lockresult",
@@ -176,6 +178,9 @@ func semaAPI67RejectedPlatformField(path string) bool {
 	}
 	receiver := strings.TrimSpace(path[:dot])
 	field := normalizeName(path[dot+1:])
+	if strings.EqualFold(receiver, "Database.AllowCallouts") || strings.EqualFold(receiver, "System.Database.AllowCallouts") {
+		return true
+	}
 	if strings.EqualFold(receiver, "System.Pattern") {
 		receiver = "Pattern"
 	}

@@ -896,13 +896,9 @@ func TestStandardPlatformSymbolsIncludeDataSourceCompileShapes(t *testing.T) {
 	for _, method := range []string{"insertAsync", "updateAsync"} {
 		requireStandardMethod(t, database, method, []string{"Object", "AccessLevel"}, true)
 		requireStandardMethod(t, database, method, []string{"List<Object>", "AccessLevel"}, true)
-		requireStandardMethod(t, database, method, []string{"Object", "Database.AllowCallouts", "AccessLevel"}, true)
-		requireStandardMethod(t, database, method, []string{"List<Object>", "Database.AllowCallouts", "AccessLevel"}, true)
 	}
 	requireStandardMethod(t, database, "deleteAsync", []string{"Object", "AccessLevel"}, true)
 	requireStandardMethod(t, database, "deleteAsync", []string{"List<Object>", "AccessLevel"}, true)
-	requireStandardMethod(t, database, "deleteAsync", []string{"Object", "Database.AllowCallouts", "AccessLevel"}, true)
-	requireStandardMethod(t, database, "deleteAsync", []string{"List<Object>", "Database.AllowCallouts", "AccessLevel"}, true)
 }
 
 func TestStandardPlatformSymbolsIncludeDatabaseAccessLevelAliasShapes(t *testing.T) {

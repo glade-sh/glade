@@ -109,6 +109,22 @@ func TestAPI67ResidualRejectsRemovedSiteURLHelpers(t *testing.T) {
 	}
 }
 
+func TestAPI67ResidualRejectsInvalidDatabaseAllowCalloutsType(t *testing.T) {
+	for _, source := range []string{
+		`Database.insertAsync(new Account(Name = 'callout'), Database.AllowCallouts.ALLOW, AccessLevel.SYSTEM_MODE);`,
+		`Database.insertAsync(new List<Account>{new Account(Name = 'callout')}, Database.AllowCallouts.ALLOW, AccessLevel.SYSTEM_MODE);`,
+		`Database.updateAsync(new Account(Id = '001000000000001AAA'), Database.AllowCallouts.ALLOW, AccessLevel.SYSTEM_MODE);`,
+		`Database.updateAsync(new List<Account>{new Account(Id = '001000000000001AAA')}, Database.AllowCallouts.ALLOW, AccessLevel.SYSTEM_MODE);`,
+		`Database.deleteAsync(new Account(Id = '001000000000001AAA'), Database.AllowCallouts.ALLOW, AccessLevel.SYSTEM_MODE);`,
+		`Database.deleteAsync(new List<Account>{new Account(Id = '001000000000001AAA')}, Database.AllowCallouts.ALLOW, AccessLevel.SYSTEM_MODE);`,
+	} {
+		result := AnalyzeAnonymous(typesys.Index{}, source)
+		if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA028") {
+			t.Fatalf("accepted invalid Database.AllowCallouts type in %q: %#v", source, result.Diagnostics)
+		}
+	}
+}
+
 func TestCB68RejectsThreeAcquiredNonSurfaces(t *testing.T) {
 	tests := map[string]string{
 		"Approval constructor":                    `new Approval();`,
