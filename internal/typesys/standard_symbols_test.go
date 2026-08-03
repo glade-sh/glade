@@ -161,6 +161,27 @@ func TestGeneratedSystemStubSymbolsSystemDebugUsesSalesforceSignatures(t *testin
 	}
 }
 
+func TestStandardPlatformSymbolsDataWeaveMatchesSalesforceCompileShape(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	for _, name := range []string{"DataWeave.Script", "DataWeave.Result"} {
+		symbol := requireStandardSymbol(t, symbols, name)
+		for _, member := range symbol.Members {
+			if member.Kind == apexast.DeclarationConstructor {
+				t.Fatalf("Salesforce-invalid DataWeave constructor on %s: %#v", name, member)
+			}
+		}
+	}
+	result := requireStandardSymbol(t, symbols, "DataWeave.Result")
+	for _, member := range result.Members {
+		if member.Kind == apexast.DeclarationMethod && strings.EqualFold(member.Name, "getMimeType") {
+			t.Fatalf("Salesforce-invalid DataWeave.Result.getMimeType member: %#v", member)
+		}
+		if member.Kind == apexast.DeclarationProperty && (strings.EqualFold(member.Name, "value") || strings.EqualFold(member.Name, "valueAsString") || strings.EqualFold(member.Name, "mimeType")) {
+			t.Fatalf("Salesforce-invalid DataWeave.Result.%s property: %#v", member.Name, member)
+		}
+	}
+}
+
 func TestStandardPlatformSymbolsBusinessHoursUseApi67Signatures(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 	businessHours := requireStandardSymbol(t, symbols, "BusinessHours")
