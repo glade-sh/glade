@@ -1005,12 +1005,12 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 	}
 	object := Object(objectType)
-	if exceptionTypeName(objectType) == "QueryException" {
+	if isExceptionType(objectType) {
 		stack := vm.rawStackFrames()
 		if vm.currentMethod.Name == "" && len(stack) > 0 {
 			stack[len(stack)-1].Symbol = "AnonymousBlock"
 		}
-		object = annotateException(object, stack)
+		object = annotateConstructedException(object, stack)
 	}
 	if definition.APIName != "" {
 		vm.initializeSObjectSchemaDefaults(&object, objectType)
@@ -3207,6 +3207,17 @@ func annotateException(value Value, stack []callFrame) Value {
 		return value
 	}
 	value.Fields["__thrown"] = Bool(true)
+	return annotateExceptionContext(value, stack)
+}
+
+func annotateConstructedException(value Value, stack []callFrame) Value {
+	if value.Kind != ValueObject || !isExceptionType(value.Type) {
+		return value
+	}
+	return annotateExceptionContext(value, stack)
+}
+
+func annotateExceptionContext(value Value, stack []callFrame) Value {
 	if len(stack) == 0 {
 		return value
 	}
