@@ -73,7 +73,7 @@ func TestInheritanceContractsAllowAuthProviderPluginClassOverrides(t *testing.T)
 public class AuthProvider extends Auth.AuthProviderPluginClass {
   public override PageReference initiate(Map<String,String> config, String state) { return new PageReference('/login'); }
   public override Auth.AuthProviderTokenResponse handleCallback(Map<String,String> config, Auth.AuthProviderCallbackState state) { return new Auth.AuthProviderTokenResponse('provider', 'token', 'secret', state.body); }
-  public override Auth.UserData getUserInfo(Map<String,String> config, Auth.AuthProviderTokenResponse response) { return new Auth.UserData(); }
+  public override Auth.UserData getUserInfo(Map<String,String> config, Auth.AuthProviderTokenResponse response) { return new Auth.UserData('id', 'first', 'last', 'full', 'email', 'link', 'user', 'locale', 'provider', 'site', new Map<String,String>()); }
   public override String getCustomMetadataType() { return 'Auth_Config__mdt'; }
   public override Auth.OAuthRefreshResult refresh(Map<String,String> config, String refreshToken) { return new Auth.OAuthRefreshResult('access', refreshToken); }
 }

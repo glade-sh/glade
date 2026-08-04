@@ -17,6 +17,42 @@ func TestAPI67ResidualRejectsTimeZoneDisplayNameBooleanByCall(t *testing.T) {
 	t.Fatalf("accepted TimeZone.getDisplayName(Boolean): %#v", result.Diagnostics)
 }
 
+func TestAPI67CompileShapeRejectsAbstractAndVoidAssignmentBatch(t *testing.T) {
+	tests := map[string]string{
+		"Auth.AuthConfiguration no-arg constructor":                  `Auth.AuthConfiguration value = new Auth.AuthConfiguration();`,
+		"Auth.UserData no-arg constructor":                           `Auth.UserData value = new Auth.UserData();`,
+		"Auth.VerificationResult no-arg constructor":                 `Auth.VerificationResult value = new Auth.VerificationResult();`,
+		"Invocable.Action no-arg constructor":                        `Invocable.Action value = new Invocable.Action();`,
+		"WebServiceCalloutFuture abstract constructor":               `WebServiceCalloutFuture value = new WebServiceCalloutFuture();`,
+		"VisualEditor.DynamicPickList abstract constructor":          `VisualEditor.DynamicPickList value = new VisualEditor.DynamicPickList();`,
+		"ConnectedAppPlugin.refresh two args returns void":           `Auth.ConnectedAppPlugin plugin = null; Object value = plugin.refresh(null, null);`,
+		"ConnectedAppPlugin.refresh invocation context returns void": `Auth.ConnectedAppPlugin plugin = null; Object value = plugin.refresh(null, null, null);`,
+	}
+	for name, source := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := AnalyzeAnonymous(typesys.Index{}, source)
+			if len(result.Diagnostics) == 0 {
+				t.Fatalf("accepted Salesforce-rejected compile-shape probe: %s", source)
+			}
+		})
+	}
+}
+
+func TestAPI67CompileShapePreservesAllowedConstructorNeighbors(t *testing.T) {
+	for name, source := range map[string]string{
+		"Auth.AuthConfiguration two args":                `Auth.AuthConfiguration value = new Auth.AuthConfiguration('client', 'secret');`,
+		"Auth.UserData documented constructor":           `Auth.UserData value = new Auth.UserData('id', 'first', 'last', 'full', 'email', 'link', 'user', 'locale', 'provider', 'site', new Map<String,String>());`,
+		"Auth.VerificationResult documented constructor": `Auth.VerificationResult value = new Auth.VerificationResult(null, true, 'ok');`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := AnalyzeAnonymous(typesys.Index{}, source)
+			if result.HasErrors() {
+				t.Fatalf("rejected allowed Salesforce constructor: %#v", result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestAPI67ResidualRejectsAcquiredNonSalesforceSurfaces(t *testing.T) {
 	tests := map[string]string{
 		"Messaging.SendEmailOptions":                    `Messaging.SendEmailOptions options = new Messaging.SendEmailOptions();`,
