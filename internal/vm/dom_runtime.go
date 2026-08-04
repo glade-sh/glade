@@ -352,7 +352,7 @@ func callDomXmlNodeMember(receiver Value, method string, args []Value) (Value, V
 		}
 		var text strings.Builder
 		for _, child := range domNodeList(receiver, "children").List {
-			if domNodeType(child) == "TEXT" || domNodeType(child) == "COMMENT" {
+			if domNodeType(child) == "TEXT" {
 				text.WriteString(domString(child.Fields["text"]))
 			}
 		}

@@ -134,7 +134,7 @@ System.assertEquals('http://my.name.space', root.getAttributeKeyNsAt(0));
 System.assertEquals('test', root.getAttribute('type', 'http://my.name.space'));
 System.assertEquals('test', root.getAttributeValue('type', 'http://my.name.space'));
 System.assertEquals(null, root.getAttributeValueNs('type', 'http://my.name.space'));
-System.assertEquals('hellonote', root.getText());
+System.assertEquals('hello', root.getText());
 List<Dom.XmlNode> children = root.getChildren();
 System.assertEquals(3, children.size());
 System.assertEquals(1, root.getChildElements().size());
