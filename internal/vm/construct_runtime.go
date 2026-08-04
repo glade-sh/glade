@@ -699,6 +699,11 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("Dom.Document constructor expects 0 arguments")
 		}
 		return newDomDocument(), nil
+	case "Dom.XmlNode":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Dom.XmlNode constructor expects 0 arguments")
+		}
+		return newDomXmlNode("ELEMENT", "", "", ""), nil
 	case "Auth.UserData":
 		return constructAuthUserData(args, namedArgs)
 	case "Auth.VerificationResult":

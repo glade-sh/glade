@@ -3,6 +3,9 @@ package vm
 import "strings"
 
 var api67CoreEnumOrders = map[string][]string{
+	"Dom.XmlNodeType": {
+		"ELEMENT", "TEXT", "COMMENT",
+	},
 	"AccessType": {
 		"CREATABLE", "READABLE", "UPDATABLE", "UPSERTABLE",
 	},

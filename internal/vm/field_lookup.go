@@ -178,7 +178,7 @@ func builtinStaticField(typeName, fieldName string) (Value, bool) {
 		case "MIN_VALUE":
 			return Int(math.MinInt64), true
 		}
-	case "Dom.XmlNodeType":
+	case "Dom.XmlNodeType", "dom.XmlNodeType":
 		return domXmlNodeTypeValue(fieldName)
 	case "Canvas.Test":
 		switch fieldName {

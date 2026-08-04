@@ -177,6 +177,88 @@ System.assert(built.toXmlString().contains('<payer>001000000000001AAA</payer>'))
 	}
 }
 
+func TestExecDomXmlNodeTypeEnumAndDomNamespaceMembers(t *testing.T) {
+	program, err := CompileAnonymous(`
+Dom.XmlNodeType elementType = Dom.XmlNodeType.ELEMENT;
+System.assertEquals(Dom.XmlNodeType.ELEMENT, elementType);
+System.assertEquals(0, elementType.ordinal());
+System.assertEquals('ELEMENT', elementType.name());
+System.assertEquals('ELEMENT', elementType.toString());
+System.assertEquals(true, elementType.equals(Dom.XmlNodeType.ELEMENT));
+System.assertEquals(false, elementType.equals(Dom.XmlNodeType.TEXT));
+System.assertNotEquals(0, elementType.hashCode());
+
+Dom.XmlNodeType textType = Dom.XmlNodeType.TEXT;
+System.assertEquals(1, textType.ordinal());
+System.assertEquals('TEXT', textType.name());
+
+Dom.XmlNodeType commentType = Dom.XmlNodeType.COMMENT;
+System.assertEquals(2, commentType.ordinal());
+System.assertEquals('COMMENT', commentType.name());
+
+List<Dom.XmlNodeType> allTypes = Dom.XmlNodeType.values();
+System.assertEquals(3, allTypes.size());
+System.assertEquals('ELEMENT', allTypes[0].name());
+System.assertEquals('TEXT', allTypes[1].name());
+System.assertEquals('COMMENT', allTypes[2].name());
+
+Dom.XmlNodeType fromName = Dom.XmlNodeType.valueOf('TEXT');
+System.assertEquals(Dom.XmlNodeType.TEXT, fromName);
+System.assertEquals(1, fromName.ordinal());
+
+Dom.XmlNodeType fromLower = Dom.XmlNodeType.valueOf('text');
+System.assertEquals(Dom.XmlNodeType.TEXT, fromLower);
+
+Dom.XmlNodeType lowerText = dom.XmlNodeType.TEXT;
+System.assertEquals(Dom.XmlNodeType.TEXT, lowerText);
+System.assertEquals(1, lowerText.ordinal());
+
+Dom.XmlNodeType lowerComment = dom.XmlNodeType.COMMENT;
+System.assertEquals(Dom.XmlNodeType.COMMENT, lowerComment);
+System.assertEquals(2, lowerComment.ordinal());
+
+Dom.Document doc1 = new Dom.Document();
+doc1.load('<root><child>data</child></root>');
+String docStr = doc1.toString();
+System.assert(docStr.length() > 0);
+
+Dom.Document doc2 = new Dom.Document();
+doc2.load('<root><child>data</child></root>');
+System.assert(doc1.hashCode() != 0);
+System.assert(doc2.hashCode() != 0);
+
+Dom.XmlNode built = new Dom.XmlNode();
+System.assertEquals(Dom.XmlNodeType.ELEMENT, built.getNodeType());
+
+Dom.Document builtDoc = new Dom.Document();
+Dom.XmlNode root = builtDoc.createRootElement('root', null, null);
+Dom.XmlNode child1 = root.addChildElement('a', null, null);
+Dom.XmlNode child2 = root.addChildElement('b', null, null);
+System.assertEquals(2, root.getChildElements().size());
+
+System.assertEquals('a', child1.getName());
+
+Dom.XmlNode newKid = root.addChildElement('x', null, null);
+System.assertEquals('x', newKid.getName());
+System.assertEquals(3, root.getChildElements().size());
+
+Dom.XmlNode inserted = root.insertBefore(new Dom.XmlNode(), child2);
+System.assertEquals(Dom.XmlNodeType.ELEMENT, inserted.getNodeType());
+System.assertEquals(4, root.getChildElements().size());
+
+System.assertEquals(true, root.removeChild(inserted));
+System.assertEquals(3, root.getChildElements().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTestCreateStubQueryRowsBuildsSObjectsFromMaps(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Object> one = new Map<String, Object>{'Id' => '001000000000001', 'Name' => 'Acme'};
