@@ -3213,17 +3213,25 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getBaseUrl expects 0 arguments")
 		}
-		return String(vm.siteBaseURL()), nil
+		// With no active Site/community request context Salesforce returns an
+		// empty base URL. Keep the local runtime deterministic rather than
+		// exposing its synthetic host as hosted Site state.
+		return String(""), nil
 	case "Site.getCurrentSiteUrl":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getCurrentSiteUrl expects 0 arguments")
 		}
 		return String(vm.siteBaseURL()), nil
-	case "Site.getBaseRequestUrl", "Site.getBaseSecureUrl", "Site.getBaseCustomUrl", "Site.getBaseInsecureUrl", "Site.getCustomWebAddress", "Site.getAnalyticsTrackingCode", "Site.getOriginalUrl", "Site.getPasswordPolicyStatement":
+	case "Site.getBaseRequestUrl", "Site.getBaseSecureUrl", "Site.getBaseCustomUrl", "Site.getBaseInsecureUrl", "Site.getCustomWebAddress", "Site.getAnalyticsTrackingCode", "Site.getOriginalUrl":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return String(""), nil
+	case "Site.getPasswordPolicyStatement":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.getPasswordPolicyStatement expects 0 arguments")
+		}
+		return String("Your password must be at least 8 characters long.\nYour password must include letters and numbers"), nil
 	case "Site.getExperienceId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getExperienceId expects 0 arguments")
@@ -3268,12 +3276,12 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.isRegistrationEnabled expects 0 arguments")
 		}
-		return Bool(true), nil
+		return Bool(false), nil
 	case "Site.isLoginEnabled":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.isLoginEnabled expects 0 arguments")
 		}
-		return Bool(true), nil
+		return Bool(false), nil
 	case "Site.isPasswordExpired":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.isPasswordExpired expects 0 arguments")
@@ -3308,7 +3316,7 @@ platformStaticCall:
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("Site.forgotPassword expects 1 or 2 arguments")
 		}
-		return Bool(true), nil
+		return Bool(false), nil
 	case "Site.login":
 		if len(args) != 3 {
 			return Null, fmt.Errorf("Site.login expects 3 arguments")

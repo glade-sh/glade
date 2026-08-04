@@ -12304,13 +12304,31 @@ System.assertEquals('local-site', siteId);
 	}
 }
 
+func TestExecSiteCurrentBaseNoContextContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('', Site.getBaseUrl());
+System.assertEquals('Your password must be at least 8 characters long.\nYour password must include letters and numbers', Site.getPasswordPolicyStatement());
+System.assertEquals(false, Site.isRegistrationEnabled());
+System.assertEquals(false, Site.isLoginEnabled());
+System.assertEquals(false, Site.forgotPassword('user@example.invalid'));
+System.assertEquals(false, Site.forgotPassword('user@example.invalid', 'ResetTemplate'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSitePasswordAndExperienceContracts(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals('', Site.getExperienceId());
 Site.setExperienceId('LocalExperience001');
 System.assertEquals('LocalExperience001', Site.getExperienceId());
-System.assertEquals(true, Site.forgotPassword('user@example.invalid'));
-System.assertEquals(true, Site.forgotPassword('user@example.invalid', 'ResetTemplate'));
+System.assertEquals(false, Site.forgotPassword('user@example.invalid'));
+System.assertEquals(false, Site.forgotPassword('user@example.invalid', 'ResetTemplate'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -12332,7 +12350,7 @@ func TestExecOrgShapeBackedSiteNetworkAndCurrencyCalls(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assert(UserInfo.isMultiCurrencyOrganization());
 System.assertEquals('0DM000000000001', Site.getSiteId());
-System.assertEquals('https://local.glade.example/local', Site.getBaseUrl());
+System.assertEquals('', Site.getBaseUrl());
 System.assertEquals('', Site.getBaseRequestUrl());
 System.assertEquals('', Site.getBaseSecureUrl());
 System.assertEquals('', Site.getBaseCustomUrl());
@@ -12345,8 +12363,8 @@ System.assertEquals('local', Site.getPathPrefix());
 System.assertEquals('system@example.invalid', Site.getAdminEmail());
 System.assertEquals('005000000000001', Site.getAdminId());
 System.assertEquals('Local Site', Site.getMasterLabel());
-System.assertEquals(true, Site.isRegistrationEnabled());
-System.assertEquals(true, Site.isLoginEnabled());
+System.assertEquals(false, Site.isRegistrationEnabled());
+System.assertEquals(false, Site.isLoginEnabled());
 System.assertEquals(true, Site.isValidUsername('user@example.invalid'));
 System.assertEquals(false, Site.isValidUsername('not-an-email'));
 Site.setExperienceId(Network.getNetworkId());
