@@ -11,6 +11,10 @@ import (
 const regexp2MatchTimeout = 2 * time.Second
 
 func compileRegexp2Pattern(callee, source string) (string, *regexp2.Regexp, error) {
+	return compileRegexp2PatternWithException(callee, source, "PatternSyntaxException")
+}
+
+func compileRegexp2PatternWithException(callee, source, exceptionType string) (string, *regexp2.Regexp, error) {
 	regexp2Source, err := compileRegexp2Source(callee, source)
 	if err != nil {
 		return "", nil, err
@@ -18,7 +22,7 @@ func compileRegexp2Pattern(callee, source string) (string, *regexp2.Regexp, erro
 	compileSource := regexp2CompileSourceForSyntax(regexp2Source)
 	re, err := regexp2.Compile(compileSource, regexp2.None)
 	if err != nil {
-		return "", nil, newPatternSyntaxExceptionError(source, err)
+		return "", nil, newRegexSyntaxError(exceptionType, source, err)
 	}
 	re.MatchTimeout = regexp2MatchTimeout
 	return regexp2Source, re, nil

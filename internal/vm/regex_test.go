@@ -178,17 +178,14 @@ func TestExecPatternRejectsNonSalesforceSurface(t *testing.T) {
 	}
 }
 
-func TestExecPatternCompileThrowsPatternSyntaxException(t *testing.T) {
+func TestExecPatternCompileThrowsStringException(t *testing.T) {
 	program, err := CompileAnonymous(`
 try {
 	Pattern.compile('[');
 	System.assert(false);
-} catch (PatternSyntaxException e) {
-	System.assertEquals('[', e.getPattern());
-	System.assertEquals(-1, e.getIndex());
-	System.assert(e.getDescription().contains('missing closing ]'));
+} catch (StringException e) {
 	System.assert(e.getMessage().contains('missing closing ]'));
-	System.assertEquals('System.PatternSyntaxException', e.getTypeName());
+	System.assertEquals('System.StringException', e.getTypeName());
 } catch (Exception e) {
 	System.assert(false);
 }
@@ -201,14 +198,39 @@ try {
 	}
 }
 
-func TestExecPatternMatchesThrowsPatternSyntaxException(t *testing.T) {
+func TestExecPatternMatchesThrowsStringException(t *testing.T) {
 	program, err := CompileAnonymous(`
 try {
 	Pattern.matches('[', 'x');
 	System.assert(false);
-} catch (IllegalArgumentException e) {
-	System.assertEquals('System.PatternSyntaxException', e.getTypeName());
+} catch (StringException e) {
+	System.assertEquals('System.StringException', e.getTypeName());
 	System.assert(e.getMessage().contains('missing closing ]'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPatternMalformedInputThrowsStringException(t *testing.T) {
+	program, err := CompileAnonymous(`
+for (Integer i = 0; i < 2; i++) {
+	try {
+		if (i == 0) {
+			Pattern.compile('[');
+		} else {
+			Pattern.matches('[', 'x');
+		}
+		System.assert(false);
+	} catch (StringException e) {
+		System.assertEquals('System.StringException', e.getTypeName());
+	} catch (Exception e) {
+		System.assert(false);
+	}
 }
 `)
 	if err != nil {

@@ -811,7 +811,7 @@ func patternCompile(args []Value) (Value, error) {
 	if len(args) != 1 || args[0].Kind != ValueString {
 		return Null, fmt.Errorf("Pattern.compile expects regex String")
 	}
-	regexp2Source, _, err := compileRegexp2Pattern("Pattern.compile", args[0].Text)
+	regexp2Source, _, err := compileRegexp2PatternWithException("Pattern.compile", args[0].Text, "StringException")
 	if err != nil {
 		return Null, err
 	}
@@ -846,13 +846,13 @@ func patternMatches(args []Value) (Value, error) {
 	if err != nil {
 		return Null, err
 	}
-	plan, err := compileRegexp2PlanForInput("Pattern.matches", pattern, input)
+	plan, err := compileRegexp2PlanForInputWithException("Pattern.matches", pattern, input, "StringException")
 	if err != nil {
 		return Null, err
 	}
 	match, err := plan.findValidStartingAt(input, 0)
 	if err != nil {
-		return Null, newPatternSyntaxExceptionError(pattern, err)
+		return Null, newRegexSyntaxError("StringException", pattern, err)
 	}
 	inputRunes := utf8.RuneCountInString(input)
 	matched := match != nil && match.Index == 0 && match.Length == inputRunes
@@ -860,9 +860,16 @@ func patternMatches(args []Value) (Value, error) {
 }
 
 func newPatternSyntaxExceptionError(pattern string, err error) error {
+	return newRegexSyntaxError("PatternSyntaxException", pattern, err)
+}
+
+func newRegexSyntaxError(exceptionType, pattern string, err error) error {
 	description := err.Error()
 	if strings.Contains(description, "unterminated [] set") {
 		description = "missing closing ]"
+	}
+	if exceptionType != "PatternSyntaxException" {
+		return newExceptionError("System."+exceptionType, description)
 	}
 	value := Object("PatternSyntaxException")
 	value.Fields["message"] = String(description)

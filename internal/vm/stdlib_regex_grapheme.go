@@ -52,6 +52,10 @@ func (g *graphemeBoundaryTable) isBoundaryByte(pos int) bool {
 }
 
 func compileRegexp2PlanForInput(callee, source, input string) (*regexp2Plan, error) {
+	return compileRegexp2PlanForInputWithException(callee, source, input, "PatternSyntaxException")
+}
+
+func compileRegexp2PlanForInputWithException(callee, source, input, exceptionType string) (*regexp2Plan, error) {
 	regexp2Source, err := compileRegexp2Source(callee, source)
 	if err != nil {
 		return nil, err
@@ -61,7 +65,7 @@ func compileRegexp2PlanForInput(callee, source, input string) (*regexp2Plan, err
 	regexp2Source = rewriteGraphemeTokensForRegexp2(regexp2Source, table, internal)
 	re, err := regexp2.Compile(regexp2Source, regexp2.None)
 	if err != nil {
-		return nil, newPatternSyntaxExceptionError(source, err)
+		return nil, newRegexSyntaxError(exceptionType, source, err)
 	}
 	re.MatchTimeout = regexp2MatchTimeout
 	return &regexp2Plan{
