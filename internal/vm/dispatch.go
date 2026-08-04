@@ -596,6 +596,9 @@ platformStaticCall:
 		if len(args) != 1 {
 			return Null, fmt.Errorf("System.hashCode expects 1 argument")
 		}
+		if args[0].Kind == ValueNull {
+			return Null, newExceptionError("NullPointerException", "Argument 1 cannot be null")
+		}
 		return Int(int64(valueHashCode(args[0]))), nil
 	case "System.debug":
 		if len(args) != 1 && len(args) != 2 {

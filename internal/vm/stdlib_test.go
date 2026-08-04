@@ -2551,6 +2551,13 @@ System.assert(!System.equals(text, 'ridge'));
 System.assert(System.equals(null, null));
 System.assert(!System.equals(null, text));
 System.assertEquals(text.hashCode(), System.hashCode(text));
+try {
+    System.hashCode(null);
+    System.assert(false, 'System.hashCode(null) should fail');
+} catch (Exception e) {
+    System.assertEquals('System.NullPointerException', e.getTypeName());
+    System.assertEquals('Argument 1 cannot be null', e.getMessage());
+}
 List<Integer> left = new List<Integer>{1, 2};
 List<Integer> right = new List<Integer>{1, 2};
 System.assert(System.equals(left, right));
