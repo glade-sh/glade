@@ -2457,10 +2457,6 @@ System.assertEquals('', flowBase.getFlowName());
 System.assertEquals('', flowBase.getFlowNamespace());
 System.assertEquals(false, flowBase.hasFlow());
 System.assertEquals(false, flowBase.hasFlowOrApex());
-UserProvisioning.UserProvisioningPlugin plugin = new UserProvisioning.UserProvisioningPlugin();
-System.assertEquals('UserProvisioning.UserProvisioningPlugin', plugin.getPluginClassName());
-System.assert(plugin.describe() != null);
-System.assert(plugin.buildDescribeCall() != null);
 System.assert(new UserProvisioning.UserProvisioningProcessHandler().invoke(null) != null);
 System.assert(new UserProvisioning.DummyConnectorApexHandler().invoke(null) != null);
 `)
@@ -2469,6 +2465,19 @@ System.assert(new UserProvisioning.DummyConnectorApexHandler().invoke(null) != n
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestCompileUserProvisioningPluginBaseRejectsConstruction(t *testing.T) {
+	program, err := CompileAnonymous(`
+UserProvisioning.UserProvisioningPlugin plugin = new UserProvisioning.UserProvisioningPlugin();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = New(nil).Execute(program)
+	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "abstract") {
+		t.Fatalf("execute error = %v, want abstract base-class construction rejection", err)
 	}
 }
 

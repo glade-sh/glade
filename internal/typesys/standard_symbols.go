@@ -454,12 +454,24 @@ func appendUniqueStandardMethods(values, additions []StandardMethodSpec) []Stand
 }
 
 func shouldReplaceStandardMethod(existing, addition StandardMethodSpec) bool {
+	if standardModifierContains(addition.Modifiers, "abstract") && !standardModifierContains(existing.Modifiers, "abstract") {
+		return true
+	}
 	existingType := strings.TrimSpace(existing.ReturnType)
 	additionType := strings.TrimSpace(addition.ReturnType)
 	if additionType == "" || strings.EqualFold(additionType, "Object") {
 		return false
 	}
 	return existingType == "" || strings.EqualFold(existingType, "Object")
+}
+
+func standardModifierContains(modifiers []string, wanted string) bool {
+	for _, modifier := range modifiers {
+		if strings.EqualFold(strings.TrimSpace(modifier), wanted) {
+			return true
+		}
+	}
+	return false
 }
 
 func appendUniqueStandardProperties(values, additions []StandardPropertySpec) []StandardPropertySpec {
@@ -1283,6 +1295,9 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 }
 
 var standardPlatformSymbolOverlays = []StandardSymbolSpec{
+	{Name: "UserProvisioning.UserProvisioningPlugin", Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{
+		{Name: "buildDescribeCall", ReturnType: "Process.PluginDescribeResult", Modifiers: []string{"abstract"}},
+	}},
 	// API 67 platform enum hashes use a stable family seed plus declaration
 	// ordinal. Keep the seeds on the merged type metadata, not on members.
 	{Name: "Schema.SoapType", EnumHashBase: standardEnumHashBase(884834318)},

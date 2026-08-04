@@ -1106,6 +1106,22 @@ func TestStandardPlatformSymbolsIncludeMetadataLayoutItemShapes(t *testing.T) {
 	requireStandardProperty(t, relatedList, "relatedList", "String")
 }
 
+func TestUserProvisioningPluginOverlayIsAbstract(t *testing.T) {
+	symbol := requireStandardSymbol(t, StandardPlatformSymbols(), "UserProvisioning.UserProvisioningPlugin")
+	if !containsStringFold(symbol.Modifiers, "abstract") {
+		t.Fatalf("UserProvisioningPlugin modifiers = %v, want abstract", symbol.Modifiers)
+	}
+	for _, member := range symbol.Members {
+		if member.Kind == apexast.DeclarationMethod && member.Name == "buildDescribeCall" {
+			if !containsStringFold(member.Modifiers, "abstract") {
+				t.Fatalf("buildDescribeCall modifiers = %v, want abstract", member.Modifiers)
+			}
+			return
+		}
+	}
+	t.Fatal("buildDescribeCall method missing")
+}
+
 func TestStandardPlatformSymbolsIncludeUserInfoStubMethodsAndFieldTokenProperties(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 

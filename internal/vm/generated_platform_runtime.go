@@ -289,6 +289,9 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 	if !ok || generated.Kind == apexast.DeclarationInterface || generated.Kind == apexast.DeclarationEnum || vm.isSObjectLikeType(generated.Name) {
 		return Null, false, nil
 	}
+	if generated.IsAbstract {
+		return Null, true, fmt.Errorf("cannot instantiate abstract class %s", generated.Name)
+	}
 	if value, handled, err := vm.constructGeneratedMetadataDTO(generated, args, namedArgs); handled || err != nil {
 		return value, handled, err
 	}
