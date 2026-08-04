@@ -14,6 +14,7 @@ for (Integer i = 0; i < loggingLevels.size(); i++) {
 	System.assert(loggingLevels.get(i).equals(resolved), 'LoggingLevel equals ' + String.valueOf(i));
     System.assertEquals(loggingLevels.get(i).hashCode(), resolved.hashCode());
 }
+
 System.assert(!loggingLevels.get(0).equals(loggingLevels.get(1)));
 
 List<String> triggerOperationNames = new List<String>{'BEFORE_INSERT', 'AFTER_INSERT', 'BEFORE_UPDATE', 'AFTER_UPDATE', 'BEFORE_DELETE', 'AFTER_DELETE', 'AFTER_UNDELETE'};
@@ -26,6 +27,7 @@ for (Integer i = 0; i < triggerOperations.size(); i++) {
 	System.assert(triggerOperations.get(i).equals(resolved), 'TriggerOperation equals ' + String.valueOf(i));
     System.assertEquals(triggerOperations.get(i).hashCode(), resolved.hashCode());
 }
+
 System.assert(!triggerOperations.get(0).equals(triggerOperations.get(1)));
 
 List<String> jsonTokenNames = new List<String>{'NOT_AVAILABLE', 'START_OBJECT', 'END_OBJECT', 'START_ARRAY', 'END_ARRAY', 'FIELD_NAME', 'VALUE_EMBEDDED_OBJECT', 'VALUE_STRING', 'VALUE_NUMBER_INT', 'VALUE_NUMBER_FLOAT', 'VALUE_TRUE', 'VALUE_FALSE', 'VALUE_NULL'};
@@ -38,6 +40,7 @@ for (Integer i = 0; i < jsonTokens.size(); i++) {
 	System.assert(jsonTokens.get(i).equals(resolved), 'JSONToken equals ' + String.valueOf(i));
     System.assertEquals(jsonTokens.get(i).hashCode(), resolved.hashCode());
 }
+
 System.assert(!jsonTokens.get(0).equals(jsonTokens.get(1)));
 
 List<String> roundingModeNames = new List<String>{'UP', 'DOWN', 'CEILING', 'FLOOR', 'HALF_UP', 'HALF_DOWN', 'HALF_EVEN', 'UNNECESSARY'};

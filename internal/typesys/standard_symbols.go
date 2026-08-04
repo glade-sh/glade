@@ -1301,6 +1301,7 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	// API 67 platform enum hashes use a stable family seed plus declaration
 	// ordinal. Keep the seeds on the merged type metadata, not on members.
 	{Name: "Schema.SoapType", EnumHashBase: standardEnumHashBase(884834318)},
+	{Name: "Schema.FieldDescribeOptions", EnumHashBase: standardEnumHashBase(-611082246)},
 	{Name: "StatusCode", EnumHashBase: standardEnumHashBase(674160322)},
 	{Name: "Metadata.StatusCode", EnumHashBase: standardEnumHashBase(-369369150)},
 	{Name: "Exception", Modifiers: []string{"abstract"}, ReplaceConstructors: true},
