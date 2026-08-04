@@ -843,6 +843,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		controller.Fields["selected"] = List()
 		controller.Fields["pageSize"] = Int(20)
 		controller.Fields["pageNumber"] = Int(1)
+		if args[0].Kind == ValueList {
+			controller.Fields["__glade_caller_provided"] = Bool(true)
+		}
 		return controller, nil
 	case "ApexPages.Message":
 		if len(args) < 2 || len(args) > 4 {

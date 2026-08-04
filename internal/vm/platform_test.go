@@ -5089,6 +5089,29 @@ try {
 	}
 }
 
+func TestExecStandardSetControllerAddFieldsRejectsCallerProvidedRecords(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Account> accounts = new List<Account>{new Account(Name = 'CallerProvided')};
+ApexPages.StandardSetController controller = new ApexPages.StandardSetController(accounts);
+try {
+    controller.addFields(new List<String>{'Rating'});
+    System.assert(false, 'addFields should reject caller-provided controller data');
+} catch (SObjectException e) {
+    System.assert(e.getMessage().contains('data is being passed into the controller by the caller'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecApexPagesStandardSetControllerQueryLocatorNavigation(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Locator-One');
