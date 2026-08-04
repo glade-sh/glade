@@ -4289,6 +4289,22 @@ System.assertEquals('ok', callable.call('probe', new Map<String,Object>()));`,
 	}
 }
 
+func TestRunExecSupportsMultipleAnonymousTypeDeclarations(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"exec",
+		`interface ProbeContract { Object value(); }
+class ProbeValue implements ProbeContract {
+  public Object value() { return 'ok'; }
+}
+ProbeContract probe = new ProbeValue();
+System.assertEquals('ok', probe.value());`,
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("multiple anonymous type declarations failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+}
+
 func TestRunExecWithProjectRejectsAnonymousSemanticDiagnosticsBeforeExecution(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
