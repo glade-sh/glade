@@ -2591,6 +2591,8 @@ System.assertEquals('Account', Id.valueOf('001B000001DVM9t').getSObjectType().ge
 System.assertEquals('001B000001DVM9t', valid.to15());
 Id longId = Id.valueOf('001B000001DVM9tIAH');
 System.assertEquals('001B000001DVM9t', longId.to15());
+System.assertEquals('001B000001DVM9tIAH', valid.to18());
+System.assertEquals('001B000001DVM9tIAH', longId.to18());
 System.assertEquals('001B000001DVM9tIAH', restored.toString());
 System.assertEquals('001B000001DVM9tIAH', restoredLowerChecksum.toString());
 List<String> ids = new List<String>{valid};

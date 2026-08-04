@@ -3989,6 +3989,17 @@ func (vm *VM) callIdMember(receiver Value, method string, args []Value) (Value, 
 			return String(idText), true, nil
 		}
 		return String(idText[:15]), true, nil
+	case "to18":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Id.to18 expects 0 arguments")
+		}
+		if err := validateApexID(idText); err != nil {
+			return Null, true, err
+		}
+		if len(idText) == 18 {
+			return String(idText), true, nil
+		}
+		return String(apexIDTo18(idText)), true, nil
 	case "getsobjecttype":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Id.getSObjectType expects 0 arguments")
@@ -4037,7 +4048,7 @@ func displayIDText(text string) string {
 
 func idMemberReceiver(value Value, method string) bool {
 	switch strings.ToLower(method) {
-	case "equals", "to15", "getsobjecttype":
+	case "equals", "to15", "to18", "getsobjecttype":
 	default:
 		return false
 	}
