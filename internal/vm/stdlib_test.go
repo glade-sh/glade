@@ -5519,3 +5519,174 @@ System.assertEquals('0', String.valueOf(zero.stripTrailingZeros()));
 		t.Fatal(err)
 	}
 }
+
+func TestExecSystemComparableSortContract(t *testing.T) {
+	compareProgram, err := CompileAnonymous(`
+Sorter otherSorter = (Sorter) other;
+if (this.Score == otherSorter.Score) {
+	return 0;
+}
+if (this.Score > otherSorter.Score) {
+	return 1;
+}
+return -1;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Sorter a = new Sorter();
+a.Score = 3;
+a.Label = 'third';
+Sorter b = new Sorter();
+b.Score = 1;
+b.Label = 'first';
+Sorter c = new Sorter();
+c.Score = 2;
+c.Label = 'second';
+List<Sorter> items = new List<Sorter>{a, b, c};
+items.sort();
+System.assertEquals('first', items.get(0).Label);
+System.assertEquals('second', items.get(1).Label);
+System.assertEquals('third', items.get(2).Label);
+
+items.sort();
+System.assertEquals('first', items.get(0).Label);
+System.assertEquals('second', items.get(1).Label);
+System.assertEquals('third', items.get(2).Label);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Sorter",
+		Interfaces: []string{"Comparable"},
+		Fields: map[string]Field{
+			"Score": {Name: "Score", Type: "Integer"},
+			"Label": {Name: "Label", Type: "String"},
+		},
+		Methods: map[string]Method{
+			"compareTo": {
+				Name:       "Sorter.compareTo",
+				ClassName:  "Sorter",
+				ReturnType: "Integer",
+				Params:     []Param{{Name: "other", Type: "Object"}},
+				Program:    compareProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSystemComparableSortWithNullValues(t *testing.T) {
+	compareProgram, err := CompileAnonymous(`
+if (other == null) {
+	return 0;
+}
+Sorter otherSorter = (Sorter) other;
+if (this.Score == otherSorter.Score) {
+	return 0;
+}
+if (this.Score > otherSorter.Score) {
+	return 1;
+}
+return -1;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Sorter a = new Sorter();
+a.Score = 2;
+a.Label = 'second';
+Sorter b = new Sorter();
+b.Score = 1;
+b.Label = 'first';
+List<Sorter> items = new List<Sorter>{null, a, null, b, null};
+items.sort();
+System.assertEquals(null, items.get(0));
+System.assertEquals(null, items.get(1));
+System.assertEquals(null, items.get(2));
+System.assertEquals('first', items.get(3).Label);
+System.assertEquals('second', items.get(4).Label);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Sorter",
+		Interfaces: []string{"Comparable"},
+		Fields: map[string]Field{
+			"Score": {Name: "Score", Type: "Integer"},
+			"Label": {Name: "Label", Type: "String"},
+		},
+		Methods: map[string]Method{
+			"compareTo": {
+				Name:       "Sorter.compareTo",
+				ClassName:  "Sorter",
+				ReturnType: "Integer",
+				Params:     []Param{{Name: "other", Type: "Object"}},
+				Program:    compareProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSystemComparableTypeQuery(t *testing.T) {
+	compareProgram, err := CompileAnonymous(`
+Sorter otherSorter = (Sorter) other;
+if (this.Score == otherSorter.Score) {
+	return 0;
+}
+if (this.Score > otherSorter.Score) {
+	return 1;
+}
+return -1;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Sorter s = new Sorter();
+s.Score = 5;
+Object obj = s;
+System.assert(obj instanceof Comparable);
+System.assert(obj instanceof System.Comparable);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Sorter",
+		Interfaces: []string{"Comparable"},
+		Fields: map[string]Field{
+			"Score": {Name: "Score", Type: "Integer"},
+		},
+		Methods: map[string]Method{
+			"compareTo": {
+				Name:       "Sorter.compareTo",
+				ClassName:  "Sorter",
+				ReturnType: "Integer",
+				Params:     []Param{{Name: "other", Type: "Object"}},
+				Program:    compareProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
