@@ -48,82 +48,76 @@ func (vm *VM) schemaDescribeTabs() Value {
 	if vm.describeTabsCache != nil {
 		return *vm.describeTabsCache
 	}
-	tabs := vm.schemaDescribeTabValues()
-	if len(tabs) == 0 {
-		value := List()
-		vm.describeTabsCache = &value
-		return value
+	localTabs := vm.schemaDescribeTabValues()
+	tabSets := make([]Value, 0, len(defaultDescribeTabSetTemplates))
+	for index, template := range defaultDescribeTabSetTemplates {
+		tabs := vm.describeDefaultTabValues(template.Tabs)
+		if index == len(defaultDescribeTabSetTemplates)-1 {
+			tabs = append(tabs, localTabs...)
+		}
+		tabSets = append(tabSets, describeTabSetValue(template, tabs))
 	}
-	tabSet := Object("Schema.DescribeTabSetResult")
-	tabSet.Fields["name"] = String("AllTabs")
-	tabSet.Fields["label"] = String("All Tabs")
-	tabSet.Fields["description"] = String("All Tabs")
-	tabSet.Fields["logoUrl"] = Null
-	tabSet.Fields["namespace"] = Null
-	tabSet.Fields["tabSetId"] = String("AllTabs")
-	tabSet.Fields["tabs"] = List(tabs...)
-	tabSet.Fields["selected"] = Bool(false)
-	value := List(tabSet)
+	value := List(tabSets...)
 	vm.describeTabsCache = &value
 	return value
+}
+
+type describeTabSetTemplate struct {
+	Name        string
+	Label       string
+	Description string
+	Namespace   string
+	Selected    bool
+	Tabs        []string
+}
+
+var defaultDescribeTabSetTemplates = []describeTabSetTemplate{
+	{Name: "Sales", Label: "Sales", Description: "The world's most popular sales force automation (SFA) solution", Namespace: "standard", Selected: true, Tabs: []string{"Home", "Chatter", "Campaigns", "Leads", "Accounts", "Contacts", "Opportunities", "Forecasts", "Contracts", "Orders", "Cases", "Solutions", "Products", "Reports", "Dashboards"}},
+	{Name: "Service", Label: "Service", Description: "Manage customer service with accounts, contacts, cases, and more", Namespace: "standard", Tabs: []string{"Home", "Chatter", "Accounts", "Contacts", "Cases", "Solutions", "Reports", "Dashboards"}},
+	{Name: "MarketingCRMClassic", Label: "Marketing CRM Classic", Description: "Track sales and marketing efforts with CRM objects.", Namespace: "standard", Tabs: []string{"Home", "Chatter", "Campaigns", "Leads", "Contacts", "Opportunities", "Reports", "Dashboards"}},
+	{Name: "HighVolumeCustomerPortalUser", Label: "High Volume Customer Portal User", Tabs: []string{"Home"}},
+	{Name: "AuthenticatedWebsiteUser", Label: "Authenticated Website User", Tabs: []string{"Home"}},
+	{Name: "AppLauncher", Label: "App Launcher", Description: "App Launcher tabs", Namespace: "standard", Tabs: []string{"App Launcher"}},
+	{Name: "Community", Label: "Community", Description: "Salesforce CRM Communities", Namespace: "standard", Tabs: []string{"Home", "Chatter", "Contacts", "Accounts", "Ideas", "Reports", "Dashboards"}},
+	{Name: "SiteCom", Label: "Site.com", Description: "Build pixel-perfect, data-rich websites using the drag-and-drop Site.com application, and manage content and published sites.", Namespace: "standard", Tabs: []string{"Home", "Chatter", "Site.com"}},
+	{Name: "SalesforceChatter", Label: "Salesforce Chatter", Description: "The Salesforce Chatter social network, including profiles and feeds", Namespace: "standard", Tabs: []string{"Home", "Chatter", "Profile", "People", "Groups", "Files"}},
+	{Name: "ProfileSelf", Label: "Profile (Self)", Description: "The tabs displayed when users view their own profile", Tabs: []string{"Profile Feed", "Profile Overview", "Recognition"}},
+	{Name: "ProfileOthers", Label: "Profile (Others)", Description: "The tabs displayed when users view someone else's profile", Tabs: []string{"Profile Feed", "Profile Overview", "Recognition"}},
+	{Name: "Content", Label: "Content", Description: "Salesforce CRM Content", Namespace: "standard", Tabs: []string{"Home", "Chatter", "Libraries", "Content", "Subscriptions"}},
+	{Name: "AllTabs", Label: "All Tabs", Namespace: "standard", Tabs: []string{"Home", "Contact Point Type Consent", "Data Use Purpose", "Data Use Legal Basis", "Authorization Form", "Authorization Form Consent", "Authorization Form Data Use", "Authorization Form Text", "Communication Subscriptions", "Engagement Channel Types", "Communication Subscription Channel Types", "Communication Subscription Consents", "Communication Subscription Timings", "Party Consent"}},
+}
+
+func (vm *VM) describeDefaultTabValues(names []string) []Value {
+	values := make([]Value, 0, len(names))
+	for _, name := range names {
+		values = append(values, vm.describeTabValue(storage.TabMetadata{Name: name, Label: name}))
+	}
+	return values
+}
+
+func describeTabSetValue(template describeTabSetTemplate, tabs []Value) Value {
+	tabSet := Object("Schema.DescribeTabSetResult")
+	tabSet.Fields["name"] = String(template.Name)
+	tabSet.Fields["label"] = String(template.Label)
+	tabSet.Fields["description"] = String(template.Description)
+	tabSet.Fields["logoUrl"] = Null
+	tabSet.Fields["namespace"] = String(template.Namespace)
+	tabSet.Fields["tabSetId"] = String(template.Name)
+	tabSet.Fields["tabs"] = List(tabs...)
+	tabSet.Fields["selected"] = Bool(template.Selected)
+	return tabSet
 }
 func (vm *VM) schemaDescribeTabValues() []Value {
 	if vm.Org == nil {
 		return nil
 	}
 	tabs := append([]storage.TabMetadata(nil), vm.Org.Metadata.Tabs...)
-	seen := make(map[string]struct{}, len(tabs))
-	for _, tab := range tabs {
-		if objectName := describeTabSObjectName(tab); objectName != "" {
-			seen[strings.ToLower(objectName)] = struct{}{}
-		}
-	}
-	objectNames := make([]string, 0, len(vm.Org.Objects))
-	for name, state := range vm.Org.Objects {
-		apiName := state.Definition.APIName
-		if apiName == "" {
-			apiName = name
-		}
-		if !isStandardDescribeTabObject(apiName) {
-			continue
-		}
-		key := strings.ToLower(apiName)
-		if _, ok := seen[key]; ok {
-			continue
-		}
-		seen[key] = struct{}{}
-		objectNames = append(objectNames, apiName)
-	}
-	sort.Strings(objectNames)
-	for _, name := range objectNames {
-		tabs = append(tabs, storage.TabMetadata{
-			Name:        name,
-			Label:       name,
-			SObjectName: name,
-		})
-	}
 	sort.Slice(tabs, func(i, j int) bool { return tabs[i].Name < tabs[j].Name })
 	values := make([]Value, 0, len(tabs))
 	for _, tab := range tabs {
-		if describeTabSObjectName(tab) == "" {
-			continue
-		}
 		values = append(values, vm.describeTabValue(tab))
 	}
 	return values
-}
-func isStandardDescribeTabObject(name string) bool {
-	lowered := strings.ToLower(strings.TrimSpace(name))
-	if lowered == "" {
-		return false
-	}
-	for _, suffix := range []string{"__c", "__e", "__mdt", "__b", "__x"} {
-		if strings.HasSuffix(lowered, suffix) {
-			return false
-		}
-	}
-	_, ok := standardDescribeTabObjects[lowered]
-	return ok
 }
 func (vm *VM) describeTabValue(tab storage.TabMetadata) Value {
 	value := Object("Schema.DescribeTabResult")

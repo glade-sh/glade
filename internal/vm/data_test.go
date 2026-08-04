@@ -10638,16 +10638,22 @@ System.assertEquals(null, nameDescribe.getRelationshipName());
 func TestExecDescribeTabsFromLocalMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Object> tabSets = Schema.describeTabs();
-System.assertEquals(1, tabSets.size());
+System.assertEquals(13, tabSets.size());
 System.assert(Schema.getAppDescribe('Sales').containsKey('Account'));
 System.assert(Schema.getModuleDescribe().containsKey('Account'));
 System.assert(Schema.getModuleDescribe('Sales').containsKey('Account'));
-Object tabSet = tabSets.get(0);
+Object tabSet;
+for (Object candidate : tabSets) {
+	if (candidate.getLabel() == 'All Tabs') {
+		tabSet = candidate;
+	}
+}
+System.assertNotEquals(null, tabSet);
 System.assertEquals('All Tabs', tabSet.getLabel());
 System.assertEquals('AllTabs', tabSet.getName());
 System.assert(!tabSet.isSelected());
 List<Object> tabs = tabSet.getTabs();
-System.assertEquals(2, tabs.size());
+System.assertEquals(15, tabs.size());
 Object tab;
 for (Object candidate : tabs) {
 	if (candidate.getName() == 'Widget__c') {
@@ -10679,6 +10685,28 @@ System.assertEquals('/lightning/o/Widget__c/list', tab.getUrl());
 		Custom:      true,
 		Motif:       "Custom1: Heart",
 	}}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeTabsProvidesDeterministicDefaultAppSets(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Object> tabSets = Schema.describeTabs();
+System.assertEquals(13, tabSets.size());
+System.assertEquals('Sales', tabSets[0].getLabel());
+System.assert(tabSets[0].isSelected());
+System.assertEquals(15, tabSets[0].getTabs().size());
+System.assertEquals('All Tabs', tabSets[12].getLabel());
+System.assert(!tabSets[12].isSelected());
+System.assertEquals(14, tabSets[12].getTabs().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)

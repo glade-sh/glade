@@ -2619,22 +2619,6 @@ func (vm *VM) putSchemaGlobalDescribeAlias(out *Value, alias, objectName string,
 	out.Map[key] = token
 }
 
-var standardDescribeTabObjects = map[string]struct{}{
-	"account":     {},
-	"campaign":    {},
-	"case":        {},
-	"contact":     {},
-	"contract":    {},
-	"event":       {},
-	"lead":        {},
-	"opportunity": {},
-	"order":       {},
-	"pricebook2":  {},
-	"product2":    {},
-	"task":        {},
-	"user":        {},
-}
-
 // foldClassKeyBuf is the max identifier length handled allocation-free by the
 // fold-lookup helpers. Apex class/namespace names are far shorter; longer names
 // fall back to the allocating canonicalClassLookupKey path.
