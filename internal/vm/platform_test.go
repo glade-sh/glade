@@ -14294,6 +14294,7 @@ func TestExecAccessLevelEnumValueWithPermissionSetIdConstructsUserModeScope(t *t
 	program, err := CompileAnonymous(`
 AccessLevel scoped = AccessLevel.USER_MODE.withPermissionSetId('0PS000000000001');
 System.assertEquals('USER_MODE', scoped.name());
+System.assertEquals('AccessLevel:[SYSTEM_MODE=AccessLevel:[SYSTEM_MODE=(already output), USER_MODE=AccessLevel:[SYSTEM_MODE=(already output), USER_MODE=(already output), currentAccessPermissions=USER_MODE, permSetId=null], currentAccessPermissions=SYSTEM_MODE, permSetId=null], USER_MODE=(already output), currentAccessPermissions=CUSTOM, permSetId=0PS000000000001]', String.valueOf(scoped));
 `)
 	if err != nil {
 		t.Fatal(err)

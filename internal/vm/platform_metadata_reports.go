@@ -1309,6 +1309,11 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 		}
 		value := accessLevelClone(receiver)
 		value.Fields["permissionSetId"] = cloneValue(args[0])
+		if args[0].Kind == ValueNull {
+			value.Fields["currentAccessPermissions"] = String(strings.ToUpper(strings.TrimSpace(receiver.Text)))
+		} else {
+			value.Fields["currentAccessPermissions"] = String("CUSTOM")
+		}
 		return value, true, nil
 	}
 	if canonical, names, ok := coreEnumSpec(receiverType); ok {

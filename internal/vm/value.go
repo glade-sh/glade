@@ -197,6 +197,9 @@ func accessLevelClone(value Value) Value {
 	user.Fields["permSetId"] = Null
 	if permissionSetID, ok := value.Fields["permissionSetId"]; ok {
 		root.Fields["permissionSetId"] = cloneValue(permissionSetID)
+		if permissionSetID.Kind != ValueNull {
+			root.Fields["currentAccessPermissions"] = String("CUSTOM")
+		}
 	}
 	return root
 }
