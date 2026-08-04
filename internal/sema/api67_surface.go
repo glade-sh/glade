@@ -158,6 +158,15 @@ func semaAPI67RejectedPlatformCall(receiverType, method, receiverMode string) bo
 		case "getcurrentsiteurl", "getcustomwebaddress", "getprefix":
 			return true
 		}
+	case "auth.authconfiguration":
+		return method == "getrightframeurl"
+	case "auth.authproviderpluginclass":
+		switch method {
+		case "getcustommetadatatype", "getuserinfo", "initiate":
+			return true
+		}
+	case "auth.connectedappplugin":
+		return method == "customattributes"
 	}
 	return false
 }
@@ -194,6 +203,9 @@ func semaAPI67RejectedPlatformField(path string) bool {
 	field := normalizeName(path[dot+1:])
 	if strings.EqualFold(receiver, "Database.AllowCallouts") || strings.EqualFold(receiver, "System.Database.AllowCallouts") {
 		return true
+	}
+	if strings.EqualFold(receiver, "Continuation") || strings.EqualFold(receiver, "System.Continuation") {
+		return field == "state"
 	}
 	if strings.EqualFold(receiver, "System.Pattern") {
 		receiver = "Pattern"

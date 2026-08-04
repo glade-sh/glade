@@ -1390,10 +1390,14 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 			return nil
 		}
 		fieldReceiver := expr.Name
+		fieldPath := expr.Name
 		if dot := strings.LastIndexByte(fieldReceiver, '.'); dot > 0 {
 			fieldReceiver = fieldReceiver[:dot]
+			if receiverType, ok := scope.lookup(fieldReceiver); ok {
+				fieldPath = receiverType + expr.Name[dot:]
+			}
 		}
-		if semaAPI67RejectedPlatformField(expr.Name) && !semaProjectTypeShadowsPlatform(model, fieldReceiver) {
+		if semaAPI67RejectedPlatformField(fieldPath) && !semaProjectTypeShadowsPlatform(model, fieldReceiver) {
 			return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, expr.Name, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Name)), source)}
 		}
 		if diag, ok := a.irVariableDiagnostic(typ, member, expr.Name, *scope, model, bodyOffset+pos, source); ok {

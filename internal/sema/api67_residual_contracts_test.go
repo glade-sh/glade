@@ -101,6 +101,25 @@ func TestAPI67CompileShapeRejectsNonConstructibleAndHiddenConstructors(t *testin
 	}
 }
 
+func TestAPI67CompileShapeRejectsHiddenAuthCallsAndContinuationState(t *testing.T) {
+	tests := map[string]string{
+		"Auth.AuthConfiguration.getRightFrameUrl":            `Auth.AuthConfiguration value = null; Object result = value.getRightFrameUrl();`,
+		"Auth.AuthProviderPluginClass.getCustomMetadataType": `Auth.AuthProviderPluginClass value = null; Object result = value.getCustomMetadataType();`,
+		"Auth.AuthProviderPluginClass.getUserInfo":           `Auth.AuthProviderPluginClass value = null; Object result = value.getUserInfo(null, null);`,
+		"Auth.AuthProviderPluginClass.initiate":              `Auth.AuthProviderPluginClass value = null; Object result = value.initiate(null, null);`,
+		"Auth.ConnectedAppPlugin.customAttributes":           `Auth.ConnectedAppPlugin value = null; Object result = value.customAttributes(null, null, null);`,
+		"System.Continuation.state":                          `System.Continuation value = null; Object result = value.state;`,
+	}
+	for name, source := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := AnalyzeAnonymous(typesys.Index{}, source)
+			if len(result.Diagnostics) == 0 {
+				t.Fatalf("accepted Salesforce-rejected hidden member: %s", source)
+			}
+		})
+	}
+}
+
 func TestAPI67ResidualRejectsAcquiredNonSalesforceSurfaces(t *testing.T) {
 	tests := map[string]string{
 		"Messaging.SendEmailOptions":                    `Messaging.SendEmailOptions options = new Messaging.SendEmailOptions();`,
