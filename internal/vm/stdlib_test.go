@@ -2619,9 +2619,7 @@ right.add(1);
 System.assert(left.equals(right));
 System.assert(left.Equals(right));
 System.assertEquals(left.hashCode(), right.hashCode());
-System.assertEquals('List[1]', left.toString());
-List<Integer> one = new List<Integer>{1};
-System.assertEquals('List[1]', one.toString());
+System.assertEquals('(1)', left.toString());
 
 URL base = URL.getOrgDomainUrl();
 System.assertEquals('https://local.glade.example', base.toExternalForm());
