@@ -647,6 +647,9 @@ func callApexPagesKnowledgeArticleVersionStandardControllerMember(receiver Value
 		}
 		return Null, receiver, false, true, nil
 	case "selectDataCategory", "setDataCategory":
+		if len(args) == 0 {
+			return Null, receiver, false, true, nil
+		}
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.KnowledgeArticleVersionStandardController.%s expects group and category Strings", method)
 		}

@@ -15605,3 +15605,350 @@ h.send(req);
 		t.Fatalf("err = %v, want HttpResponse return validation", err)
 	}
 }
+
+func TestExecApexPagesStandardControllerValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account acc = new Account(Name='Test', Phone='555-0100');
+ApexPages.StandardController sc = new ApexPages.StandardController(acc);
+System.assertEquals(acc.get('Name'), sc.getRecord().get('Name'));
+System.assertEquals(null, sc.getId());
+PageReference viewPage = sc.view();
+System.assertNotEquals(null, viewPage);
+PageReference editPage = sc.edit();
+System.assertNotEquals(null, editPage);
+PageReference cancelPage = sc.cancel();
+System.assertNotEquals(null, cancelPage);
+System.assertEquals(true, sc.equals(sc));
+System.assertEquals(false, sc.equals(null));
+System.assertNotEquals(0, sc.hashCode());
+System.assertEquals(false, sc.equals('not a controller'));
+PageReference resetPage = sc.reset();
+System.assertNotEquals(null, resetPage);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesStandardSetControllerValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a1 = new Account(Name='A1');
+Account a2 = new Account(Name='A2');
+Account a3 = new Account(Name='A3');
+List<Account> accounts = new List<Account>{a1, a2, a3};
+ApexPages.StandardSetController ssc = new ApexPages.StandardSetController(accounts);
+System.assertEquals(3, ssc.getResultSize());
+System.assertEquals(20, ssc.getPageSize());
+ssc.setPageSize(2);
+System.assertEquals(2, ssc.getPageSize());
+System.assertEquals(1, ssc.getPageNumber());
+ssc.setPageNumber(2);
+System.assertEquals(2, ssc.getPageNumber());
+List<Object> page = ssc.getRecords();
+System.assertEquals(1, page.size());
+Object record = ssc.getRecord();
+System.assertNotEquals(null, record);
+List<Object> selected = ssc.getSelected();
+System.assertEquals(0, selected.size());
+ssc.setSelected(accounts);
+System.assertEquals(3, ssc.getSelected().size());
+List<SelectOption> options = ssc.getListViewOptions();
+System.assertNotEquals(null, options);
+ssc.setFilterId('Recent');
+System.assertEquals('Recent', ssc.getFilterId());
+System.assertEquals(true, ssc.getHasPrevious());
+System.assertEquals(false, ssc.getHasNext());
+System.assertEquals(true, ssc.getCompleteResult());
+ssc.first();
+System.assertEquals(1, ssc.getPageNumber());
+ssc.last();
+System.assertEquals(2, ssc.getPageNumber());
+ssc.previous();
+System.assertEquals(1, ssc.getPageNumber());
+ssc.next();
+System.assertEquals(2, ssc.getPageNumber());
+PageReference cancelPage = ssc.cancel();
+System.assertNotEquals(null, cancelPage);
+System.assertEquals('', cancelPage.getUrl());
+System.assertEquals(true, ssc.equals(ssc));
+System.assertEquals(false, ssc.equals(null));
+System.assertNotEquals(0, ssc.hashCode());
+System.assertEquals(1, ssc.toString().length() > 0 ? 1 : 0);
+System.assertEquals(false, ssc.equals('not a controller'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesIdeaStandardControllerValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Idea idea = new Idea(Title='Test Idea');
+ApexPages.IdeaStandardController isc = new ApexPages.IdeaStandardController();
+isc.addFields(new List<String>{'Title'});
+System.assertNotEquals(null, isc.getRecord());
+System.assertEquals(null, isc.getId());
+List<Object> comments = isc.getCommentList();
+System.assertNotEquals(null, comments);
+PageReference viewPage = isc.view();
+System.assertNotEquals(null, viewPage);
+PageReference editPage = isc.edit();
+System.assertNotEquals(null, editPage);
+isc.cancel();
+isc.delete();
+isc.save();
+System.assertEquals(true, isc.equals(isc));
+System.assertEquals(false, isc.equals(null));
+System.assertNotEquals(0, isc.hashCode());
+System.assertEquals(1, isc.toString().length() > 0 ? 1 : 0);
+System.assertEquals(false, isc.equals('not a controller'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesIdeaStandardSetControllerValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.IdeaStandardSetController iss = new ApexPages.IdeaStandardSetController();
+iss.addFields(new List<String>{'Title'});
+List<Object> ideaList = iss.getIdeaList();
+System.assertNotEquals(null, ideaList);
+List<SelectOption> options = iss.getListViewOptions();
+System.assertNotEquals(null, options);
+System.assertEquals(1, iss.getPageNumber());
+iss.setPageNumber(1);
+System.assertEquals(1, iss.getPageNumber());
+System.assertEquals(20, iss.getPageSize());
+iss.setPageSize(10);
+System.assertEquals(10, iss.getPageSize());
+iss.setFilterId('Recent');
+System.assertEquals('Recent', iss.getFilterId());
+System.assertEquals(true, iss.getCompleteResult());
+List<Object> records = iss.getRecords();
+System.assertEquals(0, records.size());
+System.assertEquals(null, iss.getRecord());
+iss.first();
+iss.last();
+iss.next();
+iss.previous();
+System.assertEquals(false, iss.getHasNext());
+System.assertEquals(false, iss.getHasPrevious());
+System.assertEquals(0, iss.getResultSize());
+List<Object> selected = iss.getSelected();
+iss.setSelected(new List<Object>());
+iss.cancel();
+iss.save();
+System.assertEquals(true, iss.equals(iss));
+System.assertEquals(false, iss.equals(null));
+System.assertNotEquals(0, iss.hashCode());
+System.assertEquals(1, iss.toString().length() > 0 ? 1 : 0);
+System.assertEquals(false, iss.equals('not a controller'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesKnowledgeArticleVersionStandardControllerValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Knowledge__kav article = new Knowledge__kav(Title='Test Article');
+ApexPages.KnowledgeArticleVersionStandardController kavsc = new ApexPages.KnowledgeArticleVersionStandardController(article);
+kavsc.addFields(new List<String>{'Title'});
+System.assertNotEquals(null, kavsc.getRecord());
+System.assertEquals(null, kavsc.getId());
+System.assertEquals(null, kavsc.getSourceId());
+PageReference viewPage = kavsc.view();
+System.assertNotEquals(null, viewPage);
+kavsc.cancel();
+kavsc.selectDataCategory('group', 'category');
+kavsc.setDataCategory('group', 'category');
+kavsc.setDataCategory();
+System.assertEquals(true, kavsc.equals(kavsc));
+System.assertEquals(false, kavsc.equals(null));
+System.assertNotEquals(0, kavsc.hashCode());
+System.assertEquals(1, kavsc.toString().length() > 0 ? 1 : 0);
+System.assertEquals(false, kavsc.equals('not a controller'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesActionValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.Action action = new ApexPages.Action('{!list}');
+System.assertEquals('{!list}', action.getExpression());
+PageReference result = action.invoke();
+System.assertNotEquals(null, result);
+System.assertEquals('/list', result.getUrl());
+ApexPages.Action cloned = action.clone();
+System.assertEquals(action.getExpression(), cloned.getExpression());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesComponentValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.Component comp = new ApexPages.Component();
+System.assertNotEquals(null, comp);
+System.assertEquals(true, comp.rendered);
+System.assertEquals(null, comp.id);
+System.assertEquals(null, comp.parent);
+System.assertNotEquals(null, comp.childComponents);
+System.assertNotEquals(null, comp.expressions);
+System.assertNotEquals(null, comp.facets);
+System.assertNotEquals(null, comp.componentIterations);
+System.assertEquals(null, comp.getComponentById('test'));
+ApexPages.Component cloned = comp.clone();
+System.assertNotEquals(null, cloned);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesComponentIterationValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.ComponentIteration ci = new ApexPages.ComponentIteration();
+System.assertNotEquals(null, ci);
+System.assertEquals(null, ci.iterationValue);
+System.assertEquals(null, ci.parent);
+System.assertNotEquals(null, ci.childComponents);
+System.assertEquals(null, ci.getComponentById('test'));
+ApexPages.ComponentIteration cloned = ci.clone();
+System.assertNotEquals(null, cloned);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesSeverityEqualsAndHashCode(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.Severity s1 = ApexPages.Severity.ERROR;
+ApexPages.Severity s2 = ApexPages.Severity.ERROR;
+System.assertEquals(true, s1.equals(s2));
+System.assertEquals(s1.hashCode(), s2.hashCode());
+System.assertEquals(false, s1.equals(ApexPages.Severity.WARNING));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesSystemNamespaceConstructor(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.ApexPages ap = new ApexPages();
+System.assertNotEquals(null, ap);
+ApexPages ap2 = (ApexPages)ap;
+System.assertNotEquals(null, ap2);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesStandardSetControllerToString(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name='Sample');
+ApexPages.StandardSetController ssc = new ApexPages.StandardSetController(new List<Account>{a});
+String s = ssc.toString();
+System.assertEquals(1, s.length() > 0 ? 1 : 0);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesStandardSetControllerCanonicalMethodSpellings(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name='A1');
+Account b = new Account(Name='A2');
+List<Account> accounts = new List<Account>{a, b};
+ApexPages.StandardSetController ssc = new ApexPages.StandardSetController(accounts);
+ssc.setFilterID('Recent');
+System.assertEquals('Recent', ssc.getFilterId());
+	ssc.setfilterid('');
+	System.assertEquals('', ssc.getFilterId());
+Integer page = ssc.setpageNumber(1);
+System.assertEquals(1, ssc.getPageNumber());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
