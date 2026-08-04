@@ -19,7 +19,7 @@ func newSendEmailError(message string) Value {
 	err := Object("Messaging.SendEmailError")
 	err.Fields["fields"] = List()
 	err.Fields["message"] = String(message)
-	err.Fields["statusCode"] = Null
+	err.Fields["statusCode"] = Value{Kind: ValueObject, Type: "StatusCode", Text: "REQUIRED_FIELD_MISSING"}
 	err.Fields["targetObjectId"] = Null
 	return err
 }
@@ -254,7 +254,7 @@ func localEmailValidationError(message Value) string {
 	if emailFieldString(message, "plainTextBody") != "" || emailFieldString(message, "htmlBody") != "" || emailFieldString(message, "templateId") != "" {
 		return ""
 	}
-	return "Email body or template ID is required"
+	return "Email body is required."
 }
 func emailFieldString(message Value, field string) string {
 	if message.Kind != ValueObject || message.Fields == nil {

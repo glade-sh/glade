@@ -92,6 +92,27 @@ System.assertEquals(0, none.getFileAttachments().size());
 	}
 }
 
+func TestExecMessagingSendEmailMissingBodyUsesSalesforceErrorContract(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage();
+message.setToAddresses(new List<String>{'missing-body@example.test'});
+List<Messaging.SendEmailResult> results = Messaging.sendEmail(
+	new List<Messaging.SingleEmailMessage>{message}, false
+);
+System.assertEquals(1, results.size());
+System.assertEquals(false, results[0].isSuccess());
+System.assertEquals(1, results[0].getErrors().size());
+System.assertEquals('Email body is required.', results[0].getErrors()[0].getMessage());
+System.assertEquals('REQUIRED_FIELD_MISSING', String.valueOf(results[0].getErrors()[0].getStatusCode()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMessagingSendEmailFullLocalCapture(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SendEmailOptions opts = new Messaging.SendEmailOptions();
