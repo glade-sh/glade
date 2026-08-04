@@ -495,6 +495,7 @@ func bootstrapControllers(machine *vm.VM, page Page, saved *ViewStatePayload) (v
 			record := standardControllerRecord(machine, page.StandardController)
 			stdController = vm.Object("ApexPages.StandardController")
 			stdController.Fields["record"] = record
+			stdController.Fields["__glade_visualforce_context"] = vm.Bool(true)
 		}
 	}
 	for i, extName := range page.Extensions {

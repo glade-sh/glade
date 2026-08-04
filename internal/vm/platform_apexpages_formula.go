@@ -101,6 +101,9 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.addFields expects List")
 		}
+		if callerProvided, ok := receiver.Fields["__glade_caller_provided"]; ok && callerProvided.Kind == ValueBool && callerProvided.Bool {
+			return Null, receiver, false, true, newExceptionError("SObjectException", "You cannot call addFields when the data is being passed into the controller by the caller.")
+		}
 		fields, err := apexPagesControllerFieldList(args[0], "ApexPages.StandardController.addFields")
 		if err != nil {
 			return Null, receiver, false, true, err

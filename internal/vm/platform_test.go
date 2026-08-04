@@ -5066,6 +5066,29 @@ System.assert(setController.getHasPrevious());
 	}
 }
 
+func TestExecStandardControllerAddFieldsRejectsCallerProvidedRecord(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'CallerProvided');
+ApexPages.StandardController controller = new ApexPages.StandardController(account);
+try {
+    controller.addFields(new List<String>{'Rating'});
+    System.assert(false, 'addFields should reject caller-provided controller data');
+} catch (Exception e) {
+    System.assert(e.getMessage().contains('data is being passed into the controller by the caller'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecApexPagesStandardSetControllerQueryLocatorNavigation(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Locator-One');

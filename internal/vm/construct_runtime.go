@@ -817,6 +817,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		controller := Object("ApexPages.StandardController")
 		controller.Fields["record"] = args[0]
+		controller.Fields["__glade_caller_provided"] = Bool(true)
 		return controller, nil
 	case "ApexPages.KnowledgeArticleVersionStandardController":
 		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueObject {
