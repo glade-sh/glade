@@ -17,6 +17,7 @@ type typeMembers struct {
 	shortKey                          string
 	namespace                         string
 	dependency                        bool
+	platform                          bool
 	sobject                           bool
 	externalPackageSObject            bool
 	partialSObject                    bool
@@ -345,6 +346,7 @@ func semaTypeMembersFromPlatformSymbol(symbol typesys.TypeSymbol) typeMembers {
 		shortKey:                  semaShortTypeKey(symbol.Name),
 		namespace:                 symbol.Namespace,
 		dependency:                true,
+		platform:                  true,
 		kind:                      symbol.Kind,
 		superClass:                symbol.SuperClass,
 		interfaces:                append([]string(nil), symbol.Interfaces...),

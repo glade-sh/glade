@@ -2132,7 +2132,7 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 				})
 			}
 			abstractOverrideNotRequired := hasModifier(overridden.Modifiers, "abstract") && !typeUsesAPIVersionAtLeast(typ, 66)
-		if !hasModifier(member.Modifiers, "override") && hasOverridden && !abstractOverrideNotRequired && !objectFallback {
+			if !hasModifier(member.Modifiers, "override") && hasOverridden && !abstractOverrideNotRequired && !objectFallback {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
 					Code:     "GLADESEMA016",
@@ -2306,6 +2306,9 @@ func semaInheritedMethodVisible(child typesys.TypeSymbol, owner typeMembers, mem
 			hasAnnotation(member.Annotations, "TestVisible")
 	}
 	if strings.EqualFold(strings.TrimSpace(child.Namespace), strings.TrimSpace(owner.namespace)) {
+		return true
+	}
+	if owner.platform && hasModifier(member.Modifiers, "public") {
 		return true
 	}
 	return hasModifier(member.Modifiers, "global") || hasModifier(member.Modifiers, "protected")

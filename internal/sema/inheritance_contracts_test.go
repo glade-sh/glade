@@ -66,6 +66,24 @@ public class Child extends Base {
 	}
 }
 
+func TestInheritanceContractsAllowAuthProviderPluginClassOverrides(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"AuthProvider.cls": `
+public class AuthProvider extends Auth.AuthProviderPluginClass {
+  public override PageReference initiate(Map<String,String> config, String state) { return new PageReference('/login'); }
+  public override Auth.AuthProviderTokenResponse handleCallback(Map<String,String> config, Auth.AuthProviderCallbackState state) { return new Auth.AuthProviderTokenResponse('provider', 'token', 'secret', state.body); }
+  public override Auth.UserData getUserInfo(Map<String,String> config, Auth.AuthProviderTokenResponse response) { return new Auth.UserData(); }
+  public override String getCustomMetadataType() { return 'Auth_Config__mdt'; }
+  public override Auth.OAuthRefreshResult refresh(Map<String,String> config, String refreshToken) { return new Auth.OAuthRefreshResult('access', refreshToken); }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("Auth.AuthProviderPluginClass overrides should resolve: %#v", result.Diagnostics)
+	}
+}
+
 func TestInheritanceContractsAllowStaticMethodToShareInheritedInstanceSignature(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{

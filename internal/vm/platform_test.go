@@ -3161,6 +3161,22 @@ System.assertEquals('https://local.example/services/auth/sso/local?startURL=/sta
 	}
 }
 
+func TestExecAuthApprovalShapes(t *testing.T) {
+	program, err := CompileAnonymous(`
+Auth.AuthProviderCallbackState callback = new Auth.AuthProviderCallbackState(new Map<String,String>{'h' => 'v'}, 'body', new Map<String,String>{'q' => 'v'});
+System.assertEquals('body', callback.body);
+System.assertEquals('v', callback.headers.get('h'));
+System.assertEquals('v', callback.queryParameters.get('q'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecAuthTokenRejectsInvalidIDs(t *testing.T) {
 	program, err := CompileAnonymous(`
 try {
@@ -14377,7 +14393,7 @@ System.assertEquals('AccessLevel:[SYSTEM_MODE=AccessLevel:[SYSTEM_MODE=(already 
 func TestExecDatetimeRejectsAPI67UnsupportedShapes(t *testing.T) {
 	for name, source := range map[string]string{
 		"formatGmt without pattern": `Datetime value = Datetime.newInstanceGmt(2026, 8, 2, 1, 2, 3); value.formatGmt();`,
-		"addMilliseconds":            `Datetime value = Datetime.newInstanceGmt(2026, 8, 2, 1, 2, 3); value.addMilliseconds(1);`,
+		"addMilliseconds":           `Datetime value = Datetime.newInstanceGmt(2026, 8, 2, 1, 2, 3); value.addMilliseconds(1);`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			program, err := CompileAnonymous(source)
