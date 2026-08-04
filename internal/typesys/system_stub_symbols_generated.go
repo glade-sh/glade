@@ -114028,9 +114028,6 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 	{
 		Name:       "Messaging.ActionableNotification",
 		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
 		Methods: []StandardMethodSpec{
 			{Name: "clone", ReturnType: "Object"},
 			{Name: "getActionIdentifier", ReturnType: "String"},
@@ -114080,9 +114077,6 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 	{
 		Name:       "Messaging.ActionResult",
 		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
 		Methods: []StandardMethodSpec{
 			{Name: "clone", ReturnType: "Object"},
 			{Name: "getErrorCode", ReturnType: "Messaging.ActionError"},
@@ -114546,9 +114540,6 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 	{
 		Name:       "Messaging.SendEmailError",
 		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
 		Methods: []StandardMethodSpec{
 			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
 			{Name: "getFields", ReturnType: "List<String>"},
@@ -114567,9 +114558,6 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 	{
 		Name:       "Messaging.SendEmailResult",
 		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
 		Methods: []StandardMethodSpec{
 			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
 			{Name: "getErrors", ReturnType: "List<Messaging.SendEmailError>"},

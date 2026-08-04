@@ -42,8 +42,12 @@ func semaAPI67ReadOnlyPlatformField(path string) bool {
 }
 
 var semaAPI67RejectedPlatformConstructors = map[string]struct{}{
-	"approval":                    {},
-	"queueableduplicatesignature": {},
+	"approval":                         {},
+	"messaging.actionablenotification": {},
+	"messaging.actionresult":           {},
+	"messaging.sendemailerror":         {},
+	"messaging.sendemailresult":        {},
+	"queueableduplicatesignature":      {},
 }
 
 func semaAPI67RejectedPlatformConstructor(typeName string) bool {

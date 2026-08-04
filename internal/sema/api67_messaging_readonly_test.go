@@ -58,6 +58,20 @@ func TestAPI67MessagingAssignmentsRejectedClass(t *testing.T) {
 	assertCB133MessagingAssignmentsRejected(t, result)
 }
 
+func TestAPI67MessagingUndeclaredResultConstructorsRejectedAnonymous(t *testing.T) {
+	for _, typeName := range []string{
+		"Messaging.ActionResult",
+		"Messaging.ActionableNotification",
+		"Messaging.SendEmailResult",
+		"Messaging.SendEmailError",
+	} {
+		result := AnalyzeAnonymous(typesys.Index{}, typeName+" value = new "+typeName+"();")
+		if !result.HasErrors() {
+			t.Fatalf("expected Salesforce API 67 to reject undeclared constructor: %s", typeName)
+		}
+	}
+}
+
 func assertCB133MessagingAssignmentsRejected(t *testing.T, result Result) {
 	t.Helper()
 	if len(result.Diagnostics) != 3 {

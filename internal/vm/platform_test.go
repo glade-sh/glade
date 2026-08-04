@@ -6889,7 +6889,7 @@ Messaging.MassEmailMessage mass = new Messaging.MassEmailMessage();
 System.assertEquals(0, mass.getTargetObjectIds().size());
 System.assertEquals(0, mass.getWhatIds().size());
 System.assertEquals(null, mass.getTemplateId());
-System.assertEquals(null, mass.getDescription());
+System.assertEquals('Mass Email (API)', mass.getDescription());
 System.assertEquals(null, mass.getOptOutPolicy());
 System.assertEquals(null, mass.getEmailPriority());
 System.assertEquals(null, mass.getReplyTo());
