@@ -404,6 +404,9 @@ func scalarText(value Value) string {
 		return value.Text
 	case ValueObject:
 		if value.Type == "Id" || value.Type == "URL" {
+			if text, ok := platformScalarObjectText(value); ok {
+				return text
+			}
 			return value.Text
 		}
 	}

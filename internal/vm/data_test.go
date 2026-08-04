@@ -11228,6 +11228,54 @@ System.assertEquals('Qualified', converted.Status);
 	}
 }
 
+func TestExecDatabaseConvertLeadAccessLevelConvertsSingleAndList(t *testing.T) {
+	program, err := CompileAnonymous(`
+Lead one = new Lead(FirstName = 'CB287', LastName = 'Single', Company = 'CB287 Single Co', Status = 'Open');
+insert one;
+Database.LeadConvert singleConvert = new Database.LeadConvert();
+singleConvert.setLeadId(one.Id);
+singleConvert.setConvertedStatus('Qualified');
+singleConvert.setDoNotCreateOpportunity(true);
+Database.LeadConvertResult singleResult = Database.convertLead(singleConvert, AccessLevel.USER_MODE);
+System.assert(singleResult.isSuccess());
+
+Lead two = new Lead(FirstName = 'CB287', LastName = 'List A', Company = 'CB287 List A Co', Status = 'Open');
+Lead three = new Lead(FirstName = 'CB287', LastName = 'List B', Company = 'CB287 List B Co', Status = 'Open');
+insert new List<Lead>{two, three};
+Database.LeadConvert convertTwo = new Database.LeadConvert();
+convertTwo.setLeadId(two.Id);
+convertTwo.setConvertedStatus('Qualified');
+convertTwo.setDoNotCreateOpportunity(true);
+System.assertEquals(two.Id, convertTwo.getLeadId());
+Database.LeadConvert convertThree = new Database.LeadConvert();
+convertThree.setLeadId(three.Id);
+convertThree.setConvertedStatus('Qualified');
+convertThree.setDoNotCreateOpportunity(true);
+System.assertEquals(three.Id, convertThree.getLeadId());
+List<Database.LeadConvert> conversions = new List<Database.LeadConvert>{convertTwo, convertThree};
+System.assertEquals(two.Id, conversions[0].getLeadId());
+System.assertEquals(three.Id, conversions[1].getLeadId());
+List<Database.LeadConvertResult> listResults = Database.convertLead(conversions, AccessLevel.USER_MODE);
+System.assertEquals(2, listResults.size());
+System.assert(listResults[0].isSuccess());
+System.assert(listResults[1].isSuccess());
+System.assertEquals(two.Id, listResults[0].getLeadId());
+System.assertEquals(three.Id, listResults[1].getLeadId());
+
+Integer convertedCount = [SELECT COUNT() FROM Lead WHERE IsConverted = true];
+System.assertEquals(3, convertedCount);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testLeadConvertOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseConvertLeadRecordsJournalMutation(t *testing.T) {
 	program, err := CompileAnonymous(`
 Lead lead = new Lead(FirstName = 'Ada', LastName = 'Lovelace', Company = 'Analytical Engines', Status = 'Open');
