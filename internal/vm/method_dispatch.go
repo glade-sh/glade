@@ -1353,6 +1353,7 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable",
 		"getTabs", "isSelected", "getSObjectName", "isCustom", "getIconUrl", "getIcons",
 		"getContentType", "getHeight", "getTheme", "getWidth",
+		"getColor", "getContext",
 		"to15", "getSObjectType",
 		"toStartOfMonth", "toEndOfMonth", "format", "formatGmt", "toString",
 		"date", "dateGmt", "time", "timeGmt", "year", "month", "day", "getTime",
