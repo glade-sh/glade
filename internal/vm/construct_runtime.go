@@ -424,11 +424,14 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			response.Fields[field] = value
 		}
 		return response, nil
-	case "Database.DMLOptions", "DMLOptions":
+	case "Database.DMLOptions", "System.DMLOptions", "DMLOptions":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Database.DMLOptions constructor expects 0 arguments")
 		}
 		options := newDatabaseDMLOptions()
+		if typeName == "System.DMLOptions" {
+			options.Type = typeName
+		}
 		for field, value := range namedArgs {
 			options.Fields[field] = value
 		}

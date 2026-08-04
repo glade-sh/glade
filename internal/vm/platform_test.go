@@ -14326,6 +14326,20 @@ System.assertEquals(5, options.getMinimumQueueableDelayInMinutes());
 	}
 }
 
+func TestExecSystemQualifiedDMLOptionsFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.DMLOptions options = new System.DMLOptions();
+System.assertEquals(null, options.allowFieldTruncation);
+System.assertEquals(null, options.optAllOrNone);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatetimeRejectsAPI67UnsupportedShapes(t *testing.T) {
 	for name, source := range map[string]string{
 		"formatGmt without pattern": `Datetime value = Datetime.newInstanceGmt(2026, 8, 2, 1, 2, 3); value.formatGmt();`,
