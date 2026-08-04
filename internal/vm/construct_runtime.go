@@ -1209,29 +1209,24 @@ func setExceptionMessage(object *Value, value Value) {
 }
 
 func constructAuthUserData(args []Value, namedArgs map[string]Value) (Value, error) {
-	fields := []string{"identifier", "firstName", "lastName", "fullName", "email", "link", "username", "locale", "provider", "siteLoginUrl", "attributeMap"}
-	if len(namedArgs) != 0 || (len(args) != 0 && len(args) != len(fields)) {
-		return Null, fmt.Errorf("Auth.UserData constructor expects 0 or 11 arguments")
+	fields := []string{"identifier", "firstName", "lastName", "fullName", "email", "link", "username", "locale", "provider", "siteLoginUrl", "attributeMap", "idToken", "userInfoJSONString", "idTokenJSONString"}
+	if len(namedArgs) != 0 || (len(args) != 11 && len(args) != 13) {
+		return Null, fmt.Errorf("Auth.UserData constructor expects 11 or 13 arguments")
 	}
 	data := Object("Auth.UserData")
 	for _, field := range fields {
 		data.Fields[field] = Null
 	}
-	if len(args) == 0 {
-		return data, nil
-	}
-	for index, field := range fields {
+	for index := range args {
+		field := fields[index]
 		data.Fields[field] = args[index]
 	}
 	return data, nil
 }
 
 func constructAuthVerificationResult(args []Value, namedArgs map[string]Value) (Value, error) {
-	if len(namedArgs) != 0 || (len(args) != 0 && len(args) != 3) {
-		return Null, fmt.Errorf("Auth.VerificationResult constructor expects 0 arguments or redirect, success, message")
-	}
-	if len(args) == 0 {
-		return newAuthVerificationResult(Null, Bool(false), Null), nil
+	if len(namedArgs) != 0 || len(args) != 3 {
+		return Null, fmt.Errorf("Auth.VerificationResult constructor expects redirect, success, message")
 	}
 	return newAuthVerificationResult(args[0], args[1], args[2]), nil
 }

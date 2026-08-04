@@ -2284,20 +2284,18 @@ private class AddressValueTest {
 	}
 }
 
-func TestRunSupportsAuthValueObjectDefaultConstructors(t *testing.T) {
+func TestRunSupportsDocumentedAuthValueObjectConstructorsAndRejectsZeroArgumentForms(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/AuthValueObjectTest.cls"), `
 @isTest
 private class AuthValueObjectTest {
-  @isTest static void defaultConstructorsAreUsable() {
-    Auth.UserData data = new Auth.UserData();
-    Auth.VerificationResult result = new Auth.VerificationResult();
+  @isTest static void documentedConstructorsAreUsable() {
     Auth.UserData populated = new Auth.UserData('003000000000001', 'Ada', 'Lovelace', 'Ada Lovelace', 'ada@example.invalid', null, 'ada@example.invalid', 'en_US', 'local', null, null);
+    Auth.UserData populatedWithTokens = new Auth.UserData('003000000000001', 'Ada', 'Lovelace', 'Ada Lovelace', 'ada@example.invalid', null, 'ada@example.invalid', 'en_US', 'local', null, null, 'id-token', '{"sub":"Ada"}');
     Auth.VerificationResult verified = new Auth.VerificationResult(new PageReference('/welcome'), true, 'ok');
-    System.assertNotEquals(null, data);
-    System.assertNotEquals(null, result);
     System.assertEquals('003000000000001', populated.identifier);
+    System.assertEquals('id-token', populatedWithTokens.idToken);
     System.assertEquals(true, verified.success);
   }
 }
@@ -2306,6 +2304,23 @@ private class AuthValueObjectTest {
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AuthValueObjectTest.cls"), `
+@isTest
+private class AuthValueObjectTest {
+  @isTest static void zeroArgumentConstructorsAreRejected() {
+    Auth.UserData data = new Auth.UserData();
+    Auth.VerificationResult result = new Auth.VerificationResult();
+    System.assertNotEquals(null, data);
+    System.assertNotEquals(null, result);
+  }
+}
+`)
+
+	run = Run(loadTestIndex(t, root), Options{NoDiskCache: true})
+	if got := run.Summary(); got.Total != 1 || got.CompileErrors != 1 || got.Passed != 0 || got.Failed != 0 {
+		t.Fatalf("zero-argument constructors executed instead of failing compile: %#v problem=%q", got, firstRunProblem(run))
 	}
 }
 

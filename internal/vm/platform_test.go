@@ -3161,6 +3161,23 @@ System.assertEquals('https://local.example/services/auth/sso/local?startURL=/sta
 	}
 }
 
+func TestExecAuthValueObjectConstructorsRejectZeroArgumentForms(t *testing.T) {
+	for name, source := range map[string]string{
+		"UserData":           `Auth.UserData value = new Auth.UserData();`,
+		"VerificationResult": `Auth.VerificationResult value = new Auth.VerificationResult();`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			program, err := CompileAnonymous(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Execute(program, nil); err == nil {
+				t.Fatalf("%s zero-argument constructor executed", name)
+			}
+		})
+	}
+}
+
 func TestExecAuthApprovalShapes(t *testing.T) {
 	program, err := CompileAnonymous(`
 Auth.AuthProviderCallbackState callback = new Auth.AuthProviderCallbackState(new Map<String,String>{'h' => 'v'}, 'body', new Map<String,String>{'q' => 'v'});
