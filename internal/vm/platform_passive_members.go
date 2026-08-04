@@ -2592,6 +2592,35 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return List(), receiver, false, true, nil
 		}
+	case "Database.DuplicateError":
+		switch method {
+		case "getDuplicateResult":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.DuplicateError.getDuplicateResult expects 0 arguments")
+			}
+			if dupResult, ok := receiver.Fields["duplicateresult"]; ok {
+				return dupResult, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		case "getMessage":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.DuplicateError.getMessage expects 0 arguments")
+			}
+			return receiver.Fields["message"], receiver, false, true, nil
+		case "getStatusCode":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.DuplicateError.getStatusCode expects 0 arguments")
+			}
+			return databaseErrorStatusCodeValue(receiver.Fields["statusCode"]), receiver, false, true, nil
+		case "getFields":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.DuplicateError.getFields expects 0 arguments")
+			}
+			if fields, ok := receiver.Fields["fields"]; ok {
+				return fields, receiver, false, true, nil
+			}
+			return List(), receiver, false, true, nil
+		}
 	case "Exception":
 		if method == "getMessage" {
 			if len(args) != 0 {
