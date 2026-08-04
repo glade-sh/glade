@@ -3747,7 +3747,7 @@ System.assertEquals('Page.Missing', new PageReference('Page.Missing').getUrl());
 ApexPages.Severity severity = ApexPages.Severity.ERROR;
 System.assertEquals('ERROR', severity.name());
 System.assertEquals('ERROR', severity.toString());
-System.assertEquals(3, severity.ordinal());
+System.assertEquals(1, severity.ordinal());
 System.assertEquals(5, ApexPages.Severity.values().size());
 ApexPages.Message message = new ApexPages.Message(severity, 'Summary', 'Detail');
 System.assertEquals(ApexPages.Severity.ERROR, message.getSeverity());
@@ -3765,6 +3765,29 @@ System.assertEquals('Detail', message.getDetail());
 	machine.RegisterPageReference("AccountView")
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesMessageValueContractsMatchSalesforce(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<ApexPages.Severity> severities = ApexPages.Severity.values();
+System.assertEquals(ApexPages.Severity.FATAL, severities[0]);
+System.assertEquals(ApexPages.Severity.ERROR, severities[1]);
+System.assertEquals(ApexPages.Severity.WARNING, severities[2]);
+System.assertEquals(ApexPages.Severity.INFO, severities[3]);
+System.assertEquals(ApexPages.Severity.CONFIRM, severities[4]);
+
+ApexPages.Message first = new ApexPages.Message(ApexPages.Severity.WARNING, 'Summary', 'Detail');
+ApexPages.Message second = new ApexPages.Message(ApexPages.Severity.WARNING, 'Summary', 'Detail');
+System.assertEquals(true, first.equals(second));
+System.assertEquals(first.hashCode(), second.hashCode());
+System.assertEquals('ApexPages.Message["Summary"]', first.toString());
+`)
+	if err != nil {
+		t.Fatalf("compile: %v", err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatalf("execute: %v", err)
 	}
 }
 

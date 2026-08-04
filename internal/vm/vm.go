@@ -404,6 +404,19 @@ func apexPagesMessageFieldEqual(left, right Value, field string) bool {
 	return leftValue.Equal(rightValue)
 }
 
+func apexPagesMessageHashCode(message Value) int32 {
+	severity, _ := apexPagesSeverityName(message.Fields["severity"])
+	summary := ""
+	if value, ok := message.Fields["summary"]; ok {
+		summary = value.String()
+	}
+	detail := ""
+	if value, ok := message.Fields["detail"]; ok {
+		detail = value.String()
+	}
+	return javaStringHashCode(severity + "\x00" + summary + "\x00" + detail)
+}
+
 func (vm *VM) requireTestContext(callee string) error {
 	if vm.testContext == nil {
 		return fmt.Errorf("%s is only available in test context", callee)

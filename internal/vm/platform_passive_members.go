@@ -236,6 +236,29 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	}()
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	if strings.EqualFold(receiver.Type, "ApexPages.Message") {
+		switch strings.ToLower(method) {
+		case "equals":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("ApexPages.Message.equals expects 1 argument")
+			}
+			return Bool(apexPagesMessagesEquivalent(receiver, args[0])), receiver, false, true, nil
+		case "hashcode":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("ApexPages.Message.hashCode expects 0 arguments")
+			}
+			return Int(int64(apexPagesMessageHashCode(receiver))), receiver, false, true, nil
+		case "tostring":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("ApexPages.Message.toString expects 0 arguments")
+			}
+			summary := ""
+			if value, ok := receiver.Fields["summary"]; ok {
+				summary = value.String()
+			}
+			return String("ApexPages.Message[\"" + summary + "\"]"), receiver, false, true, nil
+		}
+	}
 	if value, handled, err := vm.callTypeObjectMember(receiver, method, args, result); handled || err != nil {
 		return value, receiver, false, true, err
 	}

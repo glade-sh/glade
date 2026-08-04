@@ -3720,7 +3720,7 @@ var generatedPlatformUnsupportedConstructors = []string{
 	"Schema.SObjectType",
 }
 
-var apexPagesSeverityNames = []string{"CONFIRM", "INFO", "WARNING", "ERROR", "FATAL"}
+var apexPagesSeverityNames = []string{"FATAL", "ERROR", "WARNING", "INFO", "CONFIRM"}
 
 var metadataDeployStatusNames = []string{"Succeeded", "SUCCEEDED", "Failed", "FAILED", "InProgress", "INPROGRESS", "Pending", "PENDING", "Canceling", "CANCELING", "Canceled", "CANCELED"}
 
