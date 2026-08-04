@@ -478,6 +478,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if isThrownAuraHandledExceptionWithoutExplicitMessage(receiver) {
 				return String("Script-thrown exception"), receiver, false, true, nil
 			}
+			if exceptionTypeName(receiver.Type) == "NullPointerException" {
+				if _, ok := receiver.Fields["message"]; !ok {
+					return String("Script-thrown exception"), receiver, false, true, nil
+				}
+			}
 			if message, ok := receiver.Fields["message"]; ok {
 				return message, receiver, false, true, nil
 			}

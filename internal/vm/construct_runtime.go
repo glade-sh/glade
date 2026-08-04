@@ -1009,6 +1009,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		stack := vm.rawStackFrames()
 		if vm.currentMethod.Name == "" && len(stack) > 0 {
 			stack[len(stack)-1].Symbol = "AnonymousBlock"
+			stack[len(stack)-1].Column = 1
 		}
 		object = annotateConstructedException(object, stack)
 	}

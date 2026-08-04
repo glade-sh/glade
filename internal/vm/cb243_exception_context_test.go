@@ -15,3 +15,18 @@ System.assertEquals('AnonymousBlock: line 2, column 1', constructed.getStackTrac
 		t.Fatal(err)
 	}
 }
+
+func TestConstructedExceptionUsesAnonymousColumnAndDefaultNullPointerMessage(t *testing.T) {
+	program, err := CompileAnonymous(`NullPointerException nullPointer = new NullPointerException();
+System.assertEquals('Script-thrown exception', nullPointer.getMessage());
+System.assertEquals('AnonymousBlock: line 1, column 1', nullPointer.getStackTraceString());
+ProcedureException procedure = new ProcedureException('procedure message');
+System.assertEquals('AnonymousBlock: line 4, column 1', procedure.getStackTraceString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
