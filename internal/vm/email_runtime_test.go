@@ -113,6 +113,23 @@ System.assertEquals('REQUIRED_FIELD_MISSING', String.valueOf(results[0].getError
 	}
 }
 
+func TestExecMessagingMassEmailMessageSalesforceDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.MassEmailMessage mass = new Messaging.MassEmailMessage();
+System.assertEquals('Mass Email (API)', mass.description);
+System.assertEquals(null, mass.targetObjectIds);
+System.assertEquals(null, mass.whatIds);
+System.assertEquals(0, mass.getTargetObjectIds().size());
+System.assertEquals(0, mass.getWhatIds().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMessagingSendEmailFullLocalCapture(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SendEmailOptions opts = new Messaging.SendEmailOptions();

@@ -74,14 +74,15 @@ func newSingleEmailMessage() Value {
 func newMassEmailMessage() Value {
 	message := Object("Messaging.MassEmailMessage")
 	for _, field := range []string{"targetObjectIds", "whatIds"} {
-		message.Fields[field] = List()
+		message.Fields[field] = Null
 	}
 	for _, field := range []string{
-		"templateId", "description", "optOutPolicy", "replyTo", "senderDisplayName",
+		"templateId", "optOutPolicy", "replyTo", "senderDisplayName",
 		"subject", "emailPriority",
 	} {
 		message.Fields[field] = Null
 	}
+	message.Fields["description"] = String("Mass Email (API)")
 	for _, field := range []string{"saveAsActivity", "bccSender", "useSignature"} {
 		message.Fields[field] = Bool(false)
 	}
@@ -1370,7 +1371,11 @@ func callMassEmailMessageMember(receiver Value, method string, args []Value) (Va
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects 0 arguments", method)
 		}
-		return receiver.Fields[emailMessageFieldName(method)], receiver, false, true, nil
+		value := receiver.Fields[emailMessageFieldName(method)]
+		if (method == "getTargetObjectIds" || method == "getWhatIds") && value.Kind == ValueNull {
+			value = List()
+		}
+		return value, receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
