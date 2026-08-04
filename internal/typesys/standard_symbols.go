@@ -1300,8 +1300,8 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "CommerceExtension.ResolutionStrategy", Kind: apexast.DeclarationInterface},
 	{Name: "Finalizer", Kind: apexast.DeclarationInterface},
 	{Name: "Readiness.ProductEvaluator", Kind: apexast.DeclarationInterface},
-	{Name: "DataSource.AsyncDeleteCallback", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "processDelete", ReturnType: "void", Parameters: []string{"Database.DeleteResult"}}}},
-	{Name: "DataSource.AsyncSaveCallback", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "processSave", ReturnType: "void", Parameters: []string{"Database.SaveResult"}}}},
+	{Name: "DataSource.AsyncDeleteCallback", Kind: apexast.DeclarationClass, Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{{Name: "processDelete", ReturnType: "void", Modifiers: []string{"virtual"}, Parameters: []string{"Database.DeleteResult"}}}},
+	{Name: "DataSource.AsyncSaveCallback", Kind: apexast.DeclarationClass, Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{{Name: "processSave", ReturnType: "void", Modifiers: []string{"virtual"}, Parameters: []string{"Database.SaveResult"}}}},
 	{Name: "Metadata.DeployResult", Properties: []StandardPropertySpec{
 		{Name: "errorMessage", Type: "String"},
 		{Name: "errorStatusCode", Type: "Metadata.StatusCode", Force: true},

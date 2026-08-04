@@ -21,6 +21,26 @@ func TestDatabaseInsertAsyncSingleRecordCallbackAccessLevelResolves(t *testing.T
 	}
 }
 
+func TestDataSourceAsyncSaveCallbackUsesClassInheritance(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"SaveCallback.cls": `public class SaveCallback extends DataSource.AsyncSaveCallback { public override void processSave(Database.SaveResult result) {} }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected AsyncSaveCallback class inheritance to compile: %#v", result.Diagnostics)
+	}
+}
+
+func TestDataSourceAsyncDeleteCallbackUsesClassInheritance(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"DeleteCallback.cls": `public class DeleteCallback extends DataSource.AsyncDeleteCallback { public override void processDelete(Database.DeleteResult result) {} }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected AsyncDeleteCallback class inheritance to compile: %#v", result.Diagnostics)
+	}
+}
+
 func TestTypeContractRejectsInvalidSourceTypesAndLiterals(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{

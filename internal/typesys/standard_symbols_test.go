@@ -727,14 +727,20 @@ func TestStandardPlatformSymbolsIncludeServiceBackedSystemAndStdlibShapes(t *tes
 	requireStandardSymbol(t, symbols, "DataSource")
 
 	asyncSaveCallback := requireStandardSymbol(t, symbols, "DataSource.AsyncSaveCallback")
-	if asyncSaveCallback.Kind != apexast.DeclarationInterface {
-		t.Fatalf("DataSource.AsyncSaveCallback kind = %q, want interface", asyncSaveCallback.Kind)
+	if asyncSaveCallback.Kind != apexast.DeclarationClass {
+		t.Fatalf("DataSource.AsyncSaveCallback kind = %q, want class", asyncSaveCallback.Kind)
+	}
+	if !hasModifier(asyncSaveCallback.Modifiers, "abstract") {
+		t.Fatalf("DataSource.AsyncSaveCallback modifiers = %#v, want abstract", asyncSaveCallback.Modifiers)
 	}
 	requireStandardMethod(t, asyncSaveCallback, "processSave", []string{"Database.SaveResult"}, false)
 
 	asyncDeleteCallback := requireStandardSymbol(t, symbols, "DataSource.AsyncDeleteCallback")
-	if asyncDeleteCallback.Kind != apexast.DeclarationInterface {
-		t.Fatalf("DataSource.AsyncDeleteCallback kind = %q, want interface", asyncDeleteCallback.Kind)
+	if asyncDeleteCallback.Kind != apexast.DeclarationClass {
+		t.Fatalf("DataSource.AsyncDeleteCallback kind = %q, want class", asyncDeleteCallback.Kind)
+	}
+	if !hasModifier(asyncDeleteCallback.Modifiers, "abstract") {
+		t.Fatalf("DataSource.AsyncDeleteCallback modifiers = %#v, want abstract", asyncDeleteCallback.Modifiers)
 	}
 	requireStandardMethod(t, asyncDeleteCallback, "processDelete", []string{"Database.DeleteResult"}, false)
 
