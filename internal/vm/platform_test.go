@@ -7742,6 +7742,36 @@ System.assertEquals(0, emptyInlineQueried.size());
 	}
 }
 
+func TestExecDatabaseGetQueryLocatorObjectHeldList(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Object-One');
+insert new Account(Name = 'Object-Two');
+List<Account> rows = [SELECT Id, Name FROM Account ORDER BY Name];
+Object objectRows = rows;
+Database.QueryLocator plainLocator = Database.getQueryLocator(objectRows);
+Database.QueryLocator accessLocator = Database.getQueryLocator(objectRows, AccessLevel.USER_MODE);
+System.assertEquals('SELECT Id , Name FROM Account ORDER BY Name', plainLocator.getQuery());
+System.assertEquals('SELECT Id , Name FROM Account ORDER BY Name', accessLocator.getQuery());
+Object plainIterator = plainLocator.iterator();
+Object accessIterator = accessLocator.iterator();
+System.assert(plainIterator.hasNext());
+System.assert(accessIterator.hasNext());
+Account plainRow = plainIterator.next();
+Account accessRow = accessIterator.next();
+System.assertEquals('Object-One', plainRow.Name);
+System.assertEquals('Object-One', accessRow.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestBatchScopeValuesRefreshesQueryLocatorQueriedFields(t *testing.T) {
 	machine := New(nil)
 	org := storage.NewOrgState()
