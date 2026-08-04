@@ -12444,7 +12444,7 @@ System.runAs(new User(Id = '005-panama-user', TimeZoneSidKey = 'America/Panama')
 func TestExecSiteGetSiteId(t *testing.T) {
 	program, err := CompileAnonymous(`
 String siteId = Site.getSiteId();
-System.assertEquals('local-site', siteId);
+System.assertEquals(null, siteId);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -12497,6 +12497,54 @@ System.assertEquals(false, Site.forgotPassword('user@example.invalid', 'ResetTem
 	}
 }
 
+func TestExecSiteNoSiteRecordReturnsNullForContextMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(null, Site.getAnalyticsTrackingCode());
+System.assertEquals(null, Site.getAdminEmail());
+System.assertEquals(null, Site.getAdminId());
+System.assertEquals(null, Site.getMasterLabel());
+System.assertEquals(null, Site.getOriginalUrl());
+System.assertEquals(null, Site.getSiteId());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCompileSiteUrlRewriterDirectConstructionRejected(t *testing.T) {
+	program, err := CompileAnonymous(`new Site.UrlRewriter();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "cannot be constructed") {
+		t.Fatalf("Site.UrlRewriter constructor execution error = %v, want cannot be constructed", err)
+	}
+}
+
+func TestSiteUrlRewriterRuntimeMethodsRemainAvailableForProvidedReceiver(t *testing.T) {
+	machine := New(nil)
+	rewriter := Object("Site.UrlRewriter")
+	page := newPageReference("/tail")
+	generated, _, _, handled, err := machine.callPlatformObjectMember(rewriter, "generateUrlFor", []Value{List(page)}, &Result{})
+	if err != nil || !handled {
+		t.Fatalf("generateUrlFor handled=%v err=%v", handled, err)
+	}
+	if generated.Kind != ValueList || len(generated.List) != 1 || pageReferenceURL(generated.List[0]).String() != "/tail" {
+		t.Fatalf("generateUrlFor = %#v, want one /tail PageReference", generated)
+	}
+	mapped, _, _, handled, err := machine.callPlatformObjectMember(rewriter, "mapRequestUrl", []Value{page}, &Result{})
+	if err != nil || !handled {
+		t.Fatalf("mapRequestUrl handled=%v err=%v", handled, err)
+	}
+	if mapped.Kind != ValueObject || pageReferenceURL(mapped).String() != "/tail" {
+		t.Fatalf("mapRequestUrl = %#v, want /tail PageReference", mapped)
+	}
+}
+
 func TestExecSiteTailLocalOverloadsAndHostedContextGuards(t *testing.T) {
 	program, err := CompileAnonymous(`
 User externalUser = new User(Username = 'tail@example.invalid');
@@ -12509,12 +12557,6 @@ System.assertEquals(null, Site.createPortalUser(externalUser, '001000000000001',
 System.assertEquals(null, Site.changePassword('newSecret', 'newSecret'));
 System.assertEquals(null, Site.changePassword('newSecret', 'newSecret', 'oldSecret'));
 System.assertEquals('/', Site.login('tail@example.invalid', 'secret', '').getUrl());
-Site.UrlRewriter rewriter = new Site.UrlRewriter();
-List<PageReference> input = new List<PageReference>{new PageReference('/tail')};
-List<PageReference> generated = rewriter.generateUrlFor(input);
-System.assertEquals(1, generated.size());
-System.assertEquals('/tail', generated[0].getUrl());
-System.assertEquals('/mapped', rewriter.mapRequestUrl(new PageReference('/mapped')).getUrl());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -12833,11 +12875,6 @@ return Instance;
 func TestExecServiceRoutingLocalHarnesses(t *testing.T) {
 	program, err := CompileAnonymous(`
 Aura.redirect(new PageReference('/redirect'));
-Site.UrlRewriter rewriter = new Site.UrlRewriter();
-List<PageReference> rewritten = rewriter.generateUrlFor(new List<PageReference>{new PageReference('/one')});
-System.assertEquals(1, rewritten.size());
-System.assertEquals('/one', rewritten[0].getUrl());
-System.assertEquals('/two', rewriter.mapRequestUrl(new PageReference('/two')).getUrl());
 System.assertEquals('001000000000001', new ChatterAnswers.AccountCreator().createAccount('Ada', 'Lovelace', UserInfo.getUserId()));
 LiveAgent.LiveAgentRealTimeSystem.cancelChatRequests(new List<String>{'request-1'});
 LiveAgent.LiveAgentRealTimeSystem.setButtonStatus('button-1', true);

@@ -3208,6 +3208,9 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getSiteId expects 0 arguments")
 		}
+		if !vm.hasOrgRecords("Site") {
+			return Null, nil
+		}
 		return String(vm.firstOrgRecordID("Site", "local-site")), nil
 	case "Site.getBaseUrl":
 		if len(args) != 0 {
@@ -3225,6 +3228,9 @@ platformStaticCall:
 	case "Site.getBaseRequestUrl", "Site.getBaseSecureUrl", "Site.getBaseCustomUrl", "Site.getBaseInsecureUrl", "Site.getCustomWebAddress", "Site.getAnalyticsTrackingCode", "Site.getOriginalUrl":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		if (strings.EqualFold(callee, "Site.getAnalyticsTrackingCode") || strings.EqualFold(callee, "Site.getOriginalUrl")) && !vm.hasOrgRecords("Site") {
+			return Null, nil
 		}
 		return String(""), nil
 	case "Site.getPasswordPolicyStatement":
@@ -3261,15 +3267,24 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getAdminEmail expects 0 arguments")
 		}
+		if !vm.hasOrgRecords("Site") {
+			return Null, nil
+		}
 		return String(vm.siteAdminEmail()), nil
 	case "Site.getAdminId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getAdminId expects 0 arguments")
 		}
+		if !vm.hasOrgRecords("Site") {
+			return Null, nil
+		}
 		return String(vm.firstOrgRecordIDField("Site", "AdminId", vm.currentUserInfoField("Id", "005-local-user"))), nil
 	case "Site.getMasterLabel":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getMasterLabel expects 0 arguments")
+		}
+		if !vm.hasOrgRecords("Site") {
+			return Null, nil
 		}
 		return String(vm.firstOrgRecordString("Site", "MasterLabel", "Local Site")), nil
 	case "Site.isRegistrationEnabled":

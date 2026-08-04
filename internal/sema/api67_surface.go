@@ -48,6 +48,7 @@ var semaAPI67RejectedPlatformConstructors = map[string]struct{}{
 	"messaging.sendemailerror":         {},
 	"messaging.sendemailresult":        {},
 	"queueableduplicatesignature":      {},
+	"site.urlrewriter":                 {},
 }
 
 func semaAPI67RejectedPlatformConstructor(typeName string) bool {

@@ -159,6 +159,14 @@ func (vm *VM) siteAdminEmail() string {
 	return "system@example.invalid"
 }
 
+func (vm *VM) hasOrgRecords(objectName string) bool {
+	if vm == nil || vm.Org == nil {
+		return false
+	}
+	object, ok := vm.Org.Objects[objectName]
+	return ok && len(object.Records) > 0
+}
+
 func (vm *VM) orgBool(objectName, field string, fallback bool) bool {
 	if vm.Org == nil {
 		return fallback

@@ -289,6 +289,9 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 	if !ok || generated.Kind == apexast.DeclarationInterface || generated.Kind == apexast.DeclarationEnum || vm.isSObjectLikeType(generated.Name) {
 		return Null, false, nil
 	}
+	if strings.EqualFold(generated.Name, "Site.UrlRewriter") {
+		return Null, true, fmt.Errorf("Site.UrlRewriter cannot be constructed")
+	}
 	if strings.EqualFold(generated.Name, "Auth.AuthConfiguration") {
 		value, err := constructAuthConfigurationValue(args, namedArgs)
 		return value, true, err
