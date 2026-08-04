@@ -12451,6 +12451,35 @@ System.assertEquals(false, Site.forgotPassword('user@example.invalid', 'ResetTem
 	}
 }
 
+func TestExecSiteTailLocalOverloadsAndHostedContextGuards(t *testing.T) {
+	program, err := CompileAnonymous(`
+User externalUser = new User(Username = 'tail@example.invalid');
+System.assertEquals(null, Site.createExternalUser(externalUser, '001000000000001'));
+System.assertEquals(null, Site.createExternalUser(externalUser, '001000000000001', 'secret'));
+System.assertEquals(null, Site.createExternalUser(externalUser, '001000000000001', 'secret', false));
+System.assertEquals(null, Site.createPortalUser(externalUser, '001000000000001'));
+System.assertEquals(null, Site.createPortalUser(externalUser, '001000000000001', 'secret'));
+System.assertEquals(null, Site.createPortalUser(externalUser, '001000000000001', 'secret', false));
+System.assertEquals(null, Site.changePassword('newSecret', 'newSecret'));
+System.assertEquals(null, Site.changePassword('newSecret', 'newSecret', 'oldSecret'));
+System.assertEquals('/', Site.login('tail@example.invalid', 'secret', '').getUrl());
+Site.UrlRewriter rewriter = new Site.UrlRewriter();
+List<PageReference> input = new List<PageReference>{new PageReference('/tail')};
+List<PageReference> generated = rewriter.generateUrlFor(input);
+System.assertEquals(1, generated.size());
+System.assertEquals('/tail', generated[0].getUrl());
+System.assertEquals('/mapped', rewriter.mapRequestUrl(new PageReference('/mapped')).getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecOrgShapeBackedSiteNetworkAndCurrencyCalls(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assert(UserInfo.isMultiCurrencyOrganization());
