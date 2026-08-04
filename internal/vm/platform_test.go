@@ -5066,6 +5066,36 @@ System.assert(setController.getHasPrevious());
 	}
 }
 
+func TestExecApexPagesStandardSetControllerQueryLocatorNavigation(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Locator-One');
+insert new Account(Name = 'Locator-Two');
+Database.QueryLocator locator = Database.getQueryLocator('SELECT Id, Name FROM Account ORDER BY Name');
+ApexPages.StandardSetController controller = new ApexPages.StandardSetController(locator);
+System.assertEquals(2, controller.getResultSize());
+controller.setPageSize(1);
+System.assertEquals('Locator-One', controller.getRecord().Name);
+System.assert(controller.getHasNext());
+controller.next();
+System.assertEquals('Locator-Two', controller.getRecord().Name);
+System.assert(controller.getHasPrevious());
+controller.last();
+System.assertEquals(2, controller.getPageNumber());
+System.assert(!controller.getHasNext());
+controller.previous();
+System.assertEquals('Locator-One', controller.getRecord().Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecIdeaStandardSetControllerListViewOptions(t *testing.T) {
 	program, err := CompileAnonymous(`
 ApexPages.IdeaStandardSetController controller = new ApexPages.IdeaStandardSetController();
