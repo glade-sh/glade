@@ -894,6 +894,10 @@ func TestStandardPlatformSymbolsIncludeDataSourceCompileShapes(t *testing.T) {
 
 	database := requireStandardSymbol(t, symbols, "Database")
 	for _, method := range []string{"insertAsync", "updateAsync"} {
+		requireStandardMethod(t, database, method, []string{"SObject", "DataSource.AsyncSaveCallback", "AccessLevel"}, true)
+	}
+	requireStandardMethod(t, database, "deleteAsync", []string{"SObject", "DataSource.AsyncDeleteCallback", "AccessLevel"}, true)
+	for _, method := range []string{"insertAsync", "updateAsync"} {
 		requireStandardMethod(t, database, method, []string{"Object", "AccessLevel"}, true)
 		requireStandardMethod(t, database, method, []string{"List<Object>", "AccessLevel"}, true)
 	}

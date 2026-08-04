@@ -1,11 +1,25 @@
 package sema
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/typesys"
 )
+
+func TestDatabaseInsertAsyncSingleRecordCallbackAccessLevelResolves(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"SaveCallback.cls": `public class SaveCallback implements DataSource.AsyncSaveCallback { public void processSave(Database.SaveResult result) {} }`,
+		"Probe.cls":        `public class Probe { public void run() { Database.SaveResult result = Database.insertAsync(new Account(Name = 'Async'), new SaveCallback(), AccessLevel.USER_MODE); } }`,
+	})
+	for _, diagnostic := range result.Diagnostics {
+		if diagnostic.Code == "GLADESEMA022" && strings.Contains(diagnostic.Message, "insertAsync") {
+			t.Fatalf("single-record insertAsync callback/access-level call was ambiguous: %#v", result.Diagnostics)
+		}
+	}
+}
 
 func TestTypeContractRejectsInvalidSourceTypesAndLiterals(t *testing.T) {
 	t.Parallel()

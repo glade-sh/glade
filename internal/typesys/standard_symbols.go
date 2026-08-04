@@ -577,6 +577,14 @@ func normalizeStandardMethodParameterSpecs(typeName string, method StandardMetho
 			specs[i].Type = "AccessLevel"
 			continue
 		}
+		if strings.EqualFold(typeName, "Database") && strings.EqualFold(specs[i].Name, "callback") && specs[i].Type == "Object" {
+			switch strings.ToLower(method.Name) {
+			case "deleteasync":
+				specs[i].Type = "DataSource.AsyncDeleteCallback"
+			case "insertasync", "updateasync":
+				specs[i].Type = "DataSource.AsyncSaveCallback"
+			}
+		}
 		if strings.EqualFold(specs[i].Name, "dmlOptions") && specs[i].Type == "Object" {
 			specs[i].Name = "dmlOptions"
 			specs[i].Type = "Database.DMLOptions"
