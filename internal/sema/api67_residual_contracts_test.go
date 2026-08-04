@@ -78,6 +78,29 @@ func TestAPI67CompileShapeRejectsInternalNoArgConstructors(t *testing.T) {
 	}
 }
 
+func TestAPI67CompileShapeRejectsNonConstructibleAndHiddenConstructors(t *testing.T) {
+	tests := map[string]string{
+		"System.Aura":                 `System.Aura value = new System.Aura();`,
+		"System.Collator":             `System.Collator value = new System.Collator();`,
+		"System.FinalizerContextImpl": `System.FinalizerContextImpl value = new System.FinalizerContextImpl();`,
+		"System.FlexQueue":            `System.FlexQueue value = new System.FlexQueue();`,
+		"System.ResetPasswordResult":  `System.ResetPasswordResult value = new System.ResetPasswordResult();`,
+		"System.System":               `System.System value = new System.System();`,
+		"System.UIRequest":            `System.UIRequest value = new System.UIRequest();`,
+		"System.WebServiceCallout":    `System.WebServiceCallout value = new System.WebServiceCallout();`,
+		"TxnSecurity.EventCondition":  `TxnSecurity.EventCondition value = new TxnSecurity.EventCondition();`,
+		"TxnSecurity.PolicyCondition": `TxnSecurity.PolicyCondition value = new TxnSecurity.PolicyCondition();`,
+	}
+	for name, source := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := AnalyzeAnonymous(typesys.Index{}, source)
+			if len(result.Diagnostics) == 0 {
+				t.Fatalf("accepted Salesforce-rejected nonconstructible constructor: %s", source)
+			}
+		})
+	}
+}
+
 func TestAPI67ResidualRejectsAcquiredNonSalesforceSurfaces(t *testing.T) {
 	tests := map[string]string{
 		"Messaging.SendEmailOptions":                    `Messaging.SendEmailOptions options = new Messaging.SendEmailOptions();`,

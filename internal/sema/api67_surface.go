@@ -51,6 +51,13 @@ var semaAPI67RejectedPlatformConstructors = map[string]struct{}{
 	"site.urlrewriter":                 {},
 	"visualeditor.dynamicpicklist":     {},
 	"webservicecalloutfuture":          {},
+	"aura":                             {},
+	"flexqueue":                        {},
+	"resetpasswordresult":              {},
+	"system":                           {},
+	"webservicecallout":                {},
+	"txnsecurity.eventcondition":       {},
+	"txnsecurity.policycondition":      {},
 }
 
 func semaAPI67RejectedPlatformConstructor(typeName string) bool {
