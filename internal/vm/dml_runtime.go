@@ -1029,7 +1029,7 @@ func databaseCursorFetch(receiver Value, method string, args []Value, deleted bo
 		size = 0
 	}
 	if strings.EqualFold(receiver.Type, "Database.Cursor") && len(records.List) == 0 && start+size > 0 {
-		return Null, receiver, false, true, fmt.Errorf("Fetch beyond bound detected: %d", start+size)
+		return Null, receiver, false, true, newExceptionError("System.InvalidParameterValueException", fmt.Sprintf("Fetch beyond bound detected: %d", start+size))
 	}
 	if start > len(records.List) {
 		start = len(records.List)

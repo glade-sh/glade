@@ -9172,12 +9172,21 @@ cursor.fetch(0, 10);
 	machine := New(nil)
 	org := testDataOrg()
 	machine.SetOrg(&org)
-	_, err = machine.Execute(program)
-	if err == nil {
-		t.Fatal("expected zero-row cursor fetch to reject a page beyond the cursor bound")
+	program, err = CompileAnonymous(`
+Database.Cursor cursor = Database.getCursor('SELECT Id FROM Account WHERE Name = ''CB317-NoRows''');
+try {
+    cursor.fetch(0, 10);
+    System.assert(false, 'expected zero-row cursor fetch to reject a page beyond the cursor bound');
+} catch (System.InvalidParameterValueException e) {
+    System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+    System.assertEquals('Fetch beyond bound detected: 10', e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if !strings.Contains(err.Error(), "Fetch beyond bound detected: 10") {
-		t.Fatalf("error = %v, want Salesforce cursor bound error", err)
+	if _, err = machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
