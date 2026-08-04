@@ -724,7 +724,13 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 		}
 		removed, removedOK := vm.cacheRemove(partitionName, cacheKeyForArgs(args, key))
 		if !removedOK {
+			if len(args) == 1 {
+				return Bool(false), receiver, nil
+			}
 			return Null, receiver, nil
+		}
+		if len(args) == 1 {
+			return Bool(true), receiver, nil
 		}
 		return removed, receiver, nil
 	case "contains":
@@ -942,6 +948,9 @@ func cachePutTTL(callee string, args []Value) (int64, error) {
 		return 0, nil
 	}
 	if args[2].Kind == ValueInt {
+		if args[2].Int > 0 && args[2].Int < 300 {
+			return 0, fmt.Errorf("%s TTL must be at least 300 seconds", callee)
+		}
 		return args[2].Int, nil
 	}
 	if len(args) == 3 && cacheVisibilityValue(args[2]) {
@@ -983,7 +992,13 @@ func (vm *VM) cacheStaticDefaultRemove(callee string, args []Value) (Value, erro
 	}
 	removed, removedOK := vm.cacheRemove(cacheDefaultPartitionKey(callee), cacheKeyForArgs(args, key))
 	if !removedOK {
+		if len(args) == 1 {
+			return Bool(false), nil
+		}
 		return Null, nil
+	}
+	if len(args) == 1 {
+		return Bool(true), nil
 	}
 	return removed, nil
 }
@@ -1081,10 +1096,13 @@ func (vm *VM) cacheGetOrLoad(partition, cacheKey string, builderType Value, load
 		}
 	}
 	if builderType.Kind != ValueObject || builderType.Type != "Type" || typeName == "" {
+		if builderType.Kind == ValueObject && builderType.Type == "Type" {
+			return Null, fmt.Errorf("%s does not implement CacheBuilder", typeName)
+		}
 		return Null, nil
 	}
 	if !vm.typeMatches(typeName, "Cache.CacheBuilder", make(map[string]bool)) {
-		return Null, nil
+		return Null, fmt.Errorf("%s does not implement CacheBuilder", typeName)
 	}
 	builder, err := vm.constructValue(typeName, nil, nil, &Result{})
 	if err != nil {

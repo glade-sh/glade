@@ -2749,7 +2749,7 @@ Cache.OrgPartition orgCache = Cache.Org.getPartition('local');
 System.assertEquals(null, orgCache.get('missing'));
 orgCache.put('name', 'Acme');
 orgCache.put('namespaceVisible', 'Scoped', Cache.Visibility.NAMESPACE);
-orgCache.put('visible', 'Trail', 60, Cache.Visibility.ALL, false);
+orgCache.put('visible', 'Trail', 300, Cache.Visibility.ALL, false);
 System.assert(orgCache.contains('name'));
 System.assertEquals('Acme', (String) orgCache.get('name'));
 System.assertEquals('Scoped', (String) orgCache.get('namespaceVisible'));
@@ -2760,14 +2760,14 @@ System.assert(orgKeys.contains('name'));
 System.assert(orgKeys.contains('namespaceVisible'));
 System.assert(orgKeys.contains('visible'));
 System.assertEquals(3, orgCache.getNumKeys());
-System.assertEquals('Acme', (String) orgCache.remove('name'));
+System.assertEquals(true, orgCache.remove('name'));
 System.assert(!orgCache.contains('name'));
 System.assertEquals(2, orgCache.getNumKeys());
 
 Cache.SessionPartition sessionCache = Cache.Session.getPartition('local');
 Cache.Partition generalSession = sessionCache;
 Cache.Partition generalOrg = orgCache;
-sessionCache.put('count', 7, 60);
+sessionCache.put('count', 7, 300);
 System.assertEquals(7, (Integer) sessionCache.get('count'));
 System.assert(sessionCache.getKeys().contains('count'));
 System.assertEquals(1, sessionCache.getNumKeys());
@@ -2775,8 +2775,7 @@ generalSession.put('general', 'session');
 generalOrg.put('general', 'org');
 System.assertEquals('session', (String) generalSession.get('general'));
 System.assertEquals('org', (String) generalOrg.get('general'));
-System.assertEquals(null, sessionCache.get(String.class, 'missing'));
-sessionCache.remove(String.class, 'missing');
+System.assertEquals(null, sessionCache.get('missing'));
 
 System.assert(Cache.Org.isAvailable());
 System.assert(Cache.Org.getCapacity() > 0);
@@ -2801,9 +2800,9 @@ System.assertEquals('org-visible', (String) Cache.Org.get('visible-default'));
 System.assert(Cache.Org.getKeys().contains('defaulted'));
 System.assertEquals(2, Cache.Org.getNumKeys());
 System.assertEquals('org-default', (String) Cache.Org.getPartition('default').get('defaulted'));
-System.assertEquals('org-default', (String) Cache.Org.remove('defaulted'));
+System.assertEquals(true, Cache.Org.remove('defaulted'));
 System.assert(!Cache.Org.contains('defaulted'));
-System.assertEquals('org-visible', (String) Cache.Org.remove('visible-default'));
+System.assertEquals(true, Cache.Org.remove('visible-default'));
 
 Cache.SecondaryKeyApi secondary = Cache.SecondaryKeyApi.get('localFeature');
 secondary.putImmediate('alpha', 'A', 'group-1');
@@ -2828,6 +2827,42 @@ System.assertEquals(2, secondary.scanForCount('', ''));
 	machine := New(nil)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecPlatformCacheSalesforceRemoveTTLAndBuilderContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Cache.Org.put('salesforceRemove', 'value');
+Boolean orgRemoved = Cache.Org.remove('salesforceRemove');
+System.assertEquals(true, orgRemoved);
+Cache.OrgPartition orgPartition = Cache.Org.getPartition('local.default');
+orgPartition.put('salesforcePartitionRemove', 'value');
+Boolean partitionRemoved = orgPartition.remove('salesforcePartitionRemove');
+System.assertEquals(true, partitionRemoved);
+Cache.Session.put('salesforceSessionRemove', 'value');
+Boolean sessionRemoved = Cache.Session.remove('salesforceSessionRemove');
+System.assertEquals(true, sessionRemoved);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	ttlProgram, err := CompileAnonymous(`Cache.Org.put('salesforceTtl', 'value', 60);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(ttlProgram); err == nil || !strings.Contains(err.Error(), "at least 300 seconds") {
+		t.Fatalf("Cache.Org.put should reject sub-minimum TTL, got %v", err)
+	}
+	builderProgram, err := CompileAnonymous(`Cache.Org.get(String.class, 'salesforceBuilder');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(builderProgram); err == nil || !strings.Contains(err.Error(), "does not implement CacheBuilder") {
+		t.Fatalf("Cache.Org.get should reject non-CacheBuilder types, got %v", err)
 	}
 }
 
