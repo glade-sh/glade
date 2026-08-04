@@ -1259,7 +1259,10 @@ platformStaticCall:
 			return Null, fmt.Errorf("System.getApplicationReadWriteMode expects 0 arguments")
 		}
 		mode := Object("ApplicationReadWriteMode")
-		mode.Fields["value"] = String("READ_WRITE")
+		// Anonymous Apex in an unmanaged namespace reports DEFAULT on
+		// Salesforce. Managed-package read/write mode is a separate context
+		// contract and is not available to this local anonymous executor.
+		mode.Fields["value"] = String("DEFAULT")
 		return mode, nil
 	case "System.getQuiddityShortCode":
 		if len(args) != 1 {

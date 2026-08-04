@@ -71,6 +71,8 @@ func (vm *VM) currentQuiddityValue() Value {
 
 func quiddityShortCode(name string) string {
 	switch name {
+	case "SYNCHRONOUS":
+		return "R"
 	case "RUNTEST_SYNC":
 		return "RT"
 	case "QUEUEABLE":
@@ -493,6 +495,8 @@ func unsupportedCoreStaticSurface(callee string) (string, bool) {
 		return "local Knowledge delete surface", true
 	case "System.changeOwnPassword", "System.movePassword", "System.resetPassword", "System.resetPasswordWithEmailTemplate":
 		return "local password/admin mutation surface", true
+	case "System.requestVersion":
+		return "unmanaged anonymous API surface", true
 	case "System.process", "System.submit":
 		return "local approval submit/process surface", true
 	default:

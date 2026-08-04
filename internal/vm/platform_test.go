@@ -4498,15 +4498,26 @@ func TestExecSystemDeterministicLocalHelpers(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(false, System.isFunctionCallback());
 System.assertEquals(false, System.isRunningElasticCompute());
-System.assertEquals('SY', System.getQuiddityShortCode(System.Request.getCurrent().getQuiddity()));
-System.assertEquals('65.0.0', System.requestVersion().toString());
-System.assertEquals('READ_WRITE', String.valueOf(System.getApplicationReadWriteMode()));
+System.assertEquals('R', System.getQuiddityShortCode(System.Request.getCurrent().getQuiddity()));
+System.assertEquals('DEFAULT', String.valueOf(System.getApplicationReadWriteMode()));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecSystemRequestVersionIsUnsupportedForUnmanagedAnonymous(t *testing.T) {
+	program, err := CompileAnonymous(`System.requestVersion();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = New(nil).Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "System.requestVersion unmanaged anonymous API surface"` {
+		t.Fatalf("err = %#v, want unmanaged anonymous requestVersion UnsupportedFeature", err)
 	}
 }
 
