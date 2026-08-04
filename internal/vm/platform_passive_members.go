@@ -1101,7 +1101,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return Null, receiver, false, true, nil
 		}
-	case "AsyncOptions":
+	case "AsyncOptions", "System.AsyncOptions":
 		switch method {
 		case "getMaximumQueueableStackDepth":
 			if len(args) != 0 {

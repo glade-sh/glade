@@ -14311,6 +14311,21 @@ System.assertEquals('USER_MODE', scoped.name());
 	}
 }
 
+func TestExecSystemQualifiedAsyncOptionsAccessors(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.AsyncOptions options = new System.AsyncOptions();
+System.assertEquals(null, options.getMaximumQueueableStackDepth());
+options.setMinimumQueueableDelayInMinutes(5);
+System.assertEquals(5, options.getMinimumQueueableDelayInMinutes());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatetimeRejectsAPI67UnsupportedShapes(t *testing.T) {
 	for name, source := range map[string]string{
 		"formatGmt without pattern": `Datetime value = Datetime.newInstanceGmt(2026, 8, 2, 1, 2, 3); value.formatGmt();`,
