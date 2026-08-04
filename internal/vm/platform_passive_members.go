@@ -2470,7 +2470,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return receiver.Fields["errors"], receiver, false, true, nil
 		}
-	case "Database.DMLOptions", "System.DMLOptions", "Database.AssignmentRuleHeader", "Database.DuplicateRuleHeader", "Database.EmailHeader", "Database.LocaleOptions":
+	case "Database.DMLOptions", "Database.AssignmentRuleHeader", "Database.DuplicateRuleHeader", "Database.EmailHeader", "Database.LocaleOptions":
 		switch method {
 		case "clone":
 			if len(args) != 0 {

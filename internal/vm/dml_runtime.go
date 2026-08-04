@@ -365,7 +365,7 @@ func databaseAccessLevelSecurityMode(value Value) string {
 }
 
 func isDatabaseDMLOptionsValue(value Value) bool {
-	return value.Kind == ValueObject && (strings.EqualFold(value.Type, "Database.DMLOptions") || strings.EqualFold(value.Type, "System.DMLOptions") || strings.EqualFold(value.Type, "DMLOptions"))
+	return value.Kind == ValueObject && (strings.EqualFold(value.Type, "Database.DMLOptions") || strings.EqualFold(value.Type, "DMLOptions"))
 }
 
 func apexMemberKey(name string) string {
@@ -536,7 +536,7 @@ func syncDatabaseOptionAliasField(value *Value, field string, fieldValue Value) 
 	}
 	var aliases []string
 	switch value.Type {
-	case "Database.DMLOptions", "System.DMLOptions", "DMLOptions":
+	case "Database.DMLOptions", "DMLOptions":
 		switch strings.ToLower(field) {
 		case "allowfieldtruncation":
 			aliases = []string{"allowFieldTruncation", "AllowFieldTruncation"}
@@ -1133,7 +1133,7 @@ func unsupportedDatabaseDMLOverload(op string, args []Value) error {
 		switch arg.Type {
 		case "AccessLevel":
 			return unsupportedCallError("Database." + op + " AccessLevel overload")
-		case "Database.DMLOptions", "System.DMLOptions", "DMLOptions":
+		case "Database.DMLOptions", "DMLOptions":
 			return unsupportedCallError("Database." + op + " DMLOptions overload")
 		}
 	}
