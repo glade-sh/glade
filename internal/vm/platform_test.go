@@ -14290,6 +14290,27 @@ System.assertEquals('USER_MODE', scoped.name());
 	}
 }
 
+func TestExecAccessLevelEnumValueWithPermissionSetIdConstructsUserModeScope(t *testing.T) {
+	program, err := CompileAnonymous(`
+AccessLevel scoped = AccessLevel.USER_MODE.withPermissionSetId('0PS000000000001');
+System.assertEquals('USER_MODE', scoped.name());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Execute(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	scoped, ok := result.Vars["scoped"]
+	if !ok {
+		t.Fatal("scoped AccessLevel not captured")
+	}
+	if got := scoped.Fields["permissionSetId"]; got.Kind != ValueString || got.Text != "0PS000000000001" {
+		t.Fatalf("permissionSetId = %#v, want string 0PS000000000001", got)
+	}
+}
+
 func TestExecDatetimeRejectsAPI67UnsupportedShapes(t *testing.T) {
 	for name, source := range map[string]string{
 		"formatGmt without pattern": `Datetime value = Datetime.newInstanceGmt(2026, 8, 2, 1, 2, 3); value.formatGmt();`,

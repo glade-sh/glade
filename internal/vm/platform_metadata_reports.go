@@ -1303,6 +1303,14 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	if rest, ok := stripLeadingSystemNamespace(receiverType); ok {
 		receiverType = rest
 	}
+	if strings.EqualFold(receiverType, "AccessLevel") && strings.EqualFold(method, "withPermissionSetId") {
+		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueNull) {
+			return Null, true, fmt.Errorf("AccessLevel.withPermissionSetId expects String")
+		}
+		value := accessLevelClone(receiver)
+		value.Fields["permissionSetId"] = cloneValue(args[0])
+		return value, true, nil
+	}
 	if canonical, names, ok := coreEnumSpec(receiverType); ok {
 		return callNamedEnumMember(canonical, names, receiver, method, args)
 	}
