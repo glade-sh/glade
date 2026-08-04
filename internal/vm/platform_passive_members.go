@@ -1054,6 +1054,14 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if childJobID, ok := receiver.Fields["ChildJobId"]; ok {
 				return childJobID, receiver, false, true, nil
 			}
+			// Salesforce returns null for a live top-level BatchableContext with
+			// no child batch. Keep the existing empty-string behavior for a
+			// directly constructed passive context, whose JobId is unset.
+			if receiver.Type == "BatchableContext" || receiver.Type == "Database.BatchableContext" || receiver.Type == "Database.BatchableContextImpl" {
+				if _, live := receiver.Fields["JobId"]; live {
+					return Null, receiver, false, true, nil
+				}
+			}
 			return String(""), receiver, false, true, nil
 		}
 	case "SchedulableContext":

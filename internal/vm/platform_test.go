@@ -9494,6 +9494,50 @@ System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'scope edited']
 	}
 }
 
+func TestExecBatchableContextTopLevelChildJobIDIsNull(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<SObject>();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`return;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishProgram, err := CompileAnonymous(`
+System.assertNotEquals(null, context.getJobId());
+System.assertEquals(null, context.getChildJobId());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+Database.executeBatch(new BatchWorker(), 200);
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStopTestDrainsQueueableEnqueuedByBatch(t *testing.T) {
 	startProgram, err := CompileAnonymous(`return new List<SObject>{ new Account(Name = 'scope') };`)
 	if err != nil {
