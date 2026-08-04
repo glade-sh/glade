@@ -1503,6 +1503,41 @@ func metadataDeployDetailsObject() Value {
 	return details
 }
 
+func metadataDeployMessageObject() Value {
+	message := Object("Metadata.DeployMessage")
+	message.Fields["changed"] = Bool(false)
+	message.Fields["columnNumber"] = Int(0)
+	message.Fields["componentType"] = Null
+	message.Fields["created"] = Bool(false)
+	message.Fields["createdDate"] = Null
+	message.Fields["deleted"] = Bool(false)
+	message.Fields["fileName"] = Null
+	message.Fields["fullName"] = Null
+	message.Fields["id"] = Null
+	message.Fields["lineNumber"] = Int(0)
+	message.Fields["problem"] = Null
+	message.Fields["problemType"] = Null
+	message.Fields["success"] = Bool(false)
+	return message
+}
+
+func metadataDeployResultConstructorObject() Value {
+	result := Object("Metadata.DeployResult")
+	result.Fields["id"] = Null
+	result.Fields["status"] = metadataDeployStatusValue("SUCCEEDED")
+	result.Fields["success"] = Bool(true)
+	result.Fields["done"] = Bool(true)
+	result.Fields["numberComponentErrors"] = Int(0)
+	result.Fields["numberComponentsDeployed"] = Int(0)
+	result.Fields["numberComponentsTotal"] = Int(0)
+	result.Fields["numberTestErrors"] = Int(0)
+	result.Fields["numberTestsCompleted"] = Int(0)
+	result.Fields["checkOnly"] = Bool(false)
+	result.Fields["messages"] = List()
+	result.Fields["details"] = metadataDeployDetailsObject()
+	return result
+}
+
 func metadataDeployResultObject(deploymentID string, items []Value) Value {
 	result := Object("Metadata.DeployResult")
 	result.Fields["id"] = platformScalar("Id", deploymentID)

@@ -269,6 +269,11 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	if value, handled, err := constructProcessPluginDescribeResultParameter(typeName, args, namedArgs); handled || err != nil {
 		return value, err
 	}
+	if generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]; ok {
+		if value, handled, err := vm.constructGeneratedMetadataDTO(generated, args, namedArgs); handled || err != nil {
+			return value, err
+		}
+	}
 	if class, ok := vm.lookupClass(typeName); ok && (!vm.isSObjectType(typeName) || vm.classConstructorCanAccept(typeName, args, namedArgs)) && !platformVersionTypeName(typeName) {
 		typeName = runtimeClassName(class)
 		if class.IsInterface {

@@ -289,6 +289,9 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 	if !ok || generated.Kind == apexast.DeclarationInterface || generated.Kind == apexast.DeclarationEnum || vm.isSObjectLikeType(generated.Name) {
 		return Null, false, nil
 	}
+	if value, handled, err := vm.constructGeneratedMetadataDTO(generated, args, namedArgs); handled || err != nil {
+		return value, handled, err
+	}
 	if strings.EqualFold(generated.Name, "Site.UrlRewriter") {
 		return Null, true, fmt.Errorf("Site.UrlRewriter cannot be constructed")
 	}
@@ -330,6 +333,38 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 	}
 	object := vm.newGeneratedPlatformObject(generated)
 	initializeGeneratedPlatformValue(&object)
+	if err := vm.bindGeneratedPlatformNamedFields(&object, namedArgs); err != nil {
+		return Null, true, err
+	}
+	return object, true, nil
+}
+
+func (vm *VM) constructGeneratedMetadataDTO(generated generatedPlatformType, args []Value, namedArgs map[string]Value) (Value, bool, error) {
+	var object Value
+	switch strings.ToLower(generated.Name) {
+	case "metadata.asyncresult":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s constructor expects 0 arguments", generated.Name)
+		}
+		object = metadataAsyncResultObject("0Af000000000001", true, "Succeeded", "")
+	case "metadata.deploydetails":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s constructor expects 0 arguments", generated.Name)
+		}
+		object = metadataDeployDetailsObject()
+	case "metadata.deploymessage":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s constructor expects 0 arguments", generated.Name)
+		}
+		object = metadataDeployMessageObject()
+	case "metadata.deployresult":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s constructor expects 0 arguments", generated.Name)
+		}
+		object = metadataDeployResultConstructorObject()
+	default:
+		return Null, false, nil
+	}
 	if err := vm.bindGeneratedPlatformNamedFields(&object, namedArgs); err != nil {
 		return Null, true, err
 	}
