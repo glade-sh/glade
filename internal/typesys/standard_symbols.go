@@ -1301,6 +1301,18 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "WebServiceCalloutFuture", Modifiers: []string{"abstract"}},
 	{Name: "VisualEditor.DynamicPickList", Modifiers: []string{"abstract"}},
 	{Name: "Invocable.Action", ReplaceConstructors: true},
+	{Name: "Approval.LockResult", ReplaceConstructors: true},
+	{Name: "Approval.ProcessRequest", ReplaceConstructors: true},
+	{Name: "Approval.ProcessResult", ReplaceConstructors: true},
+	{Name: "Approval.UnlockResult", ReplaceConstructors: true},
+	{Name: "AppExchangeTrialTemplate", ReplaceConstructors: true},
+	{Name: "Domain", ReplaceConstructors: true},
+	{Name: "FormulaRecalcFieldError", ReplaceConstructors: true},
+	{Name: "FormulaRecalcResult", ReplaceConstructors: true},
+	{Name: "OrgLimit", ReplaceConstructors: true},
+	{Name: "QueueableContextImpl", ReplaceConstructors: true},
+	{Name: "SchedulableContextImpl", ReplaceConstructors: true},
+	{Name: "UUID", ReplaceConstructors: true},
 	// API 67 platform enum hashes use a stable family seed plus declaration
 	// ordinal. Keep the seeds on the merged type metadata, not on members.
 	{Name: "Schema.SoapType", EnumHashBase: standardEnumHashBase(884834318)},

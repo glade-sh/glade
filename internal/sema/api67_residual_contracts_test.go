@@ -53,6 +53,31 @@ func TestAPI67CompileShapePreservesAllowedConstructorNeighbors(t *testing.T) {
 	}
 }
 
+func TestAPI67CompileShapeRejectsInternalNoArgConstructors(t *testing.T) {
+	tests := map[string]string{
+		"Approval.LockResult":             `Approval.LockResult value = new Approval.LockResult();`,
+		"Approval.ProcessRequest":         `Approval.ProcessRequest value = new Approval.ProcessRequest();`,
+		"Approval.ProcessResult":          `Approval.ProcessResult value = new Approval.ProcessResult();`,
+		"Approval.UnlockResult":           `Approval.UnlockResult value = new Approval.UnlockResult();`,
+		"System.AppExchangeTrialTemplate": `System.AppExchangeTrialTemplate value = new System.AppExchangeTrialTemplate();`,
+		"System.Domain":                   `System.Domain value = new System.Domain();`,
+		"System.FormulaRecalcFieldError":  `System.FormulaRecalcFieldError value = new System.FormulaRecalcFieldError();`,
+		"System.FormulaRecalcResult":      `System.FormulaRecalcResult value = new System.FormulaRecalcResult();`,
+		"System.OrgLimit":                 `System.OrgLimit value = new System.OrgLimit();`,
+		"System.QueueableContextImpl":     `System.QueueableContextImpl value = new System.QueueableContextImpl();`,
+		"System.SchedulableContextImpl":   `System.SchedulableContextImpl value = new System.SchedulableContextImpl();`,
+		"System.UUID":                     `System.UUID value = new System.UUID();`,
+	}
+	for name, source := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := AnalyzeAnonymous(typesys.Index{}, source)
+			if len(result.Diagnostics) == 0 {
+				t.Fatalf("accepted Salesforce-rejected internal constructor: %s", source)
+			}
+		})
+	}
+}
+
 func TestAPI67ResidualRejectsAcquiredNonSalesforceSurfaces(t *testing.T) {
 	tests := map[string]string{
 		"Messaging.SendEmailOptions":                    `Messaging.SendEmailOptions options = new Messaging.SendEmailOptions();`,
