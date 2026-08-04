@@ -173,8 +173,8 @@ func canonicalXmlStreamReaderMethod(method string) string {
 	)
 }
 
-func xmlStreamReaderTokens(text string) ([]Value, error) {
-	decoder := xml.NewDecoder(strings.NewReader(text))
+func xmlStreamReaderTokens(source string) ([]Value, error) {
+	decoder := xml.NewDecoder(strings.NewReader(source))
 	tokens := []Value{xmlStreamReaderToken("START_DOCUMENT", "", "", "", Null, Null)}
 	for {
 		raw, err := decoder.Token()
@@ -187,22 +187,31 @@ func xmlStreamReaderTokens(text string) ([]Value, error) {
 		switch token := raw.(type) {
 		case xml.StartElement:
 			attrs, namespaces := xmlStreamReaderAttrs(token.Attr)
-			tokens = append(tokens, xmlStreamReaderToken("START_ELEMENT", token.Name.Local, token.Name.Space, "", attrs, namespaces))
+			item := xmlStreamReaderToken("START_ELEMENT", token.Name.Local, token.Name.Space, "", attrs, namespaces)
+			item.Fields["location"] = String(xmlStreamReaderLocation(source, int(decoder.InputOffset())))
+			tokens = append(tokens, item)
 		case xml.EndElement:
-			tokens = append(tokens, xmlStreamReaderToken("END_ELEMENT", token.Name.Local, token.Name.Space, "", Null, Null))
+			item := xmlStreamReaderToken("END_ELEMENT", token.Name.Local, token.Name.Space, "", Null, Null)
+			item.Fields["location"] = String(xmlStreamReaderLocation(source, int(decoder.InputOffset())))
+			tokens = append(tokens, item)
 		case xml.CharData:
 			text := string([]byte(token))
 			kind := "CHARACTERS"
 			if strings.TrimSpace(text) == "" {
 				kind = "SPACE"
 			}
-			tokens = append(tokens, xmlStreamReaderToken(kind, "", "", text, Null, Null))
+			item := xmlStreamReaderToken(kind, "", "", text, Null, Null)
+			item.Fields["location"] = String(xmlStreamReaderLocation(source, int(decoder.InputOffset())))
+			tokens = append(tokens, item)
 		case xml.Comment:
-			tokens = append(tokens, xmlStreamReaderToken("COMMENT", "", "", string([]byte(token)), Null, Null))
+			item := xmlStreamReaderToken("COMMENT", "", "", string([]byte(token)), Null, Null)
+			item.Fields["location"] = String(xmlStreamReaderLocation(source, int(decoder.InputOffset())))
+			tokens = append(tokens, item)
 		case xml.ProcInst:
 			item := xmlStreamReaderToken("PROCESSING_INSTRUCTION", token.Target, "", string(token.Inst), Null, Null)
 			item.Fields["piTarget"] = String(token.Target)
 			item.Fields["piData"] = String(string(token.Inst))
+			item.Fields["location"] = String(xmlStreamReaderLocation(source, int(decoder.InputOffset())))
 			tokens = append(tokens, item)
 		}
 	}
@@ -416,6 +425,10 @@ func xmlStreamReaderCurrentString(receiver Value, method string) Value {
 		return String("")
 	}
 	switch method {
+	case "getLocation":
+		if location, ok := token.Fields["location"]; ok && location.Kind == ValueString {
+			return location
+		}
 	case "getNamespace":
 		if namespace, ok := token.Fields["namespace"]; ok && namespace.Kind == ValueString {
 			return String(namespace.Text)
@@ -435,6 +448,22 @@ func xmlStreamReaderCurrentString(receiver Value, method string) Value {
 		return Null
 	}
 	return String("")
+}
+
+func xmlStreamReaderLocation(source string, offset int) string {
+	if offset <= 0 || offset > len(source) {
+		return ""
+	}
+	line, column := 1, 1
+	for _, char := range source[:offset] {
+		if char == '\n' {
+			line++
+			column = 1
+			continue
+		}
+		column++
+	}
+	return fmt.Sprintf("Line: %d Column: %d", line, column)
 }
 
 func xmlStreamReaderDeclaredVersion(tokens []Value) Value {

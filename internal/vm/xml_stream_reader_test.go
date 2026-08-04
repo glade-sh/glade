@@ -12,6 +12,7 @@ System.assertEquals(1, reader.next());
 System.assert(reader.isStartElement());
 System.assertEquals(XmlTag.START_ELEMENT, reader.getEventType());
 System.assertEquals('root', reader.getLocalName());
+System.assertEquals('Line: 1 Column: 44', reader.getLocation());
 System.assertEquals(2, reader.getAttributeCount());
 System.assertEquals('id', reader.getAttributeLocalName(0));
 System.assertEquals('7', reader.getAttributeValueAt(0));
