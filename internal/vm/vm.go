@@ -2632,20 +2632,14 @@ func resultForLookup() *Result {
 
 func newRestRequest() Value {
 	request := Object("RestRequest")
-	request.Fields["requestURI"] = String("")
-	request.Fields["resourcePath"] = String("")
-	request.Fields["httpMethod"] = String("")
-	request.Fields["remoteAddress"] = String("")
+	request.Fields["requestURI"] = Null
+	request.Fields["resourcePath"] = Null
+	request.Fields["httpMethod"] = Null
+	request.Fields["remoteAddress"] = Null
 	request.Fields["headers"] = typedMap("Map<String,String>")
 	request.Fields["params"] = typedMap("Map<String,String>")
-	request.Fields["requestBody"] = nullBlob()
+	request.Fields["requestBody"] = Null
 	return request
-}
-
-func nullBlob() Value {
-	blob := Object("Blob")
-	blob.Fields["value"] = Null
-	return blob
 }
 
 func newPageReference(rawURL string) Value {
@@ -3384,9 +3378,15 @@ func storageStringField(record storage.Record, field string) string {
 
 func newRestResponse() Value {
 	response := Object("RestResponse")
-	response.Fields["statusCode"] = Int(200)
+	response.Fields["statusCode"] = Null
 	response.Fields["headers"] = typedMap("Map<String,String>")
 	response.Fields["responseBody"] = Null
+	return response
+}
+
+func newRestContextResponse() Value {
+	response := newRestResponse()
+	response.Fields["statusCode"] = Int(200)
 	return response
 }
 
@@ -3457,7 +3457,7 @@ func (vm *VM) lookupRestContextField(name string) (Value, bool, error) {
 		return vm.restRequest, true, nil
 	case "RestContext.response":
 		if vm.restResponse.Kind == "" || vm.restResponse.Kind == ValueNull {
-			vm.restResponse = newRestResponse()
+			vm.restResponse = newRestContextResponse()
 		}
 		return vm.restResponse, true, nil
 	default:

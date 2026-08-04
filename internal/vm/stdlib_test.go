@@ -459,6 +459,30 @@ System.assert(RestContext.response.getHeaderKeys().contains('location'));
 	}
 }
 
+func TestExecRestRequestAndResponseConstructorDefaultsMatchSalesforce(t *testing.T) {
+	program, err := CompileAnonymous(`
+RestRequest req = new RestRequest();
+System.assertEquals(null, req.requestURI);
+System.assertEquals(null, req.resourcePath);
+System.assertEquals(null, req.httpMethod);
+System.assertEquals(null, req.remoteAddress);
+System.assertEquals(null, req.requestBody);
+System.assertEquals(0, req.headers.size());
+System.assertEquals(0, req.params.size());
+
+RestResponse res = new RestResponse();
+System.assertEquals(null, res.statusCode);
+System.assertEquals(0, res.headers.size());
+System.assertEquals(null, res.responseBody);
+`)
+	if err != nil {
+		t.Fatalf("compile: %v", err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+}
+
 func TestExecRestContextStaticFieldsAreCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous(`
 RestRequest req = new RestRequest();

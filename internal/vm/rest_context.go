@@ -80,7 +80,7 @@ func (vm *VM) RestRequest() Value {
 
 func (vm *VM) RestResponse() Value {
 	if vm.restResponse.Kind == "" || vm.restResponse.Kind == ValueNull {
-		vm.restResponse = newRestResponse()
+		vm.restResponse = newRestContextResponse()
 	}
 	return vm.restResponse
 }
