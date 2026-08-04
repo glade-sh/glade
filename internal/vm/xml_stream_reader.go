@@ -431,8 +431,17 @@ func xmlStreamReaderCurrentString(receiver Value, method string) Value {
 		}
 	case "getNamespace":
 		if namespace, ok := token.Fields["namespace"]; ok && namespace.Kind == ValueString {
+			if namespace.Text == "" {
+				return Null
+			}
 			return String(namespace.Text)
 		}
+		return Null
+	case "getPrefix":
+		if prefix, ok := token.Fields["prefix"]; ok {
+			return prefix
+		}
+		return Null
 	case "getPIData":
 		if data, ok := token.Fields["piData"]; ok && data.Kind == ValueString {
 			return String(data.Text)
