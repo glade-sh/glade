@@ -145,6 +145,12 @@ func callXmlStreamReaderMember(receiver Value, method string, args []Value) (Val
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamReader.%s expects 0 arguments", method)
 		}
+		if (method == "getPIData" || method == "getPITarget") && xmlStreamReaderCurrentKind(receiver) != "PROCESSING_INSTRUCTION" {
+			return Null, receiver, false, true, newExceptionError(
+				"XmlException",
+				fmt.Sprintf("Illegal State: Current state of the parser is %s But Expected state is 3", xmlStreamReaderCurrentKind(receiver)),
+			)
+		}
 		return xmlStreamReaderCurrentString(receiver, method), receiver, false, true, nil
 	case "setCoalescing", "setNamespaceAware":
 		if len(args) != 1 || args[0].Kind != ValueBool {
