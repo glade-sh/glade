@@ -9161,6 +9161,26 @@ System.assertEquals(finish, updated.getLatestDateCovered());
 	}
 }
 
+func TestExecDatabaseCursorFetchZeroRowsRejectsBeyondBound(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.Cursor cursor = Database.getCursor('SELECT Id FROM Account WHERE Name = ''CB317-NoRows''');
+cursor.fetch(0, 10);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	_, err = machine.Execute(program)
+	if err == nil {
+		t.Fatal("expected zero-row cursor fetch to reject a page beyond the cursor bound")
+	}
+	if !strings.Contains(err.Error(), "Fetch beyond bound detected: 10") {
+		t.Fatalf("error = %v, want Salesforce cursor bound error", err)
+	}
+}
+
 func TestExecDatabaseCursorWithBinds(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme', Rating = 'Hot');
