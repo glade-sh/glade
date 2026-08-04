@@ -3976,7 +3976,7 @@ func TestRunDAPLaunchAcceptsIDEProjectRootAndAnonymousBody(t *testing.T) {
 	writeDAPRequest(t, inW, dap.CommandInitialize, 1, nil)
 	writeDAPRequest(t, inW, dap.CommandLaunch, 2, map[string]any{
 		"projectRoot":   filepath.Join("..", "debuglog", "testdata", "project"),
-		"anonymousBody": "System.debug('alias body');",
+		"anonymousBody": "class ProbeCallable implements Callable { public Object call(String action, Map<String,Object> args) { return 'ok'; } } Callable callable = new ProbeCallable(); System.assertEquals('ok', callable.call('probe', new Map<String,Object>()));",
 	})
 	writeDAPRequest(t, inW, dap.CommandConfigurationDone, 3, nil)
 	stderrOutput := waitForDAPTerminatedAndStderr(t, messages)
@@ -3993,6 +3993,9 @@ func TestRunDAPLaunchAcceptsIDEProjectRootAndAnonymousBody(t *testing.T) {
 	}
 	if strings.Contains(stderrOutput, "launch requires program or source") {
 		t.Fatalf("DAP launch did not accept IDE aliases: %q", stderrOutput)
+	}
+	if strings.Contains(stderrOutput, "GLADESEMA_ANONYMOUS_PARSE") {
+		t.Fatalf("DAP launch rejected transient anonymous class: %q", stderrOutput)
 	}
 }
 
