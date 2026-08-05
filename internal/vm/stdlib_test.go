@@ -5295,6 +5295,37 @@ System.assertEquals('Mapped Clone', clonedMapped.Name);
 	}
 }
 
+func TestExecSetDeepClone(t *testing.T) {
+	program, err := CompileAnonymous(`
+// Scalar Set deep clone with isolation
+Set<String> names = new Set<String>{'Alice', 'Bob'};
+Set<String> clonedNames = names.deepClone();
+clonedNames.add('Charlie');
+System.assertEquals(2, names.size());
+System.assertEquals(false, names.contains('Charlie'));
+System.assertEquals(3, clonedNames.size());
+System.assertEquals(true, clonedNames.contains('Charlie'));
+
+// SObject Set deep clone with nested isolation
+Account acme = new Account(Id = '001B000001DVM9tIAH', Name = 'Acme');
+Account beta = new Account(Id = '001B000001DVM9uIAH', Name = 'Beta');
+Set<Account> accounts = new Set<Account>{acme, beta};
+Set<Account> clonedAccounts = accounts.deepClone();
+for (Account a : clonedAccounts) {
+	a.Name = 'Clone' + a.Id;
+}
+for (Account a : accounts) {
+	System.assertNotEquals('Clone' + a.Id, a.Name);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCollectionStdlibSmallRowsCloseout(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Boolean> flags = new List<Boolean>{true, false, true};
