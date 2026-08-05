@@ -1130,13 +1130,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "AsyncOptions":
 		switch method {
 		case "getMaximumQueueableStackDepth":
-			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("AsyncOptions.getMaximumQueueableStackDepth expects 0 arguments")
-			}
-			if value, ok := receiver.Fields["maximumQueueableStackDepth"]; ok {
-				return value, receiver, false, true, nil
-			}
-			return Null, receiver, false, true, nil
+			return Null, receiver, false, true, unsupportedCallError("AsyncOptions.getMaximumQueueableStackDepth")
 		case "setMaximumQueueableStackDepth":
 			if len(args) != 1 || (args[0].Kind != ValueInt && args[0].Kind != ValueNull) {
 				return Null, receiver, false, true, fmt.Errorf("AsyncOptions.setMaximumQueueableStackDepth expects Integer")

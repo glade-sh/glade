@@ -41,20 +41,21 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		if err != nil {
 			return Null, err
 		}
-		if hasSuffixFold(stored.Object, "__e") {
-			if field, ok := vm.missingRequiredPlatformEventField(stored); ok {
-				row := Object("Database.SaveResult")
-				row.Fields["success"] = Bool(false)
-				row.Fields["id"] = Null
-				row.Fields["error"] = String("REQUIRED_FIELD_MISSING, required field " + stored.Object + "." + field + " is missing")
-				errValue := Object("Database.Error")
-				errValue.Fields["message"] = String("required field " + stored.Object + "." + field + " is missing")
-				errValue.Fields["statusCode"] = String("REQUIRED_FIELD_MISSING")
-				errValue.Fields["fields"] = List(String(field))
-				row.Fields["errors"] = List(errValue)
-				results = append(results, row)
-				continue
-			}
+		if !hasSuffixFold(stored.Object, "__e") {
+			return Null, fmt.Errorf("The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event.")
+		}
+		if field, ok := vm.missingRequiredPlatformEventField(stored); ok {
+			row := Object("Database.SaveResult")
+			row.Fields["success"] = Bool(false)
+			row.Fields["id"] = Null
+			row.Fields["error"] = String("REQUIRED_FIELD_MISSING, required field " + stored.Object + "." + field + " is missing")
+			errValue := Object("Database.Error")
+			errValue.Fields["message"] = String("required field " + stored.Object + "." + field + " is missing")
+			errValue.Fields["statusCode"] = String("REQUIRED_FIELD_MISSING")
+			errValue.Fields["fields"] = List(String(field))
+			row.Fields["errors"] = List(errValue)
+			results = append(results, row)
+			continue
 		}
 		triggerRecords = append(triggerRecords, stored)
 		row := Object("Database.SaveResult")

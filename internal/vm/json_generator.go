@@ -111,10 +111,7 @@ func (vm *VM) callJSONGeneratorMember(receiver Value, method string, args []Valu
 		}
 		return jsonGeneratorWriteRawValue(receiver, args[0].Text, method)
 	case "writeRawValue":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeRawValue expects String")
-		}
-		return jsonGeneratorWriteRawValue(receiver, args[0].Text, method)
+		return Null, receiver, false, true, unsupportedCallError("JSONGenerator.writeRawValue")
 	case "writeRawField":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeRawField expects String field name and String raw JSON value")

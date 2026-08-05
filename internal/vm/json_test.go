@@ -694,15 +694,6 @@ try {
 	System.assert(e.getMessage().contains('JSONGenerator is closed'));
 }
 System.assert(caught);
-caught = false;
-try {
-	gen.writeRawValue('{bad');
-} catch (JSONException e) {
-	caught = true;
-	System.assertEquals('System.JSONException', e.getTypeName());
-	System.assert(e.getMessage().contains('JSONGenerator is closed'));
-}
-System.assert(caught);
 System.assert(gen.isClosed());
 `)
 	if err != nil {
@@ -943,11 +934,10 @@ gen.writeRawField('config', '{"enabled":true,"nums":[1,2]}');
 gen.writeFieldName('items');
 gen.writeStartArray();
 gen.writeString('first');
-gen.writeRawValue('{"raw":true}');
 gen.writeRaw('[false,null]');
 gen.writeEndArray();
 gen.writeEndObject();
-System.assertEquals('{"config":{"enabled":true,"nums":[1,2]},"items":["first",{"raw":true},[false,null]]}', gen.getAsString());
+System.assertEquals('{"config":{"enabled":true,"nums":[1,2]},"items":["first",[false,null]]}', gen.getAsString());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -968,7 +958,7 @@ gen.writeRawValue('{bad');
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "expects valid raw JSON value") {
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), `unsupported call "JSONGenerator.writeRawValue"`) {
 		t.Fatalf("err = %v", err)
 	}
 }

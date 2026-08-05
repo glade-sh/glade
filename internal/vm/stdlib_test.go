@@ -4861,14 +4861,6 @@ List<Integer> cloned = copied.clone();
 cloned.set(0, 7);
 System.assertEquals(1, copied.get(0));
 System.assertEquals(7, cloned.get(0));
-List<Integer> deep = copied.deepClone();
-deep.set(1, 8);
-System.assertEquals(2, copied.get(1));
-System.assertEquals(8, deep.get(1));
-List<Integer> deepWithOptions = copied.deepClone(true, true, true);
-deepWithOptions.set(2, 9);
-System.assertEquals(3, copied.get(2));
-System.assertEquals(9, deepWithOptions.get(2));
 
 List<String> words = new List<String>{'delta', 'alpha', 'charlie'};
 words.sort();

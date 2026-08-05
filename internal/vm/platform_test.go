@@ -1701,32 +1701,13 @@ System.assert(!Schema.getGlobalDescribe().containsKey('Invoice__c'));
 	}
 }
 
-func TestExecEventBusPublishReturnsLocalSuccessResults(t *testing.T) {
-	program, err := CompileAnonymous(`
-	Database.SaveResult single = EventBus.publish(new Account(Name = 'Acme'));
-System.assert(single.isSuccess());
-System.assertEquals(null, single.getId());
-System.assertEquals(0, single.getErrors().size());
-List<Database.SaveResult> many = EventBus.publish(new List<Account>{new Account(Name = 'One'), new Account(Name = 'Two')});
-System.assertEquals(2, many.size());
-System.assert(many.get(0).isSuccess());
-System.assert(many.get(1).isSuccess());
-Database.SaveResult userMode = EventBus.publishWithAccessLevel(new Account(Name = 'User'), AccessLevel.USER_MODE);
-System.assert(userMode.isSuccess());
-Database.SaveResult callbackUserMode = EventBus.publishWithAccessLevel(new Account(Name = 'Callback user'), null, AccessLevel.SYSTEM_MODE);
-System.assert(callbackUserMode.isSuccess());
-List<Database.SaveResult> listUserMode = EventBus.publishWithAccessLevel(new List<Account>{new Account(Name = 'List user')}, AccessLevel.USER_MODE);
-System.assertEquals(1, listUserMode.size());
-System.assert(listUserMode.get(0).isSuccess());
-List<Database.SaveResult> callbackResults = EventBus.publishWithAccessLevel(new List<Account>{new Account(Name = 'Callback')}, null, AccessLevel.SYSTEM_MODE);
-System.assertEquals(1, callbackResults.size());
-System.assert(callbackResults.get(0).isSuccess());
-`)
+func TestExecEventBusPublishRejectsNonPlatformEvents(t *testing.T) {
+	program, err := CompileAnonymous(`EventBus.publish(new Account(Name = 'Acme'));`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
-		t.Fatal(err)
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "platform event") {
+		t.Fatalf("err = %v, want platform-event-only rejection", err)
 	}
 }
 
@@ -10436,8 +10417,6 @@ func TestExecPassiveLimitsGettersHaveStableValues(t *testing.T) {
 		"getLimitApexPaginationCursors",
 		"getAggregateQueries",
 		"getLimitAggregateQueries",
-		"getChildRelationshipsDescribes",
-		"getLimitChildRelationshipsDescribes",
 		"getDatabaseTime",
 		"getLimitDatabaseTime",
 		"getFetchCallsOnApexCursor",
@@ -12090,9 +12069,7 @@ func TestExecAbortJobUnknownRecordsAreTypedUnsupported(t *testing.T) {
 func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
 	program, err := CompileAnonymous(`
 AsyncOptions opts = new AsyncOptions();
-System.assertEquals(null, opts.getMaximumQueueableStackDepth());
 opts.setMaximumQueueableStackDepth(2);
-System.assertEquals(2, opts.getMaximumQueueableStackDepth());
 System.assertEquals(null, opts.getDuplicateSignature());
 QueueableDuplicateSignature sig = QueueableDuplicateSignature.builder().addString('typed').build();
 opts.setDuplicateSignature(sig);

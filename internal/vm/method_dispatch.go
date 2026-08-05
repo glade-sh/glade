@@ -2874,6 +2874,9 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 				return Null, true, fmt.Errorf("List.deepClone preserve options expect Boolean arguments")
 			}
 		}
+		if listSObjectTypeName(receiver) == "" {
+			return Null, true, fmt.Errorf("Operation only applies to SObject list types: %s", receiver.Type)
+		}
 		return cloneValue(receiver), true, nil
 	case "iterator":
 		if len(args) != 0 {

@@ -992,7 +992,7 @@ platformStaticCall:
 		"Limits.getAsyncCalls", "Limits.getLimitAsyncCalls",
 		"Limits.getBatchJobs", "Limits.getLimitBatchJobs", "Limits.getScheduledJobs", "Limits.getLimitScheduledJobs",
 		"Limits.getEmailInvocations", "Limits.getLimitEmailInvocations",
-		"Limits.getAggregateQueries", "Limits.getLimitAggregateQueries",
+		"Limits.getAggregateQueries", "Limits.getLimitAggregateQueries", "Limits.getChildRelationshipsDescribes",
 		"Limits.getFindSimilarCalls", "Limits.getLimitFindSimilarCalls",
 		"Limits.getMobilePushApexCalls", "Limits.getLimitMobilePushApexCalls",
 		"Limits.getQueryLocatorRows", "Limits.getLimitQueryLocatorRows",
