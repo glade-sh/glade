@@ -87,6 +87,12 @@ func semaAPI67RejectedPlatformType(typeName string) bool {
 	case "messaging.sendemailoptions",
 		"system.messaging.sendemailoptions",
 		"system.messaging.singleemailmessage",
+		// Salesforce exposes these as the return shape of DescribeSObjectResult
+		// members, but API 67 does not allow either name in user Apex type
+		// declarations. Keep the synthetic return type usable for member access
+		// while rejecting explicit local declarations.
+		"schema.sobjecttypefieldsets",
+		"schema.fieldsetmap",
 		"database.allowcallouts",
 		"system.database.allowcallouts",
 		"database.lockresult",

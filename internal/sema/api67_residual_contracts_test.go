@@ -164,6 +164,8 @@ func TestAPI67ResidualRejectsAcquiredNonSalesforceSurfaces(t *testing.T) {
 		"PushUpgrade expiration by id":                  `System.PushUpgradeCustomizationRepository.setExpirationDaysForId('id', 7);`,
 		"PushUpgrade expiration by index":               `System.PushUpgradeCustomizationRepository.setExpirationDaysForIndex('package', 'index', 7);`,
 		"System.QuickAction.describeAvailableActions":   `System.QuickAction.describeAvailableActions('Account');`,
+		"Schema.SObjectTypeFieldSets is not nameable":   `Schema.SObjectTypeFieldSets sets = Account.SObjectType.getDescribe().fieldSets;`,
+		"Schema.FieldSetMap is not nameable":            `Schema.FieldSetMap sets = Account.SObjectType.getDescribe().fieldSets;`,
 	}
 	for name, source := range tests {
 		t.Run(name, func(t *testing.T) {

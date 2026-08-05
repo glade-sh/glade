@@ -112,11 +112,9 @@ System.assertEquals(null, options.LocaleOptions);
 	}
 }
 
-func TestCB117FieldSetMapCanonicalizationSurvivesWidening(t *testing.T) {
+func TestCB117FieldSetCollectionMembersSurviveWidening(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeSObjectResult describe = Probe__c.SObjectType.getDescribe();
-Schema.SObjectTypeFieldSets canonical = describe.fieldSets;
-System.assertEquals(1, canonical.getMap().size());
 Map<String, Schema.FieldSet> typed = describe.fieldSets.getMap();
 System.assertEquals(1, typed.size());
 System.assertEquals(1, typed.keySet().size());
