@@ -1297,7 +1297,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			})
 			return privateDescribeCollection(receiver.Fields["map"]), receiver, false, true, nil
 		}
-	case "Schema.FieldSetMap":
+	case "Schema.SObjectTypeFieldSets", "Schema.FieldSetMap":
 		switch method {
 		case "getMap":
 			if len(args) != 0 {

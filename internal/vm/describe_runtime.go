@@ -1158,7 +1158,7 @@ func hasRelationForField(relations []storage.Relationship, fieldName string) boo
 }
 
 func (vm *VM) fieldSetMapValue(objectName string, definition storage.ObjectDefinition) Value {
-	fieldSets := Object("Schema.FieldSetMap")
+	fieldSets := Object("Schema.SObjectTypeFieldSets")
 	m := Map()
 	m.Type = "Map<String,Schema.FieldSet>"
 	m.Runtime = fieldSetMapRuntime

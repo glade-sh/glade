@@ -1814,7 +1814,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			}
 			current = Null
 			continue
-		case "Schema.FieldSetMap":
+		case "Schema.SObjectTypeFieldSets", "Schema.FieldSetMap":
 			mapValue, ok := current.Fields["map"]
 			if !ok || mapValue.Kind != ValueMap {
 				return Null, fmt.Errorf("Schema.FieldSetMap is missing map")
