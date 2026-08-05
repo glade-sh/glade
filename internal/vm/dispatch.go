@@ -3,7 +3,6 @@ package vm
 import (
 	"crypto/aes"
 	"crypto/hmac"
-	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -337,6 +336,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 platformStaticCall:
 	callee = normalizeStaticCallCasing(callee)
+	if strings.EqualFold(callee, "Crypto.areEqualConstantTime") {
+		return Null, unsupportedCallError(callee)
+	}
 	if className, methodName, ok := vm.splitClassMember(callee); ok {
 		if value, handled, err := vm.callConnectAPICommunitiesStatic(className, methodName, args); handled || err != nil {
 			return value, err
@@ -1678,19 +1680,6 @@ platformStaticCall:
 			return Null, newExceptionError("System.SecurityException", err.Error())
 		}
 		return Bool(hmac.Equal(actual, []byte(expected))), nil
-	case "Crypto.areEqualConstantTime":
-		if len(args) != 2 {
-			return Null, fmt.Errorf("Crypto.areEqualConstantTime expects left Blob and right Blob")
-		}
-		left, err := blobStringArg("Crypto.areEqualConstantTime left", args[:1])
-		if err != nil {
-			return Null, err
-		}
-		right, err := blobStringArg("Crypto.areEqualConstantTime right", args[1:])
-		if err != nil {
-			return Null, err
-		}
-		return Bool(subtle.ConstantTimeCompare([]byte(left), []byte(right)) == 1), nil
 	case "Crypto.encrypt":
 		if len(args) != 4 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Crypto.encrypt expects algorithm, privateKey Blob, initializationVector Blob, and clearText Blob")

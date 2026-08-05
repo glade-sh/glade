@@ -2267,9 +2267,6 @@ System.assertEquals('e477384d7ca229dd1426e64b63ebf2d36ebd6d7e669a6735424e72ea6c0
 System.assert(Crypto.verifyHmac('hmacSHA256', message, key, hmacSHA256));
 System.assert(Crypto.verifyHmac(' HMAC-SHA256 ', message, key, normalizedHmacSHA256));
 System.assert(!Crypto.verifyHmac('hmacSHA256', Blob.valueOf('changed'), key, hmacSHA256));
-System.assert(Crypto.areEqualConstantTime(hello, Blob.valueOf('hello')));
-System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hullo')));
-System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hello!')));
 	Blob aes128 = Crypto.generateAESKey(128);
 	Blob aes192 = Crypto.generateAESKey(192);
 	Blob aes256 = Crypto.generateAESKey(256);
@@ -2284,6 +2281,18 @@ System.assertEquals('0102030405060708090a0b0c0d0e0f10', EncodingUtil.convertToHe
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecCryptoAreEqualConstantTimeRejectsAbsentSalesforceAPI(t *testing.T) {
+	program, err := CompileAnonymous(`
+Crypto.areEqualConstantTime(Blob.valueOf('hello'), Blob.valueOf('hello'));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), `unsupported call "Crypto.areEqualConstantTime"`) {
+		t.Fatalf("err = %v, want Salesforce-shaped unsupported API rejection", err)
 	}
 }
 
@@ -3323,7 +3332,7 @@ func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 		{source: "Blob bad = EncodingUtil.convertFromHex('80'); bad.toString();", want: "Blob.toString invalid UTF-8 data"},
 		{source: "EncodingUtil.urlEncode(null, 'UTF-8');", want: `Argument cannot be null.`},
 		{source: "EncodingUtil.urlDecode('%zz', 'UTF-8');", want: "invalid URL escape"},
-		{source: "Crypto.areEqualConstantTime(Blob.valueOf('x'), 'x');", want: "Crypto.areEqualConstantTime right expects Blob"},
+		{source: "Crypto.areEqualConstantTime(Blob.valueOf('x'), 'x');", want: `unsupported call "Crypto.areEqualConstantTime"`},
 		{source: "Crypto.generateDigest('SHA-999', Blob.valueOf('x'));", want: `SHA-999 MessageDigest not available`},
 		{source: "Crypto.generateDigest(' sha_256 ', Blob.valueOf('x'));", want: ` sha_256  MessageDigest not available`},
 		{source: "Crypto.generateDigest('SHA3_256', Blob.valueOf('x'));", want: `SHA3_256 MessageDigest not available`},
