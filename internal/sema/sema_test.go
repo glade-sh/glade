@@ -5874,8 +5874,6 @@ public class UsesQuiddityRunIT {
 		t.Fatalf("unexpected Quiddity RUN_INTEGRATION_TESTS diagnostics: %#v", result.Diagnostics)
 	}
 }
-
-
 func TestAnalyzeAssertClassMethods(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -13315,6 +13313,30 @@ public class SortCollectionTest {
 	}}})
 	result := Analyze(index)
 	assertNoDiagnosticContaining(t, result, "GLADESEMA013", "ExpectedResponse")
+}
+
+func TestAnalyzePackageBundleServiceCompileShape(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	classPath := filepath.Join(root, "PackageBundleSvcTest.cls")
+	writeSemaFile(t, classPath, `
+@isTest
+private class PackageBundleSvcTest {
+  @isTest static void compileShape() {
+    PackageBundleService service = new PackageBundleService();
+    String a = service.getBundleVersionComponents('ns', 'key');
+    String b = service.getBundleVersions('ns', 'key');
+    String c = service.getBundles('ns');
+    String d = service.getBundlesWithVersionsAndComponents('ns');
+    Object o = service.clone();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
 }
 
 func writeSemaFile(t *testing.T, path, contents string) {
