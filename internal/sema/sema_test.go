@@ -690,6 +690,65 @@ func TestAnalyzePlatformAPIInterfacesRequireContracts(t *testing.T) {
 	}
 }
 
+func TestAnalyzeSoqlStubProviderInterface(t *testing.T) {
+	t.Parallel()
+	index := typesys.Index{
+		Types: []typesys.TypeSymbol{
+			{
+				Kind:       apexast.DeclarationClass,
+				Name:       "AccountStub",
+				File:       "AccountStub.cls",
+				Interfaces: []string{"System.SoqlStubProvider"},
+				Members: []typesys.MemberSymbol{{
+					Kind:    apexast.DeclarationMethod,
+					Name:    "handleSoqlQuery",
+					Type:    "List<SObject>",
+					Modifiers: []string{"public"},
+					Parameters: []apexast.Parameter{
+						{Name: "param1", Type: "Schema.SObjectType"},
+						{Name: "param2", Type: "String"},
+						{Name: "param3", Type: "Map<String,Object>"},
+					},
+				}},
+			},
+		},
+	}
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics for valid SoqlStubProvider: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeSoqlStubProviderInterfaceRequiresContract(t *testing.T) {
+	t.Parallel()
+	index := typesys.Index{
+		Types: []typesys.TypeSymbol{
+			{
+				Kind:       apexast.DeclarationClass,
+				Name:       "BrokenStub",
+				File:       "BrokenStub.cls",
+				Interfaces: []string{"System.SoqlStubProvider"},
+			},
+		},
+	}
+
+	result := Analyze(index)
+	if !result.HasErrors() {
+		t.Fatalf("expected missing SoqlStubProvider contract diagnostic")
+	}
+	found := false
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA017" && strings.Contains(diag.Message, "SoqlStubProvider") && strings.Contains(diag.Message, "handleSoqlQuery") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected GLADESEMA017 for missing handleSoqlQuery, got: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeProjectNamespaceQualifiedTypes(t *testing.T) {
 	t.Parallel()
 	index := typesys.Index{

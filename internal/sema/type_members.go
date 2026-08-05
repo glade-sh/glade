@@ -1735,6 +1735,16 @@ func semaApplyPlatformInterfaceOverlays(model map[string]typeMembers) {
 			{Name: "listOfArgs", Type: "List<Object>"},
 		},
 	}})
+	semaSetPlatformInterface(model, "SoqlStubProvider", []string{"System.SoqlStubProvider"}, []typesys.MemberSymbol{{
+		Kind: apexast.DeclarationMethod,
+		Name: "handleSoqlQuery",
+		Type: "List<SObject>",
+		Parameters: []apexast.Parameter{
+			{Name: "param1", Type: "Schema.SObjectType"},
+			{Name: "param2", Type: "String"},
+			{Name: "param3", Type: "Map<String,Object>"},
+		},
+	}})
 	semaSetPlatformInterface(model, "HttpCalloutMock", []string{"System.HttpCalloutMock"}, []typesys.MemberSymbol{{
 		Kind: apexast.DeclarationMethod,
 		Name: "respond",
