@@ -5434,6 +5434,29 @@ public class UsesGeneratedStubStaticAccess {
 	}
 }
 
+func TestAnalyzeApexPagesAddMessagesOverloadsAreStatic(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesApexPagesAddMessages.cls"), `
+public class UsesApexPagesAddMessages {
+  public void run(Exception exception, Object value) {
+    ApexPages.addMessages(exception);
+    ApexPages.addMessages(value);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesApexPagesAddMessages.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA027" && strings.Contains(diag.Message, "addMessages") {
+			t.Fatalf("ApexPages.addMessages overloads should be static: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeSystemDateTodayStaticCall(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
