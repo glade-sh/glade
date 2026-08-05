@@ -16587,22 +16587,19 @@ Account blocked = new Account(Name = 'Overload Block');
 Object result = Database.insert(blocked, false);
 System.assert(!result.isSuccess());
 List<Object> errors = result.getErrors();
-System.assertEquals(4, errors.size());
+System.assertEquals(3, errors.size());
 Object objectError = errors.get(0);
 System.assertEquals('object overload', objectError.getMessage());
 List<Object> objectFields = objectError.getFields();
 System.assertEquals(0, objectFields.size());
 Object fieldError = errors.get(1);
-System.assertEquals('unset field overload', fieldError.getMessage());
+System.assertEquals('string field overload', fieldError.getMessage());
 List<Object> fieldFields = fieldError.getFields();
 System.assertEquals(1, fieldFields.size());
 System.assertEquals('Rating', fieldFields.get(0));
 Object tokenFieldError = errors.get(2);
 System.assertEquals('token field overload', tokenFieldError.getMessage());
 System.assertEquals('Name', tokenFieldError.getFields().get(0));
-Object stringFieldError = errors.get(3);
-System.assertEquals('string field overload', stringFieldError.getMessage());
-System.assertEquals('Rating', stringFieldError.getFields().get(0));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -16684,6 +16681,50 @@ System.assertEquals('Clock__c', errors.get(9).getFields().get(0));
 	machine.SetOrg(&org)
 	if err := machine.RegisterTrigger(Trigger{
 		Name:      "AccountBeforeInsertPrimitiveAddError",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRepeatedFieldAddErrorUsesLastFieldError(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	if (a.Name == 'Repeated Block') {
+		a.Rating.addError('first field error');
+		a.Rating.addError('last field error');
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account blocked = new Account(Name = 'Repeated Block', Rating = 'Hot');
+Object result = Database.insert(blocked, false);
+System.assert(!result.isSuccess());
+List<Object> errors = result.getErrors();
+System.assertEquals(1, errors.size());
+System.assertEquals('last field error', errors.get(0).getMessage());
+System.assertEquals('Rating', errors.get(0).getFields().get(0));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeInsertRepeatedFieldAddError",
 		Object:    "Account",
 		Timing:    triggerTimingBefore,
 		Operation: "insert",

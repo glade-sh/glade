@@ -959,6 +959,24 @@ func cachePutTTL(callee string, args []Value) (int64, error) {
 	return 0, fmt.Errorf("%s ttl expects Integer seconds", callee)
 }
 
+func validCachePartitionName(name string) bool {
+	parts := strings.Split(name, ".")
+	if len(parts) == 0 || name == "" {
+		return false
+	}
+	for _, part := range parts {
+		if part == "" {
+			return false
+		}
+		for _, r := range part {
+			if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func cacheVisibilityValue(value Value) bool {
 	return value.Kind == ValueObject && strings.EqualFold(value.Type, "Cache.Visibility")
 }

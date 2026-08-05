@@ -1011,6 +1011,20 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 			return value, true, err
 		}
 	}
+	// These platform objects also have generated standard-symbol classes. The
+	// platform implementation must win over the generated passive method body;
+	// otherwise project test runs return the passive default (usually null)
+	// while direct VM execution reaches the real local contract.
+	if authJWTOrCanvasPlatformObjectType(receiver.Type) {
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+			if mutated {
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
+			}
+			return value, true, err
+		}
+	}
 	if _, classExists := vm.lookupClass(receiver.Type); classExists && !strings.EqualFold(receiver.Runtime, "System.Cookie") {
 		dispatchType := runtimeObjectType(receiver)
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, method, args)
@@ -1151,6 +1165,18 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 		}
 	}
 	return value, true, err
+}
+
+func authJWTOrCanvasPlatformObjectType(typeName string) bool {
+	switch {
+	case strings.EqualFold(typeName, "Auth.JWT"),
+		strings.EqualFold(typeName, "Canvas.RenderContext"),
+		strings.EqualFold(typeName, "Canvas.ApplicationContext"),
+		strings.EqualFold(typeName, "Canvas.EnvironmentContext"):
+		return true
+	default:
+		return false
+	}
 }
 
 // callNonObjectValueMember dispatches a member call whose receiver is a

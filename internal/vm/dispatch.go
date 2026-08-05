@@ -2436,6 +2436,13 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("%s expects String partition name", callee)
 		}
+		if !validCachePartitionName(args[0].Text) {
+			exceptionType := "cache.OrgCacheException"
+			if strings.HasPrefix(callee, "Cache.Session.") {
+				exceptionType = "cache.SessionCacheException"
+			}
+			return Null, newExceptionError(exceptionType, "Invalid partition: partition name must be alphanumeric.")
+		}
 		partition := Object("Cache.OrgPartition")
 		if strings.HasPrefix(callee, "Cache.Session.") {
 			partition.Type = "Cache.SessionPartition"

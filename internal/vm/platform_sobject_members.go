@@ -1170,6 +1170,29 @@ func addSObjectError(value *Value, message string, fields []string) {
 	if !ok || errorsList.Kind != ValueList {
 		errorsList = List()
 	}
+	if len(fields) > 0 {
+		for i, existing := range errorsList.List {
+			if existing.Kind != ValueObject {
+				continue
+			}
+			existingFields, ok := existing.Fields["fields"]
+			if !ok || existingFields.Kind != ValueList || len(existingFields.List) != len(fields) {
+				continue
+			}
+			matches := true
+			for j, field := range fields {
+				if existingFields.List[j].String() != field {
+					matches = false
+					break
+				}
+			}
+			if matches {
+				errorsList.List[i] = errorValue
+				value.Fields[sobjectErrorsField] = errorsList
+				return
+			}
+		}
+	}
 	errorsList.List = append(errorsList.List, errorValue)
 	value.Fields[sobjectErrorsField] = errorsList
 }
