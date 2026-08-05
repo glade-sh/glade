@@ -1083,6 +1083,100 @@ private class ValueReturningTest {
 	}
 }
 
+func TestRunCasesContextAuthJWTToJSONStringWithMapLiteralClaim(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "AuthJWTMapLiteralTest.cls")
+	writeFile(t, path, `
+@isTest
+private class AuthJWTMapLiteralTest {
+  @isTest
+  static void toJSONStringIncludesMapClaims() {
+    Auth.JWT jwt = new Auth.JWT();
+    jwt.setIss('issuer');
+    jwt.setAud('audience');
+    jwt.setSub('subject');
+    jwt.setAdditionalClaims(new Map<String,Object>{'role'=>'tester'});
+    System.assertNotEquals(null, jwt.toJSONString());
+  }
+}
+`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+}
+
+func TestRunCasesContextCanvasMockRenderContextWithMapLiterals(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "CanvasMapLiteralTest.cls")
+	writeFile(t, path, `
+@isTest
+private class CanvasMapLiteralTest {
+  @isTest
+  static void mockRenderContextUsesMapValues() {
+    Map<String,String> app = new Map<String,String>{'canvasUrl'=>'https://canvas.example', 'name'=>'CB114 Canvas', 'developerName'=>'CB114', 'namespace'=>'', 'version'=>'1'};
+    Map<String,String> env = new Map<String,String>{'displayLocation'=>'Visualforce', 'locationUrl'=>'/apex/CB114', 'subLocation'=>'detail'};
+    Canvas.RenderContext ctx = Canvas.Test.mockRenderContext(app, env);
+    System.assertEquals('https://canvas.example', ctx.getApplicationContext().getCanvasUrl());
+    System.assertEquals('CB114 Canvas', ctx.getApplicationContext().getName());
+    System.assertEquals('Visualforce', ctx.getEnvironmentContext().getDisplayLocation());
+    System.assertEquals('/apex/CB114', ctx.getEnvironmentContext().getLocationUrl());
+    ctx.getEnvironmentContext().addEntityField('Name');
+    System.assert(ctx.getEnvironmentContext().getEntityFields().contains('Name'));
+  }
+}
+`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+}
+
+func TestRunCasesContextCacheRejectsNonAlphanumericPartitionName(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "CachePartitionNameTest.cls")
+	writeFile(t, path, `
+@isTest
+private class CachePartitionNameTest {
+  @isTest
+  static void rejectsHyphenatedPartitionName() {
+    for (String name : new List<String>{'cb114-test', ' local'}) {
+      try {
+        Cache.Org.getPartition(name);
+        System.assert(false, 'expected invalid partition error');
+      } catch (Exception e) {
+        System.assertEquals('cache.OrgCacheException', e.getTypeName());
+        System.assertEquals('Invalid partition: partition name must be alphanumeric.', e.getMessage());
+      }
+    }
+    try {
+      Cache.Session.getPartition('cb114-test');
+      System.assert(false, 'expected invalid session partition error');
+    } catch (Exception e) {
+      System.assertEquals('cache.SessionCacheException', e.getTypeName());
+      System.assertEquals('Invalid partition: partition name must be alphanumeric.', e.getMessage());
+    }
+  }
+}
+`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+}
+
 func TestRuntimeKeyWithSourceDigestsAvoidsRereadsAndMatchesDiskFallback(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "force-app", "main", "default", "classes", "Unicode.cls")
