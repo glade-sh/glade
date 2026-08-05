@@ -42,6 +42,14 @@ func semaAPI67ReadOnlyPlatformField(path string) bool {
 }
 
 var semaAPI67RejectedPlatformConstructors = map[string]struct{}{
+	// Apex exposes these names as scalar value types, but Salesforce rejects
+	// `new` construction for them. Keep the local compiler aligned with the
+	// platform's "Type cannot be constructed" contract; use the documented
+	// static factories (for example Date.today or Decimal.valueOf) instead.
+	"date":                             {},
+	"datetime":                         {},
+	"decimal":                          {},
+	"double":                           {},
 	"approval":                         {},
 	"messaging.actionablenotification": {},
 	"messaging.actionresult":           {},

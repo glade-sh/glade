@@ -218,6 +218,9 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 
 func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs map[string]Value, result *Result, literalArgs bool) (Value, error) {
 	typeName = vm.resolveConstructorTypeName(typeName, args, namedArgs)
+	if scalarConstructorForbidden(typeName) {
+		return Null, fmt.Errorf("Type cannot be constructed: %s", strings.TrimPrefix(typeName, "System."))
+	}
 	if value, handled, err := vm.constructCollectionValue(typeName, args, namedArgs, literalArgs); handled || err != nil {
 		return value, err
 	}
@@ -1153,6 +1156,16 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		return Null, fmt.Errorf("%s constructor does not accept arguments", typeName)
 	}
 	return object, nil
+}
+
+func scalarConstructorForbidden(typeName string) bool {
+	typeName = strings.TrimPrefix(strings.TrimSpace(typeName), "System.")
+	switch strings.ToLower(typeName) {
+	case "date", "datetime", "decimal", "double":
+		return true
+	default:
+		return false
+	}
 }
 
 func (vm *VM) classConstructorCanAccept(typeName string, args []Value, namedArgs map[string]Value) bool {
