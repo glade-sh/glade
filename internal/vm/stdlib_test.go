@@ -2795,7 +2795,7 @@ System.assertEquals(2, constructed.getLineNumber());
 System.assertEquals('AnonymousBlock: line 2, column 1', constructed.getStackTraceString());
 System.assertEquals('System.DmlException: blocked', constructed.toString());
 Exception noMessage = new DmlException();
-System.assertEquals(null, noMessage.getMessage());
+System.assertEquals('Script-thrown exception', noMessage.getMessage());
 Exception systemPrefixed = new System.DmlException('system blocked');
 System.assertEquals('System.DmlException', systemPrefixed.getTypeName());
 System.assertEquals('System.DmlException: system blocked', systemPrefixed.toString());

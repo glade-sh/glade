@@ -31,3 +31,25 @@ System.assertEquals('AnonymousBlock: line 5, column 1', procedure.getStackTraceS
 		t.Fatal(err)
 	}
 }
+
+func TestBuiltinExceptionsUseScriptThrownDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`DmlException dml = new DmlException();
+ListException listError = new ListException();
+QueryException query = new QueryException();
+JSONException json = new JSONException();
+System.assertEquals('Script-thrown exception', dml.getMessage());
+System.assertEquals('System.DmlException: Script-thrown exception', dml.toString());
+System.assertEquals('Script-thrown exception', listError.getMessage());
+System.assertEquals('System.ListException: Script-thrown exception', listError.toString());
+System.assertEquals('Script-thrown exception', query.getMessage());
+System.assertEquals('System.QueryException: Script-thrown exception', query.toString());
+System.assertEquals('Script-thrown exception', json.getMessage());
+System.assertEquals('System.JSONException: Script-thrown exception', json.toString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}

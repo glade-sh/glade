@@ -3741,7 +3741,7 @@ func exceptionToString(value Value) string {
 	if raw, ok := value.Fields["message"]; ok && raw.Kind == ValueString {
 		message = raw.Text
 	}
-	if message == "" && typeName == "NullPointerException" {
+	if message == "" && isBuiltinExceptionType(typeName) {
 		message = "Script-thrown exception"
 	}
 	prefix := "System." + typeName
