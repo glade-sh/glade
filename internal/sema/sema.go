@@ -2190,6 +2190,24 @@ type semaCollectionSignature struct {
 	params     [][]string
 }
 
+// Salesforce accepts Search.suggest's options argument through an Object
+// variable when that value contains a Search.SuggestionOption. Keep the
+// compiler permissive at this boundary; the runtime validates the concrete
+// value before dispatch.
+func semaSearchSuggestObjectOverload(receiverType, method string, argTypes []string) bool {
+	receiverType = semaCanonicalPlatformAlias(receiverType)
+	if !strings.EqualFold(receiverType, "Search") || !strings.EqualFold(method, "suggest") {
+		return false
+	}
+	if len(argTypes) != 3 && len(argTypes) != 4 {
+		return false
+	}
+	if !strings.EqualFold(argTypes[0], "String") || !strings.EqualFold(argTypes[1], "String") || !strings.EqualFold(argTypes[2], "Object") {
+		return false
+	}
+	return len(argTypes) == 3 || strings.EqualFold(argTypes[3], "AccessLevel")
+}
+
 func semaPlatformMethodSignatureFor(model *semaTypeMemberView, receiverType, method string) (semaCollectionSignature, bool) {
 	return semaPlatformMethodSignatureForMode(model, receiverType, method, "")
 }

@@ -1035,6 +1035,9 @@ Search.SuggestionResults objectSuggestions = Search.suggest('Nook', 'Account', (
 System.assertEquals(1, objectSuggestions.getSuggestionResults().size());
 Search.SuggestionResults objectUserSuggestions = Search.suggest('Nook', 'Account', (Object)new Search.SuggestionOption(), (Object)AccessLevel.SYSTEM_MODE);
 System.assertEquals(false, objectUserSuggestions.hasMoreResults());
+Object objectOption = new Search.SuggestionOption();
+Search.SuggestionResults objectVariableSuggestions = Search.suggest('Nook', 'Account', objectOption);
+System.assertEquals(1, objectVariableSuggestions.getSuggestionResults().size());
 `)
 	if err != nil {
 		t.Fatal(err)

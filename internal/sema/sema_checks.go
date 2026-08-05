@@ -2738,6 +2738,9 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	if semaDatabaseDMLReturnType(receiverType, method, argTypes) != "" && len(args) <= 4 {
 		return nil, true
 	}
+	if semaSearchSuggestObjectOverload(receiverType, method, argTypes) {
+		return nil, true
+	}
 	if semaArgsMatchAny(sig.params, argTypes, model) || semaCollectionFieldPathArgsMatch(sig.params, args, scope, model) {
 		return nil, true
 	}

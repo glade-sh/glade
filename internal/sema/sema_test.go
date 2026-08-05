@@ -6079,6 +6079,27 @@ public class UsesSearchFind {
 	}
 }
 
+func TestAnalyzeAllowsSearchSuggestObjectOptionsSurface(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSearchSuggestObject.cls"), `
+public class UsesSearchSuggestObject {
+  public void run(String queryText) {
+    Object options = new Search.SuggestionOption();
+    Search.SuggestionResults results = Search.suggest(queryText, 'Account', options);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesSearchSuggestObject.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected Search.suggest(Object) diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeUserRecordAccessAndAddressComparison(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

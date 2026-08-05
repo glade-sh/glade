@@ -1974,6 +1974,9 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 	if semaDatabaseDMLReturnType(receiverType, method, argTypes) != "" && len(args) <= 4 {
 		return nil, true
 	}
+	if semaSearchSuggestObjectOverload(receiverType, method, argTypes) {
+		return nil, true
+	}
 	if semaArgsMatchAny(sig.params, argTypes, model) {
 		return nil, true
 	}
