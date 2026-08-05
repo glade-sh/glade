@@ -1305,6 +1305,10 @@ func exceptionConstructorArgsCanApply(args []Value) bool {
 
 func setExceptionMessage(object *Value, value Value) {
 	if value.Kind == ValueString {
+		if strings.EqualFold(exceptionTypeName(object.Type), "TouchHandledException") {
+			object.Fields["message"] = String("Script-thrown exception")
+			return
+		}
 		object.Fields["message"] = value
 	} else if value.Kind != ValueNull {
 		object.Fields["message"] = String(value.String())

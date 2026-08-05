@@ -894,7 +894,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "NoAccessException", SuperClass: "Exception", Constructors: [][]string{{"Exception"}, {"String"}, {"String", "Exception"}}},
 	{Name: "NoDataFoundException", SuperClass: "Exception", Constructors: [][]string{{"Exception"}, {"String"}, {"String", "Exception"}}},
 	{Name: "NullPointerException", SuperClass: "Exception", Constructors: [][]string{{"Exception"}, {"String"}, {"String", "Exception"}}},
-	{Name: "TouchHandledException", SuperClass: "Exception", Constructors: [][]string{{}, {"String", "Exception"}}},
+	{Name: "TouchHandledException", SuperClass: "Exception", Constructors: [][]string{{"String"}}, ReplaceConstructors: true},
 	{Name: "Answers", Methods: []StandardMethodSpec{{Name: "findSimilar", ReturnType: "List<Id>", Parameters: []string{"Question"}, Static: true}}},
 	{Name: "Approval", Methods: []StandardMethodSpec{
 		{Name: "isLocked", ReturnType: "Boolean", Parameters: []string{"Id"}, Static: true},

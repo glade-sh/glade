@@ -52,3 +52,18 @@ func TestRuntimeGeneratedStandardExceptionsPreserveCatchTypeAndMessage(t *testin
 		})
 	}
 }
+
+func TestTouchHandledExceptionStringConstructorUsesScriptMessage(t *testing.T) {
+	program, err := CompileAnonymous(`
+TouchHandledException exceptionValue = new TouchHandledException('ignored message');
+System.assertEquals('Script-thrown exception', exceptionValue.getMessage());
+exceptionValue.setMessage('changed message');
+System.assertEquals('changed message', exceptionValue.getMessage());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}

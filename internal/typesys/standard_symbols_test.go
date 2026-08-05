@@ -700,8 +700,9 @@ func TestStandardPlatformSymbolsIncludeLabelLimitsDecimalAndTargetExceptionShape
 	}
 
 	touchHandled := requireStandardSymbol(t, symbols, "TouchHandledException")
-	requireStandardConstructor(t, touchHandled, []string{})
-	requireStandardConstructor(t, touchHandled, []string{"String", "Exception"})
+	if got := standardConstructorSignatures(touchHandled); len(got) != 1 || got[0] != "String" {
+		t.Fatalf("TouchHandledException constructors = %#v, want only String constructor", got)
+	}
 }
 
 func standardConstructorSignatures(symbol TypeSymbol) []string {

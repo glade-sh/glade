@@ -30,6 +30,10 @@ func TestAPI67StandardExceptionConstructorVisibility(t *testing.T) {
 		{name: "NullPointerException", arguments: "'message'", wantErrors: true},
 		{name: "NullPointerException", arguments: "cause", wantErrors: true},
 		{name: "NullPointerException", arguments: "'message', cause", wantErrors: true},
+		{name: "TouchHandledException", arguments: "", wantErrors: true},
+		{name: "TouchHandledException", arguments: "'message'", wantErrors: false},
+		{name: "TouchHandledException", arguments: "cause", wantErrors: true},
+		{name: "TouchHandledException", arguments: "'message', cause", wantErrors: true},
 	}
 	for _, test := range tests {
 		for _, qualified := range []bool{false, true} {

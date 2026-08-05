@@ -2083,12 +2083,7 @@ func (a *Analyzer) allowsInheritedExceptionConstructor(typeName string, args []i
 		return false
 	}
 	argTypes := irCallArgTypes(a, args, scope, model, ownerType)
-	return semaArgsMatchAny([][]string{
-		{},
-		{"String"},
-		{"Exception"},
-		{"String", "Exception"},
-	}, argTypes, model)
+	return semaArgsMatchAny(inheritedExceptionConstructorSignatures(typeName), argTypes, model)
 }
 
 func semaAllowsInheritedExceptionConstructorArgs(typeName string, args []semaArg, scope map[string]string, model *semaTypeMemberView) bool {
@@ -2099,12 +2094,14 @@ func semaAllowsInheritedExceptionConstructorArgs(typeName string, args []semaArg
 	for i, arg := range args {
 		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
 	}
-	return semaArgsMatchAny([][]string{
-		{},
-		{"String"},
-		{"Exception"},
-		{"String", "Exception"},
-	}, argTypes, model)
+	return semaArgsMatchAny(inheritedExceptionConstructorSignatures(typeName), argTypes, model)
+}
+
+func inheritedExceptionConstructorSignatures(typeName string) [][]string {
+	if strings.EqualFold(strings.TrimPrefix(typeName, "System."), "TouchHandledException") {
+		return [][]string{{"String"}}
+	}
+	return [][]string{{}, {"String"}, {"Exception"}, {"String", "Exception"}}
 }
 
 func (a *Analyzer) checkIRCollectionConstructor(typ typesys.TypeSymbol, member typesys.MemberSymbol, typeName string, args []ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView) ([]diagnostic.Diagnostic, bool) {
