@@ -47,11 +47,20 @@ implemented and the existing VM value-contract tests already passed.
 
 ```text
 glade-tools run ui-apexpages-idea-controller-evidence.json      check ok=true
-go test ./internal/vm -run 'TestExecApexPagesIdeaStandard|TestExecIdeaStandardSetController' -count=1  PASS
+go test ./internal/vm -run 'TestExecApexPagesIdeaStandard|TestExecIdeaStandardSetController' -count=1  PASS (3 tests)
 go test ./internal/apextest -run 'TestRunCasesContextApexPagesIdeaControllerFixture' -count=1  PASS
-go test ./internal/apextest -count=1                             (full package, see result)
-go build ./...                                                   (see result)
-git diff --check                                                 (see result)
+go test ./internal/apextest -count=1                             PASS (309.759s)
+go build ./...                                                   PASS
+git diff --check                                                 PASS
+```
+
+Exact-candidate local replay (binary SHA-256
+`79f52c936880b0bc7715a1f9be83befa899398d178248e047a55b9b64026c475`, product
+commit `886e010f`):
+
+```text
+glade test --project apexpages-idea-controller-v27-local --no-cache --json
+status: passed; total: 2; passed: 2; compileErrors: 0; runtimeErrors: 0
 ```
 
 ## Salesforce evidence note
