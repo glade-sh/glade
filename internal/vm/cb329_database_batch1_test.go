@@ -2,13 +2,13 @@ package vm
 
 import "testing"
 
-func TestCB329DatabaseBatch1DeleteFilterEnum(t *testing.T) {
+func TestCB329DatabaseBatch1CursorDeleteFilterEnum(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals(Database.DeleteFilter.DELETED_ROWS_ONLY, Database.DeleteFilter.valueOf('DELETED_ROWS_ONLY'));
-System.assertEquals(Database.DeleteFilter.NO_DELETED_ROWS, Database.DeleteFilter.values()[1]);
-System.assertEquals(0, Database.DeleteFilter.DELETED_ROWS_ONLY.ordinal());
-System.assertEquals('DELETED_ROWS_ONLY', Database.DeleteFilter.DELETED_ROWS_ONLY.name());
-System.assertEquals(4, Database.DeleteFilter.values().size());
+System.assertEquals(Database.Cursor.DeleteFilter.DELETED_ROWS_ONLY, Database.Cursor.DeleteFilter.valueOf('DELETED_ROWS_ONLY'));
+System.assertEquals(Database.Cursor.DeleteFilter.NO_DELETED_ROWS, Database.Cursor.DeleteFilter.values()[1]);
+System.assertEquals(0, Database.Cursor.DeleteFilter.DELETED_ROWS_ONLY.ordinal());
+System.assertEquals('DELETED_ROWS_ONLY', Database.Cursor.DeleteFilter.DELETED_ROWS_ONLY.name());
+System.assertEquals(4, Database.Cursor.DeleteFilter.values().size());
 `)
 	if err != nil {
 		t.Fatal(err)

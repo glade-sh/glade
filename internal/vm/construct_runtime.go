@@ -3827,7 +3827,7 @@ var generatedPlatformUnsupportedConstructors = []string{
 
 var apexPagesSeverityNames = []string{"FATAL", "ERROR", "WARNING", "INFO", "CONFIRM"}
 
-var metadataDeployStatusNames = []string{"Succeeded", "SUCCEEDED", "Failed", "FAILED", "InProgress", "INPROGRESS", "Pending", "PENDING", "Canceling", "CANCELING", "Canceled", "CANCELED"}
+var metadataDeployStatusNames = []string{"Pending", "InProgress", "Succeeded", "SucceededPartial", "Failed", "Canceling", "Canceled"}
 
 var metadataMetadataTypeNames = []string{"CustomMetadata"}
 

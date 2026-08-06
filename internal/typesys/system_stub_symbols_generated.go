@@ -105488,26 +105488,6 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 	},
 	{
-		Name:       "Database.DeleteFilter",
-		Kind:       apexast.DeclarationEnum,
-		SuperClass: "Object",
-		Methods: []StandardMethodSpec{
-			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
-			{Name: "hashCode", ReturnType: "Integer"},
-			{Name: "ordinal", ReturnType: "Integer"},
-			{Name: "valueOf", ReturnType: "Database.Cursor.DeleteFilter", ParameterSpecs: []StandardParameterSpec{{Name: "str", Type: "String"}}, Static: true},
-			{Name: "valueOf", ReturnType: "Database.PaginationCursor.DeleteFilter", ParameterSpecs: []StandardParameterSpec{{Name: "str", Type: "String"}}, Static: true},
-			{Name: "values", ReturnType: "List<Database.Cursor.DeleteFilter>", Static: true},
-			{Name: "values", ReturnType: "List<Database.PaginationCursor.DeleteFilter>", Static: true},
-		},
-		Properties: []StandardPropertySpec{
-			{Name: "DELETED_ROWS_ONLY", Type: "Database.DeleteFilter", Static: true},
-			{Name: "NO_DELETED_ROWS", Type: "Database.DeleteFilter", Static: true},
-			{Name: "NO_DELETED_SHARING_ROWS", Type: "Database.DeleteFilter", Static: true},
-			{Name: "NO_FILTER", Type: "Database.DeleteFilter", Static: true},
-		},
-	},
-	{
 		Name:       "Database.DeleteResult",
 		SuperClass: "Object",
 		ConstructorSpecs: []StandardConstructorSpec{

@@ -252,11 +252,13 @@ var productNamespaceSymbolSpecs = []StandardSymbolSpec{
 		Name: "Metadata.DeployStatus",
 		Kind: apexast.DeclarationEnum,
 		Properties: []StandardPropertySpec{
-			{Name: "CANCELED", Type: "Metadata.DeployStatus", Static: true},
-			{Name: "FAILED", Type: "Metadata.DeployStatus", Static: true},
-			{Name: "IN_PROGRESS", Type: "Metadata.DeployStatus", Static: true},
-			{Name: "PENDING", Type: "Metadata.DeployStatus", Static: true},
-			{Name: "SUCCEEDED", Type: "Metadata.DeployStatus", Static: true},
+			{Name: "Canceled", Type: "Metadata.DeployStatus", Static: true},
+			{Name: "Canceling", Type: "Metadata.DeployStatus", Static: true},
+			{Name: "Failed", Type: "Metadata.DeployStatus", Static: true},
+			{Name: "InProgress", Type: "Metadata.DeployStatus", Static: true},
+			{Name: "Pending", Type: "Metadata.DeployStatus", Static: true},
+			{Name: "Succeeded", Type: "Metadata.DeployStatus", Static: true},
+			{Name: "SucceededPartial", Type: "Metadata.DeployStatus", Static: true},
 		},
 	},
 	{

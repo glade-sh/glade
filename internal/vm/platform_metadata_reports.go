@@ -1082,6 +1082,10 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 		value, err := callNamedEnumStaticMember(canonical, names, method, args)
 		return value, true, err
 	}
+	if typeName == "Metadata.DeployStatus" {
+		value, err := callNamedEnumStaticMember(typeName, metadataDeployStatusNames, method, args)
+		return value, true, err
+	}
 	if value, handled, err := vm.callGeneratedPlatformEnumStaticMember(typeName, method, args); handled || err != nil {
 		return value, handled, err
 	}
@@ -1113,13 +1117,6 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 	}
 	if strings.EqualFold(typeName, "Schema.SOAPType") || strings.EqualFold(typeName, "SOAPType") {
 		value, err := callNamedEnumStaticMember("Schema.SOAPType", schemaSOAPTypeNames, method, args)
-		return value, true, err
-	}
-	if typeName == "Metadata.DeployStatus" {
-		if method != "values" {
-			return Null, false, nil
-		}
-		value, err := metadataDeployStatusValues(args)
 		return value, true, err
 	}
 	if typeName == "Metadata.MetadataType" {
@@ -1319,6 +1316,9 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	if canonical, names, ok := coreEnumSpec(receiverType); ok {
 		return callNamedEnumMember(canonical, names, receiver, method, args)
 	}
+	if receiverType == "Metadata.DeployStatus" {
+		return callNamedEnumMember(receiverType, metadataDeployStatusNames, receiver, method, args)
+	}
 	if receiverType == "JSONToken" {
 		if method == "equals" {
 			if len(args) != 1 {
@@ -1375,9 +1375,6 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	}
 	if receiver.Type == "Schema.SOAPType" {
 		return callNamedEnumMember("Schema.SOAPType", schemaSOAPTypeNames, receiver, method, args)
-	}
-	if receiver.Type == "Metadata.DeployStatus" {
-		return callNamedEnumMember("Metadata.DeployStatus", metadataDeployStatusNames, receiver, method, args)
 	}
 	if receiver.Type == "Metadata.MetadataType" {
 		return callNamedEnumMember("Metadata.MetadataType", metadataMetadataTypeNames, receiver, method, args)
@@ -1524,7 +1521,7 @@ func metadataDeployMessageObject() Value {
 func metadataDeployResultConstructorObject() Value {
 	result := Object("Metadata.DeployResult")
 	result.Fields["id"] = Null
-	result.Fields["status"] = metadataDeployStatusValue("SUCCEEDED")
+	result.Fields["status"] = metadataDeployStatusValue("Succeeded")
 	result.Fields["success"] = Bool(true)
 	result.Fields["done"] = Bool(true)
 	result.Fields["numberComponentErrors"] = Int(0)
@@ -1541,7 +1538,7 @@ func metadataDeployResultConstructorObject() Value {
 func metadataDeployResultObject(deploymentID string, items []Value) Value {
 	result := Object("Metadata.DeployResult")
 	result.Fields["id"] = platformScalar("Id", deploymentID)
-	result.Fields["status"] = metadataDeployStatusValue("SUCCEEDED")
+	result.Fields["status"] = metadataDeployStatusValue("Succeeded")
 	result.Fields["success"] = Bool(true)
 	result.Fields["done"] = Bool(true)
 	result.Fields["numberComponentErrors"] = Int(0)
@@ -1564,7 +1561,7 @@ func metadataDeployResultObject(deploymentID string, items []Value) Value {
 func metadataDeployFailureResultObject(deploymentID string, items []Value, failedItem Value, err error) Value {
 	result := Object("Metadata.DeployResult")
 	result.Fields["id"] = platformScalar("Id", deploymentID)
-	result.Fields["status"] = metadataDeployStatusValue("FAILED")
+	result.Fields["status"] = metadataDeployStatusValue("Failed")
 	result.Fields["success"] = Bool(false)
 	result.Fields["done"] = Bool(true)
 	result.Fields["numberComponentErrors"] = Int(1)

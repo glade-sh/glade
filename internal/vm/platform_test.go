@@ -930,7 +930,7 @@ System.assertEquals('0Af000000000001', (String)deploymentId);
 Metadata.DeployResult deployStatus = Metadata.Operations.checkDeployStatus(deploymentId, true);
 System.assert(deployStatus.done);
 System.assert(deployStatus.success);
-System.assertEquals('SUCCEEDED', deployStatus.status.name());
+System.assertEquals('Succeeded', deployStatus.status.name());
 System.assertEquals((String)deploymentId, (String)deployStatus.id);
 System.assertEquals(2, deployStatus.numberComponentsTotal);
 System.assertEquals(2, deployStatus.numberComponentsDeployed);
@@ -955,9 +955,9 @@ Feature__mdt createdCfg = Feature__mdt.getInstance('Created');
 System.assertEquals('Created', createdCfg.MasterLabel);
 System.assertEquals(true, createdCfg.Enabled__c);
 Metadata.DeployResult result = new Metadata.DeployResult();
-result.status = Metadata.DeployStatus.SUCCEEDED;
-System.assertEquals('SUCCEEDED', result.status.name());
-System.assertEquals('SUCCEEDED', String.valueOf(result.status));
+result.status = Metadata.DeployStatus.Succeeded;
+System.assertEquals('Succeeded', result.status.name());
+System.assertEquals('Succeeded', String.valueOf(result.status));
 result.details = new Metadata.DeployDetails();
 result.details.componentFailures.add(new Metadata.DeployMessage());
 System.assertEquals(1, result.details.componentFailures.size());
@@ -984,15 +984,15 @@ System.assertEquals('Feature.Created', records[1].fullName);
 func TestExecMetadataEnumStaticAndInstanceBehavior(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Metadata.DeployStatus> statuses = Metadata.DeployStatus.values();
-System.assertEquals(8, statuses.size());
-System.assert(statuses.contains(Metadata.DeployStatus.SUCCEEDED));
-Metadata.DeployStatus succeeded = Metadata.DeployStatus.valueOf('SUCCEEDED');
-System.assertEquals(Metadata.DeployStatus.SUCCEEDED, succeeded);
-System.assert(succeeded.equals(Metadata.DeployStatus.SUCCEEDED));
-System.assert(!succeeded.equals(Metadata.DeployStatus.FAILED));
-System.assertEquals('SUCCEEDED', succeeded.name());
-System.assertEquals('SUCCEEDED', succeeded.toString());
-System.assertEquals('SUCCEEDED', String.valueOf(succeeded));
+System.assertEquals(7, statuses.size());
+System.assert(statuses.contains(Metadata.DeployStatus.Succeeded));
+Metadata.DeployStatus succeeded = Metadata.DeployStatus.valueOf('Succeeded');
+System.assertEquals(Metadata.DeployStatus.Succeeded, succeeded);
+System.assert(succeeded.equals(Metadata.DeployStatus.Succeeded));
+System.assert(!succeeded.equals(Metadata.DeployStatus.Failed));
+System.assertEquals('Succeeded', succeeded.name());
+System.assertEquals('Succeeded', succeeded.toString());
+System.assertEquals('Succeeded', String.valueOf(succeeded));
 Metadata.MetadataType metadataType = Metadata.MetadataType.valueOf('CustomMetadata');
 System.assertEquals(Metadata.MetadataType.CustomMetadata, metadataType);
 System.assertEquals('CustomMetadata', metadataType.name());
@@ -1004,6 +1004,32 @@ try {
 	System.assertEquals('System.NoSuchElementException', e.getTypeName());
 	System.assert(e.getMessage().contains('No enum value found called missing'));
 }
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMetadataDeployStatusMatchesSalesforceAPI67(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Metadata.DeployStatus> statuses = Metadata.DeployStatus.values();
+List<String> expectedNames = new List<String>{'Pending', 'InProgress', 'Succeeded', 'SucceededPartial', 'Failed', 'Canceling', 'Canceled'};
+System.assertEquals(expectedNames.size(), statuses.size());
+for (Integer i = 0; i < expectedNames.size(); i++) {
+	System.assertEquals(expectedNames[i], statuses[i].name());
+	System.assertEquals(i, statuses[i].ordinal());
+	System.assertEquals(statuses[i], Metadata.DeployStatus.valueOf(expectedNames[i]));
+}
+System.assertEquals(Metadata.DeployStatus.Pending, Metadata.DeployStatus.valueOf('Pending'));
+System.assertEquals(Metadata.DeployStatus.InProgress, Metadata.DeployStatus.valueOf('InProgress'));
+System.assertEquals(Metadata.DeployStatus.Succeeded, Metadata.DeployStatus.valueOf('Succeeded'));
+System.assertEquals(Metadata.DeployStatus.SucceededPartial, Metadata.DeployStatus.valueOf('SucceededPartial'));
+System.assertEquals(Metadata.DeployStatus.Failed, Metadata.DeployStatus.valueOf('Failed'));
+System.assertEquals(Metadata.DeployStatus.Canceling, Metadata.DeployStatus.valueOf('Canceling'));
+System.assertEquals(Metadata.DeployStatus.Canceled, Metadata.DeployStatus.valueOf('Canceled'));
 `)
 	if err != nil {
 		t.Fatal(err)
