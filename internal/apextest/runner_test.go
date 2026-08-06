@@ -1296,6 +1296,47 @@ private class IdeaControllerV27FixtureTest {
 	}
 }
 
+func TestRunCasesContextDatabaseUnitOfWorkFixture(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "DatabaseUnitOfWorkV27FixtureTest.cls")
+	writeFile(t, path, `
+@isTest
+private class DatabaseUnitOfWorkV27FixtureTest {
+  @isTest
+  static void unitOfWorkContracts() {
+    Database.UnitOfWork u = new Database.UnitOfWork();
+    System.assertNotEquals(null, u);
+    Database.SaveResult insertOne = u.insertRecord(new Account(Name = 'uow-one'));
+    System.assertEquals(false, insertOne.isSuccess());
+    List<Database.SaveResult> insertMany = u.insertRecords(new List<Account>{new Account(Name = 'uow-two'), new Account(Name = 'uow-three')});
+    System.assertEquals(2, insertMany.size());
+    Database.SaveResult updateOne = u.updateRecord(new Account(Id = '001000000000001AAA', Name = 'uow-update'));
+    System.assertEquals(false, updateOne.isSuccess());
+    List<Database.SaveResult> updateMany = u.updateRecords(new List<Account>{new Account(Id = '001000000000002AAA', Name = 'uow-update-two')});
+    System.assertEquals(1, updateMany.size());
+    Database.UpsertResult upsertOne = u.upsertRecord(new Account(Name = 'uow-upsert'));
+    System.assertEquals(false, upsertOne.isSuccess());
+    List<Database.UpsertResult> upsertMany = u.upsertRecords(new List<Account>{new Account(Name = 'uow-upsert-two')});
+    System.assertEquals(1, upsertMany.size());
+    Database.DeleteResult deleteOne = u.deleteRecord(new Account(Id = '001000000000003AAA'));
+    System.assertEquals(false, deleteOne.isSuccess());
+    List<Database.DeleteResult> deleteMany = u.deleteRecords(new List<Account>{new Account(Id = '001000000000004AAA')});
+    System.assertEquals(1, deleteMany.size());
+    u.discardWork();
+    u.commitWork();
+  }
+}
+`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+}
+
 func TestRuntimeKeyWithSourceDigestsAvoidsRereadsAndMatchesDiskFallback(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "force-app", "main", "default", "classes", "Unicode.cls")
