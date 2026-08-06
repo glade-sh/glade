@@ -93,7 +93,13 @@ func (vm *VM) hierarchyCustomSettingRecordForOwner(objectName, ownerID string) (
 	return storage.Record{}, false
 }
 func (vm *VM) customDataObject(typeName string) (string, storage.ObjectDefinition, string, bool) {
+	if vm == nil {
+		return "", storage.ObjectDefinition{}, "", false
+	}
 	if vm.Org == nil {
+		if definition, syntheticOK := syntheticListCustomSettingDefinition(typeName); syntheticOK {
+			return definition.APIName, definition, "custom setting", true
+		}
 		return "", storage.ObjectDefinition{}, "", false
 	}
 	objectName, ok := vm.resolveObjectName(typeName)
@@ -161,6 +167,9 @@ func (vm *VM) metadataLightCustomSettingObject(typeName, methodKey string) (stri
 }
 
 func (vm *VM) customDataGetInstance(objectName string, definition storage.ObjectDefinition, kind string, args []Value) (storage.Record, bool, error) {
+	if vm.Org == nil {
+		return storage.Record{}, false, nil
+	}
 	object := vm.Org.Objects[objectName]
 	if len(args) == 0 {
 		if kind != "custom setting" {

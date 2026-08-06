@@ -33,7 +33,7 @@ func callStdlibMember(receiver Value, method string, args []Value) (Value, Value
 		method = canonicalStdlibMemberName(method, "add", "addAll", "clear", "clone", "contains", "containsAll", "deepClone", "isEmpty", "iterator", "remove", "removeAll", "retainAll", "size")
 		return callSetStdlibMember(receiver, method, args)
 	case ValueMap:
-		method = canonicalStdlibMemberName(method, "clear", "clone", "containsKey", "deepClone", "get", "isEmpty", "keySet", "put", "putAll", "remove", "size", "values")
+		method = canonicalStdlibMemberName(method, "clear", "clone", "containsKey", "containsValue", "deepClone", "get", "isEmpty", "keySet", "put", "putAll", "remove", "size", "values")
 		return callMapStdlibMember(receiver, method, args)
 	case ValueObject:
 		if isIteratorValue(receiver) {

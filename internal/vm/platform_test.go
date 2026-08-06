@@ -4555,7 +4555,7 @@ func TestExecSystemDeterministicLocalHelpers(t *testing.T) {
 System.assertEquals(false, System.isFunctionCallback());
 System.assertEquals(false, System.isRunningElasticCompute());
 System.assertEquals('R', System.getQuiddityShortCode(System.Request.getCurrent().getQuiddity()));
-System.assertEquals('DEFAULT', String.valueOf(System.getApplicationReadWriteMode()));
+	System.assertEquals('READ_WRITE', String.valueOf(System.getApplicationReadWriteMode()));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4565,15 +4565,13 @@ System.assertEquals('DEFAULT', String.valueOf(System.getApplicationReadWriteMode
 	}
 }
 
-func TestExecSystemRequestVersionIsUnsupportedForUnmanagedAnonymous(t *testing.T) {
-	program, err := CompileAnonymous(`System.requestVersion();`)
+func TestExecSystemRequestVersionUsesLocalAPIVersion(t *testing.T) {
+	program, err := CompileAnonymous(`System.assertEquals('65.0.0', System.requestVersion().toString());`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = New(nil).Execute(program)
-	var runtimeErr *RuntimeError
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "System.requestVersion unmanaged anonymous API surface"` {
-		t.Fatalf("err = %#v, want unmanaged anonymous requestVersion UnsupportedFeature", err)
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -12331,7 +12329,7 @@ System.assertEquals('SUCCESS', systemContext.getResult().name());
 	}
 }
 
-func TestExecSystemAttachFinalizerIsAcceptedInTests(t *testing.T) {
+func TestExecSystemAttachFinalizerIsUnsupportedLocally(t *testing.T) {
 	program, err := CompileAnonymous(`System.attachFinalizer(new QueueWorker());`)
 	if err != nil {
 		t.Fatal(err)
@@ -12341,8 +12339,8 @@ func TestExecSystemAttachFinalizerIsAcceptedInTests(t *testing.T) {
 	if err := machine.RegisterClass(Class{Name: "QueueWorker"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), `unsupported call "System.attachFinalizer"`) {
+		t.Fatalf("err = %v, want unsupported finalizer registration", err)
 	}
 }
 

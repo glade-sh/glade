@@ -2284,15 +2284,32 @@ System.assertEquals('0102030405060708090a0b0c0d0e0f10', EncodingUtil.convertToHe
 	}
 }
 
-func TestExecCryptoAreEqualConstantTimeRejectsAbsentSalesforceAPI(t *testing.T) {
+func TestExecCryptoAreEqualConstantTimeComparesBlobBytes(t *testing.T) {
 	program, err := CompileAnonymous(`
-Crypto.areEqualConstantTime(Blob.valueOf('hello'), Blob.valueOf('hello'));
+Boolean same = Crypto.areEqualConstantTime(Blob.valueOf('hello'), Blob.valueOf('hello'));
+Boolean different = Crypto.areEqualConstantTime(Blob.valueOf('hello'), Blob.valueOf('world'));
+Boolean differentLength = Crypto.areEqualConstantTime(Blob.valueOf('hello'), Blob.valueOf('hello!'));
+System.assert(same);
+System.assert(!different);
+System.assert(!differentLength);
 	`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), `unsupported call "Crypto.areEqualConstantTime"`) {
-		t.Fatalf("err = %v, want Salesforce-shaped unsupported API rejection", err)
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCryptoAreEqualConstantTimeRejectsInvalidArguments(t *testing.T) {
+	program, err := CompileAnonymous(`
+Crypto.areEqualConstantTime(Blob.valueOf('hello'), 'hello');
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), `Crypto.areEqualConstantTime second argument expects Blob`) {
+		t.Fatalf("err = %v, want Blob argument rejection", err)
 	}
 }
 
@@ -3437,7 +3454,7 @@ func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 		{source: "Blob bad = EncodingUtil.convertFromHex('80'); bad.toString();", want: "Blob.toString invalid UTF-8 data"},
 		{source: "EncodingUtil.urlEncode(null, 'UTF-8');", want: `Argument cannot be null.`},
 		{source: "EncodingUtil.urlDecode('%zz', 'UTF-8');", want: "invalid URL escape"},
-		{source: "Crypto.areEqualConstantTime(Blob.valueOf('x'), 'x');", want: `unsupported call "Crypto.areEqualConstantTime"`},
+		{source: "Crypto.areEqualConstantTime(Blob.valueOf('x'), 'x');", want: `Crypto.areEqualConstantTime second argument expects Blob`},
 		{source: "Crypto.generateDigest('SHA-999', Blob.valueOf('x'));", want: `SHA-999 MessageDigest not available`},
 		{source: "Crypto.generateDigest(' sha_256 ', Blob.valueOf('x'));", want: ` sha_256  MessageDigest not available`},
 		{source: "Crypto.generateDigest('SHA3_256', Blob.valueOf('x'));", want: `SHA3_256 MessageDigest not available`},
@@ -4983,7 +5000,7 @@ counts.put('b', 2);
 counts.put('a', 1);
 Map<String,Integer> copiedCounts = new Map<String,Integer>(counts);
 System.assertEquals(counts, copiedCounts);
-System.assertEquals('{a=1, b=2}', copiedCounts.toString());
+System.assertEquals('Map{a=1, b=2}', copiedCounts.toString());
 List<Integer> orderedValues = copiedCounts.values();
 System.assertEquals(2, orderedValues.get(0));
 System.assertEquals(1, orderedValues.get(1));
@@ -5436,7 +5453,7 @@ System.assertEquals(true, flags.get(2));
 Map<String,Object> shape = new Map<String,Object>();
 shape.put('b', new List<Integer>{2, 3});
 shape.put('a', null);
-System.assertEquals('{a=null, b=List[2, 3]}', shape.toString());
+System.assertEquals('Map{a=null, b=List[2, 3]}', shape.toString());
 `)
 	if err != nil {
 		t.Fatal(err)

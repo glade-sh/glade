@@ -505,19 +505,24 @@ dispatchCustomData:
 		}
 		out := Map()
 		out.Type = "Map<String," + objectName + ">"
-		object := vm.Org.Objects[objectName]
-		records := make([]storage.Record, 0, len(object.Records))
-		for _, record := range object.Records {
-			if record.System.IsDeleted {
-				continue
+		namespace := ""
+		var records []storage.Record
+		if vm.Org != nil {
+			namespace = vm.Org.Namespace
+			object := vm.Org.Objects[objectName]
+			records = make([]storage.Record, 0, len(object.Records))
+			for _, record := range object.Records {
+				if record.System.IsDeleted {
+					continue
+				}
+				records = append(records, record)
 			}
-			records = append(records, record)
 		}
 		sort.Slice(records, func(i, j int) bool {
-			return customDataRecordLess(definition, kind, records[i], records[j], vm.Org.Namespace)
+			return customDataRecordLess(definition, kind, records[i], records[j], namespace)
 		})
 		for _, record := range records {
-			key := customDataRecordKey(definition, kind, record, vm.Org.Namespace)
+			key := customDataRecordKey(definition, kind, record, namespace)
 			if key == "" {
 				continue
 			}

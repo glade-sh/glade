@@ -9,7 +9,7 @@ import (
 func TestExecDescribeRecordTypeInfoAndFeedContracts(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(true, Account.SObjectType.getDescribe().isFeedEnabled());
-System.assertEquals('{Master=Schema.RecordTypeInfo[getDeveloperName=Master;getName=Master;getRecordTypeId=012000000000000AAA;isActive=true;isAvailable=true;isDefaultRecordTypeMapping=true;isMaster=true;]}',
+System.assertEquals('Map{Master=Schema.RecordTypeInfo[getDeveloperName=Master;getName=Master;getRecordTypeId=012000000000000AAA;isActive=true;isAvailable=true;isDefaultRecordTypeMapping=true;isMaster=true;]}',
 		String.valueOf(Account.SObjectType.getDescribe().getRecordTypeInfosByDeveloperName()));
 `)
 	if err != nil {

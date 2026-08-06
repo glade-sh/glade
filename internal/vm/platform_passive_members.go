@@ -590,6 +590,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if exceptionTypeName(receiver.Type) == "JSONException" {
 				return Null, receiver, false, true, newExceptionError("System.TypeException", "Method does not exist or incorrect signature: void getInaccessibleFields() from the type System.JSONException")
 			}
+			if exceptionTypeName(receiver.Type) == "MathException" {
+				return Map(), receiver, false, true, nil
+			}
 			if !builtinExceptionTypeMatches(receiver.Type, "QueryException") {
 				return Null, receiver, false, true, newExceptionError("System.TypeException", "Procedure is only valid for System.QueryException")
 			}

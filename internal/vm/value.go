@@ -1166,12 +1166,7 @@ func apexCollectionString(value Value) string {
 		}
 		return "{" + strings.Join(parts, ", ") + "}"
 	case ValueMap:
-		keys := sortedMapKeys(value.Map)
-		parts = make([]string, 0, len(keys))
-		for _, key := range keys {
-			parts = append(parts, valueFromMapKey(key).String()+"="+value.Map[key].String())
-		}
-		return "{" + strings.Join(parts, ", ") + "}"
+		return mapString(value.Map)
 	default:
 		return value.String()
 	}

@@ -3,6 +3,7 @@ package vm
 import (
 	"crypto/aes"
 	"crypto/hmac"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -336,9 +337,6 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 platformStaticCall:
 	callee = normalizeStaticCallCasing(callee)
-	if strings.EqualFold(callee, "Crypto.areEqualConstantTime") {
-		return Null, unsupportedCallError(callee)
-	}
 	if className, methodName, ok := vm.splitClassMember(callee); ok {
 		if value, handled, err := vm.callConnectAPICommunitiesStatic(className, methodName, args); handled || err != nil {
 			return value, err
@@ -1261,10 +1259,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("System.getApplicationReadWriteMode expects 0 arguments")
 		}
 		mode := Object("ApplicationReadWriteMode")
-		// Anonymous Apex in an unmanaged namespace reports DEFAULT on
-		// Salesforce. Managed-package read/write mode is a separate context
-		// contract and is not available to this local anonymous executor.
-		mode.Fields["value"] = String("DEFAULT")
+		mode.Fields["value"] = String("READ_WRITE")
 		return mode, nil
 	case "System.getQuiddityShortCode":
 		if len(args) != 1 {
@@ -1288,10 +1283,7 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueObject {
 			return Null, fmt.Errorf("System.attachFinalizer expects Finalizer object")
 		}
-		if vm.currentAsyncKind == "Queueable" {
-			vm.currentFinalizer = args[0]
-		}
-		return Null, nil
+		return Null, unsupportedCallError(callee)
 	case "AsyncInfo.hasMaxStackDepth", "System.AsyncInfo.hasMaxStackDepth":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("AsyncInfo.hasMaxStackDepth expects 0 arguments")
@@ -1583,6 +1575,19 @@ platformStaticCall:
 			return Null, newExceptionError("System.InvalidParameterValueException", "invalid hexadecimal string")
 		}
 		return platformScalar("Blob", string(decoded)), nil
+	case "Crypto.areEqualConstantTime":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("Crypto.areEqualConstantTime expects two Blob arguments")
+		}
+		left, err := blobStringArg("Crypto.areEqualConstantTime first argument", args[:1])
+		if err != nil {
+			return Null, err
+		}
+		right, err := blobStringArg("Crypto.areEqualConstantTime second argument", args[1:])
+		if err != nil {
+			return Null, err
+		}
+		return Bool(subtle.ConstantTimeCompare([]byte(left), []byte(right)) == 1), nil
 	case "EncodingUtil.convertToHex":
 		blob, err := blobStringArg("EncodingUtil.convertToHex", args)
 		if err != nil {

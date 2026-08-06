@@ -383,6 +383,12 @@ func (vm *VM) callCartExtensionMockBackedSplitShipment(receiver Value, method st
 	return value, receiver, mutated, handled, err
 }
 
+func queueableDuplicateSignaturePlatformObjectType(typeName string) bool {
+	return strings.EqualFold(typeName, "QueueableDuplicateSignature") ||
+		strings.EqualFold(typeName, "QueueableDuplicateSignature.Builder") ||
+		strings.EqualFold(typeName, "Builder")
+}
+
 func callSfsqlquerySqlQueueableMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	switch method {
 	case "cancel", "processDataChunk":

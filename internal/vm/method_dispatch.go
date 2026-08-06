@@ -916,6 +916,21 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 // enums, managed passive members, platform objects, user-class methods, and
 // SObject members. It is the ValueObject arm of callValueMember.
 func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	queueablePlatformObject := queueableDuplicateSignaturePlatformObjectType(receiver.Type)
+	if queueablePlatformObject && strings.EqualFold(receiver.Type, "Builder") {
+		_, queueablePlatformObject = vm.lookupClass(receiver.Type)
+		queueablePlatformObject = !queueablePlatformObject
+	}
+	if queueablePlatformObject {
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+			if mutated {
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
+			}
+			return value, true, err
+		}
+	}
 	if isStubProxy(receiver) {
 		value, handled, err := vm.callStubProxyMember(receiver, method, args, result)
 		if handled || err != nil {
@@ -1290,7 +1305,7 @@ func materializeTypedNullCollection(value Value) (Value, bool) {
 
 func mapLikeMemberName(method string) bool {
 	switch canonicalCollectionMemberName("Map", method) {
-	case "put", "putAll", "get", "containsKey", "keySet", "values", "remove", "clear", "size", "isEmpty", "clone", "deepClone":
+	case "put", "putAll", "get", "containsKey", "containsValue", "keySet", "values", "remove", "clear", "size", "isEmpty", "clone", "deepClone":
 		return true
 	default:
 		return false
@@ -1340,7 +1355,7 @@ func canonicalCollectionMemberName(collection, method string) string {
 	case "Set":
 		known = []string{"add", "addAll", "size", "isEmpty", "contains", "containsAll", "remove", "clear", "removeAll", "retainAll", "clone", "deepClone", "iterator"}
 	case "Map":
-		known = []string{"put", "putAll", "get", "containsKey", "keySet", "values", "remove", "clear", "size", "isEmpty", "clone", "deepClone"}
+		known = []string{"put", "putAll", "get", "containsKey", "containsValue", "keySet", "values", "remove", "clear", "size", "isEmpty", "clone", "deepClone"}
 	}
 	for _, candidate := range known {
 		if strings.EqualFold(method, candidate) {
@@ -3338,6 +3353,16 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			}
 		}
 		return Bool(ok), true, nil
+	case "containsValue":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("Map.containsValue expects 1 argument")
+		}
+		for _, rawKey := range orderedValueMapKeys(receiver) {
+			if receiver.Map[rawKey].Equal(args[0]) {
+				return Bool(true), true, nil
+			}
+		}
+		return Bool(false), true, nil
 	case "remove":
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("Map.remove expects 1 argument")

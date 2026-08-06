@@ -132,6 +132,16 @@ func callMapStdlibMember(receiver Value, method string, args []Value) (Value, Va
 			}
 		}
 		return Bool(ok), receiver, false, true, nil
+	case "containsValue":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("Map.containsValue expects 1 argument")
+		}
+		for _, value := range receiver.Map {
+			if value.Equal(args[0]) {
+				return Bool(true), receiver, false, true, nil
+			}
+		}
+		return Bool(false), receiver, false, true, nil
 	case "getSObjectType":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Map.getSObjectType expects 0 arguments")

@@ -107,7 +107,7 @@ func sObjectAddErrorFieldName(value Value) (string, bool) {
 	case ValueString:
 		return value.Text, true
 	case ValueObject:
-		if strings.EqualFold(value.Type, "Schema.SObjectField") {
+		if isSObjectFieldTokenType(value.Type) {
 			if field, ok := value.Fields["field"]; ok && field.Kind == ValueString {
 				return field.Text, true
 			}

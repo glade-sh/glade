@@ -157,7 +157,7 @@ Set<String> names = new Set<String>{'a', 'b'};
 Map<String, Integer> counts = new Map<String, Integer>{'a' => 1};
 System.assertEquals('(3, 1, 2)', String.valueOf(values));
 System.assertEquals('{a, b}', names.toString());
-System.assertEquals('{a=1}', counts.toString());
+System.assertEquals('Map{a=1}', counts.toString());
 `)
 	if err != nil {
 		t.Fatal(err)
