@@ -2800,9 +2800,7 @@ System.assertEquals('local.default', Cache.OrgPartition.createFullyQualifiedPart
 Cache.OrgPartition.validatePartitionName('default');
 Cache.OrgPartition.validateKey(false, 'account');
 Cache.OrgPartition.validateKeyValue(false, 'account', 'value');
-Cache.OrgPartition.validateKeys(false, new Set<String>{'account'});
 Cache.SessionPartition.createFullyQualifiedKey('local', 'default', 'account');
-Cache.Partition.validateKeys(false, new Set<String>{'account'});
 Cache.Org.put('defaulted', 'org-default');
 Cache.Org.put('visible-default', 'org-visible', Cache.Visibility.ALL);
 System.assert(Cache.Org.contains('defaulted'));
@@ -2934,6 +2932,9 @@ func TestExecPlatformCacheAPI67RejectedShapes(t *testing.T) {
 		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validatePartitionName('a');`,
 		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKey(false, 'a');`,
 		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeyValue(false, 'a', 'v');`,
+		`Cache.Partition.validateKeys(false, new Set<String>{'a'});`,
+		`Cache.OrgPartition.validateKeys(false, new Set<String>{'a'});`,
+		`Cache.SessionPartition.validateKeys(false, new Set<String>{'a'});`,
 		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeys(false, new Set<String>{'a'});`,
 		`Cache.SessionPartition p = Cache.Session.getPartition('local'); p.validateKeys(false, new Set<String>{'a'});`,
 		`Cache.Partition p = Cache.Org.getPartition('local'); p.validateKeyValue(false, 'a', 'v');`,

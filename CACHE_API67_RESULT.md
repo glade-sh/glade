@@ -41,7 +41,8 @@ and `Cache.SessionPartition` Apex surface with Salesforce API 67, from the
 - `internal/vm/platform_http_cache_resources.go` — instance partition member
   handler no longer admits the six static helpers or the value-size methods;
   builder-scoped `remove` returns `Boolean` on both static and instance paths;
-  new `callCachePartitionStaticDefault` implements the static helpers.
+  `callCachePartitionStaticDefault` implements the remaining static helpers and
+  rejects removed `validateKeys` calls.
 - `internal/vm/platform_test.go` — accepted shapes (static helpers,
   `Cache.Session.isAvailable`, `(Boolean)` builder remove) and a new
   `TestExecPlatformCacheAPI67RejectedShapes` proving runtime rejection.
