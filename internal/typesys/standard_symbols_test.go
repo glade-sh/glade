@@ -615,6 +615,11 @@ func TestStandardPlatformSymbolsCorrectInboundEmailAndUnsupportedOperationExcept
 	if unsupported.SuperClass != "Exception" {
 		t.Fatalf("UnsupportedOperationException superclass = %q, want Exception", unsupported.SuperClass)
 	}
+
+	visualforce := requireStandardSymbol(t, symbols, "VisualforceException")
+	if visualforce.SuperClass != "Exception" {
+		t.Fatalf("VisualforceException superclass = %q, want Exception", visualforce.SuperClass)
+	}
 }
 
 func TestStandardPlatformSymbolsIncludePassiveLimitsGetterShapeRows(t *testing.T) {

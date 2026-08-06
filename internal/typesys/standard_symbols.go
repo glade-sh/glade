@@ -887,6 +887,10 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 		{Name: "suggest", ReturnType: "Search.SuggestionResults", Parameters: []string{"String", "String", "Search.SuggestionOption", "AccessLevel"}, Static: true},
 	}},
 	{Name: "Exception", Constructors: [][]string{{}, {"Exception"}, {"String"}, {"String", "Exception"}}},
+	// VisualforceException is an Apex exception type, not a passive Object DTO.
+	// Keep the inheritance explicit because the generated system stub does not
+	// carry the platform exception superclass.
+	{Name: "VisualforceException", SuperClass: "Exception"},
 	{Name: "Decimal", Methods: []StandardMethodSpec{{Name: "divide", ReturnType: "Decimal", Parameters: []string{"Decimal", "Integer", "RoundingMode"}}}},
 	{Name: "Label", Methods: []StandardMethodSpec{{Name: "get", ReturnType: "String", Parameters: []string{"String", "String"}, Static: true}, {Name: "get", ReturnType: "String", Parameters: []string{"String", "String", "String"}, Static: true}, {Name: "translationExists", ReturnType: "Boolean", Parameters: []string{"String", "String", "String"}, Static: true}}},
 	{Name: "System.Label", Methods: []StandardMethodSpec{{Name: "get", ReturnType: "String", Parameters: []string{"String", "String"}, Static: true}, {Name: "get", ReturnType: "String", Parameters: []string{"String", "String", "String"}, Static: true}, {Name: "translationExists", ReturnType: "Boolean", Parameters: []string{"String", "String", "String"}, Static: true}}},
