@@ -2,6 +2,8 @@ package vm
 
 import (
 	"fmt"
+	"io"
+	"net/mail"
 	"sort"
 	"strings"
 	"unicode"
@@ -102,6 +104,12 @@ func newInboundEmail() Value {
 	email.Fields["htmlBodyIsTruncated"] = Bool(false)
 	email.Fields["plainTextBodyIsTruncated"] = Bool(false)
 	return email
+}
+func newInboundEmailHeader(name, value string) Value {
+	header := Object("Messaging.InboundEmail.Header")
+	header.Fields["name"] = String(name)
+	header.Fields["value"] = String(value)
+	return header
 }
 func newInboundEnvelope() Value {
 	envelope := Object("Messaging.InboundEnvelope")
@@ -246,7 +254,123 @@ func (vm *VM) extractInboundEmail(args []Value) (Value, error) {
 	if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Messaging.InboundEmail") {
 		return args[0], nil
 	}
-	return newInboundEmail(), nil
+	email := newInboundEmail()
+	parseInboundEmailSource(email, stringValue(args[0]))
+	return email, nil
+}
+
+func parseInboundEmailSource(email Value, raw string) {
+	if strings.TrimSpace(raw) == "" {
+		return
+	}
+	message, err := mail.ReadMessage(strings.NewReader(raw))
+	if err != nil {
+		return
+	}
+
+	email.Fields["headers"] = List(parseInboundEmailHeaders(raw)...)
+	setInboundEmailAddressFields(email, message.Header)
+	if subject := message.Header.Get("Subject"); subject != "" {
+		email.Fields["subject"] = String(subject)
+	}
+	if messageID := message.Header.Get("Message-ID"); messageID != "" {
+		email.Fields["messageId"] = String(messageID)
+	}
+	if inReplyTo := message.Header.Get("In-Reply-To"); inReplyTo != "" {
+		email.Fields["inReplyTo"] = String(inReplyTo)
+	}
+	if references := message.Header.Get("References"); references != "" {
+		email.Fields["references"] = String(references)
+	}
+
+	body, err := io.ReadAll(message.Body)
+	if err != nil {
+		return
+	}
+	bodyText := strings.TrimSuffix(strings.ReplaceAll(string(body), "\r\n", "\n"), "\n")
+	contentType := strings.ToLower(message.Header.Get("Content-Type"))
+	if strings.HasPrefix(contentType, "text/html") {
+		email.Fields["htmlBody"] = String(bodyText)
+	} else {
+		email.Fields["plainTextBody"] = String(bodyText)
+	}
+}
+
+func parseInboundEmailHeaders(raw string) []Value {
+	normalized := strings.ReplaceAll(raw, "\r\n", "\n")
+	end := strings.Index(normalized, "\n\n")
+	if end < 0 {
+		end = len(normalized)
+	}
+	lines := strings.Split(normalized[:end], "\n")
+	headers := make([]Value, 0, len(lines))
+	var name, value string
+	flush := func() {
+		if name != "" {
+			headers = append(headers, newInboundEmailHeader(name, strings.TrimSpace(value)))
+		}
+		name = ""
+		value = ""
+	}
+	for _, line := range lines {
+		if (strings.HasPrefix(line, " ") || strings.HasPrefix(line, "\t")) && name != "" {
+			value += " " + strings.TrimSpace(line)
+			continue
+		}
+		colon := strings.IndexByte(line, ':')
+		if colon <= 0 {
+			continue
+		}
+		flush()
+		name = strings.TrimSpace(line[:colon])
+		value = strings.TrimSpace(line[colon+1:])
+	}
+	flush()
+	return headers
+}
+
+func setInboundEmailAddressFields(email Value, headers mail.Header) {
+	if raw := headers.Get("From"); raw != "" {
+		if address, err := mail.ParseAddress(raw); err == nil {
+			email.Fields["fromAddress"] = String(address.Address)
+			if address.Name != "" {
+				email.Fields["fromName"] = String(address.Name)
+			}
+		} else {
+			email.Fields["fromAddress"] = String(strings.TrimSpace(raw))
+		}
+	}
+	if raw := headers.Get("Reply-To"); raw != "" {
+		if address, err := mail.ParseAddress(raw); err == nil {
+			email.Fields["replyTo"] = String(address.Address)
+		} else {
+			email.Fields["replyTo"] = String(strings.TrimSpace(raw))
+		}
+	}
+	email.Fields["toAddresses"] = parseInboundEmailAddressList(headers.Get("To"))
+	email.Fields["ccAddresses"] = parseInboundEmailAddressList(headers.Get("Cc"))
+}
+
+func parseInboundEmailAddressList(raw string) Value {
+	if strings.TrimSpace(raw) == "" {
+		return List()
+	}
+	addresses, err := mail.ParseAddressList(raw)
+	if err != nil {
+		parts := strings.Split(raw, ",")
+		values := make([]Value, 0, len(parts))
+		for _, part := range parts {
+			if address := strings.TrimSpace(part); address != "" {
+				values = append(values, String(address))
+			}
+		}
+		return List(values...)
+	}
+	values := make([]Value, 0, len(addresses))
+	for _, address := range addresses {
+		values = append(values, String(address.Address))
+	}
+	return List(values...)
 }
 func localEmailValidationError(message Value) string {
 	if message.Type != "Messaging.SingleEmailMessage" {

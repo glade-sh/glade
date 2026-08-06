@@ -6,6 +6,32 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+func TestExecMessagingExtractInboundEmailParsesRFC822Blob(t *testing.T) {
+	program, err := CompileAnonymous(`
+Blob source = Blob.valueOf('From: sender@example.com\nTo: recipient@example.com\nSubject: probe\n\nbody');
+Messaging.InboundEmail inbound = Messaging.extractInboundEmail(source, true);
+System.assertEquals('sender@example.com', inbound.fromAddress);
+System.assertEquals(1, inbound.toAddresses.size());
+System.assertEquals('recipient@example.com', inbound.toAddresses[0]);
+System.assertEquals('probe', inbound.subject);
+System.assertEquals('body', inbound.plainTextBody);
+System.assertEquals(false, inbound.plainTextBodyIsTruncated);
+System.assertEquals(3, inbound.headers.size());
+System.assertEquals('From', inbound.headers[0].name);
+System.assertEquals('sender@example.com', inbound.headers[0].value);
+System.assertEquals('To', inbound.headers[1].name);
+System.assertEquals('recipient@example.com', inbound.headers[1].value);
+System.assertEquals('Subject', inbound.headers[2].name);
+System.assertEquals('probe', inbound.headers[2].value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMessagingSingleEmailMessageGettersCanonicalize15CharacterIDs(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage();
