@@ -1338,7 +1338,7 @@ func canonicalCollectionMemberName(collection, method string) string {
 	case "List":
 		known = []string{"add", "addAll", "addToRelationship", "getAddedToRelationship", "getMarkedForDeletion", "markForDelete", "size", "isEmpty", "get", "contains", "indexOf", "clone", "deepClone", "iterator", "sort", "remove", "clear", "set", "getSObjectType"}
 	case "Set":
-		known = []string{"add", "addAll", "size", "isEmpty", "contains", "containsAll", "remove", "clear", "removeAll", "retainAll", "clone", "iterator"}
+		known = []string{"add", "addAll", "size", "isEmpty", "contains", "containsAll", "remove", "clear", "removeAll", "retainAll", "clone", "deepClone", "iterator"}
 	case "Map":
 		known = []string{"put", "putAll", "get", "containsKey", "keySet", "values", "remove", "clear", "size", "isEmpty", "clone", "deepClone"}
 	}
@@ -3153,6 +3153,11 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		cloned.Ref = newValueRef()
 		cloned.Set = append([]Value(nil), receiver.Set...)
 		return cloned, true, nil
+	case "deepClone":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Set.deepClone expects 0 arguments")
+		}
+		return cloneValue(receiver), true, nil
 	case "iterator":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Set.iterator expects 0 arguments")

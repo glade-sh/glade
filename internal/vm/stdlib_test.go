@@ -5402,6 +5402,31 @@ System.assertEquals('Mapped Clone', clonedMapped.Name);
 	}
 }
 
+func TestExecCollectionStdlibSetDeepClonePreservesSObjectIsolationAndMembership(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account acme = new Account(Id = '001B000001DVM9tIAH', Name = 'Acme');
+Set<Account> original = new Set<Account>{acme};
+Set<Account> cloned = original.deepClone();
+Account clonedAcme = cloned.iterator().next();
+clonedAcme.Name = 'Clone';
+Account originalAcme = original.iterator().next();
+System.assertEquals('Acme', originalAcme.Name);
+System.assertEquals('Clone', cloned.iterator().next().Name);
+
+Set<String> names = new Set<String>{'a', 'b'};
+Set<String> clonedNames = names.deepClone();
+clonedNames.add('c');
+System.assertEquals(false, names.contains('c'));
+System.assertEquals(true, clonedNames.contains('c'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCollectionStdlibSmallRowsCloseout(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Boolean> flags = new List<Boolean>{true, false, true};
