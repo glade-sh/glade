@@ -174,6 +174,30 @@ func semaAPI67RejectedPlatformCall(receiverType, method, receiverMode string) bo
 		}
 	case "auth.authconfiguration":
 		return method == "getrightframeurl"
+	case "cache.org":
+		// Cache.Org lost isAvailable, and the value-size stat methods were
+		// removed after API version 49.0. Keep the generated legacy shapes for
+		// evidence and versioned catalogs, but reject calls in the current API
+		// boundary.
+		switch method {
+		case "isavailable", "getavgvaluesize", "getmaxvaluesize":
+			return true
+		}
+	case "cache.session":
+		switch method {
+		case "getavgvaluesize", "getmaxvaluesize":
+			return true
+		}
+	case "cache.partition", "cache.orgpartition", "cache.sessionpartition":
+		switch method {
+		case "getavgvaluesize", "getmaxvaluesize":
+			return true
+		case "createfullyqualifiedkey", "createfullyqualifiedpartition",
+			"validatepartitionname", "validatekey", "validatekeyvalue", "validatekeys":
+			// Salesforce declares these partition helpers static; calling
+			// them through an instance is a compile error in API 67.
+			return receiverMode == "instance"
+		}
 	case "auth.authproviderpluginclass":
 		switch method {
 		case "getcustommetadatatype", "getuserinfo", "initiate":

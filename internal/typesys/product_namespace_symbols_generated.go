@@ -16,7 +16,6 @@ var productNamespaceSymbolSpecs = []StandardSymbolSpec{
 			{Name: "getName", ReturnType: "String", Static: true},
 			{Name: "getNumKeys", ReturnType: "Long", Static: true},
 			{Name: "getPartition", ReturnType: "Cache.OrgPartition", Parameters: []string{"String"}, Static: true},
-			{Name: "isAvailable", ReturnType: "Boolean", Static: true},
 			{Name: "put", ReturnType: "void", Parameters: []string{"String", "Object"}, Static: true},
 			{Name: "put", ReturnType: "void", Parameters: []string{"String", "Object", "Integer"}, Static: true},
 			{Name: "put", ReturnType: "void", Parameters: []string{"String", "Object", "Integer", "Cache.Visibility", "Boolean"}, Static: true},

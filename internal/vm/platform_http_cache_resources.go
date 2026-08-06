@@ -722,17 +722,8 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 		if !hasKey {
 			return Null, receiver, nil
 		}
-		removed, removedOK := vm.cacheRemove(partitionName, cacheKeyForArgs(args, key))
-		if !removedOK {
-			if len(args) == 1 {
-				return Bool(false), receiver, nil
-			}
-			return Null, receiver, nil
-		}
-		if len(args) == 1 {
-			return Bool(true), receiver, nil
-		}
-		return removed, receiver, nil
+		_, removed := vm.cacheRemove(partitionName, cacheKeyForArgs(args, key))
+		return Bool(removed), receiver, nil
 	case "contains":
 		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueSet) {
 			return Null, receiver, fmt.Errorf("%s.contains expects String key or Set<String>", receiver.Type)
@@ -782,7 +773,7 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 			return Null, receiver, fmt.Errorf("%s.getName expects no arguments", receiver.Type)
 		}
 		return String(cacheNormalizePartitionName(name.Text)), receiver, nil
-	case "getavggetsize", "getavggettime", "getavgvaluesize", "getmaxgetsize", "getmaxgettime", "getmaxvaluesize":
+	case "getavggetsize", "getavggettime", "getmaxgetsize", "getmaxgettime":
 		if len(args) != 0 {
 			return Null, receiver, fmt.Errorf("%s.%s expects no arguments", receiver.Type, method)
 		}
@@ -792,18 +783,6 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 			return Null, receiver, fmt.Errorf("%s.getMissRate expects no arguments", receiver.Type)
 		}
 		return Decimal(0), receiver, nil
-	case "createfullyqualifiedpartition":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
-			return Null, receiver, fmt.Errorf("%s.createFullyQualifiedPartition expects namespace and partition Strings", receiver.Type)
-		}
-		return String(cacheFullyQualifiedPartition(args[0].Text, args[1].Text)), receiver, nil
-	case "createfullyqualifiedkey":
-		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString {
-			return Null, receiver, fmt.Errorf("%s.createFullyQualifiedKey expects namespace, partition, and key Strings", receiver.Type)
-		}
-		return String(cacheFullyQualifiedPartition(args[0].Text, args[1].Text) + "." + args[2].Text), receiver, nil
-	case "validatecachebuilder", "validatekey", "validatekeyvalue", "validatekeys", "validatepartitionname":
-		return Null, receiver, nil
 	default:
 		return Null, receiver, unsupportedCallError(receiver.Type + "." + method)
 	}
@@ -878,6 +857,29 @@ func cacheFullyQualifiedPartition(namespace, partition string) string {
 		return partition
 	}
 	return namespace + "." + partition
+}
+
+func (vm *VM) callCachePartitionStaticDefault(callee string, args []Value) (Value, bool, error) {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok || !cachePartitionPlatformObjectType(className) {
+		return Null, false, nil
+	}
+	switch strings.ToLower(methodName) {
+	case "validatecachebuilder", "validatekey", "validatekeyvalue", "validatekeys", "validatepartitionname":
+		return Null, true, nil
+	case "createfullyqualifiedpartition":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, true, fmt.Errorf("%s expects namespace and partition Strings", callee)
+		}
+		return String(cacheFullyQualifiedPartition(args[0].Text, args[1].Text)), true, nil
+	case "createfullyqualifiedkey":
+		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString {
+			return Null, true, fmt.Errorf("%s expects namespace, partition, and key Strings", callee)
+		}
+		return String(cacheFullyQualifiedPartition(args[0].Text, args[1].Text) + "." + args[2].Text), true, nil
+	default:
+		return Null, false, nil
+	}
 }
 
 func (vm *VM) cacheStaticDefaultGet(callee string, args []Value) (Value, error) {
@@ -1008,17 +1010,8 @@ func (vm *VM) cacheStaticDefaultRemove(callee string, args []Value) (Value, erro
 	if !hasKey {
 		return Null, nil
 	}
-	removed, removedOK := vm.cacheRemove(cacheDefaultPartitionKey(callee), cacheKeyForArgs(args, key))
-	if !removedOK {
-		if len(args) == 1 {
-			return Bool(false), nil
-		}
-		return Null, nil
-	}
-	if len(args) == 1 {
-		return Bool(true), nil
-	}
-	return removed, nil
+	_, removed := vm.cacheRemove(cacheDefaultPartitionKey(callee), cacheKeyForArgs(args, key))
+	return Bool(removed), nil
 }
 
 func (vm *VM) cacheStaticDefaultContains(callee string, args []Value) (Value, error) {

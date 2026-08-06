@@ -2456,7 +2456,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return Decimal(100), nil
-	case "Cache.Org.isAvailable", "Cache.Session.isAvailable":
+	case "Cache.Session.isAvailable":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
@@ -2468,10 +2468,8 @@ platformStaticCall:
 		return String(cacheDefaultPartitionName(callee)), nil
 	case "Cache.Org.getAvgGetSize", "Cache.Session.getAvgGetSize",
 		"Cache.Org.getAvgGetTime", "Cache.Session.getAvgGetTime",
-		"Cache.Org.getAvgValueSize", "Cache.Session.getAvgValueSize",
 		"Cache.Org.getMaxGetSize", "Cache.Session.getMaxGetSize",
-		"Cache.Org.getMaxGetTime", "Cache.Session.getMaxGetTime",
-		"Cache.Org.getMaxValueSize", "Cache.Session.getMaxValueSize":
+		"Cache.Org.getMaxGetTime", "Cache.Session.getMaxGetTime":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
@@ -3529,11 +3527,8 @@ platformStaticCall:
 		if strings.HasPrefix(callee, "Crypto.") {
 			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
 		}
-		if (strings.EqualFold(callee, "Cache.Partition.validateCacheBuilder") ||
-			strings.EqualFold(callee, "Cache.OrgPartition.validateCacheBuilder") ||
-			strings.EqualFold(callee, "Cache.SessionPartition.validateCacheBuilder")) &&
-			len(args) == 1 {
-			return Null, nil
+		if value, handled, err := vm.callCachePartitionStaticDefault(callee, args); handled || err != nil {
+			return value, err
 		}
 		if _, methodName, ok := vm.splitClassMember(callee); ok {
 			if value, handled, err := vm.callGenericCollectionStaticMember(methodName, args); handled || err != nil {

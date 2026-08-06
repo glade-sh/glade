@@ -2787,21 +2787,22 @@ System.assertEquals('session', (String) generalSession.get('general'));
 System.assertEquals('org', (String) generalOrg.get('general'));
 System.assertEquals(null, sessionCache.get('missing'));
 
-System.assert(Cache.Org.isAvailable());
+System.assert(Cache.Session.isAvailable());
 System.assert(Cache.Org.getCapacity() > 0);
 System.assertEquals('local.default', Cache.Org.getName());
 System.assertEquals(0, Cache.Org.getAvgGetSize());
 System.assertEquals(0, Cache.Org.getAvgGetTime());
-System.assertEquals(0, Cache.Org.getAvgValueSize());
 System.assertEquals(0, Cache.Org.getMaxGetSize());
 System.assertEquals(0, Cache.Org.getMaxGetTime());
-System.assertEquals(0, Cache.Org.getMaxValueSize());
 System.assertEquals(0, Cache.Org.getMissRate());
-System.assertEquals('local.default.account', orgCache.createFullyQualifiedKey('local', 'default', 'account'));
-System.assertEquals('local.default', orgCache.createFullyQualifiedPartition('local', 'default'));
-orgCache.validatePartitionName('default');
-orgCache.validateKey(false, 'account');
-orgCache.validateKeyValue(false, 'account', 'value');
+System.assertEquals('local.default.account', Cache.OrgPartition.createFullyQualifiedKey('local', 'default', 'account'));
+System.assertEquals('local.default', Cache.OrgPartition.createFullyQualifiedPartition('local', 'default'));
+Cache.OrgPartition.validatePartitionName('default');
+Cache.OrgPartition.validateKey(false, 'account');
+Cache.OrgPartition.validateKeyValue(false, 'account', 'value');
+Cache.OrgPartition.validateKeys(false, new Set<String>{'account'});
+Cache.SessionPartition.createFullyQualifiedKey('local', 'default', 'account');
+Cache.Partition.validateKeys(false, new Set<String>{'account'});
 Cache.Org.put('defaulted', 'org-default');
 Cache.Org.put('visible-default', 'org-visible', Cache.Visibility.ALL);
 System.assert(Cache.Org.contains('defaulted'));
@@ -2891,7 +2892,8 @@ System.assertEquals(1, Cache.Org.getNumKeys());
 Set<String> keys = named.getKeys();
 System.assertEquals(1, keys.size());
 System.assert(keys.toString().contains('CacheLoader'));
-System.assertEquals('loaded:shape', (String) Cache.Org.remove(CacheLoader.class, 'shape'));
+System.assertEquals(true, (Boolean) Cache.Org.remove(CacheLoader.class, 'shape'));
+System.assert(!named.contains('CacheLoader.shape'));
 System.assertEquals(0, named.getNumKeys());
 `)
 	if err != nil {
@@ -2915,6 +2917,35 @@ System.assertEquals(0, named.getNumKeys());
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecPlatformCacheAPI67RejectedShapes(t *testing.T) {
+	sources := []string{
+		`Cache.Org.isAvailable();`,
+		`Cache.Org.getAvgValueSize();`,
+		`Cache.Org.getMaxValueSize();`,
+		`Cache.Session.getAvgValueSize();`,
+		`Cache.Session.getMaxValueSize();`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.getAvgValueSize();`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.getMaxValueSize();`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.createFullyQualifiedKey('a', 'b', 'c');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.createFullyQualifiedPartition('a', 'b');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validatePartitionName('a');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKey(false, 'a');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeyValue(false, 'a', 'v');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeys(false, new Set<String>{'a'});`,
+		`Cache.SessionPartition p = Cache.Session.getPartition('local'); p.validateKeys(false, new Set<String>{'a'});`,
+		`Cache.Partition p = Cache.Org.getPartition('local'); p.validateKeyValue(false, 'a', 'v');`,
+	}
+	for _, source := range sources {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatalf("%s: %v", source, err)
+		}
+		if _, err := New(nil).Execute(program); err == nil {
+			t.Fatalf("Cache API 67 rejected shape executed without error: %s", source)
+		}
 	}
 }
 

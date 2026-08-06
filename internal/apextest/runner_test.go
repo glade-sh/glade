@@ -1177,6 +1177,52 @@ private class CachePartitionNameTest {
 	}
 }
 
+func TestRunCasesContextCacheAPI67StaticPartitionHelpers(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "CacheAPI67StaticHelpersTest.cls")
+	writeFile(t, path, `
+@isTest
+private class CacheAPI67StaticHelpersTest {
+  public class ShapeLoader implements Cache.CacheBuilder {
+    public Object doLoad(String key) {
+      return 'loaded:' + key;
+    }
+  }
+
+  @isTest
+  static void staticPartitionHelpersMatchSalesforce() {
+    System.assertEquals('local.default.account', Cache.OrgPartition.createFullyQualifiedKey('local', 'default', 'account'));
+    System.assertEquals('local.default', Cache.SessionPartition.createFullyQualifiedPartition('local', 'default'));
+    System.assertEquals('local.other', Cache.Partition.createFullyQualifiedPartition('local', 'other'));
+    Cache.OrgPartition.validatePartitionName('default');
+    Cache.Partition.validateKey(false, 'account');
+    Cache.SessionPartition.validateKeyValue(false, 'account', 'value');
+    Cache.OrgPartition.validateKeys(false, new Set<String>{'account'});
+    Cache.SessionPartition.validateKeys(false, new Set<String>{'account'});
+    System.assert(Cache.Session.isAvailable());
+  }
+
+  @isTest
+  static void builderRemoveReturnsBoolean() {
+    Cache.OrgPartition named = Cache.Org.getPartition('local.default');
+    System.assertEquals('loaded:shape', (String) named.get(ShapeLoader.class, 'shape'));
+    System.assertEquals(1, named.getNumKeys());
+    System.assertEquals(true, (Boolean) named.remove(ShapeLoader.class, 'shape'));
+    System.assertEquals(0, named.getNumKeys());
+    System.assertEquals(false, (Boolean) named.remove(ShapeLoader.class, 'shape'));
+  }
+}
+`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Total != 2 || summary.Passed != 2 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+}
+
 func TestRuntimeKeyWithSourceDigestsAvoidsRereadsAndMatchesDiskFallback(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "force-app", "main", "default", "classes", "Unicode.cls")
