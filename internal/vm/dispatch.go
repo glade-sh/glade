@@ -3,7 +3,6 @@ package vm
 import (
 	"crypto/aes"
 	"crypto/hmac"
-	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -337,6 +336,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 platformStaticCall:
 	callee = normalizeStaticCallCasing(callee)
+	if strings.EqualFold(callee, "Crypto.areEqualConstantTime") {
+		return Null, unsupportedCallError(callee)
+	}
 	if className, methodName, ok := vm.splitClassMember(callee); ok {
 		if value, handled, err := vm.callConnectAPICommunitiesStatic(className, methodName, args); handled || err != nil {
 			return value, err
@@ -1627,19 +1629,6 @@ platformStaticCall:
 			return Null, newExceptionError("System.StringException", err.Error())
 		}
 		return String(decoded), nil
-	case "Crypto.areEqualConstantTime":
-		if len(args) != 2 {
-			return Null, fmt.Errorf("Crypto.areEqualConstantTime expects two Blob arguments")
-		}
-		left, err := blobStringArg("Crypto.areEqualConstantTime first argument", args[:1])
-		if err != nil {
-			return Null, err
-		}
-		right, err := blobStringArg("Crypto.areEqualConstantTime second argument", args[1:])
-		if err != nil {
-			return Null, err
-		}
-		return Bool(subtle.ConstantTimeCompare([]byte(left), []byte(right)) == 1), nil
 	case "Crypto.generateDigest":
 		if len(args) != 2 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Crypto.generateDigest expects algorithm and Blob")

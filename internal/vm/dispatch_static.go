@@ -192,7 +192,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"EncodingUtil.base64Encode", "EncodingUtil.base64Decode", "EncodingUtil.convertFromHex", "EncodingUtil.convertToHex",
 		"EncodingUtil.urlEncode", "EncodingUtil.urlDecode",
 		"URL.getSalesforceBaseUrl", "URL.getOrgDomainUrl", "URL.getCurrentRequestUrl", "URL.getFileFieldURL",
-		"Crypto.areEqualConstantTime", "Crypto.generateDigest", "Crypto.generateMac", "Crypto.verifyHmac",
+		"Crypto.generateDigest", "Crypto.generateMac", "Crypto.verifyHmac",
 		"Crypto.encrypt", "Crypto.decrypt", "Crypto.encryptWithManagedIV", "Crypto.decryptWithManagedIV",
 		"Crypto.sign", "Crypto.signWithCertificate", "Crypto.verify", "Crypto.verifyWithCertificate",
 		"Crypto.generateAESKey", "Crypto.getRandomInteger", "Crypto.getRandomLong",
