@@ -79,3 +79,21 @@ func TestCustomExceptionSuppliedConstructorRemainsConstructable(t *testing.T) {
 		t.Fatalf("custom supplied exception constructor was rejected: %#v", result.Diagnostics)
 	}
 }
+
+func TestAPI67ExceptionInheritedMembersAndSubtypeConstructors(t *testing.T) {
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+		"Probe.cls": `public class Probe {
+  public void run() {
+    Exception cause = new QueryException('cause');
+    Exception value = new BigObjectException();
+    Map<String, Set<String>> fields = new QueryException('query').getInaccessibleFields();
+    value.setMessage('updated');
+    value.initCause(cause);
+    Exception recovered = value.getCause();
+  }
+}`,
+	}, "67.0")
+	if result.HasErrors() {
+		t.Fatalf("Salesforce API 67 exception members/subtypes were rejected: %#v", result.Diagnostics)
+	}
+}

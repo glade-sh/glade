@@ -620,7 +620,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			receiver.Fields["__causeInitialized"] = Bool(true)
 			receiver.Fields["__cause"] = args[0]
-			return receiver, receiver, true, true, nil
+			return Null, receiver, true, true, nil
 		case "getDescription":
 			if exceptionTypeName(receiver.Type) != "PatternSyntaxException" {
 				break

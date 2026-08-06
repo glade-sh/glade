@@ -2953,8 +2953,7 @@ func TestExecCoreExceptionCauseStdlibMethods(t *testing.T) {
 Exception wrapperError = new DmlException('outer');
 System.assertEquals(null, wrapperError.getCause());
 Exception cause = new QueryException('root cause');
-Exception returned = wrapperError.initCause(cause);
-System.assert(wrapperError.equals(returned));
+wrapperError.initCause(cause);
 Exception recovered = wrapperError.getCause();
 System.assertEquals('System.QueryException', recovered.getTypeName());
 System.assertEquals('root cause', recovered.getMessage());
