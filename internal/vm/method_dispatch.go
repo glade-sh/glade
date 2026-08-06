@@ -222,6 +222,11 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			}
 		}
 		if generatedFamilyUnsupportedTypePrefix(className) && !vm.generatedPassiveDTOAccessorMethod(className, method) {
+			if cachePartitionPlatformObjectType(className) &&
+				strings.EqualFold(apexMethodMemberName(method.Name), "validateCacheBuilder") &&
+				len(args) == 1 {
+				return Null, nil
+			}
 			if value, handled := vm.generatedUnsupportedFamilyExplicitMethodDefault(method, receiver, args); handled {
 				return value, nil
 			}

@@ -3529,6 +3529,12 @@ platformStaticCall:
 		if strings.HasPrefix(callee, "Crypto.") {
 			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
 		}
+		if (strings.EqualFold(callee, "Cache.Partition.validateCacheBuilder") ||
+			strings.EqualFold(callee, "Cache.OrgPartition.validateCacheBuilder") ||
+			strings.EqualFold(callee, "Cache.SessionPartition.validateCacheBuilder")) &&
+			len(args) == 1 {
+			return Null, nil
+		}
 		if _, methodName, ok := vm.splitClassMember(callee); ok {
 			if value, handled, err := vm.callGenericCollectionStaticMember(methodName, args); handled || err != nil {
 				return value, err

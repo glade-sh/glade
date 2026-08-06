@@ -2892,6 +2892,20 @@ System.assertEquals(0, named.getNumKeys());
 	}
 }
 
+func TestExecPlatformCacheBuilderValidateStaticContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Cache.OrgPartition.validateCacheBuilder(CacheLoader.class);
+Cache.SessionPartition.validateCacheBuilder(CacheLoader.class);
+Cache.Partition.validateCacheBuilder(CacheLoader.class);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPlatformCacheBuilderAcceptsGeneratedLowercaseInterface(t *testing.T) {
 	loadProgram, err := CompileAnonymous(`return 'loaded:' + key;`)
 	if err != nil {
