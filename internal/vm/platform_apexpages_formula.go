@@ -828,7 +828,7 @@ func (vm *VM) callStandardSetControllerMember(receiver Value, method string, arg
 	case "delete":
 		return vm.standardSetDML(receiver, "delete", result)
 	case "cancel":
-		return newPageReference(""), receiver, false, true, nil
+		return newPageReference("/home/home.jsp"), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}

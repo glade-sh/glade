@@ -15762,7 +15762,7 @@ ssc.next();
 System.assertEquals(1, ssc.getPageNumber());
 PageReference cancelPage = ssc.cancel();
 System.assertNotEquals(null, cancelPage);
-System.assertEquals('', cancelPage.getUrl());
+System.assertEquals('/home/home.jsp', cancelPage.getUrl());
 System.assertEquals(true, ssc.equals(ssc));
 System.assertEquals(false, ssc.equals(null));
 System.assertNotEquals(0, ssc.hashCode());

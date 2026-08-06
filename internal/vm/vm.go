@@ -4361,7 +4361,7 @@ func (vm *VM) standardSetDML(receiver Value, op string, result *Result) (Value, 
 	if _, err := vm.applyDML(op, records, true, "", dml.Options{}, result); err != nil {
 		return Null, receiver, false, true, err
 	}
-	return newPageReference(""), receiver, false, true, nil
+	return newPageReference("/home/home.jsp"), receiver, false, true, nil
 }
 
 func (vm *VM) callCustomNotificationMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
