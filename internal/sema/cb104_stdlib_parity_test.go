@@ -52,7 +52,7 @@ func TestCB104StdlibExactCompileParity(t *testing.T) {
 		{surfaceID: "apex:System.Integer.doubleValue", source: `Integer value = 42; Double result = value.doubleValue();`},
 		{surfaceID: "apex:System.Map.containsValue", source: `Map<String,Integer> values = new Map<String,Integer>(); values.put('a', 1); Boolean result = values.containsValue(1);`},
 		{surfaceID: "apex:System.Math.pow", source: `Object observed = Math.pow(0.0, 0.0);`},
-		{surfaceID: "apex:System.Set.deepClone", source: `Set<Account> values = new Set<Account>(); Set<Account> result = values.deepClone();`},
+		{surfaceID: "apex:System.Set.deepClone", accepted: true, source: `Set<Account> values = new Set<Account>(); Set<Account> result = values.deepClone(true, false, true);`},
 		{surfaceID: "apex:System.String.commonPrefix", source: `String value = 'interstate'; String result = value.commonPrefix('interstellar');`},
 		{surfaceID: "apex:System.String.escapeXml10", source: `String value = '<x>&'; String result = value.escapeXml10();`},
 		{surfaceID: "apex:System.String.escapeXml11", source: `String value = '<x>&'; String result = value.escapeXml11();`},
@@ -92,7 +92,7 @@ func TestCB104StdlibExactCompileParity(t *testing.T) {
 			t.Fatalf("Salesforce-rejected source accepted: %s", row.source)
 		})
 	}
-	if accepted != 21 || rejected != 33 {
-		t.Fatalf("CB104 table counts = accepted %d, rejected %d; want 21 and 33", accepted, rejected)
+	if accepted != 22 || rejected != 32 {
+		t.Fatalf("CB104 table counts = accepted %d, rejected %d; want 22 and 32", accepted, rejected)
 	}
 }

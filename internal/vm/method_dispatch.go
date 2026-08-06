@@ -3154,8 +3154,13 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		cloned.Set = append([]Value(nil), receiver.Set...)
 		return cloned, true, nil
 	case "deepClone":
-		if len(args) != 0 {
-			return Null, true, fmt.Errorf("Set.deepClone expects 0 arguments")
+		if len(args) > 3 {
+			return Null, true, fmt.Errorf("Set.deepClone expects at most 3 Boolean arguments")
+		}
+		for _, arg := range args {
+			if arg.Kind != ValueBool {
+				return Null, true, fmt.Errorf("Set.deepClone preserve options expect Boolean arguments")
+			}
 		}
 		return cloneValue(receiver), true, nil
 	case "iterator":

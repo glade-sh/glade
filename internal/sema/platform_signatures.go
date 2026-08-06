@@ -84,7 +84,10 @@ func semaCollectionMethodSignature(receiverType, method string) (semaCollectionS
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"Object"}}}, true
 		case "tostring":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
-		case "clone":
+		case "clone", "deepclone":
+			if method == "deepclone" {
+				return semaCollectionSignature{returnType: "Set<" + args[0] + ">", params: [][]string{{}, {"Boolean"}, {"Boolean", "Boolean"}, {"Boolean", "Boolean", "Boolean"}}}, true
+			}
 			return semaCollectionSignature{returnType: "Set<" + args[0] + ">"}, true
 		case "iterator":
 			return semaCollectionSignature{returnType: "Iterator<" + args[0] + ">", params: [][]string{{}}}, true

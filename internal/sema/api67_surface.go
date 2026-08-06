@@ -134,8 +134,6 @@ func semaAPI67RejectedPlatformCall(receiverType, method, receiverMode string) bo
 		return method == "doublevalue"
 	case "map":
 		return method == "containsvalue"
-	case "set":
-		return method == "deepclone"
 	case "string":
 		switch method {
 		case "commonprefix", "escapexml10", "escapexml11", "lastindexofany", "lastordinalindexof", "ordinalindexof", "removeignorecase", "replaceignorecase", "replaceonce", "rotate", "strip", "stripall", "stripend", "stripstart", "striptoempty", "striptonull", "unescapexml10", "unescapexml11":

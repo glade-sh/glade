@@ -8030,6 +8030,26 @@ public class Hello {
 	}
 }
 
+func TestAnalyzeSetDeepClone(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public Set<Account> run(Set<Account> accounts) {
+    return accounts.deepClone();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA023" && strings.Contains(diag.Message, "deepClone") {
+			t.Fatalf("unexpected Set.deepClone diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeChainedCollectionCallAfterLessThan(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
