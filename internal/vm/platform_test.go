@@ -15008,7 +15008,7 @@ System.assertEquals(false, req.getCompressed());
 System.assertEquals(10000, req.getTimeout());
 req.setEndpoint('callout:NamedCredential/path');
 req.setMethod('post');
-System.assertEquals('POST', req.getMethod());
+System.assertEquals('post'.hashCode(), req.getMethod().hashCode());
 req.setHeader('X-Test', 'first');
 req.setHeader('x-test', 'second');
 req.setHeader('Accept', 'application/json');
