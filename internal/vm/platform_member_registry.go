@@ -35,8 +35,8 @@ func platformObjectMemberSurfaces() []platformObjectMemberSurface {
 			{name: "commerce-inventory", phase: "commerce", call: func(vm *VM, receiver Value, method string, args []Value, _ *Result) (Value, Value, bool, bool, error) {
 				return vm.callCommerceInventoryServiceMember(receiver, method, args)
 			}},
-			{name: "user-provisioning-batchable", phase: "user-provisioning", call: func(_ *VM, receiver Value, method string, args []Value, _ *Result) (Value, Value, bool, bool, error) {
-				return callUserProvisioningBatchableMember(receiver, method, args)
+			{name: "user-provisioning-batchable", phase: "user-provisioning", call: func(vm *VM, receiver Value, method string, args []Value, _ *Result) (Value, Value, bool, bool, error) {
+				return callUserProvisioningBatchableMember(vm, receiver, method, args)
 			}},
 			{name: "platform-callback-default", phase: "controller", call: func(_ *VM, receiver Value, method string, args []Value, _ *Result) (Value, Value, bool, bool, error) {
 				value, handled, err := callPlatformCallbackDefaultMember(receiver, method, args)

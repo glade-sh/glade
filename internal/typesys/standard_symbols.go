@@ -457,6 +457,9 @@ func shouldReplaceStandardMethod(existing, addition StandardMethodSpec) bool {
 	if standardModifierContains(addition.Modifiers, "abstract") && !standardModifierContains(existing.Modifiers, "abstract") {
 		return true
 	}
+	if standardModifierContains(addition.Modifiers, "virtual") && !standardModifierContains(existing.Modifiers, "virtual") {
+		return true
+	}
 	existingType := strings.TrimSpace(existing.ReturnType)
 	additionType := strings.TrimSpace(addition.ReturnType)
 	if additionType == "" || strings.EqualFold(additionType, "Object") {
@@ -1314,6 +1317,19 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "UserProvisioning.UserProvisioningPlugin", Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{
 		{Name: "buildDescribeCall", ReturnType: "Process.PluginDescribeResult", Modifiers: []string{"abstract"}},
 	}},
+	{Name: "UserProvisioning.CollectingBatchable", Interfaces: []string{"Database.Batchable<UserProvisioningRequest>"}},
+	{Name: "UserProvisioning.CommittingBatchable", Interfaces: []string{"Database.Batchable<SObject>"}},
+	{Name: "UserProvisioning.DeletingBatchable", Interfaces: []string{"Database.Batchable<SObject>"}},
+	{Name: "UserProvisioning.LinkingBatchable", Interfaces: []string{"Database.Batchable<SObject>"}},
+	{Name: "UserProvisioning.PluginBatchable", Modifiers: []string{"abstract"}, Interfaces: []string{"Database.Batchable<UserProvisioningRequest>"}, Methods: []StandardMethodSpec{
+		{Name: "flowInputPreprocessing", ReturnType: "Map<String,Object>", Parameters: []string{"Map<String,Object>"}, Modifiers: []string{"virtual"}},
+		{Name: "flowPostProcessing", ReturnType: "void", Parameters: []string{"UserProvisioning.ProvisioningProcessHandlerOutput", "SObject"}, Modifiers: []string{"virtual"}},
+		{Name: "getEventPrefix", ReturnType: "String", Modifiers: []string{"virtual"}},
+		{Name: "postBatchProcessing", ReturnType: "void", Modifiers: []string{"virtual"}},
+	}},
+	{Name: "UserProvisioning.ProvisioningBatchable", Interfaces: []string{"Database.Batchable<UserProvisioningRequest>"}},
+	{Name: "UserProvisioning.RequestingBatchable", Interfaces: []string{"Database.Batchable<UserProvisioningRequest>"}},
+	{Name: "UserProvisioning.UPASCleaningBatchable", Interfaces: []string{"Database.Batchable<SObject>"}},
 	{Name: "WebServiceCalloutFuture", Modifiers: []string{"abstract"}},
 	{Name: "VisualEditor.DynamicPickList", Modifiers: []string{"abstract"}},
 	{Name: "Invocable.Action", ReplaceConstructors: true},

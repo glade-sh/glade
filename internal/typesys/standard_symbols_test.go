@@ -1214,6 +1214,42 @@ func TestUserProvisioningBatchableLifecycleFixtureShapes(t *testing.T) {
 	if request.Kind != apexast.DeclarationClass {
 		t.Fatalf("UserProvisioningRequest kind = %v, want class", request.Kind)
 	}
+
+	batchableInterfaces := map[string]string{
+		"UserProvisioning.CollectingBatchable":   "Database.Batchable<UserProvisioningRequest>",
+		"UserProvisioning.ProvisioningBatchable": "Database.Batchable<UserProvisioningRequest>",
+		"UserProvisioning.RequestingBatchable":   "Database.Batchable<UserProvisioningRequest>",
+		"UserProvisioning.CommittingBatchable":   "Database.Batchable<SObject>",
+		"UserProvisioning.DeletingBatchable":     "Database.Batchable<SObject>",
+		"UserProvisioning.LinkingBatchable":      "Database.Batchable<SObject>",
+		"UserProvisioning.UPASCleaningBatchable": "Database.Batchable<SObject>",
+	}
+	for name, want := range batchableInterfaces {
+		symbol := requireStandardSymbol(t, symbols, name)
+		if !containsStringFold(symbol.Interfaces, want) {
+			t.Fatalf("%s interfaces = %v, want %s", name, symbol.Interfaces, want)
+		}
+	}
+
+	plugin = requireStandardSymbol(t, symbols, "UserProvisioning.PluginBatchable")
+	if !containsStringFold(plugin.Modifiers, "abstract") {
+		t.Fatalf("PluginBatchable modifiers = %v, want abstract", plugin.Modifiers)
+	}
+	if !containsStringFold(plugin.Interfaces, "Database.Batchable<UserProvisioningRequest>") {
+		t.Fatalf("PluginBatchable interfaces = %v, want Database.Batchable<UserProvisioningRequest>", plugin.Interfaces)
+	}
+	for _, method := range []string{"flowInputPreprocessing", "flowPostProcessing", "getEventPrefix", "postBatchProcessing"} {
+		for _, member := range plugin.Members {
+			if member.Kind == apexast.DeclarationMethod && strings.EqualFold(member.Name, method) {
+				if !containsStringFold(member.Modifiers, "virtual") {
+					t.Fatalf("PluginBatchable.%s modifiers = %v, want virtual", method, member.Modifiers)
+				}
+				goto foundPluginMethod
+			}
+		}
+		t.Fatalf("PluginBatchable.%s missing", method)
+	foundPluginMethod:
+	}
 }
 
 func TestUserProvisioningPluginOverlayIsAbstract(t *testing.T) {

@@ -237,12 +237,12 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	if passiveGeneratedMethod(method) {
-		if receiver.Kind == ValueObject && userProvisioningBatchableType(receiver.Type) {
+		if receiver.Kind == ValueObject && vm.isUserProvisioningBatchableType(receiver.Type) {
 			callArgs := make([]Value, 0, len(method.Params))
 			for _, param := range method.Params {
 				callArgs = append(callArgs, frame[param.Name])
 			}
-			value, _, _, handled, err := callUserProvisioningBatchableMember(receiver, apexMethodMemberName(method.Name), callArgs)
+			value, _, _, handled, err := callUserProvisioningBatchableMember(vm, receiver, apexMethodMemberName(method.Name), callArgs)
 			if handled || err != nil {
 				return value, err
 			}
