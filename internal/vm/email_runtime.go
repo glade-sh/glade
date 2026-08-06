@@ -36,7 +36,7 @@ func newRenderEmailTemplateBodyResult(mergedBody string) Value {
 	result := Object("Messaging.RenderEmailTemplateBodyResult")
 	result.Fields["success"] = Bool(true)
 	result.Fields["mergedBody"] = String(mergedBody)
-	result.Fields["errors"] = List()
+	result.Fields["errors"] = Null
 	return result
 }
 func newFailedSendEmailResult(message string) Value {

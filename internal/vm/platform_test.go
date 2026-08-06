@@ -6035,7 +6035,7 @@ List<Messaging.RenderEmailTemplateBodyResult> rendered =
 System.assertEquals(1, rendered.size());
 System.assert(rendered.get(0).getSuccess());
 System.assertEquals('Hello Ada Trail / Acme', rendered.get(0).getMergedBody());
-System.assertEquals(0, rendered.get(0).getErrors().size());
+System.assertEquals(null, rendered.get(0).getErrors());
 
 Messaging.CustomNotification custom = new Messaging.CustomNotification();
 custom.setNotificationTypeId('0ML000000000001AAA');
