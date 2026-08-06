@@ -9275,13 +9275,14 @@ List<SObject> first = cursor.fetch(0, 1);
 System.assertEquals(1, first.size());
 
 Database.PaginationCursor page = Database.getPaginationCursor('SELECT Id, Name FROM Account ORDER BY Name');
-Database.CursorFetchResult pageResult = page.fetchPage(1, 10);
+Database.CursorFetchResult pageResult = page.fetchPage(1, 1);
 System.assertEquals(1, pageResult.getRecords().size());
+System.assertEquals(0, pageResult.getNextIndex());
 System.assertEquals(true, pageResult.isDone());
-System.assertEquals(0, page.fetchDeleted(0, 10));
+System.assertEquals(0, page.fetchDeleted(0, 1));
 
-Datetime start = Datetime.newInstanceGmt(2026, 5, 15, 0, 0, 0);
-Datetime finish = Datetime.newInstanceGmt(2026, 5, 15, 1, 0, 0);
+Datetime start = Datetime.now().addDays(-1);
+Datetime finish = start.addHours(1);
 Database.GetDeletedResult deleted = Database.getDeleted('Account', start, finish);
 System.assertEquals(0, deleted.getDeletedRecords().size());
 System.assertEquals(start, deleted.getEarliestDateAvailable());
@@ -9331,6 +9332,28 @@ try {
 	}
 }
 
+func TestExecDatabaseCursorFetchNonEmptyRejectsBeyondBound(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'CB317-OneRow');
+Database.Cursor cursor = Database.getCursor('SELECT Id FROM Account WHERE Name = ''CB317-OneRow''');
+try {
+    cursor.fetch(0, 10);
+    System.assert(false, 'expected a non-empty cursor fetch beyond its bound to reject');
+} catch (System.InvalidParameterValueException e) {
+    System.assertEquals('Fetch beyond bound detected: 10', e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseCursorWithBinds(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme', Rating = 'Hot');
@@ -9340,12 +9363,12 @@ binds.put('rating', 'Warm');
 
 Database.Cursor cursor = Database.getCursorWithBinds('SELECT Id, Name FROM Account WHERE Rating = :rating ORDER BY Name', binds, null);
 System.assertEquals(1, cursor.getNumRecords());
-List<SObject> rows = cursor.fetch(0, 10);
+List<SObject> rows = cursor.fetch(0, 1);
 System.assertEquals(1, rows.size());
 System.assertEquals('Beta', rows.get(0).get('Name'));
 
 Database.PaginationCursor page = Database.getPaginationCursorWithBinds('SELECT Id, Name FROM Account WHERE Rating = :rating ORDER BY Name', binds, null);
-Database.CursorFetchResult pageResult = page.fetchPage(0, 10);
+Database.CursorFetchResult pageResult = page.fetchPage(0, 1);
 System.assertEquals(1, pageResult.getRecords().size());
 System.assertEquals(true, pageResult.isDone());
 `)

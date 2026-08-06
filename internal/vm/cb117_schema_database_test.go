@@ -94,7 +94,7 @@ func TestCB117CursorDMLOptionsAndDateContracts(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Cursor One');
 Database.PaginationCursor cursor = Database.getPaginationCursor('SELECT Id FROM Account');
-Database.CursorFetchResult page = cursor.fetchPage(0, 10);
+Database.CursorFetchResult page = cursor.fetchPage(0, 1);
 System.assertEquals(true, page.isDone());
 System.assertEquals(0, page.getNextIndex());
 
