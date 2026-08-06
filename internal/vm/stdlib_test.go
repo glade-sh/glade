@@ -2559,6 +2559,108 @@ System.assert(new UserProvisioning.DummyConnectorApexHandler().invoke(null) != n
 	}
 }
 
+func TestExecUserProvisioningBatchableLifecycleFixture(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.BatchableContextImpl bc = new Database.BatchableContextImpl();
+UserProvisioning.ProvisioningProcessHandlerOutput output = new UserProvisioning.ProvisioningProcessHandlerOutput();
+Map<String,Object> values = new Map<String,Object>();
+UserProvisioning.CollectingBatchable collectingBatchable = new UserProvisioning.CollectingBatchable('0','upr','app');
+System.assertNotEquals(null, collectingBatchable.clone());
+System.assertNotEquals(null, collectingBatchable.start(bc));
+collectingBatchable.execute(bc, new List<UserProvisioningRequest>());
+collectingBatchable.finish(bc);
+System.assertNotEquals(null, collectingBatchable.flowInputPreprocessing(values));
+collectingBatchable.flowPostProcessing(output, new Account(Name = 'CollectingBatchable'));
+System.assertNotEquals(null, collectingBatchable.getEventPrefix());
+System.assertNotEquals(null, collectingBatchable.getFlowName());
+System.assertNotEquals(null, collectingBatchable.getFlowNamespace());
+System.assertNotEquals(null, collectingBatchable.getPerBatchUPL());
+System.assertNotEquals(null, collectingBatchable.getPerBatchUPR());
+System.assertNotEquals(null, collectingBatchable.getUprToNewUplMap());
+System.assertEquals(false, collectingBatchable.hasFlow());
+System.assertEquals(false, collectingBatchable.hasFlowOrApex());
+collectingBatchable.postBatchProcessing();
+UserProvisioning.CommittingBatchable committingBatchable = new UserProvisioning.CommittingBatchable('upr');
+System.assertNotEquals(null, committingBatchable.clone());
+System.assertNotEquals(null, committingBatchable.start(bc));
+committingBatchable.execute(bc, new List<SObject>());
+committingBatchable.finish(bc);
+UserProvisioning.DeletingBatchable deletingBatchable = new UserProvisioning.DeletingBatchable('upr');
+System.assertNotEquals(null, deletingBatchable.clone());
+System.assertNotEquals(null, deletingBatchable.start(bc));
+deletingBatchable.execute(bc, new List<SObject>());
+deletingBatchable.finish(bc);
+UserProvisioning.LinkingBatchable linkingBatchable = new UserProvisioning.LinkingBatchable('upr');
+System.assertNotEquals(null, linkingBatchable.clone());
+System.assertNotEquals(null, linkingBatchable.start(bc));
+linkingBatchable.execute(bc, new List<SObject>());
+linkingBatchable.finish(bc);
+System.assertNotEquals(null, linkingBatchable.getFlowName());
+System.assertNotEquals(null, linkingBatchable.getFlowNamespace());
+System.assertEquals(false, linkingBatchable.hasFlow());
+System.assertEquals(false, linkingBatchable.hasFlowOrApex());
+UserProvisioning.PluginBatchable pluginBatchable = new UserProvisioning.PluginBatchable(new List<SObject>());
+System.assertNotEquals(null, pluginBatchable.clone());
+System.assertNotEquals(null, pluginBatchable.start(bc));
+pluginBatchable.execute(bc, new List<UserProvisioningRequest>());
+System.assertNotEquals(null, pluginBatchable.flowInputPreprocessing(values));
+pluginBatchable.flowPostProcessing(output, new Account(Name = 'PluginBatchable'));
+System.assertNotEquals(null, pluginBatchable.getEventPrefix());
+System.assertNotEquals(null, pluginBatchable.getFlowName());
+System.assertNotEquals(null, pluginBatchable.getFlowNamespace());
+System.assertNotEquals(null, pluginBatchable.getPerBatchUPL());
+System.assertNotEquals(null, pluginBatchable.getPerBatchUPR());
+System.assertNotEquals(null, pluginBatchable.getUprToNewUplMap());
+System.assertEquals(false, pluginBatchable.hasFlow());
+System.assertEquals(false, pluginBatchable.hasFlowOrApex());
+pluginBatchable.postBatchProcessing();
+UserProvisioning.ProvisioningBatchable provisioningBatchable = new UserProvisioning.ProvisioningBatchable(new List<SObject>());
+System.assertNotEquals(null, provisioningBatchable.clone());
+System.assertNotEquals(null, provisioningBatchable.start(bc));
+provisioningBatchable.execute(bc, new List<UserProvisioningRequest>());
+provisioningBatchable.finish(bc);
+System.assertNotEquals(null, provisioningBatchable.flowInputPreprocessing(values));
+provisioningBatchable.flowPostProcessing(output, new Account(Name = 'ProvisioningBatchable'));
+System.assertNotEquals(null, provisioningBatchable.getEventPrefix());
+System.assertNotEquals(null, provisioningBatchable.getFlowName());
+System.assertNotEquals(null, provisioningBatchable.getFlowNamespace());
+System.assertNotEquals(null, provisioningBatchable.getPerBatchUPL());
+System.assertNotEquals(null, provisioningBatchable.getPerBatchUPR());
+System.assertNotEquals(null, provisioningBatchable.getUprToNewUplMap());
+System.assertEquals(false, provisioningBatchable.hasFlow());
+System.assertEquals(false, provisioningBatchable.hasFlowOrApex());
+provisioningBatchable.postBatchProcessing();
+UserProvisioning.RequestingBatchable requestingBatchable = new UserProvisioning.RequestingBatchable(new List<SObject>());
+System.assertNotEquals(null, requestingBatchable.clone());
+System.assertNotEquals(null, requestingBatchable.start(bc));
+requestingBatchable.execute(bc, new List<UserProvisioningRequest>());
+requestingBatchable.finish(bc);
+UserProvisioning.UPASCleaningBatchable uPASCleaningBatchable = new UserProvisioning.UPASCleaningBatchable('upr');
+System.assertNotEquals(null, uPASCleaningBatchable.clone());
+System.assertNotEquals(null, uPASCleaningBatchable.start(bc));
+uPASCleaningBatchable.execute(bc, new List<SObject>());
+uPASCleaningBatchable.finish(bc);
+Test.startTest();
+Database.executeBatch(new UserProvisioning.CommittingBatchable('upr'), 200);
+Database.executeBatch(new UserProvisioning.DeletingBatchable('upr'), 200);
+Database.executeBatch(new UserProvisioning.LinkingBatchable('upr'), 200);
+Database.executeBatch(new UserProvisioning.RequestingBatchable(new List<SObject>()), 200);
+Database.executeBatch(new UserProvisioning.UPASCleaningBatchable('upr'), 200);
+Test.stopTest();
+System.assertEquals(5, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApex' AND Status = 'Completed']);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCompileUserProvisioningPluginBaseRejectsConstruction(t *testing.T) {
 	program, err := CompileAnonymous(`
 UserProvisioning.UserProvisioningPlugin plugin = new UserProvisioning.UserProvisioningPlugin();

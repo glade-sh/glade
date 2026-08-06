@@ -697,6 +697,24 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		value := Object(typeName)
 		value.Fields["uprId"] = args[0]
 		return value, nil
+	case "UserProvisioning.CommittingBatchable", "UserProvisioning.DeletingBatchable", "UserProvisioning.UPASCleaningBatchable":
+		if len(args) > 1 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("%s constructor expects uprId", typeName)
+		}
+		value := Object(typeName)
+		if len(args) == 1 {
+			value.Fields["uprId"] = args[0]
+		}
+		return value, nil
+	case "UserProvisioning.RequestingBatchable":
+		if len(args) > 1 || len(namedArgs) != 0 || (len(args) == 1 && args[0].Kind != ValueList) {
+			return Null, fmt.Errorf("UserProvisioning.RequestingBatchable constructor expects List<SObject>")
+		}
+		value := Object(typeName)
+		if len(args) == 1 {
+			value.Fields["newRows"] = args[0]
+		}
+		return value, nil
 	case "Dom.Document":
 		if len(args) != 0 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("Dom.Document constructor expects 0 arguments")
