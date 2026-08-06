@@ -1010,6 +1010,7 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		ensureField(definition, Field{APIName: "RelatedToId", Label: "Related To ID", Type: FieldReference, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
 		ensureField(definition, Field{APIName: "ToIds", Label: "To IDs", Type: FieldAny, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
 		markFieldOptional(definition, "ParentId")
+		markFieldCreateable(definition, "ParentId")
 		markFieldCreateable(definition, "Incoming")
 		markFieldCreateable(definition, "IsClientManaged")
 	case stringsEqualFold(definition.APIName, "EmailMessageRelation"):
