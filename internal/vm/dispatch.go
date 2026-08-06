@@ -3,7 +3,6 @@ package vm
 import (
 	"crypto/aes"
 	"crypto/hmac"
-	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -1575,19 +1574,6 @@ platformStaticCall:
 			return Null, newExceptionError("System.InvalidParameterValueException", "invalid hexadecimal string")
 		}
 		return platformScalar("Blob", string(decoded)), nil
-	case "Crypto.areEqualConstantTime":
-		if len(args) != 2 {
-			return Null, fmt.Errorf("Crypto.areEqualConstantTime expects two Blob arguments")
-		}
-		left, err := blobStringArg("Crypto.areEqualConstantTime first argument", args[:1])
-		if err != nil {
-			return Null, err
-		}
-		right, err := blobStringArg("Crypto.areEqualConstantTime second argument", args[1:])
-		if err != nil {
-			return Null, err
-		}
-		return Bool(subtle.ConstantTimeCompare([]byte(left), []byte(right)) == 1), nil
 	case "EncodingUtil.convertToHex":
 		blob, err := blobStringArg("EncodingUtil.convertToHex", args)
 		if err != nil {
