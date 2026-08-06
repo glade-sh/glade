@@ -3133,6 +3133,10 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		message := name + " message"
 		if probe, ok := runtimeProbes[name]; ok {
 			message = probe.message
+		} else if name == "TouchHandledException" {
+			// Salesforce reserves this exception for Visualforce/Aura throws;
+			// the local constructor contract uses the platform default message.
+			message = "Script-thrown exception"
 		}
 		source.WriteString(message)
 		source.WriteString("', e")

@@ -704,6 +704,11 @@ func (vm *VM) callStandardSetControllerMember(receiver Value, method string, arg
 		if len(page.List) == 0 {
 			return Null, receiver, false, true, nil
 		}
+		if page.List[0].Kind == ValueObject {
+			record := Object(page.List[0].Type)
+			record.Fields["Id"] = platformScalar("Id", "000000000000000AAA")
+			return record, receiver, false, true, nil
+		}
 		return page.List[0], receiver, false, true, nil
 	case "getResultSize":
 		if len(args) != 0 {
@@ -733,6 +738,9 @@ func (vm *VM) callStandardSetControllerMember(receiver Value, method string, arg
 		if len(args) != 1 || args[0].Kind != ValueInt || args[0].Int <= 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.setPageSize expects positive Integer")
 		}
+		if callerProvided, ok := receiver.Fields["__glade_caller_provided"]; ok && callerProvided.Kind == ValueBool && callerProvided.Bool {
+			return Null, receiver, false, true, newExceptionError("VisualforceException", "Modified rows exist in the records collection!")
+		}
 		receiver.Fields["pageSize"] = args[0]
 		receiver.Fields["pageNumber"] = Int(1)
 		return Null, receiver, true, true, nil
@@ -756,7 +764,14 @@ func (vm *VM) callStandardSetControllerMember(receiver Value, method string, arg
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.getListViewOptions expects 0 arguments")
 		}
-		return typedList("List<SelectOption>"), receiver, false, true, nil
+		options := typedList("List<SelectOption>")
+		options.List = append(options.List, newSelectOption(
+			platformScalar("Id", "000000000000000AAA"),
+			String("All"),
+			Bool(false),
+			Bool(true),
+		))
+		return options, receiver, false, true, nil
 	case "addFields":
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.addFields expects List")

@@ -5089,18 +5089,21 @@ System.assertEquals('Changed', option.getLabel());
 System.assertEquals(false, option.getDisabled());
 ApexPages.StandardSetController setController = new ApexPages.StandardSetController(new List<Account>{account, new Account(Name = 'Second')});
 System.assertEquals(2, setController.getResultSize());
-System.assertEquals(account, setController.getRecord());
-System.assertEquals(0, setController.getListViewOptions().size());
+Account setRecord = (Account) setController.getRecord();
+System.assertEquals('000000000000000AAA', String.valueOf(setRecord.Id));
+System.assertEquals(null, setRecord.Name);
+System.assertEquals(1, setController.getListViewOptions().size());
+System.assertEquals('All', setController.getListViewOptions()[0].getLabel());
 setController.setSelected(new List<Account>{account});
 System.assertEquals(1, setController.getSelected().size());
 setController.setFilterId('00B000000000001');
 System.assertEquals('00B000000000001', setController.getFilterId());
-setController.setPageSize(1);
-System.assertEquals(1, setController.getRecords().size());
-System.assert(setController.getHasNext());
-setController.setPageNumber(2);
-System.assertEquals(2, setController.getPageNumber());
-System.assert(setController.getHasPrevious());
+try {
+    setController.setPageSize(1);
+    System.assert(false, 'setPageSize should reject caller-provided rows');
+} catch (VisualforceException e) {
+    System.assertEquals('Modified rows exist in the records collection!', e.getMessage());
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5169,16 +5172,19 @@ Database.QueryLocator locator = Database.getQueryLocator('SELECT Id, Name FROM A
 ApexPages.StandardSetController controller = new ApexPages.StandardSetController(locator);
 System.assertEquals(2, controller.getResultSize());
 controller.setPageSize(1);
-System.assertEquals('Locator-One', controller.getRecord().Name);
+System.assertEquals('000000000000000AAA', String.valueOf(controller.getRecord().Id));
+System.assertEquals('Locator-One', controller.getRecords()[0].Name);
 System.assert(controller.getHasNext());
 controller.next();
-System.assertEquals('Locator-Two', controller.getRecord().Name);
+System.assertEquals('000000000000000AAA', String.valueOf(controller.getRecord().Id));
+System.assertEquals('Locator-Two', controller.getRecords()[0].Name);
 System.assert(controller.getHasPrevious());
 controller.last();
 System.assertEquals(2, controller.getPageNumber());
 System.assert(!controller.getHasNext());
 controller.previous();
-System.assertEquals('Locator-One', controller.getRecord().Name);
+System.assertEquals('000000000000000AAA', String.valueOf(controller.getRecord().Id));
+System.assertEquals('Locator-One', controller.getRecords()[0].Name);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5186,6 +5192,54 @@ System.assertEquals('Locator-One', controller.getRecord().Name);
 	machine := New(nil)
 	org := testDataOrg()
 	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesStandardSetControllerGetRecordReturnsEmptyTypedObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account first = new Account(Name = 'First');
+Account second = new Account(Name = 'Second');
+ApexPages.StandardSetController controller = new ApexPages.StandardSetController(new List<Account>{first, second});
+Account record = (Account) controller.getRecord();
+System.assertEquals('000000000000000AAA', String.valueOf(record.Id));
+System.assertEquals(null, record.Name);
+System.assertEquals(first.Name, controller.getRecords()[0].get('Name'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesStandardSetControllerCallerProvidedContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Account> accounts = new List<Account>{new Account(Name = 'First')};
+ApexPages.StandardSetController controller = new ApexPages.StandardSetController(accounts);
+try {
+    controller.setPageSize(1);
+    System.assert(false, 'setPageSize should reject caller-provided rows');
+} catch (VisualforceException e) {
+    System.assertEquals('Modified rows exist in the records collection!', e.getMessage());
+}
+System.assertEquals(true, controller.getCompleteResult());
+System.assertEquals(1, controller.getListViewOptions().size());
+System.assertEquals('All', controller.getListViewOptions()[0].getLabel());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -15674,13 +15728,16 @@ List<Account> accounts = new List<Account>{a1, a2, a3};
 ApexPages.StandardSetController ssc = new ApexPages.StandardSetController(accounts);
 System.assertEquals(3, ssc.getResultSize());
 System.assertEquals(20, ssc.getPageSize());
-ssc.setPageSize(2);
-System.assertEquals(2, ssc.getPageSize());
-System.assertEquals(1, ssc.getPageNumber());
+try {
+    ssc.setPageSize(2);
+    System.assert(false, 'setPageSize should reject caller-provided rows');
+} catch (VisualforceException e) {
+    System.assertEquals('Modified rows exist in the records collection!', e.getMessage());
+}
 ssc.setPageNumber(2);
-System.assertEquals(2, ssc.getPageNumber());
+System.assertEquals(1, ssc.getPageNumber());
 List<Object> page = ssc.getRecords();
-System.assertEquals(1, page.size());
+System.assertEquals(3, page.size());
 Object record = ssc.getRecord();
 System.assertNotEquals(null, record);
 List<Object> selected = ssc.getSelected();
@@ -15688,20 +15745,21 @@ System.assertEquals(0, selected.size());
 ssc.setSelected(accounts);
 System.assertEquals(3, ssc.getSelected().size());
 List<SelectOption> options = ssc.getListViewOptions();
-System.assertNotEquals(null, options);
+System.assertEquals(1, options.size());
+System.assertEquals('All', options[0].getLabel());
 ssc.setFilterId('Recent');
 System.assertEquals('Recent', ssc.getFilterId());
-System.assertEquals(true, ssc.getHasPrevious());
+System.assertEquals(false, ssc.getHasPrevious());
 System.assertEquals(false, ssc.getHasNext());
 System.assertEquals(true, ssc.getCompleteResult());
 ssc.first();
 System.assertEquals(1, ssc.getPageNumber());
 ssc.last();
-System.assertEquals(2, ssc.getPageNumber());
+System.assertEquals(1, ssc.getPageNumber());
 ssc.previous();
 System.assertEquals(1, ssc.getPageNumber());
 ssc.next();
-System.assertEquals(2, ssc.getPageNumber());
+System.assertEquals(1, ssc.getPageNumber());
 PageReference cancelPage = ssc.cancel();
 System.assertNotEquals(null, cancelPage);
 System.assertEquals('', cancelPage.getUrl());
