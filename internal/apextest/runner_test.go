@@ -1221,6 +1221,81 @@ private class CacheAPI67StaticHelpersTest {
 	}
 }
 
+func TestRunCasesContextApexPagesIdeaControllerFixture(t *testing.T) {
+	root := t.TempDir()
+	viewPath := filepath.Join(root, "IdeaViewExtension.cls")
+	listPath := filepath.Join(root, "IdeaListExtension.cls")
+	fixturePath := filepath.Join(root, "IdeaControllerV27FixtureTest.cls")
+	writeFile(t, viewPath, `
+public class IdeaViewExtension {
+  public IdeaViewExtension(ApexPages.IdeaStandardController controller) {
+    controller.addFields(new List<String>{'Title'});
+    List<IdeaComment> comments = controller.getCommentList();
+    SObject record = controller.getRecord();
+    String recordId = controller.getId();
+    PageReference cancelled = controller.cancel();
+    PageReference edited = controller.edit();
+    PageReference viewed = controller.view();
+    PageReference saved = controller.save();
+    PageReference deleted = controller.delete();
+  }
+}`)
+	writeFile(t, listPath, `
+public class IdeaListExtension {
+  public IdeaListExtension(ApexPages.IdeaStandardSetController controller) {
+    controller.addFields(new List<String>{'Title'});
+    List<Idea> ideas = controller.getIdeaList();
+    List<SelectOption> options = controller.getListViewOptions();
+    List<SObject> records = controller.getRecords();
+    SObject record = controller.getRecord();
+    Integer resultSize = controller.getResultSize();
+    List<SObject> selected = controller.getSelected();
+    Boolean complete = controller.getCompleteResult();
+    Integer pageSize = controller.getPageSize();
+    Integer pageNumber = controller.getPageNumber();
+    Boolean hasNext = controller.getHasNext();
+    Boolean hasPrevious = controller.getHasPrevious();
+    controller.setFilterId('00B000000000001');
+    String filterId = controller.getFilterId();
+    controller.setPageSize(5);
+    controller.setPageNumber(2);
+    controller.first();
+    controller.next();
+    controller.previous();
+    controller.last();
+    controller.setSelected(new List<SObject>());
+    PageReference saved = controller.save();
+    PageReference cancelled = controller.cancel();
+  }
+}`)
+	writeFile(t, fixturePath, `
+@isTest
+private class IdeaControllerV27FixtureTest {
+  @isTest
+  static void ideaViewExtensionRuns() {
+    IdeaViewExtension extension = new IdeaViewExtension(new ApexPages.IdeaStandardController());
+    System.assertNotEquals(null, extension);
+  }
+
+  @isTest
+  static void ideaListExtensionRuns() {
+    IdeaListExtension extension = new IdeaListExtension(new ApexPages.IdeaStandardSetController());
+    System.assertNotEquals(null, extension);
+  }
+}`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{
+		Root:      root,
+		ApexFiles: []string{viewPath, listPath, fixturePath},
+	}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Total != 2 || summary.Passed != 2 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+}
+
 func TestRuntimeKeyWithSourceDigestsAvoidsRereadsAndMatchesDiskFallback(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "force-app", "main", "default", "classes", "Unicode.cls")
