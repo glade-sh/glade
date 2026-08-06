@@ -9,19 +9,22 @@ import (
 
 func TestAPI67CacheRejectedShapes(t *testing.T) {
 	tests := map[string]string{
-		"Cache.Org.isAvailable does not exist":       `Cache.Org.isAvailable();`,
-		"Cache.Org.getAvgValueSize removed":          `Cache.Org.getAvgValueSize();`,
-		"Cache.Org.getMaxValueSize removed":          `Cache.Org.getMaxValueSize();`,
-		"Cache.Session.getAvgValueSize removed":      `Cache.Session.getAvgValueSize();`,
-		"Cache.Session.getMaxValueSize removed":      `Cache.Session.getMaxValueSize();`,
-		"partition getAvgValueSize removed":          `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.getAvgValueSize();`,
-		"partition getMaxValueSize removed":          `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.getMaxValueSize();`,
-		"createFullyQualifiedKey through instance":   `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.createFullyQualifiedKey('a', 'b', 'c');`,
+		"Cache.Org.isAvailable does not exist":           `Cache.Org.isAvailable();`,
+		"Cache.Org.getAvgValueSize removed":              `Cache.Org.getAvgValueSize();`,
+		"Cache.Org.getMaxValueSize removed":              `Cache.Org.getMaxValueSize();`,
+		"Cache.Session.getAvgValueSize removed":          `Cache.Session.getAvgValueSize();`,
+		"Cache.Session.getMaxValueSize removed":          `Cache.Session.getMaxValueSize();`,
+		"partition getAvgValueSize removed":              `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.getAvgValueSize();`,
+		"partition getMaxValueSize removed":              `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.getMaxValueSize();`,
+		"createFullyQualifiedKey through instance":       `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.createFullyQualifiedKey('a', 'b', 'c');`,
 		"createFullyQualifiedPartition through instance": `Cache.SessionPartition p = Cache.Session.getPartition('local'); p.createFullyQualifiedPartition('a', 'b');`,
-		"validatePartitionName through instance":     `Cache.Partition p = Cache.Org.getPartition('local'); p.validatePartitionName('a');`,
-		"validateKey through instance":               `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKey(false, 'a');`,
-		"validateKeyValue through instance":          `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeyValue(false, 'a', 'v');`,
-		"validateKeys through instance":              `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeys(false, new Set<String>{'a'});`,
+		"validatePartitionName through instance":         `Cache.Partition p = Cache.Org.getPartition('local'); p.validatePartitionName('a');`,
+		"validateKey through instance":                   `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKey(false, 'a');`,
+		"validateKeyValue through instance":              `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeyValue(false, 'a', 'v');`,
+		"validateKeys through instance":                  `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeys(false, new Set<String>{'a'});`,
+		"Cache.Partition.validateKeys removed":           `Cache.Partition.validateKeys(false, new Set<String>{'a'});`,
+		"Cache.OrgPartition.validateKeys removed":        `Cache.OrgPartition.validateKeys(false, new Set<String>{'a'});`,
+		"Cache.SessionPartition.validateKeys removed":    `Cache.SessionPartition.validateKeys(false, new Set<String>{'a'});`,
 	}
 	for name, source := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -42,7 +45,6 @@ func TestAPI67CacheAcceptedShapes(t *testing.T) {
 		"validatePartitionName static":         `Cache.SessionPartition.validatePartitionName('default');`,
 		"validateKey static":                   `Cache.OrgPartition.validateKey(false, 'account');`,
 		"validateKeyValue static":              `Cache.OrgPartition.validateKeyValue(false, 'account', 'value');`,
-		"validateKeys Set static":              `Cache.OrgPartition.validateKeys(false, new Set<String>{'account'});`,
 		"validateCacheBuilder static":          `Cache.Partition.validateCacheBuilder(String.class);`,
 		"getMissRate kept":                     `Cache.Org.getMissRate();`,
 		"getAvgGetSize kept":                   `Cache.Org.getAvgGetSize();`,

@@ -11,9 +11,10 @@ and `Cache.SessionPartition` Apex surface with Salesforce API 67, from the
 - `Cache.Org.isAvailable()` does not exist.
 - `Partition.createFullyQualifiedKey(String,String,String)`,
   `createFullyQualifiedPartition(String,String)`, `validatePartitionName(String)`,
-  `validateKey(Boolean,String)`, `validateKeyValue(Boolean,String,Object)`, and
-  `validateKeys(Boolean,Set<String>)` are static methods and must not be
-  callable through an instance.
+  `validateKey(Boolean,String)`, and `validateKeyValue(Boolean,String,Object)`
+  are static methods and must not be callable through an instance.
+- `Cache.Partition.validateKeys`, `Cache.OrgPartition.validateKeys`, and
+  `Cache.SessionPartition.validateKeys` were removed after version 54.0.
 - Fixture casts show builder-scoped `remove` returns `Boolean`, not `String`.
 - `Cache.Session.isAvailable()` and partition `isAvailable()` are not in the
   rejection list and stay in the surface.
@@ -25,9 +26,10 @@ and `Cache.SessionPartition` Apex surface with Salesforce API 67, from the
 - `internal/typesys/system_stub_symbols_generated.go` — dropped
   `getAvgValueSize`/`getMaxValueSize` from the five cache classes.
 - `internal/sema/api67_surface.go` — `semaAPI67RejectedPlatformCall` rejects
-  `cache.org.isavailable`, the value-size stat methods on all five classes, and
-  the six static partition helpers when called through an instance. Generated
-  legacy shapes stay available for evidence/versioned catalogs.
+  `cache.org.isavailable`, the value-size stat methods on all five classes,
+  `validateKeys` on all three partition classes, and the five remaining static
+  partition helpers when called through an instance. Generated legacy shapes
+  stay available for evidence/versioned catalogs.
 - `internal/vm/dispatch.go` — `Cache.Org.isAvailable` case removed; value-size
   cases removed; default case routes partition static calls through
   `callCachePartitionStaticDefault`.
@@ -46,8 +48,8 @@ and `Cache.SessionPartition` Apex surface with Salesforce API 67, from the
 - `internal/sema/cache_api67_surface_test.go` — accepted/rejected compile
   shapes via `AnalyzeAnonymous`.
 - `internal/apextest/runner_test.go` — new end-to-end fixture
-  `TestRunCasesContextCacheAPI67StaticPartitionHelpers` (static helpers +
-  Boolean builder remove through the full runner).
+  `TestRunCasesContextCacheAPI67StaticPartitionHelpers` (remaining static
+  helpers + Boolean builder remove through the full runner).
 
 ## Commands run
 
@@ -56,6 +58,9 @@ and `Cache.SessionPartition` Apex surface with Salesforce API 67, from the
 - `go test ./internal/sema -run 'Cache|API67'` — ok
 - `go test ./internal/typesys` — ok
 - `go test ./internal/apextest -run 'Cache'` and full `go test ./internal/apextest` — ok
+- `go test ./internal/sema -run Cache -count=1` — ok
+- `go test ./internal/vm -run Cache -count=1` — ok
+- `go test ./internal/apextest -run Cache -count=1` — ok
 - `go test ./internal/codeintel ./internal/startupcache ./internal/dap ./internal/repoguard ./internal/gladecli` — ok
 - `go test ./...` — only two pre-existing failures, both present at HEAD
   before this change (see blockers)

@@ -1197,8 +1197,6 @@ private class CacheAPI67StaticHelpersTest {
     Cache.OrgPartition.validatePartitionName('default');
     Cache.Partition.validateKey(false, 'account');
     Cache.SessionPartition.validateKeyValue(false, 'account', 'value');
-    Cache.OrgPartition.validateKeys(false, new Set<String>{'account'});
-    Cache.SessionPartition.validateKeys(false, new Set<String>{'account'});
     System.assert(Cache.Session.isAvailable());
   }
 

@@ -192,8 +192,11 @@ func semaAPI67RejectedPlatformCall(receiverType, method, receiverMode string) bo
 		switch method {
 		case "getavgvaluesize", "getmaxvaluesize":
 			return true
+		case "validatekeys":
+			// Salesforce removed the static validateKeys helpers after API version 54.0.
+			return true
 		case "createfullyqualifiedkey", "createfullyqualifiedpartition",
-			"validatepartitionname", "validatekey", "validatekeyvalue", "validatekeys":
+			"validatepartitionname", "validatekey", "validatekeyvalue":
 			// Salesforce declares these partition helpers static; calling
 			// them through an instance is a compile error in API 67.
 			return receiverMode == "instance"
