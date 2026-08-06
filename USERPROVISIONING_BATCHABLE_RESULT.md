@@ -44,7 +44,7 @@ The consolidated test is
 The exact candidate replay also passed:
 
 ```text
-product commit: d91c35316941d96aa595996fc5bbeb6c6c356b5e
+product commit: e274242d762e3322791abf8d26e7f994dfafdde2
 candidate: 79f52c936880b0bc7715a1f9be83befa899398d178248e047a55b9b64026c475
 glade test --project evidence/current-base/messaging-extract-inbound-v10/userprovisioning-v26b/local --no-cache --json
 status: passed; total: 1; passed: 1; compileErrors: 0; runtimeErrors: 0
@@ -52,14 +52,24 @@ status: passed; total: 1; passed: 1; compileErrors: 0; runtimeErrors: 0
 
 ## Salesforce evidence
 
-The API-67 probe source and raw receipt are under:
+The API-67 probe source and raw receipts are under:
 
 `evidence/current-base/messaging-extract-inbound-v10/userprovisioning-v26b/`
 
-Salesforce compilation succeeded with zero component errors. The hosted test
-still fails with `System.ListException: List index out of bounds: 0` in the
-single-line probe class. This is retained as an unresolved hosted-runtime
-probe issue, not credited as a Salesforce runtime pass. The exact candidate
-has local compile/runtime parity; the 68 rows remain pending a narrowed
-Salesforce runtime probe or an explicit environment/fixture waiver. No
-Salesforce runtime claim is made by this receipt.
+Salesforce compilation succeeded with zero component errors. The direct
+hosted probe still fails with `System.ListException: List index out of bounds: 0`
+because the scratch org has no matching `UserProvisioningRequest` data. The
+narrowed probe at
+`evidence/current-base/messaging-extract-inbound-v10/userprovisioning-v26c/`
+records the boundary explicitly: the constructors that query a persisted
+request fail with the platform's normal `ListException`/`QueryException`,
+while the list-based `RequestingBatchable` constructor passes. This is not
+credited as a hosted runtime pass, and it is not a local implementation
+mismatch.
+
+The successor packet
+`evidence/current-base/messaging-extract-inbound-v10/userprovisioning-v26b/`
+closes all 68 fixture rows from the predecessor queue using the exact local
+candidate plus Salesforce API-67 compilation and the explicit hosted data
+boundary. Terra High review is required before promotion. Until then, the
+current-base head remains Cache API-67 v25.
