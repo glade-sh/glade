@@ -1279,10 +1279,23 @@ platformStaticCall:
 	case "Database.scheduleBatch", "System.scheduleBatch":
 		return vm.scheduleBatch(args, result)
 	case "System.attachFinalizer":
-		if len(args) != 1 || args[0].Kind != ValueObject {
+		if len(args) != 1 {
 			return Null, fmt.Errorf("System.attachFinalizer expects Finalizer object")
 		}
-		return Null, unsupportedCallError(callee)
+		if vm.currentAsyncKind != "Queueable" {
+			return Null, newExceptionError("System.HandledException", "System.attachFinalizer(Finalizer) is not allowed in this context")
+		}
+		if args[0].Kind != ValueObject {
+			return Null, fmt.Errorf("System.attachFinalizer expects Finalizer object")
+		}
+		if !vm.typeAssignableTo(args[0].Type, "Finalizer") {
+			return Null, newExceptionError("System.HandledException", fmt.Sprintf("Class %s must implement the Finalizer interface", args[0].Type))
+		}
+		if vm.currentFinalizer.Kind == ValueObject {
+			return Null, newExceptionError("System.HandledException", "More than one Finalizer cannot be attached to same Async Apex Job")
+		}
+		vm.currentFinalizer = args[0]
+		return Null, nil
 	case "AsyncInfo.hasMaxStackDepth", "System.AsyncInfo.hasMaxStackDepth":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("AsyncInfo.hasMaxStackDepth expects 0 arguments")

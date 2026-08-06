@@ -12329,8 +12329,8 @@ System.assertEquals('SUCCESS', systemContext.getResult().name());
 	}
 }
 
-func TestExecSystemAttachFinalizerIsUnsupportedLocally(t *testing.T) {
-	program, err := CompileAnonymous(`System.attachFinalizer(new QueueWorker());`)
+func TestExecSystemAttachFinalizerRejectsOutsideQueueable(t *testing.T) {
+	program, err := CompileAnonymous(`System.attachFinalizer(null);`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -12339,8 +12339,8 @@ func TestExecSystemAttachFinalizerIsUnsupportedLocally(t *testing.T) {
 	if err := machine.RegisterClass(Class{Name: "QueueWorker"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), `unsupported call "System.attachFinalizer"`) {
-		t.Fatalf("err = %v, want unsupported finalizer registration", err)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "System.attachFinalizer(Finalizer) is not allowed in this context") {
+		t.Fatalf("err = %v, want Salesforce outside-Queueable finalizer error", err)
 	}
 }
 

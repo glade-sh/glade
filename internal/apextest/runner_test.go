@@ -7568,6 +7568,20 @@ func TestRunExecutesQueueableFinalizerAtStopTest(t *testing.T) {
 public class FinalizerJob implements Queueable, Finalizer {
   public void execute(QueueableContext qc) {
     System.attachFinalizer(this);
+    try {
+      System.attachFinalizer(this);
+      System.assert(false, 'double attach did not fail');
+    } catch (Exception e) {
+      System.assertEquals('System.HandledException', e.getTypeName());
+      System.assertEquals('More than one Finalizer cannot be attached to same Async Apex Job', e.getMessage());
+    }
+    try {
+      System.attachFinalizer(new QueueOnlyJob());
+      System.assert(false, 'invalid finalizer did not fail');
+    } catch (Exception e) {
+      System.assertEquals('System.HandledException', e.getTypeName());
+      System.assertEquals('Class QueueOnlyJob must implement the Finalizer interface', e.getMessage());
+    }
     insert new Account(Name = 'queueable ran');
   }
   public void execute(FinalizerContext fc) {
@@ -7576,6 +7590,11 @@ public class FinalizerJob implements Queueable, Finalizer {
     System.assertEquals(null, fc.getException());
     insert new Account(Name = 'finalizer ran');
   }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/QueueOnlyJob.cls"), `
+public class QueueOnlyJob implements Queueable {
+  public void execute(QueueableContext qc) {}
 }
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/FinalizerJobTest.cls"), `

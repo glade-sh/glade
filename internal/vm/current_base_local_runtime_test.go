@@ -6,8 +6,8 @@ import (
 	"testing"
 )
 
-func TestCurrentBaseAttachFinalizerDoesNotFakeLifecycle(t *testing.T) {
-	program, err := CompileAnonymous(`System.attachFinalizer(new QueueWorker());`)
+func TestCurrentBaseAttachFinalizerRejectsOutsideQueueable(t *testing.T) {
+	program, err := CompileAnonymous(`System.attachFinalizer(null);`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -18,8 +18,8 @@ func TestCurrentBaseAttachFinalizerDoesNotFakeLifecycle(t *testing.T) {
 	}
 	_, err = machine.Execute(program)
 	var runtimeErr *RuntimeError
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "System.attachFinalizer"` {
-		t.Fatalf("err = %#v, want unsupported finalizer registration", err)
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "System.HandledException" || runtimeErr.Message != "System.attachFinalizer(Finalizer) is not allowed in this context" {
+		t.Fatalf("err = %#v, want Salesforce outside-Queueable finalizer error", err)
 	}
 }
 
