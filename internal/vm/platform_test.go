@@ -2432,7 +2432,7 @@ ConnectApi.FollowingPage byFilterPageSize = ConnectApi.ChatterUsers.getFollowing
 
 System.assertEquals(0, byUser.total);
 System.assertEquals(0, byUser.following.size());
-System.assertEquals('/services/data/vXX.X/connect/followings', byUser.currentPageUrl);
+System.assertEquals('/services/data/vXX.X/chatter/users/' + UserInfo.getUserId() + '/following', byUser.currentPageUrl);
 System.assertEquals(byUser.currentPageUrl, byPage.currentPageUrl);
 System.assertEquals(byUser.currentPageUrl, byPageSize.currentPageUrl);
 System.assertEquals(byUser.currentPageUrl, byFilter.currentPageUrl);

@@ -12,7 +12,7 @@ func (vm *VM) connectAPIChatterUsersGetFollowings(args []Value) (Value, error) {
 		return Null, newExceptionError("UnsupportedOperationException", "ConnectApi.ChatterUsers.getFollowings requires SeeAllData=true in local tests")
 	}
 	page := Object("ConnectApi.FollowingPage")
-	page.Fields["currentPageUrl"] = String("/services/data/vXX.X/connect/followings")
+	page.Fields["currentPageUrl"] = String("/services/data/vXX.X/chatter/users/" + scalarText(args[1]) + "/following")
 	page.Fields["following"] = typedList("List<ConnectApi.Subscription>")
 	page.Fields["total"] = Int(0)
 	return page, nil
