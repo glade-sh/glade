@@ -67,7 +67,14 @@ Exception mathEx = new MathException('math message');
 System.assertEquals('System.MathException', mathEx.getTypeName());
 System.assertEquals(11, mathEx.getLineNumber());
 System.assertEquals('AnonymousBlock: line 11, column 1', mathEx.getStackTraceString());
-System.assertEquals(0, mathEx.getInaccessibleFields().size());
+Boolean inaccessibleFieldsCaught = false;
+try {
+    mathEx.getInaccessibleFields();
+} catch (Exception e) {
+    System.assertEquals('System.TypeException', e.getTypeName());
+    inaccessibleFieldsCaught = true;
+}
+System.assert(inaccessibleFieldsCaught);
 mathEx.setMessage('changed math');
 System.assertEquals('changed math', mathEx.getMessage());
 `)
