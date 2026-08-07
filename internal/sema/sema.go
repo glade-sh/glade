@@ -2123,9 +2123,9 @@ func semaDatabaseDMLReturnType(receiverType, method string, argTypes []string) s
 	}
 	resultType := ""
 	switch normalizeName(method) {
-	case "insert", "update":
+	case "insert", "insertimmediate", "update", "updateimmediate":
 		resultType = "Database.SaveResult"
-	case "delete":
+	case "delete", "deleteimmediate":
 		resultType = "Database.DeleteResult"
 	case "upsert":
 		resultType = "Database.UpsertResult"

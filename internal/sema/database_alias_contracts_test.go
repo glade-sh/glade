@@ -41,3 +41,19 @@ Database.deleteImmediate(account, AccessLevel.USER_MODE);
 		t.Fatalf("rejected immediate DML alias overloads: %#v", result.Diagnostics)
 	}
 }
+
+func TestDatabaseImmediateAliasesInferDMLResultTypes(t *testing.T) {
+	result := AnalyzeAnonymous(typesys.Index{}, `
+Account account = new Account(Name = 'alias');
+List<Account> accounts = new List<Account>{account};
+Database.SaveResult oneInsert = Database.insertImmediate(account, false);
+List<Database.SaveResult> manyInserts = Database.insertImmediate(accounts, false);
+Database.SaveResult oneUpdate = Database.updateImmediate(account, false);
+List<Database.SaveResult> manyUpdates = Database.updateImmediate(accounts, false);
+Database.DeleteResult oneDelete = Database.deleteImmediate(account, false);
+List<Database.DeleteResult> manyDeletes = Database.deleteImmediate(accounts, false);
+`)
+	if result.HasErrors() {
+		t.Fatalf("rejected immediate DML result types: %#v", result.Diagnostics)
+	}
+}
