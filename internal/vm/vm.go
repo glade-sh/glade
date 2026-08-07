@@ -1792,8 +1792,12 @@ func httpGetHeader(receiver Value, name string) Value {
 	if !ok || headers.Kind != ValueMap {
 		return Null
 	}
-	if value, ok := headers.Map[mapKey(String(strings.ToLower(name)))]; ok {
-		return value
+	for rawKey, original := range headers.MapKeys {
+		if original.Kind == ValueString && original.Text == name {
+			if value, ok := headers.Map[rawKey]; ok {
+				return value
+			}
+		}
 	}
 	return Null
 }
