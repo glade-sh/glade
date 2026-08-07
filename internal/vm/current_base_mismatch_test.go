@@ -16,17 +16,6 @@ func TestCurrentBaseAbsentAsyncOptionsGetterIsRejected(t *testing.T) {
 	}
 }
 
-func TestCurrentBaseAbsentJSONGeneratorRawValueIsRejected(t *testing.T) {
-	program, err := CompileAnonymous("JSONGenerator gen = JSON.createGenerator(false); gen.writeRawValue('{}');")
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = Execute(program, nil)
-	if err == nil || !strings.Contains(err.Error(), `unsupported call "JSONGenerator.writeRawValue"`) {
-		t.Fatalf("err = %v, want absent Salesforce API rejection", err)
-	}
-}
-
 func TestCurrentBaseRemovedLimitsChildRelationshipsIsRejected(t *testing.T) {
 	program, err := CompileAnonymous("Limits.getChildRelationshipsDescribes();")
 	if err != nil {

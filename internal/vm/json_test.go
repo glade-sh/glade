@@ -933,11 +933,11 @@ gen.writeStartObject();
 gen.writeRawField('config', '{"enabled":true,"nums":[1,2]}');
 gen.writeFieldName('items');
 gen.writeStartArray();
-gen.writeString('first');
+gen.writeRawValue('{"raw":true}');
 gen.writeRaw('[false,null]');
 gen.writeEndArray();
 gen.writeEndObject();
-System.assertEquals('{"config":{"enabled":true,"nums":[1,2]},"items":["first",[false,null]]}', gen.getAsString());
+System.assertEquals('{"config":{"enabled":true,"nums":[1,2]},"items":[{"raw":true},[false,null]]}', gen.getAsString());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -958,7 +958,7 @@ gen.writeRawValue('{bad');
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), `unsupported call "JSONGenerator.writeRawValue"`) {
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), `JSONGenerator.writeRawValue expects valid raw JSON value`) {
 		t.Fatalf("err = %v", err)
 	}
 }
