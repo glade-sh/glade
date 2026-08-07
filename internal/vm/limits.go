@@ -321,7 +321,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limitCaps.PublishImmediateDML)), true
 	case "getAggregateQueries", "getApexCursorRows", "getApexCursors", "getApexPaginationCursorRows",
 		"getApexPaginationCursors", "getDatabaseTime",
-		"getFetchCallsOnApexCursor", "getFieldSetsDescribes", "getFieldsDescribes",
+		"getChildRelationshipsDescribes", "getFetchCallsOnApexCursor", "getFieldSetsDescribes", "getFieldsDescribes",
 		"getFindSimilarCalls", "getMobilePushApexCalls", "getPicklistDescribes",
 		"getRecordTypesDescribes", "getScriptStatements":
 		return Int(0), true
