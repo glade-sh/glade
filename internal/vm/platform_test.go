@@ -2426,18 +2426,18 @@ func TestExecConnectApiChatterUsersFollowingsCorpusOverloadsReturnDeterministicP
 ConnectApi.FollowingPage byUser = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId());
 ConnectApi.FollowingPage byPage = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), 0);
 ConnectApi.FollowingPage byPageSize = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), 0, 10);
-ConnectApi.FollowingPage byFilter = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), 'People');
-ConnectApi.FollowingPage byFilterPage = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), 'People', 0);
-ConnectApi.FollowingPage byFilterPageSize = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), 'People', 0, 10);
+ConnectApi.FollowingPage byFilter = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), '005');
+ConnectApi.FollowingPage byFilterPage = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), '005', 0);
+ConnectApi.FollowingPage byFilterPageSize = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), '005', 0, 10);
 
 System.assertEquals(0, byUser.total);
 System.assertEquals(0, byUser.following.size());
 System.assertEquals('/services/data/vXX.X/chatter/users/' + UserInfo.getUserId() + '/following', byUser.currentPageUrl);
 System.assertEquals(byUser.currentPageUrl, byPage.currentPageUrl);
-System.assertEquals(byUser.currentPageUrl, byPageSize.currentPageUrl);
-System.assertEquals(byUser.currentPageUrl, byFilter.currentPageUrl);
-System.assertEquals(byUser.currentPageUrl, byFilterPage.currentPageUrl);
-System.assertEquals(byUser.currentPageUrl, byFilterPageSize.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl + '?pageSize=10', byPageSize.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl + '?filterType=005', byFilter.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl + '?filterType=005', byFilterPage.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl + '?filterType=005&pageSize=10', byFilterPageSize.currentPageUrl);
 `)
 	if err != nil {
 		t.Fatal(err)

@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"net/url"
 )
 
 func (vm *VM) connectAPIChatterUsersGetFollowings(args []Value) (Value, error) {
@@ -11,8 +12,31 @@ func (vm *VM) connectAPIChatterUsersGetFollowings(args []Value) (Value, error) {
 	if vm.testContext != nil && vm.testContext.SeeAllDataSet && !vm.testContext.SeeAllData {
 		return Null, newExceptionError("UnsupportedOperationException", "ConnectApi.ChatterUsers.getFollowings requires SeeAllData=true in local tests")
 	}
+	pageURL := "/services/data/vXX.X/chatter/users/" + scalarText(args[1]) + "/following"
+	query := url.Values{}
+	if len(args) >= 3 {
+		if args[2].Kind == ValueString {
+			query.Set("filterType", args[2].Text)
+			if len(args) >= 4 && args[3].Kind == ValueInt && args[3].Int > 0 {
+				query.Set("page", fmt.Sprint(args[3].Int))
+			}
+			if len(args) == 5 && args[4].Kind == ValueInt && args[4].Int > 0 {
+				query.Set("pageSize", fmt.Sprint(args[4].Int))
+			}
+		} else if args[2].Kind == ValueInt {
+			if args[2].Int > 0 {
+				query.Set("page", fmt.Sprint(args[2].Int))
+			}
+			if len(args) == 4 && args[3].Kind == ValueInt && args[3].Int > 0 {
+				query.Set("pageSize", fmt.Sprint(args[3].Int))
+			}
+		}
+	}
+	if encoded := query.Encode(); encoded != "" {
+		pageURL += "?" + encoded
+	}
 	page := Object("ConnectApi.FollowingPage")
-	page.Fields["currentPageUrl"] = String("/services/data/vXX.X/chatter/users/" + scalarText(args[1]) + "/following")
+	page.Fields["currentPageUrl"] = String(pageURL)
 	page.Fields["following"] = typedList("List<ConnectApi.Subscription>")
 	page.Fields["total"] = Int(0)
 	return page, nil
