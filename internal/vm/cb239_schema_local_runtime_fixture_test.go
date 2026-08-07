@@ -58,6 +58,10 @@ Boolean dependent = info.isDependent();
 Boolean optionalFilter = info.isOptionalFilter();
 List<String> controlling = info.getControllingFields();
 System.assertNotEquals(null, controlling);
+System.assertEquals(1, controlling.size());
+System.assertEquals('Account.Name', controlling.get(0));
+System.assertEquals(true, dependent);
+System.assertEquals(true, optionalFilter);
 System.assertNotEquals(null, info.controllingFields);
 System.assertNotEquals(null, info.dependent);
 System.assertNotEquals(null, info.optionalFilter);
@@ -75,10 +79,30 @@ System.assertNotEquals(null, info.optionalFilter);
 			KeyPrefix:   "a0B",
 			Fields: map[string]storage.Field{
 				"Text__c":   {APIName: "Text__c", Type: storage.FieldString, DisplayType: "STRING"},
-				"Lookup__c": {APIName: "Lookup__c", Type: storage.FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"Account"}, FilteredLookupInfo: storage.FilteredLookupInfo{ControllingFields: []string{"Account.Name"}, Dependent: true, OptionalFilter: true}},
+				"Lookup__c": {APIName: "Lookup__c", Type: storage.FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"Account"}, RelationshipName: "Account", FilteredLookupInfo: storage.FilteredLookupInfo{ControllingFields: []string{"Account.Name"}, Dependent: true, OptionalFilter: true}},
 			},
 		},
 	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDescribeAllTabsIncludesItsDescription(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Object> tabSets = Schema.describeTabs();
+Object allTabs = tabSets.get(12);
+System.assertEquals('AllTabs', allTabs.getTabSetId());
+System.assertEquals('All Tabs', allTabs.getLabel());
+System.assertEquals('All Tabs', allTabs.getDescription());
+System.assertEquals(null, allTabs.getNamespace());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)

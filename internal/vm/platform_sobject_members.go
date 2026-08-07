@@ -1299,6 +1299,9 @@ func databaseErrorValue(err dml.Error) Value {
 	if code == "" {
 		code = "FIELD_CUSTOM_VALIDATION_EXCEPTION"
 	}
+	if code == "UNDELETE_FAILED" {
+		code = "ENTITY_IS_NOT_DELETED"
+	}
 	value.Fields["statusCode"] = String(code)
 	fields := List()
 	for _, field := range err.Fields {

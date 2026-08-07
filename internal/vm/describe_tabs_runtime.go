@@ -84,7 +84,7 @@ var defaultDescribeTabSetTemplates = []describeTabSetTemplate{
 	{Name: "ProfileSelf", Label: "Profile (Self)", Description: "The tabs displayed when users view their own profile", Tabs: []string{"Profile Feed", "Profile Overview", "Recognition"}},
 	{Name: "ProfileOthers", Label: "Profile (Others)", Description: "The tabs displayed when users view someone else's profile", Tabs: []string{"Profile Feed", "Profile Overview", "Recognition"}},
 	{Name: "Content", Label: "Content", Description: "Salesforce CRM Content", Namespace: "standard", Tabs: []string{"Home", "Chatter", "Libraries", "Content", "Subscriptions"}},
-	{Name: "AllTabs", Label: "All Tabs", Namespace: "standard", Tabs: []string{"Home", "Contact Point Type Consent", "Data Use Purpose", "Data Use Legal Basis", "Authorization Form", "Authorization Form Consent", "Authorization Form Data Use", "Authorization Form Text", "Communication Subscriptions", "Engagement Channel Types", "Communication Subscription Channel Types", "Communication Subscription Consents", "Communication Subscription Timings", "Party Consent"}},
+	{Name: "AllTabs", Label: "All Tabs", Description: "All Tabs", Tabs: []string{"Home", "Contact Point Type Consent", "Data Use Purpose", "Data Use Legal Basis", "Authorization Form", "Authorization Form Consent", "Authorization Form Data Use", "Authorization Form Text", "Communication Subscriptions", "Engagement Channel Types", "Communication Subscription Channel Types", "Communication Subscription Consents", "Communication Subscription Timings", "Party Consent"}},
 }
 
 func (vm *VM) describeDefaultTabValues(names []string) []Value {
@@ -101,7 +101,11 @@ func describeTabSetValue(template describeTabSetTemplate, tabs []Value) Value {
 	tabSet.Fields["label"] = String(template.Label)
 	tabSet.Fields["description"] = String(template.Description)
 	tabSet.Fields["logoUrl"] = Null
-	tabSet.Fields["namespace"] = String(template.Namespace)
+	if template.Namespace == "" {
+		tabSet.Fields["namespace"] = Null
+	} else {
+		tabSet.Fields["namespace"] = String(template.Namespace)
+	}
 	tabSet.Fields["tabSetId"] = String(template.Name)
 	tabSet.Fields["tabs"] = List(tabs...)
 	tabSet.Fields["selected"] = Bool(template.Selected)

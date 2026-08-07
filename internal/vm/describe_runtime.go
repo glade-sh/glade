@@ -974,14 +974,18 @@ func describeFieldSortable(field storage.Field) bool {
 	}
 }
 
-func filteredLookupInfoValue(definition storage.ObjectDefinition, info storage.FilteredLookupInfo) Value {
+func (vm *VM) filteredLookupInfoValue(definition storage.ObjectDefinition, lookupField storage.Field, info storage.FilteredLookupInfo) Value {
 	controllingFields := make([]string, 0, len(info.ControllingFields))
 	for _, field := range info.ControllingFields {
 		field = strings.TrimSpace(field)
 		if field == "" {
 			continue
 		}
-		if _, ok := storage.ResolveFieldName(definition, "", field); ok {
+		_, fieldExists := storage.ResolveFieldName(definition, "", field)
+		if !fieldExists && strings.Contains(field, ".") && vm.lookupFilterTargetAvailable(lookupField) {
+			_, _, fieldExists = vm.resolveRelationshipFieldPath(definition, field)
+		}
+		if fieldExists {
 			controllingFields = append(controllingFields, field)
 		}
 	}
@@ -998,6 +1002,18 @@ func filteredLookupInfoValue(definition storage.ObjectDefinition, info storage.F
 	value.Fields["dependent"] = Bool(info.Dependent && len(controllingFields) > 0)
 	value.Fields["optionalFilter"] = Bool(info.OptionalFilter)
 	return value
+}
+
+func (vm *VM) lookupFilterTargetAvailable(field storage.Field) bool {
+	if vm == nil || vm.Org == nil || len(field.ReferenceTo) == 0 {
+		return false
+	}
+	for _, target := range field.ReferenceTo {
+		if _, ok := vm.resolveObjectName(target); ok {
+			return true
+		}
+	}
+	return false
 }
 
 func isCustomObjectLikeName(name string) bool {
@@ -1482,7 +1498,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	desc.Fields["byteLength"] = Int(int64(describeFieldByteLength(field)))
 	desc.Fields["htmlFormatted"] = Bool(describeFieldIsHTMLFormatted(field))
 	desc.Fields["dataTranslationEnabled"] = Null
-	desc.Fields["filteredLookupInfo"] = filteredLookupInfoValue(definition, field.FilteredLookupInfo)
+	desc.Fields["filteredLookupInfo"] = vm.filteredLookupInfoValue(definition, field, field.FilteredLookupInfo)
 	if defaultValue, ok := storage.DefaultValueForField(field); ok {
 		desc.Fields["defaultValue"] = vmValueFromStorage(defaultValue)
 		desc.Fields["defaultedOnCreate"] = Bool(storage.FieldFlagValue(field.DefaultedOnCreate, describeFieldDefaultedOnCreate(field)))
