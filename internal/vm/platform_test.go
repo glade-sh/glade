@@ -2437,7 +2437,7 @@ System.assertEquals(byUser.currentPageUrl, byPage.currentPageUrl);
 System.assertEquals(byUser.currentPageUrl + '?pageSize=10', byPageSize.currentPageUrl);
 System.assertEquals(byUser.currentPageUrl + '?filterType=005', byFilter.currentPageUrl);
 System.assertEquals(byUser.currentPageUrl + '?filterType=005', byFilterPage.currentPageUrl);
-System.assertEquals(byUser.currentPageUrl + '?filterType=005&pageSize=10', byFilterPageSize.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl + '?pageSize=10&filterType=005', byFilterPageSize.currentPageUrl);
 `)
 	if err != nil {
 		t.Fatal(err)
