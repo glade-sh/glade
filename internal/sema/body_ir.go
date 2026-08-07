@@ -3155,7 +3155,7 @@ func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.Memb
 		}
 		diagnostics = append(diagnostics, a.collectSemaLocalDecl(typ, member, body, bodyOffset, source, &scopes, model, match)...)
 	}
-	for _, match := range localDeclPattern.FindAllStringSubmatchIndex(body, -1) {
+	for _, match := range findSemaLocalDeclMatches(body) {
 		if semaLocalDeclMatchInIgnoredText(body, match) {
 			continue
 		}

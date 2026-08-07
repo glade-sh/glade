@@ -118011,10 +118011,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 	},
 	{
 		Name:       "Process.Plugin",
-		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
+		Kind:       apexast.DeclarationInterface,
 		Methods: []StandardMethodSpec{
 			{Name: "describe", ReturnType: "Process.PluginDescribeResult"},
 			{Name: "invoke", ReturnType: "Process.PluginResult", ParameterSpecs: []StandardParameterSpec{{Name: "param1", Type: "Process.PluginRequest"}}},

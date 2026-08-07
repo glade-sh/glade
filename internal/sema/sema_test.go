@@ -595,6 +595,18 @@ private class PlatformBridgeTest {
 	}
 }
 
+func TestAnalyzeHttpCalloutMockOneLineFixtureShape(t *testing.T) {
+	t.Parallel()
+	mockSource := "public class CloseoutMockResponse implements HttpCalloutMock { public HttpResponse respond(HttpRequest req) { System.assertEquals('https://example.test/closeout', req.getEndpoint()); System.assertEquals('PATCH', req.getMethod()); System.assertEquals('payload', req.getBody()); System.assertEquals('yes', req.getHeader('x-closeout')); HttpResponse res = new HttpResponse(); res.setStatusCode(206); res.setStatus('Partial Content'); res.setBody(req.getBody() + ':mock'); res.setHeader('Content-Type', 'text/plain'); return res; } }"
+	result := analyzeDeclarationProject(t, map[string]string{
+		"CloseoutMockResponse.cls":                 mockSource,
+		"HttpSendLocalMockCloseoutFixtureTest.cls": "@isTest private class HttpSendLocalMockCloseoutFixtureTest { @isTest static void localMockSend() { Test.setMock(HttpCalloutMock.class, new CloseoutMockResponse()); HttpRequest req = new HttpRequest(); req.setEndpoint('https://example.test/closeout'); req.setMethod('patch'); req.setHeader('X-Closeout', 'yes'); req.setBody('payload'); HttpResponse res = new Http().send(req); System.assertEquals(1, Limits.getCallouts()); System.assertEquals(206, res.getStatusCode()); System.assertEquals('Partial Content', res.getStatus()); System.assertEquals('payload:mock', res.getBody()); System.assertEquals('text/plain', res.getHeader('content-type')); System.assert(res.getHeaderKeys().contains('content-type')); } }",
+	})
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics for one-line HTTP mock fixture: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzePlatformAPITestSetCurrentPageReferencePageToken(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -5839,7 +5851,6 @@ public class UsesQuiddityRunIT {
 	}
 }
 
-
 func TestAnalyzeAssertClassMethods(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -9784,6 +9795,23 @@ public class StandardRegistrationValidator {
 	for _, diag := range result.Diagnostics {
 		if diag.Code == "GLADESEMA013" {
 			t.Fatalf("unexpected unknown variable diagnostic for comma declarator: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeUpdatedWindowLocalDeclarationsRemainVisible(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "DatabaseUpdatedSyncWindowFixtureTest.cls"), `
+@isTest private class DatabaseUpdatedSyncWindowFixtureTest { @isTest static void updatedWindowReturnsMatchingIds() { Account account = new Account(Name = 'Before'); insert account; account.Name = 'After'; update account; Datetime startWindow = Datetime.newInstanceGmt(2026, 5, 2, 11, 59, 0); Datetime endWindow = Datetime.newInstanceGmt(2026, 5, 2, 12, 5, 0); Database.GetUpdatedResult inside = Database.getUpdated('Account', startWindow, endWindow); System.assert(inside.getIds().contains(account.Id)); } }
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "DatabaseUpdatedSyncWindowFixtureTest.cls")}}, schema.Schema{
+		Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Name", Type: "String"}}}},
+	})
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA013" && (strings.Contains(diag.Message, "startWindow") || strings.Contains(diag.Message, "endWindow")) {
+			t.Fatalf("unexpected unknown window variable diagnostic: %#v", result.Diagnostics)
 		}
 	}
 }

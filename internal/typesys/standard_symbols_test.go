@@ -133,6 +133,13 @@ func TestGeneratedSystemStubSymbolsBusinessHoursUseApi67Signatures(t *testing.T)
 	}
 }
 
+func TestGeneratedSystemStubSymbolsProcessPluginIsInterface(t *testing.T) {
+	plugin := requireStandardSymbol(t, StandardPlatformSymbols(), "Process.Plugin")
+	if plugin.Kind != apexast.DeclarationInterface {
+		t.Fatalf("Process.Plugin kind = %q, want interface", plugin.Kind)
+	}
+}
+
 func TestGeneratedSystemStubSymbolsSystemDebugUsesSalesforceSignatures(t *testing.T) {
 	var system *StandardSymbolSpec
 	for i := range systemStubSymbolSpecs {

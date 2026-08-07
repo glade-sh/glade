@@ -817,6 +817,13 @@ function applyGeneratedCompatibilityOverrides(specs) {
 		notificationActionHandler.constructors = [];
 	}
 
+	const processPlugin = byName.get("process.plugin");
+	if (processPlugin) {
+		processPlugin.kind = "DeclarationInterface";
+		processPlugin.superClass = "";
+		processPlugin.constructors = [];
+	}
+
 	const unsupportedOperationException = byName.get("unsupportedoperationexception");
 	if (unsupportedOperationException) {
 		unsupportedOperationException.superClass = "Exception";

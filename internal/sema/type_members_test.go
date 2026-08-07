@@ -532,6 +532,9 @@ func TestPrepareAnalysisIndexKeepsPlatformSymbolsOutOfWorkspaceIndex(t *testing.
 		if symbol.Namespace != "" {
 			name = symbol.Namespace + "." + symbol.Name
 		}
+		if semaAPI67RejectedPlatformType(name) {
+			continue
+		}
 		if !analyzer.hasKnown(name) {
 			t.Fatalf("platform type %q is not known without index hydration", name)
 		}
