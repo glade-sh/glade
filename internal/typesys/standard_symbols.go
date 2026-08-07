@@ -358,7 +358,7 @@ func mergeStandardSymbolSpecs(specs []StandardSymbolSpec) []StandardSymbolSpec {
 		if spec.Kind != "" {
 			existing.Kind = spec.Kind
 		}
-		if existing.SuperClass == "" {
+		if existing.SuperClass == "" || strings.EqualFold(existing.SuperClass, "Object") {
 			existing.SuperClass = spec.SuperClass
 		}
 		if spec.EnumHashBase != nil {
@@ -587,7 +587,7 @@ func standardMethodParameters(typeName string, method StandardMethodSpec) []apex
 func normalizeStandardMethodParameterSpecs(typeName string, method StandardMethodSpec) []StandardParameterSpec {
 	specs := append([]StandardParameterSpec(nil), method.ParameterSpecs...)
 	for i := range specs {
-		if strings.EqualFold(specs[i].Name, "accessLevel") && specs[i].Type == "Object" {
+		if !strings.EqualFold(typeName, "Search") && strings.EqualFold(specs[i].Name, "accessLevel") && specs[i].Type == "Object" {
 			specs[i].Name = "accessLevel"
 			specs[i].Type = "AccessLevel"
 			continue
@@ -604,10 +604,6 @@ func normalizeStandardMethodParameterSpecs(typeName string, method StandardMetho
 			specs[i].Name = "dmlOptions"
 			specs[i].Type = "Database.DMLOptions"
 			continue
-		}
-		if strings.EqualFold(typeName, "Search") && strings.EqualFold(method.Name, "suggest") &&
-			strings.EqualFold(specs[i].Name, "options") && specs[i].Type == "Object" {
-			specs[i].Type = "Search.SuggestionOption"
 		}
 	}
 	return specs
@@ -1332,6 +1328,17 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "UserProvisioning.UPASCleaningBatchable", Interfaces: []string{"Database.Batchable<SObject>"}},
 	{Name: "WebServiceCalloutFuture", Modifiers: []string{"abstract"}},
 	{Name: "VisualEditor.DynamicPickList", Modifiers: []string{"abstract"}},
+	{Name: "Search", Methods: []StandardMethodSpec{
+		{Name: "query", ReturnType: "List<List<SObject>>", Parameters: []string{"String", "Object"}, Static: true},
+		{Name: "find", ReturnType: "Search.SearchResults", Parameters: []string{"String", "Object"}, Static: true},
+		{Name: "suggest", ReturnType: "Search.SuggestionResults", Parameters: []string{"String", "String", "Object"}, Static: true},
+		{Name: "suggest", ReturnType: "Search.SuggestionResults", Parameters: []string{"String", "String", "Object", "Object"}, Static: true},
+	}},
+	{Name: "Limits", Methods: []StandardMethodSpec{
+		{Name: "getScheduledJobs", ReturnType: "Integer", Static: true},
+		{Name: "getLimitScheduledJobs", ReturnType: "Integer", Static: true},
+	}},
+	{Name: "InvalidHeaderException", SuperClass: "Exception", Constructors: [][]string{{}, {"Exception"}, {"String"}, {"String", "Exception"}}, ReplaceConstructors: true},
 	{Name: "Invocable.Action", ReplaceConstructors: true},
 	{Name: "Approval.LockResult", ReplaceConstructors: true},
 	{Name: "Approval.ProcessRequest", ReplaceConstructors: true},
@@ -1368,6 +1375,8 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "eventbus.EventPublishSuccessCallback", Kind: apexast.DeclarationInterface},
 	{Name: "Finalizer", Kind: apexast.DeclarationInterface},
 	{Name: "Readiness.ProductEvaluator", Kind: apexast.DeclarationInterface},
+	{Name: "SandboxPostCopy", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "runApexClass", ReturnType: "void", Parameters: []string{"SandboxContext"}}}},
+	{Name: "SoqlStubProvider", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "handleSoqlQuery", ReturnType: "List<SObject>", Parameters: []string{"Schema.SObjectType", "String", "Map<String,Object>"}}}},
 	{Name: "DataSource.AsyncDeleteCallback", Kind: apexast.DeclarationClass, Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{{Name: "processDelete", ReturnType: "void", Modifiers: []string{"virtual"}, Parameters: []string{"Database.DeleteResult"}}}},
 	{Name: "DataSource.AsyncSaveCallback", Kind: apexast.DeclarationClass, Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{{Name: "processSave", ReturnType: "void", Modifiers: []string{"virtual"}, Parameters: []string{"Database.SaveResult"}}}},
 	{Name: "Metadata.DeployResult", Properties: []StandardPropertySpec{

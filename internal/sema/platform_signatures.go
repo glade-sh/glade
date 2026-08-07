@@ -129,9 +129,12 @@ func semaCollectionMethodSignature(receiverType, method string) (semaCollectionS
 			return semaCollectionSignature{returnType: "List<" + args[1] + ">"}, true
 		case "size", "hashcode":
 			return semaCollectionSignature{returnType: "Integer"}, true
-		case "containskey", "isempty":
+		case "containskey", "containsvalue", "isempty":
 			if method == "containskey" {
 				return semaCollectionSignature{returnType: "Boolean", params: [][]string{{args[0]}}}, true
+			}
+			if method == "containsvalue" {
+				return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"Object"}}}, true
 			}
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
 		case "equals":

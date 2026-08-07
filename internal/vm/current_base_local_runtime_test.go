@@ -129,6 +129,9 @@ values.put('label', 'ready');
 System.assert(values.containsValue(1));
 System.assert(values.containsValue('ready'));
 System.assert(!values.containsValue('missing'));
+Map<String, Integer> counts = new Map<String, Integer>();
+counts.put('two', 2);
+System.assert(counts.containsValue(2));
 `)
 	if err != nil {
 		t.Fatal(err)

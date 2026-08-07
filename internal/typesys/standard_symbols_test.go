@@ -813,10 +813,23 @@ func TestStandardPlatformSymbolsIncludeSearchQuery(t *testing.T) {
 	search := requireStandardSymbol(t, symbols, "Search")
 	requireStandardMethod(t, search, "query", []string{"String"}, true)
 	requireStandardMethod(t, search, "query", []string{"String", "AccessLevel"}, true)
+	requireStandardMethod(t, search, "query", []string{"String", "Object"}, true)
 	requireStandardMethod(t, search, "find", []string{"String", "AccessLevel"}, true)
+	requireStandardMethod(t, search, "find", []string{"String", "Object"}, true)
 	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Search.SuggestionOption"}, true)
 	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Search.SuggestionOption", "AccessLevel"}, true)
+	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Object"}, true)
+	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Object", "Object"}, true)
 	requireStandardMethodType(t, search, "query", "List<List<SObject>>")
+
+	limits := requireStandardSymbol(t, symbols, "Limits")
+	requireStandardMethod(t, limits, "getScheduledJobs", nil, true)
+	requireStandardMethod(t, limits, "getLimitScheduledJobs", nil, true)
+
+	invalidHeader := requireStandardSymbol(t, symbols, "InvalidHeaderException")
+	if invalidHeader.SuperClass != "Exception" {
+		t.Fatalf("InvalidHeaderException superclass = %q, want Exception", invalidHeader.SuperClass)
+	}
 
 	date := requireStandardSymbol(t, symbols, "Date")
 	requireStandardMethod(t, date, "daysInMonth", []string{"Integer", "Integer"}, true)
