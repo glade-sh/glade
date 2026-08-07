@@ -10566,7 +10566,6 @@ func TestExecPassiveLimitsGettersHaveStableValues(t *testing.T) {
 		"getLimitApexPaginationCursors",
 		"getAggregateQueries",
 		"getLimitAggregateQueries",
-		"getChildRelationshipsDescribes",
 		"getDatabaseTime",
 		"getLimitDatabaseTime",
 		"getFetchCallsOnApexCursor",

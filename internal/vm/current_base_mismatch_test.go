@@ -16,13 +16,14 @@ func TestCurrentBaseAbsentAsyncOptionsGetterIsRejected(t *testing.T) {
 	}
 }
 
-func TestCurrentBaseLimitsChildRelationshipsReturnsZero(t *testing.T) {
+func TestCurrentBaseRemovedLimitsChildRelationshipsIsRejected(t *testing.T) {
 	program, err := CompileAnonymous("Limits.getChildRelationshipsDescribes();")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = Execute(program, nil); err != nil {
-		t.Fatalf("err = %v, want supported local getter", err)
+	_, err = Execute(program, nil)
+	if err == nil || !strings.Contains(err.Error(), `unsupported call "Limits.getChildRelationshipsDescribes"`) {
+		t.Fatalf("err = %v, want removed Salesforce API rejection", err)
 	}
 }
 
