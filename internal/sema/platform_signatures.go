@@ -580,9 +580,9 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "Savepoint", params: [][]string{{}}}, true
 		case "rollback":
 			return semaCollectionSignature{returnType: "void", params: [][]string{{"Savepoint"}}}, true
-		case "insert", "update", "insertimmediate", "updateimmediate":
+		case "insert", "update":
 			return semaCollectionSignature{returnType: "Object", params: [][]string{{"SObject"}, {"SObject", "Boolean"}, {"SObject", "Database.DMLOptions"}, {"SObject", "AccessLevel"}, {"SObject", "Boolean", "AccessLevel"}, {"List<SObject>"}, {"List<SObject>", "Boolean"}, {"List<SObject>", "Database.DMLOptions"}, {"List<SObject>", "AccessLevel"}, {"List<SObject>", "Boolean", "AccessLevel"}}}, true
-		case "delete", "undelete", "deleteimmediate":
+		case "delete", "undelete":
 			return semaCollectionSignature{returnType: "Object", params: [][]string{{"SObject"}, {"SObject", "Boolean"}, {"SObject", "AccessLevel"}, {"SObject", "Boolean", "AccessLevel"}, {"Id"}, {"Id", "Boolean"}, {"Id", "AccessLevel"}, {"Id", "Boolean", "AccessLevel"}, {"List<SObject>"}, {"List<SObject>", "Boolean"}, {"List<SObject>", "AccessLevel"}, {"List<SObject>", "Boolean", "AccessLevel"}, {"List<Id>"}, {"List<Id>", "Boolean"}, {"List<Id>", "AccessLevel"}, {"List<Id>", "Boolean", "AccessLevel"}}}, true
 		case "upsert":
 			return semaCollectionSignature{returnType: "Object", params: [][]string{{"SObject"}, {"SObject", "Boolean"}, {"SObject", "Database.DMLOptions"}, {"SObject", "AccessLevel"}, {"SObject", "Schema.SObjectField"}, {"SObject", "Schema.SObjectField", "Boolean"}, {"SObject", "Schema.SObjectField", "AccessLevel"}, {"SObject", "Boolean", "AccessLevel"}, {"SObject", "Schema.SObjectField", "Boolean", "AccessLevel"}, {"List<SObject>"}, {"List<SObject>", "Boolean"}, {"List<SObject>", "Database.DMLOptions"}, {"List<SObject>", "AccessLevel"}, {"List<SObject>", "Schema.SObjectField"}, {"List<SObject>", "Schema.SObjectField", "Boolean"}, {"List<SObject>", "Schema.SObjectField", "AccessLevel"}, {"List<SObject>", "Boolean", "AccessLevel"}, {"List<SObject>", "Schema.SObjectField", "Boolean", "AccessLevel"}}}, true
