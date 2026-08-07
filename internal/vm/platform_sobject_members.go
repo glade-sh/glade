@@ -1154,7 +1154,7 @@ func sobjectReadOnlyReason(value Value) (string, bool) {
 	return reason.Text, true
 }
 
-func addSObjectError(value *Value, message string, fields []string) {
+func addSObjectError(value *Value, message string, fields []string, replaceExisting bool) {
 	if value.Fields == nil {
 		value.Fields = make(map[string]Value)
 	}
@@ -1170,7 +1170,7 @@ func addSObjectError(value *Value, message string, fields []string) {
 	if !ok || errorsList.Kind != ValueList {
 		errorsList = List()
 	}
-	if len(fields) > 0 {
+	if replaceExisting && len(fields) > 0 {
 		for i, existing := range errorsList.List {
 			if existing.Kind != ValueObject {
 				continue

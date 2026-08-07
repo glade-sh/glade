@@ -32,7 +32,7 @@ func (vm *VM) callSObjectFieldAddError(path []string, args []Value) (Value, bool
 	if err != nil {
 		return Null, true, err
 	}
-	addSObjectError(&root, message, []string{field})
+	addSObjectError(&root, message, []string{field}, true)
 	vm.advanceAliasContainmentMutation()
 	if err := vm.storeReceiver(path[0], root); err != nil {
 		return Null, true, err
@@ -486,7 +486,8 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if err != nil {
 			return Null, true, err
 		}
-		addSObjectError(&receiver, message, fields)
+		replaceExisting := len(args) == 0 || args[0].Kind != ValueObject || !isSObjectFieldTokenType(args[0].Type)
+		addSObjectError(&receiver, message, fields, replaceExisting)
 		vm.advanceAliasContainmentMutation()
 		return Null, true, nil
 	case "hasErrors":

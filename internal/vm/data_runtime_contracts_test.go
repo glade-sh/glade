@@ -28,6 +28,32 @@ func TestDataRuntimeSObjectAddErrorAcceptsSObjectFieldTokenAlias(t *testing.T) {
 	}
 }
 
+func TestDataRuntimeSObjectAddErrorTokenRetainsRepeatedFieldErrors(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+
+	record := Object("Account")
+	token := sObjectFieldToken("Account", "Name")
+	if _, handled, err := machine.callSObjectMember(record, "addError", []Value{token, String("first")}); err != nil || !handled {
+		t.Fatalf("first addError() = handled %v, err %v; want handled", handled, err)
+	}
+	if _, handled, err := machine.callSObjectMember(record, "addError", []Value{token, String("second"), Bool(false)}); err != nil || !handled {
+		t.Fatalf("second addError() = handled %v, err %v; want handled", handled, err)
+	}
+
+	errors := sobjectErrors(record)
+	if len(errors) != 2 {
+		t.Fatalf("error count = %d, want 2", len(errors))
+	}
+	if got := errors[0].Fields["message"].Text; got != "first" {
+		t.Fatalf("first error message = %q, want first", got)
+	}
+	if got := errors[1].Fields["message"].Text; got != "second" {
+		t.Fatalf("second error message = %q, want second", got)
+	}
+}
+
 func TestDataRuntimeListCustomSettingShellAccessorsUseNamedRecord(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String,Fixture_Setting__c> allSettings = Fixture_Setting__c.getAll();
