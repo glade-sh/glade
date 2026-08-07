@@ -55,6 +55,14 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 	}
 }
 
+func TestStandardPlatformExceptionInitCauseReturnsException(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	for _, name := range []string{"Exception", "MathException"} {
+		symbol := requireStandardSymbol(t, symbols, name)
+		requireStandardMethodReturn(t, symbol, "initCause", []string{"Exception"}, "Exception", false)
+	}
+}
+
 func TestUserProfilesSetPhotoUsesIntegerFourthParameter(t *testing.T) {
 	var productSpec *StandardSymbolSpec
 	for i := range productNamespaceSymbolSpecs {

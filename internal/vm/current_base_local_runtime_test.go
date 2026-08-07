@@ -68,8 +68,10 @@ System.assertEquals('System.MathException', mathEx.getTypeName());
 System.assertEquals(0, mathEx.getLineNumber());
 System.assertEquals('', mathEx.getStackTraceString());
 System.assertEquals(0, mathEx.getInaccessibleFields().size());
-mathEx.setMessage('changed math');
-System.assertEquals('changed math', mathEx.getMessage());
+	mathEx.setMessage('changed math');
+	System.assertEquals('changed math', mathEx.getMessage());
+	System.assertEquals(mathEx, mathEx.initCause(new QueryException('math cause')));
+	System.assertEquals('math cause', mathEx.getCause().getMessage());
 `)
 	if err != nil {
 		t.Fatal(err)

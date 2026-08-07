@@ -63,6 +63,12 @@ function normalizeContractType(typeName) {
 }
 
 function applySignatureOverrides(spec) {
+  for (const method of spec.methods) {
+    if (method.name === "initCause" && method.parameters.length === 1 &&
+      method.parameters[0].type.toLowerCase() === "exception") {
+      method.returnType = "Exception";
+    }
+  }
   if (spec.name !== "Database") return;
   for (const method of spec.methods) {
     if (method.name === "countQueryWithBinds") {
