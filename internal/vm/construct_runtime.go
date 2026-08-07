@@ -1125,7 +1125,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 	}
 	object := Object(objectType)
-	if isExceptionType(objectType) && exceptionTypeName(objectType) != "MathException" {
+	if isExceptionType(objectType) {
 		stack := vm.rawStackFrames()
 		if vm.currentMethod.Name == "" && len(stack) > 0 {
 			stack[len(stack)-1].Symbol = "AnonymousBlock"
