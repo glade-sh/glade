@@ -527,7 +527,7 @@ func (vm *VM) testLoadDataRelationshipField(definition storage.ObjectDefinition,
 		if field.Type != storage.FieldReference {
 			continue
 		}
-		if !strings.EqualFold(storage.ParentRelationshipName(field), relationship) && !strings.EqualFold(field.RelationshipName, relationship) {
+		if !testLoadDataRelationshipNameMatches(vm.Org.Namespace, storage.ParentRelationshipName(field), relationship) && !testLoadDataRelationshipNameMatches(vm.Org.Namespace, field.RelationshipName, relationship) {
 			continue
 		}
 		for _, target := range field.ReferenceTo {
@@ -539,6 +539,16 @@ func (vm *VM) testLoadDataRelationshipField(definition storage.ObjectDefinition,
 		}
 	}
 	return storage.Field{}, "", false
+}
+
+func testLoadDataRelationshipNameMatches(namespace, expected, actual string) bool {
+	if strings.EqualFold(expected, actual) {
+		return true
+	}
+	if strings.TrimSpace(namespace) == "" {
+		return false
+	}
+	return strings.EqualFold(storage.StripNamespaceToken(namespace, expected), storage.StripNamespaceToken(namespace, actual))
 }
 
 func storageStringForExternalID(record storage.Record, field string) string {
