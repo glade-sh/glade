@@ -251,7 +251,6 @@ func StandardTypeNameSymbols(names []string) []TypeSymbol {
 
 func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 	specs = mergeStandardSymbolSpecs(specs)
-	normalizeStandardMethodContracts(specs)
 	out := make([]TypeSymbol, 0, len(specs))
 	seen := make(map[string]bool, len(specs))
 	for _, spec := range specs {
@@ -331,23 +330,6 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 		return out[i].Namespace < out[j].Namespace
 	})
 	return out
-}
-
-func normalizeStandardMethodContracts(specs []StandardSymbolSpec) {
-	for i := range specs {
-		for j := range specs[i].Methods {
-			method := &specs[i].Methods[j]
-			if strings.EqualFold(method.Name, "initCause") && len(method.ParameterSpecs) == 1 &&
-				strings.EqualFold(method.ParameterSpecs[0].Type, "Exception") {
-				method.ReturnType = "Exception"
-				continue
-			}
-			if strings.EqualFold(method.Name, "initCause") && len(method.Parameters) == 1 &&
-				strings.EqualFold(method.Parameters[0], "Exception") {
-				method.ReturnType = "Exception"
-			}
-		}
-	}
 }
 
 func standardConstructorSpecs(spec StandardSymbolSpec) []StandardConstructorSpec {
