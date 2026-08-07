@@ -529,6 +529,9 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 		if isDescribeSObjectResultType(v.Type) || isDescribeSObjectResultType(other.Type) {
 			return isDescribeSObjectResultType(v.Type) && isDescribeSObjectResultType(other.Type) && describeSObjectResultIdentityEqual(v, other)
 		}
+		if isDescribeFieldResultType(v.Type) || isDescribeFieldResultType(other.Type) {
+			return isDescribeFieldResultType(v.Type) && isDescribeFieldResultType(other.Type) && describeFieldResultIdentityEqual(v, other)
+		}
 		if strings.EqualFold(v.Type, "Type") && strings.EqualFold(other.Type, "Type") {
 			leftType := typeValueText(v)
 			rightType := typeValueText(other)
@@ -1128,6 +1131,23 @@ func describeSObjectResultIdentityEqual(left, right Value) bool {
 	leftType, leftOK := left.Fields["sObjectType"]
 	rightType, rightOK := right.Fields["sObjectType"]
 	return leftOK && rightOK && schemaTokenIdentityEqual(leftType, rightType)
+}
+
+func describeFieldResultIdentityEqual(left, right Value) bool {
+	leftField, leftOK := left.Fields["sObjectField"]
+	rightField, rightOK := right.Fields["sObjectField"]
+	if leftOK && rightOK && schemaTokenIdentityEqual(leftField, rightField) {
+		return true
+	}
+	leftObject, leftObjectOK := left.Fields["sObjectName"]
+	rightObject, rightObjectOK := right.Fields["sObjectName"]
+	leftName, leftNameOK := left.Fields["name"]
+	rightName, rightNameOK := right.Fields["name"]
+	return leftObjectOK && rightObjectOK && leftNameOK && rightNameOK &&
+		leftObject.Kind == ValueString && rightObject.Kind == ValueString &&
+		leftName.Kind == ValueString && rightName.Kind == ValueString &&
+		strings.EqualFold(leftObject.Text, rightObject.Text) &&
+		strings.EqualFold(leftName.Text, rightName.Text)
 }
 
 func containsValue(values []Value, needle Value) bool {

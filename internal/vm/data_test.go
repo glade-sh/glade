@@ -5558,6 +5558,26 @@ System.assertNotEquals(first, Contact.SObjectType.getDescribe());
 	}
 }
 
+func TestExecDescribeFieldResultEqualityUsesFieldIdentity(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeFieldResult first = Account.Name.getDescribe();
+Schema.DescribeFieldResult second = Account.Name.getDescribe();
+System.assertEquals(first, second);
+System.assertEquals(first.hashCode(), second.hashCode());
+System.assertNotEquals(first, Contact.LastName.getDescribe());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeSObjectResultMergeableUsesObjectMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeSObjectResult describe = Mergeable__c.SObjectType.getDescribe();
@@ -5936,6 +5956,8 @@ System.assertEquals(0, amount.getDigits());
 System.assertEquals(0, amount.getLength());
 System.assert(!amount.isHtmlFormatted());
 System.assert(amount.isSortable());
+Schema.DescribeFieldResult doubleDescribe = Account.Number__c.getDescribe();
+System.assertEquals(12, doubleDescribe.getDigits());
 Schema.DescribeFieldResult notes = Account.Notes__c.getDescribe();
 System.assertEquals(1024, notes.getLength());
 System.assertEquals(3072, notes.getByteLength());
@@ -5952,6 +5974,7 @@ System.assert(!notes.isSortable());
 	org := testDataOrg()
 	account := org.Objects["Account"]
 	account.Definition.Fields["Amount__c"] = storage.Field{APIName: "Amount__c", Type: storage.FieldDecimal, DisplayType: "CURRENCY", Precision: 12, Scale: 2}
+	account.Definition.Fields["Number__c"] = storage.Field{APIName: "Number__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE", Precision: 12, Scale: 2}
 	account.Definition.Fields["Notes__c"] = storage.Field{APIName: "Notes__c", Type: storage.FieldString, DisplayType: "TEXTAREA", Length: 1024}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
@@ -7556,6 +7579,13 @@ System.assert(business.isActive());
 System.assert(business.isAvailable());
 System.assert(business.isDefaultRecordTypeMapping());
 System.assert(!business.isMaster());
+System.assert(business.active);
+System.assert(business.available);
+System.assert(business.defaultRecordTypeMapping);
+System.assertEquals('Business', business.developerName);
+System.assertEquals('Business Account', business.name);
+System.assertEquals('012000000000001', business.recordTypeId);
+System.assert(!business.master);
 Object consumer = byDeveloperName.get('Consumer');
 System.assertEquals('Consumer Account', consumer.getName());
 System.assertEquals('Consumer', consumer.getDeveloperName());
@@ -7602,6 +7632,47 @@ System.assertEquals('Master', master.getDeveloperName());
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestLookupRecordTypeInfoProperties(t *testing.T) {
+	machine := New(nil)
+	value := recordTypeInfoValue(storage.RecordTypeInfo{DeveloperName: "Business", Name: "Business Account", Active: true})
+	for _, property := range []string{"active", "available", "defaultRecordTypeMapping", "developerName", "master", "name", "recordTypeId"} {
+		got, err := machine.lookupPath(value, []string{property})
+		if err != nil {
+			t.Fatalf("lookup %s: %v", property, err)
+		}
+		if got.Kind == ValueNull {
+			t.Fatalf("lookup %s returned null", property)
+		}
+	}
+	program, err := CompileAnonymous(`
+Schema.RecordTypeInfo rt = Account.SObjectType.getDescribe().getRecordTypeInfosByDeveloperName().get('Business');
+System.assert(rt.available);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Account"] = func() storage.ObjectState {
+		account := org.Objects["Account"]
+		account.Definition.RecordTypes = []storage.RecordTypeInfo{{DeveloperName: "Business", Name: "Business Account", Active: true}}
+		return account
+	}()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{Name: "Harness"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "Harness.run", ClassName: "Harness", IsStatic: true, ReturnType: "void", Program: program}); err != nil {
+		t.Fatal(err)
+	}
+	caller, err := CompileAnonymous("Harness.run();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(caller); err != nil {
 		t.Fatal(err)
 	}
 }

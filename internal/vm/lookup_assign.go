@@ -1829,6 +1829,15 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			}
 			current = Null
 			continue
+		case "Schema.RecordTypeInfo", "RecordTypeInfo":
+			key := strings.ToLower(part)
+			switch key {
+			case "active", "available", "defaultrecordtypemapping", "developername", "master", "name", "recordtypeid":
+				if value, ok := current.Fields[key]; ok {
+					current = value
+					continue
+				}
+			}
 		}
 		currentType := runtimeObjectType(current)
 		if current.Text != "" {

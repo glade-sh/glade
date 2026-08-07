@@ -882,9 +882,14 @@ func describeFieldDigits(field storage.Field) int {
 	switch field.Type {
 	case storage.FieldInteger:
 		return describeFieldPrecision(field)
+	case storage.FieldDecimal:
+		if strings.EqualFold(field.DisplayType, "DOUBLE") {
+			return describeFieldPrecision(field)
+		}
 	default:
 		return 0
 	}
+	return 0
 }
 
 func describeFieldByteLength(field storage.Field) int {

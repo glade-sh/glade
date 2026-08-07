@@ -3928,6 +3928,13 @@ func valueHashCode(value Value) int32 {
 				}
 			}
 		}
+		if isDescribeFieldResultType(value.Type) {
+			objectName, objectOK := value.Fields["sObjectName"]
+			fieldName, fieldOK := value.Fields["name"]
+			if objectOK && fieldOK && objectName.Kind == ValueString && fieldName.Kind == ValueString {
+				return javaStringHashCode("schema.describefieldresult:" + strings.ToLower(objectName.Text) + "." + strings.ToLower(fieldName.Text))
+			}
+		}
 		if value.Type == "Type" {
 			if typeName := typeValueText(value); typeName != "" {
 				return javaStringHashCode(typeName)
