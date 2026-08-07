@@ -16101,3 +16101,9 @@ System.assertEquals(1, ssc.getPageNumber());
 		t.Fatal(err)
 	}
 }
+
+func TestDatabaseErrorStatusCodePreservesNull(t *testing.T) {
+	if got := databaseErrorStatusCodeValue(Null); got.Kind != ValueNull {
+		t.Fatalf("database error status code for null = %#v, want null", got)
+	}
+}

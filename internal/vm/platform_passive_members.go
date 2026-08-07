@@ -5150,6 +5150,9 @@ func passiveAccessorFieldName(receiver Value, suffix string) string {
 }
 
 func databaseErrorStatusCodeValue(value Value) Value {
+	if value.Kind == ValueNull {
+		return Null
+	}
 	if value.Kind == ValueObject && strings.EqualFold(value.Type, "StatusCode") {
 		return value
 	}
