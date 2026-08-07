@@ -41,6 +41,16 @@ func TestDataSourceAsyncDeleteCallbackUsesClassInheritance(t *testing.T) {
 	}
 }
 
+func TestEventPublishCallbacksAreInterfaces(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"PublishCallback.cls": `public class PublishCallback implements eventbus.EventPublishSuccessCallback, eventbus.EventPublishFailureCallback { public void onSuccess(eventbus.SuccessResult result) {} public void onFailure(eventbus.FailureResult result) {} }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected EventBus publish callbacks to be implementable interfaces: %#v", result.Diagnostics)
+	}
+}
+
 func TestTypeContractRejectsInvalidSourceTypesAndLiterals(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{

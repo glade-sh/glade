@@ -1364,6 +1364,8 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "NullPointerException", SuperClass: "Exception", Constructors: [][]string{{}}, ReplaceConstructors: true},
 	{Name: "Cache.CacheBuilder", Kind: apexast.DeclarationInterface},
 	{Name: "CommerceExtension.ResolutionStrategy", Kind: apexast.DeclarationInterface},
+	{Name: "eventbus.EventPublishFailureCallback", Kind: apexast.DeclarationInterface},
+	{Name: "eventbus.EventPublishSuccessCallback", Kind: apexast.DeclarationInterface},
 	{Name: "Finalizer", Kind: apexast.DeclarationInterface},
 	{Name: "Readiness.ProductEvaluator", Kind: apexast.DeclarationInterface},
 	{Name: "DataSource.AsyncDeleteCallback", Kind: apexast.DeclarationClass, Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{{Name: "processDelete", ReturnType: "void", Modifiers: []string{"virtual"}, Parameters: []string{"Database.DeleteResult"}}}},
