@@ -673,6 +673,13 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 	partitionName := cachePartitionKey(receiver.Type, name.Text)
 	method = strings.ToLower(method)
 	switch method {
+	case "clone":
+		if len(args) != 0 {
+			return Null, receiver, fmt.Errorf("%s.clone expects no arguments", receiver.Type)
+		}
+		cloned := cloneValue(receiver)
+		cloned.Ref = newValueRef()
+		return cloned, receiver, nil
 	case "get":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, receiver, fmt.Errorf("%s.get expects key or CacheBuilder type and key", receiver.Type)

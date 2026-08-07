@@ -2775,6 +2775,8 @@ System.assert(!orgCache.contains('name'));
 System.assertEquals(2, orgCache.getNumKeys());
 
 Cache.SessionPartition sessionCache = Cache.Session.getPartition('local');
+Object sessionClone = sessionCache.clone();
+System.assertNotEquals(null, sessionClone);
 Cache.Partition generalSession = sessionCache;
 Cache.Partition generalOrg = orgCache;
 sessionCache.put('count', 7, 300);
