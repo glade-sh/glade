@@ -146,6 +146,11 @@ jobs:
             query-filters:
               - exclude:
                   id:
+                    # These three did not finish in PR diff-informed run
+                    # 31262200837 after 32 of 35 queries completed.
+                    - go/incomplete-hostname-regexp
+                    - go/missing-regexp-anchor
+                    - go/weak-sensitive-data-hashing
                     # This query alone exceeded 60 minutes in run 29155739678.
                     - go/allocation-size-overflow
                     # This query was the only one still running when PR run
@@ -163,6 +168,11 @@ jobs:
             query-filters:
               - exclude:
                   id:
+                    # These three did not finish in PR diff-informed run
+                    # 31262200837 after 32 of 35 queries completed.
+                    - go/incomplete-hostname-regexp
+                    - go/missing-regexp-anchor
+                    - go/weak-sensitive-data-hashing
                     # This query alone exceeded 60 minutes in run 29155739678.
                     - go/allocation-size-overflow
                     # These five did not terminate in isolated four-thread jobs,

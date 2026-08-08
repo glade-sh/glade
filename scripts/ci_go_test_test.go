@@ -891,11 +891,20 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		}
 	}
 	fullBranchWaivers := []string{
+		"go/incomplete-hostname-regexp",
+		"go/missing-regexp-anchor",
 		"go/reflected-xss",
 		"go/weak-sensitive-data-hashing",
 		"go/bad-redirect-check",
 		"go/incorrect-integer-conversion",
 		"go/uncontrolled-allocation-size",
+	}
+	prWaivers := []string{
+		"go/incomplete-hostname-regexp",
+		"go/missing-regexp-anchor",
+		"go/weak-sensitive-data-hashing",
+		"go/allocation-size-overflow",
+		"go/incorrect-integer-conversion",
 	}
 	const initPin = "uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1"
 	if count := strings.Count(codeql, initPin); count != 2 {
@@ -912,12 +921,9 @@ func TestSecurityWorkflowContract(t *testing.T) {
 			t.Errorf("pull-request CodeQL init step missing %q", want)
 		}
 	}
-	for _, query := range fullBranchWaivers {
-		if query == "go/incorrect-integer-conversion" {
-			continue
-		}
-		if strings.Contains(prInit, query) {
-			t.Errorf("pull-request CodeQL init step excludes full-branch waiver %q", query)
+	for _, query := range prWaivers {
+		if !strings.Contains(prInit, "- "+query) {
+			t.Errorf("pull-request CodeQL init step does not exclude %q", query)
 		}
 	}
 	fullInit := workflowStepBlock(t, codeql, "name: Initialize full-branch CodeQL")
