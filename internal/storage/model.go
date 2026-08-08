@@ -200,6 +200,7 @@ type ObjectDefinition struct {
 	PluralLabel     string            `json:"pluralLabel,omitempty"`
 	KeyPrefix       string            `json:"keyPrefix,omitempty"`
 	SharingModel    string            `json:"sharingModel,omitempty"`
+	EnableSearch    bool              `json:"enableSearch,omitempty"`
 	Fields          map[string]Field  `json:"fields,omitempty"`
 	Relations       []Relationship    `json:"relationships,omitempty"`
 	RecordTypes     []RecordTypeInfo  `json:"recordTypes,omitempty"`

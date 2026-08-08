@@ -1190,8 +1190,6 @@ func storageFieldTypeName(field storage.Field) string {
 	}
 }
 
-var roundingModeNames = []string{"UP", "DOWN", "CEILING", "FLOOR", "HALF_UP", "HALF_DOWN", "HALF_EVEN", "UNNECESSARY"}
-
 func isDecimalRoundingModeName(name string) bool {
 	_, ok := canonicalDecimalRoundingModeName(name)
 	return ok
@@ -1816,7 +1814,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			}
 			current = Null
 			continue
-		case "Schema.FieldSetMap":
+		case "Schema.SObjectTypeFieldSets", "Schema.FieldSetMap":
 			mapValue, ok := current.Fields["map"]
 			if !ok || mapValue.Kind != ValueMap {
 				return Null, fmt.Errorf("Schema.FieldSetMap is missing map")
@@ -1831,6 +1829,15 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			}
 			current = Null
 			continue
+		case "Schema.RecordTypeInfo", "RecordTypeInfo":
+			key := strings.ToLower(part)
+			switch key {
+			case "active", "available", "defaultrecordtypemapping", "developername", "master", "name", "recordtypeid":
+				if value, ok := current.Fields[key]; ok {
+					current = value
+					continue
+				}
+			}
 		}
 		currentType := runtimeObjectType(current)
 		if current.Text != "" {

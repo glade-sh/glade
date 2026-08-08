@@ -101,6 +101,9 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.addFields expects List")
 		}
+		if callerProvided, ok := receiver.Fields["__glade_caller_provided"]; ok && callerProvided.Kind == ValueBool && callerProvided.Bool {
+			return Null, receiver, false, true, newExceptionError("SObjectException", "You cannot call addFields when the data is being passed into the controller by the caller.")
+		}
 		fields, err := apexPagesControllerFieldList(args[0], "ApexPages.StandardController.addFields")
 		if err != nil {
 			return Null, receiver, false, true, err
@@ -203,7 +206,7 @@ func (vm *VM) callApexPagesActionMember(receiver Value, method string, args []Va
 			value, err := vm.vfActionInvoker(expression, pageReferenceURL(vm.CurrentPage()).Text)
 			return value, receiver, false, true, err
 		}
-		return Null, receiver, false, true, unsupportedCallError("ApexPages.Action.invoke requires bound Visualforce controller lifecycle")
+		return Null, receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -644,6 +647,9 @@ func callApexPagesKnowledgeArticleVersionStandardControllerMember(receiver Value
 		}
 		return Null, receiver, false, true, nil
 	case "selectDataCategory", "setDataCategory":
+		if len(args) == 0 {
+			return Null, receiver, false, true, nil
+		}
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.KnowledgeArticleVersionStandardController.%s expects group and category Strings", method)
 		}
@@ -698,6 +704,11 @@ func (vm *VM) callStandardSetControllerMember(receiver Value, method string, arg
 		if len(page.List) == 0 {
 			return Null, receiver, false, true, nil
 		}
+		if page.List[0].Kind == ValueObject {
+			record := Object(page.List[0].Type)
+			record.Fields["Id"] = platformScalar("Id", "000000000000000AAA")
+			return record, receiver, false, true, nil
+		}
 		return page.List[0], receiver, false, true, nil
 	case "getResultSize":
 		if len(args) != 0 {
@@ -727,6 +738,9 @@ func (vm *VM) callStandardSetControllerMember(receiver Value, method string, arg
 		if len(args) != 1 || args[0].Kind != ValueInt || args[0].Int <= 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.setPageSize expects positive Integer")
 		}
+		if callerProvided, ok := receiver.Fields["__glade_caller_provided"]; ok && callerProvided.Kind == ValueBool && callerProvided.Bool {
+			return Null, receiver, false, true, newExceptionError("VisualforceException", "Modified rows exist in the records collection!")
+		}
 		receiver.Fields["pageSize"] = args[0]
 		receiver.Fields["pageNumber"] = Int(1)
 		return Null, receiver, true, true, nil
@@ -750,10 +764,20 @@ func (vm *VM) callStandardSetControllerMember(receiver Value, method string, arg
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.getListViewOptions expects 0 arguments")
 		}
-		return typedList("List<SelectOption>"), receiver, false, true, nil
+		options := typedList("List<SelectOption>")
+		options.List = append(options.List, newSelectOption(
+			platformScalar("Id", "000000000000000AAA"),
+			String("All"),
+			Bool(false),
+			Bool(true),
+		))
+		return options, receiver, false, true, nil
 	case "addFields":
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.addFields expects List")
+		}
+		if callerProvided, ok := receiver.Fields["__glade_caller_provided"]; ok && callerProvided.Kind == ValueBool && callerProvided.Bool {
+			return Null, receiver, false, true, newExceptionError("SObjectException", "You cannot call addFields when the data is being passed into the controller by the caller.")
 		}
 		fields, err := apexPagesControllerFieldList(args[0], "ApexPages.StandardSetController.addFields")
 		if err != nil {
@@ -804,7 +828,7 @@ func (vm *VM) callStandardSetControllerMember(receiver Value, method string, arg
 	case "delete":
 		return vm.standardSetDML(receiver, "delete", result)
 	case "cancel":
-		return newPageReference(""), receiver, false, true, nil
+		return newPageReference("/home/home.jsp"), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}

@@ -15,6 +15,47 @@ import (
 )
 
 func (vm *VM) callCommerceInventoryServiceMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if strings.EqualFold(receiver.Type, "commerce_inventory.InventoryLevelsResponse") {
+		if !strings.EqualFold(method, "getItemsInventoryLevels") || len(args) != 0 {
+			return Null, receiver, false, false, nil
+		}
+		return receiver.Fields["itemsInventoryLevels"], receiver, false, true, nil
+	}
+	if strings.EqualFold(receiver.Type, "commerce_inventory.InventoryReservation") {
+		switch strings.ToLower(method) {
+		case "getdurationinseconds":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+			}
+			return receiver.Fields["durationInSeconds"], receiver, false, true, nil
+		case "getitems":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+			}
+			return receiver.Fields["items"], receiver, false, true, nil
+		}
+	}
+	if strings.EqualFold(receiver.Type, "commerce_inventory.InventoryCheckAvailability") && strings.EqualFold(method, "getInventoryCheckItemAvailability") {
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.getInventoryCheckItemAvailability expects 0 arguments", receiver.Type)
+		}
+		return receiver.Fields["inventoryCheckItemAvailability"], receiver, false, true, nil
+	}
+	if strings.EqualFold(receiver.Type, "commerce_ordermanagement.ProductExpandResponse") && strings.EqualFold(method, "getSucceed") {
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.getSucceed expects 0 arguments", receiver.Type)
+		}
+		if value, ok := receiver.Fields["succeed"]; ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
+	}
+	if strings.EqualFold(receiver.Type, "commerce_ordermanagement.ProductExpandService") && strings.EqualFold(method, "returnReasons") {
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("%s.returnReasons expects ProductExpandRequest", receiver.Type)
+		}
+		return Object("commerce_ordermanagement.ProductExpandResponse"), receiver, false, true, nil
+	}
 	if !strings.EqualFold(receiver.Type, "commerce_inventory.CommerceInventoryService") {
 		return Null, receiver, false, false, nil
 	}
@@ -236,6 +277,29 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	}()
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	if strings.EqualFold(receiver.Type, "ApexPages.Message") {
+		switch strings.ToLower(method) {
+		case "equals":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("ApexPages.Message.equals expects 1 argument")
+			}
+			return Bool(apexPagesMessagesEquivalent(receiver, args[0])), receiver, false, true, nil
+		case "hashcode":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("ApexPages.Message.hashCode expects 0 arguments")
+			}
+			return Int(int64(apexPagesMessageHashCode(receiver))), receiver, false, true, nil
+		case "tostring":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("ApexPages.Message.toString expects 0 arguments")
+			}
+			summary := ""
+			if value, ok := receiver.Fields["summary"]; ok {
+				summary = value.String()
+			}
+			return String("ApexPages.Message[\"" + summary + "\"]"), receiver, false, true, nil
+		}
+	}
 	if value, handled, err := vm.callTypeObjectMember(receiver, method, args, result); handled || err != nil {
 		return value, receiver, false, true, err
 	}
@@ -295,6 +359,34 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return Null, receiver, false, true, fmt.Errorf("ChatterAnswers.AccountCreator.createAccount expects first name, last name, and user Id")
 		}
 		return String("001000000000001"), receiver, false, true, nil
+	}
+	if strings.EqualFold(receiver.Type, "Datacloud.FindDuplicatesResult") {
+		switch strings.ToLower(method) {
+		case "issuccess":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Datacloud.FindDuplicatesResult.isSuccess expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["success"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Bool(true), receiver, false, true, nil
+		case "getduplicateresults":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Datacloud.FindDuplicatesResult.getDuplicateResults expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["duplicateResults"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return typedList("List<Datacloud.DuplicateResult>"), receiver, false, true, nil
+		case "geterrors":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Datacloud.FindDuplicatesResult.getErrors expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["errors"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return typedList("List<Database.Error>"), receiver, false, true, nil
+		}
 	}
 	if strings.EqualFold(receiver.Type, "Support.EinsteinBots") && strings.EqualFold(method, "sendMessageToBot") {
 		if len(args) != 3 {
@@ -484,7 +576,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if isCustomExceptionWithoutExplicitMessage(receiver) {
 				return String("Script-thrown exception"), receiver, false, true, nil
 			}
-			if exceptionTypeName(receiver.Type) == "JSONException" {
+			if isBuiltinExceptionType(receiver.Type) {
 				return String("Script-thrown exception"), receiver, false, true, nil
 			}
 			return Null, receiver, false, true, nil
@@ -567,6 +659,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if exceptionTypeName(receiver.Type) == "JSONException" {
 				return Null, receiver, false, true, newExceptionError("System.TypeException", "Method does not exist or incorrect signature: void getInaccessibleFields() from the type System.JSONException")
 			}
+			if !builtinExceptionTypeMatches(receiver.Type, "QueryException") && !builtinExceptionTypeMatches(receiver.Type, "InvalidParameterValueException") {
+				return Null, receiver, false, true, newExceptionError("System.TypeException", "Procedure is only valid for System.QueryException")
+			}
 			return Map(), receiver, false, true, nil
 		case "getCause":
 			if len(args) != 0 {
@@ -594,7 +689,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			receiver.Fields["__causeInitialized"] = Bool(true)
 			receiver.Fields["__cause"] = args[0]
-			return receiver, receiver, true, true, nil
+			return Null, receiver, true, true, nil
 		case "getDescription":
 			if exceptionTypeName(receiver.Type) != "PatternSyntaxException" {
 				break
@@ -649,6 +744,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("%s.getStackTraceString expects 0 arguments", receiver.Type)
 			}
 			if stack, ok := receiver.Fields["__stackTrace"]; ok {
+				if stack.Kind == ValueString {
+					if cause, ok := receiver.Fields["__cause"]; ok && cause.Kind == ValueObject {
+						if causeStack, ok := cause.Fields["__stackTrace"]; ok && causeStack.Kind == ValueString && causeStack.Text != "" {
+							return String(stack.Text + "\nCaused by\n" + causeStack.Text), receiver, false, true, nil
+						}
+					}
+				}
 				return stack, receiver, false, true, nil
 			}
 			if exceptionTypeName(receiver.Type) == "JSONException" {
@@ -694,6 +796,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	}
 	if strings.EqualFold(receiver.Type, "Dom.XmlNode") {
 		return callDomXmlNodeMember(receiver, method, args)
+	}
+	if componentApexRuntimeType(receiver.Type) {
+		if value, updated, mutated, handled, err := callApexPagesComponentMember(receiver, method, args); handled || err != nil {
+			return value, updated, mutated, handled, err
+		}
 	}
 	switch receiver.Type {
 	case "eventbus.SuccessResult", "eventbus.FailureResult", "EventBus.SuccessResult", "EventBus.FailureResult":
@@ -877,6 +984,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return Null, receiver, false, true, nil
 		}
+	case "UninstallContext":
+		if method != "organizationId" {
+			break
+		}
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("UninstallContext.organizationId expects 0 arguments")
+		}
+		if value, ok := receiver.Fields["organizationId"]; ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
 	case "AggregateResult":
 		switch method {
 		case "get":
@@ -1023,6 +1141,14 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if childJobID, ok := receiver.Fields["ChildJobId"]; ok {
 				return childJobID, receiver, false, true, nil
 			}
+			// Salesforce returns null for a live top-level BatchableContext with
+			// no child batch. Keep the existing empty-string behavior for a
+			// directly constructed passive context, whose JobId is unset.
+			if receiver.Type == "BatchableContext" || receiver.Type == "Database.BatchableContext" || receiver.Type == "Database.BatchableContextImpl" {
+				if _, live := receiver.Fields["JobId"]; live {
+					return Null, receiver, false, true, nil
+				}
+			}
 			return String(""), receiver, false, true, nil
 		}
 	case "SchedulableContext":
@@ -1073,13 +1199,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "AsyncOptions":
 		switch method {
 		case "getMaximumQueueableStackDepth":
-			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("AsyncOptions.getMaximumQueueableStackDepth expects 0 arguments")
-			}
-			if value, ok := receiver.Fields["maximumQueueableStackDepth"]; ok {
-				return value, receiver, false, true, nil
-			}
-			return Null, receiver, false, true, nil
+			return Null, receiver, false, true, unsupportedCallError("AsyncOptions.getMaximumQueueableStackDepth")
 		case "setMaximumQueueableStackDepth":
 			if len(args) != 1 || (args[0].Kind != ValueInt && args[0].Kind != ValueNull) {
 				return Null, receiver, false, true, fmt.Errorf("AsyncOptions.setMaximumQueueableStackDepth expects Integer")
@@ -1235,7 +1355,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			})
 			return privateDescribeCollection(receiver.Fields["map"]), receiver, false, true, nil
 		}
-	case "Schema.FieldSetMap":
+	case "Schema.SObjectTypeFieldSets", "Schema.FieldSetMap":
 		switch method {
 		case "getMap":
 			if len(args) != 0 {
@@ -1559,7 +1679,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if value, ok := receiver.Fields["dataTranslationEnabled"]; ok {
 				return value, receiver, false, true, nil
 			}
-			return Bool(false), receiver, false, true, nil
+			return Null, receiver, false, true, nil
 		case "isSortable":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isSortable expects 0 arguments")
@@ -2054,6 +2174,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				if method == "toString" {
 					return String(t.UTC().Format("2006-01-02 15:04:05")), receiver, false, true, nil
 				}
+				if method == "formatGmt" {
+					return Null, receiver, false, true, fmt.Errorf("Datetime.formatGmt expects pattern String")
+				}
 				if method == "format" {
 					_, _, local, _, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), t)
 					if !ok {
@@ -2149,7 +2272,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				t = t.UTC()
 			}
 			return platformScalar("Time", formatPlatformTimeWithMillis(t.Hour(), t.Minute(), t.Second(), t.Nanosecond()/int(time.Millisecond))), receiver, false, true, nil
-		case "addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds", "addMilliseconds":
+		case "addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds":
 			if len(args) != 1 || args[0].Kind != ValueInt {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects Integer", method)
 			}
@@ -2174,8 +2297,6 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				t = t.Add(time.Duration(amount) * time.Minute)
 			case "addSeconds":
 				t = t.Add(time.Duration(amount) * time.Second)
-			case "addMilliseconds":
-				t = t.Add(time.Duration(amount) * time.Millisecond)
 			}
 			return platformScalar("Datetime", formatPlatformDatetime(t)), receiver, false, true, nil
 		case "year", "month", "day", "hour", "minute", "second", "millisecond", "dayOfYear",
@@ -2346,10 +2467,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return receiver.Fields["id"], receiver, false, true, nil
 		case "getDisplayName":
 			if len(args) == 0 {
-				return receiver.Fields["id"], receiver, false, true, nil
-			}
-			if len(args) == 1 && args[0].Kind == ValueBool {
-				return timeZoneDisplayName(receiver, args[0].Bool), receiver, false, true, nil
+				return vm.timeZoneDisplayName(receiver), receiver, false, true, nil
 			}
 			return Null, receiver, false, true, unsupportedCallError("TimeZone.getDisplayName locale/style overloads")
 		case "getOffset":
@@ -2532,6 +2650,35 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return List(), receiver, false, true, nil
 		}
+	case "Database.DuplicateError":
+		switch method {
+		case "getDuplicateResult":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.DuplicateError.getDuplicateResult expects 0 arguments")
+			}
+			if dupResult, ok := receiver.Fields["duplicateresult"]; ok {
+				return dupResult, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		case "getMessage":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.DuplicateError.getMessage expects 0 arguments")
+			}
+			return receiver.Fields["message"], receiver, false, true, nil
+		case "getStatusCode":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.DuplicateError.getStatusCode expects 0 arguments")
+			}
+			return databaseErrorStatusCodeValue(receiver.Fields["statusCode"]), receiver, false, true, nil
+		case "getFields":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.DuplicateError.getFields expects 0 arguments")
+			}
+			if fields, ok := receiver.Fields["fields"]; ok {
+				return fields, receiver, false, true, nil
+			}
+			return List(), receiver, false, true, nil
+		}
 	case "Exception":
 		if method == "getMessage" {
 			if len(args) != 0 {
@@ -2631,7 +2778,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.%s expects 0 arguments", method)
 			}
 			field := methodDescribeBoolField(method)
-			if value, ok := receiver.Fields[field]; ok && value.Kind == ValueBool {
+			if value, ok := receiver.Fields[field]; ok {
 				return value, receiver, false, true, nil
 			}
 			return Bool(false), receiver, false, true, nil
@@ -2800,11 +2947,12 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setMethod expects String")
 			}
-			method, err := normalizeHttpMethod(args[0].Text)
+			trimmedMethod := strings.TrimSpace(args[0].Text)
+			_, err := normalizeHttpMethod(trimmedMethod)
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
-			receiver.Fields["method"] = String(method)
+			receiver.Fields["method"] = String(trimmedMethod)
 			return Null, receiver, true, true, nil
 		case "getMethod":
 			if len(args) != 0 {
@@ -3143,58 +3291,35 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return Bool(false), receiver, false, true, nil
 		}
 	case "Auth.JWT":
-		switch method {
-		case "setIss":
-			if len(args) != 1 {
-				return Null, receiver, false, true, fmt.Errorf("Auth.JWT.setIss expects 1 argument")
-			}
-			receiver.Fields["iss"] = args[0]
-			return Null, receiver, true, true, nil
-		case "toJSONString":
-			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Auth.JWT.toJSONString expects 0 arguments")
-			}
-			fields := make(map[string]any, len(receiver.Fields))
-			for field, value := range receiver.Fields {
-				if strings.HasPrefix(field, "__") || value.Kind == ValueNull {
-					continue
-				}
-				fields[field] = jsonFromValue(value, true)
-			}
-			data, err := jsonMarshalNoEscape(fields)
-			if err != nil {
-				return Null, receiver, false, true, err
-			}
-			return String(string(data)), receiver, false, true, nil
-		}
+		return vm.callAuthJWTMember(receiver, method, args)
 	case "Metadata.DeployContainer":
 		switch method {
 		case "addMetadata":
 			if len(args) != 1 {
 				return Null, receiver, false, true, fmt.Errorf("Metadata.DeployContainer.addMetadata expects metadata")
 			}
-			values := receiver.Fields["metadata"]
+			values := receiver.Fields["components"]
 			if values.Kind != ValueList {
 				values = List()
 			}
 			values.List = append(values.List, args[0])
-			receiver.Fields["metadata"] = values
+			receiver.Fields["components"] = values
 			return Null, receiver, true, true, nil
 		case "getMetadata":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Metadata.DeployContainer.getMetadata expects 0 arguments")
 			}
-			values := receiver.Fields["metadata"]
+			values := receiver.Fields["components"]
 			if values.Kind != ValueList {
 				values = typedList("List<Metadata.Metadata>")
-				receiver.Fields["metadata"] = values
+				receiver.Fields["components"] = values
 			}
 			return values, receiver, false, true, nil
 		case "removeMetadata":
 			if len(args) != 1 {
 				return Null, receiver, false, true, fmt.Errorf("Metadata.DeployContainer.removeMetadata expects metadata")
 			}
-			values := receiver.Fields["metadata"]
+			values := receiver.Fields["components"]
 			if values.Kind != ValueList {
 				return Bool(false), receiver, false, true, nil
 			}
@@ -3208,13 +3333,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 				filtered.List = append(filtered.List, item)
 			}
-			receiver.Fields["metadata"] = filtered
+			receiver.Fields["components"] = filtered
 			return Bool(removed), receiver, removed, true, nil
 		case "removeMetadataByFullName":
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("Metadata.DeployContainer.removeMetadataByFullName expects fullName String")
 			}
-			values := receiver.Fields["metadata"]
+			values := receiver.Fields["components"]
 			if values.Kind != ValueList {
 				return Bool(false), receiver, false, true, nil
 			}
@@ -3229,9 +3354,20 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 				filtered.List = append(filtered.List, item)
 			}
-			receiver.Fields["metadata"] = filtered
+			receiver.Fields["components"] = filtered
 			return Bool(removed), receiver, removed, true, nil
 		}
+	case "Metadata.DeployCallbackContext":
+		if method != "getCallbackJobId" {
+			break
+		}
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Metadata.DeployCallbackContext.getCallbackJobId expects 0 arguments")
+		}
+		if jobID, ok := receiver.Fields["__callbackJobId"]; ok {
+			return jobID, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
 	case "Messaging.SendEmailResult":
 		switch method {
 		case "isSuccess":
@@ -4404,7 +4540,7 @@ func (vm *VM) generatedPlatformPassiveDTOShape(generated generatedPlatformType) 
 			if method.IsStatic && strings.EqualFold(method.Name, "builder") && strings.HasSuffix(method.ReturnType, ".Builder") {
 				continue
 			}
-			if !method.IsStatic && (hasPrefixFold(method.Name, "get") || hasPrefixFold(method.Name, "is")) {
+			if !method.IsStatic && (hasPrefixFold(apexMethodMemberName(method.Name), "get") || hasPrefixFold(apexMethodMemberName(method.Name), "is")) {
 				hasDataShape = true
 			}
 			if generatedPlatformPassiveDTOMethod(method) {
@@ -5083,6 +5219,9 @@ func passiveAccessorFieldName(receiver Value, suffix string) string {
 }
 
 func databaseErrorStatusCodeValue(value Value) Value {
+	if value.Kind == ValueNull {
+		return Null
+	}
 	if value.Kind == ValueObject && strings.EqualFold(value.Type, "StatusCode") {
 		return value
 	}

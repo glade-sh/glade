@@ -22,6 +22,7 @@ type standardDescribeObject struct {
 	Label              string                              `json:"label"`
 	LabelPlural        string                              `json:"labelPlural"`
 	KeyPrefix          string                              `json:"keyPrefix"`
+	Mergeable          *bool                               `json:"mergeable"`
 	Triggerable        *bool                               `json:"triggerable"`
 	Fields             []standardDescribeField             `json:"fields"`
 	ChildRelationships []standardDescribeChildRelationship `json:"childRelationships"`
@@ -81,6 +82,7 @@ type standardDescribeField struct {
 	Unique              bool                            `json:"unique"`
 	Encrypted           bool                            `json:"encrypted"`
 	CaseSensitive       bool                            `json:"caseSensitive"`
+	IDLookup            bool                            `json:"idLookup"`
 	ReferenceTo         []string                        `json:"referenceTo"`
 	RelationshipName    string                          `json:"relationshipName"`
 	Polymorphic         bool                            `json:"polymorphicForeignKey"`
@@ -279,6 +281,7 @@ func describeField(field standardDescribeField) Field {
 		Unique:              field.Unique,
 		Encrypted:           field.Encrypted,
 		CaseSensitive:       field.CaseSensitive,
+		IDLookup:            field.IDLookup,
 		ReferenceTo:         append([]string(nil), field.ReferenceTo...),
 		RelationshipName:    field.RelationshipName,
 		PicklistValues:      describePicklistValues(field.PicklistValues),

@@ -532,6 +532,9 @@ func TestPrepareAnalysisIndexKeepsPlatformSymbolsOutOfWorkspaceIndex(t *testing.
 		if symbol.Namespace != "" {
 			name = symbol.Namespace + "." + symbol.Name
 		}
+		if semaAPI67RejectedPlatformType(name) {
+			continue
+		}
 		if !analyzer.hasKnown(name) {
 			t.Fatalf("platform type %q is not known without index hydration", name)
 		}
@@ -1543,8 +1546,8 @@ func TestTypeMemberPlatformLayerPreservesConstructorsInterfacesEnumsAndStaticFie
 	view := buildSemaTypeMemberState(typesys.Index{}, nil).view()
 
 	exception, _, ok := semaLookupTypeMembers(view, "Exception")
-	if !ok || len(exception.constructors) != 5 {
-		t.Fatalf("Exception constructors = %#v, %v; want five platform overloads", exception.constructors, ok)
+	if !ok || len(exception.constructors) != 0 || !exception.constructorsAuthoritative || !hasModifier(exception.modifiers, "abstract") {
+		t.Fatalf("Exception platform shape = %#v, %v; want abstract with no source constructors", exception, ok)
 	}
 	iterator, _, ok := semaLookupTypeMembers(view, "Iterator")
 	if !ok || iterator.kind != apexast.DeclarationInterface || len(iterator.methods[normalizeName("hasNext")]) == 0 {

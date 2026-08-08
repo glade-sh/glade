@@ -263,6 +263,11 @@ func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
 		return Null, err
 	}
 	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "ScheduledApex", Object: cloneValue(args[2]), Name: args[0].Text, Cron: args[1].Text}
+	if cronHasExplicitYear(args[1].Text) {
+		if nextFire, ok := cronNextFireDate(args[1].Text, vm.fakeNow); ok {
+			job.NotBefore = nextFire
+		}
+	}
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	vm.recordCronTrigger(job, "Waiting")
@@ -655,6 +660,9 @@ func (vm *VM) nextDrainableAsyncJobIndex(jobs []AsyncJob, startIndex int) int {
 	return -1
 }
 func (vm *VM) asyncJobDue(job AsyncJob) bool {
+	if vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining && job.Kind == "Queueable" {
+		return true
+	}
 	return job.NotBefore.IsZero() || !job.NotBefore.After(vm.fakeNow)
 }
 func (vm *VM) staticFieldSnapshot() map[string]map[string]Value {
@@ -1777,50 +1785,63 @@ func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
 	vm.recordCronJobDetail(job)
 }
 func cronNextFireTime(expr string, now time.Time) (string, bool) {
+	candidate, ok := cronNextFireDate(expr, now)
+	if !ok {
+		return "", false
+	}
+	return formatPlatformDatetime(candidate), true
+}
+
+func cronHasExplicitYear(expr string) bool {
+	parts := strings.Fields(expr)
+	return len(parts) == 7 && parts[6] != "*" && parts[6] != "?"
+}
+
+func cronNextFireDate(expr string, now time.Time) (time.Time, bool) {
 	parts := strings.Fields(expr)
 	if len(parts) != 6 && len(parts) != 7 {
-		return "", false
+		return time.Time{}, false
 	}
 	sec, err := strconv.Atoi(parts[0])
 	if err != nil {
-		return "", false
+		return time.Time{}, false
 	}
 	min, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return "", false
+		return time.Time{}, false
 	}
 	hour, err := strconv.Atoi(parts[2])
 	if err != nil {
-		return "", false
+		return time.Time{}, false
 	}
 	if sec < 0 || sec > 59 || min < 0 || min > 59 || hour < 0 || hour > 23 {
-		return "", false
+		return time.Time{}, false
 	}
 	day, anyDay, ok := cronField(parts[3], 1, 31, true)
 	if !ok {
-		return "", false
+		return time.Time{}, false
 	}
 	month, anyMonth, ok := cronField(parts[4], 1, 12, false)
 	if !ok {
-		return "", false
+		return time.Time{}, false
 	}
 	weekday, anyWeekday, ok := cronField(parts[5], 1, 7, true)
 	if !ok {
-		return "", false
+		return time.Time{}, false
 	}
 	year, anyYear := 0, true
 	if len(parts) == 7 {
 		year, anyYear, ok = cronField(parts[6], 1970, 9999, false)
 		if !ok {
-			return "", false
+			return time.Time{}, false
 		}
 	}
 	if !anyYear && !anyMonth && !anyDay && anyWeekday {
 		candidate := time.Date(year, time.Month(month), day, hour, min, sec, 0, time.UTC)
 		if candidate.After(now.UTC()) {
-			return formatPlatformDatetime(candidate), true
+			return candidate, true
 		}
-		return "", false
+		return time.Time{}, false
 	}
 	start := now.UTC().Truncate(24 * time.Hour)
 	for offset := 0; offset < 3660; offset++ {
@@ -1839,10 +1860,10 @@ func cronNextFireTime(expr string, now time.Time) (string, bool) {
 		}
 		candidate := time.Date(candidateDay.Year(), candidateDay.Month(), candidateDay.Day(), hour, min, sec, 0, time.UTC)
 		if candidate.After(now.UTC()) {
-			return formatPlatformDatetime(candidate), true
+			return candidate, true
 		}
 	}
-	return "", false
+	return time.Time{}, false
 }
 func cronField(part string, min, max int, questionWildcard bool) (int, bool, bool) {
 	if part == "*" || (questionWildcard && part == "?") {

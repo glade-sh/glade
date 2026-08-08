@@ -590,7 +590,7 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(securityWorkflow, /golang\.org\/x\/vuln\/cmd\/govulncheck@v1\.6\.0/);
   assert.match(securityWorkflow, /github\/codeql-action\/init@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /- uses: security-extended/);
-  assert.match(securityWorkflow, /timeout-minutes: 5/);
+  assert.match(securityWorkflow, /timeout-minutes: 15/);
   assert.match(securityWorkflow, /- go\/allocation-size-overflow/);
   assert.match(securityWorkflow, /- go\/incorrect-integer-conversion/);
   assert.match(securityWorkflow, /github\/codeql-action\/analyze@[0-9a-f]{40}/);
@@ -929,7 +929,7 @@ test("editor support catalog is generated from checked Glade support data", () =
   assert.ok(database.some((item) => item.label === "setSavepoint" && item.status === "supported"));
 
   const answers = editorSupportJson.receivers?.Answers?.items || [];
-  assert.ok(answers.some((item) => item.label === "findSimilar" && item.status === "unsupported"));
+  assert.ok(answers.some((item) => item.label === "findSimilar" && item.status === "supported"));
 
   const describe = editorSupportJson.receivers?.["Schema.DescribeSObjectResult"]?.items || [];
   assert.ok(describe.some((item) => item.label === "getChildRelationships" && item.status === "supported"));
@@ -1120,7 +1120,7 @@ test("capability explorer exposes supported APIs and an accessible workflow demo
   assert.match(workbench, /Database\.insert/);
   assert.match(workbench, /BusinessHours\.nextStartDate/);
   assert.match(workbench, /Answers\.findSimilar/);
-  assert.match(workbench, /Requires Salesforce/);
+  assert.match(workbench, /Deterministic empty list/);
   assert.match(workbench, /<GladeEditorWorkbench \/>/);
   assert.match(workbench, /class="[^"]*\bworkbench-page\b[^"]*"/);
   assert.match(workbench, /class="[^"]*\bhome-workbench\b[^"]*"/);
@@ -1206,7 +1206,7 @@ test("workbench page mounts a real CodeMirror editor", () => {
   assert.match(apexCompletionsModule, /function indexedReceiverType/);
   assert.match(apexCompletionsModule, /catalog\.demoReceivers\[variableName\]/);
   assert.match(editorSupportTs, /getDmlRows[\s\S]*Runs locally/);
-  assert.match(editorSupportTs, /findSimilar[\s\S]*Requires Salesforce/);
+  assert.match(editorSupportTs, /findSimilar[\s\S]*Runs locally/);
   assert.doesNotMatch(codeMirrorWorkbench, /Answers\.findSimilar/);
   assert.match(codeMirrorWorkbench, /class="glade-cm-support"/);
   assert.match(codeMirrorWorkbench, /Type a dot after the final describe, Account, Database, BusinessHours, Schema, describe\.fields, results\[0\], or fieldMap\./);
@@ -1508,12 +1508,12 @@ test("guide landing, quickstart, and support map explain the current product", (
   assert.match(supportMap, /\| UserInfo, URL, Label, and TrailblazerIdentity \| Broad local capability \| 24 supported \/ 24 tracked \|/);
   assert.match(supportMap, /\| Type, FeatureManagement, and Exception \| Supported local rows, hosted package gap \| 8 supported, 1 unsupported \/ 9 tracked \|/);
   assert.match(supportMap, /\| Local test harness and request context \| Supported local rows, hosted and malformed-input gaps \| 32 supported, 2 unsupported \/ 34 tracked \|/);
-  assert.match(supportMap, /\| Hosted-service and platform boundary rows \| Requires Salesforce, plus stable diagnostics \| 1 supported diagnostic row, 2 unsupported \/ 3 tracked \|/);
+  assert.match(supportMap, /\| Hosted-service and platform boundary rows \| Requires Salesforce, plus stable diagnostics \| 2 supported, 1 unsupported \/ 3 tracked \|/);
   assert.match(supportMap, /## Capability claims/);
   assert.match(supportMap, /\| Capability features marked `supported` \| 31 \|/);
   assert.match(supportMap, /\| Capability features marked `partial` \| 0 \|/);
-  assert.match(supportMap, /\| Standard-library rows marked `supported` \| 267 \|/);
-  assert.match(supportMap, /\| Standard-library rows marked `unsupported` \| 19 \|/);
+  assert.match(supportMap, /\| Standard-library rows marked `supported` \| 268 \|/);
+  assert.match(supportMap, /\| Standard-library rows marked `unsupported` \| 18 \|/);
   assert.match(supportMap, /Approval list\s+processing/);
   assert.match(configuration, /namespaceRemaps: \[\]/);
   assert.match(configuration, /Namespace remaps/);

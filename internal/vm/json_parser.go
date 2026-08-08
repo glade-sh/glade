@@ -86,6 +86,11 @@ func (vm *VM) callJSONParserMember(receiver Value, method string, args []Value) 
 		}
 		token, ok := jsonParserCurrent(receiver)
 		if !ok {
+			if cleared, ok := jsonParserCurrentTokenEvenIfCleared(receiver); ok {
+				if name := jsonParserTokenName(cleared); name != "" {
+					return String(name), receiver, false, true, nil
+				}
+			}
 			return Null, receiver, false, true, nil
 		}
 		if jsonParserTokenKind(token) == "FIELD_NAME" {
@@ -625,20 +630,6 @@ func jsonParserTokenStringField(token Value, field string) string {
 		return value.Text
 	}
 	return ""
-}
-
-var jsonTokenNames = []string{
-	"START_OBJECT",
-	"END_OBJECT",
-	"START_ARRAY",
-	"END_ARRAY",
-	"FIELD_NAME",
-	"VALUE_STRING",
-	"VALUE_NUMBER_INT",
-	"VALUE_NUMBER_FLOAT",
-	"VALUE_TRUE",
-	"VALUE_FALSE",
-	"VALUE_NULL",
 }
 
 func jsonTokenValue(name string) Value {

@@ -2084,8 +2084,8 @@ func dateLiteralWithFiscalYearStartMonth(text string, now time.Time, fiscalYearS
 		return dateRange(start, start.AddDate(0, 0, 1))
 	}
 	if n, ok := literalNumberSuffix(upper, "LAST_N_WEEKS:"); ok {
-		start := weekStart(today).AddDate(0, 0, -7*n)
-		return dateRange(start, weekStart(today))
+		start := weekStart(today).AddDate(0, 0, -7*(n-1))
+		return dateRange(start, weekStart(today).AddDate(0, 0, 7))
 	}
 	if n, ok := literalNumberSuffix(upper, "NEXT_N_WEEKS:"); ok {
 		start := weekStart(today).AddDate(0, 0, 7)

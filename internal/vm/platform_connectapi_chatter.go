@@ -4,6 +4,40 @@ import (
 	"fmt"
 )
 
+func (vm *VM) connectAPIChatterUsersGetFollowings(args []Value) (Value, error) {
+	if len(args) < 2 || len(args) > 5 {
+		return Null, fmt.Errorf("ConnectApi.ChatterUsers.getFollowings expects 2-5 arguments")
+	}
+	if vm.testContext != nil && vm.testContext.SeeAllDataSet && !vm.testContext.SeeAllData {
+		return Null, newExceptionError("UnsupportedOperationException", "ConnectApi.ChatterUsers.getFollowings requires SeeAllData=true in local tests")
+	}
+	pageURL := "/services/data/vXX.X/chatter/users/" + scalarText(args[1]) + "/following"
+	query := ""
+	if len(args) >= 3 {
+		if args[2].Kind == ValueString {
+			if len(args) == 5 && args[4].Kind == ValueInt && args[4].Int > 0 {
+				query = "?pageSize=" + fmt.Sprint(args[4].Int) + "&filterType=" + args[2].Text
+			} else if len(args) >= 4 && args[3].Kind == ValueInt && args[3].Int > 0 {
+				query = "?page=" + fmt.Sprint(args[3].Int) + "&filterType=" + args[2].Text
+			} else {
+				query = "?filterType=" + args[2].Text
+			}
+		} else if args[2].Kind == ValueInt {
+			if len(args) == 4 && args[3].Kind == ValueInt && args[3].Int > 0 {
+				query = "?pageSize=" + fmt.Sprint(args[3].Int)
+			} else if args[2].Int > 0 {
+				query = "?page=" + fmt.Sprint(args[2].Int)
+			}
+		}
+	}
+	pageURL += query
+	page := Object("ConnectApi.FollowingPage")
+	page.Fields["currentPageUrl"] = String(pageURL)
+	page.Fields["following"] = typedList("List<ConnectApi.Subscription>")
+	page.Fields["total"] = Int(0)
+	return page, nil
+}
+
 func (vm *VM) connectAPIChatterPostFeedElement(args []Value) (Value, error) {
 	if len(args) < 2 || len(args) > 4 {
 		return Null, fmt.Errorf("ConnectApi.ChatterFeeds.postFeedElement expects 2-4 arguments")

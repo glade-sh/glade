@@ -84,13 +84,11 @@ func soapTypeForStorageField(field storage.Field) string {
 
 var schemaSOAPTypeNames = []string{"ID", "STRING", "BOOLEAN", "INTEGER", "DOUBLE", "DATE", "DATETIME", "TIME", "BASE64BINARY", "ANYTYPE"}
 
-var schemaDisplayTypeNames = []string{"ADDRESS", "ANYTYPE", "BASE64", "BOOLEAN", "COMBOBOX", "COMPLEXVALUE", "CURRENCY", "DATACATEGORYGROUPREFERENCE", "DATE", "DATETIME", "DOUBLE", "EMAIL", "ENCRYPTEDSTRING", "FLOATARRAY", "ID", "INTEGER", "JSON", "LOCATION", "LONG", "MULTIPICKLIST", "PERCENT", "PHONE", "PICKLIST", "REFERENCE", "SOBJECT", "STRING", "TEXTAREA", "TEXTARRAY", "TIME", "URL"}
+var schemaDisplayTypeNames = []string{"STRING", "BOOLEAN", "DOUBLE", "INTEGER", "PERCENT", "CURRENCY", "DATE", "DATETIME", "TIME", "PICKLIST", "MULTIPICKLIST", "DATACATEGORYGROUPREFERENCE", "BASE64", "ID", "REFERENCE", "TEXTAREA", "PHONE", "COMBOBOX", "URL", "EMAIL", "ANYTYPE", "LOCATION", "ENCRYPTEDSTRING", "COMPLEXVALUE", "ADDRESS", "SOBJECT", "LONG", "JSON", "FLOATARRAY", "TEXTARRAY"}
 
 var schemaFieldDescribeOptionNames = []string{"DEFAULT", "FULL_DESCRIBE"}
 
-var schemaSObjectDescribeOptionNames = []string{"DEFAULT", "DEFERRED", "FULL"}
-
-var accessTypeNames = []string{"CREATABLE", "READABLE", "UPDATABLE", "UPSERTABLE"}
+var schemaSObjectDescribeOptionNames = []string{"DEFAULT", "FULL", "DEFERRED"}
 
 func schemaSOAPTypeStaticValue(name string) (Value, bool) {
 	if value, ok := namedEnumStaticValue("Schema.SOAPType", schemaSOAPTypeNames, name); ok {
@@ -422,10 +420,15 @@ func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, er
 		return Null, fmt.Errorf("Metadata.Operations.enqueueDeployment expects DeployContainer and DeployCallback")
 	}
 	if args[1].Kind != ValueNull {
-		return Null, unsupportedCallError("Metadata.Operations.enqueueDeployment deploy callback invocation")
+		if args[1].Kind != ValueObject || !vm.typeAssignableTo(args[1].Type, "Metadata.DeployCallback") {
+			return Null, fmt.Errorf("Metadata.Operations.enqueueDeployment expects DeployCallback or null")
+		}
+		if _, err := vm.metadataDeploymentCallbackMethod(args[1]); err != nil {
+			return Null, err
+		}
 	}
 	deploymentID := "0Af000000000001"
-	items := args[0].Fields["metadata"]
+	items := args[0].Fields["components"]
 	if items.Kind == ValueNull || (items.Kind == ValueList && len(items.List) == 0) {
 		vm.recordMetadataDeployment(deploymentID, nil)
 		appendTrace(result, "apex.metadata.deploy.enqueue", "apex.metadata", map[string]any{
@@ -433,10 +436,13 @@ func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, er
 			"components":   0,
 			"success":      true,
 		})
+		if err := vm.invokeMetadataDeploymentCallback(args[1], deploymentID, result); err != nil {
+			return Null, err
+		}
 		return platformScalar("Id", deploymentID), nil
 	}
 	if items.Kind != ValueList {
-		return Null, fmt.Errorf("Metadata.DeployContainer.metadata must be a list")
+		return Null, fmt.Errorf("Metadata.DeployContainer.components must be a list")
 	}
 	if vm.Org == nil {
 		return Null, unsupportedCallError("Metadata.Operations.enqueueDeployment requires org storage for local metadata mutation")
@@ -458,6 +464,9 @@ func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, er
 				"success":      false,
 				"error":        err.Error(),
 			})
+			if callbackErr := vm.invokeMetadataDeploymentCallback(args[1], deploymentID, result); callbackErr != nil {
+				return Null, callbackErr
+			}
 			return platformScalar("Id", deploymentID), nil
 		}
 	}
@@ -469,7 +478,43 @@ func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, er
 		"components":   len(items.List),
 		"success":      true,
 	})
+	if err := vm.invokeMetadataDeploymentCallback(args[1], deploymentID, result); err != nil {
+		return Null, err
+	}
 	return platformScalar("Id", deploymentID), nil
+}
+
+func (vm *VM) metadataDeploymentCallbackMethod(callback Value) (Method, error) {
+	method, ok, ambiguous := vm.resolveInstanceMethodForArgs(
+		callback.Type,
+		"handleResult",
+		[]Value{Object("Metadata.DeployResult"), Object("Metadata.DeployCallbackContext")},
+	)
+	if ambiguous {
+		return Method{}, vm.ambiguousOverloadError(callback.Type+".handleResult", []Value{Object("Metadata.DeployResult"), Object("Metadata.DeployCallbackContext")})
+	}
+	if !ok {
+		return Method{}, fmt.Errorf("Metadata.DeployCallback %s has no handleResult method", callback.Type)
+	}
+	return method, nil
+}
+
+func (vm *VM) invokeMetadataDeploymentCallback(callback Value, deploymentID string, result *Result) error {
+	if callback.Kind == ValueNull {
+		return nil
+	}
+	method, err := vm.metadataDeploymentCallbackMethod(callback)
+	if err != nil {
+		return err
+	}
+	deployResult, ok := vm.metadataDeploys[deploymentID]
+	if !ok {
+		return fmt.Errorf("Metadata.Operations.enqueueDeployment missing local result %s", deploymentID)
+	}
+	context := Object("Metadata.DeployCallbackContext")
+	context.Fields["__callbackJobId"] = platformScalar("Id", deploymentID)
+	_, err = vm.callMethodWithReceiver(method, callback, []Value{cloneMetadataDeployResult(deployResult), context}, result)
+	return err
 }
 
 func (vm *VM) metadataCheckDeployStatus(args []Value, result *Result) (Value, error) {
@@ -1033,6 +1078,14 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 	if method != "values" && method != "valueOf" {
 		return Null, false, nil
 	}
+	if canonical, names, ok := coreEnumSpec(typeName); ok {
+		value, err := callNamedEnumStaticMember(canonical, names, method, args)
+		return value, true, err
+	}
+	if typeName == "Metadata.DeployStatus" {
+		value, err := callNamedEnumStaticMember(typeName, metadataDeployStatusNames, method, args)
+		return value, true, err
+	}
 	if value, handled, err := vm.callGeneratedPlatformEnumStaticMember(typeName, method, args); handled || err != nil {
 		return value, handled, err
 	}
@@ -1064,13 +1117,6 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 	}
 	if strings.EqualFold(typeName, "Schema.SOAPType") || strings.EqualFold(typeName, "SOAPType") {
 		value, err := callNamedEnumStaticMember("Schema.SOAPType", schemaSOAPTypeNames, method, args)
-		return value, true, err
-	}
-	if typeName == "Metadata.DeployStatus" {
-		if method != "values" {
-			return Null, false, nil
-		}
-		value, err := metadataDeployStatusValues(args)
 		return value, true, err
 	}
 	if typeName == "Metadata.MetadataType" {
@@ -1249,10 +1295,29 @@ func roundingModeValues(args []Value) (Value, error) {
 }
 
 func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value, bool, error) {
-	method = canonicalStdlibMemberName(method, "equals", "name", "ordinal", "toString")
+	method = canonicalStdlibMemberName(method, "equals", "hashCode", "name", "ordinal", "toString")
 	receiverType := receiver.Type
 	if rest, ok := stripLeadingSystemNamespace(receiverType); ok {
 		receiverType = rest
+	}
+	if strings.EqualFold(receiverType, "AccessLevel") && strings.EqualFold(method, "withPermissionSetId") {
+		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueNull) {
+			return Null, true, fmt.Errorf("AccessLevel.withPermissionSetId expects String")
+		}
+		value := accessLevelClone(receiver)
+		value.Fields["permissionSetId"] = cloneValue(args[0])
+		if args[0].Kind == ValueNull {
+			value.Fields["currentAccessPermissions"] = String(strings.ToUpper(strings.TrimSpace(receiver.Text)))
+		} else {
+			value.Fields["currentAccessPermissions"] = String("CUSTOM")
+		}
+		return value, true, nil
+	}
+	if canonical, names, ok := coreEnumSpec(receiverType); ok {
+		return callNamedEnumMember(canonical, names, receiver, method, args)
+	}
+	if receiverType == "Metadata.DeployStatus" {
+		return callNamedEnumMember(receiverType, metadataDeployStatusNames, receiver, method, args)
 	}
 	if receiverType == "JSONToken" {
 		if method == "equals" {
@@ -1277,6 +1342,9 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 		default:
 			return Null, false, nil
 		}
+	}
+	if generated, ok := generatedPlatformTypes()[strings.ToLower(receiverType)]; ok && generated.Kind == apexast.DeclarationEnum && generated.EnumHashBase != nil {
+		return callGeneratedPlatformEnumMember(generated, receiver, method, args)
 	}
 	if receiver.Type == "ApexPages.Severity" {
 		return callNamedEnumMember("ApexPages.Severity", apexPagesSeverityNames, receiver, method, args)
@@ -1307,9 +1375,6 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	}
 	if receiver.Type == "Schema.SOAPType" {
 		return callNamedEnumMember("Schema.SOAPType", schemaSOAPTypeNames, receiver, method, args)
-	}
-	if receiver.Type == "Metadata.DeployStatus" {
-		return callNamedEnumMember("Metadata.DeployStatus", metadataDeployStatusNames, receiver, method, args)
 	}
 	if receiver.Type == "Metadata.MetadataType" {
 		return callNamedEnumMember("Metadata.MetadataType", metadataMetadataTypeNames, receiver, method, args)
@@ -1373,7 +1438,7 @@ func callManagedEnumMember(receiver Value, method string, args []Value) (Value, 
 }
 
 func callGeneratedPlatformEnumMember(generated generatedPlatformType, receiver Value, method string, args []Value) (Value, bool, error) {
-	method = canonicalStdlibMemberName(method, "equals", "name", "ordinal", "toString")
+	method = canonicalStdlibMemberName(method, "equals", "hashCode", "name", "ordinal", "toString")
 	if method == "equals" {
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("%s.equals expects 1 argument", receiver.Type)
@@ -1387,12 +1452,16 @@ func callGeneratedPlatformEnumMember(generated generatedPlatformType, receiver V
 	case "name", "toString":
 		return String(receiver.Text), true, nil
 	case "ordinal":
-		for i, name := range generatedPlatformEnumNames(generated) {
-			if strings.EqualFold(name, receiver.Text) {
-				return Int(int64(i)), true, nil
-			}
+		return Int(int64(generatedPlatformEnumOrdinal(generated, receiver.Text))), true, nil
+	case "hashCode":
+		if generated.EnumHashBase == nil {
+			return Null, false, nil
 		}
-		return Int(-1), true, nil
+		ordinal := generatedPlatformEnumOrdinal(generated, receiver.Text)
+		if ordinal < 0 {
+			return Int(-1), true, nil
+		}
+		return Int(*generated.EnumHashBase + int64(ordinal)), true, nil
 	default:
 		return Null, false, nil
 	}
@@ -1431,10 +1500,45 @@ func metadataDeployDetailsObject() Value {
 	return details
 }
 
+func metadataDeployMessageObject() Value {
+	message := Object("Metadata.DeployMessage")
+	message.Fields["changed"] = Bool(false)
+	message.Fields["columnNumber"] = Int(0)
+	message.Fields["componentType"] = Null
+	message.Fields["created"] = Bool(false)
+	message.Fields["createdDate"] = Null
+	message.Fields["deleted"] = Bool(false)
+	message.Fields["fileName"] = Null
+	message.Fields["fullName"] = Null
+	message.Fields["id"] = Null
+	message.Fields["lineNumber"] = Int(0)
+	message.Fields["problem"] = Null
+	message.Fields["problemType"] = Null
+	message.Fields["success"] = Bool(false)
+	return message
+}
+
+func metadataDeployResultConstructorObject() Value {
+	result := Object("Metadata.DeployResult")
+	result.Fields["id"] = Null
+	result.Fields["status"] = metadataDeployStatusValue("Succeeded")
+	result.Fields["success"] = Bool(true)
+	result.Fields["done"] = Bool(true)
+	result.Fields["numberComponentErrors"] = Int(0)
+	result.Fields["numberComponentsDeployed"] = Int(0)
+	result.Fields["numberComponentsTotal"] = Int(0)
+	result.Fields["numberTestErrors"] = Int(0)
+	result.Fields["numberTestsCompleted"] = Int(0)
+	result.Fields["checkOnly"] = Bool(false)
+	result.Fields["messages"] = List()
+	result.Fields["details"] = metadataDeployDetailsObject()
+	return result
+}
+
 func metadataDeployResultObject(deploymentID string, items []Value) Value {
 	result := Object("Metadata.DeployResult")
 	result.Fields["id"] = platformScalar("Id", deploymentID)
-	result.Fields["status"] = metadataDeployStatusValue("SUCCEEDED")
+	result.Fields["status"] = metadataDeployStatusValue("Succeeded")
 	result.Fields["success"] = Bool(true)
 	result.Fields["done"] = Bool(true)
 	result.Fields["numberComponentErrors"] = Int(0)
@@ -1443,6 +1547,7 @@ func metadataDeployResultObject(deploymentID string, items []Value) Value {
 	result.Fields["numberTestErrors"] = Int(0)
 	result.Fields["numberTestsCompleted"] = Int(0)
 	result.Fields["checkOnly"] = Bool(false)
+	result.Fields["messages"] = List()
 	details := metadataDeployDetailsObject()
 	successes := make([]Value, 0, len(items))
 	for _, item := range items {
@@ -1456,7 +1561,7 @@ func metadataDeployResultObject(deploymentID string, items []Value) Value {
 func metadataDeployFailureResultObject(deploymentID string, items []Value, failedItem Value, err error) Value {
 	result := Object("Metadata.DeployResult")
 	result.Fields["id"] = platformScalar("Id", deploymentID)
-	result.Fields["status"] = metadataDeployStatusValue("FAILED")
+	result.Fields["status"] = metadataDeployStatusValue("Failed")
 	result.Fields["success"] = Bool(false)
 	result.Fields["done"] = Bool(true)
 	result.Fields["numberComponentErrors"] = Int(1)
@@ -1465,6 +1570,7 @@ func metadataDeployFailureResultObject(deploymentID string, items []Value, faile
 	result.Fields["numberTestErrors"] = Int(0)
 	result.Fields["numberTestsCompleted"] = Int(0)
 	result.Fields["checkOnly"] = Bool(false)
+	result.Fields["messages"] = List()
 	details := metadataDeployDetailsObject()
 	details.Fields["componentFailures"] = List(metadataDeployFailureMessage(failedItem, err))
 	result.Fields["details"] = details

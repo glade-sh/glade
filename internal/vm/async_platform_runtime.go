@@ -41,20 +41,21 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		if err != nil {
 			return Null, err
 		}
-		if hasSuffixFold(stored.Object, "__e") {
-			if field, ok := vm.missingRequiredPlatformEventField(stored); ok {
-				row := Object("Database.SaveResult")
-				row.Fields["success"] = Bool(false)
-				row.Fields["id"] = Null
-				row.Fields["error"] = String("REQUIRED_FIELD_MISSING, required field " + stored.Object + "." + field + " is missing")
-				errValue := Object("Database.Error")
-				errValue.Fields["message"] = String("required field " + stored.Object + "." + field + " is missing")
-				errValue.Fields["statusCode"] = String("REQUIRED_FIELD_MISSING")
-				errValue.Fields["fields"] = List(String(field))
-				row.Fields["errors"] = List(errValue)
-				results = append(results, row)
-				continue
-			}
+		if !hasSuffixFold(stored.Object, "__e") {
+			return Null, fmt.Errorf("The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event.")
+		}
+		if field, ok := vm.missingRequiredPlatformEventField(stored); ok {
+			row := Object("Database.SaveResult")
+			row.Fields["success"] = Bool(false)
+			row.Fields["id"] = Null
+			row.Fields["error"] = String("REQUIRED_FIELD_MISSING, required field " + stored.Object + "." + field + " is missing")
+			errValue := Object("Database.Error")
+			errValue.Fields["message"] = String("required field " + stored.Object + "." + field + " is missing")
+			errValue.Fields["statusCode"] = String("REQUIRED_FIELD_MISSING")
+			errValue.Fields["fields"] = List(String(field))
+			row.Fields["errors"] = List(errValue)
+			results = append(results, row)
+			continue
 		}
 		triggerRecords = append(triggerRecords, stored)
 		row := Object("Database.SaveResult")
@@ -385,8 +386,8 @@ func (vm *VM) connectAPIUserPhoto(args []Value) (Value, error) {
 }
 
 func (vm *VM) connectAPIUserSetPhoto(args []Value) (Value, error) {
-	if len(args) != 4 {
-		return Null, fmt.Errorf("ConnectApi.UserProfiles.setPhoto expects 4 arguments")
+	if len(args) != 3 && len(args) != 4 {
+		return Null, fmt.Errorf("ConnectApi.UserProfiles.setPhoto expects 3 or 4 arguments")
 	}
 	return Null, nil
 }
@@ -404,6 +405,9 @@ func scalarText(value Value) string {
 		return value.Text
 	case ValueObject:
 		if value.Type == "Id" || value.Type == "URL" {
+			if text, ok := platformScalarObjectText(value); ok {
+				return text
+			}
 			return value.Text
 		}
 	}
@@ -501,19 +505,24 @@ dispatchCustomData:
 		}
 		out := Map()
 		out.Type = "Map<String," + objectName + ">"
-		object := vm.Org.Objects[objectName]
-		records := make([]storage.Record, 0, len(object.Records))
-		for _, record := range object.Records {
-			if record.System.IsDeleted {
-				continue
+		namespace := ""
+		var records []storage.Record
+		if vm.Org != nil {
+			namespace = vm.Org.Namespace
+			object := vm.Org.Objects[objectName]
+			records = make([]storage.Record, 0, len(object.Records))
+			for _, record := range object.Records {
+				if record.System.IsDeleted {
+					continue
+				}
+				records = append(records, record)
 			}
-			records = append(records, record)
 		}
 		sort.Slice(records, func(i, j int) bool {
-			return customDataRecordLess(definition, kind, records[i], records[j], vm.Org.Namespace)
+			return customDataRecordLess(definition, kind, records[i], records[j], namespace)
 		})
 		for _, record := range records {
-			key := customDataRecordKey(definition, kind, record, vm.Org.Namespace)
+			key := customDataRecordKey(definition, kind, record, namespace)
 			if key == "" {
 				continue
 			}

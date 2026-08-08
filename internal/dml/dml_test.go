@@ -2042,7 +2042,12 @@ func TestDatabaseErrorDetailsForRequiredDuplicateAndValidationFailures(t *testin
 			"Code__c": storage.StringValue("a"),
 		},
 	}})
-	assertDMLErrorDetail(t, duplicateValue[0], "DUPLICATE_VALUE", "Code__c")
+	if duplicateValue[0].Success || duplicateValue[0].StatusCode != "DUPLICATE_VALUE" {
+		t.Fatalf("duplicate value result = %#v", duplicateValue[0])
+	}
+	if len(duplicateValue[0].Fields) != 0 {
+		t.Fatalf("duplicate value fields = %#v, want no fields", duplicateValue[0].Fields)
+	}
 
 	duplicateID := engine.Insert([]storage.Record{{
 		ID:     existing[0].ID,
@@ -2566,10 +2571,10 @@ func TestUndeleteRejectsActiveRecords(t *testing.T) {
 	}
 
 	active := engine.Undelete([]storage.Record{{ID: insert[0].ID, Object: "Account"}})
-	if active[0].Success || active[0].StatusCode != "ENTITY_IS_NOT_DELETED" {
+	if active[0].Success || active[0].StatusCode != "UNDELETE_FAILED" {
 		t.Fatalf("active undelete = %#v", active)
 	}
-	if len(active[0].Errors) != 1 || active[0].Errors[0].StatusCode != "ENTITY_IS_NOT_DELETED" {
+	if len(active[0].Errors) != 1 || active[0].Errors[0].StatusCode != "UNDELETE_FAILED" {
 		t.Fatalf("active undelete errors = %#v", active[0].Errors)
 	}
 	if org.Objects["Account"].Records[insert[0].ID].System.IsDeleted {
@@ -2611,7 +2616,7 @@ func TestUndeleteMixedRowsKeepResultAlignment(t *testing.T) {
 	if !results[0].Success || results[0].ID != deletedID {
 		t.Fatalf("deleted row result = %#v", results[0])
 	}
-	if results[1].Success || results[1].ID != activeID || results[1].StatusCode != "ENTITY_IS_NOT_DELETED" {
+	if results[1].Success || results[1].ID != activeID || results[1].StatusCode != "UNDELETE_FAILED" {
 		t.Fatalf("active row result = %#v", results[1])
 	}
 	if results[2].Success || results[2].ID != "001999999999999" || results[2].StatusCode != "ENTITY_IS_DELETED" {

@@ -48,6 +48,8 @@ type businessHoursRecurrence struct {
 	month      time.Month
 }
 
+const businessHoursRecordNotFoundMessage = "BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup."
+
 var businessHoursDayFields = []struct {
 	weekday time.Weekday
 	name    string
@@ -62,10 +64,14 @@ var businessHoursDayFields = []struct {
 }
 
 func (vm *VM) businessHoursAdd(callee string, args []Value) (Value, error) {
-	if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueInt {
-		return Null, fmt.Errorf("%s expects String, Datetime, Long", callee)
+	if len(args) != 3 || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueInt {
+		return Null, fmt.Errorf("%s expects Id, Datetime, Long", callee)
 	}
-	calendar, err := vm.businessHoursCalendar(args[0].Text)
+	id, err := businessHoursIDArgument(callee, args[0])
+	if err != nil {
+		return Null, err
+	}
+	calendar, err := vm.businessHoursCalendar(id)
 	if err != nil {
 		return Null, err
 	}
@@ -77,10 +83,14 @@ func (vm *VM) businessHoursAdd(callee string, args []Value) (Value, error) {
 }
 
 func (vm *VM) businessHoursDiff(args []Value) (Value, error) {
-	if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueObject || args[2].Type != "Datetime" {
+	if len(args) != 3 || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueObject || args[2].Type != "Datetime" {
 		return Null, fmt.Errorf("BusinessHours.diff expects String, Datetime, Datetime")
 	}
-	calendar, err := vm.businessHoursCalendar(args[0].Text)
+	id, err := businessHoursIDArgument("BusinessHours.diff", args[0])
+	if err != nil {
+		return Null, err
+	}
+	calendar, err := vm.businessHoursCalendar(id)
 	if err != nil {
 		return Null, err
 	}
@@ -96,10 +106,14 @@ func (vm *VM) businessHoursDiff(args []Value) (Value, error) {
 }
 
 func (vm *VM) businessHoursIsWithin(args []Value) (Value, error) {
-	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
+	if len(args) != 2 || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
 		return Null, fmt.Errorf("BusinessHours.isWithin expects String, Datetime")
 	}
-	calendar, err := vm.businessHoursCalendar(args[0].Text)
+	id, err := businessHoursIDArgument("BusinessHours.isWithin", args[0])
+	if err != nil {
+		return Null, err
+	}
+	calendar, err := vm.businessHoursCalendar(id)
 	if err != nil {
 		return Null, err
 	}
@@ -111,10 +125,14 @@ func (vm *VM) businessHoursIsWithin(args []Value) (Value, error) {
 }
 
 func (vm *VM) businessHoursNextStartDate(args []Value) (Value, error) {
-	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
-		return Null, fmt.Errorf("BusinessHours.nextStartDate expects String, Datetime")
+	if len(args) != 2 || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
+		return Null, fmt.Errorf("BusinessHours.nextStartDate expects Id, Datetime")
 	}
-	calendar, err := vm.businessHoursCalendar(args[0].Text)
+	id, err := businessHoursIDArgument("BusinessHours.nextStartDate", args[0])
+	if err != nil {
+		return Null, err
+	}
+	calendar, err := vm.businessHoursCalendar(id)
 	if err != nil {
 		return Null, err
 	}
@@ -129,13 +147,24 @@ func (vm *VM) businessHoursNextStartDate(args []Value) (Value, error) {
 	return platformScalar("Datetime", formatPlatformDatetime(next)), nil
 }
 
+func businessHoursIDArgument(callee string, value Value) (string, error) {
+	if value.Kind == ValueNull {
+		if callee == "BusinessHours.addGmt" {
+			return "", newExceptionError("System.MathException", businessHoursRecordNotFoundMessage)
+		}
+		return "", newExceptionError("System.NullPointerException", "Business Hours Id cannot be null")
+	}
+	id, ok := idTextFromValue(value)
+	if !ok {
+		return "", fmt.Errorf("%s expects Id", callee)
+	}
+	return id, nil
+}
+
 func (vm *VM) businessHoursCalendar(id string) (businessHoursCalendar, error) {
 	record, ok := vm.businessHoursRecord(id)
 	if !ok {
-		if strings.TrimSpace(id) == "" {
-			return businessHoursCalendar{}, unsupportedCallError("BusinessHours default record missing")
-		}
-		return businessHoursCalendar{}, unsupportedCallError("BusinessHours record missing " + id)
+		return businessHoursCalendar{}, newExceptionError("System.MathException", businessHoursRecordNotFoundMessage)
 	}
 	zoneID := strings.TrimSpace(storageStringField(record, "TimeZoneSidKey"))
 	if zoneID == "" {

@@ -78,7 +78,7 @@ func describePayload(def storage.ObjectDefinition, org *storage.OrgState) map[st
 		"custom":              strings.HasSuffix(def.APIName, "__c") || strings.HasSuffix(def.APIName, "__mdt"),
 		"keyPrefix":           def.KeyPrefix,
 		"fields":              fields,
-		"searchable":          true,
+		"searchable":          def.EnableSearch,
 		"queryable":           true,
 		"createable":          true,
 		"updateable":          true,

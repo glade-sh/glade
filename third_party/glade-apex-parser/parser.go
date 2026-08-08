@@ -19,6 +19,7 @@ type Parser struct {
 
 const voidIdentifierSentinel = "v0id"
 const triggerContextSentinel = "Tr1gger"
+const packageQualifiedTypeSentinel = "Packxge"
 
 func NewParser() *Parser {
 	parser := tree_sitter.NewParser()
@@ -148,7 +149,31 @@ func (p *Parser) ParseSourceAST(path, source string) ASTFile {
 }
 
 func normalizeApexSource(source string) string {
-	return normalizeExplicitConstructorInvocations(normalizeTriggerContextReferences(normalizeVoidIdentifiers(source)))
+	return normalizeExplicitConstructorInvocations(normalizePackageQualifiedReferences(normalizeTriggerContextReferences(normalizeVoidIdentifiers(source))))
+}
+
+func normalizePackageQualifiedReferences(source string) string {
+	// The upstream grammar reserves Package for its version-expression rule, but
+	// Package.Version is also a legal qualified type reference in Apex source.
+	// Keep the source byte length unchanged so parser ranges still map directly
+	// to the original source.
+	out := []byte(source)
+	for i := 0; i < len(source); {
+		switch {
+		case source[i] == '\'':
+			i = skipApexString(source, i)
+		case hasPrefixAt(source, i, "//"):
+			i = skipUntilNewline(source, i)
+		case hasPrefixAt(source, i, "/*"):
+			i = skipBlockComment(source, i)
+		case hasWordAtFold(source, i, "Package") && nextSignificantByte(source, i+len("Package")) == '.':
+			copy(out[i:i+len(packageQualifiedTypeSentinel)], packageQualifiedTypeSentinel)
+			i += len("Package")
+		default:
+			i++
+		}
+	}
+	return string(out)
 }
 
 func treeSitterDeclaration(node *tree_sitter.Node, source string, lineMap LineMap) (Declaration, bool) {

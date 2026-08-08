@@ -1,11 +1,66 @@
 package sema
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/typesys"
 )
+
+func TestDatabaseInsertAsyncSingleRecordCallbackAccessLevelResolves(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"SaveCallback.cls": `public class SaveCallback implements DataSource.AsyncSaveCallback { public void processSave(Database.SaveResult result) {} }`,
+		"Probe.cls":        `public class Probe { public void run() { Database.SaveResult result = Database.insertAsync(new Account(Name = 'Async'), new SaveCallback(), AccessLevel.USER_MODE); } }`,
+	})
+	for _, diagnostic := range result.Diagnostics {
+		if diagnostic.Code == "GLADESEMA022" && strings.Contains(diagnostic.Message, "insertAsync") {
+			t.Fatalf("single-record insertAsync callback/access-level call was ambiguous: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestDataSourceAsyncSaveCallbackUsesClassInheritance(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"SaveCallback.cls": `public class SaveCallback extends DataSource.AsyncSaveCallback { public override void processSave(Database.SaveResult result) {} }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected AsyncSaveCallback class inheritance to compile: %#v", result.Diagnostics)
+	}
+}
+
+func TestDataSourceAsyncDeleteCallbackUsesClassInheritance(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"DeleteCallback.cls": `public class DeleteCallback extends DataSource.AsyncDeleteCallback { public override void processDelete(Database.DeleteResult result) {} }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected AsyncDeleteCallback class inheritance to compile: %#v", result.Diagnostics)
+	}
+}
+
+func TestEventPublishCallbacksAreInterfaces(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"PublishCallback.cls": `public class PublishCallback implements eventbus.EventPublishSuccessCallback, eventbus.EventPublishFailureCallback { public void onSuccess(eventbus.SuccessResult result) {} public void onFailure(eventbus.FailureResult result) {} }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected EventBus publish callbacks to be implementable interfaces: %#v", result.Diagnostics)
+	}
+}
+
+func TestSandboxPostCopyAndSoqlStubProviderAreInterfaces(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"SandboxCopy.cls": `public class SandboxCopy implements SandboxPostCopy { public void runApexClass(SandboxContext context) {} }`,
+		"SoqlProvider.cls": `public class SoqlProvider implements SoqlStubProvider { public List<SObject> handleSoqlQuery(Schema.SObjectType targetType, String query, Map<String,Object> binds) { return new List<SObject>(); } }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected SandboxPostCopy and SoqlStubProvider interface implementations to compile: %#v", result.Diagnostics)
+	}
+}
 
 func TestTypeContractRejectsInvalidSourceTypesAndLiterals(t *testing.T) {
 	t.Parallel()

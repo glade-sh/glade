@@ -1083,6 +1083,260 @@ private class ValueReturningTest {
 	}
 }
 
+func TestRunCasesContextAuthJWTToJSONStringWithMapLiteralClaim(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "AuthJWTMapLiteralTest.cls")
+	writeFile(t, path, `
+@isTest
+private class AuthJWTMapLiteralTest {
+  @isTest
+  static void toJSONStringIncludesMapClaims() {
+    Auth.JWT jwt = new Auth.JWT();
+    jwt.setIss('issuer');
+    jwt.setAud('audience');
+    jwt.setSub('subject');
+    jwt.setAdditionalClaims(new Map<String,Object>{'role'=>'tester'});
+    System.assertNotEquals(null, jwt.toJSONString());
+  }
+}
+`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+}
+
+func TestRunCasesContextCanvasMockRenderContextWithMapLiterals(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "CanvasMapLiteralTest.cls")
+	writeFile(t, path, `
+@isTest
+private class CanvasMapLiteralTest {
+  @isTest
+  static void mockRenderContextUsesMapValues() {
+    Map<String,String> app = new Map<String,String>{'canvasUrl'=>'https://canvas.example', 'name'=>'CB114 Canvas', 'developerName'=>'CB114', 'namespace'=>'', 'version'=>'1'};
+    Map<String,String> env = new Map<String,String>{'displayLocation'=>'Visualforce', 'locationUrl'=>'/apex/CB114', 'subLocation'=>'detail'};
+    Canvas.RenderContext ctx = Canvas.Test.mockRenderContext(app, env);
+    System.assertEquals('https://canvas.example', ctx.getApplicationContext().getCanvasUrl());
+    System.assertEquals('CB114 Canvas', ctx.getApplicationContext().getName());
+    System.assertEquals('Visualforce', ctx.getEnvironmentContext().getDisplayLocation());
+    System.assertEquals('/apex/CB114', ctx.getEnvironmentContext().getLocationUrl());
+    ctx.getEnvironmentContext().addEntityField('Name');
+    System.assert(ctx.getEnvironmentContext().getEntityFields().contains('Name'));
+  }
+}
+`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+}
+
+func TestRunCasesContextCacheRejectsNonAlphanumericPartitionName(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "CachePartitionNameTest.cls")
+	writeFile(t, path, `
+@isTest
+private class CachePartitionNameTest {
+  @isTest
+  static void rejectsHyphenatedPartitionName() {
+    for (String name : new List<String>{'cb114-test', ' local'}) {
+      try {
+        Cache.Org.getPartition(name);
+        System.assert(false, 'expected invalid partition error');
+      } catch (Exception e) {
+        System.assertEquals('cache.OrgCacheException', e.getTypeName());
+        System.assertEquals('Invalid partition: partition name must be alphanumeric.', e.getMessage());
+      }
+    }
+    try {
+      Cache.Session.getPartition('cb114-test');
+      System.assert(false, 'expected invalid session partition error');
+    } catch (Exception e) {
+      System.assertEquals('cache.SessionCacheException', e.getTypeName());
+      System.assertEquals('Invalid partition: partition name must be alphanumeric.', e.getMessage());
+    }
+  }
+}
+`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+}
+
+func TestRunCasesContextCacheAPI67StaticPartitionHelpers(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "CacheAPI67StaticHelpersTest.cls")
+	writeFile(t, path, `
+@isTest
+private class CacheAPI67StaticHelpersTest {
+  public class ShapeLoader implements Cache.CacheBuilder {
+    public Object doLoad(String key) {
+      return 'loaded:' + key;
+    }
+  }
+
+  @isTest
+  static void staticPartitionHelpersMatchSalesforce() {
+    System.assertEquals('local.default.account', Cache.OrgPartition.createFullyQualifiedKey('local', 'default', 'account'));
+    System.assertEquals('local.default', Cache.SessionPartition.createFullyQualifiedPartition('local', 'default'));
+    System.assertEquals('local.other', Cache.Partition.createFullyQualifiedPartition('local', 'other'));
+    Cache.OrgPartition.validatePartitionName('default');
+    Cache.Partition.validateKey(false, 'account');
+    Cache.SessionPartition.validateKeyValue(false, 'account', 'value');
+    System.assert(Cache.Session.isAvailable());
+  }
+
+  @isTest
+  static void builderRemoveReturnsBoolean() {
+    Cache.OrgPartition named = Cache.Org.getPartition('local.default');
+    System.assertEquals('loaded:shape', (String) named.get(ShapeLoader.class, 'shape'));
+    System.assertEquals(1, named.getNumKeys());
+    System.assertEquals(true, (Boolean) named.remove(ShapeLoader.class, 'shape'));
+    System.assertEquals(0, named.getNumKeys());
+    System.assertEquals(false, (Boolean) named.remove(ShapeLoader.class, 'shape'));
+  }
+}
+`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Total != 2 || summary.Passed != 2 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+}
+
+func TestRunCasesContextApexPagesIdeaControllerFixture(t *testing.T) {
+	root := t.TempDir()
+	viewPath := filepath.Join(root, "IdeaViewExtension.cls")
+	listPath := filepath.Join(root, "IdeaListExtension.cls")
+	fixturePath := filepath.Join(root, "IdeaControllerV27FixtureTest.cls")
+	writeFile(t, viewPath, `
+public class IdeaViewExtension {
+  public IdeaViewExtension(ApexPages.IdeaStandardController controller) {
+    controller.addFields(new List<String>{'Title'});
+    List<IdeaComment> comments = controller.getCommentList();
+    SObject record = controller.getRecord();
+    String recordId = controller.getId();
+    PageReference cancelled = controller.cancel();
+    PageReference edited = controller.edit();
+    PageReference viewed = controller.view();
+    PageReference saved = controller.save();
+    PageReference deleted = controller.delete();
+  }
+}`)
+	writeFile(t, listPath, `
+public class IdeaListExtension {
+  public IdeaListExtension(ApexPages.IdeaStandardSetController controller) {
+    controller.addFields(new List<String>{'Title'});
+    List<Idea> ideas = controller.getIdeaList();
+    List<SelectOption> options = controller.getListViewOptions();
+    List<SObject> records = controller.getRecords();
+    SObject record = controller.getRecord();
+    Integer resultSize = controller.getResultSize();
+    List<SObject> selected = controller.getSelected();
+    Boolean complete = controller.getCompleteResult();
+    Integer pageSize = controller.getPageSize();
+    Integer pageNumber = controller.getPageNumber();
+    Boolean hasNext = controller.getHasNext();
+    Boolean hasPrevious = controller.getHasPrevious();
+    controller.setFilterId('00B000000000001');
+    String filterId = controller.getFilterId();
+    controller.setPageSize(5);
+    controller.setPageNumber(2);
+    controller.first();
+    controller.next();
+    controller.previous();
+    controller.last();
+    controller.setSelected(new List<SObject>());
+    PageReference saved = controller.save();
+    PageReference cancelled = controller.cancel();
+  }
+}`)
+	writeFile(t, fixturePath, `
+@isTest
+private class IdeaControllerV27FixtureTest {
+  @isTest
+  static void ideaViewExtensionRuns() {
+    IdeaViewExtension extension = new IdeaViewExtension(new ApexPages.IdeaStandardController());
+    System.assertNotEquals(null, extension);
+  }
+
+  @isTest
+  static void ideaListExtensionRuns() {
+    IdeaListExtension extension = new IdeaListExtension(new ApexPages.IdeaStandardSetController());
+    System.assertNotEquals(null, extension);
+  }
+}`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{
+		Root:      root,
+		ApexFiles: []string{viewPath, listPath, fixturePath},
+	}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Total != 2 || summary.Passed != 2 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+}
+
+func TestRunCasesContextDatabaseUnitOfWorkFixture(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "DatabaseUnitOfWorkV27FixtureTest.cls")
+	writeFile(t, path, `
+@isTest
+private class DatabaseUnitOfWorkV27FixtureTest {
+  @isTest
+  static void unitOfWorkContracts() {
+    Database.UnitOfWork u = new Database.UnitOfWork();
+    System.assertNotEquals(null, u);
+    Database.SaveResult insertOne = u.insertRecord(new Account(Name = 'uow-one'));
+    System.assertEquals(false, insertOne.isSuccess());
+    List<Database.SaveResult> insertMany = u.insertRecords(new List<Account>{new Account(Name = 'uow-two'), new Account(Name = 'uow-three')});
+    System.assertEquals(2, insertMany.size());
+    Database.SaveResult updateOne = u.updateRecord(new Account(Id = '001000000000001AAA', Name = 'uow-update'));
+    System.assertEquals(false, updateOne.isSuccess());
+    List<Database.SaveResult> updateMany = u.updateRecords(new List<Account>{new Account(Id = '001000000000002AAA', Name = 'uow-update-two')});
+    System.assertEquals(1, updateMany.size());
+    Database.UpsertResult upsertOne = u.upsertRecord(new Account(Name = 'uow-upsert'));
+    System.assertEquals(false, upsertOne.isSuccess());
+    List<Database.UpsertResult> upsertMany = u.upsertRecords(new List<Account>{new Account(Name = 'uow-upsert-two')});
+    System.assertEquals(1, upsertMany.size());
+    Database.DeleteResult deleteOne = u.deleteRecord(new Account(Id = '001000000000003AAA'));
+    System.assertEquals(false, deleteOne.isSuccess());
+    List<Database.DeleteResult> deleteMany = u.deleteRecords(new List<Account>{new Account(Id = '001000000000004AAA')});
+    System.assertEquals(1, deleteMany.size());
+    u.discardWork();
+    u.commitWork();
+  }
+}
+`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+}
+
 func TestRuntimeKeyWithSourceDigestsAvoidsRereadsAndMatchesDiskFallback(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "force-app", "main", "default", "classes", "Unicode.cls")
@@ -2284,20 +2538,18 @@ private class AddressValueTest {
 	}
 }
 
-func TestRunSupportsAuthValueObjectDefaultConstructors(t *testing.T) {
+func TestRunSupportsDocumentedAuthValueObjectConstructorsAndRejectsZeroArgumentForms(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/AuthValueObjectTest.cls"), `
 @isTest
 private class AuthValueObjectTest {
-  @isTest static void defaultConstructorsAreUsable() {
-    Auth.UserData data = new Auth.UserData();
-    Auth.VerificationResult result = new Auth.VerificationResult();
+  @isTest static void documentedConstructorsAreUsable() {
     Auth.UserData populated = new Auth.UserData('003000000000001', 'Ada', 'Lovelace', 'Ada Lovelace', 'ada@example.invalid', null, 'ada@example.invalid', 'en_US', 'local', null, null);
+    Auth.UserData populatedWithTokens = new Auth.UserData('003000000000001', 'Ada', 'Lovelace', 'Ada Lovelace', 'ada@example.invalid', null, 'ada@example.invalid', 'en_US', 'local', null, null, 'id-token', '{"sub":"Ada"}');
     Auth.VerificationResult verified = new Auth.VerificationResult(new PageReference('/welcome'), true, 'ok');
-    System.assertNotEquals(null, data);
-    System.assertNotEquals(null, result);
     System.assertEquals('003000000000001', populated.identifier);
+    System.assertEquals('id-token', populatedWithTokens.idToken);
     System.assertEquals(true, verified.success);
   }
 }
@@ -2306,6 +2558,23 @@ private class AuthValueObjectTest {
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AuthValueObjectTest.cls"), `
+@isTest
+private class AuthValueObjectTest {
+  @isTest static void zeroArgumentConstructorsAreRejected() {
+    Auth.UserData data = new Auth.UserData();
+    Auth.VerificationResult result = new Auth.VerificationResult();
+    System.assertNotEquals(null, data);
+    System.assertNotEquals(null, result);
+  }
+}
+`)
+
+	run = Run(loadTestIndex(t, root), Options{NoDiskCache: true})
+	if got := run.Summary(); got.Total != 1 || got.CompileErrors != 1 || got.Passed != 0 || got.Failed != 0 {
+		t.Fatalf("zero-argument constructors executed instead of failing compile: %#v problem=%q", got, firstRunProblem(run))
 	}
 }
 
@@ -7299,6 +7568,20 @@ func TestRunExecutesQueueableFinalizerAtStopTest(t *testing.T) {
 public class FinalizerJob implements Queueable, Finalizer {
   public void execute(QueueableContext qc) {
     System.attachFinalizer(this);
+    try {
+      System.attachFinalizer(this);
+      System.assert(false, 'double attach did not fail');
+    } catch (Exception e) {
+      System.assertEquals('System.HandledException', e.getTypeName());
+      System.assertEquals('More than one Finalizer cannot be attached to same Async Apex Job', e.getMessage());
+    }
+    try {
+      System.attachFinalizer(new QueueOnlyJob());
+      System.assert(false, 'invalid finalizer did not fail');
+    } catch (Exception e) {
+      System.assertEquals('System.HandledException', e.getTypeName());
+      System.assertEquals('Class QueueOnlyJob must implement the Finalizer interface', e.getMessage());
+    }
     insert new Account(Name = 'queueable ran');
   }
   public void execute(FinalizerContext fc) {
@@ -7307,6 +7590,11 @@ public class FinalizerJob implements Queueable, Finalizer {
     System.assertEquals(null, fc.getException());
     insert new Account(Name = 'finalizer ran');
   }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/QueueOnlyJob.cls"), `
+public class QueueOnlyJob implements Queueable {
+  public void execute(QueueableContext qc) {}
 }
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/FinalizerJobTest.cls"), `
@@ -7325,6 +7613,52 @@ private class FinalizerJobTest {
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v problem=%#v", got, run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunDrainsTopLevelScheduledJobAtStopTest(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `
+<CustomObject>
+  <label>Account</label>
+  <pluralLabel>Accounts</pluralLabel>
+  <sharingModel>ReadWrite</sharingModel>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Name.field-meta.xml"), `
+<CustomField>
+  <fullName>Name</fullName>
+  <label>Name</label>
+  <type>Text</type>
+</CustomField>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ScheduledWorker.cls"), `
+public class ScheduledWorker implements Schedulable {
+  public void execute(SchedulableContext sc) {
+    insert new Account(Name = 'scheduled');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ScheduledWorkerTest.cls"), `
+@isTest
+private class ScheduledWorkerTest {
+  @isTest static void stopTestDrainsScheduledJob() {
+    Test.startTest();
+    System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
+    Test.stopTest();
+    System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'scheduled']);
+    System.assertEquals(1, [SELECT COUNT() FROM CronTrigger WHERE State = 'Complete']);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		if run.Suites[0].Cases[0].Problem != nil {
+			t.Logf("problem=%#v", *run.Suites[0].Cases[0].Problem)
+		}
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
 	}
 }
 
@@ -7451,8 +7785,7 @@ private class AsyncSemanticsTest {
     System.assertEquals(2, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApexWorker']);
     List<CronTrigger> crons = [SELECT Id, State FROM CronTrigger];
     System.assertEquals(2, crons.size());
-    CronTrigger cron = crons.get(0);
-    System.assertEquals('Complete', cron.State);
+    System.assertEquals(2, [SELECT COUNT() FROM CronTrigger WHERE State = 'Complete']);
     System.assertEquals(7, AsyncState.futureRan);
     System.assertEquals(12, AsyncState.batchSum);
     System.assertEquals(1, AsyncState.batchFinish);
@@ -7838,7 +8171,6 @@ private class AsyncContextIdsTest {
     List<CronTrigger> crons = [SELECT Id, State, CronExpression, CronJobDetail FROM CronTrigger];
     System.assertEquals(1, crons.size());
     CronTrigger cron = crons.get(0);
-    System.assertEquals('Complete', cron.State);
     System.assertEquals('0 0 0 * * ?', cron.CronExpression);
     System.assertEquals('nightly', cron.CronJobDetail);
   }

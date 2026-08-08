@@ -1369,7 +1369,7 @@ Map<Account, String> byAccount = new Map<Account, String>();
 byAccount.put(a, 'seen');
 insert a;
 List<String> ids = new List<String>{a.Id};
-System.assertEquals(a.Id.to18(), ids[0]);
+System.assertEquals(String.valueOf(a.Id), ids[0]);
 for (Account key : byAccount.keySet()) {
     System.assertEquals(a.Id, key.Id);
 }
@@ -1476,7 +1476,7 @@ Account a = new Account(Name = 'Acme', Job_Text__c = jobId);
 insert a;
 List<Account> rows = [SELECT Id, Job_Text__c FROM Account WHERE Job_Text__c = :jobId];
 System.assertEquals(1, rows.size());
-System.assertEquals(jobId.to18(), rows[0].Job_Text__c);
+System.assertEquals(String.valueOf(jobId), rows[0].Job_Text__c);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4195,16 +4195,165 @@ System.assertEquals('CREATABLE', AccessType.CREATABLE.name());
 	}
 }
 
-func TestExecSecurityStripInaccessiblePermissionSetScopedUnsupported(t *testing.T) {
+func TestExecSecurityStripInaccessiblePermissionSetScoped(t *testing.T) {
 	program, err := CompileAnonymous(`
-Id permissionSetId = '0PS000000000001';
-Security.stripInaccessible(AccessType.READABLE, new List<Account>{ new Account(Name = 'Acme') }, true, permissionSetId);
+PermissionSet ps = new PermissionSet(Name = 'ScopedStrip', Label = 'Scoped Strip');
+insert ps;
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Contact', PermissionsRead = true, PermissionsCreate = true);
+insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Account', Field = 'Account.Name', PermissionsEdit = true);
+insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Contact', Field = 'Contact.LastName', PermissionsEdit = true);
+
+Account source = new Account(Name = 'Acme', Secret__c = 'Hidden');
+insert source;
+insert new Contact(AccountId = source.Id, LastName = 'Child', Email = 'hidden@example.invalid');
+Account row = [
+	SELECT Id, Name, Description, Secret__c, (SELECT Id, LastName, Email FROM Contacts)
+	FROM Account
+	WHERE Id = :source.Id
+];
+
+// A non-null local scope models the enabled ApexUserModeWithPermset scratch-org path.
+SObjectAccessDecision decision = Security.stripInaccessible(
+	AccessType.CREATABLE,
+	new List<Account>{ row },
+	false,
+	ps.Id
+);
+List<Account> stripped = (List<Account>) decision.getRecords();
+Map<String, Set<String>> removed = decision.getRemovedFields();
+System.assertEquals('Acme', stripped[0].Name, 'allowed root field');
+System.assert(removed.get('Account').contains('Description'), 'selected absent root field reported');
+System.assert(removed.get('Account').contains('Secret__c'), 'populated root field reported');
+System.assertEquals(1, decision.getModifiedIndexes().size(), 'root modified index');
+System.assertEquals('Child', stripped[0].Contacts[0].LastName, 'allowed recursive field');
+System.assert(removed.get('Contact').contains('Email'));
+Boolean secretStripped = false;
+try {
+	String ignoredSecret = stripped[0].Secret__c;
+} catch (SObjectException e) {
+	secretStripped = e.getMessage().contains('without querying the requested field');
+}
+System.assert(secretStripped, 'populated root field stripped');
+Boolean emailStripped = false;
+emailStripped = !stripped[0].Contacts[0].getPopulatedFieldsAsMap().containsKey('Email');
+System.assert(emailStripped, 'recursive field stripped');
+System.assert(removed.get('Contact').contains('Email'), 'recursive field reported');
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), `unsupported call "Security.stripInaccessible permission-set-scoped access checks"`) {
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
+	account := org.Objects["Account"]
+	account.Definition.Fields["Secret__c"] = storage.Field{APIName: "Secret__c", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSecurityStripInaccessiblePermissionSetScopedEnforcesRootCRUD(t *testing.T) {
+	program, err := CompileAnonymous(`
+PermissionSet ps = new PermissionSet(Name = 'ScopedReadOnly', Label = 'Scoped Read Only');
+insert ps;
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
+Boolean caught = false;
+try {
+	Security.stripInaccessible(
+		AccessType.CREATABLE,
+		new List<Account>{ new Account(Name = 'Acme') },
+		true,
+		ps.Id
+	);
+} catch (NoAccessException e) {
+	caught = e.getMessage().containsIgnoreCase('no access to entity: Account');
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "Account")
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSecurityStripInaccessibleFourArgumentBooleanDiagnostic(t *testing.T) {
+	machine := New(nil)
+	accessType := Object("AccessType")
+	_, err := machine.call("Security.stripInaccessible", []Value{
+		accessType,
+		List(Object("Account")),
+		String("not a Boolean"),
+		Null,
+	}, nil, &Result{})
+	if err == nil || err.Error() != "Security.stripInaccessible expects Boolean enforceRootObjectCRUD" {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestExecSecurityStripInaccessibleNullPermissionSetUsesUnscopedPath(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account row = new Account(Name = 'Acme', Secret__c = 'Hidden');
+SObjectAccessDecision decision = Security.stripInaccessible(
+		AccessType.CREATABLE,
+		new List<Account>{ row },
+		false,
+		null
+);
+List<Account> stripped = (List<Account>) decision.getRecords();
+System.assertEquals('Acme', stripped[0].Name);
+System.assertEquals(null, stripped[0].Secret__c);
+System.assert(decision.getRemovedFields().get('Account').contains('Secret__c'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := stripInaccessibleTestOrg()
+	machine.SetOrg(&org)
+	machine.executionUser = stripInaccessibleTestUser()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSecurityStripInaccessibleInvalidPermissionSetID(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id invalidPermissionSetId = '0PS000000000404';
+Boolean caught = false;
+try {
+	Security.stripInaccessible(
+		AccessType.READABLE,
+		new List<Account>{ new Account(Name = 'Acme') },
+		false,
+		invalidPermissionSetId
+	);
+} catch (NoDataFoundException e) {
+	caught = e.getMessage() == 'Invalid permission set id: 0PS000000000404';
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "Account")
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -5359,20 +5508,21 @@ func TestExecDescribeSObjectResultStubBackedAccessors(t *testing.T) {
 Schema.DescribeSObjectResult describe = Account.SObjectType.getDescribe();
 System.assertEquals('Account', describe.getLocalName());
 System.assertEquals(0, describe.getFieldSets().getMap().size());
-System.assertEquals(false, describe.isFeedEnabled());
+System.assertEquals(true, describe.isFeedEnabled());
 System.assertEquals(false, Schema.SObjectType.User.isFeedEnabled());
-System.assertEquals(false, describe.isMergeable());
+System.assertEquals(true, describe.isMergeable());
+System.assertEquals(false, Case.SObjectType.getDescribe().isMergeable());
 System.assertEquals(true, describe.isMruEnabled());
 System.assertEquals(true, describe.isUndeletable());
 System.assertEquals(false, describe.isDeprecatedAndHidden());
-System.assertEquals(false, describe.getDataTranslationEnabled());
+System.assertEquals(null, describe.getDataTranslationEnabled());
 System.assertEquals(null, describe.getDefaultImplementation());
 System.assertEquals(false, describe.getHasSubtypes());
 System.assertEquals(null, describe.getImplementedBy());
 System.assertEquals(null, describe.getImplementsInterfaces());
 System.assertEquals(false, describe.getIsInterface());
 System.assertEquals(Account.SObjectType, describe.getSobjectType());
-System.assertEquals(SObjectDescribeOptions.FULL, describe.getSObjectDescribeOption());
+System.assertEquals(SObjectDescribeOptions.DEFERRED, describe.getSObjectDescribeOption());
 Schema.DescribeSObjectResult deferredDescribe = Account.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED);
 System.assertEquals(SObjectDescribeOptions.DEFERRED, deferredDescribe.getSObjectDescribeOption());
 `)
@@ -5381,6 +5531,47 @@ System.assertEquals(SObjectDescribeOptions.DEFERRED, deferredDescribe.getSObject
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Case")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeSObjectResultEqualityUsesSObjectIdentity(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeSObjectResult first = Account.SObjectType.getDescribe();
+Schema.DescribeSObjectResult second = Account.SObjectType.getDescribe();
+System.assertEquals(first, second);
+System.assertEquals(first.hashCode(), second.hashCode());
+System.assertNotEquals(first, Contact.SObjectType.getDescribe());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeFieldResultEqualityUsesFieldIdentity(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeFieldResult first = Account.Name.getDescribe();
+Schema.DescribeFieldResult second = Account.Name.getDescribe();
+System.assertEquals(first, second);
+System.assertEquals(first.hashCode(), second.hashCode());
+System.assertNotEquals(first, Contact.LastName.getDescribe());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Contact")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -5639,6 +5830,7 @@ func TestExecStandardObjectDescribeMapDoesNotSynthesizeMissingNameField(t *testi
 System.assertEquals(null, Event.SObjectType.getDescribe().fields.getMap().get('Name'));
 System.assertEquals('Subject', Event.SObjectType.getDescribe().fields.getMap().get('Subject').getDescribe().getName());
 System.assertEquals('Name', Account.SObjectType.getDescribe().fields.getMap().get('Name').getDescribe().getName());
+System.assertEquals(false, Account.Name.getDescribe().isNillable());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5760,13 +5952,15 @@ func TestExecDescribeFieldNumericAndTextMetadata(t *testing.T) {
 Schema.DescribeFieldResult amount = Account.Amount__c.getDescribe();
 System.assertEquals(12, amount.getPrecision());
 System.assertEquals(2, amount.getScale());
-System.assertEquals(12, amount.getDigits());
+System.assertEquals(0, amount.getDigits());
 System.assertEquals(0, amount.getLength());
 System.assert(!amount.isHtmlFormatted());
 System.assert(amount.isSortable());
+Schema.DescribeFieldResult doubleDescribe = Account.Number__c.getDescribe();
+System.assertEquals(12, doubleDescribe.getDigits());
 Schema.DescribeFieldResult notes = Account.Notes__c.getDescribe();
 System.assertEquals(1024, notes.getLength());
-System.assertEquals(1024, notes.getByteLength());
+System.assertEquals(3072, notes.getByteLength());
 System.assertEquals(1024, Schema.SObjectType.Account.fields.Notes__c.getLength());
 System.assertEquals(0, notes.getPrecision());
 System.assertEquals(0, notes.getScale());
@@ -5780,6 +5974,7 @@ System.assert(!notes.isSortable());
 	org := testDataOrg()
 	account := org.Objects["Account"]
 	account.Definition.Fields["Amount__c"] = storage.Field{APIName: "Amount__c", Type: storage.FieldDecimal, DisplayType: "CURRENCY", Precision: 12, Scale: 2}
+	account.Definition.Fields["Number__c"] = storage.Field{APIName: "Number__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE", Precision: 12, Scale: 2}
 	account.Definition.Fields["Notes__c"] = storage.Field{APIName: "Notes__c", Type: storage.FieldString, DisplayType: "TEXTAREA", Length: 1024}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
@@ -5799,7 +5994,7 @@ System.assertEquals('External Id Help', external.getInlineHelpText());
 System.assertEquals('External_Id__c', external.getLocalName());
 System.assertEquals(Account.External_Id__c, external.getSObjectField());
 System.assertEquals(null, external.getReferenceTargetField());
-System.assertEquals(0, external.getRelationshipOrder());
+System.assertEquals(null, external.getRelationshipOrder());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -7384,6 +7579,13 @@ System.assert(business.isActive());
 System.assert(business.isAvailable());
 System.assert(business.isDefaultRecordTypeMapping());
 System.assert(!business.isMaster());
+System.assert(business.active);
+System.assert(business.available);
+System.assert(business.defaultRecordTypeMapping);
+System.assertEquals('Business', business.developerName);
+System.assertEquals('Business Account', business.name);
+System.assertEquals('012000000000001', business.recordTypeId);
+System.assert(!business.master);
 Object consumer = byDeveloperName.get('Consumer');
 System.assertEquals('Consumer Account', consumer.getName());
 System.assertEquals('Consumer', consumer.getDeveloperName());
@@ -7434,6 +7636,47 @@ System.assertEquals('Master', master.getDeveloperName());
 	}
 }
 
+func TestLookupRecordTypeInfoProperties(t *testing.T) {
+	machine := New(nil)
+	value := recordTypeInfoValue(storage.RecordTypeInfo{DeveloperName: "Business", Name: "Business Account", Active: true})
+	for _, property := range []string{"active", "available", "defaultRecordTypeMapping", "developerName", "master", "name", "recordTypeId"} {
+		got, err := machine.lookupPath(value, []string{property})
+		if err != nil {
+			t.Fatalf("lookup %s: %v", property, err)
+		}
+		if got.Kind == ValueNull {
+			t.Fatalf("lookup %s returned null", property)
+		}
+	}
+	program, err := CompileAnonymous(`
+Schema.RecordTypeInfo rt = Account.SObjectType.getDescribe().getRecordTypeInfosByDeveloperName().get('Business');
+System.assert(rt.available);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Account"] = func() storage.ObjectState {
+		account := org.Objects["Account"]
+		account.Definition.RecordTypes = []storage.RecordTypeInfo{{DeveloperName: "Business", Name: "Business Account", Active: true}}
+		return account
+	}()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{Name: "Harness"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "Harness.run", ClassName: "Harness", IsStatic: true, ReturnType: "void", Program: program}); err != nil {
+		t.Fatal(err)
+	}
+	caller, err := CompileAnonymous("Harness.run();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(caller); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeAccountRecordTypeInfosUsesPersonAccountFallback(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String,Object> byName = Account.SObjectType.getDescribe().getRecordTypeInfosByName();
@@ -7476,7 +7719,7 @@ System.assertNotEquals(null, individual.getRecordTypeId());
 func TestExecSObjectTypeRecordTypeInfosByNameForCustomObject(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String,Object> byName = Schema.SObjectType.Batch__c.getRecordTypeInfosByName();
-System.assertEquals(3, byName.size());
+System.assertEquals(4, byName.size());
 Object scheduled = byName.get('Scheduled Batch');
 System.assertEquals('Scheduled Batch', scheduled.getName());
 System.assertEquals('Scheduled', scheduled.getDeveloperName());
@@ -8467,7 +8710,7 @@ System.assertEquals('Coupon', product.RecordType.Name);
 func TestExecSObjectTypeRecordTypeInfosByNameEmptyForCustomObject(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String,Object> byName = Schema.SObjectType.Batch__c.getRecordTypeInfosByName();
-System.assertEquals(0, byName.size());
+System.assertEquals(1, byName.size());
 System.assertEquals(null, byName.get('Scheduled Batch'));
 `)
 	if err != nil {
@@ -8798,28 +9041,6 @@ System.assertEquals('Austin', queriedAddress.getCity());
 	}
 }
 
-func TestExecAddressFluentSettersPopulateComponents(t *testing.T) {
-	program, err := CompileAnonymous(`
-Address address = Address.newInstance()
-    .withStreet('12 Lake Road')
-    .withCity('Port Alsworth')
-    .withState('Alaska')
-    .withPostalCode('99653')
-    .withCountry('United States');
-System.assertEquals('12 Lake Road', address.getStreet());
-System.assertEquals('Port Alsworth', address.getCity());
-System.assertEquals('Alaska', address.getState());
-System.assertEquals('99653', address.getPostalCode());
-System.assertEquals('United States', address.getCountry());
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := Execute(program, nil); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestExecNamespacedAddressClassWinsOverPlatformAddressForUnqualifiedStaticCall(t *testing.T) {
 	newInstanceProgram, err := CompileAnonymous(`
 Address address = new Address();
@@ -8832,8 +9053,6 @@ return address;
 	runProgram, err := CompileAnonymous(`
 Address custom = Address.newInstance();
 System.assertEquals('custom', custom.Street);
-System.Address platformAddress = System.Address.newInstance();
-System.assertEquals(null, platformAddress.getStreet());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -10490,16 +10709,22 @@ System.assertEquals(null, nameDescribe.getRelationshipName());
 func TestExecDescribeTabsFromLocalMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Object> tabSets = Schema.describeTabs();
-System.assertEquals(1, tabSets.size());
+System.assertEquals(13, tabSets.size());
 System.assert(Schema.getAppDescribe('Sales').containsKey('Account'));
 System.assert(Schema.getModuleDescribe().containsKey('Account'));
 System.assert(Schema.getModuleDescribe('Sales').containsKey('Account'));
-Object tabSet = tabSets.get(0);
+Object tabSet;
+for (Object candidate : tabSets) {
+	if (candidate.getLabel() == 'All Tabs') {
+		tabSet = candidate;
+	}
+}
+System.assertNotEquals(null, tabSet);
 System.assertEquals('All Tabs', tabSet.getLabel());
 System.assertEquals('AllTabs', tabSet.getName());
 System.assert(!tabSet.isSelected());
 List<Object> tabs = tabSet.getTabs();
-System.assertEquals(2, tabs.size());
+System.assertEquals(15, tabs.size());
 Object tab;
 for (Object candidate : tabs) {
 	if (candidate.getName() == 'Widget__c') {
@@ -10531,6 +10756,28 @@ System.assertEquals('/lightning/o/Widget__c/list', tab.getUrl());
 		Custom:      true,
 		Motif:       "Custom1: Heart",
 	}}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeTabsProvidesDeterministicDefaultAppSets(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Object> tabSets = Schema.describeTabs();
+System.assertEquals(13, tabSets.size());
+System.assertEquals('Sales', tabSets[0].getLabel());
+System.assert(tabSets[0].isSelected());
+System.assertEquals(15, tabSets[0].getTabs().size());
+System.assertEquals('All Tabs', tabSets[12].getLabel());
+System.assert(!tabSets[12].isSelected());
+System.assertEquals(14, tabSets[12].getTabs().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -10902,6 +11149,7 @@ Database.RelationshipSaveResult relationship = result.getRelationshipSaveResults
 System.assertEquals('Contacts', relationship.getRelationshipName());
 System.assertEquals(2, relationship.getSaveResults().size());
 System.assert(relationship.getSaveResults()[0].isSuccess());
+System.assertEquals(0, relationship.getErrors().size());
 
 List<Account> accounts = [SELECT Id, Name FROM Account WHERE Name = 'Tree Parent'];
 System.assertEquals(1, accounts.size());
@@ -11067,6 +11315,54 @@ System.assertEquals(true, converted.IsConverted);
 System.assertEquals(account.Id, converted.ConvertedAccountId);
 System.assertEquals(contact.Id, converted.ConvertedContactId);
 System.assertEquals('Qualified', converted.Status);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testLeadConvertOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseConvertLeadAccessLevelConvertsSingleAndList(t *testing.T) {
+	program, err := CompileAnonymous(`
+Lead one = new Lead(FirstName = 'CB287', LastName = 'Single', Company = 'CB287 Single Co', Status = 'Open');
+insert one;
+Database.LeadConvert singleConvert = new Database.LeadConvert();
+singleConvert.setLeadId(one.Id);
+singleConvert.setConvertedStatus('Qualified');
+singleConvert.setDoNotCreateOpportunity(true);
+Database.LeadConvertResult singleResult = Database.convertLead(singleConvert, AccessLevel.USER_MODE);
+System.assert(singleResult.isSuccess());
+
+Lead two = new Lead(FirstName = 'CB287', LastName = 'List A', Company = 'CB287 List A Co', Status = 'Open');
+Lead three = new Lead(FirstName = 'CB287', LastName = 'List B', Company = 'CB287 List B Co', Status = 'Open');
+insert new List<Lead>{two, three};
+Database.LeadConvert convertTwo = new Database.LeadConvert();
+convertTwo.setLeadId(two.Id);
+convertTwo.setConvertedStatus('Qualified');
+convertTwo.setDoNotCreateOpportunity(true);
+System.assertEquals(two.Id, convertTwo.getLeadId());
+Database.LeadConvert convertThree = new Database.LeadConvert();
+convertThree.setLeadId(three.Id);
+convertThree.setConvertedStatus('Qualified');
+convertThree.setDoNotCreateOpportunity(true);
+System.assertEquals(three.Id, convertThree.getLeadId());
+List<Database.LeadConvert> conversions = new List<Database.LeadConvert>{convertTwo, convertThree};
+System.assertEquals(two.Id, conversions[0].getLeadId());
+System.assertEquals(three.Id, conversions[1].getLeadId());
+List<Database.LeadConvertResult> listResults = Database.convertLead(conversions, AccessLevel.USER_MODE);
+System.assertEquals(2, listResults.size());
+System.assert(listResults[0].isSuccess());
+System.assert(listResults[1].isSuccess());
+System.assertEquals(two.Id, listResults[0].getLeadId());
+System.assertEquals(three.Id, listResults[1].getLeadId());
+
+Integer convertedCount = [SELECT COUNT() FROM Lead WHERE IsConverted = true];
+System.assertEquals(3, convertedCount);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -12418,12 +12714,47 @@ func TestExecDatabaseEmptyRecycleBinResult(t *testing.T) {
 Account a = new Account(Name = 'Acme');
 insert a;
 delete a;
-Database.EmptyRecycleBinResult result = Database.emptyRecycleBin(a, false);
-System.assert(result.isSuccess());
-System.assertEquals(a.Id, result.getId());
-System.assertEquals(0, result.getErrors().size());
+	Database.EmptyRecycleBinResult result = Database.emptyRecycleBin(a, false);
+	System.assert(result.isSuccess());
+	System.assertEquals(a.Id, result.getId());
+System.assertEquals(null, result.getErrors());
 List<Account> rows = [SELECT Id FROM Account WHERE Id = :a.Id ALL ROWS];
 System.assertEquals(0, rows.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseSuccessfulResultErrorsNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account recycle = new Account(Name = 'RecycleNull');
+insert recycle;
+delete recycle;
+Database.EmptyRecycleBinResult emptied = Database.emptyRecycleBin(recycle, false);
+System.assert(emptied.isSuccess());
+System.assertEquals(null, emptied.getErrors());
+
+Account restore = new Account(Name = 'RestoreNull');
+insert restore;
+delete restore;
+Database.UndeleteResult restored = Database.undelete(restore, false);
+System.assert(restored.isSuccess());
+System.assertEquals(null, restored.getErrors());
+
+Account master2 = new Account(Name = 'MasterNull');
+insert master2;
+Account duplicate2 = new Account(Name = 'DupNull');
+insert duplicate2;
+Database.MergeResult merged = Database.merge(master2, duplicate2, false);
+System.assert(merged.isSuccess());
+System.assertEquals(null, merged.getErrors());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -14392,20 +14723,19 @@ System.assertEquals(true, caught);
 	}
 }
 
-func TestExecExceptionGetInaccessibleFieldsDefaultsEmpty(t *testing.T) {
+func TestExecDmlExceptionGetInaccessibleFieldsRequiresQueryException(t *testing.T) {
 	program, err := CompileAnonymous(`
 try {
-	throw new NoAccessException('blocked');
+    new DmlException('blocked').getInaccessibleFields();
 } catch (Exception e) {
-	Map<String, Set<String>> fields = e.getInaccessibleFields();
-	System.assert(fields != null);
-	System.assertEquals(0, fields.size());
+	System.assertEquals('System.TypeException', e.getTypeName());
+	System.assertEquals('Procedure is only valid for System.QueryException', e.getMessage());
 }
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -14581,7 +14911,7 @@ System.assertEquals(3, partial.size());
 System.assertEquals('REQUIRED_FIELD_MISSING', partial.get(0).getErrors().get(0).getStatusCode());
 System.assertEquals('Name', partial.get(0).getErrors().get(0).getFields().get(0));
 System.assertEquals('DUPLICATE_VALUE', partial.get(1).getErrors().get(0).getStatusCode());
-System.assertEquals('Code__c', partial.get(1).getErrors().get(0).getFields().get(0));
+System.assertEquals(0, partial.get(1).getErrors().get(0).getFields().size());
 System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', partial.get(2).getErrors().get(0).getStatusCode());
 System.assertEquals('Name', partial.get(2).getErrors().get(0).getFields().get(0));
 
@@ -14600,7 +14930,7 @@ try {
 	System.assertEquals(null, e.getDmlId(0));
 	System.assertEquals(1, e.getDmlIndex(1));
 	System.assertEquals('DUPLICATE_VALUE', e.getDmlStatusCode(1));
-	System.assertEquals('Code__c', e.getDmlFields(1).get(0));
+	System.assertEquals(0, e.getDmlFields(1).size());
 	System.assertEquals(2, e.getDmlIndex(2));
 	System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', e.getDmlStatusCode(2));
 	System.assertEquals('Name', e.getDmlFields(2).get(0));
@@ -16328,22 +16658,19 @@ Account blocked = new Account(Name = 'Overload Block');
 Object result = Database.insert(blocked, false);
 System.assert(!result.isSuccess());
 List<Object> errors = result.getErrors();
-System.assertEquals(4, errors.size());
+System.assertEquals(3, errors.size());
 Object objectError = errors.get(0);
 System.assertEquals('object overload', objectError.getMessage());
 List<Object> objectFields = objectError.getFields();
 System.assertEquals(0, objectFields.size());
 Object fieldError = errors.get(1);
-System.assertEquals('unset field overload', fieldError.getMessage());
+System.assertEquals('string field overload', fieldError.getMessage());
 List<Object> fieldFields = fieldError.getFields();
 System.assertEquals(1, fieldFields.size());
 System.assertEquals('Rating', fieldFields.get(0));
 Object tokenFieldError = errors.get(2);
 System.assertEquals('token field overload', tokenFieldError.getMessage());
 System.assertEquals('Name', tokenFieldError.getFields().get(0));
-Object stringFieldError = errors.get(3);
-System.assertEquals('string field overload', stringFieldError.getMessage());
-System.assertEquals('Rating', stringFieldError.getFields().get(0));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -16425,6 +16752,50 @@ System.assertEquals('Clock__c', errors.get(9).getFields().get(0));
 	machine.SetOrg(&org)
 	if err := machine.RegisterTrigger(Trigger{
 		Name:      "AccountBeforeInsertPrimitiveAddError",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRepeatedFieldAddErrorUsesLastFieldError(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	if (a.Name == 'Repeated Block') {
+		a.Rating.addError('first field error');
+		a.Rating.addError('last field error');
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account blocked = new Account(Name = 'Repeated Block', Rating = 'Hot');
+Object result = Database.insert(blocked, false);
+System.assert(!result.isSuccess());
+List<Object> errors = result.getErrors();
+System.assertEquals(1, errors.size());
+System.assertEquals('last field error', errors.get(0).getMessage());
+System.assertEquals('Rating', errors.get(0).getFields().get(0));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeInsertRepeatedFieldAddError",
 		Object:    "Account",
 		Timing:    triggerTimingBefore,
 		Operation: "insert",
@@ -16853,7 +17224,7 @@ for (Account newer : Trigger.new) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Before');
 insert a;
-Account updateRecord = new Account(Id = (Id)a.Id.to18(), Name = 'After');
+Account updateRecord = new Account(Id = (Id)String.valueOf(a.Id), Name = 'After');
 update updateRecord;
 `)
 	if err != nil {

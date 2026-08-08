@@ -35,9 +35,6 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 		if backreferences, ok := receiver.Fields["backreferencePairs"]; ok {
 			matcher.Fields["backreferencePairs"] = backreferences
 		}
-		if flags, ok := receiver.Fields["flags"]; ok {
-			matcher.Fields["flags"] = flags
-		}
 		matcher.Fields["input"] = args[0]
 		matcherClearMatch(matcher)
 		matcher.Fields["index"] = Int(0)
@@ -290,11 +287,6 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		receiver.Fields["regexp2Source"] = String(regexp2Source)
 		receiver.Fields["patternSource"] = source
-		if flags, ok := args[0].Fields["flags"]; ok {
-			receiver.Fields["flags"] = flags
-		} else {
-			delete(receiver.Fields, "flags")
-		}
 		matcherClearMatch(receiver)
 		region, err := matcherRegion(receiver, input)
 		if err != nil {
@@ -349,9 +341,6 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		if regexp2Source, ok := receiver.Fields["regexp2Source"]; ok {
 			pattern.Fields["regexp2Source"] = regexp2Source
-		}
-		if flags, ok := receiver.Fields["flags"]; ok {
-			pattern.Fields["flags"] = flags
 		}
 		return pattern, receiver, false, true, nil
 	default:

@@ -17,6 +17,7 @@ type typeMembers struct {
 	shortKey                          string
 	namespace                         string
 	dependency                        bool
+	platform                          bool
 	sobject                           bool
 	externalPackageSObject            bool
 	partialSObject                    bool
@@ -25,6 +26,7 @@ type typeMembers struct {
 	superClass                        string
 	interfaces                        []string
 	modifiers                         []string
+	constructorsAuthoritative         bool
 	methods                           map[string][]typesys.MemberSymbol
 	constructors                      []typesys.MemberSymbol
 	fields                            map[string]typesys.MemberSymbol
@@ -340,16 +342,18 @@ func (m *semaLazyPlatformTypeMemberModel) hasField(key string) bool {
 
 func semaTypeMembersFromPlatformSymbol(symbol typesys.TypeSymbol) typeMembers {
 	members := typeMembers{
-		name:       semaTypeMembersName(symbol),
-		shortKey:   semaShortTypeKey(symbol.Name),
-		namespace:  symbol.Namespace,
-		dependency: true,
-		kind:       symbol.Kind,
-		superClass: symbol.SuperClass,
-		interfaces: append([]string(nil), symbol.Interfaces...),
-		modifiers:  append([]string(nil), symbol.Modifiers...),
-		methods:    make(map[string][]typesys.MemberSymbol),
-		fields:     make(map[string]typesys.MemberSymbol),
+		name:                      semaTypeMembersName(symbol),
+		shortKey:                  semaShortTypeKey(symbol.Name),
+		namespace:                 symbol.Namespace,
+		dependency:                true,
+		platform:                  true,
+		kind:                      symbol.Kind,
+		superClass:                symbol.SuperClass,
+		interfaces:                append([]string(nil), symbol.Interfaces...),
+		modifiers:                 append([]string(nil), symbol.Modifiers...),
+		constructorsAuthoritative: symbol.ConstructorsAuthoritative,
+		methods:                   make(map[string][]typesys.MemberSymbol),
+		fields:                    make(map[string]typesys.MemberSymbol),
 	}
 	for _, member := range symbol.Members {
 		member = semaCloneMemberSymbol(member)
@@ -862,17 +866,18 @@ func semaModelWithCurrentType(model *semaTypeMemberView, typ typesys.TypeSymbol)
 
 func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
 	members := typeMembers{
-		name:         semaTypeMembersName(typ),
-		shortKey:     semaShortTypeKey(typ.Name),
-		namespace:    typ.Namespace,
-		dependency:   typ.Dependency,
-		nestingDepth: typ.NestingDepth,
-		kind:         typ.Kind,
-		superClass:   typ.SuperClass,
-		interfaces:   append([]string(nil), typ.Interfaces...),
-		modifiers:    append([]string(nil), typ.Modifiers...),
-		methods:      make(map[string][]typesys.MemberSymbol),
-		fields:       make(map[string]typesys.MemberSymbol),
+		name:                      semaTypeMembersName(typ),
+		shortKey:                  semaShortTypeKey(typ.Name),
+		namespace:                 typ.Namespace,
+		dependency:                typ.Dependency,
+		nestingDepth:              typ.NestingDepth,
+		kind:                      typ.Kind,
+		superClass:                typ.SuperClass,
+		interfaces:                append([]string(nil), typ.Interfaces...),
+		modifiers:                 append([]string(nil), typ.Modifiers...),
+		constructorsAuthoritative: typ.ConstructorsAuthoritative,
+		methods:                   make(map[string][]typesys.MemberSymbol),
+		fields:                    make(map[string]typesys.MemberSymbol),
 	}
 	for _, member := range typ.Members {
 		member = semaCloneMemberSymbol(member)
@@ -915,17 +920,18 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 	projectNamespace := index.Project.Namespace
 	for _, typ := range index.Types {
 		members := typeMembers{
-			name:         semaTypeMembersName(typ),
-			shortKey:     semaShortTypeKey(typ.Name),
-			namespace:    typ.Namespace,
-			dependency:   typ.Dependency,
-			nestingDepth: typ.NestingDepth,
-			kind:         typ.Kind,
-			superClass:   typ.SuperClass,
-			interfaces:   append([]string(nil), typ.Interfaces...),
-			modifiers:    append([]string(nil), typ.Modifiers...),
-			methods:      make(map[string][]typesys.MemberSymbol),
-			fields:       make(map[string]typesys.MemberSymbol),
+			name:                      semaTypeMembersName(typ),
+			shortKey:                  semaShortTypeKey(typ.Name),
+			namespace:                 typ.Namespace,
+			dependency:                typ.Dependency,
+			nestingDepth:              typ.NestingDepth,
+			kind:                      typ.Kind,
+			superClass:                typ.SuperClass,
+			interfaces:                append([]string(nil), typ.Interfaces...),
+			modifiers:                 append([]string(nil), typ.Modifiers...),
+			constructorsAuthoritative: typ.ConstructorsAuthoritative,
+			methods:                   make(map[string][]typesys.MemberSymbol),
+			fields:                    make(map[string]typesys.MemberSymbol),
 		}
 		for _, member := range typ.Members {
 			member = semaCloneMemberSymbol(member)
