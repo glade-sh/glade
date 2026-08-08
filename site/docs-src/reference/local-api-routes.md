@@ -21,6 +21,6 @@ Keep it on a trusted local interface unless a real auth layer stands in front.
 
 ## Related workflows
 
-- [Local org data](/guide/modules/local-org-data)
+- [Local org and data](/guide/modules#local-org-and-data)
 - [Local data workflow](/guide/workflows/local-data)
 - [Glade orgs](/guide/glade-orgs)

@@ -2,7 +2,7 @@
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Install</p>
-  <p>Recommended path: use the one-line installer, then run <code>glade doctor</code>.</p>
+  <p>Recommended path: use the one-line installer, confirm the version, then initialize Glade inside a Salesforce DX project.</p>
   <ul>
     <li>Use the script for macOS and Linux release archives.</li>
     <li>Use a manual archive when CI or policy requires pinned artifacts.</li>
@@ -10,33 +10,33 @@
   </ul>
 </div>
 
-Glade ships as a single local binary for macOS and Linux. Install it, verify
-your environment with `glade doctor`, then run your first project check from an
-SFDX workspace.
+Glade ships as a single local binary for macOS and Linux. Install it, confirm
+the binary, then complete the project-aware checks from a Salesforce DX
+workspace.
 
 ## Choose an install path
 
 <div class="docs-install-grid">
-  <div class="docs-install-card">
+  <a class="docs-install-card" href="#one-line-install">
     <p class="docs-card-kicker">Recommended</p>
     <strong>macOS/Linux script</strong>
     <span>Installs the current release to <code>~/.local/bin</code>.</span>
-  </div>
-  <div class="docs-install-card">
+  </a>
+  <a class="docs-install-card" href="#manual-release-archive">
     <p class="docs-card-kicker">Pinned</p>
     <strong>Manual release archive</strong>
     <span>Use in CI or when policy requires pinned artifacts.</span>
-  </div>
-  <div class="docs-install-card">
+  </a>
+  <a class="docs-install-card" href="#build-from-source">
     <p class="docs-card-kicker">Source</p>
     <strong>Build from source</strong>
     <span>Use for Glade development or unreleased changes.</span>
-  </div>
-  <div class="docs-install-card">
+  </a>
+  <a class="docs-install-card" href="#editor-and-ci">
     <p class="docs-card-kicker">Editor and CI</p>
     <strong>VS Code and automation</strong>
     <span>Install the bundled VS Code extension or place the binary in a CI runner.</span>
-  </div>
+  </a>
 </div>
 
 ## One-line install
@@ -62,28 +62,14 @@ curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR=/usr/local/bin sh
 curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=vX.Y.Z sh
 ```
 
-Check the binary after it is on your path:
+Confirm the binary after it is on your path:
 
 ```bash
 glade version
-glade doctor
 ```
 
-Expected: `glade doctor` prints status rows for the parser, toolchain, config,
-and runtime, then ends with `Ready.`.
-
-```text
-glade doctor
-Glade doctor
-
-Project      ✓ SFDX project found
-Parser       ✓ ok (tree-sitter)
-Toolchain    ✓ <glade data dir> (ok (global))
-Config       ✓ glade.yml
-Runtime      ✓ glade <version> · go<version> · <os>/<arch>
-
-Ready.
-```
+`glade doctor` is project-aware. Run it after the project initialization steps
+below, not from an arbitrary directory.
 
 ## Update Glade
 
@@ -94,7 +80,6 @@ to see what will run:
 glade update --dry-run
 GLADE_UPDATE_ALLOW_SHELL=1 glade update
 glade version
-glade doctor
 ```
 
 `glade update` prints the exact installer command before it runs. It updates the
@@ -106,7 +91,7 @@ Manual fallback:
 - Release archives: <https://github.com/glade-sh/glade/releases>
 - Checksums: <https://github.com/glade-sh/glade/releases/latest/download/SHA256SUMS.txt>
 
-## Security verification
+## Security verification for a manual release archive {#manual-release-archive}
 
 Release archives publish checksums, CycloneDX SBOMs, and GitHub artifact
 attestations. The release workflow verifies both archive provenance and the
@@ -114,22 +99,34 @@ CycloneDX attestation before uploading platform assets. Use this path when
 policy requires pinned proof:
 
 ```bash
-GLADE_ARCHIVE=glade_vX.Y.Z_linux_amd64.tar.gz
-curl -L -o "$GLADE_ARCHIVE" "$GLADE_RELEASE_URL"
-curl -L -o SHA256SUMS.txt "$GLADE_CHECKSUMS_URL"
-grep -F "  ./$GLADE_ARCHIVE" SHA256SUMS.txt | shasum -a 256 -c -
+GLADE_MANIFEST_URL=https://downloads.glade.sh/latest/release-manifest.json
+GLADE_VERSION="$(curl -fsSL "$GLADE_MANIFEST_URL" | sed -nE 's/^[[:space:]]*"version": "(v[^"]+)",?$/\1/p')"
+[ -n "$GLADE_VERSION" ] || { echo "could not resolve the stable Glade version" >&2; exit 1; }
+case "$(uname -s)" in Darwin) GLADE_OS=darwin ;; Linux) GLADE_OS=linux ;; *) echo "unsupported operating system" >&2; exit 1 ;; esac
+case "$(uname -m)" in arm64|aarch64) GLADE_ARCH=arm64 ;; x86_64|amd64) GLADE_ARCH=amd64 ;; *) echo "unsupported architecture" >&2; exit 1 ;; esac
+GLADE_ARCHIVE="glade_${GLADE_VERSION}_${GLADE_OS}_${GLADE_ARCH}.tar.gz"
+GLADE_BASE="https://downloads.glade.sh/${GLADE_VERSION}"
+curl -fLO "${GLADE_BASE}/${GLADE_ARCHIVE}"
+curl -fLO "${GLADE_BASE}/SHA256SUMS.txt"
+GLADE_CHECKSUM_LINE="$(grep "  \./${GLADE_ARCHIVE}$" SHA256SUMS.txt)"
+[ -n "$GLADE_CHECKSUM_LINE" ] || { echo "checksum entry not found" >&2; exit 1; }
+if command -v shasum >/dev/null 2>&1; then printf '%s\n' "$GLADE_CHECKSUM_LINE" | shasum -a 256 -c -; else printf '%s\n' "$GLADE_CHECKSUM_LINE" | sha256sum -c -; fi
 gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
 gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
   --predicate-type https://cyclonedx.org/bom
 tar -xzf "$GLADE_ARCHIVE"
 ./glade version
-./glade doctor
 ```
 
 Download the matching `*.sbom.json` release asset when your review process
 requires a dependency inventory.
 
-## Install VS Code Extension
+## Editor and CI {#editor-and-ci}
+
+Use the bundled VS Code extension for editor workflows. For automation, skip
+to [CI usage](#ci-usage).
+
+### Install the VS Code extension
 
 Release archives include the Glade VS Code extension at
 `share/glade/editor/vscode-glade.vsix`. After the `glade` binary is on your
@@ -164,7 +161,6 @@ git clone https://github.com/glade-sh/glade.git
 cd glade
 go build -o glade ./cmd/glade
 ./glade version
-./glade doctor
 ```
 
 Run against an SFDX project. No Salesforce org login is required for these local commands:
@@ -179,7 +175,6 @@ During development you can run the CLI without building a binary:
 
 ```bash
 go run ./cmd/glade version
-go run ./cmd/glade doctor
 go run ./cmd/glade check --project path/to/sfdx-project
 ```
 
@@ -191,6 +186,7 @@ From an SFDX project root:
 glade init --project . --yes
 glade config validate --project .
 glade config show --project .
+glade doctor
 glade check --project .
 glade test --project . --json --no-progress
 ```
@@ -198,8 +194,8 @@ glade test --project . --json --no-progress
 Run one class, one method, or tests affected by a git ref:
 
 ```bash
-glade test --project . --class RefinementServiceTest --json
-glade test --project . --class RefinementServiceTest --method testRefinesFileRow --json
+glade test --project . --class <YourTestClass> --json
+glade test --project . --class <YourTestClass> --method <yourTestMethod> --json
 glade test changed --project . --since origin/main --json --no-progress
 ```
 
@@ -223,10 +219,16 @@ Or download a release artifact and verify checksums:
 
 ```yaml
 - run: |
-    GLADE_ARCHIVE=glade_vX.Y.Z_linux_amd64.tar.gz
-    curl -L -o "$GLADE_ARCHIVE" "$GLADE_RELEASE_URL"
-    curl -L -o SHA256SUMS.txt "$GLADE_CHECKSUMS_URL"
-    grep -F "  ./$GLADE_ARCHIVE" SHA256SUMS.txt | shasum -a 256 -c -
+    GLADE_MANIFEST_URL=https://downloads.glade.sh/latest/release-manifest.json
+    GLADE_VERSION="$(curl -fsSL "$GLADE_MANIFEST_URL" | sed -nE 's/^[[:space:]]*"version": "(v[^"]+)",?$/\1/p')"
+    [ -n "$GLADE_VERSION" ] || { echo "could not resolve the stable Glade version" >&2; exit 1; }
+    GLADE_ARCHIVE="glade_${GLADE_VERSION}_linux_amd64.tar.gz"
+    GLADE_BASE="https://downloads.glade.sh/${GLADE_VERSION}"
+    curl -fLO "${GLADE_BASE}/${GLADE_ARCHIVE}"
+    curl -fLO "${GLADE_BASE}/SHA256SUMS.txt"
+    GLADE_CHECKSUM_LINE="$(grep "  \./${GLADE_ARCHIVE}$" SHA256SUMS.txt)"
+    [ -n "$GLADE_CHECKSUM_LINE" ] || { echo "checksum entry not found" >&2; exit 1; }
+    printf '%s\n' "$GLADE_CHECKSUM_LINE" | sha256sum -c -
     gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
     tar -xzf "$GLADE_ARCHIVE"
     install -m 0755 glade ~/.local/bin/glade
@@ -245,12 +247,9 @@ Then open a new shell and run:
 
 ```bash
 glade version
-glade doctor
 ```
 
 ::: tip Next step
-For a first project run, use the [Tester field guide](/guide/tester-field-guide).
-For a narrow first run, create project config:
-[Configure a Glade Project](/guide/configuration), then check
-[What Glade runs locally](/guide/support-map).
+Continue with the [first project run](#first-project-run), or follow the
+[first local check](/guide/quickstart) one step at a time.
 :::

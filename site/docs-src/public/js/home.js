@@ -7,7 +7,6 @@
   var copyTimer = 0
   var copyControlsInitialized = false
   var homeControlsInitialized = false
-  var homeSearchInitialized = false
   var workbenchHashListenerInitialized = false
   var scenarioAliases = {
     "check-source": "check",
@@ -377,7 +376,7 @@
         "glade check --project . --no-progress"
       ],
       installLabel: "Selected workflow: Catch deploy issues",
-      docsHref: "/guide/cli-reference"
+      docsHref: "/reference/cli"
     },
     "test": {
       shortLabel: "Test",
@@ -491,7 +490,7 @@
         "glade exec \"System.debug('local');\""
       ],
       installLabel: "Selected workflow: Execute Apex locally",
-      docsHref: "/guide/cli-reference"
+      docsHref: "/reference/cli"
     },
     "debug": {
       shortLabel: "Debug",
@@ -563,7 +562,7 @@
         "glade debug profile --log apex.log"
       ],
       installLabel: "Selected workflow: Profile debug logs",
-      docsHref: "/guide/cli-reference#glade-debug"
+      docsHref: "/reference/cli#glade-debug"
     }
   }
 
@@ -576,7 +575,6 @@
   window.addEventListener("glade:content-updated", init)
 
   function init() {
-    initHomeSearchState()
     initCopyControls()
     initWorkbenchDemo()
   }
@@ -600,42 +598,6 @@
       var copyButton = target.closest("[data-copy-target]")
       if (copyButton) copyToClipboard(copyButton)
     })
-  }
-
-  function initHomeSearchState() {
-    if (homeSearchInitialized) {
-      hideHomeSearch()
-      return
-    }
-    homeSearchInitialized = true
-    hideHomeSearch()
-    var app = document.getElementById("app")
-    if (!app || !window.MutationObserver) return
-    var observer = new MutationObserver(function () {
-      hideHomeSearch()
-    })
-    observer.observe(app, { childList: true, subtree: true })
-  }
-
-  function hideHomeSearch() {
-    var search = document.querySelector(".VPNavBarSearch")
-    if (!search) {
-      window.setTimeout(hideHomeSearch, 120)
-      return
-    }
-    if (document.querySelector(".VPHome")) {
-      search.setAttribute("aria-hidden", "true")
-      search.setAttribute("inert", "")
-      search.setAttribute("data-home-hidden", "true")
-      search.inert = true
-      return
-    }
-    if (search.getAttribute("data-home-hidden") === "true") {
-      search.removeAttribute("aria-hidden")
-      search.removeAttribute("inert")
-      search.removeAttribute("data-home-hidden")
-      search.inert = false
-    }
   }
 
   function initHomeControls() {
@@ -703,17 +665,14 @@
         moveOutputTab(e.key === "ArrowRight" ? 1 : -1)
         return
       }
-      if (/^[1-4]$/.test(e.key)) {
+      var focusedScenarioTab = document.activeElement && document.activeElement.closest && document.activeElement.closest("[data-scenario-id]")
+      if (focusedScenarioTab && (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "Home" || e.key === "End")) {
         e.preventDefault()
-        setActiveScenario(scenarioOrder[Number(e.key) - 1])
-      }
-      if (e.key.toLowerCase() === "r") {
-        e.preventDefault()
-        runActiveScenario()
-      }
-      if (e.key.toLowerCase() === "c") {
-        e.preventDefault()
-        copyActiveCommand()
+        var currentIndex = scenarioOrder.indexOf(activeScenarioId)
+        var nextIndex = e.key === "Home" ? 0 : e.key === "End" ? scenarioOrder.length - 1 : (currentIndex + (e.key === "ArrowRight" ? 1 : -1) + scenarioOrder.length) % scenarioOrder.length
+        setActiveScenario(scenarioOrder[nextIndex])
+        var nextTab = document.querySelector('[data-scenario-id="' + scenarioOrder[nextIndex] + '"]')
+        if (nextTab) nextTab.focus()
       }
     })
   }
@@ -734,20 +693,11 @@
   }
 
   function copyLinesFromTarget(target) {
-    return target.textContent.trim()
-  }
-
-  function copyActiveCommand() {
-    var scenario = scenarios[activeScenarioId]
-    if (!scenario) return
-    copyText(scenario.command, function (success) {
-      setCopyStatus(success ? "Command copied" : "Copy failed")
-    })
+    return target.getAttribute("data-copy-text") || target.textContent.trim()
   }
 
   function copyText(text, done) {
     var settled = false
-    var fallbackSuccess = fallbackCopyText(text)
 
     function complete(success) {
       if (settled) return
@@ -755,28 +705,25 @@
       done(success)
     }
 
-    if (fallbackSuccess) {
-      complete(true)
-    }
-
     if (navigator.clipboard && navigator.clipboard.writeText) {
       try {
         navigator.clipboard.writeText(text).then(function () {
           complete(true)
         }, function () {
-          if (!fallbackSuccess) complete(false)
+          complete(fallbackCopyText(text))
         })
         return
       } catch (e) {
-        if (!fallbackSuccess) complete(false)
+        complete(fallbackCopyText(text))
         return
       }
     }
 
-    if (!fallbackSuccess) complete(false)
+    complete(fallbackCopyText(text))
   }
 
   function fallbackCopyText(text) {
+    var active = document.activeElement
     var input = document.createElement("textarea")
     input.value = text
     input.setAttribute("readonly", "readonly")
@@ -791,6 +738,7 @@
       copied = false
     }
     document.body.removeChild(input)
+    if (active && typeof active.focus === "function") active.focus({ preventScroll: true })
     return copied
   }
 
@@ -836,8 +784,8 @@
       var active = button.getAttribute("data-scenario-id") === id
       button.classList.toggle("active", active)
       button.setAttribute("data-active", active ? "true" : "false")
-      button.setAttribute("aria-pressed", active ? "true" : "false")
       button.setAttribute("aria-selected", active ? "true" : "false")
+      button.tabIndex = active ? 0 : -1
       var label = button.querySelector("[data-selected-label]")
       if (label) label.textContent = active ? "Selected" : ""
     })
@@ -904,8 +852,8 @@
     document.querySelectorAll("[data-output-tab]").forEach(function (button) {
       var active = button.getAttribute("data-output-tab") === activeOutputView
       button.classList.toggle("active", active)
-      button.setAttribute("aria-pressed", active ? "true" : "false")
       button.setAttribute("aria-selected", active ? "true" : "false")
+      button.tabIndex = active ? 0 : -1
     })
   }
 
@@ -928,6 +876,8 @@
     output.setAttribute("data-output-view", activeOutputView)
     var panel = document.getElementById("command-output-panel")
     if (panel) panel.setAttribute("aria-labelledby", "output-tab-" + activeOutputView)
+    var workflowPanel = document.getElementById("workbench-demo-panel")
+    if (workflowPanel) workflowPanel.setAttribute("aria-labelledby", "scenario-tab-" + activeScenarioId)
   }
 
   function runActiveScenario() {
@@ -1149,49 +1099,6 @@
       } else {
         line.removeAttribute("data-highlighted")
       }
-    })
-  }
-
-  function initCommandPalette() {
-    var overlay = document.createElement("div")
-    overlay.className = "home-cmd-overlay"
-    overlay.setAttribute("aria-hidden", "true")
-    overlay.inert = true
-    overlay.innerHTML =
-      '<div class="home-cmd-panel">' +
-      '<div class="home-cmd-header"><span>glade</span><button class="home-cmd-close" type="button">esc</button></div>' +
-      '<div class="home-cmd-items">' +
-      '<a href="/guide/installation" class="home-cmd-item"><strong>Install</strong><code>curl -fsSL https://glade.sh/install.sh | sh</code></a>' +
-      '<a href="#check" class="home-cmd-item"><strong>Run local check</strong><code>glade check --project . --no-progress</code></a>' +
-      '<a href="#test" class="home-cmd-item"><strong>Run focused tests</strong><code>glade test --project . --class PassingTest --no-progress</code></a>' +
-      '<a href="#exec" class="home-cmd-item"><strong>Execute Apex locally</strong><code>glade exec "System.debug(\\\'local\\\');"</code></a>' +
-      '<a href="#debug" class="home-cmd-item"><strong>Profile debug logs</strong><code>glade debug profile --log apex.log</code></a>' +
-      "</div></div>"
-    document.body.appendChild(overlay)
-
-    var close = function () {
-      overlay.setAttribute("aria-hidden", "true")
-      overlay.inert = true
-    }
-    var open = function () {
-      overlay.setAttribute("aria-hidden", "false")
-      overlay.inert = false
-    }
-    overlay.addEventListener("click", function (e) {
-      if (e.target === overlay) close()
-    })
-    overlay.querySelector(".home-cmd-close").addEventListener("click", close)
-    overlay.querySelectorAll(".home-cmd-item").forEach(function (item) {
-      item.addEventListener("click", close)
-    })
-    window.addEventListener("keydown", function (e) {
-      var tag = document.activeElement && document.activeElement.tagName
-      var typing = tag === "INPUT" || tag === "TEXTAREA" || String(document.activeElement && document.activeElement.isContentEditable) === "true"
-      if (!typing && (e.key === "/" || (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)))) {
-        e.preventDefault()
-        open()
-      }
-      if (e.key === "Escape") close()
     })
   }
 

@@ -42,7 +42,7 @@ and exposes support gaps instead of hiding them.
     <strong>Interactive capability map</strong>
     <span>Try checked Apex support labels in the browser workbench.</span>
   </a>
-  <a class="docs-route-card" href="/guide/cli-reference">
+  <a class="docs-route-card" href="/reference/cli">
     <strong>CLI Reference</strong>
     <span>Find commands, flags, and common examples.</span>
   </a>

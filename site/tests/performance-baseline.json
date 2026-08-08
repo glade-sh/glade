@@ -1,0 +1,46 @@
+{
+  "runner": {
+    "browser": "chromium",
+    "browserVersion": "151.0.7922.34",
+    "platform": "darwin",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "profile": "local VitePress preview; cold browser context; 100ms latency; 1.6Mbps down; 0.8Mbps up; 4x CPU slowdown",
+    "capturedAt": "2026-07-30",
+    "runs": 5
+  },
+  "routes": {
+    "/": {
+      "median": {
+        "jsCssBytes": 129519,
+        "lcpMs": 744,
+        "cls": 0.00214,
+        "tbtMs": 0
+      },
+      "samples": [
+        { "jsCssBytes": 129519, "lcpMs": 764, "cls": 0.0021384862075617284, "tbtMs": 13 },
+        { "jsCssBytes": 129519, "lcpMs": 756, "cls": 0.0021384862075617284, "tbtMs": 0 },
+        { "jsCssBytes": 129519, "lcpMs": 740, "cls": 0.0021384862075617284, "tbtMs": 0 },
+        { "jsCssBytes": 129519, "lcpMs": 744, "cls": 0.0021384862075617284, "tbtMs": 0 },
+        { "jsCssBytes": 129519, "lcpMs": 732, "cls": 0.0021384862075617284, "tbtMs": 0 }
+      ]
+    },
+    "/guide/quickstart": {
+      "median": {
+        "jsCssBytes": 121752,
+        "lcpMs": 704,
+        "cls": 0.00093,
+        "tbtMs": 25
+      },
+      "samples": [
+        { "jsCssBytes": 121752, "lcpMs": 696, "cls": 0.0009324716575842336, "tbtMs": 25 },
+        { "jsCssBytes": 121752, "lcpMs": 712, "cls": 0.0009324716575842336, "tbtMs": 25 },
+        { "jsCssBytes": 121752, "lcpMs": 700, "cls": 0.0009324716575842336, "tbtMs": 24 },
+        { "jsCssBytes": 121752, "lcpMs": 704, "cls": 0.0009324716575842336, "tbtMs": 27 },
+        { "jsCssBytes": 121752, "lcpMs": 712, "cls": 0.0009324716575842336, "tbtMs": 40 }
+      ]
+    }
+  }
+}

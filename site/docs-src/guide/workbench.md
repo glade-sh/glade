@@ -1,8 +1,15 @@
 ---
 aside: false
+head:
+  - - link
+    - rel: stylesheet
+      href: /css/home.css
+  - - link
+    - rel: stylesheet
+      href: /css/workbench.css
 ---
 
-# Interactive capability map
+# Capability explorer
 
 Type Apex expressions and see whether the API runs locally, runs with limits, or requires Salesforce.
 
@@ -54,47 +61,47 @@ Use the editor as a live capability map: type a dot, read the label, and see the
       </div>
     </div>
     <div class="home-workflow-tabs" role="tablist" aria-label="Demo workflows">
-      <button class="home-workflow-tab active" type="button" role="tab" data-scenario-id="check" data-active="true" aria-pressed="true" aria-selected="true">
+      <button id="scenario-tab-check" class="home-workflow-tab active" type="button" role="tab" data-scenario-id="check" data-active="true" aria-selected="true" aria-controls="workbench-demo-panel">
         <span class="home-scenario-kicker"><span>Check</span><em class="home-selected-indicator" data-selected-label>Selected</em></span>
         <strong>Catch deploy issues</strong>
         <small>1 diagnostic caught</small>
       </button>
-      <button class="home-workflow-tab" type="button" role="tab" data-scenario-id="test" data-active="false" aria-pressed="false" aria-selected="false">
+      <button id="scenario-tab-test" class="home-workflow-tab" type="button" role="tab" data-scenario-id="test" data-active="false" aria-selected="false" aria-controls="workbench-demo-panel" tabindex="-1">
         <span class="home-scenario-kicker"><span>Test</span><em class="home-selected-indicator" data-selected-label></em></span>
         <strong>Run focused tests</strong>
         <small>1 passed · 0 failed</small>
       </button>
-      <button class="home-workflow-tab" type="button" role="tab" data-scenario-id="exec" data-active="false" aria-pressed="false" aria-selected="false">
+      <button id="scenario-tab-exec" class="home-workflow-tab" type="button" role="tab" data-scenario-id="exec" data-active="false" aria-selected="false" aria-controls="workbench-demo-panel" tabindex="-1">
         <span class="home-scenario-kicker"><span>Exec</span><em class="home-selected-indicator" data-selected-label></em></span>
         <strong>Execute Apex locally</strong>
         <small>USER_DEBUG emitted</small>
       </button>
-      <button class="home-workflow-tab" type="button" role="tab" data-scenario-id="debug" data-active="false" aria-pressed="false" aria-selected="false">
+      <button id="scenario-tab-debug" class="home-workflow-tab" type="button" role="tab" data-scenario-id="debug" data-active="false" aria-selected="false" aria-controls="workbench-demo-panel" tabindex="-1">
         <span class="home-scenario-kicker"><span>Debug</span><em class="home-selected-indicator" data-selected-label></em></span>
         <strong>Profile debug logs</strong>
         <small>4 events parsed</small>
       </button>
     </div>
     <div class="home-result-summary" data-result-summary data-result-state="failed" aria-live="polite">FAILED · 1 diagnostic · 1 type checked · exit code 1</div>
-    <div class="home-workbench-grid">
+    <div id="workbench-demo-panel" class="home-workbench-grid" role="tabpanel" aria-labelledby="scenario-tab-check" tabindex="0">
       <section class="home-command-panel" aria-label="Command output">
         <div class="home-panel-top">
           <strong>Command output</strong>
           <span data-command-label>glade check</span>
         </div>
         <div class="home-output-tabs" role="tablist" aria-label="Command output format">
-          <button id="output-tab-output" class="home-output-tab active" type="button" role="tab" data-output-tab="output" aria-pressed="true" aria-selected="true" aria-controls="command-output-panel">Output</button>
-          <button id="output-tab-json" class="home-output-tab" type="button" role="tab" data-output-tab="json" aria-pressed="false" aria-selected="false" aria-controls="command-output-panel">JSON</button>
-          <button id="output-tab-trace" class="home-output-tab" type="button" role="tab" data-output-tab="trace" aria-pressed="false" aria-selected="false" aria-controls="command-output-panel">Trace</button>
+          <button id="output-tab-output" class="home-output-tab active" type="button" role="tab" data-output-tab="output" aria-selected="true" aria-controls="command-output-panel">Output</button>
+          <button id="output-tab-json" class="home-output-tab" type="button" role="tab" data-output-tab="json" aria-selected="false" aria-controls="command-output-panel" tabindex="-1">JSON</button>
+          <button id="output-tab-trace" class="home-output-tab" type="button" role="tab" data-output-tab="trace" aria-selected="false" aria-controls="command-output-panel" tabindex="-1">Trace</button>
         </div>
-        <pre id="command-output-panel" class="home-command-output" role="tabpanel" aria-labelledby="output-tab-output"><code data-command-output data-cli-output data-output-view="output">$ glade check --project . --no-progress&#10;Glade check&#10;&#10;✗ 1 diagnostic found&#10;&#10;force-app/main/default/classes/RefinementService.cls:2:3&#10;error GLADESEMA002 method "latestInvoice" references unknown type "Invoice__c"&#10;&#10;Try:&#10;  glade schema load --project .&#10;  glade check --project .</code></pre>
+        <pre id="command-output-panel" class="home-command-output" role="tabpanel" aria-labelledby="output-tab-output" tabindex="0"><code data-command-output data-cli-output data-output-view="output">$ glade check --project . --no-progress&#10;Glade check&#10;&#10;✗ 1 diagnostic found&#10;&#10;force-app/main/default/classes/RefinementService.cls:2:3&#10;error GLADESEMA002 method "latestInvoice" references unknown type "Invoice__c"&#10;&#10;Try:&#10;  glade schema load --project .&#10;  glade check --project .</code></pre>
       </section>
       <section class="home-source-panel" aria-label="Workflow input">
         <div class="home-panel-top">
           <strong data-source-title>Apex input</strong>
           <span data-source-label>RefinementService.cls:2</span>
         </div>
-        <pre class="home-source-code"><code class="language-apex" data-source-code data-highlighted-line="2">public with sharing class RefinementService {&#10;  public static Invoice__c latestInvoice() {&#10;    return null;&#10;  }&#10;}</code></pre>
+        <pre class="home-source-code" tabindex="0"><code class="language-apex" data-source-code data-highlighted-line="2">public with sharing class RefinementService {&#10;  public static Invoice__c latestInvoice() {&#10;    return null;&#10;  }&#10;}</code></pre>
       </section>
       <section class="home-changed-panel" aria-label="What changed">
         <div class="home-panel-top">
@@ -133,8 +140,7 @@ Use the editor as a live capability map: type a dot, read the label, and see the
         <button type="button" data-copy-target="workbench-ci-command" aria-label="Copy workbench JSON command">Copy JSON command</button>
       </div>
       <div class="home-command-strip-foot">
-        <a href="/guide/cli-reference" data-docs-link>View docs</a>
-        <span class="home-shortcuts">Shortcuts: 1-4 switch jobs · R run · C copy</span>
+        <a href="/reference/cli" data-docs-link>View docs</a>
         <span class="home-copy-status" data-copy-status role="status" aria-live="polite"></span>
       </div>
     </div>

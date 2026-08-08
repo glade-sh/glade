@@ -45,10 +45,18 @@ CycloneDX attestation must verify before any platform asset is uploaded.
 Verify a downloaded archive:
 
 ```bash
-GLADE_ARCHIVE=glade_vX.Y.Z_linux_amd64.tar.gz
-curl -L -o "$GLADE_ARCHIVE" "$GLADE_RELEASE_URL"
-curl -L -o SHA256SUMS.txt "$GLADE_CHECKSUMS_URL"
-grep -F "  ./$GLADE_ARCHIVE" SHA256SUMS.txt | shasum -a 256 -c -
+GLADE_MANIFEST_URL=https://downloads.glade.sh/latest/release-manifest.json
+GLADE_VERSION="$(curl -fsSL "$GLADE_MANIFEST_URL" | sed -nE 's/^[[:space:]]*"version": "(v[^"]+)",?$/\1/p')"
+[ -n "$GLADE_VERSION" ] || { echo "could not resolve the stable Glade version" >&2; exit 1; }
+case "$(uname -s)" in Darwin) GLADE_OS=darwin ;; Linux) GLADE_OS=linux ;; *) echo "unsupported operating system" >&2; exit 1 ;; esac
+case "$(uname -m)" in arm64|aarch64) GLADE_ARCH=arm64 ;; x86_64|amd64) GLADE_ARCH=amd64 ;; *) echo "unsupported architecture" >&2; exit 1 ;; esac
+GLADE_ARCHIVE="glade_${GLADE_VERSION}_${GLADE_OS}_${GLADE_ARCH}.tar.gz"
+GLADE_BASE="https://downloads.glade.sh/${GLADE_VERSION}"
+curl -fLO "${GLADE_BASE}/${GLADE_ARCHIVE}"
+curl -fLO "${GLADE_BASE}/SHA256SUMS.txt"
+GLADE_CHECKSUM_LINE="$(grep "  \./${GLADE_ARCHIVE}$" SHA256SUMS.txt)"
+[ -n "$GLADE_CHECKSUM_LINE" ] || { echo "checksum entry not found" >&2; exit 1; }
+if command -v shasum >/dev/null 2>&1; then printf '%s\n' "$GLADE_CHECKSUM_LINE" | shasum -a 256 -c -; else printf '%s\n' "$GLADE_CHECKSUM_LINE" | sha256sum -c -; fi
 gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
 gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
   --predicate-type https://cyclonedx.org/bom
@@ -70,6 +78,13 @@ Glade uses the network when installing or updating release archives, installing
 the local LWC toolchain, or installing plugins from a registry or archive URL.
 The local check, test, parse, exec, SOQL, DML, and local API paths do not send
 project source to a hosted Glade service.
+
+## Plugins
+
+Plugins are executables. They run as the current OS user with a minimal environment.
+Review a plugin's source before installing or linking it, pin plugin versions in CI
+with a lock file, and treat `glade plugins link --exec <path>` as immediate trust in
+that executable. The registry index is fetched over HTTPS but is not separately signed.
 
 ## Local storage
 

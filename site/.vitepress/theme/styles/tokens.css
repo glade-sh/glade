@@ -1,0 +1,49 @@
+:root {
+  --glade-status-supported: #9be870;
+  --glade-status-limited: #f5c95f;
+  --glade-status-salesforce: #7db7ff;
+  --glade-status-error: #ff6b61;
+  --glade-reading-width: 72ch;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+  --bg: #f7faf7;
+  --bg-soft: #edf4ef;
+  --surface: #ffffff;
+  --surface-raised: #f2f7f3;
+  --surface-active: #dfebe2;
+  --surface-inset: #eff5f0;
+  --terminal: #ffffff;
+  --line: #bfd0c3;
+  --line-strong: #789180;
+  --line-soft: rgba(18, 43, 25, 0.10);
+  --text: #102217;
+  --text-muted: #3e5545;
+  --text-subtle: #637667;
+  --text-inverse: #f7fff8;
+  --success-text: #164b22;
+  --danger-text: #94231b;
+  --warning-text: #745500;
+  --glade: #27743d;
+  --glade-strong: #155929;
+  --glade-muted: rgba(39, 116, 61, 0.13);
+  --glade-line: rgba(39, 116, 61, 0.45);
+  --success: #27743d;
+  --warning: #9c6500;
+  --danger: #c5372d;
+  --info: #2869b7;
+  --focus: #155929;
+  --glade-contour-opacity: 0.05;
+  --glade-bg-grid-line: rgba(18, 43, 25, 0.045);
+  --glade-bg-grid-line-soft: rgba(18, 43, 25, 0.035);
+  --glade-nav-bg: #f7faf7;
+  --glade-bg-wash: linear-gradient(180deg, rgba(223, 235, 226, 0.72) 0%, rgba(247, 250, 247, 0) 430px);
+  --glade-surface: rgba(255, 255, 255, 0.94);
+  --glade-surface-solid: var(--surface);
+  --glade-surface-soft: rgba(18, 43, 25, 0.045);
+  --glade-surface-pressed: var(--surface-active);
+  --glade-code-line: #637667;
+  --glade-shadow: 0 18px 44px rgba(23, 51, 30, 0.12);
+  --glade-shadow-soft: 0 10px 28px rgba(23, 51, 30, 0.08);
+}

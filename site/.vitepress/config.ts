@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress'
+import routeManifest from '../routes.json'
 
 const tunnelAllowedHosts = [
   'apollo.local',
@@ -16,14 +17,83 @@ function isVueUsePureAnnotationWarning(warning: { code?: string; id?: string; me
   )
 }
 
+const noindexRoutes = new Set(
+  routeManifest.routes
+    .filter((entry) => entry.classification === 'noindex' || entry.classification === 'redirect')
+    .map((entry) => entry.route)
+)
+const buildCommit = process.env.CF_PAGES_COMMIT_SHA || process.env.GITHUB_SHA || 'local-preview'
+
+const descriptions: Record<string, string> = {
+  'index.md': 'Run and test supported Salesforce Apex locally from a Salesforce DX project.',
+  'guide/index.md': 'Choose a first local check, a day-to-day workflow, or exact Glade reference material for a Salesforce DX project.',
+  'guide/installation.md': 'Install Glade on macOS or Linux, then verify a release archive, checksum, SBOM, and attestation.',
+  'guide/quickstart.md': 'Initialize a Salesforce DX project and run the first local Glade check and Apex test.',
+  'guide/workflows.md': 'Choose a local Glade workflow for Apex tests, debugging, local data, UI previews, or CI.',
+  'guide/support-map.md': 'Check which Glade Apex, data, API, LWC, and Visualforce paths run locally or still require Salesforce.',
+  'guide/security-trust.md': 'Verify Glade releases and understand local plugin execution, security boundaries, and trust evidence.',
+  'reference/cli.md': 'Look up Glade command behavior, flags, output formats, configuration, and local Salesforce compatibility.',
+  'help/index.md': 'Pick a Glade troubleshooting guide for a local check, Apex test, VS Code debugging, local data, or CI setup.'
+}
+
+function routeFor(relativePath: string) {
+  if (relativePath === 'index.md') return '/'
+  return `/${relativePath.replace(/(?:^|\/)index\.md$/, '').replace(/\.md$/, '')}${relativePath.endsWith('/index.md') ? '/' : ''}`
+}
+
+function descriptionFor(relativePath: string, title: string) {
+  if (descriptions[relativePath]) return descriptions[relativePath]
+  const sentence = /[.?!]$/.test(title) ? title : `${title}.`
+  if (relativePath.startsWith('help/')) {
+    return `${sentence} Follow a focused troubleshooting path with expected Glade results and recovery steps.`
+  }
+  if (relativePath.startsWith('reference/')) {
+    return `${sentence} Find exact Glade behavior, supported local paths, and the boundary with Salesforce.`
+  }
+  if (relativePath.startsWith('guide/workflows/')) {
+    return `${sentence} Follow the local workflow with commands, expected results, and Salesforce boundaries.`
+  }
+  if (relativePath.startsWith('maintainer/')) {
+    return `${sentence} Use the checked Glade maintainer runbook and repository commands.`
+  }
+  return `${sentence} Understand the Glade task, complete the local work, and identify when Salesforce is required.`
+}
+
 export default defineConfig({
-  title: 'Glade - Local Apex Runtime for SFDX Projects',
-  description: 'Local Apex checks and focused tests before the Salesforce validation gate.',
+  title: 'Glade',
+  description: 'Run and test supported Salesforce Apex locally from a Salesforce DX project.',
   base: '/',
   srcDir: 'docs-src',
   outDir: '.vitepress/dist',
   cleanUrls: true,
-  appearance: 'force-dark',
+  appearance: true,
+  sitemap: {
+    hostname: 'https://glade.sh',
+    transformItems: (items) => items.filter((item) => !noindexRoutes.has(new URL(item.url, 'https://glade.sh').pathname))
+  },
+  transformPageData(pageData) {
+    return { description: descriptionFor(pageData.relativePath, pageData.title) }
+  },
+  transformHead(ctx) {
+    const route = routeFor(ctx.pageData.relativePath)
+    const canonical = `https://glade.sh${route}`
+    const title = route === '/' ? 'Glade' : `${ctx.pageData.title} | Glade`
+    const description = descriptionFor(ctx.pageData.relativePath, ctx.pageData.title)
+    const type = route === '/' ? 'website' : 'article'
+    const head: [string, Record<string, string>][] = [
+      ['link', { rel: 'canonical', href: canonical }],
+      ['meta', { property: 'og:title', content: title }],
+      ['meta', { property: 'og:description', content: description }],
+      ['meta', { property: 'og:type', content: type }],
+      ['meta', { property: 'og:url', content: canonical }],
+      ['meta', { name: 'twitter:title', content: title }],
+      ['meta', { name: 'twitter:description', content: description }]
+    ]
+    if (ctx.pageData.isNotFound || noindexRoutes.has(route)) {
+      head.push(['meta', { name: 'robots', content: 'noindex' }])
+    }
+    return head
+  },
   lastUpdated: false,
   vite: {
     server: {
@@ -43,14 +113,7 @@ export default defineConfig({
   },
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo-mark.svg' }],
-    ['script', { defer: true, src: '/js/highlight.js' }],
-    ['script', { defer: true, src: '/js/home.js' }],
     ['meta', { name: 'theme-color', content: '#060a0d' }],
-    ['meta', { name: 'description', content: 'Local Apex checks and focused tests before the Salesforce validation gate.' }],
-    ['meta', { property: 'og:title', content: 'Glade — Local Apex runtime for SFDX projects' }],
-    ['meta', { property: 'og:description', content: 'Run supported Apex checks before the Salesforce round trip.' }],
-    ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:url', content: 'https://glade.sh/' }],
     ['meta', { property: 'og:site_name', content: 'Glade' }],
     ['meta', { property: 'og:image', content: 'https://glade.sh/social-card.png' }],
     ['meta', { property: 'og:image:secure_url', content: 'https://glade.sh/social-card.png' }],
@@ -59,41 +122,36 @@ export default defineConfig({
     ['meta', { property: 'og:image:height', content: '630' }],
     ['meta', { property: 'og:image:alt', content: 'Glade local Apex runtime social preview' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-    ['meta', { name: 'twitter:title', content: 'Glade — Local Apex runtime for SFDX projects' }],
-    ['meta', { name: 'twitter:description', content: 'Run supported Apex checks before the Salesforce round trip.' }],
     ['meta', { name: 'twitter:image', content: 'https://glade.sh/social-card.png' }],
-    ['meta', { name: 'twitter:image:alt', content: 'Glade local Apex runtime social preview' }]
+    ['meta', { name: 'twitter:image:alt', content: 'Glade local Apex runtime social preview' }],
+    ['meta', { name: 'glade:commit', content: buildCommit }]
   ],
   themeConfig: {
     siteTitle: 'Glade',
     logo: '/logo-mark.svg',
     search: { provider: 'local' },
     nav: [
+      { text: 'Docs', link: '/guide/' },
       { text: 'Install', link: '/guide/installation' },
       { text: 'Workflows', link: '/guide/workflows' },
-      { text: 'Product areas', link: '/guide/modules' },
-      { text: 'What runs locally', link: '/guide/support-map' },
       { text: 'Reference', link: '/reference/cli' },
-      { text: 'Help', link: '/help/' },
-      { text: 'GitHub', link: 'https://github.com/glade-sh/glade' }
+      { text: 'Support & trust', link: '/guide/support-map' }
     ],
-    sidebar: [
+    sidebar: {
+      '/guide/': [
       {
         text: 'Start',
         items: [
           { text: 'What is Glade?', link: '/guide/overview' },
           { text: 'Install', link: '/guide/installation' },
           { text: 'First local check', link: '/guide/quickstart' },
-          { text: 'Tester field guide', link: '/guide/tester-field-guide' },
           { text: 'Choose a workflow', link: '/guide/workflows' },
-          { text: 'What runs locally', link: '/guide/support-map' },
-          { text: 'Security & Trust', link: '/guide/security-trust' },
-          { text: 'Playground', link: '/guide/playground' }
+          { text: 'What runs locally', link: '/guide/support-map' }
         ]
       },
       {
         text: 'Workflows',
-        collapsed: false,
+        collapsed: true,
         items: [
           { text: 'Run Apex tests', link: '/guide/workflows/apex-tests' },
           { text: 'Debug Apex', link: '/guide/workflows/debug-apex' },
@@ -107,59 +165,25 @@ export default defineConfig({
         ]
       },
       {
-        text: 'Product areas',
-        collapsed: false,
+        text: 'How Glade works',
+        collapsed: true,
         items: [
-          { text: 'Product area overview', link: '/guide/modules' },
-          { text: 'Apex runtime', link: '/guide/modules/apex-runtime' },
-          { text: 'Test runner', link: '/guide/modules/test-runner' },
-          { text: 'Local org and data', link: '/guide/modules/local-org-data' },
-          { text: 'LWC preview', link: '/guide/modules/lwc-preview' },
-          { text: 'Visualforce preview', link: '/guide/modules/visualforce-preview' },
-          { text: 'Debug and profile', link: '/guide/modules/debug-profile' },
-          { text: 'Editor and workbench', link: '/guide/modules/editor' },
-          { text: 'Plugins', link: '/guide/modules/plugins' }
+          { text: 'Capability overview', link: '/guide/modules' },
+          { text: 'Plugins', link: '/guide/plugins' },
+          { text: 'Security & trust', link: '/guide/security-trust' },
+          { text: 'Tester field guide', link: '/guide/tester-field-guide' },
+          { text: 'Playground', link: '/guide/playground' },
+          { text: 'Capability explorer', link: '/guide/workbench' },
+          { text: 'VS Code', link: '/guide/editor' },
+          { text: 'Advanced workflows', link: '/guide/enterprise-workflows' }
         ]
       },
       {
-        text: 'Reference',
+        text: 'More guides',
         collapsed: true,
         items: [
-          { text: 'CLI reference', link: '/reference/cli' },
           { text: 'Output modes', link: '/guide/cli-output' },
-          { text: 'Config reference', link: '/reference/config' },
-          { text: 'JSON envelope', link: '/reference/json-schema' },
           { text: 'Automation and JSON', link: '/guide/automation' },
-          { text: 'Exit codes', link: '/guide/exit-codes' },
-          { text: 'Error codes', link: '/reference/errors' },
-          { text: 'Apex language compatibility', link: '/reference/apex-language-compatibility' },
-          { text: 'Apex support map', link: '/reference/apex-support' },
-          { text: 'LWC support matrix', link: '/reference/lwc-support' },
-          { text: 'Visualforce support matrix', link: '/reference/visualforce-support' },
-          { text: 'Local API routes', link: '/reference/local-api-routes' }
-        ]
-      },
-      {
-        text: 'Guided help',
-        collapsed: true,
-        items: [
-          { text: 'Help overview', link: '/help/' },
-          { text: 'First local check', link: '/help/first-local-check' },
-          { text: 'Run one Apex test', link: '/help/run-one-apex-test' },
-          { text: 'Debug with breakpoints', link: '/help/debug-apex-vscode' },
-          { text: 'Anonymous Apex scratch', link: '/help/anonymous-apex-scratch' },
-          { text: 'Local data environments', link: '/help/local-data-environments' },
-          { text: 'Changed tests before a PR', link: '/help/changed-tests-before-pr' },
-          { text: 'Glade org data import', link: '/help/glade-org-sf-data-import' },
-          { text: 'Profile a debug log', link: '/help/profile-apex-debug-log' },
-          { text: 'CI setup', link: '/help/ci-setup' }
-        ]
-      },
-      {
-        text: 'Advanced',
-        collapsed: true,
-        items: [
-          { text: 'Enterprise projects', link: '/guide/enterprise-workflows' },
           { text: 'Affected tests', link: '/guide/affected-tests' },
           { text: 'Test startup cache', link: '/guide/test-startup-cache' },
           { text: 'Reports and package artifacts', link: '/guide/rich-local-workflows' },
@@ -172,10 +196,44 @@ export default defineConfig({
           { text: 'First-party plugins', link: '/guide/plugins/first-party' },
           { text: 'AI-assisted Apex', link: '/guide/ai-assisted-apex' }
         ]
-      },
+      }
+      ],
+      '/reference/': [
+      {
+        text: 'Reference',
+        items: [
+          { text: 'CLI reference', link: '/reference/cli' },
+          { text: 'Configuration', link: '/reference/config' },
+          { text: 'Error codes', link: '/reference/errors' },
+          { text: 'JSON envelope', link: '/reference/json-schema' },
+          { text: 'Apex language compatibility', link: '/reference/apex-language-compatibility' },
+          { text: 'Apex support map', link: '/reference/apex-support' },
+          { text: 'LWC support matrix', link: '/reference/lwc-support' },
+          { text: 'Visualforce support matrix', link: '/reference/visualforce-support' },
+          { text: 'Local API routes', link: '/reference/local-api-routes' }
+        ]
+      }
+      ],
+      '/help/': [
+      {
+        text: 'Guided help',
+        items: [
+          { text: 'Help overview', link: '/help/' },
+          { text: 'First local check', link: '/help/first-local-check' },
+          { text: 'Run one Apex test', link: '/help/run-one-apex-test' },
+          { text: 'Debug with breakpoints', link: '/help/debug-apex-vscode' },
+          { text: 'Anonymous Apex scratch', link: '/help/anonymous-apex-scratch' },
+          { text: 'Local data environments', link: '/help/local-data-environments' },
+          { text: 'Changed tests before a PR', link: '/help/changed-tests-before-pr' },
+          { text: 'Glade org data import', link: '/help/glade-org-sf-data-import' },
+          { text: 'Profile a debug log', link: '/help/profile-apex-debug-log' },
+          { text: 'CI setup', link: '/help/ci-setup' }
+        ]
+      }
+      ],
+      '/maintainer/': [
       {
         text: 'Maintainer',
-        collapsed: true,
         items: [
           { text: 'Maintainer home', link: '/maintainer/' },
           { text: 'Extend runtime support', link: '/maintainer/extend-runtime' },
@@ -184,12 +242,13 @@ export default defineConfig({
           { text: 'Plugin runtime', link: '/maintainer/plugin-runtime' }
         ]
       }
-    ],
+      ]
+    },
     socialLinks: [
       { icon: 'github', link: 'https://github.com/glade-sh/glade' }
     ],
     footer: {
-      message: 'Glade is local-first Apex tooling.',
+      message: 'Glade is local-first Apex tooling. Supported paths run locally; use Salesforce for hosted services, deployment, and final production validation. · <a href="/maintainer/">Maintainer</a> · <a href="/guide/security-trust">Security</a> · <a href="https://github.com/glade-sh/glade/releases">Releases</a> · <a href="https://github.com/glade-sh/glade/blob/main/LICENSE">Apache-2.0</a>',
       copyright: 'Released by the Glade project.'
     }
   }

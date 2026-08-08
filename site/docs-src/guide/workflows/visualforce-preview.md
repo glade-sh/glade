@@ -42,7 +42,7 @@ Visualforce checks.
 
 ## Deeper reference
 
-- [Visualforce preview](/guide/modules/visualforce-preview)
+- [Visualforce preview](/guide/modules#visualforce-preview)
 - [Visualforce support matrix](/reference/visualforce-support)
-- [LWC preview](/guide/modules/lwc-preview)
+- [LWC preview](/guide/modules#lwc-preview)
 - [What runs locally](/guide/support-map)

@@ -21,6 +21,6 @@ Keep Salesforce validation for hosted platform behavior.
 
 ## Related workflows
 
-- [LWC preview module](/guide/modules/lwc-preview)
+- [LWC preview module](/guide/modules#lwc-preview)
 - [LWC preview workflow](/guide/workflows/lwc-preview)
-- [Visualforce preview module](/guide/modules/visualforce-preview)
+- [Visualforce preview module](/guide/modules#visualforce-preview)

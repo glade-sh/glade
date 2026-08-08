@@ -43,6 +43,10 @@ onMounted(() => {
         basicSetup,
         apexLanguage,
         syntaxHighlighting(gladeHighlight),
+        EditorView.contentAttributes.of({
+          'aria-labelledby': 'apex-editor-heading',
+          'aria-describedby': 'apex-editor-instructions'
+        }),
         autocompletion({ override: [apexCompletions], activateOnTyping: false }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) maybeOpenReceiverCompletion(update.view, () => editorView)
@@ -83,6 +87,8 @@ onMounted(() => {
       ]
     })
   })
+  editorView.scrollDOM.tabIndex = 0
+  editorView.scrollDOM.setAttribute('aria-label', 'Apex editor scroll area')
 })
 
 onBeforeUnmount(() => {
@@ -96,11 +102,11 @@ onBeforeUnmount(() => {
     <div class="glade-cm-head">
       <div>
         <p class="home-eyebrow">Interactive Editor</p>
-        <h2 class="home-h2">Try capability-backed autocomplete.</h2>
+        <h2 id="apex-editor-heading" class="home-h2">Try capability-backed autocomplete.</h2>
       </div>
       <a href="/guide/support-map">What runs locally</a>
     </div>
-    <div class="glade-cm-support" aria-label="Autocomplete surfaces to try">
+    <div id="apex-editor-instructions" class="glade-cm-support">
       <span>Type a dot after the final describe, Account, Database, BusinessHours, Schema, describe.fields, results[0], or fieldMap.</span>
       <div>
         <code>Account.</code>
@@ -113,7 +119,7 @@ onBeforeUnmount(() => {
         <code>fieldMap.</code>
       </div>
     </div>
-    <div ref="editorHost" class="glade-cm-editor" aria-label="CodeMirror Apex editor"></div>
+    <div ref="editorHost" class="glade-cm-editor"></div>
     <div class="glade-cm-proof" aria-label="CodeMirror editor capabilities">
       <span><strong>Apex syntax</strong> annotations, SOQL, SObjects, and platform classes</span>
       <span><strong>Autocomplete</strong> describe, Database, Schema fields, DML results, maps, and local context</span>

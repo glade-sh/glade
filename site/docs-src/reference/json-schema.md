@@ -51,6 +51,6 @@ Priority commands write a versioned JSON envelope.
     "glade schema load --project .",
     "glade check --project ."
   ],
-  "docs": "https://glade.sh/guide/errors#gladesema002"
+  "docs": "https://glade.sh/reference/errors#gladesema002"
 }
 ```

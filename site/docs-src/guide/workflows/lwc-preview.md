@@ -62,7 +62,7 @@ live streaming. Salesforce remains the gate for hosted behavior.
 
 ## Deeper reference
 
-- [LWC preview](/guide/modules/lwc-preview)
+- [LWC preview](/guide/modules#lwc-preview)
 - [LWC support matrix](/reference/lwc-support)
-- [Local org and data](/guide/modules/local-org-data)
+- [Local org and data](/guide/modules#local-org-and-data)
 - [Local LWC shell details](/guide/lwc-local-shell)

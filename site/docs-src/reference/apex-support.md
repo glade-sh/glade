@@ -24,6 +24,6 @@ For compiler rules, reserved identifiers, and diagnostic propagation, see
 
 ## Related workflows
 
-- [Apex runtime](/guide/modules/apex-runtime)
+- [Apex runtime](/guide/modules#apex-runtime)
 - [Apex tests](/guide/workflows/apex-tests)
 - [Enterprise workflows](/guide/enterprise-workflows)

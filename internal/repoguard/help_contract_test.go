@@ -33,7 +33,7 @@ func TestBuiltHelpMatchesAuthoritativeCheckedCommandCatalog(t *testing.T) {
 		t.Fatalf("built `glade help commands` and docs/COMPATIBILITY.md command catalog differ:\n%s", diff)
 	}
 
-	for _, command := range siteCLIReferenceHeadingCommands(t, readRepoFile(t, root, "site/docs-src/guide/cli-reference.md")) {
+	for _, command := range siteCLIReferenceHeadingCommands(t, readRepoFile(t, root, "site/docs-src/reference/cli.md")) {
 		parts := strings.Fields(command)
 		if !containsSortedString(live, parts[0]) {
 			t.Errorf("site CLI reference claims unknown command %q", command)
