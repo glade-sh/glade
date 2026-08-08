@@ -103,10 +103,6 @@ func semaAPI67RejectedPlatformType(typeName string) bool {
 		"schema.fieldsetmap",
 		"database.allowcallouts",
 		"system.database.allowcallouts",
-		"database.lockresult",
-		"database.unlockresult",
-		"system.database.lockresult",
-		"system.database.unlockresult",
 		"canvas.lifecyclehandler",
 		"system.pushupgradecustomizationrepository":
 		return true
@@ -147,7 +143,7 @@ func semaAPI67RejectedPlatformCall(receiverType, method, receiverMode string) bo
 	case "asyncoptions":
 		return method == "getminimumqueueabledelayinminutes"
 	case "database":
-		return method == "lock" || method == "unlock"
+		return false
 	case "quickaction":
 		return method == "describeavailableactions"
 	case "canvas.environmentcontext":
