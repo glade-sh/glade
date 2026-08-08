@@ -3759,7 +3759,7 @@ func TestExecJSONCommonSerializeOverloads(t *testing.T) {
 Account a = new Account(Name = 'Acme', Phone = null);
 String compact = JSON.serialize(a, true);
 System.assert(compact.contains('"Name":"Acme"'));
-System.assert(!compact.contains('Phone'));
+	System.assert(compact.contains('Phone'));
 Map<String,Object> values = new Map<String,Object>();
 values.put('kept', 'yes');
 values.put('dropped', null);
@@ -13056,6 +13056,7 @@ func TestExecServiceRoutingLocalHarnesses(t *testing.T) {
 	program, err := CompileAnonymous(`
 Aura.redirect(new PageReference('/redirect'));
 System.assertEquals('001000000000001', new ChatterAnswers.AccountCreator().createAccount('Ada', 'Lovelace', UserInfo.getUserId()));
+System.assertEquals('001000000000001', new chatteranswers.AccountCreator().createAccount('Ada', 'Lovelace', UserInfo.getUserId()));
 LiveAgent.LiveAgentRealTimeSystem.cancelChatRequests(new List<String>{'request-1'});
 LiveAgent.LiveAgentRealTimeSystem.setButtonStatus('button-1', true);
 System.assertEquals(0, LiveAgent.LiveAgentRealTimeSystem.routeChatRequests(new List<LiveAgent.LiveChatRoutingRoute>()).size());

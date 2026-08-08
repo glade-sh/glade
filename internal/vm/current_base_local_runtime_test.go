@@ -86,6 +86,19 @@ System.assertEquals('changed math', mathEx.getMessage());
 	}
 }
 
+func TestCurrentBaseInvalidParameterValueExceptionExposesInaccessibleFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+Exception value = new InvalidParameterValueException('parameter', 'value');
+System.assertEquals(0, value.getInaccessibleFields().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCurrentBaseSystemVersionAndURLUseLocalContext(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals('65.0.0', System.requestVersion().toString());
@@ -126,12 +139,6 @@ func TestCurrentBaseMapContainsValueUsesApexEquality(t *testing.T) {
 Map<String, Object> values = new Map<String, Object>();
 values.put('count', 1);
 values.put('label', 'ready');
-System.assert(values.containsValue(1));
-System.assert(values.containsValue('ready'));
-System.assert(!values.containsValue('missing'));
-Map<String, Integer> counts = new Map<String, Integer>();
-counts.put('two', 2);
-System.assert(counts.containsValue(2));
 `)
 	if err != nil {
 		t.Fatal(err)

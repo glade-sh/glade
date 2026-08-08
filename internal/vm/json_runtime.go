@@ -135,7 +135,10 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 			if vm != nil && vm.Org != nil {
 				version = storage.EffectiveRESTAPIVersion(vm.Org.APIVersion)
 			}
-			return jsonSObjectFromValue(value, suppressObjectNulls, vm.jsonFromValueForSerialize, version)
+			// Salesforce preserves null SObject fields for JSON.serialize, even
+			// when the overload's Boolean argument is true. That flag only
+			// suppresses nulls on Apex objects and collections.
+			return jsonSObjectFromValue(value, false, vm.jsonFromValueForSerialize, version)
 		}
 		base := orderedJSONObject{}
 		seen := map[string]bool{}

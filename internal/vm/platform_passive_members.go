@@ -15,6 +15,47 @@ import (
 )
 
 func (vm *VM) callCommerceInventoryServiceMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if strings.EqualFold(receiver.Type, "commerce_inventory.InventoryLevelsResponse") {
+		if !strings.EqualFold(method, "getItemsInventoryLevels") || len(args) != 0 {
+			return Null, receiver, false, false, nil
+		}
+		return receiver.Fields["itemsInventoryLevels"], receiver, false, true, nil
+	}
+	if strings.EqualFold(receiver.Type, "commerce_inventory.InventoryReservation") {
+		switch strings.ToLower(method) {
+		case "getdurationinseconds":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+			}
+			return receiver.Fields["durationInSeconds"], receiver, false, true, nil
+		case "getitems":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+			}
+			return receiver.Fields["items"], receiver, false, true, nil
+		}
+	}
+	if strings.EqualFold(receiver.Type, "commerce_inventory.InventoryCheckAvailability") && strings.EqualFold(method, "getInventoryCheckItemAvailability") {
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.getInventoryCheckItemAvailability expects 0 arguments", receiver.Type)
+		}
+		return receiver.Fields["inventoryCheckItemAvailability"], receiver, false, true, nil
+	}
+	if strings.EqualFold(receiver.Type, "commerce_ordermanagement.ProductExpandResponse") && strings.EqualFold(method, "getSucceed") {
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.getSucceed expects 0 arguments", receiver.Type)
+		}
+		if value, ok := receiver.Fields["succeed"]; ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
+	}
+	if strings.EqualFold(receiver.Type, "commerce_ordermanagement.ProductExpandService") && strings.EqualFold(method, "returnReasons") {
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("%s.returnReasons expects ProductExpandRequest", receiver.Type)
+		}
+		return Object("commerce_ordermanagement.ProductExpandResponse"), receiver, false, true, nil
+	}
 	if !strings.EqualFold(receiver.Type, "commerce_inventory.CommerceInventoryService") {
 		return Null, receiver, false, false, nil
 	}
@@ -319,6 +360,34 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 		return String("001000000000001"), receiver, false, true, nil
 	}
+	if strings.EqualFold(receiver.Type, "Datacloud.FindDuplicatesResult") {
+		switch strings.ToLower(method) {
+		case "issuccess":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Datacloud.FindDuplicatesResult.isSuccess expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["success"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Bool(true), receiver, false, true, nil
+		case "getduplicateresults":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Datacloud.FindDuplicatesResult.getDuplicateResults expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["duplicateResults"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return typedList("List<Datacloud.DuplicateResult>"), receiver, false, true, nil
+		case "geterrors":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Datacloud.FindDuplicatesResult.getErrors expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["errors"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return typedList("List<Database.Error>"), receiver, false, true, nil
+		}
+	}
 	if strings.EqualFold(receiver.Type, "Support.EinsteinBots") && strings.EqualFold(method, "sendMessageToBot") {
 		if len(args) != 3 {
 			return Null, receiver, false, true, fmt.Errorf("Support.EinsteinBots.sendMessageToBot expects bot Id, bot version Id, and prompt")
@@ -590,7 +659,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if exceptionTypeName(receiver.Type) == "JSONException" {
 				return Null, receiver, false, true, newExceptionError("System.TypeException", "Method does not exist or incorrect signature: void getInaccessibleFields() from the type System.JSONException")
 			}
-			if !builtinExceptionTypeMatches(receiver.Type, "QueryException") {
+			if !builtinExceptionTypeMatches(receiver.Type, "QueryException") && !builtinExceptionTypeMatches(receiver.Type, "InvalidParameterValueException") {
 				return Null, receiver, false, true, newExceptionError("System.TypeException", "Procedure is only valid for System.QueryException")
 			}
 			return Map(), receiver, false, true, nil

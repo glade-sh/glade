@@ -54,6 +54,28 @@ func TestDataRuntimeSObjectAddErrorTokenRetainsRepeatedFieldErrors(t *testing.T)
 	}
 }
 
+func TestDataRuntimeSObjectAddErrorStringOverloadsReplaceSalesforceErrors(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+
+	record := Object("Account")
+	args := [][]Value{
+		{String("row")},
+		{String("row 2"), Bool(false)},
+		{String("Name"), String("name")},
+		{String("Name"), String("name 2"), Bool(false)},
+	}
+	for _, call := range args {
+		if _, handled, err := machine.callSObjectMember(record, "addError", call); err != nil || !handled {
+			t.Fatalf("addError(%#v) = handled %v, err %v; want handled", call, handled, err)
+		}
+	}
+	if errors := sobjectErrors(record); len(errors) != 2 {
+		t.Fatalf("error count = %d, want 2", len(errors))
+	}
+}
+
 func TestDataRuntimeListCustomSettingShellAccessorsUseNamedRecord(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String,Fixture_Setting__c> allSettings = Fixture_Setting__c.getAll();

@@ -4318,6 +4318,19 @@ func TestRunExecWithProjectRejectsAnonymousSemanticDiagnosticsBeforeExecution(t 
 	}
 }
 
+func TestRunExecWithProjectUsesLocalPlatformHarnesses(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"exec", "--project", root,
+		"Apex.Stack stack = new Apex.Stack(); System.assert(stack.empty()); System.assertEquals('001000000000001', new chatteranswers.AccountCreator().createAccount('Ada', 'Lovelace', UserInfo.getUserId())); List<Datacloud.FindDuplicatesResult> duplicateRows = Datacloud.FindDuplicates.findDuplicates(new List<SObject>{new Account(Name = 'Acme')}); System.assertEquals(1, duplicateRows.size()); System.assert(duplicateRows[0].isSuccess()); System.assertEquals(0, duplicateRows[0].getDuplicateResults().size()); System.assertEquals(0, duplicateRows[0].getErrors().size()); commerce_inventory.InventoryLevelsResponse levels = new commerce_inventory.CommerceInventoryService().getInventoryLevel(new commerce_inventory.InventoryLevelsRequest('LOCATION', new Set<commerce_inventory.InventoryLevelsItemRequest>())); System.assertEquals(0, levels.getItemsInventoryLevels().size()); commerce_ordermanagement.ProductExpandResponse expand = new commerce_ordermanagement.ProductExpandService().returnReasons(new commerce_ordermanagement.ProductExpandRequest()); System.assertEquals(null, expand.getSucceed()); Exception value = new InvalidParameterValueException('parameter', 'value'); System.assertEquals('System.InvalidParameterValueException', value.getTypeName()); TouchHandledException touch = new TouchHandledException('ignored'); System.assertEquals('Script-thrown exception', touch.getMessage()); touch.setMessage('changed'); System.assertEquals('changed', touch.getMessage());",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("project-backed local platform harnesses failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+}
+
 func TestRunExecLoadsCurrentProjectOrgFeaturesByDefault(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)

@@ -858,6 +858,13 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
 		_, value, ok := objectFieldValue(receiver, field)
+		if !ok && !strings.EqualFold(field, fieldArg) {
+			if actualField, explicitValue, found := objectFieldValue(receiver, fieldArg); found {
+				field = actualField
+				value = explicitValue
+				ok = true
+			}
+		}
 		if !ok || value.Kind == ValueNull {
 			if fieldTokenArg {
 				if relationshipName := lookupFieldRelationshipName(field); relationshipName != "" {

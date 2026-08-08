@@ -86,6 +86,11 @@ func (vm *VM) callJSONParserMember(receiver Value, method string, args []Value) 
 		}
 		token, ok := jsonParserCurrent(receiver)
 		if !ok {
+			if cleared, ok := jsonParserCurrentTokenEvenIfCleared(receiver); ok {
+				if name := jsonParserTokenName(cleared); name != "" {
+					return String(name), receiver, false, true, nil
+				}
+			}
 			return Null, receiver, false, true, nil
 		}
 		if jsonParserTokenKind(token) == "FIELD_NAME" {

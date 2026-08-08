@@ -375,18 +375,10 @@ func TestStandardPlatformSymbolsQualifySearchSuggestionOptions(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 	search := requireStandardSymbol(t, symbols, "Search")
 
-	for _, member := range search.Members {
-		if member.Kind != apexast.DeclarationMethod || !strings.EqualFold(member.Name, "suggest") {
-			continue
-		}
-		for _, param := range member.Parameters {
-			if strings.EqualFold(param.Name, "options") && param.Type == "Object" {
-				t.Fatalf("Search.suggest has Object options parameter; use Search.SuggestionOption: %#v", member.Parameters)
-			}
-		}
-	}
 	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Search.SuggestionOption"}, true)
 	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Search.SuggestionOption", "AccessLevel"}, true)
+	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Object"}, true)
+	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Object", "Object"}, true)
 }
 
 func TestStandardPlatformSymbolsIncludeApexPagesControllerShapeRows(t *testing.T) {

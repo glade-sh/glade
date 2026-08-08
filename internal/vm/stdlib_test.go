@@ -3397,7 +3397,7 @@ Type dmlType = Type.forName('DmlException');
 System.assert(exceptionType.isAssignableFrom(dmlType));
 System.assert(!dmlType.isAssignableFrom(exceptionType));
 System.assertEquals(null, Type.forName('System', 'Exception'));
-System.assertEquals(null, Type.forName('System', 'DmlException'));
+System.assertNotEquals(null, Type.forName('System', 'DmlException'));
 
 Type markerType = Type.forName('Marker');
 Type childType = Type.forName('Child');
@@ -3749,7 +3749,7 @@ Type systemStringType = Type.forName('System', 'String');
 System.assertEquals(null, systemStringType);
 System.assertEquals(null, Type.forName('System', 'DefinitelyMissing'));
 Type systemDmlType = Type.forName('System', 'DmlException');
-System.assertEquals(null, systemDmlType);
+System.assertNotEquals(null, systemDmlType);
 `)
 	if err != nil {
 		t.Fatal(err)

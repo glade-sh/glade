@@ -5259,6 +5259,26 @@ System.assertEquals(null, new Account(CreatedById = UserInfo.getUserId()).getSOb
 	}
 }
 
+func TestExecSObjectGetSObjectUsesExplicitStandardRelationshipName(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account();
+User owner = new User(Id = UserInfo.getUserId(), LastName = 'Owner');
+account.putSObject('Owner', owner);
+System.assertEquals('Owner', account.getSObject('Owner').get('LastName'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "User")
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecContactChildRelationshipSubqueriesStaySeparated(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'Acme');

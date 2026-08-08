@@ -1202,7 +1202,7 @@ func (vm *VM) classConstructorCanAccept(typeName string, args []Value, namedArgs
 	if ok && !ambiguous {
 		return true
 	}
-	return !ambiguous && isExceptionType(runtimeClassName(class)) && exceptionConstructorArgsCanApply(args)
+	return !ambiguous && isExceptionType(runtimeClassName(class)) && exceptionConstructorArgsCanApply(runtimeClassName(class), args)
 }
 
 func (vm *VM) resolveCurrentNamespaceTopLevelClassName(typeName string) (string, bool) {
@@ -1298,6 +1298,11 @@ func applyExceptionConstructorArgs(object *Value, args []Value) (bool, error) {
 		setExceptionMessage(object, args[0])
 		return true, nil
 	case 2:
+		if strings.EqualFold(exceptionTypeName(object.Type), "InvalidParameterValueException") &&
+			args[0].Kind == ValueString && args[1].Kind == ValueString {
+			setExceptionMessage(object, args[0])
+			return true, nil
+		}
 		setExceptionMessage(object, args[0])
 		if args[1].Kind != ValueNull && (args[1].Kind != ValueObject || !isExceptionType(args[1].Type)) {
 			return false, fmt.Errorf("%s constructor expects Exception cause", object.Type)
@@ -1310,11 +1315,15 @@ func applyExceptionConstructorArgs(object *Value, args []Value) (bool, error) {
 	}
 }
 
-func exceptionConstructorArgsCanApply(args []Value) bool {
+func exceptionConstructorArgsCanApply(typeName string, args []Value) bool {
 	switch len(args) {
 	case 0, 1:
 		return true
 	case 2:
+		if strings.EqualFold(exceptionTypeName(typeName), "InvalidParameterValueException") &&
+			args[0].Kind == ValueString && args[1].Kind == ValueString {
+			return true
+		}
 		return args[1].Kind == ValueNull || (args[1].Kind == ValueObject && isExceptionType(args[1].Type))
 	default:
 		return false

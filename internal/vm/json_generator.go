@@ -319,7 +319,7 @@ func jsonGeneratorWriteFieldName(receiver Value, name string) (Value, error) {
 	}
 	jsonGeneratorAppend(&updated, jsonGeneratorQuote(name))
 	if jsonGeneratorPretty(updated) {
-		jsonGeneratorAppend(&updated, ": ")
+		jsonGeneratorAppend(&updated, " : ")
 	} else {
 		jsonGeneratorAppend(&updated, ":")
 	}
@@ -513,6 +513,18 @@ func jsonGeneratorRenderScalar(value Value) (string, error) {
 		}
 		return strconv.FormatFloat(value.Decimal, 'f', -1, 64), nil
 	case ValueObject:
+		if strings.EqualFold(value.Type, "Datetime") || strings.EqualFold(value.Type, "DateTime") {
+			if datetime, err := parsePlatformDatetime(value); err == nil {
+				return jsonGeneratorQuote(datetime.UTC().Format("2006-01-02T15:04:05.000Z")), nil
+			}
+		}
+		if strings.EqualFold(value.Type, "Id") {
+			if scalar, ok := jsonPlatformScalarFromValue(value); ok {
+				if text, ok := scalar.(string); ok && validateApexID(text) == nil {
+					return jsonGeneratorQuote(displayIDText(text)), nil
+				}
+			}
+		}
 		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
 			data, err := jsonMarshalNoEscape(scalar)
 			if err != nil {

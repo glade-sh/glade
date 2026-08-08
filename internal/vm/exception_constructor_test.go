@@ -67,3 +67,18 @@ System.assertEquals('changed message', exceptionValue.getMessage());
 		t.Fatal(err)
 	}
 }
+
+func TestInvalidParameterValueExceptionAcceptsSalesforceStringPair(t *testing.T) {
+	program, err := CompileAnonymous(`
+Exception value = new InvalidParameterValueException('parameter', 'value');
+System.assertEquals('System.InvalidParameterValueException', value.getTypeName());
+value.setMessage('changed');
+System.assertEquals('changed', value.getMessage());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}

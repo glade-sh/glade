@@ -2032,7 +2032,7 @@ func semaPlatformAssignableToType(paramType, argType string, model *semaTypeMemb
 func semaStandardExceptionType(typeName string) bool {
 	typeName = strings.TrimPrefix(strings.TrimSpace(typeName), "System.")
 	switch normalizeName(typeName) {
-	case "assertionexception", "assertexception", "aurahandledexception", "asyncexception", "bigobjectexception", "calloutexception", "canvasexception", "dmlexception", "emailexception", "externalobjectexception", "illegalargumentexception", "illegalstateexception", "invalidparametervalueexception", "jsonexception", "limitexception", "listexception", "mathexception", "noaccessexception", "nodatafoundexception", "nosuchelementexception", "nullpointerexception", "patternsyntaxexception", "queryexception", "requiredfeaturemissingexception", "searchexception", "securityexception", "sobjectexception", "stringexception", "typeexception", "xmlexception":
+	case "assertionexception", "assertexception", "aurahandledexception", "asyncexception", "bigobjectexception", "calloutexception", "canvasexception", "dmlexception", "emailexception", "externalobjectexception", "illegalargumentexception", "illegalstateexception", "invalidheaderexception", "invalidparametervalueexception", "invalidreadonlyuserdmlexception", "jsonexception", "limitexception", "listexception", "mathexception", "noaccessexception", "nodatafoundexception", "nosuchelementexception", "nullpointerexception", "patternsyntaxexception", "queryexception", "requiredfeaturemissingexception", "searchexception", "securityexception", "sobjectexception", "stringexception", "typeexception", "xmlexception":
 		return true
 	default:
 		base := shortNestedTypeName(typeName)

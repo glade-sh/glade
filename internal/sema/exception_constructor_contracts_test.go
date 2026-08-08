@@ -86,10 +86,14 @@ func TestAPI67ExceptionInheritedMembersAndSubtypeConstructors(t *testing.T) {
   public void run() {
     Exception cause = new QueryException('cause');
     Exception value = new BigObjectException();
+    Exception header = new InvalidHeaderException('header');
+    Exception readOnly = new InvalidReadOnlyUserDmlException('read only');
     Map<String, Set<String>> fields = new QueryException('query').getInaccessibleFields();
     value.setMessage('updated');
     value.initCause(cause);
     Exception recovered = value.getCause();
+    System.assertNotEquals(null, header);
+    System.assertNotEquals(null, readOnly);
   }
 }`,
 	}, "67.0")

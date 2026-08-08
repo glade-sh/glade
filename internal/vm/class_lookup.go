@@ -309,6 +309,13 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		if resolved, ok := generatedPlatformTypeForName(namespace, name); ok {
 			return platformScalar("Type", resolved)
 		}
+		// Salesforce exposes concrete System exception types through the
+		// two-argument overload, but the abstract Exception base type is not
+		// returned from Type.forName('System', 'Exception').
+		if strings.EqualFold(namespace, "System") &&
+			!strings.EqualFold(name, "Exception") && isBuiltinExceptionType(name) {
+			return platformScalar("Type", "System."+exceptionTypeName(name))
+		}
 		for _, candidate := range namespaceTypeNameCandidates(namespace, name) {
 			if class, ok := vm.lookupClass(candidate); ok {
 				return platformScalar("Type", typeForNameClassToken(namespace, class))

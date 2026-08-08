@@ -1045,6 +1045,16 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 			return value, true, err
 		}
 	}
+	if isExceptionType(receiver.Type) {
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+			if mutated {
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
+			}
+			return value, true, err
+		}
+	}
 	if _, classExists := vm.lookupClass(receiver.Type); classExists && !strings.EqualFold(receiver.Runtime, "System.Cookie") {
 		dispatchType := runtimeObjectType(receiver)
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, method, args)
@@ -1698,7 +1708,16 @@ func localRuntimeHarnessPlatformObjectType(typeName string) bool {
 		strings.EqualFold(typeName, "invocable.action"),
 		strings.EqualFold(typeName, "invocable.action.result"),
 		strings.EqualFold(typeName, "testasynchttp"),
-		strings.EqualFold(typeName, "functions.functioninvokemock"):
+		strings.EqualFold(typeName, "functions.functioninvokemock"),
+		strings.EqualFold(typeName, "apex.stack"),
+		strings.EqualFold(typeName, "chatteranswers.accountcreator"),
+		strings.EqualFold(typeName, "datacloud.findduplicatesresult"),
+		strings.EqualFold(typeName, "commerce_inventory.commerceinventoryservice"),
+		strings.EqualFold(typeName, "commerce_inventory.inventorylevelsresponse"),
+		strings.EqualFold(typeName, "commerce_inventory.inventoryreservation"),
+		strings.EqualFold(typeName, "commerce_inventory.inventorycheckavailability"),
+		strings.EqualFold(typeName, "commerce_ordermanagement.productexpandservice"),
+		strings.EqualFold(typeName, "commerce_ordermanagement.productexpandresponse"):
 		return true
 	default:
 		return false

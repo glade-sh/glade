@@ -1170,7 +1170,7 @@ func addSObjectError(value *Value, message string, fields []string, replaceExist
 	if !ok || errorsList.Kind != ValueList {
 		errorsList = List()
 	}
-	if replaceExisting && len(fields) > 0 {
+	if replaceExisting {
 		for i, existing := range errorsList.List {
 			if existing.Kind != ValueObject {
 				continue

@@ -382,8 +382,8 @@ gen.writeNumber(2);
 gen.writeEndArray();
 gen.writeEndObject();
 String text = gen.getAsString();
-System.assert(text.contains('  "name": "Acme"'));
-System.assert(text.contains('  "items": ['));
+System.assert(text.contains('  "name" : "Acme"'));
+System.assert(text.contains('  "items" : ['));
 System.assert(text.contains('    "x"'));
 `)
 	if err != nil {
@@ -976,7 +976,7 @@ System.assertEquals('whole', parser.getCurrentName());
 System.assertEquals(12, parser.getLongValue());
 parser.clearCurrentToken();
 System.assertEquals(null, parser.getCurrentToken());
-System.assertEquals(null, parser.getCurrentName());
+System.assertEquals('whole', parser.getCurrentName());
 System.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());
 System.assertEquals(JSONToken.VALUE_NUMBER_FLOAT, parser.nextValue());
 System.assertEquals(1.25, parser.getDoubleValue());
@@ -1004,7 +1004,7 @@ System.assertEquals(JSONToken.END_OBJECT, parser.getCurrentToken());
 System.assertEquals('outer', parser.getCurrentName());
 parser.clearCurrentToken();
 System.assertEquals(null, parser.getCurrentToken());
-System.assertEquals(null, parser.getCurrentName());
+System.assertEquals('outer', parser.getCurrentName());
 System.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());
 System.assertEquals('tail', parser.getCurrentName());
 System.assertEquals(JSONToken.VALUE_NUMBER_INT, parser.nextValue());
@@ -2584,7 +2584,7 @@ System.assert(pretty.contains('"webhooks" : [ "DatasetScanMatchesChanged" ]'));
 System.assert(pretty.contains('  "missing" : null'));
 System.assert(pretty.contains('  "name" : "Acme"'));
 Account account = new Account(Name = 'NoNull', Phone = null);
-System.assert(!JSON.serializePretty(account, true).contains('Phone'));
+System.assert(JSON.serializePretty(account, true).contains('Phone'));
 System.assert(JSON.serializePretty(account, false).contains('"Phone" : null'));
 
 JSONGenerator gen = JSON.createGenerator(true);
@@ -2593,9 +2593,42 @@ gen.writeObjectField('root', root);
 gen.writeRawField('raw', '{"ok":true}');
 gen.writeEndObject();
 String generated = gen.getAsString();
-System.assert(generated.contains('  "root": {"webhooks":["DatasetScanMatchesChanged"],"items":[1,null],"missing":null,"scriptName":"X","name":"Acme"}'));
-System.assert(generated.contains('"raw": {"ok":true}'));
+System.assert(generated.contains('  "root" : {"webhooks":["DatasetScanMatchesChanged"],"items":[1,null],"missing":null,"scriptName":"X","name":"Acme"}'));
+System.assert(generated.contains('"raw" : {"ok":true}'));
 System.assert(gen.isClosed());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONSerializePrettyObjectArraysRemainValid(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Object> empty = new List<Object>();
+System.assertEquals(0, ((List<Object>)JSON.deserializeUntyped(JSON.serializePretty(empty))).size());
+
+List<Object> rows = new List<Object>();
+Map<String,Object> first = new Map<String,Object>();
+first.put('a', 1);
+rows.add(first);
+String one = JSON.serializePretty(rows);
+System.assertEquals(1, ((List<Object>)JSON.deserializeUntyped(one)).size());
+
+Map<String,Object> second = new Map<String,Object>();
+second.put('b', 2);
+rows.add(second);
+Map<String,Object> root = new Map<String,Object>();
+root.put('rows', rows);
+String many = JSON.serializePretty(root);
+Map<String,Object> decodedRoot = (Map<String,Object>)JSON.deserializeUntyped(many);
+List<Object> decodedRows = (List<Object>)decodedRoot.get('rows');
+System.assertEquals(2, decodedRows.size());
+System.assertEquals(1, ((Map<String,Object>)decodedRows[0]).get('a'));
+System.assertEquals(2, ((Map<String,Object>)decodedRows[1]).get('b'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2645,7 +2678,7 @@ func TestExecJSONGeneratorWritesPlatformAndObjectValues(t *testing.T) {
 JSONGenerator gen = JSON.createGenerator(false);
 gen.writeStartObject();
 gen.writeDateField('date', Date.newInstance(2024, 2, 29));
-gen.writeDateTimeField('when', Datetime.newInstance(2024, 2, 29, 12, 34, 56));
+gen.writeDateTimeField('when', Datetime.newInstanceGmt(2024, 2, 29, 12, 34, 56));
 gen.writeTimeField('clock', Time.newInstance(5, 6, 7, 0));
 gen.writeIdField('id', Id.valueOf('001B000001DVM9t'));
 gen.writeBlobField('blob', Blob.valueOf('abc'));
@@ -2656,9 +2689,9 @@ gen.writeObject(nested);
 gen.writeEndObject();
 String text = gen.getAsString();
 System.assert(text.contains('"date":"2024-02-29"'));
-System.assert(text.contains('"when":"2024-02-29T12:34:56Z"'));
+System.assert(text.contains('"when":"2024-02-29T12:34:56.000Z"'));
 System.assert(text.contains('"clock":"05:06:07.000Z"'));
-System.assert(text.contains('"id":"001B000001DVM9t"'));
+System.assert(text.contains('"id":"001B000001DVM9tIAH"'));
 System.assert(text.contains('"blob":"YWJj"'));
 System.assert(text.contains('"nested"'));
 System.assert(text.contains('[true]'));
@@ -2689,12 +2722,12 @@ System.assert(compact.contains('"missing":null'));
 System.assert(compact.contains('},null]'));
 String pretty = JSON.serializePretty(root, true);
 System.assert(pretty.contains('  "items" : ['));
-System.assert(pretty.contains('      "kept" : "yes"'));
-System.assert(pretty.contains('      "missing" : null'));
+System.assert(pretty.contains('    "kept" : "yes"'));
+System.assert(pretty.contains('    "missing" : null'));
 Account account = new Account(Name = 'NoNull', Phone = null);
 String objectSuppressed = JSON.serialize(account, true);
 System.assert(objectSuppressed.contains('"Name":"NoNull"'));
-System.assert(!objectSuppressed.contains('Phone'));
+System.assert(objectSuppressed.contains('Phone'));
 String objectIncluded = JSON.serialize(account, false);
 System.assert(objectIncluded.contains('"Phone":null'));
 `)
