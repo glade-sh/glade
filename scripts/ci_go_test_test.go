@@ -876,7 +876,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	codeql := jobs["codeql"]
 	for _, want := range []string{
 		"name: CodeQL",
-		"timeout-minutes: 5",
+		"timeout-minutes: 15",
 		"languages: go",
 		"config: |",
 		"- uses: security-extended",
