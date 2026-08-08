@@ -892,7 +892,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	fullBranchWaivers := []string{
 		"go/incomplete-hostname-regexp",
-		"go/missing-regexp-anchor",
+		"go/regex/missing-regexp-anchor",
 		"go/reflected-xss",
 		"go/weak-sensitive-data-hashing",
 		"go/bad-redirect-check",
@@ -901,7 +901,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	prWaivers := []string{
 		"go/incomplete-hostname-regexp",
-		"go/missing-regexp-anchor",
+		"go/regex/missing-regexp-anchor",
 		"go/weak-sensitive-data-hashing",
 		"go/allocation-size-overflow",
 		"go/incorrect-integer-conversion",
