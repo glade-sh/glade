@@ -785,6 +785,7 @@ func TestStandardPlatformSymbolsIncludeServiceBackedSystemAndStdlibShapes(t *tes
 	eventBus := requireStandardSymbol(t, symbols, "EventBus")
 	requireStandardMethod(t, eventBus, "publishWithAccessLevel", []string{"SObject", "AccessLevel"}, true)
 	requireStandardMethod(t, eventBus, "publishWithAccessLevel", []string{"SObject", "Object", "AccessLevel"}, true)
+	requireStandardMethod(t, eventBus, "publishWithAccessLevel", []string{"List<SObject>", "AccessLevel"}, true)
 	requireStandardMethod(t, eventBus, "publishWithAccessLevel", []string{"List<SObject>", "Object", "AccessLevel"}, true)
 
 	pushPayload := requireStandardSymbol(t, symbols, "Messaging.PushNotificationPayload")
