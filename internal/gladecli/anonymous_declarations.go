@@ -71,7 +71,7 @@ func prepareAnonymousSource(source, apiVersion string) (preparedAnonymousSource,
 	prepared.cleanup = func() { _ = os.RemoveAll(tempRoot) }
 
 	classDir := filepath.Join(tempRoot, "force-app", "main", "default", "classes")
-	if err := os.MkdirAll(classDir, 0o755); err != nil {
+	if err := os.MkdirAll(classDir, 0o700); err != nil {
 		prepared.close()
 		return prepared, fmt.Errorf("create anonymous class directory: %w", err)
 	}

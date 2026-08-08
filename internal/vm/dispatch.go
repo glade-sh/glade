@@ -1740,14 +1740,15 @@ platformStaticCall:
 			if err != nil {
 				return Null, err
 			}
-			managed := managedIV([]byte(key), []byte(clearText))
-			iv := managed[:12]
+				managed := managedIV([]byte(key), []byte(clearText))
+				const managedIVSize = 12
+				iv := managed[:managedIVSize]
 			cipherText, err := encryptAESGCM(args[0].Text, []byte(key), iv, []byte(clearText), []byte(additionalData))
 			if err != nil {
 				return Null, newExceptionError("System.InvalidParameterValueException", err.Error())
 			}
 			envelope := make([]byte, 1+len(iv)+len(cipherText))
-			envelope[0] = byte(len(iv))
+				envelope[0] = managedIVSize
 			copy(envelope[1:], iv)
 			copy(envelope[1+len(iv):], cipherText)
 			return platformScalar("Blob", string(envelope)), nil
