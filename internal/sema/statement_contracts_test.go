@@ -55,6 +55,16 @@ func TestStatementContractsAllowInstructionsAfterThrow(t *testing.T) {
 	}
 }
 
+func TestStatementContractsAllowFallbackAfterTerminatingTry(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { private String load(String value) { try { return value; } catch (Exception error) { return 'fallback'; } return null; } }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("fallback after a terminating try must remain compiler-compatible: %#v", result.Diagnostics)
+	}
+}
+
 func TestSwitchContractsRejectUnsupportedSelectorsAndDuplicateValues(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{

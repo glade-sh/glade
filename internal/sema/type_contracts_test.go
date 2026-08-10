@@ -54,7 +54,7 @@ func TestEventPublishCallbacksAreInterfaces(t *testing.T) {
 func TestSandboxPostCopyAndSoqlStubProviderAreInterfaces(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{
-		"SandboxCopy.cls": `public class SandboxCopy implements SandboxPostCopy { public void runApexClass(SandboxContext context) {} }`,
+		"SandboxCopy.cls":  `public class SandboxCopy implements SandboxPostCopy { public void runApexClass(SandboxContext context) {} }`,
 		"SoqlProvider.cls": `public class SoqlProvider implements SoqlStubProvider { public List<SObject> handleSoqlQuery(Schema.SObjectType targetType, String query, Map<String,Object> binds) { return new List<SObject>(); } }`,
 	})
 	if result.HasErrors() {
@@ -84,6 +84,16 @@ func TestTypeContractRejectsInvalidSourceTypesAndLiterals(t *testing.T) {
 				t.Fatalf("expected source contract diagnostic, got %#v", result.Diagnostics)
 			}
 		})
+	}
+}
+
+func TestTypeContractAllowsUnaryPlusBeforeStringConcatenation(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run(List<String> values) { String result = ''; result += +values[0]; } }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("unary plus before a String concatenation must compile: %#v", result.Diagnostics)
 	}
 }
 

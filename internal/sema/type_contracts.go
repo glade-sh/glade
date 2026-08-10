@@ -183,7 +183,7 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 				if operand != "" && !strings.EqualFold(operand, "Boolean") {
 					appendDiagnostic("operator ! requires a Boolean operand")
 				}
-			case "+", "-":
+			case "-":
 				if operand != "" && !isSemaNumericType(operand) {
 					appendDiagnostic("unary numeric operator requires a numeric operand")
 				}
