@@ -4568,7 +4568,7 @@ System.assertEquals('R', System.getQuiddityShortCode(System.Request.getCurrent()
 }
 
 func TestExecSystemRequestVersionUsesLocalAPIVersion(t *testing.T) {
-	program, err := CompileAnonymous(`System.assertEquals('65.0.0', System.requestVersion().toString());`)
+	program, err := CompileAnonymous(`System.assertEquals('67.0.0', System.requestVersion().toString());`)
 	if err != nil {
 		t.Fatal(err)
 	}
