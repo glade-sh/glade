@@ -89,11 +89,16 @@ func TestTypeContractRejectsInvalidSourceTypesAndLiterals(t *testing.T) {
 
 func TestTypeContractAllowsUnaryPlusBeforeStringConcatenation(t *testing.T) {
 	t.Parallel()
-	result := analyzeDeclarationProject(t, map[string]string{
-		"Probe.cls": `public class Probe { public void run(List<String> values) { String result = ''; result += +values[0]; } }`,
-	})
-	if result.HasErrors() {
-		t.Fatalf("unary plus before a String concatenation must compile: %#v", result.Diagnostics)
+	for name, source := range map[string]string{
+		"String": `public class Probe { public void run(List<String> values) { String result = ''; result += +values[0]; } }`,
+		"Id":     `public class Probe { public void run(List<Id> values) { String result = ''; result += +values[0]; } }`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+			if result.HasErrors() {
+				t.Fatalf("unary plus before a String concatenation must compile: %#v", result.Diagnostics)
+			}
+		})
 	}
 }
 
