@@ -620,6 +620,7 @@ func semanticCompileErrorWithHooks(ctx context.Context, index typesys.Index, art
 	}
 	analyzeOptions := sema.AnalyzeOptions{
 		Diagnostics:                    true,
+		ExportTypes:                    true,
 		SuppressPerformanceDiagnostics: true,
 		BuildArtifacts:                 artifacts,
 	}

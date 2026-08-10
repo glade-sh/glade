@@ -217,6 +217,29 @@ private class SemanticDiskTest {
 	}
 }
 
+func TestTestSemanticGateWritesCheckCompatibleCacheIdentity(t *testing.T) {
+	restoreDisk := EnableDiskCacheForTesting()
+	t.Cleanup(restoreDisk)
+	t.Cleanup(InvalidateRuntimeCaches)
+	InvalidateRuntimeCaches()
+
+	root := t.TempDir()
+	path := filepath.Join(root, "CheckCompatibleSemanticTest.cls")
+	writeFile(t, path, `@isTest private class CheckCompatibleSemanticTest { @isTest static void passes() { System.assertEquals(1, 1); } }`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	identity, err := semanticcache.IdentityForBuild(semanticAnalysisIndex(index), &artifacts, sema.AnalyzeOptions{Diagnostics: true, ExportTypes: true, SuppressPerformanceDiagnostics: true, BuildArtifacts: &artifacts})
+	if err != nil {
+		t.Fatal(err)
+	}
+	run := RunCasesContext(context.Background(), index, Options{BuildArtifacts: &artifacts}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Passed != 1 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+	if _, err := os.Stat(filepath.Join(root, semanticResultCachePath(identity))); err != nil {
+		t.Fatalf("test semantic gate did not write check-compatible cache: %v", err)
+	}
+}
+
 func TestSemanticNoCacheReadsWritesOrRetainsNothing(t *testing.T) {
 	restoreDisk := EnableDiskCacheForTesting()
 	t.Cleanup(restoreDisk)
