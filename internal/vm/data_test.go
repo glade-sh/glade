@@ -8119,6 +8119,60 @@ System.assertEquals(true, storedPerson.IsPersonAccount);
 	}
 }
 
+func TestExecGenericSObjectMapHelperRetainsConcreteMapMutations(t *testing.T) {
+	helper, err := CompileAnonymous(`
+if (!records.containsKey(recordId)) {
+    records.put(recordId, recordId.getSObjectType().newSObject(recordId));
+}
+return records.get(recordId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account child = new Account(Name = 'Child');
+Account parent = new Account(Name = 'Parent');
+insert new List<Account>{ child, parent };
+Map<Id, Account> updates = new Map<Id, Account>();
+Account childUpdate = (Account)MapWideningHarness.ensure(child.Id, updates);
+childUpdate.PrimaryAffiliation__c = parent.Id;
+Account parentUpdate = (Account)MapWideningHarness.ensure(parent.Id, updates);
+parentUpdate.PrimaryContact__c = child.Id;
+System.assertEquals(2, updates.size());
+update updates.values();
+Account storedChild = [SELECT PrimaryAffiliation__c FROM Account WHERE Id = :child.Id];
+Account storedParent = [SELECT PrimaryContact__c FROM Account WHERE Id = :parent.Id];
+System.assertEquals(parent.Id, storedChild.PrimaryAffiliation__c);
+System.assertEquals(child.Id, storedParent.PrimaryContact__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["PrimaryAffiliation__c"] = storage.Field{APIName: "PrimaryAffiliation__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}}
+	account.Definition.Fields["PrimaryContact__c"] = storage.Field{APIName: "PrimaryContact__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}}
+	org.Objects["Account"] = account
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterMethod(Method{
+		Name:       "MapWideningHarness.ensure",
+		ClassName:  "MapWideningHarness",
+		IsStatic:   true,
+		ReturnType: "SObject",
+		Params: []Param{
+			{Name: "recordId", Type: "Id"},
+			{Name: "records", Type: "Map<Id,SObject>"},
+		},
+		Program: helper,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLFiltersExplicitRecordTypeIdWithNoObjectDefault(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id cvoRecordTypeId = Batch__c.SObjectType.getDescribe().getRecordTypeInfosByDeveloperName().get('Secondary').getRecordTypeId();

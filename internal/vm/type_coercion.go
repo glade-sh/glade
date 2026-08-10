@@ -1316,10 +1316,10 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			value.Type = typeName
 			return value, nil
 		}
-		resultType := typeName
 		if strings.EqualFold(valueType, "sObject") && mapConcreteSObjectValueType(sourceType) != "" {
-			resultType = sourceType
+			return value, nil
 		}
+		resultType := typeName
 		type coercedEntry struct {
 			key      string
 			keyValue Value
