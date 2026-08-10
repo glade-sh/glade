@@ -105,9 +105,9 @@ func TestTypeContractAllowsUnaryPlusBeforeStringConcatenation(t *testing.T) {
 func TestTypeContractRejectsUnaryPlusOutsideStringConcatenation(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{
-		"String":  `public class Probe { public void run(String value) { System.debug(+value); } }`,
 		"Boolean": `public class Probe { public void run(Boolean value) { System.debug(+value); } }`,
 		"Date":    `public class Probe { public void run(Date value) { System.debug(+value); } }`,
+		"Object":  `public class Probe { public void run(Object value) { System.debug(+value); } }`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
@@ -115,6 +115,16 @@ func TestTypeContractRejectsUnaryPlusOutsideStringConcatenation(t *testing.T) {
 				t.Fatalf("expected invalid unary-plus diagnostic, got %#v", result.Diagnostics)
 			}
 		})
+	}
+}
+
+func TestTypeContractAllowsUnaryPlusStringArgument(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() { System.assertNotEquals(null, null, + 'message'); } }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("unary plus before a String argument must compile: %#v", result.Diagnostics)
 	}
 }
 

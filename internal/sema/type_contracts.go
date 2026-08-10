@@ -141,7 +141,7 @@ func typeContractDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol,
 
 func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
-	var walk func(ir.Expr, bool)
+	var walk func(ir.Expr)
 	appendDiagnostic := func(detail string) {
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
@@ -159,19 +159,18 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 	runtimeCompatible := func(left, right string) bool {
 		return compatible(left, right) || semaRuntimeTypeTestCompatible(typ.Name, left, right, model)
 	}
-	walk = func(current ir.Expr, stringConcatenationOperand bool) {
+	walk = func(current ir.Expr) {
 		if current.Left != nil {
-			walk(*current.Left, false)
+			walk(*current.Left)
 		}
 		if current.Right != nil && !strings.EqualFold(current.Operator, "instanceof") {
-			allowStringUnaryPlus := current.Kind == ir.ExprBinary && current.Operator == "+" && current.Left != nil && strings.EqualFold(a.inferIRExprType(*current.Left, scope, model, typ.Name), "String")
-			walk(*current.Right, allowStringUnaryPlus)
+			walk(*current.Right)
 		}
 		for _, arg := range current.Args {
-			walk(arg, false)
+			walk(arg)
 		}
 		for _, arg := range current.NamedArgs {
-			walk(arg.Expr, false)
+			walk(arg.Expr)
 		}
 		switch current.Kind {
 		case ir.ExprUnary:
@@ -185,7 +184,7 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 					appendDiagnostic("operator ! requires a Boolean operand")
 				}
 			case "+", "-":
-				if operand != "" && !isSemaNumericType(operand) && !(current.Operator == "+" && stringConcatenationOperand && (strings.EqualFold(operand, "String") || strings.EqualFold(operand, "Id"))) {
+				if operand != "" && !isSemaNumericType(operand) && !(current.Operator == "+" && (strings.EqualFold(operand, "String") || strings.EqualFold(operand, "Id"))) {
 					appendDiagnostic("unary numeric operator requires a numeric operand")
 				}
 			}
@@ -259,7 +258,7 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 			}
 		}
 	}
-	walk(expr, false)
+	walk(expr)
 	return diagnostics
 }
 
