@@ -90,9 +90,88 @@ var defaultDescribeTabSetTemplates = []describeTabSetTemplate{
 func (vm *VM) describeDefaultTabValues(names []string) []Value {
 	values := make([]Value, 0, len(names))
 	for _, name := range names {
-		values = append(values, vm.describeTabValue(storage.TabMetadata{Name: name, Label: name}))
+		values = append(values, vm.describeTabValue(storage.TabMetadata{Name: name, Label: name, SObjectName: defaultDescribeTabSObjectName(name)}))
 	}
 	return values
+}
+
+func defaultDescribeTabSObjectName(name string) string {
+	switch name {
+	case "Campaigns":
+		return "Campaign"
+	case "Leads":
+		return "Lead"
+	case "Accounts":
+		return "Account"
+	case "Contacts":
+		return "Contact"
+	case "Opportunities":
+		return "Opportunity"
+	case "Forecasts":
+		return "Forecasting3"
+	case "Contracts":
+		return "Contract"
+	case "Orders":
+		return "Order"
+	case "Cases":
+		return "Case"
+	case "Solutions":
+		return "Solution"
+	case "Products":
+		return "Product2"
+	case "Reports":
+		return "Report"
+	case "Dashboards":
+		return "Dashboard"
+	case "App Launcher":
+		return "AppLauncher"
+	case "Ideas":
+		return "Idea"
+	case "Site.com":
+		return "Sites"
+	case "Profile", "People":
+		return "User"
+	case "Groups":
+		return "CollaborationGroup"
+	case "Files":
+		return "File"
+	case "Profile Feed":
+		return "ProfilePlatformFeed"
+	case "Profile Overview":
+		return "ProfilePlatformOverview"
+	case "Libraries":
+		return "Workspace"
+	case "Content":
+		return "ContentSearch"
+	case "Subscriptions":
+		return "ContentSubscriptions"
+	case "Contact Point Type Consent":
+		return "ContactPointTypeConsent"
+	case "Data Use Purpose":
+		return "DataUsePurpose"
+	case "Data Use Legal Basis":
+		return "DataUseLegalBasis"
+	case "Authorization Form":
+		return "AuthorizationForm"
+	case "Authorization Form Consent":
+		return "AuthorizationFormConsent"
+	case "Authorization Form Data Use":
+		return "AuthorizationFormDataUse"
+	case "Authorization Form Text":
+		return "AuthorizationFormText"
+	case "Communication Subscriptions":
+		return "CommSubscription"
+	case "Communication Subscription Channel Types":
+		return "CommSubscriptionChannelType"
+	case "Communication Subscription Consents":
+		return "CommSubscriptionConsent"
+	case "Communication Subscription Timings":
+		return "CommSubscriptionTiming"
+	case "Party Consent":
+		return "PartyConsent"
+	default:
+		return name
+	}
 }
 
 func describeTabSetValue(template describeTabSetTemplate, tabs []Value) Value {

@@ -10784,6 +10784,23 @@ System.assertEquals(14, tabSets[12].getTabs().size());
 	}
 }
 
+func TestExecDescribeTabsDefaultTabsHaveSObjectNames(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Object> tabs = Schema.describeTabs()[0].getTabs();
+System.assertEquals('Account', tabs[4].getSObjectName());
+System.assertNotEquals(null, tabs[0].getSObjectName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeDataCategoriesFromLocalMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Object> groups = Schema.describeDataCategoryGroups(new List<String>{'Knowledge__kav'});
