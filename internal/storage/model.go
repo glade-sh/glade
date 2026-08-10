@@ -11,7 +11,7 @@ const FixtureVersion = "glade.storage.v1"
 
 // DefaultRESTAPIVersion is the REST API release string advertised by local HTTP
 // surfaces when [OrgState.APIVersion] is empty (no leading "v").
-const DefaultRESTAPIVersion = "67.0"
+const DefaultRESTAPIVersion = "65.0"
 
 // NormalizeRESTAPIVersion trims whitespace and strips an optional leading "v".
 func NormalizeRESTAPIVersion(s string) string {

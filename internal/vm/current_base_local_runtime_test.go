@@ -101,7 +101,7 @@ System.assertEquals(0, value.getInaccessibleFields().size());
 
 func TestCurrentBaseSystemVersionAndURLUseLocalContext(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals('67.0.0', System.requestVersion().toString());
+System.assertEquals('65.0.0', System.requestVersion().toString());
 URL base = URL.getSalesforceBaseUrl();
 System.assertEquals('https://trail.example.test:8443', base.toExternalForm());
 System.assertEquals(base.toExternalForm(), URL.getOrgDomainUrl().toExternalForm());
