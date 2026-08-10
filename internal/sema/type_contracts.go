@@ -141,7 +141,7 @@ func typeContractDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol,
 
 func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
-	var walk func(ir.Expr)
+	var walk func(ir.Expr, bool)
 	appendDiagnostic := func(detail string) {
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
@@ -159,18 +159,19 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 	runtimeCompatible := func(left, right string) bool {
 		return compatible(left, right) || semaRuntimeTypeTestCompatible(typ.Name, left, right, model)
 	}
-	walk = func(current ir.Expr) {
+	walk = func(current ir.Expr, stringConcatenationOperand bool) {
 		if current.Left != nil {
-			walk(*current.Left)
+			walk(*current.Left, false)
 		}
 		if current.Right != nil && !strings.EqualFold(current.Operator, "instanceof") {
-			walk(*current.Right)
+			allowStringUnaryPlus := current.Kind == ir.ExprBinary && current.Operator == "+" && current.Left != nil && strings.EqualFold(a.inferIRExprType(*current.Left, scope, model, typ.Name), "String")
+			walk(*current.Right, allowStringUnaryPlus)
 		}
 		for _, arg := range current.Args {
-			walk(arg)
+			walk(arg, false)
 		}
 		for _, arg := range current.NamedArgs {
-			walk(arg.Expr)
+			walk(arg.Expr, false)
 		}
 		switch current.Kind {
 		case ir.ExprUnary:
@@ -183,8 +184,8 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 				if operand != "" && !strings.EqualFold(operand, "Boolean") {
 					appendDiagnostic("operator ! requires a Boolean operand")
 				}
-			case "-":
-				if operand != "" && !isSemaNumericType(operand) {
+			case "+", "-":
+				if operand != "" && !isSemaNumericType(operand) && !(current.Operator == "+" && stringConcatenationOperand && strings.EqualFold(operand, "String")) {
 					appendDiagnostic("unary numeric operator requires a numeric operand")
 				}
 			}
@@ -258,7 +259,7 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 			}
 		}
 	}
-	walk(expr)
+	walk(expr, false)
 	return diagnostics
 }
 
