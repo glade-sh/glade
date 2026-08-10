@@ -10816,6 +10816,28 @@ System.assertEquals('/lightning/o/Widget__c/list', tab.getUrl());
 	}
 }
 
+func TestExecDescribeTabsOmitsNonSObjectMetadataTabs(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Object> tabs = Schema.describeTabs()[12].getTabs();
+for (Object tab : tabs) {
+	System.assertNotEquals('UtilityTab', tab.getName());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Metadata.Tabs = []storage.TabMetadata{
+		{Name: "Gadget__c", Custom: true},
+		{Name: "UtilityTab", Custom: false},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeTabsProvidesDeterministicDefaultAppSets(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Object> tabSets = Schema.describeTabs();

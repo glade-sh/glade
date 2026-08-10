@@ -198,6 +198,9 @@ func (vm *VM) schemaDescribeTabValues() []Value {
 	sort.Slice(tabs, func(i, j int) bool { return tabs[i].Name < tabs[j].Name })
 	values := make([]Value, 0, len(tabs))
 	for _, tab := range tabs {
+		if describeTabSObjectName(tab) == "" {
+			continue
+		}
 		values = append(values, vm.describeTabValue(tab))
 	}
 	return values
