@@ -3723,8 +3723,8 @@ System.assert(afterQuery >= afterDml);
 	if len(result.LimitViolations) == 0 {
 		t.Fatalf("expected CPU budget violation from instruction and row costs")
 	}
-	if result.LimitViolations[0].Used <= result.Limits.CPUTimeMS {
-		t.Fatalf("CPU budget used = %d, public cpu time = %d; want separate budget counter", result.LimitViolations[0].Used, result.Limits.CPUTimeMS)
+	if result.LimitViolations[0].Used != machine.cpuBudgetUsed {
+		t.Fatalf("CPU budget violation used = %d, budget counter = %d", result.LimitViolations[0].Used, machine.cpuBudgetUsed)
 	}
 }
 
