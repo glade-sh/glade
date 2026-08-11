@@ -3,6 +3,7 @@ package vm
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -81,6 +82,72 @@ System.assertEquals(0, empty.size());
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestObjectStateDoesNotMutateFrozenDefinition(t *testing.T) {
+	source := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Account": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Account",
+				Fields: map[string]storage.Field{
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	clone := source.CloneRuntimeFrozenShared()
+	sibling := source.CloneRuntimeFrozenShared()
+	machine := New(nil)
+	machine.SetOrg(&clone)
+
+	state, ok := machine.objectState("Account")
+	if !ok {
+		t.Fatal("objectState(Account) did not find Account")
+	}
+	if _, ok := state.Definition.Fields["Id"]; !ok {
+		t.Fatal("objectState(Account) did not apply standard fields")
+	}
+	if _, ok := machine.Org.Objects["Account"].Definition.Fields["Id"]; !ok {
+		t.Fatal("objectState(Account) did not retain its local standard fields")
+	}
+	fields := machine.Org.Objects["Account"].Definition.Fields
+	if _, ok := machine.objectState("Account"); !ok {
+		t.Fatal("second objectState(Account) did not find Account")
+	}
+	if got, want := reflect.ValueOf(machine.Org.Objects["Account"].Definition.Fields).Pointer(), reflect.ValueOf(fields).Pointer(); got != want {
+		t.Fatalf("second objectState(Account) replaced its already private definition: got %#x, want %#x", got, want)
+	}
+	for name, org := range map[string]storage.OrgState{"source": source, "sibling": sibling} {
+		if _, ok := org.Objects["Account"].Definition.Fields["Id"]; ok {
+			t.Fatalf("objectState(Account) mutated %s frozen definition", name)
+		}
+	}
+}
+
+func TestObjectStateDoesNotRecloneFrozenCustomDefinition(t *testing.T) {
+	source := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Probe__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Probe__c",
+				Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	clone := source.CloneRuntimeFrozenShared()
+	machine := New(nil)
+	machine.SetOrg(&clone)
+	if _, ok := machine.objectState("Probe__c"); !ok {
+		t.Fatal("objectState(Probe__c) did not find Probe__c")
+	}
+	fields := machine.Org.Objects["Probe__c"].Definition.Fields
+	if _, ok := machine.objectState("Probe__c"); !ok {
+		t.Fatal("second objectState(Probe__c) did not find Probe__c")
+	}
+	if got, want := reflect.ValueOf(machine.Org.Objects["Probe__c"].Definition.Fields).Pointer(), reflect.ValueOf(fields).Pointer(); got != want {
+		t.Fatalf("second objectState(Probe__c) replaced its already private definition: got %#x, want %#x", got, want)
 	}
 }
 

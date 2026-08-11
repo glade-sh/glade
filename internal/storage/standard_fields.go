@@ -15,16 +15,25 @@ func EnsureStandardObjectFields(definition *ObjectDefinition) {
 	EnsureStandardObjectFieldsForFeatures(definition, nil)
 }
 
+// StandardObjectFieldsNeedWrite reports whether EnsureStandardObjectFields
+// would mutate definition.
+func StandardObjectFieldsNeedWrite(definition ObjectDefinition) bool {
+	return standardObjectFieldsNeedWrite(definition, "")
+}
+
 // EnsureStandardObjectFieldsForFeatures adds the base standard object overlay,
 // plus feature-gated standard fields and record types for enabled org features.
 func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, features []string) {
 	if definition == nil {
 		return
 	}
+	featureSignature := canonicalFeatureSignature(features)
+	if !standardObjectFieldsNeedWrite(*definition, featureSignature) {
+		return
+	}
 	if _, ok := standardObjectCatalogEntryForName(definition.APIName); ok {
 		definition.EnableSearch = true
 	}
-	featureSignature := canonicalFeatureSignature(features)
 	if standardFieldsOverlayApplied(*definition, featureSignature) {
 		if standardReadOnlyFlagsNeedRepair(definition) {
 			applyStandardSObjectStubReadOnlyFields(definition)
@@ -69,6 +78,16 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	}
 	RemoveCustomSettingUnsupportedFields(definition)
 	markStandardFieldsOverlay(definition, featureSignature)
+}
+
+func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature string) bool {
+	if _, ok := standardObjectCatalogEntryForName(definition.APIName); ok && !definition.EnableSearch {
+		return true
+	}
+	if !standardFieldsOverlayApplied(definition, featureSignature) {
+		return true
+	}
+	return standardReadOnlyFlagsNeedRepair(&definition)
 }
 
 func RemoveCustomSettingUnsupportedFields(definition *ObjectDefinition) {
@@ -880,7 +899,11 @@ func standardReadOnlyFlagsNeedRepair(definition *ObjectDefinition) bool {
 	if definition == nil || len(definition.Fields) == 0 {
 		return false
 	}
-	for _, name := range []string{"Id", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"} {
+	readOnlyFields, ok := standardSObjectStubReadOnlyFieldsFor(definition.APIName)
+	if !ok {
+		return false
+	}
+	for _, name := range readOnlyFields {
 		field, ok := definition.Fields[name]
 		if ok && (field.Createable == nil || field.Updateable == nil) {
 			return true

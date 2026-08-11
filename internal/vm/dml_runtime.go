@@ -3287,8 +3287,10 @@ func (vm *VM) objectState(objectName string) (storage.ObjectState, bool) {
 		objectName = canonical
 	}
 	object, ok := vm.Org.Objects[objectName]
-	if ok {
+	if ok && storage.StandardObjectFieldsNeedWrite(object.Definition) {
+		object.Definition = object.Definition.Clone()
 		storage.EnsureStandardObjectFields(&object.Definition)
+		vm.Org.Objects[objectName] = object
 	}
 	return object, ok
 }
