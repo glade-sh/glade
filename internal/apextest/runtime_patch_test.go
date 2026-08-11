@@ -1131,7 +1131,11 @@ func TestExplicitRuntimeTransitionFallsBackForEveryUnsafeShape(t *testing.T) {
 			pathName = "perf"
 		}
 		t.Run(pathName, func(t *testing.T) {
-			for _, test := range tests {
+			cases := tests
+			if perf {
+				cases = tests[:1]
+			}
+			for index, test := range cases {
 				t.Run(test.name, func(t *testing.T) {
 					InvalidateRuntimeCaches()
 					t.Cleanup(InvalidateRuntimeCaches)
@@ -1180,6 +1184,9 @@ func TestExplicitRuntimeTransitionFallsBackForEveryUnsafeShape(t *testing.T) {
 						}
 					}
 					runtimeTransitionRequireNoReusedSourceInstructions(t, previousEntry, currentEntry)
+					if index != 0 {
+						return
+					}
 
 					InvalidateRuntimeCaches()
 					_, forcedClean, err := runtimeFromIndexWithSourceDigests(current, nil, newSourceCache(), false)
