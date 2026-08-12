@@ -1184,7 +1184,7 @@ func TestExplicitRuntimeTransitionFallsBackForEveryUnsafeShape(t *testing.T) {
 						}
 					}
 					runtimeTransitionRequireNoReusedSourceInstructions(t, previousEntry, currentEntry)
-					if index != 0 {
+					if index != 0 && !test.clearBaseCache && !test.breakBaseAuthority {
 						return
 					}
 
