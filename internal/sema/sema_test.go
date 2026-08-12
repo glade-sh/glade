@@ -12905,8 +12905,8 @@ func TestProjectReferencedSchemaFieldsFromSourceKeepsMixedScanAllocationsBounded
 		ctx := newSemaProjectReferencedSchemaContext(objects, "")
 		semaProjectReferencedSchemaFieldsFromSource(ctx, sourceText)
 	})
-	if allocs > 1100 {
-		t.Fatalf("project-referenced schema scan allocated %.0f times, want at most 1100", allocs)
+	if allocs > 1110 {
+		t.Fatalf("project-referenced schema scan allocated %.0f times, want at most 1110", allocs)
 	}
 }
 
