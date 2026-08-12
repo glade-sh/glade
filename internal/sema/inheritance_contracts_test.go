@@ -66,6 +66,24 @@ public class Child extends Base {
 	}
 }
 
+func TestInheritanceContractsAllowAuthProviderPluginClassOverrides(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"AuthProvider.cls": `
+public class AuthProvider extends Auth.AuthProviderPluginClass {
+  public override PageReference initiate(Map<String,String> config, String state) { return new PageReference('/login'); }
+  public override Auth.AuthProviderTokenResponse handleCallback(Map<String,String> config, Auth.AuthProviderCallbackState state) { return new Auth.AuthProviderTokenResponse('provider', 'token', 'secret', state.body); }
+  public override Auth.UserData getUserInfo(Map<String,String> config, Auth.AuthProviderTokenResponse response) { return new Auth.UserData('id', 'first', 'last', 'full', 'email', 'link', 'user', 'locale', 'provider', 'site', new Map<String,String>()); }
+  public override String getCustomMetadataType() { return 'Auth_Config__mdt'; }
+  public override Auth.OAuthRefreshResult refresh(Map<String,String> config, String refreshToken) { return new Auth.OAuthRefreshResult('access', refreshToken); }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("Auth.AuthProviderPluginClass overrides should resolve: %#v", result.Diagnostics)
+	}
+}
+
 func TestInheritanceContractsAllowStaticMethodToShareInheritedInstanceSignature(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{
@@ -336,6 +354,48 @@ public class Child extends Base {
 	if !result.HasErrors() {
 		t.Fatalf("expected visibility-narrowing diagnostic, got %#v", result.Diagnostics)
 	}
+}
+
+func TestInheritanceContractsRequireOverrideForAbstractImplementation(t *testing.T) {
+	t.Parallel()
+	files := map[string]string{
+		"Base.cls": `
+public abstract class Base {
+  public abstract String value();
+}
+`,
+		"Child.cls": `
+public class Child extends Base {
+  public String value() { return 'x'; }
+}
+`,
+	}
+	for _, apiVersion := range []string{"66.0", "67.0"} {
+		t.Run("reject_"+apiVersion, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, files, apiVersion)
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA016") {
+				t.Fatalf("API %s abstract implementation without override was NOT rejected: %#v", apiVersion, result.Diagnostics)
+			}
+		})
+	}
+	t.Run("accept with override", func(t *testing.T) {
+		filesWithOverride := map[string]string{
+			"Base.cls": `
+public abstract class Base {
+  public abstract String value();
+}
+`,
+			"Child.cls": `
+public class Child extends Base {
+  public override String value() { return 'x'; }
+}
+`,
+		}
+		result := analyzeDeclarationProjectWithAPIVersion(t, filesWithOverride, "66.0")
+		if result.HasErrors() {
+			t.Fatalf("abstract implementation with override was rejected: %#v", result.Diagnostics)
+		}
+	})
 }
 
 func TestInheritanceContractsRequireVisibleInterfaceImplementation(t *testing.T) {

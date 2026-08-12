@@ -383,6 +383,12 @@ func (vm *VM) callCartExtensionMockBackedSplitShipment(receiver Value, method st
 	return value, receiver, mutated, handled, err
 }
 
+func queueableDuplicateSignaturePlatformObjectType(typeName string) bool {
+	return strings.EqualFold(typeName, "QueueableDuplicateSignature") ||
+		strings.EqualFold(typeName, "QueueableDuplicateSignature.Builder") ||
+		strings.EqualFold(typeName, "Builder")
+}
+
 func callSfsqlquerySqlQueueableMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	switch method {
 	case "cancel", "processDataChunk":
@@ -667,6 +673,13 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 	partitionName := cachePartitionKey(receiver.Type, name.Text)
 	method = strings.ToLower(method)
 	switch method {
+	case "clone":
+		if len(args) != 0 {
+			return Null, receiver, fmt.Errorf("%s.clone expects no arguments", receiver.Type)
+		}
+		cloned := cloneValue(receiver)
+		cloned.Ref = newValueRef()
+		return cloned, receiver, nil
 	case "get":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, receiver, fmt.Errorf("%s.get expects key or CacheBuilder type and key", receiver.Type)
@@ -722,11 +735,8 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 		if !hasKey {
 			return Null, receiver, nil
 		}
-		removed, removedOK := vm.cacheRemove(partitionName, cacheKeyForArgs(args, key))
-		if !removedOK {
-			return Null, receiver, nil
-		}
-		return removed, receiver, nil
+		_, removed := vm.cacheRemove(partitionName, cacheKeyForArgs(args, key))
+		return Bool(removed), receiver, nil
 	case "contains":
 		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueSet) {
 			return Null, receiver, fmt.Errorf("%s.contains expects String key or Set<String>", receiver.Type)
@@ -776,7 +786,7 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 			return Null, receiver, fmt.Errorf("%s.getName expects no arguments", receiver.Type)
 		}
 		return String(cacheNormalizePartitionName(name.Text)), receiver, nil
-	case "getavggetsize", "getavggettime", "getavgvaluesize", "getmaxgetsize", "getmaxgettime", "getmaxvaluesize":
+	case "getavggetsize", "getavggettime", "getmaxgetsize", "getmaxgettime":
 		if len(args) != 0 {
 			return Null, receiver, fmt.Errorf("%s.%s expects no arguments", receiver.Type, method)
 		}
@@ -786,18 +796,6 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 			return Null, receiver, fmt.Errorf("%s.getMissRate expects no arguments", receiver.Type)
 		}
 		return Decimal(0), receiver, nil
-	case "createfullyqualifiedpartition":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
-			return Null, receiver, fmt.Errorf("%s.createFullyQualifiedPartition expects namespace and partition Strings", receiver.Type)
-		}
-		return String(cacheFullyQualifiedPartition(args[0].Text, args[1].Text)), receiver, nil
-	case "createfullyqualifiedkey":
-		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString {
-			return Null, receiver, fmt.Errorf("%s.createFullyQualifiedKey expects namespace, partition, and key Strings", receiver.Type)
-		}
-		return String(cacheFullyQualifiedPartition(args[0].Text, args[1].Text) + "." + args[2].Text), receiver, nil
-	case "validatecachebuilder", "validatekey", "validatekeyvalue", "validatekeys", "validatepartitionname":
-		return Null, receiver, nil
 	default:
 		return Null, receiver, unsupportedCallError(receiver.Type + "." + method)
 	}
@@ -874,6 +872,31 @@ func cacheFullyQualifiedPartition(namespace, partition string) string {
 	return namespace + "." + partition
 }
 
+func (vm *VM) callCachePartitionStaticDefault(callee string, args []Value) (Value, bool, error) {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok || !cachePartitionPlatformObjectType(className) {
+		return Null, false, nil
+	}
+	switch strings.ToLower(methodName) {
+	case "validatekeys":
+		return Null, true, unsupportedCallError(callee + " removed after API version 54.0")
+	case "validatecachebuilder", "validatekey", "validatekeyvalue", "validatepartitionname":
+		return Null, true, nil
+	case "createfullyqualifiedpartition":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, true, fmt.Errorf("%s expects namespace and partition Strings", callee)
+		}
+		return String(cacheFullyQualifiedPartition(args[0].Text, args[1].Text)), true, nil
+	case "createfullyqualifiedkey":
+		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString {
+			return Null, true, fmt.Errorf("%s expects namespace, partition, and key Strings", callee)
+		}
+		return String(cacheFullyQualifiedPartition(args[0].Text, args[1].Text) + "." + args[2].Text), true, nil
+	default:
+		return Null, false, nil
+	}
+}
+
 func (vm *VM) cacheStaticDefaultGet(callee string, args []Value) (Value, error) {
 	partition := cacheDefaultPartitionKey(callee)
 	if len(args) != 1 && len(args) != 2 {
@@ -942,12 +965,33 @@ func cachePutTTL(callee string, args []Value) (int64, error) {
 		return 0, nil
 	}
 	if args[2].Kind == ValueInt {
+		if args[2].Int > 0 && args[2].Int < 300 {
+			return 0, fmt.Errorf("%s TTL must be at least 300 seconds", callee)
+		}
 		return args[2].Int, nil
 	}
 	if len(args) == 3 && cacheVisibilityValue(args[2]) {
 		return 0, nil
 	}
 	return 0, fmt.Errorf("%s ttl expects Integer seconds", callee)
+}
+
+func validCachePartitionName(name string) bool {
+	parts := strings.Split(name, ".")
+	if len(parts) == 0 || name == "" {
+		return false
+	}
+	for _, part := range parts {
+		if part == "" {
+			return false
+		}
+		for _, r := range part {
+			if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func cacheVisibilityValue(value Value) bool {
@@ -981,11 +1025,8 @@ func (vm *VM) cacheStaticDefaultRemove(callee string, args []Value) (Value, erro
 	if !hasKey {
 		return Null, nil
 	}
-	removed, removedOK := vm.cacheRemove(cacheDefaultPartitionKey(callee), cacheKeyForArgs(args, key))
-	if !removedOK {
-		return Null, nil
-	}
-	return removed, nil
+	_, removed := vm.cacheRemove(cacheDefaultPartitionKey(callee), cacheKeyForArgs(args, key))
+	return Bool(removed), nil
 }
 
 func (vm *VM) cacheStaticDefaultContains(callee string, args []Value) (Value, error) {
@@ -1081,10 +1122,13 @@ func (vm *VM) cacheGetOrLoad(partition, cacheKey string, builderType Value, load
 		}
 	}
 	if builderType.Kind != ValueObject || builderType.Type != "Type" || typeName == "" {
+		if builderType.Kind == ValueObject && builderType.Type == "Type" {
+			return Null, fmt.Errorf("%s does not implement CacheBuilder", typeName)
+		}
 		return Null, nil
 	}
 	if !vm.typeMatches(typeName, "Cache.CacheBuilder", make(map[string]bool)) {
-		return Null, nil
+		return Null, fmt.Errorf("%s does not implement CacheBuilder", typeName)
 	}
 	builder, err := vm.constructValue(typeName, nil, nil, &Result{})
 	if err != nil {

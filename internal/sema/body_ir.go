@@ -1018,6 +1018,9 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 		}
 		switch inst.Op {
 		case ir.OpDeclare:
+			if semaAPI67RejectedPlatformType(inst.Type) && !semaProjectTypeShadowsPlatform(model, inst.Type) {
+				diagnostics = append(diagnostics, unsupportedLocalFeatureDiagnostic(typ, member, inst.Type, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(inst.Type)), source))
+			}
 			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, inst.Expr, scope, inst.Pos, bodyOffset, source, model, constructability)...)
 			diagnostics = append(diagnostics, a.checkIRAssignmentType(typ, member, inst.Type, inst.Name, inst.Expr, scope, inst.Pos, bodyOffset, source, model, "initializes")...)
 			if !scope.declare(inst.Name, resolveNestedTypeReference(model, typ.Name, inst.Type)) {
@@ -1188,20 +1191,30 @@ func (a *Analyzer) semaUpsertSelectorAllowed(operandType, selector string) bool 
 	if fieldName == "" {
 		return false
 	}
-	foundObject := false
+	fieldSchemaFound := false
 	for _, object := range a.queryDeclaredObjects {
 		if !semaProjectReferencedSchemaAPINamesMatch(a.namespace, object.Name, objectName) {
 			continue
 		}
-		foundObject = true
 		for _, field := range object.Fields {
-			if semaProjectReferencedSchemaAPINamesMatch(a.namespace, field.Name, fieldName) &&
-				(field.ExternalID || field.IDLookup) {
+			if semaProjectReferencedSchemaAPINamesMatch(a.namespace, field.Name, fieldName) {
+				fieldSchemaFound = true
+				if field.ExternalID || field.IDLookup {
+					return true
+				}
+			}
+		}
+	}
+	if provider := semaStandardSObjectFieldProviderFor(objectName); provider != nil && provider.hasFields() {
+		field, ok := provider.lookup(fieldName)
+		if ok {
+			fieldSchemaFound = true
+			if field.ExternalID || field.IDLookup {
 				return true
 			}
 		}
 	}
-	if foundObject {
+	if fieldSchemaFound {
 		return false
 	}
 	// Do not infer a selector capability from a field name. An unavailable
@@ -1376,6 +1389,17 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 		if semaExprAtSwitchWhenLabel(source, bodyOffset+pos, expr.Name) {
 			return nil
 		}
+		fieldReceiver := expr.Name
+		fieldPath := expr.Name
+		if dot := strings.LastIndexByte(fieldReceiver, '.'); dot > 0 {
+			fieldReceiver = fieldReceiver[:dot]
+			if receiverType, ok := scope.lookup(fieldReceiver); ok {
+				fieldPath = receiverType + expr.Name[dot:]
+			}
+		}
+		if semaAPI67RejectedPlatformField(fieldPath) && !semaProjectTypeShadowsPlatform(model, fieldReceiver) {
+			return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, expr.Name, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Name)), source)}
+		}
 		if diag, ok := a.irVariableDiagnostic(typ, member, expr.Name, *scope, model, bodyOffset+pos, source); ok {
 			diagnostics = append(diagnostics, diag)
 		} else if !a.irVariableKnown(expr.Name, *scope, model, typ.Name) && !isLikelyTypeReference(expr.Name) {
@@ -1425,6 +1449,13 @@ func (a *Analyzer) checkIRAssignmentTarget(typ typesys.TypeSymbol, member typesy
 	}
 	if !strings.Contains(name, ".") && scope.hasNonFieldBinding(name) {
 		return nil
+	}
+	if root, field, ok := strings.Cut(name, "."); ok {
+		if receiverType := semaIRReceiverType(root, scope, model, typ.Name); receiverType != "" && !semaProjectTypeShadowsPlatform(model, receiverType) {
+			if target, resolved := semaResolveFieldPath(model, receiverType, field); resolved && semaAPI67ReadOnlyPlatformField(target.owner+"."+target.member.Name) {
+				return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, name, bodyOffset+pos, bodyOffset+pos+max(1, len(name)), source)}
+			}
+		}
 	}
 	if target, ok := semaResolveFieldPath(model, typ.Name, name); ok && target.member.Kind == apexast.DeclarationProperty && !typeContractPropertyHasAccessor(target.member, "set") {
 		return []diagnostic.Diagnostic{typeContractDiagnostic(typ, member, "property has no setter", bodyOffset+pos, bodyOffset+pos+max(1, len(name)), source)}
@@ -1486,6 +1517,12 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	}
 	if expr.Callee == "" || expr.Callee == "this" || expr.Callee == "super" || skipSemaCall(expr.Callee) {
 		return nil
+	}
+	// Keep this pre-resolution guard for rejected qualified platform receivers.
+	// The later platform path is shared, but unknown dotted receivers can exit
+	// through permissive fallback before it is reached.
+	if receiver, method, ok := splitSemaMethodPath(expr.Callee); ok && !scope.hasNonFieldBinding(receiver) && !semaProjectTypeShadowsPlatform(model, receiver) && semaAPI67RejectedPlatformCall(receiver, method, "class") {
+		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiver+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
 	}
 	receiverType := typ.Name
 	method := expr.Callee
@@ -1582,6 +1619,14 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 				}
 			}
 		}
+	}
+	// Instance receivers can bypass checkIRPlatformCall through its permissive
+	// fallback after IR infers their platform type, so guard that path here.
+	if !semaProjectTypeShadowsPlatform(model, receiverType) && semaAPI67RejectedPlatformCall(receiverType, method, receiverMode) {
+		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
+	}
+	if !semaProjectTypeShadowsPlatform(model, receiverType) && semaAPI67RejectedPlatformCallArgs(receiverType, method, irCallArgTypes(a, expr.Args, scope, model, typ.Name)) {
+		return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(expr.Args), bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source)}
 	}
 	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), receiverMode)
 	if !explicitReceiver {
@@ -1923,7 +1968,13 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 	for i, arg := range args {
 		argTypes[i] = a.inferIRExprType(arg, scope, model, typ.Name)
 	}
+	if semaAPI67RejectedPlatformCallArgs(receiverType, method, argTypes) {
+		return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source)}, true
+	}
 	if semaDatabaseDMLReturnType(receiverType, method, argTypes) != "" && len(args) <= 4 {
+		return nil, true
+	}
+	if semaSearchSuggestObjectOverload(receiverType, method, argTypes) {
 		return nil, true
 	}
 	if semaArgsMatchAny(sig.params, argTypes, model) {
@@ -1935,6 +1986,9 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
 	typeName := strings.TrimPrefix(expr.Callee, "new:")
 	resolvedTypeName := resolveNestedTypeReference(model, typ.Name, typeName)
+	if semaAPI67RejectedPlatformConstructor(typeName) && !semaProjectTypeShadowsPlatform(model, typeName) {
+		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, "new "+typeName, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
+	}
 	for _, ref := range extractTypeNames(typeName) {
 		if !a.hasKnown(ref) {
 			return []diagnostic.Diagnostic{{
@@ -1965,6 +2019,9 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 	namedArgTypes := irCallNamedArgTypes(a, expr.NamedArgs, scope, model, typ.Name)
 	if semaExplicitPlatformQualifiedName(typeName) {
 		if params, ok := semaPlatformConstructorSignatures(resolvedTypeName); ok {
+			if len(params) == 0 {
+				return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("no matching %s constructor with %d argument(s)", typeName, len(expr.Args)+len(expr.NamedArgs)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
+			}
 			if len(namedArgTypes) == 0 && semaArgsMatchAny(params, argTypes, model) {
 				return nil
 			}
@@ -1976,6 +2033,9 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 		return nil
 	}
 	if len(target.constructors) == 0 {
+		if target.constructorsAuthoritative {
+			return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("no matching %s constructor with %d argument(s)", typeName, len(expr.Args)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
+		}
 		if len(expr.Args) == 0 || a.allowsInheritedExceptionConstructor(resolvedTypeName, expr.Args, scope, model, typ.Name) {
 			return nil
 		}
@@ -2005,7 +2065,7 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 		}
 		return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("ambiguous %s constructor with %d argument(s)", typeName, len(expr.Args)+len(expr.NamedArgs)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
 	}
-	if a.allowsInheritedExceptionConstructor(resolvedTypeName, expr.Args, scope, model, typ.Name) {
+	if !target.constructorsAuthoritative && a.allowsInheritedExceptionConstructor(resolvedTypeName, expr.Args, scope, model, typ.Name) {
 		return nil
 	}
 	return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("no matching %s constructor with %d argument(s)", typeName, len(expr.Args)+len(expr.NamedArgs)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
@@ -2023,12 +2083,7 @@ func (a *Analyzer) allowsInheritedExceptionConstructor(typeName string, args []i
 		return false
 	}
 	argTypes := irCallArgTypes(a, args, scope, model, ownerType)
-	return semaArgsMatchAny([][]string{
-		{},
-		{"String"},
-		{"Exception"},
-		{"String", "Exception"},
-	}, argTypes, model)
+	return semaArgsMatchAny(inheritedExceptionConstructorSignatures(typeName), argTypes, model)
 }
 
 func semaAllowsInheritedExceptionConstructorArgs(typeName string, args []semaArg, scope map[string]string, model *semaTypeMemberView) bool {
@@ -2039,12 +2094,14 @@ func semaAllowsInheritedExceptionConstructorArgs(typeName string, args []semaArg
 	for i, arg := range args {
 		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
 	}
-	return semaArgsMatchAny([][]string{
-		{},
-		{"String"},
-		{"Exception"},
-		{"String", "Exception"},
-	}, argTypes, model)
+	return semaArgsMatchAny(inheritedExceptionConstructorSignatures(typeName), argTypes, model)
+}
+
+func inheritedExceptionConstructorSignatures(typeName string) [][]string {
+	if strings.EqualFold(strings.TrimPrefix(typeName, "System."), "TouchHandledException") {
+		return [][]string{{"String"}}
+	}
+	return [][]string{{}, {"String"}, {"Exception"}, {"String", "Exception"}}
 }
 
 func (a *Analyzer) checkIRCollectionConstructor(typ typesys.TypeSymbol, member typesys.MemberSymbol, typeName string, args []ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView) ([]diagnostic.Diagnostic, bool) {
@@ -3098,7 +3155,7 @@ func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.Memb
 		}
 		diagnostics = append(diagnostics, a.collectSemaLocalDecl(typ, member, body, bodyOffset, source, &scopes, model, match)...)
 	}
-	for _, match := range localDeclPattern.FindAllStringSubmatchIndex(body, -1) {
+	for _, match := range findSemaLocalDeclMatches(body) {
 		if semaLocalDeclMatchInIgnoredText(body, match) {
 			continue
 		}

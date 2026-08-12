@@ -3976,7 +3976,7 @@ func TestRunDAPLaunchAcceptsIDEProjectRootAndAnonymousBody(t *testing.T) {
 	writeDAPRequest(t, inW, dap.CommandInitialize, 1, nil)
 	writeDAPRequest(t, inW, dap.CommandLaunch, 2, map[string]any{
 		"projectRoot":   filepath.Join("..", "debuglog", "testdata", "project"),
-		"anonymousBody": "System.debug('alias body');",
+		"anonymousBody": "class ProbeCallable implements Callable { public Object call(String action, Map<String,Object> args) { return 'ok'; } } Callable callable = new ProbeCallable(); System.assertEquals('ok', callable.call('probe', new Map<String,Object>()));",
 	})
 	writeDAPRequest(t, inW, dap.CommandConfigurationDone, 3, nil)
 	stderrOutput := waitForDAPTerminatedAndStderr(t, messages)
@@ -3993,6 +3993,9 @@ func TestRunDAPLaunchAcceptsIDEProjectRootAndAnonymousBody(t *testing.T) {
 	}
 	if strings.Contains(stderrOutput, "launch requires program or source") {
 		t.Fatalf("DAP launch did not accept IDE aliases: %q", stderrOutput)
+	}
+	if strings.Contains(stderrOutput, "GLADESEMA_ANONYMOUS_PARSE") {
+		t.Fatalf("DAP launch rejected transient anonymous class: %q", stderrOutput)
 	}
 }
 
@@ -4274,6 +4277,37 @@ public class LocalProbe {
 	}
 }
 
+func TestRunExecSupportsAnonymousTransientClassDeclarations(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"exec",
+		`class ProbeCallable implements Callable {
+  public Object call(String action, Map<String,Object> args) { return 'ok'; }
+}
+Callable callable = new ProbeCallable();
+System.assertEquals('ok', callable.call('probe', new Map<String,Object>()));`,
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("anonymous transient class execution failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+}
+
+func TestRunExecSupportsMultipleAnonymousTypeDeclarations(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"exec",
+		`interface ProbeContract { Object value(); }
+class ProbeValue implements ProbeContract {
+  public Object value() { return 'ok'; }
+}
+ProbeContract probe = new ProbeValue();
+System.assertEquals('ok', probe.value());`,
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("multiple anonymous type declarations failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+}
+
 func TestRunExecWithProjectRejectsAnonymousSemanticDiagnosticsBeforeExecution(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
@@ -4281,6 +4315,19 @@ func TestRunExecWithProjectRejectsAnonymousSemanticDiagnosticsBeforeExecution(t 
 	code := Run(context.Background(), []string{"exec", "--project", root, "String value = 'x'; insert value;"}, &stdout, &stderr)
 	if code == 0 || !strings.Contains(stderr.String(), "GLADESEMA034") {
 		t.Fatalf("anonymous semantic error must fail before execution: code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+}
+
+func TestRunExecWithProjectUsesLocalPlatformHarnesses(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"exec", "--project", root,
+		"Apex.Stack stack = new Apex.Stack(); System.assert(stack.empty()); System.assertEquals('001000000000001', new chatteranswers.AccountCreator().createAccount('Ada', 'Lovelace', UserInfo.getUserId())); List<Datacloud.FindDuplicatesResult> duplicateRows = Datacloud.FindDuplicates.findDuplicates(new List<SObject>{new Account(Name = 'Acme')}); System.assertEquals(1, duplicateRows.size()); System.assert(duplicateRows[0].isSuccess()); System.assertEquals(0, duplicateRows[0].getDuplicateResults().size()); System.assertEquals(0, duplicateRows[0].getErrors().size()); commerce_inventory.InventoryLevelsResponse levels = new commerce_inventory.CommerceInventoryService().getInventoryLevel(new commerce_inventory.InventoryLevelsRequest('LOCATION', new Set<commerce_inventory.InventoryLevelsItemRequest>())); System.assertEquals(0, levels.getItemsInventoryLevels().size()); commerce_ordermanagement.ProductExpandResponse expand = new commerce_ordermanagement.ProductExpandService().returnReasons(new commerce_ordermanagement.ProductExpandRequest()); System.assertEquals(null, expand.getSucceed()); Exception value = new InvalidParameterValueException('parameter', 'value'); System.assertEquals('System.InvalidParameterValueException', value.getTypeName()); TouchHandledException touch = new TouchHandledException('ignored'); System.assertEquals('Script-thrown exception', touch.getMessage()); touch.setMessage('changed'); System.assertEquals('changed', touch.getMessage());",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("project-backed local platform harnesses failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
 }
 

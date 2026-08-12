@@ -228,7 +228,7 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 		case strings.EqualFold(annotation.Name, "JsonAccess"):
 			diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "JsonAccess is only valid on classes with serialization control properties"))
 		case strings.EqualFold(annotation.Name, "NamespaceAccessible"):
-			if annotationAPIVersionAtLeast(typ, 50) && ((!hasAnnotation(typ.Annotations, "NamespaceAccessible") && !hasModifier(typ.Modifiers, "global")) || hasAnnotation(member.Annotations, "AuraEnabled") || hasAnnotation(member.Annotations, "InvocableMethod")) {
+			if annotationAPIVersionAtLeast(typ, 50) && (typ.Kind == apexast.DeclarationInterface || (!hasAnnotation(typ.Annotations, "NamespaceAccessible") && !hasModifier(typ.Modifiers, "global")) || hasAnnotation(member.Annotations, "AuraEnabled") || hasAnnotation(member.Annotations, "InvocableMethod")) {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "NamespaceAccessible methods require a NamespaceAccessible or global owner and cannot be combined with AuraEnabled or InvocableMethod"))
 			}
 		}

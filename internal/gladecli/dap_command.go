@@ -74,7 +74,12 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		return err
 	}
 	trace.mark("source")
-	program, err := vm.CompileAnonymous(source)
+	preparedAnonymous, err := prepareAnonymousSource(source, "67.0")
+	if err != nil {
+		return err
+	}
+	defer preparedAnonymous.close()
+	program, err := vm.CompileAnonymous(preparedAnonymous.body)
 	if err != nil {
 		return err
 	}
@@ -103,6 +108,11 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 	}
 	if err := apextest.RegisterCompiledProjectRuntimeForRequest(machine, runtime); err != nil {
 		return err
+	}
+	if len(preparedAnonymous.index.Types) > 0 {
+		if err := registerAnonymousRuntime(machine, preparedAnonymous.runtime); err != nil {
+			return err
+		}
 	}
 	if testLaunch {
 		index, err := loadIndex(projectRoot)

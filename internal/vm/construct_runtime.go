@@ -218,6 +218,9 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 
 func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs map[string]Value, result *Result, literalArgs bool) (Value, error) {
 	typeName = vm.resolveConstructorTypeName(typeName, args, namedArgs)
+	if scalarConstructorForbidden(typeName) {
+		return Null, fmt.Errorf("Type cannot be constructed: %s", strings.TrimPrefix(typeName, "System."))
+	}
 	if value, handled, err := vm.constructCollectionValue(typeName, args, namedArgs, literalArgs); handled || err != nil {
 		return value, err
 	}
@@ -269,6 +272,11 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	if value, handled, err := constructProcessPluginDescribeResultParameter(typeName, args, namedArgs); handled || err != nil {
 		return value, err
 	}
+	if generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]; ok {
+		if value, handled, err := vm.constructGeneratedMetadataDTO(generated, args, namedArgs); handled || err != nil {
+			return value, err
+		}
+	}
 	if class, ok := vm.lookupClass(typeName); ok && (!vm.isSObjectType(typeName) || vm.classConstructorCanAccept(typeName, args, namedArgs)) && !platformVersionTypeName(typeName) {
 		typeName = runtimeClassName(class)
 		if class.IsInterface {
@@ -303,13 +311,13 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		frameworkUOWRuntime := vm.isSObjectUnitOfWorkRuntimeType(typeName)
 		isSObjectCtor := vm.isSObjectType(typeName)
 		object := Object(typeName)
-		initializeGeneratedPlatformValue(&object)
 		if !passiveDTO {
 			for field, value := range namedArgs {
 				object.Fields[field] = value
 			}
 		}
 		vm.initializeFields(&object, typeName)
+		initializeGeneratedPlatformValue(&object)
 		if isSObjectCtor {
 			vm.initializeSObjectSchemaDefaults(&object, typeName)
 		}
@@ -461,6 +469,91 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("Database.LocaleOptions constructor expects 0 arguments")
 		}
 		return Object("Database.LocaleOptions"), nil
+	case "Database.Cursor":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.Cursor constructor expects 0 arguments")
+		}
+		return Object("Database.Cursor"), nil
+	case "Database.CursorFetchResult":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.CursorFetchResult constructor expects 0 arguments")
+		}
+		obj := Object("Database.CursorFetchResult")
+		obj.Fields["records"] = List()
+		obj.Fields["nextIndex"] = Int(0)
+		obj.Fields["numDeletedRecords"] = Int(0)
+		obj.Fields["done"] = Bool(false)
+		return obj, nil
+	case "Database.DeletedRecord":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.DeletedRecord constructor expects 0 arguments")
+		}
+		obj := Object("Database.DeletedRecord")
+		obj.Fields["id"] = Null
+		obj.Fields["deletedDate"] = Null
+		return obj, nil
+	case "Database.EmptyRecycleBinResult":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.EmptyRecycleBinResult constructor expects 0 arguments")
+		}
+		obj := Object("Database.EmptyRecycleBinResult")
+		obj.Fields["success"] = Bool(false)
+		obj.Fields["id"] = Null
+		obj.Fields["errors"] = List()
+		return obj, nil
+	case "Database.DeleteResult":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.DeleteResult constructor expects 0 arguments")
+		}
+		obj := Object("Database.DeleteResult")
+		obj.Fields["success"] = Bool(false)
+		obj.Fields["id"] = Null
+		obj.Fields["errors"] = List()
+		return obj, nil
+	case "Database.GetDeletedResult":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.GetDeletedResult constructor expects 0 arguments")
+		}
+		obj := Object("Database.GetDeletedResult")
+		obj.Fields["deletedRecords"] = List()
+		obj.Fields["earliestDateAvailable"] = Null
+		obj.Fields["latestDateCovered"] = Null
+		return obj, nil
+	case "Database.GetUpdatedResult":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.GetUpdatedResult constructor expects 0 arguments")
+		}
+		obj := Object("Database.GetUpdatedResult")
+		obj.Fields["ids"] = List()
+		obj.Fields["latestDateCovered"] = Null
+		return obj, nil
+	case "Database.MergeResult":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.MergeResult constructor expects 0 arguments")
+		}
+		obj := Object("Database.MergeResult")
+		obj.Fields["success"] = Bool(false)
+		obj.Fields["id"] = Null
+		obj.Fields["errors"] = List()
+		obj.Fields["mergedRecordIds"] = List()
+		obj.Fields["updatedRelatedIds"] = List()
+		return obj, nil
+	case "Database.BatchableContextImpl":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.BatchableContextImpl constructor expects 0 arguments")
+		}
+		obj := Object("Database.BatchableContextImpl")
+		return obj, nil
+	case "Database.DuplicateError":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.DuplicateError constructor expects 0 arguments")
+		}
+		obj := Object("Database.DuplicateError")
+		obj.Fields["duplicateresult"] = Null
+		obj.Fields["fields"] = List()
+		obj.Fields["message"] = Null
+		obj.Fields["statusCode"] = Null
+		return obj, nil
 	case "AsyncOptions":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("AsyncOptions constructor expects 0 arguments")
@@ -604,11 +697,34 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		value := Object(typeName)
 		value.Fields["uprId"] = args[0]
 		return value, nil
+	case "UserProvisioning.CommittingBatchable", "UserProvisioning.DeletingBatchable", "UserProvisioning.UPASCleaningBatchable":
+		if len(args) > 1 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("%s constructor expects uprId", typeName)
+		}
+		value := Object(typeName)
+		if len(args) == 1 {
+			value.Fields["uprId"] = args[0]
+		}
+		return value, nil
+	case "UserProvisioning.RequestingBatchable":
+		if len(args) > 1 || len(namedArgs) != 0 || (len(args) == 1 && args[0].Kind != ValueList) {
+			return Null, fmt.Errorf("UserProvisioning.RequestingBatchable constructor expects List<SObject>")
+		}
+		value := Object(typeName)
+		if len(args) == 1 {
+			value.Fields["newRows"] = args[0]
+		}
+		return value, nil
 	case "Dom.Document":
 		if len(args) != 0 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("Dom.Document constructor expects 0 arguments")
 		}
 		return newDomDocument(), nil
+	case "Dom.XmlNode":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Dom.XmlNode constructor expects 0 arguments")
+		}
+		return newDomXmlNode("ELEMENT", "", "", ""), nil
 	case "Auth.UserData":
 		return constructAuthUserData(args, namedArgs)
 	case "Auth.VerificationResult":
@@ -619,12 +735,14 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Auth.JWT constructor expects 0 arguments")
 		}
-		jwt := Object("Auth.JWT")
+		jwt := newAuthJWT()
 		for field, value := range namedArgs {
 			jwt.Fields[field] = value
 		}
 		return jwt, nil
-	case "Version", "Package.Version":
+	case "Package.Version":
+		return Null, fmt.Errorf("Package.Version cannot be constructed")
+	case "Version":
 		if len(args) != 2 && len(args) != 3 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("Version constructor expects major, minor[, patch]")
 		}
@@ -646,7 +764,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("Metadata.DeployContainer constructor expects 0 arguments")
 		}
 		container := Object("Metadata.DeployContainer")
-		container.Fields["metadata"] = typedList("List<Metadata.Metadata>")
+		container.Fields["components"] = typedList("List<Metadata.Metadata>")
 		for field, value := range namedArgs {
 			container.Fields[field] = value
 		}
@@ -733,6 +851,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		result.Fields["numberTestErrors"] = Int(0)
 		result.Fields["numberTestsCompleted"] = Int(0)
 		result.Fields["checkOnly"] = Bool(false)
+		result.Fields["messages"] = List()
 		result.Fields["details"] = metadataDeployDetailsObject()
 		for field, value := range namedArgs {
 			result.Fields[field] = value
@@ -788,8 +907,8 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		return result, nil
 	case "SelectOption":
-		if len(args) < 2 || len(args) > 4 || len(namedArgs) != 0 {
-			return Null, fmt.Errorf("SelectOption constructor expects value, label[, disabled[, escapeItem]]")
+		if len(args) < 2 || len(args) > 3 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("SelectOption constructor expects value, label[, disabled]")
 		}
 		value, err := vm.coerceAssignable("String", args[0])
 		if err != nil {
@@ -807,12 +926,6 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			}
 			disabled = args[2]
 		}
-		if len(args) == 4 {
-			if args[3].Kind != ValueBool {
-				return Null, fmt.Errorf("SelectOption constructor escapeItem expects Boolean")
-			}
-			escapeItem = args[3]
-		}
 		return newSelectOption(value, label, disabled, escapeItem), nil
 	case "ApexPages.StandardController":
 		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueObject {
@@ -820,6 +933,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		controller := Object("ApexPages.StandardController")
 		controller.Fields["record"] = args[0]
+		controller.Fields["__glade_caller_provided"] = Bool(true)
 		return controller, nil
 	case "ApexPages.KnowledgeArticleVersionStandardController":
 		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueObject {
@@ -845,6 +959,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		controller.Fields["selected"] = List()
 		controller.Fields["pageSize"] = Int(20)
 		controller.Fields["pageNumber"] = Int(1)
+		if args[0].Kind == ValueList {
+			controller.Fields["__glade_caller_provided"] = Bool(true)
+		}
 		return controller, nil
 	case "ApexPages.Message":
 		if len(args) < 2 || len(args) > 4 {
@@ -1008,6 +1125,14 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 	}
 	object := Object(objectType)
+	if isExceptionType(objectType) {
+		stack := vm.rawStackFrames()
+		if vm.currentMethod.Name == "" && len(stack) > 0 {
+			stack[len(stack)-1].Symbol = "AnonymousBlock"
+			stack[len(stack)-1].Column = 1
+		}
+		object = annotateConstructedException(object, stack)
+	}
 	if definition.APIName != "" {
 		vm.initializeSObjectSchemaDefaults(&object, objectType)
 	}
@@ -1051,6 +1176,16 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	return object, nil
 }
 
+func scalarConstructorForbidden(typeName string) bool {
+	typeName = strings.TrimPrefix(strings.TrimSpace(typeName), "System.")
+	switch strings.ToLower(typeName) {
+	case "date", "datetime", "decimal", "double":
+		return true
+	default:
+		return false
+	}
+}
+
 func (vm *VM) classConstructorCanAccept(typeName string, args []Value, namedArgs map[string]Value) bool {
 	if len(namedArgs) != 0 {
 		return false
@@ -1067,7 +1202,7 @@ func (vm *VM) classConstructorCanAccept(typeName string, args []Value, namedArgs
 	if ok && !ambiguous {
 		return true
 	}
-	return !ambiguous && isExceptionType(runtimeClassName(class)) && exceptionConstructorArgsCanApply(args)
+	return !ambiguous && isExceptionType(runtimeClassName(class)) && exceptionConstructorArgsCanApply(runtimeClassName(class), args)
 }
 
 func (vm *VM) resolveCurrentNamespaceTopLevelClassName(typeName string) (string, bool) {
@@ -1163,6 +1298,11 @@ func applyExceptionConstructorArgs(object *Value, args []Value) (bool, error) {
 		setExceptionMessage(object, args[0])
 		return true, nil
 	case 2:
+		if strings.EqualFold(exceptionTypeName(object.Type), "InvalidParameterValueException") &&
+			args[0].Kind == ValueString && args[1].Kind == ValueString {
+			setExceptionMessage(object, args[0])
+			return true, nil
+		}
 		setExceptionMessage(object, args[0])
 		if args[1].Kind != ValueNull && (args[1].Kind != ValueObject || !isExceptionType(args[1].Type)) {
 			return false, fmt.Errorf("%s constructor expects Exception cause", object.Type)
@@ -1175,11 +1315,15 @@ func applyExceptionConstructorArgs(object *Value, args []Value) (bool, error) {
 	}
 }
 
-func exceptionConstructorArgsCanApply(args []Value) bool {
+func exceptionConstructorArgsCanApply(typeName string, args []Value) bool {
 	switch len(args) {
 	case 0, 1:
 		return true
 	case 2:
+		if strings.EqualFold(exceptionTypeName(typeName), "InvalidParameterValueException") &&
+			args[0].Kind == ValueString && args[1].Kind == ValueString {
+			return true
+		}
 		return args[1].Kind == ValueNull || (args[1].Kind == ValueObject && isExceptionType(args[1].Type))
 	default:
 		return false
@@ -1188,6 +1332,10 @@ func exceptionConstructorArgsCanApply(args []Value) bool {
 
 func setExceptionMessage(object *Value, value Value) {
 	if value.Kind == ValueString {
+		if strings.EqualFold(exceptionTypeName(object.Type), "TouchHandledException") {
+			object.Fields["message"] = String("Script-thrown exception")
+			return
+		}
 		object.Fields["message"] = value
 	} else if value.Kind != ValueNull {
 		object.Fields["message"] = String(value.String())
@@ -1195,29 +1343,24 @@ func setExceptionMessage(object *Value, value Value) {
 }
 
 func constructAuthUserData(args []Value, namedArgs map[string]Value) (Value, error) {
-	fields := []string{"identifier", "firstName", "lastName", "fullName", "email", "link", "username", "locale", "provider", "siteLoginUrl", "attributeMap"}
-	if len(namedArgs) != 0 || (len(args) != 0 && len(args) != len(fields)) {
-		return Null, fmt.Errorf("Auth.UserData constructor expects 0 or 11 arguments")
+	fields := []string{"identifier", "firstName", "lastName", "fullName", "email", "link", "username", "locale", "provider", "siteLoginUrl", "attributeMap", "idToken", "userInfoJSONString", "idTokenJSONString"}
+	if len(namedArgs) != 0 || (len(args) != 11 && len(args) != 13) {
+		return Null, fmt.Errorf("Auth.UserData constructor expects 11 or 13 arguments")
 	}
 	data := Object("Auth.UserData")
 	for _, field := range fields {
 		data.Fields[field] = Null
 	}
-	if len(args) == 0 {
-		return data, nil
-	}
-	for index, field := range fields {
+	for index := range args {
+		field := fields[index]
 		data.Fields[field] = args[index]
 	}
 	return data, nil
 }
 
 func constructAuthVerificationResult(args []Value, namedArgs map[string]Value) (Value, error) {
-	if len(namedArgs) != 0 || (len(args) != 0 && len(args) != 3) {
-		return Null, fmt.Errorf("Auth.VerificationResult constructor expects 0 arguments or redirect, success, message")
-	}
-	if len(args) == 0 {
-		return newAuthVerificationResult(Null, Bool(false), Null), nil
+	if len(namedArgs) != 0 || len(args) != 3 {
+		return Null, fmt.Errorf("Auth.VerificationResult constructor expects redirect, success, message")
 	}
 	return newAuthVerificationResult(args[0], args[1], args[2]), nil
 }
@@ -3203,6 +3346,17 @@ func annotateException(value Value, stack []callFrame) Value {
 		return value
 	}
 	value.Fields["__thrown"] = Bool(true)
+	return annotateExceptionContext(value, stack)
+}
+
+func annotateConstructedException(value Value, stack []callFrame) Value {
+	if value.Kind != ValueObject || !isExceptionType(value.Type) {
+		return value
+	}
+	return annotateExceptionContext(value, stack)
+}
+
+func annotateExceptionContext(value Value, stack []callFrame) Value {
 	if len(stack) == 0 {
 		return value
 	}
@@ -3587,6 +3741,7 @@ var builtinExceptionParents = map[string]string{
 	"NoSuchElementException":          "Exception",
 	"NullPointerException":            "Exception",
 	"PatternSyntaxException":          "IllegalArgumentException",
+	"ProcedureException":              "Exception",
 	"QueryException":                  "Exception",
 	"RequiredFeatureMissingException": "Exception",
 	"SearchException":                 "Exception",
@@ -3629,6 +3784,9 @@ func exceptionToString(value Value) string {
 	message := ""
 	if raw, ok := value.Fields["message"]; ok && raw.Kind == ValueString {
 		message = raw.Text
+	}
+	if message == "" && isBuiltinExceptionType(typeName) {
+		message = "Script-thrown exception"
 	}
 	prefix := "System." + typeName
 	if message == "" {
@@ -3694,13 +3852,9 @@ var generatedPlatformUnsupportedConstructors = []string{
 	"Schema.SObjectType",
 }
 
-var loggingLevelNames = []string{"NONE", "ERROR", "WARN", "INFO", "DEBUG", "FINE", "FINER", "FINEST"}
+var apexPagesSeverityNames = []string{"FATAL", "ERROR", "WARNING", "INFO", "CONFIRM"}
 
-var apexPagesSeverityNames = []string{"CONFIRM", "INFO", "WARNING", "ERROR", "FATAL"}
-
-var triggerOperationNames = []string{"BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_DELETE", "AFTER_INSERT", "AFTER_UPDATE", "AFTER_DELETE", "AFTER_UNDELETE"}
-
-var metadataDeployStatusNames = []string{"Succeeded", "SUCCEEDED", "Failed", "FAILED", "InProgress", "INPROGRESS", "Pending", "PENDING", "Canceling", "CANCELING", "Canceled", "CANCELED"}
+var metadataDeployStatusNames = []string{"Pending", "InProgress", "Succeeded", "SucceededPartial", "Failed", "Canceling", "Canceled"}
 
 var metadataMetadataTypeNames = []string{"CustomMetadata"}
 

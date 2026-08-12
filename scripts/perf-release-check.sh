@@ -120,24 +120,24 @@ node_version="$(version_or_empty node --version)"
 npm_version="$(version_or_empty npm --version)"
 gomaxprocs="${GOMAXPROCS:-}"
 selected_jobs="${LOCAL_GO_TEST_JOBS:-}"
-if [[ -v LC_ALL ]]; then
+if [[ "${LC_ALL+x}" == x ]]; then
 	child_lc_all_state=set
 	child_lc_all_value="${LC_ALL}"
 else
 	child_lc_all_state=unset
 	child_lc_all_value=""
 fi
-if [[ -v GOCACHE ]]; then
+if [[ "${GOCACHE+x}" == x ]]; then
 	go_cache_environment_override=true
 else
 	go_cache_environment_override=false
 fi
-if [[ -v npm_config_cache || -v NPM_CONFIG_CACHE ]]; then
+if [[ "${npm_config_cache+x}" == x || "${NPM_CONFIG_CACHE+x}" == x ]]; then
 	npm_cache_environment_override=true
 else
 	npm_cache_environment_override=false
 fi
-if [[ -v GLADE_CACHE_DIR ]]; then
+if [[ "${GLADE_CACHE_DIR+x}" == x ]]; then
 	glade_cache_environment_override=true
 else
 	glade_cache_environment_override=false

@@ -342,6 +342,9 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 	if strings.EqualFold(from, to) || strings.EqualFold(to, "Object") {
 		return true
 	}
+	if _, ok := vm.generatedPlatformTypeDistance(from, to, make(map[string]bool)); ok {
+		return true
+	}
 	if vm.namespaceAliasEquivalent(from, to) {
 		return true
 	}
@@ -419,6 +422,28 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 		return true
 	}
 	return false
+}
+
+func (vm *VM) generatedPlatformTypeDistance(typeName, target string, seen map[string]bool) (int, bool) {
+	typeName = canonicalRuntimePlatformType(typeName)
+	target = canonicalRuntimePlatformType(target)
+	if strings.EqualFold(typeName, target) {
+		return 0, true
+	}
+	key := strings.ToLower(strings.TrimSpace(typeName))
+	if key == "" || seen[key] {
+		return 0, false
+	}
+	seen[key] = true
+	generation, ok := generatedPlatformTypes()[key]
+	if !ok || strings.TrimSpace(generation.SuperClass) == "" {
+		return 0, false
+	}
+	distance, ok := vm.generatedPlatformTypeDistance(generation.SuperClass, target, seen)
+	if !ok {
+		return 0, false
+	}
+	return distance + 1, true
 }
 func stripLeadingTypeNamespace(typeName string) string {
 	first := strings.Index(typeName, ".")
@@ -1291,10 +1316,10 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			value.Type = typeName
 			return value, nil
 		}
-		resultType := typeName
 		if strings.EqualFold(valueType, "sObject") && mapConcreteSObjectValueType(sourceType) != "" {
-			resultType = sourceType
+			return value, nil
 		}
+		resultType := typeName
 		type coercedEntry struct {
 			key      string
 			keyValue Value

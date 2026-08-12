@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"strconv"
 	"strings"
 )
@@ -19,7 +20,7 @@ func callIntegerMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, fmt.Errorf("Integer.%s expects 0 arguments", method)
 		}
 		return receiver, receiver, false, true, nil
-	case "doubleValue", "decimalValue":
+	case "decimalValue":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Integer.%s expects 0 arguments", method)
 		}
@@ -61,6 +62,9 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, fmt.Errorf("Decimal.round expects optional RoundingMode")
 		}
 		mode := "HALF_EVEN"
+		if len(args) == 0 && strings.EqualFold(receiver.Static, "Double") {
+			mode = "HALF_UP"
+		}
 		if len(args) == 1 {
 			parsedMode, err := decimalRoundingMode(args[0])
 			if err != nil {
@@ -131,6 +135,15 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, err
 		}
 		if receiver.Text != "" {
+			if strings.IndexAny(receiver.Text, "eE") >= 0 {
+				rat, ok := new(big.Rat).SetString(receiver.Text)
+				if ok && rat.IsInt() {
+					return String(rat.Num().String()), receiver, false, true, nil
+				}
+				if ok {
+					return String(rat.FloatString(int(decimalScale(receiver)))), receiver, false, true, nil
+				}
+			}
 			return String(receiver.Text), receiver, false, true, nil
 		}
 		return String(strconv.FormatFloat(receiver.Decimal, 'f', -1, 64)), receiver, false, true, nil
@@ -152,9 +165,24 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, err
 		}
 		text := decimalPlainText(receiver)
-		if dot := strings.IndexByte(text, '.'); dot >= 0 {
-			text = strings.TrimRight(text, "0")
-			text = strings.TrimRight(text, ".")
+		if expIdx := strings.IndexAny(text, "eE"); expIdx >= 0 {
+			mantissa := text[:expIdx]
+			expStr := text[expIdx:]
+			if dot := strings.IndexByte(mantissa, '.'); dot >= 0 {
+				mantissa = strings.TrimRight(mantissa, "0")
+				mantissa = strings.TrimRight(mantissa, ".")
+			}
+			rat, ok := new(big.Rat).SetString(mantissa + expStr)
+			if ok && rat.Sign() == 0 {
+				text = "0"
+			} else {
+				text = mantissa + expStr
+			}
+		} else {
+			if dot := strings.IndexByte(text, '.'); dot >= 0 {
+				text = strings.TrimRight(text, "0")
+				text = strings.TrimRight(text, ".")
+			}
 		}
 		if text == "" || text == "-" {
 			text = "0"

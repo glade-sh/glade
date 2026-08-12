@@ -1,11 +1,66 @@
 package sema
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/typesys"
 )
+
+func TestDatabaseInsertAsyncSingleRecordCallbackAccessLevelResolves(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"SaveCallback.cls": `public class SaveCallback implements DataSource.AsyncSaveCallback { public void processSave(Database.SaveResult result) {} }`,
+		"Probe.cls":        `public class Probe { public void run() { Database.SaveResult result = Database.insertAsync(new Account(Name = 'Async'), new SaveCallback(), AccessLevel.USER_MODE); } }`,
+	})
+	for _, diagnostic := range result.Diagnostics {
+		if diagnostic.Code == "GLADESEMA022" && strings.Contains(diagnostic.Message, "insertAsync") {
+			t.Fatalf("single-record insertAsync callback/access-level call was ambiguous: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestDataSourceAsyncSaveCallbackUsesClassInheritance(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"SaveCallback.cls": `public class SaveCallback extends DataSource.AsyncSaveCallback { public override void processSave(Database.SaveResult result) {} }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected AsyncSaveCallback class inheritance to compile: %#v", result.Diagnostics)
+	}
+}
+
+func TestDataSourceAsyncDeleteCallbackUsesClassInheritance(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"DeleteCallback.cls": `public class DeleteCallback extends DataSource.AsyncDeleteCallback { public override void processDelete(Database.DeleteResult result) {} }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected AsyncDeleteCallback class inheritance to compile: %#v", result.Diagnostics)
+	}
+}
+
+func TestEventPublishCallbacksAreInterfaces(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"PublishCallback.cls": `public class PublishCallback implements eventbus.EventPublishSuccessCallback, eventbus.EventPublishFailureCallback { public void onSuccess(eventbus.SuccessResult result) {} public void onFailure(eventbus.FailureResult result) {} }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected EventBus publish callbacks to be implementable interfaces: %#v", result.Diagnostics)
+	}
+}
+
+func TestSandboxPostCopyAndSoqlStubProviderAreInterfaces(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"SandboxCopy.cls":  `public class SandboxCopy implements SandboxPostCopy { public void runApexClass(SandboxContext context) {} }`,
+		"SoqlProvider.cls": `public class SoqlProvider implements SoqlStubProvider { public List<SObject> handleSoqlQuery(Schema.SObjectType targetType, String query, Map<String,Object> binds) { return new List<SObject>(); } }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected SandboxPostCopy and SoqlStubProvider interface implementations to compile: %#v", result.Diagnostics)
+	}
+}
 
 func TestTypeContractRejectsInvalidSourceTypesAndLiterals(t *testing.T) {
 	t.Parallel()
@@ -29,6 +84,47 @@ func TestTypeContractRejectsInvalidSourceTypesAndLiterals(t *testing.T) {
 				t.Fatalf("expected source contract diagnostic, got %#v", result.Diagnostics)
 			}
 		})
+	}
+}
+
+func TestTypeContractAllowsUnaryPlusBeforeStringConcatenation(t *testing.T) {
+	t.Parallel()
+	for name, source := range map[string]string{
+		"String": `public class Probe { public void run(List<String> values) { String result = ''; result += +values[0]; } }`,
+		"Id":     `public class Probe { public void run(List<Id> values) { String result = ''; result += +values[0]; } }`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+			if result.HasErrors() {
+				t.Fatalf("unary plus before a String concatenation must compile: %#v", result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestTypeContractRejectsUnaryPlusOutsideStringConcatenation(t *testing.T) {
+	t.Parallel()
+	for name, source := range map[string]string{
+		"Boolean": `public class Probe { public void run(Boolean value) { System.debug(+value); } }`,
+		"Date":    `public class Probe { public void run(Date value) { System.debug(+value); } }`,
+		"Object":  `public class Probe { public void run(Object value) { System.debug(+value); } }`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA019") {
+				t.Fatalf("expected invalid unary-plus diagnostic, got %#v", result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestTypeContractAllowsUnaryPlusStringArgument(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() { System.assertNotEquals(null, null, + 'message'); } }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("unary plus before a String argument must compile: %#v", result.Diagnostics)
 	}
 }
 

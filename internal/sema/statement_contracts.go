@@ -175,7 +175,11 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 			if inst.Op == ir.OpDeclare {
 				currentScope.declare(inst.Name, resolveNestedTypeReference(model, typ.Name, inst.Type))
 			}
-			if inst.Op != ir.OpThrow && irInstructionTerminates(inst) {
+			terminates := irInstructionTerminates(inst)
+			if inst.Op == ir.OpTry && len(inst.Finally) == 0 {
+				terminates = false
+			}
+			if inst.Op != ir.OpThrow && terminates {
 				terminated = true
 			}
 		}

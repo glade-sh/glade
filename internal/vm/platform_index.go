@@ -69,6 +69,8 @@ func buildGeneratedPlatformTypeIndex() map[string]generatedPlatformType {
 			Name:         name,
 			Kind:         typ.Kind,
 			SuperClass:   typ.SuperClass,
+			IsAbstract:   methodHasModifier(typ.Modifiers, "abstract"),
+			EnumHashBase: typ.EnumHashBase,
 			Fields:       make(map[string]Field),
 			StaticFields: make(map[string]Field),
 		}

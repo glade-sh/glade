@@ -28,6 +28,7 @@ func newXmlStreamReader(text string) (Value, error) {
 	reader.Fields["index"] = Int(0)
 	reader.Fields["coalescing"] = Bool(false)
 	reader.Fields["namespaceAware"] = Bool(true)
+	reader.Fields["version"] = xmlStreamReaderDeclaredVersion(tokens)
 	return reader, nil
 }
 
@@ -144,6 +145,12 @@ func callXmlStreamReaderMember(receiver Value, method string, args []Value) (Val
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamReader.%s expects 0 arguments", method)
 		}
+		if (method == "getPIData" || method == "getPITarget") && xmlStreamReaderCurrentKind(receiver) != "PROCESSING_INSTRUCTION" {
+			return Null, receiver, false, true, newExceptionError(
+				"XmlException",
+				fmt.Sprintf("Illegal State: Current state of the parser is %s But Expected state is 3", xmlStreamReaderCurrentKind(receiver)),
+			)
+		}
 		return xmlStreamReaderCurrentString(receiver, method), receiver, false, true, nil
 	case "setCoalescing", "setNamespaceAware":
 		if len(args) != 1 || args[0].Kind != ValueBool {
@@ -172,8 +179,8 @@ func canonicalXmlStreamReaderMethod(method string) string {
 	)
 }
 
-func xmlStreamReaderTokens(text string) ([]Value, error) {
-	decoder := xml.NewDecoder(strings.NewReader(text))
+func xmlStreamReaderTokens(source string) ([]Value, error) {
+	decoder := xml.NewDecoder(strings.NewReader(source))
 	tokens := []Value{xmlStreamReaderToken("START_DOCUMENT", "", "", "", Null, Null)}
 	for {
 		raw, err := decoder.Token()
@@ -186,22 +193,31 @@ func xmlStreamReaderTokens(text string) ([]Value, error) {
 		switch token := raw.(type) {
 		case xml.StartElement:
 			attrs, namespaces := xmlStreamReaderAttrs(token.Attr)
-			tokens = append(tokens, xmlStreamReaderToken("START_ELEMENT", token.Name.Local, token.Name.Space, "", attrs, namespaces))
+			item := xmlStreamReaderToken("START_ELEMENT", token.Name.Local, token.Name.Space, "", attrs, namespaces)
+			item.Fields["location"] = String(xmlStreamReaderLocation(source, int(decoder.InputOffset())))
+			tokens = append(tokens, item)
 		case xml.EndElement:
-			tokens = append(tokens, xmlStreamReaderToken("END_ELEMENT", token.Name.Local, token.Name.Space, "", Null, Null))
+			item := xmlStreamReaderToken("END_ELEMENT", token.Name.Local, token.Name.Space, "", Null, Null)
+			item.Fields["location"] = String(xmlStreamReaderLocation(source, int(decoder.InputOffset())))
+			tokens = append(tokens, item)
 		case xml.CharData:
 			text := string([]byte(token))
 			kind := "CHARACTERS"
 			if strings.TrimSpace(text) == "" {
 				kind = "SPACE"
 			}
-			tokens = append(tokens, xmlStreamReaderToken(kind, "", "", text, Null, Null))
+			item := xmlStreamReaderToken(kind, "", "", text, Null, Null)
+			item.Fields["location"] = String(xmlStreamReaderLocation(source, int(decoder.InputOffset())))
+			tokens = append(tokens, item)
 		case xml.Comment:
-			tokens = append(tokens, xmlStreamReaderToken("COMMENT", "", "", string([]byte(token)), Null, Null))
+			item := xmlStreamReaderToken("COMMENT", "", "", string([]byte(token)), Null, Null)
+			item.Fields["location"] = String(xmlStreamReaderLocation(source, int(decoder.InputOffset())))
+			tokens = append(tokens, item)
 		case xml.ProcInst:
 			item := xmlStreamReaderToken("PROCESSING_INSTRUCTION", token.Target, "", string(token.Inst), Null, Null)
 			item.Fields["piTarget"] = String(token.Target)
 			item.Fields["piData"] = String(string(token.Inst))
+			item.Fields["location"] = String(xmlStreamReaderLocation(source, int(decoder.InputOffset())))
 			tokens = append(tokens, item)
 		}
 	}
@@ -415,10 +431,18 @@ func xmlStreamReaderCurrentString(receiver Value, method string) Value {
 		return String("")
 	}
 	switch method {
+	case "getLocation":
+		if location, ok := token.Fields["location"]; ok && location.Kind == ValueString {
+			return location
+		}
 	case "getNamespace":
 		if namespace, ok := token.Fields["namespace"]; ok && namespace.Kind == ValueString {
+			if namespace.Text == "" {
+				return Null
+			}
 			return String(namespace.Text)
 		}
+		return Null
 	case "getPIData":
 		if data, ok := token.Fields["piData"]; ok && data.Kind == ValueString {
 			return String(data.Text)
@@ -428,9 +452,58 @@ func xmlStreamReaderCurrentString(receiver Value, method string) Value {
 			return String(target.Text)
 		}
 	case "getVersion":
-		return String("1.0")
+		if version, ok := receiver.Fields["version"]; ok {
+			return version
+		}
+		return Null
 	}
 	return String("")
+}
+
+func xmlStreamReaderLocation(source string, offset int) string {
+	if offset <= 0 || offset > len(source) {
+		return ""
+	}
+	line, column := 1, 1
+	for _, char := range source[:offset] {
+		if char == '\n' {
+			line++
+			column = 1
+			continue
+		}
+		column++
+	}
+	return fmt.Sprintf("Line: %d Column: %d", line, column)
+}
+
+func xmlStreamReaderDeclaredVersion(tokens []Value) Value {
+	for _, token := range tokens {
+		if token.Kind != ValueObject {
+			continue
+		}
+		target, targetOK := token.Fields["piTarget"]
+		data, dataOK := token.Fields["piData"]
+		if !targetOK || target.Kind != ValueString || target.Text != "xml" || !dataOK || data.Kind != ValueString {
+			continue
+		}
+		declaration := strings.TrimSpace(data.Text)
+		if !strings.HasPrefix(declaration, "version") {
+			continue
+		}
+		declaration = strings.TrimSpace(strings.TrimPrefix(declaration, "version"))
+		if !strings.HasPrefix(declaration, "=") {
+			continue
+		}
+		declaration = strings.TrimSpace(strings.TrimPrefix(declaration, "="))
+		if len(declaration) < 2 || (declaration[0] != '\'' && declaration[0] != '"') {
+			continue
+		}
+		end := strings.IndexByte(declaration[1:], declaration[0])
+		if end >= 0 {
+			return String(declaration[1 : end+1])
+		}
+	}
+	return Null
 }
 
 func xmlStreamReaderBoolNoArgs(receiver Value, args []Value, method string, value bool) (Value, Value, bool, bool, error) {
@@ -475,11 +548,7 @@ func xmlStreamReaderEventName(kind string) string {
 }
 
 func canonicalXmlTagName(name string) (string, bool) {
-	for _, known := range []string{
-		"ATTRIBUTE", "CDATA", "CHARACTERS", "COMMENT", "DTD", "END_DOCUMENT", "END_ELEMENT",
-		"ENTITY_DECLARATION", "ENTITY_REFERENCE", "NAMESPACE", "NOTATION_DECLARATION",
-		"PROCESSING_INSTRUCTION", "SPACE", "START_DOCUMENT", "START_ELEMENT",
-	} {
+	for _, known := range xmlTagNames {
 		if strings.EqualFold(name, known) {
 			return known, true
 		}

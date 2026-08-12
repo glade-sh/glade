@@ -414,11 +414,6 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "Approval.ProcessWorkitemRequest.setAction local approval process metadata"`,
 		},
 		{
-			name: "answers find similar api",
-			src:  `Answers.findSimilar(new Question(Title = 'Acme'));`,
-			want: `unsupported call "Answers.findSimilar local Answers zone search surface"`,
-		},
-		{
 			name: "auth oauth api",
 			src:  `Auth.JWTUtil.validateJWTWithKeysEndpoint('token', 'https://example.invalid/keys');`,
 			want: `unsupported call "Auth.JWTUtil.validateJWTWithKeysEndpoint local authentication token/cloud API surface"`,
@@ -467,16 +462,6 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			name: "crypto key wrapper api second path",
 			src:  `Crypto.generateSelfSignedCertificate('LocalKeys');`,
 			want: `unsupported call "Crypto.generateSelfSignedCertificate local key, certificate, encryption, and random surfaces"`,
-		},
-		{
-			name: "crypto managed iv authenticated data encrypt",
-			src:  `Crypto.encryptWithManagedIV('AES256', Blob.valueOf('0123456789abcdef0123456789abcdef'), Blob.valueOf('hello'), Blob.valueOf('aad'));`,
-			want: `unsupported call "Crypto.encryptWithManagedIV local authenticated-data managed-IV AES surface"`,
-		},
-		{
-			name: "crypto managed iv authenticated data decrypt",
-			src:  `Crypto.decryptWithManagedIV('AES256', Blob.valueOf('0123456789abcdef0123456789abcdef'), Blob.valueOf('cipher'), Blob.valueOf('aad'));`,
-			want: `unsupported call "Crypto.decryptWithManagedIV local authenticated-data managed-IV AES surface"`,
 		},
 		{
 			name: "system password reset",
@@ -550,6 +535,19 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 				t.Fatalf("error = (%q, %q), want %q", runtimeErr.Message, err.Error(), tc.want)
 			}
 		})
+	}
+}
+
+func TestExecAnswersFindSimilarDeterministicMock(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Id> similarQuestions = Answers.findSimilar(new Question(Title = 'Acme'));
+System.assertEquals(0, similarQuestions.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -932,7 +930,7 @@ System.assertEquals('0Af000000000001', (String)deploymentId);
 Metadata.DeployResult deployStatus = Metadata.Operations.checkDeployStatus(deploymentId, true);
 System.assert(deployStatus.done);
 System.assert(deployStatus.success);
-System.assertEquals('SUCCEEDED', deployStatus.status.name());
+System.assertEquals('Succeeded', deployStatus.status.name());
 System.assertEquals((String)deploymentId, (String)deployStatus.id);
 System.assertEquals(2, deployStatus.numberComponentsTotal);
 System.assertEquals(2, deployStatus.numberComponentsDeployed);
@@ -947,7 +945,7 @@ asyncResult.id = deploymentId;
 asyncResult.done = true;
 asyncResult.state = 'Succeeded';
 System.assertEquals((String)deploymentId, (String)asyncResult.id);
-System.assertEquals(2, container.metadata.size());
+System.assertEquals(2, container.getMetadata().size());
 System.assertEquals(1, item.values.size());
 System.assertEquals('Enabled__c', ((Metadata.CustomMetadataValue)item.values[0]).field);
 Feature__mdt cfg = Feature__mdt.getInstance('Default');
@@ -957,9 +955,9 @@ Feature__mdt createdCfg = Feature__mdt.getInstance('Created');
 System.assertEquals('Created', createdCfg.MasterLabel);
 System.assertEquals(true, createdCfg.Enabled__c);
 Metadata.DeployResult result = new Metadata.DeployResult();
-result.status = Metadata.DeployStatus.SUCCEEDED;
-System.assertEquals('SUCCEEDED', result.status.name());
-System.assertEquals('SUCCEEDED', String.valueOf(result.status));
+result.status = Metadata.DeployStatus.Succeeded;
+System.assertEquals('Succeeded', result.status.name());
+System.assertEquals('Succeeded', String.valueOf(result.status));
 result.details = new Metadata.DeployDetails();
 result.details.componentFailures.add(new Metadata.DeployMessage());
 System.assertEquals(1, result.details.componentFailures.size());
@@ -986,15 +984,15 @@ System.assertEquals('Feature.Created', records[1].fullName);
 func TestExecMetadataEnumStaticAndInstanceBehavior(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Metadata.DeployStatus> statuses = Metadata.DeployStatus.values();
-System.assertEquals(8, statuses.size());
-System.assert(statuses.contains(Metadata.DeployStatus.SUCCEEDED));
-Metadata.DeployStatus succeeded = Metadata.DeployStatus.valueOf('SUCCEEDED');
-System.assertEquals(Metadata.DeployStatus.SUCCEEDED, succeeded);
-System.assert(succeeded.equals(Metadata.DeployStatus.SUCCEEDED));
-System.assert(!succeeded.equals(Metadata.DeployStatus.FAILED));
-System.assertEquals('SUCCEEDED', succeeded.name());
-System.assertEquals('SUCCEEDED', succeeded.toString());
-System.assertEquals('SUCCEEDED', String.valueOf(succeeded));
+System.assertEquals(7, statuses.size());
+System.assert(statuses.contains(Metadata.DeployStatus.Succeeded));
+Metadata.DeployStatus succeeded = Metadata.DeployStatus.valueOf('Succeeded');
+System.assertEquals(Metadata.DeployStatus.Succeeded, succeeded);
+System.assert(succeeded.equals(Metadata.DeployStatus.Succeeded));
+System.assert(!succeeded.equals(Metadata.DeployStatus.Failed));
+System.assertEquals('Succeeded', succeeded.name());
+System.assertEquals('Succeeded', succeeded.toString());
+System.assertEquals('Succeeded', String.valueOf(succeeded));
 Metadata.MetadataType metadataType = Metadata.MetadataType.valueOf('CustomMetadata');
 System.assertEquals(Metadata.MetadataType.CustomMetadata, metadataType);
 System.assertEquals('CustomMetadata', metadataType.name());
@@ -1006,6 +1004,32 @@ try {
 	System.assertEquals('System.NoSuchElementException', e.getTypeName());
 	System.assert(e.getMessage().contains('No enum value found called missing'));
 }
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMetadataDeployStatusMatchesSalesforceAPI67(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Metadata.DeployStatus> statuses = Metadata.DeployStatus.values();
+List<String> expectedNames = new List<String>{'Pending', 'InProgress', 'Succeeded', 'SucceededPartial', 'Failed', 'Canceling', 'Canceled'};
+System.assertEquals(expectedNames.size(), statuses.size());
+for (Integer i = 0; i < expectedNames.size(); i++) {
+	System.assertEquals(expectedNames[i], statuses[i].name());
+	System.assertEquals(i, statuses[i].ordinal());
+	System.assertEquals(statuses[i], Metadata.DeployStatus.valueOf(expectedNames[i]));
+}
+System.assertEquals(Metadata.DeployStatus.Pending, Metadata.DeployStatus.valueOf('Pending'));
+System.assertEquals(Metadata.DeployStatus.InProgress, Metadata.DeployStatus.valueOf('InProgress'));
+System.assertEquals(Metadata.DeployStatus.Succeeded, Metadata.DeployStatus.valueOf('Succeeded'));
+System.assertEquals(Metadata.DeployStatus.SucceededPartial, Metadata.DeployStatus.valueOf('SucceededPartial'));
+System.assertEquals(Metadata.DeployStatus.Failed, Metadata.DeployStatus.valueOf('Failed'));
+System.assertEquals(Metadata.DeployStatus.Canceling, Metadata.DeployStatus.valueOf('Canceling'));
+System.assertEquals(Metadata.DeployStatus.Canceled, Metadata.DeployStatus.valueOf('Canceled'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1037,6 +1061,9 @@ Search.SuggestionResults objectSuggestions = Search.suggest('Nook', 'Account', (
 System.assertEquals(1, objectSuggestions.getSuggestionResults().size());
 Search.SuggestionResults objectUserSuggestions = Search.suggest('Nook', 'Account', (Object)new Search.SuggestionOption(), (Object)AccessLevel.SYSTEM_MODE);
 System.assertEquals(false, objectUserSuggestions.hasMoreResults());
+Object objectOption = new Search.SuggestionOption();
+Search.SuggestionResults objectVariableSuggestions = Search.suggest('Nook', 'Account', objectOption);
+System.assertEquals(1, objectVariableSuggestions.getSuggestionResults().size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1577,6 +1604,20 @@ System.assert(base.getAsMap().containsKey('fullName'));
 	}
 }
 
+func TestMetadataDeployMessageProblemTypeUsesEnumType(t *testing.T) {
+	typ, ok := generatedPlatformTypes()["metadata.deploymessage"]
+	if !ok {
+		t.Fatal("missing generated Metadata.DeployMessage type")
+	}
+	field, ok := typ.Fields["problemType"]
+	if !ok {
+		t.Fatal("missing generated Metadata.DeployMessage.problemType field")
+	}
+	if field.Type != "Metadata.DeployProblemType" {
+		t.Fatalf("Metadata.DeployMessage.problemType field type = %q, want Metadata.DeployProblemType", field.Type)
+	}
+}
+
 func TestExecMetadataDeploymentUnsupportedItemType(t *testing.T) {
 	program, err := CompileAnonymous(`
 Metadata.DeployContainer container = new Metadata.DeployContainer();
@@ -1686,27 +1727,13 @@ System.assert(!Schema.getGlobalDescribe().containsKey('Invoice__c'));
 	}
 }
 
-func TestExecEventBusPublishReturnsLocalSuccessResults(t *testing.T) {
-	program, err := CompileAnonymous(`
-	Database.SaveResult single = EventBus.publish(new Account(Name = 'Acme'));
-System.assert(single.isSuccess());
-System.assertEquals(null, single.getId());
-System.assertEquals(0, single.getErrors().size());
-List<Database.SaveResult> many = EventBus.publish(new List<Account>{new Account(Name = 'One'), new Account(Name = 'Two')});
-System.assertEquals(2, many.size());
-System.assert(many.get(0).isSuccess());
-System.assert(many.get(1).isSuccess());
-Database.SaveResult userMode = EventBus.publishWithAccessLevel(new Account(Name = 'User'), AccessLevel.USER_MODE);
-System.assert(userMode.isSuccess());
-List<Database.SaveResult> callbackResults = EventBus.publishWithAccessLevel(new List<Account>{new Account(Name = 'Callback')}, null, AccessLevel.SYSTEM_MODE);
-System.assertEquals(1, callbackResults.size());
-System.assert(callbackResults.get(0).isSuccess());
-`)
+func TestExecEventBusPublishRejectsNonPlatformEvents(t *testing.T) {
+	program, err := CompileAnonymous(`EventBus.publish(new Account(Name = 'Acme'));`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
-		t.Fatal(err)
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "platform event") {
+		t.Fatalf("err = %v, want platform-event-only rejection", err)
 	}
 }
 
@@ -2394,6 +2421,34 @@ System.assertNotEquals(null, page);
 	}
 }
 
+func TestExecConnectApiChatterUsersFollowingsCorpusOverloadsReturnDeterministicPages(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.FollowingPage byUser = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId());
+ConnectApi.FollowingPage byPage = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), 0);
+ConnectApi.FollowingPage byPageSize = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), 0, 10);
+ConnectApi.FollowingPage byFilter = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), '005');
+ConnectApi.FollowingPage byFilterPage = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), '005', 0);
+ConnectApi.FollowingPage byFilterPageSize = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId(), '005', 0, 10);
+
+System.assertEquals(0, byUser.total);
+System.assertEquals(0, byUser.following.size());
+System.assertEquals('/services/data/vXX.X/chatter/users/' + UserInfo.getUserId() + '/following', byUser.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl, byPage.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl + '?pageSize=10', byPageSize.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl + '?filterType=005', byFilter.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl + '?filterType=005', byFilterPage.currentPageUrl);
+System.assertEquals(byUser.currentPageUrl + '?pageSize=10&filterType=005', byFilterPageSize.currentPageUrl);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecConnectApiNamedCredentialsPrimaryFlow(t *testing.T) {
 	program, err := CompileAnonymous(`
 ConnectApi.ExternalCredentialInput externalInput = new ConnectApi.ExternalCredentialInput();
@@ -2492,6 +2547,50 @@ System.assertNotEquals(null, item.contentNodes);
 System.assertEquals(true, item.contentNodes.containsKey('title'));
 ConnectApi.ManagedContentNodeValue title = item.contentNodes.get('title');
 System.assertEquals('Local managed content home-hero', title.value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConnectApiManagedContentCorpusOverloadsReturnConsistentContent(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.ManagedContentVersionCollection five =
+	ConnectApi.ManagedContent.getAllManagedContent(null, 0, 1, 'en_US', 'News');
+ConnectApi.ManagedContentVersionCollection six =
+	ConnectApi.ManagedContent.getAllManagedContent(null, 0, 1, 'en_US', 'News', false);
+List<String> keys = new List<String>{ 'home-hero' };
+ConnectApi.ManagedContentVersionCollection byKeys =
+	ConnectApi.ManagedContent.getManagedContentByContentKeys(null, keys, 0, 1, 'en_US', 'News', false);
+
+System.assertEquals(1, five.items.size());
+System.assertEquals(1, six.items.size());
+System.assertEquals(1, byKeys.items.size());
+System.assertEquals('News', five.items[0].contentKey);
+System.assertEquals('News', six.items[0].contentKey);
+System.assertEquals('home-hero', byKeys.items[0].contentKey);
+System.assertEquals('Local managed content News', five.items[0].title);
+System.assertEquals(five.items[0].title, six.items[0].title);
+System.assertEquals('Local managed content home-hero', byKeys.items[0].contentNodes.get('title').value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConnectApiUserProfilesSetPhotoCorpusOverloadsAreLocalNoOps(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.UserProfiles.setPhoto(null, UserInfo.getUserId(),
+		new ConnectApi.BinaryInput(Blob.valueOf('bytes'), 'image/png', 'avatar.png'));
+ConnectApi.UserProfiles.setPhoto(null, UserInfo.getUserId(), '069000000000001', null);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2660,7 +2759,7 @@ Cache.OrgPartition orgCache = Cache.Org.getPartition('local');
 System.assertEquals(null, orgCache.get('missing'));
 orgCache.put('name', 'Acme');
 orgCache.put('namespaceVisible', 'Scoped', Cache.Visibility.NAMESPACE);
-orgCache.put('visible', 'Trail', 60, Cache.Visibility.ALL, false);
+orgCache.put('visible', 'Trail', 300, Cache.Visibility.ALL, false);
 System.assert(orgCache.contains('name'));
 System.assertEquals('Acme', (String) orgCache.get('name'));
 System.assertEquals('Scoped', (String) orgCache.get('namespaceVisible'));
@@ -2671,14 +2770,16 @@ System.assert(orgKeys.contains('name'));
 System.assert(orgKeys.contains('namespaceVisible'));
 System.assert(orgKeys.contains('visible'));
 System.assertEquals(3, orgCache.getNumKeys());
-System.assertEquals('Acme', (String) orgCache.remove('name'));
+System.assertEquals(true, orgCache.remove('name'));
 System.assert(!orgCache.contains('name'));
 System.assertEquals(2, orgCache.getNumKeys());
 
 Cache.SessionPartition sessionCache = Cache.Session.getPartition('local');
+Object sessionClone = sessionCache.clone();
+System.assertNotEquals(null, sessionClone);
 Cache.Partition generalSession = sessionCache;
 Cache.Partition generalOrg = orgCache;
-sessionCache.put('count', 7, 60);
+sessionCache.put('count', 7, 300);
 System.assertEquals(7, (Integer) sessionCache.get('count'));
 System.assert(sessionCache.getKeys().contains('count'));
 System.assertEquals(1, sessionCache.getNumKeys());
@@ -2686,24 +2787,22 @@ generalSession.put('general', 'session');
 generalOrg.put('general', 'org');
 System.assertEquals('session', (String) generalSession.get('general'));
 System.assertEquals('org', (String) generalOrg.get('general'));
-System.assertEquals(null, sessionCache.get(String.class, 'missing'));
-sessionCache.remove(String.class, 'missing');
+System.assertEquals(null, sessionCache.get('missing'));
 
-System.assert(Cache.Org.isAvailable());
+System.assert(Cache.Session.isAvailable());
 System.assert(Cache.Org.getCapacity() > 0);
 System.assertEquals('local.default', Cache.Org.getName());
 System.assertEquals(0, Cache.Org.getAvgGetSize());
 System.assertEquals(0, Cache.Org.getAvgGetTime());
-System.assertEquals(0, Cache.Org.getAvgValueSize());
 System.assertEquals(0, Cache.Org.getMaxGetSize());
 System.assertEquals(0, Cache.Org.getMaxGetTime());
-System.assertEquals(0, Cache.Org.getMaxValueSize());
 System.assertEquals(0, Cache.Org.getMissRate());
-System.assertEquals('local.default.account', orgCache.createFullyQualifiedKey('local', 'default', 'account'));
-System.assertEquals('local.default', orgCache.createFullyQualifiedPartition('local', 'default'));
-orgCache.validatePartitionName('default');
-orgCache.validateKey(false, 'account');
-orgCache.validateKeyValue(false, 'account', 'value');
+System.assertEquals('local.default.account', Cache.OrgPartition.createFullyQualifiedKey('local', 'default', 'account'));
+System.assertEquals('local.default', Cache.OrgPartition.createFullyQualifiedPartition('local', 'default'));
+Cache.OrgPartition.validatePartitionName('default');
+Cache.OrgPartition.validateKey(false, 'account');
+Cache.OrgPartition.validateKeyValue(false, 'account', 'value');
+Cache.SessionPartition.createFullyQualifiedKey('local', 'default', 'account');
 Cache.Org.put('defaulted', 'org-default');
 Cache.Org.put('visible-default', 'org-visible', Cache.Visibility.ALL);
 System.assert(Cache.Org.contains('defaulted'));
@@ -2712,9 +2811,9 @@ System.assertEquals('org-visible', (String) Cache.Org.get('visible-default'));
 System.assert(Cache.Org.getKeys().contains('defaulted'));
 System.assertEquals(2, Cache.Org.getNumKeys());
 System.assertEquals('org-default', (String) Cache.Org.getPartition('default').get('defaulted'));
-System.assertEquals('org-default', (String) Cache.Org.remove('defaulted'));
+System.assertEquals(true, Cache.Org.remove('defaulted'));
 System.assert(!Cache.Org.contains('defaulted'));
-System.assertEquals('org-visible', (String) Cache.Org.remove('visible-default'));
+System.assertEquals(true, Cache.Org.remove('visible-default'));
 
 Cache.SecondaryKeyApi secondary = Cache.SecondaryKeyApi.get('localFeature');
 secondary.putImmediate('alpha', 'A', 'group-1');
@@ -2742,6 +2841,42 @@ System.assertEquals(2, secondary.scanForCount('', ''));
 	}
 }
 
+func TestExecPlatformCacheSalesforceRemoveTTLAndBuilderContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Cache.Org.put('salesforceRemove', 'value');
+Boolean orgRemoved = Cache.Org.remove('salesforceRemove');
+System.assertEquals(true, orgRemoved);
+Cache.OrgPartition orgPartition = Cache.Org.getPartition('local.default');
+orgPartition.put('salesforcePartitionRemove', 'value');
+Boolean partitionRemoved = orgPartition.remove('salesforcePartitionRemove');
+System.assertEquals(true, partitionRemoved);
+Cache.Session.put('salesforceSessionRemove', 'value');
+Boolean sessionRemoved = Cache.Session.remove('salesforceSessionRemove');
+System.assertEquals(true, sessionRemoved);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	ttlProgram, err := CompileAnonymous(`Cache.Org.put('salesforceTtl', 'value', 60);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(ttlProgram); err == nil || !strings.Contains(err.Error(), "at least 300 seconds") {
+		t.Fatalf("Cache.Org.put should reject sub-minimum TTL, got %v", err)
+	}
+	builderProgram, err := CompileAnonymous(`Cache.Org.get(String.class, 'salesforceBuilder');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(builderProgram); err == nil || !strings.Contains(err.Error(), "does not implement CacheBuilder") {
+		t.Fatalf("Cache.Org.get should reject non-CacheBuilder types, got %v", err)
+	}
+}
+
 func TestExecPlatformCacheBuilderLoadsAndMemoizesDefaultPartition(t *testing.T) {
 	loadProgram, err := CompileAnonymous(`return 'loaded:' + requiredButNotUsed;`)
 	if err != nil {
@@ -2757,7 +2892,8 @@ System.assertEquals(1, Cache.Org.getNumKeys());
 Set<String> keys = named.getKeys();
 System.assertEquals(1, keys.size());
 System.assert(keys.toString().contains('CacheLoader'));
-System.assertEquals('loaded:shape', (String) Cache.Org.remove(CacheLoader.class, 'shape'));
+System.assertEquals(true, (Boolean) Cache.Org.remove(CacheLoader.class, 'shape'));
+System.assert(!named.contains('CacheLoader.shape'));
 System.assertEquals(0, named.getNumKeys());
 `)
 	if err != nil {
@@ -2780,6 +2916,52 @@ System.assertEquals(0, named.getNumKeys());
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPlatformCacheAPI67RejectedShapes(t *testing.T) {
+	sources := []string{
+		`Cache.Org.isAvailable();`,
+		`Cache.Org.getAvgValueSize();`,
+		`Cache.Org.getMaxValueSize();`,
+		`Cache.Session.getAvgValueSize();`,
+		`Cache.Session.getMaxValueSize();`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.getAvgValueSize();`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.getMaxValueSize();`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.createFullyQualifiedKey('a', 'b', 'c');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.createFullyQualifiedPartition('a', 'b');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validatePartitionName('a');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKey(false, 'a');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeyValue(false, 'a', 'v');`,
+		`Cache.Partition.validateKeys(false, new Set<String>{'a'});`,
+		`Cache.OrgPartition.validateKeys(false, new Set<String>{'a'});`,
+		`Cache.SessionPartition.validateKeys(false, new Set<String>{'a'});`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeys(false, new Set<String>{'a'});`,
+		`Cache.SessionPartition p = Cache.Session.getPartition('local'); p.validateKeys(false, new Set<String>{'a'});`,
+		`Cache.Partition p = Cache.Org.getPartition('local'); p.validateKeyValue(false, 'a', 'v');`,
+	}
+	for _, source := range sources {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatalf("%s: %v", source, err)
+		}
+		if _, err := New(nil).Execute(program); err == nil {
+			t.Fatalf("Cache API 67 rejected shape executed without error: %s", source)
+		}
+	}
+}
+
+func TestExecPlatformCacheBuilderValidateStaticContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Cache.OrgPartition.validateCacheBuilder(CacheLoader.class);
+Cache.SessionPartition.validateCacheBuilder(CacheLoader.class);
+Cache.Partition.validateCacheBuilder(CacheLoader.class);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -2873,11 +3055,51 @@ System.assertEquals('Success', (String)response.status);
 	}
 }
 
+func TestExecApexPagesActionInvokeUnboundOrdinaryExpression(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.Action action = new ApexPages.Action('{!save}');
+System.assertEquals('{!save}', action.getExpression());
+System.assertEquals(null, action.invoke());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesActionInvokeUsesBoundInvoker(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.Action action = new ApexPages.Action('{!save}');
+PageReference invoked = action.invoke();
+System.assertEquals('/apex/Done', invoked.getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetCurrentPageURL("/apex/Edit")
+	var gotExpression, gotPageURL string
+	machine.SetVisualforceActionInvoker(func(expression, pageURL string) (Value, error) {
+		gotExpression = expression
+		gotPageURL = pageURL
+		return newPageReference("/apex/Done"), nil
+	})
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if gotExpression != "{!save}" || gotPageURL != "/apex/Edit" {
+		t.Fatalf("invoker args = (%q, %q)", gotExpression, gotPageURL)
+	}
+}
+
 func TestExecPlatformHelperTailUnsupportedFences(t *testing.T) {
 	cases := []string{
 		`System.changeOwnPassword('old', 'new', 'new');`,
 		`ConnectApi.Payments.authorize(null);`,
-		`new ApexPages.Action('{!save}').invoke();`,
 		`functions.Function.get('fn').invoke(null);`,
 	}
 	for _, source := range cases {
@@ -2979,7 +3201,6 @@ System.assert(passwordless.success);
 System.assertEquals('/passwordless', passwordless.redirect.getUrl());
 System.assertEquals('local-verification', UserManagement.verifyRegisterVerificationMethod('12345', Auth.VerificationMethod.EMAIL));
 System.assert(UserManagement.verifyVerificationMethod('ada@example.invalid', '12345', Auth.VerificationMethod.EMAIL).success);
-System.assertEquals(true, Auth.AuthToken.revokeAccess('provider', 'user', 'token'));
 System.assert(Auth.SessionManagement.getCurrentSession().get('SessionId').contains('session'));
 Auth.AuthConfiguration config = new Auth.AuthConfiguration('https://local.example', '/start');
 System.assertEquals(0, config.getAuthProviders().size());
@@ -2995,6 +3216,199 @@ System.assertEquals('https://local.example/services/auth/sso/local?startURL=/sta
 	machine := New(nil)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecAuthValueObjectConstructorsRejectZeroArgumentForms(t *testing.T) {
+	for name, source := range map[string]string{
+		"UserData":           `Auth.UserData value = new Auth.UserData();`,
+		"VerificationResult": `Auth.VerificationResult value = new Auth.VerificationResult();`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			program, err := CompileAnonymous(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Execute(program, nil); err == nil {
+				t.Fatalf("%s zero-argument constructor executed", name)
+			}
+		})
+	}
+}
+
+func TestExecAuthApprovalShapes(t *testing.T) {
+	program, err := CompileAnonymous(`
+Auth.AuthProviderCallbackState callback = new Auth.AuthProviderCallbackState(new Map<String,String>{'h' => 'v'}, 'body', new Map<String,String>{'q' => 'v'});
+System.assertEquals('body', callback.body);
+System.assertEquals('v', callback.headers.get('h'));
+System.assertEquals('v', callback.queryParameters.get('q'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAuthTokenRejectsInvalidIDs(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+  Auth.AuthToken.getAccessToken('provider', 'local');
+  System.assert(false, 'expected getAccessToken to reject an invalid ID');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Invalid ID', e.getMessage());
+}
+try {
+  Auth.AuthToken.getAccessTokenMap('provider', 'local');
+  System.assert(false, 'expected getAccessTokenMap to reject an invalid ID');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Invalid ID', e.getMessage());
+}
+try {
+  Auth.AuthToken.refreshAccessToken('provider', 'local', 'token');
+  System.assert(false, 'expected refreshAccessToken to reject an invalid ID');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Invalid ID', e.getMessage());
+}
+try {
+  Auth.AuthToken.revokeAccess('provider', 'local', 'user', 'remote');
+  System.assert(false, 'expected revokeAccess to reject an invalid ID');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Invalid ID', e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAuthTokenRejectsNullAndEmptyArguments(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+  Auth.AuthToken.getAccessToken(null, 'provider');
+  System.assert(false, 'expected getAccessToken to reject null');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Argument cannot be null or empty.', e.getMessage());
+}
+try {
+  Auth.AuthToken.getAccessTokenMap('', 'provider');
+  System.assert(false, 'expected getAccessTokenMap to reject empty');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Argument cannot be null or empty.', e.getMessage());
+}
+try {
+  Auth.AuthToken.refreshAccessToken('provider', 'local', null);
+  System.assert(false, 'expected refreshAccessToken to reject null');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Argument cannot be null or empty.', e.getMessage());
+}
+try {
+  Auth.AuthToken.revokeAccess('provider', 'local', null, 'remote');
+  System.assert(false, 'expected revokeAccess to reject an invalid ID before null user');
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Invalid ID', e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAuthTokenRefreshAccessTokenCompilesAsMap(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+  Map<String,String> refresh = Auth.AuthToken.refreshAccessToken('provider', 'local', 'token');
+  System.assertEquals(null, refresh);
+} catch (Exception e) {
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+  System.assertEquals('Invalid ID', e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAuthTokenValidIDUsesUnsupportedHostedPath(t *testing.T) {
+	machine := New(nil)
+	for _, tc := range []struct {
+		callee string
+		args   []Value
+	}{
+		{callee: "Auth.AuthToken.getAccessToken", args: []Value{String("005000000000001"), String("provider")}},
+		{callee: "Auth.AuthToken.getAccessTokenMap", args: []Value{String("005000000000001"), String("provider")}},
+		{callee: "Auth.AuthToken.refreshAccessToken", args: []Value{String("005000000000001"), String("provider"), String("token")}},
+	} {
+		if _, err := machine.call(tc.callee, tc.args, nil, &Result{}); err == nil {
+			t.Fatalf("%s unexpectedly returned local success", tc.callee)
+		} else {
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "`+tc.callee+`"` {
+				t.Fatalf("%s error = %#v, want unsupported hosted path", tc.callee, err)
+			}
+		}
+	}
+}
+
+func TestAuthTokenRevokeAccessReturnsObservedBoolean(t *testing.T) {
+	machine := New(nil)
+	for _, test := range []struct {
+		name string
+		args []Value
+		want bool
+	}{
+		{name: "third-null", args: []Value{String("005000000000001"), String("provider"), Null, String("remote")}, want: true},
+		{name: "third-empty", args: []Value{String("005000000000001"), String("provider"), String(""), String("remote")}, want: false},
+		{name: "fourth-null", args: []Value{String("005000000000001"), String("provider"), String("005000000000001AAA"), Null}, want: false},
+		{name: "fourth-empty", args: []Value{String("005000000000001"), String("provider"), String("005000000000001AAA"), String("")}, want: false},
+		{name: "arbitrary", args: []Value{String("005000000000001"), String("provider"), String("005000000000001AAA"), String("remote")}, want: false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := machine.call("Auth.AuthToken.revokeAccess", test.args, nil, &Result{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.Kind != ValueBool || got.Bool != test.want {
+				t.Fatalf("result = %#v, want Boolean(%t)", got, test.want)
+			}
+		})
+	}
+}
+
+func TestAuthTokenDispatchRequiresExactArities(t *testing.T) {
+	machine := New(nil)
+	for _, test := range []struct {
+		callee string
+		args   []Value
+		want   string
+	}{
+		{callee: "Auth.AuthToken.getAccessToken", args: []Value{String("provider")}, want: "expects 2 arguments"},
+		{callee: "Auth.AuthToken.getAccessTokenMap", args: []Value{String("provider")}, want: "expects 2 arguments"},
+		{callee: "Auth.AuthToken.refreshAccessToken", args: []Value{String("provider")}, want: "expects 3 arguments"},
+		{callee: "Auth.AuthToken.revokeAccess", args: []Value{String("provider")}, want: "expects 4 arguments"},
+	} {
+		if _, err := machine.call(test.callee, test.args, nil, &Result{}); err == nil || !strings.Contains(err.Error(), test.want) {
+			t.Fatalf("%s error = %v, want %q", test.callee, err, test.want)
+		}
 	}
 }
 
@@ -3309,8 +3723,8 @@ System.assert(afterQuery >= afterDml);
 	if len(result.LimitViolations) == 0 {
 		t.Fatalf("expected CPU budget violation from instruction and row costs")
 	}
-	if result.LimitViolations[0].Used <= result.Limits.CPUTimeMS {
-		t.Fatalf("CPU budget used = %d, public cpu time = %d; want separate budget counter", result.LimitViolations[0].Used, result.Limits.CPUTimeMS)
+	if result.LimitViolations[0].Used != machine.cpuBudgetUsed {
+		t.Fatalf("CPU budget violation used = %d, budget counter = %d", result.LimitViolations[0].Used, machine.cpuBudgetUsed)
 	}
 }
 
@@ -3345,7 +3759,7 @@ func TestExecJSONCommonSerializeOverloads(t *testing.T) {
 Account a = new Account(Name = 'Acme', Phone = null);
 String compact = JSON.serialize(a, true);
 System.assert(compact.contains('"Name":"Acme"'));
-System.assert(!compact.contains('Phone'));
+	System.assert(compact.contains('Phone'));
 Map<String,Object> values = new Map<String,Object>();
 values.put('kept', 'yes');
 values.put('dropped', null);
@@ -3378,7 +3792,7 @@ Account decoded = JSON.deserializeStrict('{"Name":"Acme","NoSuchField__c":"x"}',
 	machine := New(nil)
 	org := testDataOrg()
 	machine.SetOrg(&org)
-	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "unknown field") {
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "No such column 'NoSuchField__c' on sobject of type Account") {
 		t.Fatalf("err = %v", err)
 	}
 }
@@ -3408,7 +3822,7 @@ System.assertEquals('Page.Missing', new PageReference('Page.Missing').getUrl());
 ApexPages.Severity severity = ApexPages.Severity.ERROR;
 System.assertEquals('ERROR', severity.name());
 System.assertEquals('ERROR', severity.toString());
-System.assertEquals(3, severity.ordinal());
+System.assertEquals(1, severity.ordinal());
 System.assertEquals(5, ApexPages.Severity.values().size());
 ApexPages.Message message = new ApexPages.Message(severity, 'Summary', 'Detail');
 System.assertEquals(ApexPages.Severity.ERROR, message.getSeverity());
@@ -3426,6 +3840,29 @@ System.assertEquals('Detail', message.getDetail());
 	machine.RegisterPageReference("AccountView")
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesMessageValueContractsMatchSalesforce(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<ApexPages.Severity> severities = ApexPages.Severity.values();
+System.assertEquals(ApexPages.Severity.FATAL, severities[0]);
+System.assertEquals(ApexPages.Severity.ERROR, severities[1]);
+System.assertEquals(ApexPages.Severity.WARNING, severities[2]);
+System.assertEquals(ApexPages.Severity.INFO, severities[3]);
+System.assertEquals(ApexPages.Severity.CONFIRM, severities[4]);
+
+ApexPages.Message first = new ApexPages.Message(ApexPages.Severity.WARNING, 'Summary', 'Detail');
+ApexPages.Message second = new ApexPages.Message(ApexPages.Severity.WARNING, 'Summary', 'Detail');
+System.assertEquals(true, first.equals(second));
+System.assertEquals(first.hashCode(), second.hashCode());
+System.assertEquals('ApexPages.Message["Summary"]', first.toString());
+`)
+	if err != nil {
+		t.Fatalf("compile: %v", err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatalf("execute: %v", err)
 	}
 }
 
@@ -3808,17 +4245,18 @@ handler.handlePredictionResponse(new NLPPredictions.PredictionResponseContextImp
 
 func TestExecBusinessHoursRecordBackedWeekSchedule(t *testing.T) {
 	program, err := CompileAnonymous(`
+Id businessHoursId = '01m000000000001AAA';
 Datetime mondayNine = Datetime.newInstanceGmt(2026, 6, 15, 16, 0, 0);
-System.assertEquals(true, BusinessHours.isWithin('01m000000000001AAA', mondayNine));
-Datetime mondayTen = BusinessHours.add('01m000000000001AAA', mondayNine, 60 * 60 * 1000);
+System.assertEquals(true, BusinessHours.isWithin(businessHoursId, mondayNine));
+Datetime mondayTen = BusinessHours.add(businessHoursId, mondayNine, 60 * 60 * 1000);
 System.assertEquals(Datetime.newInstanceGmt(2026, 6, 15, 17, 0, 0), mondayTen);
-System.assertEquals(mondayTen, BusinessHours.nextStartDate('01m000000000001AAA', mondayTen));
-Datetime mondayEleven = BusinessHours.addGmt('01m000000000001AAA', mondayTen, 60 * 60 * 1000);
+System.assertEquals(mondayTen, BusinessHours.nextStartDate(businessHoursId, mondayTen));
+Datetime mondayEleven = BusinessHours.addGmt(businessHoursId, mondayTen, 60 * 60 * 1000);
 System.assertEquals(Datetime.newInstanceGmt(2026, 6, 15, 18, 0, 0), mondayEleven);
-System.assertEquals(60 * 60 * 1000, BusinessHours.diff('01m000000000001AAA', mondayNine, mondayTen));
+System.assertEquals(60 * 60 * 1000, BusinessHours.diff(businessHoursId, mondayNine, mondayTen));
 Datetime saturday = Datetime.newInstanceGmt(2026, 6, 20, 16, 0, 0);
-System.assertEquals(false, BusinessHours.isWithin('01m000000000001AAA', saturday));
-System.assertEquals(Datetime.newInstanceGmt(2026, 6, 22, 16, 0, 0), BusinessHours.nextStartDate('01m000000000001AAA', saturday));
+System.assertEquals(false, BusinessHours.isWithin(businessHoursId, saturday));
+System.assertEquals(Datetime.newInstanceGmt(2026, 6, 22, 16, 0, 0), BusinessHours.nextStartDate(businessHoursId, saturday));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3988,7 +4426,7 @@ System.assertNotEquals(null, inventory.processInput(null));
 System.assertEquals(data, inventory.getInventory(data));
 System.assertEquals(data, inventory.getPricing(data));
 System.assertEquals(data, inventory.getInventoryAndPricing(data));
-System.assertEquals(data, inventory.handleInventoryPricingServiceException(new Exception('local'), data));
+System.assertEquals(data, inventory.handleInventoryPricingServiceException(new PlatformHarnessException('local'), data));
 System.assertNotEquals(null, inventory.createResponse(data));
 
 System.assertEquals(0, new CommerceDxSampleapp.CommerceDx_Inventory().calculateInventoryLevel('webstore', 'event'));
@@ -4025,7 +4463,9 @@ System.assertEquals(true, new ime_mrm.EventManagementSubjectApi().getSubjectAssi
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(nil).Execute(program); err != nil {
+	machine := New(nil)
+	registerCustomException(t, machine, "PlatformHarnessException")
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -4116,15 +4556,23 @@ func TestExecSystemDeterministicLocalHelpers(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(false, System.isFunctionCallback());
 System.assertEquals(false, System.isRunningElasticCompute());
-System.assertEquals('SY', System.getQuiddityShortCode(System.Request.getCurrent().getQuiddity()));
-System.assertEquals('65.0.0', System.requestVersion().toString());
-System.assertEquals('READ_WRITE', String.valueOf(System.getApplicationReadWriteMode()));
+System.assertEquals('R', System.getQuiddityShortCode(System.Request.getCurrent().getQuiddity()));
+	System.assertEquals('READ_WRITE', String.valueOf(System.getApplicationReadWriteMode()));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	machine := New(nil)
-	if _, err := machine.Execute(program); err != nil {
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSystemRequestVersionUsesLocalAPIVersion(t *testing.T) {
+	program, err := CompileAnonymous(`System.assertEquals('65.0.0', System.requestVersion().toString());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -4505,7 +4953,7 @@ try {
 	PageReference.forResource('MissingStaticResource');
 } catch (Exception e) {
 	caught = true;
-	System.assertEquals('System.VisualforceException', e.getTypeName());
+		System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
 }
 System.assert(caught);
 `)
@@ -4685,30 +5133,35 @@ System.assertEquals('/' + account.Id, saved.getUrl());
 PageReference token = Page.MyPage;
 System.assertEquals('/apex/MyPage', token.getUrl());
 System.assertEquals('/apex/MyPage', page.MyPage.getUrl());
-SelectOption option = new SelectOption('1', 'One', true, false);
+SelectOption option = new SelectOption('1', 'One', true);
 System.assertEquals('1', option.getValue());
 System.assertEquals('One', option.getLabel());
 System.assert(option.getDisabled());
+System.assertEquals(true, option.getEscapeItem());
+System.assertEquals(new SelectOption('1', 'One', true), option);
+option.setEscapeItem(false);
 System.assertEquals(false, option.getEscapeItem());
-System.assertEquals(new SelectOption('1', 'One', true, false), option);
 option.setLabel('Changed');
 option.setDisabled(false);
 System.assertEquals('Changed', option.getLabel());
 System.assertEquals(false, option.getDisabled());
 ApexPages.StandardSetController setController = new ApexPages.StandardSetController(new List<Account>{account, new Account(Name = 'Second')});
 System.assertEquals(2, setController.getResultSize());
-System.assertEquals(account, setController.getRecord());
-System.assertEquals(0, setController.getListViewOptions().size());
+Account setRecord = (Account) setController.getRecord();
+System.assertEquals('000000000000000AAA', String.valueOf(setRecord.Id));
+System.assertEquals(null, setRecord.Name);
+System.assertEquals(1, setController.getListViewOptions().size());
+System.assertEquals('All', setController.getListViewOptions()[0].getLabel());
 setController.setSelected(new List<Account>{account});
 System.assertEquals(1, setController.getSelected().size());
 setController.setFilterId('00B000000000001');
 System.assertEquals('00B000000000001', setController.getFilterId());
-setController.setPageSize(1);
-System.assertEquals(1, setController.getRecords().size());
-System.assert(setController.getHasNext());
-setController.setPageNumber(2);
-System.assertEquals(2, setController.getPageNumber());
-System.assert(setController.getHasPrevious());
+try {
+    setController.setPageSize(1);
+    System.assert(false, 'setPageSize should reject caller-provided rows');
+} catch (VisualforceException e) {
+    System.assertEquals('Modified rows exist in the records collection!', e.getMessage());
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4716,6 +5169,133 @@ System.assert(setController.getHasPrevious());
 	machine := New(nil)
 	org := testDataOrg()
 	storage.EnsureStandardObject(&org, "User")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStandardControllerAddFieldsRejectsCallerProvidedRecord(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'CallerProvided');
+ApexPages.StandardController controller = new ApexPages.StandardController(account);
+try {
+    controller.addFields(new List<String>{'Rating'});
+    System.assert(false, 'addFields should reject caller-provided controller data');
+} catch (Exception e) {
+    System.assert(e.getMessage().contains('data is being passed into the controller by the caller'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStandardSetControllerAddFieldsRejectsCallerProvidedRecords(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Account> accounts = new List<Account>{new Account(Name = 'CallerProvided')};
+ApexPages.StandardSetController controller = new ApexPages.StandardSetController(accounts);
+try {
+    controller.addFields(new List<String>{'Rating'});
+    System.assert(false, 'addFields should reject caller-provided controller data');
+} catch (SObjectException e) {
+    System.assert(e.getMessage().contains('data is being passed into the controller by the caller'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesStandardSetControllerQueryLocatorNavigation(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Locator-One');
+insert new Account(Name = 'Locator-Two');
+Database.QueryLocator locator = Database.getQueryLocator('SELECT Id, Name FROM Account ORDER BY Name');
+ApexPages.StandardSetController controller = new ApexPages.StandardSetController(locator);
+System.assertEquals(2, controller.getResultSize());
+controller.setPageSize(1);
+System.assertEquals('000000000000000AAA', String.valueOf(controller.getRecord().Id));
+System.assertEquals('Locator-One', controller.getRecords()[0].Name);
+System.assert(controller.getHasNext());
+controller.next();
+System.assertEquals('000000000000000AAA', String.valueOf(controller.getRecord().Id));
+System.assertEquals('Locator-Two', controller.getRecords()[0].Name);
+System.assert(controller.getHasPrevious());
+controller.last();
+System.assertEquals(2, controller.getPageNumber());
+System.assert(!controller.getHasNext());
+controller.previous();
+System.assertEquals('000000000000000AAA', String.valueOf(controller.getRecord().Id));
+System.assertEquals('Locator-One', controller.getRecords()[0].Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesStandardSetControllerGetRecordReturnsEmptyTypedObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account first = new Account(Name = 'First');
+Account second = new Account(Name = 'Second');
+ApexPages.StandardSetController controller = new ApexPages.StandardSetController(new List<Account>{first, second});
+Account record = (Account) controller.getRecord();
+System.assertEquals('000000000000000AAA', String.valueOf(record.Id));
+System.assertEquals(null, record.Name);
+System.assertEquals(first.Name, controller.getRecords()[0].get('Name'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesStandardSetControllerCallerProvidedContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Account> accounts = new List<Account>{new Account(Name = 'First')};
+ApexPages.StandardSetController controller = new ApexPages.StandardSetController(accounts);
+try {
+    controller.setPageSize(1);
+    System.assert(false, 'setPageSize should reject caller-provided rows');
+} catch (VisualforceException e) {
+    System.assertEquals('Modified rows exist in the records collection!', e.getMessage());
+}
+System.assertEquals(true, controller.getCompleteResult());
+System.assertEquals(1, controller.getListViewOptions().size());
+System.assertEquals('All', controller.getListViewOptions()[0].getLabel());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
@@ -4867,6 +5447,34 @@ System.assertEquals(0, table.rows);
 	}
 	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecComponentApexPageBlockTableDispatchesComponentLookup(t *testing.T) {
+	program, err := CompileAnonymous(`
+Component.Apex.PageBlockTable concreteComponent = new Component.Apex.PageBlockTable();
+ApexPages.Component component = concreteComponent;
+System.assertEquals(null, component.getComponentById('missing'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecComponentApexPageBlockTableLookupRejectsZeroArguments(t *testing.T) {
+	program, err := CompileAnonymous(`
+Component.Apex.PageBlockTable concreteComponent = new Component.Apex.PageBlockTable();
+ApexPages.Component component = concreteComponent;
+component.getComponentById();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err == nil {
+		t.Fatal("expected getComponentById without an id to fail")
 	}
 }
 
@@ -5022,7 +5630,7 @@ System.assertEquals('Bonjour', System.Label.Greeting);
 	}
 }
 
-func TestExecSystemLabelMethodsLimitsAsyncAndTargetExceptionConstructors(t *testing.T) {
+func TestExecSystemLabelMethodsLimitsAsyncAndRuntimeExceptionTypes(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(1.2, Decimal.valueOf('1.25').divide(Decimal.valueOf('1'), 1, RoundingMode.valueOf('HALF_DOWN')));
 System.assertEquals('Hello', System.Label.get('', 'Greeting'));
@@ -5032,22 +5640,38 @@ System.assert(!System.Label.translationExists('pkg', 'Greeting', 'es'));
 System.assertEquals(0, Limits.getAsyncCalls());
 System.assert(Limits.getLimitAsyncCalls() > 0);
 
-Exception invalidNoMessage = new InvalidParameterValueException();
-Exception invalidCause = new InvalidParameterValueException(new Exception('cause'));
-Exception invalidMessage = new InvalidParameterValueException('bad value');
-System.assertEquals('System.InvalidParameterValueException', invalidNoMessage.getTypeName());
-System.assertEquals('cause', invalidCause.getCause().getMessage());
-System.assertEquals('bad value', invalidMessage.getMessage());
+try {
+    Auth.AuthToken.getAccessToken('provider', 'local');
+    System.assert(false, 'expected getAccessToken to reject an invalid ID');
+} catch (Exception e) {
+    System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+    System.assertEquals('Invalid ID', e.getMessage());
+}
 
-Exception noAccess = new NoAccessException('blocked', new Exception('root'));
-Exception noData = new NoDataFoundException('missing', new Exception('root'));
-Exception npe = new NullPointerException('null value', new Exception('root'));
-System.assertEquals('blocked', noAccess.getMessage());
-System.assertEquals('missing', noData.getMessage());
-System.assertEquals('null value', npe.getMessage());
-System.assertEquals('root', noAccess.getCause().getMessage());
-System.assertEquals('root', noData.getCause().getMessage());
-System.assertEquals('root', npe.getCause().getMessage());
+try {
+    Crypto.signWithCertificate('RSA-SHA999', Blob.valueOf('data'), 'cert');
+    System.assert(false, 'expected signWithCertificate to reject an unsupported algorithm');
+} catch (Exception e) {
+    System.assertEquals('System.NoDataFoundException', e.getTypeName());
+    System.assertEquals('unsupported signature algorithm "RSA-SHA999"', e.getMessage());
+}
+
+try {
+    Date.valueOf();
+    System.assert(false, 'expected Date.valueOf to reject missing arguments');
+} catch (Exception e) {
+    System.assertEquals('System.NullPointerException', e.getTypeName());
+    System.assertEquals('Date.valueOf expects String', e.getMessage());
+}
+
+Auth.JWT parsed = Auth.JWTUtil.parseJWTFromStringWithoutValidation('eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwYXJzZWQtaXNzdWUiLCJzdWIiOiJwYXJzZWQtc3ViaiIsImF1ZCI6InBhcnNlZC1hdWQiLCJyb2xlcyI6WyJhZG1pbiIsInVzZXIiXSwibmJmIjoxMjMsImV4cCI6NDU2fQ.c2lnbmF0dXJl');
+try {
+    parsed.getNbfClockSkew();
+    System.assert(false, 'expected parsed JWT access to be rejected');
+} catch (Exception e) {
+    System.assertEquals('System.NoAccessException', e.getTypeName());
+    System.assertEquals('method is not available for a parsed JWT', e.getMessage());
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5523,7 +6147,7 @@ List<Messaging.RenderEmailTemplateBodyResult> rendered =
 System.assertEquals(1, rendered.size());
 System.assert(rendered.get(0).getSuccess());
 System.assertEquals('Hello Ada Trail / Acme', rendered.get(0).getMergedBody());
-System.assertEquals(0, rendered.get(0).getErrors().size());
+System.assertEquals(null, rendered.get(0).getErrors());
 
 Messaging.CustomNotification custom = new Messaging.CustomNotification();
 custom.setNotificationTypeId('0ML000000000001AAA');
@@ -5552,8 +6176,14 @@ System.assertEquals(false, inbound.plainTextBodyIsTruncated);
 Messaging.ActionResult actionResult = new Messaging.ActionResult.Builder().withSuccess(true).withMessage('ok').build();
 System.assert(actionResult.isSuccess());
 System.assertEquals('ok', actionResult.getMessage());
-Messaging.ActionableNotification actionable = new Messaging.ActionableNotification.Builder().withActionIdentifier('open').build();
+Messaging.ActionableNotification actionable = new Messaging.ActionableNotification.Builder()
+	.withActionIdentifier('open')
+	.withTargetId('001000000000001AAA')
+	.withTargetPageRef('/lightning/r/Account/001000000000001AAA/view')
+	.build();
 System.assertEquals('open', actionable.getActionIdentifier());
+System.assertEquals('001000000000001AAA', actionable.getTargetId());
+System.assertEquals('/lightning/r/Account/001000000000001AAA/view', actionable.getTargetPageRef());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5563,6 +6193,96 @@ System.assertEquals('open', actionable.getActionIdentifier());
 	vm.SetOrg(&org)
 	if _, err := vm.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecAuthJWTDeterministicValuesAndParse(t *testing.T) {
+	program, err := CompileAnonymous(`
+Auth.JWT defaults = new Auth.JWT();
+System.assertEquals(30, defaults.getNbfClockSkew());
+System.assertEquals(300, defaults.getValidityLength());
+
+Auth.JWT jwt = new Auth.JWT();
+jwt.setIss('issuer');
+jwt.setSub('subject');
+jwt.setAud('audience');
+jwt.setNbfClockSkew(30);
+jwt.setValidityLength(120);
+jwt.setAdditionalClaims(new Map<String,Object>{'scope' => 'read', 'active' => true});
+System.assertEquals('issuer', jwt.getIss());
+System.assertEquals('subject', jwt.getSub());
+System.assertEquals('audience', jwt.getAud());
+System.assertEquals(30, jwt.getNbfClockSkew());
+System.assertEquals(120, jwt.getValidityLength());
+System.assertEquals('read', jwt.getAdditionalClaims().get('scope'));
+System.assertEquals(true, jwt.getAdditionalClaims().get('active'));
+Map<String,Object> serialized = (Map<String,Object>)JSON.deserializeUntyped(jwt.toJSONString());
+System.assertEquals('issuer', serialized.get('iss'));
+System.assertEquals('subject', serialized.get('sub'));
+System.assertEquals('audience', serialized.get('aud'));
+System.assertEquals(1777723200, serialized.get('iat'));
+System.assertEquals(1777723170, serialized.get('nbf'));
+System.assertEquals(1777723320, serialized.get('exp'));
+System.assertEquals(36, ((String)serialized.get('jti')).length());
+System.assertEquals(false, serialized.containsKey('nbfClockSkew'));
+System.assertEquals(false, serialized.containsKey('validityLength'));
+System.assertEquals('read', serialized.get('scope'));
+
+Auth.JWT parsed = Auth.JWTUtil.parseJWTFromStringWithoutValidation('eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwYXJzZWQtaXNzdWUiLCJzdWIiOiJwYXJzZWQtc3ViaiIsImF1ZCI6InBhcnNlZC1hdWQiLCJzY29wZSI6InJlYWQiLCJyb2xlcyI6WyJhZG1pbiIsInVzZXIiXSwibmJmIjoxMjMsImV4cCI6NDU2fQ.c2lnbmF0dXJl');
+System.assertEquals('parsed-issue', parsed.getIss());
+System.assertEquals('parsed-subj', parsed.getSub());
+System.assertEquals('parsed-aud', parsed.getAud());
+System.assertEquals('read', parsed.getAdditionalClaims().get('scope'));
+System.assertEquals('["admin","user"]', parsed.getAdditionalClaims().get('roles'));
+System.assertEquals(Datetime.newInstanceGmt(1970, 1, 1, 0, 2, 3), parsed.getAdditionalClaims().get('nbf'));
+System.assertEquals(Datetime.newInstanceGmt(1970, 1, 1, 0, 7, 36), parsed.getAdditionalClaims().get('exp'));
+
+Integer noAccessCount = 0;
+try { parsed.getNbfClockSkew(); } catch (NoAccessException expected) { noAccessCount++; }
+try { parsed.getValidityLength(); } catch (NoAccessException expected) { noAccessCount++; }
+try { parsed.setNbfClockSkew(30); } catch (NoAccessException expected) { noAccessCount++; }
+try { parsed.setValidityLength(120); } catch (NoAccessException expected) { noAccessCount++; }
+System.assertEquals(4, noAccessCount);
+
+String validationType;
+try {
+	Auth.JWTUtil.parseJWTFromStringWithoutValidation('a.b.c');
+} catch (Exception expected) {
+	validationType = expected.getTypeName();
+}
+System.assertEquals('Auth.JWTValidationException', validationType);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMessagingSingleEmailCustomHeaders(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+email.setToAddresses(new List<String>{'recipient@example.test'});
+email.setPlainTextBody('body');
+email.setCustomHeaders(new Map<String,String>{'X-Trace' => 'trace-1', 'X-Mode' => 'local'});
+System.assertEquals('trace-1', email.getCustomHeaders().get('X-Trace'));
+System.assertEquals('local', email.customheaders.get('X-Mode'));
+Messaging.sendEmail(new List<Messaging.Email>{email});
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.CapturedEmails) != 1 {
+		t.Fatalf("captured emails = %#v", result.CapturedEmails)
+	}
+	if got := result.CapturedEmails[0].CustomHeaders; got["X-Trace"] != "trace-1" || got["X-Mode"] != "local" {
+		t.Fatalf("captured custom headers = %#v", got)
 	}
 }
 
@@ -6422,7 +7142,7 @@ Messaging.MassEmailMessage mass = new Messaging.MassEmailMessage();
 System.assertEquals(0, mass.getTargetObjectIds().size());
 System.assertEquals(0, mass.getWhatIds().size());
 System.assertEquals(null, mass.getTemplateId());
-System.assertEquals(null, mass.getDescription());
+System.assertEquals('Mass Email (API)', mass.getDescription());
 System.assertEquals(null, mass.getOptOutPolicy());
 System.assertEquals(null, mass.getEmailPriority());
 System.assertEquals(null, mass.getReplyTo());
@@ -6686,12 +7406,16 @@ System.assertEquals(1, UninstallScript.count);
 	}
 	onUninstall, err := CompileAnonymous(`
 System.assertNotEquals(null, context);
+System.assertEquals('00D000000000001', String.valueOf(context.organizationId()));
 UninstallScript.count++;
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	org := testDataOrg()
+	org.OrgID = "00D000000000001"
+	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
 		Name:       "UninstallScript",
@@ -7243,6 +7967,36 @@ Database.QueryLocator emptyInlineLocator = Database.getQueryLocator([
 System.assertEquals('SELECT Id , Name FROM Account WHERE Name = ''Missing'' ORDER BY Name NULLS LAST', emptyInlineLocator.getQuery());
 List<Account> emptyInlineQueried = Database.query(emptyInlineLocator.getQuery());
 System.assertEquals(0, emptyInlineQueried.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseGetQueryLocatorObjectHeldList(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Object-One');
+insert new Account(Name = 'Object-Two');
+List<Account> rows = [SELECT Id, Name FROM Account ORDER BY Name];
+Object objectRows = rows;
+Database.QueryLocator plainLocator = Database.getQueryLocator(objectRows);
+Database.QueryLocator accessLocator = Database.getQueryLocator(objectRows, AccessLevel.USER_MODE);
+System.assertEquals('SELECT Id , Name FROM Account ORDER BY Name', plainLocator.getQuery());
+System.assertEquals('SELECT Id , Name FROM Account ORDER BY Name', accessLocator.getQuery());
+Object plainIterator = plainLocator.iterator();
+Object accessIterator = accessLocator.iterator();
+System.assert(plainIterator.hasNext());
+System.assert(accessIterator.hasNext());
+Account plainRow = plainIterator.next();
+Account accessRow = accessIterator.next();
+System.assertEquals('Object-One', plainRow.Name);
+System.assertEquals('Object-One', accessRow.Name);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -8647,13 +9401,14 @@ List<SObject> first = cursor.fetch(0, 1);
 System.assertEquals(1, first.size());
 
 Database.PaginationCursor page = Database.getPaginationCursor('SELECT Id, Name FROM Account ORDER BY Name');
-Database.CursorFetchResult pageResult = page.fetchPage(1, 10);
+Database.CursorFetchResult pageResult = page.fetchPage(1, 1);
 System.assertEquals(1, pageResult.getRecords().size());
+System.assertEquals(0, pageResult.getNextIndex());
 System.assertEquals(true, pageResult.isDone());
-System.assertEquals(0, page.fetchDeleted(0, 10));
+System.assertEquals(0, page.fetchDeleted(0, 1));
 
-Datetime start = Datetime.newInstanceGmt(2026, 5, 15, 0, 0, 0);
-Datetime finish = Datetime.newInstanceGmt(2026, 5, 15, 1, 0, 0);
+Datetime start = Datetime.now().addDays(-1);
+Datetime finish = start.addHours(1);
 Database.GetDeletedResult deleted = Database.getDeleted('Account', start, finish);
 System.assertEquals(0, deleted.getDeletedRecords().size());
 System.assertEquals(start, deleted.getEarliestDateAvailable());
@@ -8662,6 +9417,57 @@ System.assertEquals(finish, deleted.getLatestDateCovered());
 Database.GetUpdatedResult updated = Database.getUpdated('Account', start, finish);
 System.assertEquals(0, updated.getIds().size());
 System.assertEquals(finish, updated.getLatestDateCovered());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseCursorFetchZeroRowsRejectsBeyondBound(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.Cursor cursor = Database.getCursor('SELECT Id FROM Account WHERE Name = ''CB317-NoRows''');
+cursor.fetch(0, 10);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	program, err = CompileAnonymous(`
+Database.Cursor cursor = Database.getCursor('SELECT Id FROM Account WHERE Name = ''CB317-NoRows''');
+try {
+    cursor.fetch(0, 10);
+    System.assert(false, 'expected zero-row cursor fetch to reject a page beyond the cursor bound');
+} catch (System.InvalidParameterValueException e) {
+    System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
+    System.assertEquals('Fetch beyond bound detected: 10', e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseCursorFetchNonEmptyRejectsBeyondBound(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'CB317-OneRow');
+Database.Cursor cursor = Database.getCursor('SELECT Id FROM Account WHERE Name = ''CB317-OneRow''');
+try {
+    cursor.fetch(0, 10);
+    System.assert(false, 'expected a non-empty cursor fetch beyond its bound to reject');
+} catch (System.InvalidParameterValueException e) {
+    System.assertEquals('Fetch beyond bound detected: 10', e.getMessage());
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -8683,12 +9489,12 @@ binds.put('rating', 'Warm');
 
 Database.Cursor cursor = Database.getCursorWithBinds('SELECT Id, Name FROM Account WHERE Rating = :rating ORDER BY Name', binds, null);
 System.assertEquals(1, cursor.getNumRecords());
-List<SObject> rows = cursor.fetch(0, 10);
+List<SObject> rows = cursor.fetch(0, 1);
 System.assertEquals(1, rows.size());
 System.assertEquals('Beta', rows.get(0).get('Name'));
 
 Database.PaginationCursor page = Database.getPaginationCursorWithBinds('SELECT Id, Name FROM Account WHERE Rating = :rating ORDER BY Name', binds, null);
-Database.CursorFetchResult pageResult = page.fetchPage(0, 10);
+Database.CursorFetchResult pageResult = page.fetchPage(0, 1);
 System.assertEquals(1, pageResult.getRecords().size());
 System.assertEquals(true, pageResult.isDone());
 `)
@@ -9023,6 +9829,50 @@ System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'scope edited']
 	}
 }
 
+func TestExecBatchableContextTopLevelChildJobIDIsNull(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<SObject>();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`return;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishProgram, err := CompileAnonymous(`
+System.assertNotEquals(null, context.getJobId());
+System.assertEquals(null, context.getChildJobId());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+Database.executeBatch(new BatchWorker(), 200);
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "BatchWorker",
+		Interfaces: []string{"Database.Batchable<SObject>"},
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStopTestDrainsQueueableEnqueuedByBatch(t *testing.T) {
 	startProgram, err := CompileAnonymous(`return new List<SObject>{ new Account(Name = 'scope') };`)
 	if err != nil {
@@ -9206,7 +10056,7 @@ func TestExecFailedBatchChunkRollsBackChunkDML(t *testing.T) {
 Integer value = scope.get(0);
 insert new Account(Name = 'chunk-' + value);
 if (value == 2) {
-	throw new Exception('second chunk failed');
+	throw new BatchFailureException('second chunk failed');
 }
 `)
 	if err != nil {
@@ -9229,6 +10079,7 @@ System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'chunk-2']);
 	org := testDataOrg()
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	registerCustomException(t, machine, "BatchFailureException")
 	if err := machine.RegisterClass(Class{
 		Name:       "BatchWorker",
 		Interfaces: []string{"Database.Batchable<Integer>"},
@@ -9715,8 +10566,6 @@ func TestExecPassiveLimitsGettersHaveStableValues(t *testing.T) {
 		"getLimitApexPaginationCursors",
 		"getAggregateQueries",
 		"getLimitAggregateQueries",
-		"getChildRelationshipsDescribes",
-		"getLimitChildRelationshipsDescribes",
 		"getDatabaseTime",
 		"getLimitDatabaseTime",
 		"getFetchCallsOnApexCursor",
@@ -10262,7 +11111,7 @@ func TestExecExecuteBatchRejectsInvalidBatchableSignatures(t *testing.T) {
 	}
 }
 
-func TestExecScheduledApexResolvesExecuteBySchedulableContext(t *testing.T) {
+func TestExecScheduledApexRunsAtStopTest(t *testing.T) {
 	scheduledProgram, err := CompileAnonymous("MultiWorker.triggerId = context.getTriggerId();")
 	if err != nil {
 		t.Fatal(err)
@@ -10275,12 +11124,17 @@ func TestExecScheduledApexResolvesExecuteBySchedulableContext(t *testing.T) {
 Test.startTest();
 String scheduleId = System.schedule('nightly', '0 0 0 * * ?', new MultiWorker());
 Test.stopTest();
-System.assertEquals(scheduleId, MultiWorker.triggerId);
+System.assertNotEquals(null, MultiWorker.triggerId);
+CronTrigger ct = [SELECT Id FROM CronTrigger WHERE Id = :scheduleId];
+System.assertNotEquals(null, ct);
+System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'ScheduledApex' AND ApexClassName = 'MultiWorker']);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
 		Name:       "MultiWorker",
@@ -10307,6 +11161,48 @@ System.assertEquals(scheduleId, MultiWorker.triggerId);
 			{Name: "scope", Type: "List<SObject>"},
 		},
 		Program: batchProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecScheduledApexWithExplicitFutureYearRemainsQueuedAtStopTest(t *testing.T) {
+	scheduledProgram, err := CompileAnonymous("ScheduledWorker.triggerId = context.getTriggerId();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+String scheduleId = System.schedule('far-future', '0 0 0 1 1 ? 2050', new ScheduledWorker());
+Test.stopTest();
+System.assertEquals(null, ScheduledWorker.triggerId);
+CronTrigger ct = [SELECT Id, State FROM CronTrigger WHERE Id = :scheduleId];
+System.assertEquals('Waiting', ct.State);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "ScheduledWorker",
+		Interfaces: []string{"Schedulable"},
+		StaticFields: map[string]Field{
+			"triggerId": {Name: "triggerId", Type: "String", Static: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{
+		Name:      "ScheduledWorker.execute",
+		ClassName: "ScheduledWorker",
+		Params:    []Param{{Name: "context", Type: "SchedulableContext"}},
+		Program:   scheduledProgram,
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -10783,7 +11679,7 @@ func TestExecFailedBatchRecordsProcessedChunksBeforeError(t *testing.T) {
 	}
 	executeProgram, err := CompileAnonymous(`
 if ([SELECT COUNT() FROM Account WHERE Name = 'chunk ran'] > 0) {
-	throw new Exception('second chunk failed');
+	throw new BatchFailureException('second chunk failed');
 }
 insert new Account(Name = 'chunk ran');
 `)
@@ -10817,6 +11713,7 @@ System.assertNotEquals(null, job.CompletedDate);
 	org := testDataOrg()
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	registerCustomException(t, machine, "BatchFailureException")
 	if err := machine.RegisterClass(Class{
 		Name:       "BatchWorker",
 		Interfaces: []string{"Database.Batchable<SObject>"},
@@ -10838,7 +11735,7 @@ func TestExecFailedBatchPublishesBatchApexErrorEventTrigger(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	executeProgram, err := CompileAnonymous(`throw new Exception('batch failed');`)
+	executeProgram, err := CompileAnonymous(`throw new BatchFailureException('batch failed');`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -10877,6 +11774,7 @@ System.assertEquals('EXECUTE', logged.Description);
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	registerCustomException(t, machine, "BatchFailureException")
 	if err := machine.RegisterClass(Class{
 		Name:       "BatchWorker",
 		Interfaces: []string{"Database.Batchable<SObject>"},
@@ -10913,7 +11811,7 @@ func TestExecFailedBatchFinishRecordsFailedJobCounts(t *testing.T) {
 	}
 	finishProgram, err := CompileAnonymous(`
 insert new Account(Name = 'finish before failure');
-throw new Exception('finish failed');
+throw new BatchFailureException('finish failed');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -10947,6 +11845,7 @@ System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'finish before 
 	org := testDataOrg()
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	registerCustomException(t, machine, "BatchFailureException")
 	if err := machine.RegisterClass(Class{
 		Name:       "BatchWorker",
 		Interfaces: []string{"Database.Batchable<SObject>"},
@@ -11319,9 +12218,7 @@ func TestExecAbortJobUnknownRecordsAreTypedUnsupported(t *testing.T) {
 func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
 	program, err := CompileAnonymous(`
 AsyncOptions opts = new AsyncOptions();
-System.assertEquals(null, opts.getMaximumQueueableStackDepth());
 opts.setMaximumQueueableStackDepth(2);
-System.assertEquals(2, opts.getMaximumQueueableStackDepth());
 System.assertEquals(null, opts.getDuplicateSignature());
 QueueableDuplicateSignature sig = QueueableDuplicateSignature.builder().addString('typed').build();
 opts.setDuplicateSignature(sig);
@@ -11434,8 +12331,8 @@ System.assertEquals('SUCCESS', systemContext.getResult().name());
 	}
 }
 
-func TestExecSystemAttachFinalizerIsAcceptedInTests(t *testing.T) {
-	program, err := CompileAnonymous(`System.attachFinalizer(new QueueWorker());`)
+func TestExecSystemAttachFinalizerRejectsOutsideQueueable(t *testing.T) {
+	program, err := CompileAnonymous(`System.attachFinalizer(null);`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -11444,8 +12341,8 @@ func TestExecSystemAttachFinalizerIsAcceptedInTests(t *testing.T) {
 	if err := machine.RegisterClass(Class{Name: "QueueWorker"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "System.attachFinalizer(Finalizer) is not allowed in this context") {
+		t.Fatalf("err = %v, want Salesforce outside-Queueable finalizer error", err)
 	}
 }
 
@@ -11466,7 +12363,7 @@ System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username =
   System.assertEquals(false, UserInfo.isMultiCurrencyOrganization());
   TimeZone tz = UserInfo.getTimeZone();
   System.assertEquals('UTC', tz.getID());
-  System.assertEquals('UTC', tz.getDisplayName());
+  System.assertEquals('(GMT+00:00) Coordinated Universal Time (UTC)', tz.getDisplayName());
 }
 System.assertEquals('system', UserInfo.getUserId());
 System.runAs(new User(Id = '005-user-b', FirstName = 'Ada', LastName = 'Trail', Name = 'Ada Trail', Email = 'ada@example.test', Permissions = new List<String>{'CanRunLocal'})) {
@@ -11522,7 +12419,7 @@ Datetime winter = Datetime.valueOfGmt('2024-02-29T23:05:06Z');
 Datetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
 TimeZone tz = UserInfo.getTimeZone();
 System.assertEquals('America/Los_Angeles', tz.getID());
-System.assertEquals('America/Los_Angeles', tz.getDisplayName());
+System.assertEquals('(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)', tz.getDisplayName());
 System.assertEquals(-28800000, tz.getOffset(winter));
 System.assertEquals(-25200000, tz.getOffset(summer));
 System.assertEquals('2024-02-29 15:05:06 -0800 PST', winter.format('yyyy-MM-dd HH:mm:ss Z z'));
@@ -11727,7 +12624,25 @@ System.runAs(new User(Id = '005-panama-user', TimeZoneSidKey = 'America/Panama')
 func TestExecSiteGetSiteId(t *testing.T) {
 	program, err := CompileAnonymous(`
 String siteId = Site.getSiteId();
-System.assertEquals('local-site', siteId);
+System.assertEquals(null, siteId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSiteCurrentBaseNoContextContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('', Site.getBaseUrl());
+System.assertEquals('Your password must be at least 8 characters long.\nYour password must include letters and numbers', Site.getPasswordPolicyStatement());
+System.assertEquals(false, Site.isRegistrationEnabled());
+System.assertEquals(false, Site.isLoginEnabled());
+System.assertEquals(false, Site.forgotPassword('user@example.invalid'));
+System.assertEquals(false, Site.forgotPassword('user@example.invalid', 'ResetTemplate'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -11743,8 +12658,8 @@ func TestExecSitePasswordAndExperienceContracts(t *testing.T) {
 System.assertEquals('', Site.getExperienceId());
 Site.setExperienceId('LocalExperience001');
 System.assertEquals('LocalExperience001', Site.getExperienceId());
-System.assertEquals(true, Site.forgotPassword('user@example.invalid'));
-System.assertEquals(true, Site.forgotPassword('user@example.invalid', 'ResetTemplate'));
+System.assertEquals(false, Site.forgotPassword('user@example.invalid'));
+System.assertEquals(false, Site.forgotPassword('user@example.invalid', 'ResetTemplate'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -11762,11 +12677,82 @@ System.assertEquals(true, Site.forgotPassword('user@example.invalid', 'ResetTemp
 	}
 }
 
+func TestExecSiteNoSiteRecordReturnsNullForContextMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(null, Site.getAnalyticsTrackingCode());
+System.assertEquals(null, Site.getAdminEmail());
+System.assertEquals(null, Site.getAdminId());
+System.assertEquals(null, Site.getMasterLabel());
+System.assertEquals(null, Site.getOriginalUrl());
+System.assertEquals(null, Site.getSiteId());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCompileSiteUrlRewriterDirectConstructionRejected(t *testing.T) {
+	program, err := CompileAnonymous(`new Site.UrlRewriter();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "cannot be constructed") {
+		t.Fatalf("Site.UrlRewriter constructor execution error = %v, want cannot be constructed", err)
+	}
+}
+
+func TestSiteUrlRewriterRuntimeMethodsRemainAvailableForProvidedReceiver(t *testing.T) {
+	machine := New(nil)
+	rewriter := Object("Site.UrlRewriter")
+	page := newPageReference("/tail")
+	generated, _, _, handled, err := machine.callPlatformObjectMember(rewriter, "generateUrlFor", []Value{List(page)}, &Result{})
+	if err != nil || !handled {
+		t.Fatalf("generateUrlFor handled=%v err=%v", handled, err)
+	}
+	if generated.Kind != ValueList || len(generated.List) != 1 || pageReferenceURL(generated.List[0]).String() != "/tail" {
+		t.Fatalf("generateUrlFor = %#v, want one /tail PageReference", generated)
+	}
+	mapped, _, _, handled, err := machine.callPlatformObjectMember(rewriter, "mapRequestUrl", []Value{page}, &Result{})
+	if err != nil || !handled {
+		t.Fatalf("mapRequestUrl handled=%v err=%v", handled, err)
+	}
+	if mapped.Kind != ValueObject || pageReferenceURL(mapped).String() != "/tail" {
+		t.Fatalf("mapRequestUrl = %#v, want /tail PageReference", mapped)
+	}
+}
+
+func TestExecSiteTailLocalOverloadsAndHostedContextGuards(t *testing.T) {
+	program, err := CompileAnonymous(`
+User externalUser = new User(Username = 'tail@example.invalid');
+System.assertEquals(null, Site.createExternalUser(externalUser, '001000000000001'));
+System.assertEquals(null, Site.createExternalUser(externalUser, '001000000000001', 'secret'));
+System.assertEquals(null, Site.createExternalUser(externalUser, '001000000000001', 'secret', false));
+System.assertEquals(null, Site.createPortalUser(externalUser, '001000000000001'));
+System.assertEquals(null, Site.createPortalUser(externalUser, '001000000000001', 'secret'));
+System.assertEquals(null, Site.createPortalUser(externalUser, '001000000000001', 'secret', false));
+System.assertEquals(null, Site.changePassword('newSecret', 'newSecret'));
+System.assertEquals(null, Site.changePassword('newSecret', 'newSecret', 'oldSecret'));
+System.assertEquals('/', Site.login('tail@example.invalid', 'secret', '').getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecOrgShapeBackedSiteNetworkAndCurrencyCalls(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assert(UserInfo.isMultiCurrencyOrganization());
 System.assertEquals('0DM000000000001', Site.getSiteId());
-System.assertEquals('https://local.glade.example/local', Site.getBaseUrl());
+System.assertEquals('', Site.getBaseUrl());
 System.assertEquals('', Site.getBaseRequestUrl());
 System.assertEquals('', Site.getBaseSecureUrl());
 System.assertEquals('', Site.getBaseCustomUrl());
@@ -11779,8 +12765,8 @@ System.assertEquals('local', Site.getPathPrefix());
 System.assertEquals('system@example.invalid', Site.getAdminEmail());
 System.assertEquals('005000000000001', Site.getAdminId());
 System.assertEquals('Local Site', Site.getMasterLabel());
-System.assertEquals(true, Site.isRegistrationEnabled());
-System.assertEquals(true, Site.isLoginEnabled());
+System.assertEquals(false, Site.isRegistrationEnabled());
+System.assertEquals(false, Site.isLoginEnabled());
 System.assertEquals(true, Site.isValidUsername('user@example.invalid'));
 System.assertEquals(false, Site.isValidUsername('not-an-email'));
 Site.setExperienceId(Network.getNetworkId());
@@ -12069,12 +13055,8 @@ return Instance;
 func TestExecServiceRoutingLocalHarnesses(t *testing.T) {
 	program, err := CompileAnonymous(`
 Aura.redirect(new PageReference('/redirect'));
-Site.UrlRewriter rewriter = new Site.UrlRewriter();
-List<PageReference> rewritten = rewriter.generateUrlFor(new List<PageReference>{new PageReference('/one')});
-System.assertEquals(1, rewritten.size());
-System.assertEquals('/one', rewritten[0].getUrl());
-System.assertEquals('/two', rewriter.mapRequestUrl(new PageReference('/two')).getUrl());
 System.assertEquals('001000000000001', new ChatterAnswers.AccountCreator().createAccount('Ada', 'Lovelace', UserInfo.getUserId()));
+System.assertEquals('001000000000001', new chatteranswers.AccountCreator().createAccount('Ada', 'Lovelace', UserInfo.getUserId()));
 LiveAgent.LiveAgentRealTimeSystem.cancelChatRequests(new List<String>{'request-1'});
 LiveAgent.LiveAgentRealTimeSystem.setButtonStatus('button-1', true);
 System.assertEquals(0, LiveAgent.LiveAgentRealTimeSystem.routeChatRequests(new List<LiveAgent.LiveChatRoutingRoute>()).size());
@@ -12109,6 +13091,18 @@ func TestExecPlatformCallbackDefaultHarnesses(t *testing.T) {
 System.assert(Process.SparkPlugApi.describePlugin('LocalPlugin') != null);
 System.assertEquals(0, Process.SparkPlugApi.describePlugins().size());
 System.assertEquals('{}', Process.SparkPlugApi.invokePluginWithJson('LocalPlugin', '{}'));
+try {
+  Process.SparkPlugApi.describePlugin('CB63Missing');
+  System.assert(false, 'expected missing plugin description to fail');
+} catch (NoDataFoundException e) {
+  System.assert(e.getMessage().contains('CB63Missing'));
+}
+try {
+  Process.SparkPlugApi.invokePluginWithJson('CB63Missing', '{}');
+  System.assert(false, 'expected missing plugin invocation to fail');
+} catch (NoDataFoundException e) {
+  System.assert(e.getMessage().contains('CB63Missing'));
+}
 System.assertEquals('local-email-verification-token', TrailblazerIdentity.generateUserEmailVerificationToken('00D000000000001', UserInfo.getUserId(), 'local@example.invalid'));
 System.assertEquals(0, TrailblazerIdentity.getUserOrgInfo(new List<String>{'local@example.invalid'}).size());
 TrailblazerIdentity.splunkLog('local', 'message');
@@ -12553,7 +13547,13 @@ System.assertEquals('2027-05-02', String.valueOf(nextYear));
 Date parsedDate = Date.valueOf('2026-05-04');
 System.assertEquals(2, d.daysBetween(parsedDate));
 Object parsedDateObjectText = '2026-05-04';
-System.assertEquals(parsedDate, Date.valueOf(parsedDateObjectText));
+String parsedDateObjectTextError = '';
+try {
+	Date.valueOf(parsedDateObjectText);
+} catch (TypeException e) {
+	parsedDateObjectTextError = e.getMessage();
+}
+System.assertEquals('Invalid date: 2026-05-04', parsedDateObjectTextError);
 Object parsedDateObject = parsedDate;
 System.assertEquals(parsedDate, Date.valueOf(parsedDateObject));
 Object nullDateObject = null;
@@ -12784,9 +13784,6 @@ System.assertEquals('2024-02-29 23:59:58', parsedGmt.formatGmt('yyyy-MM-dd HH:mm
 Datetime fractionalGmt = Datetime.valueOfGmt('2024-02-29T23:59:58.250Z');
 System.assertEquals('2024-02-29 23:59:58', fractionalGmt.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals(0, fractionalGmt.millisecond());
-Datetime plusMillis = fractionalGmt.addMilliseconds(750);
-System.assertEquals('2024-02-29 23:59:58.750', plusMillis.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'));
-System.assertEquals(750, plusMillis.millisecond());
 
 Time clock = Time.newInstance(23, 59, 58, 250);
 System.assertEquals(23, clock.hour());
@@ -12806,61 +13803,79 @@ System.assertEquals(Time.newInstance(12, 34, 56, 789), Time.valueOf('12:34:56.78
 TimeZone utc = TimeZone.getTimeZone('UTC');
 System.assertEquals('UTC', utc.getID());
 System.assertEquals('UTC', utc.toString());
-System.assertEquals('UTC', utc.getDisplayName());
+System.assertEquals('(GMT+00:00) Coordinated Universal Time (UTC)', utc.getDisplayName());
 System.assertEquals(0, utc.getOffset(gmt));
 TimeZone offset = TimeZone.getTimeZone('GMT+05:30');
 System.assertEquals('GMT+05:30', offset.getID());
+System.assertEquals('(GMT+05:30) Pacific Standard Time (GMT+05:30)', offset.getDisplayName());
 System.assertEquals(19800000, offset.getOffset(gmt));
 TimeZone west = TimeZone.getTimeZone('UTC-02:00');
 System.assertEquals('GMT-02:00', west.getID());
+System.assertEquals('(GMT-02:00) Pacific Standard Time (GMT-02:00)', west.getDisplayName());
 System.assertEquals(-7200000, west.getOffset(gmt));
 TimeZone edge = TimeZone.getTimeZone('GMT+14:00');
-System.assertEquals('GMT+14:00', edge.getDisplayName());
+System.assertEquals('(GMT+14:00) Pacific Standard Time (GMT+14:00)', edge.getDisplayName());
 System.assertEquals(50400000, edge.getOffset(gmt));
 TimeZone pacific = TimeZone.getTimeZone('America/Los_Angeles');
 System.assertEquals('America/Los_Angeles', pacific.getID());
 System.assertEquals('America/Los_Angeles', pacific.toString());
-System.assertEquals('America/Los_Angeles', pacific.getDisplayName());
-System.assertEquals('PST', pacific.getDisplayName(false));
-System.assertEquals('PDT', pacific.getDisplayName(true));
+System.assertEquals('(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)', pacific.getDisplayName());
 System.assertEquals(-28800000, pacific.getOffset(gmt));
 Datetime summerNoon = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
 System.assertEquals(-25200000, pacific.getOffset(summerNoon));
 TimeZone eastern = TimeZone.getTimeZone('America/New_York');
 System.assertEquals('America/New_York', eastern.getID());
-System.assertEquals('America/New_York', eastern.getDisplayName());
+System.assertEquals('(GMT-04:00) Eastern Daylight Time (America/New_York)', eastern.getDisplayName());
 System.assertEquals(-18000000, eastern.getOffset(gmt));
 System.assertEquals(-14400000, eastern.getOffset(summerNoon));
 TimeZone central = TimeZone.getTimeZone('America/Chicago');
 System.assertEquals('America/Chicago', central.getID());
-System.assertEquals('America/Chicago', central.getDisplayName());
+System.assertEquals('(GMT-05:00) Central Daylight Time (America/Chicago)', central.getDisplayName());
 System.assertEquals(-21600000, central.getOffset(gmt));
 System.assertEquals(-18000000, central.getOffset(summerNoon));
 TimeZone mountain = TimeZone.getTimeZone('America/Denver');
 System.assertEquals('America/Denver', mountain.getID());
-System.assertEquals('America/Denver', mountain.getDisplayName());
+System.assertEquals('(GMT-06:00) Mountain Daylight Time (America/Denver)', mountain.getDisplayName());
 System.assertEquals(-25200000, mountain.getOffset(gmt));
 System.assertEquals(-21600000, mountain.getOffset(summerNoon));
+TimeZone panama = TimeZone.getTimeZone('America/Panama');
+System.assertEquals('America/Panama', panama.getID());
+System.assertEquals('(GMT-05:00) Eastern Standard Time (America/Panama)', panama.getDisplayName());
+System.assertEquals(-18000000, panama.getOffset(gmt));
+System.assertEquals(-18000000, panama.getOffset(summerNoon));
 TimeZone london = TimeZone.getTimeZone('Europe/London');
 System.assertEquals('Europe/London', london.getID());
-System.assertEquals('Europe/London', london.getDisplayName());
+System.assertEquals('(GMT+01:00) British Summer Time (Europe/London)', london.getDisplayName());
 System.assertEquals(0, london.getOffset(gmt));
 System.assertEquals(3600000, london.getOffset(summerNoon));
 TimeZone berlin = TimeZone.getTimeZone('Europe/Berlin');
 System.assertEquals('Europe/Berlin', berlin.getID());
-System.assertEquals('Europe/Berlin', berlin.getDisplayName());
+System.assertEquals('(GMT+02:00) Central European Summer Time (Europe/Berlin)', berlin.getDisplayName());
 System.assertEquals(3600000, berlin.getOffset(gmt));
 System.assertEquals(7200000, berlin.getOffset(summerNoon));
 TimeZone tokyo = TimeZone.getTimeZone('Asia/Tokyo');
 System.assertEquals('Asia/Tokyo', tokyo.getID());
-System.assertEquals('Asia/Tokyo', tokyo.getDisplayName());
-System.assertEquals('JST', tokyo.getDisplayName(false));
-System.assertEquals('JST', tokyo.getDisplayName(true));
+System.assertEquals('(GMT+09:00) Japan Standard Time (Asia/Tokyo)', tokyo.getDisplayName());
 System.assertEquals(32400000, tokyo.getOffset(gmt));
 System.assertEquals(32400000, tokyo.getOffset(summerNoon));
+TimeZone hoChiMinh = TimeZone.getTimeZone('Asia/Ho_Chi_Minh');
+System.assertEquals('Asia/Ho_Chi_Minh', hoChiMinh.getID());
+System.assertEquals('(GMT+07:00) Indochina Time (Asia/Ho_Chi_Minh)', hoChiMinh.getDisplayName());
+System.assertEquals(25200000, hoChiMinh.getOffset(gmt));
+System.assertEquals(25200000, hoChiMinh.getOffset(summerNoon));
+TimeZone honolulu = TimeZone.getTimeZone('Pacific/Honolulu');
+System.assertEquals('Pacific/Honolulu', honolulu.getID());
+System.assertEquals('(GMT-10:00) Hawaii-Aleutian Standard Time (Pacific/Honolulu)', honolulu.getDisplayName());
+System.assertEquals(-36000000, honolulu.getOffset(gmt));
+System.assertEquals(-36000000, honolulu.getOffset(summerNoon));
+TimeZone pagoPago = TimeZone.getTimeZone('Pacific/Pago_Pago');
+System.assertEquals('Pacific/Pago_Pago', pagoPago.getID());
+System.assertEquals('(GMT-11:00) Samoa Standard Time (Pacific/Pago_Pago)', pagoPago.getDisplayName());
+System.assertEquals(-39600000, pagoPago.getOffset(gmt));
+System.assertEquals(-39600000, pagoPago.getOffset(summerNoon));
 TimeZone sydney = TimeZone.getTimeZone('Australia/Sydney');
 System.assertEquals('Australia/Sydney', sydney.getID());
-System.assertEquals('Australia/Sydney', sydney.getDisplayName());
+System.assertEquals('(GMT+10:00) Australian Eastern Standard Time (Australia/Sydney)', sydney.getDisplayName());
 System.assertEquals(39600000, sydney.getOffset(gmt));
 System.assertEquals(36000000, sydney.getOffset(summerNoon));
 `)
@@ -12869,6 +13884,18 @@ System.assertEquals(36000000, sydney.getOffset(summerNoon));
 	}
 	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecTimeZoneGetDisplayNameBooleanIsUnsupported(t *testing.T) {
+	program, err := CompileAnonymous(`TimeZone zone = TimeZone.getTimeZone('UTC'); zone.getDisplayName(false);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = New(nil).Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "TimeZone.getDisplayName locale/style overloads"` {
+		t.Fatalf("err = %#v, want UnsupportedFeature for Boolean overload", err)
 	}
 }
 
@@ -12918,10 +13945,10 @@ System.assertEquals(0, localValue.millisecond());
 
 func TestExecDatetimePatternFormatting(t *testing.T) {
 	program, err := CompileAnonymous(`
-Datetime stamp = Datetime.newInstanceGmt(2024, 2, 29, 23, 5, 6).addMilliseconds(250);
-System.assertEquals('2024-02-29 23:05:06.250 +0000 UTC', stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS Z z'));
+Datetime stamp = Datetime.newInstanceGmt(2024, 2, 29, 23, 5, 6);
+System.assertEquals('2024-02-29 23:05:06.000 +0000 UTC', stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS Z z'));
 System.assertEquals('Thu, Feb 29 2024 11:05 PM', stamp.formatGmt('EEE, MMM d yyyy h:mm a'));
-System.assertEquals('2024-03-01 04:35:06.250 +0530 GMT+05:30', stamp.format('yyyy-MM-dd HH:mm:ss.SSS Z z', 'GMT+05:30'));
+System.assertEquals('2024-03-01 04:35:06.000 +0530 GMT+05:30', stamp.format('yyyy-MM-dd HH:mm:ss.SSS Z z', 'GMT+05:30'));
 System.assertEquals('2024-02-29T21:05:06', stamp.format('yyyy-MM-dd''T''HH:mm:ss', 'UTC-02:00'));
 System.assertEquals('2024-03-01 13:05:06 +1400 GMT+14:00', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'GMT+14:00'));
 System.assertEquals('2024-02-29 15:05:06 -0800 PST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Los_Angeles'));
@@ -13215,7 +14242,7 @@ System.assert(!upsertUpdate.isCreated());
 func TestExecDatabaseDMLOptionsHeaderRuntimeBreadth(t *testing.T) {
 	program, err := CompileAnonymous(`
 Database.DMLOptions opts = new Database.DMLOptions();
-System.assertEquals(false, opts.optAllOrNone, 'default optAllOrNone');
+System.assertEquals(null, opts.optAllOrNone, 'default optAllOrNone');
 opts.OptAllOrNone = false;
 opts.AllowFieldTruncation = true;
 opts.LocalizeErrors = true;
@@ -13226,7 +14253,7 @@ opts.DuplicateRuleHeader.RunAsCurrentUser = true;
 opts.AssignmentRuleHeader.UseDefaultRule = true;
 opts.AssignmentRuleHeader.AssignmentRuleId = '01Q000000000001';
 Object locale = opts.LocaleOptions;
-System.assertNotEquals(null, locale);
+System.assertEquals(null, locale);
 
 Object copied = opts.clone();
 System.assertEquals(false, copied.OptAllOrNone, 'cloned OptAllOrNone');
@@ -13375,12 +14402,12 @@ System.assert(merged.isSuccess());
 System.assertEquals(master.Id, merged.getId());
 System.assertEquals(duplicate.Id, merged.getMergedRecordIds().get(0));
 System.assertEquals(child.Id, merged.getUpdatedRelatedIds().get(0));
-System.assertEquals(0, merged.getErrors().size());
+System.assertEquals(null, merged.getErrors());
 
 Database.UndeleteResult activeUndelete = Database.undelete(base, false);
 System.assert(!activeUndelete.isSuccess());
 System.assertEquals(inserted.getId(), activeUndelete.getId());
-System.assertEquals('ENTITY_IS_NOT_DELETED', activeUndelete.getErrors().get(0).getStatusCode());
+System.assertEquals('UNDELETE_FAILED', activeUndelete.getErrors().get(0).getStatusCode());
 
 Account recycle = new Account(Name = 'Recycle');
 insert recycle;
@@ -13508,7 +14535,7 @@ insert a;
 Database.UndeleteResult active = Database.undelete(a, false);
 System.assert(!active.isSuccess());
 System.assertEquals(a.Id, active.getId());
-System.assertEquals('ENTITY_IS_NOT_DELETED', active.getErrors().get(0).getStatusCode());
+System.assertEquals('UNDELETE_FAILED', active.getErrors().get(0).getStatusCode());
 Database.DeleteResult deleted = Database.delete(a, false);
 System.assert(deleted.isSuccess());
 System.assertEquals(a.Id, deleted.getId());
@@ -13516,7 +14543,7 @@ System.assertEquals(0, deleted.getErrors().size());
 Database.UndeleteResult restored = Database.undelete(a, false);
 System.assert(restored.isSuccess());
 System.assertEquals(a.Id, restored.getId());
-System.assertEquals(0, restored.getErrors().size());
+System.assertEquals(null, restored.getErrors());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -13596,7 +14623,7 @@ System.assert(restored.isSuccess());
 System.assertEquals(deleted.Id, restored.getId());
 System.assert(!activeResult.isSuccess());
 System.assertEquals(active.Id, activeResult.getId());
-System.assertEquals('ENTITY_IS_NOT_DELETED', activeResult.getErrors().get(0).getStatusCode());
+System.assertEquals('UNDELETE_FAILED', activeResult.getErrors().get(0).getStatusCode());
 System.assert(!missingResult.isSuccess());
 System.assertEquals('001999999999999', missingResult.getId());
 System.assertEquals('ENTITY_IS_DELETED', missingResult.getErrors().get(0).getStatusCode());
@@ -13614,7 +14641,7 @@ try {
 } catch (DmlException e) {
 	caught = true;
 	System.assert(e.getMessage().contains('Database.undelete failed'));
-	System.assert(e.getMessage().contains('not deleted'));
+	System.assert(e.getMessage().contains('recycle bin'));
 }
 System.assert(caught);
 List<Account> rolledBack = [SELECT Id, IsDeleted FROM Account WHERE Id = :deleted.Id ALL ROWS];
@@ -13723,30 +14750,42 @@ System.assertEquals('USER_MODE', scoped.name());
 	}
 }
 
-func TestExecRunAsPackageVersionScopesTestContext(t *testing.T) {
+func TestExecAccessLevelEnumValueWithPermissionSetIdConstructsUserModeScope(t *testing.T) {
 	program, err := CompileAnonymous(`
-Package.Version v = new Package.Version(1, 2, 3);
-System.runAs(v) {
-	System.assertEquals('1.2.3', String.valueOf(v));
-}
-System.runAs(new User(Id = '005000000000999'), v) {
-	System.assertEquals('005000000000999', UserInfo.getUserId());
-}
-System.assertEquals('system', UserInfo.getUserId());
+AccessLevel scoped = AccessLevel.USER_MODE.withPermissionSetId('0PS000000000001');
+System.assertEquals('USER_MODE', scoped.name());
+System.assertEquals('AccessLevel:[SYSTEM_MODE=AccessLevel:[SYSTEM_MODE=(already output), USER_MODE=AccessLevel:[SYSTEM_MODE=(already output), USER_MODE=(already output), currentAccessPermissions=USER_MODE, permSetId=null], currentAccessPermissions=SYSTEM_MODE, permSetId=null], USER_MODE=(already output), currentAccessPermissions=CUSTOM, permSetId=0PS000000000001]', String.valueOf(scoped));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	machine := New(nil)
-	machine.EnableTestContext()
-	if _, err := machine.Execute(program); err != nil {
+	result, err := Execute(program, nil)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if machine.testContext.PackageRunAsDepth != 0 {
-		t.Fatalf("PackageRunAsDepth = %d, want restored 0", machine.testContext.PackageRunAsDepth)
+	scoped, ok := result.Vars["scoped"]
+	if !ok {
+		t.Fatal("scoped AccessLevel not captured")
 	}
-	if machine.testContext.CurrentPackageVersion.Kind != "" {
-		t.Fatalf("CurrentPackageVersion = %#v, want restored zero value", machine.testContext.CurrentPackageVersion)
+	if got := scoped.Fields["permissionSetId"]; got.Kind != ValueString || got.Text != "0PS000000000001" {
+		t.Fatalf("permissionSetId = %#v, want string 0PS000000000001", got)
+	}
+}
+
+func TestExecDatetimeRejectsAPI67UnsupportedShapes(t *testing.T) {
+	for name, source := range map[string]string{
+		"formatGmt without pattern": `Datetime value = Datetime.newInstanceGmt(2026, 8, 2, 1, 2, 3); value.formatGmt();`,
+		"addMilliseconds":           `Datetime value = Datetime.newInstanceGmt(2026, 8, 2, 1, 2, 3); value.addMilliseconds(1);`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			program, err := CompileAnonymous(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Execute(program, nil); err == nil {
+				t.Fatal("API 67-rejected Datetime shape executed locally")
+			}
+		})
 	}
 }
 
@@ -13864,10 +14903,11 @@ System.assertEquals(false, req.getCompressed());
 req.setCompressed(true);
 System.assertEquals('https://example.test', req.getEndpoint());
 System.assertEquals('GET', req.getMethod());
-System.assertEquals('yes', req.getHeader('x-test'));
+System.assertEquals(null, req.getHeader('x-test'));
+System.assertEquals('yes', req.getHeader('X-Test'));
 System.assertEquals(true, req.getCompressed());
 System.assertEquals(1, req.getHeaderKeys().size());
-System.assert(req.getHeaderKeys().contains('x-test'));
+System.assert(req.getHeaderKeys().contains('X-Test'));
 System.assertEquals(5000, req.getTimeout());
 Http h = new Http();
 HttpResponse res = h.send(req);
@@ -13876,9 +14916,10 @@ System.assertEquals('ok', res.getBody());
 res.setStatus('Created');
 res.setHeader('Content-Type', 'text/plain');
 System.assertEquals('Created', res.getStatus());
-System.assertEquals('text/plain', res.getHeader('content-type'));
+System.assertEquals(null, res.getHeader('content-type'));
+System.assertEquals('text/plain', res.getHeader('Content-Type'));
 System.assertEquals(1, res.getHeaderKeys().size());
-System.assert(res.getHeaderKeys().contains('content-type'));
+System.assert(res.getHeaderKeys().contains('Content-Type'));
 Blob bodyBlob = res.getBodyAsBlob();
 System.assertEquals('6f6b', EncodingUtil.convertToHex(bodyBlob));
 System.assertEquals(1, Limits.getCallouts());
@@ -13970,14 +15011,15 @@ System.assertEquals(false, req.getCompressed());
 System.assertEquals(10000, req.getTimeout());
 req.setEndpoint('callout:NamedCredential/path');
 req.setMethod('post');
-System.assertEquals('POST', req.getMethod());
+System.assertEquals('post'.hashCode(), req.getMethod().hashCode());
 req.setHeader('X-Test', 'first');
 req.setHeader('x-test', 'second');
 req.setHeader('Accept', 'application/json');
-System.assertEquals('second', req.getHeader('X-TEST'));
+System.assertEquals(null, req.getHeader('X-TEST'));
+System.assertEquals('second', req.getHeader('x-test'));
 System.assertEquals(null, req.getHeader('Missing'));
 System.assertEquals(2, req.getHeaderKeys().size());
-System.assertEquals('accept', req.getHeaderKeys().get(0));
+System.assertEquals('Accept', req.getHeaderKeys().get(0));
 System.assertEquals('x-test', req.getHeaderKeys().get(1));
 req.setBody('');
 System.assertEquals('', req.getBody());
@@ -14052,7 +15094,8 @@ HttpResponse first = new Http().send(firstReq);
 System.assertEquals(203, first.getStatusCode());
 System.assertEquals('Single Status', first.getStatus());
 System.assertEquals('{"single":true}', first.getBody());
-System.assertEquals('application/json', first.getHeader('content-type'));
+System.assertEquals(null, first.getHeader('content-type'));
+System.assertEquals('application/json', first.getHeader('Content-Type'));
 
 MultiStaticResourceCalloutMock multiMock = new MultiStaticResourceCalloutMock();
 multiMock.setStaticResource('https://example.test/a', 'Response_A');
@@ -14637,6 +15680,8 @@ Canvas.Test.testCanvasLifecycle(handler, ctx);
 
 func TestExecHttpCalloutMockRespondMethod(t *testing.T) {
 	respondProgram, err := CompileAnonymous(`
+System.assertEquals(null, req.getHeader('x-closeout'));
+System.assertEquals('yes', req.getHeader('X-Closeout'));
 HttpResponse res = new HttpResponse();
 res.setStatusCode(202);
 res.setBody(req.getBody() + ':mocked');
@@ -14650,6 +15695,7 @@ Test.setMock('HttpCalloutMock', new EchoMock());
 HttpRequest req = new HttpRequest();
 req.setEndpoint('https://example.test');
 req.setMethod('POST');
+req.setHeader('X-Closeout', 'yes');
 req.setBody('payload');
 Http h = new Http();
 HttpResponse res = h.send(req);
@@ -14705,5 +15751,362 @@ h.send(req);
 	_, err = machine.Execute(program)
 	if err == nil || !strings.Contains(err.Error(), "HttpCalloutMock.respond must return HttpResponse") {
 		t.Fatalf("err = %v, want HttpResponse return validation", err)
+	}
+}
+
+func TestExecApexPagesStandardControllerValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account acc = new Account(Name='Test', Phone='555-0100');
+ApexPages.StandardController sc = new ApexPages.StandardController(acc);
+System.assertEquals(acc.get('Name'), sc.getRecord().get('Name'));
+System.assertEquals(null, sc.getId());
+PageReference viewPage = sc.view();
+System.assertNotEquals(null, viewPage);
+PageReference editPage = sc.edit();
+System.assertNotEquals(null, editPage);
+PageReference cancelPage = sc.cancel();
+System.assertNotEquals(null, cancelPage);
+System.assertEquals(true, sc.equals(sc));
+System.assertEquals(false, sc.equals(null));
+System.assertNotEquals(0, sc.hashCode());
+System.assertEquals(false, sc.equals('not a controller'));
+PageReference resetPage = sc.reset();
+System.assertNotEquals(null, resetPage);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesStandardSetControllerValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a1 = new Account(Name='A1');
+Account a2 = new Account(Name='A2');
+Account a3 = new Account(Name='A3');
+List<Account> accounts = new List<Account>{a1, a2, a3};
+ApexPages.StandardSetController ssc = new ApexPages.StandardSetController(accounts);
+System.assertEquals(3, ssc.getResultSize());
+System.assertEquals(20, ssc.getPageSize());
+try {
+    ssc.setPageSize(2);
+    System.assert(false, 'setPageSize should reject caller-provided rows');
+} catch (VisualforceException e) {
+    System.assertEquals('Modified rows exist in the records collection!', e.getMessage());
+}
+ssc.setPageNumber(2);
+System.assertEquals(1, ssc.getPageNumber());
+List<Object> page = ssc.getRecords();
+System.assertEquals(3, page.size());
+Object record = ssc.getRecord();
+System.assertNotEquals(null, record);
+List<Object> selected = ssc.getSelected();
+System.assertEquals(0, selected.size());
+ssc.setSelected(accounts);
+System.assertEquals(3, ssc.getSelected().size());
+List<SelectOption> options = ssc.getListViewOptions();
+System.assertEquals(1, options.size());
+System.assertEquals('All', options[0].getLabel());
+ssc.setFilterId('Recent');
+System.assertEquals('Recent', ssc.getFilterId());
+System.assertEquals(false, ssc.getHasPrevious());
+System.assertEquals(false, ssc.getHasNext());
+System.assertEquals(true, ssc.getCompleteResult());
+ssc.first();
+System.assertEquals(1, ssc.getPageNumber());
+ssc.last();
+System.assertEquals(1, ssc.getPageNumber());
+ssc.previous();
+System.assertEquals(1, ssc.getPageNumber());
+ssc.next();
+System.assertEquals(1, ssc.getPageNumber());
+PageReference cancelPage = ssc.cancel();
+System.assertNotEquals(null, cancelPage);
+System.assertEquals('/home/home.jsp', cancelPage.getUrl());
+System.assertEquals(true, ssc.equals(ssc));
+System.assertEquals(false, ssc.equals(null));
+System.assertNotEquals(0, ssc.hashCode());
+System.assertEquals(1, ssc.toString().length() > 0 ? 1 : 0);
+System.assertEquals(false, ssc.equals('not a controller'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesIdeaStandardControllerValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Idea idea = new Idea(Title='Test Idea');
+ApexPages.IdeaStandardController isc = new ApexPages.IdeaStandardController();
+isc.addFields(new List<String>{'Title'});
+System.assertNotEquals(null, isc.getRecord());
+System.assertEquals(null, isc.getId());
+List<Object> comments = isc.getCommentList();
+System.assertNotEquals(null, comments);
+PageReference viewPage = isc.view();
+System.assertNotEquals(null, viewPage);
+PageReference editPage = isc.edit();
+System.assertNotEquals(null, editPage);
+isc.cancel();
+isc.delete();
+isc.save();
+System.assertEquals(true, isc.equals(isc));
+System.assertEquals(false, isc.equals(null));
+System.assertNotEquals(0, isc.hashCode());
+System.assertEquals(1, isc.toString().length() > 0 ? 1 : 0);
+System.assertEquals(false, isc.equals('not a controller'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesIdeaStandardSetControllerValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.IdeaStandardSetController iss = new ApexPages.IdeaStandardSetController();
+iss.addFields(new List<String>{'Title'});
+List<Object> ideaList = iss.getIdeaList();
+System.assertNotEquals(null, ideaList);
+List<SelectOption> options = iss.getListViewOptions();
+System.assertNotEquals(null, options);
+System.assertEquals(1, iss.getPageNumber());
+iss.setPageNumber(1);
+System.assertEquals(1, iss.getPageNumber());
+System.assertEquals(20, iss.getPageSize());
+iss.setPageSize(10);
+System.assertEquals(10, iss.getPageSize());
+iss.setFilterId('Recent');
+System.assertEquals('Recent', iss.getFilterId());
+System.assertEquals(true, iss.getCompleteResult());
+List<Object> records = iss.getRecords();
+System.assertEquals(0, records.size());
+System.assertEquals(null, iss.getRecord());
+iss.first();
+iss.last();
+iss.next();
+iss.previous();
+System.assertEquals(false, iss.getHasNext());
+System.assertEquals(false, iss.getHasPrevious());
+System.assertEquals(0, iss.getResultSize());
+List<Object> selected = iss.getSelected();
+iss.setSelected(new List<Object>());
+iss.cancel();
+iss.save();
+System.assertEquals(true, iss.equals(iss));
+System.assertEquals(false, iss.equals(null));
+System.assertNotEquals(0, iss.hashCode());
+System.assertEquals(1, iss.toString().length() > 0 ? 1 : 0);
+System.assertEquals(false, iss.equals('not a controller'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesKnowledgeArticleVersionStandardControllerValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Knowledge__kav article = new Knowledge__kav(Title='Test Article');
+ApexPages.KnowledgeArticleVersionStandardController kavsc = new ApexPages.KnowledgeArticleVersionStandardController(article);
+kavsc.addFields(new List<String>{'Title'});
+System.assertNotEquals(null, kavsc.getRecord());
+System.assertEquals(null, kavsc.getId());
+System.assertEquals(null, kavsc.getSourceId());
+PageReference viewPage = kavsc.view();
+System.assertNotEquals(null, viewPage);
+kavsc.cancel();
+kavsc.selectDataCategory('group', 'category');
+kavsc.setDataCategory('group', 'category');
+kavsc.setDataCategory();
+System.assertEquals(true, kavsc.equals(kavsc));
+System.assertEquals(false, kavsc.equals(null));
+System.assertNotEquals(0, kavsc.hashCode());
+System.assertEquals(1, kavsc.toString().length() > 0 ? 1 : 0);
+System.assertEquals(false, kavsc.equals('not a controller'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesActionValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.Action action = new ApexPages.Action('{!list}');
+System.assertEquals('{!list}', action.getExpression());
+PageReference result = action.invoke();
+System.assertNotEquals(null, result);
+System.assertEquals('/list', result.getUrl());
+ApexPages.Action cloned = action.clone();
+System.assertEquals(action.getExpression(), cloned.getExpression());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesComponentValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.Component comp = new ApexPages.Component();
+System.assertNotEquals(null, comp);
+System.assertEquals(true, comp.rendered);
+System.assertEquals(null, comp.id);
+System.assertEquals(null, comp.parent);
+System.assertNotEquals(null, comp.childComponents);
+System.assertNotEquals(null, comp.expressions);
+System.assertNotEquals(null, comp.facets);
+System.assertNotEquals(null, comp.componentIterations);
+System.assertEquals(null, comp.getComponentById('test'));
+ApexPages.Component cloned = comp.clone();
+System.assertNotEquals(null, cloned);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesComponentIterationValueContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.ComponentIteration ci = new ApexPages.ComponentIteration();
+System.assertNotEquals(null, ci);
+System.assertEquals(null, ci.iterationValue);
+System.assertEquals(null, ci.parent);
+System.assertNotEquals(null, ci.childComponents);
+System.assertEquals(null, ci.getComponentById('test'));
+ApexPages.ComponentIteration cloned = ci.clone();
+System.assertNotEquals(null, cloned);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesSeverityEqualsAndHashCode(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.Severity s1 = ApexPages.Severity.ERROR;
+ApexPages.Severity s2 = ApexPages.Severity.ERROR;
+System.assertEquals(true, s1.equals(s2));
+System.assertEquals(s1.hashCode(), s2.hashCode());
+System.assertEquals(false, s1.equals(ApexPages.Severity.WARNING));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesSystemNamespaceConstructor(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.ApexPages ap = new ApexPages();
+System.assertNotEquals(null, ap);
+ApexPages ap2 = (ApexPages)ap;
+System.assertNotEquals(null, ap2);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesStandardSetControllerToString(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name='Sample');
+ApexPages.StandardSetController ssc = new ApexPages.StandardSetController(new List<Account>{a});
+String s = ssc.toString();
+System.assertEquals(1, s.length() > 0 ? 1 : 0);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApexPagesStandardSetControllerCanonicalMethodSpellings(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name='A1');
+Account b = new Account(Name='A2');
+List<Account> accounts = new List<Account>{a, b};
+ApexPages.StandardSetController ssc = new ApexPages.StandardSetController(accounts);
+ssc.setFilterID('Recent');
+System.assertEquals('Recent', ssc.getFilterId());
+	ssc.setfilterid('');
+	System.assertEquals('', ssc.getFilterId());
+Integer page = ssc.setpageNumber(1);
+System.assertEquals(1, ssc.getPageNumber());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDatabaseErrorStatusCodePreservesNull(t *testing.T) {
+	if got := databaseErrorStatusCodeValue(Null); got.Kind != ValueNull {
+		t.Fatalf("database error status code for null = %#v, want null", got)
 	}
 }

@@ -77,10 +77,15 @@ type TypeSymbol struct {
 	Annotations    []apexast.Annotation `json:"annotations,omitempty"`
 	TypeParameters []string             `json:"typeParameters,omitempty"`
 	IsTest         bool                 `json:"isTest,omitempty"`
-	SuperClass     string               `json:"superClass,omitempty"`
-	Interfaces     []string             `json:"interfaces,omitempty"`
-	Range          diagnostic.Range     `json:"range"`
-	Members        []MemberSymbol       `json:"members,omitempty"`
+	// ConstructorsAuthoritative is internal standard-platform metadata. It
+	// closes an intentionally empty or narrowed constructor set without
+	// exposing a synthetic Apex modifier through symbol JSON.
+	ConstructorsAuthoritative bool             `json:"-"`
+	EnumHashBase              *int64           `json:"-"` // measured platform enum family identity seed
+	SuperClass                string           `json:"superClass,omitempty"`
+	Interfaces                []string         `json:"interfaces,omitempty"`
+	Range                     diagnostic.Range `json:"range"`
+	Members                   []MemberSymbol   `json:"members,omitempty"`
 }
 
 // HasSourceSnapshot reports whether this symbol requires an Apex source

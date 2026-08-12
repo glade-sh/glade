@@ -595,6 +595,18 @@ private class PlatformBridgeTest {
 	}
 }
 
+func TestAnalyzeHttpCalloutMockOneLineFixtureShape(t *testing.T) {
+	t.Parallel()
+	mockSource := "public class CloseoutMockResponse implements HttpCalloutMock { public HttpResponse respond(HttpRequest req) { System.assertEquals('https://example.test/closeout', req.getEndpoint()); System.assertEquals('PATCH', req.getMethod()); System.assertEquals('payload', req.getBody()); System.assertEquals('yes', req.getHeader('x-closeout')); HttpResponse res = new HttpResponse(); res.setStatusCode(206); res.setStatus('Partial Content'); res.setBody(req.getBody() + ':mock'); res.setHeader('Content-Type', 'text/plain'); return res; } }"
+	result := analyzeDeclarationProject(t, map[string]string{
+		"CloseoutMockResponse.cls":                 mockSource,
+		"HttpSendLocalMockCloseoutFixtureTest.cls": "@isTest private class HttpSendLocalMockCloseoutFixtureTest { @isTest static void localMockSend() { Test.setMock(HttpCalloutMock.class, new CloseoutMockResponse()); HttpRequest req = new HttpRequest(); req.setEndpoint('https://example.test/closeout'); req.setMethod('patch'); req.setHeader('X-Closeout', 'yes'); req.setBody('payload'); HttpResponse res = new Http().send(req); System.assertEquals(1, Limits.getCallouts()); System.assertEquals(206, res.getStatusCode()); System.assertEquals('Partial Content', res.getStatus()); System.assertEquals('payload:mock', res.getBody()); System.assertEquals('text/plain', res.getHeader('content-type')); System.assert(res.getHeaderKeys().contains('content-type')); } }",
+	})
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics for one-line HTTP mock fixture: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzePlatformAPITestSetCurrentPageReferencePageToken(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -614,6 +626,60 @@ private class PageTokenTest {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeAPI67PlatformStaticCallsAcceptBroadObjectSignatures(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	classPath := filepath.Join(root, "API67PlatformCalls.cls")
+	writeSemaFile(t, classPath, `
+public class API67PlatformCalls {
+  public void run() {
+    Object order = DataSource.Order.get('cb70', 'cb70', (DataSource.OrderDirection)null);
+    Site.validatePassword(new Account(), 'cb70', 'cb70');
+    Test.setCurrentPage((Object)null);
+    Test.setCurrentPage((PageReference)null);
+    Test.setCurrentPageReference((Object)null);
+    Test.setCurrentPageReference((PageReference)null);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("API 67 platform calls should analyze: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeAPI67PlatformCallChecksRetainNegativeControls(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	classPath := filepath.Join(root, "API67PlatformNegativeControls.cls")
+	writeSemaFile(t, classPath, `
+public class API67PlatformNegativeControls {
+  public void run() {
+    List<String> values = new List<String>();
+    values.get(0, 1);
+    Database.SaveResult.isSuccess();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
+
+	result := Analyze(index)
+	var collectionArity, staticAccess bool
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA023" && strings.Contains(diag.Message, `invalid collection call "get"`) {
+			collectionArity = true
+		}
+		if diag.Code == "GLADESEMA027" && strings.Contains(diag.Message, "instance method called through a type") {
+			staticAccess = true
+		}
+	}
+	if !collectionArity || !staticAccess {
+		t.Fatalf("negative platform call controls were not preserved: %#v", result.Diagnostics)
 	}
 }
 
@@ -1569,7 +1635,7 @@ public class UsesDates {
     Datetime stampFromParts = Datetime.newInstance(today, Time.newInstance(1, 2, 3, 0));
     Datetime gmtStamp = Datetime.newInstanceGmt(2026, 5, 7, 1, 2, 3);
     Datetime parsedStamp = Datetime.valueOfGmt('2026-05-07T01:02:03Z');
-    Datetime later = stamp.addDays(1).addHours(2).addMinutes(3).addSeconds(4).addMilliseconds(5);
+    Datetime later = stamp.addDays(1).addHours(2).addMinutes(3).addSeconds(4);
     Date localDate = later.date();
     Date gmtDate = later.dateGmt();
     Time localTime = later.time();
@@ -1997,6 +2063,18 @@ func TestSemaPlatformConstructorSignaturesUseStandardSymbols(t *testing.T) {
 		},
 		{
 			name: "System.HttpRequest",
+			want: [][]string{{}},
+		},
+		{
+			name: "System.Exception",
+			want: [][]string{},
+		},
+		{
+			name: "System.InvalidParameterValueException",
+			want: [][]string{{"String", "String"}},
+		},
+		{
+			name: "System.NoAccessException",
 			want: [][]string{{}},
 		},
 	} {
@@ -5368,6 +5446,29 @@ public class UsesGeneratedStubStaticAccess {
 	}
 }
 
+func TestAnalyzeApexPagesAddMessagesOverloadsAreStatic(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesApexPagesAddMessages.cls"), `
+public class UsesApexPagesAddMessages {
+  public void run(Exception exception, Object value) {
+    ApexPages.addMessages(exception);
+    ApexPages.addMessages(value);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesApexPagesAddMessages.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA027" && strings.Contains(diag.Message, "addMessages") {
+			t.Fatalf("ApexPages.addMessages overloads should be static: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeSystemDateTodayStaticCall(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -5705,6 +5806,51 @@ public class UsesSObjectClone {
 	}
 }
 
+func TestAnalyzeStatusCodePrincipalEnumValues(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesPrincipalStatusCodes.cls"), `
+public class UsesPrincipalStatusCodes {
+  public void run() {
+    StatusCode a = StatusCode.PRINCIPAL_NOT_ASSIGNED;
+    StatusCode b = StatusCode.PRINCIPAL_NOT_CONFIGURED;
+    StatusCode c = StatusCode.PRINCIPAL_UNAUTHENTICATED;
+    StatusCode d = StatusCode.COMMERCE_SEARCH_RULES_SYNC_FAILED;
+    System.StatusCode sa = System.StatusCode.PRINCIPAL_NOT_ASSIGNED;
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesPrincipalStatusCodes.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected StatusCode principal diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeQuiddityRunIntegrationTests(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesQuiddityRunIT.cls"), `
+public class UsesQuiddityRunIT {
+  public void run() {
+    Quiddity q = Quiddity.RUN_INTEGRATION_TESTS;
+    System.Quiddity sq = System.Quiddity.RUN_INTEGRATION_TESTS;
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesQuiddityRunIT.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected Quiddity RUN_INTEGRATION_TESTS diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeAssertClassMethods(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -5964,6 +6110,27 @@ public class UsesSearchFind {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeAllowsSearchSuggestObjectOptionsSurface(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSearchSuggestObject.cls"), `
+public class UsesSearchSuggestObject {
+  public void run(String queryText) {
+    Object options = new Search.SuggestionOption();
+    Search.SuggestionResults results = Search.suggest(queryText, 'Account', options);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesSearchSuggestObject.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected Search.suggest(Object) diagnostics: %#v", result.Diagnostics)
 	}
 }
 
@@ -7132,6 +7299,7 @@ public class AffiliationTestData {
 func TestAnalyzeSObjectAddErrorAndTriggerStaticFlags(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "HandlerException.cls"), `public class HandlerException extends Exception {}`)
 	writeSemaFile(t, filepath.Join(root, "Handler.cls"), `
 public class Handler {
   public void run(List<Affiliation__c> affiliations) {
@@ -7139,14 +7307,14 @@ public class Handler {
       affiliation.addError('bad');
       affiliation.IsPrimaryContact__c.addError('bad');
       if (trigger.isInsert) {
-        affiliation.addError(new Exception('bad'), false);
+        affiliation.addError(new HandlerException('bad'), false);
       }
     }
   }
 }
 `)
 	index := typesys.Build(
-		project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Handler.cls")}},
+		project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "HandlerException.cls"), filepath.Join(root, "Handler.cls")}},
 		schema.Schema{Objects: []schema.Object{{
 			Name: "Affiliation__c",
 			Fields: []schema.Field{{
@@ -7869,6 +8037,26 @@ public class Hello {
 	for _, diag := range result.Diagnostics {
 		if diag.Code == "GLADESEMA023" && strings.Contains(diag.Message, "deepClone") {
 			t.Fatalf("unexpected List.deepClone diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeSetDeepClone(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public Set<Account> run(Set<Account> accounts) {
+    return accounts.deepClone();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA023" && strings.Contains(diag.Message, "deepClone") {
+			t.Fatalf("unexpected Set.deepClone diagnostic: %#v", result.Diagnostics)
 		}
 	}
 }
@@ -9611,6 +9799,23 @@ public class StandardRegistrationValidator {
 	}
 }
 
+func TestAnalyzeUpdatedWindowLocalDeclarationsRemainVisible(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "DatabaseUpdatedSyncWindowFixtureTest.cls"), `
+@isTest private class DatabaseUpdatedSyncWindowFixtureTest { @isTest static void updatedWindowReturnsMatchingIds() { Account account = new Account(Name = 'Before'); insert account; account.Name = 'After'; update account; Datetime startWindow = Datetime.newInstanceGmt(2026, 5, 2, 11, 59, 0); Datetime endWindow = Datetime.newInstanceGmt(2026, 5, 2, 12, 5, 0); Database.GetUpdatedResult inside = Database.getUpdated('Account', startWindow, endWindow); System.assert(inside.getIds().contains(account.Id)); } }
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "DatabaseUpdatedSyncWindowFixtureTest.cls")}}, schema.Schema{
+		Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Name", Type: "String"}}}},
+	})
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA013" && (strings.Contains(diag.Message, "startWindow") || strings.Contains(diag.Message, "endWindow")) {
+			t.Fatalf("unexpected unknown window variable diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeVisibleOverrideWinsOverProtectedBaseMethod(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -10995,6 +11200,30 @@ public class SOQL {
 	}
 	if getExcludeCount != 0 || missingNestedCount != 1 {
 		t.Fatalf("nested interface diagnostics getExclude=%d missingNested=%d all=%#v", getExcludeCount, missingNestedCount, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeNestedPlatformInterfaceImplementation(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "CB112_MessagingNotificationHandlerTest.cls"), `
+public class CB112_MessagingNotificationHandlerTest {
+  public class NotificationHandler implements Messaging.NotificationActionHandler {
+    public Messaging.ActionResult executeAction(Messaging.ActionableNotification notification) {
+      return null;
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "CB112_MessagingNotificationHandlerTest.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA017" {
+			t.Fatalf("nested platform interface implementation was rejected: %#v", result.Diagnostics)
+		}
 	}
 }
 

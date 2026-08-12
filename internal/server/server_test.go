@@ -1701,6 +1701,7 @@ func TestSObjectResourceShape(t *testing.T) {
 func TestSObjectDescribePayloadIncludesCommonMetadataShape(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
+	account.Definition.EnableSearch = true
 	account.Definition.Label = "Account"
 	account.Definition.PluralLabel = "Accounts"
 	account.Definition.Fields["Id"] = storage.Field{APIName: "Id", Label: "Account ID", Type: storage.FieldID, Required: true}
@@ -1808,6 +1809,33 @@ func TestSObjectDescribePayloadIncludesCommonMetadataShape(t *testing.T) {
 	cold, ok := values[1].(map[string]any)
 	if !ok || cold["value"] != "Cold" || cold["label"] != "Cold" || cold["active"] != false || cold["defaultValue"] != false {
 		t.Fatalf("cold picklist value = %#v", values[1])
+	}
+}
+
+func TestDescribePayloadSearchabilityUsesObjectDefinition(t *testing.T) {
+	account, ok := storage.StandardObjectDefinition("Account")
+	if !ok {
+		t.Fatal("Account standard definition missing")
+	}
+
+	for _, tc := range []struct {
+		name       string
+		definition storage.ObjectDefinition
+		want       bool
+	}{
+		{name: "default custom object", definition: storage.ObjectDefinition{APIName: "Default__c"}, want: false},
+		{name: "enabled custom object", definition: storage.ObjectDefinition{APIName: "Enabled__c", EnableSearch: true}, want: true},
+		{name: "Account", definition: account, want: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			searchable, ok := describePayload(tc.definition, nil)["searchable"].(bool)
+			if !ok {
+				t.Fatalf("searchable payload value has wrong type: %#v", describePayload(tc.definition, nil)["searchable"])
+			}
+			if searchable != tc.want {
+				t.Fatalf("searchable = %v, want %v", searchable, tc.want)
+			}
+		})
 	}
 }
 
@@ -4625,14 +4653,21 @@ func TestToolingExecuteAnonymousLocalEventBusAndConnectApiStubs(t *testing.T) {
 	org.OrgID = "00DLOCAL00000001"
 	handler := New(&org)
 
-	body := `{"anonymousBody":"Database.SaveResult eventResult = EventBus.publish(new Account(Name = 'Local Event')); System.assert(eventResult.isSuccess()); ConnectApi.OrganizationSettings settings = ConnectApi.Organization.getSettings(); System.assertEquals('00DLOCAL00000001', settings.orgId);"}`
+	body := `{"anonymousBody":"EventBus.publish(new Account(Name = 'Local Event'));"}`
 	exec := httptest.NewRecorder()
 	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/tooling/executeAnonymous", strings.NewReader(body)))
-	if exec.Code != http.StatusOK || !bytes.Contains(exec.Body.Bytes(), []byte(`"success":true`)) {
+	if exec.Code != http.StatusOK || !bytes.Contains(exec.Body.Bytes(), []byte(`"success":false`)) || !bytes.Contains(exec.Body.Bytes(), []byte("platform events")) {
 		t.Fatalf("executeAnonymous event/connect status = %d body=%s", exec.Code, exec.Body.String())
 	}
 	if len(org.Objects["Account"].Records) != 0 {
 		t.Fatalf("EventBus publish should not persist event payload locally: %#v", org.Objects["Account"].Records)
+	}
+
+	connect := httptest.NewRecorder()
+	connectBody := `{"anonymousBody":"ConnectApi.OrganizationSettings settings = ConnectApi.Organization.getSettings(); System.assertEquals('00DLOCAL00000001', settings.orgId);"}`
+	handler.ServeHTTP(connect, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/tooling/executeAnonymous", strings.NewReader(connectBody)))
+	if connect.Code != http.StatusOK || !bytes.Contains(connect.Body.Bytes(), []byte(`"success":true`)) {
+		t.Fatalf("executeAnonymous ConnectApi status = %d body=%s", connect.Code, connect.Body.String())
 	}
 }
 

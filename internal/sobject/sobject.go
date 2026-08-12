@@ -141,6 +141,7 @@ type DescribeSObjectResult struct {
 	PluralLabel     string                         `json:"pluralLabel,omitempty"`
 	KeyPrefix       string                         `json:"keyPrefix,omitempty"`
 	SharingModel    string                         `json:"sharingModel,omitempty"`
+	EnableSearch    bool                           `json:"enableSearch,omitempty"`
 	Metadata        map[string]string              `json:"metadata,omitempty"`
 	Fields          map[string]DescribeFieldResult `json:"fields,omitempty"`
 	Relationships   []storage.Relationship         `json:"relationships,omitempty"`
@@ -221,6 +222,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			PluralLabel:  object.PluralLabel,
 			KeyPrefix:    prefixes[object.Name],
 			SharingModel: object.SharingModel,
+			EnableSearch: object.EnableSearch,
 			Fields:       make(map[string]DescribeFieldResult, len(object.Fields)),
 		}
 		if strings.HasSuffix(object.Name, "__mdt") {
@@ -259,6 +261,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			if strings.EqualFold(field.Type, "Summary") {
 				fieldType = storage.FieldSummary
 			}
+			autoNumber := strings.EqualFold(field.Type, "AutoNumber")
 			var updateable *bool
 			if strings.EqualFold(field.Type, "MasterDetail") {
 				updateable = storage.BoolFlag(false)
@@ -280,6 +283,8 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				DisplayType:           displayFieldType(field.Type),
 				Label:                 labelOrName(field.Label, field.Name),
 				InlineHelpText:        field.InlineHelpText,
+				AutoNumber:            autoNumber,
+				DisplayFormat:         field.DisplayFormat,
 				Length:                field.Length,
 				Precision:             field.Precision,
 				Scale:                 field.Scale,
@@ -297,7 +302,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				Required:              field.Required,
 				ExternalID:            field.ExternalID,
 				Unique:                field.Unique,
-				IDLookup:              field.IDLookup,
+				IDLookup:              field.IDLookup || field.ExternalID,
 				Encrypted:             field.Encrypted,
 				RestrictedPicklist:    field.RestrictedPicklist,
 				NamePointing:          len(references) > 1,
@@ -408,6 +413,9 @@ func mergeSchemaObject(base, overlay schema.Object) schema.Object {
 	}
 	if overlay.CustomSettingsType != "" {
 		base.CustomSettingsType = overlay.CustomSettingsType
+	}
+	if overlay.EnableSearch {
+		base.EnableSearch = true
 	}
 	if overlay.NameField.Type != "" || overlay.NameField.Label != "" || overlay.NameField.DisplayFormat != "" {
 		base.NameField = overlay.NameField
@@ -528,6 +536,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 		PluralLabel:     describe.PluralLabel,
 		KeyPrefix:       describe.KeyPrefix,
 		SharingModel:    describe.SharingModel,
+		EnableSearch:    describe.EnableSearch,
 		Fields:          make(map[string]storage.Field, len(describe.Fields)),
 		Relations:       append([]storage.Relationship(nil), describe.Relationships...),
 		RecordTypes:     make([]storage.RecordTypeInfo, 0, len(describe.RecordTypes)),
@@ -610,6 +619,7 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 		PluralLabel:     definition.PluralLabel,
 		KeyPrefix:       definition.KeyPrefix,
 		SharingModel:    definition.SharingModel,
+		EnableSearch:    definition.EnableSearch,
 		Fields:          make(map[string]DescribeFieldResult, len(definition.Fields)),
 		Relationships:   append([]storage.Relationship(nil), definition.Relations...),
 		RecordTypes:     make([]DescribeRecordTypeInfo, 0, len(definition.RecordTypes)),
@@ -702,15 +712,21 @@ func ensureDescribeField(fields map[string]DescribeFieldResult, name, typ, label
 }
 
 func displayFieldType(raw string) string {
-	switch raw {
-	case "Number":
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "number":
 		return "DOUBLE"
-	case "Currency":
+	case "currency":
 		return "CURRENCY"
-	case "Percent":
+	case "percent":
 		return "PERCENT"
-	case "TextArea", "LongTextArea":
+	case "textarea", "longtextarea":
 		return "TEXTAREA"
+	case "email":
+		return "EMAIL"
+	case "url":
+		return "URL"
+	case "autonumber":
+		return "STRING"
 	default:
 		return string(storageFieldType(raw))
 	}
@@ -851,32 +867,32 @@ func labelOrName(label, name string) string {
 }
 
 func storageFieldType(raw string) storage.FieldType {
-	switch raw {
-	case "Text", "TextArea", "LongTextArea", "Email", "Phone", "Url", "EncryptedText":
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "text", "textarea", "longtextarea", "email", "phone", "url", "encryptedtext", "autonumber":
 		return storage.FieldString
-	case "Picklist":
+	case "picklist":
 		return storage.FieldPicklist
-	case "MultiselectPicklist":
+	case "multiselectpicklist":
 		return storage.FieldMultiPicklist
-	case "Checkbox":
+	case "checkbox":
 		return storage.FieldBoolean
-	case "Number", "Currency", "Percent":
+	case "number", "currency", "percent":
 		return storage.FieldDecimal
-	case "Date":
+	case "date":
 		return storage.FieldDate
-	case "DateTime":
+	case "datetime":
 		return storage.FieldDateTime
-	case "Location":
+	case "location":
 		return storage.FieldLocation
-	case "Lookup", "MasterDetail", "MetadataRelationship":
+	case "lookup", "masterdetail", "metadatarelationship":
 		return storage.FieldReference
-	case "Id":
+	case "id":
 		return storage.FieldID
-	case "Base64":
+	case "base64":
 		return storage.FieldBlob
-	case "Formula":
+	case "formula":
 		return storage.FieldCalculated
-	case "Summary":
+	case "summary":
 		return storage.FieldSummary
 	default:
 		return storage.FieldAny

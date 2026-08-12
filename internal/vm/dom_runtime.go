@@ -12,13 +12,23 @@ func newDomDocument() Value {
 	doc.Fields["root"] = Null
 	return doc
 }
+var domXmlNodeTypeNames = []string{"ELEMENT", "TEXT", "COMMENT"}
+
+func domXmlNodeTypeOrdinal(name string) int {
+	for i, candidate := range domXmlNodeTypeNames {
+		if strings.EqualFold(candidate, name) {
+			return i
+		}
+	}
+	return -1
+}
+
 func domXmlNodeTypeValue(name string) (Value, bool) {
-	switch strings.ToUpper(name) {
-	case "ELEMENT", "TEXT", "COMMENT":
-		return Value{Kind: ValueObject, Type: "Dom.XmlNodeType", Text: strings.ToUpper(name)}, true
-	default:
+	ordinal := domXmlNodeTypeOrdinal(name)
+	if ordinal < 0 {
 		return Null, false
 	}
+	return Value{Kind: ValueObject, Type: "Dom.XmlNodeType", Text: domXmlNodeTypeNames[ordinal], Fields: map[string]Value{"ordinal": Int(int64(ordinal))}}, true
 }
 func newDomXmlNode(nodeType, name, namespace, text string) Value {
 	node := Object("Dom.XmlNode")
@@ -342,7 +352,7 @@ func callDomXmlNodeMember(receiver Value, method string, args []Value) (Value, V
 		}
 		var text strings.Builder
 		for _, child := range domNodeList(receiver, "children").List {
-			if domNodeType(child) == "TEXT" || domNodeType(child) == "COMMENT" {
+			if domNodeType(child) == "TEXT" {
 				text.WriteString(domString(child.Fields["text"]))
 			}
 		}

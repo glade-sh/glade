@@ -57,12 +57,6 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, err
 		}
 		return Int(int64(stringIndexOfAnyBut(receiver.Text, chars))), true, nil
-	case "lastIndexOfAny":
-		chars, err := stringArg("String.lastIndexOfAny", args)
-		if err != nil {
-			return Null, true, err
-		}
-		return Int(int64(stringLastIndexOfAny(receiver.Text, chars))), true, nil
 	case "containsWhitespace":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.containsWhitespace expects 0 arguments")
@@ -99,31 +93,11 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
 		}
 		return String(escapeXML(receiver.Text)), true, nil
-	case "escapeXml10":
-		if len(args) != 0 {
-			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
-		}
-		return String(escapeXML10(receiver.Text)), true, nil
-	case "escapeXml11":
-		if len(args) != 0 {
-			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
-		}
-		return String(escapeXML11(receiver.Text)), true, nil
 	case "unescapeXml":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
 		}
 		return String(unescapeXMLEntities(receiver.Text, xmlEntityAny)), true, nil
-	case "unescapeXml10":
-		if len(args) != 0 {
-			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
-		}
-		return String(unescapeXMLEntities(receiver.Text, xmlEntity10)), true, nil
-	case "unescapeXml11":
-		if len(args) != 0 {
-			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
-		}
-		return String(unescapeXMLEntities(receiver.Text, xmlEntity11)), true, nil
 	case "escapeJava":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.escapeJava expects 0 arguments")
@@ -257,18 +231,6 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, err
 		}
 		return Int(int64(stringIndexOfDifference(receiver.Text, other))), true, nil
-	case "ordinalIndexOf":
-		needle, ordinal, err := stringStringIntArgs("String.ordinalIndexOf", args)
-		if err != nil {
-			return Null, true, err
-		}
-		return Int(int64(stringOrdinalIndexOf(receiver.Text, needle, ordinal, false))), true, nil
-	case "lastOrdinalIndexOf":
-		needle, ordinal, err := stringStringIntArgs("String.lastOrdinalIndexOf", args)
-		if err != nil {
-			return Null, true, err
-		}
-		return Int(int64(stringOrdinalIndexOf(receiver.Text, needle, ordinal, true))), true, nil
 	case "replace":
 		target, replacement, ok := stringReplacementArgs(args)
 		if !ok {
@@ -278,18 +240,6 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return receiver, true, nil
 		}
 		return String(strings.ReplaceAll(receiver.Text, target, replacement)), true, nil
-	case "replaceOnce":
-		target, replacement, ok := stringReplacementArgs(args)
-		if !ok {
-			return Null, true, fmt.Errorf("String.replaceOnce expects target and replacement Strings")
-		}
-		return String(stringReplaceLiteral(receiver.Text, target, replacement, false, true)), true, nil
-	case "replaceIgnoreCase":
-		target, replacement, ok := stringReplacementArgs(args)
-		if !ok {
-			return Null, true, fmt.Errorf("String.replaceIgnoreCase expects target and replacement Strings")
-		}
-		return String(stringReplaceLiteral(receiver.Text, target, replacement, true, false)), true, nil
 	case "replaceAll":
 		replaced, err := stringRegexReplace("String.replaceAll", receiver.Text, args, true)
 		if err != nil {
@@ -317,12 +267,6 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, err
 		}
 		return String(strings.ReplaceAll(receiver.Text, needle, "")), true, nil
-	case "removeIgnoreCase":
-		needle, err := stringArg("String.removeIgnoreCase", args)
-		if err != nil {
-			return Null, true, err
-		}
-		return String(stringReplaceLiteral(receiver.Text, needle, "", true, false)), true, nil
 	case "removeStart":
 		prefix, err := stringArg("String.removeStart", args)
 		if err != nil {
@@ -524,12 +468,6 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, err
 		}
 		return String(stringOverlay(receiver.Text, overlay, start, end)), true, nil
-	case "rotate":
-		shift, err := stringIntArg("String.rotate", args)
-		if err != nil {
-			return Null, true, err
-		}
-		return String(stringRotate(receiver.Text, shift)), true, nil
 	case "swapCase":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.swapCase expects 0 arguments")
@@ -547,12 +485,6 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, err
 		}
 		return String(stringDifference(receiver.Text, other)), true, nil
-	case "commonPrefix":
-		other, err := stringArg("String.commonPrefix", args)
-		if err != nil {
-			return Null, true, err
-		}
-		return String(commonPrefix([]string{receiver.Text, other})), true, nil
 	case "getLevenshteinDistance":
 		distance, err := stringLevenshteinDistance("String.getLevenshteinDistance", receiver.Text, args)
 		if err != nil {
@@ -616,50 +548,11 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, fmt.Errorf("String.deleteWhitespace expects 0 arguments")
 		}
 		return String(strings.Join(strings.Fields(receiver.Text), "")), true, nil
-	case "strip":
-		stripped, err := stringStrip(receiver.Text, args, stripBoth)
-		if err != nil {
-			return Null, true, err
-		}
-		return String(stripped), true, nil
-	case "stripStart":
-		stripped, err := stringStrip(receiver.Text, args, stripStart)
-		if err != nil {
-			return Null, true, err
-		}
-		return String(stripped), true, nil
-	case "stripEnd":
-		stripped, err := stringStrip(receiver.Text, args, stripEnd)
-		if err != nil {
-			return Null, true, err
-		}
-		return String(stripped), true, nil
 	case "stripHtmlTags":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.stripHtmlTags expects 0 arguments")
 		}
 		return String(stripHTMLTags(receiver.Text)), true, nil
-	case "stripToNull":
-		if len(args) != 0 {
-			return Null, true, fmt.Errorf("String.stripToNull expects 0 arguments")
-		}
-		stripped, err := stringStrip(receiver.Text, args, stripBoth)
-		if err != nil {
-			return Null, true, err
-		}
-		if stripped == "" {
-			return Null, true, nil
-		}
-		return String(stripped), true, nil
-	case "stripToEmpty":
-		if len(args) != 0 {
-			return Null, true, fmt.Errorf("String.stripToEmpty expects 0 arguments")
-		}
-		stripped, err := stringStrip(receiver.Text, args, stripBoth)
-		if err != nil {
-			return Null, true, err
-		}
-		return String(stripped), true, nil
 	case "normalizeSpace":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.normalizeSpace expects 0 arguments")

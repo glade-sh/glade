@@ -226,7 +226,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 		if op == "upsert" {
 			row.Fields["created"] = Bool(dmlResult.Created)
 		}
-		row.Fields["errors"] = databaseErrorsList(dmlResult)
+		row.Fields["errors"] = databaseErrorsList(dmlResult, resultType)
 		values = append(values, row)
 	}
 	if args[0].Kind == ValueList {
@@ -396,7 +396,7 @@ func databaseAsyncLocatorValue(value Value) Value {
 
 func newDatabaseDMLOptions() Value {
 	options := Object("Database.DMLOptions")
-	options.Fields["allowFieldTruncation"] = Bool(false)
+	options.Fields["allowFieldTruncation"] = Null
 	options.Fields["AllowFieldTruncation"] = options.Fields["allowFieldTruncation"]
 	options.Fields["assignmentRuleHeader"] = newDatabaseHeaderObject("Database.AssignmentRuleHeader")
 	options.Fields["AssignmentRuleHeader"] = options.Fields["assignmentRuleHeader"]
@@ -404,12 +404,12 @@ func newDatabaseDMLOptions() Value {
 	options.Fields["DuplicateRuleHeader"] = options.Fields["duplicateRuleHeader"]
 	options.Fields["emailHeader"] = newDatabaseHeaderObject("Database.EmailHeader")
 	options.Fields["EmailHeader"] = options.Fields["emailHeader"]
-	options.Fields["localeOptions"] = Object("Database.LocaleOptions")
-	options.Fields["LocaleOptions"] = options.Fields["localeOptions"]
-	options.Fields["localizeErrors"] = Bool(false)
+	options.Fields["localeOptions"] = Null
+	options.Fields["LocaleOptions"] = Null
+	options.Fields["localizeErrors"] = Null
 	options.Fields["LocalizeErrors"] = options.Fields["localizeErrors"]
-	options.Fields["optAllOrNone"] = Bool(false)
-	options.Fields["OptAllOrNone"] = options.Fields["optAllOrNone"]
+	options.Fields["optAllOrNone"] = Null
+	options.Fields["OptAllOrNone"] = Null
 	return options
 }
 
@@ -653,7 +653,7 @@ func (vm *VM) executeDatabaseRecordAction(op string, args []Value, result *Resul
 		row.Fields["success"] = Bool(dmlResult.Success)
 		row.Fields["id"] = databaseResultIDValue(dmlResult.ID)
 		row.Fields["error"] = String(dmlResult.Error)
-		row.Fields["errors"] = databaseErrorsList(dmlResult)
+		row.Fields["errors"] = databaseErrorsList(dmlResult, resultType)
 		values = append(values, row)
 	}
 	if args[0].Kind == ValueList {
@@ -869,7 +869,7 @@ func databaseNestedSaveResult(results []dml.Result, relationships []Value) Value
 		row.Fields["success"] = Bool(results[0].Success)
 		row.Fields["id"] = databaseResultIDValue(results[0].ID)
 		row.Fields["error"] = String(results[0].Error)
-		row.Fields["errors"] = databaseErrorsList(results[0])
+		row.Fields["errors"] = databaseErrorsList(results[0], "Database.NestedSaveResult")
 	}
 	row.Fields["relationshipSaveResults"] = List(relationships...)
 	return row
@@ -1028,6 +1028,9 @@ func databaseCursorFetch(receiver Value, method string, args []Value, deleted bo
 	if size < 0 {
 		size = 0
 	}
+	if (strings.EqualFold(receiver.Type, "Database.Cursor") || strings.EqualFold(receiver.Type, "Database.PaginationCursor")) && size > 0 && start+size > len(records.List) {
+		return Null, receiver, false, true, newExceptionError("System.InvalidParameterValueException", fmt.Sprintf("Fetch beyond bound detected: %d", start+size))
+	}
 	if start > len(records.List) {
 		start = len(records.List)
 	}
@@ -1045,7 +1048,11 @@ func databaseCursorFetch(receiver Value, method string, args []Value, deleted bo
 	}
 	out := Object("Database.CursorFetchResult")
 	out.Fields["records"] = page
-	out.Fields["nextIndex"] = Int(int64(end))
+	nextIndex := end
+	if end >= len(records.List) {
+		nextIndex = 0
+	}
+	out.Fields["nextIndex"] = Int(int64(nextIndex))
 	out.Fields["numDeletedRecords"] = Int(0)
 	out.Fields["done"] = Bool(end >= len(records.List))
 	return out, receiver, false, true, nil
@@ -1408,7 +1415,7 @@ func (vm *VM) mergeResultValue(listInput bool, duplicates []storage.Record, resu
 			updatedRelatedIDs.List = append(updatedRelatedIDs.List, String(string(id)))
 		}
 		row.Fields["updatedRelatedIds"] = updatedRelatedIDs
-		row.Fields["errors"] = databaseErrorsList(dmlResult)
+		row.Fields["errors"] = databaseErrorsList(dmlResult, "Database.MergeResult")
 		values = append(values, row)
 	}
 	if listInput {
@@ -3280,8 +3287,10 @@ func (vm *VM) objectState(objectName string) (storage.ObjectState, bool) {
 		objectName = canonical
 	}
 	object, ok := vm.Org.Objects[objectName]
-	if ok {
+	if ok && storage.StandardObjectFieldsNeedWrite(object.Definition) {
+		object.Definition = object.Definition.Clone()
 		storage.EnsureStandardObjectFields(&object.Definition)
+		vm.Org.Objects[objectName] = object
 	}
 	return object, ok
 }

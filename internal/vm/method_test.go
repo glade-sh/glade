@@ -11384,7 +11384,7 @@ System.enqueueJob(new DelayWorker(), opts);
 	}
 }
 
-func TestExecStopTestDrainsOnlyQueueablesDueOnDeterministicClock(t *testing.T) {
+func TestExecStopTestDrainsQueueablesRegardlessOfDelay(t *testing.T) {
 	program, err := CompileAnonymous(`
 Test.startTest();
 System.enqueueJob(new ImmediateWorker());
@@ -11406,13 +11406,13 @@ Test.stopTest();
 	}
 	immediate := countRecordsByName(t, org, "Account", "immediate")
 	delayed := countRecordsByName(t, org, "Account", "delayed")
-	if immediate != 1 || delayed != 0 {
-		t.Fatalf("record counts immediate=%d delayed=%d, want 1/0", immediate, delayed)
+	if immediate != 1 || delayed != 1 {
+		t.Fatalf("record counts immediate=%d delayed=%d, want 1/1", immediate, delayed)
 	}
 	delayedJob := org.Objects["AsyncApexJob"].Records[storage.ID("707000000000002")]
 	status, _ := delayedJob.GetField("Status")
-	if status.String != "Queued" {
-		t.Fatalf("delayed job status = %#v, want Queued", status)
+	if status.String != "Completed" {
+		t.Fatalf("delayed job status = %#v, want Completed", status)
 	}
 }
 
@@ -11443,6 +11443,55 @@ System.enqueueJob(new DelayedWorker(), 5);
 	}
 	if got := countRecordsByName(t, org, "Account", "delayed"); got != 1 {
 		t.Fatalf("delayed records = %d, want 1", got)
+	}
+}
+
+func TestExecStopTestDrainsDelayedQueueableAsyncInfo(t *testing.T) {
+	program, err := CompileAnonymous(`
+AsyncOptions opts = new AsyncOptions();
+opts.setMinimumQueueableDelayInMinutes(7);
+System.assertEquals(7, opts.getMinimumQueueableDelayInMinutes());
+Test.startTest();
+System.enqueueJob(new DelayFixture.QueueWorker(), opts);
+Test.stopTest();
+System.assertEquals(7, DelayFixture.seenDelay);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queueProgram, err := CompileAnonymous(`
+DelayFixture.seenDelay = System.AsyncInfo.getMinimumQueueableDelayInMinutes();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "DelayFixture",
+		StaticFields: map[string]Field{
+			"seenDelay": {Name: "seenDelay", Type: "Integer", Static: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "DelayFixture.QueueWorker",
+		Interfaces: []string{"Queueable"},
+		Methods: map[string]Method{
+			"execute": {
+				Name:       "DelayFixture.QueueWorker.execute",
+				ClassName:  "DelayFixture.QueueWorker",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "QueueableContext"}},
+				Program:    queueProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

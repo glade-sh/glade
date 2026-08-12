@@ -3099,7 +3099,7 @@ func sameAliasRuntimeContent(left, right Value, seen map[[2]uint64]bool) bool {
 		}
 		return true
 	case ValueMap:
-		if len(left.Map) != len(right.Map) || len(left.MapKeys) != len(right.MapKeys) {
+		if len(left.Map) != len(right.Map) || len(left.MapKeys) != len(right.MapKeys) || len(left.MapOrder) != len(right.MapOrder) {
 			return false
 		}
 		for key, leftValue := range left.Map {
@@ -3111,6 +3111,11 @@ func sameAliasRuntimeContent(left, right Value, seen map[[2]uint64]bool) bool {
 		for key, leftValue := range left.MapKeys {
 			rightValue, ok := right.MapKeys[key]
 			if !ok || !sameAliasRuntimeContent(leftValue, rightValue, seen) {
+				return false
+			}
+		}
+		for i := range left.MapOrder {
+			if left.MapOrder[i] != right.MapOrder[i] {
 				return false
 			}
 		}
