@@ -199,7 +199,7 @@ test("release docs publish the sealed private-corpus assurance snapshot", () => 
   assert.match(privateCorpusAssuranceExplorer, /private-corpus-002/);
   assert.match(privateCorpusAssuranceExplorer, /All namespaces/);
   assert.match(privateCorpusAssuranceExplorer, /All repositories/);
-  assert.equal(explorerSha256, "5a04cf59d752f99a2bde7b25ba2f372dcf0fad638582b1515a5e2cd9fface167");
+  assert.equal(explorerSha256, "5bad30dfb04858f39d11c33a82e1290181d376ea58205a80ce47467eaff21625");
   assert.match(repoPrivateCorpusAssurance, new RegExp(explorerSha256));
   assert.doesNotMatch(privateCorpusAssuranceExplorer, /https?:\/\/|\/Users\/|@agentforce\.com|00D[A-Za-z0-9]{12,}/);
 });

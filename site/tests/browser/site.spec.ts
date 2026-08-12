@@ -9,7 +9,8 @@ const representativeRoutes = [
   '/guide/support-map',
   '/reference/cli',
   '/guide/workbench',
-  '/help/'
+  '/help/',
+  '/private-corpus-assurance.html'
 ]
 
 function observeBrowserErrors(page: Page) {

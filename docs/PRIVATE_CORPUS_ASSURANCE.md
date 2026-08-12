@@ -14,13 +14,13 @@ and explicit non-parity are separate outcomes.
 | --- | --- |
 | Glade commit | `b8a60258aa5c54777535d356e3ce1e746a874cd5` |
 | Glade binary SHA-256 | `be4bd8cc105b1b84ee83d8dad491d0ede2a096038cd916ecb0e1fbadf68d0db0` |
-| Glade Tools commit | `b8f3d9573144630aaf563d765758526717ff8dfd` |
-| Glade Tools binary SHA-256 | `69fa8e8f934f3650c4507a68b35f1bf430c7a01d496f82cc2a7f811e8861ac1d` |
+| Glade Tools commit | `07663fff635bb6ab5feafdee8380f0afcdce0b92` |
+| Glade Tools binary SHA-256 | `2796d6e4354d98305bb426274efc2b9f07609be60a8b2a3cde453225464368b4` |
 | Frozen scope SHA-256 | `ec25212379b73f65320f7cd6b0c5d81638a98124da6f4713c5f8ca49e79587cf` |
-| Receipt SHA-256 | `fbae8437f54927280d48374d05833627fe62e796941fd9735f76c079e39177fa` |
+| Receipt SHA-256 | `e2c455154681ab707014c113df30e748961916be53e478078bf09545d2c08496` |
 | Assurance JSON SHA-256 | `921bbc27c8fdc62e3e340138c26e1ea34b8137f206d251c66244bb63642aae04` |
-| Explorer SHA-256 | `5a04cf59d752f99a2bde7b25ba2f372dcf0fad638582b1515a5e2cd9fface167` |
-| Packet manifest SHA-256 | `000fc9802c870dcdece9356df75158d4fab17cc48fef4c6124a05ba7881d693e` |
+| Explorer SHA-256 | `5bad30dfb04858f39d11c33a82e1290181d376ea58205a80ce47467eaff21625` |
+| Packet manifest SHA-256 | `cbbef68f5e11369b531963ddfc55664e289203345b0886b6a2fa507910c9c5d7` |
 
 The docs-only follow-up does not change the reviewed product candidate.
 
