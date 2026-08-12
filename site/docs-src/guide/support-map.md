@@ -40,6 +40,28 @@ when you need route and module detail.
   </div>
 </div>
 
+## Current release assurance
+
+The next release was exercised against a frozen two-repository private corpus
+using the exact Glade candidate and real project checks and tests. Public
+artifacts identify the repositories only as `private-corpus-001` and
+`private-corpus-002`.
+
+- 321 observed usage keys reconciled with zero unknown usage.
+- 184 required surfaces were derived from sealed authoritative inputs.
+- 178 compile-ready and test-ready surfaces have required local proof.
+- 54 runtime-parity-ready surfaces have fresh Salesforce proof.
+- 107 explicit zero-credit non-parity outcomes remain visible.
+- Six hosted-deferred surfaces remain outside compile, test, and runtime-parity
+  readiness in this snapshot.
+
+These outcomes overlap and are not a claim of blanket Salesforce parity. Open
+the [self-contained assurance explorer](/private-corpus-assurance.html) to
+filter by namespace, repository, disposition, evidence, exclusion, or text.
+The exact candidate, receipt hashes, replay result, and interpretation rules
+are recorded in the
+[release assurance note](https://github.com/glade-sh/glade/blob/main/docs/PRIVATE_CORPUS_ASSURANCE.md).
+
 ## Runs locally
 
 These areas are the main local development contract.

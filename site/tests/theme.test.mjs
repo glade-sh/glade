@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { test } from "node:test";
 import vm from "node:vm";
@@ -36,6 +37,7 @@ const repoApexLanguageCompatibility = await readFile(new URL("../../docs/APEX_LA
 const repoDocsIndex = await readFile(new URL("../../docs/README.md", import.meta.url), "utf8");
 const reservedIdentifierImplementation = await readFile(new URL("../../third_party/glade-apex-parser/reserved_identifier_words.go", import.meta.url), "utf8");
 const repoCompatibilityDashboard = await readFile(new URL("../../docs/COMPATIBILITY_DASHBOARD.md", import.meta.url), "utf8");
+const repoPrivateCorpusAssurance = await readFile(new URL("../../docs/PRIVATE_CORPUS_ASSURANCE.md", import.meta.url), "utf8").catch(() => "");
 const repoLwcSupport = await readFile(new URL("../../docs/LWC_SUPPORT.md", import.meta.url), "utf8");
 const releaseNotes = await readFile(new URL("../../docs/RELEASE_NOTES.md", import.meta.url), "utf8");
 const repoInstallDocs = await readFile(new URL("../../docs/INSTALL.md", import.meta.url), "utf8");
@@ -93,6 +95,7 @@ const aiAssistedApex = await readFile(new URL("../docs-src/guide/ai-assisted-ape
 const testerFieldGuide = await readFile(new URL("../docs-src/guide/tester-field-guide.md", import.meta.url), "utf8");
 const editor = await readFile(new URL("../docs-src/guide/editor.md", import.meta.url), "utf8");
 const supportMap = await readFile(new URL("../docs-src/guide/support-map.md", import.meta.url), "utf8");
+const privateCorpusAssuranceExplorer = await readFile(new URL("../docs-src/public/private-corpus-assurance.html", import.meta.url), "utf8").catch(() => "");
 const localApiServer = await readFile(new URL("../docs-src/guide/local-api-server.md", import.meta.url), "utf8");
 const gladeOrgs = await readFile(new URL("../docs-src/guide/glade-orgs.md", import.meta.url), "utf8");
 const lwcLocalShell = await readFile(new URL("../docs-src/guide/lwc-local-shell.md", import.meta.url), "utf8");
@@ -177,6 +180,28 @@ test("unreleased notes describe the merged correctness-preserving performance wo
   assert.match(unreleased[1], /Salesforce correctness/i);
   assert.match(unreleased[1], /release check/i);
   assert.doesNotMatch(releaseNotes, /profiled large [A-Z]{2} test methods/);
+});
+
+test("release docs publish the sealed private-corpus assurance snapshot", () => {
+  const explorerSha256 = createHash("sha256").update(privateCorpusAssuranceExplorer).digest("hex");
+  for (const page of [releaseNotes, repoPrivateCorpusAssurance, supportMap]) {
+    assert.match(page, /184 required surfaces/);
+    assert.match(page, /178 compile-ready/);
+    assert.match(page, /54 runtime-parity-ready/);
+    assert.match(page, /107 explicit (?:zero-credit )?non-parity/);
+    assert.match(page, /six hosted-deferred/i);
+    assert.match(page, /not (?:a claim of|claim) blanket Salesforce parity/i);
+  }
+  assert.match(repoDocsIndex, /PRIVATE_CORPUS_ASSURANCE\.md/);
+  assert.match(supportMap, /\/private-corpus-assurance\.html/);
+  assert.match(privateCorpusAssuranceExplorer, /<title>Glade assurance<\/title>/);
+  assert.match(privateCorpusAssuranceExplorer, /private-corpus-001/);
+  assert.match(privateCorpusAssuranceExplorer, /private-corpus-002/);
+  assert.match(privateCorpusAssuranceExplorer, /All namespaces/);
+  assert.match(privateCorpusAssuranceExplorer, /All repositories/);
+  assert.equal(explorerSha256, "5a04cf59d752f99a2bde7b25ba2f372dcf0fad638582b1515a5e2cd9fface167");
+  assert.match(repoPrivateCorpusAssurance, new RegExp(explorerSha256));
+  assert.doesNotMatch(privateCorpusAssuranceExplorer, /https?:\/\/|\/Users\/|@agentforce\.com|00D[A-Za-z0-9]{12,}/);
 });
 
 test("current docs describe the live registry and release safety", () => {
