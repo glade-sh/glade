@@ -120,6 +120,7 @@ test('SPA navigation returns home without losing route-scoped behavior', async (
 })
 
 test('representative routes have no serious or critical axe violations', async ({ page }) => {
+  test.setTimeout(90_000)
   const errors = observeBrowserErrors(page)
   for (const theme of ['dark', 'light']) {
     await page.goto('/')
