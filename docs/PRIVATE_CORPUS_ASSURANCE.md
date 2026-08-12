@@ -14,13 +14,14 @@ and explicit non-parity are separate outcomes.
 | --- | --- |
 | Glade commit | `b8a60258aa5c54777535d356e3ce1e746a874cd5` |
 | Glade binary SHA-256 | `be4bd8cc105b1b84ee83d8dad491d0ede2a096038cd916ecb0e1fbadf68d0db0` |
-| Glade Tools commit | `07663fff635bb6ab5feafdee8380f0afcdce0b92` |
-| Glade Tools binary SHA-256 | `2796d6e4354d98305bb426274efc2b9f07609be60a8b2a3cde453225464368b4` |
+| Glade Tools commit | `7cf3d717c266c06d51583c297593f579b8acc1b1` |
+| Glade Tools ARM64 binary SHA-256 | `660bf89394094186379c1773d0e8aa2887cbff7f6681b67937c7218ccf256810` |
+| Glade Tools AMD64 binary SHA-256 | `f3842194bd55476f4d0ef8a01ed79ed7757d7f617a4c2d4ba1e11bbcbc075252` |
 | Frozen scope SHA-256 | `ec25212379b73f65320f7cd6b0c5d81638a98124da6f4713c5f8ca49e79587cf` |
-| Receipt SHA-256 | `e2c455154681ab707014c113df30e748961916be53e478078bf09545d2c08496` |
+| Receipt SHA-256 | `bf0a7b7a9fc2b0a7e505677b37c4891acea4f9b1cad8edb0c6ba714e3709517c` |
 | Assurance JSON SHA-256 | `921bbc27c8fdc62e3e340138c26e1ea34b8137f206d251c66244bb63642aae04` |
 | Explorer SHA-256 | `5bad30dfb04858f39d11c33a82e1290181d376ea58205a80ce47467eaff21625` |
-| Packet manifest SHA-256 | `cbbef68f5e11369b531963ddfc55664e289203345b0886b6a2fa507910c9c5d7` |
+| Packet manifest SHA-256 | `f9d9593c9b09c1c062bca5abb515b79f7fc7bcbbd350b835eddf70696c3e896e` |
 
 The docs-only follow-up does not change the reviewed product candidate.
 
@@ -43,9 +44,9 @@ The readiness fields overlap. Do not add the counts together.
 
 Both repositories passed every required `glade check` and real `glade test`
 shard on the exact candidate. The authoritative replay contains eight passing
-records across local and remote hosts. A superseded contention timeout is
-retained outside the final receipt; the isolated replacement passed and is the
-record used for readiness.
+records across local and remote hosts. Superseded resource-contention and
+exhausted-hub attempts are retained outside the final receipt; their isolated
+replacements passed and are the records used for readiness.
 
 Fresh scratch-org proof closed all 77 planned Salesforce obligations: 23
 compile observations and 54 runtime observations. The scratch orgs and both
