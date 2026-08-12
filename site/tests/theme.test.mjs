@@ -165,20 +165,19 @@ test("home page links the latest stable release from release notes", () => {
   assert.doesNotMatch(index, /Latest stable release[\s\S]*0\.0\.0-dev/);
 });
 
-test("release notes cover the latest stable release", () => {
-  assert.match(releaseNotes, /^## v0\.2\.10 - 2026-07-27/m);
-  assert.match(releaseNotes, /all 121 Salesforce reserved words/);
-  assert.match(releaseNotes, /400-row Salesforce language-rule evidence catalog/);
-  assert.match(releaseNotes, /bounded to five minutes/);
+test("release notes cover the v0.2.11 release", () => {
+  assert.match(releaseNotes, /^## v0\.2\.11 - 2026-08-12/m);
+  assert.match(releaseNotes, /semantic result cache/i);
+  assert.match(releaseNotes, /184 required surfaces/);
+  assert.match(releaseNotes, /SHA256SUMS\.txt/);
+  assert.match(releaseNotes, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.11\/docs\/DISTRIBUTION_WORKFLOW\.md/);
+  assert.match(releaseNotes, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.11\/docs\/KNOWN_GAPS\.md/);
 });
 
-test("unreleased notes describe the merged correctness-preserving performance work", () => {
+test("unreleased notes reset after the release cut", () => {
   const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(unreleased, "release notes should contain an Unreleased section");
-  assert.doesNotMatch(unreleased[1], /No changes yet\./);
-  assert.match(unreleased[1], /semantic result cache/i);
-  assert.match(unreleased[1], /Salesforce correctness/i);
-  assert.match(unreleased[1], /release check/i);
+  assert.match(unreleased[1], /No changes yet\./);
   assert.doesNotMatch(releaseNotes, /profiled large [A-Z]{2} test methods/);
 });
 

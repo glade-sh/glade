@@ -94,6 +94,18 @@ func TestNoPersonalAbsolutePathsInTrackedText(t *testing.T) {
 	}
 }
 
+func TestNoPrivateOrgAliasesInPublicDocs(t *testing.T) {
+	privateAlias := regexp.MustCompile(`(?i)\b(?:` + strings.Join([]string{"n" + "u", "n" + "c", "n" + "ams", hyphen("sf", "cred")}, "|") + `)\b`)
+	for _, file := range repoRegularFiles(t, repoRoot(t)) {
+		if !isHumanFacingExampleSurface(file.rel) || strings.IndexByte(file.text, 0) >= 0 {
+			continue
+		}
+		if match := privateAlias.FindString(file.text); match != "" {
+			t.Errorf("%s contains private org alias %q", file.rel, match)
+		}
+	}
+}
+
 func TestPublicExampleNamesAvoidGenericPlaceholders(t *testing.T) {
 	root := repoRoot(t)
 	for _, file := range repoRegularFiles(t, root) {
