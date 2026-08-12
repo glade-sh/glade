@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+Salesforce compatibility and private-corpus assurance:
+
+- Expanded API 67-backed compiler, semantic, schema, standard-library, and VM
+  contracts used by the frozen two-repository private corpus. The product
+  default local API version remains `v65.0`; API 67 is the comparison contract,
+  not a silent default-version change.
+- Replayed every required project check and real local test shard against the
+  exact candidate. Both neutral repositories passed all eight authoritative
+  replay records.
+- Reconciled 321 observed usage keys with zero unknown usage. The sealed result
+  contains 184 required surfaces: 178 compile-ready and test-ready,
+  54 runtime-parity-ready from fresh Salesforce proof,
+  107 explicit zero-credit non-parity outcomes, and six hosted-deferred surfaces.
+- Added a self-contained [private-corpus assurance explorer](https://glade.sh/private-corpus-assurance.html)
+  for filtering the sealed outcome by namespace, repository, disposition,
+  evidence, exclusion, and text. These overlapping, surface-specific outcomes
+  are not a claim of blanket Salesforce parity.
+
 Performance and correctness:
 
 - Added an exact, checksummed semantic result cache for `glade check` and the

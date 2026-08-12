@@ -194,7 +194,7 @@ if (!globalRule || globalRule.headers.has('cache-control')) failures.push('_head
 if (globalRule?.headers.get('x-frame-options') !== 'DENY' || !globalRule?.headers.has('permissions-policy')) {
   failures.push('_headers: global security headers are missing')
 }
-for (const routePrefix of ['/', '/guide/*', '/reference/*', '/help/*', '/maintainer/*', '/install.sh']) {
+for (const routePrefix of ['/', '/guide/*', '/reference/*', '/help/*', '/maintainer/*', '/private-corpus-assurance.html', '/install.sh']) {
   const rule = headerRules.find((candidate) => candidate.path === routePrefix)
   if (!/max-age=0, must-revalidate/.test(rule?.headers.get('cache-control') || '')) {
     failures.push(`_headers: ${routePrefix} does not revalidate`)
