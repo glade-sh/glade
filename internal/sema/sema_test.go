@@ -132,6 +132,40 @@ public class UsesNamespacedFields {
 	}
 }
 
+func TestSemaOpenSObjectFieldsAreOpaque(t *testing.T) {
+	model := semaTypeMemberViewFromMembers(map[string]typeMembers{
+		normalizeName("pkg.External__c"): {
+			name:                  "pkg.External__c",
+			sobject:               true,
+			externalPackageSObject: true,
+			fields:                map[string]typesys.MemberSymbol{},
+		},
+		normalizeName("pkg.Partial__c"): {
+			name:         "pkg.Partial__c",
+			sobject:      true,
+			partialSObject: true,
+			fields:       map[string]typesys.MemberSymbol{},
+		},
+	})
+
+	for _, tc := range []struct {
+		typeName  string
+		fieldName string
+	}{
+		{typeName: "pkg.External__c", fieldName: "Email"},
+		{typeName: "pkg.Partial__c", fieldName: "IsApproved"},
+		{typeName: "pkg.External__c", fieldName: "Owner"},
+		{typeName: "pkg.Partial__c", fieldName: "Thing__r"},
+		{typeName: "pkg.External__c", fieldName: "Body"},
+		{typeName: "pkg.Partial__c", fieldName: "RecordId"},
+	} {
+		field, ok := semaOpenSObjectFieldMember(tc.typeName, tc.fieldName, model)
+		if !ok || field.member.Type != "" {
+			t.Fatalf("%s.%s = %#v, %v; want opaque open field", tc.typeName, tc.fieldName, field, ok)
+		}
+	}
+}
+
 func TestAnalyzeLoadsNestedSchemaCustomObjectsRelationshipTraversal(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -8418,7 +8452,7 @@ public class UsesQ {
 	}
 }
 
-func TestAnalyzeFallbackCustomStringFieldContains(t *testing.T) {
+func TestAnalyzeOpaqueSObjectFieldDoesNotInferStringFromName(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
@@ -8433,10 +8467,14 @@ public class Hello {
 	})
 
 	result := Analyze(index)
+	found := false
 	for _, diag := range result.Diagnostics {
 		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "PriceClasses__c.contains") {
-			t.Fatalf("unexpected fallback string field contains diagnostic: %#v", result.Diagnostics)
+			found = true
 		}
+	}
+	if !found {
+		t.Fatalf("opaque SObject field should not infer String from its name: %#v", result.Diagnostics)
 	}
 }
 

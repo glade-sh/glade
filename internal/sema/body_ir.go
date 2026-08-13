@@ -7,7 +7,6 @@ import (
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/ir"
-	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
@@ -268,7 +267,7 @@ func semaResolveFieldPath(model *semaTypeMemberView, receiverType, fieldPath str
 		}
 		resolved, ok := semaResolveField(model, currentType, part, make(map[string]bool))
 		if !ok {
-			if sobjectField, fieldOK := semaSObjectFieldMember(currentType, part, model); fieldOK {
+			if sobjectField, fieldOK := semaOpenSObjectFieldMember(currentType, part, model); fieldOK {
 				resolved = sobjectField
 			} else {
 				return resolvedMember{}, false
@@ -334,64 +333,14 @@ func semaIsSObjectTypeFields(typeName string) bool {
 		strings.EqualFold(typeName, "Schema.SObjectFields")
 }
 
-func semaSObjectFieldMember(typeName, fieldName string, model *semaTypeMemberView) (resolvedMember, bool) {
+func semaOpenSObjectFieldMember(typeName, fieldName string, model *semaTypeMemberView) (resolvedMember, bool) {
 	if !isSemaSObjectLike(typeName, model) {
 		return resolvedMember{}, false
-	}
-	fieldType := ""
-	fieldKey := normalizeName(fieldName)
-	switch {
-	case fieldKey == "recordtype":
-		fieldType = "RecordType"
-	case fieldKey == "runninguserentityaccess":
-		fieldType = "UserEntityAccess"
-	case fieldKey == "runninguserfieldaccess":
-		fieldType = "UserFieldAccess"
-	case fieldKey == "fielddefinition":
-		fieldType = "FieldDefinition"
-	case fieldKey == "entitydefinition":
-		fieldType = "EntityDefinition"
-	case strings.HasSuffix(fieldKey, "__r"):
-		fieldType = semaRelationshipFieldTypeForModel(model, fieldName)
-	case fieldKey == "id" || strings.HasSuffix(fieldKey, "id"):
-		fieldType = "Id"
-	case fieldKey == "body" || fieldKey == "versiondata":
-		fieldType = "Blob"
-	case fieldKey == "email":
-		fieldType = "String"
-	case strings.HasSuffix(fieldKey, "address"):
-		fieldType = "Address"
-	case fieldKey == "assignee", fieldKey == "owner", fieldKey == "createdby", fieldKey == "lastmodifiedby", fieldKey == "user":
-		fieldType = "User"
-	case fieldKey == "contact":
-		fieldType = "Contact"
-	case fieldKey == "account", fieldKey == "parentaccount":
-		fieldType = "Account"
-	case strings.HasSuffix(fieldKey, "street") ||
-		strings.HasSuffix(fieldKey, "city") ||
-		strings.HasSuffix(fieldKey, "state") ||
-		strings.HasSuffix(fieldKey, "statecode") ||
-		strings.HasSuffix(fieldKey, "postalcode") ||
-		strings.HasSuffix(fieldKey, "country") ||
-		strings.HasSuffix(fieldKey, "countrycode"):
-		fieldType = "String"
-	case strings.Contains(fieldKey, "file") || strings.Contains(fieldKey, "name") || strings.Contains(fieldKey, "class"):
-		fieldType = "String"
-	case fieldKey == "name" || fieldKey == "label" || fieldKey == "developername" || fieldKey == "masterlabel":
-		fieldType = "String"
-	case fieldKey == "isdeleted" || strings.HasPrefix(fieldKey, "is") || strings.HasPrefix(fieldKey, "has"):
-		fieldType = "Boolean"
-	}
-	if fieldType == "" && semaAllowsShapedSObjectField(typeName, model) && semaIsCustomAPIName(fieldName) {
-		fieldType = semaApexTypeForSchemaField(schema.Field{Name: fieldName, Type: "Object"})
-		if fieldType == "" {
-			fieldType = "Object"
-		}
 	}
 	return resolvedMember{owner: typeName, member: typesys.MemberSymbol{
 		Kind:      apexast.DeclarationField,
 		Name:      fieldName,
-		Type:      fieldType,
+		Type:      "",
 		Modifiers: []string{"public"},
 	}}, true
 }
@@ -399,11 +348,6 @@ func semaSObjectFieldMember(typeName, fieldName string, model *semaTypeMemberVie
 func semaExternalPackageSObjectType(typeName string, model *semaTypeMemberView) bool {
 	members, _, ok := semaLookupTypeMembers(model, typeName)
 	return ok && members.sobject && members.externalPackageSObject
-}
-
-func semaAllowsShapedSObjectField(typeName string, model *semaTypeMemberView) bool {
-	members, _, ok := semaLookupTypeMembers(model, typeName)
-	return ok && members.sobject && (members.externalPackageSObject || members.partialSObject)
 }
 
 func semaExternalPackageSObjectFieldPath(expr string, scope map[string]string, model *semaTypeMemberView) bool {
@@ -453,73 +397,9 @@ func semaParentRelationshipFieldName(fieldName string) string {
 	return ""
 }
 
-func semaRelationshipFieldType(fieldName string) string {
-	key := normalizeName(strings.TrimSuffix(fieldName, "__r"))
-	raw := strings.TrimSuffix(fieldName, "__r")
-	switch key {
-	case "personcontact", "contact":
-		return "Contact"
-	case "account", "parentaccount":
-		return "Account"
-	case "owner", "createdby", "lastmodifiedby", "user":
-		return "User"
-	case "product2", "product":
-		return "Product2"
-	case "pricebook2":
-		return "Pricebook2"
-	case "pricebookentry":
-		return "PricebookEntry"
-	case "opportunity":
-		return "Opportunity"
-	case "order":
-		return "Order"
-	}
-	if semaLooksLikeChildRelationship(key) {
-		return "List<" + semaChildRelationshipElementType(raw) + ">"
-	}
-	return "SObject"
-}
-
-func semaRelationshipFieldTypeForModel(model *semaTypeMemberView, fieldName string) string {
-	raw := strings.TrimSuffix(fieldName, "__r")
-	key := normalizeName(raw)
-	if semaLooksLikeChildRelationship(key) {
-		for _, candidate := range semaChildRelationshipTypeCandidates(raw) {
-			if _, ok := model.lookup(normalizeName(candidate)); ok {
-				return "List<" + candidate + ">"
-			}
-		}
-	}
-	return semaRelationshipFieldType(fieldName)
-}
-
-func semaChildRelationshipTypeCandidates(name string) []string {
-	base := semaChildRelationshipBase(name)
-	if base == "" {
-		return nil
-	}
-	return []string{base, base + "__c", base + "2__c", base + "__mdt", base + "2__mdt"}
-}
-
-func semaChildRelationshipBase(name string) string {
-	trimmed := strings.TrimRight(name, "0123456789")
-	if strings.HasSuffix(trimmed, "ies") {
-		return strings.TrimSuffix(trimmed, "ies") + "y"
-	}
-	return strings.TrimSuffix(trimmed, "s")
-}
-
 func semaLooksLikeChildRelationship(key string) bool {
 	trimmed := strings.TrimRight(key, "0123456789")
 	return trimmed != key || strings.HasSuffix(trimmed, "s")
-}
-
-func semaChildRelationshipElementType(name string) string {
-	trimmed := semaChildRelationshipBase(name)
-	if trimmed == "" {
-		return "SObject"
-	}
-	return trimmed + "__c"
 }
 
 type irSemaOrigin int
@@ -2890,7 +2770,7 @@ func semaFieldPathEntersDependencyType(model *semaTypeMemberView, receiverType, 
 		}
 		target, ok := semaResolveField(model, currentType, part, make(map[string]bool))
 		if !ok {
-			if sobjectField, fieldOK := semaSObjectFieldMember(currentType, part, model); fieldOK {
+			if sobjectField, fieldOK := semaOpenSObjectFieldMember(currentType, part, model); fieldOK {
 				target = sobjectField
 			} else {
 				return false
