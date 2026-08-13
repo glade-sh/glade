@@ -1010,7 +1010,7 @@ func TestSecurityWorkflowHeaderRejectsNestedPermissionAndTriggerMutations(t *tes
 	}
 	workflowText := string(workflow)
 	mutations := map[string]string{
-		"job permission substitute": strings.Replace(workflowText, "\npermissions:\n  contents: read\n\njobs:\n", "\njobs:\n", 1),
+		"job permission substitute": strings.Replace(workflowText, "\npermissions:\n  contents: read\n\nconcurrency:\n", "\nconcurrency:\n", 1),
 		"changed trigger":           strings.Replace(workflowText, "  pull_request:\n", "  pull_request_target:\n", 1),
 	}
 	for name, mutated := range mutations {
@@ -1037,8 +1037,8 @@ func securityWorkflowHeaderProblem(workflow string) string {
 	if problem != "" {
 		return problem
 	}
-	if len(blocks) != 3 {
-		return fmt.Sprintf("top-level header block count = %d, want 3", len(blocks))
+	if len(blocks) != 4 {
+		return fmt.Sprintf("top-level header block count = %d, want 4", len(blocks))
 	}
 	wantBlocks := map[string]string{
 		"name": "name: Security",
@@ -1052,6 +1052,9 @@ func securityWorkflowHeaderProblem(workflow string) string {
   workflow_dispatch:`,
 		"permissions": `permissions:
   contents: read`,
+		"concurrency": `concurrency:
+  group: security-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}`,
 	}
 	for name, want := range wantBlocks {
 		got, ok := blocks[name]
@@ -1491,7 +1494,7 @@ func TestCIBenchmarkCachePairValidator(t *testing.T) {
 	}
 }
 
-func ciWorkflowConcurrencyProblem(workflow string) string {
+func prWorkflowConcurrencyProblem(workflow, group string) string {
 	header, _, found := strings.Cut(workflow, "\njobs:\n")
 	if !found {
 		return "missing top-level jobs boundary"
@@ -1500,9 +1503,9 @@ func ciWorkflowConcurrencyProblem(workflow string) string {
 	if problem != "" {
 		return problem
 	}
-	want := `concurrency:
-  group: ci-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: true`
+	want := fmt.Sprintf(`concurrency:
+  group: %s-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}`, group)
 	if blocks["concurrency"] != want {
 		return "top-level concurrency block does not match required structure"
 	}
@@ -1603,9 +1606,25 @@ func requiredAggregateShell(t *testing.T, job string) string {
 }
 
 func TestCIWorkflowConcurrencyContract(t *testing.T) {
-	workflow, _ := readCIWorkflow(t)
-	if problem := ciWorkflowConcurrencyProblem(workflow); problem != "" {
-		t.Fatal(problem)
+	for _, name := range []string{"ci", "browser", "security", "vscode-glade"} {
+		workflow := readWorkflowFile(t, name+".yml")
+		if problem := prWorkflowConcurrencyProblem(workflow, name); problem != "" {
+			t.Errorf("%s.yml: %s", name, problem)
+		}
+	}
+}
+
+func TestNonPRWorkflowsRemainNonCancelling(t *testing.T) {
+	race := readWorkflowFile(t, "race.yml")
+	wantRace := `concurrency:
+  group: race-${{ github.run_id }}
+  cancel-in-progress: false`
+	if !strings.Contains(race, wantRace) {
+		t.Fatal("race.yml must retain non-cancelling run-ID concurrency")
+	}
+	release := readWorkflowFile(t, "release.yml")
+	if strings.Contains(release, "\nconcurrency:") || strings.Contains(release, "cancel-in-progress:") {
+		t.Fatal("release.yml must remain non-cancelling")
 	}
 }
 
