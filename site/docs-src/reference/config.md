@@ -15,7 +15,7 @@ Glade resolves settings in this order:
 
 ## Create config
 
-Create a starter file from an existing SFDX project:
+Create a starter file from an existing Salesforce DX project:
 
 ```bash
 glade init --project . --yes

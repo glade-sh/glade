@@ -1,7 +1,7 @@
 # Profile an Apex Debug Log
 
 <div class="docs-intro">
-  <p class="docs-intro-eyebrow">Guided help</p>
+  <p class="docs-intro-eyebrow">Task guide</p>
   <p>Turn a Salesforce Apex debug log into a local profile report.</p>
   <ul>
     <li>Run `glade debug profile` on a saved log.</li>
@@ -13,7 +13,7 @@
 ## Before you start
 
 - You have a Salesforce debug log saved on disk.
-- Run from the SFDX project root when you want project context nearby.
+- Run from the Salesforce DX project root when you want project context nearby.
 - You have a terminal open at the project root.
 - The log does not contain secrets you should not store in local reports.
 

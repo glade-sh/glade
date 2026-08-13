@@ -1,7 +1,7 @@
 # Troubleshoot Glade CI setup
 
 <div class="docs-intro">
-  <p class="docs-intro-eyebrow">Guided help</p>
+  <p class="docs-intro-eyebrow">Task guide</p>
   <p>Add Glade checks, affected tests, JUnit, SARIF, and artifacts to a pull request workflow.</p>
   <ul>
     <li>Fetch full git history for changed-test selection.</li>
@@ -35,7 +35,8 @@ jobs:
           fetch-depth: 0
       - run: curl -fsSL https://glade.sh/install.sh | sh
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - run: glade doctor
+      - run: glade version
+      - run: glade doctor --project .
       - run: mkdir -p reports
       - run: glade check --project . --format sarif --output reports/glade-check.sarif --no-progress
       - run: glade test changed --project . --since origin/main --json --no-progress > reports/glade-test-changed.json

@@ -4,10 +4,17 @@ import type { EditorSupportCatalog } from '../editor/editorSupportTypes'
 export const editorSupportCatalog = {
   "schemaVersion": 1,
   "generatedFrom": "docs/STDLIB_COVERAGE.md",
+  "summary": {
+    "supported": 267,
+    "partial": 0,
+    "stub": 0,
+    "unsupported": 19,
+    "unknown": 0
+  },
   "statusLabels": {
     "supported": "Runs locally",
-    "partial": "Runs with limits",
-    "stub": "Runs with limits",
+    "partial": "Runs locally with limits",
+    "stub": "Runs locally with limits",
     "unsupported": "Requires Salesforce",
     "unknown": "Not measured"
   },
@@ -84,7 +91,7 @@ export const editorSupportCatalog = {
           "type": "property",
           "detail": "Describe token",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -1481,7 +1488,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Collection clone",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Collection support with named limits"
         }
       ]
@@ -1496,7 +1503,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Schema.SObjectField",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -2080,7 +2087,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "CRUD metadata",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -2089,7 +2096,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "CRUD metadata",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -2098,7 +2105,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Lookup targets",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Local metadata with named limits"
         }
       ]
@@ -2131,7 +2138,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Field describe map",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -2164,7 +2171,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Map<String, Schema.SObjectField>",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Local metadata with named limits"
         }
       ]
@@ -3302,7 +3309,7 @@ export const editorSupportCatalog = {
       "type": "class",
       "detail": "Metadata",
       "status": "partial",
-      "statusLabel": "Runs with limits",
+      "statusLabel": "Runs locally with limits",
       "info": "Configured metadata with named limits"
     },
     {

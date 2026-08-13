@@ -20,7 +20,7 @@ at `127.0.0.1:17911`.
 Pass `--project` when creating the target from outside the project root:
 
 ```bash
-glade org create refinement-local --project /path/to/macrodata-apex
+glade org create refinement-local --project /path/to/apex-project
 ```
 
 Use `--db` or `--addr` only when you want to pin the database path or local

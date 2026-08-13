@@ -1,66 +1,61 @@
 # Run your first local Apex check
 
 <div class="docs-intro">
-  <p class="docs-intro-eyebrow">Start</p>
-  <p>Use this path when you want the shortest install, project setup, doctor, check, and test loop for a Salesforce DX project.</p>
+  <p class="docs-intro-eyebrow">Tutorial</p>
+  <p>Prove that Glade can discover a Salesforce DX project and return a useful local result before an org round trip.</p>
   <ul>
-    <li>Install the binary.</li>
-    <li>Initialize local project config.</li>
-    <li>Run one check and the project's discovered local tests.</li>
+    <li>Verify the binary.</li>
+    <li>Establish project context.</li>
+    <li>Run one check and interpret the result.</li>
   </ul>
 </div>
 
-This path installs Glade, checks the project, and runs its discovered local tests.
-For VS Code, CI, and report workflows, use the
-[Tester field guide](/guide/tester-field-guide).
+## Prerequisites
 
-## 1. Install
+- macOS or Linux for a packaged release
+- a Salesforce DX project with `sfdx-project.json`
+- Apex source in a configured package directory
+
+## 1. Install and verify Glade
 
 ```bash
 curl -fsSL https://glade.sh/install.sh | sh
 glade version
 ```
 
-If `glade` is not found, add `~/.local/bin` to `PATH` and restart your shell.
+Expected: `glade version` prints the installed stable version. If the shell
+cannot find `glade`, add `~/.local/bin` to `PATH` and open a new shell.
 
-Expected: `glade version` prints the installed version.
-
-## 2. Open a Salesforce DX project
+## 2. Enter the project
 
 ```bash
 cd path/to/salesforce-dx-project
+test -f sfdx-project.json
+```
+
+Expected: the file check exits with code `0` and prints nothing.
+
+## 3. Initialize local project configuration
+
+```bash
 glade init --project . --yes
 glade config validate --project .
 ```
 
-Expected: `glade.yml` exists, and config validation exits with code `0`.
+Expected: Glade writes `glade.yml` when it is absent and config validation
+exits with code `0`. Review a new `glade.yml` before committing it.
 
-## 3. Check the local environment
+## 4. Check the project-aware environment
 
 ```bash
-glade doctor
+glade doctor --project .
 ```
 
-Expected:
+Expected: Glade reports the project, parser, toolchain, config, and runtime,
+then ends with `Ready.`. A missing project or parser is a setup failure; fix it
+before treating later diagnostics as Apex results.
 
-```text
-Glade doctor
-
-Project      ✓ SFDX project found
-Parser       ✓ ok (tree-sitter)
-Toolchain    ✓ <glade data dir> (ok (global))
-Config       ✓ glade.yml
-Runtime      ✓ glade <version> · go<version> · <os>/<arch>
-
-Ready.
-
-Next:
-  glade check
-  glade test changed --since origin/main
-  glade playground --examples --open
-```
-
-## 4. Check source
+## 5. Run one local check
 
 ```bash
 glade check --project .
@@ -68,41 +63,49 @@ glade check --project .
 
 Expected:
 
-- zero diagnostics and exit code `0`
-- or one or more file/line diagnostics and exit code `1`
+- a clean result and exit code `0`; or
+- a named diagnostic with file and line, plus exit code `1`.
 
-## 5. Run local tests
+A named source diagnostic is a valid local result. It is different from a
+setup error such as an undiscovered project or unavailable parser.
+
+## 6. Run discovered tests
 
 ```bash
 glade test --project .
 ```
 
-Expected: a selected/passed/failed summary, plus file and method details for any failure.
-
-After the first run, narrow a command to a class that exists in your project:
+Expected: a selected/passed/failed summary, with file and method details for a
+failure. After the first run, narrow the loop to a class that exists in your
+project:
 
 ```bash
 glade test --project . --class <YourTestClass>
 ```
 
-## 6. Run affected tests
+## Local result boundary
+
+This path runs against supported local project state. Use Salesforce for
+hosted services, deployment, and final production validation. Check the
+[versioned support map](/guide/support-map) for the exact capability.
+
+## You are done when
+
+Glade discovers the project, reports the expected source path, and returns
+either a clean local check or a named diagnostic with a file and line.
+
+## Reset or clean up
+
+`glade init` writes only the local project configuration. If this was an
+evaluation and you do not want to keep it, review and remove `glade.yml`. Clear
+project-local startup state after a branch switch or stale result:
 
 ```bash
-glade test changed --project . --since origin/main
+glade test clear-cache --project .
 ```
 
-Expected: Glade maps changed Apex and metadata to the smallest local test set it can prove.
+## Choose the next workflow
 
-## 7. Open the playground
-
-```bash
-glade playground --examples --open
-```
-
-Expected: Glade starts the browser workbench and prints the local URL, example mode, database mode, and stop command.
-
-## 8. Know the limits
-
-Glade is a local runtime, not a Salesforce emulator. Check [what Glade runs locally](/guide/support-map)
-before relying on platform service APIs, live auth, exact hosted Visualforce
-behavior, or REST and Tooling APIs outside the checked local baseline.
+- [Run Apex tests](/guide/workflows/apex-tests)
+- [Debug or execute Apex](/guide/workflows/debug-apex)
+- [Work with local data](/guide/workflows/local-data)

@@ -333,6 +333,21 @@ body:has(.VPHome)::before {
   padding-inline: 8px;
 }
 
+.VPNavBarMenuLink[href="/guide/installation"] {
+  min-height: 38px;
+  padding-inline: 14px;
+  border: 1px solid var(--glade-strong);
+  border-radius: 10px;
+  background: var(--glade);
+  color: var(--text-inverse);
+  font-weight: 700;
+}
+
+.VPNavBarMenuLink[href="/guide/installation"]:hover {
+  background: var(--glade-strong);
+  color: var(--text-inverse);
+}
+
 @media (min-width: 641px) {
   .VPNavBar > .wrapper {
     padding-inline: 0;
@@ -780,6 +795,123 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
   --chip-line: color-mix(in srgb, var(--info) 64%, transparent);
   --chip-bg: color-mix(in srgb, var(--info) 16%, transparent);
   --chip-text: #d8ebff;
+}
+
+.support-explorer {
+  margin: 2rem 0;
+  padding: 1.25rem;
+  border: 1px solid var(--glade-border);
+  border-radius: 12px;
+  background: var(--glade-surface);
+}
+
+.support-explorer-heading,
+.support-explorer-controls,
+.support-explorer-summary,
+.support-explorer-list li > div {
+  display: flex;
+  gap: 1rem;
+}
+
+.support-explorer-heading,
+.support-explorer-list li > div {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.support-explorer-heading h2 {
+  margin: 0;
+  border: 0;
+}
+
+.support-explorer-summary {
+  margin: 0;
+  text-align: center;
+}
+
+.support-explorer-summary div {
+  min-width: 5.5rem;
+}
+
+.support-explorer-summary dt,
+.support-explorer-summary dd {
+  margin: 0;
+}
+
+.support-explorer-summary dt,
+.support-explorer-foot,
+.support-explorer-result {
+  color: var(--vp-c-text-2);
+  font-size: 0.8125rem;
+}
+
+.support-explorer-summary dd {
+  color: var(--vp-c-text-1);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.support-explorer-controls {
+  margin: 1.25rem 0 0.5rem;
+}
+
+.support-explorer-controls label {
+  display: grid;
+  flex: 1;
+  gap: 0.35rem;
+  color: var(--vp-c-text-1);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.support-explorer-controls label:last-child {
+  flex: 0 1 15rem;
+}
+
+.support-explorer-controls :is(input, select) {
+  min-height: 44px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--glade-border);
+  border-radius: 8px;
+  background: var(--surface-inset);
+  color: var(--vp-c-text-1);
+  font: inherit;
+}
+
+.support-explorer-list {
+  max-height: 34rem;
+  margin: 1rem 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.support-explorer-list li {
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--glade-border);
+}
+
+.support-explorer-list p,
+.support-explorer-foot,
+.support-explorer-result {
+  margin: 0.35rem 0 0;
+}
+
+@media (max-width: 640px) {
+  .support-explorer-heading,
+  .support-explorer-controls,
+  .support-explorer-summary {
+    flex-direction: column;
+  }
+
+  .support-explorer-summary {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .support-explorer-controls label:last-child {
+    flex-basis: auto;
+  }
 }
 
 .docs-support-legend {

@@ -7,6 +7,7 @@ import { chromium } from '@playwright/test'
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const baseURL = new URL(process.argv[2] || 'http://127.0.0.1:4173')
 const { routes } = JSON.parse(await readFile(path.join(siteRoot, 'routes.json'), 'utf8'))
+const releaseManifest = JSON.parse(await readFile(path.join(siteRoot, 'release-manifest.json'), 'utf8'))
 const redirectRules = new Map(
   (await readFile(path.join(siteRoot, 'docs-src/public/_redirects'), 'utf8'))
     .trim()
@@ -23,12 +24,13 @@ async function get(pathname) {
   return { response, body }
 }
 
-for (const entry of routes.filter((route) => route.classification === 'nav' || route.classification === 'deep-link')) {
+for (const entry of routes.filter((route) => ['nav', 'deep-link', 'noindex'].includes(route.classification))) {
   const { response, body } = await get(entry.route)
   assert.equal(response.status, 200, `${entry.route} should return 200`)
   assert.match(body, new RegExp(`<link[^>]+rel="canonical"[^>]+href="https://glade\\.sh${entry.route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`))
   assert.match(body, /<meta[^>]+name="description"[^>]+content="[^"]{24,}"/)
   assert.match(body, /<meta[^>]+property="og:url"[^>]+content="https:\/\/glade\.sh/)
+  if (entry.classification === 'noindex') assert.match(body, /<meta[^>]+name="robots"[^>]+content="noindex"/)
 }
 
 for (const entry of routes.filter((route) => route.classification === 'redirect')) {
@@ -41,8 +43,8 @@ for (const entry of routes.filter((route) => route.classification === 'redirect'
 assert.equal(redirectRules.size, routes.filter((route) => route.classification === 'redirect').length)
 
 const home = await get('/')
-assert.match(home.body, /Run and test Salesforce Apex locally\./)
-assert.match(home.body, /Latest stable release:[\s\S]*https:\/\/github\.com\/glade-sh\/glade\/releases\/tag\/v\d+\.\d+\.\d+/)
+assert.match(home.body, /Apex feedback without the deploy wait\./)
+assert.match(home.body, new RegExp(`https://github\\.com/glade-sh/glade/releases/tag/${releaseManifest.version}`))
 
 const install = await get('/install.sh')
 assert.equal(install.response.status, 200)

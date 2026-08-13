@@ -39,7 +39,7 @@ Stderr carries progress, warnings, and internal status. `--json` keeps stdout pa
 - uses: actions/checkout@v4
   with:
     fetch-depth: 0
-- run: glade doctor
+- run: glade doctor --project .
 - run: glade check --project . --format sarif --output glade-check.sarif
 - run: glade test changed --project . --since origin/main --json --no-progress
 - run: mkdir -p reports

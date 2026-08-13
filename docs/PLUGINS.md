@@ -257,7 +257,7 @@ verifies the archive SHA-256, then installs the archive.
           "os": "darwin",
           "arch": "arm64",
           "url": "https://plugins.glade.sh/vX.Y.Z/glade-plugin-compat_X.Y.Z_darwin_arm64.tar.gz",
-          "sha256": "<archive sha256>"
+          "sha256": "<archive-sha256>"
         }
       ]
     }

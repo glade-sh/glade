@@ -1,7 +1,7 @@
 # Run Changed Tests Before a PR
 
 <div class="docs-intro">
-  <p class="docs-intro-eyebrow">Guided help</p>
+  <p class="docs-intro-eyebrow">Task guide</p>
   <p>Run the local tests Glade can connect to your branch diff, then save machine-readable output.</p>
   <ul>
     <li>Run changed tests against `origin/main`.</li>

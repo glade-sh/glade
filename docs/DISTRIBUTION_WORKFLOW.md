@@ -24,7 +24,7 @@ bounded memory use and write raw events plus a validated
 `package-summary.json` under `ci-artifacts/local-release/`. Package discovery
 or lane ownership drift fails closed. If a command fails, stop and fix before
 tagging.
-Run the first project check from [INSTALL.md](INSTALL.md) on one real SFDX
+Run the first project check from [INSTALL.md](INSTALL.md) on one real Salesforce DX
 project before tagging.
 When a release also ships first-party plugin archives, run the matching tools
 gate before tagging:
@@ -67,7 +67,6 @@ Download one archive and checksums from the GitHub Release, then verify:
 grep "  \./glade_VERSION_linux_amd64.tar.gz$" SHA256SUMS.txt | shasum -a 256 -c -
 tar -xzf glade_VERSION_linux_amd64.tar.gz
 ./glade version
-./glade doctor
 ```
 
 Check the GitHub release body before publishing wider:
@@ -160,7 +159,6 @@ Validate install:
 brew update
 brew install <tap>/glade
 glade version
-glade doctor
 ```
 
 ## 5. Publish Notes

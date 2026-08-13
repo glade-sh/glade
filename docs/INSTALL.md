@@ -88,7 +88,7 @@ glade editor doctor vscode --editor cursor
 glade editor install vscode --editor windsurf --force
 ```
 
-Open an SFDX project in VS Code. The extension adds Glade Home, a Glade
+Open a Salesforce DX project in VS Code. The extension adds Glade Home, a Glade
 Activity Bar, native Test Explorer entries, local CodeLens actions, DAP debug
 launches, named local data environments, Apex & SOQL scratch buffers, and a
 Plugins view for linked and installed plugin actions. See [EDITOR.md](EDITOR.md).
@@ -146,7 +146,7 @@ go build -o glade ./cmd/glade
 ./glade version
 ```
 
-Run the locally built binary against an SFDX project. No Salesforce org login is
+Run the locally built binary against a Salesforce DX project. No Salesforce org login is
 required for these local commands:
 
 ```bash
@@ -171,14 +171,14 @@ glade version
 
 ## First Project Run
 
-Run parse/check/tests against an SFDX project without connecting to an org:
+Run parse/check/tests against a Salesforce DX project without connecting to an org:
 
 ```bash
 cd path/to/sfdx-project
 glade init --project . --yes
 glade config validate --project .
 glade config show --project .
-glade doctor
+glade doctor --project .
 glade check --project .
 glade test --project . --json
 ```
@@ -257,7 +257,7 @@ Build from source:
     go-version-file: go.mod
 - run: sudo apt-get update && sudo apt-get install -y build-essential
 - run: CGO_ENABLED=1 go install github.com/glade-sh/glade/cmd/glade@latest
-- run: glade doctor --json
+- run: glade doctor --project . --json
 - run: glade check --project .
 - run: glade test --project . --json
 ```
@@ -282,7 +282,7 @@ Use a release artifact:
     tar -xzf "$GLADE_ARCHIVE"
     install -m 0755 glade ~/.local/bin/glade
     glade version
-    glade doctor
+    glade doctor --project .
 ```
 
 ## Persistent Local Server
@@ -339,7 +339,7 @@ glade playground --db .glade/playground/org.sqlite --addr 127.0.0.1:1789 --open
 The playground stores scratch files under `.glade/playground/workspaces/default`
 when no project is supplied. Pass `--examples` to include built-in example
 projects for DML, SOQL, triggers, relationships, maps, and governor-limit
-counters. Point the playground at an existing SFDX project to edit that
+counters. Point the playground at an existing Salesforce DX project to edit that
 project's supported files directly:
 
 ```bash
@@ -351,10 +351,10 @@ glade playground --project . --db .glade/playground/org.sqlite
 ```
 
 The foreground project runs as local source in the playground, even when its
-SFDX descriptor declares a package namespace. Managed package dependencies keep
+Salesforce DX descriptor declares a package namespace. Managed package dependencies keep
 their configured namespaces.
 
-Use `--project-ref name=path` to add local SFDX folders to the scratch
+Use `--project-ref name=path` to add local Salesforce DX folders to the scratch
 workspace's project selector without editing them in place. Loading a reference
 copies supported `.cls`, `.trigger`, `.apex`, `.json`, `.xml`, `.yml`, and
 `.yaml` files into the managed scratch workspace while preserving their relative

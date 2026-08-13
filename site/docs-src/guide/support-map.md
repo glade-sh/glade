@@ -1,5 +1,9 @@
 # What Glade runs locally
 
+<script setup>
+import releaseManifest from '../../release-manifest.json'
+</script>
+
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Capabilities</p>
   <p>Use this page to see what Glade runs locally, what runs with named limits, and what still requires Salesforce or a plugin.</p>
@@ -15,6 +19,10 @@ local Salesforce API flow. Checked Apex/runtime reports carry the method-level
 detail. The LWC summary below links to the local shell guide and support table
 when you need route and module detail.
 
+**Verified with Glade {{ releaseManifest.version }}.** The generated
+standard-library counts and searchable rows below come from the checked coverage
+ledger in this repository state.
+
 ## Before you adopt Glade
 
 - Your local loop uses supported Apex parse, check, test, SOQL, DML, trigger, and SObject paths.
@@ -29,8 +37,8 @@ when you need route and module detail.
   <div class="docs-support-legend-card docs-support-legend-card-supported" aria-label="Runs locally">
     <span class="docs-status-chip docs-status-supported">Runs locally</span>
   </div>
-  <div class="docs-support-legend-card docs-support-legend-card-partial" aria-label="Runs with limits">
-    <span class="docs-status-chip docs-status-partial">Runs with limits</span>
+  <div class="docs-support-legend-card docs-support-legend-card-partial" aria-label="Runs locally with limits">
+    <span class="docs-status-chip docs-status-partial">Runs locally with limits</span>
   </div>
   <div class="docs-support-legend-card docs-support-legend-card-unsupported" aria-label="Requires Salesforce">
     <span class="docs-status-chip docs-status-unsupported">Requires Salesforce</span>
@@ -40,21 +48,27 @@ when you need route and module detail.
   </div>
 </div>
 
+“Runs locally with limits” is the user-facing capability state. Generated
+evidence catalogs may use narrower row-level classifications; their counts
+apply only to the named catalog.
+
+<GladeSupportExplorer />
+
 ## Runs locally
 
 These areas are the main local development contract.
 
 | Area | What to expect |
 | --- | --- |
-| Apex parsing and project indexing | Large SFDX projects, nested types, namespace tokens, stable parse diagnostics, and case-insensitive rejection of all 121 Salesforce reserved words in non-method source identifier contexts. See [Apex language compatibility](/reference/apex-language-compatibility). |
-| Project configuration and package contracts | `glade.yml` and SFDX discovery cover package dirs, default namespace, namespace remaps, source-backed managed package dependencies, captured package artifacts, package shims, org features, storage, and local limits. |
+| Apex parsing and project indexing | Large Salesforce DX projects, nested types, namespace tokens, stable parse diagnostics, and case-insensitive rejection of all 121 Salesforce reserved words in non-method source identifier contexts. See [Apex language compatibility](/reference/apex-language-compatibility). |
+| Project configuration and package contracts | `glade.yml` and Salesforce DX discovery cover package dirs, default namespace, namespace remaps, source-backed managed package dependencies, captured package artifacts, package shims, org features, storage, and local limits. |
 | Semantic checks | Checked annotation, declaration, type, inheritance, trigger, statement, SOQL/SOSL, API-version, local, assignment, overload, and return-path rules, with token ranges for the supported VM subset. |
 | Local Apex tests | `@isTest`, `@TestSetup`, isolated org state, static reset, governor windows, async drain, stack frames, JSON, and JUnit output. |
 | SOQL, DML, triggers, and SObjects | Static and dynamic SOQL, DML statements, `Database.*` result objects, trigger context, schema-backed SObjects, and local SQLite-backed storage. |
 | Local API server | Salesforce-style REST discovery, SObject CRUD, query/queryAll, limits and record counts, userinfo stubs, Tooling `executeAnonymous`, local Tooling source/schema metadata queries, Composite sObject insert, Composite Batch, Tree, and Graph local requests, Bulk API v2 simple query jobs, layout/default-value metadata, metadata job status, reset endpoints, and optional SQLite persistence. |
 | Editor and debug tools | LSP diagnostics, symbols, hover, completion, rename, semantic tokens, DAP stepping, watch mode, and trace/profile reports. |
 
-## Runs with limits
+## Runs locally with limits
 
 These areas cover useful local test paths. They are not exact Salesforce
 service behavior.
@@ -132,20 +146,6 @@ processing, BusinessHours, QuickAction, Request, UIRequest, Sandbox,
 Schedulable, and AccessLevel rows. The hosted-service boundary group includes
 Answers and ResetPasswordResult rows plus the stable UnsupportedFeature
 diagnostic row.
-
-## Capability claims
-
-The checked capability status and standard-library report now show no partial rows.
-Every remaining hosted-only behavior is split into an explicit unsupported row.
-
-| Measure | Rows |
-| --- | ---: |
-| Capability features marked `supported` | 31 |
-| Capability features marked `partial` | 0 |
-| Capability features marked `unsupported` | 2 |
-| Standard-library rows marked `supported` | 267 |
-| Standard-library rows marked `partial` | 0 |
-| Standard-library rows marked `unsupported` | 19 |
 
 ## Drill down
 

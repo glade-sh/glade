@@ -22,8 +22,9 @@ test('public IA has a guide landing, five-destination navigation, and scoped sid
 })
 
 test('homepage has the four-band local-first message and release trust links', () => {
-  assert.match(home, /Run and test Salesforce Apex locally\./)
-  assert.match(home, /Daily local workflow/)
+  assert.match(home, /Apex feedback without the deploy wait\./)
+  assert.match(home, /Move from project to proof in three steps\./)
+  assert.match(home, /Run local Apex tests from VS Code\./)
   assert.match(home, /Know the boundary before you rely on a result\./)
   assert.match(home, /Checksums, SBOM, and attestations/)
   assert.doesNotMatch(home, /home-data-section|home-plugin-section/)

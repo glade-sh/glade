@@ -22,7 +22,7 @@
   ·
   <a href="https://glade.sh/guide/security-trust">Security</a>
   ·
-  <a href="docs/TESTER_FIELD_GUIDE.md">Tester field guide</a>
+  <a href="docs/TESTER_FIELD_GUIDE.md">Pilot guide</a>
 </p>
 
 Glade is a clean-room Apex runtime for local development and testing. It reads
@@ -39,23 +39,22 @@ Install Glade:
 ```bash
 curl -fsSL https://glade.sh/install.sh | sh
 glade version
-glade doctor
 ```
 
-`glade doctor` must report `Ready.` before project parsing, checking, or
-testing will work.
+Use `glade version` as the binary check. `glade doctor` is project-aware.
 
 For a small tester pilot, start with
 [docs/TESTER_FIELD_GUIDE.md](docs/TESTER_FIELD_GUIDE.md). It shows the install,
 first project run, VS Code setup, AI handoff prompt, CI gate, and useful
 follow-on workflows in one place.
 
-Run it in an SFDX project:
+Run it in a Salesforce DX project:
 
 ```bash
 cd path/to/sfdx-project
 glade init --project . --yes
 glade config validate --project .
+glade doctor --project .
 glade check --project .
 glade test --project . --json --no-progress
 ```
@@ -221,12 +220,12 @@ glade report refactor-proof --project . --since origin/main --format html --out 
 
 ## Docs
 
-- [Tester field guide](docs/TESTER_FIELD_GUIDE.md)
+- [Pilot guide](docs/TESTER_FIELD_GUIDE.md)
 - [Install](docs/INSTALL.md)
 - [Project configuration](docs/CONFIG.md)
 - [Local Apex testing](docs/LOCAL_TESTING.md)
 - [Public workflow guide](https://glade.sh/guide/workflows)
-- [Product areas](https://glade.sh/guide/modules)
+- [How Glade works](https://glade.sh/guide/modules)
 - [CLI reference](https://glade.sh/reference/cli)
 - [Support map](https://glade.sh/guide/support-map)
 - [CI artifacts](docs/CI_ARTIFACTS.md)

@@ -2,7 +2,7 @@
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Playground</p>
-  <p>Use built-in examples when you want a safe scratch workspace. Use <code>--project</code> when you want to run against a local SFDX project.</p>
+  <p>Use built-in examples when you want a safe scratch workspace. Use <code>--project</code> when you want to run against a local Salesforce DX project.</p>
   <ul>
     <li>Start examples without touching project source.</li>
     <li>Persist or reset local org state.</li>
@@ -10,17 +10,34 @@
   </ul>
 </div>
 
-`glade playground` starts a local browser workbench for Apex snippets, SOQL, DML, logs, limits, traces, and local org diffs. It runs from your machine and can use built-in examples, a scratch workspace, or an SFDX project.
+`glade playground` starts a local browser workbench for Apex snippets, SOQL, DML, logs, limits, traces, and local org diffs. It runs from your machine and can use built-in examples, a scratch workspace, or a Salesforce DX project.
 
-## Start with built-in examples
+## Read the surface
 
-Load built-in examples:
+![Glade Playground showing built-in examples, Apex source, the Run action, and a passing local result](/playground-overview.png)
+
+1. **Examples or project tree** selects the source workspace.
+2. **Apex Source** shows the current class.
+3. **Execute Anonymous** holds the runnable scenario.
+4. **Run** executes the supported path against the selected local state.
+5. **Output** shows status, time, DML, rows, logs, variables, limits, org diff, and problems.
+6. The database control and reset action show whether state is memory-only or persisted.
+
+## Two-minute first scenario
+
+Start the built-in examples with memory-only state:
 
 ```bash
-glade playground --examples --addr 127.0.0.1:1789
+glade playground --examples --no-db --addr 127.0.0.1:1789 --open
 ```
 
-Start on one built-in example:
+Choose **Account + Contact Query**, read the Apex class and anonymous script,
+then press **Run** beside Execute Anonymous.
+
+Expected: Status shows `pass`, DML shows `2`, Rows shows `4`, and Logs contains
+`contacts: 3`. Close the server with `Ctrl-C`; memory-only state is discarded.
+
+Start directly on another built-in example when the basic loop is familiar:
 
 ```bash
 glade playground --example deal-desk-discount-guard --addr 127.0.0.1:1789 --open
@@ -28,7 +45,7 @@ glade playground --example deal-desk-discount-guard --addr 127.0.0.1:1789 --open
 
 `--example` uses the managed scratch workspace. It cannot be combined with `--project` or `--project-ref`.
 
-## Start from an SFDX project
+## Start from a Salesforce DX project
 
 ```bash
 glade playground --project . --db .glade/playground/org.sqlite --open

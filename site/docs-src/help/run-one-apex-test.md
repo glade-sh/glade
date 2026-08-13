@@ -1,7 +1,7 @@
 # Run One Apex Test Locally
 
 <div class="docs-intro">
-  <p class="docs-intro-eyebrow">Guided help</p>
+  <p class="docs-intro-eyebrow">Task guide</p>
   <p>Run one local Apex test from the terminal, CodeLens, and VS Code Test Explorer debug flow.</p>
   <ul>
     <li>Run one class from the CLI.</li>
@@ -12,7 +12,7 @@
 
 ## Before you start
 
-- `glade doctor` passes.
+- `glade doctor --project .` passes.
 - The project has at least one Apex test class.
 - VS Code uses a clean VS Code profile with Glade, Catppuccin Mocha, and the Salesforce Apex extension.
 

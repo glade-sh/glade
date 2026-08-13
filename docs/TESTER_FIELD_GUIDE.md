@@ -1,7 +1,7 @@
 # Tester Field Guide
 
 Use this guide when you hand Glade to Salesforce engineers for a small pilot.
-It starts from an existing SFDX project and keeps the first loop local. No org
+It starts from an existing Salesforce DX project and keeps the first loop local. No org
 login, scratch org, source push, or metadata deploy is required for the core
 commands.
 
@@ -12,30 +12,15 @@ supported.
 
 ## 10-Minute Setup
 
-Install and prove the parser:
+Install and verify the binary:
 
 ```bash
 curl -fsSL https://glade.sh/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 glade version
-glade doctor
 ```
 
-`glade doctor` must print status rows and end with `Ready.`:
-
-```text
-Glade doctor
-
-Project      ✓ SFDX project found
-Parser       ✓ ok (tree-sitter)
-Toolchain    ✓ <glade data dir> (ok (global))
-Config       ✓ glade.yml
-Runtime      ✓ glade <version> · go<version> · <os>/<arch>
-
-Ready.
-```
-
-Open an SFDX project:
+Open a Salesforce DX project:
 
 ```bash
 cd path/to/sfdx-project
@@ -43,7 +28,10 @@ test -f sfdx-project.json
 glade init --project . --yes
 glade config validate --project .
 glade config show --project .
+glade doctor --project .
 ```
+
+`glade doctor --project .` must print status rows and end with `Ready.`.
 
 Run the first local checks:
 
@@ -59,7 +47,7 @@ glade editor doctor vscode
 glade editor install vscode --force
 ```
 
-Open the SFDX project root in VS Code. The extension adds Glade Home, the Glade
+Open the Salesforce DX project root in VS Code. The extension adds Glade Home, the Glade
 Activity Bar, local Apex tests in Test Explorer, local CodeLens actions, DAP
 debug launches, named SQLite-backed data environments, Apex & SOQL scratch
 buffers, and plugin actions.
@@ -100,13 +88,13 @@ Glade gives AI tools small, checked work packets instead of broad guesses. The
 useful pattern is: inspect the project, run a local gate, fix the smallest
 thing, then rerun the same gate.
 
-Give an AI coding agent this contract from the SFDX project root:
+Give an AI coding agent this contract from the Salesforce DX project root:
 
 ```text
 Use Glade for local Salesforce checks.
 Do not connect to a Salesforce org for the first pass.
 Run:
-  glade doctor
+  glade doctor --project .
   glade config validate --project .
   glade check --project . --format json --output reports/glade-check.json --no-progress
   glade test changed --project . --since origin/main --json --no-progress > reports/glade-test-changed.json
@@ -143,7 +131,7 @@ jobs:
           fetch-depth: 0
       - run: curl -fsSL https://glade.sh/install.sh | sh
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - run: glade doctor
+      - run: glade doctor --project .
       - run: mkdir -p reports
       - run: glade check --project . --format sarif --output reports/glade-check.sarif
       - run: glade test changed --project . --since origin/main --json --no-progress > reports/glade-test-changed.json
@@ -197,7 +185,7 @@ glade performance scan --project . --json > reports/glade-performance.json
 Useful pilot feedback includes:
 
 - `glade version`
-- full `glade doctor` output
+- full `glade doctor --project .` output
 - the exact command that failed
 - JSON output from `glade check` or `glade test`, when available
 - the smallest Apex class, trigger, metadata file, fixture, or debug log that
