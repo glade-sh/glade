@@ -142,7 +142,11 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 			allOrNone = args[1].Bool
 		} else if isDatabaseDMLOptionsValue(args[1]) {
 			allOrNone = databaseDMLOptionsAllOrNone(args[1], allOrNone)
-			dmlOptions = databaseDMLOptions(args[1])
+			var optionsErr error
+			dmlOptions, optionsErr = databaseDMLOptions(args[1])
+			if optionsErr != nil {
+				return Null, optionsErr
+			}
 		} else if isDatabaseAccessLevelValue(args[1]) {
 			userMode = isUserModeAccessLevel(args[1])
 			accessLevel = args[1]
@@ -458,7 +462,21 @@ func databaseDMLOptionsAllOrNone(value Value, fallback bool) bool {
 	return fallback
 }
 
-func databaseDMLOptions(value Value) dml.Options {
+func databaseDMLOptions(value Value) (dml.Options, error) {
+	for _, field := range []struct {
+		name       string
+		inspectMap bool
+	}{
+		{name: "AssignmentRuleHeader", inspectMap: true},
+		{name: "DuplicateRuleHeader", inspectMap: true},
+		{name: "EmailHeader", inspectMap: true},
+		{name: "LocaleOptions"},
+		{name: "LocalizeErrors"},
+	} {
+		if databaseDMLOptionConfigured(value, field.name, field.inspectMap) {
+			return dml.Options{}, unsupportedCallError("Database.DMLOptions." + field.name + " local DML option behavior")
+		}
+	}
 	options := dml.Options{}
 	for _, field := range []string{"allowFieldTruncation", "AllowFieldTruncation"} {
 		if option, ok := value.Fields[field]; ok && option.Kind == ValueBool && option.Bool {
@@ -466,12 +484,29 @@ func databaseDMLOptions(value Value) dml.Options {
 			break
 		}
 	}
-	return options
+	return options, nil
 }
 
-func (vm *VM) applyPerRecordDMLTargetOptions(records []storage.Record, targets []*Value) {
+func databaseDMLOptionConfigured(value Value, fieldName string, inspectMap bool) bool {
+	for field, option := range value.Fields {
+		if !strings.EqualFold(field, fieldName) || option.Kind == ValueNull {
+			continue
+		}
+		if !inspectMap || option.Kind != ValueObject {
+			return true
+		}
+		for _, nested := range option.Fields {
+			if nested.Kind != ValueNull {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (vm *VM) applyPerRecordDMLTargetOptions(records []storage.Record, targets []*Value) error {
 	if vm == nil || vm.Org == nil || len(records) == 0 || len(targets) == 0 {
-		return
+		return nil
 	}
 	for i := range records {
 		if i >= len(targets) || targets[i] == nil || targets[i].Kind != ValueObject {
@@ -481,11 +516,16 @@ func (vm *VM) applyPerRecordDMLTargetOptions(records []storage.Record, targets [
 		if !ok || !isDatabaseDMLOptionsValue(value) {
 			continue
 		}
-		if !databaseDMLOptions(value).AllowFieldTruncation {
+		options, err := databaseDMLOptions(value)
+		if err != nil {
+			return err
+		}
+		if !options.AllowFieldTruncation {
 			continue
 		}
 		vm.applyRecordFieldTruncation(&records[i])
 	}
+	return nil
 }
 
 func (vm *VM) applyRecordFieldTruncation(record *storage.Record) {
@@ -1940,7 +1980,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		}
 	}
 	vm.stripTransientDMLDerivedFields(records)
-	vm.applyPerRecordDMLTargetOptions(records, targets)
+	if err := vm.applyPerRecordDMLTargetOptions(records, targets); err != nil {
+		return nil, err
+	}
 	engine := vm.newDeferredAutomationDMLEngine(result)
 	engine.Options = options
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
@@ -2472,7 +2514,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		return nil, err
 	}
 	vm.stripTransientDMLDerivedFields(records)
-	vm.applyPerRecordDMLTargetOptions(records, targets)
+	if err := vm.applyPerRecordDMLTargetOptions(records, targets); err != nil {
+		return nil, err
+	}
 	engine := vm.newDeferredAutomationDMLEngine(result)
 	engine.Options = options
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
