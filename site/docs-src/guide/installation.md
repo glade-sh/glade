@@ -49,6 +49,9 @@ GLADE_UPDATE_ALLOW_SHELL=1 glade update
 glade version
 ```
 
+`glade update` updates the directory that contains the current `glade` binary.
+The environment guard keeps self-replacement explicit.
+
 ## Continue in a project
 
 `glade doctor` is project-aware. Do not use it as the binary installation
@@ -71,3 +74,10 @@ glade doctor --project .
 The [security and release trust guide](/guide/security-trust) is the canonical
 manual verification path. It resolves the version and archive from the same
 published manifest used by the installer and this page.
+
+Its fail-closed release check verifies the CycloneDX attestation:
+
+```bash
+gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
+  --predicate-type https://cyclonedx.org/bom
+```
