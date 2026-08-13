@@ -20,9 +20,11 @@ jobs:
     timeout-minutes: 15
     outputs:
       packages: ${{ steps.classify.outputs.packages }}
-      non-apextest-packages: ${{ steps.classify.outputs.non-apextest-packages }}
+      early-packages: ${{ steps.classify.outputs.early-packages }}
+      generic-packages: ${{ steps.classify.outputs.generic-packages }}
       has-packages: ${{ steps.classify.outputs.has-packages }}
-      has-non-apextest-packages: ${{ steps.classify.outputs.has-non-apextest-packages }}
+      has-early-packages: ${{ steps.classify.outputs.has-early-packages }}
+      has-generic-packages: ${{ steps.classify.outputs.has-generic-packages }}
       mode: ${{ steps.classify.outputs.mode }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -50,41 +52,44 @@ jobs:
               ;;
           esac
           if [[ "$packages" == "[]" ]]; then has_packages=false; else has_packages=true; fi
-          non_apextest_packages="$(python3 - "$packages" <<'PY'
-          import json
-          import sys
-          packages = json.loads(sys.argv[1])
-          print(json.dumps([package for package in packages if package != "./internal/apextest"], separators=(",", ":")))
-          PY
-          )"
-          if [[ "$non_apextest_packages" == "[]" ]]; then has_non_apextest_packages=false; else has_non_apextest_packages=true; fi
+          mapfile -t partition < <(scripts/ci-race-packages.sh partition "$packages")
+          if [[ "${#partition[@]}" -ne 2 ]]; then
+            echo "race package partition did not return early and generic lists" >&2
+            exit 2
+          fi
+          early_packages="${partition[0]}"
+          generic_packages="${partition[1]}"
+          if [[ "$early_packages" == "[]" ]]; then has_early_packages=false; else has_early_packages=true; fi
+          if [[ "$generic_packages" == "[]" ]]; then has_generic_packages=false; else has_generic_packages=true; fi
           echo "mode=$mode" >>"$GITHUB_OUTPUT"
           echo "packages=$packages" >>"$GITHUB_OUTPUT"
-          echo "non-apextest-packages=$non_apextest_packages" >>"$GITHUB_OUTPUT"
+          echo "early-packages=$early_packages" >>"$GITHUB_OUTPUT"
+          echo "generic-packages=$generic_packages" >>"$GITHUB_OUTPUT"
           echo "has-packages=$has_packages" >>"$GITHUB_OUTPUT"
-          echo "has-non-apextest-packages=$has_non_apextest_packages" >>"$GITHUB_OUTPUT"
+          echo "has-early-packages=$has_early_packages" >>"$GITHUB_OUTPUT"
+          echo "has-generic-packages=$has_generic_packages" >>"$GITHUB_OUTPUT"
           mkdir -p ci-artifacts/race-plan
-          printf '{"mode":"%s","packages":%s}\n' "$mode" "$packages" >ci-artifacts/race-plan/plan.json
+          printf '{"mode":"%s","packages":%s,"early_packages":%s,"generic_packages":%s}\n' "$mode" "$packages" "$early_packages" "$generic_packages" >ci-artifacts/race-plan/plan.json
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        if: ${{ contains(fromJSON(steps.classify.outputs.non-apextest-packages), './internal/gladecli') }}
+        if: ${{ contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
         with:
           node-version: "22"
       - name: Resolve race npm cache path
         id: race-npm-cache
-        if: ${{ contains(fromJSON(steps.classify.outputs.non-apextest-packages), './internal/gladecli') }}
+        if: ${{ contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
         run: echo "dir=$(npm config get cache)" >>"$GITHUB_OUTPUT"
       - name: Restore race npm cache
         id: race-npm-cache-restore
-        if: ${{ contains(fromJSON(steps.classify.outputs.non-apextest-packages), './internal/gladecli') }}
+        if: ${{ contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ steps.race-npm-cache.outputs.dir }}
           key: race-npm-v1-${{ runner.os }}-${{ runner.arch }}-22-${{ hashFiles('third_party/lwc/package-lock.json') }}
       - name: Install shared LWC toolchain
-        if: ${{ contains(fromJSON(steps.classify.outputs.non-apextest-packages), './internal/gladecli') }}
+        if: ${{ contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
         run: npm ci --prefix third_party/lwc
       - name: Save race npm cache
-        if: ${{ contains(fromJSON(steps.classify.outputs.non-apextest-packages), './internal/gladecli') }}
+        if: ${{ contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ steps.race-npm-cache.outputs.dir }}
@@ -97,16 +102,15 @@ jobs:
           path: ci-artifacts/race-plan/plan.json
           if-no-files-found: error
 
-  race:
+  race-early:
     needs: plan
-    if: needs.plan.outputs.has-non-apextest-packages == 'true'
+    if: needs.plan.outputs.has-early-packages == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 70
     strategy:
       fail-fast: false
-      max-parallel: 16
       matrix:
-        package: ${{ fromJSON(needs.plan.outputs.non-apextest-packages) }}
+        package: ${{ fromJSON(needs.plan.outputs.early-packages) }}
     env:
       GOMAXPROCS: "2"
     steps:
@@ -116,22 +120,79 @@ jobs:
           go-version: "1.26.5"
           cache: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        if: ${{ contains(fromJSON('["./internal/gladecli","./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        if: ${{ matrix.package == './internal/gladecli' }}
         with:
           node-version: "22"
       - name: Resolve npm cache path
         id: npm-cache
-        if: ${{ contains(fromJSON('["./internal/gladecli","./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        if: ${{ matrix.package == './internal/gladecli' }}
         run: echo "dir=$(npm config get cache)" >>"$GITHUB_OUTPUT"
       - name: Restore LWC npm cache
-        id: npm-cache-restore
-        if: ${{ contains(fromJSON('["./internal/gladecli","./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        if: ${{ matrix.package == './internal/gladecli' }}
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ steps.npm-cache.outputs.dir }}
           key: race-npm-v1-${{ runner.os }}-${{ runner.arch }}-22-${{ hashFiles('third_party/lwc/package-lock.json') }}
       - name: Install LWC toolchain
-        if: ${{ contains(fromJSON('["./internal/gladecli","./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        if: ${{ matrix.package == './internal/gladecli' }}
+        run: npm ci --prefix third_party/lwc
+      - name: Resolve artifact name
+        id: artifact
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: |
+          slug="${PACKAGE#./}"
+          slug="${slug//\//-}"
+          if [[ ! "$slug" =~ ^[A-Za-z0-9._-]+$ ]]; then exit 2; fi
+          echo "slug=$slug" >>"$GITHUB_OUTPUT"
+      - name: Run early race detector
+        env:
+          PACKAGE: ${{ matrix.package }}
+          SLUG: ${{ steps.artifact.outputs.slug }}
+        run: scripts/ci-race-test.sh "$PACKAGE" "$SLUG"
+      - name: Upload early race evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: race-${{ steps.artifact.outputs.slug }}
+          path: ci-artifacts/race/
+          if-no-files-found: error
+
+  race:
+    needs: plan
+    if: needs.plan.outputs.has-generic-packages == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    strategy:
+      fail-fast: false
+      max-parallel: 14
+      matrix:
+        package: ${{ fromJSON(needs.plan.outputs.generic-packages) }}
+    env:
+      GOMAXPROCS: "2"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        with:
+          node-version: "22"
+      - name: Resolve npm cache path
+        id: npm-cache
+        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        run: echo "dir=$(npm config get cache)" >>"$GITHUB_OUTPUT"
+      - name: Restore LWC npm cache
+        id: npm-cache-restore
+        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ steps.npm-cache.outputs.dir }}
+          key: race-npm-v1-${{ runner.os }}-${{ runner.arch }}-22-${{ hashFiles('third_party/lwc/package-lock.json') }}
+      - name: Install LWC toolchain
+        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
         run: npm ci --prefix third_party/lwc
       - name: Resolve artifact name
         id: artifact
@@ -163,7 +224,7 @@ jobs:
     env:
       GOMAXPROCS: "2"
       CI_RACE_APEXTEST_RUNNER: a
-      CI_RACE_APEXTEST_SHARD_INDEXES: 0,2,4,5
+      CI_RACE_APEXTEST_SHARD_INDEXES: 0,3,5
       CI_RACE_HEAD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -189,7 +250,7 @@ jobs:
     env:
       GOMAXPROCS: "2"
       CI_RACE_APEXTEST_RUNNER: b
-      CI_RACE_APEXTEST_SHARD_INDEXES: 1,3,6,7
+      CI_RACE_APEXTEST_SHARD_INDEXES: 4,7
       CI_RACE_HEAD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -207,8 +268,34 @@ jobs:
           path: ci-artifacts/race/internal-apextest
           if-no-files-found: error
 
+  race-apextest-c:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    env:
+      GOMAXPROCS: "2"
+      CI_RACE_APEXTEST_RUNNER: c
+      CI_RACE_APEXTEST_SHARD_INDEXES: 1,2,6
+      CI_RACE_HEAD_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - name: Run assigned Apex race shards
+        run: scripts/ci-race-test.sh ./internal/apextest internal-apextest
+      - name: Upload Apex runner C evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: race-internal-apextest-c-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-artifacts/race/internal-apextest
+          if-no-files-found: error
+
   race-apextest-aggregate:
-    needs: [plan, race-apextest-a, race-apextest-b]
+    needs: [plan, race-apextest-a, race-apextest-b, race-apextest-c]
     if: always() && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -224,8 +311,13 @@ jobs:
         with:
           name: race-internal-apextest-b-${{ github.run_id }}-${{ github.run_attempt }}
           path: ci-artifacts/race/apextest-b
+      - name: Download Apex runner C evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: race-internal-apextest-c-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-artifacts/race/apextest-c
       - name: Validate combined Apex race evidence
-        run: scripts/ci-race-apextest-aggregate.sh ci-artifacts/race/apextest-a ci-artifacts/race/apextest-b ci-artifacts/race/apextest-aggregate/union-validation.json "${{ github.sha }}"
+        run: scripts/ci-race-apextest-aggregate.sh ci-artifacts/race/apextest-a ci-artifacts/race/apextest-b ci-artifacts/race/apextest-c ci-artifacts/race/apextest-aggregate/union-validation.json "${{ github.sha }}"
       - name: Upload combined Apex race evidence
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

@@ -48,7 +48,7 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 			t.Fatalf("release.yml missing %q", want)
 		}
 	}
-	requiredCIBlock := releaseWorkflowJobBlock(t, workflowText, "required-ci-attestation", "prepare")
+	requiredCIBlock := releaseWorkflowJobBlock(t, workflowText, "required-ci-attestation", "salesforce-authority")
 	if got := strings.Count(requiredCIBlock, "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2"); got != 1 {
 		t.Fatalf("Required CI attestation upload count = %d, want 1", got)
 	}
@@ -104,6 +104,32 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 	checkoutPin := "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3"
 	if checkouts, hardened := strings.Count(workflowText, checkoutPin), strings.Count(workflowText, "persist-credentials: false"); checkouts != hardened {
 		t.Fatalf("release checkout hardening count = %d, want one for each of %d checkouts", hardened, checkouts)
+	}
+}
+
+func TestReleaseWorkflowRequiresSalesforceAuthorityBeforePrepare(t *testing.T) {
+	workflow := string(mustReadFile(t, filepath.Join("..", ".github", "workflows", "release.yml")))
+	for _, want := range []string{
+		"glade_tools_sha:",
+		"required: true",
+		"salesforce-authority:",
+		`scripts/verify-salesforce-check.sh --tag-tools-sha "$GITHUB_REF_NAME"`,
+		`scripts/verify-salesforce-check.sh "$GITHUB_SHA" "$glade_tools_sha" > salesforce-release-authority.json`,
+		"name: salesforce-release-authority",
+		"path: salesforce-release-authority.json",
+		"needs: salesforce-authority",
+		"needs: required-ci-attestation",
+	} {
+		if !strings.Contains(workflow, want) {
+			t.Fatalf("release workflow missing Salesforce authority contract %q", want)
+		}
+	}
+	gate := releaseWorkflowJobBlock(t, workflow, "salesforce-authority", "prepare")
+	if strings.Contains(gate, "contents: write") || strings.Contains(gate, "checks: write") {
+		t.Fatal("Salesforce verification gate has write authority")
+	}
+	if gateIndex, prepareIndex := strings.Index(workflow, "  salesforce-authority:"), strings.Index(workflow, "  prepare:"); gateIndex < 0 || gateIndex >= prepareIndex {
+		t.Fatal("Salesforce authority gate must precede prepare")
 	}
 }
 

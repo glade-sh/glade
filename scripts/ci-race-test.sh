@@ -160,11 +160,14 @@ if [[ "${package}" == "./internal/apextest" ]]; then
 			exit 2
 		fi
 		case "${apextest_runner}:${apextest_shard_indexes}" in
-			a:0,2,4,5)
-				assigned_apextest_indexes=(0 2 4 5)
+			a:0,3,5)
+				assigned_apextest_indexes=(0 3 5)
 				;;
-			b:1,3,6,7)
-				assigned_apextest_indexes=(1 3 6 7)
+			b:4,7)
+				assigned_apextest_indexes=(4 7)
+				;;
+			c:1,2,6)
+				assigned_apextest_indexes=(1 2 6)
 				;;
 			*)
 				printf '[ci] invalid apextest runner assignment %q:%q\n' "${apextest_runner}" "${apextest_shard_indexes}" >&2

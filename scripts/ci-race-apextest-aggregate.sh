@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "$#" -ne 4 ]]; then
-	echo "usage: scripts/ci-race-apextest-aggregate.sh <runner-a-dir> <runner-b-dir> <output-json> <expected-head-sha>" >&2
+if [[ "$#" -ne 5 ]]; then
+	echo "usage: scripts/ci-race-apextest-aggregate.sh <runner-a-dir> <runner-b-dir> <runner-c-dir> <output-json> <expected-head-sha>" >&2
 	exit 2
 fi
 
@@ -15,9 +15,12 @@ import re
 import sys
 import tempfile
 
-runner_a_dir, runner_b_dir, output_path, expected_head_sha = sys.argv[1:]
+runner_a_dir, runner_b_dir, runner_c_dir, output_path, expected_head_sha = sys.argv[1:]
 package = "github.com/glade-sh/glade/internal/apextest"
-runner_indexes = {"a": [0, 2, 4, 5], "b": [1, 3, 6, 7]}
+runner_indexes = {"a": [0, 3, 5], "b": [4, 7], "c": [1, 2, 6]}
+assignments = [index for indexes in runner_indexes.values() for index in indexes]
+if sorted(assignments) != list(range(8)) or len(assignments) != len(set(assignments)):
+    raise SystemExit("race apextest aggregate runner assignments do not exactly cover eight shards")
 test_pattern = re.compile(r"Test[A-Za-z0-9_]*\Z")
 sha_pattern = re.compile(r"[0-9a-f]{40}\Z")
 digest_pattern = re.compile(r"[0-9a-f]{64}\Z")
@@ -149,12 +152,13 @@ def validate_runner(root, expected_runner):
 
 runner_a, discovery_a, counts_a = validate_runner(runner_a_dir, "a")
 runner_b, discovery_b, counts_b = validate_runner(runner_b_dir, "b")
+runner_c, discovery_c, counts_c = validate_runner(runner_c_dir, "c")
 for field in ("package", "head_sha", "discovered_count", "discovery_sha256", "plan_sha256", "binary_sha256", "binary_size_bytes"):
-    if runner_a[field] != runner_b[field]:
+    if runner_a[field] != runner_b[field] or runner_a[field] != runner_c[field]:
         raise SystemExit(f"race apextest aggregate {field} identity mismatch")
-if discovery_a != discovery_b:
+if discovery_a != discovery_b or discovery_a != discovery_c:
     raise SystemExit("race apextest aggregate discovery mismatch")
-if runner_a["head_sha"] != expected_head_sha or runner_b["head_sha"] != expected_head_sha:
+if any(runner["head_sha"] != expected_head_sha for runner in (runner_a, runner_b, runner_c)):
     raise SystemExit("race apextest aggregate runner checkout head does not match expected head")
 result = {"schema_version": 1, "package": package, "head_sha": runner_a["head_sha"], "discovered_count": len(discovery_a), "discovery_sha256": runner_a["discovery_sha256"], "plan_sha256": runner_a["plan_sha256"], "binary_sha256": runner_a["binary_sha256"], "shard_counts": counts_a, "valid": True}
 output_dir = os.path.dirname(os.path.abspath(output_path))
