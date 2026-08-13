@@ -3,7 +3,6 @@ package vm
 import (
 	"crypto/aes"
 	"crypto/hmac"
-	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -13,6 +12,22 @@ import (
 	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
 )
+
+func validateAuthTokenArguments(args []Value, count int) error {
+	for i := 0; i < count; i++ {
+		if args[i].Kind == ValueNull || (args[i].Kind == ValueString && args[i].Text == "") {
+			return newExceptionError("System.InvalidParameterValueException", "Argument cannot be null or empty.")
+		}
+	}
+	return nil
+}
+
+func validateAuthTokenID(value Value) error {
+	if value.Kind != ValueString || validateApexID(value.Text) != nil {
+		return newExceptionError("System.InvalidParameterValueException", "Invalid ID")
+	}
+	return nil
+}
 
 func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, result *Result) (Value, error) {
 	vm.markRootCollectionRefsEscaped(args...)
@@ -580,6 +595,9 @@ platformStaticCall:
 		if len(args) != 1 {
 			return Null, fmt.Errorf("System.hashCode expects 1 argument")
 		}
+		if args[0].Kind == ValueNull {
+			return Null, newExceptionError("NullPointerException", "Argument 1 cannot be null")
+		}
 		return Int(int64(valueHashCode(args[0]))), nil
 	case "System.debug":
 		if len(args) != 1 && len(args) != 2 {
@@ -776,10 +794,7 @@ platformStaticCall:
 		cursor.Fields["Query"] = args[0]
 		return cursor, nil
 	case "Security.stripInaccessible":
-		if len(args) == 4 {
-			return Null, unsupportedCallError("Security.stripInaccessible permission-set-scoped access checks")
-		}
-		if len(args) != 2 && len(args) != 3 {
+		if len(args) < 2 || len(args) > 4 {
 			return Null, fmt.Errorf("Security.stripInaccessible expects AccessType, records, and optional enforceRootObjectCRUD")
 		}
 		if args[0].Kind != ValueObject || args[0].Type != "AccessType" {
@@ -788,14 +803,22 @@ platformStaticCall:
 		if args[1].Kind != ValueList {
 			return Null, fmt.Errorf("Security.stripInaccessible expects List<SObject>")
 		}
-		if len(args) == 3 && args[2].Kind != ValueBool {
+		if len(args) >= 3 && args[2].Kind != ValueBool {
 			return Null, fmt.Errorf("Security.stripInaccessible expects Boolean enforceRootObjectCRUD")
 		}
+		scopedPermissionSetID := ""
+		if len(args) == 4 && args[3].Kind != ValueNull {
+			var ok bool
+			scopedPermissionSetID, ok = typedIDValueText(args[3])
+			if !ok {
+				return Null, fmt.Errorf("Security.stripInaccessible expects Id permissionSetId")
+			}
+		}
 		enforceRootObjectCRUD := true
-		if len(args) == 3 {
+		if len(args) >= 3 {
 			enforceRootObjectCRUD = args[2].Bool
 		}
-		records, removedFields, modifiedIndexes, err := vm.stripInaccessibleRecords(args[0].Text, args[1], enforceRootObjectCRUD)
+		records, removedFields, modifiedIndexes, err := vm.stripInaccessibleRecords(args[0].Text, args[1], enforceRootObjectCRUD, scopedPermissionSetID)
 		if err != nil {
 			return Null, err
 		}
@@ -951,7 +974,10 @@ platformStaticCall:
 	case "Approval.process":
 		return vm.executeApprovalProcess(args)
 	case "Answers.findSimilar":
-		return Null, unsupportedCallError(callee + " local Answers zone search surface")
+		if len(args) != 1 {
+			return Null, fmt.Errorf("Answers.findSimilar expects Question")
+		}
+		return typedList("List<Id>"), nil
 	case "Database.merge":
 		return vm.executeDatabaseMerge(args, result)
 	case "Limits.getQueries", "Limits.getLimitQueries", "Limits.getQueryRows", "Limits.getLimitQueryRows",
@@ -963,7 +989,7 @@ platformStaticCall:
 		"Limits.getAsyncCalls", "Limits.getLimitAsyncCalls",
 		"Limits.getBatchJobs", "Limits.getLimitBatchJobs", "Limits.getScheduledJobs", "Limits.getLimitScheduledJobs",
 		"Limits.getEmailInvocations", "Limits.getLimitEmailInvocations",
-		"Limits.getAggregateQueries", "Limits.getLimitAggregateQueries",
+		"Limits.getAggregateQueries", "Limits.getLimitAggregateQueries", "Limits.getChildRelationshipsDescribes",
 		"Limits.getFindSimilarCalls", "Limits.getLimitFindSimilarCalls",
 		"Limits.getMobilePushApexCalls", "Limits.getLimitMobilePushApexCalls",
 		"Limits.getQueryLocatorRows", "Limits.getLimitQueryLocatorRows",
@@ -998,6 +1024,9 @@ platformStaticCall:
 		}
 		if args[0].Kind == ValueNull {
 			return Value{Kind: ValueNull, Type: "String"}, nil
+		}
+		if args[0].Kind == ValueMap {
+			return String(apexCollectionString(args[0])), nil
 		}
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Date") {
 			text, err := stringValueOfDate(args[0])
@@ -1045,7 +1074,7 @@ platformStaticCall:
 			return Null, err
 		}
 		return String(formatted), nil
-	case "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty", "String.join", "String.getCommonPrefix", "String.getLevenshteinDistance", "String.stripAll", "String.fromCharArray", "String.escapeSingleQuotes", "String.toLowerCase", "String.toUpperCase":
+	case "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty", "String.join", "String.getCommonPrefix", "String.getLevenshteinDistance", "String.fromCharArray", "String.escapeSingleQuotes", "String.toLowerCase", "String.toUpperCase":
 		return stringStatic(callee, args)
 	case "Integer.valueOf", "Long.valueOf", "Decimal.valueOf", "Double.valueOf":
 		return numericStatic(callee, args)
@@ -1067,7 +1096,7 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("AccessLevel.withPermissionSetId expects String")
 		}
-		value := Value{Kind: ValueObject, Type: "AccessLevel", Text: "USER_MODE", Fields: map[string]Value{}}
+		value := accessLevelValue("USER_MODE")
 		value.Fields["permissionSetId"] = args[0]
 		return value, nil
 	case "RoundingMode.valueOf":
@@ -1169,7 +1198,11 @@ platformStaticCall:
 		} else {
 			return Null, newExceptionError("System.TypeException", "Date.valueOf expects String")
 		}
-		date, err := parseDateText(text)
+		parse := parseDateText
+		if args[0].Kind == ValueString && strings.EqualFold(args[0].Static, "Object") {
+			parse = parseDateObjectText
+		}
+		date, err := parse(text)
 		if err != nil {
 			return Null, newExceptionError("System.TypeException", "Invalid date: "+text)
 		}
@@ -1246,12 +1279,22 @@ platformStaticCall:
 	case "Database.scheduleBatch", "System.scheduleBatch":
 		return vm.scheduleBatch(args, result)
 	case "System.attachFinalizer":
-		if len(args) != 1 || args[0].Kind != ValueObject {
+		if len(args) != 1 {
 			return Null, fmt.Errorf("System.attachFinalizer expects Finalizer object")
 		}
-		if vm.currentAsyncKind == "Queueable" {
-			vm.currentFinalizer = args[0]
+		if vm.currentAsyncKind != "Queueable" {
+			return Null, newExceptionError("System.HandledException", "System.attachFinalizer(Finalizer) is not allowed in this context")
 		}
+		if args[0].Kind != ValueObject {
+			return Null, fmt.Errorf("System.attachFinalizer expects Finalizer object")
+		}
+		if !vm.typeAssignableTo(args[0].Type, "Finalizer") {
+			return Null, newExceptionError("System.HandledException", fmt.Sprintf("Class %s must implement the Finalizer interface", args[0].Type))
+		}
+		if vm.currentFinalizer.Kind == ValueObject {
+			return Null, newExceptionError("System.HandledException", "More than one Finalizer cannot be attached to same Async Apex Job")
+		}
+		vm.currentFinalizer = args[0]
 		return Null, nil
 	case "AsyncInfo.hasMaxStackDepth", "System.AsyncInfo.hasMaxStackDepth":
 		if len(args) != 0 {
@@ -1266,7 +1309,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("AsyncInfo.getCurrentQueueableStackDepth expects 0 arguments")
 		}
 		if vm.currentAsyncKind != "Queueable" {
-			return Null, newExceptionError("System.AsyncException", "getCurrentQueueableStackDepth is not allowed outside a Queueable or Finalizer execution")
+			return Null, newExceptionError("System.AsyncException", "getCurrentQueueableStackDepth is not allowed outside a Queueable of Finalizer execution")
 		}
 		if vm.currentQueueableDepth > 0 {
 			return Int(int64(vm.currentQueueableDepth)), nil
@@ -1641,19 +1684,6 @@ platformStaticCall:
 			return Null, newExceptionError("System.SecurityException", err.Error())
 		}
 		return Bool(hmac.Equal(actual, []byte(expected))), nil
-	case "Crypto.areEqualConstantTime":
-		if len(args) != 2 {
-			return Null, fmt.Errorf("Crypto.areEqualConstantTime expects left Blob and right Blob")
-		}
-		left, err := blobStringArg("Crypto.areEqualConstantTime left", args[:1])
-		if err != nil {
-			return Null, err
-		}
-		right, err := blobStringArg("Crypto.areEqualConstantTime right", args[1:])
-		if err != nil {
-			return Null, err
-		}
-		return Bool(subtle.ConstantTimeCompare([]byte(left), []byte(right)) == 1), nil
 	case "Crypto.encrypt":
 		if len(args) != 4 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Crypto.encrypt expects algorithm, privateKey Blob, initializationVector Blob, and clearText Blob")
@@ -1698,7 +1728,30 @@ platformStaticCall:
 		return platformScalar("Blob", string(clearText)), nil
 	case "Crypto.encryptWithManagedIV":
 		if len(args) == 4 {
-			return Null, unsupportedCallError("Crypto.encryptWithManagedIV local authenticated-data managed-IV AES surface")
+			key, err := blobStringArg("Crypto.encryptWithManagedIV privateKey", args[1:2])
+			if err != nil {
+				return Null, err
+			}
+			clearText, err := blobStringArg("Crypto.encryptWithManagedIV clearText", args[2:3])
+			if err != nil {
+				return Null, err
+			}
+			additionalData, err := blobStringArg("Crypto.encryptWithManagedIV additionalData", args[3:4])
+			if err != nil {
+				return Null, err
+			}
+				managed := managedIV([]byte(key), []byte(clearText))
+				const managedIVSize = 12
+				iv := managed[:managedIVSize]
+			cipherText, err := encryptAESGCM(args[0].Text, []byte(key), iv, []byte(clearText), []byte(additionalData))
+			if err != nil {
+				return Null, newExceptionError("System.InvalidParameterValueException", err.Error())
+			}
+			envelope := make([]byte, 1+len(iv)+len(cipherText))
+				envelope[0] = managedIVSize
+			copy(envelope[1:], iv)
+			copy(envelope[1+len(iv):], cipherText)
+			return platformScalar("Blob", string(envelope)), nil
 		}
 		if len(args) != 3 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Crypto.encryptWithManagedIV expects algorithm, privateKey Blob, and clearText Blob")
@@ -1719,7 +1772,30 @@ platformStaticCall:
 		return platformScalar("Blob", string(append(append([]byte{}, iv...), cipherText...))), nil
 	case "Crypto.decryptWithManagedIV":
 		if len(args) == 4 {
-			return Null, unsupportedCallError("Crypto.decryptWithManagedIV local authenticated-data managed-IV AES surface")
+			key, err := blobStringArg("Crypto.decryptWithManagedIV privateKey", args[1:2])
+			if err != nil {
+				return Null, err
+			}
+			cipherEnvelope, err := blobStringArg("Crypto.decryptWithManagedIV cipherText", args[2:3])
+			if err != nil {
+				return Null, err
+			}
+			additionalData, err := blobStringArg("Crypto.decryptWithManagedIV additionalData", args[3:4])
+			if err != nil {
+				return Null, err
+			}
+			if len(cipherEnvelope) < 1 {
+				return Null, newExceptionError("System.InvalidParameterValueException", "cipherText must include managed IV")
+			}
+			ivLength := int(cipherEnvelope[0])
+			if ivLength != 12 || len(cipherEnvelope) < 1+ivLength {
+				return Null, newExceptionError("System.InvalidParameterValueException", "cipherText must include a 12-byte managed IV")
+			}
+			clearText, err := decryptAESGCM(args[0].Text, []byte(key), []byte(cipherEnvelope[1:1+ivLength]), []byte(cipherEnvelope[1+ivLength:]), []byte(additionalData))
+			if err != nil {
+				return Null, newExceptionError("System.InvalidParameterValueException", err.Error())
+			}
+			return platformScalar("Blob", string(clearText)), nil
 		}
 		if len(args) != 3 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Crypto.decryptWithManagedIV expects algorithm, privateKey Blob, and cipherText Blob")
@@ -1821,6 +1897,9 @@ platformStaticCall:
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Schema.SObjectField") {
 			return Null, jsonDeserializeException("Type cannot be serialized")
 		}
+		if isIteratorValue(args[0]) {
+			return Null, jsonDeserializeException("Apex Type unsupported in JSON: system.ListIterator")
+		}
 		data, err := jsonMarshalNoEscape(vm.jsonFromValueForSerialize(args[0], suppressNulls))
 		if err != nil {
 			return Null, jsonDeserializeException("%s", err.Error())
@@ -1836,6 +1915,9 @@ platformStaticCall:
 		}
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Schema.SObjectField") {
 			return Null, jsonDeserializeException("Type cannot be serialized")
+		}
+		if isIteratorValue(args[0]) {
+			return Null, jsonDeserializeException("Apex Type unsupported in JSON: system.ListIterator")
 		}
 		data, err := jsonMarshalNoEscapeIndent(vm.jsonFromValueForSerialize(args[0], suppressNulls), "", "  ")
 		if err != nil {
@@ -1948,6 +2030,12 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, fmt.Errorf("Schema.describeDataCategoryGroups expects List<String>")
 		}
+		if len(args[0].List) > 0 && !vm.hasDataCategoryMetadata() {
+			return Null, newExceptionError(
+				"System.InvalidParameterValueException",
+				"No data category groups are configured for this org",
+			)
+		}
 		describes := vm.schemaDescribeDataCategoryGroups(args[0])
 		appendTraceLazy(result, "apex.describe.dataCategoryGroups", "apex.describe", func() map[string]any {
 			return vm.traceDescribeArgs("describeDataCategoryGroups", map[string]any{
@@ -1958,6 +2046,12 @@ platformStaticCall:
 	case "Schema.describeDataCategoryGroupStructures":
 		if len(args) != 2 || args[0].Kind != ValueList || args[1].Kind != ValueBool {
 			return Null, fmt.Errorf("Schema.describeDataCategoryGroupStructures expects List<Schema.DataCategoryGroupSobjectTypePair> and Boolean")
+		}
+		if len(args[0].List) > 0 && !vm.hasDataCategoryMetadata() {
+			return Null, newExceptionError(
+				"System.NullPointerException",
+				"No data category groups are configured for this org",
+			)
 		}
 		describes := vm.schemaDescribeDataCategoryGroupStructures(args[0], args[1].Bool)
 		appendTraceLazy(result, "apex.describe.dataCategoryGroupStructures", "apex.describe", func() map[string]any {
@@ -2046,6 +2140,11 @@ platformStaticCall:
 		return Null, unsupportedCallError(callee + " local platform event after-commit delivery surface")
 	case "IntegrationTest.commitTestOnly":
 		return Null, unsupportedCallError(callee + " local IntegrationTest developer preview service surface")
+	case "Auth.JWTUtil.parseJWTFromStringWithoutValidation":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Auth.JWTUtil.parseJWTFromStringWithoutValidation expects String")
+		}
+		return parseJWTFromStringWithoutValidation(args[0].Text)
 	case "Request.getCurrent", "System.Request.getCurrent", "RequestImpl.getCurrent":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -2059,10 +2158,7 @@ platformStaticCall:
 	case "ConnectApi.Organization.getSettings":
 		return vm.connectAPIOrganizationSettings(args)
 	case "ConnectApi.ChatterUsers.getFollowings", "System.ConnectApi.ChatterUsers.getFollowings":
-		if vm.testContext != nil && vm.testContext.SeeAllDataSet && !vm.testContext.SeeAllData {
-			return Null, newExceptionError("UnsupportedOperationException", "ConnectApi.ChatterUsers.getFollowings requires SeeAllData=true in local tests")
-		}
-		return Object("ConnectApi.FollowingPage"), nil
+		return vm.connectAPIChatterUsersGetFollowings(args)
 	case "ConnectApi.Communities.getCommunity", "System.ConnectApi.Communities.getCommunity":
 		return vm.connectAPICommunity(args)
 	case "ConnectApi.Communities.getCommunities", "System.ConnectApi.Communities.getCommunities":
@@ -2226,6 +2322,9 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Process.SparkPlugApi.describePlugin expects class name String")
 		}
+		if !localSparkPlugIsRegistered(args[0].Text) {
+			return Null, newExceptionError("System.NoDataFoundException", fmt.Sprintf("SparkPlug plugin %q was not found", args[0].Text))
+		}
 		result := Object("Process.SparkPlugApi.SparkPlugDescribeResult")
 		result.Fields["className"] = args[0]
 		return result, nil
@@ -2237,6 +2336,9 @@ platformStaticCall:
 	case "Process.SparkPlugApi.invokePluginWithJson":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 			return Null, fmt.Errorf("Process.SparkPlugApi.invokePluginWithJson expects class name and parameters JSON Strings")
+		}
+		if !localSparkPlugIsRegistered(args[0].Text) {
+			return Null, newExceptionError("System.NoDataFoundException", fmt.Sprintf("SparkPlug plugin %q was not found", args[0].Text))
 		}
 		return String("{}"), nil
 	case "TrailblazerIdentity.generateUserEmailVerificationToken":
@@ -2254,17 +2356,64 @@ platformStaticCall:
 			return Null, fmt.Errorf("TrailblazerIdentity.splunkLog expects source and message")
 		}
 		return Null, nil
-	case "Auth.AuthToken.revokeAccess":
-		if len(args) != 3 {
-			return Null, fmt.Errorf("Auth.AuthToken.revokeAccess expects 3 arguments")
+	case "Auth.AuthToken.getAccessToken":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("Auth.AuthToken.getAccessToken expects 2 arguments")
 		}
-		return Bool(true), nil
+		if err := validateAuthTokenArguments(args, len(args)); err != nil {
+			return Null, err
+		}
+		if err := validateAuthTokenID(args[0]); err != nil {
+			return Null, err
+		}
+		return Null, unsupportedCallError(callee)
+	case "Auth.AuthToken.getAccessTokenMap":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("Auth.AuthToken.getAccessTokenMap expects 2 arguments")
+		}
+		if err := validateAuthTokenArguments(args, len(args)); err != nil {
+			return Null, err
+		}
+		if err := validateAuthTokenID(args[0]); err != nil {
+			return Null, err
+		}
+		return Null, unsupportedCallError(callee)
+	case "Auth.AuthToken.refreshAccessToken":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("Auth.AuthToken.refreshAccessToken expects 3 arguments")
+		}
+		if err := validateAuthTokenArguments(args, len(args)); err != nil {
+			return Null, err
+		}
+		if err := validateAuthTokenID(args[0]); err != nil {
+			return Null, err
+		}
+		return Null, unsupportedCallError(callee)
+	case "Auth.AuthToken.revokeAccess":
+		if len(args) != 4 {
+			return Null, fmt.Errorf("Auth.AuthToken.revokeAccess expects 4 arguments")
+		}
+		if err := validateAuthTokenArguments(args, 2); err != nil {
+			return Null, err
+		}
+		if err := validateAuthTokenID(args[0]); err != nil {
+			return Null, err
+		}
+		return Bool(args[2].Kind == ValueNull), nil
 	case "Auth.SessionManagement.getCurrentSession":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Auth.SessionManagement.getCurrentSession expects 0 arguments")
 		}
 		session := typedMap("Map<String,String>")
-		session.Map[mapKey(String("SessionId"))] = String(vm.currentUserInfoField("Id", "005-local-user") + "-session")
+		for _, key := range []string{
+			"NumSecondsValid", "LastModifiedDate", "CreatedDate", "LoginGeoId",
+			"LoginHistoryId", "LoginDomain", "LogoutUrl", "ParentId", "SessionId",
+			"SessionSecurityLevel", "SourceIp", "LoginSubType", "LoginType", "UserType",
+			"SessionType", "Username", "UsersId",
+		} {
+			session.Map[mapKey(String(key))] = Null
+		}
+		session.Map[mapKey(String("SessionId"))] = String("local-session")
 		return session, nil
 	case "Auth.AuthConfiguration.getAuthProviderSsoUrl":
 		if len(args) != 3 {
@@ -2280,6 +2429,13 @@ platformStaticCall:
 	case "Cache.Org.getPartition", "Cache.Session.getPartition":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("%s expects String partition name", callee)
+		}
+		if !validCachePartitionName(args[0].Text) {
+			exceptionType := "cache.OrgCacheException"
+			if strings.HasPrefix(callee, "Cache.Session.") {
+				exceptionType = "cache.SessionCacheException"
+			}
+			return Null, newExceptionError(exceptionType, "Invalid partition: partition name must be alphanumeric.")
 		}
 		partition := Object("Cache.OrgPartition")
 		if strings.HasPrefix(callee, "Cache.Session.") {
@@ -2305,7 +2461,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return Decimal(100), nil
-	case "Cache.Org.isAvailable", "Cache.Session.isAvailable":
+	case "Cache.Session.isAvailable":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
@@ -2317,10 +2473,8 @@ platformStaticCall:
 		return String(cacheDefaultPartitionName(callee)), nil
 	case "Cache.Org.getAvgGetSize", "Cache.Session.getAvgGetSize",
 		"Cache.Org.getAvgGetTime", "Cache.Session.getAvgGetTime",
-		"Cache.Org.getAvgValueSize", "Cache.Session.getAvgValueSize",
 		"Cache.Org.getMaxGetSize", "Cache.Session.getMaxGetSize",
-		"Cache.Org.getMaxGetTime", "Cache.Session.getMaxGetTime",
-		"Cache.Org.getMaxValueSize", "Cache.Session.getMaxValueSize":
+		"Cache.Org.getMaxGetTime", "Cache.Session.getMaxGetTime":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
@@ -2493,6 +2647,9 @@ platformStaticCall:
 	case "UserProvisioning.ConnectorTestUtil.createConnectedApp":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("UserProvisioning.ConnectorTestUtil.createConnectedApp expects connected app name")
+		}
+		if vm.testContext == nil {
+			return Null, newExceptionError("System.TypeException", "Cannot call test methods in non-test context")
 		}
 		app := Object("ConnectedApplication")
 		app.Fields["Id"] = platformScalar("Id", "0SO000000000001")
@@ -2769,11 +2926,6 @@ platformStaticCall:
 			return Null, fmt.Errorf("Location.newInstance expects latitude and longitude")
 		}
 		return newLocation(args[0], args[1]), nil
-	case "Address.newInstance":
-		if len(args) != 0 {
-			return Null, fmt.Errorf("Address.newInstance expects 0 arguments")
-		}
-		return Object("Address"), nil
 	case "Location.getDistance":
 		if len(args) != 3 || args[0].Kind != ValueObject || args[1].Kind != ValueObject || args[2].Kind != ValueString {
 			return Null, fmt.Errorf("Location.getDistance expects two Locations and unit String")
@@ -3058,22 +3210,36 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getSiteId expects 0 arguments")
 		}
+		if !vm.hasOrgRecords("Site") {
+			return Null, nil
+		}
 		return String(vm.firstOrgRecordID("Site", "local-site")), nil
 	case "Site.getBaseUrl":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getBaseUrl expects 0 arguments")
 		}
-		return String(vm.siteBaseURL()), nil
+		// With no active Site/community request context Salesforce returns an
+		// empty base URL. Keep the local runtime deterministic rather than
+		// exposing its synthetic host as hosted Site state.
+		return String(""), nil
 	case "Site.getCurrentSiteUrl":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getCurrentSiteUrl expects 0 arguments")
 		}
 		return String(vm.siteBaseURL()), nil
-	case "Site.getBaseRequestUrl", "Site.getBaseSecureUrl", "Site.getBaseCustomUrl", "Site.getBaseInsecureUrl", "Site.getCustomWebAddress", "Site.getAnalyticsTrackingCode", "Site.getOriginalUrl", "Site.getPasswordPolicyStatement":
+	case "Site.getBaseRequestUrl", "Site.getBaseSecureUrl", "Site.getBaseCustomUrl", "Site.getBaseInsecureUrl", "Site.getCustomWebAddress", "Site.getAnalyticsTrackingCode", "Site.getOriginalUrl":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
+		if (strings.EqualFold(callee, "Site.getAnalyticsTrackingCode") || strings.EqualFold(callee, "Site.getOriginalUrl")) && !vm.hasOrgRecords("Site") {
+			return Null, nil
+		}
 		return String(""), nil
+	case "Site.getPasswordPolicyStatement":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.getPasswordPolicyStatement expects 0 arguments")
+		}
+		return String("Your password must be at least 8 characters long.\nYour password must include letters and numbers"), nil
 	case "Site.getExperienceId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getExperienceId expects 0 arguments")
@@ -3103,27 +3269,36 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getAdminEmail expects 0 arguments")
 		}
+		if !vm.hasOrgRecords("Site") {
+			return Null, nil
+		}
 		return String(vm.siteAdminEmail()), nil
 	case "Site.getAdminId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getAdminId expects 0 arguments")
+		}
+		if !vm.hasOrgRecords("Site") {
+			return Null, nil
 		}
 		return String(vm.firstOrgRecordIDField("Site", "AdminId", vm.currentUserInfoField("Id", "005-local-user"))), nil
 	case "Site.getMasterLabel":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getMasterLabel expects 0 arguments")
 		}
+		if !vm.hasOrgRecords("Site") {
+			return Null, nil
+		}
 		return String(vm.firstOrgRecordString("Site", "MasterLabel", "Local Site")), nil
 	case "Site.isRegistrationEnabled":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.isRegistrationEnabled expects 0 arguments")
 		}
-		return Bool(true), nil
+		return Bool(false), nil
 	case "Site.isLoginEnabled":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.isLoginEnabled expects 0 arguments")
 		}
-		return Bool(true), nil
+		return Bool(false), nil
 	case "Site.isPasswordExpired":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.isPasswordExpired expects 0 arguments")
@@ -3158,7 +3333,7 @@ platformStaticCall:
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("Site.forgotPassword expects 1 or 2 arguments")
 		}
-		return Bool(true), nil
+		return Bool(false), nil
 	case "Site.login":
 		if len(args) != 3 {
 			return Null, fmt.Errorf("Site.login expects 3 arguments")
@@ -3356,6 +3531,9 @@ platformStaticCall:
 	default:
 		if strings.HasPrefix(callee, "Crypto.") {
 			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
+		}
+		if value, handled, err := vm.callCachePartitionStaticDefault(callee, args); handled || err != nil {
+			return value, err
 		}
 		if _, methodName, ok := vm.splitClassMember(callee); ok {
 			if value, handled, err := vm.callGenericCollectionStaticMember(methodName, args); handled || err != nil {
@@ -3582,7 +3760,7 @@ func (vm *VM) pageReferenceForResource(args []Value) (Value, error) {
 		return newPageReference("/resource"), nil
 	}
 	if vm.Org != nil && !vm.staticResourceExists(resourceName) {
-		return Null, newExceptionError("VisualforceException", fmt.Sprintf("Static Resource named %s does not exist.", resourceName))
+		return Null, newExceptionError("System.InvalidParameterValueException", "Static Resource does not exist")
 	}
 	url := "/resource/" + resourceName
 	if len(args) == 2 {

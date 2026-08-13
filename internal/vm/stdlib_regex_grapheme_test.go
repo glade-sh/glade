@@ -15,7 +15,7 @@ func TestGraphemeBoundaryTable(t *testing.T) {
 
 func TestCompileGraphemeRegexPlanMatchesExtendedClusters(t *testing.T) {
 	text := "👍🏽x"
-	plan, err := compileRegexp2PlanForInput("Pattern.compile", `\X`, 0, text)
+	plan, err := compileRegexp2PlanForInput("Pattern.compile", `\X`, text)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func TestCompileGraphemeRegexPlanMatchesExtendedClusters(t *testing.T) {
 
 func TestCompileGraphemeRegexPlanMatchesGraphemeBoundaries(t *testing.T) {
 	text := "e\u0301x"
-	plan, err := compileRegexp2PlanForInput("Pattern.compile", `\b{g}`, 0, text)
+	plan, err := compileRegexp2PlanForInput("Pattern.compile", `\b{g}`, text)
 	if err != nil {
 		t.Fatal(err)
 	}

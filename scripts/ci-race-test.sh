@@ -94,7 +94,7 @@ PY
 
 heavy_package=false
 case "${package}" in
-	./internal/apextest|./internal/gladecli|./internal/playground|./internal/server)
+	./internal/apextest|./internal/gladecli|./internal/playground|./internal/server|./internal/testdaemon)
 		heavy_package=true
 		;;
 	*)
@@ -160,11 +160,11 @@ if [[ "${package}" == "./internal/apextest" ]]; then
 			exit 2
 		fi
 		case "${apextest_runner}:${apextest_shard_indexes}" in
-			a:0,1,2,3,4,5,6)
-				assigned_apextest_indexes=(0 1 2 3 4 5 6)
+			a:0,2,4,5)
+				assigned_apextest_indexes=(0 2 4 5)
 				;;
-			b:7)
-				assigned_apextest_indexes=(7)
+			b:1,3,6,7)
+				assigned_apextest_indexes=(1 3 6 7)
 				;;
 			*)
 				printf '[ci] invalid apextest runner assignment %q:%q\n' "${apextest_runner}" "${apextest_shard_indexes}" >&2

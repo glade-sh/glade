@@ -37,11 +37,12 @@ invocation, and expected externally observable behavior. The expected behavior
 should come from Salesforce itself or from a written public specification, not
 from proprietary implementation internals.
 
-When runtime behavior is ambiguous, confirm it against a connected scratch org
-before changing `glade`. Use its alias for small executable probes:
+When runtime behavior is ambiguous, confirm it against the connected scratch org
+before changing `glade`. Use an explicitly authorized scratch-org alias such as
+`glade-probe` for small executable probes:
 
 ```bash
-echo "System.debug('Hello from CLI');" | sf apex run --target-org scratch-org-alias
+echo "System.debug('Hello from CLI');" | sf apex run --target-org glade-probe
 ```
 
 Keep the probe minimal, record the observed result in the test or commit

@@ -38,9 +38,9 @@ Use the editor as a live capability map: type a dot, read the label, and see the
       <p>Object labels, fields, record types, and child relationships from local metadata.</p>
     </article>
     <article>
-      <span class="home-completion-status home-completion-status-salesforce">Requires Salesforce</span>
+      <span class="home-completion-status home-completion-status-supported">Runs locally</span>
       <code>Answers.findSimilar</code>
-      <p>Hosted Answers service data stays marked instead of being silently faked.</p>
+      <p>Deterministic empty list. Glade does not perform hosted similarity search.</p>
     </article>
   </div>
 </section>

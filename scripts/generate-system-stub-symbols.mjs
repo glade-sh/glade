@@ -796,11 +796,32 @@ function addReferencedPlaceholders(specs) {
 function applyGeneratedCompatibilityOverrides(specs) {
   const byName = new Map(specs.map((spec) => [spec.name.toLowerCase(), spec]));
 
+  const system = byName.get("system");
+  if (system) {
+    system.methods = system.methods.filter((method) =>
+      !(method.name.toLowerCase() === "debug" && method.parameters.length === 2 &&
+        method.parameters.every((param) => param.type.toLowerCase() === "object")));
+  }
+
 	const inboundEmailHandler = byName.get("messaging.inboundemailhandler");
 	if (inboundEmailHandler) {
 		inboundEmailHandler.kind = "DeclarationInterface";
 		inboundEmailHandler.superClass = "";
 		inboundEmailHandler.constructors = [];
+	}
+
+	const notificationActionHandler = byName.get("messaging.notificationactionhandler");
+	if (notificationActionHandler) {
+		notificationActionHandler.kind = "DeclarationInterface";
+		notificationActionHandler.superClass = "";
+		notificationActionHandler.constructors = [];
+	}
+
+	const processPlugin = byName.get("process.plugin");
+	if (processPlugin) {
+		processPlugin.kind = "DeclarationInterface";
+		processPlugin.superClass = "";
+		processPlugin.constructors = [];
 	}
 
 	const unsupportedOperationException = byName.get("unsupportedoperationexception");

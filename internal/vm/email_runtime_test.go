@@ -6,6 +6,52 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+func TestExecMessagingExtractInboundEmailParsesRFC822Blob(t *testing.T) {
+	program, err := CompileAnonymous(`
+Blob source = Blob.valueOf('From: sender@example.com\nTo: recipient@example.com\nSubject: probe\n\nbody');
+Messaging.InboundEmail inbound = Messaging.extractInboundEmail(source, true);
+System.assertEquals('sender@example.com', inbound.fromAddress);
+System.assertEquals(1, inbound.toAddresses.size());
+System.assertEquals('recipient@example.com', inbound.toAddresses[0]);
+System.assertEquals('probe', inbound.subject);
+System.assertEquals('body', inbound.plainTextBody);
+System.assertEquals(false, inbound.plainTextBodyIsTruncated);
+System.assertEquals(3, inbound.headers.size());
+System.assertEquals('From', inbound.headers[0].name);
+System.assertEquals('sender@example.com', inbound.headers[0].value);
+System.assertEquals('To', inbound.headers[1].name);
+System.assertEquals('recipient@example.com', inbound.headers[1].value);
+System.assertEquals('Subject', inbound.headers[2].name);
+System.assertEquals('probe', inbound.headers[2].value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMessagingSingleEmailMessageGettersCanonicalize15CharacterIDs(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage();
+message.setOrgWideEmailAddressId('0D2000000000001');
+message.setTargetObjectId('003000000000001');
+message.setTemplateId('00X000000000001');
+message.setWhatId('001000000000001');
+System.assertEquals('0D2000000000001CAA', String.valueOf(message.getOrgWideEmailAddressId()));
+System.assertEquals('003000000000001AAA', String.valueOf(message.getTargetObjectId()));
+System.assertEquals('00X000000000001EAA', String.valueOf(message.getTemplateId()));
+System.assertEquals('001000000000001AAA', String.valueOf(message.getWhatId()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMessagingRenderStoredEmailTemplateFullLocalAttachments(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage withBody = Messaging.renderStoredEmailTemplate(
@@ -69,6 +115,44 @@ System.assertEquals(0, none.getFileAttachments().size());
 	}
 	if got := stringValue(attachments.List[0].Fields["body"]); got != "contract body" {
 		t.Fatalf("BODY first attachment body = %q", got)
+	}
+}
+
+func TestExecMessagingSendEmailMissingBodyUsesSalesforceErrorContract(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage();
+message.setToAddresses(new List<String>{'missing-body@example.test'});
+List<Messaging.SendEmailResult> results = Messaging.sendEmail(
+	new List<Messaging.SingleEmailMessage>{message}, false
+);
+System.assertEquals(1, results.size());
+System.assertEquals(false, results[0].isSuccess());
+System.assertEquals(1, results[0].getErrors().size());
+System.assertEquals('Email body is required.', results[0].getErrors()[0].getMessage());
+System.assertEquals('REQUIRED_FIELD_MISSING', String.valueOf(results[0].getErrors()[0].getStatusCode()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMessagingMassEmailMessageSalesforceDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.MassEmailMessage mass = new Messaging.MassEmailMessage();
+System.assertEquals('Mass Email (API)', mass.description);
+System.assertEquals(null, mass.targetObjectIds);
+System.assertEquals(null, mass.whatIds);
+System.assertEquals(0, mass.getTargetObjectIds().size());
+System.assertEquals(0, mass.getWhatIds().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

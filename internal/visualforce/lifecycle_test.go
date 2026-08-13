@@ -169,6 +169,66 @@ return null;
 	}
 }
 
+func TestRenderPageActionInvokeUsesBoundVisualforceLifecycle(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/ActionInvoke.page"), `<apex:page controller="ActionInvokeController">
+  <apex:outputText value="{!status}"/>
+</apex:page>`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	idx, err := LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runProgram, err := vm.CompileAnonymous(`
+return new ApexPages.Action('{!save}').invoke();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	saveProgram, err := vm.CompileAnonymous(`
+this.status = 'saved';
+PageReference next = new PageReference('/apex/Done');
+next.setRedirect(true);
+return next;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := testRunner(t)
+	if err := machine.RegisterClass(vm.Class{
+		Name: "ActionInvokeController",
+		Fields: map[string]vm.Field{
+			"status": {Name: "status", Type: "String", InitialValue: vm.String("ready")},
+		},
+		Methods: map[string]vm.Method{
+			"run":  {Name: "ActionInvokeController.run", ClassName: "ActionInvokeController", ReturnType: "PageReference", Program: runProgram},
+			"save": {Name: "ActionInvokeController.save", ClassName: "ActionInvokeController", ReturnType: "PageReference", Program: saveProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := RenderPage(PageRenderRequest{
+		Project:  p,
+		VFIndex:  idx,
+		Machine:  machine,
+		PageName: "ActionInvoke",
+		PageURL:  "/apex/ActionInvoke",
+		Action:   "{!run}",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Redirect || result.RedirectURL != "/apex/Done" {
+		t.Fatalf("redirect = %v, url = %q", result.Redirect, result.RedirectURL)
+	}
+}
+
 func TestRenderPageStandardControllerSaveUpdatesCurrentPageRecord(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

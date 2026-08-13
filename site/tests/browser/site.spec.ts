@@ -9,7 +9,8 @@ const representativeRoutes = [
   '/guide/support-map',
   '/reference/cli',
   '/guide/workbench',
-  '/help/'
+  '/help/',
+  '/private-corpus-assurance.html'
 ]
 
 function observeBrowserErrors(page: Page) {
@@ -119,6 +120,7 @@ test('SPA navigation returns home without losing route-scoped behavior', async (
 })
 
 test('representative routes have no serious or critical axe violations', async ({ page }) => {
+  test.setTimeout(90_000)
   const errors = observeBrowserErrors(page)
   for (const theme of ['dark', 'light']) {
     await page.goto('/')
@@ -158,7 +160,7 @@ test('support rows can be searched and filtered with announced results', async (
   await search.fill('Answers.findSimilar')
   await expect(page.getByRole('status')).toContainText('1 checked row')
   await expect(page.locator('.support-explorer-list')).toContainText('Answers.findSimilar')
-  await page.getByRole('combobox', { name: 'Status' }).selectOption('supported')
+  await page.getByRole('combobox', { name: 'Status' }).selectOption('unsupported')
   await expect(page.getByRole('status')).toContainText('0 checked rows')
   await expectNoHorizontalOverflow(page)
   expect(errors).toEqual([])

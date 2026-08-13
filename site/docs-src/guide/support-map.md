@@ -54,6 +54,28 @@ apply only to the named catalog.
 
 <GladeSupportExplorer />
 
+## Current release assurance
+
+The next release was exercised against a frozen two-repository private corpus
+using the exact Glade candidate and real project checks and tests. Public
+artifacts identify the repositories only as `private-corpus-001` and
+`private-corpus-002`.
+
+- 321 observed usage keys reconciled with zero unknown usage.
+- 184 required surfaces were derived from sealed authoritative inputs.
+- 178 compile-ready and test-ready surfaces have required local proof.
+- 54 runtime-parity-ready surfaces have fresh Salesforce proof.
+- 107 explicit zero-credit non-parity outcomes remain visible.
+- Six hosted-deferred surfaces remain outside compile, test, and runtime-parity
+  readiness in this snapshot.
+
+These outcomes overlap and are not a claim of blanket Salesforce parity. Open
+the [self-contained assurance explorer](/private-corpus-assurance.html) to
+filter by namespace, repository, disposition, evidence, exclusion, or text.
+The exact candidate, receipt hashes, replay result, and interpretation rules
+are recorded in the
+[release assurance note](https://github.com/glade-sh/glade/blob/main/docs/PRIVATE_CORPUS_ASSURANCE.md).
+
 ## Runs locally
 
 These areas are the main local development contract.
@@ -105,7 +127,7 @@ Check this list before relying on Glade for a project.
 Example diagnostic:
 
 ```text
-UnsupportedFeature: unsupported call "Answers.findSimilar local Answers zone search surface"
+UnsupportedFeature: unsupported call "Search.unavailable local search/SOSL surface"
 ```
 
 ## Area details
@@ -115,7 +137,7 @@ UnsupportedFeature: unsupported call "Answers.findSimilar local Answers zone sea
 | Apex front end | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Parser, project loader, symbols, semantic checks, LSP, and diagnostics form the starting point. The checked compiler contract contains 400 language-rule rows. |
 | Runtime and tests | <span class="docs-status-chip docs-status-supported">Runs locally</span> | VM execution, local tests, SObjects, SOQL, DML, triggers, async drain, and local storage are the core contract. |
 | Local Salesforce API | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Useful for local REST, SObject CRUD/query, record count, Tooling `executeAnonymous`, and local source/schema metadata flows. It is not a hosted-org replacement. |
-| Standard library | <span class="docs-status-chip docs-status-supported">Runs locally</span> | The checked standard-library report has 267 supported rows, 19 unsupported hosted-boundary rows, and 0 partial rows. |
+| Standard library | <span class="docs-status-chip docs-status-supported">Runs locally</span> | The checked standard-library report has 268 supported rows, 18 unsupported hosted-boundary rows, and 0 partial rows. |
 | Platform service APIs | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Deterministic DTO and harness rows are modeled when the capability report says supported. Hosted service execution stays explicitly unsupported. |
 
 ## Standard library families
@@ -139,13 +161,27 @@ state.
 | UserInfo, URL, Label, and TrailblazerIdentity | Broad local capability | 24 supported / 24 tracked |
 | Type, FeatureManagement, and Exception | Supported local rows, hosted package gap | 8 supported, 1 unsupported / 9 tracked |
 | Local test harness and request context | Supported local rows, hosted and malformed-input gaps | 32 supported, 2 unsupported / 34 tracked |
-| Hosted-service and platform boundary rows | Requires Salesforce, plus stable diagnostics | 1 supported diagnostic row, 2 unsupported / 3 tracked |
+| Hosted-service and platform boundary rows | Requires Salesforce, plus stable diagnostics | 2 supported, 1 unsupported / 3 tracked |
 
 The local test harness and request-context group includes Approval list
 processing, BusinessHours, QuickAction, Request, UIRequest, Sandbox,
 Schedulable, and AccessLevel rows. The hosted-service boundary group includes
-Answers and ResetPasswordResult rows plus the stable UnsupportedFeature
-diagnostic row.
+the deterministic local Answers stub, the ResetPasswordResult row, and the
+stable UnsupportedFeature diagnostic row.
+
+## Capability claims
+
+The checked capability status and standard-library report now show no partial rows.
+Every remaining hosted-only behavior is split into an explicit unsupported row.
+
+| Measure | Rows |
+| --- | ---: |
+| Capability features marked `supported` | 31 |
+| Capability features marked `partial` | 0 |
+| Capability features marked `unsupported` | 2 |
+| Standard-library rows marked `supported` | 268 |
+| Standard-library rows marked `partial` | 0 |
+| Standard-library rows marked `unsupported` | 18 |
 
 ## Drill down
 

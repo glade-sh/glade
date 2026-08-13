@@ -20,5 +20,8 @@
 /maintainer/*
   Cache-Control: public, max-age=0, must-revalidate
 
+/private-corpus-assurance.html
+  Cache-Control: public, max-age=0, must-revalidate
+
 /install.sh
   Cache-Control: public, max-age=0, must-revalidate

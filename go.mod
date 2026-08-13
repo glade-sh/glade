@@ -11,8 +11,8 @@ require (
 	github.com/muesli/termenv v0.16.0
 	github.com/rivo/uniseg v0.4.7
 	golang.org/x/net v0.56.0
-	modernc.org/sqlite v1.50.0
 	gopkg.in/yaml.v3 v3.0.1
+	modernc.org/sqlite v1.50.0
 )
 
 require (

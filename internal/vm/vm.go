@@ -404,6 +404,19 @@ func apexPagesMessageFieldEqual(left, right Value, field string) bool {
 	return leftValue.Equal(rightValue)
 }
 
+func apexPagesMessageHashCode(message Value) int32 {
+	severity, _ := apexPagesSeverityName(message.Fields["severity"])
+	summary := ""
+	if value, ok := message.Fields["summary"]; ok {
+		summary = value.String()
+	}
+	detail := ""
+	if value, ok := message.Fields["detail"]; ok {
+		detail = value.String()
+	}
+	return javaStringHashCode(severity + "\x00" + summary + "\x00" + detail)
+}
+
 func (vm *VM) requireTestContext(callee string) error {
 	if vm.testContext == nil {
 		return fmt.Errorf("%s is only available in test context", callee)
@@ -885,6 +898,8 @@ type generatedPlatformType struct {
 	Name             string
 	Kind             apexast.DeclarationKind
 	SuperClass       string
+	IsAbstract       bool
+	EnumHashBase     *int64
 	Fields           map[string]Field
 	FieldOrder       []string
 	StaticFields     map[string]Field
@@ -1137,6 +1152,19 @@ func parseDateParseText(text string) (time.Time, error) {
 		}
 	}
 	return parseDateText(text)
+}
+
+func parseDateObjectText(text string) (time.Time, error) {
+	text = strings.TrimSpace(text)
+	for _, layout := range []string{"1/2/2006", "01/02/2006", "1/2/06", "01/02/06"} {
+		if value, err := time.Parse(layout, text); err == nil {
+			if err := validateDateParts(value.Year(), int(value.Month()), value.Day()); err != nil {
+				return time.Time{}, err
+			}
+			return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC), nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("unsupported Date object value %q", text)
 }
 
 func formatPlatformDatetime(value time.Time) string {
@@ -1444,27 +1472,29 @@ func fixedTimeZone(id string) (Value, error) {
 }
 
 type modeledTimeZone struct {
-	id             string
-	standardOffset time.Duration
-	daylightOffset time.Duration
-	standardLabel  string
-	daylightLabel  string
-	daylightRule   string
+	id                  string
+	standardOffset      time.Duration
+	daylightOffset      time.Duration
+	standardLabel       string
+	daylightLabel       string
+	standardDisplayName string
+	daylightDisplayName string
+	daylightRule        string
 }
 
 var supportedNamedTimeZones = map[string]modeledTimeZone{
-	"America/Los_Angeles": {id: "America/Los_Angeles", standardOffset: -8 * time.Hour, daylightOffset: -7 * time.Hour, standardLabel: "PST", daylightLabel: "PDT", daylightRule: "us"},
-	"America/New_York":    {id: "America/New_York", standardOffset: -5 * time.Hour, daylightOffset: -4 * time.Hour, standardLabel: "EST", daylightLabel: "EDT", daylightRule: "us"},
-	"America/Chicago":     {id: "America/Chicago", standardOffset: -6 * time.Hour, daylightOffset: -5 * time.Hour, standardLabel: "CST", daylightLabel: "CDT", daylightRule: "us"},
-	"America/Denver":      {id: "America/Denver", standardOffset: -7 * time.Hour, daylightOffset: -6 * time.Hour, standardLabel: "MST", daylightLabel: "MDT", daylightRule: "us"},
-	"America/Panama":      {id: "America/Panama", standardOffset: -5 * time.Hour, standardLabel: "EST"},
-	"Europe/London":       {id: "Europe/London", standardOffset: 0, daylightOffset: time.Hour, standardLabel: "GMT", daylightLabel: "BST", daylightRule: "europe"},
-	"Europe/Berlin":       {id: "Europe/Berlin", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", daylightRule: "europe"},
-	"Asia/Ho_Chi_Minh":    {id: "Asia/Ho_Chi_Minh", standardOffset: 7 * time.Hour, standardLabel: "ICT"},
-	"Asia/Tokyo":          {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST"},
-	"Pacific/Honolulu":    {id: "Pacific/Honolulu", standardOffset: -10 * time.Hour, standardLabel: "HST"},
-	"Pacific/Pago_Pago":   {id: "Pacific/Pago_Pago", standardOffset: -11 * time.Hour, standardLabel: "SST"},
-	"Australia/Sydney":    {id: "Australia/Sydney", standardOffset: 10 * time.Hour, daylightOffset: 11 * time.Hour, standardLabel: "AEST", daylightLabel: "AEDT", daylightRule: "sydney"},
+	"America/Los_Angeles": {id: "America/Los_Angeles", standardOffset: -8 * time.Hour, daylightOffset: -7 * time.Hour, standardLabel: "PST", daylightLabel: "PDT", standardDisplayName: "Pacific Standard Time", daylightDisplayName: "Pacific Daylight Time", daylightRule: "us"},
+	"America/New_York":    {id: "America/New_York", standardOffset: -5 * time.Hour, daylightOffset: -4 * time.Hour, standardLabel: "EST", daylightLabel: "EDT", standardDisplayName: "Eastern Standard Time", daylightDisplayName: "Eastern Daylight Time", daylightRule: "us"},
+	"America/Chicago":     {id: "America/Chicago", standardOffset: -6 * time.Hour, daylightOffset: -5 * time.Hour, standardLabel: "CST", daylightLabel: "CDT", standardDisplayName: "Central Standard Time", daylightDisplayName: "Central Daylight Time", daylightRule: "us"},
+	"America/Denver":      {id: "America/Denver", standardOffset: -7 * time.Hour, daylightOffset: -6 * time.Hour, standardLabel: "MST", daylightLabel: "MDT", standardDisplayName: "Mountain Standard Time", daylightDisplayName: "Mountain Daylight Time", daylightRule: "us"},
+	"America/Panama":      {id: "America/Panama", standardOffset: -5 * time.Hour, standardLabel: "EST", standardDisplayName: "Eastern Standard Time"},
+	"Europe/London":       {id: "Europe/London", standardOffset: 0, daylightOffset: time.Hour, standardLabel: "GMT", daylightLabel: "BST", standardDisplayName: "Greenwich Mean Time", daylightDisplayName: "British Summer Time", daylightRule: "europe"},
+	"Europe/Berlin":       {id: "Europe/Berlin", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
+	"Asia/Ho_Chi_Minh":    {id: "Asia/Ho_Chi_Minh", standardOffset: 7 * time.Hour, standardLabel: "ICT", standardDisplayName: "Indochina Time"},
+	"Asia/Tokyo":          {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST", standardDisplayName: "Japan Standard Time"},
+	"Pacific/Honolulu":    {id: "Pacific/Honolulu", standardOffset: -10 * time.Hour, standardLabel: "HST", standardDisplayName: "Hawaii-Aleutian Standard Time"},
+	"Pacific/Pago_Pago":   {id: "Pacific/Pago_Pago", standardOffset: -11 * time.Hour, standardLabel: "SST", standardDisplayName: "Samoa Standard Time"},
+	"Australia/Sydney":    {id: "Australia/Sydney", standardOffset: 10 * time.Hour, daylightOffset: 11 * time.Hour, standardLabel: "AEST", daylightLabel: "AEDT", standardDisplayName: "Australian Eastern Standard Time", daylightDisplayName: "Australian Eastern Daylight Time", daylightRule: "sydney"},
 }
 
 func supportedNamedTimeZone(id string) (modeledTimeZone, bool) {
@@ -1504,17 +1534,34 @@ func timeZoneOffsetMillis(receiver Value, instant time.Time) (Value, error) {
 	return offsetValue, nil
 }
 
-func timeZoneDisplayName(receiver Value, daylight bool) Value {
-	locationValue := receiver.Fields["location"]
-	if locationValue.Kind == ValueString && locationValue.Text != "" && locationValue.Text != "UTC" {
-		if location, ok := supportedNamedTimeZone(locationValue.Text); ok {
-			if daylight && location.daylightLabel != "" {
-				return String(location.daylightLabel)
-			}
-			return String(location.standardLabel)
-		}
+func (vm *VM) timeZoneDisplayName(receiver Value) Value {
+	idValue := receiver.Fields["id"]
+	if idValue.Kind != ValueString {
+		return idValue
 	}
-	return receiver.Fields["id"]
+	offset := time.Duration(0)
+	longName := "Pacific Standard Time"
+	locationValue := receiver.Fields["location"]
+	if locationValue.Kind == ValueString && locationValue.Text != "" {
+		if locationValue.Text == "UTC" {
+			longName = "Coordinated Universal Time"
+		} else if location, ok := supportedNamedTimeZone(locationValue.Text); ok {
+			offset, longName = location.displayNameAt(vm.fakeNow)
+		}
+	} else if offsetValue := receiver.Fields["offsetMillis"]; offsetValue.Kind == ValueInt {
+		offset = time.Duration(offsetValue.Int) * time.Millisecond
+	}
+	return String(fmt.Sprintf("(GMT%s) %s (%s)", formatTimeZoneDisplayOffset(offset), longName, idValue.Text))
+}
+
+func formatTimeZoneDisplayOffset(offset time.Duration) string {
+	sign := "+"
+	if offset < 0 {
+		sign = "-"
+		offset = -offset
+	}
+	totalMinutes := int(offset / time.Minute)
+	return fmt.Sprintf("%s%02d:%02d", sign, totalMinutes/60, totalMinutes%60)
 }
 
 func (zone modeledTimeZone) offsetAt(instant time.Time) (time.Duration, string) {
@@ -1522,6 +1569,14 @@ func (zone modeledTimeZone) offsetAt(instant time.Time) (time.Duration, string) 
 		return zone.standardOffset, zone.standardLabel
 	}
 	return zone.daylightOffset, zone.daylightLabel
+}
+
+func (zone modeledTimeZone) displayNameAt(instant time.Time) (time.Duration, string) {
+	offset, _ := zone.offsetAt(instant)
+	if zone.daylightRule != "" && zone.isDaylight(instant.UTC()) && zone.daylightDisplayName != "" {
+		return offset, zone.daylightDisplayName
+	}
+	return offset, zone.standardDisplayName
 }
 
 func (zone modeledTimeZone) instantFromLocal(year int, month time.Month, day, hour, minute, second, millisecond int) time.Time {
@@ -1723,7 +1778,12 @@ func httpSetHeader(receiver Value, name string, value Value) {
 	if !ok || headers.Kind != ValueMap {
 		headers = Map()
 	}
-	headers.Map[mapKey(String(strings.ToLower(name)))] = value
+	key := mapKey(String(strings.ToLower(name)))
+	headers.Map[key] = value
+	if headers.MapKeys == nil {
+		headers.MapKeys = make(map[string]Value)
+	}
+	headers.MapKeys[key] = String(name)
 	receiver.Fields["headers"] = headers
 }
 
@@ -1732,8 +1792,12 @@ func httpGetHeader(receiver Value, name string) Value {
 	if !ok || headers.Kind != ValueMap {
 		return Null
 	}
-	if value, ok := headers.Map[mapKey(String(strings.ToLower(name)))]; ok {
-		return value
+	for rawKey, original := range headers.MapKeys {
+		if original.Kind == ValueString && original.Text == name {
+			if value, ok := headers.Map[rawKey]; ok {
+				return value
+			}
+		}
 	}
 	return Null
 }
@@ -1747,6 +1811,10 @@ func httpHeaderKeys(receiver Value) Value {
 	for rawKey := range headers.Map {
 		decoded := valueFromMapKey(rawKey)
 		if decoded.Kind == ValueString {
+			if original, ok := headers.MapKeys[rawKey]; ok && original.Kind == ValueString {
+				keys = append(keys, original.Text)
+				continue
+			}
 			keys = append(keys, decoded.Text)
 		}
 	}
@@ -2142,6 +2210,48 @@ func managedIV(privateKey, clearText []byte) []byte {
 	return iv
 }
 
+func encryptAESGCM(algorithm string, privateKey, initializationVector, clearText, additionalData []byte) ([]byte, error) {
+	if normalizeCryptoAlgorithm(algorithm) != "AES256GCM" {
+		return nil, fmt.Errorf("Crypto.encryptWithManagedIV authenticated data only supports AES256-GCM")
+	}
+	if len(privateKey) != 32 {
+		return nil, fmt.Errorf("Crypto.encryptWithManagedIV AES256-GCM privateKey expects 32 bytes, got %d", len(privateKey))
+	}
+	block, err := aes.NewCipher(privateKey)
+	if err != nil {
+		return nil, err
+	}
+	aead, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	if len(initializationVector) != aead.NonceSize() {
+		return nil, fmt.Errorf("Crypto.encryptWithManagedIV AES256-GCM initializationVector expects %d bytes, got %d", aead.NonceSize(), len(initializationVector))
+	}
+	return aead.Seal(nil, initializationVector, clearText, additionalData), nil
+}
+
+func decryptAESGCM(algorithm string, privateKey, initializationVector, cipherText, additionalData []byte) ([]byte, error) {
+	if normalizeCryptoAlgorithm(algorithm) != "AES256GCM" {
+		return nil, fmt.Errorf("Crypto.decryptWithManagedIV authenticated data only supports AES256-GCM")
+	}
+	if len(privateKey) != 32 {
+		return nil, fmt.Errorf("Crypto.decryptWithManagedIV AES256-GCM privateKey expects 32 bytes, got %d", len(privateKey))
+	}
+	block, err := aes.NewCipher(privateKey)
+	if err != nil {
+		return nil, err
+	}
+	aead, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	if len(initializationVector) != aead.NonceSize() {
+		return nil, fmt.Errorf("Crypto.decryptWithManagedIV AES256-GCM initializationVector expects %d bytes, got %d", aead.NonceSize(), len(initializationVector))
+	}
+	return aead.Open(nil, initializationVector, cipherText, additionalData)
+}
+
 func localCryptoSignature(algorithm string, input []byte) ([]byte, error) {
 	digestAlgorithm, err := signatureDigestAlgorithm(algorithm)
 	if err != nil {
@@ -2348,7 +2458,19 @@ func finiteDecimalResult(callee string, value float64) (Value, error) {
 	if math.IsInf(value, 0) || math.IsNaN(value) {
 		return Null, fmt.Errorf("%s result must be finite", callee)
 	}
-	return Decimal(value), nil
+	result := Decimal(value)
+	result.Text = doubleDisplayText(value)
+	return result, nil
+}
+
+func doubleDisplayText(value float64) string {
+	if value == 0 {
+		return "0.0"
+	}
+	if math.Trunc(value) == value {
+		return strconv.FormatFloat(value, 'f', 1, 64)
+	}
+	return strconv.FormatFloat(value, 'f', -1, 64)
 }
 
 func isMathNumeric(value Value) bool {
@@ -2366,11 +2488,14 @@ func builtinEnumStaticValue(typeName, memberName string) (Value, bool) {
 	if rest, ok := stripLeadingSystemNamespace(typeName); ok {
 		typeName = rest
 	}
+	if canonical, names, ok := coreEnumSpec(typeName); ok {
+		return namedEnumStaticValue(canonical, names, canonical+"."+memberName)
+	}
 	switch {
 	case strings.EqualFold(typeName, "AccessLevel"):
 		for _, known := range []string{"USER_MODE", "SYSTEM_MODE"} {
 			if strings.EqualFold(memberName, known) {
-				return Value{Kind: ValueObject, Type: "AccessLevel", Text: known}, true
+				return accessLevelValue(known), true
 			}
 		}
 	case strings.EqualFold(typeName, "AccessType"):
@@ -2498,22 +2623,6 @@ func (vm *VM) putSchemaGlobalDescribeAlias(out *Value, alias, objectName string,
 	out.Map[key] = token
 }
 
-var standardDescribeTabObjects = map[string]struct{}{
-	"account":     {},
-	"campaign":    {},
-	"case":        {},
-	"contact":     {},
-	"contract":    {},
-	"event":       {},
-	"lead":        {},
-	"opportunity": {},
-	"order":       {},
-	"pricebook2":  {},
-	"product2":    {},
-	"task":        {},
-	"user":        {},
-}
-
 // foldClassKeyBuf is the max identifier length handled allocation-free by the
 // fold-lookup helpers. Apex class/namespace names are far shorter; longer names
 // fall back to the allocating canonicalClassLookupKey path.
@@ -2525,20 +2634,14 @@ func resultForLookup() *Result {
 
 func newRestRequest() Value {
 	request := Object("RestRequest")
-	request.Fields["requestURI"] = String("")
-	request.Fields["resourcePath"] = String("")
-	request.Fields["httpMethod"] = String("")
-	request.Fields["remoteAddress"] = String("")
+	request.Fields["requestURI"] = Null
+	request.Fields["resourcePath"] = Null
+	request.Fields["httpMethod"] = Null
+	request.Fields["remoteAddress"] = Null
 	request.Fields["headers"] = typedMap("Map<String,String>")
 	request.Fields["params"] = typedMap("Map<String,String>")
-	request.Fields["requestBody"] = nullBlob()
+	request.Fields["requestBody"] = Null
 	return request
-}
-
-func nullBlob() Value {
-	blob := Object("Blob")
-	blob.Fields["value"] = Null
-	return blob
 }
 
 func newPageReference(rawURL string) Value {
@@ -2583,8 +2686,12 @@ func newCookie(args []Value) (Value, error) {
 
 func newLocation(latitude, longitude Value) Value {
 	location := Object("Location")
-	location.Fields["latitude"] = Decimal(numericFloat(latitude))
-	location.Fields["longitude"] = Decimal(numericFloat(longitude))
+	latitudeValue := Decimal(numericFloat(latitude))
+	latitudeValue.Text = doubleDisplayText(latitudeValue.Decimal)
+	longitudeValue := Decimal(numericFloat(longitude))
+	longitudeValue.Text = doubleDisplayText(longitudeValue.Decimal)
+	location.Fields["latitude"] = latitudeValue
+	location.Fields["longitude"] = longitudeValue
 	return location
 }
 
@@ -3273,9 +3380,15 @@ func storageStringField(record storage.Record, field string) string {
 
 func newRestResponse() Value {
 	response := Object("RestResponse")
-	response.Fields["statusCode"] = Int(200)
+	response.Fields["statusCode"] = Null
 	response.Fields["headers"] = typedMap("Map<String,String>")
 	response.Fields["responseBody"] = Null
+	return response
+}
+
+func newRestContextResponse() Value {
+	response := newRestResponse()
+	response.Fields["statusCode"] = Int(200)
 	return response
 }
 
@@ -3300,7 +3413,7 @@ func typedSet(typeName string) Value {
 var canonicalRuntimeTypeNames = []string{
 	"HttpRequest", "HttpResponse", "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock",
 	"RestRequest", "RestResponse", "Continuation", "PageReference", "VisualEditor.DataRow",
-	"VisualEditor.DynamicPickListRows", "Dom.Document", "Auth.UserData", "Auth.VerificationResult",
+	"VisualEditor.DynamicPickListRows", "Dom.Document", "Dom.XmlNode", "Auth.UserData", "Auth.VerificationResult",
 	"Auth.AuthConfiguration", "Auth.JWT", "Metadata.DeployContainer", "Metadata.CustomMetadata",
 	"Metadata.CustomMetadataValue", "Metadata.CustomObject", "Metadata.CustomField", "Metadata.Metadata",
 	"Metadata.DeployResult", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext",
@@ -3346,7 +3459,7 @@ func (vm *VM) lookupRestContextField(name string) (Value, bool, error) {
 		return vm.restRequest, true, nil
 	case "RestContext.response":
 		if vm.restResponse.Kind == "" || vm.restResponse.Kind == ValueNull {
-			vm.restResponse = newRestResponse()
+			vm.restResponse = newRestContextResponse()
 		}
 		return vm.restResponse, true, nil
 	default:
@@ -4252,7 +4365,7 @@ func (vm *VM) standardSetDML(receiver Value, op string, result *Result) (Value, 
 	if _, err := vm.applyDML(op, records, true, "", dml.Options{}, result); err != nil {
 		return Null, receiver, false, true, err
 	}
-	return newPageReference(""), receiver, false, true, nil
+	return newPageReference("/home/home.jsp"), receiver, false, true, nil
 }
 
 func (vm *VM) callCustomNotificationMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {

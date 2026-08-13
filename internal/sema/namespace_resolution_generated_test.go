@@ -135,6 +135,12 @@ func TestAnalyzeAllowsEveryDocumentedSystemQualifiedTypeSpelling(t *testing.T) {
 	t.Parallel()
 	typeNames := make([]string, 0, len(typesys.StandardSystemNamespaceTypeNames()))
 	for _, name := range typesys.StandardSystemNamespaceTypeNames() {
+		// The generated catalog still contains the stale qualified PushUpgrade
+		// alias. Salesforce rejects that spelling; the canonical unqualified
+		// type remains covered by the residual contract tests.
+		if semaAPI67RejectedPlatformType("System." + name) {
+			continue
+		}
 		typeNames = append(typeNames, "System."+name)
 	}
 	result := analyzeSingleGeneratedClass(t, "UsesSystemQualified.cls", namespaceResolutionSourceForTypes("UsesSystemQualified", typeNames))

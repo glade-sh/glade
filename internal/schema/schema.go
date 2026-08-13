@@ -24,6 +24,7 @@ type Object struct {
 	PluralLabel        string           `json:"pluralLabel,omitempty"`
 	SharingModel       string           `json:"sharingModel,omitempty"`
 	CustomSettingsType string           `json:"customSettingsType,omitempty"`
+	EnableSearch       bool             `json:"enableSearch,omitempty"`
 	Triggerable        *bool            `json:"triggerable,omitempty"`
 	NameField          NameField        `json:"nameField,omitempty"`
 	Fields             []Field          `json:"fields,omitempty"`
@@ -52,6 +53,7 @@ type Field struct {
 	Label                         string             `json:"label,omitempty"`
 	InlineHelpText                string             `json:"inlineHelpText,omitempty"`
 	Type                          string             `json:"type,omitempty"`
+	DisplayFormat                 string             `json:"displayFormat,omitempty"`
 	Length                        int                `json:"length,omitempty"`
 	Precision                     int                `json:"precision,omitempty"`
 	Scale                         int                `json:"scale,omitempty"`
@@ -147,6 +149,7 @@ type customObjectXML struct {
 	PluralLabel        string              `xml:"pluralLabel"`
 	SharingModel       string              `xml:"sharingModel"`
 	CustomSettingsType string              `xml:"customSettingsType"`
+	EnableSearch       bool                `xml:"enableSearch"`
 	NameField          nameFieldXML        `xml:"nameField"`
 	Fields             []customFieldXML    `xml:"fields"`
 	RecordTypes        []recordTypeXML     `xml:"recordTypes"`
@@ -164,6 +167,7 @@ type customFieldXML struct {
 	Label                 string             `xml:"label"`
 	InlineHelpText        string             `xml:"inlineHelpText"`
 	Type                  string             `xml:"type"`
+	DisplayFormat         string             `xml:"displayFormat"`
 	Length                int                `xml:"length"`
 	Precision             int                `xml:"precision"`
 	Scale                 int                `xml:"scale"`
@@ -403,6 +407,9 @@ func mergeObjectMetadata(dst *Object, src Object) {
 	if dst.CustomSettingsType == "" {
 		dst.CustomSettingsType = src.CustomSettingsType
 	}
+	if src.EnableSearch {
+		dst.EnableSearch = true
+	}
 	if dst.NameField == (NameField{}) {
 		dst.NameField = src.NameField
 	}
@@ -612,6 +619,7 @@ func loadObject(path string, p project.Project) (Object, error) {
 		PluralLabel:        raw.PluralLabel,
 		SharingModel:       raw.SharingModel,
 		CustomSettingsType: strings.TrimSpace(raw.CustomSettingsType),
+		EnableSearch:       raw.EnableSearch,
 		NameField: NameField{
 			Label:         strings.TrimSpace(raw.NameField.Label),
 			Type:          strings.TrimSpace(raw.NameField.Type),
@@ -674,6 +682,7 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		Label:                         raw.Label,
 		InlineHelpText:                strings.TrimSpace(raw.InlineHelpText),
 		Type:                          raw.Type,
+		DisplayFormat:                 strings.TrimSpace(raw.DisplayFormat),
 		Length:                        raw.Length,
 		Precision:                     raw.Precision,
 		Scale:                         raw.Scale,

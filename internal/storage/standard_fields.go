@@ -2,6 +2,7 @@ package storage
 
 import (
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -14,6 +15,12 @@ func EnsureStandardObjectFields(definition *ObjectDefinition) {
 	EnsureStandardObjectFieldsForFeatures(definition, nil)
 }
 
+// StandardObjectFieldsNeedWrite reports whether EnsureStandardObjectFields
+// would mutate definition.
+func StandardObjectFieldsNeedWrite(definition ObjectDefinition) bool {
+	return standardObjectFieldsNeedWrite(definition, "")
+}
+
 // EnsureStandardObjectFieldsForFeatures adds the base standard object overlay,
 // plus feature-gated standard fields and record types for enabled org features.
 func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, features []string) {
@@ -21,6 +28,12 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 		return
 	}
 	featureSignature := canonicalFeatureSignature(features)
+	if !standardObjectFieldsNeedWrite(*definition, featureSignature) {
+		return
+	}
+	if _, ok := standardObjectCatalogEntryForName(definition.APIName); ok {
+		definition.EnableSearch = true
+	}
 	if standardFieldsOverlayApplied(*definition, featureSignature) {
 		if standardReadOnlyFlagsNeedRepair(definition) {
 			applyStandardSObjectStubReadOnlyFields(definition)
@@ -65,6 +78,16 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	}
 	RemoveCustomSettingUnsupportedFields(definition)
 	markStandardFieldsOverlay(definition, featureSignature)
+}
+
+func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature string) bool {
+	if _, ok := standardObjectCatalogEntryForName(definition.APIName); ok && !definition.EnableSearch {
+		return true
+	}
+	if !standardFieldsOverlayApplied(definition, featureSignature) {
+		return true
+	}
+	return standardReadOnlyFlagsNeedRepair(&definition)
 }
 
 func RemoveCustomSettingUnsupportedFields(definition *ObjectDefinition) {
@@ -424,7 +447,10 @@ func standardFieldsForObject(objectName string) []Field {
 	case stringsHasSuffixFold(objectName, "__c"):
 		return []Field{
 			{APIName: "Name", Label: "Name", Type: FieldString},
+			{APIName: "IsDeleted", Label: "Deleted", Type: FieldBoolean, DefaultValue: "false", Required: true, Nillable: BoolFlag(false), DefaultedOnCreate: BoolFlag(true), Createable: BoolFlag(false), Updateable: BoolFlag(false), Filterable: BoolFlag(true), Groupable: BoolFlag(true), Sortable: BoolFlag(true), Aggregatable: BoolFlag(false), Permissionable: BoolFlag(false)},
 			{APIName: "LastActivityDate", Label: "Last Activity", Type: FieldDate, DisplayType: "DATE", Createable: BoolFlag(false), Updateable: BoolFlag(false), Permissionable: BoolFlag(false)},
+			{APIName: "LastReferencedDate", Label: "Last Referenced Date", Type: FieldDateTime, DisplayType: "DATETIME", Nillable: BoolFlag(true), Createable: BoolFlag(false), Updateable: BoolFlag(false), Filterable: BoolFlag(true), Groupable: BoolFlag(false), Sortable: BoolFlag(true), Aggregatable: BoolFlag(true), Permissionable: BoolFlag(false)},
+			{APIName: "LastViewedDate", Label: "Last Viewed Date", Type: FieldDateTime, DisplayType: "DATETIME", Nillable: BoolFlag(true), Createable: BoolFlag(false), Updateable: BoolFlag(false), Filterable: BoolFlag(true), Groupable: BoolFlag(false), Sortable: BoolFlag(true), Aggregatable: BoolFlag(true), Permissionable: BoolFlag(false)},
 			{APIName: "RecordTypeId", Label: "Record Type ID", Type: FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},
 		}
 	default:
@@ -714,9 +740,29 @@ func StandardObjectDefinition(objectName string) (ObjectDefinition, bool) {
 	return definition, true
 }
 
+// StandardObjectMetadata returns a catalog-backed object metadata value
+// without mutating the runtime definition. This keeps optional describe
+// properties separate from the field/record-type overlay.
+func StandardObjectMetadata(objectName, key string) (string, bool) {
+	canonical, ok := ResolveKnownStandardObjectName(objectName)
+	if !ok {
+		return "", false
+	}
+	if key == "feedEnabled" && stringsEqualFold(canonical, "Account") {
+		return "true", true
+	}
+	entry, ok := standardObjectCatalogEntryForName(canonical)
+	if !ok || entry.Definition.Metadata == nil {
+		return "", false
+	}
+	value, ok := entry.Definition.Metadata[key]
+	return value, ok
+}
+
 func mergeStandardObjectDefinition(definition *ObjectDefinition, features []string) {
 	entry, ok := standardObjectCatalogEntryForName(definition.APIName)
 	if !ok {
+		enrichStandardDescribeMetadataFromV2(definition)
 		return
 	}
 	if definition.APIName == "" {
@@ -741,9 +787,66 @@ func mergeStandardObjectDefinition(definition *ObjectDefinition, features []stri
 		if feature == "" {
 			continue
 		}
+		if feature == "PersonAccounts" && stringsEqualFold(definition.APIName, "Account") {
+			for i := range definition.RecordTypes {
+				if stringsEqualFold(definition.RecordTypes[i].DeveloperName, "Master") {
+					definition.RecordTypes[i].Default = false
+				}
+			}
+		}
 		mergeStandardFields(definition, entry.FeatureFields[feature])
 		mergeStandardRecordTypes(definition, entry.FeatureRecordTypes[feature])
 	}
+	if stringsEqualFold(definition.APIName, "Account") && len(definition.RecordTypes) == 1 &&
+		stringsEqualFold(definition.RecordTypes[0].DeveloperName, "Master") &&
+		!hasCanonicalFeature(features, "PersonAccounts") {
+		definition.RecordTypes[0].Default = true
+	}
+	enrichStandardFieldsFromV2Describe(definition)
+}
+
+func enrichStandardDescribeMetadataFromV2(definition *ObjectDefinition) {
+	if definition == nil {
+		return
+	}
+	canonical, ok := standardDescribeCatalogCanonicalName(definition.APIName)
+	if !ok {
+		return
+	}
+	describe, ok, err := lookupStandardDescribeCatalogV2(canonical)
+	if err != nil || !ok {
+		return
+	}
+	enrichStandardDescribeMetadata(definition, describe)
+}
+
+func enrichStandardFieldsFromV2Describe(definition *ObjectDefinition) {
+	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	if err != nil || !ok {
+		return
+	}
+	v2Fields := describeFieldMap(describe.Fields)
+	for _, v2Field := range v2Fields {
+		if existingName, ok := ResolveFieldName(*definition, "", v2Field.APIName); ok {
+			existing := definition.Fields[existingName]
+			enrichStandardField(&existing, v2Field)
+			definition.Fields[existingName] = existing
+		}
+	}
+	enrichStandardDescribeMetadata(definition, describe)
+}
+
+func enrichStandardDescribeMetadata(definition *ObjectDefinition, describe standardDescribeObject) {
+	if definition == nil || describe.Mergeable == nil {
+		return
+	}
+	if definition.Metadata == nil {
+		definition.Metadata = make(map[string]string)
+	}
+	if _, explicit := definition.Metadata["mergeable"]; explicit {
+		return
+	}
+	definition.Metadata["mergeable"] = strconv.FormatBool(*describe.Mergeable)
 }
 
 func mergeStandardSObjectStubFields(definition *ObjectDefinition, features []string) {
@@ -796,7 +899,11 @@ func standardReadOnlyFlagsNeedRepair(definition *ObjectDefinition) bool {
 	if definition == nil || len(definition.Fields) == 0 {
 		return false
 	}
-	for _, name := range []string{"Id", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"} {
+	readOnlyFields, ok := standardSObjectStubReadOnlyFieldsFor(definition.APIName)
+	if !ok {
+		return false
+	}
+	for _, name := range readOnlyFields {
 		field, ok := definition.Fields[name]
 		if ok && (field.Createable == nil || field.Updateable == nil) {
 			return true
@@ -926,6 +1033,7 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		ensureField(definition, Field{APIName: "RelatedToId", Label: "Related To ID", Type: FieldReference, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
 		ensureField(definition, Field{APIName: "ToIds", Label: "To IDs", Type: FieldAny, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
 		markFieldOptional(definition, "ParentId")
+		markFieldCreateable(definition, "ParentId")
 		markFieldCreateable(definition, "Incoming")
 		markFieldCreateable(definition, "IsClientManaged")
 	case stringsEqualFold(definition.APIName, "EmailMessageRelation"):
@@ -1039,6 +1147,7 @@ func markFieldRequired(definition *ObjectDefinition, fieldName string) {
 	}
 	field := definition.Fields[resolved]
 	field.Required = true
+	field.Nillable = BoolFlag(false)
 	definition.Fields[resolved] = field
 }
 

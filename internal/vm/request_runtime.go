@@ -71,6 +71,8 @@ func (vm *VM) currentQuiddityValue() Value {
 
 func quiddityShortCode(name string) string {
 	switch name {
+	case "SYNCHRONOUS":
+		return "R"
 	case "RUNTEST_SYNC":
 		return "RT"
 	case "QUEUEABLE":
@@ -157,6 +159,14 @@ func (vm *VM) siteAdminEmail() string {
 		}
 	}
 	return "system@example.invalid"
+}
+
+func (vm *VM) hasOrgRecords(objectName string) bool {
+	if vm == nil || vm.Org == nil {
+		return false
+	}
+	object, ok := vm.Org.Objects[objectName]
+	return ok && len(object.Records) > 0
 }
 
 func (vm *VM) orgBool(objectName, field string, fallback bool) bool {
@@ -422,13 +432,17 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 	}
 	switch {
 	case strings.EqualFold(callee, "Auth.AuthConfiguration.getAuthProviderSsoUrl"),
+		strings.EqualFold(callee, "Auth.AuthToken.getAccessToken"),
+		strings.EqualFold(callee, "Auth.AuthToken.getAccessTokenMap"),
+		strings.EqualFold(callee, "Auth.AuthToken.refreshAccessToken"),
 		strings.EqualFold(callee, "Auth.AuthToken.revokeAccess"),
 		strings.EqualFold(callee, "Auth.CommunitiesUtil.isGuestUser"),
-		strings.EqualFold(callee, "Auth.SessionManagement.getCurrentSession"):
+		strings.EqualFold(callee, "Auth.SessionManagement.getCurrentSession"),
+		strings.EqualFold(callee, "Auth.JWTUtil.parseJWTFromStringWithoutValidation"):
 		return "", false
 	}
 	switch callee {
-	case "Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.AuthToken.revokeAccess", "Auth.CommunitiesUtil.isGuestUser", "Auth.SessionManagement.getCurrentSession":
+	case "Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.AuthToken.getAccessToken", "Auth.AuthToken.getAccessTokenMap", "Auth.AuthToken.refreshAccessToken", "Auth.AuthToken.revokeAccess", "Auth.CommunitiesUtil.isGuestUser", "Auth.SessionManagement.getCurrentSession":
 		return "", false
 	case "Canvas.Test.mockRenderContext", "Canvas.Test.testCanvasLifecycle",
 		"Continuation.getResponse", "Test.invokeContinuationMethod", "Test.setContinuationResponse":

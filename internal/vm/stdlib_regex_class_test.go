@@ -23,7 +23,7 @@ func TestJavaClassAlgebraLowering(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			_, re, err := compileRegexp2Pattern("Pattern.compile", tc.source, 0)
+			_, re, err := compileRegexp2Pattern("Pattern.compile", tc.source)
 			if err != nil {
 				t.Fatal(err)
 			}

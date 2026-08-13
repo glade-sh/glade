@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { test } from "node:test";
 import vm from "node:vm";
@@ -37,6 +38,7 @@ const repoApexLanguageCompatibility = await readFile(new URL("../../docs/APEX_LA
 const repoDocsIndex = await readFile(new URL("../../docs/README.md", import.meta.url), "utf8");
 const reservedIdentifierImplementation = await readFile(new URL("../../third_party/glade-apex-parser/reserved_identifier_words.go", import.meta.url), "utf8");
 const repoCompatibilityDashboard = await readFile(new URL("../../docs/COMPATIBILITY_DASHBOARD.md", import.meta.url), "utf8");
+const repoPrivateCorpusAssurance = await readFile(new URL("../../docs/PRIVATE_CORPUS_ASSURANCE.md", import.meta.url), "utf8").catch(() => "");
 const repoLwcSupport = await readFile(new URL("../../docs/LWC_SUPPORT.md", import.meta.url), "utf8");
 const releaseNotes = await readFile(new URL("../../docs/RELEASE_NOTES.md", import.meta.url), "utf8");
 const repoInstallDocs = await readFile(new URL("../../docs/INSTALL.md", import.meta.url), "utf8");
@@ -95,6 +97,7 @@ const testerFieldGuide = await readFile(new URL("../docs-src/guide/tester-field-
 const editor = await readFile(new URL("../docs-src/guide/editor.md", import.meta.url), "utf8");
 const lspReference = await readFile(new URL("../docs-src/reference/lsp.md", import.meta.url), "utf8");
 const supportMap = await readFile(new URL("../docs-src/guide/support-map.md", import.meta.url), "utf8");
+const privateCorpusAssuranceExplorer = await readFile(new URL("../docs-src/public/private-corpus-assurance.html", import.meta.url), "utf8").catch(() => "");
 const localApiServer = await readFile(new URL("../docs-src/guide/local-api-server.md", import.meta.url), "utf8");
 const gladeOrgs = await readFile(new URL("../docs-src/guide/glade-orgs.md", import.meta.url), "utf8");
 const lwcLocalShell = await readFile(new URL("../docs-src/guide/lwc-local-shell.md", import.meta.url), "utf8");
@@ -153,33 +156,51 @@ const siteCopy = [
   ...siteSourceFiles.map(([, contents]) => contents)
 ].join("\n");
 
-test("home page links the latest stable release from release notes", () => {
-  const releaseMatch = releaseNotes.match(/^## (v\d+\.\d+\.\d+) - /m);
-  assert.ok(releaseMatch, "release notes should name the latest release");
-  const latestRelease = releaseMatch[1];
-
-  assert.equal(releaseManifest.version, latestRelease);
+test("home page uses the checked stable release manifest", () => {
+  assert.match(releaseManifest.version, /^v\d+\.\d+\.\d+$/);
   assert.match(index, /import releaseManifest from '\.\.\/release-manifest\.json'/);
   assert.match(index, /class="home-release-version"/);
   assert.match(index, /releaseManifest\.version/);
+  assert.doesNotMatch(index, /releases\/tag\/v\d+\.\d+\.\d+/);
   assert.doesNotMatch(index, /v0\.0\.0-dev/);
 });
 
-test("release notes cover the latest stable release", () => {
-  assert.match(releaseNotes, /^## v0\.2\.10 - 2026-07-27/m);
-  assert.match(releaseNotes, /all 121 Salesforce reserved words/);
-  assert.match(releaseNotes, /400-row Salesforce language-rule evidence catalog/);
-  assert.match(releaseNotes, /bounded to five minutes/);
+test("release notes cover the v0.2.11 release", () => {
+  assert.match(releaseNotes, /^## v0\.2\.11 - 2026-08-12/m);
+  assert.match(releaseNotes, /semantic result cache/i);
+  assert.match(releaseNotes, /184 required surfaces/);
+  assert.match(releaseNotes, /SHA256SUMS\.txt/);
+  assert.match(releaseNotes, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.11\/docs\/DISTRIBUTION_WORKFLOW\.md/);
+  assert.match(releaseNotes, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.11\/docs\/KNOWN_GAPS\.md/);
 });
 
-test("unreleased notes describe the merged correctness-preserving performance work", () => {
+test("unreleased notes reset after the release cut", () => {
   const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(unreleased, "release notes should contain an Unreleased section");
-  assert.doesNotMatch(unreleased[1], /No changes yet\./);
-  assert.match(unreleased[1], /semantic result cache/i);
-  assert.match(unreleased[1], /Salesforce correctness/i);
-  assert.match(unreleased[1], /release check/i);
+  assert.match(unreleased[1], /No changes yet\./);
   assert.doesNotMatch(releaseNotes, /profiled large [A-Z]{2} test methods/);
+});
+
+test("release docs publish the sealed private-corpus assurance snapshot", () => {
+  const explorerSha256 = createHash("sha256").update(privateCorpusAssuranceExplorer).digest("hex");
+  for (const page of [releaseNotes, repoPrivateCorpusAssurance, supportMap]) {
+    assert.match(page, /184 required surfaces/);
+    assert.match(page, /178 compile-ready/);
+    assert.match(page, /54 runtime-parity-ready/);
+    assert.match(page, /107 explicit (?:zero-credit )?non-parity/);
+    assert.match(page, /six hosted-deferred/i);
+    assert.match(page, /not (?:a claim of|claim) blanket Salesforce parity/i);
+  }
+  assert.match(repoDocsIndex, /PRIVATE_CORPUS_ASSURANCE\.md/);
+  assert.match(supportMap, /\/private-corpus-assurance\.html/);
+  assert.match(privateCorpusAssuranceExplorer, /<title>Glade assurance<\/title>/);
+  assert.match(privateCorpusAssuranceExplorer, /private-corpus-001/);
+  assert.match(privateCorpusAssuranceExplorer, /private-corpus-002/);
+  assert.match(privateCorpusAssuranceExplorer, /All namespaces/);
+  assert.match(privateCorpusAssuranceExplorer, /All repositories/);
+  assert.equal(explorerSha256, "5bad30dfb04858f39d11c33a82e1290181d376ea58205a80ce47467eaff21625");
+  assert.match(repoPrivateCorpusAssurance, new RegExp(explorerSha256));
+  assert.doesNotMatch(privateCorpusAssuranceExplorer, /https?:\/\/|\/Users\/|@agentforce\.com|00D[A-Za-z0-9]{12,}/);
 });
 
 test("current docs describe the live registry and release safety", () => {
@@ -594,7 +615,7 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(securityWorkflow, /golang\.org\/x\/vuln\/cmd\/govulncheck@v1\.6\.0/);
   assert.match(securityWorkflow, /github\/codeql-action\/init@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /- uses: security-extended/);
-  assert.match(securityWorkflow, /timeout-minutes: 5/);
+  assert.match(securityWorkflow, /timeout-minutes: 15/);
   assert.match(securityWorkflow, /- go\/allocation-size-overflow/);
   assert.match(securityWorkflow, /- go\/incorrect-integer-conversion/);
   assert.match(securityWorkflow, /github\/codeql-action\/analyze@[0-9a-f]{40}/);
@@ -934,7 +955,7 @@ test("editor support catalog is generated from checked Glade support data", () =
   assert.ok(database.some((item) => item.label === "setSavepoint" && item.status === "supported"));
 
   const answers = editorSupportJson.receivers?.Answers?.items || [];
-  assert.ok(answers.some((item) => item.label === "findSimilar" && item.status === "unsupported"));
+  assert.ok(answers.some((item) => item.label === "findSimilar" && item.status === "supported"));
 
   const describe = editorSupportJson.receivers?.["Schema.DescribeSObjectResult"]?.items || [];
   assert.ok(describe.some((item) => item.label === "getChildRelationships" && item.status === "supported"));
@@ -1125,7 +1146,7 @@ test("capability explorer exposes supported APIs and an accessible workflow demo
   assert.match(workbench, /Database\.insert/);
   assert.match(workbench, /BusinessHours\.nextStartDate/);
   assert.match(workbench, /Answers\.findSimilar/);
-  assert.match(workbench, /Requires Salesforce/);
+  assert.match(workbench, /Deterministic empty list/);
   assert.match(workbench, /<GladeEditorWorkbench \/>/);
   assert.match(workbench, /class="[^"]*\bworkbench-page\b[^"]*"/);
   assert.match(workbench, /class="[^"]*\bhome-workbench\b[^"]*"/);
@@ -1211,7 +1232,7 @@ test("workbench page mounts a real CodeMirror editor", () => {
   assert.match(apexCompletionsModule, /function indexedReceiverType/);
   assert.match(apexCompletionsModule, /catalog\.demoReceivers\[variableName\]/);
   assert.match(editorSupportTs, /getDmlRows[\s\S]*Runs locally/);
-  assert.match(editorSupportTs, /findSimilar[\s\S]*Requires Salesforce/);
+  assert.match(editorSupportTs, /findSimilar[\s\S]*Runs locally/);
   assert.doesNotMatch(codeMirrorWorkbench, /Answers\.findSimilar/);
   assert.match(codeMirrorWorkbench, /class="glade-cm-support"/);
   assert.match(codeMirrorWorkbench, /Type a dot after the final describe, Account, Database, BusinessHours, Schema, describe\.fields, results\[0\], or fieldMap\./);
@@ -1504,8 +1525,13 @@ test("guide landing, quickstart, and support map explain the current product", (
   assert.match(supportMap, /\| UserInfo, URL, Label, and TrailblazerIdentity \| Broad local capability \| 24 supported \/ 24 tracked \|/);
   assert.match(supportMap, /\| Type, FeatureManagement, and Exception \| Supported local rows, hosted package gap \| 8 supported, 1 unsupported \/ 9 tracked \|/);
   assert.match(supportMap, /\| Local test harness and request context \| Supported local rows, hosted and malformed-input gaps \| 32 supported, 2 unsupported \/ 34 tracked \|/);
-  assert.match(supportMap, /\| Hosted-service and platform boundary rows \| Requires Salesforce, plus stable diagnostics \| 1 supported diagnostic row, 2 unsupported \/ 3 tracked \|/);
+  assert.match(supportMap, /\| Hosted-service and platform boundary rows \| Requires Salesforce, plus stable diagnostics \| 2 supported, 1 unsupported \/ 3 tracked \|/);
   assert.match(supportMap, /<GladeSupportExplorer \/>/);
+  assert.match(supportMap, /## Capability claims/);
+  assert.match(supportMap, /\| Capability features marked `supported` \| 31 \|/);
+  assert.match(supportMap, /\| Capability features marked `partial` \| 0 \|/);
+  assert.match(supportMap, /\| Standard-library rows marked `supported` \| 268 \|/);
+  assert.match(supportMap, /\| Standard-library rows marked `unsupported` \| 18 \|/);
   assert.match(supportMap, /Approval list\s+processing/);
   assert.match(configuration, /namespaceRemaps: \[\]/);
   assert.match(configuration, /Namespace remaps/);

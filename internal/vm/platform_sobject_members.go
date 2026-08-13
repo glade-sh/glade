@@ -39,6 +39,9 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 			return text, nil
 		}
 	}
+	if strings.EqualFold(value.Type, "AccessLevel") {
+		return accessLevelString(value), nil
+	}
 	if strings.EqualFold(value.Type, "String") {
 		if text, err := platformScalarText(value, "String"); err == nil {
 			return text, nil
@@ -1151,7 +1154,7 @@ func sobjectReadOnlyReason(value Value) (string, bool) {
 	return reason.Text, true
 }
 
-func addSObjectError(value *Value, message string, fields []string) {
+func addSObjectError(value *Value, message string, fields []string, replaceExisting bool) {
 	if value.Fields == nil {
 		value.Fields = make(map[string]Value)
 	}
@@ -1166,6 +1169,29 @@ func addSObjectError(value *Value, message string, fields []string) {
 	errorsList, ok := value.Fields[sobjectErrorsField]
 	if !ok || errorsList.Kind != ValueList {
 		errorsList = List()
+	}
+	if replaceExisting {
+		for i, existing := range errorsList.List {
+			if existing.Kind != ValueObject {
+				continue
+			}
+			existingFields, ok := existing.Fields["fields"]
+			if !ok || existingFields.Kind != ValueList || len(existingFields.List) != len(fields) {
+				continue
+			}
+			matches := true
+			for j, field := range fields {
+				if existingFields.List[j].String() != field {
+					matches = false
+					break
+				}
+			}
+			if matches {
+				errorsList.List[i] = errorValue
+				value.Fields[sobjectErrorsField] = errorsList
+				return
+			}
+		}
 	}
 	errorsList.List = append(errorsList.List, errorValue)
 	value.Fields[sobjectErrorsField] = errorsList
@@ -1226,13 +1252,24 @@ func dmlResultsFromSObjectErrors(records []storage.Record, values []Value) []dml
 	return results
 }
 
-func databaseErrorsList(result dml.Result) Value {
+func databaseErrorsList(result dml.Result, resultType string) Value {
 	errors := dmlResultErrors(result)
+	if errors == nil && databaseResultTypeReturnsNullErrors(resultType) {
+		return Null
+	}
 	values := make([]Value, 0, len(errors))
 	for _, err := range errors {
 		values = append(values, databaseErrorValue(err))
 	}
 	return List(values...)
+}
+
+func databaseResultTypeReturnsNullErrors(resultType string) bool {
+	switch resultType {
+	case "Database.EmptyRecycleBinResult", "Database.MergeResult", "Database.UndeleteResult":
+		return true
+	}
+	return false
 }
 
 func dmlResultErrors(result dml.Result) []dml.Error {

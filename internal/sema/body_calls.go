@@ -166,7 +166,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 							}
 							continue
 						}
-						if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, classMembers.name, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "class"); handled {
+						if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, lookupName, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "class"); handled {
 							diagnostics = append(diagnostics, platformDiagnostics...)
 							continue
 						}
@@ -1763,6 +1763,9 @@ func semaConversionScore(paramType, argType string, model *semaTypeMemberView) i
 	}
 	paramType = semaCanonicalAssignableType(paramType)
 	argType = semaCanonicalAssignableType(argType)
+	if strings.EqualFold(argType, "void") {
+		return -1
+	}
 	if strings.EqualFold(paramType, argType) {
 		return 1000
 	}
@@ -1859,6 +1862,9 @@ func semaNumericConversionScore(paramType, argType string) int {
 func semaAssignableToType(paramType, argType string, model *semaTypeMemberView) bool {
 	paramType = semaCanonicalAssignableType(paramType)
 	argType = semaCanonicalAssignableType(argType)
+	if strings.EqualFold(argType, "void") {
+		return false
+	}
 	if strings.EqualFold(argType, "Database.QueryResult") {
 		return semaDynamicQueryResultAssignableTo(paramType, model)
 	}
@@ -2026,7 +2032,7 @@ func semaPlatformAssignableToType(paramType, argType string, model *semaTypeMemb
 func semaStandardExceptionType(typeName string) bool {
 	typeName = strings.TrimPrefix(strings.TrimSpace(typeName), "System.")
 	switch normalizeName(typeName) {
-	case "assertionexception", "assertexception", "aurahandledexception", "asyncexception", "calloutexception", "dmlexception", "emailexception", "externalobjectexception", "illegalargumentexception", "illegalstateexception", "invalidparametervalueexception", "jsonexception", "limitexception", "listexception", "mathexception", "noaccessexception", "nodatafoundexception", "nosuchelementexception", "nullpointerexception", "patternsyntaxexception", "queryexception", "requiredfeaturemissingexception", "searchexception", "securityexception", "sobjectexception", "stringexception", "typeexception", "xmlexception":
+	case "assertionexception", "assertexception", "aurahandledexception", "asyncexception", "bigobjectexception", "calloutexception", "canvasexception", "dmlexception", "emailexception", "externalobjectexception", "illegalargumentexception", "illegalstateexception", "invalidheaderexception", "invalidparametervalueexception", "invalidreadonlyuserdmlexception", "jsonexception", "limitexception", "listexception", "mathexception", "noaccessexception", "nodatafoundexception", "nosuchelementexception", "nullpointerexception", "patternsyntaxexception", "queryexception", "requiredfeaturemissingexception", "searchexception", "securityexception", "sobjectexception", "stringexception", "typeexception", "xmlexception":
 		return true
 	default:
 		base := shortNestedTypeName(typeName)

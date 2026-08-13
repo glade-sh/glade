@@ -122,8 +122,8 @@ System.assertEquals(10, total);
 	if result.LimitViolations[0].Used <= caps.CPUTimeMS {
 		t.Fatalf("cpu violation used = %d, want over limit %d", result.LimitViolations[0].Used, caps.CPUTimeMS)
 	}
-	if result.LimitViolations[0].Used <= result.Limits.CPUTimeMS {
-		t.Fatalf("cpu violation used = %d, public cpu time = %d; want private budget counter", result.LimitViolations[0].Used, result.Limits.CPUTimeMS)
+	if result.LimitViolations[0].Used != machine.cpuBudgetUsed {
+		t.Fatalf("cpu violation used = %d, budget counter = %d", result.LimitViolations[0].Used, machine.cpuBudgetUsed)
 	}
 }
 

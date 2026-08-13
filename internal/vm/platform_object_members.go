@@ -48,6 +48,15 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 	if strings.EqualFold(className, "WebStoreContext") && strings.EqualFold(methodName, "getCommerceContext") {
 		return Null, false
 	}
+	if (strings.EqualFold(className, "Cache.Partition") ||
+		strings.EqualFold(className, "Cache.OrgPartition") ||
+		strings.EqualFold(className, "Cache.SessionPartition")) &&
+		strings.EqualFold(methodName, "validateCacheBuilder") {
+		if len(args) != 1 {
+			return Null, false
+		}
+		return Null, true
+	}
 	if (strings.EqualFold(className, "ConnectApi.Communities") || strings.EqualFold(className, "System.ConnectApi.Communities")) &&
 		(strings.EqualFold(methodName, "getCommunity") || strings.EqualFold(methodName, "getCommunities")) {
 		return Null, false

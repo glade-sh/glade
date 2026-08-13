@@ -104,6 +104,32 @@ func TestStandardDescribeCatalogV2CaseInsensitiveLookup(t *testing.T) {
 	}
 }
 
+func TestEnsureStandardObjectFieldsHydratesMergeableDescribeMetadata(t *testing.T) {
+	account := ObjectDefinition{APIName: "Account"}
+	EnsureStandardObjectFields(&account)
+	if got := account.Metadata["mergeable"]; got != "true" {
+		t.Fatalf("Account mergeable metadata = %q, want true", got)
+	}
+
+	caseDefinition := ObjectDefinition{APIName: "Case"}
+	EnsureStandardObjectFields(&caseDefinition)
+	if got := caseDefinition.Metadata["mergeable"]; got != "false" {
+		t.Fatalf("Case mergeable metadata = %q, want false", got)
+	}
+
+	stubOnly := ObjectDefinition{APIName: "AcceptedEventRelation"}
+	EnsureStandardObjectFields(&stubOnly)
+	if got := stubOnly.Metadata["mergeable"]; got != "false" {
+		t.Fatalf("AcceptedEventRelation mergeable metadata = %q, want false", got)
+	}
+
+	explicit := ObjectDefinition{APIName: "Account", Metadata: map[string]string{"mergeable": "false"}}
+	EnsureStandardObjectFields(&explicit)
+	if got := explicit.Metadata["mergeable"]; got != "false" {
+		t.Fatalf("explicit Account mergeable metadata = %q, want false", got)
+	}
+}
+
 func TestStandardDescribeCatalogV2UnknownName(t *testing.T) {
 	if _, ok, err := lookupStandardDescribeCatalogV2("DefinitelyNotAStandardObject"); err != nil || ok {
 		t.Fatalf("unknown lookup: ok=%v err=%v", ok, err)

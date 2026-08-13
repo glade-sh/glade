@@ -11,6 +11,12 @@ func (vm *VM) callConnectAPILocalStatic(callee string, args []Value) (Value, boo
 		return Null, false, nil
 	}
 	switch {
+	case strings.EqualFold(className, "ConnectApi.ChatterUsers") && strings.EqualFold(methodName, "getFollowings"):
+		value, err := vm.connectAPIChatterUsersGetFollowings(args)
+		return value, true, err
+	case strings.EqualFold(className, "ConnectApi.UserProfiles") && strings.EqualFold(methodName, "setPhoto"):
+		value, err := vm.connectAPIUserSetPhoto(args)
+		return value, true, err
 	case strings.EqualFold(className, "ConnectApi.ManagedContent") && strings.EqualFold(methodName, "getAllManagedContent"):
 		value, err := vm.connectAPIManagedContentGetAll(args)
 		return value, true, err
@@ -26,8 +32,8 @@ func (vm *VM) callConnectAPILocalStatic(callee string, args []Value) (Value, boo
 }
 
 func (vm *VM) connectAPIManagedContentGetAll(args []Value) (Value, error) {
-	if len(args) != 5 {
-		return Null, fmt.Errorf("ConnectApi.ManagedContent.getAllManagedContent expects 5 arguments")
+	if len(args) != 5 && len(args) != 6 {
+		return Null, fmt.Errorf("ConnectApi.ManagedContent.getAllManagedContent expects 5 or 6 arguments")
 	}
 	key := strings.TrimSpace(scalarText(args[4]))
 	if key == "" {

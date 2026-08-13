@@ -2131,7 +2131,8 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 					Range:    &member.Range,
 				})
 			}
-			if !hasModifier(member.Modifiers, "override") && hasOverridden && !hasModifier(overridden.Modifiers, "abstract") && !objectFallback {
+			abstractOverrideNotRequired := hasModifier(overridden.Modifiers, "abstract") && !typeUsesAPIVersionAtLeast(typ, 66)
+			if !hasModifier(member.Modifiers, "override") && hasOverridden && !abstractOverrideNotRequired && !objectFallback {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
 					Code:     "GLADESEMA016",
@@ -2305,6 +2306,9 @@ func semaInheritedMethodVisible(child typesys.TypeSymbol, owner typeMembers, mem
 			hasAnnotation(member.Annotations, "TestVisible")
 	}
 	if strings.EqualFold(strings.TrimSpace(child.Namespace), strings.TrimSpace(owner.namespace)) {
+		return true
+	}
+	if owner.platform && hasModifier(member.Modifiers, "public") {
 		return true
 	}
 	return hasModifier(member.Modifiers, "global") || hasModifier(member.Modifiers, "protected")
@@ -2544,6 +2548,10 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 			continue
 		}
 		field, found := semaResolveFieldPath(model, receiverType, fieldName)
+		if found && !semaProjectTypeShadowsPlatform(model, receiverType) && semaAPI67ReadOnlyPlatformField(field.owner+"."+field.member.Name) {
+			diagnostics = append(diagnostics, unsupportedLocalFeatureDiagnostic(typ, member, receiver+"."+fieldName, bodyOffset+match[2], bodyOffset+match[5], source))
+			continue
+		}
 		if found && hasModifier(field.member.Modifiers, "static") {
 			diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, receiver+"."+fieldName, "static fields cannot be accessed through an instance", bodyOffset+match[2], bodyOffset+match[5], source))
 		}
@@ -2695,6 +2703,9 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	if semaProjectTypeShadowsPlatform(model, receiverType) {
 		return nil, false
 	}
+	if semaAPI67RejectedPlatformCall(receiverType, method, receiverMode) {
+		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, start, end, source)}, true
+	}
 	if strings.EqualFold(receiverType, "System") && strings.EqualFold(method, "runAs") && len(args) == 1 {
 		return nil, true
 	}
@@ -2721,7 +2732,13 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	for i, arg := range args {
 		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
 	}
+	if semaAPI67RejectedPlatformCallArgs(receiverType, method, argTypes) {
+		return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true
+	}
 	if semaDatabaseDMLReturnType(receiverType, method, argTypes) != "" && len(args) <= 4 {
+		return nil, true
+	}
+	if semaSearchSuggestObjectOverload(receiverType, method, argTypes) {
 		return nil, true
 	}
 	if semaArgsMatchAny(sig.params, argTypes, model) || semaCollectionFieldPathArgsMatch(sig.params, args, scope, model) {

@@ -17,7 +17,7 @@ import tempfile
 
 runner_a_dir, runner_b_dir, output_path, expected_head_sha = sys.argv[1:]
 package = "github.com/glade-sh/glade/internal/apextest"
-runner_indexes = {"a": [0, 1, 2, 3, 4, 5, 6], "b": [7]}
+runner_indexes = {"a": [0, 2, 4, 5], "b": [1, 3, 6, 7]}
 test_pattern = re.compile(r"Test[A-Za-z0-9_]*\Z")
 sha_pattern = re.compile(r"[0-9a-f]{40}\Z")
 digest_pattern = re.compile(r"[0-9a-f]{64}\Z")

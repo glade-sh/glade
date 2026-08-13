@@ -1021,6 +1021,7 @@ func (e *Engine) validateUnique(objectName string, definition storage.ObjectDefi
 		}
 		index := e.uniqueIndexForField(objectName, definition, fieldName)
 		for _, key := range uniqueValueKeys(field, value) {
+			conflicts := make([]storage.ID, 0, len(index[key]))
 			for id := range index[key] {
 				if id == currentID {
 					continue
@@ -1028,7 +1029,11 @@ func (e *Engine) validateUnique(objectName string, definition storage.ObjectDefi
 				if e.uniqueBatchIgnoresConflict(objectName, fieldName, currentID, id, key) {
 					continue
 				}
-				return dmlErrorf("DUPLICATE_VALUE", []string{fieldName}, "dml: duplicate value %s.%s", objectName, fieldName)
+				conflicts = append(conflicts, id)
+			}
+			if len(conflicts) > 0 {
+				sort.Slice(conflicts, func(i, j int) bool { return conflicts[i].String() < conflicts[j].String() })
+				return dmlErrorf("DUPLICATE_VALUE", nil, "duplicate value found: %s duplicates value on record with id: %s", fieldName, conflicts[0])
 			}
 		}
 	}
