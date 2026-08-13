@@ -3,26 +3,26 @@
     {
       "arch": "amd64",
       "os": "darwin",
-      "sha256": "b9c39ccef213cda5554667d5c6afa57c319974f1963c9ed995c4994474853750",
-      "url": "https://downloads.glade.sh/v0.2.10/glade_v0.2.10_darwin_amd64.tar.gz"
+      "sha256": "d75b85d200c90508ba31e9ff3493a7fe0c767b229fe1b3320f9a9c37baf2902f",
+      "url": "https://downloads.glade.sh/v0.2.11/glade_v0.2.11_darwin_amd64.tar.gz"
     },
     {
       "arch": "arm64",
       "os": "darwin",
-      "sha256": "034164f1898a35234e91b894be5b8ae6e9eaba2e6075f19d5f3ea3ab793c8fa6",
-      "url": "https://downloads.glade.sh/v0.2.10/glade_v0.2.10_darwin_arm64.tar.gz"
+      "sha256": "c555609a6b83a96f1d7976e3688ac1332e678a0d292d78c5bcbf83f30a46a18c",
+      "url": "https://downloads.glade.sh/v0.2.11/glade_v0.2.11_darwin_arm64.tar.gz"
     },
     {
       "arch": "amd64",
       "os": "linux",
-      "sha256": "95882d6d51445139881fcd8f26ef0178c20822fd3fb90b7129a7684428d072d8",
-      "url": "https://downloads.glade.sh/v0.2.10/glade_v0.2.10_linux_amd64.tar.gz"
+      "sha256": "104ad31a75d6e852bc329717bbafaa2bef571451b5df3c21e4a5b06e328aa37c",
+      "url": "https://downloads.glade.sh/v0.2.11/glade_v0.2.11_linux_amd64.tar.gz"
     },
     {
       "arch": "arm64",
       "os": "linux",
-      "sha256": "e7d394dbd9a4b38ed53d9adaa69ad4cd668738182801bbf63a51315bf40cbc0b",
-      "url": "https://downloads.glade.sh/v0.2.10/glade_v0.2.10_linux_arm64.tar.gz"
+      "sha256": "b820ddb373ea65fb2b8a14cf0f71494c542521c7423bbd2b9c3ed301a5fcdb9e",
+      "url": "https://downloads.glade.sh/v0.2.11/glade_v0.2.11_linux_arm64.tar.gz"
     }
   ],
   "channel": "stable",
@@ -33,31 +33,31 @@
     {
       "doctor": "passed",
       "parserSmoke": "passed",
-      "sharedPayloadSHA256": "4fa6e27bb3c458ab4c06248bb4e7d3c132256942fef3f2ad13878af1faaf946a",
-      "versionOutput": "glade v0.2.10",
+      "sharedPayloadSHA256": "c18d6b441ee620dca4ecaf04b6bc377a33df018ccd3a20c21833c2bc897e60eb",
+      "versionOutput": "glade v0.2.11",
       "vscodeExtensionPackage": "present"
     },
     {
       "doctor": "passed",
       "parserSmoke": "passed",
-      "sharedPayloadSHA256": "4fa6e27bb3c458ab4c06248bb4e7d3c132256942fef3f2ad13878af1faaf946a",
-      "versionOutput": "glade v0.2.10",
+      "sharedPayloadSHA256": "c18d6b441ee620dca4ecaf04b6bc377a33df018ccd3a20c21833c2bc897e60eb",
+      "versionOutput": "glade v0.2.11",
       "vscodeExtensionPackage": "present"
     },
     {
       "doctor": "passed",
       "parserSmoke": "passed",
-      "sharedPayloadSHA256": "4fa6e27bb3c458ab4c06248bb4e7d3c132256942fef3f2ad13878af1faaf946a",
-      "versionOutput": "glade v0.2.10",
+      "sharedPayloadSHA256": "c18d6b441ee620dca4ecaf04b6bc377a33df018ccd3a20c21833c2bc897e60eb",
+      "versionOutput": "glade v0.2.11",
       "vscodeExtensionPackage": "present"
     },
     {
       "doctor": "passed",
       "parserSmoke": "passed",
-      "sharedPayloadSHA256": "4fa6e27bb3c458ab4c06248bb4e7d3c132256942fef3f2ad13878af1faaf946a",
-      "versionOutput": "glade v0.2.10",
+      "sharedPayloadSHA256": "c18d6b441ee620dca4ecaf04b6bc377a33df018ccd3a20c21833c2bc897e60eb",
+      "versionOutput": "glade v0.2.11",
       "vscodeExtensionPackage": "present"
     }
   ],
-  "version": "v0.2.10"
+  "version": "v0.2.11"
 }
