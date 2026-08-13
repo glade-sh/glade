@@ -14,7 +14,8 @@ jobs:
           fetch-depth: 0
       - run: curl -fsSL https://glade.sh/install.sh | sh
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - run: glade doctor
+      - run: glade version
+      - run: glade doctor --project .
       - run: glade check --project . --format sarif --output glade-check.sarif
       - run: glade test changed --project . --since origin/main --json --no-progress
       - run: mkdir -p reports

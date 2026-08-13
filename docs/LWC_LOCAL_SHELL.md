@@ -507,7 +507,7 @@ format. Pass `--db <path>` to load and save a SQLite local org instead.
 Use fixtures for records that record-page LWCs and LDS wires should see:
 
 ```text
-macrodata-apex/
+apex-project/
   glade.lwc.json
   data/file-rows.json
   force-app/main/default/lwc/

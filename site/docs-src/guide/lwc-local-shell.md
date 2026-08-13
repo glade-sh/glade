@@ -2,7 +2,7 @@
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Local Lightning</p>
-  <p>Serve Lightning Web Components from an SFDX project with the Workbench Console, route discovery, page context, local data, diagnostics, and a Glade-owned Lightning preview canvas.</p>
+  <p>Serve Lightning Web Components from a Salesforce DX project with the Workbench Console, route discovery, page context, local data, diagnostics, and a Glade-owned Lightning preview canvas.</p>
   <ul>
     <li>Start <code>glade dev lwc --open</code>.</li>
     <li>Select contexts from <code>glade.lwc.json</code>.</li>
@@ -430,7 +430,7 @@ storage fixtures from `data/*.json`. Use those fixtures for records that
 record-page LWCs and LDS wires should read.
 
 ```text
-macrodata-apex/
+apex-project/
   glade.lwc.json
   data/file-rows.json
   force-app/main/default/lwc/

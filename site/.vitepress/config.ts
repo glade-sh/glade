@@ -33,7 +33,8 @@ const descriptions: Record<string, string> = {
   'guide/support-map.md': 'Check which Glade Apex, data, API, LWC, and Visualforce paths run locally or still require Salesforce.',
   'guide/security-trust.md': 'Verify Glade releases and understand local plugin execution, security boundaries, and trust evidence.',
   'reference/cli.md': 'Look up Glade command behavior, flags, output formats, configuration, and local Salesforce compatibility.',
-  'help/index.md': 'Pick a Glade troubleshooting guide for a local check, Apex test, VS Code debugging, local data, or CI setup.'
+  'help/index.md': 'Pick a Glade task guide for a local check, Apex test, VS Code debugging, local data, or CI setup.',
+  'help/troubleshooting.md': 'Recover from common Glade project, doctor, test, VS Code, local target, and plugin setup problems.'
 }
 
 function routeFor(relativePath: string) {
@@ -45,7 +46,9 @@ function descriptionFor(relativePath: string, title: string) {
   if (descriptions[relativePath]) return descriptions[relativePath]
   const sentence = /[.?!]$/.test(title) ? title : `${title}.`
   if (relativePath.startsWith('help/')) {
-    return `${sentence} Follow a focused troubleshooting path with expected Glade results and recovery steps.`
+    return relativePath === 'help/troubleshooting.md'
+      ? `${sentence} Follow the shortest diagnostic and recovery path.`
+      : `${sentence} Follow a focused task guide with expected Glade results.`
   }
   if (relativePath.startsWith('reference/')) {
     return `${sentence} Find exact Glade behavior, supported local paths, and the boundary with Salesforce.`
@@ -132,10 +135,10 @@ export default defineConfig({
     search: { provider: 'local' },
     nav: [
       { text: 'Docs', link: '/guide/' },
-      { text: 'Install', link: '/guide/installation' },
       { text: 'Workflows', link: '/guide/workflows' },
       { text: 'Reference', link: '/reference/cli' },
-      { text: 'Support & trust', link: '/guide/support-map' }
+      { text: 'Support & trust', link: '/guide/support-map' },
+      { text: 'Install', link: '/guide/installation' }
     ],
     sidebar: {
       '/guide/': [
@@ -160,26 +163,27 @@ export default defineConfig({
           { text: 'Preview LWC', link: '/guide/workflows/lwc-preview' },
           { text: 'Preview Visualforce', link: '/guide/workflows/visualforce-preview' },
           { text: 'Add Glade to CI', link: '/guide/workflows/ci' },
-          { text: 'Use VS Code', link: '/guide/editor' },
-          { text: 'Use plugins', link: '/guide/plugins' }
+          { text: 'Use VS Code', link: '/guide/editor' }
         ]
       },
       {
         text: 'How Glade works',
         collapsed: true,
         items: [
-          { text: 'Capability overview', link: '/guide/modules' },
-          { text: 'Plugins', link: '/guide/plugins' },
-          { text: 'Security & trust', link: '/guide/security-trust' },
-          { text: 'Tester field guide', link: '/guide/tester-field-guide' },
-          { text: 'Playground', link: '/guide/playground' },
-          { text: 'Capability explorer', link: '/guide/workbench' },
-          { text: 'VS Code', link: '/guide/editor' },
-          { text: 'Advanced workflows', link: '/guide/enterprise-workflows' }
+          { text: 'Architecture and capabilities', link: '/guide/modules' },
+          { text: 'Playground', link: '/guide/playground' }
         ]
       },
       {
-        text: 'More guides',
+        text: 'Trust & adoption',
+        collapsed: true,
+        items: [
+          { text: 'Security & trust', link: '/guide/security-trust' },
+          { text: 'Pilot Glade on a real project', link: '/guide/tester-field-guide' }
+        ]
+      },
+      {
+        text: 'Advanced',
         collapsed: true,
         items: [
           { text: 'Output modes', link: '/guide/cli-output' },
@@ -188,9 +192,11 @@ export default defineConfig({
           { text: 'Test startup cache', link: '/guide/test-startup-cache' },
           { text: 'Reports and package artifacts', link: '/guide/rich-local-workflows' },
           { text: 'Built-in examples', link: '/guide/examples' },
+          { text: 'Build from source', link: '/guide/build-from-source' },
           { text: 'Local API routes', link: '/guide/local-api-server' },
-          { text: 'sf target orgs', link: '/guide/glade-orgs' },
+          { text: 'Use Glade as a local sf target', link: '/guide/glade-orgs' },
           { text: 'CI artifacts', link: '/guide/ci-artifacts' },
+          { text: 'Plugins', link: '/guide/plugins' },
           { text: 'Plugin install and manage', link: '/guide/plugins/install-manage' },
           { text: 'Plugin lock files and CI', link: '/guide/plugins/lock-ci' },
           { text: 'First-party plugins', link: '/guide/plugins/first-party' },
@@ -204,6 +210,8 @@ export default defineConfig({
         items: [
           { text: 'CLI reference', link: '/reference/cli' },
           { text: 'Configuration', link: '/reference/config' },
+          { text: 'LSP reference', link: '/reference/lsp' },
+          { text: 'DAP reference', link: '/reference/dap' },
           { text: 'Error codes', link: '/reference/errors' },
           { text: 'JSON envelope', link: '/reference/json-schema' },
           { text: 'Apex language compatibility', link: '/reference/apex-language-compatibility' },
@@ -216,9 +224,9 @@ export default defineConfig({
       ],
       '/help/': [
       {
-        text: 'Guided help',
+        text: 'Task guides',
         items: [
-          { text: 'Help overview', link: '/help/' },
+          { text: 'Task guide overview', link: '/help/' },
           { text: 'First local check', link: '/help/first-local-check' },
           { text: 'Run one Apex test', link: '/help/run-one-apex-test' },
           { text: 'Debug with breakpoints', link: '/help/debug-apex-vscode' },
@@ -229,6 +237,12 @@ export default defineConfig({
           { text: 'Profile a debug log', link: '/help/profile-apex-debug-log' },
           { text: 'CI setup', link: '/help/ci-setup' }
         ]
+      },
+      {
+        text: 'Troubleshooting',
+        items: [
+          { text: 'Fix a problem', link: '/help/troubleshooting' }
+        ]
       }
       ],
       '/maintainer/': [
@@ -238,6 +252,7 @@ export default defineConfig({
           { text: 'Maintainer home', link: '/maintainer/' },
           { text: 'Extend runtime support', link: '/maintainer/extend-runtime' },
           { text: 'Release runbook', link: '/maintainer/release' },
+          { text: 'Develop the VS Code extension', link: '/maintainer/editor-extension' },
           { text: 'glade-tools', link: '/maintainer/glade-tools' },
           { text: 'Plugin runtime', link: '/maintainer/plugin-runtime' }
         ]

@@ -11,7 +11,7 @@ head:
 
 # Capability explorer
 
-Type Apex expressions and see whether the API runs locally, runs with limits, or requires Salesforce.
+Type Apex expressions and see whether the API runs locally, runs locally with limits, or requires Salesforce.
 
 Use the editor as a live capability map: type a dot, read the label, and see the boundary before you depend on an API.
 
@@ -33,7 +33,7 @@ Use the editor as a live capability map: type a dot, read the label, and see the
       <p>Seeded schedules, time zones, holidays, and deterministic local calendar math.</p>
     </article>
     <article>
-      <span class="home-completion-status home-completion-status-limited">Runs with limits</span>
+      <span class="home-completion-status home-completion-status-limited">Runs locally with limits</span>
       <code>Schema.DescribeSObjectResult</code>
       <p>Object labels, fields, record types, and child relationships from local metadata.</p>
     </article>

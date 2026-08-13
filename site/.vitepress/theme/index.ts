@@ -12,6 +12,7 @@ export default {
   extends: DefaultTheme,
   enhanceApp({ app }) {
     app.component('GladeEditorWorkbench', defineAsyncComponent(() => import('./GladeEditorWorkbench.vue')))
+    app.component('GladeSupportExplorer', defineAsyncComponent(() => import('./GladeSupportExplorer.vue')))
   },
   Layout() {
     return h(DefaultTheme.Layout, null, {

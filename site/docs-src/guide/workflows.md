@@ -1,22 +1,37 @@
 # Choose a Glade workflow
 
-Start with the job in front of you. Each workflow gives the commands, the local
-result to expect, and the Salesforce boundary to keep.
+<div class="docs-intro">
+  <p class="docs-intro-eyebrow">Task guides</p>
+  <p>Start with the job in front of you. Each path names the interface, project setup, expected local result, and Salesforce boundary.</p>
+</div>
 
-## Start here
+## Daily code loop
 
-| Workflow | Use it when |
-| --- | --- |
-| [Run Apex tests](/guide/workflows/apex-tests) | You want a local Apex test loop for all tests, one class, one method, changed tests, or failed tests. |
-| [Debug Apex](/guide/workflows/debug-apex) | You need breakpoints, anonymous Apex output, or a profile from a local debug log. |
-| [Preview LWC locally](/guide/workflows/lwc-preview) | You want a local shell for LWC routes, records, page targets, and named contexts. |
-| [Preview Visualforce locally](/guide/workflows/visualforce-preview) | You want local `/apex/<PageName>` preview routes for controller and page work. |
-| [Work with local data](/guide/workflows/local-data) | You need a local sf target, queryable records, or a seeded SQLite store. |
-| [Add Glade to CI](/guide/workflows/ci) | You need SARIF, JSON, JUnit, and stable exit codes in pull request checks. |
+<div class="docs-route-grid docs-workflow-grid">
+  <a class="docs-route-card" href="/guide/quickstart"><strong>Check Apex source</strong><span>Get a named local diagnostic or a clean result.<br>Start: <code>glade check --project .</code><br>Interface: CLI or VS Code · Requires: project</span></a>
+  <a class="docs-route-card" href="/guide/workflows/apex-tests"><strong>Run Apex tests</strong><span>Run all, focused, changed, or failed tests locally.<br>Start: <code>glade test --project .</code><br>Interface: CLI or VS Code · Requires: project</span></a>
+  <a class="docs-route-card" href="/guide/workflows/debug-apex"><strong>Debug or execute Apex</strong><span>Use breakpoints, anonymous Apex, SOQL, or saved-log profiling.<br>Start: <code>glade exec --project .</code><br>Interface: CLI, VS Code, or Workbench · Requires: project</span></a>
+</div>
 
-## When you need more depth
+## Local state
 
-Use [Product areas](/guide/modules) when you need the system map behind a
-workflow. Use the [CLI reference](/reference/cli) when you need exact flags. Use
-[What runs locally](/guide/support-map) before relying on local behavior for a
-hosted Salesforce edge.
+<div class="docs-route-grid docs-workflow-grid">
+  <a class="docs-route-card" href="/guide/workflows/local-data"><strong>Work with local data</strong><span>Create a named SQLite-backed environment, seed records, and use supported local API routes.<br>Start: <code>glade org create refinement-local</code><br>Interface: CLI or VS Code · Requires: project and local data</span></a>
+</div>
+
+## UI preview
+
+<div class="docs-route-grid docs-workflow-grid">
+  <a class="docs-route-card" href="/guide/workflows/lwc-preview"><strong>Preview LWC</strong><span>Open local component and page routes in the Workbench Console.<br>Start: <code>glade dev lwc --project . --open</code><br>Interface: browser · Requires: project and toolchain</span></a>
+  <a class="docs-route-card" href="/guide/workflows/visualforce-preview"><strong>Preview Visualforce</strong><span>Serve supported pages and controller flows locally.<br>Start: <code>glade dev vf --project .</code><br>Interface: browser · Requires: project</span></a>
+</div>
+
+## Team automation
+
+<div class="docs-route-grid docs-workflow-grid">
+  <a class="docs-route-card" href="/guide/workflows/ci"><strong>Add Glade to CI</strong><span>Publish JSON, SARIF, JUnit, and stable exit-code evidence.<br>Start: <code>glade check --project . --json</code><br>Interface: CI · Requires: project and pinned binary</span></a>
+</div>
+
+Use [How Glade works](/guide/modules) for subsystem boundaries, the [CLI
+reference](/reference/cli) for exact flags, and [What runs locally](/guide/support-map)
+before relying on a hosted Salesforce edge.

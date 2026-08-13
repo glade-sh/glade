@@ -18,7 +18,7 @@ the same test naming and branch shape.
 ## Global skill prompt
 
 ```text
-Use Glade from the SFDX project root when developing Apex.
+Use Glade from the Salesforce DX project root when developing Apex.
 
 This applies to any Apex feature, bug fix, refactor, trigger, service class,
 selector, batch, queueable, schedulable, Visualforce controller, LWC Apex
@@ -29,7 +29,7 @@ Default workflow:
 1. Inspect the requested change and the existing Apex tests.
 2. Run local setup checks:
    mkdir -p reports
-   glade doctor
+   glade doctor --project .
    glade config validate --project .
 3. Write the smallest failing Apex test first.
    - Do not edit production Apex until a Glade test fails for the expected reason.
@@ -63,7 +63,7 @@ piece of work:
 ```text
 Implement this Apex change with TDD and Glade.
 
-Start from the SFDX project root. Write the smallest failing Apex test first.
+Start from the Salesforce DX project root. Write the smallest failing Apex test first.
 Prove it fails with:
 
 glade test --project . --class <TestClass> --method <TestMethod> --json --no-progress

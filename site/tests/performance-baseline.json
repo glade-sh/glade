@@ -8,23 +8,23 @@
       "height": 900
     },
     "profile": "local VitePress preview; cold browser context; 100ms latency; 1.6Mbps down; 0.8Mbps up; 4x CPU slowdown",
-    "capturedAt": "2026-07-30",
+    "capturedAt": "2026-08-12",
     "runs": 5
   },
   "routes": {
     "/": {
       "median": {
-        "jsCssBytes": 129519,
-        "lcpMs": 744,
-        "cls": 0.00214,
-        "tbtMs": 0
+        "jsCssBytes": 129142,
+        "lcpMs": 872,
+        "cls": 0.001515,
+        "tbtMs": 1
       },
       "samples": [
-        { "jsCssBytes": 129519, "lcpMs": 764, "cls": 0.0021384862075617284, "tbtMs": 13 },
-        { "jsCssBytes": 129519, "lcpMs": 756, "cls": 0.0021384862075617284, "tbtMs": 0 },
-        { "jsCssBytes": 129519, "lcpMs": 740, "cls": 0.0021384862075617284, "tbtMs": 0 },
-        { "jsCssBytes": 129519, "lcpMs": 744, "cls": 0.0021384862075617284, "tbtMs": 0 },
-        { "jsCssBytes": 129519, "lcpMs": 732, "cls": 0.0021384862075617284, "tbtMs": 0 }
+        { "jsCssBytes": 129142, "lcpMs": 876, "cls": 0.0015149468315972222, "tbtMs": 1 },
+        { "jsCssBytes": 129142, "lcpMs": 872, "cls": 0.0015149468315972222, "tbtMs": 5 },
+        { "jsCssBytes": 129142, "lcpMs": 852, "cls": 0.0015149468315972222, "tbtMs": 0 },
+        { "jsCssBytes": 129142, "lcpMs": 876, "cls": 0.0015149468315972222, "tbtMs": 3 },
+        { "jsCssBytes": 129142, "lcpMs": 864, "cls": 0.0015149468315972222, "tbtMs": 0 }
       ]
     },
     "/guide/quickstart": {

@@ -1,7 +1,7 @@
 # Work With Local Data Environments
 
 <div class="docs-intro">
-  <p class="docs-intro-eyebrow">Guided help</p>
+  <p class="docs-intro-eyebrow">Task guide</p>
   <p>Create, switch, seed, inspect, reset, and export local SQLite-backed Glade environments.</p>
   <ul>
     <li>Use a named environment for the local DB.</li>
@@ -13,7 +13,7 @@
 
 ## Before you start
 
-- Glade is initialized in an SFDX project.
+- Glade is initialized in a Salesforce DX project.
 - VS Code uses only Glade, Catppuccin Mocha, and the Salesforce Apex extension.
 - These environments are local SQLite files. They do not copy Salesforce org data unless you import or seed data yourself.
 

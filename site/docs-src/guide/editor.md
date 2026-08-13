@@ -1,145 +1,106 @@
-# Editor, LSP, and DAP
+# Use Glade in VS Code
 
-Glade includes a VS Code extension for local Apex work. It uses the same parser,
-semantic checks, VM, storage layer, test runner, LSP, and DAP features as the
-CLI.
+<div class="docs-intro">
+  <p class="docs-intro-eyebrow">Task guide</p>
+  <p>Install the bundled extension, confirm project discovery, run one local Apex test, navigate a diagnostic, and start a debug session.</p>
+</div>
+
+Glade uses the same parser, semantic checks, VM, storage, test runner, LSP, and
+DAP as the CLI. Glade actions stay local; Salesforce actions stay org-backed.
+
+## Before you start
+
+- Install Glade and confirm `glade version`.
+- Open a Salesforce DX project with `sfdx-project.json`.
+- Run `glade doctor --project .` successfully.
 
 ## VS Code Extension
 
-Install the bundled extension from a Glade release:
+Install and verify the extension:
 
 ```bash
-glade editor doctor vscode
 glade editor install vscode --force
-glade editor doctor vscode --editor cursor
+glade editor doctor vscode
+```
+
+Omit `--editor` for VS Code. Cursor and Windsurf use the same bundled VSIX:
+
+```bash
+glade editor install vscode --editor cursor --force
 glade editor install vscode --editor windsurf --force
 ```
 
-Omit `--editor` for VS Code. Cursor and Windsurf use the same bundled VSIX
-through their own install targets.
+Expected: the doctor command reports the selected editor and installed Glade
+extension. The release archive stores the VSIX at
+`share/glade/editor/vscode-glade.vsix`.
 
-The VSIX lives in the release archive at
-`share/glade/editor/vscode-glade.vsix`. For extension development, package from
-the source tree, then run the same install command from anywhere inside the
-checkout:
+## 1. Confirm the workspace
 
-```bash
-npm --prefix contrib/vscode-glade install
-npm --prefix contrib/vscode-glade run package
-glade editor install vscode --force
-```
+Open the Glade Activity Bar and run the `Glade: Open Home` command. Start Here
+should show the Salesforce DX project root, active local data environment, test
+state, and recent command status.
 
-Open an SFDX project. The extension adds one `Glade` Activity Bar and a
-`Glade: Open Home` command. The sidebar includes Start Here, Tests, Data
-Environments, Data Browser, Apex & SOQL, and optional Debug and Plugins views.
+If the wrong root appears, open the folder that contains `sfdx-project.json`
+and rerun `glade doctor --project .` in the integrated terminal.
 
-Glade keeps a separate local workflow with `glade.*` command ids, a `Glade Apex`
-Test Explorer controller, and CodeLens labels that include `Local`. It does not
-take over org-backed commands, scratch-org tests, CodeLens, replay debugging, or
-language-server ownership.
+## 2. Run one local test
 
-The Command Palette also includes `Glade: Open TUI`, `Glade: Open Tests TUI`,
-`Glade: Open Data TUI`, and `Glade: Open Plugins TUI`. Each command opens a
-terminal and runs `glade tui` for the current project. The data TUI uses the
-active local data environment. When `Glade: Check Salesforce Org` has found a
-ready target, the data TUI passes that target to the import-from-org action.
-
-## Daily Local Apex Loop
-
-Open the Glade Activity Bar and start in **Start Here**.
-Use **Glade: Open Home** when you want the daily hub. The first tab groups run,
-data, debug, Salesforce, and ship actions. The state tab shows project root,
-active Glade org, active data environment, Salesforce target, tests, watch
-state, and plugin reports.
-
-1. Confirm the SFDX root and active local data environment.
-2. Click **Run local proof** before pushing work to a scratch org.
-3. Create or start the Glade org when you need the supported local Salesforce
-   API routes. It is separate from the active SQLite data environment.
-4. Use Glade Home to clone, seed, reset, inspect, and export local state.
-5. Use org-backed tools for deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
-
-Glade actions are local. Salesforce actions stay org-backed.
-
-## Native VS Code Features
-
-Glade uses one Activity Bar item and one Status Bar item. The sidebar shows
-Start Here, Tests, Data Environments, Data Browser, Apex & SOQL, and optional
-Debug and Plugins views.
-
-Local Apex tests appear in the native VS Code Testing view under `Glade Apex`.
-Glade does not add a second Apex Tests sidebar tree. Breakpoints stay in the
-normal editor gutter and debug state stays in VS Code Run and Debug.
-
-The Status Bar shows short local state, such as `Glade: dev`,
-`Glade: dev 18ms`, `Glade: dev no DB`, or `Glade: plugin 2 reports`.
-Details stay in the tooltip: project root, active DB, plugin report counts,
-and last command. Click it to switch data, inspect local data, run local proof,
-manage plugins, or open output.
-
-## LWC and Visualforce preview
-
-LWC and Visualforce preview are CLI preview features. They remain available
-through `glade dev`, but the VS Code extension does not start, stop, list, or
-monitor those servers until the preview workflow is steadier.
-
-Use [Preview LWC locally](/guide/workflows/lwc-preview) and [Preview Visualforce locally](/guide/workflows/visualforce-preview) for task steps. Use [LWC preview](/guide/modules#lwc-preview) and [Visualforce preview](/guide/modules#visualforce-preview) for subsystem boundaries.
-
-```bash
-glade toolchain install
-glade dev lwc --project . --open
-glade dev vf --project . --port 8080
-```
-
-The LWC Workbench Console has Component Lab for exposed components, editable
-properties, page context, and form factors, plus Page Workbench for discovered
-tab, app, home, record, Flow, action, utility, and community routes. Its debug
-dock records Console, Apex, LDS Cache, Network, Events, Issues, and recent save
-or rebuild runs. Raw routes use `/lwc/preview/...`; Visualforce routes use
-`/apex/<Page>`.
-
-## Plugin actions and findings
-
-The extension reads installed and linked plugins through:
-
-```bash
-glade plugins list --json
-```
-
-Installed plugins may declare editor actions for Start Here, Tests, Data
-Browser, Debug, or Plugins views. Linked local plugins work the same way
-after `glade plugins link --exec <plugin-executable>`.
-
-When a plugin action declares `output: "glade.findings.v1"`, the extension can
-parse stdout and publish findings into VS Code Problems. Findings carry
-severity, message, optional file, line, column, rule id, and source.
-
-## Local Tests
-
-Run local tests from the Glade Activity Bar, the native VS Code Test Explorer,
-or CodeLens. Focused runs call:
+Local Apex tests appear under `Glade Apex` in the native VS Code Testing view.
+Use Test Explorer or a `Local` CodeLens action. Focused runs call:
 
 ```bash
 glade test --project PROJECT_ROOT --json --class CLASS_NAME --method METHOD_NAME
 ```
 
-Changed-test runs use:
+![VS Code Apex editor showing Glade Run Local Test CodeLens actions](/help/screenshots/run-one-apex-test-02-codelens.png)
+
+Expected: the test node shows pass or fail status and Glade Output includes the
+selected class, method, and local result. Changed and warm-watch runs use:
 
 ```bash
 glade test changed --project PROJECT_ROOT --since origin/main --json
-```
-
-Change the default ref with `glade.changedSince`.
-
-The warm watch buttons run:
-
-```bash
 glade test --project PROJECT_ROOT --daemon --watch
 ```
 
-## Local Data Environments
+## 3. Navigate a diagnostic
 
-The default environment is `dev` at `.glade/envs/dev.sqlite`. Add more named
+Click **Run local proof** in Glade Home or run `Glade: Check Project`. Select a
+Glade entry in Problems to open its file and source location. Glade does not
+replace Salesforce extensions, org-backed CodeLens, or language-server
+ownership.
+
+## 4. Start a debug session
+
+Set a breakpoint in the normal editor gutter, then choose a local debug action
+from Test Explorer, CodeLens, or Apex & SOQL. Anonymous and test debugging use
+the active local data environment:
+
+```bash
+glade dap --project PROJECT_ROOT --db ACTIVE_DB
+```
+
+Expected: VS Code Run and Debug stops at a supported breakpoint and exposes
+stack, variables, and debug-console state. See [Debug Apex](/guide/workflows/debug-apex)
+for the task path and [DAP reference](/reference/dap) for protocol details.
+
+![VS Code Run and Debug showing local variables at an Apex breakpoint](/help/screenshots/run-one-apex-test-03-test-explorer.png)
+
+## Native VS Code surfaces
+
+The extension uses one Glade Activity Bar item and native VS Code surfaces:
+
+- **Start Here / Glade Home** for run, data, debug, Salesforce, and ship actions.
+- **Tests** and native Test Explorer for focused, changed, failed, and watch runs.
+- **Data Environments** and **Data Browser** for named SQLite-backed state.
+- **Apex & SOQL** for supported local snippets and queries.
+- **Problems**, the normal editor gutter, and Run and Debug for diagnostics and breakpoints.
+
+The Status Bar summarizes the active data environment and last local command.
+Click it to switch data, run local proof, manage plugins, or open output.
+
+## Local data
+
+The default environment is `dev` at `.glade/envs/dev.sqlite`. Add named
 environments in workspace settings:
 
 ```json
@@ -152,89 +113,37 @@ environments in workspace settings:
 }
 ```
 
-Execute anonymous Apex persists successful DML to the active environment:
+Anonymous Apex persists successful DML to the active environment:
 
 ```bash
 glade exec --project PROJECT_ROOT --db ACTIVE_DB --log-out reports/exec.log "insert new Account(Name='local');"
 ```
 
-Data Browser inspects the active DB. Glade Home carries seed, reset, export,
-and environment-management actions.
+## Plugin actions and findings
 
-## Debug
-
-Glade debug sessions use Debug Adapter Protocol over stdio:
-
-Use [Debug Apex](/guide/workflows/debug-apex) for the task path and [Debug and profile](/guide/modules#debug-and-profile) for the subsystem boundary.
+The extension reads installed and linked plugins through:
 
 ```bash
-glade dap --project PROJECT_ROOT --db ACTIVE_DB
+glade plugins list --json
 ```
 
-Anonymous debug, CodeLens debug, and Test Explorer debug all use the active
-local data environment. Breakpoints come from the normal VS Code Apex gutter.
-Glade does not draw a second breakpoint UI.
+Installed plugins may add actions to Start Here, Tests, Data Browser, Debug, or
+Plugins. `glade.findings.v1` output appears in VS Code Problems with severity,
+message, source location, rule id, and source.
 
-## Language Server
+## Common setup failures
 
-Start the LSP server over stdio:
+- **No project:** open the folder containing `sfdx-project.json`, then run `glade doctor --project .`.
+- **Extension missing or stale:** run `glade editor install vscode --force`, then reload the window.
+- **No tests:** confirm Apex test classes are inside a configured package directory.
+- **No breakpoint hit:** use a supported local test or anonymous Apex path and check the active data environment.
+- **No local diagnostics:** set `glade.enableLsp=true` only when you want the optional Glade language server.
 
-```bash
-glade lsp --project .
-```
+Use [Troubleshooting](/help/troubleshooting) for symptom-first recovery.
 
-Run one diagnostics pass without starting a long-lived server:
+## Reference and development
 
-```bash
-glade lsp --project . --diagnostics-once
-```
-
-The VS Code extension keeps the Glade LSP off by default. Set
-`glade.enableLsp=true` when you want local Glade diagnostics in VS Code.
-
-## CLI code intelligence
-
-Use the same project graph from terminal tasks when you need definition,
-reference, or rename checks outside an editor:
-
-```bash
-glade inspect definition --project . --symbol RefinementService
-glade inspect definition --project . --file force-app/main/default/classes/RefinementService.cls --line 6 --column 13
-glade inspect references --project . --symbol RefinementService.total --json
-glade inspect references --project . --symbol Account.Name --include-declaration
-glade refactor rename --project . --symbol RefinementService --to FileRefinementService --dry-run
-glade schema import describe --input reports/org-describe.json --project-cache .
-```
-
-`glade refactor rename` defaults to a dry-run plan. `schema import describe
---project-cache` writes captured schema symbols under `.glade/symbols` for
-offline definition, reference, and rename queries.
-
-## VS Code Task Example
-
-```json
-{
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "glade: check",
-      "type": "shell",
-      "command": "glade check --project . --json",
-      "problemMatcher": []
-    },
-    {
-      "label": "glade: watch local tests",
-      "type": "shell",
-      "command": "glade test --project . --daemon --watch",
-      "isBackground": true,
-      "problemMatcher": []
-    },
-    {
-      "label": "glade: lsp diagnostics",
-      "type": "shell",
-      "command": "glade lsp --project . --diagnostics-once",
-      "problemMatcher": []
-    }
-  ]
-}
-```
+- [LSP reference](/reference/lsp) covers invocation, capabilities, configuration, and logs.
+- [DAP reference](/reference/dap) covers launch behavior, breakpoints, and limits.
+- [Develop and package the extension](/maintainer/editor-extension) is contributor-only.
+- [Preview LWC](/guide/workflows/lwc-preview) and [Preview Visualforce](/guide/workflows/visualforce-preview) remain separate browser workflows.

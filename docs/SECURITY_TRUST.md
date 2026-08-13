@@ -50,7 +50,7 @@ gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
 gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
   --predicate-type https://cyclonedx.org/bom
 tar -xzf "$GLADE_ARCHIVE"
-./glade doctor
+./glade version
 ```
 
 ## Laptop behavior

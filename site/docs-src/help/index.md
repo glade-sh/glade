@@ -1,11 +1,14 @@
 ---
-title: Glade guided help
-description: Pick a Glade troubleshooting guide for a local check, Apex test, VS Code debugging, local data, or CI setup.
+title: Glade task guides
+description: Complete a focused Glade task or recover from a recognizable project, test, editor, data, or CI problem.
 ---
 
-# Guided help
+# Task guides and troubleshooting
 
-Choose the task you need to complete. These guides use a clean capture profile for screenshots; Glade supports normal VS Code profiles too.
+## Complete a task
+
+These guides start from a known state, show the action, and name the expected
+result.
 
 <div class="docs-route-grid">
   <a class="docs-route-card" href="/help/first-local-check"><strong>Run the first local check</strong><span>Outcome: a configured project and a checked source tree.<br>Interface: terminal · Time: about 5 minutes.</span></a>
@@ -18,6 +21,14 @@ Choose the task you need to complete. These guides use a clean capture profile f
   <a class="docs-route-card" href="/help/ci-setup"><strong>Add Glade to CI</strong><span>Outcome: emit a reliable local check, test, and report gate.<br>Interface: CI · Time: about 15 minutes.</span></a>
 </div>
 
-## Need exact command behavior?
+## Fix a problem
 
-Use the [CLI reference](/reference/cli), [configuration reference](/reference/config), or [support map](/guide/support-map). For a guided workflow rather than a problem, start with [Workflows](/guide/workflows).
+Start from the symptom or exact setup failure. The troubleshooting page gives
+the shortest diagnostic path before linking back to a task guide.
+
+<div class="docs-route-grid">
+  <a class="docs-route-card" href="/help/troubleshooting"><strong>Troubleshoot Glade</strong><span>Recover when Glade cannot find the project, doctor fails, tests or breakpoints are missing, or local tools drift.</span></a>
+</div>
+
+Use the [error reference](/reference/errors) when output includes a stable Glade
+error code.

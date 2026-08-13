@@ -449,6 +449,118 @@
   align-items: start;
 }
 
+.home-step-list {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  counter-reset: local-step;
+  list-style: none;
+}
+
+.home-step-list li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 4px 14px;
+  counter-increment: local-step;
+}
+
+.home-step-list li::before {
+  display: grid;
+  grid-row: span 2;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid rgba(155, 232, 112, 0.42);
+  border-radius: 50%;
+  color: var(--glade);
+  content: counter(local-step);
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.home-step-list strong {
+  color: var(--vp-c-text-1);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.home-step-list span {
+  color: var(--vp-c-text-2);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.home-product-section {
+  align-items: center;
+}
+
+.home-product-section .home-p {
+  margin-bottom: 16px;
+  font-size: 15px;
+}
+
+.home-product-figure {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--glade-home-border);
+  border-radius: 14px;
+  background: var(--surface-inset);
+  box-shadow: var(--glade-home-shadow);
+}
+
+.home-product-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.home-product-figure figcaption {
+  border-top: 1px solid var(--glade-home-border);
+  color: var(--vp-c-text-2);
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 10px 14px;
+}
+
+.home-workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.home-workflow-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid rgba(169,184,173,0.18);
+  border-radius: 12px;
+  background: rgba(9, 16, 18, 0.68);
+  color: var(--vp-c-text-1);
+  padding: 18px;
+  text-decoration: none;
+}
+
+.home-workflow-card:hover,
+.home-workflow-card:focus-visible {
+  border-color: var(--glade);
+  text-decoration: none;
+}
+
+.home-workflow-card strong {
+  color: var(--vp-c-text-1);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.home-workflow-card span {
+  color: var(--vp-c-text-2);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
 .home-command-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -866,6 +978,7 @@
 
   .home-coverage-grid,
   .home-command-grid,
+  .home-workflow-grid,
   .coverage-workbench-cards {
     grid-template-columns: 1fr;
   }
@@ -898,6 +1011,21 @@
   .home-info-list article {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+}
+
+@media (max-width: 360px) {
+  .home-loop-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-loop-metrics span:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .home-completion-status {
+    justify-self: start;
+    white-space: normal;
   }
 }
 
