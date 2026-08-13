@@ -12,6 +12,8 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
+const runtimeLoweringDiagnosticCode = "GLADERUNTIME001"
+
 func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, model *semaTypeMemberView, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
 	member = semaNormalizeMemberTypes(model, typ.Name, member)
 	baseScope := semaBodyBaseScope(typ, member, model)
@@ -664,6 +666,15 @@ func (a *Analyzer) checkBodyIR(typ typesys.TypeSymbol, member typesys.MemberSymb
 func (a *Analyzer) checkBodyIRWithCompileStatus(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, base map[string]string, model *semaTypeMemberView, constructability map[string]typesys.TypeSymbol) ([]diagnostic.Diagnostic, bool) {
 	program, err := vm.CompileAnonymous(body)
 	if err != nil {
+		if semaApexParserAcceptsBody(body, typ.File) {
+			return []diagnostic.Diagnostic{{
+				Severity: diagnostic.Warning,
+				Code:     runtimeLoweringDiagnosticCode,
+				Message:  fmt.Sprintf("local VM cannot lower this Apex body: %v", err),
+				File:     typ.File,
+				Range:    semaRange(source, bodyOffset, bodyOffset+len(body)),
+			}}, false
+		}
 		return nil, false
 	}
 	scope := newIRSemaScopeWithOrigins(base, semaMemberParameterNames(member))
@@ -684,6 +695,17 @@ func (a *Analyzer) checkBodyIRWithCompileStatus(typ typesys.TypeSymbol, member t
 		diagnostics = append(diagnostics, returnTypeDiagnostic(typ, member, fmt.Sprintf("method must return %s on all paths", returnType), member.Range.Start.Offset, member.Range.End.Offset, source))
 	}
 	return diagnostics, true
+}
+
+func semaApexParserAcceptsBody(body, file string) bool {
+	probe := "public class GladeRuntimeLoweringProbe { public void run() {\n" + body + "\n} }"
+	parsed := apexast.NewParser().ParseSource(file, probe)
+	for _, diag := range parsed.Diagnostics {
+		if diag.Severity == diagnostic.Error {
+			return false
+		}
+	}
+	return true
 }
 
 func (a *Analyzer) checkConstructorChainingIR(typ typesys.TypeSymbol, member typesys.MemberSymbol, instructions []ir.Instruction, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {

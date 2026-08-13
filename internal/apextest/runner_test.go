@@ -131,6 +131,33 @@ private class BadBodyTest {
 	}
 }
 
+func TestRunMarksRuntimeUnlowerableBodyUnsupported(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "RuntimeGapTest.cls")
+	writeFile(t, path, `
+public class RuntimeGapHelper {
+  public static void run() { Integer flags = 1 ^ 2; }
+}
+@isTest
+private class RuntimeGapTest {
+  @isTest
+  static void runtimeGap() { RuntimeGapHelper.run(); }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	cases := Discover(index, Options{})
+	if len(cases) != 1 {
+		t.Fatalf("discovered cases = %#v", cases)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true}, cases)
+	if summary := run.Summary(); summary.Total != 1 || summary.Unsupported != 1 || summary.Passed != 0 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+	if problem := firstRunProblem(run); !strings.Contains(problem, "RuntimeGapHelper.run") {
+		t.Fatalf("problem = %q", problem)
+	}
+}
+
 func TestRunCasesContextUsesCapturedBuildArtifactsForSemanticDiagnostics(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "CapturedSemanticTest.cls")

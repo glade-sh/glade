@@ -64,7 +64,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	if method.Unsupported != "" {
-		return Null, fmt.Errorf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
+		return Null, UnsupportedFeature(fmt.Sprintf("%s is not supported by the local VM: %s", method.Name, method.Unsupported))
 	}
 	if methodHasModifier(method.Modifiers, "abstract") {
 		if receiver.Kind == ValueObject {
@@ -85,7 +85,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	if method.Unsupported != "" {
-		return Null, fmt.Errorf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
+		return Null, UnsupportedFeature(fmt.Sprintf("%s is not supported by the local VM: %s", method.Name, method.Unsupported))
 	}
 	if methodHasModifier(method.Modifiers, "abstract") {
 		return Null, fmt.Errorf("cannot execute abstract method %s", method.Name)

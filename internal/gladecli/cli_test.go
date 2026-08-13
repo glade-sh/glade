@@ -3654,6 +3654,21 @@ func TestRunCheckUnknownType(t *testing.T) {
 	}
 }
 
+func TestRunCheckReportsRuntimeLoweringGapButSucceeds(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/UsesXor.cls"), `public class UsesXor { public void run() { Integer flags = 1 ^ 2; } }`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--no-progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "GLADERUNTIME001") || !strings.Contains(stdout.String(), "warning") {
+		t.Fatalf("check output missing runtime lowering warning: %q", stdout.String())
+	}
+}
+
 func TestRunCheckProgressWritesPhasesToStderr(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

@@ -135,16 +135,16 @@ public class UsesNamespacedFields {
 func TestSemaOpenSObjectFieldsAreOpaque(t *testing.T) {
 	model := semaTypeMemberViewFromMembers(map[string]typeMembers{
 		normalizeName("pkg.External__c"): {
-			name:                  "pkg.External__c",
-			sobject:               true,
+			name:                   "pkg.External__c",
+			sobject:                true,
 			externalPackageSObject: true,
-			fields:                map[string]typesys.MemberSymbol{},
+			fields:                 map[string]typesys.MemberSymbol{},
 		},
 		normalizeName("pkg.Partial__c"): {
-			name:         "pkg.Partial__c",
-			sobject:      true,
+			name:           "pkg.Partial__c",
+			sobject:        true,
 			partialSObject: true,
-			fields:       map[string]typesys.MemberSymbol{},
+			fields:         map[string]typesys.MemberSymbol{},
 		},
 	})
 
@@ -163,6 +163,40 @@ func TestSemaOpenSObjectFieldsAreOpaque(t *testing.T) {
 		if !ok || field.member.Type != "" {
 			t.Fatalf("%s.%s = %#v, %v; want opaque open field", tc.typeName, tc.fieldName, field, ok)
 		}
+	}
+}
+
+func TestAnalyzeReportsParserAcceptedButRuntimeUnlowerableBody(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	path := filepath.Join(root, "UsesXor.cls")
+	writeSemaFile(t, path, `
+public class UsesXor {
+  public void run() {
+    Integer flags = 1 ^ 2;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == runtimeLoweringDiagnosticCode && diag.Severity != diagnostic.Warning {
+			t.Fatalf("runtime lowering diagnostic severity = %q, want warning", diag.Severity)
+		}
+		if diag.Code == runtimeLoweringDiagnosticCode {
+			return
+		}
+	}
+	t.Fatalf("missing %s diagnostic: %#v", runtimeLoweringDiagnosticCode, result.Diagnostics)
+}
+
+func TestAnalyzeAnonymousStillRejectsRuntimeUnlowerableSource(t *testing.T) {
+	result := AnalyzeAnonymous(typesys.Index{}, "Integer flags = 1 ^ 2;")
+	if !result.HasErrors() {
+		t.Fatalf("runtime-unlowerable anonymous source unexpectedly passed: %#v", result.Diagnostics)
+	}
+	if len(result.Diagnostics) == 0 || result.Diagnostics[0].Code != "GLADESEMA_ANONYMOUS_PARSE" {
+		t.Fatalf("anonymous diagnostics = %#v, want parse/lowering error", result.Diagnostics)
 	}
 }
 

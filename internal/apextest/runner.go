@@ -2837,7 +2837,12 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			out.Status = testreport.StatusUnsupported
 		} else {
-			out.Status = testreport.StatusFail
+			var runtimeErr *vm.RuntimeError
+			if errors.As(err, &runtimeErr) && runtimeErr.Type == "UnsupportedFeature" {
+				out.Status = testreport.StatusUnsupported
+			} else {
+				out.Status = testreport.StatusFail
+			}
 		}
 		out.Problem = problemFromError(err, testCase)
 	}
