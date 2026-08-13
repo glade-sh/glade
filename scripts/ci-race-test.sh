@@ -94,7 +94,7 @@ PY
 
 heavy_package=false
 case "${package}" in
-	./internal/apextest|./internal/gladecli|./internal/playground|./internal/server)
+	./internal/apextest|./internal/gladecli|./internal/playground|./internal/server|./internal/testdaemon)
 		heavy_package=true
 		;;
 	*)

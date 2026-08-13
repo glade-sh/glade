@@ -391,7 +391,7 @@ func writeRaceFixture(t *testing.T, name, contents string) string {
 
 func runRacePackage(t *testing.T, workdir string, env []string, pkg, slug string) (string, error) {
 	t.Helper()
-	if pkg == "./internal/apextest" || pkg == "./internal/gladecli" || pkg == "./internal/playground" || pkg == "./internal/server" {
+	if pkg == "./internal/apextest" || pkg == "./internal/gladecli" || pkg == "./internal/playground" || pkg == "./internal/server" || pkg == "./internal/testdaemon" {
 		hasTimeout := false
 		for _, value := range env {
 			if strings.HasPrefix(value, "CI_RACE_TIMEOUT_COMMAND=") {
@@ -770,7 +770,7 @@ func TestCIRacePlaygroundRealPlanUsesFiveOrdinaryShards(t *testing.T) {
 }
 
 func TestCIRacePackageRunnerGenericHeavyPackagesUseBoundedSequentialExactShards(t *testing.T) {
-	for _, pkg := range []string{"./internal/gladecli", "./internal/server"} {
+	for _, pkg := range []string{"./internal/gladecli", "./internal/server", "./internal/testdaemon"} {
 		t.Run(filepath.Base(pkg), func(t *testing.T) {
 			root := t.TempDir()
 			logPath := filepath.Join(root, "calls.log")
