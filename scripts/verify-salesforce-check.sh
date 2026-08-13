@@ -11,7 +11,7 @@ if [[ "${1:-}" == "--tag-tools-sha" ]]; then
     echo "$2 is not an annotated tag" >&2
     exit 1
   }
-  mapfile -t trailers < <(git for-each-ref --format='%(contents)' "$ref" | awk '/^Glade-Tools-SHA:/')
+  mapfile -t trailers < <(git for-each-ref --format='%(trailers:only,unfold)' "$ref" | awk '/^Glade-Tools-SHA:/')
   [[ ${#trailers[@]} -eq 1 && "${trailers[0]}" =~ ^Glade-Tools-SHA:\ ([0-9a-f]{40})$ ]] || {
     echo "$2 must contain exactly one lowercase Glade-Tools-SHA trailer" >&2
     exit 1

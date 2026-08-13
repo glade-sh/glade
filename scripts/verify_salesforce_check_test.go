@@ -83,6 +83,7 @@ func TestVerifySalesforceCheckReadsToolsSHAFromAnnotatedTag(t *testing.T) {
 		{"tag", "-a", "missing", "-m", "No authority"},
 		{"tag", "-a", "duplicate", "-m", "Glade-Tools-SHA: " + testToolsSHA + "\nGlade-Tools-SHA: " + strings.Repeat("4", 40)},
 		{"tag", "-a", "uppercase", "-m", "Glade-Tools-SHA: " + strings.Repeat("A", 40)},
+		{"tag", "-a", "body", "-m", "Glade-Tools-SHA: " + testToolsSHA + "\n\nRelease notes continue."},
 	} {
 		runGitSF(t, root, args...)
 		tag := args[1]
