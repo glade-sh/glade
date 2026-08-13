@@ -149,6 +149,41 @@ func TestCIRaceClassifierFullMatchesManifest(t *testing.T) {
 	}
 }
 
+func TestCIRaceClassifierPartitionsFullManifest(t *testing.T) {
+	full, out, err := runRaceClassifier(t, nil, "full")
+	if err != nil {
+		t.Fatalf("full classification failed: %v\n%s", err, out)
+	}
+	fullJSON, err := json.Marshal(full)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("bash", "ci-race-packages.sh", "partition", string(fullJSON))
+	data, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("full partition failed: %v\n%s", err, data)
+	}
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("partition output has %d lines, want early and generic JSON", len(lines))
+	}
+	var early, generic []string
+	if err := json.Unmarshal([]byte(lines[0]), &early); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal([]byte(lines[1]), &generic); err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"./internal/gladecli", "./internal/repoguard"}; !reflect.DeepEqual(early, want) {
+		t.Fatalf("early packages = %v, want %v", early, want)
+	}
+	combined := append(append(append([]string(nil), early...), generic...), "./internal/apextest")
+	sort.Strings(combined)
+	if !reflect.DeepEqual(combined, full) || len(combined) != len(slices.Compact(combined)) {
+		t.Fatalf("early, generic, and Apex packages do not exactly partition the full manifest")
+	}
+}
+
 func TestCIRaceClassifierChangedIncludesDependents(t *testing.T) {
 	dir := t.TempDir()
 	gitPath := filepath.Join(dir, "git")
@@ -280,14 +315,15 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	for _, marker := range []string{
 		"name: Race", "branches: [main]", "schedule:", "workflow_dispatch:",
 		"fetch-depth: 0", "scripts/ci-race-packages.sh", "fromJSON(needs.plan.outputs.packages)",
-		"fail-fast: false", "max-parallel: 16", "GOMAXPROCS: \"2\"", "go-version: \"1.26.5\"",
+		"fail-fast: false", "max-parallel: 14", "GOMAXPROCS: \"2\"", "go-version: \"1.26.5\"",
 		`scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "if: always()",
 		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0", "ci-artifacts/race/", "if-no-files-found: error",
-		"npm ci --prefix third_party/lwc", "contains(fromJSON('[\"./internal/gladecli\"",
-		"non-apextest-packages", "has-non-apextest-packages", "race-apextest-a:", "race-apextest-b:", "race-apextest-aggregate:",
-		"CI_RACE_APEXTEST_RUNNER: a", "CI_RACE_APEXTEST_SHARD_INDEXES: 0,2,4,5", "CI_RACE_APEXTEST_RUNNER: b", "CI_RACE_APEXTEST_SHARD_INDEXES: 1,3,6,7",
+		"npm ci --prefix third_party/lwc", "matrix.package == './internal/gladecli'",
+		"early-packages", "generic-packages", "has-early-packages", "has-generic-packages", "race-early:",
+		"race-apextest-a:", "race-apextest-b:", "race-apextest-c:", "race-apextest-aggregate:",
+		"CI_RACE_APEXTEST_RUNNER: a", "CI_RACE_APEXTEST_SHARD_INDEXES: 0,3,5", "CI_RACE_APEXTEST_RUNNER: b", "CI_RACE_APEXTEST_SHARD_INDEXES: 4,7", "CI_RACE_APEXTEST_RUNNER: c", "CI_RACE_APEXTEST_SHARD_INDEXES: 1,2,6",
 		"CI_RACE_HEAD_SHA: ${{ github.sha }}",
-		"if: always() && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')", "scripts/ci-race-apextest-aggregate.sh ci-artifacts/race/apextest-a ci-artifacts/race/apextest-b", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0",
+		"if: always() && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')", "scripts/ci-race-apextest-aggregate.sh ci-artifacts/race/apextest-a ci-artifacts/race/apextest-b ci-artifacts/race/apextest-c", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0",
 	} {
 		if !strings.Contains(workflow, marker) {
 			t.Errorf("race workflow missing %q", marker)
@@ -310,8 +346,20 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	if strings.Contains(workflow, "scripts/ci-resource-run.sh") || strings.Contains(workflow, "go test -race") {
 		t.Fatal("race workflow bypasses the package race runner")
 	}
-	planJob := workflow[strings.Index(workflow, "  plan:"):strings.Index(workflow, "  race:")]
-	raceJob := workflow[strings.Index(workflow, "  race:"):strings.Index(workflow, "  race-apextest-a:")]
+	planIndex, earlyIndex := strings.Index(workflow, "  plan:"), strings.Index(workflow, "  race-early:")
+	raceIndex, apexIndex := strings.Index(workflow, "  race:"), strings.Index(workflow, "  race-apextest-a:")
+	if planIndex < 0 || earlyIndex < 0 || raceIndex < 0 || apexIndex < 0 {
+		t.Fatal("race workflow is missing a required job boundary")
+	}
+	planJob := workflow[planIndex:earlyIndex]
+	earlyJob := workflow[earlyIndex:raceIndex]
+	raceJob := workflow[raceIndex:apexIndex]
+	if !strings.Contains(planJob, `scripts/ci-race-packages.sh partition "$packages"`) {
+		t.Error("race plan must derive early and generic packages from its one full manifest")
+	}
+	if !strings.Contains(planJob, `if [[ "${#partition[@]}" -ne 2 ]]; then`) {
+		t.Error("race plan must fail closed when package partitioning does not return both lists")
+	}
 	for _, marker := range []string{
 		"timeout-minutes: 15",
 		"name: Resolve race npm cache path",
@@ -326,7 +374,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 		"path: ${{ steps.race-npm-cache.outputs.dir }}",
 		"key: race-npm-v1-${{ runner.os }}-${{ runner.arch }}-22-${{ hashFiles('third_party/lwc/package-lock.json') }}",
 		"key: ${{ steps.race-npm-cache-restore.outputs.cache-primary-key }}",
-		"if: ${{ contains(fromJSON(steps.classify.outputs.non-apextest-packages), './internal/gladecli') }}",
+		"if: ${{ contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}",
 	} {
 		if !strings.Contains(planJob, marker) {
 			t.Errorf("race plan cache owner missing %q", marker)
@@ -337,6 +385,13 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	}
 	if strings.Contains(planJob, "cache: npm") {
 		t.Fatal("race plan setup-node must not own an implicit npm cache")
+	}
+	if !strings.Contains(earlyJob, "matrix:\n        package: ${{ fromJSON(needs.plan.outputs.early-packages) }}") ||
+		strings.Contains(earlyJob, "./internal/apextest") {
+		t.Fatal("race early matrix must contain only the classified early packages")
+	}
+	if !strings.Contains(raceJob, "matrix:\n        package: ${{ fromJSON(needs.plan.outputs.generic-packages) }}") {
+		t.Fatal("race generic matrix must use only the classified generic packages")
 	}
 	if got := strings.Count(raceJob, "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0"); got != 1 {
 		t.Fatalf("race Node setup count = %d, want one setup shared by all LWC consumers", got)
@@ -357,7 +412,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 			t.Errorf("race explicit npm cache missing %q", marker)
 		}
 	}
-	const lwcConsumers = `contains(fromJSON('["./internal/gladecli","./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package)`
+	const lwcConsumers = `contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package)`
 	if got := strings.Count(raceJob, lwcConsumers); got != 4 {
 		t.Fatalf("race LWC consumer selector count = %d, want setup, path, restore, and install", got)
 	}
@@ -962,8 +1017,8 @@ func TestCIRacePackageRunnerApextestRunsOnlyAssignedShards(t *testing.T) {
 		"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_SHARD_PLANNER=" + planner,
 		"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_GIT_COMMAND=" + gitCommand, "CI_RACE_CALL_LOG=" + logPath,
 		"CI_RACE_TEST_NAMES=" + strings.Join(testNames, "\n") + "\n",
-		"CI_RACE_BINARY_DISCOVERY_PASS=1", "CI_RACE_APEXTEST_SHARD_INDEXES=1,3,6,7",
-		"CI_RACE_APEXTEST_RUNNER=b", "CI_RACE_HEAD_SHA=0123456789abcdef0123456789abcdef01234567",
+		"CI_RACE_BINARY_DISCOVERY_PASS=1", "CI_RACE_APEXTEST_SHARD_INDEXES=1,2,6",
+		"CI_RACE_APEXTEST_RUNNER=c", "CI_RACE_HEAD_SHA=0123456789abcdef0123456789abcdef01234567",
 		"TMPDIR=" + root,
 	}, "./internal/apextest", "internal-apextest")
 	if err != nil {
@@ -974,16 +1029,16 @@ func TestCIRacePackageRunnerApextestRunsOnlyAssignedShards(t *testing.T) {
 		t.Fatal(err)
 	}
 	log := string(logData)
-	if strings.Count(log, "start race-internal-apextest-shard-") != 4 {
+	if strings.Count(log, "start race-internal-apextest-shard-") != 3 {
 		t.Fatalf("assigned runner started unexpected shard lanes:\n%s", log)
 	}
-	for _, index := range []int{1, 3, 6, 7} {
+	for _, index := range []int{1, 2, 6} {
 		if !strings.Contains(log, fmt.Sprintf("start race-internal-apextest-shard-%d", index)) {
 			t.Fatalf("assigned runner omitted shard %d:\n%s", index, log)
 		}
 	}
 	artifactDir := filepath.Join(root, "ci-artifacts", "race", "internal-apextest")
-	for _, index := range []int{1, 3, 6, 7} {
+	for _, index := range []int{1, 2, 6} {
 		if _, err := os.Stat(filepath.Join(artifactDir, fmt.Sprintf("shard-%d", index), "events.json")); err != nil {
 			t.Fatalf("assigned shard %d evidence: %v", index, err)
 		}
@@ -1002,7 +1057,7 @@ func TestCIRacePackageRunnerApextestRunsOnlyAssignedShards(t *testing.T) {
 		DiscoveredCount int    `json:"discovered_count"`
 		BinaryRemoved   bool   `json:"binary_removed"`
 	}
-	if err := json.Unmarshal(runnerData, &runner); err != nil || runner.Runner != "b" || runner.HeadSHA != "0123456789abcdef0123456789abcdef01234567" || !reflect.DeepEqual(runner.AssignedIndexes, []int{1, 3, 6, 7}) || runner.DiscoveredCount != 8 || !runner.BinaryRemoved {
+	if err := json.Unmarshal(runnerData, &runner); err != nil || runner.Runner != "c" || runner.HeadSHA != "0123456789abcdef0123456789abcdef01234567" || !reflect.DeepEqual(runner.AssignedIndexes, []int{1, 2, 6}) || runner.DiscoveredCount != 8 || !runner.BinaryRemoved {
 		t.Fatalf("runner validation = %#v err=%v data=%s", runner, err, runnerData)
 	}
 }
@@ -1019,7 +1074,7 @@ func TestCIRacePackageRunnerApextestRejectsUnexpectedCheckoutHead(t *testing.T) 
 		"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_SHARD_PLANNER=" + planner,
 		"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_GIT_COMMAND=" + gitCommand,
 		"CI_RACE_CALL_LOG=" + logPath, "CI_RACE_TEST_NAMES=" + strings.Join(testNames, "\n") + "\n",
-		"CI_RACE_APEXTEST_SHARD_INDEXES=1,3,6,7", "CI_RACE_APEXTEST_RUNNER=b",
+		"CI_RACE_APEXTEST_SHARD_INDEXES=1,2,6", "CI_RACE_APEXTEST_RUNNER=c",
 		"CI_RACE_HEAD_SHA=0123456789abcdef0123456789abcdef01234567", "TMPDIR=" + root,
 	}, "./internal/apextest", "internal-apextest")
 	if err == nil || !strings.Contains(out, "checkout HEAD does not match expected head") {
@@ -1112,15 +1167,16 @@ func writeApextestAggregateArtifact(t *testing.T, root, runner string, indexes [
 func TestCIRaceApextestAggregateRejectsMismatchedEvidence(t *testing.T) {
 	root := t.TempDir()
 	headSHA := "0123456789abcdef0123456789abcdef01234567"
-	writeApextestAggregateArtifact(t, root, "a", []int{0, 2, 4, 5}, headSHA, 332)
-	writeApextestAggregateArtifact(t, root, "b", []int{1, 3, 6, 7}, headSHA, 332)
+	writeApextestAggregateArtifact(t, root, "a", []int{0, 3, 5}, headSHA, 332)
+	writeApextestAggregateArtifact(t, root, "b", []int{4, 7}, headSHA, 332)
+	writeApextestAggregateArtifact(t, root, "c", []int{1, 2, 6}, headSHA, 332)
 	script, err := filepath.Abs("ci-race-apextest-aggregate.sh")
 	if err != nil {
 		t.Fatal(err)
 	}
 	out := filepath.Join(root, "aggregate.json")
 	command := func() (string, error) {
-		result, runErr := exec.Command("bash", script, filepath.Join(root, "a"), filepath.Join(root, "b"), out, headSHA).CombinedOutput()
+		result, runErr := exec.Command("bash", script, filepath.Join(root, "a"), filepath.Join(root, "b"), filepath.Join(root, "c"), out, headSHA).CombinedOutput()
 		return string(result), runErr
 	}
 	if output, runErr := command(); runErr != nil {
@@ -1141,14 +1197,15 @@ func TestCIRaceApextestAggregateRejectsMismatchedEvidence(t *testing.T) {
 func TestCIRaceApextestAggregateDerivesDiscoveryCount(t *testing.T) {
 	root := t.TempDir()
 	headSHA := "0123456789abcdef0123456789abcdef01234567"
-	writeApextestAggregateArtifact(t, root, "a", []int{0, 2, 4, 5}, headSHA, 333)
-	writeApextestAggregateArtifact(t, root, "b", []int{1, 3, 6, 7}, headSHA, 333)
+	writeApextestAggregateArtifact(t, root, "a", []int{0, 3, 5}, headSHA, 333)
+	writeApextestAggregateArtifact(t, root, "b", []int{4, 7}, headSHA, 333)
+	writeApextestAggregateArtifact(t, root, "c", []int{1, 2, 6}, headSHA, 333)
 	script, err := filepath.Abs("ci-race-apextest-aggregate.sh")
 	if err != nil {
 		t.Fatal(err)
 	}
 	out := filepath.Join(root, "aggregate.json")
-	result, err := exec.Command("bash", script, filepath.Join(root, "a"), filepath.Join(root, "b"), out, headSHA).CombinedOutput()
+	result, err := exec.Command("bash", script, filepath.Join(root, "a"), filepath.Join(root, "b"), filepath.Join(root, "c"), out, headSHA).CombinedOutput()
 	if err != nil {
 		t.Fatalf("aggregate rejected matching 333-test discovery: %v\n%s", err, result)
 	}
@@ -1164,6 +1221,11 @@ func TestCIRaceApextestAggregateRejectsAdversarialEvidence(t *testing.T) {
 		name   string
 		mutate func(t *testing.T, root string)
 	}{
+		{name: "missing runner c", mutate: func(t *testing.T, root string) {
+			if err := os.Remove(filepath.Join(root, "c", "runner-validation.json")); err != nil {
+				t.Fatal(err)
+			}
+		}},
 		{name: "mismatched head", mutate: func(t *testing.T, root string) {
 			t.Helper()
 			path := filepath.Join(root, "b", "runner-validation.json")
@@ -1196,25 +1258,25 @@ func TestCIRaceApextestAggregateRejectsAdversarialEvidence(t *testing.T) {
 				t.Fatal(err)
 			}
 		}},
-		{name: "missing shard index", mutate: func(t *testing.T, root string) {
+		{name: "omitted assignment", mutate: func(t *testing.T, root string) {
 			t.Helper()
-			path := filepath.Join(root, "b", "runner-validation.json")
+			path := filepath.Join(root, "c", "runner-validation.json")
 			data, err := os.ReadFile(path)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"assigned_indexes":[1,3,6,7]`, `"assigned_indexes":[]`, 1)), 0o600); err != nil {
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"assigned_indexes":[1,2,6]`, `"assigned_indexes":[1,2]`, 1)), 0o600); err != nil {
 				t.Fatal(err)
 			}
 		}},
-		{name: "duplicate shard index", mutate: func(t *testing.T, root string) {
+		{name: "duplicate assignment", mutate: func(t *testing.T, root string) {
 			t.Helper()
-			path := filepath.Join(root, "b", "runner-validation.json")
+			path := filepath.Join(root, "c", "runner-validation.json")
 			data, err := os.ReadFile(path)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"assigned_indexes":[1,3,6,7]`, `"assigned_indexes":[0,1,3,6,7]`, 1)), 0o600); err != nil {
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"assigned_indexes":[1,2,6]`, `"assigned_indexes":[1,2,2,6]`, 1)), 0o600); err != nil {
 				t.Fatal(err)
 			}
 		}},
@@ -1306,14 +1368,15 @@ func TestCIRaceApextestAggregateRejectsAdversarialEvidence(t *testing.T) {
 	for _, fixture := range tests {
 		t.Run(fixture.name, func(t *testing.T) {
 			root := t.TempDir()
-			writeApextestAggregateArtifact(t, root, "a", []int{0, 2, 4, 5}, headSHA, 333)
-			writeApextestAggregateArtifact(t, root, "b", []int{1, 3, 6, 7}, headSHA, 333)
+			writeApextestAggregateArtifact(t, root, "a", []int{0, 3, 5}, headSHA, 333)
+			writeApextestAggregateArtifact(t, root, "b", []int{4, 7}, headSHA, 333)
+			writeApextestAggregateArtifact(t, root, "c", []int{1, 2, 6}, headSHA, 333)
 			fixture.mutate(t, root)
 			script, err := filepath.Abs("ci-race-apextest-aggregate.sh")
 			if err != nil {
 				t.Fatal(err)
 			}
-			output, err := exec.Command("bash", script, filepath.Join(root, "a"), filepath.Join(root, "b"), filepath.Join(root, "aggregate.json"), headSHA).CombinedOutput()
+			output, err := exec.Command("bash", script, filepath.Join(root, "a"), filepath.Join(root, "b"), filepath.Join(root, "c"), filepath.Join(root, "aggregate.json"), headSHA).CombinedOutput()
 			if err == nil {
 				t.Fatalf("adversarial evidence accepted:\n%s", output)
 			}

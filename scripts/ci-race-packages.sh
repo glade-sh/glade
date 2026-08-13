@@ -29,6 +29,31 @@ PY
 }
 
 case "${1:-}" in
+	partition)
+		if [[ "$#" -ne 2 ]]; then
+			echo "usage: scripts/ci-race-packages.sh partition <full-packages-json>" >&2
+			exit 2
+		fi
+		python3 - "$2" <<'PY'
+import json
+import sys
+
+packages = json.loads(sys.argv[1])
+module = "./"
+if not isinstance(packages, list) or len(packages) != 64 or len(set(packages)) != 64 or any(not isinstance(value, str) or not value.startswith(module) for value in packages):
+    raise SystemExit("race partition requires the 64 unique full-manifest packages")
+early = ["./internal/gladecli", "./internal/repoguard"]
+apextest = "./internal/apextest"
+excluded = set(early + [apextest])
+generic = [package for package in packages if package not in excluded]
+combined = early + generic + [apextest]
+if sorted(combined) != sorted(packages) or len(combined) != len(set(combined)):
+    raise SystemExit("race package partition does not exactly cover the full manifest")
+print(json.dumps(early, separators=(",", ":")))
+print(json.dumps(generic, separators=(",", ":")))
+PY
+		exit 0
+		;;
 	high-risk)
 		printf '%s\n' '["./internal/apextest","./internal/gladecli","./internal/playground","./internal/sema","./internal/semanticcache","./internal/server","./internal/startupcache","./internal/storage"]'
 		exit 0
@@ -46,7 +71,7 @@ case "${1:-}" in
 		head_sha="$3"
 		;;
 	*)
-		echo "usage: scripts/ci-race-packages.sh <high-risk|full|changed BASE HEAD>" >&2
+		echo "usage: scripts/ci-race-packages.sh <partition FULL_JSON|high-risk|full|changed BASE HEAD>" >&2
 		exit 2
 		;;
 esac
