@@ -1522,6 +1522,7 @@ func ciRequiredAggregateProblem(workflow string) string {
       - apextest-history
       - gladecli
       - node-integration
+      - nested-sources
       - sema
       - sema-history
       - server-and-playground
@@ -2704,6 +2705,40 @@ func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
 	}
 }
 
+func TestCINestedSourcesWorkflowContract(t *testing.T) {
+	workflow, jobs := readCIWorkflow(t)
+	if got := strings.Count(workflow, "\n  nested-sources:\n"); got != 1 {
+		t.Fatalf("nested-sources job key count = %d, want 1", got)
+	}
+	job, ok := jobs["nested-sources"]
+	if !ok {
+		t.Fatal("CI workflow is missing nested-sources job")
+	}
+	for _, marker := range []string{
+		"runs-on: ubuntu-latest", "timeout-minutes: 30",
+		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
+		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.5\"", "cache: false",
+		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", "node-version: \"22\"",
+		"- name: Test vendored parser", "(cd third_party/glade-apex-parser && go test ./...)",
+		"- name: Test vendored parser without CGO", "(cd third_party/glade-apex-parser && CGO_ENABLED=0 go test ./...)",
+		"- name: Install playground", "npm ci --prefix internal/playground/web",
+		"- name: Test playground", "npm test --prefix internal/playground/web",
+		"- name: Build playground", "npm run build --prefix internal/playground/web",
+	} {
+		if !strings.Contains(job, marker) {
+			t.Errorf("nested-sources job missing %q", marker)
+		}
+	}
+	step := workflowStepBlockText(job, "      - name: Check playground build is deterministic")
+	wantStep := `      - name: Check playground build is deterministic
+        run: |
+          status="$(git status --porcelain --untracked-files=all -- internal/playground/static)"
+          test -z "$status"` + "\n"
+	if step != wantStep {
+		t.Errorf("playground static check = %q, want %q", step, wantStep)
+	}
+}
+
 func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
 	wantSkip := map[string]string{
 		"gladecli":              "^(?:TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$",
@@ -2760,6 +2795,7 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 	mutations := map[string]string{
 		"remove history":          strings.Replace(workflow, "      - apextest-history\n", "", 1),
 		"remove node integration": strings.Replace(workflow, "      - node-integration\n", "", 1),
+		"remove nested sources":   strings.Replace(workflow, "      - nested-sources\n", "", 1),
 		"success-only condition":  strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5", "    if: success()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5", 1),
 		"failure-only predicate":  strings.Replace(workflow, `select(.value.result != "success")`, `select(.value.result == "failure")`, 1),
 		"remove exit":             strings.Replace(workflow, "            exit 1\n", "", 1),
@@ -2784,7 +2820,7 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 func TestCIParallelDAGTopology(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	wantJobs := []string{
-		"apextest", "apextest-history", "gladecli", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
+		"apextest", "apextest-history", "gladecli", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
 		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "vet",
 	}
 	gotJobs := make([]string, 0, len(jobs))
@@ -2804,7 +2840,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 			t.Errorf("root job %s must not be serialized with needs", name)
 		}
 	}
-	for _, name := range []string{"site", "vet", "gladecli", "node-integration", "sema", "sema-full", "server-and-playground", "test", "smoke-runtime", "smoke-distribution"} {
+	for _, name := range []string{"site", "vet", "gladecli", "node-integration", "nested-sources", "sema", "sema-full", "server-and-playground", "test", "smoke-runtime", "smoke-distribution"} {
 		if !strings.Contains(jobs[name], "timeout-minutes: 30") {
 			t.Errorf("%s timeout is not 30 minutes", name)
 		}

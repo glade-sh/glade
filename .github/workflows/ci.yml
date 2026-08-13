@@ -281,6 +281,34 @@ jobs:
             ci-artifacts/go-test-node-integration/resource-usage.json
           if-no-files-found: error
 
+  nested-sources:
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
+      - name: Test vendored parser
+        run: (cd third_party/glade-apex-parser && go test ./...)
+      - name: Test vendored parser without CGO
+        run: (cd third_party/glade-apex-parser && CGO_ENABLED=0 go test ./...)
+      - name: Install playground
+        run: npm ci --prefix internal/playground/web
+      - name: Test playground
+        run: npm test --prefix internal/playground/web
+      - name: Build playground
+        run: npm run build --prefix internal/playground/web
+      - name: Check playground build is deterministic
+        run: |
+          status="$(git status --porcelain --untracked-files=all -- internal/playground/static)"
+          test -z "$status"
+
   sema:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-latest
@@ -809,6 +837,7 @@ jobs:
       - apextest-history
       - gladecli
       - node-integration
+      - nested-sources
       - sema
       - sema-history
       - server-and-playground
