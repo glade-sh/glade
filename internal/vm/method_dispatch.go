@@ -235,6 +235,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			}
 			return Null, newExceptionError("UnsupportedOperationException", method.Name+" local stub surface")
 		}
+		if vm.generatedRuntimeDisposition(method, receiver) == generatedRuntimeUnsupported {
+			return Null, unsupportedCallError(method.Name)
+		}
 	}
 	if passiveGeneratedMethod(method) {
 		if receiver.Kind == ValueObject && vm.isUserProvisioningBatchableType(receiver.Type) {

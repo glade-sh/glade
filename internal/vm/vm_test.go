@@ -506,19 +506,20 @@ func TestAliasSnapshotMutationPropagationKeepsRealDataChange(t *testing.T) {
 	}
 }
 
-func TestExecGeneratedPlatformStaticMethodFallsBackToTypedDefault(t *testing.T) {
-	program, err := CompileAnonymous(`
-List<Id> similarIdeas = Ideas.findSimilar(new Idea(Title = 'Acme'));
-System.assertEquals(0, similarIdeas.size());
-System.assertEquals(0, Ideas.getAllRecentReplies('005000000000001', '0DB000000000001').size());
-System.assertEquals(0, Ideas.getReadRecentReplies('005000000000001', '0DB000000000001').size());
-System.assertEquals(0, Ideas.getUnreadRecentReplies('005000000000001', '0DB000000000001').size());
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := Execute(program, nil); err != nil {
-		t.Fatal(err)
+func TestExecGeneratedPlatformStaticMethodIsUnsupportedWithoutContract(t *testing.T) {
+	for _, source := range []string{
+		`Ideas.findSimilar(new Idea(Title = 'Acme'));`,
+		`Ideas.getAllRecentReplies('005000000000001', '0DB000000000001');`,
+		`Ideas.getReadRecentReplies('005000000000001', '0DB000000000001');`,
+		`Ideas.getUnreadRecentReplies('005000000000001', '0DB000000000001');`,
+	} {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "unsupported call") {
+			t.Fatalf("%s error = %v, want unsupported call", source, err)
+		}
 	}
 }
 
@@ -768,7 +769,7 @@ func writeDataCategoryVMTestFile(t *testing.T, path, content string) {
 	}
 }
 
-func TestGeneratedPlatformFallbackSelectsTypeAwareOverload(t *testing.T) {
+func TestGeneratedPlatformFallbackRejectsUnclassifiedStaticMethod(t *testing.T) {
 	original := generatedPlatformMethods()
 	generatedPlatformMethodIndex = map[string]map[string][]Method{
 		"generated.overload": {
@@ -793,14 +794,10 @@ func TestGeneratedPlatformFallbackSelectsTypeAwareOverload(t *testing.T) {
 	defer func() { generatedPlatformMethodIndex = original }()
 
 	machine := New(nil)
-	value, handled := machine.generatedPlatformStaticDefault("Generated.Overload.pick", []Value{Bool(true)})
-	if !handled || value.Kind != ValueBool || value.Bool {
-		t.Fatalf("Boolean overload default = %#v, handled %v; want false Boolean", value, handled)
-	}
-
-	value, handled = machine.generatedPlatformStaticDefault("Generated.Overload.pick", []Value{Int(1)})
-	if !handled || value.Kind != ValueInt || value.Int != 0 {
-		t.Fatalf("Integer overload default = %#v, handled %v; want zero Integer", value, handled)
+	for _, args := range [][]Value{{Bool(true)}, {Int(1)}} {
+		if _, err := machine.call("Generated.Overload.pick", args, nil, &Result{}); err == nil || !strings.Contains(err.Error(), "unsupported call") {
+			t.Fatalf("Generated.Overload.pick(%v) error = %v, want unsupported call", args, err)
+		}
 	}
 }
 

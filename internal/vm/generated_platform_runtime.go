@@ -12,6 +12,62 @@ func passiveGeneratedMethod(method Method) bool {
 	return methodHasModifier(method.Modifiers, "passive-generated") &&
 		len(method.Program.Instructions) == 0
 }
+
+type generatedRuntimeDisposition uint8
+
+const (
+	generatedRuntimeConcrete generatedRuntimeDisposition = iota
+	generatedRuntimePassiveDTO
+	generatedRuntimeUnsupported
+)
+
+func (vm *VM) generatedRuntimeDisposition(method Method, receiver Value) generatedRuntimeDisposition {
+	if !passiveGeneratedMethod(method) {
+		return generatedRuntimeConcrete
+	}
+	className := generatedMethodClassName(method, receiver)
+	if _, generated := generatedPlatformTypes()[strings.ToLower(className)]; !generated {
+		if _, local := vm.lookupClass(className); local {
+			return generatedRuntimeConcrete
+		}
+	}
+	if (vm.isPassivePlatformDTOType(className) || generatedPlatformTopLevelPassiveTypeName(className)) && generatedPassiveDTOOperation(method) {
+		return generatedRuntimePassiveDTO
+	}
+	return generatedRuntimeUnsupported
+}
+
+func generatedMethodClassName(method Method, receiver Value) string {
+	if className := strings.TrimSpace(method.ClassName); className != "" {
+		return className
+	}
+	if receiver.Kind == ValueObject {
+		return receiver.Type
+	}
+	className, _, _ := strings.Cut(method.Name, ".")
+	return strings.TrimSpace(className)
+}
+
+func generatedPassiveDTOOperation(method Method) bool {
+	if method.IsConstructor {
+		return true
+	}
+	name := strings.ToLower(apexMethodMemberName(method.Name))
+	switch name {
+	case "clone", "getasmap", "equals", "hashcode", "tostring":
+		return true
+	case "":
+		return false
+	}
+	if strings.HasPrefix(name, "get") || strings.HasPrefix(name, "is") {
+		return len(method.Params) == 0
+	}
+	if method.IsStatic && name == "builder" && strings.HasSuffix(method.ReturnType, ".Builder") {
+		return true
+	}
+	return strings.HasPrefix(name, "set") && len(method.Params) == 1
+}
+
 func (vm *VM) generatedPassiveDTOAccessorMethod(className string, method Method) bool {
 	return generatedPlatformTypeName(className) &&
 		vm.isPassivePlatformDTOType(className) &&
