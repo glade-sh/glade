@@ -2360,7 +2360,7 @@ func mathUnary(callee string, args []Value) (Value, error) {
 			return decimalAsDouble(Decimal(roundHalfEven(n))), nil
 		}
 	case "Math.round":
-		if args[0].Kind == ValueDecimal && !isFloatBackedDecimal(args[0]) {
+		if !isFloatBackedDecimal(args[0]) {
 			if result, ok := exactMathRound(callee, args[0], "HALF_EVEN"); ok {
 				rounded, err := int32FromDecimalValue(callee, result)
 				if err != nil {
@@ -2369,13 +2369,13 @@ func mathUnary(callee string, args []Value) (Value, error) {
 				return Int(int64(rounded)), nil
 			}
 		}
-		rounded, err := int64FromFloat("Math.round", roundHalfEven(n))
+		rounded, err := int32FromFloat("Math.round", roundHalfEven(n))
 		if err != nil {
 			return Null, err
 		}
-		return Int(rounded), nil
+		return Int(int64(rounded)), nil
 	case "Math.roundToLong":
-		if args[0].Kind == ValueDecimal && !isFloatBackedDecimal(args[0]) {
+		if !isFloatBackedDecimal(args[0]) {
 			if result, ok := exactMathRound(callee, args[0], "HALF_EVEN"); ok {
 				rounded, err := int64FromDecimalValue(callee, result)
 				if err != nil {
@@ -2390,31 +2390,21 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		}
 		return Int(rounded), nil
 	case "Math.signum":
-		if args[0].Kind == ValueDecimal {
-			sign := 0
-			if !isFloatBackedDecimal(args[0]) {
-				if rat, ok := valueDecimalRat(args[0]); ok {
-					sign = rat.Sign()
-				} else {
-					sign = signumFloat(n)
-				}
+		sign := 0
+		if !isFloatBackedDecimal(args[0]) {
+			if rat, ok := valueDecimalRat(args[0]); ok {
+				sign = rat.Sign()
 			} else {
 				sign = signumFloat(n)
 			}
-			result := Decimal(float64(sign))
-			if isFloatBackedDecimal(args[0]) {
-				return decimalAsDouble(result), nil
-			}
-			return result, nil
+		} else {
+			sign = signumFloat(n)
 		}
-		switch {
-		case n > 0:
-			return Int(1), nil
-		case n < 0:
-			return Int(-1), nil
-		default:
-			return Int(0), nil
+		result := Decimal(float64(sign))
+		if isFloatBackedDecimal(args[0]) {
+			return decimalAsDouble(result), nil
 		}
+		return result, nil
 	case "Math.sqrt":
 		if n < 0 {
 			return Null, fmt.Errorf("Math.sqrt argument out of domain")

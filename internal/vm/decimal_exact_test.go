@@ -139,7 +139,9 @@ func TestExecDecimalMathRoundingAndSignumRemainExact(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(9007199254740993, Math.roundToLong(Decimal.valueOf('9007199254740993.4')));
 System.assertEquals(2147483645, Math.round(Decimal.valueOf('2147483645.499999999')));
+System.assertEquals(9007199254740993, Math.roundToLong(9007199254740993L));
 System.assertEquals('1', Math.signum(Decimal.valueOf('9007199254740993')).toPlainString());
+System.assertEquals('1', Math.signum(1).toPlainString());
 Double doubleValue = Double.valueOf('-9007199254740993');
 System.assertEquals('-1', Math.signum(doubleValue).toPlainString());
 `)
@@ -148,6 +150,14 @@ System.assertEquals('-1', Math.signum(doubleValue).toPlainString());
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+
+	program, err = CompileAnonymous(`Math.round(Double.valueOf('2147483648'));`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil {
+		t.Fatal("Math.round accepted a Double outside the Integer result range")
 	}
 }
 
@@ -160,5 +170,22 @@ Math.mod(Decimal.valueOf('5.5'), Decimal.valueOf('2'));
 	}
 	if _, err := Execute(program, nil); err == nil {
 		t.Fatal("Math.mod accepted Decimal operands despite having only Integer and Long overloads")
+	}
+}
+
+func TestExecDecimalListSortPreservesExactOrdering(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Decimal> values = new List<Decimal>{
+    Decimal.valueOf('9007199254740993'),
+    Decimal.valueOf('9007199254740992')
+};
+values.sort();
+System.assertEquals('9007199254740992', values[0].toPlainString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
