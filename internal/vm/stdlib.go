@@ -687,9 +687,20 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		case ValueDecimal:
 			return tagDouble(args[0]), nil
 		case ValueInt:
-			return tagDouble(Decimal(float64(args[0].Int))), nil
+			value, err := decimalFromText(strconv.FormatInt(args[0].Int, 10))
+			if err != nil {
+				return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s invalid numeric argument", callee))
+			}
+			return tagDouble(value), nil
 		case ValueString:
 			text := strings.TrimSpace(args[0].Text)
+			if callee == "Decimal.valueOf" {
+				value, err := decimalFromText(text)
+				if err != nil {
+					return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s invalid decimal %q", callee, args[0].Text))
+				}
+				return value, nil
+			}
 			parsed, err := strconv.ParseFloat(text, 64)
 			if err != nil {
 				return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s invalid decimal %q", callee, args[0].Text))

@@ -34,14 +34,11 @@ func parseLiteral(raw string) (Value, error) {
 	isLong := suffix == 'L' || suffix == 'l'
 	isDecimal := suffix == 'D' || suffix == 'd' || suffix == 'F' || suffix == 'f' || strings.ContainsAny(raw, ".eE")
 	if isDecimal {
-		numberRaw := raw
-		value, err := strconv.ParseFloat(numberRaw, 64)
+		value, err := decimalFromText(raw)
 		if err != nil {
 			return Null, fmt.Errorf("invalid decimal literal %q", original)
 		}
-		out := Decimal(value)
-		out.Text = numberRaw
-		return out, nil
+		return value, nil
 	}
 	numberRaw := raw
 	value, err := strconv.ParseInt(numberRaw, 10, 64)
@@ -107,6 +104,9 @@ func evalUnary(op string, value Value) (Value, error) {
 		return Bool(!boolValue), nil
 	case "-":
 		if value.Kind == ValueDecimal {
+			if rat, ok := valueDecimalRat(value); ok {
+				return decimalFromRat(new(big.Rat).Neg(rat), int64(decimalScale(value))), nil
+			}
 			return Decimal(-value.Decimal), nil
 		}
 		if value.Kind != ValueInt {
@@ -226,6 +226,21 @@ func evalBinary(op string, left, right Value) (Value, error) {
 			return Null, fmt.Errorf("operator %s requires numeric operands", op)
 		}
 		if left.Kind == ValueDecimal || right.Kind == ValueDecimal {
+			aRat, aOK := valueDecimalRat(left)
+			bRat, bOK := valueDecimalRat(right)
+			if aOK && bOK {
+				comparison := aRat.Cmp(bRat)
+				switch op {
+				case "<":
+					return Bool(comparison < 0), nil
+				case "<=":
+					return Bool(comparison <= 0), nil
+				case ">":
+					return Bool(comparison > 0), nil
+				default:
+					return Bool(comparison >= 0), nil
+				}
+			}
 			a, b := decimalOf(left), decimalOf(right)
 			switch op {
 			case "<":
@@ -451,11 +466,11 @@ func decimalBinary(op string, left, right Value, fn func(float64, float64) float
 }
 
 func preciseDecimalBinary(op string, left, right Value) (Value, bool) {
-	leftRat, ok := decimalRat(left)
+	leftRat, ok := valueDecimalRat(left)
 	if !ok {
 		return Null, false
 	}
-	rightRat, ok := decimalRat(right)
+	rightRat, ok := valueDecimalRat(right)
 	if !ok {
 		return Null, false
 	}
@@ -479,13 +494,11 @@ func preciseDecimalBinary(op string, left, right Value) (Value, bool) {
 	default:
 		return Null, false
 	}
-	text := normalizeComputedDecimalText(ratFixedText(result, int64(scale)))
-	parsed, err := strconv.ParseFloat(text, 64)
-	if err != nil {
+	out := decimalFromRat(result, int64(scale))
+	if math.IsInf(out.Decimal, 0) || math.IsNaN(out.Decimal) {
 		return Null, false
 	}
-	out := Decimal(parsed)
-	out.Text = text
+	out.Text = normalizeComputedDecimalText(out.Text)
 	return out, true
 }
 
@@ -499,22 +512,6 @@ func normalizeComputedDecimalText(text string) string {
 		return "0"
 	}
 	return text
-}
-
-func decimalRat(value Value) (*big.Rat, bool) {
-	switch value.Kind {
-	case ValueInt:
-		return new(big.Rat).SetInt64(value.Int), true
-	case ValueDecimal:
-		raw := strings.TrimSpace(value.Text)
-		if raw == "" {
-			raw = strconv.FormatFloat(value.Decimal, 'f', -1, 64)
-		}
-		rat, ok := new(big.Rat).SetString(raw)
-		return rat, ok
-	default:
-		return nil, false
-	}
 }
 
 func checkIntBinaryOverflow(op string, left, right int64) error {
@@ -575,9 +572,7 @@ func coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 	case "Decimal", "Double":
 		if value.Kind == ValueInt {
-			decimal := Decimal(float64(value.Int))
-			decimal.Text = strconv.FormatInt(value.Int, 10)
-			return decimal, nil
+			return decimalFromText(strconv.FormatInt(value.Int, 10))
 		}
 		if value.Kind == ValueDecimal {
 			return value, nil

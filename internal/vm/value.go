@@ -57,6 +57,30 @@ func Decimal(v float64) Value {
 	return Value{Kind: ValueDecimal, Decimal: v}
 }
 
+func decimalFromText(text string) (Value, error) {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return Null, fmt.Errorf("decimal value cannot be empty")
+	}
+	if _, ok := new(big.Rat).SetString(text); !ok {
+		return Null, fmt.Errorf("invalid decimal %q", text)
+	}
+	parsed, err := strconv.ParseFloat(text, 64)
+	if err != nil {
+		return Null, err
+	}
+	return Value{Kind: ValueDecimal, Decimal: parsed, Text: text}, nil
+}
+
+func decimalFromRat(value *big.Rat, scale int64) Value {
+	if value == nil {
+		return Null
+	}
+	text := ratFixedText(value, scale)
+	parsed, _ := value.Float64()
+	return Value{Kind: ValueDecimal, Decimal: parsed, Text: text}
+}
+
 func Bool(v bool) Value {
 	return Value{Kind: ValueBool, Bool: v}
 }
@@ -608,6 +632,9 @@ func numericDecimalValuesEqual(left, right Value) bool {
 }
 
 func valueDecimalRat(value Value) (*big.Rat, bool) {
+	if value.Static == "Double" {
+		return nil, false
+	}
 	switch value.Kind {
 	case ValueInt:
 		return new(big.Rat).SetInt64(value.Int), true

@@ -24,7 +24,8 @@ func callIntegerMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Integer.%s expects 0 arguments", method)
 		}
-		return Decimal(float64(receiver.Int)), receiver, false, true, nil
+		value, err := decimalFromText(strconv.FormatInt(receiver.Int, 10))
+		return value, receiver, false, true, err
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -85,7 +86,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.intValue expects 0 arguments")
 		}
-		converted, err := int32FromFloat("Decimal.intValue", receiver.Decimal)
+		converted, err := int32FromDecimalValue("Decimal.intValue", receiver)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -94,7 +95,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.longValue expects 0 arguments")
 		}
-		converted, err := int64FromFloat("Decimal.longValue", receiver.Decimal)
+		converted, err := int64FromDecimalValue("Decimal.longValue", receiver)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -126,7 +127,19 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if err := ensureFiniteDecimal("Decimal.format", receiver.Decimal); err != nil {
 			return Null, receiver, false, true, err
 		}
-		return String(formatDecimalWithGrouping(receiver.Decimal)), receiver, false, true, nil
+		text := decimalPlainText(receiver)
+		if strings.ContainsAny(text, "eE") {
+			rat, ok := new(big.Rat).SetString(text)
+			if !ok {
+				return Null, receiver, false, true, fmt.Errorf("Decimal.format value cannot be represented")
+			}
+			if rat.IsInt() {
+				text = rat.Num().String()
+			} else {
+				text = rat.FloatString(decimalScale(receiver))
+			}
+		}
+		return String(formatDecimalTextWithGrouping(text)), receiver, false, true, nil
 	case "toPlainString":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.toPlainString expects 0 arguments")
@@ -226,6 +239,10 @@ func decimalAbsValue(value Value) (Value, error) {
 	if err := ensureFiniteDecimal("Decimal.abs", value.Decimal); err != nil {
 		return Null, err
 	}
+	if rat, ok := valueDecimalRat(value); ok {
+		rat.Abs(rat)
+		return decimalFromRat(rat, int64(decimalScale(value))), nil
+	}
 	out := Decimal(math.Abs(value.Decimal))
 	if text := strings.TrimSpace(value.Text); text != "" {
 		text = strings.TrimPrefix(text, "-")
@@ -233,4 +250,41 @@ func decimalAbsValue(value Value) (Value, error) {
 		out.Text = text
 	}
 	return out, nil
+}
+
+func int32FromDecimalValue(name string, value Value) (int32, error) {
+	if rat, ok := valueDecimalRat(value); ok {
+		integer := new(big.Int).Quo(rat.Num(), rat.Denom())
+		if integer.Cmp(big.NewInt(-2147483648)) < 0 || integer.Cmp(big.NewInt(2147483648)) >= 0 {
+			return 0, fmt.Errorf("%s value out of Integer range", name)
+		}
+		return int32(integer.Int64()), nil
+	}
+	return int32FromFloat(name, value.Decimal)
+}
+
+func int64FromDecimalValue(name string, value Value) (int64, error) {
+	if rat, ok := valueDecimalRat(value); ok {
+		integer := new(big.Int).Quo(rat.Num(), rat.Denom())
+		if !integer.IsInt64() {
+			return 0, fmt.Errorf("%s value out of 64-bit integer range", name)
+		}
+		return integer.Int64(), nil
+	}
+	return int64FromFloat(name, value.Decimal)
+}
+
+func formatDecimalTextWithGrouping(text string) string {
+	sign := ""
+	if strings.HasPrefix(text, "-") || strings.HasPrefix(text, "+") {
+		sign = text[:1]
+		text = text[1:]
+	}
+	whole := text
+	fraction := ""
+	if dot := strings.IndexByte(text, '.'); dot >= 0 {
+		whole = text[:dot]
+		fraction = text[dot:]
+	}
+	return sign + addThousandsSeparators(whole) + fraction
 }
