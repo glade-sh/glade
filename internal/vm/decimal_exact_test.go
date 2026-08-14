@@ -91,3 +91,29 @@ func TestDecimalFloatBackedMarkerIsCaseInsensitive(t *testing.T) {
 		t.Fatalf("float-backed decimal marker = %q, want double", got.Static)
 	}
 }
+
+func TestExecMathResultsRemainFloatBacked(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('9007199254740992', (Math.pow(9007199254740992L, 1) + 1).toPlainString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDecimalDisplayPreservesExponentText(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal value = Decimal.valueOf('9.007199254740993E15');
+String display = '' + value;
+System.assertEquals('9007199254740993', display);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}

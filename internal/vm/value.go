@@ -447,8 +447,16 @@ func decimalDisplayText(value Value) string {
 		return text
 	}
 	if strings.ContainsAny(text, "eE") {
-		if parsed, err := strconv.ParseFloat(text, 64); err == nil {
-			text = strconv.FormatFloat(parsed, 'f', -1, 64)
+		if rat, ok := new(big.Rat).SetString(text); ok {
+			if rat.IsInt() {
+				text = rat.Num().String()
+			} else {
+				scale := decimalScale(value)
+				if scale < 0 {
+					scale = 0
+				}
+				text = rat.FloatString(scale)
+			}
 		}
 	}
 	if strings.Contains(text, ".") {

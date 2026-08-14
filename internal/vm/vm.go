@@ -2342,11 +2342,11 @@ func mathUnary(callee string, args []Value) (Value, error) {
 	case "Math.floor", "Math.ceil", "Math.rint":
 		switch callee {
 		case "Math.floor":
-			return Decimal(math.Floor(n)), nil
+			return decimalAsDouble(Decimal(math.Floor(n))), nil
 		case "Math.ceil":
-			return Decimal(math.Ceil(n)), nil
+			return decimalAsDouble(Decimal(math.Ceil(n))), nil
 		default:
-			return Decimal(roundHalfEven(n)), nil
+			return decimalAsDouble(Decimal(roundHalfEven(n))), nil
 		}
 	case "Math.round":
 		rounded, err := int64FromFloat("Math.round", roundHalfEven(n))
@@ -2431,12 +2431,12 @@ func mathBinary(callee string, args []Value) (Value, error) {
 		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {
 			return Int(int64(math.Max(left, right))), nil
 		}
-		return Decimal(math.Max(left, right)), nil
+		return decimalAsDouble(Decimal(math.Max(left, right))), nil
 	case "Math.min":
 		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {
 			return Int(int64(math.Min(left, right))), nil
 		}
-		return Decimal(math.Min(left, right)), nil
+		return decimalAsDouble(Decimal(math.Min(left, right))), nil
 	case "Math.mod":
 		if right == 0 {
 			return Null, fmt.Errorf("Math.mod divisor cannot be zero")
@@ -2444,7 +2444,7 @@ func mathBinary(callee string, args []Value) (Value, error) {
 		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {
 			return Int(args[0].Int % args[1].Int), nil
 		}
-		return Decimal(math.Mod(left, right)), nil
+		return decimalAsDouble(Decimal(math.Mod(left, right))), nil
 	case "Math.pow":
 		return finiteDecimalResult(callee, math.Pow(left, right))
 	case "Math.atan2":
@@ -2458,7 +2458,7 @@ func finiteDecimalResult(callee string, value float64) (Value, error) {
 	if math.IsInf(value, 0) || math.IsNaN(value) {
 		return Null, fmt.Errorf("%s result must be finite", callee)
 	}
-	result := Decimal(value)
+	result := decimalAsDouble(Decimal(value))
 	result.Text = doubleDisplayText(value)
 	return result, nil
 }

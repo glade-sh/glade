@@ -180,21 +180,6 @@ func addThousandsSeparators(text string) string {
 	return out.String()
 }
 
-func roundDecimalToScale(callee string, value float64, scaleValue int64, mode string) (float64, error) {
-	const maxLocalScale int64 = 15
-	if err := ensureFiniteDecimal(callee, value); err != nil {
-		return 0, err
-	}
-	if scaleValue > maxLocalScale || scaleValue < -maxLocalScale {
-		return 0, unsupportedCallError(fmt.Sprintf("%s absolute scale greater than %d is not supported by the local decimal model", callee, maxLocalScale))
-	}
-	rounded, err := roundLocalDecimalStringToScale(callee, value, scaleValue, mode)
-	if err != nil {
-		return 0, err
-	}
-	return rounded, nil
-}
-
 func roundDecimalValueToScale(callee string, value Value, scaleValue int64, mode string) (Value, error) {
 	if err := ensureFiniteDecimal(callee, value.Decimal); err != nil {
 		return Null, err
@@ -222,22 +207,6 @@ func ensureFiniteDecimal(callee string, value float64) error {
 		return fmt.Errorf("%s value must be finite", callee)
 	}
 	return nil
-}
-
-func roundLocalDecimalStringToScale(callee string, value float64, scaleValue int64, mode string) (float64, error) {
-	rat := new(big.Rat)
-	if _, ok := rat.SetString(strconv.FormatFloat(value, 'f', -1, 64)); !ok {
-		return 0, fmt.Errorf("%s value cannot be represented by local decimal model", callee)
-	}
-	resultRat, err := roundRatToScale(callee, rat, scaleValue, mode)
-	if err != nil {
-		return 0, err
-	}
-	result, _ := resultRat.Float64()
-	if math.IsInf(result, 0) || math.IsNaN(result) {
-		return 0, fmt.Errorf("%s rounded value must be finite", callee)
-	}
-	return result, nil
 }
 
 func roundRatToScale(callee string, rat *big.Rat, scaleValue int64, mode string) (*big.Rat, error) {
