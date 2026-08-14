@@ -164,19 +164,12 @@ func Load(projectRoot, relativePath string, expected Identity) (sema.Result, err
 		return sema.Result{}, miss(MissCorrupt, err)
 	}
 
-	var header struct {
-		Version int `json:"version"`
-	}
-	if err := json.Unmarshal(data, &header); err != nil {
-		return sema.Result{}, miss(MissCorrupt, err)
-	}
-	if header.Version != EnvelopeVersion {
-		return sema.Result{}, miss(MissUnsupportedVersion, nil)
-	}
-
 	var stored diskEnvelope
 	if err := json.Unmarshal(data, &stored); err != nil {
 		return sema.Result{}, miss(MissCorrupt, err)
+	}
+	if stored.Version != EnvelopeVersion {
+		return sema.Result{}, miss(MissUnsupportedVersion, nil)
 	}
 	checksum, err := payloadChecksum(checksumPayload{
 		Version:  stored.Version,

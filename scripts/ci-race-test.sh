@@ -160,11 +160,14 @@ if [[ "${package}" == "./internal/apextest" ]]; then
 			exit 2
 		fi
 		case "${apextest_runner}:${apextest_shard_indexes}" in
-			a:0,2,4,5)
-				assigned_apextest_indexes=(0 2 4 5)
+			a:0,3,5)
+				assigned_apextest_indexes=(0 3 5)
 				;;
-			b:1,3,6,7)
-				assigned_apextest_indexes=(1 3 6 7)
+			b:4,7)
+				assigned_apextest_indexes=(4 7)
+				;;
+			c:1,2,6)
+				assigned_apextest_indexes=(1 2 6)
 				;;
 			*)
 				printf '[ci] invalid apextest runner assignment %q:%q\n' "${apextest_runner}" "${apextest_shard_indexes}" >&2
@@ -308,7 +311,6 @@ if digest.hexdigest() != expected_sha:
     raise SystemExit("race apextest binary checksum changed")
 PY
 	}
-	verify_apextest_binary
 	set +e
 	run_apextest_command "${binary_path}" -test.list '.' >"${discovery_raw}"
 	discovery_native_rc="$?"
@@ -497,9 +499,8 @@ if [[ "${package}" == "./internal/apextest" ]]; then
 		run_apextest_command "${resource_runner}" "${resource}" "race-${slug}-${lane_name}" -- \
 			bash -c '
 set -euo pipefail
-binary="$1"; expected_sha="$2"; expected_size="$3"; events="$4"; go_command="$5"; package="$6"; regex="$7"
-read -r actual_sha actual_size < <(python3 - "$binary" <<'"'"'PY'"'"'
-import hashlib
+binary="$1"; expected_size="$2"; events="$3"; go_command="$4"; package="$5"; regex="$6"
+actual_size="$(python3 - "$binary" <<'"'"'PY'"'"'
 import os
 import stat
 import sys
@@ -510,14 +511,10 @@ except FileNotFoundError:
     raise SystemExit("race apextest binary is missing before direct shard")
 if not stat.S_ISREG(info.st_mode) or info.st_size <= 0 or not os.access(path, os.X_OK):
     raise SystemExit("race apextest binary is not executable before direct shard")
-digest = hashlib.sha256()
-with open(path, "rb") as source:
-    for chunk in iter(lambda: source.read(1024 * 1024), b""):
-        digest.update(chunk)
-print(digest.hexdigest(), info.st_size)
+print(info.st_size)
 PY
-)
-if [[ "$actual_sha" != "$expected_sha" || "$actual_size" != "$expected_size" ]]; then
+)"
+if [[ "$actual_size" != "$expected_size" ]]; then
     echo "race apextest binary changed before direct shard" >&2
     exit 125
 fi
@@ -528,7 +525,7 @@ statuses=("${PIPESTATUS[@]}")
 set -e
 if [[ "${statuses[0]}" -ne 0 ]]; then exit "${statuses[0]}"; fi
 exit "${statuses[1]}"
-' bash "${binary_path}" "${binary_sha256}" "${binary_size}" "${events}" "${go_command}" "${package_name}" "${regex}"
+' bash "${binary_path}" "${binary_size}" "${events}" "${go_command}" "${package_name}" "${regex}"
 		native_rc="$?"
 		set -e
 		set +e

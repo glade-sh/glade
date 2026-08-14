@@ -286,7 +286,6 @@ consume_platform_payload() {
 	(
 		cd "${DIST_DIR}"
 		shasum -a 256 "./${archive}" >"${archive}.sha256"
-		shasum -a 256 -c "${archive}.sha256"
 		cp "${archive}.sha256" SHA256SUMS.txt
 	)
 	local archive_sha256

@@ -51,7 +51,7 @@ for lane in manifest["lanes"].values():
     expected.extend("." + value[len(module):] for value in lane)
 packages = json.loads(sys.argv[2])
 if not isinstance(packages, list) or sorted(packages) != sorted(expected) or len(packages) != len(set(packages)):
-    raise SystemExit("race partition requires the exact unique full-manifest packages")
+	raise SystemExit("race partition requires the exact unique full-manifest packages")
 early = ["./internal/gladecli", "./internal/repoguard"]
 apextest = "./internal/apextest"
 excluded = set(early + [apextest])
