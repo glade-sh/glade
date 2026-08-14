@@ -143,6 +143,7 @@ type TestCase struct {
 	MethodName string
 	File       string
 	Range      diagnostic.Range
+	BodyRange  *diagnostic.Range
 	Body       string
 	SeeAllData bool
 	CostHint   int64 // generic, history-free cost signal used by the priority dispatcher
@@ -198,6 +199,7 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 				MethodName: member.Name,
 				File:       typ.File,
 				Range:      member.Range,
+				BodyRange:  member.BodyRange,
 				SeeAllData: isSeeAllDataTest(member.Modifiers),
 				CostHint:   testCaseCostHint(typ.File),
 				ReturnType: member.Type,
@@ -4062,7 +4064,7 @@ func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[
 				errs[typ.Name] = err
 				continue
 			}
-			method, err := compileProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, source, sources.apexAPIVersion(typ.File))
+			method, err := compileProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, member.BodyRange, source, sources.apexAPIVersion(typ.File))
 			if err != nil {
 				errs[typ.Name] = err
 				continue
@@ -4099,7 +4101,7 @@ func compileTestMethods(cases []TestCase, caches ...*sourceCache) (map[string]vm
 		if len(modifiers) == 0 {
 			modifiers = []string{"static"}
 		}
-		method, err := compileProjectMethod(testCase.ClassName, testCase.MethodName, returnType, modifiers, testCase.File, testCase.Range, source, sources.apexAPIVersion(testCase.File))
+		method, err := compileProjectMethod(testCase.ClassName, testCase.MethodName, returnType, modifiers, testCase.File, testCase.Range, testCase.BodyRange, source, sources.apexAPIVersion(testCase.File))
 		if err != nil {
 			errs[key] = err
 			continue
@@ -6101,7 +6103,7 @@ func triggerEventParts(event string) (string, string) {
 }
 
 func compilePropertyAccessor(className, file string, member typesys.MemberSymbol, accessor apexast.Accessor, source, apiVersion string) (vm.Method, error) {
-	body, err := extractMethodBody(source, accessor.Range)
+	body, err := extractMethodBody(source, accessor.BodyRange)
 	if err != nil {
 		return vm.Method{}, err
 	}
@@ -6563,61 +6565,20 @@ func splitTopLevelCommas(raw string) []string {
 	return parts
 }
 
-func extractMethodBody(source string, r diagnostic.Range) (string, error) {
-	start := r.Start.Offset
-	end := r.End.Offset
+func extractMethodBody(source string, bodyRange *diagnostic.Range) (string, error) {
+	if bodyRange == nil {
+		return "", fmt.Errorf("parser executable body range is unavailable")
+	}
+	start := bodyRange.Start.Offset
+	end := bodyRange.End.Offset
 	if start < 0 || start >= len(source) || end <= start || end > len(source) {
-		return "", fmt.Errorf("method source range is unavailable")
+		return "", fmt.Errorf("parser executable body range is unavailable")
 	}
-	text := source[start:end]
-	open := strings.IndexByte(text, '{')
-	if open < 0 {
-		lineStart := strings.LastIndexAny(source[:start], "\r\n")
-		if lineStart < 0 {
-			lineStart = 0
-		} else {
-			lineStart++
-		}
-		text = source[lineStart:]
-		open = strings.IndexByte(text, '{')
-		if open < 0 {
-			return "", fmt.Errorf("test method has no executable body")
-		}
-		start = lineStart
+	if source[start] != '{' || source[end-1] != '}' {
+		return "", fmt.Errorf("parser executable body range does not bound a block")
 	}
-	if body, ok := extractMethodBodyFromText(source, start, text, open); ok {
-		return body, nil
-	}
-	text = source[start:]
-	if body, ok := extractMethodBodyFromText(source, start, text, open); ok {
-		return body, nil
-	}
-	return "", fmt.Errorf("test method body is incomplete")
-}
-
-func extractMethodBodyFromText(source string, start int, text string, open int) (string, bool) {
-	depth := 0
-	for i := open; i < len(text); i++ {
-		switch text[i] {
-		case '\'':
-			i = skipApexString(text, i)
-		case '/':
-			if i+1 < len(text) && text[i+1] == '/' {
-				i = skipLineComment(text, i)
-			} else if i+1 < len(text) && text[i+1] == '*' {
-				i = skipBlockComment(text, i)
-			}
-		case '{':
-			depth++
-		case '}':
-			depth--
-			if depth == 0 {
-				bodyStart := start + open + 1
-				return sourcePositionPrefix(source[:bodyStart]) + text[open+1:i], true
-			}
-		}
-	}
-	return "", false
+	bodyStart := start + 1
+	return sourcePositionPrefix(source[:bodyStart]) + source[bodyStart:end-1], nil
 }
 
 func sourcePositionPrefix(source string) string {

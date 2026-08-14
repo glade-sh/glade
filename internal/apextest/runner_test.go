@@ -244,6 +244,102 @@ func TestMultilineStringCompilesAtAPI66AndAPI67(t *testing.T) {
 	}
 }
 
+func TestParserBodyRangesDriveExecutableBodiesAtAPI66AndAPI67(t *testing.T) {
+	for _, apiVersion := range []string{"66.0", "67.0"} {
+		t.Run(apiVersion, func(t *testing.T) {
+			root := t.TempDir()
+			classPath := filepath.Join(root, "BodyRangeProbe.cls")
+			triggerPath := filepath.Join(root, "BodyRangeProbeTrigger.trigger")
+			testPath := filepath.Join(root, "BodyRangeProbeTest.cls")
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+			classSource := `public class BodyRangeProbe {
+  public String value { get { String body = '''
+class accessor quote: ' and brace: }
+'''; return body; } set { value = value; } }
+  public BodyRangeProbe() { String body = '''
+class constructor quote: ' and brace: }
+'''; }
+  static { String body = '''
+class static initializer quote: ' and brace: }
+'''; }
+  { String body = '''
+class initializer quote: ' and brace: }
+'''; }
+  public static String run() { String body = '''
+class method quote: ' and brace: }
+'''; return body; }
+}`
+			writeFile(t, classPath, classSource)
+			writeFile(t, classPath+"-meta.xml", `<ApexClass><apiVersion>`+apiVersion+`</apiVersion></ApexClass>`)
+			writeFile(t, triggerPath, `trigger BodyRangeProbeTrigger on Account (before insert) {
+  String body = '''
+trigger quote: ' and brace: }
+''';
+}`)
+			writeFile(t, triggerPath+"-meta.xml", `<ApexTrigger><apiVersion>`+apiVersion+`</apiVersion></ApexTrigger>`)
+			writeFile(t, testPath, `@isTest private class BodyRangeProbeTest {
+  @testSetup static void setup() { String body = '''
+test setup quote: ' and brace: }
+'''; }
+  @isTest static void run() { String body = '''
+test method quote: ' and brace: }
+'''; }
+}`)
+			writeFile(t, testPath+"-meta.xml", `<ApexClass><apiVersion>`+apiVersion+`</apiVersion></ApexClass>`)
+
+			index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath, triggerPath, testPath}}, gladeschema.Schema{})
+			if index.HasErrors() {
+				t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+			}
+
+			methods := compileProjectMethods(index)
+			if _, ok := methodNamed(methods, "BodyRangeProbe.run"); !ok {
+				t.Fatalf("class method was not compiled: %#v", methods)
+			}
+			classes := compileProjectClasses(index, methods)
+			bodyRangeProbe := classNamed(classes, "BodyRangeProbe")
+			if bodyRangeProbe.Name == "" || len(bodyRangeProbe.Constructors) != 1 || len(bodyRangeProbe.StaticInitializers) != 1 || len(bodyRangeProbe.InstanceInitializers) != 1 {
+				t.Fatalf("class executable bodies = %#v", bodyRangeProbe)
+			}
+			if property := bodyRangeProbe.Fields["value"]; property.Getter == nil || property.Setter == nil {
+				t.Fatalf("property executable bodies = %#v", bodyRangeProbe.Fields["value"])
+			}
+
+			triggers, triggerErrs := compileProjectTriggers(index)
+			if len(triggerErrs) != 0 || len(triggers) != 1 {
+				t.Fatalf("trigger executable body = %#v errors = %#v", triggers, triggerErrs)
+			}
+			setups, setupErrs, _, _ := compileTestSetupMethods(index)
+			if len(setupErrs) != 0 || len(setups["BodyRangeProbeTest"]) != 1 {
+				t.Fatalf("test setup executable body = %#v errors = %#v", setups, setupErrs)
+			}
+			cases := Discover(index, Options{})
+			testMethods, testErrs := compileTestMethods(cases)
+			if len(testErrs) != 0 || testMethods["BodyRangeProbeTest.run"].Name == "" {
+				t.Fatalf("test executable body = %#v errors = %#v", testMethods, testErrs)
+			}
+		})
+	}
+}
+
+func methodNamed(methods map[string]vm.Method, name string) (vm.Method, bool) {
+	for _, method := range methods {
+		if method.Name == name {
+			return method, true
+		}
+	}
+	return vm.Method{}, false
+}
+
+func classNamed(classes []vm.Class, name string) vm.Class {
+	for _, class := range classes {
+		if class.Name == name {
+			return class
+		}
+	}
+	return vm.Class{}
+}
+
 func TestRunFailsClosedOnReservedIdentifierDiagnostic(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "ReservedCurrencyTest.cls")
@@ -4368,10 +4464,13 @@ private class DataRequestTest {
 	if start < 0 || end < 0 {
 		t.Fatal("test source markers not found")
 	}
-	body, err := extractMethodBody(source, diagnostic.Range{
-		Start: diagnostic.Position{Offset: start},
-		End:   diagnostic.Position{Offset: end},
-	})
+	bodyStart := strings.Index(source[start:end], "{") + start
+	bodyEnd := strings.LastIndex(source[:end], "}") + 1
+	bodyRange := diagnostic.Range{
+		Start: diagnostic.Position{Offset: bodyStart},
+		End:   diagnostic.Position{Offset: bodyEnd},
+	}
+	body, err := extractMethodBody(source, &bodyRange)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -4675,7 +4774,7 @@ private class JSONParserHolderTest {
 	}
 }
 
-func TestExtractMethodBodyFallsBackPastShortRange(t *testing.T) {
+func TestExtractMethodBodyRequiresExactParserRange(t *testing.T) {
 	source := `public class BigClass {
   public static void run() {
     // a comment with { that should not count
@@ -4686,15 +4785,12 @@ func TestExtractMethodBodyFallsBackPastShortRange(t *testing.T) {
 }`
 	start := strings.Index(source, "public static void run")
 	shortEnd := strings.Index(source, "if (true)")
-	body, err := extractMethodBody(source, diagnostic.Range{
+	bodyRange := diagnostic.Range{
 		Start: diagnostic.Position{Offset: start},
 		End:   diagnostic.Position{Offset: shortEnd},
-	})
-	if err != nil {
-		t.Fatal(err)
 	}
-	if !strings.Contains(body, "System.debug('}')") {
-		t.Fatalf("body = %q", body)
+	if _, err := extractMethodBody(source, &bodyRange); err == nil {
+		t.Fatal("short declaration range unexpectedly produced an executable body")
 	}
 }
 
@@ -4717,10 +4813,11 @@ func TestExtractMethodSourceRecoversOneLineSignature(t *testing.T) {
 	if len(params) != 0 {
 		t.Fatalf("params = %#v", params)
 	}
-	body, err := extractMethodBody(source, diagnostic.Range{
-		Start: diagnostic.Position{Offset: start + 1},
-		End:   diagnostic.Position{Offset: start + 2},
-	})
+	bodyRange := diagnostic.Range{
+		Start: diagnostic.Position{Offset: start},
+		End:   diagnostic.Position{Offset: start + 3},
+	}
+	body, err := extractMethodBody(source, &bodyRange)
 	if err != nil {
 		t.Fatal(err)
 	}

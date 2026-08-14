@@ -133,12 +133,12 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 					class.FieldOrder = append(class.FieldOrder, field.Name)
 				}
 			case apexast.DeclarationConstructor:
-				ctor, err := compileProjectConstructor(typ.Name, typ.File, member.Range, source, apiVersion)
+				ctor, err := compileProjectConstructor(typ.Name, typ.File, member.Range, member.BodyRange, source, apiVersion)
 				if err == nil {
 					class.Constructors = append(class.Constructors, ctor)
 				}
 			case apexast.DeclarationInitializer:
-				init, err := compileProjectInitializer(typ.Name, typ.File, member.Range, source, hasModifier(member.Modifiers, "static"), apiVersion)
+				init, err := compileProjectInitializer(typ.Name, typ.File, member.Range, member.BodyRange, source, hasModifier(member.Modifiers, "static"), apiVersion)
 				if err == nil {
 					if init.IsStatic {
 						class.StaticInitializers = append(class.StaticInitializers, init)
@@ -246,7 +246,7 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 			}
 			return
 		}
-		method, err := compileProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, job.Source, job.APIVersion)
+		method, err := compileProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, member.BodyRange, job.Source, job.APIVersion)
 		if err != nil {
 			if unsupported, ok := unsupportedProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, job.Source, err); ok {
 				unsupported.Dependency = job.Dependency
@@ -434,7 +434,7 @@ func compileProjectTriggers(index typesys.Index, caches ...*sourceCache) ([]vm.T
 			errs = append(errs, err)
 			continue
 		}
-		body, err := extractMethodBody(source, trigger.Range)
+		body, err := extractMethodBody(source, trigger.BodyRange)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -1068,7 +1068,7 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 	org.Objects["PermissionSetGroup"] = state
 }
 
-func compileProjectMethod(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, source, apiVersion string) (vm.Method, error) {
+func compileProjectMethod(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, bodyRange *diagnostic.Range, source, apiVersion string) (vm.Method, error) {
 	methodSource, err := extractMethodSource(source, r)
 	if err != nil {
 		return vm.Method{}, err
@@ -1077,7 +1077,7 @@ func compileProjectMethod(className, methodName, returnType string, modifiers []
 	if err != nil {
 		return vm.Method{}, err
 	}
-	body, err := extractMethodBody(source, r)
+	body, err := extractMethodBody(source, bodyRange)
 	if err != nil {
 		return vm.Method{}, err
 	}
@@ -1100,7 +1100,7 @@ func compileProjectMethod(className, methodName, returnType string, modifiers []
 		Column:     r.Start.Column,
 	}, nil
 }
-func compileProjectConstructor(className, file string, r diagnostic.Range, source, apiVersion string) (vm.Method, error) {
+func compileProjectConstructor(className, file string, r diagnostic.Range, bodyRange *diagnostic.Range, source, apiVersion string) (vm.Method, error) {
 	methodSource, err := extractMethodSource(source, r)
 	if err != nil {
 		return vm.Method{}, err
@@ -1109,7 +1109,7 @@ func compileProjectConstructor(className, file string, r diagnostic.Range, sourc
 	if err != nil {
 		return vm.Method{}, err
 	}
-	body, err := extractMethodBody(source, r)
+	body, err := extractMethodBody(source, bodyRange)
 	if err != nil {
 		return vm.Method{}, err
 	}
@@ -1130,8 +1130,8 @@ func compileProjectConstructor(className, file string, r diagnostic.Range, sourc
 		Column:        r.Start.Column,
 	}, nil
 }
-func compileProjectInitializer(className, file string, r diagnostic.Range, source string, static bool, apiVersion string) (vm.Method, error) {
-	body, err := extractMethodBody(source, r)
+func compileProjectInitializer(className, file string, r diagnostic.Range, bodyRange *diagnostic.Range, source string, static bool, apiVersion string) (vm.Method, error) {
+	body, err := extractMethodBody(source, bodyRange)
 	if err != nil {
 		return vm.Method{}, err
 	}
