@@ -105,6 +105,7 @@ type MemberSymbol struct {
 	Parameters  []apexast.Parameter     `json:"parameters,omitempty"`
 	Accessors   []apexast.Accessor      `json:"accessors,omitempty"`
 	HasBody     bool                    `json:"hasBody,omitempty"`
+	BodyRange   *diagnostic.Range       `json:"bodyRange,omitempty"`
 	IsTest      bool                    `json:"isTest,omitempty"`
 	Range       diagnostic.Range        `json:"range"`
 }
@@ -117,12 +118,13 @@ type TriggerSymbol struct {
 	Version               string                `json:"version,omitempty"`
 	EffectiveAPIVersion   string                `json:"effectiveApiVersion,omitempty"`
 	// SourceBacked has the same source-arena contract as TypeSymbol.
-	SourceBacked bool             `json:"sourceBacked,omitempty"`
-	ObjectName   string           `json:"objectName"`
-	Events       []string         `json:"events,omitempty"`
-	File         string           `json:"file"`
-	Dependency   bool             `json:"dependency,omitempty"`
-	Range        diagnostic.Range `json:"range"`
+	SourceBacked bool              `json:"sourceBacked,omitempty"`
+	ObjectName   string            `json:"objectName"`
+	Events       []string          `json:"events,omitempty"`
+	File         string            `json:"file"`
+	Dependency   bool              `json:"dependency,omitempty"`
+	BodyRange    *diagnostic.Range `json:"bodyRange,omitempty"`
+	Range        diagnostic.Range  `json:"range"`
 }
 
 // HasSourceSnapshot reports whether this trigger requires an Apex source
@@ -728,7 +730,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root, fallbackAPIVe
 	for _, decl := range file.Declarations {
 		switch decl.Kind {
 		case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-			for _, sym := range typeSymbolsFromDeclaration(path, decl, "", 0, false, normalized) {
+			for _, sym := range typeSymbolsFromDeclaration(path, decl, "", 0, false) {
 				sym.Namespace = namespace
 				sym.SourceNamespaceRemaps = append([]namespaceremap.Rule(nil), sourceRemaps...)
 				sym.SourceRoot = root
@@ -751,6 +753,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root, fallbackAPIVe
 				Events:                decl.Events,
 				File:                  path,
 				Dependency:            dependency,
+				BodyRange:             decl.BodyRange,
 				Range:                 decl.Range,
 			})
 		}
@@ -1490,7 +1493,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		for _, decl := range file.Declarations {
 			switch decl.Kind {
 			case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-				for _, sym := range typeSymbolsFromDeclaration(path, decl, "", 0, false, source) {
+				for _, sym := range typeSymbolsFromDeclaration(path, decl, "", 0, false) {
 					sym.Namespace = metadata.namespace
 					sym.SourceNamespaceRemaps = cloneIncrementalNamespaceRemaps(metadata.namespaceRemaps)
 					sym.SourceRoot = metadata.root
@@ -1520,6 +1523,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 					Events:                decl.Events,
 					File:                  path,
 					Dependency:            metadata.dependency,
+					BodyRange:             decl.BodyRange,
 					Range:                 decl.Range,
 				}
 				triggerKey := namespaceTypeKey(trigger.Namespace, trigger.Name)
@@ -1633,23 +1637,15 @@ func cleanFilePath(path string) string {
 	return filepath.Clean(path)
 }
 
-func typeSymbolsFromDeclaration(path string, decl apexast.Declaration, parent string, parentDepth int, parentIsTest bool, source string) []TypeSymbol {
+func typeSymbolsFromDeclaration(path string, decl apexast.Declaration, parent string, parentDepth int, parentIsTest bool) []TypeSymbol {
 	sym := typeSymbolFromDeclaration(path, decl, parent, parentDepth, parentIsTest)
-	superClass, interfaces := parseTypeInheritance(source, decl.Range)
-	if decl.Kind == apexast.DeclarationInterface {
-		if superClass != "" {
-			interfaces = append([]string{superClass}, interfaces...)
-		}
-		sym.Interfaces = interfaces
-	} else {
-		sym.SuperClass = superClass
-		sym.Interfaces = interfaces
-	}
+	sym.SuperClass = decl.SuperClass
+	sym.Interfaces = append([]string(nil), decl.Interfaces...)
 	out := []TypeSymbol{sym}
 	for _, member := range decl.Members {
 		switch member.Kind {
 		case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-			out = append(out, typeSymbolsFromDeclaration(path, member, sym.Name, sym.NestingDepth, sym.IsTest, source)...)
+			out = append(out, typeSymbolsFromDeclaration(path, member, sym.Name, sym.NestingDepth, sym.IsTest)...)
 		}
 	}
 	return out
@@ -1692,116 +1688,12 @@ func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent str
 			Parameters:  member.Parameters,
 			Accessors:   member.Accessors,
 			HasBody:     member.HasBody,
+			BodyRange:   member.BodyRange,
 			IsTest:      hasTestModifier(member.Modifiers) || (member.Kind == apexast.DeclarationMethod && hasModifier(member.Modifiers, "testmethod")),
 			Range:       member.Range,
 		})
 	}
 	return sym
-}
-
-func parseTypeInheritance(source string, r diagnostic.Range) (string, []string) {
-	if r.Start.Offset < 0 || r.End.Offset <= r.Start.Offset || r.End.Offset > len(source) {
-		return "", nil
-	}
-	text := stripTypeInheritanceComments(source[r.Start.Offset:r.End.Offset])
-	open := strings.IndexByte(text, '{')
-	if open >= 0 {
-		text = text[:open]
-	}
-	fields := splitTypeInheritanceFields(text)
-	var super string
-	var interfaces []string
-	for i := 0; i < len(fields); i++ {
-		switch strings.ToLower(fields[i]) {
-		case "extends":
-			if i+1 < len(fields) {
-				super = strings.TrimSpace(fields[i+1])
-				i++
-			}
-		case "implements":
-			for j := i + 1; j < len(fields); j++ {
-				token := strings.TrimSpace(fields[j])
-				if token == "" {
-					continue
-				}
-				interfaces = append(interfaces, token)
-			}
-			return super, interfaces
-		}
-	}
-	return super, interfaces
-}
-
-func stripTypeInheritanceComments(text string) string {
-	var out strings.Builder
-	for i := 0; i < len(text); i++ {
-		if text[i] == '/' && i+1 < len(text) {
-			switch text[i+1] {
-			case '/':
-				for i < len(text) && text[i] != '\n' {
-					i++
-				}
-				if i < len(text) {
-					out.WriteByte(text[i])
-				}
-				continue
-			case '*':
-				i += 2
-				for i+1 < len(text) && !(text[i] == '*' && text[i+1] == '/') {
-					if text[i] == '\n' {
-						out.WriteByte('\n')
-					} else {
-						out.WriteByte(' ')
-					}
-					i++
-				}
-				if i+1 < len(text) {
-					i++
-				}
-				continue
-			}
-		}
-		out.WriteByte(text[i])
-	}
-	return out.String()
-}
-
-func splitTypeInheritanceFields(text string) []string {
-	var fields []string
-	start := -1
-	depth := 0
-	for i, r := range text {
-		switch r {
-		case '<':
-			if start < 0 {
-				start = i
-			}
-			depth++
-		case '>':
-			if start < 0 {
-				start = i
-			}
-			if depth > 0 {
-				depth--
-			}
-		case ' ', '\t', '\n', '\r', ',':
-			if depth == 0 {
-				if start >= 0 {
-					fields = append(fields, strings.TrimSpace(text[start:i]))
-					start = -1
-				}
-				continue
-			}
-		default:
-			if start < 0 {
-				start = i
-			}
-		}
-	}
-	if start >= 0 {
-		fields = append(fields, strings.TrimSpace(text[start:]))
-	}
-	return fields
 }
 
 func hasTestModifier(modifiers []string) bool {
