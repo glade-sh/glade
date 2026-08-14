@@ -617,23 +617,30 @@ func treeSitterInterfaces(node *tree_sitter.Node, source string) []string {
 	for _, child := range namedChildren(field) {
 		if child.Kind() == "type_list" {
 			for _, base := range namedChildren(&child) {
-				if text := treeSitterTypeText(&base, source); text != "" {
+				if text := treeSitterInterfaceText(&base, source); text != "" {
 					out = append(out, text)
 				}
 			}
 			continue
 		}
-		text := treeSitterTypeText(&child, source)
+		text := treeSitterInterfaceText(&child, source)
 		if text != "" {
 			out = append(out, text)
 		}
 	}
 	if len(out) == 0 {
-		if text := treeSitterTypeText(field, source); text != "" {
+		if text := treeSitterInterfaceText(field, source); text != "" {
 			out = append(out, text)
 		}
 	}
 	return out
+}
+
+func treeSitterInterfaceText(node *tree_sitter.Node, source string) string {
+	if node == nil {
+		return ""
+	}
+	return strings.Join(strings.Fields(nodeText(node, source)), " ")
 }
 
 func treeSitterSuperclass(node *tree_sitter.Node, source string) string {
