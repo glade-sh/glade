@@ -170,20 +170,30 @@ func TestAnalyzeReportsParserAcceptedButRuntimeUnlowerableBody(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
 	path := filepath.Join(root, "UsesXor.cls")
-	writeSemaFile(t, path, `
+	source := `
 public class UsesXor {
   public void run() {
     Integer flags = 1 ^ 2;
   }
 }
-`)
+	`
+	writeSemaFile(t, path, source)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
 	result := Analyze(index)
+	expectedBody := "\n    Integer flags = 1 ^ 2;\n  "
+	expectedStart := strings.Index(source, expectedBody)
+	if expectedStart < 0 {
+		t.Fatalf("test body not found in source")
+	}
+	expectedEnd := expectedStart + len(expectedBody)
 	for _, diag := range result.Diagnostics {
 		if diag.Code == runtimeLoweringDiagnosticCode && diag.Severity != diagnostic.Warning {
 			t.Fatalf("runtime lowering diagnostic severity = %q, want warning", diag.Severity)
 		}
 		if diag.Code == runtimeLoweringDiagnosticCode {
+			if diag.Range == nil || diag.Range.Start.Offset != expectedStart || diag.Range.End.Offset != expectedEnd {
+				t.Fatalf("runtime lowering diagnostic range = %#v, want offsets %d:%d", diag.Range, expectedStart, expectedEnd)
+			}
 			return
 		}
 	}
