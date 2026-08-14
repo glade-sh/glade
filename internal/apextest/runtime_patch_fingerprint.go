@@ -216,6 +216,8 @@ func (writer *runtimePatchFingerprintWriter) program(tag byte, program ir.Progra
 	writer.raw(tag)
 	writer.instructions(0x01, program.Instructions, true, depth+1)
 	writer.string(0x02, program.Source)
+	writer.string(0x03, program.APIVersion)
+	writer.boolean(0x04, program.Trigger)
 }
 
 func (writer *runtimePatchFingerprintWriter) instructions(tag byte, instructions []ir.Instruction, preserveNil bool, depth int) {
@@ -345,6 +347,7 @@ func (writer *runtimePatchFingerprintWriter) class(class vm.Class) {
 	writer.string(0x01, class.Name)
 	writer.string(0x02, class.Namespace)
 	writer.string(0x03, class.SuperClass)
+	writer.string(0x14, class.APIVersion)
 	writer.strings(0x04, class.Interfaces, true)
 	writer.fields(0x05, class.Fields)
 	writer.fields(0x06, class.StaticFields)

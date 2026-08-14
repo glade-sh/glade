@@ -109,12 +109,14 @@ func (vm *VM) classSharingMode(className string) (string, bool) {
 		return "with sharing", true
 	}
 	seen := map[string]bool{}
+	secureDefault := false
 	for strings.TrimSpace(className) != "" && !seen[strings.ToLower(className)] {
 		seen[strings.ToLower(className)] = true
 		class, ok := vm.lookupClass(className)
 		if !ok {
-			return "", false
+			break
 		}
+		secureDefault = secureDefault || apexversion.Enabled(class.APIVersion, apexversion.SecureDefaults)
 		switch {
 		case methodHasModifier(class.Modifiers, "with sharing"):
 			return "with sharing", true
@@ -124,6 +126,9 @@ func (vm *VM) classSharingMode(className string) (string, bool) {
 			return "inherited sharing", true
 		}
 		className = vm.resolvedSuperClassName(class)
+	}
+	if secureDefault {
+		return "with sharing", true
 	}
 	return "", false
 }

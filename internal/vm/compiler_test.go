@@ -8,29 +8,54 @@ import (
 )
 
 func TestCompileDMLAccessModesPreservePrefixAndSuffixSyntax(t *testing.T) {
-	for _, test := range []struct {
-		name string
-		src  string
-		mode ir.DMLMode
+	for _, operation := range []struct {
+		name       string
+		defaultSrc string
+		userSrc    string
+		systemSrc  string
 	}{
-		{name: "insert prefix", src: "insert as user record;", mode: ir.DMLModeUser},
-		{name: "update suffix", src: "update record as system;", mode: ir.DMLModeSystem},
-		{name: "upsert suffix", src: "upsert record External_Id__c as user;", mode: ir.DMLModeUser},
-		{name: "delete prefix", src: "delete as user record;", mode: ir.DMLModeUser},
-		{name: "undelete suffix", src: "undelete record as system;", mode: ir.DMLModeSystem},
-		{name: "merge prefix", src: "merge as system master duplicate;", mode: ir.DMLModeSystem},
-		{name: "merge suffix", src: "merge master duplicate as user;", mode: ir.DMLModeUser},
-		{name: "default", src: "delete record;", mode: ir.DMLModeDefault},
+		{name: "insert", defaultSrc: "insert record;", userSrc: "insert as user record;", systemSrc: "insert as system record;"},
+		{name: "update", defaultSrc: "update record;", userSrc: "update record as user;", systemSrc: "update record as system;"},
+		{name: "upsert", defaultSrc: "upsert record External_Id__c;", userSrc: "upsert record External_Id__c as user;", systemSrc: "upsert as system record External_Id__c;"},
+		{name: "delete", defaultSrc: "delete record;", userSrc: "delete as user record;", systemSrc: "delete record as system;"},
+		{name: "undelete", defaultSrc: "undelete record;", userSrc: "undelete as user record;", systemSrc: "undelete record as system;"},
+		{name: "merge", defaultSrc: "merge master duplicate;", userSrc: "merge master duplicate as user;", systemSrc: "merge as system master duplicate;"},
 	} {
-		t.Run(test.name, func(t *testing.T) {
-			program, err := CompileAnonymous(test.src)
-			if err != nil {
-				t.Fatalf("CompileAnonymous(%q): %v", test.src, err)
-			}
-			if len(program.Instructions) != 1 || program.Instructions[0].DMLMode != test.mode {
-				t.Fatalf("DML mode for %q = %#v, want %d", test.src, program.Instructions, test.mode)
-			}
-		})
+		for _, test := range []struct {
+			name string
+			src  string
+			mode ir.DMLMode
+		}{
+			{name: "default", src: operation.defaultSrc, mode: ir.DMLModeDefault},
+			{name: "user", src: operation.userSrc, mode: ir.DMLModeUser},
+			{name: "system", src: operation.systemSrc, mode: ir.DMLModeSystem},
+		} {
+			t.Run(operation.name+"/"+test.name, func(t *testing.T) {
+				program, err := CompileAnonymous(test.src)
+				if err != nil {
+					t.Fatalf("CompileAnonymous(%q): %v", test.src, err)
+				}
+				if len(program.Instructions) != 1 || program.Instructions[0].DMLMode != test.mode {
+					t.Fatalf("DML mode for %q = %#v, want %d", test.src, program.Instructions, test.mode)
+				}
+			})
+		}
+	}
+}
+
+func TestCompileDMLAccessModesSurviveControlFlow(t *testing.T) {
+	program, err := CompileAnonymous("if (true) { update as user record; } else { delete as system record; }")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(program.Instructions) != 1 {
+		t.Fatalf("instructions = %#v", program.Instructions)
+	}
+	if got := program.Instructions[0].Then[0].DMLMode; got != ir.DMLModeUser {
+		t.Fatalf("then DML mode = %d, want user", got)
+	}
+	if got := program.Instructions[0].Else[0].DMLMode; got != ir.DMLModeSystem {
+		t.Fatalf("else DML mode = %d, want system", got)
 	}
 }
 

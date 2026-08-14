@@ -42,6 +42,7 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 			class := vm.Class{
 				Name:         typ.Name,
 				Namespace:    typ.Namespace,
+				APIVersion:   typ.EffectiveAPIVersion,
 				Access:       accessModifier(typ.Modifiers),
 				Modifiers:    append([]string(nil), typ.Modifiers...),
 				IsAbstract:   hasModifier(typ.Modifiers, "abstract"),
@@ -70,6 +71,7 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 		class := vm.Class{
 			Name:         typ.Name,
 			Namespace:    typ.Namespace,
+			APIVersion:   apiVersion,
 			Access:       accessModifier(typ.Modifiers),
 			Modifiers:    append([]string(nil), typ.Modifiers...),
 			IsAbstract:   hasModifier(typ.Modifiers, "abstract"),

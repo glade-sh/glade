@@ -51,30 +51,46 @@ func runCaseStatuses(run testreport.Run) map[string]testreport.Status {
 func TestAPIVersionMetadataStampsEveryExecutableBody(t *testing.T) {
 	root := t.TempDir()
 	classPath := filepath.Join(root, "BodyKinds.cls")
+	asyncPath := filepath.Join(root, "AsyncBodyKinds.cls")
 	triggerPath := filepath.Join(root, "BodyKindsTrigger.trigger")
 	testPath := filepath.Join(root, "BodyKindsTest.cls")
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, classPath, `public class BodyKinds {
   public String field = makeValue();
+  public String literalField = '''
+field initializer
+''';
   public String prop { get { return field; } set { field = value; } }
   public BodyKinds() { field = 'ctor'; }
   static { Integer count = 1; }
   { field = 'init'; }
-  public String makeValue() { return 'value'; }
+  public String makeValue() { return '''
+method body
+'''; }
   @future static void futureRun() { Integer count = 1; }
 }`)
 	writeFile(t, classPath+"-meta.xml", `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
+	writeFile(t, asyncPath, `public class AsyncBodyKinds {
+  public void queueableEntry(QueueableContext context) { String value = 'queueable'; }
+  public void batchEntry(Database.BatchableContext context, List<SObject> scope) { String value = 'batch'; }
+  public void scheduledEntry(SchedulableContext context) { String value = 'scheduled'; }
+}`)
+	writeFile(t, asyncPath+"-meta.xml", `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
 	writeFile(t, triggerPath, `trigger BodyKindsTrigger on Account (before insert) {
   String body = '''\ntrigger body\n''';
 }`)
 	writeFile(t, triggerPath+"-meta.xml", `<ApexTrigger><apiVersion>67.0</apiVersion></ApexTrigger>`)
 	writeFile(t, testPath, `@isTest private class BodyKindsTest {
-  @testSetup static void setup() { Integer count = 1; }
-  @isTest static void run() { Integer count = 1; }
+  @testSetup static void setup() { String value = '''
+setup body
+'''; }
+  @isTest static void run() { String value = '''
+test body
+'''; }
 }`)
 	writeFile(t, testPath+"-meta.xml", `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
 
-	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath, triggerPath, testPath}}, gladeschema.Schema{})
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath, asyncPath, triggerPath, testPath}}, gladeschema.Schema{})
 	if index.HasErrors() {
 		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
 	}
@@ -90,6 +106,18 @@ func TestAPIVersionMetadataStampsEveryExecutableBody(t *testing.T) {
 		}
 		if !ok || method.APIVersion != "67.0" {
 			t.Fatalf("method %s = %#v, want API 67.0", name, method)
+		}
+	}
+	for _, name := range []string{"AsyncBodyKinds.queueableEntry", "AsyncBodyKinds.batchEntry", "AsyncBodyKinds.scheduledEntry"} {
+		var method vm.Method
+		for _, candidate := range methods {
+			if candidate.Name == name {
+				method = candidate
+				break
+			}
+		}
+		if method.Name == "" || method.APIVersion != "67.0" {
+			t.Fatalf("async method %s = %#v, want API 67.0", name, method)
 		}
 	}
 	classes := compileProjectClasses(index, methods)
@@ -111,6 +139,9 @@ func TestAPIVersionMetadataStampsEveryExecutableBody(t *testing.T) {
 	}
 	if len(bodyKinds.InstanceInitializers) != 2 {
 		t.Fatalf("instance initializers = %#v", bodyKinds.InstanceInitializers)
+	}
+	if got := bodyKinds.Fields["literalField"].Value.Text; got != "field initializer\n" {
+		t.Fatalf("multiline field value = %q", got)
 	}
 	for _, initializer := range bodyKinds.InstanceInitializers {
 		if initializer.APIVersion != "67.0" {
@@ -160,6 +191,32 @@ trigger body
 	}
 }
 
+func TestSharingInheritancePreservesClassAPIVersions(t *testing.T) {
+	root := t.TempDir()
+	parentPath := filepath.Join(root, "ModernParent.cls")
+	childPath := filepath.Join(root, "LegacyChild.cls")
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, parentPath, `public class ModernParent {}`)
+	writeFile(t, parentPath+"-meta.xml", `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
+	writeFile(t, childPath, `public class LegacyChild extends ModernParent {}`)
+	writeFile(t, childPath+"-meta.xml", `<ApexClass><apiVersion>66.0</apiVersion></ApexClass>`)
+
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{parentPath, childPath}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	classes := compileProjectClasses(index, compileProjectMethods(index))
+	versions := map[string]string{}
+	for _, class := range classes {
+		if class.Name == "ModernParent" || class.Name == "LegacyChild" {
+			versions[class.Name] = class.APIVersion
+		}
+	}
+	if versions["ModernParent"] != "67.0" || versions["LegacyChild"] != "66.0" {
+		t.Fatalf("compiled class API versions = %#v", versions)
+	}
+}
+
 func TestMultilineStringCompilesAtAPI66AndAPI67(t *testing.T) {
 	for _, apiVersion := range []string{"66.0", "67.0"} {
 		t.Run(apiVersion, func(t *testing.T) {
@@ -173,8 +230,12 @@ func TestMultilineStringCompilesAtAPI66AndAPI67(t *testing.T) {
 				"String value = '''''' ;",
 			} {
 				options := vm.CompileOptions{APIVersion: apiVersion, Trigger: strings.Contains(body, "trigger")}
-				if _, err := vm.CompileAnonymousWithOptions(body, options); err != nil {
+				program, err := vm.CompileAnonymousWithOptions(body, options)
+				if err != nil {
 					t.Fatalf("API %s body %q: %v", apiVersion, body, err)
+				}
+				if program.APIVersion != apiVersion || program.Trigger != options.Trigger {
+					t.Fatalf("compiled options = %#v, want API %s trigger %t", program, apiVersion, options.Trigger)
 				}
 			}
 		})

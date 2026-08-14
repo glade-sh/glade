@@ -3,6 +3,8 @@ package ir
 type Program struct {
 	Instructions []Instruction `json:"instructions"`
 	Source       string        `json:"source,omitempty"`
+	APIVersion   string        `json:"apiVersion,omitempty"`
+	Trigger      bool          `json:"trigger,omitempty"`
 }
 
 type Instruction struct {

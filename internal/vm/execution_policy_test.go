@@ -65,6 +65,34 @@ func TestDefaultSharingAndInheritedSharingResolution(t *testing.T) {
 	}
 }
 
+func TestSharingDefaultFollowsAPIVersionInheritanceChain(t *testing.T) {
+	for _, test := range []struct {
+		name        string
+		parentAPI   string
+		childAPI    string
+		wantSharing string
+	}{
+		{name: "legacy chain", parentAPI: "66.0", childAPI: "66.0", wantSharing: "without sharing"},
+		{name: "modern parent", parentAPI: "67.0", childAPI: "66.0", wantSharing: "with sharing"},
+		{name: "modern child", parentAPI: "66.0", childAPI: "67.0", wantSharing: "with sharing"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			machine := New(io.Discard)
+			if err := machine.RegisterClass(Class{Name: "Parent", APIVersion: test.parentAPI}); err != nil {
+				t.Fatal(err)
+			}
+			if err := machine.RegisterClass(Class{Name: "Child", APIVersion: test.childAPI, SuperClass: "Parent"}); err != nil {
+				t.Fatal(err)
+			}
+			machine.currentClass = "Child"
+			machine.currentMethod = Method{APIVersion: test.childAPI}
+			if got := machine.currentSharingMode(); got != test.wantSharing {
+				t.Fatalf("sharing = %q, want %q", got, test.wantSharing)
+			}
+		})
+	}
+}
+
 func TestResolveDMLModeUsesExplicitModeBeforeSourceDefault(t *testing.T) {
 	machine := New(io.Discard)
 	machine.currentMethod = Method{APIVersion: "67.0"}
@@ -184,6 +212,88 @@ func TestTriggerUserModeStillEnforcesRecordVisibility(t *testing.T) {
 	}
 	if len(rows.List) != 0 {
 		t.Fatalf("trigger user-mode suggestions = %d, want 0", len(rows.List))
+	}
+}
+
+func TestTriggerUserModePublicQueryAndSearchPaths(t *testing.T) {
+	program, err := CompileAnonymousWithOptions(`
+List<Widget__c> rows = [SELECT Id FROM Widget__c];
+if (rows.size() != 1) { throw new DmlException('trigger SOQL exposed another owner'); }
+List<Widget__c> databaseRows = Database.query('SELECT Id FROM Widget__c');
+if (databaseRows.size() != 1 || Database.countQuery('SELECT Id FROM Widget__c') != 1) { throw new DmlException('trigger Database query exposed another owner'); }
+Search.SearchResults found = Search.find('FIND {Other} IN ALL FIELDS RETURNING Widget__c(Id, Name)');
+if (found.get('Widget__c').size() != 0) { throw new DmlException('trigger Search.find exposed another owner'); }
+List<List<SObject>> queried = Search.query('FIND {Other} IN ALL FIELDS RETURNING Widget__c(Id, Name)');
+if (queried[0].size() != 0) { throw new DmlException('trigger Search.query exposed another owner'); }
+Search.SuggestionOption option = new Search.SuggestionOption();
+if (Search.suggest('Other', 'Widget__c', option).getSuggestionResults().size() != 0) { throw new DmlException('trigger Search.suggest exposed another owner'); }
+`, CompileOptions{APIVersion: "67.0", Trigger: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := privateExecutionPolicyOrg()
+	machine := New(io.Discard)
+	machine.SetOrg(&org)
+	machine.SetCurrentUser(storage.Record{ID: "005000000000001", Object: "User"})
+	if _, err := machine.runTrigger(Trigger{Name: "WidgetSecurityTrigger", Object: "Widget__c", Timing: "before", Operation: "insert", APIVersion: "67.0", Program: program}, nil, nil, &Result{}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestTriggerHandlerUsesOwnSharingContext(t *testing.T) {
+	handlerProgram, err := CompileAnonymousWithOptions(`
+List<Widget__c> rows = [SELECT Id FROM Widget__c];
+if (rows.size() != 1) { throw new DmlException('handler sharing context was lost'); }
+`, CompileOptions{APIVersion: "66.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	triggerProgram, err := CompileAnonymousWithOptions("Handler.run();", CompileOptions{APIVersion: "67.0", Trigger: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := privateExecutionPolicyOrg()
+	machine := New(io.Discard)
+	machine.SetOrg(&org)
+	machine.SetCurrentUser(storage.Record{ID: "005000000000001", Object: "User"})
+	if err := machine.RegisterClass(Class{Name: "Handler", APIVersion: "66.0", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "Handler.run", ClassName: "Handler", IsStatic: true, APIVersion: "66.0", Program: handlerProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.runTrigger(Trigger{Name: "WidgetHandlerTrigger", Object: "Widget__c", Timing: "before", Operation: "insert", APIVersion: "67.0", Program: triggerProgram}, nil, nil, &Result{}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestTriggerUserModePublicSOQLChecksFieldPermissions(t *testing.T) {
+	program, err := CompileAnonymousWithOptions("List<Account> rows = [SELECT Id, Secret__c FROM Account];", CompileOptions{APIVersion: "67.0", Trigger: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := orgForSecurePolicyTest()
+	machine := New(io.Discard)
+	machine.SetOrg(&org)
+	machine.executionUser = stripInaccessibleTestUser()
+	if _, err := machine.runTrigger(Trigger{Name: "AccountSecurityTrigger", Object: "Account", Timing: "before", Operation: "insert", APIVersion: "67.0", Program: program}, nil, nil, &Result{}); err == nil {
+		t.Fatal("trigger user-mode SOQL unexpectedly bypassed field permissions")
+	}
+}
+
+func TestTriggerUserModePublicDMLChecksRecordPermissions(t *testing.T) {
+	program, err := CompileAnonymousWithOptions("update Trigger.new;", CompileOptions{APIVersion: "67.0", Trigger: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := privateExecutionPolicyOrg()
+	machine := New(io.Discard)
+	machine.SetOrg(&org)
+	machine.SetCurrentUser(storage.Record{ID: "005000000000001", Object: "User"})
+	other := org.Objects["Widget__c"].Records["a00000000000002"]
+	failures, err := machine.runTrigger(Trigger{Name: "WidgetDMLSecurityTrigger", Object: "Widget__c", Timing: "before", Operation: "insert", APIVersion: "67.0", Program: program}, []storage.Record{other}, nil, &Result{})
+	if err == nil && (len(failures) == 0 || failures[0].Success) {
+		t.Fatal("trigger user-mode DML unexpectedly updated another owner's record")
 	}
 }
 

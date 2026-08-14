@@ -117,6 +117,7 @@ type Field struct {
 type Class struct {
 	Name                 string
 	Namespace            string
+	APIVersion           string
 	SuperClass           string
 	Interfaces           []string
 	Fields               map[string]Field

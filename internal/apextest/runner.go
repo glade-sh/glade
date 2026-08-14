@@ -3733,6 +3733,7 @@ func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.C
 	class := vm.Class{
 		Name:         name,
 		Namespace:    typ.Namespace,
+		APIVersion:   typ.EffectiveAPIVersion,
 		SuperClass:   typ.SuperClass,
 		Interfaces:   append([]string(nil), typ.Interfaces...),
 		Access:       "global",

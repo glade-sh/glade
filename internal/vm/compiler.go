@@ -27,7 +27,7 @@ func CompileAnonymous(source string) (ir.Program, error) {
 	return CompileAnonymousWithOptions(source, CompileOptions{})
 }
 
-func CompileAnonymousWithOptions(source string, _ CompileOptions) (ir.Program, error) {
+func CompileAnonymousWithOptions(source string, options CompileOptions) (ir.Program, error) {
 	tokens, err := lex(source)
 	if err != nil {
 		return ir.Program{}, classifyCompileError(source, err)
@@ -38,6 +38,8 @@ func CompileAnonymousWithOptions(source string, _ CompileOptions) (ir.Program, e
 		return ir.Program{}, classifyCompileError(source, err)
 	}
 	program.Source = source
+	program.APIVersion = options.APIVersion
+	program.Trigger = options.Trigger
 	return program, nil
 }
 

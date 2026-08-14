@@ -138,9 +138,17 @@ func TestRuntimePatchFingerprintBindsBehaviorAffectingPayload(t *testing.T) {
 		name   string
 		mutate func(*runtimeCacheEntry)
 	}{
+		{name: "class api version", mutate: func(entry *runtimeCacheEntry) {
+			entry.Classes[0].APIVersion = "67.0"
+		}},
 		{"method", func(entry *runtimeCacheEntry) {
 			method := entry.Methods["Example.run"]
 			method.Program.Source = "changed source"
+			entry.Methods["Example.run"] = method
+		}},
+		{"method API version", func(entry *runtimeCacheEntry) {
+			method := entry.Methods["Example.run"]
+			method.APIVersion = "67.0"
 			entry.Methods["Example.run"] = method
 		}},
 		{"dml mode", func(entry *runtimeCacheEntry) {
@@ -150,6 +158,7 @@ func TestRuntimePatchFingerprintBindsBehaviorAffectingPayload(t *testing.T) {
 		}},
 		{"class", func(entry *runtimeCacheEntry) { entry.Classes[0].Name = "ChangedClass" }},
 		{"trigger", func(entry *runtimeCacheEntry) { entry.Triggers[0].Timing = "after" }},
+		{"trigger API version", func(entry *runtimeCacheEntry) { entry.Triggers[0].APIVersion = "67.0" }},
 		{"field value", func(entry *runtimeCacheEntry) {
 			field := entry.Classes[0].StaticFields["State"]
 			field.Value = vm.Int(99)

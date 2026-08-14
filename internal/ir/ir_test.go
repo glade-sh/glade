@@ -20,7 +20,8 @@ func TestDMLModesRoundTripForAllOperationsAndNestedInstructions(t *testing.T) {
 			}},
 		})
 	}
-	encoded, err := json.Marshal(Program{Instructions: instructions})
+	original := Program{Instructions: instructions, APIVersion: "67.0", Trigger: true}
+	encoded, err := json.Marshal(original)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,6 +31,9 @@ func TestDMLModesRoundTripForAllOperationsAndNestedInstructions(t *testing.T) {
 	}
 	if len(roundTrip.Instructions) != len(instructions) {
 		t.Fatalf("instruction count = %d, want %d", len(roundTrip.Instructions), len(instructions))
+	}
+	if roundTrip.APIVersion != original.APIVersion || roundTrip.Trigger != original.Trigger {
+		t.Fatalf("program context = %#v, want %#v", roundTrip, original)
 	}
 	for index, instruction := range roundTrip.Instructions {
 		want := instructions[index]
