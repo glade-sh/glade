@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"io"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/ir"
@@ -312,11 +313,7 @@ func TestTriggerUserModePublicSOQLChecksObjectPermissions(t *testing.T) {
 }
 
 func TestTriggerUserModePublicDMLChecksRecordPermissions(t *testing.T) {
-	program, err := CompileAnonymousWithOptions(`
-update Trigger.new;
-List<Database.SaveResult> databaseResults = Database.update(Trigger.new);
-if (databaseResults.size() == 0 || databaseResults[0].isSuccess()) { throw new DmlException('trigger Database.update bypassed record permissions'); }
-`, CompileOptions{APIVersion: "67.0", Trigger: true})
+	program, err := CompileAnonymousWithOptions("update Trigger.new;", CompileOptions{APIVersion: "67.0", Trigger: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -328,6 +325,29 @@ if (databaseResults.size() == 0 || databaseResults[0].isSuccess()) { throw new D
 	failures, err := machine.runTrigger(Trigger{Name: "WidgetDMLSecurityTrigger", Object: "Widget__c", Timing: "before", Operation: "insert", APIVersion: "67.0", Program: program}, []storage.Record{other}, nil, &Result{})
 	if err == nil && (len(failures) == 0 || failures[0].Success) {
 		t.Fatal("trigger user-mode DML unexpectedly updated another owner's record")
+	}
+}
+
+func TestTriggerUserModePublicDatabaseDMLChecksRecordPermissions(t *testing.T) {
+	program, err := CompileAnonymousWithOptions(`
+Boolean denied = false;
+try {
+	Database.update(Trigger.new);
+} catch (DmlException e) {
+	denied = true;
+}
+if (!denied) { throw new DmlException('trigger Database.update bypassed record permissions'); }
+`, CompileOptions{APIVersion: "67.0", Trigger: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := privateExecutionPolicyOrg()
+	machine := New(io.Discard)
+	machine.SetOrg(&org)
+	machine.SetCurrentUser(storage.Record{ID: "005000000000001", Object: "User"})
+	other := org.Objects["Widget__c"].Records["a00000000000002"]
+	if _, err := machine.runTrigger(Trigger{Name: "WidgetDatabaseDMLSecurityTrigger", Object: "Widget__c", Timing: "before", Operation: "insert", APIVersion: "67.0", Program: program}, []storage.Record{other}, nil, &Result{}); err == nil || !strings.Contains(err.Error(), "Access to record") {
+		t.Fatalf("trigger Database.update error = %v, want record access denial", err)
 	}
 }
 
@@ -479,32 +499,34 @@ func TestAsyncBodiesUseOwnAPIVersionForDatabaseDefaults(t *testing.T) {
 		},
 	} {
 		for _, api := range []string{"66.0", "67.0"} {
-			t.Run(test.name+"/api"+api, func(t *testing.T) {
-				body, err := CompileAnonymousWithOptions(bodySource, CompileOptions{APIVersion: api})
-				if err != nil {
-					t.Fatal(err)
-				}
-				caller, err := CompileAnonymousWithOptions(test.caller, CompileOptions{APIVersion: "66.0"})
-				if err != nil {
-					t.Fatal(err)
-				}
-				machine := New(io.Discard)
-				org := orgForSecurePolicyTest()
-				machine.SetOrg(&org)
-				machine.executionUser = stripInaccessibleTestUser()
-				machine.EnableTestContext()
-				if err := machine.RegisterClass(test.setup(api, body)); err != nil {
-					t.Fatal(err)
-				}
-				_, err = machine.Execute(caller)
-				if api == "67.0" {
-					if err == nil {
-						t.Fatal("API 67 async body unexpectedly bypassed field permissions")
+			for _, callerAPI := range []string{"66.0", "67.0"} {
+				t.Run(test.name+"/body"+api+"/caller"+callerAPI, func(t *testing.T) {
+					body, err := CompileAnonymousWithOptions(bodySource, CompileOptions{APIVersion: api})
+					if err != nil {
+						t.Fatal(err)
 					}
-				} else if err != nil {
-					t.Fatalf("API 66 async body unexpectedly used user-mode default: %v", err)
-				}
-			})
+					caller, err := CompileAnonymousWithOptions(test.caller, CompileOptions{APIVersion: callerAPI})
+					if err != nil {
+						t.Fatal(err)
+					}
+					machine := New(io.Discard)
+					org := orgForSecurePolicyTest()
+					machine.SetOrg(&org)
+					machine.executionUser = stripInaccessibleTestUser()
+					machine.EnableTestContext()
+					if err := machine.RegisterClass(test.setup(api, body)); err != nil {
+						t.Fatal(err)
+					}
+					_, err = machine.Execute(caller)
+					if api == "67.0" {
+						if err == nil {
+							t.Fatal("API 67 async body unexpectedly bypassed field permissions")
+						}
+					} else if err != nil {
+						t.Fatalf("API 66 async body unexpectedly used user-mode default: %v", err)
+					}
+				})
+			}
 		}
 	}
 }
