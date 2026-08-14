@@ -3873,16 +3873,18 @@ func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
 	}
 	targetType := typeExceptionTargetName(typeName)
 	if value.Kind == ValueDecimal && strings.EqualFold(typeName, "Integer") {
-		if value.Decimal < math.MinInt32 || value.Decimal > math.MaxInt32 {
+		converted, conversionErr := int32FromDecimalValue("Integer cast", value)
+		if conversionErr != nil {
 			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", runtimeValueTypeName(value), targetType))
 		}
-		return Int(int64(value.Decimal)), nil
+		return Int(int64(converted)), nil
 	}
 	if value.Kind == ValueDecimal && strings.EqualFold(typeName, "Long") {
-		if value.Decimal < float64(math.MinInt64) || value.Decimal > float64(math.MaxInt64) {
+		converted, conversionErr := int64FromDecimalValue("Long cast", value)
+		if conversionErr != nil {
 			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", runtimeValueTypeName(value), targetType))
 		}
-		return Int(int64(value.Decimal)), nil
+		return Int(converted), nil
 	}
 	var thrown *apexThrowError
 	if errors.As(err, &thrown) {
@@ -3895,7 +3897,8 @@ func untypedIntegralDecimalLiteral(value Value) bool {
 	if value.Kind != ValueDecimal || value.Type != "" || value.Static != "" {
 		return false
 	}
-	return math.Trunc(value.Decimal) == value.Decimal
+	rat, ok := valueDecimalRat(value)
+	return ok && rat.IsInt()
 }
 
 func typeExceptionTargetName(typeName string) string {

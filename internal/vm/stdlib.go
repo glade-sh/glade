@@ -163,22 +163,6 @@ func formatIntegerWithGrouping(value int64) string {
 	return sign + addThousandsSeparators(text)
 }
 
-func formatDecimalWithGrouping(value float64) string {
-	text := strconv.FormatFloat(value, 'f', -1, 64)
-	sign := ""
-	if strings.HasPrefix(text, "-") {
-		sign = "-"
-		text = text[1:]
-	}
-	whole := text
-	fraction := ""
-	if dot := strings.IndexByte(text, '.'); dot >= 0 {
-		whole = text[:dot]
-		fraction = text[dot:]
-	}
-	return sign + addThousandsSeparators(whole) + fraction
-}
-
 func addThousandsSeparators(text string) string {
 	if len(text) <= 3 {
 		return text
@@ -638,7 +622,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 			}
 			return Int(int64(converted)), nil
 		case ValueDecimal:
-			converted, err := int32FromFloat(callee, args[0].Decimal)
+			converted, err := int32FromDecimalValue(callee, args[0])
 			if err != nil {
 				return Null, err
 			}
@@ -659,7 +643,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		case ValueInt:
 			return args[0], nil
 		case ValueDecimal:
-			converted, err := int64FromFloat(callee, args[0].Decimal)
+			converted, err := int64FromDecimalValue(callee, args[0])
 			if err != nil {
 				return Null, err
 			}
@@ -679,7 +663,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		}
 		tagDouble := func(value Value) Value {
 			if callee == "Double.valueOf" {
-				value.Static = "Double"
+				return decimalAsDouble(value)
 			}
 			return value
 		}

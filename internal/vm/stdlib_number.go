@@ -107,7 +107,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if err := ensureFiniteDecimal("Decimal.doubleValue", receiver.Decimal); err != nil {
 			return Null, receiver, false, true, err
 		}
-		return receiver, receiver, false, true, nil
+		return decimalAsDouble(receiver), receiver, false, true, nil
 	case "pow":
 		if len(args) != 1 || args[0].Kind != ValueInt {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.pow expects Integer")
@@ -244,6 +244,9 @@ func decimalAbsValue(value Value) (Value, error) {
 		return decimalFromRat(rat, int64(decimalScale(value))), nil
 	}
 	out := Decimal(math.Abs(value.Decimal))
+	if isFloatBackedDecimal(value) {
+		out = decimalAsDouble(out)
+	}
 	if text := strings.TrimSpace(value.Text); text != "" {
 		text = strings.TrimPrefix(text, "-")
 		text = strings.TrimPrefix(text, "+")

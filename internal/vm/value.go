@@ -54,7 +54,17 @@ func Int(v int64) Value {
 }
 
 func Decimal(v float64) Value {
-	return Value{Kind: ValueDecimal, Decimal: v}
+	return Value{Kind: ValueDecimal, Decimal: v, Text: strconv.FormatFloat(v, 'f', -1, 64)}
+}
+
+func isFloatBackedDecimal(value Value) bool {
+	return value.Kind == ValueDecimal && strings.EqualFold(strings.TrimSpace(value.Static), "Double")
+}
+
+func decimalAsDouble(value Value) Value {
+	out := Decimal(value.Decimal)
+	out.Static = "Double"
+	return out
 }
 
 func decimalFromText(text string) (Value, error) {
@@ -632,7 +642,7 @@ func numericDecimalValuesEqual(left, right Value) bool {
 }
 
 func valueDecimalRat(value Value) (*big.Rat, bool) {
-	if value.Static == "Double" {
+	if isFloatBackedDecimal(value) {
 		return nil, false
 	}
 	switch value.Kind {
@@ -641,7 +651,7 @@ func valueDecimalRat(value Value) (*big.Rat, bool) {
 	case ValueDecimal:
 		text := strings.TrimSpace(value.Text)
 		if text == "" {
-			text = strconv.FormatFloat(value.Decimal, 'f', -1, 64)
+			return nil, false
 		}
 		rat, ok := new(big.Rat).SetString(text)
 		return rat, ok

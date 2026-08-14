@@ -104,6 +104,9 @@ func evalUnary(op string, value Value) (Value, error) {
 		return Bool(!boolValue), nil
 	case "-":
 		if value.Kind == ValueDecimal {
+			if isFloatBackedDecimal(value) {
+				return decimalAsDouble(Decimal(-value.Decimal)), nil
+			}
 			if rat, ok := valueDecimalRat(value); ok {
 				return decimalFromRat(new(big.Rat).Neg(rat), int64(decimalScale(value))), nil
 			}
@@ -460,7 +463,11 @@ func decimalBinary(op string, left, right Value, fn func(float64, float64) float
 		if math.IsInf(floatResult, 0) || math.IsNaN(floatResult) {
 			return Null, fmt.Errorf("operator %s result must be finite", op)
 		}
-		return Decimal(floatResult), nil
+		result := Decimal(floatResult)
+		if isFloatBackedDecimal(left) || isFloatBackedDecimal(right) {
+			result.Static = "Double"
+		}
+		return result, nil
 	}
 	return result, nil
 }
@@ -572,9 +579,22 @@ func coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 	case "Decimal", "Double":
 		if value.Kind == ValueInt {
-			return decimalFromText(strconv.FormatInt(value.Int, 10))
+			decimal, err := decimalFromText(strconv.FormatInt(value.Int, 10))
+			if err != nil {
+				return Null, err
+			}
+			if strings.EqualFold(canonicalType, "Double") {
+				return decimalAsDouble(decimal), nil
+			}
+			return decimal, nil
 		}
 		if value.Kind == ValueDecimal {
+			if strings.EqualFold(canonicalType, "Double") {
+				return decimalAsDouble(value), nil
+			}
+			if isFloatBackedDecimal(value) {
+				return Decimal(value.Decimal), nil
+			}
 			return value, nil
 		}
 	case "Boolean":
