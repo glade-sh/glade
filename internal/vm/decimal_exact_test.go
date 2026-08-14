@@ -444,7 +444,7 @@ func TestExecDecimalDivisionIsExplicitlyUnsupported(t *testing.T) {
 	} {
 		program, err := CompileAnonymous(source)
 		if err != nil {
-			continue
+			t.Fatalf("compile Decimal division probe %q: %v", source, err)
 		}
 		if _, err := Execute(program, nil); err == nil {
 			t.Fatalf("Decimal division unexpectedly succeeded: %s", source)
