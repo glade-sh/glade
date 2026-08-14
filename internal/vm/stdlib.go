@@ -638,6 +638,9 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		}
 		switch args[0].Kind {
 		case ValueDecimal:
+			if callee == "Decimal.valueOf" && isFloatBackedDecimal(args[0]) {
+				return Decimal(args[0].Decimal), nil
+			}
 			return tagDouble(args[0]), nil
 		case ValueInt:
 			value, err := decimalFromText(strconv.FormatInt(args[0].Int, 10))

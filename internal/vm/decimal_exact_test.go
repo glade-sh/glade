@@ -95,6 +95,7 @@ func TestDecimalFloatBackedMarkerIsCaseInsensitive(t *testing.T) {
 func TestExecMathResultsRemainFloatBacked(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals('9007199254740992', (Math.pow(9007199254740992L, 1) + 1).toPlainString());
+System.assertEquals('9007199254740992', (Math.random() + 9007199254740992L).toPlainString());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -109,6 +110,22 @@ func TestExecDecimalDisplayPreservesExponentText(t *testing.T) {
 Decimal value = Decimal.valueOf('9.007199254740993E15');
 String display = '' + value;
 System.assertEquals('9007199254740993', display);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDecimalMathOverloadsRemainExact(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('9007199254740993', Math.max(Decimal.valueOf('9007199254740993'), Decimal.valueOf('9007199254740992')).toPlainString());
+System.assertEquals('9007199254740993', Math.floor(9007199254740993.9).toPlainString());
+Double doubleValue = Double.valueOf('9007199254740993');
+Decimal converted = Decimal.valueOf(doubleValue);
+System.assertEquals('9007199254740993', (converted + 1).toPlainString());
 `)
 	if err != nil {
 		t.Fatal(err)

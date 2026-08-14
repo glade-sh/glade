@@ -2340,6 +2340,17 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		}
 		return decimalAbsValue(args[0])
 	case "Math.floor", "Math.ceil", "Math.rint":
+		if !isFloatBackedDecimal(args[0]) {
+			mode := "FLOOR"
+			if callee == "Math.ceil" {
+				mode = "CEILING"
+			} else if callee == "Math.rint" {
+				mode = "HALF_EVEN"
+			}
+			if result, ok := exactMathRound(callee, args[0], mode); ok {
+				return result, nil
+			}
+		}
 		switch callee {
 		case "Math.floor":
 			return decimalAsDouble(Decimal(math.Floor(n))), nil
@@ -2373,45 +2384,45 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		if n < 0 {
 			return Null, fmt.Errorf("Math.sqrt argument out of domain")
 		}
-		return finiteDecimalResult(callee, math.Sqrt(n))
+		return finiteMathResult(callee, math.Sqrt(n), args[0])
 	case "Math.cbrt":
-		return finiteDecimalResult(callee, math.Cbrt(n))
+		return finiteMathResult(callee, math.Cbrt(n), args[0])
 	case "Math.acos":
 		if n < -1 || n > 1 {
 			return Null, newExceptionError("System.MathException", "Math.acos argument out of domain")
 		}
-		return finiteDecimalResult(callee, math.Acos(n))
+		return finiteMathResult(callee, math.Acos(n), args[0])
 	case "Math.asin":
 		if n < -1 || n > 1 {
 			return Null, newExceptionError("System.MathException", "Math.asin argument out of domain")
 		}
-		return finiteDecimalResult(callee, math.Asin(n))
+		return finiteMathResult(callee, math.Asin(n), args[0])
 	case "Math.atan":
-		return finiteDecimalResult(callee, math.Atan(n))
+		return finiteMathResult(callee, math.Atan(n), args[0])
 	case "Math.cos":
-		return finiteDecimalResult(callee, math.Cos(n))
+		return finiteMathResult(callee, math.Cos(n), args[0])
 	case "Math.sin":
-		return finiteDecimalResult(callee, math.Sin(n))
+		return finiteMathResult(callee, math.Sin(n), args[0])
 	case "Math.tan":
-		return finiteDecimalResult(callee, math.Tan(n))
+		return finiteMathResult(callee, math.Tan(n), args[0])
 	case "Math.cosh":
-		return finiteDecimalResult(callee, math.Cosh(n))
+		return finiteMathResult(callee, math.Cosh(n), args[0])
 	case "Math.sinh":
-		return finiteDecimalResult(callee, math.Sinh(n))
+		return finiteMathResult(callee, math.Sinh(n), args[0])
 	case "Math.tanh":
-		return finiteDecimalResult(callee, math.Tanh(n))
+		return finiteMathResult(callee, math.Tanh(n), args[0])
 	case "Math.exp":
-		return finiteDecimalResult(callee, math.Exp(n))
+		return finiteMathResult(callee, math.Exp(n), args[0])
 	case "Math.log":
 		if n <= 0 {
 			return Null, fmt.Errorf("Math.log argument out of domain")
 		}
-		return finiteDecimalResult(callee, math.Log(n))
+		return finiteMathResult(callee, math.Log(n), args[0])
 	case "Math.log10":
 		if n <= 0 {
 			return Null, fmt.Errorf("Math.log10 argument out of domain")
 		}
-		return finiteDecimalResult(callee, math.Log10(n))
+		return finiteMathResult(callee, math.Log10(n), args[0])
 	default:
 		return Null, unsupportedCallError(callee)
 	}
@@ -2420,6 +2431,25 @@ func mathUnary(callee string, args []Value) (Value, error) {
 func mathBinary(callee string, args []Value) (Value, error) {
 	if len(args) != 2 || !isMathNumeric(args[0]) || !isMathNumeric(args[1]) {
 		return Null, fmt.Errorf("%s expects two numeric arguments", callee)
+	}
+	if callee == "Math.max" || callee == "Math.min" {
+		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {
+			if callee == "Math.max" {
+				if args[0].Int >= args[1].Int {
+					return args[0], nil
+				}
+				return args[1], nil
+			}
+			if args[0].Int <= args[1].Int {
+				return args[0], nil
+			}
+			return args[1], nil
+		}
+		if !isFloatBackedDecimal(args[0]) && !isFloatBackedDecimal(args[1]) {
+			if result, ok := exactMathExtremum(args[0], args[1], callee == "Math.max"); ok {
+				return result, nil
+			}
+		}
 	}
 	left := numericFloat(args[0])
 	right := numericFloat(args[1])
@@ -2446,15 +2476,68 @@ func mathBinary(callee string, args []Value) (Value, error) {
 		}
 		return decimalAsDouble(Decimal(math.Mod(left, right))), nil
 	case "Math.pow":
-		return finiteDecimalResult(callee, math.Pow(left, right))
+		return finiteDoubleResult(callee, math.Pow(left, right))
 	case "Math.atan2":
-		return finiteDecimalResult(callee, math.Atan2(left, right))
+		return finiteMathResult(callee, math.Atan2(left, right), args...)
 	default:
 		return Null, unsupportedCallError(callee)
 	}
 }
 
+func exactMathRound(callee string, value Value, mode string) (Value, bool) {
+	rat, ok := valueDecimalRat(value)
+	if !ok {
+		return Null, false
+	}
+	rounded, err := roundRatToScale(callee, rat, 0, mode)
+	if err != nil {
+		return Null, false
+	}
+	result := decimalFromRat(rounded, 0)
+	result.Text = normalizeComputedDecimalText(result.Text)
+	return result, true
+}
+
+func exactMathExtremum(left, right Value, maximum bool) (Value, bool) {
+	leftRat, leftOK := valueDecimalRat(left)
+	rightRat, rightOK := valueDecimalRat(right)
+	if !leftOK || !rightOK {
+		return Null, false
+	}
+	selected := left
+	comparison := leftRat.Cmp(rightRat)
+	if (maximum && comparison < 0) || (!maximum && comparison > 0) {
+		selected = right
+	}
+	if selected.Kind == ValueDecimal {
+		return selected, true
+	}
+	converted, err := decimalFromText(strconv.FormatInt(selected.Int, 10))
+	if err != nil {
+		return Null, false
+	}
+	return converted, true
+}
+
+func finiteMathResult(callee string, value float64, args ...Value) (Value, error) {
+	for _, arg := range args {
+		if isFloatBackedDecimal(arg) {
+			return finiteDoubleResult(callee, value)
+		}
+	}
+	return finiteDecimalResult(callee, value)
+}
+
 func finiteDecimalResult(callee string, value float64) (Value, error) {
+	if math.IsInf(value, 0) || math.IsNaN(value) {
+		return Null, fmt.Errorf("%s result must be finite", callee)
+	}
+	result := Decimal(value)
+	result.Text = doubleDisplayText(value)
+	return result, nil
+}
+
+func finiteDoubleResult(callee string, value float64) (Value, error) {
 	if math.IsInf(value, 0) || math.IsNaN(value) {
 		return Null, fmt.Errorf("%s result must be finite", callee)
 	}
