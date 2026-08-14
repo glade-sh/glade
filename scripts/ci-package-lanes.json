@@ -20,9 +20,9 @@
     "remaining-go": [
       "github.com/glade-sh/glade/cmd/glade",
       "github.com/glade-sh/glade/internal/apexast",
-      "github.com/glade-sh/glade/internal/apexversion",
       "github.com/glade-sh/glade/internal/apexlang",
       "github.com/glade-sh/glade/internal/apexlog",
+      "github.com/glade-sh/glade/internal/apexversion",
       "github.com/glade-sh/glade/internal/aura",
       "github.com/glade-sh/glade/internal/automation",
       "github.com/glade-sh/glade/internal/cliui",
