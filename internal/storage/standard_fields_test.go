@@ -96,6 +96,23 @@ func TestStandardObjectDefinitionAccountNameIDLookupFalse(t *testing.T) {
 	}
 }
 
+func TestMergeStandardFieldsCaseVariantOrderIsDeterministic(t *testing.T) {
+	fields := map[string]Field{
+		"UserName": {APIName: "UserName", Label: "User Name"},
+		"Username": {APIName: "Username", Label: "Username"},
+	}
+	for i := 0; i < 10; i++ {
+		definition := ObjectDefinition{Fields: make(map[string]Field)}
+		mergeStandardFields(&definition, fields)
+		if _, ok := definition.Fields["UserName"]; !ok {
+			t.Fatalf("merge retained %v on run %d, want UserName", definition.Fields, i+1)
+		}
+		if _, ok := definition.Fields["Username"]; ok {
+			t.Fatalf("merge retained case-variant Username on run %d", i+1)
+		}
+	}
+}
+
 func TestStandardObjectDefinitionNoFeatureGatedFieldsFromEnrichment(t *testing.T) {
 	def, ok := StandardObjectDefinition("Account")
 	if !ok {

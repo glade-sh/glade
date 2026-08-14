@@ -146,6 +146,11 @@ func TestSemaOpenSObjectFieldsAreOpaque(t *testing.T) {
 			partialSObject: true,
 			fields:         map[string]typesys.MemberSymbol{},
 		},
+		normalizeName("pkg.Authoritative__c"): {
+			name:    "pkg.Authoritative__c",
+			sobject: true,
+			fields:  map[string]typesys.MemberSymbol{},
+		},
 	})
 
 	for _, tc := range []struct {
@@ -163,6 +168,9 @@ func TestSemaOpenSObjectFieldsAreOpaque(t *testing.T) {
 		if !ok || field.member.Type != "" {
 			t.Fatalf("%s.%s = %#v, %v; want opaque open field", tc.typeName, tc.fieldName, field, ok)
 		}
+	}
+	if _, ok := semaOpenSObjectFieldMember("pkg.Authoritative__c", "Invented", model); ok {
+		t.Fatalf("authoritative SObject unexpectedly accepted an unknown opaque field")
 	}
 }
 

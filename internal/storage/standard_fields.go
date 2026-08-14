@@ -1286,7 +1286,13 @@ func asciiFoldKey(s string) string {
 }
 
 func mergeStandardFields(definition *ObjectDefinition, fields map[string]Field) {
-	for _, field := range fields {
+	names := make([]string, 0, len(fields))
+	for name := range fields {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		field := fields[name]
 		if existingName, ok := ResolveFieldName(*definition, "", field.APIName); ok {
 			existing := definition.Fields[existingName]
 			enrichStandardField(&existing, field)

@@ -355,7 +355,8 @@ func semaIsSObjectTypeFields(typeName string) bool {
 }
 
 func semaOpenSObjectFieldMember(typeName, fieldName string, model *semaTypeMemberView) (resolvedMember, bool) {
-	if !isSemaSObjectLike(typeName, model) {
+	members, _, ok := semaLookupTypeMembers(model, typeName)
+	if !ok || !members.sobject || (!members.externalPackageSObject && !members.partialSObject) {
 		return resolvedMember{}, false
 	}
 	return resolvedMember{owner: typeName, member: typesys.MemberSymbol{

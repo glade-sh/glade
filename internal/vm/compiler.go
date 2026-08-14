@@ -21,15 +21,36 @@ func (e *RuntimeLoweringError) Error() string {
 func CompileAnonymous(source string) (ir.Program, error) {
 	tokens, err := lex(source)
 	if err != nil {
-		return ir.Program{}, err
+		return ir.Program{}, classifyCompileError(source, err)
 	}
 	p := parser{tokens: tokens}
 	program, err := p.parseProgram()
 	if err != nil {
-		return ir.Program{}, err
+		return ir.Program{}, classifyCompileError(source, err)
 	}
 	program.Source = source
 	return program, nil
+}
+
+func classifyCompileError(source string, err error) error {
+	if !runtimeLoweringSourceAccepted(source) {
+		return err
+	}
+	return &RuntimeLoweringError{Message: err.Error()}
+}
+
+func runtimeLoweringSourceAccepted(source string) bool {
+	parser := apexparser.NewParser()
+	probes := []string{
+		source,
+		"public class GladeRuntimeLoweringProbe { public void run() {\n" + source + "\n} }",
+	}
+	for i, probe := range probes {
+		if !parser.ParseSource(fmt.Sprintf("__glade_runtime_lowering_%d.cls", i), probe).HasErrors() {
+			return true
+		}
+	}
+	return false
 }
 
 func compileExpressionPrefix(source string) (ir.Expr, int, error) {
