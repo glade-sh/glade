@@ -395,6 +395,7 @@ func TestParseInheritanceSkipsCommentsAndPreservesTypeNodes(t *testing.T) {
 	}{
 		{source: "public class Child EXTENDS Base implements One, Two {}", superClass: "Base", interfaces: []string{"One", "Two"}},
 		{source: "public interface Contract eXtEnDs BaseContract, Generic<String> {}", interfaces: []string{"BaseContract", "Generic<String>"}},
+		{source: "public class GenericChild extends Base</* { superclass type comment } */Account> implements Generic</* { interface type comment } */String> {}", superClass: "Base<Account>", interfaces: []string{"Generic<String>"}},
 	} {
 		file := NewParser().ParseSource("Inheritance.cls", test.source)
 		if len(file.Diagnostics) != 0 || len(file.Declarations) != 1 {

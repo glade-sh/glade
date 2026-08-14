@@ -598,7 +598,7 @@ func normalizeAnnotationText(text string) string {
 }
 
 func treeSitterTypeText(node *tree_sitter.Node, source string) string {
-	text := nodeText(node, source)
+	text := treeSitterTextWithoutComments(node, source)
 	return strings.Join(strings.Fields(text), "")
 }
 
@@ -646,7 +646,7 @@ func treeSitterInterfaceText(node *tree_sitter.Node, source string) string {
 	if node == nil || isTreeSitterComment(node) {
 		return ""
 	}
-	return strings.Join(strings.Fields(nodeText(node, source)), " ")
+	return strings.Join(strings.Fields(treeSitterTextWithoutComments(node, source)), " ")
 }
 
 func treeSitterSuperclass(node *tree_sitter.Node, source string) string {
@@ -662,6 +662,55 @@ func treeSitterSuperclass(node *tree_sitter.Node, source string) string {
 
 func isTreeSitterComment(node *tree_sitter.Node) bool {
 	return node != nil && strings.HasSuffix(node.Kind(), "comment")
+}
+
+type treeSitterByteRange struct {
+	start int
+	end   int
+}
+
+func treeSitterTextWithoutComments(node *tree_sitter.Node, source string) string {
+	if node == nil || isTreeSitterComment(node) {
+		return ""
+	}
+	start, end := int(node.StartByte()), int(node.EndByte())
+	if start < 0 || end < start || end > len(source) {
+		return ""
+	}
+	ranges := treeSitterCommentRanges(node)
+	if len(ranges) == 0 {
+		return source[start:end]
+	}
+	var out strings.Builder
+	cursor := start
+	for _, comment := range ranges {
+		if comment.start > cursor {
+			out.WriteString(source[cursor:comment.start])
+		}
+		if comment.end > cursor {
+			cursor = comment.end
+		}
+	}
+	if cursor < end {
+		out.WriteString(source[cursor:end])
+	}
+	return out.String()
+}
+
+func treeSitterCommentRanges(node *tree_sitter.Node) []treeSitterByteRange {
+	var ranges []treeSitterByteRange
+	var visit func(*tree_sitter.Node)
+	visit = func(current *tree_sitter.Node) {
+		for _, child := range namedChildren(current) {
+			if isTreeSitterComment(&child) {
+				ranges = append(ranges, treeSitterByteRange{start: int(child.StartByte()), end: int(child.EndByte())})
+				continue
+			}
+			visit(&child)
+		}
+	}
+	visit(node)
+	return ranges
 }
 
 func treeSitterRangePtr(node *tree_sitter.Node, lineMap LineMap) *Range {

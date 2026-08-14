@@ -684,7 +684,7 @@ func TestBuildIndexUsesParserInheritanceAndBodyRanges(t *testing.T) {
 	classPath := filepath.Join(root, "Child.cls")
 	triggerPath := filepath.Join(root, "Child.trigger")
 	classSource := `/* { comment } */
-public class Child extends Base implements One, Generic<String> {
+public class Child extends Base implements One, Generic</* { interface type comment } */String> {
   public String run() { return '}'; }
 }`
 	triggerSource := `trigger ChildTrigger on Account (before insert) {
