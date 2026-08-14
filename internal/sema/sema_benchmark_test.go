@@ -33,7 +33,7 @@ func TestBenchmarkFixtureExercisesMethodBodies(t *testing.T) {
 			if !ok || source == "" {
 				t.Fatalf("fixture source for %s is empty or unreadable", typ.Name)
 			}
-			body, _, ok := extractBodyForSema(source, member.Range)
+			body, _, ok := semaBodyFromRange(source, member.BodyRange)
 			if !ok || body == "" {
 				t.Fatalf("fixture body for %s.%s is empty or unreadable", typ.Name, member.Name)
 			}

@@ -532,7 +532,7 @@ func (a *Analyzer) staticFinalFieldsInitializedElsewhere(typ typesys.TypeSymbol,
 		if candidate.Range.Start.Offset >= member.Range.Start.Offset || !semaStaticInitializer(candidate) {
 			continue
 		}
-		body, _, ok := extractBodyForSema(source, candidate.Range)
+		body, _, ok := semaBodyFromRange(source, candidate.BodyRange)
 		if !ok {
 			continue
 		}

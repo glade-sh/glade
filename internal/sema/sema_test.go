@@ -1876,11 +1876,11 @@ func TestExtractBodyForSemaSkipsCommentApostrophes(t *testing.T) {
     return 'fallback';
   }
 }`
-	start := strings.Index(source, "public static String run")
-	body, _, ok := extractBodyForSema(source, diagnostic.Range{
-		Start: diagnostic.Position{Offset: start},
-		End:   diagnostic.Position{Offset: len(source) - 1},
-	})
+	file := apexast.NewParser().ParseSource("Example.cls", source)
+	if len(file.Declarations) != 1 || len(file.Declarations[0].Members) != 1 {
+		t.Fatalf("declarations = %#v", file.Declarations)
+	}
+	body, _, ok := semaBodyFromRange(source, file.Declarations[0].Members[0].BodyRange)
 	if !ok {
 		t.Fatalf("expected body extraction to succeed")
 	}
@@ -3656,7 +3656,7 @@ private class UsesTestMethodMapConstant {
 			if member.Name != "testOnCancel" {
 				continue
 			}
-			body, bodyOffset, ok := extractBodyForSema(string(sourceBytes), member.Range)
+			body, bodyOffset, ok := semaBodyFromRange(string(sourceBytes), member.BodyRange)
 			if !ok {
 				t.Fatalf("method body not found")
 			}
@@ -4160,7 +4160,7 @@ public inherited sharing class UsesContactFields {
 			if member.Kind != apexast.DeclarationConstructor {
 				continue
 			}
-			body, bodyOffset, ok := extractBodyForSema(string(sourceBytes), member.Range)
+			body, bodyOffset, ok := semaBodyFromRange(string(sourceBytes), member.BodyRange)
 			if !ok {
 				t.Fatalf("constructor body not found")
 			}
