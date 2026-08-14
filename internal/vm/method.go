@@ -15,21 +15,22 @@ type Param struct {
 }
 
 type Method struct {
-	Name          string
-	ReturnType    string
-	Params        []Param
-	Program       ir.Program
-	ClassName     string
-	IsStatic      bool
-	IsConstructor bool
-	Access        string
-	Modifiers     []string
-	File          string
-	APIVersion    string
-	Line          int
-	Column        int
-	Unsupported   string
-	Dependency    bool
+	Name            string
+	ReturnType      string
+	Params          []Param
+	Program         ir.Program
+	ClassName       string
+	IsStatic        bool
+	IsConstructor   bool
+	Access          string
+	Modifiers       []string
+	File            string
+	APIVersion      string
+	Line            int
+	Column          int
+	Unsupported     string
+	RuntimeLowering bool
+	Dependency      bool
 }
 
 func (vm *VM) RegisterMethod(method Method) error {

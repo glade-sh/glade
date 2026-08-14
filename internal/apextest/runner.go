@@ -4007,18 +4007,24 @@ func unsupportedProjectMethod(className, methodName, returnType string, modifier
 		params = nil
 	}
 	return vm.Method{
-		Name:        className + "." + methodName,
-		ReturnType:  returnType,
-		Params:      params,
-		ClassName:   className,
-		IsStatic:    hasModifier(modifiers, "static"),
-		Access:      accessModifier(modifiers),
-		Modifiers:   modifiers,
-		File:        file,
-		Line:        r.Start.Line,
-		Column:      r.Start.Column,
-		Unsupported: cause.Error(),
+		Name:            className + "." + methodName,
+		ReturnType:      returnType,
+		Params:          params,
+		ClassName:       className,
+		IsStatic:        hasModifier(modifiers, "static"),
+		Access:          accessModifier(modifiers),
+		Modifiers:       modifiers,
+		File:            file,
+		Line:            r.Start.Line,
+		Column:          r.Start.Column,
+		Unsupported:     cause.Error(),
+		RuntimeLowering: isRuntimeLoweringError(cause),
 	}, true
+}
+
+func isRuntimeLoweringError(err error) bool {
+	var loweringErr *vm.RuntimeLoweringError
+	return errors.As(err, &loweringErr)
 }
 
 func compileTestSetupMethods(index typesys.Index, caches ...*sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error) {

@@ -269,6 +269,12 @@ func semaResolveFieldPath(model *semaTypeMemberView, receiverType, fieldPath str
 		}
 		resolved, ok := semaResolveField(model, currentType, part, make(map[string]bool))
 		if !ok {
+			if standardField, standardOK := semaStandardSObjectFieldMember(currentType, part); standardOK {
+				resolved = standardField
+				ok = true
+			}
+		}
+		if !ok {
 			if sobjectField, fieldOK := semaOpenSObjectFieldMember(currentType, part, model); fieldOK {
 				resolved = sobjectField
 			} else {
@@ -279,6 +285,19 @@ func semaResolveFieldPath(model *semaTypeMemberView, receiverType, fieldPath str
 		currentType = resolved.member.Type
 	}
 	return target, true
+}
+
+func semaStandardSObjectFieldMember(typeName, fieldName string) (resolvedMember, bool) {
+	objectName, ok := semaStandardSObjectNameForKey(normalizeName(typeName))
+	if !ok {
+		return resolvedMember{}, false
+	}
+	members := semaBuildStandardSObjectMembers(objectName)
+	field, ok := members.fields[normalizeName(fieldName)]
+	if !ok {
+		return resolvedMember{}, false
+	}
+	return resolvedMember{owner: objectName, member: field}, true
 }
 
 func semaResolveSObjectTypeFieldPath(currentType, part string) (resolvedMember, bool) {

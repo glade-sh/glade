@@ -64,7 +64,11 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	if method.Unsupported != "" {
-		return Null, UnsupportedFeature(fmt.Sprintf("%s is not supported by the local VM: %s", method.Name, method.Unsupported))
+		message := fmt.Sprintf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
+		if method.RuntimeLowering {
+			return Null, UnsupportedFeature(message)
+		}
+		return Null, fmt.Errorf("%s", message)
 	}
 	if methodHasModifier(method.Modifiers, "abstract") {
 		if receiver.Kind == ValueObject {
@@ -85,7 +89,11 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	if method.Unsupported != "" {
-		return Null, UnsupportedFeature(fmt.Sprintf("%s is not supported by the local VM: %s", method.Name, method.Unsupported))
+		message := fmt.Sprintf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
+		if method.RuntimeLowering {
+			return Null, UnsupportedFeature(message)
+		}
+		return Null, fmt.Errorf("%s", message)
 	}
 	if methodHasModifier(method.Modifiers, "abstract") {
 		return Null, fmt.Errorf("cannot execute abstract method %s", method.Name)
@@ -235,7 +243,10 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			}
 			return Null, newExceptionError("UnsupportedOperationException", method.Name+" local stub surface")
 		}
-		if vm.generatedRuntimeDisposition(method, receiver) == generatedRuntimeUnsupported {
+		dataWeaveRuntime := receiver.Kind == ValueObject &&
+			(strings.EqualFold(receiver.Type, "DataWeave.Script") || strings.HasPrefix(receiver.Type, "DataWeaveScriptResource.")) &&
+			strings.EqualFold(apexMethodMemberName(method.Name), "execute")
+		if !dataWeaveRuntime && vm.generatedRuntimeDisposition(method, receiver) == generatedRuntimeUnsupported {
 			return Null, unsupportedCallError(method.Name)
 		}
 	}

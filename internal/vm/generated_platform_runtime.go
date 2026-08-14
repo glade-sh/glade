@@ -31,10 +31,14 @@ func (vm *VM) generatedRuntimeDisposition(method Method, receiver Value) generat
 			return generatedRuntimeConcrete
 		}
 	}
-	if (vm.isPassivePlatformDTOType(className) || generatedPlatformTopLevelPassiveTypeName(className)) && generatedPassiveDTOOperation(method) {
+	if (vm.isPassivePlatformDTOType(className) || generatedPlatformTopLevelPassiveTypeName(className) || generatedPlatformBuilderTypeName(className)) && generatedPassiveDTOOperation(method) {
 		return generatedRuntimePassiveDTO
 	}
 	return generatedRuntimeUnsupported
+}
+
+func generatedPlatformBuilderTypeName(typeName string) bool {
+	return strings.HasSuffix(strings.TrimSpace(typeName), "Builder") && generatedPlatformTypeName(typeName)
 }
 
 func generatedMethodClassName(method Method, receiver Value) string {
@@ -64,6 +68,14 @@ func generatedPassiveDTOOperation(method Method) bool {
 	}
 	if method.IsStatic && name == "builder" && strings.HasSuffix(method.ReturnType, ".Builder") {
 		return true
+	}
+	if strings.HasSuffix(strings.TrimSpace(method.ClassName), "Builder") {
+		if name == "build" && len(method.Params) == 0 && generatedPlatformTypeName(method.ReturnType) {
+			return true
+		}
+		if len(method.Params) == 1 && strings.EqualFold(strings.TrimSpace(method.ReturnType), strings.TrimSpace(method.ClassName)) {
+			return true
+		}
 	}
 	return strings.HasPrefix(name, "set") && len(method.Params) == 1
 }

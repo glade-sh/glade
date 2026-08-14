@@ -10,6 +10,14 @@ import (
 	"github.com/glade-sh/glade/internal/ir"
 )
 
+type RuntimeLoweringError struct {
+	Message string
+}
+
+func (e *RuntimeLoweringError) Error() string {
+	return e.Message
+}
+
 func CompileAnonymous(source string) (ir.Program, error) {
 	tokens, err := lex(source)
 	if err != nil {
@@ -190,6 +198,9 @@ func lex(source string) ([]token, error) {
 				tokens = append(tokens, token{kind: tokenSymbol, text: source[i : i+1], pos: start})
 				i++
 			default:
+				if source[i] == '^' {
+					return nil, &RuntimeLoweringError{Message: fmt.Sprintf("unexpected character %q at byte %d", source[i], start)}
+				}
 				return nil, fmt.Errorf("unexpected character %q at byte %d", source[i], start)
 			}
 		}
