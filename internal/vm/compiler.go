@@ -220,7 +220,7 @@ func lex(source string) ([]token, error) {
 				i++
 			default:
 				if source[i] == '^' {
-					return nil, &RuntimeLoweringError{Message: fmt.Sprintf("unexpected character %q at byte %d", source[i], start)}
+					return nil, fmt.Errorf("unexpected character %q at byte %d", source[i], start)
 				}
 				return nil, fmt.Errorf("unexpected character %q at byte %d", source[i], start)
 			}

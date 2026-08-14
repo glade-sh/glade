@@ -174,6 +174,28 @@ func TestSemaOpenSObjectFieldsAreOpaque(t *testing.T) {
 	}
 }
 
+func TestSemaOpenSObjectFieldsPreservesIncompleteBuiltModels(t *testing.T) {
+	model := buildSemaTypeMemberView(typesys.Index{Objects: []schema.Object{
+		{Name: "Account"},
+		{Name: "Config__mdt"},
+		{Name: "Authoritative__c"},
+	}})
+	for _, tc := range []struct {
+		typeName  string
+		fieldName string
+		wantOpen  bool
+	}{
+		{typeName: "Account", fieldName: "Affiliates__r", wantOpen: true},
+		{typeName: "Config__mdt", fieldName: "FromStates__c", wantOpen: true},
+		{typeName: "Authoritative__c", fieldName: "Invented__c", wantOpen: false},
+	} {
+		field, ok := semaOpenSObjectFieldMember(tc.typeName, tc.fieldName, model)
+		if ok != tc.wantOpen || (ok && field.member.Type != "") {
+			t.Fatalf("%s.%s = %#v, %v; want open=%v with opaque type", tc.typeName, tc.fieldName, field, ok, tc.wantOpen)
+		}
+	}
+}
+
 func TestAnalyzeReportsParserAcceptedButRuntimeUnlowerableBody(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

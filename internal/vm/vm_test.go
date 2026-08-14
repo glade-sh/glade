@@ -1637,6 +1637,16 @@ func TestCompileAnonymousRejectsReservedLocalIdentifier(t *testing.T) {
 	}
 }
 
+func TestCompileAnonymousDoesNotClassifyParserRejectedCaret(t *testing.T) {
+	_, err := CompileAnonymous("^")
+	if err == nil {
+		t.Fatal("CompileAnonymous(^) unexpectedly succeeded")
+	}
+	if _, ok := err.(*RuntimeLoweringError); ok {
+		t.Fatalf("CompileAnonymous(^) returned runtime-lowering error for parser-rejected source: %v", err)
+	}
+}
+
 func TestCompileAnonymousRejectsInvalidLocalIdentifierShapes(t *testing.T) {
 	for _, name := range []string{
 		"_value",
