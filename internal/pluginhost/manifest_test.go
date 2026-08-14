@@ -204,13 +204,36 @@ func TestConfigureManifestCommandAfterProcessExitReportsProcessDone(t *testing.T
 	}
 }
 
+func TestReadRecordedPIDWaitsForPIDFileContents(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "descendant.pid")
+	if err := os.WriteFile(path, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		time.Sleep(10 * time.Millisecond)
+		_ = os.WriteFile(path, []byte(strconv.Itoa(os.Getpid())+"\n"), 0o644)
+	}()
+
+	if got := readRecordedPID(t, path); got != os.Getpid() {
+		t.Fatalf("PID = %d, want %d", got, os.Getpid())
+	}
+}
+
 func readRecordedPID(t *testing.T, path string) int {
 	t.Helper()
 	deadline := time.Now().Add(10 * time.Second)
 	for {
 		data, err := os.ReadFile(path)
 		if err == nil {
-			pid, convErr := strconv.Atoi(strings.TrimSpace(string(data)))
+			text := strings.TrimSpace(string(data))
+			if text == "" {
+				if time.Now().After(deadline) {
+					t.Fatalf("timed out waiting for PID file contents %s", path)
+				}
+				time.Sleep(5 * time.Millisecond)
+				continue
+			}
+			pid, convErr := strconv.Atoi(text)
 			if convErr != nil || pid <= 0 {
 				t.Fatalf("invalid recorded PID %q: %v", data, convErr)
 			}
