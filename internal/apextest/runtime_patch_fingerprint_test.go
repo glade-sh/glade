@@ -274,8 +274,8 @@ func TestRuntimePatchFingerprintRejectsCyclesAndExcessiveDepth(t *testing.T) {
 }
 
 func TestRuntimePatchFingerprintStreamingABIAndCounters(t *testing.T) {
-	if runtimePatchABI != "apextest-runtime-patch-v2" {
-		t.Fatalf("runtime patch ABI = %q, want apextest-runtime-patch-v2", runtimePatchABI)
+	if runtimePatchABI != "apextest-runtime-patch-v3" {
+		t.Fatalf("runtime patch ABI = %q, want apextest-runtime-patch-v3", runtimePatchABI)
 	}
 	if testRuntimeCacheABI != "apextest-runtime-v6" {
 		t.Fatalf("runtime cache ABI = %q, want apextest-runtime-v6", testRuntimeCacheABI)

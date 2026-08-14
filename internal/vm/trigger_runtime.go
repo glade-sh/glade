@@ -443,6 +443,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	caller := vm.Globals
 	callerClass := vm.currentClass
 	callerNamespace := vm.currentNamespace
+	callerMethod := vm.currentMethod
 	callerTriggerGlobals := vm.triggerGlobals
 	callerTriggerNamespaces := vm.activeTriggerNamespaces
 	callerStatement := vm.currentStatement
@@ -456,6 +457,12 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	vm.triggerGlobals = frame
 	vm.currentClass = trigger.Name
 	vm.currentNamespace = strings.TrimSpace(trigger.Namespace)
+	vm.currentMethod = Method{
+		Name:       trigger.Name,
+		ClassName:  trigger.Name,
+		File:       trigger.File,
+		APIVersion: trigger.APIVersion,
+	}
 	if vm.currentNamespace != "" {
 		vm.activeTriggerNamespaces = append(vm.activeTriggerNamespaces, vm.currentNamespace)
 	}
@@ -467,6 +474,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		vm.activeTriggerNamespaces = callerTriggerNamespaces
 		vm.currentClass = callerClass
 		vm.currentNamespace = callerNamespace
+		vm.currentMethod = callerMethod
 		vm.currentStatement = callerStatement
 		vm.hasStatement = callerHasStatement
 	}()

@@ -3770,10 +3770,10 @@ func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.C
 				class.FieldOrder = append(class.FieldOrder, field.Name)
 			}
 		case apexast.DeclarationConstructor:
-			class.Constructors = append(class.Constructors, passiveRuntimeConstructorFromMember(name, member))
+			class.Constructors = append(class.Constructors, passiveRuntimeConstructorFromMember(name, member, typ.EffectiveAPIVersion))
 		case apexast.DeclarationMethod:
 			if passiveGeneratedRuntimeMethod(member) {
-				method := passiveRuntimeMethodFromMember(name, member)
+				method := passiveRuntimeMethodFromMember(name, member, typ.EffectiveAPIVersion)
 				class.Methods[methodShortName(method.Name)+methodParamKey(method.Params)] = method
 			}
 		}
@@ -3781,7 +3781,7 @@ func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.C
 	return class
 }
 
-func passiveRuntimeConstructorFromMember(className string, member typesys.MemberSymbol) vm.Method {
+func passiveRuntimeConstructorFromMember(className string, member typesys.MemberSymbol, apiVersion string) vm.Method {
 	params := make([]vm.Param, 0, len(member.Parameters))
 	for _, param := range member.Parameters {
 		params = append(params, vm.Param{Name: param.Name, Type: param.Type})
@@ -3793,10 +3793,11 @@ func passiveRuntimeConstructorFromMember(className string, member typesys.Member
 		Params:        params,
 		IsConstructor: true,
 		Access:        "global",
+		APIVersion:    apiVersion,
 	}
 }
 
-func passiveRuntimeMethodFromMember(className string, member typesys.MemberSymbol) vm.Method {
+func passiveRuntimeMethodFromMember(className string, member typesys.MemberSymbol, apiVersion string) vm.Method {
 	params := make([]vm.Param, 0, len(member.Parameters))
 	for i, param := range member.Parameters {
 		name := strings.TrimSpace(param.Name)
@@ -3813,6 +3814,7 @@ func passiveRuntimeMethodFromMember(className string, member typesys.MemberSymbo
 		IsStatic:   hasModifier(member.Modifiers, "static"),
 		Access:     "global",
 		Modifiers:  passiveGeneratedMethodModifiers(member),
+		APIVersion: apiVersion,
 	}
 }
 
@@ -3955,7 +3957,7 @@ func qualifyNestedTypeName(owner, name string, known map[string]bool) string {
 	}
 }
 
-func attachPropertyAccessors(field *vm.Field, className, file string, member typesys.MemberSymbol, source string) {
+func attachPropertyAccessors(field *vm.Field, className, file string, member typesys.MemberSymbol, source, apiVersion string) {
 	for _, accessor := range member.Accessors {
 		if accessor.Kind == "set" {
 			field.HasSetter = true
@@ -3963,7 +3965,7 @@ func attachPropertyAccessors(field *vm.Field, className, file string, member typ
 		if !accessor.HasBody {
 			continue
 		}
-		method, err := compilePropertyAccessor(className, file, member, accessor, source)
+		method, err := compilePropertyAccessor(className, file, member, accessor, source, apiVersion)
 		if err != nil {
 			continue
 		}
@@ -4059,7 +4061,7 @@ func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[
 				errs[typ.Name] = err
 				continue
 			}
-			method, err := compileProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, source)
+			method, err := compileProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, source, sources.apexAPIVersion(typ.File))
 			if err != nil {
 				errs[typ.Name] = err
 				continue
@@ -4096,7 +4098,7 @@ func compileTestMethods(cases []TestCase, caches ...*sourceCache) (map[string]vm
 		if len(modifiers) == 0 {
 			modifiers = []string{"static"}
 		}
-		method, err := compileProjectMethod(testCase.ClassName, testCase.MethodName, returnType, modifiers, testCase.File, testCase.Range, source)
+		method, err := compileProjectMethod(testCase.ClassName, testCase.MethodName, returnType, modifiers, testCase.File, testCase.Range, source, sources.apexAPIVersion(testCase.File))
 		if err != nil {
 			errs[key] = err
 			continue
@@ -6097,12 +6099,12 @@ func triggerEventParts(event string) (string, string) {
 	return "", ""
 }
 
-func compilePropertyAccessor(className, file string, member typesys.MemberSymbol, accessor apexast.Accessor, source string) (vm.Method, error) {
+func compilePropertyAccessor(className, file string, member typesys.MemberSymbol, accessor apexast.Accessor, source, apiVersion string) (vm.Method, error) {
 	body, err := extractMethodBody(source, accessor.Range)
 	if err != nil {
 		return vm.Method{}, err
 	}
-	program, err := vm.CompileAnonymous(body)
+	program, err := vm.CompileAnonymousWithOptions(body, vm.CompileOptions{APIVersion: apiVersion})
 	if err != nil {
 		return vm.Method{}, err
 	}
@@ -6115,6 +6117,7 @@ func compilePropertyAccessor(className, file string, member typesys.MemberSymbol
 		Access:     accessModifier(accessor.Modifiers),
 		Modifiers:  accessor.Modifiers,
 		File:       file,
+		APIVersion: apiVersion,
 		Line:       accessor.Range.Start.Line,
 		Column:     accessor.Range.Start.Column,
 	}
@@ -6250,12 +6253,12 @@ func canEvaluateFieldInitializerEagerly(expr string) bool {
 	return true
 }
 
-func compileFieldInitializerMethod(className, fieldName string, static bool, file string, r diagnostic.Range, source string) (vm.Method, bool) {
+func compileFieldInitializerMethod(className, fieldName string, static bool, file string, r diagnostic.Range, source, apiVersion string) (vm.Method, bool) {
 	expr, ok := fieldInitializerExpr(fieldName, r, source)
 	if !ok || expr == "" {
 		return vm.Method{}, false
 	}
-	program, err := vm.CompileAnonymous(fieldName + " = " + expr + ";")
+	program, err := vm.CompileAnonymousWithOptions(fieldName+" = "+expr+";", vm.CompileOptions{APIVersion: apiVersion})
 	if err != nil {
 		return vm.Method{}, false
 	}
@@ -6270,6 +6273,7 @@ func compileFieldInitializerMethod(className, fieldName string, static bool, fil
 		ClassName:  className,
 		IsStatic:   static,
 		File:       file,
+		APIVersion: apiVersion,
 		Line:       r.Start.Line,
 		Column:     r.Start.Column,
 	}, true

@@ -519,15 +519,16 @@ type cacheScanItem struct {
 }
 
 type Trigger struct {
-	Name      string
-	Namespace string
-	Object    string
-	Timing    string
-	Operation string
-	Program   ir.Program
-	File      string
-	Line      int
-	Column    int
+	Name       string
+	Namespace  string
+	Object     string
+	Timing     string
+	Operation  string
+	APIVersion string
+	Program    ir.Program
+	File       string
+	Line       int
+	Column     int
 }
 
 func New(stdout io.Writer) *VM {

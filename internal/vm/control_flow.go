@@ -198,7 +198,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 				return out, err
 			}
 		case ir.OpDML:
-			if err := vm.executeDML(inst.Name, inst.Expr, inst.Field, result); err != nil {
+			if err := vm.executeDML(inst.Name, inst.Expr, inst.Field, inst.DMLMode, result); err != nil {
 				return execOutcome{}, err
 			}
 		default:

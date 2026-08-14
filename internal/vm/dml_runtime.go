@@ -4812,7 +4812,7 @@ func groupedRecordIndicesByObject(records []storage.Record) [][]int {
 	return groups
 }
 
-func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result *Result) error {
+func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode ir.DMLMode, result *Result) error {
 	traceStart, traceStartedAt := traceSpanStart(result)
 	if op == "merge" {
 		if expr.Kind != ir.ExprCall || len(expr.Args) < 2 {

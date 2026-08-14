@@ -18,7 +18,16 @@ func (e *RuntimeLoweringError) Error() string {
 	return e.Message
 }
 
+type CompileOptions struct {
+	APIVersion string
+	Trigger    bool
+}
+
 func CompileAnonymous(source string) (ir.Program, error) {
+	return CompileAnonymousWithOptions(source, CompileOptions{})
+}
+
+func CompileAnonymousWithOptions(source string, _ CompileOptions) (ir.Program, error) {
 	tokens, err := lex(source)
 	if err != nil {
 		return ir.Program{}, classifyCompileError(source, err)
@@ -450,7 +459,8 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 
 	for _, op := range []string{"insert", "update", "delete", "upsert", "undelete", "merge"} {
 		if p.match(tokenIdent, op) {
-			if err := p.parseOptionalDMLAccessMode(op); err != nil {
+			mode, err := p.parseOptionalDMLAccessMode(op)
+			if err != nil {
 				return ir.Instruction{}, err
 			}
 			expr, err := p.parseExpression()
@@ -462,6 +472,14 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 				if err != nil {
 					return ir.Instruction{}, err
 				}
+				trailingMode, err := p.parseOptionalDMLAccessMode(op)
+				if err != nil {
+					return ir.Instruction{}, err
+				}
+				mode, err = mergeDMLModes(op, mode, trailingMode)
+				if err != nil {
+					return ir.Instruction{}, err
+				}
 				if _, err := p.expect(tokenSymbol, ";"); err != nil {
 					return ir.Instruction{}, err
 				}
@@ -470,7 +488,7 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 					duplicate,
 					{Kind: ir.ExprLiteral, Value: "true"},
 				}}
-				return ir.Instruction{Op: ir.OpDML, Name: op, Expr: expr, Pos: start.pos}, nil
+				return ir.Instruction{Op: ir.OpDML, Name: op, Expr: expr, DMLMode: mode, Pos: start.pos}, nil
 			}
 			field := ""
 			if op == "upsert" && !p.peek(tokenSymbol, ";") {
@@ -479,13 +497,18 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 					return ir.Instruction{}, err
 				}
 			}
-			if err := p.parseOptionalDMLAccessMode(op); err != nil {
+			trailingMode, err := p.parseOptionalDMLAccessMode(op)
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+			mode, err = mergeDMLModes(op, mode, trailingMode)
+			if err != nil {
 				return ir.Instruction{}, err
 			}
 			if _, err := p.expect(tokenSymbol, ";"); err != nil {
 				return ir.Instruction{}, err
 			}
-			return ir.Instruction{Op: ir.OpDML, Name: op, Expr: expr, Field: field, Pos: start.pos}, nil
+			return ir.Instruction{Op: ir.OpDML, Name: op, Expr: expr, Field: field, DMLMode: mode, Pos: start.pos}, nil
 		}
 	}
 
@@ -539,14 +562,27 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 	return ir.Instruction{Op: ir.OpExpr, Expr: expr, Pos: start.pos}, nil
 }
 
-func (p *parser) parseOptionalDMLAccessMode(op string) error {
+func (p *parser) parseOptionalDMLAccessMode(op string) (ir.DMLMode, error) {
 	if !p.match(tokenIdent, "as") {
-		return nil
+		return ir.DMLModeDefault, nil
 	}
-	if p.match(tokenIdent, "user") || p.match(tokenIdent, "system") {
-		return nil
+	if p.match(tokenIdent, "user") {
+		return ir.DMLModeUser, nil
 	}
-	return fmt.Errorf("%s as expects user or system at byte %d", op, p.tokens[p.pos].pos)
+	if p.match(tokenIdent, "system") {
+		return ir.DMLModeSystem, nil
+	}
+	return ir.DMLModeDefault, fmt.Errorf("%s as expects user or system at byte %d", op, p.tokens[p.pos].pos)
+}
+
+func mergeDMLModes(op string, first, second ir.DMLMode) (ir.DMLMode, error) {
+	if first != ir.DMLModeDefault && second != ir.DMLModeDefault {
+		return ir.DMLModeDefault, fmt.Errorf("%s has duplicate access modes", op)
+	}
+	if first != ir.DMLModeDefault {
+		return first, nil
+	}
+	return second, nil
 }
 
 func (p *parser) parseFor(pos int) (ir.Instruction, error) {

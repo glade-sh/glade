@@ -420,6 +420,7 @@ func (writer *runtimePatchFingerprintWriter) triggers(tag byte, triggers []vm.Tr
 		writer.string(0x03, trigger.Object)
 		writer.string(0x04, trigger.Timing)
 		writer.string(0x05, trigger.Operation)
+		writer.string(0x0a, trigger.APIVersion)
 		writer.program(0x06, trigger.Program, 0)
 		writer.string(0x07, trigger.File)
 		writer.integer(0x08, int64(trigger.Line))

@@ -25,7 +25,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-const runtimePatchABI = "apextest-runtime-patch-v2"
+const runtimePatchABI = "apextest-runtime-patch-v3"
 
 // runtimePatchAuthority is attached only to runtimes compiled from a complete,
 // immutable Index source snapshot. Disk-restored entries intentionally have no
