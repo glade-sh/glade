@@ -77,7 +77,9 @@ method body
 }`)
 	writeFile(t, asyncPath+"-meta.xml", `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
 	writeFile(t, triggerPath, `trigger BodyKindsTrigger on Account (before insert) {
-  String body = '''\ntrigger body\n''';
+  String body = '''
+trigger body
+''';
 }`)
 	writeFile(t, triggerPath+"-meta.xml", `<ApexTrigger><apiVersion>67.0</apiVersion></ApexTrigger>`)
 	writeFile(t, testPath, `@isTest private class BodyKindsTest {
@@ -225,9 +227,9 @@ func TestMultilineStringCompilesAtAPI66AndAPI67(t *testing.T) {
 				"String value = '''\nmethod body\n''';",
 				"String value = '''\ntrigger body\n''';",
 				"String value = '''\ntest body\n''';",
-				"String value = '''same line''';",
+				"String value = '''\nsame line''';",
 				"String value = '''\n  indented 'quote' \\\\n  value\n''';",
-				"String value = '''''' ;",
+				"String value = '''\n''' ;",
 			} {
 				options := vm.CompileOptions{APIVersion: apiVersion, Trigger: strings.Contains(body, "trigger")}
 				program, err := vm.CompileAnonymousWithOptions(body, options)

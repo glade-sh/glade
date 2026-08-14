@@ -82,18 +82,27 @@ func TestCompileDMLAccessModesRejectDuplicatesAndSurviveJSON(t *testing.T) {
 
 func TestCompileMultilineStringLiteral(t *testing.T) {
 	for _, test := range []struct {
-		name string
-		src  string
-		want string
+		name    string
+		src     string
+		want    string
+		wantErr bool
 	}{
 		{name: "opening newline is trimmed", src: "String value = '''\nhello\nworld\n''';", want: "hello\nworld\n"},
-		{name: "CRLF is preserved", src: "String value = '''\r\nhello\r\nworld\r\n''';", want: "hello\r\nworld\r\n"},
-		{name: "same line", src: "String value = '''hello''';", want: "hello"},
-		{name: "empty", src: "String value = '''''';", want: ""},
+		{name: "CRLF is normalized", src: "String value = '''\r\nhello\r\nworld\r\n''';", want: "hello\nworld\n"},
+		{name: "same line opening is rejected", src: "String value = '''hello''';", wantErr: true},
+		{name: "empty opening is rejected", src: "String value = '''''';", wantErr: true},
+		{name: "empty after opening newline", src: "String value = '''\n''';", want: ""},
 		{name: "quotes and backslash are preserved", src: "String value = '''\n'quote' \\n\n''';", want: "'quote' \\n\n"},
+		{name: "quote runs are preserved", src: "String value = '''\none ' quote\ntwo '' quotes\n''';", want: "one ' quote\ntwo '' quotes\n"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			program, err := CompileAnonymous(test.src)
+			if test.wantErr {
+				if err == nil {
+					t.Fatalf("CompileAnonymous(%q) succeeded, want error", test.src)
+				}
+				return
+			}
 			if err != nil {
 				t.Fatalf("CompileAnonymous(%q): %v", test.src, err)
 			}

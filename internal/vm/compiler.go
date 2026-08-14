@@ -224,6 +224,9 @@ func lexMultilineString(source string, start int) (token, int, error) {
 	const delimiter = "'''"
 	i := start + len(delimiter)
 	var text strings.Builder
+	if i >= len(source) || (source[i] != '\n' && source[i] != '\r') {
+		return token{}, start, fmt.Errorf("multiline string opening delimiter must be followed by a newline at byte %d", start)
+	}
 	if i < len(source) && source[i] == '\r' {
 		if i+1 < len(source) && source[i+1] == '\n' {
 			i += 2
@@ -234,6 +237,11 @@ func lexMultilineString(source string, start int) (token, int, error) {
 	for i < len(source) {
 		if i+len(delimiter) <= len(source) && source[i:i+len(delimiter)] == delimiter {
 			return token{kind: tokenString, text: text.String(), pos: start}, i + len(delimiter), nil
+		}
+		if source[i] == '\r' && i+1 < len(source) && source[i+1] == '\n' {
+			text.WriteByte('\n')
+			i += 2
+			continue
 		}
 		text.WriteByte(source[i])
 		i++
