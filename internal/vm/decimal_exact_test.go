@@ -134,3 +134,31 @@ System.assertEquals('9007199254740993', (converted + 1).toPlainString());
 		t.Fatal(err)
 	}
 }
+
+func TestExecDecimalMathRoundingAndSignumRemainExact(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(9007199254740993, Math.roundToLong(Decimal.valueOf('9007199254740993.4')));
+System.assertEquals(2147483645, Math.round(Decimal.valueOf('2147483645.499999999')));
+System.assertEquals('1', Math.signum(Decimal.valueOf('9007199254740993')).toPlainString());
+Double doubleValue = Double.valueOf('-9007199254740993');
+System.assertEquals('-1', Math.signum(doubleValue).toPlainString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMathModRejectsDecimalOperands(t *testing.T) {
+	program, err := CompileAnonymous(`
+Math.mod(Decimal.valueOf('5.5'), Decimal.valueOf('2'));
+`)
+	if err != nil {
+		return
+	}
+	if _, err := Execute(program, nil); err == nil {
+		t.Fatal("Math.mod accepted Decimal operands despite having only Integer and Long overloads")
+	}
+}

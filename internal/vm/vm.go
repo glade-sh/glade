@@ -2360,18 +2360,53 @@ func mathUnary(callee string, args []Value) (Value, error) {
 			return decimalAsDouble(Decimal(roundHalfEven(n))), nil
 		}
 	case "Math.round":
+		if args[0].Kind == ValueDecimal && !isFloatBackedDecimal(args[0]) {
+			if result, ok := exactMathRound(callee, args[0], "HALF_EVEN"); ok {
+				rounded, err := int32FromDecimalValue(callee, result)
+				if err != nil {
+					return Null, err
+				}
+				return Int(int64(rounded)), nil
+			}
+		}
 		rounded, err := int64FromFloat("Math.round", roundHalfEven(n))
 		if err != nil {
 			return Null, err
 		}
 		return Int(rounded), nil
 	case "Math.roundToLong":
+		if args[0].Kind == ValueDecimal && !isFloatBackedDecimal(args[0]) {
+			if result, ok := exactMathRound(callee, args[0], "HALF_EVEN"); ok {
+				rounded, err := int64FromDecimalValue(callee, result)
+				if err != nil {
+					return Null, err
+				}
+				return Int(rounded), nil
+			}
+		}
 		rounded, err := int64FromFloat("Math.roundToLong", roundHalfEven(n))
 		if err != nil {
 			return Null, err
 		}
 		return Int(rounded), nil
 	case "Math.signum":
+		if args[0].Kind == ValueDecimal {
+			sign := 0
+			if !isFloatBackedDecimal(args[0]) {
+				if rat, ok := valueDecimalRat(args[0]); ok {
+					sign = rat.Sign()
+				} else {
+					sign = signumFloat(n)
+				}
+			} else {
+				sign = signumFloat(n)
+			}
+			result := Decimal(float64(sign))
+			if isFloatBackedDecimal(args[0]) {
+				return decimalAsDouble(result), nil
+			}
+			return result, nil
+		}
 		switch {
 		case n > 0:
 			return Int(1), nil
@@ -2428,9 +2463,23 @@ func mathUnary(callee string, args []Value) (Value, error) {
 	}
 }
 
+func signumFloat(value float64) int {
+	switch {
+	case value > 0:
+		return 1
+	case value < 0:
+		return -1
+	default:
+		return 0
+	}
+}
+
 func mathBinary(callee string, args []Value) (Value, error) {
 	if len(args) != 2 || !isMathNumeric(args[0]) || !isMathNumeric(args[1]) {
 		return Null, fmt.Errorf("%s expects two numeric arguments", callee)
+	}
+	if callee == "Math.mod" && (args[0].Kind != ValueInt || args[1].Kind != ValueInt) {
+		return Null, unsupportedCallError(callee)
 	}
 	if callee == "Math.max" || callee == "Math.min" {
 		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {

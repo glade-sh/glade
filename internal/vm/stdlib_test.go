@@ -4421,7 +4421,6 @@ System.assertEquals(1, Math.signum(12.5));
 System.assertEquals(-1, Math.signum(-4));
 System.assertEquals(0, Math.signum(0));
 System.assertEquals(1, Math.mod(10, 3));
-System.assertEquals(2.5, Math.mod(12.5, 5));
 System.assertEquals(12, Math.roundToLong(12.5));
 System.assertEquals(3.0, Math.ceil(2.1));
 System.assertEquals(2.0, Math.floor(2.9));
