@@ -2736,7 +2736,7 @@ func TestCINestedSourcesWorkflowContract(t *testing.T) {
 	for _, marker := range []string{
 		"runs-on: ubuntu-latest", "timeout-minutes: 30",
 		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
-		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.5\"", "cache: false",
+		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.6\"", "cache: false",
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", "node-version: \"22\"",
 		"- name: Test vendored parser", "(cd third_party/glade-apex-parser && go test ./...)",
 		"- name: Test vendored parser without CGO", "(cd third_party/glade-apex-parser && CGO_ENABLED=0 go test ./...)",
