@@ -195,10 +195,13 @@ func treeSitterClass(node *tree_sitter.Node, source string, lineMap LineMap) Dec
 	decl := Declaration{
 		Kind:           DeclarationClass,
 		Name:           nodeText(childByField(node, "name"), source),
+		SuperClass:     treeSitterSuperclass(node, source),
+		Interfaces:     treeSitterInterfaces(node, source),
 		Modifiers:      treeSitterModifiers(node, source),
 		Annotations:    treeSitterAnnotations(node, source, lineMap),
 		TypeParameters: treeSitterTypeParameters(node, source),
 		Range:          treeSitterRange(node, lineMap),
+		BodyRange:      treeSitterRangePtr(childByField(node, "body"), lineMap),
 	}
 	if body := childByField(node, "body"); body != nil {
 		decl.Members = treeSitterMembers(body, source, lineMap)
@@ -210,10 +213,12 @@ func treeSitterInterface(node *tree_sitter.Node, source string, lineMap LineMap)
 	decl := Declaration{
 		Kind:           DeclarationInterface,
 		Name:           nodeText(childByField(node, "name"), source),
+		Interfaces:     treeSitterInterfaces(node, source),
 		Modifiers:      treeSitterModifiers(node, source),
 		Annotations:    treeSitterAnnotations(node, source, lineMap),
 		TypeParameters: treeSitterTypeParameters(node, source),
 		Range:          treeSitterRange(node, lineMap),
+		BodyRange:      treeSitterRangePtr(childByField(node, "body"), lineMap),
 	}
 	if body := childByField(node, "body"); body != nil {
 		for _, child := range namedChildren(body) {
@@ -265,6 +270,7 @@ func treeSitterTrigger(node *tree_sitter.Node, source string, lineMap LineMap) D
 		Name:       nodeText(childByField(node, "name"), source),
 		ObjectName: nodeText(childByField(node, "object"), source),
 		Range:      treeSitterRange(node, lineMap),
+		BodyRange:  treeSitterRangePtr(childByField(node, "body"), lineMap),
 	}
 	for _, child := range childrenByField(node, "events") {
 		if child.Kind() != "trigger_event" {
@@ -294,15 +300,17 @@ func treeSitterMembers(body *tree_sitter.Node, source string, lineMap LineMap) [
 			}
 		case "block":
 			members = append(members, Declaration{
-				Kind:  DeclarationInitializer,
-				Name:  "initializer",
-				Range: treeSitterRange(&child, lineMap),
+				Kind:      DeclarationInitializer,
+				Name:      "initializer",
+				BodyRange: treeSitterRangePtr(&child, lineMap),
+				Range:     treeSitterRange(&child, lineMap),
 			})
 		case "static_initializer":
 			members = append(members, Declaration{
 				Kind:      DeclarationInitializer,
 				Name:      "initializer",
 				Modifiers: []string{"static"},
+				BodyRange: treeSitterInitializerBodyRange(&child, lineMap),
 				Range:     treeSitterRange(&child, lineMap),
 			})
 		}
@@ -319,6 +327,7 @@ func treeSitterMethod(node *tree_sitter.Node, source string, lineMap LineMap) De
 		Annotations: treeSitterAnnotations(node, source, lineMap),
 		Parameters:  treeSitterParameters(childByField(node, "parameters"), source, lineMap),
 		HasBody:     childByField(node, "body") != nil,
+		BodyRange:   treeSitterRangePtr(childByField(node, "body"), lineMap),
 		Range:       treeSitterRange(node, lineMap),
 	}
 }
@@ -331,6 +340,7 @@ func treeSitterConstructor(node *tree_sitter.Node, source string, lineMap LineMa
 		Annotations: treeSitterAnnotations(node, source, lineMap),
 		Parameters:  treeSitterParameters(childByField(node, "parameters"), source, lineMap),
 		HasBody:     childByField(node, "body") != nil,
+		BodyRange:   treeSitterRangePtr(childByField(node, "body"), lineMap),
 		Range:       treeSitterRange(node, lineMap),
 	}
 }
@@ -394,6 +404,7 @@ func treeSitterAccessors(node *tree_sitter.Node, source string, lineMap LineMap)
 			Modifiers:   treeSitterModifiers(&child, source),
 			Annotations: treeSitterAnnotations(&child, source, lineMap),
 			Range:       treeSitterRange(&child, lineMap),
+			BodyRange:   treeSitterRangePtr(firstChildOfKind(&child, "block"), lineMap),
 		}
 		for i := uint(0); i < child.ChildCount(); i++ {
 			token := child.Child(i)
@@ -589,6 +600,60 @@ func normalizeAnnotationText(text string) string {
 func treeSitterTypeText(node *tree_sitter.Node, source string) string {
 	text := nodeText(node, source)
 	return strings.Join(strings.Fields(text), "")
+}
+
+func treeSitterInterfaces(node *tree_sitter.Node, source string) []string {
+	field := childByField(node, "interfaces")
+	if field == nil {
+		field = childByField(node, "extends_interfaces")
+	}
+	if field == nil {
+		field = firstChildOfKind(node, "extends_interfaces")
+	}
+	if field == nil {
+		return nil
+	}
+	var out []string
+	for _, child := range namedChildren(field) {
+		if child.Kind() == "type_list" {
+			for _, base := range namedChildren(&child) {
+				if text := treeSitterTypeText(&base, source); text != "" {
+					out = append(out, text)
+				}
+			}
+			continue
+		}
+		text := treeSitterTypeText(&child, source)
+		if text != "" {
+			out = append(out, text)
+		}
+	}
+	if len(out) == 0 {
+		if text := treeSitterTypeText(field, source); text != "" {
+			out = append(out, text)
+		}
+	}
+	return out
+}
+
+func treeSitterSuperclass(node *tree_sitter.Node, source string) string {
+	text := treeSitterTypeText(childByField(node, "superclass"), source)
+	return strings.TrimPrefix(text, "extends")
+}
+
+func treeSitterRangePtr(node *tree_sitter.Node, lineMap LineMap) *Range {
+	if node == nil {
+		return nil
+	}
+	r := treeSitterRange(node, lineMap)
+	return &r
+}
+
+func treeSitterInitializerBodyRange(node *tree_sitter.Node, lineMap LineMap) *Range {
+	if body := childByField(node, "body"); body != nil {
+		return treeSitterRangePtr(body, lineMap)
+	}
+	return treeSitterRangePtr(firstChildOfKind(node, "block"), lineMap)
 }
 
 func treeSitterRange(node *tree_sitter.Node, lineMap LineMap) Range {

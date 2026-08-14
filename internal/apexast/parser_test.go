@@ -3,6 +3,8 @@ package apexast
 import (
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/diagnostic"
 )
 
 func TestParseClass(t *testing.T) {
@@ -345,6 +347,39 @@ func TestParseMultilineStringLiteralPreservesMethodRange(t *testing.T) {
 	}
 	if !strings.Contains(source[method.Range.Start.Offset:method.Range.End.Offset], "'''") {
 		t.Fatalf("method range does not contain multiline literal: %q", source[method.Range.Start.Offset:method.Range.End.Offset])
+	}
+}
+
+func TestParseInheritanceAndBodyRanges(t *testing.T) {
+	source := `public class Child extends Base implements One, Map<String, List<Integer>> {
+  public String Name { get { return value; } set { value = value; } }
+  public void run() { System.debug('}'); }
+}
+public interface ChildContract extends BaseContract, Generic<String> { void run(); }
+trigger ChildTrigger on Account (before insert) { System.debug('}'); }`
+	file := NewParser().ParseSource("Inheritance.cls", source)
+	if len(file.Diagnostics) != 0 || len(file.Declarations) != 3 {
+		t.Fatalf("parse = %#v", file)
+	}
+	bodyText := func(r *diagnostic.Range) string {
+		if r == nil {
+			return ""
+		}
+		return source[r.Start.Offset:r.End.Offset]
+	}
+	child := file.Declarations[0]
+	if child.SuperClass != "Base" || len(child.Interfaces) != 2 || child.Interfaces[0] != "One" || child.Interfaces[1] != "Map<String,List<Integer>>" {
+		t.Fatalf("class facts = %#v", child)
+	}
+	if bodyText(child.BodyRange) == "" || bodyText(child.Members[0].Accessors[0].BodyRange) != "{ return value; }" || bodyText(child.Members[1].BodyRange) != "{ System.debug('}'); }" {
+		t.Fatalf("class body facts = %#v", child)
+	}
+	contract := file.Declarations[1]
+	if len(contract.Interfaces) != 2 || contract.Interfaces[0] != "BaseContract" || contract.Interfaces[1] != "Generic<String>" {
+		t.Fatalf("interface facts = %#v", contract)
+	}
+	if bodyText(file.Declarations[2].BodyRange) != "{ System.debug('}'); }" {
+		t.Fatalf("trigger body = %q", bodyText(file.Declarations[2].BodyRange))
 	}
 }
 

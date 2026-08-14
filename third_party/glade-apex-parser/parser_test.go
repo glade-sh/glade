@@ -4,6 +4,7 @@ package apexast
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -324,6 +325,65 @@ public interface Drawable { void draw(); }`)
 	iface := file.Declarations[1]
 	if iface.Members[0].HasBody {
 		t.Fatalf("interface method should not have body: %#v", iface.Members[0])
+	}
+}
+
+func TestParseInheritanceAndBodyRanges(t *testing.T) {
+	source := `public class Child extends Base implements One, Map<String, List<Integer>> {
+  static { Count = 1; }
+  { Count++; }
+  public String Name {
+    get { return backing; }
+    set { backing = value; }
+  }
+  public void run() { System.debug('}'); }
+}
+public interface ChildContract extends BaseContract, Generic<String> {
+  void run();
+}
+trigger ChildTrigger on Account (before insert) {
+  System.debug('}');
+}`
+	file := NewParser().ParseSource("Inheritance.cls", source)
+	if len(file.Diagnostics) != 0 || len(file.Declarations) != 3 {
+		t.Fatalf("parse = %#v", file)
+	}
+	bodyText := func(r *Range) string {
+		if r == nil {
+			return ""
+		}
+		return source[r.Start.Offset:r.End.Offset]
+	}
+	child := file.Declarations[0]
+	if child.SuperClass != "Base" {
+		t.Fatalf("superclass = %q", child.SuperClass)
+	}
+	if got, want := child.Interfaces, []string{"One", "Map<String,List<Integer>>"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("interfaces = %#v, want %#v", got, want)
+	}
+	if got := strings.TrimSpace(bodyText(child.BodyRange)); !strings.HasPrefix(got, "{") || !strings.HasSuffix(got, "}") {
+		t.Fatalf("class body = %q", got)
+	}
+	if got := strings.TrimSpace(bodyText(child.Members[0].BodyRange)); got != "{ Count = 1; }" {
+		t.Fatalf("static initializer body = %q", got)
+	}
+	if got := strings.TrimSpace(bodyText(child.Members[1].BodyRange)); got != "{ Count++; }" {
+		t.Fatalf("instance initializer body = %q", got)
+	}
+	property := child.Members[2]
+	if len(property.Accessors) != 2 || strings.TrimSpace(bodyText(property.Accessors[0].BodyRange)) != "{ return backing; }" || strings.TrimSpace(bodyText(property.Accessors[1].BodyRange)) != "{ backing = value; }" {
+		t.Fatalf("accessor bodies = %#v", property.Accessors)
+	}
+	if got := strings.TrimSpace(bodyText(child.Members[3].BodyRange)); got != "{ System.debug('}'); }" {
+		t.Fatalf("method body = %q", got)
+	}
+	contract := file.Declarations[1]
+	if got, want := contract.Interfaces, []string{"BaseContract", "Generic<String>"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("interface bases = %#v, want %#v", got, want)
+	}
+	trigger := file.Declarations[2]
+	if got := strings.TrimSpace(bodyText(trigger.BodyRange)); got != "{\n  System.debug('}');\n}" {
+		t.Fatalf("trigger body = %q", got)
 	}
 }
 
