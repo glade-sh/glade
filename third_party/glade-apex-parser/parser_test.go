@@ -329,14 +329,14 @@ public interface Drawable { void draw(); }`)
 }
 
 func TestParseInheritanceAndBodyRanges(t *testing.T) {
-	source := `public class Child extends Base implements One, Map<String, List<Integer>> {
-  static { Count = 1; }
-  { Count++; }
+	source := `public class Child extends /* { superclass comment } */ Base implements One, /* { interface comment } */ Map<String, List<Integer>> {
+  static { /* { initializer comment } */ Count = 1; }
+  { /* } initializer comment { */ Count++; }
   public String Name {
-    get { return backing; }
-    set { backing = value; }
+    get { /* { getter comment } */ return backing; }
+    set { /* } setter comment { */ backing = value; }
   }
-  public void run() { System.debug('}'); }
+  public void run() { /* { method comment } */ System.debug('}'); }
 }
 public interface ChildContract extends BaseContract, Generic<String> {
   void run();
@@ -364,17 +364,17 @@ trigger ChildTrigger on Account (before insert) {
 	if got := strings.TrimSpace(bodyText(child.BodyRange)); !strings.HasPrefix(got, "{") || !strings.HasSuffix(got, "}") {
 		t.Fatalf("class body = %q", got)
 	}
-	if got := strings.TrimSpace(bodyText(child.Members[0].BodyRange)); got != "{ Count = 1; }" {
+	if got := strings.TrimSpace(bodyText(child.Members[0].BodyRange)); got != "{ /* { initializer comment } */ Count = 1; }" {
 		t.Fatalf("static initializer body = %q", got)
 	}
-	if got := strings.TrimSpace(bodyText(child.Members[1].BodyRange)); got != "{ Count++; }" {
+	if got := strings.TrimSpace(bodyText(child.Members[1].BodyRange)); got != "{ /* } initializer comment { */ Count++; }" {
 		t.Fatalf("instance initializer body = %q", got)
 	}
 	property := child.Members[2]
-	if len(property.Accessors) != 2 || strings.TrimSpace(bodyText(property.Accessors[0].BodyRange)) != "{ return backing; }" || strings.TrimSpace(bodyText(property.Accessors[1].BodyRange)) != "{ backing = value; }" {
+	if len(property.Accessors) != 2 || strings.TrimSpace(bodyText(property.Accessors[0].BodyRange)) != "{ /* { getter comment } */ return backing; }" || strings.TrimSpace(bodyText(property.Accessors[1].BodyRange)) != "{ /* } setter comment { */ backing = value; }" {
 		t.Fatalf("accessor bodies = %#v", property.Accessors)
 	}
-	if got := strings.TrimSpace(bodyText(child.Members[3].BodyRange)); got != "{ System.debug('}'); }" {
+	if got := strings.TrimSpace(bodyText(child.Members[3].BodyRange)); got != "{ /* { method comment } */ System.debug('}'); }" {
 		t.Fatalf("method body = %q", got)
 	}
 	contract := file.Declarations[1]
@@ -384,6 +384,26 @@ trigger ChildTrigger on Account (before insert) {
 	trigger := file.Declarations[2]
 	if got := strings.TrimSpace(bodyText(trigger.BodyRange)); got != "{\n  System.debug('}');\n}" {
 		t.Fatalf("trigger body = %q", got)
+	}
+}
+
+func TestParseInheritanceSkipsCommentsAndPreservesTypeNodes(t *testing.T) {
+	for _, test := range []struct {
+		source     string
+		superClass string
+		interfaces []string
+	}{
+		{source: "public class Child EXTENDS Base implements One, Two {}", superClass: "Base", interfaces: []string{"One", "Two"}},
+		{source: "public interface Contract eXtEnDs BaseContract, Generic<String> {}", interfaces: []string{"BaseContract", "Generic<String>"}},
+	} {
+		file := NewParser().ParseSource("Inheritance.cls", test.source)
+		if len(file.Diagnostics) != 0 || len(file.Declarations) != 1 {
+			t.Fatalf("parse %q = %#v", test.source, file)
+		}
+		decl := file.Declarations[0]
+		if decl.SuperClass != test.superClass || !reflect.DeepEqual(decl.Interfaces, test.interfaces) {
+			t.Fatalf("facts for %q = superclass %q interfaces %#v", test.source, decl.SuperClass, decl.Interfaces)
+		}
 	}
 }
 

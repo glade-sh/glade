@@ -1,6 +1,7 @@
 package apexast
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -351,12 +352,12 @@ func TestParseMultilineStringLiteralPreservesMethodRange(t *testing.T) {
 }
 
 func TestParseInheritanceAndBodyRanges(t *testing.T) {
-	source := `public class Child extends Base implements One, Map<String, List<Integer>> {
-  public String Name { get { return value; } set { value = value; } }
-  public void run() { System.debug('}'); }
+	source := `public class Child extends /* { superclass comment } */ Base implements One, /* { interface comment } */ Map<String, List<Integer>> {
+	  public String Name { get { /* { getter comment } */ return value; } set { /* } setter comment { */ value = value; } }
+	  public void run() { /* { method comment } */ System.debug('}'); }
 }
 public interface ChildContract extends BaseContract, Generic<String> { void run(); }
-trigger ChildTrigger on Account (before insert) { System.debug('}'); }`
+trigger ChildTrigger on Account (before insert) { /* } trigger comment { */ System.debug('}'); }`
 	file := NewParser().ParseSource("Inheritance.cls", source)
 	if len(file.Diagnostics) != 0 || len(file.Declarations) != 3 {
 		t.Fatalf("parse = %#v", file)
@@ -371,15 +372,35 @@ trigger ChildTrigger on Account (before insert) { System.debug('}'); }`
 	if child.SuperClass != "Base" || len(child.Interfaces) != 2 || child.Interfaces[0] != "One" || child.Interfaces[1] != "Map<String, List<Integer>>" {
 		t.Fatalf("class facts = %#v", child)
 	}
-	if bodyText(child.BodyRange) == "" || bodyText(child.Members[0].Accessors[0].BodyRange) != "{ return value; }" || bodyText(child.Members[1].BodyRange) != "{ System.debug('}'); }" {
+	if bodyText(child.BodyRange) == "" || bodyText(child.Members[0].Accessors[0].BodyRange) != "{ /* { getter comment } */ return value; }" || bodyText(child.Members[1].BodyRange) != "{ /* { method comment } */ System.debug('}'); }" {
 		t.Fatalf("class body facts = %#v", child)
 	}
 	contract := file.Declarations[1]
 	if len(contract.Interfaces) != 2 || contract.Interfaces[0] != "BaseContract" || contract.Interfaces[1] != "Generic<String>" {
 		t.Fatalf("interface facts = %#v", contract)
 	}
-	if bodyText(file.Declarations[2].BodyRange) != "{ System.debug('}'); }" {
+	if bodyText(file.Declarations[2].BodyRange) != "{ /* } trigger comment { */ System.debug('}'); }" {
 		t.Fatalf("trigger body = %q", bodyText(file.Declarations[2].BodyRange))
+	}
+}
+
+func TestParseInheritanceSkipsCommentsAndPreservesTypeNodes(t *testing.T) {
+	for _, test := range []struct {
+		source     string
+		superClass string
+		interfaces []string
+	}{
+		{source: "public class Child EXTENDS Base implements One, Two {}", superClass: "Base", interfaces: []string{"One", "Two"}},
+		{source: "public interface Contract eXtEnDs BaseContract, Generic<String> {}", interfaces: []string{"BaseContract", "Generic<String>"}},
+	} {
+		file := NewParser().ParseSource("Inheritance.cls", test.source)
+		if len(file.Diagnostics) != 0 || len(file.Declarations) != 1 {
+			t.Fatalf("parse %q = %#v", test.source, file)
+		}
+		decl := file.Declarations[0]
+		if decl.SuperClass != test.superClass || !reflect.DeepEqual(decl.Interfaces, test.interfaces) {
+			t.Fatalf("facts for %q = superclass %q interfaces %#v", test.source, decl.SuperClass, decl.Interfaces)
+		}
 	}
 }
 

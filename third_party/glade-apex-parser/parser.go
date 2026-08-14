@@ -615,8 +615,14 @@ func treeSitterInterfaces(node *tree_sitter.Node, source string) []string {
 	}
 	var out []string
 	for _, child := range namedChildren(field) {
+		if isTreeSitterComment(&child) {
+			continue
+		}
 		if child.Kind() == "type_list" {
 			for _, base := range namedChildren(&child) {
+				if isTreeSitterComment(&base) {
+					continue
+				}
 				if text := treeSitterInterfaceText(&base, source); text != "" {
 					out = append(out, text)
 				}
@@ -637,15 +643,25 @@ func treeSitterInterfaces(node *tree_sitter.Node, source string) []string {
 }
 
 func treeSitterInterfaceText(node *tree_sitter.Node, source string) string {
-	if node == nil {
+	if node == nil || isTreeSitterComment(node) {
 		return ""
 	}
 	return strings.Join(strings.Fields(nodeText(node, source)), " ")
 }
 
 func treeSitterSuperclass(node *tree_sitter.Node, source string) string {
-	text := treeSitterTypeText(childByField(node, "superclass"), source)
-	return strings.TrimPrefix(text, "extends")
+	field := childByField(node, "superclass")
+	for _, child := range namedChildren(field) {
+		if isTreeSitterComment(&child) {
+			continue
+		}
+		return treeSitterTypeText(&child, source)
+	}
+	return ""
+}
+
+func isTreeSitterComment(node *tree_sitter.Node) bool {
+	return node != nil && strings.HasSuffix(node.Kind(), "comment")
 }
 
 func treeSitterRangePtr(node *tree_sitter.Node, lineMap LineMap) *Range {
