@@ -202,7 +202,7 @@ func callLocationMember(receiver Value, method string, args []Value) (Value, Val
 		if _, value, ok := objectFieldValue(receiver, field); ok {
 			return value, receiver, false, true, nil
 		}
-		return Decimal(0), receiver, false, true, nil
+		return decimalAsDouble(Decimal(0)), receiver, false, true, nil
 	case "getDistance":
 		if len(args) != 2 || args[0].Kind != ValueObject || args[1].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("Location.getDistance expects Location and unit String")

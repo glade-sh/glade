@@ -3503,8 +3503,13 @@ func decimalString(value *big.Rat) string {
 
 func valueKey(value storage.Value) string {
 	switch value.Kind {
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal, storage.ValueBlob:
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
 		return string(value.Kind) + ":" + value.String
+	case storage.ValueDecimal:
+		if rat, ok := new(big.Rat).SetString(value.Decimal); ok {
+			return string(value.Kind) + ":" + rat.RatString()
+		}
+		return string(value.Kind) + ":" + value.Decimal
 	case storage.ValueInteger:
 		return string(value.Kind) + ":" + strconv.FormatInt(value.Integer, 10)
 	case storage.ValueBoolean:

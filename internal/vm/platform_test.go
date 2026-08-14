@@ -4254,6 +4254,7 @@ System.assertEquals(mondayTen, BusinessHours.nextStartDate(businessHoursId, mond
 Datetime mondayEleven = BusinessHours.addGmt(businessHoursId, mondayTen, 60 * 60 * 1000);
 System.assertEquals(Datetime.newInstanceGmt(2026, 6, 15, 18, 0, 0), mondayEleven);
 System.assertEquals(60 * 60 * 1000, BusinessHours.diff(businessHoursId, mondayNine, mondayTen));
+System.assert(!(BusinessHours.diff(businessHoursId, mondayNine, mondayTen) instanceof Integer));
 Datetime saturday = Datetime.newInstanceGmt(2026, 6, 20, 16, 0, 0);
 System.assertEquals(false, BusinessHours.isWithin(businessHoursId, saturday));
 System.assertEquals(Datetime.newInstanceGmt(2026, 6, 22, 16, 0, 0), BusinessHours.nextStartDate(businessHoursId, saturday));

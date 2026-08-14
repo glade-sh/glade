@@ -2253,7 +2253,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if datetimeLegacyIsoFractionalTruncate(receiver) {
 				t = t.Truncate(time.Second)
 			}
-			return Int(t.UnixNano() / int64(time.Millisecond)), receiver, false, true, nil
+			return longIntValue(t.UnixNano() / int64(time.Millisecond)), receiver, false, true, nil
 		case "time", "timeGmt":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects 0 arguments", method)

@@ -311,6 +311,64 @@ System.assert(!(parsed instanceof Integer));
 	}
 }
 
+func TestExecDeclaredLongPlatformReturnsRetainIdentity(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assert(!(Crypto.getRandomLong() instanceof Integer));
+System.assert(!(Datetime.now().getTime() instanceof Integer));
+System.assert(!(System.currentTimeMillis() instanceof Integer));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDecimalExactTextRoundTripsThroughStorageAndJSON(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Probe__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Probe__c",
+			KeyPrefix: "a90",
+			Fields: map[string]storage.Field{
+				"Id":        {APIName: "Id", Type: storage.FieldID},
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Amount__c": {APIName: "Amount__c", Type: storage.FieldDecimal},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	program, err := CompileAnonymous(`
+Decimal firstAmount = Decimal.valueOf('9007199254740993.01');
+Decimal secondAmount = Decimal.valueOf('9007199254740993.02');
+Probe__c first = new Probe__c(Name = 'first', Amount__c = firstAmount);
+Probe__c second = new Probe__c(Name = 'second', Amount__c = secondAmount);
+insert new List<Probe__c>{first, second};
+Decimal threshold = Decimal.valueOf('9007199254740993.00');
+List<Probe__c> rows = [SELECT Amount__c FROM Probe__c WHERE Amount__c > :threshold ORDER BY Amount__c];
+System.assertEquals(2, rows.size());
+System.assertEquals('9007199254740993.01', rows[0].Amount__c.toPlainString());
+System.assertEquals('9007199254740993.02', rows[1].Amount__c.toPlainString());
+List<AggregateResult> counts = [SELECT COUNT_DISTINCT(Amount__c) distinctCount FROM Probe__c];
+System.assertEquals(2, counts[0].get('distinctCount'));
+String payload = JSON.serialize(first);
+Probe__c decoded = (Probe__c)JSON.deserialize(payload, Probe__c.class);
+System.assertEquals('9007199254740993.01', decoded.Amount__c.toPlainString());
+List<Decimal> values = new List<Decimal>{secondAmount, firstAmount};
+values.sort();
+System.assertEquals('9007199254740993.01', values[0].toPlainString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDoublePathsRetainDoubleIdentity(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONParser parser = JSON.createParser('9007199254740993.0');
@@ -334,6 +392,11 @@ System.assertEquals(9007199254740992, parsed + 1);
 	}
 	if !isFloatBackedDecimal(distance) {
 		t.Fatalf("Location distance = %#v, want Double-backed value", distance)
+	}
+	missing := Object("Location")
+	latitude, _, _, handled, err := callLocationMember(missing, "getLatitude", nil)
+	if err != nil || !handled || !isFloatBackedDecimal(latitude) {
+		t.Fatalf("missing Location latitude = handled %v, value %#v, err %v; want Double-backed zero", handled, latitude, err)
 	}
 }
 
