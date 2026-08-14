@@ -21,7 +21,7 @@ func (vm *VM) currentUserCanSeeSharedRecord(objectName string, record storage.Re
 }
 
 func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, userID string) bool {
-	if vm == nil || vm.currentTrigger || vm.soqlObjectHasPublicReadSharing(objectName) || vm.currentUserBypassesRecordSharing() || userID == "" {
+	if vm == nil || vm.soqlObjectHasPublicReadSharing(objectName) || vm.currentUserBypassesRecordSharing() || userID == "" {
 		return true
 	}
 	return record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.currentUserCanSeeSharedRecord(objectName, record, userID)

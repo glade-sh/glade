@@ -1,6 +1,9 @@
 package apexast
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestParseClass(t *testing.T) {
 	src := `
@@ -324,6 +327,24 @@ func TestParseSyntaxError(t *testing.T) {
 	}
 	if got.End.Offset < got.Start.Offset {
 		t.Fatalf("diagnostic range went backwards: %#v", got)
+	}
+}
+
+func TestParseMultilineStringLiteralPreservesMethodRange(t *testing.T) {
+	source := "public class Probe {\n  public String run() { return '''\nhello\n'''; }\n}\n"
+	file := NewParser().ParseSource("Probe.cls", source)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	if len(file.Declarations) != 1 || len(file.Declarations[0].Members) != 1 {
+		t.Fatalf("declarations = %#v", file.Declarations)
+	}
+	method := file.Declarations[0].Members[0]
+	if method.Range.End.Offset <= method.Range.Start.Offset {
+		t.Fatalf("method range = %#v", method.Range)
+	}
+	if !strings.Contains(source[method.Range.Start.Offset:method.Range.End.Offset], "'''") {
+		t.Fatalf("method range does not contain multiline literal: %q", source[method.Range.Start.Offset:method.Range.End.Offset])
 	}
 }
 

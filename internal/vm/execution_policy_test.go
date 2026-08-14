@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"io"
 	"testing"
 
@@ -32,7 +33,7 @@ func TestCurrentSourceExecutionPolicyUsesAPIVersionAndTriggerFrame(t *testing.T)
 	}
 }
 
-func TestCurrentSourceExecutionPolicyHonorsSharingModifiers(t *testing.T) {
+func TestDefaultSharingAndInheritedSharingResolution(t *testing.T) {
 	machine := New(io.Discard)
 	machine.currentMethod = Method{APIVersion: "67.0"}
 	machine.Classes["ExplicitWithout"] = Class{Name: "ExplicitWithout", Modifiers: []string{"without sharing"}}
@@ -78,7 +79,7 @@ func TestResolveDMLModeUsesExplicitModeBeforeSourceDefault(t *testing.T) {
 	}
 }
 
-func TestAPI67OmittedDatabaseOperationsUseUserMode(t *testing.T) {
+func TestDefaultUserModeAPI67OmittedDatabaseOperations(t *testing.T) {
 	modernSOQL := New(io.Discard)
 	modernSOQL.currentMethod = Method{APIVersion: "67.0"}
 	modernSOQLOrg := orgForSecurePolicyTest()
@@ -141,6 +142,149 @@ update as system row;
 	if _, err := legacy.Execute(program); err != nil {
 		t.Fatalf("API 66 omitted DML = %v", err)
 	}
+}
+
+func TestMixedVersionDatabaseOperationMode(t *testing.T) {
+	program, err := CompileAnonymous("Account row = new Account(Id = '001000000000001', Secret__c = 'changed'); update row;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	modern := New(io.Discard)
+	modern.currentMethod = Method{APIVersion: "66.0"}
+	modern.executionUser = stripInaccessibleTestUser()
+	org := orgForSecurePolicyTest()
+	modern.SetOrg(&org)
+	modernMethod := Method{Name: "Modern.run", ClassName: "Modern", APIVersion: "67.0", Program: program}
+	if _, err := modern.callMethod(modernMethod, nil, &Result{}); err == nil {
+		t.Fatal("API 67 callee unexpectedly inherited API 66 system-mode default")
+	}
+
+	legacy := New(io.Discard)
+	legacy.currentMethod = Method{APIVersion: "67.0"}
+	legacy.executionUser = stripInaccessibleTestUser()
+	org = orgForSecurePolicyTest()
+	legacy.SetOrg(&org)
+	legacyMethod := Method{Name: "Legacy.run", ClassName: "Legacy", APIVersion: "66.0", Program: program}
+	if _, err := legacy.callMethod(legacyMethod, nil, &Result{}); err != nil {
+		t.Fatalf("API 66 callee unexpectedly inherited API 67 user-mode default: %v", err)
+	}
+}
+
+func TestTriggerUserModeStillEnforcesRecordVisibility(t *testing.T) {
+	org := privateExecutionPolicyOrg()
+	machine := New(io.Discard)
+	machine.SetOrg(&org)
+	machine.SetCurrentUser(storage.Record{ID: "005000000000001", Object: "User"})
+	machine.currentMethod = Method{APIVersion: "67.0"}
+	machine.currentTrigger = true
+
+	rows, err := machine.searchSuggestionRows("Other", "Widget__c", Null, Null)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows.List) != 0 {
+		t.Fatalf("trigger user-mode suggestions = %d, want 0", len(rows.List))
+	}
+}
+
+func TestSystemModeDMLStillHonorsWithSharing(t *testing.T) {
+	org := privateExecutionPolicyOrg()
+	machine := New(io.Discard)
+	machine.SetOrg(&org)
+	machine.SetCurrentUser(storage.Record{ID: "005000000000001", Object: "User"})
+	machine.currentClass = "WithSharing"
+	machine.currentMethod = Method{APIVersion: "67.0"}
+	if err := machine.RegisterClass(Class{Name: "WithSharing", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	row := Object("Widget__c")
+	row.Fields["Id"] = String("a00000000000002")
+	if err := machine.enforceDMLRecordAccess("update", row, "", false); err == nil {
+		t.Fatal("system-mode DML unexpectedly bypassed with-sharing record access")
+	}
+}
+
+func TestUserModeUpsertChecksMatchedRecord(t *testing.T) {
+	org := privateExecutionPolicyOrg()
+	account := org.Objects["Widget__c"]
+	account.Definition.Fields["External_Key__c"] = storage.Field{APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true}
+	account.Records["a00000000000002"].Fields["External_Key__c"] = storage.StringValue("other-key")
+	org.Objects["Widget__c"] = account
+	program, err := CompileAnonymous("Widget__c row = new Widget__c(Name = 'Changed', External_Key__c = 'other-key'); upsert row External_Key__c;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(io.Discard)
+	machine.SetOrg(&org)
+	machine.SetCurrentUser(storage.Record{ID: "005000000000001", Object: "User"})
+	machine.currentMethod = Method{APIVersion: "67.0"}
+	if _, err := machine.Execute(program); err == nil {
+		t.Fatal("user-mode upsert unexpectedly updated an inaccessible record")
+	}
+}
+
+func TestMixedVersionSharingUsesResolvedCallerFrame(t *testing.T) {
+	machine := New(io.Discard)
+	machine.currentClass = "LegacyChild"
+	machine.currentMethod = Method{APIVersion: "66.0"}
+	machine.callStack = []callFrame{{Symbol: "ModernCaller.run", SharingMode: "with sharing"}}
+	if got := machine.currentSharingMode(); got != "with sharing" {
+		t.Fatalf("legacy callee sharing = %q, want with sharing", got)
+	}
+}
+
+func TestDefaultSharingAuraAndLWCEntryPointsUseWithSharing(t *testing.T) {
+	program, err := CompileAnonymous("return [SELECT Id FROM Widget__c].size();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, framework := range []string{"aura", "lwc"} {
+		t.Run(framework, func(t *testing.T) {
+			org := privateExecutionPolicyOrg()
+			machine := New(io.Discard)
+			machine.SetOrg(&org)
+			machine.SetCurrentUser(storage.Record{ID: "005000000000001", Object: "User"})
+			if err := machine.RegisterClass(Class{Name: "EntryProbe"}); err != nil {
+				t.Fatal(err)
+			}
+			if err := machine.RegisterMethod(Method{Name: "EntryProbe.run", ClassName: "EntryProbe", IsStatic: true, Access: "public", Modifiers: []string{"AuraEnabled"}, APIVersion: "66.0", Program: program}); err != nil {
+				t.Fatal(err)
+			}
+			var invocation UIInvocationResult
+			if framework == "aura" {
+				invocation, err = machine.InvokeAuraAction("EntryProbe", "run", nil)
+			} else {
+				invocation, err = machine.InvokeLWCMethod("EntryProbe", "run", nil)
+			}
+			if err != nil || !invocation.Success {
+				t.Fatalf("invocation = %#v error = %#v, err = %v", invocation, invocation.Error, err)
+			}
+			if got := fmt.Sprint(invocation.ReturnValue); got != "1" {
+				t.Fatalf("%s entry visible rows = %s, want 1", framework, got)
+			}
+		})
+	}
+}
+
+func privateExecutionPolicyOrg() storage.OrgState {
+	org := storage.NewOrgState()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:      "Widget__c",
+			KeyPrefix:    "a00",
+			SharingModel: "Private",
+			Fields: map[string]storage.Field{
+				"Id":   {APIName: "Id", Type: storage.FieldID},
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {ID: "a00000000000001", Object: "Widget__c", System: storage.SystemFields{OwnerID: "005000000000001"}, Fields: map[string]storage.Value{"Name": storage.StringValue("Owned")}},
+			"a00000000000002": {ID: "a00000000000002", Object: "Widget__c", System: storage.SystemFields{OwnerID: "005000000000002"}, Fields: map[string]storage.Value{"Name": storage.StringValue("Other")}},
+		},
+	}
+	return org
 }
 
 func orgForSecurePolicyTest() storage.OrgState {

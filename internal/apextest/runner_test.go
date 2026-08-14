@@ -48,6 +48,139 @@ func runCaseStatuses(run testreport.Run) map[string]testreport.Status {
 	return statuses
 }
 
+func TestAPIVersionMetadataStampsEveryExecutableBody(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "BodyKinds.cls")
+	triggerPath := filepath.Join(root, "BodyKindsTrigger.trigger")
+	testPath := filepath.Join(root, "BodyKindsTest.cls")
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, classPath, `public class BodyKinds {
+  public String field = makeValue();
+  public String prop { get { return field; } set { field = value; } }
+  public BodyKinds() { field = 'ctor'; }
+  static { Integer count = 1; }
+  { field = 'init'; }
+  public String makeValue() { return 'value'; }
+  @future static void futureRun() { Integer count = 1; }
+}`)
+	writeFile(t, classPath+"-meta.xml", `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
+	writeFile(t, triggerPath, `trigger BodyKindsTrigger on Account (before insert) {
+  String body = '''\ntrigger body\n''';
+}`)
+	writeFile(t, triggerPath+"-meta.xml", `<ApexTrigger><apiVersion>67.0</apiVersion></ApexTrigger>`)
+	writeFile(t, testPath, `@isTest private class BodyKindsTest {
+  @testSetup static void setup() { Integer count = 1; }
+  @isTest static void run() { Integer count = 1; }
+}`)
+	writeFile(t, testPath+"-meta.xml", `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
+
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath, triggerPath, testPath}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	methods := compileProjectMethods(index)
+	for _, name := range []string{"BodyKinds.makeValue", "BodyKinds.futureRun"} {
+		var method vm.Method
+		ok := false
+		for _, candidate := range methods {
+			if candidate.Name == name {
+				method, ok = candidate, true
+				break
+			}
+		}
+		if !ok || method.APIVersion != "67.0" {
+			t.Fatalf("method %s = %#v, want API 67.0", name, method)
+		}
+	}
+	classes := compileProjectClasses(index, methods)
+	var bodyKinds vm.Class
+	for _, class := range classes {
+		if class.Name == "BodyKinds" {
+			bodyKinds = class
+			break
+		}
+	}
+	if bodyKinds.Name == "" {
+		t.Fatalf("BodyKinds class was not compiled: %#v", classes)
+	}
+	if len(bodyKinds.Constructors) != 1 || bodyKinds.Constructors[0].APIVersion != "67.0" {
+		t.Fatalf("constructors = %#v", bodyKinds.Constructors)
+	}
+	if len(bodyKinds.StaticInitializers) != 1 || bodyKinds.StaticInitializers[0].APIVersion != "67.0" {
+		t.Fatalf("static initializers = %#v", bodyKinds.StaticInitializers)
+	}
+	if len(bodyKinds.InstanceInitializers) != 2 {
+		t.Fatalf("instance initializers = %#v", bodyKinds.InstanceInitializers)
+	}
+	for _, initializer := range bodyKinds.InstanceInitializers {
+		if initializer.APIVersion != "67.0" {
+			t.Fatalf("instance initializer API version = %q", initializer.APIVersion)
+		}
+	}
+	property := bodyKinds.Fields["prop"]
+	if property.Getter == nil || property.Getter.APIVersion != "67.0" || property.Setter == nil || property.Setter.APIVersion != "67.0" {
+		t.Fatalf("property accessors = %#v", property)
+	}
+	triggers, errs := compileProjectTriggers(index)
+	if len(errs) != 0 || len(triggers) != 1 || triggers[0].APIVersion != "67.0" {
+		t.Fatalf("triggers = %#v errors = %#v", triggers, errs)
+	}
+	setups, setupErrs, _, _ := compileTestSetupMethods(index)
+	if len(setupErrs) != 0 || len(setups["BodyKindsTest"]) != 1 || setups["BodyKindsTest"][0].APIVersion != "67.0" {
+		t.Fatalf("test setups = %#v errors = %#v", setups, setupErrs)
+	}
+	cases := Discover(index, Options{})
+	testMethods, testErrs := compileTestMethods(cases)
+	if len(testErrs) != 0 || testMethods["BodyKindsTest.run"].APIVersion != "67.0" {
+		t.Fatalf("test methods = %#v errors = %#v", testMethods, testErrs)
+	}
+}
+
+func TestTriggerUserModeUsesTriggerBodyAPIVersion(t *testing.T) {
+	root := t.TempDir()
+	triggerPath := filepath.Join(root, "SecureTrigger.trigger")
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, triggerPath, `trigger SecureTrigger on Account (before insert) {
+  String body = '''
+trigger body
+''';
+}`)
+	writeFile(t, triggerPath+"-meta.xml", `<ApexTrigger><apiVersion>67.0</apiVersion></ApexTrigger>`)
+
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{triggerPath}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	triggers, errs := compileProjectTriggers(index)
+	if len(errs) != 0 || len(triggers) != 1 {
+		t.Fatalf("triggers = %#v errors = %#v", triggers, errs)
+	}
+	if triggers[0].APIVersion != "67.0" {
+		t.Fatalf("trigger API version = %q, want 67.0", triggers[0].APIVersion)
+	}
+}
+
+func TestMultilineStringCompilesAtAPI66AndAPI67(t *testing.T) {
+	for _, apiVersion := range []string{"66.0", "67.0"} {
+		t.Run(apiVersion, func(t *testing.T) {
+			for _, body := range []string{
+				"String value = '''\nfield initializer\n''';",
+				"String value = '''\nmethod body\n''';",
+				"String value = '''\ntrigger body\n''';",
+				"String value = '''\ntest body\n''';",
+				"String value = '''same line''';",
+				"String value = '''\n  indented 'quote' \\\\n  value\n''';",
+				"String value = '''''' ;",
+			} {
+				options := vm.CompileOptions{APIVersion: apiVersion, Trigger: strings.Contains(body, "trigger")}
+				if _, err := vm.CompileAnonymousWithOptions(body, options); err != nil {
+					t.Fatalf("API %s body %q: %v", apiVersion, body, err)
+				}
+			}
+		})
+	}
+}
+
 func TestRunFailsClosedOnReservedIdentifierDiagnostic(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "ReservedCurrencyTest.cls")

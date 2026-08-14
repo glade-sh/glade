@@ -13,6 +13,13 @@ func TestAnalyzeAnonymousUsesBodyContracts(t *testing.T) {
 	}
 }
 
+func TestAnalyzeAnonymousAcceptsMultilineStringLiteral(t *testing.T) {
+	result := AnalyzeAnonymous(typesys.Index{}, "String value = '''\nhello\n''';")
+	if result.HasErrors() {
+		t.Fatalf("multiline string diagnostics = %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeAnonymousRejectsNonSalesforcePatternSurface(t *testing.T) {
 	tests := []struct {
 		name   string

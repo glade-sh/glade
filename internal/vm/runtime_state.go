@@ -89,6 +89,7 @@ type VM struct {
 	currentNamespace        string
 	currentMethod           Method
 	currentTrigger          bool
+	entrySharingMode        string
 	reflectionConstructType string
 	testContext             *TestContext
 	localAsyncJobs          []AsyncJob
@@ -445,10 +446,12 @@ func unsupportedCallError(callee string) error {
 }
 
 type callFrame struct {
-	Symbol string
-	File   string
-	Line   int
-	Column int
+	Symbol      string
+	File        string
+	Line        int
+	Column      int
+	APIVersion  string
+	SharingMode string
 }
 
 type TestContext struct {

@@ -578,6 +578,24 @@ func TestParseRanges(t *testing.T) {
 	}
 }
 
+func TestParseMultilineStringLiteralPreservesMethodRange(t *testing.T) {
+	source := "public class Probe {\n  public String run() { return '''\nhello\n'''; }\n}\n"
+	file := NewParser().ParseSource("Probe.cls", source)
+	if file.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	if len(file.Declarations) != 1 || len(file.Declarations[0].Members) != 1 {
+		t.Fatalf("declarations = %#v", file.Declarations)
+	}
+	method := file.Declarations[0].Members[0]
+	if method.Range.End.Offset <= method.Range.Start.Offset {
+		t.Fatalf("method range = %#v", method.Range)
+	}
+	if !strings.Contains(source[method.Range.Start.Offset:method.Range.End.Offset], "'''") {
+		t.Fatalf("method range does not contain multiline literal: %q", source[method.Range.Start.Offset:method.Range.End.Offset])
+	}
+}
+
 func TestWalkFile(t *testing.T) {
 	file := NewParser().ParseSource("Hello.cls", "public class Hello { Integer count; void run() {} }")
 	var names []string

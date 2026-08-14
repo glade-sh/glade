@@ -197,6 +197,9 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 			return Null, err
 		}
 	}
+	if err := vm.enforceDMLRecordAccess(op, args[0], externalIDField, dmlMode == "USER_MODE"); err != nil {
+		return Null, err
+	}
 	var traceRecords []storage.Record
 	if traceIsEnabled(result) {
 		var recordsErr error
@@ -1318,6 +1321,12 @@ func (vm *VM) executeDatabaseMergeWithMode(args []Value, mode ir.DMLMode, result
 		if err := vm.enforceUserModeDMLAccess("delete", duplicateInput, accessLevel); err != nil {
 			return Null, err
 		}
+	}
+	if err := vm.enforceDMLRecordAccess("update", args[0], "", dmlMode == "USER_MODE"); err != nil {
+		return Null, err
+	}
+	if err := vm.enforceDMLRecordAccess("delete", duplicateInput, "", dmlMode == "USER_MODE"); err != nil {
+		return Null, err
 	}
 	recordsForChecks := append([]storage.Record{master[0]}, duplicates...)
 	if err := vm.incrementLimit("dmlStatements", 1); err != nil {
@@ -4884,10 +4893,14 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 			return recordsErr
 		}
 	}
-	if vm.resolveDMLMode(mode) == "USER_MODE" {
+	dmlMode := vm.resolveDMLMode(mode)
+	if dmlMode == "USER_MODE" {
 		if err := vm.enforceUserModeDMLAccess(op, value, Value{}); err != nil {
 			return err
 		}
+	}
+	if err := vm.enforceDMLRecordAccess(op, value, externalIDField, dmlMode == "USER_MODE"); err != nil {
+		return err
 	}
 	traceStart, traceStartedAt = traceSpanStart(result)
 	results, err := vm.applyDML(op, value, true, externalIDField, dml.Options{}, result)

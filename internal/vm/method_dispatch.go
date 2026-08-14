@@ -316,6 +316,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	callerClass := vm.currentClass
 	callerMethod := vm.currentMethod
 	callerTrigger := vm.currentTrigger
+	callerSharingMode := vm.currentSharingMode()
 	callerStatement := vm.currentStatement
 	callerHasStatement := vm.hasStatement
 	vm.scopeStack = append(vm.scopeStack, caller)
@@ -328,10 +329,12 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		vm.currentClass = classNameFromMethod(method.Name)
 	}
 	vm.callStack = append(vm.callStack, callFrame{
-		Symbol: vm.apexMethodFrameSymbol(method),
-		File:   method.File,
-		Line:   method.Line,
-		Column: method.Column,
+		Symbol:      vm.apexMethodFrameSymbol(method),
+		File:        method.File,
+		Line:        method.Line,
+		Column:      method.Column,
+		APIVersion:  method.APIVersion,
+		SharingMode: callerSharingMode,
 	})
 	if traceIsEnabled(result) {
 		traceStart, traceStartedAt := traceSpanStart(result)

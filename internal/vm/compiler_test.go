@@ -16,6 +16,8 @@ func TestCompileDMLAccessModesPreservePrefixAndSuffixSyntax(t *testing.T) {
 		{name: "insert prefix", src: "insert as user record;", mode: ir.DMLModeUser},
 		{name: "update suffix", src: "update record as system;", mode: ir.DMLModeSystem},
 		{name: "upsert suffix", src: "upsert record External_Id__c as user;", mode: ir.DMLModeUser},
+		{name: "delete prefix", src: "delete as user record;", mode: ir.DMLModeUser},
+		{name: "undelete suffix", src: "undelete record as system;", mode: ir.DMLModeSystem},
 		{name: "merge prefix", src: "merge as system master duplicate;", mode: ir.DMLModeSystem},
 		{name: "merge suffix", src: "merge master duplicate as user;", mode: ir.DMLModeUser},
 		{name: "default", src: "delete record;", mode: ir.DMLModeDefault},

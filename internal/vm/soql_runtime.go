@@ -735,7 +735,7 @@ func (vm *VM) soslRecordsForSpec(spec soslReturningObject, objectName string, pa
 			if !ok || !soslRecordMatchesWhere(record, spec.Where) || !vm.soslRecordMatchesPricebook(objectName, record, pricebookID) {
 				continue
 			}
-			if databaseAccessLevelSecurityMode(accessLevel) == "USER_MODE" && !vm.userModeRecordVisible(objectName, record, vm.currentUserID()) {
+			if vm.recordSharingApplies(accessLevel) && !vm.userModeRecordVisible(objectName, record, vm.currentUserID()) {
 				continue
 			}
 			records = append(records, record)
@@ -755,7 +755,7 @@ func (vm *VM) soslRecordsForSpec(spec soslReturningObject, objectName string, pa
 		if !vm.soslRecordMatchesSearch(objectName, record, patterns, scope, accessLevel) {
 			continue
 		}
-		if databaseAccessLevelSecurityMode(accessLevel) == "USER_MODE" && !vm.userModeRecordVisible(objectName, record, vm.currentUserID()) {
+		if vm.recordSharingApplies(accessLevel) && !vm.userModeRecordVisible(objectName, record, vm.currentUserID()) {
 			continue
 		}
 		records = append(records, record)
@@ -999,6 +999,9 @@ func (vm *VM) searchSuggestionRows(query, objectName string, option Value, acces
 		}
 		record := state.Records[storage.ID(id)]
 		if !vm.soslRecordMatchesSuggestion(objectName, record, pattern, accessLevel) {
+			continue
+		}
+		if vm.recordSharingApplies(accessLevel) && !vm.userModeRecordVisible(objectName, record, vm.currentUserID()) {
 			continue
 		}
 		value := vm.vmValueFromRecord(record)
@@ -2292,13 +2295,10 @@ func (vm *VM) parentRelationshipTargets(objectName, relationshipName string) ([]
 }
 
 func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result {
-	if vm.testContext != nil && vm.testContext.RunAsDepth == 0 {
-		return result
-	}
-	if vm.currentTrigger {
-		return result
-	}
 	userMode := strings.EqualFold(strings.TrimSpace(query.SecurityMode), "USER_MODE")
+	if !userMode && vm.testContext != nil && vm.testContext.RunAsDepth == 0 {
+		return result
+	}
 	if !userMode && !vm.currentClassHasSharingMode("with sharing") {
 		return result
 	}
@@ -2477,6 +2477,9 @@ func (vm *VM) currentClassHasSharingMode(mode string) bool {
 
 func (vm *VM) nearestCallStackSharingMode() (string, bool) {
 	for i := len(vm.callStack) - 1; i >= 0; i-- {
+		if mode := strings.TrimSpace(vm.callStack[i].SharingMode); mode != "" {
+			return mode, true
+		}
 		className := classNameFromMethod(vm.callStack[i].Symbol)
 		if hasSuffixFold(className, ".withsharing") {
 			return "with sharing", true
