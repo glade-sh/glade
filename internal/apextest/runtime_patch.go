@@ -1368,7 +1368,7 @@ func runtimePatchCloneProgram(in ir.Program, active map[*ir.Expr]bool, depth int
 	if !ok {
 		return ir.Program{}, false
 	}
-	return ir.Program{Instructions: instructions, Source: in.Source}, true
+	return ir.Program{Instructions: instructions, Source: in.Source, APIVersion: in.APIVersion, Trigger: in.Trigger}, true
 }
 
 func runtimePatchCloneInstructions(in []ir.Instruction, active map[*ir.Expr]bool, depth int) ([]ir.Instruction, bool) {
