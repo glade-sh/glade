@@ -227,6 +227,70 @@ func TestExecMathLongOverloadsRetainLongIdentity(t *testing.T) {
 	}
 }
 
+func TestExecLongCoercionRetainsLongIdentity(t *testing.T) {
+	program, err := CompileAnonymous(`
+Long widened = 1;
+System.assert(widened instanceof Long);
+System.assert(!(widened instanceof Integer));
+List<Long> values = new List<Long>{1};
+System.assert(values[0] instanceof Long);
+System.assert(!(values[0] instanceof Integer));
+System.assert(!((widened << 1) instanceof Integer));
+Long minimum = Integer.MIN_VALUE;
+System.assert(!(Math.abs(minimum) instanceof Integer));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDeclaredLongMethodReturnRetainsLongIdentity(t *testing.T) {
+	returnProgram, err := CompileAnonymous(`return 1;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`System.assert(!(LongSource.get() instanceof Integer));`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterMethod(Method{
+		Name:       "LongSource.get",
+		ClassName:  "LongSource",
+		IsStatic:   true,
+		ReturnType: "Long",
+		Program:    returnProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDecimalPowUsesCaseInsensitiveSurfaceAndIntegerExponent(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('1.953125', Decimal.valueOf('1.25').Pow(3).toPlainString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	program, err = CompileAnonymous(`Decimal.valueOf('1.25').pow(3L);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil {
+		t.Fatal("Decimal.pow accepted a Long exponent despite its Integer-only surface")
+	}
+}
+
 func TestExecMathAbsRejectsIntegerOverflow(t *testing.T) {
 	program, err := CompileAnonymous(`Math.abs(Integer.MIN_VALUE);`)
 	if err != nil {

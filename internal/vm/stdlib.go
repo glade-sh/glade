@@ -24,7 +24,7 @@ func callStdlibMember(receiver Value, method string, args []Value) (Value, Value
 		value, handled, err := callStringMember(receiver, method, args)
 		return value, receiver, false, handled, err
 	case ValueDecimal:
-		method = canonicalStdlibMemberName(method, "abs", "setScale", "round", "intValue", "longValue", "doubleValue", "format", "toPlainString", "divide", "scale", "precision", "stripTrailingZeros")
+		method = canonicalStdlibMemberName(method, "abs", "setScale", "round", "intValue", "longValue", "doubleValue", "format", "toPlainString", "divide", "pow", "scale", "precision", "stripTrailingZeros")
 		return callDecimalMember(receiver, method, args)
 	case ValueList:
 		method = canonicalStdlibMemberName(method, "add", "addAll", "clear", "clone", "contains", "deepClone", "get", "getSObjectType", "isEmpty", "iterator", "remove", "set", "size", "sort")

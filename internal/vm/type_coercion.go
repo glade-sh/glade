@@ -1185,6 +1185,9 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 		return vm.coerceAssignable(typeName, value.List[0])
 	}
+	if (strings.EqualFold(typeName, "Integer") || strings.EqualFold(typeName, "Long")) && value.Kind == ValueInt {
+		return integerValueForType(value, typeName), nil
+	}
 	if (strings.EqualFold(typeName, "Decimal") || strings.EqualFold(typeName, "Double")) && value.Kind == ValueInt {
 		decimal, err := decimalFromText(strconv.FormatInt(value.Int, 10))
 		if err != nil {

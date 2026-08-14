@@ -59,6 +59,15 @@ func longIntValue(v int64) Value {
 	return value
 }
 
+func integerValueForType(value Value, typeName string) Value {
+	if strings.EqualFold(strings.TrimSpace(typeName), "Long") {
+		value.Type = "Long"
+	} else if strings.EqualFold(strings.TrimSpace(typeName), "Integer") {
+		value.Type = ""
+	}
+	return value
+}
+
 func Decimal(v float64) Value {
 	return Value{Kind: ValueDecimal, Decimal: v, Text: strconv.FormatFloat(v, 'f', -1, 64)}
 }

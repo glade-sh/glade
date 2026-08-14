@@ -183,9 +183,17 @@ func evalBinary(op string, left, right Value) (Value, error) {
 			return Null, fmt.Errorf("operator %s shift count out of range", op)
 		}
 		if op == "<<" {
-			return Int(left.Int << uint(right.Int)), nil
+			result := Int(left.Int << uint(right.Int))
+			if isLongIntValue(left) {
+				result.Type = "Long"
+			}
+			return result, nil
 		}
-		return Int(left.Int >> uint(right.Int)), nil
+		result := Int(left.Int >> uint(right.Int))
+		if isLongIntValue(left) {
+			result.Type = "Long"
+		}
+		return result, nil
 	case "==":
 		return Bool(left.Equal(right)), nil
 	case "!=":
@@ -589,7 +597,7 @@ func coerceAssignable(typeName string, value Value) (Value, error) {
 	switch canonicalType {
 	case "Integer", "Long":
 		if value.Kind == ValueInt {
-			return value, nil
+			return integerValueForType(value, canonicalType), nil
 		}
 	case "Decimal", "Double":
 		if value.Kind == ValueInt {

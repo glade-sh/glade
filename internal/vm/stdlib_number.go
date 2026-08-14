@@ -115,7 +115,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		return decimalAsDouble(receiver), receiver, false, true, nil
 	case "pow":
-		if len(args) != 1 || args[0].Kind != ValueInt {
+		if len(args) != 1 || args[0].Kind != ValueInt || isLongIntValue(args[0]) {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.pow expects Integer")
 		}
 		if err := ensureFiniteDecimal("Decimal.pow", receiver.Decimal); err != nil {
