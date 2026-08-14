@@ -31,6 +31,9 @@ func callIntegerMember(receiver Value, method string, args []Value) (Value, Valu
 	}
 }
 func callDecimalMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if isFloatBackedDecimal(receiver) && (strings.EqualFold(method, "setScale") || strings.EqualFold(method, "toPlainString")) {
+		return Null, receiver, false, true, unsupportedCallError("Double." + method)
+	}
 	switch method {
 	case "abs":
 		if len(args) != 0 {

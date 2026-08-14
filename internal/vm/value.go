@@ -53,6 +53,12 @@ func Int(v int64) Value {
 	return Value{Kind: ValueInt, Int: v}
 }
 
+func longIntValue(v int64) Value {
+	value := Int(v)
+	value.Type = "Long"
+	return value
+}
+
 func Decimal(v float64) Value {
 	return Value{Kind: ValueDecimal, Decimal: v, Text: strconv.FormatFloat(v, 'f', -1, 64)}
 }
@@ -72,14 +78,45 @@ func decimalFromText(text string) (Value, error) {
 	if text == "" {
 		return Null, fmt.Errorf("decimal value cannot be empty")
 	}
-	if _, ok := new(big.Rat).SetString(text); !ok {
-		return Null, fmt.Errorf("invalid decimal %q", text)
+	canonical, err := canonicalDecimalText(text)
+	if err != nil {
+		return Null, err
 	}
 	parsed, err := strconv.ParseFloat(text, 64)
 	if err != nil {
 		return Null, err
 	}
-	return Value{Kind: ValueDecimal, Decimal: parsed, Text: text}, nil
+	return Value{Kind: ValueDecimal, Decimal: parsed, Text: canonical}, nil
+}
+
+func canonicalDecimalText(text string) (string, error) {
+	text = strings.TrimSpace(text)
+	if strings.HasPrefix(text, "+") {
+		text = text[1:]
+	}
+	rat, ok := new(big.Rat).SetString(text)
+	if !ok {
+		return "", fmt.Errorf("invalid decimal %q", text)
+	}
+	mantissa := text
+	exponent := 0
+	if expIndex := strings.IndexAny(mantissa, "eE"); expIndex >= 0 {
+		parsed, err := strconv.Atoi(mantissa[expIndex+1:])
+		if err != nil {
+			return "", fmt.Errorf("invalid decimal %q", text)
+		}
+		exponent = parsed
+		mantissa = mantissa[:expIndex]
+	}
+	fractionDigits := 0
+	if dotIndex := strings.IndexByte(mantissa, '.'); dotIndex >= 0 {
+		fractionDigits = len(mantissa) - dotIndex - 1
+	}
+	scale := fractionDigits - exponent
+	if scale < 0 {
+		scale = 0
+	}
+	return rat.FloatString(scale), nil
 }
 
 func decimalFromRat(value *big.Rat, scale int64) Value {

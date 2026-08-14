@@ -2388,7 +2388,7 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		if err != nil {
 			return Null, err
 		}
-		return Int(rounded), nil
+		return longIntValue(rounded), nil
 	case "Math.signum":
 		sign := 0
 		if !isFloatBackedDecimal(args[0]) {
@@ -2473,16 +2473,17 @@ func mathBinary(callee string, args []Value) (Value, error) {
 	}
 	if callee == "Math.max" || callee == "Math.min" {
 		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {
+			longResult := isLongIntValue(args[0]) || isLongIntValue(args[1])
 			if callee == "Math.max" {
 				if args[0].Int >= args[1].Int {
-					return args[0], nil
+					return mathIntegerResult(args[0], longResult), nil
 				}
-				return args[1], nil
+				return mathIntegerResult(args[1], longResult), nil
 			}
 			if args[0].Int <= args[1].Int {
-				return args[0], nil
+				return mathIntegerResult(args[0], longResult), nil
 			}
-			return args[1], nil
+			return mathIntegerResult(args[1], longResult), nil
 		}
 		if !isFloatBackedDecimal(args[0]) && !isFloatBackedDecimal(args[1]) {
 			if result, ok := exactMathExtremum(args[0], args[1], callee == "Math.max"); ok {
@@ -2511,7 +2512,11 @@ func mathBinary(callee string, args []Value) (Value, error) {
 			return Null, fmt.Errorf("Math.mod divisor cannot be zero")
 		}
 		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {
-			return Int(args[0].Int % args[1].Int), nil
+			result := Int(args[0].Int % args[1].Int)
+			if isLongIntValue(args[0]) || isLongIntValue(args[1]) {
+				result.Type = "Long"
+			}
+			return result, nil
 		}
 		return decimalAsDouble(Decimal(math.Mod(left, right))), nil
 	case "Math.pow":
@@ -2521,6 +2526,17 @@ func mathBinary(callee string, args []Value) (Value, error) {
 	default:
 		return Null, unsupportedCallError(callee)
 	}
+}
+
+func isLongIntValue(value Value) bool {
+	return value.Kind == ValueInt && strings.EqualFold(strings.TrimSpace(value.Type), "Long")
+}
+
+func mathIntegerResult(value Value, longResult bool) Value {
+	if longResult {
+		value.Type = "Long"
+	}
+	return value
 }
 
 func exactMathRound(callee string, value Value, mode string) (Value, bool) {

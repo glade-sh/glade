@@ -610,19 +610,19 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		case ValueNull:
 			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 		case ValueInt:
-			return args[0], nil
+			return longIntValue(args[0].Int), nil
 		case ValueDecimal:
 			converted, err := int64FromDecimalValue(callee, args[0])
 			if err != nil {
 				return Null, err
 			}
-			return Int(converted), nil
+			return longIntValue(converted), nil
 		case ValueString:
 			parsed, err := strconv.ParseInt(strings.TrimSpace(args[0].Text), 10, 64)
 			if err != nil {
 				return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s invalid integer %q", callee, args[0].Text))
 			}
-			return Int(parsed), nil
+			return longIntValue(parsed), nil
 		default:
 			return Null, fmt.Errorf("%s expects String or numeric argument", callee)
 		}
