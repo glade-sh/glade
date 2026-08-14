@@ -144,8 +144,8 @@ func TestCIRaceClassifierFullMatchesManifest(t *testing.T) {
 		}
 	}
 	sort.Strings(want)
-	if len(got) != 64 || !reflect.DeepEqual(got, want) {
-		t.Fatalf("full packages = %d/%v, want 64 exact manifest packages", len(got), got)
+	if len(got) != 65 || !reflect.DeepEqual(got, want) {
+		t.Fatalf("full packages = %d/%v, want 65 exact manifest packages", len(got), got)
 	}
 }
 
@@ -210,7 +210,7 @@ func TestCIRaceClassifierFallsBackToFullOnDiffFailure(t *testing.T) {
 	if err != nil {
 		t.Fatalf("diff failure did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 64 || !strings.Contains(diagnostic, "git diff failed") {
+	if len(got) != 65 || !strings.Contains(diagnostic, "git diff failed") {
 		t.Fatalf("diff failure selected %d packages without diagnostic: %s", len(got), diagnostic)
 	}
 }
@@ -225,7 +225,7 @@ func TestCIRaceClassifierFallsBackToFullOnGoDeletion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("deletion did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 64 || !strings.Contains(diagnostic, "deleted Go file") {
+	if len(got) != 65 || !strings.Contains(diagnostic, "deleted Go file") {
 		t.Fatalf("deletion selected %d packages without diagnostic: %s", len(got), diagnostic)
 	}
 }
@@ -240,8 +240,8 @@ func TestCIRaceClassifierFallsBackToFullOnNestedModuleChange(t *testing.T) {
 	if err != nil {
 		t.Fatalf("nested module change did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 64 {
-		t.Fatalf("nested module change selected %d packages, want full 64", len(got))
+	if len(got) != 65 {
+		t.Fatalf("nested module change selected %d packages, want full 65", len(got))
 	}
 }
 
@@ -266,7 +266,7 @@ esac
 	if err != nil {
 		t.Fatalf("graph failure did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 64 || !strings.Contains(diagnostic, "dependency graph failed") {
+	if len(got) != 65 || !strings.Contains(diagnostic, "dependency graph failed") {
 		t.Fatalf("graph failure selected %d packages without diagnostic: %s", len(got), diagnostic)
 	}
 }

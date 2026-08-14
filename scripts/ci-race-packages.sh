@@ -22,8 +22,8 @@ for lane in manifest["lanes"].values():
     if not isinstance(lane, list):
         raise SystemExit("race classifier rejected invalid package lane")
     packages.extend(lane)
-if len(packages) != 64 or len(set(packages)) != 64 or any(not value.startswith(module + "/") for value in packages):
-    raise SystemExit("race classifier requires 64 unique in-module packages")
+if len(packages) != 65 or len(set(packages)) != 65 or any(not value.startswith(module + "/") for value in packages):
+    raise SystemExit("race classifier requires 65 unique in-module packages")
 print(json.dumps(sorted("." + value[len(module):] for value in packages), separators=(",", ":")))
 PY
 }

@@ -3075,8 +3075,8 @@ func TestCIPackageLanesRouteThroughCheckedManifest(t *testing.T) {
 	for _, packages := range document.Lanes {
 		totalPackages += len(packages)
 	}
-	if totalPackages != 64 {
-		t.Fatalf("manifest package union = %d, want 64", totalPackages)
+	if totalPackages != 65 {
+		t.Fatalf("manifest package union = %d, want 65", totalPackages)
 	}
 	remaining := document.Lanes["remaining-go"]
 	if len(remaining) == 0 {
@@ -3498,7 +3498,7 @@ for argument in "$@"; do
   if [[ "$argument" == ./* ]]; then
     package="github.com/glade-sh/glade/${argument#./}"
     action=pass
-    if [[ "$package" == "github.com/glade-sh/glade/internal/ir" || "$package" == "github.com/glade-sh/glade/internal/lwcruntime/embed" ]]; then action=skip; fi
+    if [[ "$package" == "github.com/glade-sh/glade/internal/lwcruntime/embed" ]]; then action=skip; fi
     if [[ "$package" == "$FIXTURE_FAIL_PACKAGE" ]]; then action=fail; rc=23; fi
     printf '{"Action":"%s","Package":"%s"}\n' "$action" "$package"
   fi
