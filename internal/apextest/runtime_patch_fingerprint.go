@@ -252,6 +252,7 @@ func (writer *runtimePatchFingerprintWriter) instruction(instruction ir.Instruct
 	writer.instructions(0x0f, instruction.Finally, false, depth+1)
 	writer.cases(0x10, instruction.Cases, depth+1)
 	writer.integer(0x11, int64(instruction.Pos))
+	writer.integer(0x12, int64(instruction.DMLMode))
 }
 
 func (writer *runtimePatchFingerprintWriter) instructionPointer(tag byte, instruction *ir.Instruction, depth int) {

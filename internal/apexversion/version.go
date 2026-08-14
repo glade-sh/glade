@@ -19,8 +19,8 @@ func Major(raw string) (int, bool) {
 	if len(parts) == 0 || parts[0] == "" {
 		return 0, false
 	}
-	major, err := strconv.Atoi(parts[0])
-	if err != nil || major < 1 {
+	major, ok := unsignedComponent(parts[0])
+	if !ok || major < 1 {
 		return 0, false
 	}
 	if len(parts) > 2 {
@@ -30,11 +30,24 @@ func Major(raw string) (int, bool) {
 		if parts[1] == "" {
 			return 0, false
 		}
-		if _, err := strconv.Atoi(parts[1]); err != nil {
+		if _, ok := unsignedComponent(parts[1]); !ok {
 			return 0, false
 		}
 	}
 	return major, true
+}
+
+func unsignedComponent(raw string) (int, bool) {
+	if raw == "" {
+		return 0, false
+	}
+	for _, char := range raw {
+		if char < '0' || char > '9' {
+			return 0, false
+		}
+	}
+	value, err := strconv.Atoi(raw)
+	return value, err == nil
 }
 
 func Enabled(raw string, feature Feature) bool {

@@ -12,6 +12,8 @@ func TestMajor(t *testing.T) {
 		{raw: " 29 ", want: 29, ok: true},
 		{raw: "", ok: false},
 		{raw: "67.x", ok: false},
+		{raw: "67.-1", ok: false},
+		{raw: "+67.0", ok: false},
 		{raw: "67.0.1", ok: false},
 		{raw: "0.0", ok: false},
 	} {

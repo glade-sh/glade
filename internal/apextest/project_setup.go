@@ -1093,6 +1093,7 @@ func compileProjectMethod(className, methodName, returnType string, modifiers []
 		Access:     accessModifier(modifiers),
 		Modifiers:  modifiers,
 		File:       file,
+		APIVersion: apiVersion,
 		Line:       r.Start.Line,
 		Column:     r.Start.Column,
 	}, nil

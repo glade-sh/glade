@@ -143,6 +143,11 @@ func TestRuntimePatchFingerprintBindsBehaviorAffectingPayload(t *testing.T) {
 			method.Program.Source = "changed source"
 			entry.Methods["Example.run"] = method
 		}},
+		{"dml mode", func(entry *runtimeCacheEntry) {
+			method := entry.Methods["Example.run"]
+			method.Program.Instructions[0].DMLMode = ir.DMLModeUser
+			entry.Methods["Example.run"] = method
+		}},
 		{"class", func(entry *runtimeCacheEntry) { entry.Classes[0].Name = "ChangedClass" }},
 		{"trigger", func(entry *runtimeCacheEntry) { entry.Triggers[0].Timing = "after" }},
 		{"field value", func(entry *runtimeCacheEntry) {
