@@ -3,6 +3,8 @@ package vm
 import (
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestExecDecimalPreservesExactArithmeticAndStorageText(t *testing.T) {
@@ -288,6 +290,77 @@ System.assertEquals('1.953125', Decimal.valueOf('1.25').Pow(3).toPlainString());
 	}
 	if _, err := Execute(program, nil); err == nil {
 		t.Fatal("Decimal.pow accepted a Long exponent despite its Integer-only surface")
+	}
+}
+
+func TestExecLongConstantsAndJSONPathsRetainIdentity(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assert(!(Long.MAX_VALUE instanceof Integer));
+System.assert(!(Long.MIN_VALUE instanceof Integer));
+JSONParser parser = JSON.createParser('1');
+parser.nextToken();
+System.assert(!(parser.getLongValue() instanceof Integer));
+Object parsed = JSON.deserialize('1', Long.class);
+System.assert(!(parsed instanceof Integer));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDoublePathsRetainDoubleIdentity(t *testing.T) {
+	program, err := CompileAnonymous(`
+JSONParser parser = JSON.createParser('9007199254740993.0');
+parser.nextToken();
+Double parsed = parser.getDoubleValue();
+System.assertEquals(9007199254740992, parsed + 1);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+	location := newLocation(Decimal(37.7749), Decimal(-122.4194))
+	if !isFloatBackedDecimal(location.Fields["latitude"]) || !isFloatBackedDecimal(location.Fields["longitude"]) {
+		t.Fatalf("Location coordinates = %#v, want Double-backed values", location.Fields)
+	}
+	distance, err := locationDistance(location, newLocation(Decimal(34.0522), Decimal(-118.2437)), "mi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !isFloatBackedDecimal(distance) {
+		t.Fatalf("Location distance = %#v, want Double-backed value", distance)
+	}
+}
+
+func TestTestLoadDataPreservesExactDecimalText(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Probe__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Probe__c",
+		Fields: map[string]storage.Field{
+			"Amount__c": {APIName: "Amount__c", Type: storage.FieldDecimal},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	value, err := machine.testLoadDataFieldValue("Probe__c", "Amount__c", "9007199254740993.01")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Text != "9007199254740993.01" {
+		t.Fatalf("loaded Decimal text = %q, want exact source text", value.Text)
+	}
+}
+
+func TestDecimalDivisionRejectsUntextedDecimal(t *testing.T) {
+	receiver := Value{Kind: ValueDecimal, Decimal: 1}
+	_, _, _, handled, err := callDecimalMember(receiver, "divide", []Value{Decimal(3), Int(2)})
+	if !handled || err == nil || !strings.Contains(err.Error(), "Decimal division exact semantics are deferred") {
+		t.Fatalf("untexted Decimal division = handled %v, err %v; want explicit unsupported", handled, err)
 	}
 }
 

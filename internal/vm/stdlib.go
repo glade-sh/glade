@@ -90,17 +90,6 @@ func decimalRoundingMode(value Value) (string, error) {
 	}
 }
 
-func decimalOperand(value Value) (float64, bool) {
-	switch value.Kind {
-	case ValueDecimal:
-		return value.Decimal, true
-	case ValueInt:
-		return float64(value.Int), true
-	default:
-		return 0, false
-	}
-}
-
 func decimalPlainText(value Value) string {
 	text := strings.TrimSpace(value.Text)
 	if text != "" {
@@ -723,43 +712,6 @@ func roundHalfEven(n float64) float64 {
 		return t + 1
 	}
 	return t - 1
-}
-
-func decimalDivide(dividend, divisor float64, scale int64, mode string) (float64, error) {
-	const maxLocalScale int64 = 15
-	if err := ensureFiniteDecimal("Decimal.divide", dividend); err != nil {
-		return 0, err
-	}
-	if err := ensureFiniteDecimal("Decimal.divide", divisor); err != nil {
-		return 0, err
-	}
-	if divisor == 0 {
-		return 0, fmt.Errorf("Decimal.divide division by zero")
-	}
-	if scale > maxLocalScale {
-		return 0, unsupportedCallError(fmt.Sprintf("Decimal.divide scale greater than %d is not supported by the local decimal model", maxLocalScale))
-	}
-	divRat := new(big.Rat)
-	if _, ok := divRat.SetString(strconv.FormatFloat(dividend, 'f', -1, 64)); !ok {
-		return 0, fmt.Errorf("Decimal.divide dividend cannot be represented")
-	}
-	divsRat := new(big.Rat)
-	if _, ok := divsRat.SetString(strconv.FormatFloat(divisor, 'f', -1, 64)); !ok {
-		return 0, fmt.Errorf("Decimal.divide divisor cannot be represented")
-	}
-	result := new(big.Rat).Quo(divRat, divsRat)
-	factor := new(big.Int).Exp(big.NewInt(10), big.NewInt(scale), nil)
-	scaled := new(big.Rat).Mul(result, new(big.Rat).SetInt(factor))
-	rounded, err := roundScaledRat("Decimal.divide", scaled, mode)
-	if err != nil {
-		return 0, err
-	}
-	resultRat := new(big.Rat).SetFrac(rounded, factor)
-	f, _ := resultRat.Float64()
-	if math.IsInf(f, 0) || math.IsNaN(f) {
-		return 0, fmt.Errorf("Decimal.divide result must be finite")
-	}
-	return f, nil
 }
 
 func int32FromFloat(name string, value float64) (int32, error) {

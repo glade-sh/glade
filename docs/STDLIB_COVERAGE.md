@@ -97,7 +97,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Datetime | `Datetime.now` | `supported` | Returns the deterministic local runtime datetime. |
 | Datetime | `Datetime.valueOf` | `supported` | Parses supported datetime strings. |
 | Decimal | `Decimal.divide(Decimal,Integer,RoundingMode)` | `unsupported` | Exact Decimal division is fail-closed pending the bounded Salesforce oracle and Task 4.2 implementation. |
-| Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
+| Decimal | `Decimal.doubleValue` | `supported` | Returns an explicitly Double-backed local value. |
 | Decimal | `Decimal.intValue` | `supported` | Truncates to integer. |
 | Decimal | `Decimal.round` | `supported` | Oracle-pinned finite Decimal rounding uses Salesforce default HALF_EVEN ties and explicit RoundingMode behavior. |
 | Decimal | `Decimal.setScale` | `supported` | Oracle-pinned finite Decimal scaling covers positive and negative scales, RoundingMode ties, UNNECESSARY MathException, and Salesforce scale bounds. |

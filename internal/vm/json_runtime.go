@@ -2030,20 +2030,32 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 			if text, textOK := raw.(string); textOK {
 				parsed, err := strconv.ParseInt(strings.TrimSpace(text), 10, 64)
 				if err == nil {
+					if canonical == "Long" {
+						return longIntValue(parsed), true, nil
+					}
 					return Int(parsed), true, nil
 				}
 			}
 			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
+		if canonical == "Long" {
+			return longIntValue(value), true, nil
+		}
 		return Int(value), true, nil
 	case "Decimal", "Double":
 		if number, ok := raw.(json.Number); ok {
+			if canonical == "Decimal" {
+				decimal, err := decimalFromText(number.String())
+				if err != nil {
+					return Null, true, jsonTypeMappingError(canonical, raw)
+				}
+				return decimal, true, nil
+			}
 			parsed, err := strconv.ParseFloat(number.String(), 64)
 			if err != nil {
 				return Null, true, jsonTypeMappingError(canonical, raw)
 			}
-			decimal := Decimal(parsed)
-			decimal.Text = number.String()
+			decimal := decimalAsDouble(Decimal(parsed))
 			return decimal, true, nil
 		}
 		value, ok := jsonDecimalNumber(raw)
@@ -2053,12 +2065,19 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 				if trimmed == "" {
 					return Null, true, nil
 				}
-				parsed, err := strconv.ParseFloat(trimmed, 64)
-				if err == nil {
-					return Decimal(parsed), true, nil
+				if canonical == "Decimal" {
+					decimal, err := decimalFromText(trimmed)
+					if err == nil {
+						return decimal, true, nil
+					}
+				} else if parsed, err := strconv.ParseFloat(trimmed, 64); err == nil {
+					return decimalAsDouble(Decimal(parsed)), true, nil
 				}
 			}
 			return Null, true, jsonTypeMappingError(canonical, raw)
+		}
+		if canonical == "Double" {
+			return decimalAsDouble(Decimal(value)), true, nil
 		}
 		return Decimal(value), true, nil
 	case "Date":

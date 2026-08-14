@@ -2827,9 +2827,9 @@ func newCookie(args []Value) (Value, error) {
 
 func newLocation(latitude, longitude Value) Value {
 	location := Object("Location")
-	latitudeValue := Decimal(numericFloat(latitude))
+	latitudeValue := decimalAsDouble(Decimal(numericFloat(latitude)))
 	latitudeValue.Text = doubleDisplayText(latitudeValue.Decimal)
-	longitudeValue := Decimal(numericFloat(longitude))
+	longitudeValue := decimalAsDouble(Decimal(numericFloat(longitude)))
 	longitudeValue.Text = doubleDisplayText(longitudeValue.Decimal)
 	location.Fields["latitude"] = latitudeValue
 	location.Fields["longitude"] = longitudeValue
@@ -3004,7 +3004,7 @@ func locationDistance(left, right Value, unit string) (Value, error) {
 	default:
 		return Null, fmt.Errorf("Location.getDistance unit must be mi, km, or m")
 	}
-	return Decimal(distance), nil
+	return decimalAsDouble(Decimal(distance)), nil
 }
 
 func newQueueableDuplicateSignatureBuilder() Value {

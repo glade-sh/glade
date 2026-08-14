@@ -229,32 +229,13 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) < 2 || len(args) > 3 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects divisor, scale, and optional RoundingMode")
 		}
-		divisor, ok := decimalOperand(args[0])
-		if !ok {
+		if args[0].Kind != ValueDecimal {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects Decimal divisor")
 		}
 		if args[1].Kind != ValueInt {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects Integer scale")
 		}
-		if !isFloatBackedDecimal(receiver) {
-			return Null, receiver, false, true, unsupportedCallError("Decimal division exact semantics are deferred")
-		}
-		if args[1].Int < 0 {
-			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects non-negative scale")
-		}
-		mode := "HALF_UP"
-		if len(args) == 3 {
-			parsedMode, err := decimalRoundingMode(args[2])
-			if err != nil {
-				return Null, receiver, false, true, err
-			}
-			mode = parsedMode
-		}
-		result, err := decimalDivide(receiver.Decimal, divisor, args[1].Int, mode)
-		if err != nil {
-			return Null, receiver, false, true, err
-		}
-		return Decimal(result), receiver, false, true, nil
+		return Null, receiver, false, true, unsupportedCallError("Decimal division exact semantics are deferred")
 	default:
 		return Null, receiver, false, false, nil
 	}

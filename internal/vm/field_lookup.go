@@ -174,9 +174,9 @@ func builtinStaticField(typeName, fieldName string) (Value, bool) {
 	case "Long":
 		switch fieldName {
 		case "MAX_VALUE":
-			return Int(math.MaxInt64), true
+			return longIntValue(math.MaxInt64), true
 		case "MIN_VALUE":
-			return Int(math.MinInt64), true
+			return longIntValue(math.MinInt64), true
 		}
 	case "Dom.XmlNodeType", "dom.XmlNodeType":
 		return domXmlNodeTypeValue(fieldName)
