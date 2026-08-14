@@ -93,6 +93,16 @@ func TestSharingDefaultFollowsAPIVersionInheritanceChain(t *testing.T) {
 	}
 }
 
+func TestDuplicateClassMergeKeepsPreferredAPIVersion(t *testing.T) {
+	merged := mergeDuplicateClass(
+		Class{Name: "Shared", APIVersion: "66.0", Dependency: true},
+		Class{Name: "Shared", APIVersion: "67.0"},
+	)
+	if merged.APIVersion != "67.0" {
+		t.Fatalf("merged API version = %q, want 67.0", merged.APIVersion)
+	}
+}
+
 func TestResolveDMLModeUsesExplicitModeBeforeSourceDefault(t *testing.T) {
 	machine := New(io.Discard)
 	machine.currentMethod = Method{APIVersion: "67.0"}
@@ -225,6 +235,8 @@ Search.SearchResults found = Search.find('FIND {Other} IN ALL FIELDS RETURNING W
 if (found.get('Widget__c').size() != 0) { throw new DmlException('trigger Search.find exposed another owner'); }
 List<List<SObject>> queried = Search.query('FIND {Other} IN ALL FIELDS RETURNING Widget__c(Id, Name)');
 if (queried[0].size() != 0) { throw new DmlException('trigger Search.query exposed another owner'); }
+List<Widget__c> inlineRows = (List<Widget__c>)([FIND 'Other' IN ALL FIELDS RETURNING Widget__c(Id, Name)][0]);
+if (inlineRows.size() != 0) { throw new DmlException('trigger inline SOSL exposed another owner'); }
 Search.SuggestionOption option = new Search.SuggestionOption();
 if (Search.suggest('Other', 'Widget__c', option).getSuggestionResults().size() != 0) { throw new DmlException('trigger Search.suggest exposed another owner'); }
 `, CompileOptions{APIVersion: "67.0", Trigger: true})
@@ -281,8 +293,30 @@ func TestTriggerUserModePublicSOQLChecksFieldPermissions(t *testing.T) {
 	}
 }
 
+func TestTriggerUserModePublicSOQLChecksObjectPermissions(t *testing.T) {
+	program, err := CompileAnonymousWithOptions("List<Denied__c> rows = [SELECT Id FROM Denied__c];", CompileOptions{APIVersion: "67.0", Trigger: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := orgForSecurePolicyTest()
+	org.Objects["Denied__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Denied__c", KeyPrefix: "a99", Fields: map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine := New(io.Discard)
+	machine.SetOrg(&org)
+	machine.executionUser = stripInaccessibleTestUser()
+	if _, err := machine.runTrigger(Trigger{Name: "DeniedSecurityTrigger", Object: "Denied__c", Timing: "before", Operation: "insert", APIVersion: "67.0", Program: program}, nil, nil, &Result{}); err == nil {
+		t.Fatal("trigger user-mode SOQL unexpectedly bypassed object permissions")
+	}
+}
+
 func TestTriggerUserModePublicDMLChecksRecordPermissions(t *testing.T) {
-	program, err := CompileAnonymousWithOptions("update Trigger.new;", CompileOptions{APIVersion: "67.0", Trigger: true})
+	program, err := CompileAnonymousWithOptions(`
+update Trigger.new;
+List<Database.SaveResult> databaseResults = Database.update(Trigger.new);
+if (databaseResults.size() == 0 || databaseResults[0].isSuccess()) { throw new DmlException('trigger Database.update bypassed record permissions'); }
+`, CompileOptions{APIVersion: "67.0", Trigger: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -374,6 +408,104 @@ func TestDefaultSharingAuraAndLWCEntryPointsUseWithSharing(t *testing.T) {
 				t.Fatalf("%s entry visible rows = %s, want 1", framework, got)
 			}
 		})
+	}
+}
+
+func TestAsyncBodiesUseOwnAPIVersionForDatabaseDefaults(t *testing.T) {
+	bodySource := "List<Account> rows = [SELECT Id, Secret__c FROM Account];"
+	for _, test := range []struct {
+		name   string
+		caller string
+		setup  func(string, ir.Program) Class
+	}{
+		{
+			name:   "future",
+			caller: "Test.startTest(); AsyncVersionWorker.run(); Test.stopTest();",
+			setup: func(api string, body ir.Program) Class {
+				return Class{
+					Name:       "AsyncVersionWorker",
+					APIVersion: api,
+					Methods: map[string]Method{
+						"run": {Name: "AsyncVersionWorker.run", ClassName: "AsyncVersionWorker", IsStatic: true, Modifiers: []string{"future"}, APIVersion: api, Program: body},
+					},
+				}
+			},
+		},
+		{
+			name:   "queueable",
+			caller: "Test.startTest(); System.enqueueJob(new AsyncVersionWorker()); Test.stopTest();",
+			setup: func(api string, body ir.Program) Class {
+				return Class{
+					Name:       "AsyncVersionWorker",
+					APIVersion: api,
+					Interfaces: []string{"Queueable"},
+					Methods: map[string]Method{
+						"execute": {Name: "AsyncVersionWorker.execute", ClassName: "AsyncVersionWorker", Params: []Param{{Name: "context", Type: "QueueableContext"}}, APIVersion: api, Program: body},
+					},
+				}
+			},
+		},
+		{
+			name:   "batch",
+			caller: "Test.startTest(); Database.executeBatch(new AsyncVersionWorker(), 1); Test.stopTest();",
+			setup: func(api string, body ir.Program) Class {
+				start, _ := CompileAnonymousWithOptions("return new List<Account>{new Account(Name = 'scope')};", CompileOptions{APIVersion: api})
+				finish, _ := CompileAnonymousWithOptions("return null;", CompileOptions{APIVersion: api})
+				return Class{
+					Name:       "AsyncVersionWorker",
+					APIVersion: api,
+					Interfaces: []string{"Database.Batchable<Account>"},
+					Methods: map[string]Method{
+						"start":   {Name: "AsyncVersionWorker.start", ClassName: "AsyncVersionWorker", ReturnType: "Iterable<Account>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, APIVersion: api, Program: start},
+						"execute": {Name: "AsyncVersionWorker.execute", ClassName: "AsyncVersionWorker", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<Account>"}}, APIVersion: api, Program: body},
+						"finish":  {Name: "AsyncVersionWorker.finish", ClassName: "AsyncVersionWorker", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, APIVersion: api, Program: finish},
+					},
+				}
+			},
+		},
+		{
+			name:   "scheduled",
+			caller: "Test.startTest(); System.schedule('nightly', '0 0 0 * * ?', new AsyncVersionWorker()); Test.stopTest();",
+			setup: func(api string, body ir.Program) Class {
+				return Class{
+					Name:       "AsyncVersionWorker",
+					APIVersion: api,
+					Interfaces: []string{"Schedulable"},
+					Methods: map[string]Method{
+						"execute": {Name: "AsyncVersionWorker.execute", ClassName: "AsyncVersionWorker", Params: []Param{{Name: "context", Type: "SchedulableContext"}}, APIVersion: api, Program: body},
+					},
+				}
+			},
+		},
+	} {
+		for _, api := range []string{"66.0", "67.0"} {
+			t.Run(test.name+"/api"+api, func(t *testing.T) {
+				body, err := CompileAnonymousWithOptions(bodySource, CompileOptions{APIVersion: api})
+				if err != nil {
+					t.Fatal(err)
+				}
+				caller, err := CompileAnonymousWithOptions(test.caller, CompileOptions{APIVersion: "66.0"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				machine := New(io.Discard)
+				org := orgForSecurePolicyTest()
+				machine.SetOrg(&org)
+				machine.executionUser = stripInaccessibleTestUser()
+				machine.EnableTestContext()
+				if err := machine.RegisterClass(test.setup(api, body)); err != nil {
+					t.Fatal(err)
+				}
+				_, err = machine.Execute(caller)
+				if api == "67.0" {
+					if err == nil {
+						t.Fatal("API 67 async body unexpectedly bypassed field permissions")
+					}
+				} else if err != nil {
+					t.Fatalf("API 66 async body unexpectedly used user-mode default: %v", err)
+				}
+			})
+		}
 	}
 }
 

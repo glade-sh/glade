@@ -312,6 +312,9 @@ func mergeDuplicateClass(existing, incoming Class) Class {
 	if preferIncoming && incoming.Namespace != "" {
 		merged.Namespace = incoming.Namespace
 	}
+	if preferIncoming && incoming.APIVersion != "" {
+		merged.APIVersion = incoming.APIVersion
+	}
 	if preferIncoming && incoming.SuperClass != "" {
 		merged.SuperClass = incoming.SuperClass
 	}
