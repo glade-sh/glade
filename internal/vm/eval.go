@@ -451,7 +451,11 @@ func intBinary(op string, left, right Value, fn func(int64, int64) int64) (Value
 	if err := checkIntBinaryOverflow(op, left.Int, right.Int); err != nil {
 		return Null, err
 	}
-	return Int(fn(left.Int, right.Int)), nil
+	result := Int(fn(left.Int, right.Int))
+	if isLongIntValue(left) || isLongIntValue(right) {
+		result.Type = "Long"
+	}
+	return result, nil
 }
 
 func decimalBinary(op string, left, right Value, fn func(float64, float64) float64) (Value, error) {

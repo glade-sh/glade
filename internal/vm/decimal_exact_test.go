@@ -149,6 +149,20 @@ System.assertEquals('9007199254740993', (converted + 1).toPlainString());
 	}
 }
 
+func TestExecDecimalPowPreservesExactText(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal value = Decimal.valueOf('9007199254740993');
+System.assertEquals('9007199254740993', value.pow(1).toPlainString());
+System.assertEquals('1.5625', Decimal.valueOf('1.25').pow(2).toPlainString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDecimalMathRoundingAndSignumRemainExact(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(9007199254740993, Math.roundToLong(Decimal.valueOf('9007199254740993.4')));
@@ -196,6 +210,10 @@ func TestExecMathLongOverloadsRetainLongIdentity(t *testing.T) {
 		"System.assert(!(Math.abs(-5L) instanceof Integer));",
 		"System.assert(!(Decimal.valueOf('42').longValue() instanceof Integer));",
 		"System.assert(!(Decimal.valueOf('42.1').round() instanceof Integer));",
+		"System.assert(!(1L + 2L instanceof Integer));",
+		"Integer integerValue = 42; System.assert(!(integerValue.longValue() instanceof Integer));",
+		"Long longValue = 42L; System.assert(longValue.intValue() instanceof Integer);",
+		"Long castValue = (Long) Decimal.valueOf('42'); System.assert(!(castValue instanceof Integer));",
 	} {
 		t.Run(source, func(t *testing.T) {
 			program, err := CompileAnonymous(source)
@@ -206,6 +224,16 @@ func TestExecMathLongOverloadsRetainLongIdentity(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+func TestExecMathAbsRejectsIntegerOverflow(t *testing.T) {
+	program, err := CompileAnonymous(`Math.abs(Integer.MIN_VALUE);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil {
+		t.Fatal("Math.abs accepted an Integer result outside the Integer range")
 	}
 }
 

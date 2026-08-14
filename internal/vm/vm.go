@@ -2333,6 +2333,9 @@ func mathUnary(callee string, args []Value) (Value, error) {
 			if args[0].Int == math.MinInt64 {
 				return Null, fmt.Errorf("Math.abs integer overflow")
 			}
+			if !isLongIntValue(args[0]) && args[0].Int == math.MinInt32 {
+				return Null, fmt.Errorf("Math.abs integer overflow")
+			}
 			if args[0].Int < 0 {
 				return mathIntegerResult(Int(-args[0].Int), isLongIntValue(args[0])), nil
 			}
@@ -4022,7 +4025,7 @@ func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
 		if conversionErr != nil {
 			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", runtimeValueTypeName(value), targetType))
 		}
-		return Int(converted), nil
+		return longIntValue(converted), nil
 	}
 	var thrown *apexThrowError
 	if errors.As(err, &thrown) {

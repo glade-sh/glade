@@ -1207,7 +1207,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		if err != nil {
 			return Null, fmt.Errorf("cannot assign decimal to %s", typeName)
 		}
-		return Int(converted), nil
+		return longIntValue(converted), nil
 	}
 	if collectionBase(typeName) == "List" && value.Kind == ValueList {
 		sourceTypes := []string{value.Type, value.Runtime, value.Static}

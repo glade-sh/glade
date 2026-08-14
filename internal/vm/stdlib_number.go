@@ -19,7 +19,10 @@ func callIntegerMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Integer.%s expects 0 arguments", method)
 		}
-		return receiver, receiver, false, true, nil
+		if method == "longValue" {
+			return longIntValue(receiver.Int), receiver, false, true, nil
+		}
+		return Int(receiver.Int), receiver, false, true, nil
 	case "decimalValue":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Integer.%s expects 0 arguments", method)
@@ -117,6 +120,22 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		if err := ensureFiniteDecimal("Decimal.pow", receiver.Decimal); err != nil {
 			return Null, receiver, false, true, err
+		}
+		if rat, ok := valueDecimalRat(receiver); ok {
+			if args[0].Int < 0 {
+				return Null, receiver, false, true, unsupportedCallError("Decimal.pow negative exponent exact semantics are deferred")
+			}
+			exponent := big.NewInt(args[0].Int)
+			numerator := new(big.Int).Exp(rat.Num(), exponent, nil)
+			denominator := new(big.Int).Exp(rat.Denom(), exponent, nil)
+			resultRat := new(big.Rat).SetFrac(numerator, denominator)
+			scale, ok := terminatingDecimalScale(resultRat)
+			if !ok {
+				return Null, receiver, false, true, unsupportedCallError("Decimal.pow exact result cannot be represented")
+			}
+			result := decimalFromRat(resultRat, scale)
+			result.Text = normalizeComputedDecimalText(result.Text)
+			return result, receiver, false, true, nil
 		}
 		value := math.Pow(receiver.Decimal, float64(args[0].Int))
 		if math.IsInf(value, 0) || math.IsNaN(value) {
@@ -248,6 +267,27 @@ func isDoubleUnsupportedMember(method string) bool {
 	default:
 		return false
 	}
+}
+
+func terminatingDecimalScale(value *big.Rat) (int64, bool) {
+	denominator := new(big.Int).Set(value.Denom())
+	two := int64(0)
+	five := int64(0)
+	for new(big.Int).Mod(denominator, big.NewInt(2)).Sign() == 0 {
+		denominator.Quo(denominator, big.NewInt(2))
+		two++
+	}
+	for new(big.Int).Mod(denominator, big.NewInt(5)).Sign() == 0 {
+		denominator.Quo(denominator, big.NewInt(5))
+		five++
+	}
+	if denominator.Cmp(big.NewInt(1)) != 0 {
+		return 0, false
+	}
+	if two > five {
+		return two, true
+	}
+	return five, true
 }
 
 func decimalAbsValue(value Value) (Value, error) {
