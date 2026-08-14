@@ -358,7 +358,7 @@ trigger ChildTrigger on Account (before insert) {
 	if child.SuperClass != "Base" {
 		t.Fatalf("superclass = %q", child.SuperClass)
 	}
-	if got, want := child.Interfaces, []string{"One", "Map<String,List<Integer>>"}; !reflect.DeepEqual(got, want) {
+	if got, want := child.Interfaces, []string{"One", "Map<String, List<Integer>>"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("interfaces = %#v, want %#v", got, want)
 	}
 	if got := strings.TrimSpace(bodyText(child.BodyRange)); !strings.HasPrefix(got, "{") || !strings.HasSuffix(got, "}") {

@@ -368,7 +368,7 @@ trigger ChildTrigger on Account (before insert) { System.debug('}'); }`
 		return source[r.Start.Offset:r.End.Offset]
 	}
 	child := file.Declarations[0]
-	if child.SuperClass != "Base" || len(child.Interfaces) != 2 || child.Interfaces[0] != "One" || child.Interfaces[1] != "Map<String,List<Integer>>" {
+	if child.SuperClass != "Base" || len(child.Interfaces) != 2 || child.Interfaces[0] != "One" || child.Interfaces[1] != "Map<String, List<Integer>>" {
 		t.Fatalf("class facts = %#v", child)
 	}
 	if bodyText(child.BodyRange) == "" || bodyText(child.Members[0].Accessors[0].BodyRange) != "{ return value; }" || bodyText(child.Members[1].BodyRange) != "{ System.debug('}'); }" {
