@@ -679,6 +679,50 @@ global class PostInstall implements InstallHandler {
 	}
 }
 
+func TestBuildIndexUsesParserInheritanceAndBodyRanges(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "Child.cls")
+	triggerPath := filepath.Join(root, "Child.trigger")
+	classSource := `/* { comment } */
+public class Child extends Base implements One, Generic</* { interface type comment } */String> {
+  public String run() { return '}'; }
+}`
+	triggerSource := `trigger ChildTrigger on Account (before insert) {
+  System.debug('}');
+}`
+	writeFile(t, classPath, classSource)
+	writeFile(t, triggerPath, triggerSource)
+
+	idx := Build(project.Project{Root: root, ApexFiles: []string{classPath, triggerPath}}, schema.Schema{})
+	if idx.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
+	}
+	var child TypeSymbol
+	for _, typ := range idx.Types {
+		if typ.Name == "Child" {
+			child = typ
+			break
+		}
+	}
+	if child.SuperClass != "Base" || len(child.Interfaces) != 2 || child.Interfaces[0] != "One" || child.Interfaces[1] != "Generic<String>" {
+		t.Fatalf("inheritance = %#v", child)
+	}
+	if len(child.Members) != 1 || child.Members[0].BodyRange == nil {
+		t.Fatalf("member body range = %#v", child.Members)
+	}
+	r := child.Members[0].BodyRange
+	if got := classSource[r.Start.Offset:r.End.Offset]; got != "{ return '}'; }" {
+		t.Fatalf("member body = %q", got)
+	}
+	if len(idx.Triggers) != 1 || idx.Triggers[0].BodyRange == nil {
+		t.Fatalf("trigger body range = %#v", idx.Triggers)
+	}
+	r = idx.Triggers[0].BodyRange
+	if got := triggerSource[r.Start.Offset:r.End.Offset]; got != "{\n  System.debug('}');\n}" {
+		t.Fatalf("trigger body = %q", got)
+	}
+}
+
 func TestBuildIndexPromotesNestedTypes(t *testing.T) {
 	root := t.TempDir()
 	classPath := filepath.Join(root, "Container.cls")

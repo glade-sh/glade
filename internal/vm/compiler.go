@@ -10,18 +10,58 @@ import (
 	"github.com/glade-sh/glade/internal/ir"
 )
 
+type RuntimeLoweringError struct {
+	Message string
+}
+
+func (e *RuntimeLoweringError) Error() string {
+	return e.Message
+}
+
+type CompileOptions struct {
+	APIVersion string
+	Trigger    bool
+}
+
 func CompileAnonymous(source string) (ir.Program, error) {
+	return CompileAnonymousWithOptions(source, CompileOptions{})
+}
+
+func CompileAnonymousWithOptions(source string, options CompileOptions) (ir.Program, error) {
 	tokens, err := lex(source)
 	if err != nil {
-		return ir.Program{}, err
+		return ir.Program{}, classifyCompileError(source, err)
 	}
 	p := parser{tokens: tokens}
 	program, err := p.parseProgram()
 	if err != nil {
-		return ir.Program{}, err
+		return ir.Program{}, classifyCompileError(source, err)
 	}
 	program.Source = source
+	program.APIVersion = options.APIVersion
+	program.Trigger = options.Trigger
 	return program, nil
+}
+
+func classifyCompileError(source string, err error) error {
+	if !runtimeLoweringSourceAccepted(source) {
+		return err
+	}
+	return &RuntimeLoweringError{Message: err.Error()}
+}
+
+func runtimeLoweringSourceAccepted(source string) bool {
+	parser := apexparser.NewParser()
+	probes := []string{
+		source,
+		"public class GladeRuntimeLoweringProbe { public void run() {\n" + source + "\n} }",
+	}
+	for i, probe := range probes {
+		if !parser.ParseSource(fmt.Sprintf("__glade_runtime_lowering_%d.cls", i), probe).HasErrors() {
+			return true
+		}
+	}
+	return false
 }
 
 func compileExpressionPrefix(source string) (ir.Expr, int, error) {
@@ -115,52 +155,30 @@ func lex(source string) ([]token, error) {
 				i++
 			}
 			tokens = append(tokens, token{kind: tokenNumber, text: source[start:i], pos: start})
-		case source[i] == '\'':
-			start := i
-			var text strings.Builder
-			i++
-			for i < len(source) {
-				if source[i] == '\'' {
-					if i+1 < len(source) && source[i+1] == '\'' {
-						text.WriteByte('\'')
-						i += 2
-						continue
-					}
-					i++
-					tokens = append(tokens, token{kind: tokenString, text: text.String(), pos: start})
-					goto next
-				}
-				if source[i] == '\\' && i+1 < len(source) {
-					switch source[i+1] {
-					case '\'':
-						if i+2 < len(source) && source[i+2] == '\'' && i+3 < len(source) && isIdentPart(source[i+3]) {
-							text.WriteByte('\\')
-							text.WriteByte('\'')
-							i += 3
-							continue
-						}
-						text.WriteByte('\'')
-					case '\\':
-						text.WriteByte('\\')
-					case '"':
-						text.WriteByte('"')
-					case 'n':
-						text.WriteByte('\n')
-					case 'r':
-						text.WriteByte('\r')
-					case 't':
-						text.WriteByte('\t')
-					default:
-						text.WriteByte('\\')
-						text.WriteByte(source[i+1])
-					}
-					i += 2
-					continue
-				}
-				text.WriteByte(source[i])
-				i++
+		case i+2 < len(source) && source[i:i+3] == "'''":
+			var tok token
+			var next int
+			var err error
+			_, singleNext, singleErr := lexSingleString(source, i)
+			tripleOffset := strings.Index(source[i+3:], "'''")
+			openingNewline := i+3 < len(source) && (source[i+3] == '\n' || source[i+3] == '\r')
+			if tripleOffset >= 0 && (openingNewline || singleErr != nil || i+3+tripleOffset < singleNext) {
+				tok, next, err = lexMultilineString(source, i)
+			} else {
+				tok, next, err = lexSingleString(source, i)
 			}
-			return nil, fmt.Errorf("unterminated string literal at byte %d", start)
+			if err != nil {
+				return nil, err
+			}
+			tokens = append(tokens, tok)
+			i = next
+		case source[i] == '\'':
+			tok, next, err := lexSingleString(source, i)
+			if err != nil {
+				return nil, err
+			}
+			tokens = append(tokens, tok)
+			i = next
 		default:
 			start := i
 			if i+2 < len(source) {
@@ -190,6 +208,9 @@ func lex(source string) ([]token, error) {
 				tokens = append(tokens, token{kind: tokenSymbol, text: source[i : i+1], pos: start})
 				i++
 			default:
+				if source[i] == '^' {
+					return nil, fmt.Errorf("unexpected character %q at byte %d", source[i], start)
+				}
 				return nil, fmt.Errorf("unexpected character %q at byte %d", source[i], start)
 			}
 		}
@@ -197,6 +218,80 @@ func lex(source string) ([]token, error) {
 	}
 	tokens = append(tokens, token{kind: tokenEOF, pos: len(source)})
 	return tokens, nil
+}
+
+func lexMultilineString(source string, start int) (token, int, error) {
+	const delimiter = "'''"
+	i := start + len(delimiter)
+	var text strings.Builder
+	if i >= len(source) || (source[i] != '\n' && source[i] != '\r') {
+		return token{}, start, fmt.Errorf("multiline string opening delimiter must be followed by a newline at byte %d", start)
+	}
+	if i < len(source) && source[i] == '\r' {
+		if i+1 < len(source) && source[i+1] == '\n' {
+			i += 2
+		}
+	} else if i < len(source) && source[i] == '\n' {
+		i++
+	}
+	for i < len(source) {
+		if i+len(delimiter) <= len(source) && source[i:i+len(delimiter)] == delimiter {
+			return token{kind: tokenString, text: text.String(), pos: start}, i + len(delimiter), nil
+		}
+		if source[i] == '\r' && i+1 < len(source) && source[i+1] == '\n' {
+			text.WriteByte('\n')
+			i += 2
+			continue
+		}
+		text.WriteByte(source[i])
+		i++
+	}
+	return token{}, start, fmt.Errorf("unterminated multiline string literal at byte %d", start)
+}
+
+func lexSingleString(source string, start int) (token, int, error) {
+	i := start + 1
+	var text strings.Builder
+	for i < len(source) {
+		if source[i] == '\'' {
+			if i+1 < len(source) && source[i+1] == '\'' {
+				text.WriteByte('\'')
+				i += 2
+				continue
+			}
+			return token{kind: tokenString, text: text.String(), pos: start}, i + 1, nil
+		}
+		if source[i] == '\\' && i+1 < len(source) {
+			switch source[i+1] {
+			case '\'':
+				if i+2 < len(source) && source[i+2] == '\'' && i+3 < len(source) && isIdentPart(source[i+3]) {
+					text.WriteByte('\\')
+					text.WriteByte('\'')
+					i += 3
+					continue
+				}
+				text.WriteByte('\'')
+			case '\\':
+				text.WriteByte('\\')
+			case '"':
+				text.WriteByte('"')
+			case 'n':
+				text.WriteByte('\n')
+			case 'r':
+				text.WriteByte('\r')
+			case 't':
+				text.WriteByte('\t')
+			default:
+				text.WriteByte('\\')
+				text.WriteByte(source[i+1])
+			}
+			i += 2
+			continue
+		}
+		text.WriteByte(source[i])
+		i++
+	}
+	return token{}, start, fmt.Errorf("unterminated string literal at byte %d", start)
 }
 
 type parser struct {
@@ -418,7 +513,8 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 
 	for _, op := range []string{"insert", "update", "delete", "upsert", "undelete", "merge"} {
 		if p.match(tokenIdent, op) {
-			if err := p.parseOptionalDMLAccessMode(op); err != nil {
+			mode, err := p.parseOptionalDMLAccessMode(op)
+			if err != nil {
 				return ir.Instruction{}, err
 			}
 			expr, err := p.parseExpression()
@@ -430,6 +526,14 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 				if err != nil {
 					return ir.Instruction{}, err
 				}
+				trailingMode, err := p.parseOptionalDMLAccessMode(op)
+				if err != nil {
+					return ir.Instruction{}, err
+				}
+				mode, err = mergeDMLModes(op, mode, trailingMode)
+				if err != nil {
+					return ir.Instruction{}, err
+				}
 				if _, err := p.expect(tokenSymbol, ";"); err != nil {
 					return ir.Instruction{}, err
 				}
@@ -438,7 +542,7 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 					duplicate,
 					{Kind: ir.ExprLiteral, Value: "true"},
 				}}
-				return ir.Instruction{Op: ir.OpDML, Name: op, Expr: expr, Pos: start.pos}, nil
+				return ir.Instruction{Op: ir.OpDML, Name: op, Expr: expr, DMLMode: mode, Pos: start.pos}, nil
 			}
 			field := ""
 			if op == "upsert" && !p.peek(tokenSymbol, ";") {
@@ -447,13 +551,18 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 					return ir.Instruction{}, err
 				}
 			}
-			if err := p.parseOptionalDMLAccessMode(op); err != nil {
+			trailingMode, err := p.parseOptionalDMLAccessMode(op)
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+			mode, err = mergeDMLModes(op, mode, trailingMode)
+			if err != nil {
 				return ir.Instruction{}, err
 			}
 			if _, err := p.expect(tokenSymbol, ";"); err != nil {
 				return ir.Instruction{}, err
 			}
-			return ir.Instruction{Op: ir.OpDML, Name: op, Expr: expr, Field: field, Pos: start.pos}, nil
+			return ir.Instruction{Op: ir.OpDML, Name: op, Expr: expr, Field: field, DMLMode: mode, Pos: start.pos}, nil
 		}
 	}
 
@@ -507,14 +616,27 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 	return ir.Instruction{Op: ir.OpExpr, Expr: expr, Pos: start.pos}, nil
 }
 
-func (p *parser) parseOptionalDMLAccessMode(op string) error {
+func (p *parser) parseOptionalDMLAccessMode(op string) (ir.DMLMode, error) {
 	if !p.match(tokenIdent, "as") {
-		return nil
+		return ir.DMLModeDefault, nil
 	}
-	if p.match(tokenIdent, "user") || p.match(tokenIdent, "system") {
-		return nil
+	if p.match(tokenIdent, "user") {
+		return ir.DMLModeUser, nil
 	}
-	return fmt.Errorf("%s as expects user or system at byte %d", op, p.tokens[p.pos].pos)
+	if p.match(tokenIdent, "system") {
+		return ir.DMLModeSystem, nil
+	}
+	return ir.DMLModeDefault, fmt.Errorf("%s as expects user or system at byte %d", op, p.tokens[p.pos].pos)
+}
+
+func mergeDMLModes(op string, first, second ir.DMLMode) (ir.DMLMode, error) {
+	if first != ir.DMLModeDefault && second != ir.DMLModeDefault {
+		return ir.DMLModeDefault, fmt.Errorf("%s has duplicate access modes", op)
+	}
+	if first != ir.DMLModeDefault {
+		return first, nil
+	}
+	return second, nil
 }
 
 func (p *parser) parseFor(pos int) (ir.Instruction, error) {

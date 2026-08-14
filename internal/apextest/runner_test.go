@@ -48,6 +48,298 @@ func runCaseStatuses(run testreport.Run) map[string]testreport.Status {
 	return statuses
 }
 
+func TestAPIVersionMetadataStampsEveryExecutableBody(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "BodyKinds.cls")
+	asyncPath := filepath.Join(root, "AsyncBodyKinds.cls")
+	triggerPath := filepath.Join(root, "BodyKindsTrigger.trigger")
+	testPath := filepath.Join(root, "BodyKindsTest.cls")
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, classPath, `public class BodyKinds {
+  public String field = makeValue();
+  public String literalField = '''
+field initializer
+''';
+  public String prop { get { return field; } set { field = value; } }
+  public BodyKinds() { field = 'ctor'; }
+  static { Integer count = 1; }
+  { field = 'init'; }
+  public String makeValue() { return '''
+method body
+'''; }
+  @future static void futureRun() { Integer count = 1; }
+}`)
+	writeFile(t, classPath+"-meta.xml", `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
+	writeFile(t, asyncPath, `public class AsyncBodyKinds {
+  public void queueableEntry(QueueableContext context) { String value = 'queueable'; }
+  public void batchEntry(Database.BatchableContext context, List<SObject> scope) { String value = 'batch'; }
+  public void scheduledEntry(SchedulableContext context) { String value = 'scheduled'; }
+}`)
+	writeFile(t, asyncPath+"-meta.xml", `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
+	writeFile(t, triggerPath, `trigger BodyKindsTrigger on Account (before insert) {
+  String body = '''
+trigger body
+''';
+}`)
+	writeFile(t, triggerPath+"-meta.xml", `<ApexTrigger><apiVersion>67.0</apiVersion></ApexTrigger>`)
+	writeFile(t, testPath, `@isTest private class BodyKindsTest {
+  @testSetup static void setup() { String value = '''
+setup body
+'''; }
+  @isTest static void run() { String value = '''
+test body
+'''; }
+}`)
+	writeFile(t, testPath+"-meta.xml", `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
+
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath, asyncPath, triggerPath, testPath}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	methods := compileProjectMethods(index)
+	for _, name := range []string{"BodyKinds.makeValue", "BodyKinds.futureRun"} {
+		var method vm.Method
+		ok := false
+		for _, candidate := range methods {
+			if candidate.Name == name {
+				method, ok = candidate, true
+				break
+			}
+		}
+		if !ok || method.APIVersion != "67.0" {
+			t.Fatalf("method %s = %#v, want API 67.0", name, method)
+		}
+	}
+	for _, name := range []string{"AsyncBodyKinds.queueableEntry", "AsyncBodyKinds.batchEntry", "AsyncBodyKinds.scheduledEntry"} {
+		var method vm.Method
+		for _, candidate := range methods {
+			if candidate.Name == name {
+				method = candidate
+				break
+			}
+		}
+		if method.Name == "" || method.APIVersion != "67.0" {
+			t.Fatalf("async method %s = %#v, want API 67.0", name, method)
+		}
+	}
+	classes := compileProjectClasses(index, methods)
+	var bodyKinds vm.Class
+	for _, class := range classes {
+		if class.Name == "BodyKinds" {
+			bodyKinds = class
+			break
+		}
+	}
+	if bodyKinds.Name == "" {
+		t.Fatalf("BodyKinds class was not compiled: %#v", classes)
+	}
+	if len(bodyKinds.Constructors) != 1 || bodyKinds.Constructors[0].APIVersion != "67.0" {
+		t.Fatalf("constructors = %#v", bodyKinds.Constructors)
+	}
+	if len(bodyKinds.StaticInitializers) != 1 || bodyKinds.StaticInitializers[0].APIVersion != "67.0" {
+		t.Fatalf("static initializers = %#v", bodyKinds.StaticInitializers)
+	}
+	if len(bodyKinds.InstanceInitializers) != 2 {
+		t.Fatalf("instance initializers = %#v", bodyKinds.InstanceInitializers)
+	}
+	if got := bodyKinds.Fields["literalField"].Value.Text; got != "field initializer\n" {
+		t.Fatalf("multiline field value = %q", got)
+	}
+	for _, initializer := range bodyKinds.InstanceInitializers {
+		if initializer.APIVersion != "67.0" {
+			t.Fatalf("instance initializer API version = %q", initializer.APIVersion)
+		}
+	}
+	property := bodyKinds.Fields["prop"]
+	if property.Getter == nil || property.Getter.APIVersion != "67.0" || property.Setter == nil || property.Setter.APIVersion != "67.0" {
+		t.Fatalf("property accessors = %#v", property)
+	}
+	triggers, errs := compileProjectTriggers(index)
+	if len(errs) != 0 || len(triggers) != 1 || triggers[0].APIVersion != "67.0" {
+		t.Fatalf("triggers = %#v errors = %#v", triggers, errs)
+	}
+	setups, setupErrs, _, _ := compileTestSetupMethods(index)
+	if len(setupErrs) != 0 || len(setups["BodyKindsTest"]) != 1 || setups["BodyKindsTest"][0].APIVersion != "67.0" {
+		t.Fatalf("test setups = %#v errors = %#v", setups, setupErrs)
+	}
+	cases := Discover(index, Options{})
+	testMethods, testErrs := compileTestMethods(cases)
+	if len(testErrs) != 0 || testMethods["BodyKindsTest.run"].APIVersion != "67.0" {
+		t.Fatalf("test methods = %#v errors = %#v", testMethods, testErrs)
+	}
+}
+
+func TestTriggerUserModeUsesTriggerBodyAPIVersion(t *testing.T) {
+	root := t.TempDir()
+	triggerPath := filepath.Join(root, "SecureTrigger.trigger")
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, triggerPath, `trigger SecureTrigger on Account (before insert) {
+  String body = '''
+trigger body
+''';
+}`)
+	writeFile(t, triggerPath+"-meta.xml", `<ApexTrigger><apiVersion>67.0</apiVersion></ApexTrigger>`)
+
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{triggerPath}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	triggers, errs := compileProjectTriggers(index)
+	if len(errs) != 0 || len(triggers) != 1 {
+		t.Fatalf("triggers = %#v errors = %#v", triggers, errs)
+	}
+	if triggers[0].APIVersion != "67.0" {
+		t.Fatalf("trigger API version = %q, want 67.0", triggers[0].APIVersion)
+	}
+}
+
+func TestSharingInheritancePreservesClassAPIVersions(t *testing.T) {
+	root := t.TempDir()
+	parentPath := filepath.Join(root, "ModernParent.cls")
+	childPath := filepath.Join(root, "LegacyChild.cls")
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, parentPath, `public class ModernParent {}`)
+	writeFile(t, parentPath+"-meta.xml", `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
+	writeFile(t, childPath, `public class LegacyChild extends ModernParent {}`)
+	writeFile(t, childPath+"-meta.xml", `<ApexClass><apiVersion>66.0</apiVersion></ApexClass>`)
+
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{parentPath, childPath}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	classes := compileProjectClasses(index, compileProjectMethods(index))
+	versions := map[string]string{}
+	for _, class := range classes {
+		if class.Name == "ModernParent" || class.Name == "LegacyChild" {
+			versions[class.Name] = class.APIVersion
+		}
+	}
+	if versions["ModernParent"] != "67.0" || versions["LegacyChild"] != "66.0" {
+		t.Fatalf("compiled class API versions = %#v", versions)
+	}
+}
+
+func TestMultilineStringCompilesAtAPI66AndAPI67(t *testing.T) {
+	for _, apiVersion := range []string{"66.0", "67.0"} {
+		t.Run(apiVersion, func(t *testing.T) {
+			for _, body := range []string{
+				"String value = '''\nfield initializer\n''';",
+				"String value = '''\nmethod body\n''';",
+				"String value = '''\ntrigger body\n''';",
+				"String value = '''\ntest body\n''';",
+				"String value = '''\nsame line''';",
+				"String value = '''\n  indented 'quote' \\\\n  value\n''';",
+				"String value = '''\n''' ;",
+			} {
+				options := vm.CompileOptions{APIVersion: apiVersion, Trigger: strings.Contains(body, "trigger")}
+				program, err := vm.CompileAnonymousWithOptions(body, options)
+				if err != nil {
+					t.Fatalf("API %s body %q: %v", apiVersion, body, err)
+				}
+				if program.APIVersion != apiVersion || program.Trigger != options.Trigger {
+					t.Fatalf("compiled options = %#v, want API %s trigger %t", program, apiVersion, options.Trigger)
+				}
+			}
+		})
+	}
+}
+
+func TestParserBodyRangesDriveExecutableBodiesAtAPI66AndAPI67(t *testing.T) {
+	for _, apiVersion := range []string{"66.0", "67.0"} {
+		t.Run(apiVersion, func(t *testing.T) {
+			root := t.TempDir()
+			classPath := filepath.Join(root, "BodyRangeProbe.cls")
+			triggerPath := filepath.Join(root, "BodyRangeProbeTrigger.trigger")
+			testPath := filepath.Join(root, "BodyRangeProbeTest.cls")
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+			classSource := `public class BodyRangeProbe {
+  public String value { get { String body = '''
+class accessor quote: ' and brace: }
+'''; return body; } set { value = value; } }
+  public BodyRangeProbe() { String body = '''
+class constructor quote: ' and brace: }
+'''; }
+  static { String body = '''
+class static initializer quote: ' and brace: }
+'''; }
+  { String body = '''
+class initializer quote: ' and brace: }
+'''; }
+  public static String run() { String body = '''
+class method quote: ' and brace: }
+'''; return body; }
+}`
+			writeFile(t, classPath, classSource)
+			writeFile(t, classPath+"-meta.xml", `<ApexClass><apiVersion>`+apiVersion+`</apiVersion></ApexClass>`)
+			writeFile(t, triggerPath, `trigger BodyRangeProbeTrigger on Account (before insert) {
+  String body = '''
+trigger quote: ' and brace: }
+''';
+}`)
+			writeFile(t, triggerPath+"-meta.xml", `<ApexTrigger><apiVersion>`+apiVersion+`</apiVersion></ApexTrigger>`)
+			writeFile(t, testPath, `@isTest private class BodyRangeProbeTest {
+  @testSetup static void setup() { String body = '''
+test setup quote: ' and brace: }
+'''; }
+  @isTest static void run() { String body = '''
+test method quote: ' and brace: }
+'''; }
+}`)
+			writeFile(t, testPath+"-meta.xml", `<ApexClass><apiVersion>`+apiVersion+`</apiVersion></ApexClass>`)
+
+			index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath, triggerPath, testPath}}, gladeschema.Schema{})
+			if index.HasErrors() {
+				t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+			}
+
+			methods := compileProjectMethods(index)
+			if _, ok := methodNamed(methods, "BodyRangeProbe.run"); !ok {
+				t.Fatalf("class method was not compiled: %#v", methods)
+			}
+			classes := compileProjectClasses(index, methods)
+			bodyRangeProbe := classNamed(classes, "BodyRangeProbe")
+			if bodyRangeProbe.Name == "" || len(bodyRangeProbe.Constructors) != 1 || len(bodyRangeProbe.StaticInitializers) != 1 || len(bodyRangeProbe.InstanceInitializers) != 1 {
+				t.Fatalf("class executable bodies = %#v", bodyRangeProbe)
+			}
+			if property := bodyRangeProbe.Fields["value"]; property.Getter == nil || property.Setter == nil {
+				t.Fatalf("property executable bodies = %#v", bodyRangeProbe.Fields["value"])
+			}
+
+			triggers, triggerErrs := compileProjectTriggers(index)
+			if len(triggerErrs) != 0 || len(triggers) != 1 {
+				t.Fatalf("trigger executable body = %#v errors = %#v", triggers, triggerErrs)
+			}
+			setups, setupErrs, _, _ := compileTestSetupMethods(index)
+			if len(setupErrs) != 0 || len(setups["BodyRangeProbeTest"]) != 1 {
+				t.Fatalf("test setup executable body = %#v errors = %#v", setups, setupErrs)
+			}
+			cases := Discover(index, Options{})
+			testMethods, testErrs := compileTestMethods(cases)
+			if len(testErrs) != 0 || testMethods["BodyRangeProbeTest.run"].Name == "" {
+				t.Fatalf("test executable body = %#v errors = %#v", testMethods, testErrs)
+			}
+		})
+	}
+}
+
+func methodNamed(methods map[string]vm.Method, name string) (vm.Method, bool) {
+	for _, method := range methods {
+		if method.Name == name {
+			return method, true
+		}
+	}
+	return vm.Method{}, false
+}
+
+func classNamed(classes []vm.Class, name string) vm.Class {
+	for _, class := range classes {
+		if class.Name == name {
+			return class
+		}
+	}
+	return vm.Class{}
+}
+
 func TestRunFailsClosedOnReservedIdentifierDiagnostic(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "ReservedCurrencyTest.cls")
@@ -127,6 +419,33 @@ private class BadBodyTest {
 		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
 	}
 	if problem := firstRunProblem(run); !strings.Contains(problem, "constructs unknown type") || !strings.Contains(problem, "MissingHelper") {
+		t.Fatalf("problem = %q", problem)
+	}
+}
+
+func TestRunMarksRuntimeUnlowerableBodyUnsupported(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "RuntimeGapTest.cls")
+	writeFile(t, path, `
+public class RuntimeGapHelper {
+  public static void run() { Integer flags = 1 ^ 2; }
+}
+@isTest
+private class RuntimeGapTest {
+  @isTest
+  static void runtimeGap() { RuntimeGapHelper.run(); }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	cases := Discover(index, Options{})
+	if len(cases) != 1 {
+		t.Fatalf("discovered cases = %#v", cases)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true}, cases)
+	if summary := run.Summary(); summary.Total != 1 || summary.Unsupported != 1 || summary.Passed != 0 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+	if problem := firstRunProblem(run); !strings.Contains(problem, "RuntimeGapHelper.run") {
 		t.Fatalf("problem = %q", problem)
 	}
 }
@@ -4145,10 +4464,13 @@ private class DataRequestTest {
 	if start < 0 || end < 0 {
 		t.Fatal("test source markers not found")
 	}
-	body, err := extractMethodBody(source, diagnostic.Range{
-		Start: diagnostic.Position{Offset: start},
-		End:   diagnostic.Position{Offset: end},
-	})
+	bodyStart := strings.Index(source[start:end], "{") + start
+	bodyEnd := strings.LastIndex(source[:end], "}") + 1
+	bodyRange := diagnostic.Range{
+		Start: diagnostic.Position{Offset: bodyStart},
+		End:   diagnostic.Position{Offset: bodyEnd},
+	}
+	body, err := extractMethodBody(source, &bodyRange)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -4452,7 +4774,7 @@ private class JSONParserHolderTest {
 	}
 }
 
-func TestExtractMethodBodyFallsBackPastShortRange(t *testing.T) {
+func TestExtractMethodBodyRequiresExactParserRange(t *testing.T) {
 	source := `public class BigClass {
   public static void run() {
     // a comment with { that should not count
@@ -4463,15 +4785,12 @@ func TestExtractMethodBodyFallsBackPastShortRange(t *testing.T) {
 }`
 	start := strings.Index(source, "public static void run")
 	shortEnd := strings.Index(source, "if (true)")
-	body, err := extractMethodBody(source, diagnostic.Range{
+	bodyRange := diagnostic.Range{
 		Start: diagnostic.Position{Offset: start},
 		End:   diagnostic.Position{Offset: shortEnd},
-	})
-	if err != nil {
-		t.Fatal(err)
 	}
-	if !strings.Contains(body, "System.debug('}')") {
-		t.Fatalf("body = %q", body)
+	if _, err := extractMethodBody(source, &bodyRange); err == nil {
+		t.Fatal("short declaration range unexpectedly produced an executable body")
 	}
 }
 
@@ -4494,10 +4813,11 @@ func TestExtractMethodSourceRecoversOneLineSignature(t *testing.T) {
 	if len(params) != 0 {
 		t.Fatalf("params = %#v", params)
 	}
-	body, err := extractMethodBody(source, diagnostic.Range{
-		Start: diagnostic.Position{Offset: start + 1},
-		End:   diagnostic.Position{Offset: start + 2},
-	})
+	bodyRange := diagnostic.Range{
+		Start: diagnostic.Position{Offset: start},
+		End:   diagnostic.Position{Offset: start + 3},
+	}
+	body, err := extractMethodBody(source, &bodyRange)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -6129,12 +6449,12 @@ private class PassiveGeneratedStubTest {
     System.assertEquals('NO_FILTER', Database.PaginationCursor.DeleteFilter.NO_FILTER.name());
     System.assertEquals(4, Database.PaginationCursor.DeleteFilter.values().size());
     System.assertEquals('EmailActivity', sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum.EmailActivity.name());
-    Slack.ApiTestRequest slackRequest = Slack.ApiTestRequest.builder().foo('bar').build();
+    Slack.ChatPostMessageRequest slackRequest = Slack.ChatPostMessageRequest.builder().channel('C123').text('bar').build();
     System.assert(slackRequest != null);
-    Slack.ApiTestRequest.Builder slackBuilder = Slack.ApiTestRequest.builder();
-    slackBuilder.foo('stored');
-    slackBuilder.error('none');
-    Slack.ApiTestRequest storedSlackRequest = slackBuilder.build();
+    Slack.ChatPostMessageRequest.Builder slackBuilder = Slack.ChatPostMessageRequest.builder();
+    slackBuilder.channel('C456');
+    slackBuilder.text('stored');
+    Slack.ChatPostMessageRequest storedSlackRequest = slackBuilder.build();
     System.assert(storedSlackRequest != null);
     LoyaltyManagement.ChangeTierInputBuilder tierBuilder = new LoyaltyManagement.ChangeTierInputBuilder();
     tierBuilder.setProgramName('Rewards');
@@ -6143,18 +6463,6 @@ private class PassiveGeneratedStubTest {
     Map<String,Object> tierValues = tierInput.getAsMap();
     System.assertEquals('Rewards', (String)tierValues.get('programName'));
     System.assertEquals('Gold', (String)tierValues.get('targetTierName'));
-    inventorypricing.GetInventoryPricing inventoryService = new inventorypricing.GetInventoryPricing();
-    Object response = inventoryService.createResponse(new inventorypricing.InventoryPricingData());
-    System.assertNotEquals(null, response);
-    Map<String,Object> flowInputs = new Map<String,Object>{'recordId' => '001000000000001'};
-    Flow.Interview interview = Flow.Interview.createInterview('Demo_Flow', flowInputs);
-    interview.start();
-    Map<String,Object> interviewValues = interview.getAsMap();
-    System.assertEquals('Demo_Flow', (String)interviewValues.get('flowName'));
-    System.assertEquals(true, (Boolean)interviewValues.get('started'));
-    Flow.Interview namespacedInterview = Flow.Interview.createInterview('pkg', 'Demo_Flow', flowInputs);
-    Map<String,Object> namespacedValues = namespacedInterview.getAsMap();
-    System.assertEquals('pkg', (String)namespacedValues.get('namespace'));
     CartExtension.BuyerActionDetails.Builder actionBuilder = new CartExtension.BuyerActionDetails.Builder();
     actionBuilder.withCheckoutStarted(true);
     CartExtension.BuyerActionDetails details = actionBuilder.build();

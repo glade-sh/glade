@@ -132,6 +132,114 @@ public class UsesNamespacedFields {
 	}
 }
 
+func TestSemaOpenSObjectFieldsAreOpaque(t *testing.T) {
+	model := semaTypeMemberViewFromMembers(map[string]typeMembers{
+		normalizeName("pkg.External__c"): {
+			name:                   "pkg.External__c",
+			sobject:                true,
+			externalPackageSObject: true,
+			fields:                 map[string]typesys.MemberSymbol{},
+		},
+		normalizeName("pkg.Partial__c"): {
+			name:           "pkg.Partial__c",
+			sobject:        true,
+			partialSObject: true,
+			fields:         map[string]typesys.MemberSymbol{},
+		},
+		normalizeName("pkg.Authoritative__c"): {
+			name:    "pkg.Authoritative__c",
+			sobject: true,
+			fields:  map[string]typesys.MemberSymbol{},
+		},
+	})
+
+	for _, tc := range []struct {
+		typeName  string
+		fieldName string
+	}{
+		{typeName: "pkg.External__c", fieldName: "Email"},
+		{typeName: "pkg.Partial__c", fieldName: "IsApproved"},
+		{typeName: "pkg.External__c", fieldName: "Owner"},
+		{typeName: "pkg.Partial__c", fieldName: "Thing__r"},
+		{typeName: "pkg.External__c", fieldName: "Body"},
+		{typeName: "pkg.Partial__c", fieldName: "RecordId"},
+	} {
+		field, ok := semaOpenSObjectFieldMember(tc.typeName, tc.fieldName, model)
+		if !ok || field.member.Type != "" {
+			t.Fatalf("%s.%s = %#v, %v; want opaque open field", tc.typeName, tc.fieldName, field, ok)
+		}
+	}
+	if _, ok := semaOpenSObjectFieldMember("pkg.Authoritative__c", "Invented", model); ok {
+		t.Fatalf("authoritative SObject unexpectedly accepted an unknown opaque field")
+	}
+}
+
+func TestSemaOpenSObjectFieldsPreservesIncompleteBuiltModels(t *testing.T) {
+	model := buildSemaTypeMemberView(typesys.Index{Objects: []schema.Object{
+		{Name: "Account"},
+		{Name: "Config__mdt"},
+		{Name: "Authoritative__c"},
+	}})
+	for _, tc := range []struct {
+		typeName  string
+		fieldName string
+		wantOpen  bool
+	}{
+		{typeName: "Account", fieldName: "Affiliates__r", wantOpen: true},
+		{typeName: "Config__mdt", fieldName: "FromStates__c", wantOpen: true},
+		{typeName: "Authoritative__c", fieldName: "Invented__c", wantOpen: false},
+	} {
+		field, ok := semaOpenSObjectFieldMember(tc.typeName, tc.fieldName, model)
+		if ok != tc.wantOpen || (ok && field.member.Type != "") {
+			t.Fatalf("%s.%s = %#v, %v; want open=%v with opaque type", tc.typeName, tc.fieldName, field, ok, tc.wantOpen)
+		}
+	}
+}
+
+func TestAnalyzeReportsParserAcceptedButRuntimeUnlowerableBody(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	path := filepath.Join(root, "UsesXor.cls")
+	source := `
+public class UsesXor {
+  public void run() {
+    Integer flags = 1 ^ 2;
+  }
+}
+	`
+	writeSemaFile(t, path, source)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	result := Analyze(index)
+	expectedBody := "\n    Integer flags = 1 ^ 2;\n  "
+	expectedStart := strings.Index(source, expectedBody)
+	if expectedStart < 0 {
+		t.Fatalf("test body not found in source")
+	}
+	expectedEnd := expectedStart + len(expectedBody)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == runtimeLoweringDiagnosticCode && diag.Severity != diagnostic.Warning {
+			t.Fatalf("runtime lowering diagnostic severity = %q, want warning", diag.Severity)
+		}
+		if diag.Code == runtimeLoweringDiagnosticCode {
+			if diag.Range == nil || diag.Range.Start.Offset != expectedStart || diag.Range.End.Offset != expectedEnd {
+				t.Fatalf("runtime lowering diagnostic range = %#v, want offsets %d:%d", diag.Range, expectedStart, expectedEnd)
+			}
+			return
+		}
+	}
+	t.Fatalf("missing %s diagnostic: %#v", runtimeLoweringDiagnosticCode, result.Diagnostics)
+}
+
+func TestAnalyzeAnonymousStillRejectsRuntimeUnlowerableSource(t *testing.T) {
+	result := AnalyzeAnonymous(typesys.Index{}, "Integer flags = 1 ^ 2;")
+	if !result.HasErrors() {
+		t.Fatalf("runtime-unlowerable anonymous source unexpectedly passed: %#v", result.Diagnostics)
+	}
+	if len(result.Diagnostics) == 0 || result.Diagnostics[0].Code != "GLADESEMA_ANONYMOUS_PARSE" {
+		t.Fatalf("anonymous diagnostics = %#v, want parse/lowering error", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeLoadsNestedSchemaCustomObjectsRelationshipTraversal(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -1768,11 +1876,11 @@ func TestExtractBodyForSemaSkipsCommentApostrophes(t *testing.T) {
     return 'fallback';
   }
 }`
-	start := strings.Index(source, "public static String run")
-	body, _, ok := extractBodyForSema(source, diagnostic.Range{
-		Start: diagnostic.Position{Offset: start},
-		End:   diagnostic.Position{Offset: len(source) - 1},
-	})
+	file := apexast.NewParser().ParseSource("Example.cls", source)
+	if len(file.Declarations) != 1 || len(file.Declarations[0].Members) != 1 {
+		t.Fatalf("declarations = %#v", file.Declarations)
+	}
+	body, _, ok := semaBodyFromRange(source, file.Declarations[0].Members[0].BodyRange)
 	if !ok {
 		t.Fatalf("expected body extraction to succeed")
 	}
@@ -3548,7 +3656,7 @@ private class UsesTestMethodMapConstant {
 			if member.Name != "testOnCancel" {
 				continue
 			}
-			body, bodyOffset, ok := extractBodyForSema(string(sourceBytes), member.Range)
+			body, bodyOffset, ok := semaBodyFromRange(string(sourceBytes), member.BodyRange)
 			if !ok {
 				t.Fatalf("method body not found")
 			}
@@ -4052,7 +4160,7 @@ public inherited sharing class UsesContactFields {
 			if member.Kind != apexast.DeclarationConstructor {
 				continue
 			}
-			body, bodyOffset, ok := extractBodyForSema(string(sourceBytes), member.Range)
+			body, bodyOffset, ok := semaBodyFromRange(string(sourceBytes), member.BodyRange)
 			if !ok {
 				t.Fatalf("constructor body not found")
 			}
@@ -8418,7 +8526,7 @@ public class UsesQ {
 	}
 }
 
-func TestAnalyzeFallbackCustomStringFieldContains(t *testing.T) {
+func TestAnalyzeOpaqueSObjectFieldDoesNotInferStringFromName(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
@@ -8433,10 +8541,14 @@ public class Hello {
 	})
 
 	result := Analyze(index)
+	found := false
 	for _, diag := range result.Diagnostics {
 		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "PriceClasses__c.contains") {
-			t.Fatalf("unexpected fallback string field contains diagnostic: %#v", result.Diagnostics)
+			found = true
 		}
+	}
+	if !found {
+		t.Fatalf("opaque SObject field should not infer String from its name: %#v", result.Diagnostics)
 	}
 }
 

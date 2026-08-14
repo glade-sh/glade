@@ -253,7 +253,7 @@ func semaSObjectFieldPathArgType(arg string, scope map[string]string, model *sem
 	if target, ok := semaResolveFieldPath(model, receiverType, field); ok && target.member.Type != "" {
 		return target.member.Type
 	}
-	return semaFallbackFieldPathType(field)
+	return ""
 }
 
 func semaChildRelationshipListArgCompatible(paramType, argType, argText string) bool {

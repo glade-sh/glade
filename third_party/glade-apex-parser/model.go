@@ -32,6 +32,8 @@ const (
 type Declaration struct {
 	Kind           DeclarationKind `json:"kind"`
 	Name           string          `json:"name,omitempty"`
+	SuperClass     string          `json:"superClass,omitempty"`
+	Interfaces     []string        `json:"interfaces,omitempty"`
 	Type           string          `json:"type,omitempty"`
 	Modifiers      []string        `json:"modifiers,omitempty"`
 	Annotations    []Annotation    `json:"annotations,omitempty"`
@@ -41,6 +43,7 @@ type Declaration struct {
 	Events         []string        `json:"events,omitempty"`
 	TypeParameters []string        `json:"typeParameters,omitempty"`
 	HasBody        bool            `json:"hasBody,omitempty"`
+	BodyRange      *Range          `json:"bodyRange,omitempty"`
 	Range          Range           `json:"range"`
 	Members        []Declaration   `json:"members,omitempty"`
 }
@@ -63,6 +66,7 @@ type Accessor struct {
 	Annotations []Annotation `json:"annotations,omitempty"`
 	Range       Range        `json:"range"`
 	HasBody     bool         `json:"hasBody,omitempty"`
+	BodyRange   *Range       `json:"bodyRange,omitempty"`
 }
 
 type Parameter struct {

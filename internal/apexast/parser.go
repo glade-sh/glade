@@ -63,6 +63,8 @@ func convertDeclaration(decl external.Declaration) Declaration {
 	return Declaration{
 		Kind:           DeclarationKind(decl.Kind),
 		Name:           decl.Name,
+		SuperClass:     decl.SuperClass,
+		Interfaces:     append([]string(nil), decl.Interfaces...),
 		Type:           decl.Type,
 		Modifiers:      decl.Modifiers,
 		Annotations:    convertAnnotations(decl.Annotations),
@@ -72,6 +74,7 @@ func convertDeclaration(decl external.Declaration) Declaration {
 		Events:         decl.Events,
 		TypeParameters: append([]string(nil), decl.TypeParameters...),
 		HasBody:        decl.HasBody,
+		BodyRange:      convertRangePtr(decl.BodyRange),
 		Range:          convertRange(decl.Range),
 		Members:        convertDeclarations(decl.Members),
 	}
@@ -118,6 +121,7 @@ func convertAccessors(accessors []external.Accessor) []Accessor {
 			Annotations: convertAnnotations(accessor.Annotations),
 			Range:       convertRange(accessor.Range),
 			HasBody:     accessor.HasBody,
+			BodyRange:   convertRangePtr(accessor.BodyRange),
 		})
 	}
 	return out
@@ -151,6 +155,14 @@ func convertRange(r external.Range) diagnostic.Range {
 		Start: convertPosition(r.Start),
 		End:   convertPosition(r.End),
 	}
+}
+
+func convertRangePtr(r *external.Range) *diagnostic.Range {
+	if r == nil {
+		return nil
+	}
+	converted := convertRange(*r)
+	return &converted
 }
 
 func convertPosition(pos external.Position) diagnostic.Position {

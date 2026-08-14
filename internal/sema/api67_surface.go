@@ -1,6 +1,10 @@
 package sema
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/glade-sh/glade/internal/apexversion"
+)
 
 // These are authoritative Salesforce API 67 negative contracts. Generated
 // symbols cannot express every stale alias or member, and legacy namespace and
@@ -119,6 +123,10 @@ func semaAPI67RejectedPlatformType(typeName string) bool {
 // by the platform fallback after generated symbol lookup finds no canonical
 // Salesforce member. receiverType may be generic or explicitly qualified.
 func semaAPI67RejectedPlatformCall(receiverType, method, receiverMode string) bool {
+	return semaAPI67RejectedPlatformCallAtVersion("67.0", receiverType, method, receiverMode)
+}
+
+func semaAPI67RejectedPlatformCallAtVersion(version, receiverType, method, receiverMode string) bool {
 	receiverType = strings.TrimSpace(receiverType)
 	method = normalizeName(method)
 	if strings.EqualFold(receiverType, "System.PushUpgradeCustomizationRepository") {
@@ -168,7 +176,7 @@ func semaAPI67RejectedPlatformCall(receiverType, method, receiverMode string) bo
 		// versioned catalogs, but reject calls in the current API boundary.
 		switch method {
 		case "getcurrentsiteurl", "getcustomwebaddress", "getprefix":
-			return true
+			return !apexversion.Enabled(version, apexversion.LegacySiteURLHelpers)
 		}
 	case "auth.authconfiguration":
 		return method == "getrightframeurl"
@@ -179,20 +187,20 @@ func semaAPI67RejectedPlatformCall(receiverType, method, receiverMode string) bo
 		// boundary.
 		switch method {
 		case "isavailable", "getavgvaluesize", "getmaxvaluesize":
-			return true
+			return method == "isavailable" || !apexversion.Enabled(version, apexversion.LegacyCacheValueSize)
 		}
 	case "cache.session":
 		switch method {
 		case "getavgvaluesize", "getmaxvaluesize":
-			return true
+			return !apexversion.Enabled(version, apexversion.LegacyCacheValueSize)
 		}
 	case "cache.partition", "cache.orgpartition", "cache.sessionpartition":
 		switch method {
 		case "getavgvaluesize", "getmaxvaluesize":
-			return true
+			return !apexversion.Enabled(version, apexversion.LegacyCacheValueSize)
 		case "validatekeys":
 			// Salesforce removed the static validateKeys helpers after API version 54.0.
-			return true
+			return !apexversion.Enabled(version, apexversion.LegacyCacheValidateKeys)
 		case "createfullyqualifiedkey", "createfullyqualifiedpartition",
 			"validatepartitionname", "validatekey", "validatekeyvalue":
 			// Salesforce declares these partition helpers static; calling

@@ -15,21 +15,22 @@ type Param struct {
 }
 
 type Method struct {
-	Name          string
-	ReturnType    string
-	Params        []Param
-	Program       ir.Program
-	ClassName     string
-	IsStatic      bool
-	IsConstructor bool
-	Access        string
-	Modifiers     []string
-	File          string
-	APIVersion    string
-	Line          int
-	Column        int
-	Unsupported   string
-	Dependency    bool
+	Name            string
+	ReturnType      string
+	Params          []Param
+	Program         ir.Program
+	ClassName       string
+	IsStatic        bool
+	IsConstructor   bool
+	Access          string
+	Modifiers       []string
+	File            string
+	APIVersion      string
+	Line            int
+	Column          int
+	Unsupported     string
+	RuntimeLowering bool
+	Dependency      bool
 }
 
 func (vm *VM) RegisterMethod(method Method) error {
@@ -116,6 +117,7 @@ type Field struct {
 type Class struct {
 	Name                 string
 	Namespace            string
+	APIVersion           string
 	SuperClass           string
 	Interfaces           []string
 	Fields               map[string]Field
@@ -309,6 +311,9 @@ func mergeDuplicateClass(existing, incoming Class) Class {
 	preferIncoming := !incoming.Dependency || existing.Dependency
 	if preferIncoming && incoming.Namespace != "" {
 		merged.Namespace = incoming.Namespace
+	}
+	if preferIncoming && incoming.APIVersion != "" {
+		merged.APIVersion = incoming.APIVersion
 	}
 	if preferIncoming && incoming.SuperClass != "" {
 		merged.SuperClass = incoming.SuperClass

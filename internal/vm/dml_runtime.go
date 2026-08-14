@@ -134,7 +134,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 	}
 	allOrNone := true
 	externalIDField := ""
-	userMode := false
+	dmlMode := vm.defaultAccessLevelMode()
 	accessLevel := Value{}
 	dmlOptions := dml.Options{}
 	if len(args) >= 2 {
@@ -142,9 +142,13 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 			allOrNone = args[1].Bool
 		} else if isDatabaseDMLOptionsValue(args[1]) {
 			allOrNone = databaseDMLOptionsAllOrNone(args[1], allOrNone)
-			dmlOptions = databaseDMLOptions(args[1])
+			var optionsErr error
+			dmlOptions, optionsErr = databaseDMLOptions(args[1])
+			if optionsErr != nil {
+				return Null, optionsErr
+			}
 		} else if isDatabaseAccessLevelValue(args[1]) {
-			userMode = isUserModeAccessLevel(args[1])
+			dmlMode = databaseAccessLevelSecurityMode(args[1])
 			accessLevel = args[1]
 		} else if op == "upsert" {
 			field, err := vm.externalIDFieldName(args[1])
@@ -158,7 +162,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 	}
 	if len(args) == 3 {
 		if isDatabaseAccessLevelValue(args[2]) {
-			userMode = isUserModeAccessLevel(args[2])
+			dmlMode = databaseAccessLevelSecurityMode(args[2])
 			accessLevel = args[2]
 		} else if op != "upsert" {
 			return Null, fmt.Errorf("Database.%s expects at most records and allOrNone", op)
@@ -179,7 +183,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 			return Null, fmt.Errorf("Database.%s AccessLevel overload expects AccessLevel", op)
 		}
 		allOrNone = args[2].Bool
-		userMode = isUserModeAccessLevel(args[3])
+		dmlMode = databaseAccessLevelSecurityMode(args[3])
 		accessLevel = args[3]
 	}
 	if op == "delete" || op == "undelete" {
@@ -188,10 +192,13 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 			args[0] = records
 		}
 	}
-	if userMode {
+	if dmlMode == "USER_MODE" {
 		if err := vm.enforceUserModeDMLAccess(op, args[0], accessLevel); err != nil {
 			return Null, err
 		}
+	}
+	if err := vm.enforceDMLRecordAccess(op, args[0], externalIDField, dmlMode == "USER_MODE"); err != nil {
+		return Null, err
 	}
 	var traceRecords []storage.Record
 	if traceIsEnabled(result) {
@@ -458,7 +465,21 @@ func databaseDMLOptionsAllOrNone(value Value, fallback bool) bool {
 	return fallback
 }
 
-func databaseDMLOptions(value Value) dml.Options {
+func databaseDMLOptions(value Value) (dml.Options, error) {
+	for _, field := range []struct {
+		name       string
+		inspectMap bool
+	}{
+		{name: "AssignmentRuleHeader", inspectMap: true},
+		{name: "DuplicateRuleHeader", inspectMap: true},
+		{name: "EmailHeader", inspectMap: true},
+		{name: "LocaleOptions"},
+		{name: "LocalizeErrors"},
+	} {
+		if databaseDMLOptionConfigured(value, field.name, field.inspectMap) {
+			return dml.Options{}, unsupportedCallError("Database.DMLOptions." + field.name + " local DML option behavior")
+		}
+	}
 	options := dml.Options{}
 	for _, field := range []string{"allowFieldTruncation", "AllowFieldTruncation"} {
 		if option, ok := value.Fields[field]; ok && option.Kind == ValueBool && option.Bool {
@@ -466,12 +487,29 @@ func databaseDMLOptions(value Value) dml.Options {
 			break
 		}
 	}
-	return options
+	return options, nil
 }
 
-func (vm *VM) applyPerRecordDMLTargetOptions(records []storage.Record, targets []*Value) {
+func databaseDMLOptionConfigured(value Value, fieldName string, inspectMap bool) bool {
+	for field, option := range value.Fields {
+		if !strings.EqualFold(field, fieldName) || option.Kind == ValueNull {
+			continue
+		}
+		if !inspectMap || option.Kind != ValueObject {
+			return true
+		}
+		for _, nested := range option.Fields {
+			if nested.Kind != ValueNull {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (vm *VM) applyPerRecordDMLTargetOptions(records []storage.Record, targets []*Value) error {
 	if vm == nil || vm.Org == nil || len(records) == 0 || len(targets) == 0 {
-		return
+		return nil
 	}
 	for i := range records {
 		if i >= len(targets) || targets[i] == nil || targets[i].Kind != ValueObject {
@@ -481,11 +519,16 @@ func (vm *VM) applyPerRecordDMLTargetOptions(records []storage.Record, targets [
 		if !ok || !isDatabaseDMLOptionsValue(value) {
 			continue
 		}
-		if !databaseDMLOptions(value).AllowFieldTruncation {
+		options, err := databaseDMLOptions(value)
+		if err != nil {
+			return err
+		}
+		if !options.AllowFieldTruncation {
 			continue
 		}
 		vm.applyRecordFieldTruncation(&records[i])
 	}
+	return nil
 }
 
 func (vm *VM) applyRecordFieldTruncation(record *storage.Record) {
@@ -1222,14 +1265,20 @@ func dmlExceptionErrorDetails(results []dml.Result) Value {
 }
 
 func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) {
+	return vm.executeDatabaseMergeWithMode(args, ir.DMLModeDefault, result)
+}
+
+func (vm *VM) executeDatabaseMergeWithMode(args []Value, mode ir.DMLMode, result *Result) (Value, error) {
 	if len(args) < 2 || len(args) > 4 {
 		return Null, fmt.Errorf("Database.merge expects master, duplicate record(s), and optional allOrNone")
 	}
 	allOrNone := true
+	dmlMode := vm.resolveDMLMode(mode)
+	accessLevel := Value{}
 	if len(args) == 3 {
 		if isDatabaseAccessLevelValue(args[2]) {
-			// USER_MODE/SYSTEM_MODE is accepted for overload parity; local merge
-			// currently uses the same in-memory DML engine for both modes.
+			dmlMode = databaseAccessLevelSecurityMode(args[2])
+			accessLevel = args[2]
 		} else if args[2].Kind != ValueBool {
 			return Null, fmt.Errorf("Database.merge allOrNone expects Boolean")
 		} else {
@@ -1244,6 +1293,8 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 			return Null, fmt.Errorf("Database.merge AccessLevel overload expects AccessLevel")
 		}
 		allOrNone = args[2].Bool
+		dmlMode = databaseAccessLevelSecurityMode(args[3])
+		accessLevel = args[3]
 	}
 	if vm.Org == nil {
 		return Null, fmt.Errorf("DML requires org state")
@@ -1261,6 +1312,20 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 	}
 	duplicates, _, err := vm.recordsFromValue(duplicateInput)
 	if err != nil {
+		return Null, err
+	}
+	if dmlMode == "USER_MODE" {
+		if err := vm.enforceUserModeDMLAccess("update", args[0], accessLevel); err != nil {
+			return Null, err
+		}
+		if err := vm.enforceUserModeDMLAccess("delete", duplicateInput, accessLevel); err != nil {
+			return Null, err
+		}
+	}
+	if err := vm.enforceDMLRecordAccess("update", args[0], "", dmlMode == "USER_MODE"); err != nil {
+		return Null, err
+	}
+	if err := vm.enforceDMLRecordAccess("delete", duplicateInput, "", dmlMode == "USER_MODE"); err != nil {
 		return Null, err
 	}
 	recordsForChecks := append([]storage.Record{master[0]}, duplicates...)
@@ -1940,7 +2005,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		}
 	}
 	vm.stripTransientDMLDerivedFields(records)
-	vm.applyPerRecordDMLTargetOptions(records, targets)
+	if err := vm.applyPerRecordDMLTargetOptions(records, targets); err != nil {
+		return nil, err
+	}
 	engine := vm.newDeferredAutomationDMLEngine(result)
 	engine.Options = options
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
@@ -2472,7 +2539,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		return nil, err
 	}
 	vm.stripTransientDMLDerivedFields(records)
-	vm.applyPerRecordDMLTargetOptions(records, targets)
+	if err := vm.applyPerRecordDMLTargetOptions(records, targets); err != nil {
+		return nil, err
+	}
 	engine := vm.newDeferredAutomationDMLEngine(result)
 	engine.Options = options
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
@@ -4768,7 +4837,7 @@ func groupedRecordIndicesByObject(records []storage.Record) [][]int {
 	return groups
 }
 
-func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result *Result) error {
+func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode ir.DMLMode, result *Result) error {
 	traceStart, traceStartedAt := traceSpanStart(result)
 	if op == "merge" {
 		if expr.Kind != ir.ExprCall || len(expr.Args) < 2 {
@@ -4782,7 +4851,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result
 			}
 			args = append(args, value)
 		}
-		value, err := vm.executeDatabaseMerge(args, result)
+		value, err := vm.executeDatabaseMergeWithMode(args, mode, result)
 		appendDurationTraceLazy(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), func() map[string]any {
 			return vm.traceDMLArgs(op, nil, len(args))
 		})
@@ -4823,6 +4892,15 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result
 		if _, _, recordsErr := vm.recordsFromValue(value); recordsErr != nil {
 			return recordsErr
 		}
+	}
+	dmlMode := vm.resolveDMLMode(mode)
+	if dmlMode == "USER_MODE" {
+		if err := vm.enforceUserModeDMLAccess(op, value, Value{}); err != nil {
+			return err
+		}
+	}
+	if err := vm.enforceDMLRecordAccess(op, value, externalIDField, dmlMode == "USER_MODE"); err != nil {
+		return err
 	}
 	traceStart, traceStartedAt = traceSpanStart(result)
 	results, err := vm.applyDML(op, value, true, externalIDField, dml.Options{}, result)

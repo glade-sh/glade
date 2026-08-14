@@ -88,6 +88,8 @@ type VM struct {
 	currentClass            string
 	currentNamespace        string
 	currentMethod           Method
+	currentTrigger          bool
+	entrySharingMode        string
 	reflectionConstructType string
 	testContext             *TestContext
 	localAsyncJobs          []AsyncJob
@@ -444,10 +446,12 @@ func unsupportedCallError(callee string) error {
 }
 
 type callFrame struct {
-	Symbol string
-	File   string
-	Line   int
-	Column int
+	Symbol      string
+	File        string
+	Line        int
+	Column      int
+	APIVersion  string
+	SharingMode string
 }
 
 type TestContext struct {
@@ -519,15 +523,16 @@ type cacheScanItem struct {
 }
 
 type Trigger struct {
-	Name      string
-	Namespace string
-	Object    string
-	Timing    string
-	Operation string
-	Program   ir.Program
-	File      string
-	Line      int
-	Column    int
+	Name       string
+	Namespace  string
+	Object     string
+	Timing     string
+	Operation  string
+	APIVersion string
+	Program    ir.Program
+	File       string
+	Line       int
+	Column     int
 }
 
 func New(stdout io.Writer) *VM {

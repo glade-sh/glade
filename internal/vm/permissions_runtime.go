@@ -287,6 +287,38 @@ func (vm *VM) enforceUserModeDMLAccess(op string, value Value, accessLevel Value
 	return nil
 }
 
+func (vm *VM) enforceDMLRecordAccess(op string, value Value, externalIDField string, userMode bool) error {
+	if vm == nil || vm.Org == nil || (op != "update" && op != "delete" && op != "undelete" && op != "upsert") {
+		return nil
+	}
+	if !userMode && (vm.currentTrigger || !strings.EqualFold(vm.currentSharingMode(), "with sharing")) {
+		return nil
+	}
+	for _, item := range dmlAccessRecords(value) {
+		record, err := vm.recordFromValue(&item)
+		if err != nil {
+			return err
+		}
+		var stored storage.Record
+		var found bool
+		if strings.EqualFold(op, "upsert") {
+			kind, existing, classifyErr := vm.classifyUpsert(record, externalIDField)
+			if classifyErr != nil {
+				return classifyErr
+			}
+			if kind == "update" && existing.ID != "" {
+				stored, found = vm.findOrgRecord(record.Object, existing.ID)
+			}
+		} else if record.ID != "" {
+			stored, found = vm.findOrgRecord(record.Object, record.ID)
+		}
+		if found && !vm.userModeRecordVisible(record.Object, stored, vm.currentUserID()) {
+			return newExceptionError("SecurityException", fmt.Sprintf("Access to record '%s' denied", stored.ID))
+		}
+	}
+	return nil
+}
+
 func accessLevelPermissionSetID(accessLevel Value) string {
 	if !isDatabaseAccessLevelValue(accessLevel) || accessLevel.Fields == nil {
 		return ""

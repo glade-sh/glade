@@ -42,6 +42,7 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 			class := vm.Class{
 				Name:         typ.Name,
 				Namespace:    typ.Namespace,
+				APIVersion:   typ.EffectiveAPIVersion,
 				Access:       accessModifier(typ.Modifiers),
 				Modifiers:    append([]string(nil), typ.Modifiers...),
 				IsAbstract:   hasModifier(typ.Modifiers, "abstract"),
@@ -66,9 +67,11 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 		if err != nil {
 			continue
 		}
+		apiVersion := runtimeTypeAPIVersion(typ, sources)
 		class := vm.Class{
 			Name:         typ.Name,
 			Namespace:    typ.Namespace,
+			APIVersion:   apiVersion,
 			Access:       accessModifier(typ.Modifiers),
 			Modifiers:    append([]string(nil), typ.Modifiers...),
 			IsAbstract:   hasModifier(typ.Modifiers, "abstract"),
@@ -110,12 +113,12 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 					Dependency: typ.Dependency,
 				}
 				if member.Kind == apexast.DeclarationProperty {
-					attachPropertyAccessors(&field, typ.Name, typ.File, member, source)
+					attachPropertyAccessors(&field, typ.Name, typ.File, member, source, apiVersion)
 				}
 				if value, ok := compileFieldInitializer(member.Type, member.Name, member.Range, source); ok {
 					field.Value = value
 					field.InitialValue = value
-				} else if initializer, ok := compileFieldInitializerMethod(typ.Name, field.Name, field.Static, typ.File, member.Range, source); ok {
+				} else if initializer, ok := compileFieldInitializerMethod(typ.Name, field.Name, field.Static, typ.File, member.Range, source, apiVersion); ok {
 					if field.Static {
 						class.StaticInitializers = append(class.StaticInitializers, initializer)
 					} else {
@@ -130,12 +133,12 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 					class.FieldOrder = append(class.FieldOrder, field.Name)
 				}
 			case apexast.DeclarationConstructor:
-				ctor, err := compileProjectConstructor(typ.Name, typ.File, member.Range, source)
+				ctor, err := compileProjectConstructor(typ.Name, typ.File, member.Range, member.BodyRange, source, apiVersion)
 				if err == nil {
 					class.Constructors = append(class.Constructors, ctor)
 				}
 			case apexast.DeclarationInitializer:
-				init, err := compileProjectInitializer(typ.Name, typ.File, member.Range, source, hasModifier(member.Modifiers, "static"))
+				init, err := compileProjectInitializer(typ.Name, typ.File, member.Range, member.BodyRange, source, hasModifier(member.Modifiers, "static"), apiVersion)
 				if err == nil {
 					if init.IsStatic {
 						class.StaticInitializers = append(class.StaticInitializers, init)
@@ -243,7 +246,7 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 			}
 			return
 		}
-		method, err := compileProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, job.Source)
+		method, err := compileProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, member.BodyRange, job.Source, job.APIVersion)
 		if err != nil {
 			if unsupported, ok := unsupportedProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, job.Source, err); ok {
 				unsupported.Dependency = job.Dependency
@@ -320,6 +323,7 @@ func artifactUnsupportedConstructor(typ typesys.TypeSymbol, member typesys.Membe
 		IsConstructor: true,
 		Access:        accessModifier(member.Modifiers),
 		Modifiers:     append([]string(nil), member.Modifiers...),
+		APIVersion:    typ.EffectiveAPIVersion,
 		Dependency:    true,
 		Unsupported:   capturedPackageNoLocalBody,
 	}
@@ -430,12 +434,12 @@ func compileProjectTriggers(index typesys.Index, caches ...*sourceCache) ([]vm.T
 			errs = append(errs, err)
 			continue
 		}
-		body, err := extractMethodBody(source, trigger.Range)
+		body, err := extractMethodBody(source, trigger.BodyRange)
 		if err != nil {
 			errs = append(errs, err)
 			continue
 		}
-		program, err := vm.CompileAnonymous(body)
+		program, err := vm.CompileAnonymousWithOptions(body, vm.CompileOptions{APIVersion: trigger.EffectiveAPIVersion, Trigger: true})
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -446,15 +450,16 @@ func compileProjectTriggers(index typesys.Index, caches ...*sourceCache) ([]vm.T
 				continue
 			}
 			out = append(out, vm.Trigger{
-				Name:      trigger.Name,
-				Namespace: trigger.Namespace,
-				Object:    trigger.ObjectName,
-				Timing:    timing,
-				Operation: op,
-				Program:   program,
-				File:      trigger.File,
-				Line:      trigger.Range.Start.Line,
-				Column:    trigger.Range.Start.Column,
+				Name:       trigger.Name,
+				Namespace:  trigger.Namespace,
+				Object:     trigger.ObjectName,
+				Timing:     timing,
+				Operation:  op,
+				APIVersion: trigger.EffectiveAPIVersion,
+				Program:    program,
+				File:       trigger.File,
+				Line:       trigger.Range.Start.Line,
+				Column:     trigger.Range.Start.Column,
 			})
 		}
 	}
@@ -1063,7 +1068,7 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 	org.Objects["PermissionSetGroup"] = state
 }
 
-func compileProjectMethod(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, source string) (vm.Method, error) {
+func compileProjectMethod(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, bodyRange *diagnostic.Range, source, apiVersion string) (vm.Method, error) {
 	methodSource, err := extractMethodSource(source, r)
 	if err != nil {
 		return vm.Method{}, err
@@ -1072,11 +1077,11 @@ func compileProjectMethod(className, methodName, returnType string, modifiers []
 	if err != nil {
 		return vm.Method{}, err
 	}
-	body, err := extractMethodBody(source, r)
+	body, err := extractMethodBody(source, bodyRange)
 	if err != nil {
 		return vm.Method{}, err
 	}
-	program, err := vm.CompileAnonymous(body)
+	program, err := vm.CompileAnonymousWithOptions(body, vm.CompileOptions{APIVersion: apiVersion})
 	if err != nil {
 		return vm.Method{}, err
 	}
@@ -1090,11 +1095,12 @@ func compileProjectMethod(className, methodName, returnType string, modifiers []
 		Access:     accessModifier(modifiers),
 		Modifiers:  modifiers,
 		File:       file,
+		APIVersion: apiVersion,
 		Line:       r.Start.Line,
 		Column:     r.Start.Column,
 	}, nil
 }
-func compileProjectConstructor(className, file string, r diagnostic.Range, source string) (vm.Method, error) {
+func compileProjectConstructor(className, file string, r diagnostic.Range, bodyRange *diagnostic.Range, source, apiVersion string) (vm.Method, error) {
 	methodSource, err := extractMethodSource(source, r)
 	if err != nil {
 		return vm.Method{}, err
@@ -1103,11 +1109,11 @@ func compileProjectConstructor(className, file string, r diagnostic.Range, sourc
 	if err != nil {
 		return vm.Method{}, err
 	}
-	body, err := extractMethodBody(source, r)
+	body, err := extractMethodBody(source, bodyRange)
 	if err != nil {
 		return vm.Method{}, err
 	}
-	program, err := vm.CompileAnonymous(body)
+	program, err := vm.CompileAnonymousWithOptions(body, vm.CompileOptions{APIVersion: apiVersion})
 	if err != nil {
 		return vm.Method{}, err
 	}
@@ -1118,17 +1124,18 @@ func compileProjectConstructor(className, file string, r diagnostic.Range, sourc
 		Program:       program,
 		ClassName:     className,
 		IsConstructor: true,
+		APIVersion:    apiVersion,
 		File:          file,
 		Line:          r.Start.Line,
 		Column:        r.Start.Column,
 	}, nil
 }
-func compileProjectInitializer(className, file string, r diagnostic.Range, source string, static bool) (vm.Method, error) {
-	body, err := extractMethodBody(source, r)
+func compileProjectInitializer(className, file string, r diagnostic.Range, bodyRange *diagnostic.Range, source string, static bool, apiVersion string) (vm.Method, error) {
+	body, err := extractMethodBody(source, bodyRange)
 	if err != nil {
 		return vm.Method{}, err
 	}
-	program, err := vm.CompileAnonymous(body)
+	program, err := vm.CompileAnonymousWithOptions(body, vm.CompileOptions{APIVersion: apiVersion})
 	if err != nil {
 		return vm.Method{}, err
 	}
@@ -1142,6 +1149,7 @@ func compileProjectInitializer(className, file string, r diagnostic.Range, sourc
 		Program:    program,
 		ClassName:  className,
 		IsStatic:   static,
+		APIVersion: apiVersion,
 		File:       file,
 		Line:       r.Start.Line,
 		Column:     r.Start.Column,

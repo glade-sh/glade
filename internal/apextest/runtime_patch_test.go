@@ -999,7 +999,10 @@ func TestExplicitRuntimeTransitionFallsBackForEveryUnsafeShape(t *testing.T) {
 				if len(current.Triggers) != 1 {
 					t.Fatalf("trigger count = %d", len(current.Triggers))
 				}
-				current.Triggers[0].Range.End.Offset = current.Triggers[0].Range.Start.Offset
+				if current.Triggers[0].BodyRange == nil {
+					t.Fatal("trigger body range is unavailable")
+				}
+				current.Triggers[0].BodyRange.End.Offset = current.Triggers[0].BodyRange.Start.Offset
 				return current
 			},
 		},

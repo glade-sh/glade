@@ -52,6 +52,10 @@ ledger in this repository state.
 evidence catalogs may use narrower row-level classifications; their counts
 apply only to the named catalog.
 
+`GLADERUNTIME001` marks a body that the Apex parser accepts but the local VM
+cannot lower. That body is compile-ready for `glade check`, but it receives no
+runtime-support credit and local test execution reports `UnsupportedFeature`.
+
 <GladeSupportExplorer />
 
 ## Current release assurance

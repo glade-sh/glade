@@ -275,6 +275,9 @@ func mergeCurrentPageStringParams(page Value, params map[string]string) {
 
 func (vm *VM) invokeUIAction(framework, className, methodName string, params map[string]any) (UIInvocationResult, error) {
 	out := UIInvocationResult{Framework: framework, ClassName: className, MethodName: methodName}
+	callerEntrySharing := vm.entrySharingMode
+	vm.entrySharingMode = "with sharing"
+	defer func() { vm.entrySharingMode = callerEntrySharing }()
 	method, args, err := vm.resolveUIAction(className, methodName, params)
 	if err != nil {
 		var diagnostic *UIActionDiagnosticError

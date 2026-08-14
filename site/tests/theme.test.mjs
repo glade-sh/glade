@@ -628,8 +628,8 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(securityWorkflow, /ossf\/scorecard-action@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /publish_results: true/);
 
-  assert.match(ciWorkflow, /go-version: "1\.26\.5"/);
-  assert.match(releaseWorkflow, /go-version: "1\.26\.5"/);
+  assert.match(ciWorkflow, /go-version: "1\.26\.6"/);
+  assert.match(releaseWorkflow, /go-version: "1\.26\.6"/);
   assert.match(releaseWorkflow, /cyclonedx-gomod/);
   assert.match(releaseWorkflow, /tar -xzf "\$archive" -C "\$extract_dir" glade/);
   assert.match(releaseWorkflow, /cyclonedx-gomod bin -json -version "\$VERSION" -output "\$sbom" "\$extract_dir\/glade"/);

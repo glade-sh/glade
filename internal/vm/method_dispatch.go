@@ -64,7 +64,11 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	if method.Unsupported != "" {
-		return Null, fmt.Errorf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
+		message := fmt.Sprintf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
+		if method.RuntimeLowering {
+			return Null, UnsupportedFeature(message)
+		}
+		return Null, fmt.Errorf("%s", message)
 	}
 	if methodHasModifier(method.Modifiers, "abstract") {
 		if receiver.Kind == ValueObject {
@@ -85,7 +89,11 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	if method.Unsupported != "" {
-		return Null, fmt.Errorf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
+		message := fmt.Sprintf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
+		if method.RuntimeLowering {
+			return Null, UnsupportedFeature(message)
+		}
+		return Null, fmt.Errorf("%s", message)
 	}
 	if methodHasModifier(method.Modifiers, "abstract") {
 		return Null, fmt.Errorf("cannot execute abstract method %s", method.Name)
@@ -235,6 +243,12 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			}
 			return Null, newExceptionError("UnsupportedOperationException", method.Name+" local stub surface")
 		}
+		dataWeaveRuntime := receiver.Kind == ValueObject &&
+			(strings.EqualFold(receiver.Type, "DataWeave.Script") || strings.HasPrefix(receiver.Type, "DataWeaveScriptResource.")) &&
+			strings.EqualFold(apexMethodMemberName(method.Name), "execute")
+		if !dataWeaveRuntime && vm.generatedRuntimeDisposition(method, receiver) == generatedRuntimeUnsupported {
+			return Null, unsupportedCallError(method.Name)
+		}
 	}
 	if passiveGeneratedMethod(method) {
 		if receiver.Kind == ValueObject && vm.isUserProvisioningBatchableType(receiver.Type) {
@@ -301,6 +315,8 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	callerTypes := vm.VarTypes
 	callerClass := vm.currentClass
 	callerMethod := vm.currentMethod
+	callerTrigger := vm.currentTrigger
+	callerSharingMode := vm.currentSharingMode()
 	callerStatement := vm.currentStatement
 	callerHasStatement := vm.hasStatement
 	vm.scopeStack = append(vm.scopeStack, caller)
@@ -308,14 +324,17 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	vm.VarTypes = frameTypes
 	vm.currentClass = method.ClassName
 	vm.currentMethod = method
+	vm.currentTrigger = false
 	if vm.currentClass == "" {
 		vm.currentClass = classNameFromMethod(method.Name)
 	}
 	vm.callStack = append(vm.callStack, callFrame{
-		Symbol: vm.apexMethodFrameSymbol(method),
-		File:   method.File,
-		Line:   method.Line,
-		Column: method.Column,
+		Symbol:      vm.apexMethodFrameSymbol(method),
+		File:        method.File,
+		Line:        method.Line,
+		Column:      method.Column,
+		APIVersion:  method.APIVersion,
+		SharingMode: callerSharingMode,
 	})
 	if traceIsEnabled(result) {
 		traceStart, traceStartedAt := traceSpanStart(result)
@@ -337,6 +356,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		vm.VarTypes = callerTypes
 		vm.currentClass = callerClass
 		vm.currentMethod = callerMethod
+		vm.currentTrigger = callerTrigger
 		vm.currentStatement = callerStatement
 		vm.hasStatement = callerHasStatement
 		vm.scopeStack = vm.scopeStack[:len(vm.scopeStack)-1]

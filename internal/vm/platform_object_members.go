@@ -45,6 +45,11 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 			return value, true
 		}
 	}
+	if strings.EqualFold(className, "Invocable.Action") {
+		if action, handled := newInvocableAction(methodName, args); handled {
+			return action, true
+		}
+	}
 	if strings.EqualFold(className, "WebStoreContext") && strings.EqualFold(methodName, "getCommerceContext") {
 		return Null, false
 	}
@@ -61,23 +66,6 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 		(strings.EqualFold(methodName, "getCommunity") || strings.EqualFold(methodName, "getCommunities")) {
 		return Null, false
 	}
-	if strings.EqualFold(className, "Ideas") && strings.EqualFold(methodName, "findSimilar") {
-		method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, true)
-		if !ok {
-			return Null, false
-		}
-		return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
-	}
-	if strings.EqualFold(className, "Ideas") {
-		switch strings.ToLower(methodName) {
-		case "getallrecentreplies", "getreadrecentreplies", "getunreadrecentreplies":
-			method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, true)
-			if !ok {
-				return Null, false
-			}
-			return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
-		}
-	}
 	if !vm.generatedPlatformMethodFallbackType(className) {
 		return Null, false
 	}
@@ -87,11 +75,6 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 	}
 	if !vm.generatedPlatformMethodAllowsDefault(method) {
 		return Null, false
-	}
-	if strings.EqualFold(className, "Invocable.Action") {
-		if action, handled := newInvocableAction(methodName, args); handled {
-			return action, true
-		}
 	}
 	return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
 }
@@ -1478,23 +1461,10 @@ func (vm *VM) generatedPlatformMethodFallbackType(typeName string) bool {
 }
 
 func (vm *VM) generatedPlatformMethodAllowsDefault(method Method) bool {
-	if packagedControllerDefaultMethod(method.ClassName, method.Name) {
-		return true
-	}
-	if industryControllerDefaultStatic(method.ClassName, method.Name) || industryControllerDefaultInstance(method.ClassName, method.Name) {
-		return true
-	}
-	if commerceLocalHarnessRuntimeMethod(method.ClassName, method.Name) {
-		return true
-	}
-	if generatedPlatformTopLevelPassiveTypeName(method.ClassName) ||
-		strings.EqualFold(method.ClassName, "ApexPages.IdeaStandardSetController") {
-		return true
-	}
 	if slackGeneratedPlatformPassiveDTOTypeName(method.ClassName) {
 		return slackGeneratedPlatformPassiveDTOMethod(method)
 	}
-	return vm.isPassivePlatformDTOType(method.ClassName)
+	return vm.generatedRuntimeDisposition(method, Null) == generatedRuntimePassiveDTO
 }
 
 func waveEnumLikeRuntimeType(typeName string) bool {

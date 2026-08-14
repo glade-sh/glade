@@ -17,6 +17,18 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+func semaParserBodyRange(source string, start, end int) *diagnostic.Range {
+	open := strings.IndexByte(source[start:end], '{')
+	if open < 0 {
+		return nil
+	}
+	r := diagnostic.Range{
+		Start: diagnostic.Position{Offset: start + open},
+		End:   diagnostic.Position{Offset: end},
+	}
+	return &r
+}
+
 func TestSemaSObjectFieldProviderPrecedenceAndDeterministicVisit(t *testing.T) {
 	provider := newSemaSObjectFieldProvider("pkg", schema.Object{
 		Name: "Account",
@@ -976,9 +988,10 @@ func TestZeroBodyDuplicateOverlayHydrationPrecedesLaterDiagnostics(t *testing.T)
 			Name: "LaterDiagnostics",
 			File: file,
 			Members: []typesys.MemberSymbol{{
-				Kind: apexast.DeclarationMethod,
-				Name: "run",
-				Type: "void",
+				Kind:      apexast.DeclarationMethod,
+				Name:      "run",
+				Type:      "void",
+				BodyRange: semaParserBodyRange(source, methodStart, methodEnd),
 				Range: diagnostic.Range{
 					Start: diagnostic.Position{Offset: methodStart},
 					End:   diagnostic.Position{Offset: methodEnd},
@@ -1052,9 +1065,10 @@ func TestMethodBodyWorkerScaffoldKeepsViewsPrivate(t *testing.T) {
 			Name: "WorkerOne",
 			File: workerFile,
 			Members: []typesys.MemberSymbol{{
-				Kind: apexast.DeclarationMethod,
-				Name: "run",
-				Type: "void",
+				Kind:      apexast.DeclarationMethod,
+				Name:      "run",
+				Type:      "void",
+				BodyRange: semaParserBodyRange(workerSource, methodStart, methodEnd),
 				Range: diagnostic.Range{
 					Start: diagnostic.Position{Offset: methodStart},
 					End:   diagnostic.Position{Offset: methodEnd},
@@ -1119,9 +1133,10 @@ func TestMethodBodyWorkerScaffoldMergesIndexedOrder(t *testing.T) {
 			Name: typeName,
 			File: file,
 			Members: []typesys.MemberSymbol{{
-				Kind: apexast.DeclarationMethod,
-				Name: "run",
-				Type: "void",
+				Kind:      apexast.DeclarationMethod,
+				Name:      "run",
+				Type:      "void",
+				BodyRange: semaParserBodyRange(source, methodStart, methodEnd),
 				Range: diagnostic.Range{
 					Start: diagnostic.Position{Offset: methodStart},
 					End:   diagnostic.Position{Offset: methodEnd},
@@ -1234,22 +1249,27 @@ func TestMethodBodyWorkItemsPreserveOriginalOrder(t *testing.T) {
 			End:   diagnostic.Position{Offset: start + len(marker)},
 		}
 	}
+	bodyRangeFor := func(source, marker string) *diagnostic.Range {
+		r := rangeFor(source, marker)
+		r.Start.Offset += strings.Index(marker, "{")
+		return &r
+	}
 	index := typesys.Index{Types: []typesys.TypeSymbol{
 		{
 			Kind: apexast.DeclarationClass,
 			Name: "Shared",
 			File: firstFile,
 			Members: []typesys.MemberSymbol{
-				{Kind: apexast.DeclarationMethod, Name: "firstMethod", Type: "void", Range: rangeFor(firstSource, "firstMethod{}")},
-				{Kind: apexast.DeclarationConstructor, Name: "Shared", Range: rangeFor(firstSource, "constructor{}")},
-				{Kind: apexast.DeclarationInitializer, Name: "initializer", Range: rangeFor(firstSource, "initializer{}")},
+				{Kind: apexast.DeclarationMethod, Name: "firstMethod", Type: "void", BodyRange: bodyRangeFor(firstSource, "firstMethod{}"), Range: rangeFor(firstSource, "firstMethod{}")},
+				{Kind: apexast.DeclarationConstructor, Name: "Shared", BodyRange: bodyRangeFor(firstSource, "constructor{}"), Range: rangeFor(firstSource, "constructor{}")},
+				{Kind: apexast.DeclarationInitializer, Name: "initializer", BodyRange: bodyRangeFor(firstSource, "initializer{}"), Range: rangeFor(firstSource, "initializer{}")},
 				{
 					Kind: apexast.DeclarationProperty,
 					Name: "Value",
 					Type: "String",
 					Accessors: []apexast.Accessor{
-						{Kind: "get", HasBody: true, Range: rangeFor(firstSource, "getter{}")},
-						{Kind: "set", HasBody: true, Range: rangeFor(firstSource, "setter{}")},
+						{Kind: "get", HasBody: true, BodyRange: bodyRangeFor(firstSource, "getter{}"), Range: rangeFor(firstSource, "getter{}")},
+						{Kind: "set", HasBody: true, BodyRange: bodyRangeFor(firstSource, "setter{}"), Range: rangeFor(firstSource, "setter{}")},
 					},
 				},
 			},
@@ -1259,10 +1279,11 @@ func TestMethodBodyWorkItemsPreserveOriginalOrder(t *testing.T) {
 			Name: "Shared",
 			File: secondFile,
 			Members: []typesys.MemberSymbol{{
-				Kind:  apexast.DeclarationMethod,
-				Name:  "secondMethod",
-				Type:  "void",
-				Range: rangeFor(secondSource, "secondMethod{}"),
+				Kind:      apexast.DeclarationMethod,
+				Name:      "secondMethod",
+				Type:      "void",
+				BodyRange: bodyRangeFor(secondSource, "secondMethod{}"),
+				Range:     rangeFor(secondSource, "secondMethod{}"),
 			}},
 		},
 	}}
@@ -1319,6 +1340,71 @@ func TestMethodBodyWorkItemsPreserveOriginalOrder(t *testing.T) {
 	}
 }
 
+func TestBuildSemaMethodBodyWorkItemsUsesParserBodyRanges(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "ParserFacts.cls")
+	source := "public class ParserFacts { public String run() { return '}'; } }"
+	writeSemaFile(t, path, source)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", index.Diagnostics)
+	}
+	items := buildSemaMethodBodyWorkItems(index, newSemaSources(nil, nil))
+	if len(items) != 1 || items[0].body != " return '}'; " {
+		t.Fatalf("method body items = %#v", items)
+	}
+	if items[0].bodyOffset != strings.Index(source, "{ return")+1 {
+		t.Fatalf("body offset = %d", items[0].bodyOffset)
+	}
+}
+
+func TestBuildSemaTriggerBodyWorkItemsUsesParserBodyRange(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "ParserFacts.trigger")
+	source := "trigger ParserFacts on Account (before insert) { System.debug('}'); }"
+	writeSemaFile(t, path, source)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", index.Diagnostics)
+	}
+	items := buildSemaTriggerBodyWorkItems(index, newSemaSources(nil, nil))
+	if len(items) != 1 || items[0].body != " System.debug('}'); " {
+		t.Fatalf("trigger body items = %#v", items)
+	}
+	if items[0].bodyOffset != strings.Index(source, "{ System")+1 {
+		t.Fatalf("body offset = %d", items[0].bodyOffset)
+	}
+}
+
+func TestStaticFinalFieldsInitializedElsewhereUsesParserBodyRange(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "StaticFacts.cls")
+	source := `public class StaticFacts {
+  public static final Integer Value;
+  static { String marker = '}'; Value = 1; }
+  static { Value = 2; }
+}`
+	writeSemaFile(t, path, source)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", index.Diagnostics)
+	}
+	var typ typesys.TypeSymbol
+	for _, candidate := range index.Types {
+		if candidate.Name == "StaticFacts" {
+			typ = candidate
+			break
+		}
+	}
+	if len(typ.Members) != 3 || typ.Members[1].BodyRange == nil || typ.Members[2].BodyRange == nil {
+		t.Fatalf("static members = %#v", typ.Members)
+	}
+	assigned := (&Analyzer{}).staticFinalFieldsInitializedElsewhere(typ, typ.Members[2], source, buildSemaTypeMemberView(index), nil)
+	if !assigned[normalizeName("Value")] {
+		t.Fatalf("assigned static final fields = %#v", assigned)
+	}
+}
+
 func TestMethodBodyWorkItemsDoNotReserveInvalidBodies(t *testing.T) {
 	root := t.TempDir()
 	file := filepath.Join(root, "MixedBodies.cls")
@@ -1334,12 +1420,17 @@ func TestMethodBodyWorkItemsDoNotReserveInvalidBodies(t *testing.T) {
 			End:   diagnostic.Position{Offset: start + len(marker)},
 		}
 	}
+	bodyRangeFor := func(marker string) *diagnostic.Range {
+		r := rangeFor(marker)
+		r.Start.Offset += strings.Index(marker, "{")
+		return &r
+	}
 	index := typesys.Index{Types: []typesys.TypeSymbol{{
 		Kind: apexast.DeclarationClass,
 		Name: "MixedBodies",
 		File: file,
 		Members: []typesys.MemberSymbol{
-			{Kind: apexast.DeclarationMethod, Name: "valid", Type: "void", Range: rangeFor("valid{}")},
+			{Kind: apexast.DeclarationMethod, Name: "valid", Type: "void", BodyRange: bodyRangeFor("valid{}"), Range: rangeFor("valid{}")},
 			{Kind: apexast.DeclarationMethod, Name: "abstractMethod", Type: "void", Range: rangeFor("abstract;")},
 			{
 				Kind: apexast.DeclarationProperty,
@@ -1420,6 +1511,11 @@ func TestCountExtractableMethodBodyRangesDoesNotAllocatePerAccessor(t *testing.T
 			End:   diagnostic.Position{Offset: start + len(marker)},
 		}
 	}
+	bodyRangeFor := func(marker string) *diagnostic.Range {
+		r := rangeFor(marker)
+		r.Start.Offset += strings.Index(marker, "{")
+		return &r
+	}
 	typ := typesys.TypeSymbol{
 		Kind:    apexast.DeclarationClass,
 		Name:    "PropertyHeavy",
@@ -1431,8 +1527,8 @@ func TestCountExtractableMethodBodyRangesDoesNotAllocatePerAccessor(t *testing.T
 			Name: "Value",
 			Type: "String",
 			Accessors: []apexast.Accessor{
-				{Kind: "get", HasBody: true, Range: rangeFor("getter{}")},
-				{Kind: "set", HasBody: true, Range: rangeFor("setter{}")},
+				{Kind: "get", HasBody: true, BodyRange: bodyRangeFor("getter{}"), Range: rangeFor("getter{}")},
+				{Kind: "set", HasBody: true, BodyRange: bodyRangeFor("setter{}"), Range: rangeFor("setter{}")},
 			},
 		}
 	}

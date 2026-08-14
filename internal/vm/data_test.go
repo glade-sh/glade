@@ -190,6 +190,28 @@ System.assertEquals(true, blockedFailed, 'record options must not make truncatio
 	}
 }
 
+func TestExecNativeInsertRejectsUnsupportedPerRecordDMLOptions(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.DMLOptions opts = new Database.DMLOptions();
+opts.EmailHeader.TriggerUserEmail = true;
+Account account = new Account(Name = 'Acme');
+account.setOptions(opts);
+insert account;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	_, err = machine.Execute(program)
+	var runtimeErr *RuntimeError
+	want := `unsupported call "Database.DMLOptions.EmailHeader local DML option behavior"`
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != want {
+		t.Fatalf("error = %#v, want UnsupportedFeature %q", err, want)
+	}
+}
+
 func TestExecInlineSOQLPreservesEscapedStringLiteral(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Bob\'s Shop');

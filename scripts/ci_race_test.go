@@ -144,8 +144,8 @@ func TestCIRaceClassifierFullMatchesManifest(t *testing.T) {
 		}
 	}
 	sort.Strings(want)
-	if len(got) != 64 || !reflect.DeepEqual(got, want) {
-		t.Fatalf("full packages = %d/%v, want 64 exact manifest packages", len(got), got)
+	if len(got) != len(want) || !reflect.DeepEqual(got, want) {
+		t.Fatalf("full packages = %d/%v, want %d exact manifest packages", len(got), got, len(want))
 	}
 }
 
@@ -182,6 +182,25 @@ func TestCIRaceClassifierPartitionsFullManifest(t *testing.T) {
 	if !reflect.DeepEqual(combined, full) || len(combined) != len(slices.Compact(combined)) {
 		t.Fatalf("early, generic, and Apex packages do not exactly partition the full manifest")
 	}
+}
+
+func fullManifestPackageCount(t *testing.T) int {
+	t.Helper()
+	data, err := os.ReadFile("ci-package-lanes.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var manifest struct {
+		Lanes map[string][]string `json:"lanes"`
+	}
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	count := 0
+	for _, packages := range manifest.Lanes {
+		count += len(packages)
+	}
+	return count
 }
 
 func TestCIRaceClassifierChangedIncludesDependents(t *testing.T) {
@@ -245,7 +264,7 @@ func TestCIRaceClassifierFallsBackToFullOnDiffFailure(t *testing.T) {
 	if err != nil {
 		t.Fatalf("diff failure did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 64 || !strings.Contains(diagnostic, "git diff failed") {
+	if len(got) != fullManifestPackageCount(t) || !strings.Contains(diagnostic, "git diff failed") {
 		t.Fatalf("diff failure selected %d packages without diagnostic: %s", len(got), diagnostic)
 	}
 }
@@ -260,7 +279,7 @@ func TestCIRaceClassifierFallsBackToFullOnGoDeletion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("deletion did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 64 || !strings.Contains(diagnostic, "deleted Go file") {
+	if len(got) != fullManifestPackageCount(t) || !strings.Contains(diagnostic, "deleted Go file") {
 		t.Fatalf("deletion selected %d packages without diagnostic: %s", len(got), diagnostic)
 	}
 }
@@ -275,8 +294,8 @@ func TestCIRaceClassifierFallsBackToFullOnNestedModuleChange(t *testing.T) {
 	if err != nil {
 		t.Fatalf("nested module change did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 64 {
-		t.Fatalf("nested module change selected %d packages, want full 64", len(got))
+	if len(got) != fullManifestPackageCount(t) {
+		t.Fatalf("nested module change selected %d packages, want full manifest", len(got))
 	}
 }
 
@@ -301,7 +320,7 @@ esac
 	if err != nil {
 		t.Fatalf("graph failure did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 64 || !strings.Contains(diagnostic, "dependency graph failed") {
+	if len(got) != fullManifestPackageCount(t) || !strings.Contains(diagnostic, "dependency graph failed") {
 		t.Fatalf("graph failure selected %d packages without diagnostic: %s", len(got), diagnostic)
 	}
 }
@@ -315,7 +334,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	for _, marker := range []string{
 		"name: Race", "branches: [main]", "schedule:", "workflow_dispatch:",
 		"fetch-depth: 0", "scripts/ci-race-packages.sh", "fromJSON(needs.plan.outputs.packages)",
-		"fail-fast: false", "max-parallel: 14", "GOMAXPROCS: \"2\"", "go-version: \"1.26.5\"",
+		"fail-fast: false", "max-parallel: 14", "GOMAXPROCS: \"2\"", "go-version: \"1.26.6\"",
 		`scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "if: always()",
 		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0", "ci-artifacts/race/", "if-no-files-found: error",
 		"npm ci --prefix third_party/lwc", "matrix.package == './internal/gladecli'",

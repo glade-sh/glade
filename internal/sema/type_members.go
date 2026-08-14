@@ -516,7 +516,7 @@ func buildSemaTriggerBodyWorkItems(index typesys.Index, sources *semaSources) []
 		if !ok {
 			continue
 		}
-		body, bodyOffset, extracted := extractBodyForSema(source, trigger.Range)
+		body, bodyOffset, extracted := semaBodyFromRange(source, trigger.BodyRange)
 		if !extracted {
 			continue
 		}
@@ -568,6 +568,7 @@ func semaTriggerBodyDeclaration(trigger typesys.TriggerSymbol) (typesys.TypeSymb
 		Name:      trigger.Name,
 		Type:      "void",
 		Modifiers: []string{"static"},
+		BodyRange: trigger.BodyRange,
 		Range:     trigger.Range,
 	}
 	return typ, member
@@ -686,8 +687,8 @@ func buildSemaMethodBodyWorkItems(index typesys.Index, sources *semaSources) []s
 		typeIndex := bodySource.typeIndex
 		typ := index.Types[typeIndex]
 		source := bodySource.source
-		appendBody := func(memberIndex, accessorIndex int, bodyRange diagnostic.Range) {
-			body, bodyOffset, extracted := extractBodyForSema(source, bodyRange)
+		appendBody := func(memberIndex, accessorIndex int, bodyRange *diagnostic.Range) {
+			body, bodyOffset, extracted := semaBodyFromRange(source, bodyRange)
 			if !extracted {
 				return
 			}
@@ -703,11 +704,11 @@ func buildSemaMethodBodyWorkItems(index typesys.Index, sources *semaSources) []s
 		for memberIndex, member := range typ.Members {
 			switch member.Kind {
 			case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
-				appendBody(memberIndex, semaMethodBodyNoAccessor, member.Range)
+				appendBody(memberIndex, semaMethodBodyNoAccessor, member.BodyRange)
 			case apexast.DeclarationProperty:
 				for accessorIndex, accessor := range member.Accessors {
 					if accessor.HasBody {
-						appendBody(memberIndex, accessorIndex, accessor.Range)
+						appendBody(memberIndex, accessorIndex, accessor.BodyRange)
 					}
 				}
 			}
@@ -773,19 +774,19 @@ func collectSemaMethodBodySources(index typesys.Index, sources *semaSources) ([]
 
 func countExtractableSemaMethodBodyRanges(typ typesys.TypeSymbol, source string) int {
 	count := 0
-	countRange := func(bodyRange diagnostic.Range) {
-		if _, _, extracted := extractBodyForSema(source, bodyRange); extracted {
+	countRange := func(bodyRange *diagnostic.Range) {
+		if _, _, extracted := semaBodyFromRange(source, bodyRange); extracted {
 			count++
 		}
 	}
 	for _, member := range typ.Members {
 		switch member.Kind {
 		case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
-			countRange(member.Range)
+			countRange(member.BodyRange)
 		case apexast.DeclarationProperty:
 			for _, accessor := range member.Accessors {
 				if accessor.HasBody {
-					countRange(accessor.Range)
+					countRange(accessor.BodyRange)
 				}
 			}
 		}

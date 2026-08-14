@@ -14245,19 +14245,19 @@ Database.DMLOptions opts = new Database.DMLOptions();
 System.assertEquals(null, opts.optAllOrNone, 'default optAllOrNone');
 opts.OptAllOrNone = false;
 opts.AllowFieldTruncation = true;
-opts.LocalizeErrors = true;
-opts.EmailHeader.TriggerUserEmail = true;
-opts.EmailHeader.triggerOtherEmail = false;
-opts.DuplicateRuleHeader.AllowSave = true;
-opts.DuplicateRuleHeader.RunAsCurrentUser = true;
-opts.AssignmentRuleHeader.UseDefaultRule = true;
-opts.AssignmentRuleHeader.AssignmentRuleId = '01Q000000000001';
 Object locale = opts.LocaleOptions;
 System.assertEquals(null, locale);
 
-Object copied = opts.clone();
-System.assertEquals(false, copied.OptAllOrNone, 'cloned OptAllOrNone');
-System.assertEquals(true, copied.AllowFieldTruncation);
+Database.DMLOptions headerOpts = new Database.DMLOptions();
+headerOpts.LocalizeErrors = true;
+headerOpts.EmailHeader.TriggerUserEmail = true;
+headerOpts.EmailHeader.triggerOtherEmail = false;
+headerOpts.DuplicateRuleHeader.AllowSave = true;
+headerOpts.DuplicateRuleHeader.RunAsCurrentUser = true;
+headerOpts.AssignmentRuleHeader.UseDefaultRule = true;
+headerOpts.AssignmentRuleHeader.AssignmentRuleId = '01Q000000000001';
+Object copied = headerOpts.clone();
+System.assertEquals(true, copied.LocalizeErrors);
 System.assertEquals(true, copied.EmailHeader.TriggerUserEmail);
 System.assertEquals(false, copied.EmailHeader.triggerOtherEmail, 'cloned triggerOtherEmail');
 System.assertEquals(true, copied.DuplicateRuleHeader.AllowSave);
@@ -14312,6 +14312,36 @@ System.assertEquals(false, upperResults.get(0).isSuccess(), 'upper OptAllOrNone 
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseDMLOptionsRejectConfiguredUnsupportedHeader(t *testing.T) {
+	cases := []struct {
+		name   string
+		config string
+		want   string
+	}{
+		{name: "assignment rule", config: "opts.AssignmentRuleHeader.AssignmentRuleId = '01Q000000000001';", want: `unsupported call "Database.DMLOptions.AssignmentRuleHeader local DML option behavior"`},
+		{name: "duplicate rule", config: "opts.DuplicateRuleHeader.AllowSave = true;", want: `unsupported call "Database.DMLOptions.DuplicateRuleHeader local DML option behavior"`},
+		{name: "email", config: "opts.EmailHeader.TriggerUserEmail = true;", want: `unsupported call "Database.DMLOptions.EmailHeader local DML option behavior"`},
+		{name: "locale", config: "opts.LocaleOptions = new Database.LocaleOptions();", want: `unsupported call "Database.DMLOptions.LocaleOptions local DML option behavior"`},
+		{name: "localize errors", config: "opts.LocalizeErrors = false;", want: `unsupported call "Database.DMLOptions.LocalizeErrors local DML option behavior"`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous("Database.DMLOptions opts = new Database.DMLOptions();\n" + tc.config + "\nDatabase.insert(new Account(Name = 'Acme'), opts);")
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			org := testDataOrg()
+			machine.SetOrg(&org)
+			_, err = machine.Execute(program)
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want {
+				t.Fatalf("error = %#v, want UnsupportedFeature %q", err, tc.want)
+			}
+		})
 	}
 }
 

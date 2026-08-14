@@ -4,6 +4,7 @@ package apexast
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -327,6 +328,86 @@ public interface Drawable { void draw(); }`)
 	}
 }
 
+func TestParseInheritanceAndBodyRanges(t *testing.T) {
+	source := `public class Child extends /* { superclass comment } */ Base implements One, /* { interface comment } */ Map<String, List<Integer>> {
+  static { /* { initializer comment } */ Count = 1; }
+  { /* } initializer comment { */ Count++; }
+  public String Name {
+    get { /* { getter comment } */ return backing; }
+    set { /* } setter comment { */ backing = value; }
+  }
+  public void run() { /* { method comment } */ System.debug('}'); }
+}
+public interface ChildContract extends BaseContract, Generic<String> {
+  void run();
+}
+trigger ChildTrigger on Account (before insert) {
+  System.debug('}');
+}`
+	file := NewParser().ParseSource("Inheritance.cls", source)
+	if len(file.Diagnostics) != 0 || len(file.Declarations) != 3 {
+		t.Fatalf("parse = %#v", file)
+	}
+	bodyText := func(r *Range) string {
+		if r == nil {
+			return ""
+		}
+		return source[r.Start.Offset:r.End.Offset]
+	}
+	child := file.Declarations[0]
+	if child.SuperClass != "Base" {
+		t.Fatalf("superclass = %q", child.SuperClass)
+	}
+	if got, want := child.Interfaces, []string{"One", "Map<String, List<Integer>>"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("interfaces = %#v, want %#v", got, want)
+	}
+	if got := strings.TrimSpace(bodyText(child.BodyRange)); !strings.HasPrefix(got, "{") || !strings.HasSuffix(got, "}") {
+		t.Fatalf("class body = %q", got)
+	}
+	if got := strings.TrimSpace(bodyText(child.Members[0].BodyRange)); got != "{ /* { initializer comment } */ Count = 1; }" {
+		t.Fatalf("static initializer body = %q", got)
+	}
+	if got := strings.TrimSpace(bodyText(child.Members[1].BodyRange)); got != "{ /* } initializer comment { */ Count++; }" {
+		t.Fatalf("instance initializer body = %q", got)
+	}
+	property := child.Members[2]
+	if len(property.Accessors) != 2 || strings.TrimSpace(bodyText(property.Accessors[0].BodyRange)) != "{ /* { getter comment } */ return backing; }" || strings.TrimSpace(bodyText(property.Accessors[1].BodyRange)) != "{ /* } setter comment { */ backing = value; }" {
+		t.Fatalf("accessor bodies = %#v", property.Accessors)
+	}
+	if got := strings.TrimSpace(bodyText(child.Members[3].BodyRange)); got != "{ /* { method comment } */ System.debug('}'); }" {
+		t.Fatalf("method body = %q", got)
+	}
+	contract := file.Declarations[1]
+	if got, want := contract.Interfaces, []string{"BaseContract", "Generic<String>"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("interface bases = %#v, want %#v", got, want)
+	}
+	trigger := file.Declarations[2]
+	if got := strings.TrimSpace(bodyText(trigger.BodyRange)); got != "{\n  System.debug('}');\n}" {
+		t.Fatalf("trigger body = %q", got)
+	}
+}
+
+func TestParseInheritanceSkipsCommentsAndPreservesTypeNodes(t *testing.T) {
+	for _, test := range []struct {
+		source     string
+		superClass string
+		interfaces []string
+	}{
+		{source: "public class Child EXTENDS Base implements One, Two {}", superClass: "Base", interfaces: []string{"One", "Two"}},
+		{source: "public interface Contract eXtEnDs BaseContract, Generic<String> {}", interfaces: []string{"BaseContract", "Generic<String>"}},
+		{source: "public class GenericChild extends Base</* { superclass type comment } */Account> implements Generic</* { interface type comment } */String> {}", superClass: "Base<Account>", interfaces: []string{"Generic<String>"}},
+	} {
+		file := NewParser().ParseSource("Inheritance.cls", test.source)
+		if len(file.Diagnostics) != 0 || len(file.Declarations) != 1 {
+			t.Fatalf("parse %q = %#v", test.source, file)
+		}
+		decl := file.Declarations[0]
+		if decl.SuperClass != test.superClass || !reflect.DeepEqual(decl.Interfaces, test.interfaces) {
+			t.Fatalf("facts for %q = superclass %q interfaces %#v", test.source, decl.SuperClass, decl.Interfaces)
+		}
+	}
+}
+
 func TestParseEnumUserMethodSyntax(t *testing.T) {
 	file := NewParser().ParseSource("Color.cls", `public enum Color { Red, Green; public void run() {} }`)
 	if !file.HasErrors() {
@@ -575,6 +656,24 @@ func TestParseRanges(t *testing.T) {
 	}
 	if method.Range.End.Line != 2 || method.Range.End.Column != 30 {
 		t.Fatalf("method end = %#v", method.Range.End)
+	}
+}
+
+func TestParseMultilineStringLiteralPreservesMethodRange(t *testing.T) {
+	source := "public class Probe {\n  public String run() { return '''\nhello\n'''; }\n}\n"
+	file := NewParser().ParseSource("Probe.cls", source)
+	if file.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	if len(file.Declarations) != 1 || len(file.Declarations[0].Members) != 1 {
+		t.Fatalf("declarations = %#v", file.Declarations)
+	}
+	method := file.Declarations[0].Members[0]
+	if method.Range.End.Offset <= method.Range.Start.Offset {
+		t.Fatalf("method range = %#v", method.Range)
+	}
+	if !strings.Contains(source[method.Range.Start.Offset:method.Range.End.Offset], "'''") {
+		t.Fatalf("method range does not contain multiline literal: %q", source[method.Range.Start.Offset:method.Range.End.Offset])
 	}
 }
 

@@ -261,36 +261,16 @@ func matchingOpenParenBefore(body string, close int) int {
 	}
 	return -1
 }
-func extractBodyForSema(source string, r diagnostic.Range) (string, int, bool) {
-	start := r.Start.Offset
-	end := r.End.Offset
-	if start < 0 || start >= len(source) || end <= start || end > len(source) {
+func semaBodyFromRange(source string, bodyRange *diagnostic.Range) (string, int, bool) {
+	if bodyRange == nil {
 		return "", 0, false
 	}
-	text := source[start:end]
-	open := strings.IndexByte(text, '{')
-	if open < 0 {
+	start := bodyRange.Start.Offset
+	end := bodyRange.End.Offset
+	if start < 0 || end <= start || end > len(source) || source[start] != '{' || source[end-1] != '}' {
 		return "", 0, false
 	}
-	depth := 0
-	for i := open; i < len(text); i++ {
-		switch text[i] {
-		case '/':
-			if end, ok := skipSemaComment(text, i); ok {
-				i = end
-			}
-		case '\'':
-			i = skipSemaString(text, i)
-		case '{':
-			depth++
-		case '}':
-			depth--
-			if depth == 0 {
-				return text[open+1 : i], start + open + 1, true
-			}
-		}
-	}
-	return "", 0, false
+	return source[start+1 : end-1], start + 1, true
 }
 func skipSemaString(source string, start int) int {
 	for i := start + 1; i < len(source); i++ {

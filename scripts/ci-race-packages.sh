@@ -22,8 +22,9 @@ for lane in manifest["lanes"].values():
     if not isinstance(lane, list):
         raise SystemExit("race classifier rejected invalid package lane")
     packages.extend(lane)
-if len(packages) != 64 or len(set(packages)) != 64 or any(not value.startswith(module + "/") for value in packages):
-    raise SystemExit("race classifier requires 64 unique in-module packages")
+expected = len(packages)
+if expected == 0 or len(set(packages)) != expected or any(not value.startswith(module + "/") for value in packages):
+    raise SystemExit(f"race classifier requires {expected} unique in-module packages")
 print(json.dumps(sorted("." + value[len(module):] for value in packages), separators=(",", ":")))
 PY
 }
@@ -34,14 +35,23 @@ case "${1:-}" in
 			echo "usage: scripts/ci-race-packages.sh partition <full-packages-json>" >&2
 			exit 2
 		fi
-		python3 - "$2" <<'PY'
+		python3 - "${manifest}" "$2" <<'PY'
 import json
 import sys
 
-packages = json.loads(sys.argv[1])
-module = "./"
-if not isinstance(packages, list) or len(packages) != 64 or len(set(packages)) != 64 or any(not isinstance(value, str) or not value.startswith(module) for value in packages):
-    raise SystemExit("race partition requires the 64 unique full-manifest packages")
+module = "github.com/glade-sh/glade"
+with open(sys.argv[1], encoding="utf-8") as source:
+    manifest = json.load(source)
+if manifest.get("version") != 1 or not isinstance(manifest.get("lanes"), dict):
+    raise SystemExit("race classifier rejected invalid package manifest")
+expected = []
+for lane in manifest["lanes"].values():
+    if not isinstance(lane, list):
+        raise SystemExit("race classifier rejected invalid package lane")
+    expected.extend("." + value[len(module):] for value in lane)
+packages = json.loads(sys.argv[2])
+if not isinstance(packages, list) or sorted(packages) != sorted(expected) or len(packages) != len(set(packages)):
+	raise SystemExit("race partition requires the exact unique full-manifest packages")
 early = ["./internal/gladecli", "./internal/repoguard"]
 apextest = "./internal/apextest"
 excluded = set(early + [apextest])
