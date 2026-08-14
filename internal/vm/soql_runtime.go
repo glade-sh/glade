@@ -37,6 +37,9 @@ func (vm *VM) parseSOQLAt(queryText string) (soql.Query, error) {
 }
 
 func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand func(string) (string, error), binds Value, accessLevelMode string) ([]Value, error) {
+	if strings.TrimSpace(accessLevelMode) == "" {
+		accessLevelMode = vm.defaultAccessLevelMode()
+	}
 	return vm.executeSOQLRowsWithExpanderAndScope(raw, execResult, expand, binds, accessLevelMode, "")
 }
 
@@ -478,6 +481,9 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 	if len(args) == 2 {
 		accessLevel = args[1]
 	}
+	if !isDatabaseAccessLevelValue(accessLevel) {
+		accessLevel = vm.defaultAccessLevel()
+	}
 	queryText, err := vm.expandSOQLBinds(args[0].Text)
 	if err != nil {
 		return Null, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), args[0].Text))
@@ -588,6 +594,9 @@ func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 }
 
 func (vm *VM) executeSOSLWithAccessLevel(raw string, execResult *Result, accessLevel Value) (Value, error) {
+	if !isDatabaseAccessLevelValue(accessLevel) {
+		accessLevel = vm.defaultAccessLevel()
+	}
 	queryText, err := vm.expandSOQLBinds(raw)
 	if err != nil {
 		return Null, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), raw))
@@ -695,6 +704,9 @@ func (vm *VM) soslRecordsForSpec(spec soslReturningObject, objectName string, pa
 	if vm == nil || vm.Org == nil {
 		return nil, nil
 	}
+	if !isDatabaseAccessLevelValue(accessLevel) {
+		accessLevel = vm.defaultAccessLevel()
+	}
 	if strings.HasSuffix(strings.ToLower(strings.TrimSpace(objectName)), "__x") {
 		return nil, unsupportedCallError("Search.query SOSL external indexes")
 	}
@@ -723,6 +735,9 @@ func (vm *VM) soslRecordsForSpec(spec soslReturningObject, objectName string, pa
 			if !ok || !soslRecordMatchesWhere(record, spec.Where) || !vm.soslRecordMatchesPricebook(objectName, record, pricebookID) {
 				continue
 			}
+			if databaseAccessLevelSecurityMode(accessLevel) == "USER_MODE" && !vm.userModeRecordVisible(objectName, record, vm.currentUserID()) {
+				continue
+			}
 			records = append(records, record)
 		}
 		return records, nil
@@ -738,6 +753,9 @@ func (vm *VM) soslRecordsForSpec(spec soslReturningObject, objectName string, pa
 			continue
 		}
 		if !vm.soslRecordMatchesSearch(objectName, record, patterns, scope, accessLevel) {
+			continue
+		}
+		if databaseAccessLevelSecurityMode(accessLevel) == "USER_MODE" && !vm.userModeRecordVisible(objectName, record, vm.currentUserID()) {
 			continue
 		}
 		records = append(records, record)
@@ -948,6 +966,9 @@ func (vm *VM) searchSuggestionRows(query, objectName string, option Value, acces
 	out := typedList("List<Search.SuggestionResult>")
 	if vm == nil || vm.Org == nil {
 		return out, nil
+	}
+	if !isDatabaseAccessLevelValue(accessLevel) {
+		accessLevel = vm.defaultAccessLevel()
 	}
 	if canonical, ok := vm.resolveObjectName(objectName); ok {
 		objectName = canonical
@@ -2274,7 +2295,11 @@ func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result
 	if vm.testContext != nil && vm.testContext.RunAsDepth == 0 {
 		return result
 	}
-	if !vm.currentClassHasSharingMode("with sharing") {
+	if vm.currentTrigger {
+		return result
+	}
+	userMode := strings.EqualFold(strings.TrimSpace(query.SecurityMode), "USER_MODE")
+	if !userMode && !vm.currentClassHasSharingMode("with sharing") {
 		return result
 	}
 	if vm.soqlObjectHasPublicReadSharing(query.Object) {
@@ -2292,7 +2317,9 @@ func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result
 		visibleQuery.Count = false
 		visibleQuery.Aggregates = nil
 		visibleQuery.Fields = []string{"Id"}
-		visibleQuery.SecurityMode = ""
+		if !userMode {
+			visibleQuery.SecurityMode = ""
+		}
 		visibleResult, err := soql.ExecuteWithCache(*vm.Org, visibleQuery, vm.soqlExecutionCacheForOrg(vm.Org))
 		if err == nil {
 			visibleResult = vm.applySOQLSharing(visibleQuery, visibleResult)
@@ -2311,7 +2338,7 @@ func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result
 	}
 	records := result.Records[:0]
 	for _, record := range result.Records {
-		if record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.currentUserCanSeeSharedRecord(query.Object, record, userID) {
+		if vm.userModeRecordVisible(query.Object, record, userID) {
 			records = append(records, record)
 		}
 	}
@@ -2445,14 +2472,7 @@ func (vm *VM) normalizeSOQLRelationshipField(objectName, field string) (string, 
 }
 
 func (vm *VM) currentClassHasSharingMode(mode string) bool {
-	if strings.EqualFold(mode, "with sharing") && hasSuffixFold(vm.currentClass, ".withsharing") {
-		return true
-	}
-	if stackMode, ok := vm.nearestCallStackSharingMode(); ok {
-		return strings.EqualFold(stackMode, mode)
-	}
-	class, ok := vm.lookupClass(vm.currentClass)
-	return ok && methodHasModifier(class.Modifiers, mode)
+	return strings.EqualFold(vm.currentSharingMode(), mode)
 }
 
 func (vm *VM) nearestCallStackSharingMode() (string, bool) {

@@ -283,6 +283,13 @@ func (vm *VM) enforceUserModeDMLAccess(op string, value Value, accessLevel Value
 				return newExceptionError("SecurityException", fmt.Sprintf("Access to field '%s.%s' denied", objectName, canonicalField))
 			}
 		}
+		if !vm.currentTrigger && (strings.EqualFold(op, "update") || strings.EqualFold(op, "delete") || strings.EqualFold(op, "undelete")) {
+			if id, ok := valueIDString(record.Fields["Id"]); ok {
+				if stored, found := vm.findOrgRecord(objectName, storage.ID(id)); found && !vm.userModeRecordVisible(objectName, stored, vm.currentUserID()) {
+					return newExceptionError("SecurityException", fmt.Sprintf("Access to record '%s' denied", id))
+				}
+			}
+		}
 	}
 	return nil
 }

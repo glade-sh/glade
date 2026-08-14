@@ -52,3 +52,45 @@ func TestCompileDMLAccessModesRejectDuplicatesAndSurviveJSON(t *testing.T) {
 		t.Fatalf("JSON DML mode = %d, want %d", got, ir.DMLModeSystem)
 	}
 }
+
+func TestCompileMultilineStringLiteral(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		src  string
+		want string
+	}{
+		{name: "opening newline is trimmed", src: "String value = '''\nhello\nworld\n''';", want: "hello\nworld\n"},
+		{name: "CRLF is preserved", src: "String value = '''\r\nhello\r\nworld\r\n''';", want: "hello\r\nworld\r\n"},
+		{name: "same line", src: "String value = '''hello''';", want: "hello"},
+		{name: "empty", src: "String value = '''''';", want: ""},
+		{name: "quotes and backslash are preserved", src: "String value = '''\n'quote' \\n\n''';", want: "'quote' \\n\n"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			program, err := CompileAnonymous(test.src)
+			if err != nil {
+				t.Fatalf("CompileAnonymous(%q): %v", test.src, err)
+			}
+			literal, err := parseLiteral(firstLiteralValue(program))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if literal.Text != test.want {
+				t.Fatalf("literal = %q, want %q", literal.Text, test.want)
+			}
+		})
+	}
+}
+
+func firstLiteralValue(program ir.Program) string {
+	for _, instruction := range program.Instructions {
+		if instruction.Expr.Kind == ir.ExprLiteral {
+			return instruction.Expr.Value
+		}
+		for _, arg := range instruction.Expr.Args {
+			if arg.Kind == ir.ExprLiteral {
+				return arg.Value
+			}
+		}
+	}
+	return ""
+}

@@ -444,6 +444,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	callerClass := vm.currentClass
 	callerNamespace := vm.currentNamespace
 	callerMethod := vm.currentMethod
+	callerTrigger := vm.currentTrigger
 	callerTriggerGlobals := vm.triggerGlobals
 	callerTriggerNamespaces := vm.activeTriggerNamespaces
 	callerStatement := vm.currentStatement
@@ -463,6 +464,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		File:       trigger.File,
 		APIVersion: trigger.APIVersion,
 	}
+	vm.currentTrigger = true
 	if vm.currentNamespace != "" {
 		vm.activeTriggerNamespaces = append(vm.activeTriggerNamespaces, vm.currentNamespace)
 	}
@@ -475,6 +477,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		vm.currentClass = callerClass
 		vm.currentNamespace = callerNamespace
 		vm.currentMethod = callerMethod
+		vm.currentTrigger = callerTrigger
 		vm.currentStatement = callerStatement
 		vm.hasStatement = callerHasStatement
 	}()

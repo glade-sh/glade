@@ -88,6 +88,7 @@ type VM struct {
 	currentClass            string
 	currentNamespace        string
 	currentMethod           Method
+	currentTrigger          bool
 	reflectionConstructType string
 	testContext             *TestContext
 	localAsyncJobs          []AsyncJob

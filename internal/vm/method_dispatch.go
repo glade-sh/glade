@@ -315,6 +315,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	callerTypes := vm.VarTypes
 	callerClass := vm.currentClass
 	callerMethod := vm.currentMethod
+	callerTrigger := vm.currentTrigger
 	callerStatement := vm.currentStatement
 	callerHasStatement := vm.hasStatement
 	vm.scopeStack = append(vm.scopeStack, caller)
@@ -322,6 +323,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	vm.VarTypes = frameTypes
 	vm.currentClass = method.ClassName
 	vm.currentMethod = method
+	vm.currentTrigger = false
 	if vm.currentClass == "" {
 		vm.currentClass = classNameFromMethod(method.Name)
 	}
@@ -351,6 +353,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		vm.VarTypes = callerTypes
 		vm.currentClass = callerClass
 		vm.currentMethod = callerMethod
+		vm.currentTrigger = callerTrigger
 		vm.currentStatement = callerStatement
 		vm.hasStatement = callerHasStatement
 		vm.scopeStack = vm.scopeStack[:len(vm.scopeStack)-1]

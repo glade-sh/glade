@@ -153,52 +153,30 @@ func lex(source string) ([]token, error) {
 				i++
 			}
 			tokens = append(tokens, token{kind: tokenNumber, text: source[start:i], pos: start})
-		case source[i] == '\'':
-			start := i
-			var text strings.Builder
-			i++
-			for i < len(source) {
-				if source[i] == '\'' {
-					if i+1 < len(source) && source[i+1] == '\'' {
-						text.WriteByte('\'')
-						i += 2
-						continue
-					}
-					i++
-					tokens = append(tokens, token{kind: tokenString, text: text.String(), pos: start})
-					goto next
-				}
-				if source[i] == '\\' && i+1 < len(source) {
-					switch source[i+1] {
-					case '\'':
-						if i+2 < len(source) && source[i+2] == '\'' && i+3 < len(source) && isIdentPart(source[i+3]) {
-							text.WriteByte('\\')
-							text.WriteByte('\'')
-							i += 3
-							continue
-						}
-						text.WriteByte('\'')
-					case '\\':
-						text.WriteByte('\\')
-					case '"':
-						text.WriteByte('"')
-					case 'n':
-						text.WriteByte('\n')
-					case 'r':
-						text.WriteByte('\r')
-					case 't':
-						text.WriteByte('\t')
-					default:
-						text.WriteByte('\\')
-						text.WriteByte(source[i+1])
-					}
-					i += 2
-					continue
-				}
-				text.WriteByte(source[i])
-				i++
+		case i+2 < len(source) && source[i:i+3] == "'''":
+			var tok token
+			var next int
+			var err error
+			_, singleNext, singleErr := lexSingleString(source, i)
+			tripleOffset := strings.Index(source[i+3:], "'''")
+			openingNewline := i+3 < len(source) && (source[i+3] == '\n' || source[i+3] == '\r')
+			if tripleOffset >= 0 && (openingNewline || singleErr != nil || i+3+tripleOffset < singleNext) {
+				tok, next, err = lexMultilineString(source, i)
+			} else {
+				tok, next, err = lexSingleString(source, i)
 			}
-			return nil, fmt.Errorf("unterminated string literal at byte %d", start)
+			if err != nil {
+				return nil, err
+			}
+			tokens = append(tokens, tok)
+			i = next
+		case source[i] == '\'':
+			tok, next, err := lexSingleString(source, i)
+			if err != nil {
+				return nil, err
+			}
+			tokens = append(tokens, tok)
+			i = next
 		default:
 			start := i
 			if i+2 < len(source) {
@@ -238,6 +216,72 @@ func lex(source string) ([]token, error) {
 	}
 	tokens = append(tokens, token{kind: tokenEOF, pos: len(source)})
 	return tokens, nil
+}
+
+func lexMultilineString(source string, start int) (token, int, error) {
+	const delimiter = "'''"
+	i := start + len(delimiter)
+	var text strings.Builder
+	if i < len(source) && source[i] == '\r' {
+		if i+1 < len(source) && source[i+1] == '\n' {
+			i += 2
+		}
+	} else if i < len(source) && source[i] == '\n' {
+		i++
+	}
+	for i < len(source) {
+		if i+len(delimiter) <= len(source) && source[i:i+len(delimiter)] == delimiter {
+			return token{kind: tokenString, text: text.String(), pos: start}, i + len(delimiter), nil
+		}
+		text.WriteByte(source[i])
+		i++
+	}
+	return token{}, start, fmt.Errorf("unterminated multiline string literal at byte %d", start)
+}
+
+func lexSingleString(source string, start int) (token, int, error) {
+	i := start + 1
+	var text strings.Builder
+	for i < len(source) {
+		if source[i] == '\'' {
+			if i+1 < len(source) && source[i+1] == '\'' {
+				text.WriteByte('\'')
+				i += 2
+				continue
+			}
+			return token{kind: tokenString, text: text.String(), pos: start}, i + 1, nil
+		}
+		if source[i] == '\\' && i+1 < len(source) {
+			switch source[i+1] {
+			case '\'':
+				if i+2 < len(source) && source[i+2] == '\'' && i+3 < len(source) && isIdentPart(source[i+3]) {
+					text.WriteByte('\\')
+					text.WriteByte('\'')
+					i += 3
+					continue
+				}
+				text.WriteByte('\'')
+			case '\\':
+				text.WriteByte('\\')
+			case '"':
+				text.WriteByte('"')
+			case 'n':
+				text.WriteByte('\n')
+			case 'r':
+				text.WriteByte('\r')
+			case 't':
+				text.WriteByte('\t')
+			default:
+				text.WriteByte('\\')
+				text.WriteByte(source[i+1])
+			}
+			i += 2
+			continue
+		}
+		text.WriteByte(source[i])
+		i++
+	}
+	return token{}, start, fmt.Errorf("unterminated string literal at byte %d", start)
 }
 
 type parser struct {
