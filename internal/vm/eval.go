@@ -118,7 +118,11 @@ func evalUnary(op string, value Value) (Value, error) {
 		if value.Int == math.MinInt64 {
 			return Null, fmt.Errorf("integer unary - overflow")
 		}
-		return Int(-value.Int), nil
+		result := Int(-value.Int)
+		if isLongIntValue(value) {
+			result.Type = "Long"
+		}
+		return result, nil
 	case "+":
 		return value, nil
 	default:
@@ -156,6 +160,9 @@ func evalBinary(op string, left, right Value) (Value, error) {
 		if left.Kind == ValueDecimal || right.Kind == ValueDecimal {
 			if decimalOf(right) == 0 {
 				return Null, newExceptionError("MathException", "Divide by 0")
+			}
+			if !isFloatBackedDecimal(left) && !isFloatBackedDecimal(right) {
+				return Null, unsupportedCallError("Decimal division exact semantics are deferred")
 			}
 			return decimalBinary(op, left, right, func(a, b float64) float64 { return a / b })
 		}
@@ -456,6 +463,9 @@ func decimalBinary(op string, left, right Value, fn func(float64, float64) float
 	}
 	if !isNumeric(left) || !isNumeric(right) {
 		return Null, fmt.Errorf("operator %s requires numeric operands", op)
+	}
+	if op == "/" && !isFloatBackedDecimal(left) && !isFloatBackedDecimal(right) {
+		return Null, unsupportedCallError("Decimal division exact semantics are deferred")
 	}
 	result, ok := preciseDecimalBinary(op, left, right)
 	if !ok {

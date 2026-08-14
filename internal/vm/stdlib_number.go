@@ -31,7 +31,7 @@ func callIntegerMember(receiver Value, method string, args []Value) (Value, Valu
 	}
 }
 func callDecimalMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
-	if isFloatBackedDecimal(receiver) && (strings.EqualFold(method, "setScale") || strings.EqualFold(method, "toPlainString")) {
+	if isFloatBackedDecimal(receiver) && isDoubleUnsupportedMember(method) {
 		return Null, receiver, false, true, unsupportedCallError("Double." + method)
 	}
 	switch method {
@@ -84,7 +84,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		return Int(rounded), receiver, false, true, nil
+		return longIntValue(rounded), receiver, false, true, nil
 	case "intValue":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.intValue expects 0 arguments")
@@ -102,7 +102,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		return Int(converted), receiver, false, true, nil
+		return longIntValue(converted), receiver, false, true, nil
 	case "doubleValue":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.doubleValue expects 0 arguments")
@@ -217,6 +217,9 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if args[1].Kind != ValueInt {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects Integer scale")
 		}
+		if !isFloatBackedDecimal(receiver) {
+			return Null, receiver, false, true, unsupportedCallError("Decimal division exact semantics are deferred")
+		}
 		if args[1].Int < 0 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects non-negative scale")
 		}
@@ -235,6 +238,15 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		return Decimal(result), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
+	}
+}
+
+func isDoubleUnsupportedMember(method string) bool {
+	switch strings.ToLower(strings.TrimSpace(method)) {
+	case "abs", "divide", "doublevalue", "pow", "precision", "scale", "setscale", "striptrailingzeros", "toplainstring":
+		return true
+	default:
+		return false
 	}
 }
 

@@ -2334,7 +2334,7 @@ func mathUnary(callee string, args []Value) (Value, error) {
 				return Null, fmt.Errorf("Math.abs integer overflow")
 			}
 			if args[0].Int < 0 {
-				return Int(-args[0].Int), nil
+				return mathIntegerResult(Int(-args[0].Int), isLongIntValue(args[0])), nil
 			}
 			return args[0], nil
 		}
@@ -2381,7 +2381,7 @@ func mathUnary(callee string, args []Value) (Value, error) {
 				if err != nil {
 					return Null, err
 				}
-				return Int(rounded), nil
+				return longIntValue(rounded), nil
 			}
 		}
 		rounded, err := int64FromFloat("Math.roundToLong", roundHalfEven(n))

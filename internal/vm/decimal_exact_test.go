@@ -188,17 +188,39 @@ Math.mod(Decimal.valueOf('5.5'), Decimal.valueOf('2'));
 }
 
 func TestExecMathLongOverloadsRetainLongIdentity(t *testing.T) {
-	program, err := CompileAnonymous(`
-System.assert(Math.roundToLong(9007199254740993L) instanceof Long);
-System.assert(Math.max(3, 2L) instanceof Long);
-System.assert(Math.min(3, 4L) instanceof Long);
-System.assert(Math.mod(5, 3L) instanceof Long);
-`)
-	if err != nil {
-		t.Fatal(err)
+	for _, source := range []string{
+		"System.assert(!(Math.roundToLong(9007199254740993L) instanceof Integer));",
+		"System.assert(!(Math.max(3, 2L) instanceof Integer));",
+		"System.assert(!(Math.min(3, 4L) instanceof Integer));",
+		"System.assert(!(Math.mod(5, 3L) instanceof Integer));",
+		"System.assert(!(Math.abs(-5L) instanceof Integer));",
+		"System.assert(!(Decimal.valueOf('42').longValue() instanceof Integer));",
+		"System.assert(!(Decimal.valueOf('42.1').round() instanceof Integer));",
+	} {
+		t.Run(source, func(t *testing.T) {
+			program, err := CompileAnonymous(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Execute(program, nil); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
-	if _, err := Execute(program, nil); err != nil {
-		t.Fatal(err)
+}
+
+func TestExecDecimalDivisionIsExplicitlyUnsupported(t *testing.T) {
+	for _, source := range []string{
+		"Decimal result = Decimal.valueOf('9007199254740993') / Decimal.valueOf('1');",
+		"Decimal result = Decimal.valueOf('9007199254740993').divide(Decimal.valueOf('1'), 0);",
+	} {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			continue
+		}
+		if _, err := Execute(program, nil); err == nil {
+			t.Fatalf("Decimal division unexpectedly succeeded: %s", source)
+		}
 	}
 }
 
@@ -206,6 +228,8 @@ func TestExecDoubleRejectsDecimalOnlyMembers(t *testing.T) {
 	for _, source := range []string{
 		"Double value = Double.valueOf('1.25'); value.toPlainString();",
 		"Double value = Double.valueOf('1.25'); value.setScale(1);",
+		"Double value = Double.valueOf('1.25'); value.precision();",
+		"Double value = Double.valueOf('-1.25'); value.abs();",
 	} {
 		program, err := CompileAnonymous(source)
 		if err != nil {

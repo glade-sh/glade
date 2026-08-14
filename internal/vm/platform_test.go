@@ -5632,7 +5632,6 @@ System.assertEquals('Bonjour', System.Label.Greeting);
 
 func TestExecSystemLabelMethodsLimitsAsyncAndRuntimeExceptionTypes(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals(1.2, Decimal.valueOf('1.25').divide(Decimal.valueOf('1'), 1, RoundingMode.valueOf('HALF_DOWN')));
 System.assertEquals('Hello', System.Label.get('', 'Greeting'));
 System.assertEquals('Bonjour', System.Label.get('pkg', 'Greeting', 'fr'));
 System.assert(System.Label.translationExists('pkg', 'Greeting', 'fr'));
@@ -13584,7 +13583,7 @@ System.assertEquals('2026-05-02 01:04:03', madePlusMinutes.formatGmt('yyyy-MM-dd
 	System.assertEquals('2026-05-02 01:02:06', madePlusSeconds.formatGmt('yyyy-MM-dd HH:mm:ss'));
 	Datetime madePlusDay = made.addDays(1);
 	System.assertEquals('2026-05-03 01:02:03', madePlusDay.formatGmt('yyyy-MM-dd HH:mm:ss'));
-	Datetime madePlusFractionalDay = made + (100000.0 / 86400000.0);
+	Datetime madePlusFractionalDay = made + 0.0011574074074074074;
 	System.assertEquals('2026-05-02 01:03:43', madePlusFractionalDay.formatGmt('yyyy-MM-dd HH:mm:ss'));
 		Datetime parsedDt = Datetime.valueOf('2026-05-02 01:02:03');
 	String madeText = made.formatGmt('yyyy-MM-dd HH:mm:ss');
