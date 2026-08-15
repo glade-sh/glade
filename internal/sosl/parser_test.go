@@ -71,6 +71,16 @@ func TestParseSOSLBindSearchAndDivision(t *testing.T) {
 	}
 }
 
+func TestParseSOSLTracksExplicitEmptyDivision(t *testing.T) {
+	query, err := sosl.Parse("FIND {Acme} RETURNING Account(Id) WITH DIVISION = ''")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !query.DivisionSpecified || query.DivisionBind != "" {
+		t.Fatalf("division = %#v", query)
+	}
+}
+
 func TestParseRejectsUnimplementedSearchOperators(t *testing.T) {
 	for _, input := range []string{
 		"FIND {Acme AND West} RETURNING Account(Id)",

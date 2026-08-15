@@ -56,15 +56,16 @@ type ReturningObject struct {
 }
 
 type Query struct {
-	Terms           []SearchTerm
-	Scope           SearchScope
-	Returning       []ReturningObject
-	Limit           Window
-	WithSnippet     bool
-	SpellCorrection *bool
-	PricebookID     string
-	PricebookIDBind string
-	DivisionBind    string
+	Terms             []SearchTerm
+	Scope             SearchScope
+	Returning         []ReturningObject
+	Limit             Window
+	WithSnippet       bool
+	SpellCorrection   *bool
+	PricebookID       string
+	PricebookIDBind   string
+	DivisionBind      string
+	DivisionSpecified bool
 }
 
 type UnsupportedFeatureError struct {
@@ -426,6 +427,7 @@ func (p *parser) parseWith(query *Query) error {
 		query.SpellCorrection = &parsed
 		return nil
 	case strings.EqualFold(clause.text, "DIVISION"):
+		query.DivisionSpecified = true
 		if !p.accept(tokenEqual) {
 			return p.errorf("expected WITH DIVISION value")
 		}
@@ -551,6 +553,7 @@ func lex(input string) []token {
 		case '\'', '"':
 			quote := input[i]
 			start := i + 1
+			closed := false
 			i++
 			var value strings.Builder
 			for i < len(input) {
@@ -565,11 +568,12 @@ func lex(input string) []token {
 					value.WriteString(input[start:i])
 					i++
 					tokens = append(tokens, token{kind: tokenString, text: value.String()})
+					closed = true
 					break
 				}
 				i++
 			}
-			if i >= len(input) && (len(tokens) == 0 || tokens[len(tokens)-1].kind != tokenString || start != i) {
+			if !closed {
 				tokens = append(tokens, token{kind: tokenInvalid, text: input[start:]})
 			}
 		case '?':

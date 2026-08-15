@@ -556,7 +556,7 @@ func validateSOSLRuntimeFeatures(query sosl.Query) error {
 	if query.SpellCorrection != nil {
 		return &sosl.UnsupportedFeatureError{Message: "SOSL WITH SPELL_CORRECTION local runtime"}
 	}
-	if query.DivisionBind != "" {
+	if query.DivisionSpecified {
 		return &sosl.UnsupportedFeatureError{Message: "SOSL WITH DIVISION local runtime"}
 	}
 	return nil
@@ -616,6 +616,10 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 		accessLevel = vm.defaultAccessLevel()
 	}
 	groups := make([]soslResultGroup, 0, len(query.Returning))
+	remaining := -1
+	if query.Limit.HasValue {
+		remaining = query.Limit.Value
+	}
 	for _, spec := range query.Returning {
 		specObjectName := spec.Object
 		if vm.Org != nil {
@@ -643,8 +647,11 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 		sortSOSLRows(rows, spec.OrderBy)
 		applySOSLReturningOffset(&rows, spec)
 		applySOSLReturningLimit(&rows, spec)
-		if query.Limit.HasValue && len(rows.List) > query.Limit.Value {
-			rows.List = rows.List[:query.Limit.Value]
+		if remaining >= 0 {
+			if remaining < len(rows.List) {
+				rows.List = rows.List[:remaining]
+			}
+			remaining -= len(rows.List)
 		}
 		groups = append(groups, soslResultGroup{ObjectName: specObjectName, Rows: rows})
 	}
