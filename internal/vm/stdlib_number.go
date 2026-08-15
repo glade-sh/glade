@@ -134,6 +134,9 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 				return Null, receiver, false, true, unsupportedCallError("Decimal.pow exact result cannot be represented")
 			}
 			result := decimalFromRat(resultRat, scale)
+			if err := ensureFiniteDecimal("Decimal.pow result", result.Decimal); err != nil {
+				return Null, receiver, false, true, err
+			}
 			result.Text = normalizeComputedDecimalText(result.Text)
 			return result, receiver, false, true, nil
 		}

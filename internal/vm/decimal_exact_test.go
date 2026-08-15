@@ -293,6 +293,16 @@ System.assertEquals('1.953125', Decimal.valueOf('1.25').Pow(3).toPlainString());
 	}
 }
 
+func TestExecDecimalPowRejectsNonFiniteCompatibilityCache(t *testing.T) {
+	program, err := CompileAnonymous(`Decimal.valueOf('1e308').pow(2);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil {
+		t.Fatal("Decimal.pow accepted a result whose compatibility cache is non-finite")
+	}
+}
+
 func TestExecLongConstantsAndJSONPathsRetainIdentity(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assert(!(Long.MAX_VALUE instanceof Integer));

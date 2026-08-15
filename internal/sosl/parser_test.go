@@ -9,14 +9,14 @@ import (
 )
 
 func TestParseRuntimeSubsetCarriesSearchAndReturningClauses(t *testing.T) {
-	query, err := sosl.Parse("FIND {Acme* AND West} IN NAME FIELDS RETURNING Account(Id, FORMAT(AnnualRevenue) formatted WHERE Name LIKE :name ORDER BY Name DESC LIMIT :perObject OFFSET 2), Contact(Id) WITH SNIPPET WITH SPELL_CORRECTION = false LIMIT :globalLimit")
+	query, err := sosl.Parse("FIND {Acme*} IN NAME FIELDS RETURNING Account(Id, FORMAT(AnnualRevenue) formatted WHERE Name LIKE :name ORDER BY Name DESC LIMIT :perObject OFFSET 2), Contact(Id) WITH SNIPPET LIMIT :globalLimit")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(query.Terms, []sosl.SearchTerm{{Text: "Acme", Prefix: true}, {Text: "West"}}) {
+	if !reflect.DeepEqual(query.Terms, []sosl.SearchTerm{{Text: "Acme", Prefix: true}}) {
 		t.Fatalf("terms = %#v", query.Terms)
 	}
-	if query.Scope != sosl.SearchScopeName || !query.WithSnippet || query.SpellCorrection == nil || *query.SpellCorrection {
+	if query.Scope != sosl.SearchScopeName || !query.WithSnippet {
 		t.Fatalf("query options = %#v", query)
 	}
 	if query.Limit != (sosl.Window{Bind: "globalLimit"}) {
@@ -68,5 +68,21 @@ func TestParseSOSLBindSearchAndDivision(t *testing.T) {
 	}
 	if query.Returning[0].Where == nil || query.Returning[0].Where.Bind != "name" {
 		t.Fatalf("where = %#v", query.Returning[0].Where)
+	}
+}
+
+func TestParseRejectsUnimplementedSearchOperators(t *testing.T) {
+	for _, input := range []string{
+		"FIND {Acme AND West} RETURNING Account(Id)",
+		"FIND {Acme NOT West} RETURNING Account(Id)",
+		"FIND {Acme?} RETURNING Account(Id)",
+	} {
+		t.Run(input, func(t *testing.T) {
+			_, err := sosl.Parse(input)
+			var unsupported *sosl.UnsupportedFeatureError
+			if !errors.As(err, &unsupported) {
+				t.Fatalf("error = %v, want UnsupportedFeatureError", err)
+			}
+		})
 	}
 }

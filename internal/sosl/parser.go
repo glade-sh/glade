@@ -215,12 +215,17 @@ func (p *parser) parseTerms() ([]SearchTerm, error) {
 	terms := make([]SearchTerm, 0, len(raw))
 	for _, item := range raw {
 		item = strings.TrimSpace(item)
-		if item == "" || strings.EqualFold(item, "AND") || strings.EqualFold(item, "OR") {
+		if item == "" {
 			continue
+		}
+		if strings.EqualFold(item, "AND") || strings.EqualFold(item, "OR") || strings.EqualFold(item, "NOT") {
+			return nil, &UnsupportedFeatureError{Message: fmt.Sprintf("SOSL boolean search operator %s", strings.ToUpper(item))}
+		}
+		if strings.Contains(item, "?") {
+			return nil, &UnsupportedFeatureError{Message: "SOSL fuzzy search operator ?"}
 		}
 		prefix := strings.HasSuffix(item, "*")
 		item = strings.TrimSuffix(item, "*")
-		item = strings.TrimSuffix(item, "?")
 		if item != "" {
 			terms = append(terms, SearchTerm{Text: item, Prefix: prefix})
 		}

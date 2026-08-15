@@ -469,68 +469,44 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 	if !isDatabaseAccessLevelValue(accessLevel) {
 		accessLevel = vm.defaultAccessLevel()
 	}
-	queryText, err := vm.expandSOQLBinds(args[0].Text)
-	if err != nil {
-		return Null, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), args[0].Text))
-	}
 	if err := vm.incrementLimit("soslQueries", 1); err != nil {
 		return Null, err
 	}
-	query, err := sosl.Parse(queryText)
+	_, query, err := vm.parseSOSLQuery(args[0].Text)
 	if err != nil {
-		return Null, vm.soslParseError(err)
+		return Null, err
 	}
-	withSnippet := query.WithSnippet
-	searchTerms := query.Terms
+	groups, err := vm.executeSOSLQuery(query, accessLevel)
+	if err != nil {
+		return Null, err
+	}
 	results := Object("Search.SearchResults")
 	byObject := typedMap("Map<String,List<Search.SearchResult>>")
 	if vm.Org != nil {
-		for _, spec := range query.Returning {
-			objectName := spec.Object
-			if canonical, ok := vm.resolveObjectName(spec.Object); ok {
-				objectName = canonical
-			}
-			records, err := vm.soslRecordsForSpec(spec, objectName, query.Terms, query.Scope, query.PricebookID, accessLevel)
-			if err != nil {
-				return Null, err
-			}
-			key := mapKey(String(objectName))
+		for _, group := range groups {
+			key := mapKey(String(group.ObjectName))
 			list := byObject.Map[key]
 			if list.Kind != ValueList {
 				list = typedList("List<Search.SearchResult>")
 			}
-			values := List()
-			values.Type = "List<" + objectName + ">"
-			for _, record := range records {
-				value := vm.vmValueFromRecord(record)
-				vm.applySOSLReturningFunctionAliases(&value, record, spec)
-				if len(spec.Fields) > 0 {
-					value.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(record.Object, soslFieldSet(spec))
-					vm.hydrateQueriedRecordTypeRelationships(value)
-				}
-				values.List = append(values.List, value)
-			}
-			sortSOSLRows(values, spec.OrderBy)
-			applySOSLReturningOffset(&values, spec)
-			applySOSLReturningLimit(&values, spec)
-			for _, value := range values.List {
+			for _, value := range group.Rows.List {
 				record := storage.Record{}
 				if value.Kind == ValueObject {
 					if id, ok := valueIDString(value.Fields["Id"]); ok {
-						if found, foundOK := vm.findOrgRecord(objectName, storage.ID(id)); foundOK {
+						if found, foundOK := vm.findOrgRecord(group.ObjectName, storage.ID(id)); foundOK {
 							record = found
 						}
 					}
 				}
 				row := Object("Search.SearchResult")
 				row.Fields["sObject"] = value
-				snippet, snippets := soslSnippetsForRecord(record, withSnippet, searchTerms)
+				snippet, snippets := soslSnippetsForRecord(record, query.WithSnippet, query.Terms)
 				row.Fields["snippet"] = String(snippet)
 				row.Fields["snippets"] = snippets
 				list.List = append(list.List, row)
 			}
 			byObject.Map[key] = list
-			byObject.MapKeys[key] = String(objectName)
+			byObject.MapKeys[key] = String(group.ObjectName)
 		}
 	}
 	results.Fields["results"] = byObject
@@ -576,28 +552,70 @@ func (vm *VM) soslParseError(err error) error {
 	return newExceptionError("QueryException", err.Error())
 }
 
+func validateSOSLRuntimeFeatures(query sosl.Query) error {
+	if query.SpellCorrection != nil {
+		return &sosl.UnsupportedFeatureError{Message: "SOSL WITH SPELL_CORRECTION local runtime"}
+	}
+	if query.DivisionBind != "" {
+		return &sosl.UnsupportedFeatureError{Message: "SOSL WITH DIVISION local runtime"}
+	}
+	return nil
+}
+
 func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 	return vm.executeSOSLWithAccessLevel(raw, execResult, Null)
+}
+
+func (vm *VM) parseSOSLQuery(raw string) (string, sosl.Query, error) {
+	queryText, err := vm.expandSOQLBinds(raw)
+	if err != nil {
+		return "", sosl.Query{}, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), raw))
+	}
+	query, err := sosl.Parse(queryText)
+	if err != nil {
+		return "", sosl.Query{}, vm.soslParseError(err)
+	}
+	if err := validateSOSLRuntimeFeatures(query); err != nil {
+		return "", sosl.Query{}, vm.soslParseError(err)
+	}
+	return queryText, query, nil
 }
 
 func (vm *VM) executeSOSLWithAccessLevel(raw string, execResult *Result, accessLevel Value) (Value, error) {
 	if !isDatabaseAccessLevelValue(accessLevel) {
 		accessLevel = vm.defaultAccessLevel()
 	}
-	queryText, err := vm.expandSOQLBinds(raw)
-	if err != nil {
-		return Null, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), raw))
-	}
 	if err := vm.incrementLimit("soslQueries", 1); err != nil {
 		return Null, err
 	}
-	query, err := sosl.Parse(queryText)
+	queryText, query, err := vm.parseSOSLQuery(raw)
 	if err != nil {
-		return Null, vm.soslParseError(err)
+		return Null, err
 	}
-	pricebookID := query.PricebookID
-	groups := make([]Value, 0, len(query.Returning))
+	groups, err := vm.executeSOSLQuery(query, accessLevel)
+	if err != nil {
+		return Null, err
+	}
 	rowCount := 0
+	values := make([]Value, 0, len(groups))
+	for _, group := range groups {
+		rowCount += len(group.Rows.List)
+		values = append(values, group.Rows)
+	}
+	appendTraceLazy(execResult, "apex.sosl", "apex.sosl", func() map[string]any {
+		return map[string]any{
+			"query": queryText,
+			"rows":  rowCount,
+		}
+	})
+	return List(values...), nil
+}
+
+func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResultGroup, error) {
+	if !isDatabaseAccessLevelValue(accessLevel) {
+		accessLevel = vm.defaultAccessLevel()
+	}
+	groups := make([]soslResultGroup, 0, len(query.Returning))
 	for _, spec := range query.Returning {
 		specObjectName := spec.Object
 		if vm.Org != nil {
@@ -608,9 +626,9 @@ func (vm *VM) executeSOSLWithAccessLevel(raw string, execResult *Result, accessL
 		rows := List()
 		rows.Type = "List<" + specObjectName + ">"
 		if vm.Org != nil {
-			records, err := vm.soslRecordsForSpec(spec, specObjectName, query.Terms, query.Scope, pricebookID, accessLevel)
+			records, err := vm.soslRecordsForSpec(spec, specObjectName, query.Terms, query.Scope, query.PricebookID, accessLevel)
 			if err != nil {
-				return Null, err
+				return nil, err
 			}
 			for _, record := range records {
 				value := vm.vmValueFromRecord(record)
@@ -628,19 +646,17 @@ func (vm *VM) executeSOSLWithAccessLevel(raw string, execResult *Result, accessL
 		if query.Limit.HasValue && len(rows.List) > query.Limit.Value {
 			rows.List = rows.List[:query.Limit.Value]
 		}
-		rowCount += len(rows.List)
-		groups = append(groups, rows)
+		groups = append(groups, soslResultGroup{ObjectName: specObjectName, Rows: rows})
 	}
-	appendTraceLazy(execResult, "apex.sosl", "apex.sosl", func() map[string]any {
-		return map[string]any{
-			"query": queryText,
-			"rows":  rowCount,
-		}
-	})
-	return List(groups...), nil
+	return groups, nil
 }
 
 type soslWhere = sosl.Condition
+
+type soslResultGroup struct {
+	ObjectName string
+	Rows       Value
+}
 
 func soslFieldSet(spec sosl.ReturningObject) map[string]bool {
 	fields := make(map[string]bool, len(spec.Fields))
@@ -1075,81 +1091,6 @@ func (vm *VM) soslToLabel(objectName, fieldName string, value storage.Value) str
 		}
 	}
 	return text
-}
-
-func lastIndexFold(s, substr string) int {
-	if substr == "" {
-		return len(s)
-	}
-	for i := len(s) - len(substr); i >= 0; i-- {
-		if strings.EqualFold(s[i:i+len(substr)], substr) {
-			return i
-		}
-	}
-	return -1
-}
-
-func lastIndexFoldOutsideQuotes(s, substr string) int {
-	if substr == "" {
-		return len(s)
-	}
-	last := -1
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if soslQuotedAt(s, i) {
-			i = skipSOSLQuoted(s, i)
-			continue
-		}
-		if strings.EqualFold(s[i:i+len(substr)], substr) {
-			last = i
-		}
-	}
-	return last
-}
-
-func indexFold(s, substr string) int {
-	if substr == "" {
-		return 0
-	}
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if strings.EqualFold(s[i:i+len(substr)], substr) {
-			return i
-		}
-	}
-	return -1
-}
-
-func indexFoldOutsideQuotes(s, substr string) int {
-	if substr == "" {
-		return 0
-	}
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if soslQuotedAt(s, i) {
-			i = skipSOSLQuoted(s, i)
-			continue
-		}
-		if strings.EqualFold(s[i:i+len(substr)], substr) {
-			return i
-		}
-	}
-	return -1
-}
-
-func soslQuotedAt(text string, index int) bool {
-	return index >= 0 && index < len(text) && text[index] == '\''
-}
-
-func skipSOSLQuoted(text string, index int) int {
-	for i := index + 1; i < len(text); i++ {
-		if text[i] != '\'' {
-			continue
-		}
-		if i+1 < len(text) && text[i+1] == '\'' {
-			i++
-			continue
-		}
-		return i
-	}
-	return len(text) - 1
 }
 
 func sortSOSLRows(rows Value, orderBy []sosl.OrderSpec) {
