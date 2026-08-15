@@ -9933,8 +9933,57 @@ func TestExecWithSharingHonorsRoleHierarchy(t *testing.T) {
 	runSharingVisibilityQuery(t, org, storage.Record{
 		ID:     userID,
 		Object: "User",
-		Fields: map[string]storage.Value{"Id": storage.IDValue(userID), "UserRoleId": storage.IDValue(childRole)},
+		Fields: map[string]storage.Value{"Id": storage.IDValue(userID), "UserRoleId": storage.IDValue(ancestorRole)},
 	}, accountID, 1)
+}
+
+func TestExecWithSharingDeniesSameRolePeer(t *testing.T) {
+	const (
+		accountID    = storage.ID("001000000000804")
+		userID       = storage.ID("005000000000804")
+		sharedUserID = storage.ID("005000000000807")
+		roleID       = storage.ID("00E000000000805")
+	)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "AccountShare")
+	storage.EnsureStandardObject(&org, "UserRole")
+	storage.EnsureStandardObject(&org, "User")
+	account := org.Objects["Account"]
+	account.Definition.SharingModel = "Private"
+	account.Records[accountID] = storage.Record{
+		ID:     accountID,
+		Object: "Account",
+		System: storage.SystemFields{OwnerID: "005000000000999"},
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Same Role Account")},
+	}
+	org.Objects["Account"] = account
+	org.Objects["UserRole"].Records[roleID] = storage.Record{
+		ID:     roleID,
+		Object: "UserRole",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Peer Role")},
+	}
+	org.Objects["User"].Records[sharedUserID] = storage.Record{
+		ID:     sharedUserID,
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"Id":         storage.IDValue(sharedUserID),
+			"UserRoleId": storage.IDValue(roleID),
+		},
+	}
+	org.Objects["AccountShare"].Records["00A000000000804"] = storage.Record{
+		ID:     "00A000000000804",
+		Object: "AccountShare",
+		Fields: map[string]storage.Value{
+			"AccountId":          storage.IDValue(accountID),
+			"UserOrGroupId":      storage.IDValue(sharedUserID),
+			"AccountAccessLevel": storage.StringValue("Read"),
+		},
+	}
+	runSharingVisibilityQuery(t, org, storage.Record{
+		ID:     userID,
+		Object: "User",
+		Fields: map[string]storage.Value{"Id": storage.IDValue(userID), "UserRoleId": storage.IDValue(roleID)},
+	}, accountID, 0)
 }
 
 func TestExecWithSharingDeniesUnrelatedRole(t *testing.T) {

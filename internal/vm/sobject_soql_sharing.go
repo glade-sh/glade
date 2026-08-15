@@ -116,9 +116,6 @@ func (vm *VM) currentUserCanSeeUserThroughRoleHierarchy(sharedUserID storage.ID,
 	}
 	visited := make(map[storage.ID]bool)
 	for sharedRoleID != "" && !visited[sharedRoleID] {
-		if storage.IDsEqual(sharedRoleID, currentRoleID) {
-			return true
-		}
 		visited[sharedRoleID] = true
 		role, ok := roles.Records[sharedRoleID]
 		if !ok {
@@ -129,6 +126,9 @@ func (vm *VM) currentUserCanSeeUserThroughRoleHierarchy(sharedUserID storage.ID,
 			return false
 		}
 		sharedRoleID = storage.ID(storageValueIDText(parent))
+		if storage.IDsEqual(sharedRoleID, currentRoleID) {
+			return true
+		}
 	}
 	return false
 }
