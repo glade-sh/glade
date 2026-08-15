@@ -10223,6 +10223,14 @@ func TestOrgFromIndexIncludesGeneratedStandardSchema(t *testing.T) {
 	}
 }
 
+func TestOrgFromIndexUsesProjectSourceAPIVersion(t *testing.T) {
+	org := orgFromIndex(typesys.Index{Project: typesys.ProjectInfo{SourceAPIVersion: "67.0"}})
+
+	if org.APIVersion != "67.0" {
+		t.Fatalf("org API version = %q, want 67.0", org.APIVersion)
+	}
+}
+
 func TestOrgFromIndexPreservesNamespacedCustomMetadataParentRelationships(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
