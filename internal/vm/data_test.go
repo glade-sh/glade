@@ -9883,14 +9883,14 @@ func TestExecWithSharingHonorsRoleHierarchy(t *testing.T) {
 	const (
 		accountID    = storage.ID("001000000000802")
 		userID       = storage.ID("005000000000802")
+		sharedUserID = storage.ID("005000000000805")
 		ancestorRole = storage.ID("00E000000000801")
 		childRole    = storage.ID("00E000000000802")
-		roleGroup    = storage.ID("00G000000000803")
 	)
 	org := testDataOrg()
 	storage.EnsureStandardObject(&org, "AccountShare")
-	storage.EnsureStandardObject(&org, "Group")
 	storage.EnsureStandardObject(&org, "UserRole")
+	storage.EnsureStandardObject(&org, "User")
 	account := org.Objects["Account"]
 	account.Definition.SharingModel = "Private"
 	account.Records[accountID] = storage.Record{
@@ -9913,13 +9913,12 @@ func TestExecWithSharingHonorsRoleHierarchy(t *testing.T) {
 			"ParentRoleId": storage.IDValue(ancestorRole),
 		},
 	}
-	org.Objects["Group"].Records[roleGroup] = storage.Record{
-		ID:     roleGroup,
-		Object: "Group",
+	org.Objects["User"].Records[sharedUserID] = storage.Record{
+		ID:     sharedUserID,
+		Object: "User",
 		Fields: map[string]storage.Value{
-			"Name":      storage.StringValue("Ancestor Role Group"),
-			"Type":      storage.StringValue("Role"),
-			"RelatedId": storage.IDValue(ancestorRole),
+			"Id":         storage.IDValue(sharedUserID),
+			"UserRoleId": storage.IDValue(childRole),
 		},
 	}
 	org.Objects["AccountShare"].Records["00A000000000802"] = storage.Record{
@@ -9927,7 +9926,7 @@ func TestExecWithSharingHonorsRoleHierarchy(t *testing.T) {
 		Object: "AccountShare",
 		Fields: map[string]storage.Value{
 			"AccountId":          storage.IDValue(accountID),
-			"UserOrGroupId":      storage.IDValue(roleGroup),
+			"UserOrGroupId":      storage.IDValue(sharedUserID),
 			"AccountAccessLevel": storage.StringValue("Read"),
 		},
 	}
@@ -9942,14 +9941,14 @@ func TestExecWithSharingDeniesUnrelatedRole(t *testing.T) {
 	const (
 		accountID     = storage.ID("001000000000803")
 		userID        = storage.ID("005000000000803")
+		sharedUserID  = storage.ID("005000000000806")
 		userRole      = storage.ID("00E000000000803")
 		unrelatedRole = storage.ID("00E000000000804")
-		roleGroup     = storage.ID("00G000000000804")
 	)
 	org := testDataOrg()
 	storage.EnsureStandardObject(&org, "AccountShare")
-	storage.EnsureStandardObject(&org, "Group")
 	storage.EnsureStandardObject(&org, "UserRole")
+	storage.EnsureStandardObject(&org, "User")
 	account := org.Objects["Account"]
 	account.Definition.SharingModel = "Private"
 	account.Records[accountID] = storage.Record{
@@ -9969,13 +9968,12 @@ func TestExecWithSharingDeniesUnrelatedRole(t *testing.T) {
 		Object: "UserRole",
 		Fields: map[string]storage.Value{"Name": storage.StringValue("Unrelated Role")},
 	}
-	org.Objects["Group"].Records[roleGroup] = storage.Record{
-		ID:     roleGroup,
-		Object: "Group",
+	org.Objects["User"].Records[sharedUserID] = storage.Record{
+		ID:     sharedUserID,
+		Object: "User",
 		Fields: map[string]storage.Value{
-			"Name":      storage.StringValue("Unrelated Role Group"),
-			"Type":      storage.StringValue("Role"),
-			"RelatedId": storage.IDValue(unrelatedRole),
+			"Id":         storage.IDValue(sharedUserID),
+			"UserRoleId": storage.IDValue(unrelatedRole),
 		},
 	}
 	org.Objects["AccountShare"].Records["00A000000000803"] = storage.Record{
@@ -9983,7 +9981,7 @@ func TestExecWithSharingDeniesUnrelatedRole(t *testing.T) {
 		Object: "AccountShare",
 		Fields: map[string]storage.Value{
 			"AccountId":          storage.IDValue(accountID),
-			"UserOrGroupId":      storage.IDValue(roleGroup),
+			"UserOrGroupId":      storage.IDValue(sharedUserID),
 			"AccountAccessLevel": storage.StringValue("Read"),
 		},
 	}

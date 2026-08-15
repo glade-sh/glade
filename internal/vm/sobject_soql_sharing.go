@@ -60,7 +60,7 @@ func (vm *VM) currentUserCanSeeAccountShareTarget(targetID storage.ID, userID st
 		return false
 	}
 	return vm.currentUserInPublicGroup(targetID, userID, make(map[storage.ID]bool)) ||
-		vm.currentUserInRoleGroup(targetID, userID)
+		vm.currentUserCanSeeUserThroughRoleHierarchy(targetID, userID)
 }
 
 func (vm *VM) currentUserInPublicGroup(groupID storage.ID, userID string, visited map[storage.ID]bool) bool {
@@ -101,29 +101,13 @@ func (vm *VM) currentUserInPublicGroup(groupID storage.ID, userID string, visite
 	return false
 }
 
-func (vm *VM) currentUserInRoleGroup(groupID storage.ID, userID string) bool {
-	if vm == nil || vm.Org == nil || groupID == "" || userID == "" {
+func (vm *VM) currentUserCanSeeUserThroughRoleHierarchy(sharedUserID storage.ID, currentUserID string) bool {
+	if vm == nil || vm.Org == nil || sharedUserID == "" || currentUserID == "" {
 		return false
 	}
-	groups, ok := vm.Org.Objects["Group"]
-	if !ok {
-		return false
-	}
-	group, ok := groups.Records[groupID]
-	if !ok {
-		return false
-	}
-	typeValue, ok := group.GetField("Type")
-	if !ok || !strings.EqualFold(typeValue.String, "Role") {
-		return false
-	}
-	roleValue, ok := group.GetField("RelatedId")
-	if !ok {
-		return false
-	}
-	targetRoleID := storage.ID(storageValueIDText(roleValue))
-	currentRoleID := vm.currentUserRoleID(userID)
-	if targetRoleID == "" || currentRoleID == "" {
+	currentRoleID := vm.currentUserRoleID(currentUserID)
+	sharedRoleID := vm.storedUserRoleID(sharedUserID)
+	if currentRoleID == "" || sharedRoleID == "" {
 		return false
 	}
 	roles, ok := vm.Org.Objects["UserRole"]
@@ -131,12 +115,12 @@ func (vm *VM) currentUserInRoleGroup(groupID storage.ID, userID string) bool {
 		return false
 	}
 	visited := make(map[storage.ID]bool)
-	for currentRoleID != "" && !visited[currentRoleID] {
-		if storage.IDsEqual(currentRoleID, targetRoleID) {
+	for sharedRoleID != "" && !visited[sharedRoleID] {
+		if storage.IDsEqual(sharedRoleID, currentRoleID) {
 			return true
 		}
-		visited[currentRoleID] = true
-		role, ok := roles.Records[currentRoleID]
+		visited[sharedRoleID] = true
+		role, ok := roles.Records[sharedRoleID]
 		if !ok {
 			return false
 		}
@@ -144,12 +128,15 @@ func (vm *VM) currentUserInRoleGroup(groupID storage.ID, userID string) bool {
 		if !ok {
 			return false
 		}
-		currentRoleID = storage.ID(storageValueIDText(parent))
+		sharedRoleID = storage.ID(storageValueIDText(parent))
 	}
 	return false
 }
 
 func (vm *VM) currentUserRoleID(userID string) storage.ID {
+	if vm == nil {
+		return ""
+	}
 	user := vm.executionUser
 	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
 		user = vm.testContext.CurrentUser
@@ -157,14 +144,18 @@ func (vm *VM) currentUserRoleID(userID string) storage.ID {
 	if roleID := stringField(user, "UserRoleId"); roleID != "" {
 		return storage.ID(roleID)
 	}
-	if vm == nil || vm.Org == nil {
+	return vm.storedUserRoleID(storage.ID(userID))
+}
+
+func (vm *VM) storedUserRoleID(userID storage.ID) storage.ID {
+	if vm == nil || vm.Org == nil || userID == "" {
 		return ""
 	}
 	users, ok := vm.Org.Objects["User"]
 	if !ok {
 		return ""
 	}
-	stored, ok := users.Records[storage.ID(userID)]
+	stored, ok := users.Records[userID]
 	if !ok {
 		return ""
 	}
