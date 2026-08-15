@@ -250,6 +250,48 @@ func TestFallbackIsDeterministicAndBalances279Tests(t *testing.T) {
 	}
 }
 
+func TestHistoryKeepsExistingTestsOnTheirShardWhenNewTestsAreDiscovered(t *testing.T) {
+	base := []string{"TestCase000", "TestCase001", "TestCase002", "TestCase003", "TestCase004", "TestCase005"}
+	withNewTest := append(append([]string(nil), base...), "TestInserted")
+	history := validHistory(base, map[string]int64{
+		"TestCase000": 10,
+		"TestCase001": 9,
+		"TestCase002": 8,
+		"TestCase003": 7,
+		"TestCase004": 6,
+		"TestCase005": 5,
+	})
+
+	before, _, err := buildPlan(base, 2, history)
+	if err != nil {
+		t.Fatal(err)
+	}
+	after, _, err := buildPlan(withNewTest, 2, history)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !after.HistoryUsed {
+		t.Fatal("history was discarded when only a new test was discovered")
+	}
+
+	shardOf := func(plan plan, name string) int {
+		for index, shard := range plan.Shards {
+			for _, test := range shard.Tests {
+				if test == name {
+					return index
+				}
+			}
+		}
+		t.Fatalf("test %s missing from plan", name)
+		return -1
+	}
+	for _, name := range base {
+		if got, want := shardOf(after, name), shardOf(before, name); got != want {
+			t.Fatalf("test %s moved from shard %d to shard %d after adding a test", name, want, got)
+		}
+	}
+}
+
 func TestHistoryRejectionFallsBackWholesale(t *testing.T) {
 	names := []string{"TestA", "TestB", "TestC"}
 	valid := string(validHistory(names, map[string]int64{"TestA": 0, "TestB": 2, "TestC": 3}))
@@ -257,7 +299,6 @@ func TestHistoryRejectionFallsBackWholesale(t *testing.T) {
 		"malformed":         `{`,
 		"negative":          strings.Replace(valid, `"durationMillis":2`, `"durationMillis":-2`, 1),
 		"duplicate":         strings.Replace(valid, `"name":"TestC"`, `"name":"TestA"`, 1),
-		"missing":           strings.Replace(valid, `,{"name":"TestC","durationMillis":3}`, ``, 1),
 		"extra":             strings.Replace(valid, `]}`, `,{"name":"TestExtra","durationMillis":1}]}`, 1),
 		"stale":             strings.Replace(valid, `"name":"TestC"`, `"name":"TestStale"`, 1),
 		"wrong version":     strings.Replace(valid, `"version":1`, `"version":2`, 1),

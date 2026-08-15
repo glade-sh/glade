@@ -55,6 +55,18 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 	}
 }
 
+func TestStandardPlatformSymbolsDatabaseSyncAccessorsUseDateReturns(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	deletedRecord := requireStandardSymbol(t, symbols, "Database.DeletedRecord")
+	deletedResult := requireStandardSymbol(t, symbols, "Database.GetDeletedResult")
+	updatedResult := requireStandardSymbol(t, symbols, "Database.GetUpdatedResult")
+
+	requireStandardMethodReturn(t, deletedRecord, "getDeletedDate", []string{}, "Date", false)
+	requireStandardMethodReturn(t, deletedResult, "getEarliestDateAvailable", []string{}, "Date", false)
+	requireStandardMethodReturn(t, deletedResult, "getLatestDateCovered", []string{}, "Date", false)
+	requireStandardMethodReturn(t, updatedResult, "getLatestDateCovered", []string{}, "Date", false)
+}
+
 func TestUserProfilesSetPhotoUsesIntegerFourthParameter(t *testing.T) {
 	var productSpec *StandardSymbolSpec
 	for i := range productNamespaceSymbolSpecs {

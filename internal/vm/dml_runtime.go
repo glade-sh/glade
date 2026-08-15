@@ -39,7 +39,7 @@ func (vm *VM) databaseGetUpdated(args []Value) (Value, error) {
 	}
 	updated := Object("Database.GetUpdatedResult")
 	updated.Fields["ids"] = List(values...)
-	updated.Fields["latestDateCovered"] = args[2]
+	updated.Fields["latestDateCovered"] = platformScalar("Date", formatPlatformDate(end))
 	return updated, nil
 }
 
@@ -49,6 +49,7 @@ func (vm *VM) databaseGetDeleted(args []Value) (Value, error) {
 		return Null, err
 	}
 	records := make([]Value, 0)
+	var earliest time.Time
 	if object, ok := vm.databaseSyncObject(args[0].Text); ok {
 		ids := make([]string, 0)
 		byID := make(map[string]storage.Record)
@@ -57,7 +58,13 @@ func (vm *VM) databaseGetDeleted(args []Value) (Value, error) {
 				continue
 			}
 			stamp, ok := databaseSyncRecordStamp(record)
-			if !ok || !databaseSyncStampInWindow(stamp, start, end) {
+			if !ok {
+				continue
+			}
+			if earliest.IsZero() || stamp.Before(earliest) {
+				earliest = stamp
+			}
+			if !databaseSyncStampInWindow(stamp, start, end) {
 				continue
 			}
 			rawID := string(id)
@@ -70,14 +77,18 @@ func (vm *VM) databaseGetDeleted(args []Value) (Value, error) {
 			stamp, _ := databaseSyncRecordStamp(record)
 			deleted := Object("Database.DeletedRecord")
 			deleted.Fields["id"] = platformScalar("Id", id)
-			deleted.Fields["deletedDate"] = platformScalar("Datetime", formatPlatformDatetime(stamp))
+			deleted.Fields["deletedDate"] = platformScalar("Date", formatPlatformDate(stamp))
 			records = append(records, deleted)
 		}
 	}
 	deleted := Object("Database.GetDeletedResult")
 	deleted.Fields["deletedRecords"] = List(records...)
-	deleted.Fields["earliestDateAvailable"] = args[1]
-	deleted.Fields["latestDateCovered"] = args[2]
+	if earliest.IsZero() {
+		deleted.Fields["earliestDateAvailable"] = Null
+	} else {
+		deleted.Fields["earliestDateAvailable"] = platformScalar("Date", formatPlatformDate(earliest))
+	}
+	deleted.Fields["latestDateCovered"] = platformScalar("Date", formatPlatformDate(end))
 	return deleted, nil
 }
 

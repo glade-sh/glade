@@ -9411,18 +9411,72 @@ Datetime start = Datetime.now().addDays(-1);
 Datetime finish = start.addHours(1);
 Database.GetDeletedResult deleted = Database.getDeleted('Account', start, finish);
 System.assertEquals(0, deleted.getDeletedRecords().size());
-System.assertEquals(start, deleted.getEarliestDateAvailable());
-System.assertEquals(finish, deleted.getLatestDateCovered());
+System.assertEquals(null, deleted.getEarliestDateAvailable());
+Date expectedDate = Date.newInstance(start.year(), start.month(), start.day());
+System.assertEquals(expectedDate, deleted.getLatestDateCovered());
 
 Database.GetUpdatedResult updated = Database.getUpdated('Account', start, finish);
 System.assertEquals(0, updated.getIds().size());
-System.assertEquals(finish, updated.getLatestDateCovered());
+System.assertEquals(expectedDate, updated.getLatestDateCovered());
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseSyncResultAccessorsReturnDate(t *testing.T) {
+	program, err := CompileAnonymous(`
+Date expectedEarliest = Date.newInstance(2026, 4, 1);
+Date expectedLatest = Date.newInstance(2026, 5, 2);
+Datetime start = Datetime.newInstanceGmt(2026, 5, 2, 11, 59, 0);
+Datetime finish = Datetime.newInstanceGmt(2026, 5, 2, 12, 5, 0);
+
+Database.DeletedRecord deletedRecord = new Database.DeletedRecord();
+	Date deletedDate = deletedRecord.getDeletedDate();
+	System.assertEquals(null, deletedDate);
+	Account deletedAccount = new Account(Name = 'M6 Date Return');
+	insert deletedAccount;
+	delete deletedAccount;
+	Datetime deletedWindowStart = Datetime.now().addMinutes(-1);
+	Datetime deletedWindowEnd = Datetime.now().addMinutes(1);
+	Database.GetDeletedResult observedDeleted = Database.getDeleted('Account', deletedWindowStart, deletedWindowEnd);
+	System.assertEquals(1, observedDeleted.getDeletedRecords().size());
+	Date observedDeletedDate = observedDeleted.getDeletedRecords()[0].getDeletedDate();
+	System.assertEquals(Date.newInstance(deletedWindowStart.year(), deletedWindowStart.month(), deletedWindowStart.day()), observedDeletedDate);
+
+	Database.GetDeletedResult deleted = Database.getDeleted('Account', start, finish);
+	Date earliest = deleted.getEarliestDateAvailable();
+	Date latest = deleted.getLatestDateCovered();
+	System.assertEquals(expectedEarliest, earliest);
+	System.assertEquals(expectedLatest, latest);
+	System.assertEquals('2026-04-01', String.valueOf(earliest));
+	System.assertEquals('2026-05-02', String.valueOf(latest));
+
+Database.GetUpdatedResult updated = Database.getUpdated('Account', start, finish);
+	Date updatedLatest = updated.getLatestDateCovered();
+	System.assertEquals(expectedLatest, updatedLatest);
+	System.assertEquals('2026-05-02', String.valueOf(updatedLatest));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Account"].Records["001000000000099"] = storage.Record{
+		ID:     "001000000000099",
+		Object: "Account",
+		System: storage.SystemFields{
+			IsDeleted:        true,
+			LastModifiedDate: "2026-04-01T00:00:00Z",
+			SystemModstamp:   "2026-04-01T00:00:00Z",
+		},
+	}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
