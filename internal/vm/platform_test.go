@@ -9412,7 +9412,7 @@ Datetime finish = start.addHours(1);
 Date expectedDate = Date.newInstance(start.year(), start.month(), start.day());
 Database.GetDeletedResult deleted = Database.getDeleted('Account', start, finish);
 System.assertEquals(0, deleted.getDeletedRecords().size());
-System.assertEquals(null, deleted.getEarliestDateAvailable());
+System.assertEquals(expectedDate, deleted.getEarliestDateAvailable());
 System.assertEquals(expectedDate, deleted.getLatestDateCovered());
 
 Database.GetUpdatedResult updated = Database.getUpdated('Account', start, finish);
