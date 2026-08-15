@@ -9755,6 +9755,78 @@ func TestExecDescribePermissionsUseProfileOwnedPermissionSetRows(t *testing.T) {
 	}
 }
 
+func TestExecAccessConsistencyAcrossDescribeSOQLDMLAndStrip(t *testing.T) {
+	program, err := CompileAnonymous(`
+PermissionSet ps = new PermissionSet(Name = 'AccessConsistency', Label = 'Access Consistency');
+insert ps;
+insert new ObjectPermissions(
+	ParentId = ps.Id,
+	SObjectType = 'Account',
+	PermissionsRead = true,
+	PermissionsCreate = true,
+	PermissionsEdit = true
+);
+insert new FieldPermissions(
+	ParentId = ps.Id,
+	SObjectType = 'Account',
+	Field = 'Account.Name',
+	PermissionsRead = true,
+	PermissionsEdit = true
+);
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
+User u = new User(
+	Username = 'access-consistency@example.invalid',
+	Alias = 'access',
+	Email = 'access-consistency@example.invalid',
+	LastName = 'Consistency',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id);
+
+System.runAs(u) {
+	System.assert(Account.SObjectType.getDescribe().isAccessible());
+	System.assert(Account.Name.getDescribe().isAccessible());
+
+	Account created = new Account(Name = 'Access Consistency');
+	Database.SaveResult result = Database.insert(created, AccessLevel.USER_MODE);
+	System.assert(result.isSuccess());
+
+	List<Account> queried = Database.query('SELECT Id, Name FROM Account WHERE Id = :created.Id WITH USER_MODE');
+	System.assertEquals(1, queried.size());
+
+	SObjectAccessDecision decision = Security.stripInaccessible(
+		AccessType.CREATABLE,
+		new List<Account>{ new Account(Name = 'Access Consistency Strip') }
+	);
+	System.assert(!decision.getRemovedFields().get('Account').contains('Name'));
+	List<Account> stripped = (List<Account>) decision.getRecords();
+	System.assertEquals('Access Consistency Strip', stripped[0].Name);
+
+	List<Account> visible = [SELECT Id FROM Account WHERE Id = :created.Id];
+	System.assertEquals(1, visible.size());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "AccessConsistencyProbe", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "AccessConsistencyProbe"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecWithSharingHonorsPublicReadObjectSharingModel(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(3, [SELECT Id FROM Account].size());
