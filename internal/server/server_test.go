@@ -1275,6 +1275,32 @@ func TestSObjectDeletedResourceAfterDelete(t *testing.T) {
 	}
 }
 
+func TestDeletedPayloadEarliestDateAvailableUsesRetainedDeletionHistory(t *testing.T) {
+	object := storage.ObjectState{Records: map[storage.ID]storage.Record{
+		"001000000000001": {
+			ID:     "001000000000001",
+			Object: "Account",
+			System: storage.SystemFields{LastModifiedDate: "2026-04-01T00:00:00Z", IsDeleted: true},
+		},
+		"001000000000002": {
+			ID:     "001000000000002",
+			Object: "Account",
+			System: storage.SystemFields{LastModifiedDate: "2026-05-03T00:00:00Z", IsDeleted: true},
+		},
+	}}
+
+	payload, err := deletedPayload(object, httptest.NewRequest(http.MethodGet, "/?start=2026-05-02T00:00:00Z&end=2026-05-04T00:00:00Z", nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if payload.EarliestDateAvailable != "2026-04-01T00:00:00Z" {
+		t.Fatalf("earliestDateAvailable = %q, want 2026-04-01T00:00:00Z", payload.EarliestDateAvailable)
+	}
+	if len(payload.DeletedRecords) != 1 || payload.DeletedRecords[0].ID != "001000000000002" {
+		t.Fatalf("deletedRecords = %#v, want only the in-window record", payload.DeletedRecords)
+	}
+}
+
 func TestSObjectUpdatedDeletedResourceErrorsAndMethods(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)

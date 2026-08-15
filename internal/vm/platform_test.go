@@ -9412,7 +9412,7 @@ Datetime finish = start.addHours(1);
 Date expectedDate = Date.newInstance(start.year(), start.month(), start.day());
 Database.GetDeletedResult deleted = Database.getDeleted('Account', start, finish);
 System.assertEquals(0, deleted.getDeletedRecords().size());
-System.assertEquals(expectedDate, deleted.getEarliestDateAvailable());
+System.assertEquals(null, deleted.getEarliestDateAvailable());
 System.assertEquals(expectedDate, deleted.getLatestDateCovered());
 
 Database.GetUpdatedResult updated = Database.getUpdated('Account', start, finish);
@@ -9432,7 +9432,8 @@ System.assertEquals(expectedDate, updated.getLatestDateCovered());
 
 func TestExecDatabaseSyncResultAccessorsReturnDate(t *testing.T) {
 	program, err := CompileAnonymous(`
-Date expected = Date.newInstance(2026, 5, 2);
+Date expectedEarliest = Date.newInstance(2026, 4, 1);
+Date expectedLatest = Date.newInstance(2026, 5, 2);
 Datetime start = Datetime.newInstanceGmt(2026, 5, 2, 11, 59, 0);
 Datetime finish = Datetime.newInstanceGmt(2026, 5, 2, 12, 5, 0);
 
@@ -9452,14 +9453,14 @@ Database.DeletedRecord deletedRecord = new Database.DeletedRecord();
 	Database.GetDeletedResult deleted = Database.getDeleted('Account', start, finish);
 	Date earliest = deleted.getEarliestDateAvailable();
 	Date latest = deleted.getLatestDateCovered();
-	System.assertEquals(expected, earliest);
-	System.assertEquals(expected, latest);
-	System.assertEquals('2026-05-02', String.valueOf(earliest));
+	System.assertEquals(expectedEarliest, earliest);
+	System.assertEquals(expectedLatest, latest);
+	System.assertEquals('2026-04-01', String.valueOf(earliest));
 	System.assertEquals('2026-05-02', String.valueOf(latest));
 
 Database.GetUpdatedResult updated = Database.getUpdated('Account', start, finish);
 	Date updatedLatest = updated.getLatestDateCovered();
-	System.assertEquals(expected, updatedLatest);
+	System.assertEquals(expectedLatest, updatedLatest);
 	System.assertEquals('2026-05-02', String.valueOf(updatedLatest));
 `)
 	if err != nil {
@@ -9467,6 +9468,15 @@ Database.GetUpdatedResult updated = Database.getUpdated('Account', start, finish
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	org.Objects["Account"].Records["001000000000099"] = storage.Record{
+		ID:     "001000000000099",
+		Object: "Account",
+		System: storage.SystemFields{
+			IsDeleted:        true,
+			LastModifiedDate: "2026-04-01T00:00:00Z",
+			SystemModstamp:   "2026-04-01T00:00:00Z",
+		},
+	}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)

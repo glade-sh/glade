@@ -49,6 +49,7 @@ func (vm *VM) databaseGetDeleted(args []Value) (Value, error) {
 		return Null, err
 	}
 	records := make([]Value, 0)
+	var earliest time.Time
 	if object, ok := vm.databaseSyncObject(args[0].Text); ok {
 		ids := make([]string, 0)
 		byID := make(map[string]storage.Record)
@@ -57,7 +58,13 @@ func (vm *VM) databaseGetDeleted(args []Value) (Value, error) {
 				continue
 			}
 			stamp, ok := databaseSyncRecordStamp(record)
-			if !ok || !databaseSyncStampInWindow(stamp, start, end) {
+			if !ok {
+				continue
+			}
+			if earliest.IsZero() || stamp.Before(earliest) {
+				earliest = stamp
+			}
+			if !databaseSyncStampInWindow(stamp, start, end) {
 				continue
 			}
 			rawID := string(id)
@@ -76,7 +83,11 @@ func (vm *VM) databaseGetDeleted(args []Value) (Value, error) {
 	}
 	deleted := Object("Database.GetDeletedResult")
 	deleted.Fields["deletedRecords"] = List(records...)
-	deleted.Fields["earliestDateAvailable"] = platformScalar("Date", formatPlatformDate(start))
+	if earliest.IsZero() {
+		deleted.Fields["earliestDateAvailable"] = Null
+	} else {
+		deleted.Fields["earliestDateAvailable"] = platformScalar("Date", formatPlatformDate(earliest))
+	}
 	deleted.Fields["latestDateCovered"] = platformScalar("Date", formatPlatformDate(end))
 	return deleted, nil
 }
