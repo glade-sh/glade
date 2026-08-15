@@ -1185,16 +1185,32 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 		return vm.coerceAssignable(typeName, value.List[0])
 	}
+	if (strings.EqualFold(typeName, "Integer") || strings.EqualFold(typeName, "Long")) && value.Kind == ValueInt {
+		return integerValueForType(value, typeName), nil
+	}
 	if (strings.EqualFold(typeName, "Decimal") || strings.EqualFold(typeName, "Double")) && value.Kind == ValueInt {
-		decimal := Decimal(float64(value.Int))
-		decimal.Text = strconv.FormatInt(value.Int, 10)
+		decimal, err := decimalFromText(strconv.FormatInt(value.Int, 10))
+		if err != nil {
+			return Null, err
+		}
+		if strings.EqualFold(typeName, "Double") {
+			decimal = decimalAsDouble(decimal)
+		}
 		return decimal, nil
 	}
 	if (strings.EqualFold(typeName, "Integer") || strings.EqualFold(typeName, "Long")) && untypedIntegralDecimalLiteral(value) {
-		if value.Decimal < float64(math.MinInt64) || value.Decimal > float64(math.MaxInt64) {
+		if strings.EqualFold(typeName, "Integer") {
+			converted, err := int32FromDecimalValue("decimal assignment", value)
+			if err != nil {
+				return Null, fmt.Errorf("cannot assign decimal to %s", typeName)
+			}
+			return Int(int64(converted)), nil
+		}
+		converted, err := int64FromDecimalValue("decimal assignment", value)
+		if err != nil {
 			return Null, fmt.Errorf("cannot assign decimal to %s", typeName)
 		}
-		return Int(int64(value.Decimal)), nil
+		return longIntValue(converted), nil
 	}
 	if collectionBase(typeName) == "List" && value.Kind == ValueList {
 		sourceTypes := []string{value.Type, value.Runtime, value.Static}

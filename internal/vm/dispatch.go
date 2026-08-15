@@ -1123,7 +1123,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Math.random expects 0 arguments")
 		}
-		return Decimal(0.5), nil
+		return decimalAsDouble(Decimal(0.5)), nil
 	case "UUID.randomUUID":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UUID.randomUUID expects 0 arguments")
@@ -1240,9 +1240,9 @@ platformStaticCall:
 			return Null, fmt.Errorf("System.currentTimeMillis expects 0 arguments")
 		}
 		if vm.hasLastNow {
-			return Int(vm.lastNow.UnixMilli()), nil
+			return longIntValue(vm.lastNow.UnixMilli()), nil
 		}
-		return Int(vm.fakeNow.UnixMilli()), nil
+		return longIntValue(vm.fakeNow.UnixMilli()), nil
 	case "System.isBatch", "System.isFuture", "System.isQueueable", "System.isScheduled":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -1875,7 +1875,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Crypto.getRandomLong expects 0 arguments")
 		}
-		return Int(vm.nextDeterministicCryptoLong()), nil
+		return longIntValue(vm.nextDeterministicCryptoLong()), nil
 	case "JSON.createGenerator":
 		if len(args) != 1 || args[0].Kind != ValueBool {
 			return Null, fmt.Errorf("JSON.createGenerator expects Boolean")

@@ -53,8 +53,88 @@ func Int(v int64) Value {
 	return Value{Kind: ValueInt, Int: v}
 }
 
+func longIntValue(v int64) Value {
+	value := Int(v)
+	value.Type = "Long"
+	return value
+}
+
+func integerValueForType(value Value, typeName string) Value {
+	if strings.EqualFold(strings.TrimSpace(typeName), "Long") {
+		value.Type = "Long"
+	} else if strings.EqualFold(strings.TrimSpace(typeName), "Integer") {
+		value.Type = ""
+	}
+	return value
+}
+
 func Decimal(v float64) Value {
-	return Value{Kind: ValueDecimal, Decimal: v}
+	return Value{Kind: ValueDecimal, Decimal: v, Text: strconv.FormatFloat(v, 'f', -1, 64)}
+}
+
+func isFloatBackedDecimal(value Value) bool {
+	return value.Kind == ValueDecimal && strings.EqualFold(strings.TrimSpace(value.Static), "Double")
+}
+
+func decimalAsDouble(value Value) Value {
+	out := Decimal(value.Decimal)
+	out.Static = "Double"
+	return out
+}
+
+func decimalFromText(text string) (Value, error) {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return Null, fmt.Errorf("decimal value cannot be empty")
+	}
+	canonical, err := canonicalDecimalText(text)
+	if err != nil {
+		return Null, err
+	}
+	parsed, err := strconv.ParseFloat(text, 64)
+	if err != nil {
+		return Null, err
+	}
+	return Value{Kind: ValueDecimal, Decimal: parsed, Text: canonical}, nil
+}
+
+func canonicalDecimalText(text string) (string, error) {
+	text = strings.TrimSpace(text)
+	if strings.HasPrefix(text, "+") {
+		text = text[1:]
+	}
+	rat, ok := new(big.Rat).SetString(text)
+	if !ok {
+		return "", fmt.Errorf("invalid decimal %q", text)
+	}
+	mantissa := text
+	exponent := 0
+	if expIndex := strings.IndexAny(mantissa, "eE"); expIndex >= 0 {
+		parsed, err := strconv.Atoi(mantissa[expIndex+1:])
+		if err != nil {
+			return "", fmt.Errorf("invalid decimal %q", text)
+		}
+		exponent = parsed
+		mantissa = mantissa[:expIndex]
+	}
+	fractionDigits := 0
+	if dotIndex := strings.IndexByte(mantissa, '.'); dotIndex >= 0 {
+		fractionDigits = len(mantissa) - dotIndex - 1
+	}
+	scale := fractionDigits - exponent
+	if scale < 0 {
+		scale = 0
+	}
+	return rat.FloatString(scale), nil
+}
+
+func decimalFromRat(value *big.Rat, scale int64) Value {
+	if value == nil {
+		return Null
+	}
+	text := ratFixedText(value, scale)
+	parsed, _ := value.Float64()
+	return Value{Kind: ValueDecimal, Decimal: parsed, Text: text}
 }
 
 func Bool(v bool) Value {
@@ -413,8 +493,16 @@ func decimalDisplayText(value Value) string {
 		return text
 	}
 	if strings.ContainsAny(text, "eE") {
-		if parsed, err := strconv.ParseFloat(text, 64); err == nil {
-			text = strconv.FormatFloat(parsed, 'f', -1, 64)
+		if rat, ok := new(big.Rat).SetString(text); ok {
+			if rat.IsInt() {
+				text = rat.Num().String()
+			} else {
+				scale := decimalScale(value)
+				if scale < 0 {
+					scale = 0
+				}
+				text = rat.FloatString(scale)
+			}
 		}
 	}
 	if strings.Contains(text, ".") {
@@ -608,13 +696,16 @@ func numericDecimalValuesEqual(left, right Value) bool {
 }
 
 func valueDecimalRat(value Value) (*big.Rat, bool) {
+	if isFloatBackedDecimal(value) {
+		return nil, false
+	}
 	switch value.Kind {
 	case ValueInt:
 		return new(big.Rat).SetInt64(value.Int), true
 	case ValueDecimal:
 		text := strings.TrimSpace(value.Text)
 		if text == "" {
-			text = strconv.FormatFloat(value.Decimal, 'f', -1, 64)
+			return nil, false
 		}
 		rat, ok := new(big.Rat).SetString(text)
 		return rat, ok

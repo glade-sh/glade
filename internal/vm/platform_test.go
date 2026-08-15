@@ -725,10 +725,10 @@ System.assertEquals(unnamed.Id, nullRows[0].Id);
 
 func TestSOSLReturningWhereBlankStringIsNotNull(t *testing.T) {
 	record := storage.Record{Fields: map[string]storage.Value{"Name": storage.StringValue("")}}
-	if !soslRecordMatchesWhere(record, soslWhere{Field: "Name", Operator: "!=", ValueIsNull: true}) {
+	if !soslRecordMatchesWhere(record, &soslWhere{Field: "Name", Operator: "!=", ValueIsNull: true}) {
 		t.Fatal("blank string should match != null")
 	}
-	if soslRecordMatchesWhere(record, soslWhere{Field: "Name", Operator: "=", ValueIsNull: true}) {
+	if soslRecordMatchesWhere(record, &soslWhere{Field: "Name", Operator: "=", ValueIsNull: true}) {
 		t.Fatal("blank string should not match = null")
 	}
 }
@@ -4254,6 +4254,7 @@ System.assertEquals(mondayTen, BusinessHours.nextStartDate(businessHoursId, mond
 Datetime mondayEleven = BusinessHours.addGmt(businessHoursId, mondayTen, 60 * 60 * 1000);
 System.assertEquals(Datetime.newInstanceGmt(2026, 6, 15, 18, 0, 0), mondayEleven);
 System.assertEquals(60 * 60 * 1000, BusinessHours.diff(businessHoursId, mondayNine, mondayTen));
+System.assert(!(BusinessHours.diff(businessHoursId, mondayNine, mondayTen) instanceof Integer));
 Datetime saturday = Datetime.newInstanceGmt(2026, 6, 20, 16, 0, 0);
 System.assertEquals(false, BusinessHours.isWithin(businessHoursId, saturday));
 System.assertEquals(Datetime.newInstanceGmt(2026, 6, 22, 16, 0, 0), BusinessHours.nextStartDate(businessHoursId, saturday));
@@ -5632,7 +5633,6 @@ System.assertEquals('Bonjour', System.Label.Greeting);
 
 func TestExecSystemLabelMethodsLimitsAsyncAndRuntimeExceptionTypes(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals(1.2, Decimal.valueOf('1.25').divide(Decimal.valueOf('1'), 1, RoundingMode.valueOf('HALF_DOWN')));
 System.assertEquals('Hello', System.Label.get('', 'Greeting'));
 System.assertEquals('Bonjour', System.Label.get('pkg', 'Greeting', 'fr'));
 System.assert(System.Label.translationExists('pkg', 'Greeting', 'fr'));
@@ -13584,7 +13584,7 @@ System.assertEquals('2026-05-02 01:04:03', madePlusMinutes.formatGmt('yyyy-MM-dd
 	System.assertEquals('2026-05-02 01:02:06', madePlusSeconds.formatGmt('yyyy-MM-dd HH:mm:ss'));
 	Datetime madePlusDay = made.addDays(1);
 	System.assertEquals('2026-05-03 01:02:03', madePlusDay.formatGmt('yyyy-MM-dd HH:mm:ss'));
-	Datetime madePlusFractionalDay = made + (100000.0 / 86400000.0);
+	Datetime madePlusFractionalDay = made + 0.0011574074074074074;
 	System.assertEquals('2026-05-02 01:03:43', madePlusFractionalDay.formatGmt('yyyy-MM-dd HH:mm:ss'));
 		Datetime parsedDt = Datetime.valueOf('2026-05-02 01:02:03');
 	String madeText = made.formatGmt('yyyy-MM-dd HH:mm:ss');

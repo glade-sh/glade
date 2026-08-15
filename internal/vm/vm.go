@@ -2333,93 +2333,166 @@ func mathUnary(callee string, args []Value) (Value, error) {
 			if args[0].Int == math.MinInt64 {
 				return Null, fmt.Errorf("Math.abs integer overflow")
 			}
+			if !isLongIntValue(args[0]) && args[0].Int == math.MinInt32 {
+				return Null, fmt.Errorf("Math.abs integer overflow")
+			}
 			if args[0].Int < 0 {
-				return Int(-args[0].Int), nil
+				return mathIntegerResult(Int(-args[0].Int), isLongIntValue(args[0])), nil
 			}
 			return args[0], nil
 		}
 		return decimalAbsValue(args[0])
 	case "Math.floor", "Math.ceil", "Math.rint":
+		if !isFloatBackedDecimal(args[0]) {
+			mode := "FLOOR"
+			if callee == "Math.ceil" {
+				mode = "CEILING"
+			} else if callee == "Math.rint" {
+				mode = "HALF_EVEN"
+			}
+			if result, ok := exactMathRound(callee, args[0], mode); ok {
+				return result, nil
+			}
+		}
 		switch callee {
 		case "Math.floor":
-			return Decimal(math.Floor(n)), nil
+			return decimalAsDouble(Decimal(math.Floor(n))), nil
 		case "Math.ceil":
-			return Decimal(math.Ceil(n)), nil
+			return decimalAsDouble(Decimal(math.Ceil(n))), nil
 		default:
-			return Decimal(roundHalfEven(n)), nil
+			return decimalAsDouble(Decimal(roundHalfEven(n))), nil
 		}
 	case "Math.round":
-		rounded, err := int64FromFloat("Math.round", roundHalfEven(n))
+		if !isFloatBackedDecimal(args[0]) {
+			if result, ok := exactMathRound(callee, args[0], "HALF_EVEN"); ok {
+				rounded, err := int32FromDecimalValue(callee, result)
+				if err != nil {
+					return Null, err
+				}
+				return Int(int64(rounded)), nil
+			}
+		}
+		rounded, err := int32FromFloat("Math.round", roundHalfEven(n))
 		if err != nil {
 			return Null, err
 		}
-		return Int(rounded), nil
+		return Int(int64(rounded)), nil
 	case "Math.roundToLong":
+		if !isFloatBackedDecimal(args[0]) {
+			if result, ok := exactMathRound(callee, args[0], "HALF_EVEN"); ok {
+				rounded, err := int64FromDecimalValue(callee, result)
+				if err != nil {
+					return Null, err
+				}
+				return longIntValue(rounded), nil
+			}
+		}
 		rounded, err := int64FromFloat("Math.roundToLong", roundHalfEven(n))
 		if err != nil {
 			return Null, err
 		}
-		return Int(rounded), nil
+		return longIntValue(rounded), nil
 	case "Math.signum":
-		switch {
-		case n > 0:
-			return Int(1), nil
-		case n < 0:
-			return Int(-1), nil
-		default:
-			return Int(0), nil
+		sign := 0
+		if !isFloatBackedDecimal(args[0]) {
+			if rat, ok := valueDecimalRat(args[0]); ok {
+				sign = rat.Sign()
+			} else {
+				sign = signumFloat(n)
+			}
+		} else {
+			sign = signumFloat(n)
 		}
+		result := Decimal(float64(sign))
+		if isFloatBackedDecimal(args[0]) {
+			return decimalAsDouble(result), nil
+		}
+		return result, nil
 	case "Math.sqrt":
 		if n < 0 {
 			return Null, fmt.Errorf("Math.sqrt argument out of domain")
 		}
-		return finiteDecimalResult(callee, math.Sqrt(n))
+		return finiteMathResult(callee, math.Sqrt(n), args[0])
 	case "Math.cbrt":
-		return finiteDecimalResult(callee, math.Cbrt(n))
+		return finiteMathResult(callee, math.Cbrt(n), args[0])
 	case "Math.acos":
 		if n < -1 || n > 1 {
 			return Null, newExceptionError("System.MathException", "Math.acos argument out of domain")
 		}
-		return finiteDecimalResult(callee, math.Acos(n))
+		return finiteMathResult(callee, math.Acos(n), args[0])
 	case "Math.asin":
 		if n < -1 || n > 1 {
 			return Null, newExceptionError("System.MathException", "Math.asin argument out of domain")
 		}
-		return finiteDecimalResult(callee, math.Asin(n))
+		return finiteMathResult(callee, math.Asin(n), args[0])
 	case "Math.atan":
-		return finiteDecimalResult(callee, math.Atan(n))
+		return finiteMathResult(callee, math.Atan(n), args[0])
 	case "Math.cos":
-		return finiteDecimalResult(callee, math.Cos(n))
+		return finiteMathResult(callee, math.Cos(n), args[0])
 	case "Math.sin":
-		return finiteDecimalResult(callee, math.Sin(n))
+		return finiteMathResult(callee, math.Sin(n), args[0])
 	case "Math.tan":
-		return finiteDecimalResult(callee, math.Tan(n))
+		return finiteMathResult(callee, math.Tan(n), args[0])
 	case "Math.cosh":
-		return finiteDecimalResult(callee, math.Cosh(n))
+		return finiteMathResult(callee, math.Cosh(n), args[0])
 	case "Math.sinh":
-		return finiteDecimalResult(callee, math.Sinh(n))
+		return finiteMathResult(callee, math.Sinh(n), args[0])
 	case "Math.tanh":
-		return finiteDecimalResult(callee, math.Tanh(n))
+		return finiteMathResult(callee, math.Tanh(n), args[0])
 	case "Math.exp":
-		return finiteDecimalResult(callee, math.Exp(n))
+		return finiteMathResult(callee, math.Exp(n), args[0])
 	case "Math.log":
 		if n <= 0 {
 			return Null, fmt.Errorf("Math.log argument out of domain")
 		}
-		return finiteDecimalResult(callee, math.Log(n))
+		return finiteMathResult(callee, math.Log(n), args[0])
 	case "Math.log10":
 		if n <= 0 {
 			return Null, fmt.Errorf("Math.log10 argument out of domain")
 		}
-		return finiteDecimalResult(callee, math.Log10(n))
+		return finiteMathResult(callee, math.Log10(n), args[0])
 	default:
 		return Null, unsupportedCallError(callee)
+	}
+}
+
+func signumFloat(value float64) int {
+	switch {
+	case value > 0:
+		return 1
+	case value < 0:
+		return -1
+	default:
+		return 0
 	}
 }
 
 func mathBinary(callee string, args []Value) (Value, error) {
 	if len(args) != 2 || !isMathNumeric(args[0]) || !isMathNumeric(args[1]) {
 		return Null, fmt.Errorf("%s expects two numeric arguments", callee)
+	}
+	if callee == "Math.mod" && (args[0].Kind != ValueInt || args[1].Kind != ValueInt) {
+		return Null, unsupportedCallError(callee)
+	}
+	if callee == "Math.max" || callee == "Math.min" {
+		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {
+			longResult := isLongIntValue(args[0]) || isLongIntValue(args[1])
+			if callee == "Math.max" {
+				if args[0].Int >= args[1].Int {
+					return mathIntegerResult(args[0], longResult), nil
+				}
+				return mathIntegerResult(args[1], longResult), nil
+			}
+			if args[0].Int <= args[1].Int {
+				return mathIntegerResult(args[0], longResult), nil
+			}
+			return mathIntegerResult(args[1], longResult), nil
+		}
+		if !isFloatBackedDecimal(args[0]) && !isFloatBackedDecimal(args[1]) {
+			if result, ok := exactMathExtremum(args[0], args[1], callee == "Math.max"); ok {
+				return result, nil
+			}
+		}
 	}
 	left := numericFloat(args[0])
 	right := numericFloat(args[1])
@@ -2431,27 +2504,86 @@ func mathBinary(callee string, args []Value) (Value, error) {
 		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {
 			return Int(int64(math.Max(left, right))), nil
 		}
-		return Decimal(math.Max(left, right)), nil
+		return decimalAsDouble(Decimal(math.Max(left, right))), nil
 	case "Math.min":
 		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {
 			return Int(int64(math.Min(left, right))), nil
 		}
-		return Decimal(math.Min(left, right)), nil
+		return decimalAsDouble(Decimal(math.Min(left, right))), nil
 	case "Math.mod":
 		if right == 0 {
 			return Null, fmt.Errorf("Math.mod divisor cannot be zero")
 		}
 		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {
-			return Int(args[0].Int % args[1].Int), nil
+			result := Int(args[0].Int % args[1].Int)
+			if isLongIntValue(args[0]) || isLongIntValue(args[1]) {
+				result.Type = "Long"
+			}
+			return result, nil
 		}
-		return Decimal(math.Mod(left, right)), nil
+		return decimalAsDouble(Decimal(math.Mod(left, right))), nil
 	case "Math.pow":
-		return finiteDecimalResult(callee, math.Pow(left, right))
+		return finiteDoubleResult(callee, math.Pow(left, right))
 	case "Math.atan2":
-		return finiteDecimalResult(callee, math.Atan2(left, right))
+		return finiteMathResult(callee, math.Atan2(left, right), args...)
 	default:
 		return Null, unsupportedCallError(callee)
 	}
+}
+
+func isLongIntValue(value Value) bool {
+	return value.Kind == ValueInt && strings.EqualFold(strings.TrimSpace(value.Type), "Long")
+}
+
+func mathIntegerResult(value Value, longResult bool) Value {
+	if longResult {
+		value.Type = "Long"
+	}
+	return value
+}
+
+func exactMathRound(callee string, value Value, mode string) (Value, bool) {
+	rat, ok := valueDecimalRat(value)
+	if !ok {
+		return Null, false
+	}
+	rounded, err := roundRatToScale(callee, rat, 0, mode)
+	if err != nil {
+		return Null, false
+	}
+	result := decimalFromRat(rounded, 0)
+	result.Text = normalizeComputedDecimalText(result.Text)
+	return result, true
+}
+
+func exactMathExtremum(left, right Value, maximum bool) (Value, bool) {
+	leftRat, leftOK := valueDecimalRat(left)
+	rightRat, rightOK := valueDecimalRat(right)
+	if !leftOK || !rightOK {
+		return Null, false
+	}
+	selected := left
+	comparison := leftRat.Cmp(rightRat)
+	if (maximum && comparison < 0) || (!maximum && comparison > 0) {
+		selected = right
+	}
+	if selected.Kind == ValueDecimal {
+		return selected, true
+	}
+	converted, err := decimalFromText(strconv.FormatInt(selected.Int, 10))
+	if err != nil {
+		return Null, false
+	}
+	return converted, true
+}
+
+func finiteMathResult(callee string, value float64, args ...Value) (Value, error) {
+	for _, arg := range args {
+		if isFloatBackedDecimal(arg) {
+			return finiteDoubleResult(callee, value)
+		}
+	}
+	return finiteDecimalResult(callee, value)
 }
 
 func finiteDecimalResult(callee string, value float64) (Value, error) {
@@ -2459,6 +2591,15 @@ func finiteDecimalResult(callee string, value float64) (Value, error) {
 		return Null, fmt.Errorf("%s result must be finite", callee)
 	}
 	result := Decimal(value)
+	result.Text = doubleDisplayText(value)
+	return result, nil
+}
+
+func finiteDoubleResult(callee string, value float64) (Value, error) {
+	if math.IsInf(value, 0) || math.IsNaN(value) {
+		return Null, fmt.Errorf("%s result must be finite", callee)
+	}
+	result := decimalAsDouble(Decimal(value))
 	result.Text = doubleDisplayText(value)
 	return result, nil
 }
@@ -2686,9 +2827,9 @@ func newCookie(args []Value) (Value, error) {
 
 func newLocation(latitude, longitude Value) Value {
 	location := Object("Location")
-	latitudeValue := Decimal(numericFloat(latitude))
+	latitudeValue := decimalAsDouble(Decimal(numericFloat(latitude)))
 	latitudeValue.Text = doubleDisplayText(latitudeValue.Decimal)
-	longitudeValue := Decimal(numericFloat(longitude))
+	longitudeValue := decimalAsDouble(Decimal(numericFloat(longitude)))
 	longitudeValue.Text = doubleDisplayText(longitudeValue.Decimal)
 	location.Fields["latitude"] = latitudeValue
 	location.Fields["longitude"] = longitudeValue
@@ -2863,7 +3004,7 @@ func locationDistance(left, right Value, unit string) (Value, error) {
 	default:
 		return Null, fmt.Errorf("Location.getDistance unit must be mi, km, or m")
 	}
-	return Decimal(distance), nil
+	return decimalAsDouble(Decimal(distance)), nil
 }
 
 func newQueueableDuplicateSignatureBuilder() Value {
@@ -3873,16 +4014,18 @@ func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
 	}
 	targetType := typeExceptionTargetName(typeName)
 	if value.Kind == ValueDecimal && strings.EqualFold(typeName, "Integer") {
-		if value.Decimal < math.MinInt32 || value.Decimal > math.MaxInt32 {
+		converted, conversionErr := int32FromDecimalValue("Integer cast", value)
+		if conversionErr != nil {
 			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", runtimeValueTypeName(value), targetType))
 		}
-		return Int(int64(value.Decimal)), nil
+		return Int(int64(converted)), nil
 	}
 	if value.Kind == ValueDecimal && strings.EqualFold(typeName, "Long") {
-		if value.Decimal < float64(math.MinInt64) || value.Decimal > float64(math.MaxInt64) {
+		converted, conversionErr := int64FromDecimalValue("Long cast", value)
+		if conversionErr != nil {
 			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", runtimeValueTypeName(value), targetType))
 		}
-		return Int(int64(value.Decimal)), nil
+		return longIntValue(converted), nil
 	}
 	var thrown *apexThrowError
 	if errors.As(err, &thrown) {
@@ -3895,7 +4038,8 @@ func untypedIntegralDecimalLiteral(value Value) bool {
 	if value.Kind != ValueDecimal || value.Type != "" || value.Static != "" {
 		return false
 	}
-	return math.Trunc(value.Decimal) == value.Decimal
+	rat, ok := valueDecimalRat(value)
+	return ok && rat.IsInt()
 }
 
 func typeExceptionTargetName(typeName string) string {

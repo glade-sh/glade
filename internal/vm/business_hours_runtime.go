@@ -102,7 +102,7 @@ func (vm *VM) businessHoursDiff(args []Value) (Value, error) {
 	if err != nil {
 		return Null, err
 	}
-	return Int(int64(calendar.diff(start, end) / time.Millisecond)), nil
+	return longIntValue(int64(calendar.diff(start, end) / time.Millisecond)), nil
 }
 
 func (vm *VM) businessHoursIsWithin(args []Value) (Value, error) {

@@ -41,15 +41,129 @@ func (vm *VM) currentUserHasDirectAccountShare(accountID storage.ID, userID stri
 			continue
 		}
 		sharedUser, ok := share.GetField("UserOrGroupId")
-		if !ok || !storage.IDsEqual(storage.ID(storageValueIDText(sharedUser)), storage.ID(userID)) {
+		if !ok {
 			continue
 		}
 		if access, ok := share.GetField("AccountAccessLevel"); ok && strings.EqualFold(access.String, "None") {
 			continue
 		}
-		return true
+		sharedTarget := storage.ID(storageValueIDText(sharedUser))
+		if storage.IDsEqual(sharedTarget, storage.ID(userID)) || vm.currentUserCanSeeAccountShareTarget(sharedTarget, userID) {
+			return true
+		}
 	}
 	return false
+}
+
+func (vm *VM) currentUserCanSeeAccountShareTarget(targetID storage.ID, userID string) bool {
+	if targetID == "" || userID == "" {
+		return false
+	}
+	return vm.currentUserInPublicGroup(targetID, userID, make(map[storage.ID]bool)) ||
+		vm.currentUserCanSeeUserThroughRoleHierarchy(targetID, userID)
+}
+
+func (vm *VM) currentUserInPublicGroup(groupID storage.ID, userID string, visited map[storage.ID]bool) bool {
+	if vm == nil || vm.Org == nil || groupID == "" || visited[groupID] {
+		return false
+	}
+	groups, ok := vm.Org.Objects["Group"]
+	if !ok {
+		return false
+	}
+	_, group, ok := storage.LookupRecordByID(groups.Records, groupID)
+	if !ok {
+		return false
+	}
+	typeValue, ok := group.GetField("Type")
+	if !ok || !strings.EqualFold(typeValue.String, "Regular") {
+		return false
+	}
+	visited[groupID] = true
+	members, ok := vm.Org.Objects["GroupMember"]
+	if !ok {
+		return false
+	}
+	for _, member := range members.Records {
+		memberGroup, ok := member.GetField("GroupId")
+		if !ok || !storage.IDsEqual(storage.ID(storageValueIDText(memberGroup)), groupID) {
+			continue
+		}
+		memberTarget, ok := member.GetField("UserOrGroupId")
+		if !ok {
+			continue
+		}
+		targetID := storage.ID(storageValueIDText(memberTarget))
+		if storage.IDsEqual(targetID, storage.ID(userID)) || vm.currentUserInPublicGroup(targetID, userID, visited) {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) currentUserCanSeeUserThroughRoleHierarchy(sharedUserID storage.ID, currentUserID string) bool {
+	if vm == nil || vm.Org == nil || sharedUserID == "" || currentUserID == "" {
+		return false
+	}
+	currentRoleID := vm.currentUserRoleID(currentUserID)
+	sharedRoleID := vm.storedUserRoleID(sharedUserID)
+	if currentRoleID == "" || sharedRoleID == "" {
+		return false
+	}
+	roles, ok := vm.Org.Objects["UserRole"]
+	if !ok {
+		return false
+	}
+	visited := make(map[storage.ID]bool)
+	for sharedRoleID != "" && !visited[sharedRoleID] {
+		visited[sharedRoleID] = true
+		_, role, ok := storage.LookupRecordByID(roles.Records, sharedRoleID)
+		if !ok {
+			return false
+		}
+		parent, ok := role.GetField("ParentRoleId")
+		if !ok {
+			return false
+		}
+		sharedRoleID = storage.ID(storageValueIDText(parent))
+		if storage.IDsEqual(sharedRoleID, currentRoleID) {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) currentUserRoleID(userID string) storage.ID {
+	if vm == nil {
+		return ""
+	}
+	user := vm.executionUser
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	if roleID := stringField(user, "UserRoleId"); roleID != "" {
+		return storage.ID(roleID)
+	}
+	return vm.storedUserRoleID(storage.ID(userID))
+}
+
+func (vm *VM) storedUserRoleID(userID storage.ID) storage.ID {
+	if vm == nil || vm.Org == nil || userID == "" {
+		return ""
+	}
+	users, ok := vm.Org.Objects["User"]
+	if !ok {
+		return ""
+	}
+	_, stored, ok := storage.LookupRecordByID(users.Records, userID)
+	if !ok {
+		return ""
+	}
+	role, ok := stored.GetField("UserRoleId")
+	if !ok {
+		return ""
+	}
+	return storage.ID(storageValueIDText(role))
 }
 
 func (vm *VM) permissionSetAssignmentVisibleToUser(record storage.Record, userID string) bool {

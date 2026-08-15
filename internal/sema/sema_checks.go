@@ -288,11 +288,11 @@ func (c querySemanticsChecker) checkFileWithFacts(file string, facts *sourceFact
 		bindings := bindingResolver.bindingsAt(literal.queryOffset)
 		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings, c.knownTypes)...)
 		diagnostics = append(diagnostics, soslAssignmentDiagnostics(source, literal, ctx)...)
-		diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, query.LimitBind, "LIMIT")...)
+		diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, query.Limit.Bind, "LIMIT")...)
 		diagnostics = append(diagnostics, queryStringBindDiagnostics(ctx, bindings, query.DivisionBind, "WITH DIVISION")...)
 		for _, returning := range query.Returning {
-			diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, returning.LimitBind, "RETURNING LIMIT")...)
-			diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, returning.OffsetBind, "RETURNING OFFSET")...)
+			diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, returning.Limit.Bind, "RETURNING LIMIT")...)
+			diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, returning.Offset.Bind, "RETURNING OFFSET")...)
 		}
 		diagnostics = append(diagnostics, c.soslFieldBindDiagnostics(query, ctx, bindings)...)
 	}
@@ -302,18 +302,20 @@ func (c querySemanticsChecker) checkFileWithFacts(file string, facts *sourceFact
 func (c querySemanticsChecker) soslFieldBindDiagnostics(query sosl.Query, ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, returning := range query.Returning {
-		for _, bind := range returning.WhereBinds {
-			field, ok := c.field(returning.Object, bind.Field)
-			if !ok {
-				continue
-			}
-			typeName := bindings[strings.ToLower(bind.Name)]
-			if typeName == "" || queryFieldAcceptsBindType(field.Type, typeName) {
-				continue
-			}
-			offset := findQueryIdentifier(ctx.queryText, ":"+bind.Name, 0)
-			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("query bind variable %q of type %s is incompatible with field %s", bind.Name, typeName, field.Name), ":"+bind.Name, offset))
+		if returning.Where == nil || returning.Where.Bind == "" {
+			continue
 		}
+		bind := returning.Where
+		field, ok := c.field(returning.Object, bind.Field)
+		if !ok {
+			continue
+		}
+		typeName := bindings[strings.ToLower(bind.Bind)]
+		if typeName == "" || queryFieldAcceptsBindType(field.Type, typeName) {
+			continue
+		}
+		offset := findQueryIdentifier(ctx.queryText, ":"+bind.Bind, 0)
+		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("query bind variable %q of type %s is incompatible with field %s", bind.Bind, typeName, field.Name), ":"+bind.Bind, offset))
 	}
 	return diagnostics
 }
@@ -993,19 +995,19 @@ func (c querySemanticsChecker) checkSOSLQuery(query sosl.Query, ctx queryTextCon
 		}
 		cursor = maxInt(objectCursor+len(returning.Object), cursor)
 		for _, field := range returning.Fields {
-			fieldCursor := findQueryIdentifier(ctx.queryText, field, cursor)
+			fieldCursor := findQueryIdentifier(ctx.queryText, field.Field, cursor)
 			if !c.hasFieldMetadata(object.Name) {
-				cursor = maxInt(fieldCursor+len(field), cursor)
+				cursor = maxInt(fieldCursor+len(field.Field), cursor)
 				continue
 			}
-			if strings.Contains(field, ".") && len(c.checkSOQLField(object.Name, field, ctx, cursor)) == 0 {
-				cursor = maxInt(fieldCursor+len(field), cursor)
+			if strings.Contains(field.Field, ".") && len(c.checkSOQLField(object.Name, field.Field, ctx, cursor)) == 0 {
+				cursor = maxInt(fieldCursor+len(field.Field), cursor)
 				continue
 			}
-			if _, ok := c.field(object.Name, field); !ok {
-				diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_SOSL_FIELD", fmt.Sprintf("SOSL RETURNING references unknown field %s.%s", object.Name, field), field, fieldCursor))
+			if _, ok := c.field(object.Name, field.Field); !ok {
+				diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_SOSL_FIELD", fmt.Sprintf("SOSL RETURNING references unknown field %s.%s", object.Name, field.Field), field.Field, fieldCursor))
 			}
-			cursor = maxInt(fieldCursor+len(field), cursor)
+			cursor = maxInt(fieldCursor+len(field.Field), cursor)
 		}
 	}
 	return diagnostics

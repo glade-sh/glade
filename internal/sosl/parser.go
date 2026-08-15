@@ -2,40 +2,99 @@ package sosl
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"unicode"
 )
 
-type Query struct {
-	Returning    []ReturningObject
-	DivisionBind string
-	LimitBind    string
+type Window struct {
+	Value    int
+	HasValue bool
+	Bind     string
+}
+
+type SearchScope string
+
+const (
+	SearchScopeAll   SearchScope = "ALL FIELDS"
+	SearchScopeName  SearchScope = "NAME FIELDS"
+	SearchScopeEmail SearchScope = "EMAIL FIELDS"
+	SearchScopePhone SearchScope = "PHONE FIELDS"
+)
+
+type SearchTerm struct {
+	Text   string
+	Prefix bool
+}
+
+type SelectExpr struct {
+	Field string
+	Func  string
+	Alias string
+}
+
+type Condition struct {
+	Field       string
+	Operator    string
+	Value       string
+	ValueIsNull bool
+	Bind        string
+}
+
+type OrderSpec struct {
+	Field string
+	Desc  bool
 }
 
 type ReturningObject struct {
-	Object     string
-	Fields     []string
-	WhereBinds []WhereBind
-	LimitBind  string
-	OffsetBind string
+	Object  string
+	Fields  []SelectExpr
+	Where   *Condition
+	OrderBy []OrderSpec
+	Limit   Window
+	Offset  Window
 }
 
-type WhereBind struct {
-	Field string
-	Name  string
+type Query struct {
+	Terms             []SearchTerm
+	Scope             SearchScope
+	Returning         []ReturningObject
+	Limit             Window
+	WithSnippet       bool
+	SpellCorrection   *bool
+	PricebookID       string
+	PricebookIDBind   string
+	DivisionBind      string
+	DivisionSpecified bool
 }
 
-type tokenKind int
+type UnsupportedFeatureError struct {
+	Message string
+}
+
+func (err *UnsupportedFeatureError) Error() string {
+	if err == nil {
+		return "unsupported SOSL feature"
+	}
+	return err.Message
+}
+
+type tokenKind uint8
 
 const (
 	tokenEOF tokenKind = iota
-	tokenIdent
+	tokenWord
+	tokenString
+	tokenNumber
 	tokenComma
 	tokenLParen
 	tokenRParen
+	tokenLBrace
+	tokenRBrace
 	tokenColon
 	tokenEqual
-	tokenNumber
+	tokenNotEqual
+	tokenInvalid
 )
 
 type token struct {
@@ -44,12 +103,8 @@ type token struct {
 }
 
 func Parse(input string) (Query, error) {
-	tokens := lex(input)
-	p := parser{tokens: tokens}
-	if !p.skipToKeyword("RETURNING") {
-		return Query{}, fmt.Errorf("sosl: missing RETURNING")
-	}
-	return p.parseReturning()
+	parser := parser{tokens: lex(input)}
+	return parser.parse()
 }
 
 type parser struct {
@@ -57,239 +112,386 @@ type parser struct {
 	pos    int
 }
 
-func (p *parser) parseReturning() (Query, error) {
+func (p *parser) parse() (Query, error) {
 	var query Query
-	for {
-		p.skipCommas()
-		if p.peek().kind == tokenEOF {
-			break
+	if err := p.expectKeyword("FIND"); err != nil {
+		return Query{}, err
+	}
+	terms, err := p.parseTerms()
+	if err != nil {
+		return Query{}, err
+	}
+	query.Terms = terms
+	query.Scope = SearchScopeAll
+	if p.acceptKeyword("IN") {
+		var scope SearchScope
+		switch {
+		case p.acceptKeyword("ALL"):
+			scope = SearchScopeAll
+		case p.acceptKeyword("NAME"):
+			scope = SearchScopeName
+		case p.acceptKeyword("EMAIL"):
+			scope = SearchScopeEmail
+		case p.acceptKeyword("PHONE"):
+			scope = SearchScopePhone
+		default:
+			return Query{}, p.errorf("expected SOSL search scope")
 		}
-		if p.peek().kind == tokenIdent && equalFold(p.peek().text, "LIMIT") {
-			p.next()
-			bind, err := p.parseBindOrNumber("LIMIT")
+		if err := p.expectKeyword("FIELDS"); err != nil {
+			return Query{}, err
+		}
+		query.Scope = scope
+	}
+	for p.acceptKeyword("WITH") {
+		if err := p.parseWith(&query); err != nil {
+			return Query{}, err
+		}
+	}
+	if err := p.expectKeyword("RETURNING"); err != nil {
+		return Query{}, err
+	}
+	if err := p.parseReturning(&query); err != nil {
+		return Query{}, err
+	}
+	for p.peek().kind != tokenEOF {
+		if p.accept(tokenComma) {
+			return Query{}, p.errorf("unexpected comma after RETURNING clause")
+		}
+		if p.acceptKeyword("WITH") {
+			if err := p.parseWith(&query); err != nil {
+				return Query{}, err
+			}
+			continue
+		}
+		if p.acceptKeyword("LIMIT") {
+			window, err := p.parseWindow("LIMIT")
 			if err != nil {
 				return Query{}, err
 			}
-			query.LimitBind = bind
+			query.Limit = window
 			continue
 		}
-		if p.peek().kind == tokenIdent && equalFold(p.peek().text, "WITH") {
-			p.next()
-			if p.peek().kind == tokenIdent && equalFold(p.peek().text, "DIVISION") {
-				p.next()
-				if p.peek().kind == tokenEqual {
-					p.next()
-				}
-				bind, err := p.parseDivisionValue()
-				if err != nil {
-					return Query{}, err
-				}
-				query.DivisionBind = bind
-				continue
-			}
-			p.skipGlobalClause()
-			continue
+		if p.acceptKeyword("USING") {
+			kind := p.next()
+			return Query{}, &UnsupportedFeatureError{Message: fmt.Sprintf("SOSL USING %s hosted search service", kind.text)}
 		}
-		object := p.next()
-		if object.kind != tokenIdent {
-			return Query{}, fmt.Errorf("sosl: expected returning object")
+		if p.acceptKeyword("UPDATE") {
+			kind := p.next()
+			return Query{}, &UnsupportedFeatureError{Message: fmt.Sprintf("SOSL UPDATE %s hosted search analytics", kind.text)}
 		}
-		if got := p.next(); got.kind != tokenLParen {
-			return Query{}, fmt.Errorf("sosl: expected fields for %s", object.text)
-		}
-		fields, whereBinds, limitBind, offsetBind, err := p.parseFields()
-		if err != nil {
-			return Query{}, err
-		}
-		returning := ReturningObject{
-			Object:     object.text,
-			Fields:     fields,
-			WhereBinds: whereBinds,
-			LimitBind:  limitBind,
-			OffsetBind: offsetBind,
-		}
-		query.Returning = append(query.Returning, returning)
-	}
-	if len(query.Returning) == 0 {
-		return Query{}, fmt.Errorf("sosl: empty RETURNING clause")
+		return Query{}, p.errorf("unexpected SOSL token %q", p.peek().text)
 	}
 	return query, nil
 }
 
-func (p *parser) parseFields() ([]string, []WhereBind, string, string, error) {
-	var fields []string
-	for {
-		tok := p.next()
-		switch tok.kind {
-		case tokenIdent:
-			if equalFold(tok.text, "WHERE") {
-				whereBinds, limitBind, offsetBind, err := p.parseWhereBinds()
-				return fields, whereBinds, limitBind, offsetBind, err
-			}
-			if equalFold(tok.text, "ORDER") {
-				p.skipReturningOrderBy()
-				continue
-			}
-			if equalFold(tok.text, "LIMIT") {
-				limitBind, offsetBind, err := p.parseReturningWindow("LIMIT")
-				return fields, nil, limitBind, offsetBind, err
-			}
-			if equalFold(tok.text, "OFFSET") {
-				limitBind, offsetBind, err := p.parseReturningWindow("OFFSET")
-				return fields, nil, limitBind, offsetBind, err
-			}
-			fields = append(fields, tok.text)
-		case tokenComma:
-			continue
-		case tokenRParen:
-			return fields, nil, "", "", nil
-		case tokenEOF:
-			return nil, nil, "", "", fmt.Errorf("sosl: unterminated field list")
-		default:
-			return nil, nil, "", "", fmt.Errorf("sosl: expected field")
-		}
-	}
-}
-
-func (p *parser) skipReturningOrderBy() {
-	if p.peek().kind == tokenIdent && equalFold(p.peek().text, "BY") {
+func (p *parser) parseTerms() ([]SearchTerm, error) {
+	var raw []string
+	switch p.peek().kind {
+	case tokenLBrace:
 		p.next()
-	}
-	for p.peek().kind != tokenEOF {
-		if p.peek().kind == tokenRParen || (p.peek().kind == tokenIdent && (equalFold(p.peek().text, "LIMIT") || equalFold(p.peek().text, "OFFSET"))) {
-			return
+		for p.peek().kind != tokenRBrace && p.peek().kind != tokenEOF {
+			tok := p.next()
+			if tok.kind != tokenWord && tok.kind != tokenString {
+				return nil, p.errorf("expected SOSL search term")
+			}
+			raw = append(raw, strings.Fields(tok.text)...)
 		}
-		p.next()
-	}
-}
-
-func (p *parser) parseWhereBinds() ([]WhereBind, string, string, error) {
-	var binds []WhereBind
-	depth := 0
-	for {
-		tok := p.next()
-		switch tok.kind {
-		case tokenEOF:
-			return nil, "", "", fmt.Errorf("sosl: unterminated WHERE clause")
-		case tokenLParen:
-			depth++
-		case tokenRParen:
-			if depth == 0 {
-				return binds, "", "", nil
-			}
-			depth--
-		case tokenIdent:
-			if depth == 0 && equalFold(tok.text, "LIMIT") {
-				limitBind, offsetBind, err := p.parseReturningWindow("LIMIT")
-				return binds, limitBind, offsetBind, err
-			}
-			if depth == 0 && equalFold(tok.text, "OFFSET") {
-				limitBind, offsetBind, err := p.parseReturningWindow("OFFSET")
-				return binds, limitBind, offsetBind, err
-			}
-			if p.peek().kind != tokenEqual {
-				if p.peek().kind != tokenIdent || !equalFold(p.peek().text, "LIKE") {
-					continue
-				}
-				p.next()
-				if p.next().kind != tokenColon {
-					continue
-				}
-				name := p.next()
-				if name.kind == tokenIdent {
-					binds = append(binds, WhereBind{Field: tok.text, Name: name.text})
-				}
-				continue
-			}
-			p.next()
-			if p.next().kind != tokenColon {
-				continue
-			}
-			name := p.next()
-			if name.kind == tokenIdent {
-				binds = append(binds, WhereBind{Field: tok.text, Name: name.text})
-			}
+		if !p.accept(tokenRBrace) {
+			return nil, p.errorf("unterminated SOSL search term")
 		}
-	}
-}
-
-func (p *parser) parseReturningWindow(first string) (string, string, error) {
-	var limitBind, offsetBind string
-	if equalFold(first, "LIMIT") {
-		bind, err := p.parseBindOrNumber("RETURNING LIMIT")
-		if err != nil {
-			return "", "", err
-		}
-		limitBind = bind
-		if p.peek().kind == tokenIdent && equalFold(p.peek().text, "OFFSET") {
-			p.next()
-			bind, err := p.parseBindOrNumber("RETURNING OFFSET")
-			if err != nil {
-				return "", "", err
-			}
-			offsetBind = bind
-		}
-	} else {
-		bind, err := p.parseBindOrNumber("RETURNING OFFSET")
-		if err != nil {
-			return "", "", err
-		}
-		offsetBind = bind
-	}
-	if p.next().kind != tokenRParen {
-		return "", "", fmt.Errorf("sosl: expected end of fields after %s", first)
-	}
-	return limitBind, offsetBind, nil
-}
-
-func (p *parser) parseBindOrNumber(clause string) (string, error) {
-	if p.peek().kind == tokenColon {
+	case tokenString:
+		raw = strings.Fields(p.next().text)
+	case tokenColon:
 		p.next()
 		bind := p.next()
-		if bind.kind != tokenIdent {
-			return "", fmt.Errorf("sosl: expected %s bind", clause)
+		if bind.kind != tokenWord {
+			return nil, p.errorf("expected FIND bind")
 		}
-		return bind.text, nil
+		raw = []string{":" + bind.text}
+	case tokenWord:
+		raw = []string{p.next().text}
+	default:
+		return nil, p.errorf("expected FIND search term")
 	}
-	if p.next().kind != tokenNumber {
-		return "", fmt.Errorf("sosl: expected %s value", clause)
+	terms := make([]SearchTerm, 0, len(raw))
+	for _, item := range raw {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		if strings.EqualFold(item, "AND") || strings.EqualFold(item, "OR") || strings.EqualFold(item, "NOT") {
+			return nil, &UnsupportedFeatureError{Message: fmt.Sprintf("SOSL boolean search operator %s", strings.ToUpper(item))}
+		}
+		if strings.Contains(item, "?") {
+			return nil, &UnsupportedFeatureError{Message: "SOSL fuzzy search operator ?"}
+		}
+		prefix := strings.HasSuffix(item, "*")
+		item = strings.TrimSuffix(item, "*")
+		if item != "" {
+			terms = append(terms, SearchTerm{Text: item, Prefix: prefix})
+		}
 	}
-	return "", nil
+	if len(terms) == 0 {
+		return nil, p.errorf("empty FIND search term")
+	}
+	return terms, nil
 }
 
-func (p *parser) parseDivisionValue() (string, error) {
-	if p.peek().kind == tokenColon {
-		return p.parseBindOrNumber("WITH DIVISION")
+func (p *parser) parseReturning(query *Query) error {
+	for {
+		if p.peek().kind != tokenWord {
+			return p.errorf("expected RETURNING object")
+		}
+		object := p.next().text
+		if !p.accept(tokenLParen) {
+			return p.errorf("expected fields for %s", object)
+		}
+		returning, err := p.parseReturningObject(object)
+		if err != nil {
+			return err
+		}
+		query.Returning = append(query.Returning, returning)
+		if !p.accept(tokenComma) {
+			return nil
+		}
+		if p.peek().kind == tokenWord && strings.EqualFold(p.peek().text, "WITH") {
+			return p.errorf("unexpected comma before global SOSL clause")
+		}
 	}
-	if p.next().kind == tokenEOF {
-		return "", fmt.Errorf("sosl: expected WITH DIVISION value")
-	}
-	return "", nil
 }
 
-func (p *parser) skipGlobalClause() {
-	for p.peek().kind != tokenEOF {
-		if p.peek().kind == tokenIdent && (equalFold(p.peek().text, "LIMIT") || equalFold(p.peek().text, "OFFSET")) {
-			return
+func (p *parser) parseReturningObject(object string) (ReturningObject, error) {
+	returning := ReturningObject{Object: object}
+	for {
+		switch {
+		case p.accept(tokenRParen):
+			return returning, nil
+		case p.acceptKeyword("WHERE"):
+			condition, err := p.parseCondition()
+			if err != nil {
+				return ReturningObject{}, err
+			}
+			returning.Where = &condition
+		case p.acceptKeyword("ORDER"):
+			if err := p.expectKeyword("BY"); err != nil {
+				return ReturningObject{}, err
+			}
+			order, err := p.parseOrderBy()
+			if err != nil {
+				return ReturningObject{}, err
+			}
+			returning.OrderBy = order
+		case p.acceptKeyword("LIMIT"):
+			window, err := p.parseWindow("RETURNING LIMIT")
+			if err != nil {
+				return ReturningObject{}, err
+			}
+			returning.Limit = window
+		case p.acceptKeyword("OFFSET"):
+			window, err := p.parseWindow("RETURNING OFFSET")
+			if err != nil {
+				return ReturningObject{}, err
+			}
+			returning.Offset = window
+		case p.accept(tokenComma):
+			continue
+		default:
+			field, err := p.parseSelectExpr()
+			if err != nil {
+				return ReturningObject{}, err
+			}
+			returning.Fields = append(returning.Fields, field)
 		}
-		p.next()
 	}
 }
 
-func (p *parser) skipToKeyword(keyword string) bool {
-	for p.peek().kind != tokenEOF {
-		tok := p.next()
-		if tok.kind == tokenIdent && equalFold(tok.text, keyword) {
-			return true
+func (p *parser) parseSelectExpr() (SelectExpr, error) {
+	field := p.next()
+	if field.kind != tokenWord {
+		return SelectExpr{}, p.errorf("expected RETURNING field")
+	}
+	if !p.accept(tokenLParen) {
+		return SelectExpr{Field: field.text}, nil
+	}
+	if !isLocalFunction(field.text) {
+		return SelectExpr{}, &UnsupportedFeatureError{Message: fmt.Sprintf("SOSL RETURNING %s function", field.text)}
+	}
+	argument := p.next()
+	if argument.kind != tokenWord {
+		return SelectExpr{}, p.errorf("expected %s field", field.text)
+	}
+	if !p.accept(tokenRParen) {
+		return SelectExpr{}, p.errorf("expected end of %s expression", field.text)
+	}
+	alias := p.next()
+	if alias.kind != tokenWord {
+		return SelectExpr{}, p.errorf("expected alias for %s", field.text)
+	}
+	return SelectExpr{Field: argument.text, Func: strings.ToUpper(field.text), Alias: alias.text}, nil
+}
+
+func (p *parser) parseCondition() (Condition, error) {
+	field := p.next()
+	if field.kind != tokenWord {
+		return Condition{}, p.errorf("expected SOSL WHERE field")
+	}
+	operator := p.next()
+	var operation string
+	switch {
+	case operator.kind == tokenEqual:
+		operation = "="
+	case operator.kind == tokenNotEqual:
+		operation = "!="
+	case operator.kind == tokenWord && strings.EqualFold(operator.text, "LIKE"):
+		operation = "LIKE"
+	default:
+		return Condition{}, p.errorf("unsupported SOSL WHERE operator %q", operator.text)
+	}
+	value, bind, nullValue, err := p.parseValue("SOSL WHERE value")
+	if err != nil {
+		return Condition{}, err
+	}
+	return Condition{Field: field.text, Operator: operation, Value: value, Bind: bind, ValueIsNull: nullValue}, nil
+}
+
+func (p *parser) parseOrderBy() ([]OrderSpec, error) {
+	var order []OrderSpec
+	for {
+		field := p.next()
+		if field.kind != tokenWord {
+			return nil, p.errorf("expected SOSL ORDER BY field")
 		}
+		spec := OrderSpec{Field: field.text}
+		if p.peek().kind == tokenWord && (strings.EqualFold(p.peek().text, "ASC") || strings.EqualFold(p.peek().text, "DESC")) {
+			spec.Desc = strings.EqualFold(p.next().text, "DESC")
+		}
+		order = append(order, spec)
+		if !p.accept(tokenComma) {
+			return order, nil
+		}
+	}
+}
+
+func (p *parser) parseWindow(clause string) (Window, error) {
+	if p.accept(tokenColon) {
+		bind := p.next()
+		if bind.kind != tokenWord {
+			return Window{}, p.errorf("expected %s bind", clause)
+		}
+		return Window{Bind: bind.text}, nil
+	}
+	tok := p.next()
+	if tok.kind != tokenNumber {
+		return Window{}, p.errorf("expected %s value", clause)
+	}
+	value, err := strconv.Atoi(tok.text)
+	if err != nil || value < 0 {
+		return Window{}, p.errorf("invalid %s value %q", clause, tok.text)
+	}
+	return Window{Value: value, HasValue: true}, nil
+}
+
+func (p *parser) parseValue(clause string) (string, string, bool, error) {
+	if p.accept(tokenColon) {
+		bind := p.next()
+		if bind.kind != tokenWord {
+			return "", "", false, p.errorf("expected %s bind", clause)
+		}
+		return "", bind.text, false, nil
+	}
+	tok := p.next()
+	if tok.kind != tokenString && tok.kind != tokenWord && tok.kind != tokenNumber {
+		return "", "", false, p.errorf("expected %s", clause)
+	}
+	return tok.text, "", strings.EqualFold(tok.text, "NULL"), nil
+}
+
+func (p *parser) parseWith(query *Query) error {
+	clause := p.next()
+	if clause.kind != tokenWord {
+		return p.errorf("expected SOSL WITH clause")
+	}
+	switch {
+	case strings.EqualFold(clause.text, "SNIPPET"):
+		query.WithSnippet = true
+		return nil
+	case strings.EqualFold(clause.text, "SPELL_CORRECTION"):
+		if !p.accept(tokenEqual) {
+			return p.errorf("expected SPELL_CORRECTION value")
+		}
+		value := p.next()
+		if value.kind != tokenWord || (!strings.EqualFold(value.text, "TRUE") && !strings.EqualFold(value.text, "FALSE")) {
+			return p.errorf("SOSL WITH SPELL_CORRECTION expects true or false")
+		}
+		parsed := strings.EqualFold(value.text, "TRUE")
+		query.SpellCorrection = &parsed
+		return nil
+	case strings.EqualFold(clause.text, "DIVISION"):
+		query.DivisionSpecified = true
+		if !p.accept(tokenEqual) {
+			return p.errorf("expected WITH DIVISION value")
+		}
+		value, bind, _, err := p.parseValue("WITH DIVISION")
+		if err != nil {
+			return err
+		}
+		query.DivisionBind = bind
+		if bind == "" {
+			query.DivisionBind = value
+		}
+		return nil
+	case strings.EqualFold(clause.text, "PRICEBOOKID"):
+		if !p.accept(tokenEqual) {
+			return p.errorf("expected WITH PricebookId value")
+		}
+		value, bind, _, err := p.parseValue("WITH PricebookId")
+		if err != nil {
+			return err
+		}
+		query.PricebookID, query.PricebookIDBind = value, bind
+		return nil
+	case strings.EqualFold(clause.text, "DATA"):
+		return &UnsupportedFeatureError{Message: "SOSL WITH DATA CATEGORY hosted search service"}
+	case strings.EqualFold(clause.text, "DIVISIONFILTER"):
+		return &UnsupportedFeatureError{Message: "SOSL WITH DivisionFilter hosted search service"}
+	case strings.EqualFold(clause.text, "METADATA"):
+		return &UnsupportedFeatureError{Message: "SOSL WITH METADATA hosted search service"}
+	default:
+		return &UnsupportedFeatureError{Message: fmt.Sprintf("SOSL WITH %s hosted search service", clause.text)}
+	}
+}
+
+func isLocalFunction(name string) bool {
+	switch strings.ToUpper(strings.TrimSpace(name)) {
+	case "FORMAT", "CONVERTCURRENCY", "TOLABEL":
+		return true
+	default:
+		return false
+	}
+}
+
+func (p *parser) expectKeyword(keyword string) error {
+	tok := p.next()
+	if tok.kind != tokenWord || !strings.EqualFold(tok.text, keyword) {
+		return p.errorf("expected %s", keyword)
+	}
+	return nil
+}
+
+func (p *parser) acceptKeyword(keyword string) bool {
+	if p.peek().kind == tokenWord && strings.EqualFold(p.peek().text, keyword) {
+		p.pos++
+		return true
 	}
 	return false
 }
 
-func (p *parser) skipCommas() {
-	for p.peek().kind == tokenComma {
+func (p *parser) accept(kind tokenKind) bool {
+	if p.peek().kind == kind {
 		p.pos++
+		return true
 	}
+	return false
 }
 
 func (p *parser) peek() token {
@@ -307,11 +509,14 @@ func (p *parser) next() token {
 	return tok
 }
 
+func (p *parser) errorf(format string, args ...any) error {
+	return fmt.Errorf("sosl: "+format, args...)
+}
+
 func lex(input string) []token {
 	var tokens []token
 	for i := 0; i < len(input); {
-		r := rune(input[i])
-		if unicode.IsSpace(r) {
+		if unicode.IsSpace(rune(input[i])) {
 			i++
 			continue
 		}
@@ -325,31 +530,74 @@ func lex(input string) []token {
 		case ')':
 			tokens = append(tokens, token{kind: tokenRParen, text: ")"})
 			i++
+		case '{':
+			tokens = append(tokens, token{kind: tokenLBrace, text: "{"})
+			i++
+		case '}':
+			tokens = append(tokens, token{kind: tokenRBrace, text: "}"})
+			i++
 		case ':':
 			tokens = append(tokens, token{kind: tokenColon, text: ":"})
 			i++
 		case '=':
 			tokens = append(tokens, token{kind: tokenEqual, text: "="})
 			i++
-		default:
-			if '0' <= input[i] && input[i] <= '9' {
-				start := i
+		case '!':
+			if i+1 < len(input) && input[i+1] == '=' {
+				tokens = append(tokens, token{kind: tokenNotEqual, text: "!="})
+				i += 2
+			} else {
+				tokens = append(tokens, token{kind: tokenInvalid, text: "!"})
 				i++
-				for i < len(input) && '0' <= input[i] && input[i] <= '9' {
+			}
+		case '\'', '"':
+			quote := input[i]
+			start := i + 1
+			closed := false
+			i++
+			var value strings.Builder
+			for i < len(input) {
+				if input[i] == quote {
+					if i+1 < len(input) && input[i+1] == quote {
+						value.WriteString(input[start:i])
+						value.WriteByte(quote)
+						i += 2
+						start = i
+						continue
+					}
+					value.WriteString(input[start:i])
+					i++
+					tokens = append(tokens, token{kind: tokenString, text: value.String()})
+					closed = true
+					break
+				}
+				i++
+			}
+			if !closed {
+				tokens = append(tokens, token{kind: tokenInvalid, text: input[start:]})
+			}
+		case '?':
+			tokens = append(tokens, token{kind: tokenWord, text: "?"})
+			i++
+		default:
+			if isDigit(input[i]) {
+				start := i
+				for i < len(input) && isDigit(input[i]) {
 					i++
 				}
 				tokens = append(tokens, token{kind: tokenNumber, text: input[start:i]})
 				continue
 			}
-			if isIdentStart(input[i]) {
+			if isWordPart(input[i]) {
 				start := i
 				i++
-				for i < len(input) && isIdentPart(input[i]) {
+				for i < len(input) && isWordPart(input[i]) {
 					i++
 				}
-				tokens = append(tokens, token{kind: tokenIdent, text: input[start:i]})
+				tokens = append(tokens, token{kind: tokenWord, text: input[start:i]})
 				continue
 			}
+			tokens = append(tokens, token{kind: tokenInvalid, text: string(input[i])})
 			i++
 		}
 	}
@@ -357,14 +605,11 @@ func lex(input string) []token {
 	return tokens
 }
 
-func isIdentStart(ch byte) bool {
-	return ch == '_' || ch == '$' || ('A' <= ch && ch <= 'Z') || ('a' <= ch && ch <= 'z')
+func isDigit(ch byte) bool {
+	return ch >= '0' && ch <= '9'
 }
 
-func isIdentPart(ch byte) bool {
-	return ch == '.' || isIdentStart(ch) || ('0' <= ch && ch <= '9')
-}
-
-func equalFold(a, b string) bool {
-	return strings.EqualFold(a, b)
+func isWordPart(ch byte) bool {
+	return ch == '_' || ch == '$' || ch == '.' || ch == '*' ||
+		(ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || isDigit(ch)
 }

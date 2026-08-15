@@ -5,10 +5,10 @@ export const editorSupportCatalog = {
   "schemaVersion": 1,
   "generatedFrom": "docs/STDLIB_COVERAGE.md",
   "summary": {
-    "supported": 268,
+    "supported": 267,
     "partial": 0,
     "stub": 0,
-    "unsupported": 18,
+    "unsupported": 19,
     "unknown": 0
   },
   "statusLabels": {
@@ -1125,9 +1125,9 @@ export const editorSupportCatalog = {
           "apply": "divide()",
           "type": "method",
           "detail": "Decimal API",
-          "status": "supported",
-          "statusLabel": "Runs locally",
-          "info": "Divides local Decimal values with explicit scale and RoundingMode.",
+          "status": "unsupported",
+          "statusLabel": "Requires Salesforce",
+          "info": "Exact Decimal division is fail-closed pending the bounded Salesforce oracle and Task 4.2 implementation.",
           "signature": "divide(Decimal,Integer,RoundingMode)",
           "source": "docs/STDLIB_COVERAGE.md"
         },
@@ -1138,7 +1138,7 @@ export const editorSupportCatalog = {
           "detail": "Decimal API",
           "status": "supported",
           "statusLabel": "Runs locally",
-          "info": "Returns local Decimal value.",
+          "info": "Returns an explicitly Double-backed local value.",
           "signature": "doubleValue",
           "source": "docs/STDLIB_COVERAGE.md"
         },

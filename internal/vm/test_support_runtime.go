@@ -598,11 +598,11 @@ func (vm *VM) testLoadDataFieldValue(objectName, fieldName, raw string) (Value, 
 		}
 		return Int(parsed), nil
 	case storage.FieldDecimal:
-		parsed, err := strconv.ParseFloat(strings.TrimSpace(raw), 64)
+		value, err := decimalFromText(strings.TrimSpace(raw))
 		if err != nil {
 			return Null, err
 		}
-		return Decimal(parsed), nil
+		return value, nil
 	case storage.FieldID, storage.FieldReference:
 		return platformScalar("Id", raw), nil
 	case storage.FieldDate:

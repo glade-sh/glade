@@ -62,10 +62,34 @@ type standardDescribeCatalogV2CacheEntry struct {
 	err        error
 }
 
+type standardDescribeCatalogV2RawDecodeFunc func(standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error)
+
+type standardDescribeCatalogV2RawCache struct {
+	entries sync.Map
+	decode  standardDescribeCatalogV2RawDecodeFunc
+}
+
+type standardDescribeCatalogV2RawCacheEntry struct {
+	once       sync.Once
+	indexEntry standardDescribeCatalogV2IndexEntry
+	value      standardDescribeObject
+	err        error
+}
+
 var standardDescribeCatalogV2ProductionCache = newStandardDescribeCatalogV2Cache(standardDescribeCatalogV2EntryForResolvedIndexEntry)
+
+// Raw catalog entries are immutable after decode. Callers may share them, but
+// must not mutate the returned slices or nested values.
+var standardDescribeCatalogV2RawProductionCache = newStandardDescribeCatalogV2RawCache(func(entry standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error) {
+	return decodeStandardDescribeCatalogV2Member(standardDescribeCatalogV2Pack, entry)
+})
 
 func newStandardDescribeCatalogV2Cache(decode standardDescribeCatalogV2DecodeFunc) *standardDescribeCatalogV2Cache {
 	return &standardDescribeCatalogV2Cache{decode: decode}
+}
+
+func newStandardDescribeCatalogV2RawCache(decode standardDescribeCatalogV2RawDecodeFunc) *standardDescribeCatalogV2RawCache {
+	return &standardDescribeCatalogV2RawCache{decode: decode}
 }
 
 func (cache *standardDescribeCatalogV2Cache) entryForName(objectName string) (standardObjectCatalogEntry, bool, error) {
@@ -102,6 +126,29 @@ func (cache *standardDescribeCatalogV2Cache) decodeCachedEntry(cached *standardD
 	return cached.value, true, cached.err
 }
 
+func (cache *standardDescribeCatalogV2RawCache) entryForName(objectName string) (standardDescribeObject, bool, error) {
+	objectName = strings.TrimSpace(objectName)
+	if objectName == "" {
+		return standardDescribeObject{}, false, nil
+	}
+	indexEntry, ok := lookupStandardDescribeCatalogV2Index(standardDescribeCatalogV2Index, objectName)
+	if !ok {
+		return standardDescribeObject{}, false, nil
+	}
+	if err := validateResolvedStandardDescribeCatalogV2IndexEntry(indexEntry); err != nil {
+		return standardDescribeObject{}, true, err
+	}
+	loaded, _ := cache.entries.LoadOrStore(indexEntry.Name, &standardDescribeCatalogV2RawCacheEntry{indexEntry: indexEntry})
+	cached := loaded.(*standardDescribeCatalogV2RawCacheEntry)
+	cached.once.Do(func() {
+		cached.value, cached.err = cache.decode(cached.indexEntry)
+		if cached.err != nil {
+			cached.value = standardDescribeObject{}
+		}
+	})
+	return cached.value, true, cached.err
+}
+
 func validateResolvedStandardDescribeCatalogV2IndexEntry(entry standardDescribeCatalogV2IndexEntry) error {
 	canonical, ok := lookupStandardDescribeCatalogV2Index(standardDescribeCatalogV2Index, entry.Name)
 	if !ok || canonical != entry {
@@ -111,12 +158,7 @@ func validateResolvedStandardDescribeCatalogV2IndexEntry(entry standardDescribeC
 }
 
 func lookupStandardDescribeCatalogV2(objectName string) (standardDescribeObject, bool, error) {
-	entry, ok := lookupStandardDescribeCatalogV2Index(standardDescribeCatalogV2Index, objectName)
-	if !ok {
-		return standardDescribeObject{}, false, nil
-	}
-	describe, err := decodeStandardDescribeCatalogV2Member(standardDescribeCatalogV2Pack, entry)
-	return describe, true, err
+	return standardDescribeCatalogV2RawProductionCache.entryForName(objectName)
 }
 
 func lookupStandardDescribeChildRelationshipsV2(objectName string) (standardDescribeChildRelationshipsV2Member, bool, error) {
@@ -200,9 +242,15 @@ func standardDescribeCatalogV2EntryForName(objectName string) (standardObjectCat
 }
 
 func standardDescribeCatalogV2EntryForResolvedIndexEntry(indexEntry standardDescribeCatalogV2IndexEntry) (standardObjectCatalogEntry, error) {
-	describe, err := decodeStandardDescribeCatalogV2Member(standardDescribeCatalogV2Pack, indexEntry)
+	if err := validateResolvedStandardDescribeCatalogV2IndexEntry(indexEntry); err != nil {
+		return standardObjectCatalogEntry{}, err
+	}
+	describe, ok, err := standardDescribeCatalogV2RawProductionCache.entryForName(indexEntry.Name)
 	if err != nil {
 		return standardObjectCatalogEntry{}, err
+	}
+	if !ok {
+		return standardObjectCatalogEntry{}, fmt.Errorf("standard describe member %q not found", indexEntry.Name)
 	}
 	childRelationships := map[string]standardDescribeChildRelationshipInfo{}
 	if reverse, reverseOK, reverseErr := lookupStandardDescribeChildRelationshipsV2(describe.Name); reverseErr != nil {

@@ -66,6 +66,42 @@ func TestExecSOSLHostedSearchServicesStayUnsupported(t *testing.T) {
 		"SOSL external indexes")
 }
 
+func TestExecSOSLUnimplementedOptionsFailClosed(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	assertSOSLUnsupported(t, machine,
+		`Search.query('FIND {Needle} IN ALL FIELDS RETURNING Contact(Id) WITH SPELL_CORRECTION = false');`,
+		"SOSL WITH SPELL_CORRECTION")
+	assertSOSLUnsupported(t, machine,
+		`Search.query('FIND {Needle} IN ALL FIELDS RETURNING Contact(Id) WITH DIVISION = 1');`,
+		"SOSL WITH DIVISION")
+}
+
+func TestExecSearchFindAppliesGlobalLimit(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Nook One');
+insert new Account(Name = 'Nook Two');
+insert new Contact(LastName = 'Nook Contact');
+Search.SearchResults results = Search.find('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name), Contact(Id, LastName) LIMIT 1');
+System.assertEquals(1, results.get('Account').size());
+System.assertEquals(0, results.get('Contact').size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func assertSOSLUnsupported(t *testing.T, machine *VM, source, want string) {
 	t.Helper()
 	program, err := CompileAnonymous(source)
