@@ -73,12 +73,12 @@ func collectParsedSOSLUses(file string, lineMap apexast.LineMap, queryOffset int
 			fieldCursor += paren + 1
 		}
 		for _, field := range object.Fields {
-			fieldOffset := findIdentifier(queryText, field, fieldCursor)
+			fieldOffset := findIdentifier(queryText, field.Field, fieldCursor)
 			if fieldOffset < 0 {
 				continue
 			}
-			uses = append(uses, newSOSLUse(file, lineMap, queryOffset+fieldOffset, field, SObjectFieldID(object.Object, field)))
-			fieldCursor = fieldOffset + len(field)
+			uses = append(uses, newSOSLUse(file, lineMap, queryOffset+fieldOffset, field.Field, SObjectFieldID(object.Object, field.Field)))
+			fieldCursor = fieldOffset + len(field.Field)
 		}
 		cursor = fieldCursor
 	}

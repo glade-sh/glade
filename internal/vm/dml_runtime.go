@@ -4181,12 +4181,10 @@ func vmValueFromStorage(value storage.Value) Value {
 	case storage.ValueBoolean:
 		return Bool(value.Boolean)
 	case storage.ValueDecimal:
-		parsed, err := strconv.ParseFloat(value.Decimal, 64)
+		out, err := decimalFromText(value.Decimal)
 		if err != nil {
 			return String(value.Decimal)
 		}
-		out := Decimal(parsed)
-		out.Text = value.Decimal
 		return out
 	case storage.ValueID:
 		return platformScalar("Id", string(value.ID))
@@ -4221,16 +4219,13 @@ func coerceStoredSObjectFieldRuntimeValue(value Value, field storage.Field) Valu
 	}
 	text := strings.TrimSpace(value.Text)
 	if text == "" {
-		out := Decimal(0)
-		out.Text = "0"
+		out, _ := decimalFromText("0")
 		return out
 	}
-	parsed, err := strconv.ParseFloat(text, 64)
+	out, err := decimalFromText(text)
 	if err != nil {
 		return value
 	}
-	out := Decimal(parsed)
-	out.Text = text
 	return out
 }
 

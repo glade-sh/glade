@@ -725,10 +725,10 @@ System.assertEquals(unnamed.Id, nullRows[0].Id);
 
 func TestSOSLReturningWhereBlankStringIsNotNull(t *testing.T) {
 	record := storage.Record{Fields: map[string]storage.Value{"Name": storage.StringValue("")}}
-	if !soslRecordMatchesWhere(record, soslWhere{Field: "Name", Operator: "!=", ValueIsNull: true}) {
+	if !soslRecordMatchesWhere(record, &soslWhere{Field: "Name", Operator: "!=", ValueIsNull: true}) {
 		t.Fatal("blank string should match != null")
 	}
-	if soslRecordMatchesWhere(record, soslWhere{Field: "Name", Operator: "=", ValueIsNull: true}) {
+	if soslRecordMatchesWhere(record, &soslWhere{Field: "Name", Operator: "=", ValueIsNull: true}) {
 		t.Fatal("blank string should not match = null")
 	}
 }

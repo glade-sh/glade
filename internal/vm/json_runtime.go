@@ -745,13 +745,11 @@ func decodeJSONUntypedToken(decoder *json.Decoder, source string) (Value, error)
 			line, column := jsonNumberStartLineColumn(source, decoder.InputOffset(), value.String())
 			return Null, &jsonNumberInputError{text: value.String(), line: line, column: column}
 		}
-		decimal, err := strconv.ParseFloat(value.String(), 64)
+		decimal, err := decimalFromText(value.String())
 		if err != nil {
 			return Null, err
 		}
-		out := Decimal(decimal)
-		out.Text = value.String()
-		return out, nil
+		return decimal, nil
 	default:
 		return valueFromJSON(value), nil
 	}
@@ -925,9 +923,7 @@ func valueFromJSON(raw any) Value {
 				return Int(converted)
 			}
 		}
-		if converted, err := strconv.ParseFloat(text, 64); err == nil {
-			decimal := Decimal(converted)
-			decimal.Text = text
+		if decimal, err := decimalFromText(text); err == nil {
 			return decimal
 		}
 		return String(text)
