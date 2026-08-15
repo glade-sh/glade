@@ -9409,10 +9409,10 @@ System.assertEquals(0, page.fetchDeleted(0, 1));
 
 Datetime start = Datetime.now().addDays(-1);
 Datetime finish = start.addHours(1);
-Date expectedDate = Date.newInstance(start.year(), start.month(), start.day());
 Database.GetDeletedResult deleted = Database.getDeleted('Account', start, finish);
 System.assertEquals(0, deleted.getDeletedRecords().size());
-System.assertEquals(expectedDate, deleted.getEarliestDateAvailable());
+System.assertEquals(null, deleted.getEarliestDateAvailable());
+Date expectedDate = Date.newInstance(start.year(), start.month(), start.day());
 System.assertEquals(expectedDate, deleted.getLatestDateCovered());
 
 Database.GetUpdatedResult updated = Database.getUpdated('Account', start, finish);

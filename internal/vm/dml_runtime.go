@@ -83,11 +83,11 @@ func (vm *VM) databaseGetDeleted(args []Value) (Value, error) {
 	}
 	deleted := Object("Database.GetDeletedResult")
 	deleted.Fields["deletedRecords"] = List(records...)
-	earliestDate := start
-	if !earliest.IsZero() {
-		earliestDate = earliest
+	if earliest.IsZero() {
+		deleted.Fields["earliestDateAvailable"] = Null
+	} else {
+		deleted.Fields["earliestDateAvailable"] = platformScalar("Date", formatPlatformDate(earliest))
 	}
-	deleted.Fields["earliestDateAvailable"] = platformScalar("Date", formatPlatformDate(earliestDate))
 	deleted.Fields["latestDateCovered"] = platformScalar("Date", formatPlatformDate(end))
 	return deleted, nil
 }

@@ -995,9 +995,6 @@ func deletedPayload(object storage.ObjectState, r *http.Request) (deletedResourc
 			latest = stamp
 		}
 	}
-	if earliest == "" && bounds.hasStart {
-		earliest = bounds.start.UTC().Format(time.RFC3339)
-	}
 	sort.Strings(ids)
 	records := make([]deletedResourceEntry, 0, len(ids))
 	for _, id := range ids {
