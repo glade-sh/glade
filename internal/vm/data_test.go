@@ -9827,6 +9827,201 @@ System.runAs(u) {
 	}
 }
 
+func TestExecWithSharingHonorsPublicGroup(t *testing.T) {
+	const (
+		accountID   = storage.ID("001000000000801")
+		userID      = storage.ID("005000000000801")
+		rootGroup   = storage.ID("00G000000000801")
+		nestedGroup = storage.ID("00G000000000802")
+	)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "AccountShare")
+	storage.EnsureStandardObject(&org, "Group")
+	storage.EnsureStandardObject(&org, "GroupMember")
+	account := org.Objects["Account"]
+	account.Definition.SharingModel = "Private"
+	account.Records[accountID] = storage.Record{
+		ID:     accountID,
+		Object: "Account",
+		System: storage.SystemFields{OwnerID: "005000000000999"},
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Public Group Account")},
+	}
+	org.Objects["Account"] = account
+	org.Objects["Group"].Records[rootGroup] = storage.Record{
+		ID:     rootGroup,
+		Object: "Group",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Public Group"), "Type": storage.StringValue("Regular")},
+	}
+	org.Objects["Group"].Records[nestedGroup] = storage.Record{
+		ID:     nestedGroup,
+		Object: "Group",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Nested Public Group"), "Type": storage.StringValue("Regular")},
+	}
+	org.Objects["GroupMember"].Records["00v000000000801"] = storage.Record{
+		ID:     "00v000000000801",
+		Object: "GroupMember",
+		Fields: map[string]storage.Value{"GroupId": storage.IDValue(rootGroup), "UserOrGroupId": storage.IDValue(nestedGroup)},
+	}
+	org.Objects["GroupMember"].Records["00v000000000802"] = storage.Record{
+		ID:     "00v000000000802",
+		Object: "GroupMember",
+		Fields: map[string]storage.Value{"GroupId": storage.IDValue(nestedGroup), "UserOrGroupId": storage.IDValue(userID)},
+	}
+	org.Objects["AccountShare"].Records["00A000000000801"] = storage.Record{
+		ID:     "00A000000000801",
+		Object: "AccountShare",
+		Fields: map[string]storage.Value{
+			"AccountId":          storage.IDValue(accountID),
+			"UserOrGroupId":      storage.IDValue(rootGroup),
+			"AccountAccessLevel": storage.StringValue("Read"),
+		},
+	}
+	runSharingVisibilityQuery(t, org, userID, accountID, 1)
+}
+
+func TestExecWithSharingHonorsRoleHierarchy(t *testing.T) {
+	const (
+		accountID    = storage.ID("001000000000802")
+		userID       = storage.ID("005000000000802")
+		ancestorRole = storage.ID("00E000000000801")
+		childRole    = storage.ID("00E000000000802")
+		roleGroup    = storage.ID("00G000000000803")
+	)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "AccountShare")
+	storage.EnsureStandardObject(&org, "Group")
+	storage.EnsureStandardObject(&org, "UserRole")
+	account := org.Objects["Account"]
+	account.Definition.SharingModel = "Private"
+	account.Records[accountID] = storage.Record{
+		ID:     accountID,
+		Object: "Account",
+		System: storage.SystemFields{OwnerID: "005000000000999"},
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Role Account")},
+	}
+	org.Objects["Account"] = account
+	org.Objects["UserRole"].Records[ancestorRole] = storage.Record{
+		ID:     ancestorRole,
+		Object: "UserRole",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Ancestor Role")},
+	}
+	org.Objects["UserRole"].Records[childRole] = storage.Record{
+		ID:     childRole,
+		Object: "UserRole",
+		Fields: map[string]storage.Value{
+			"Name":         storage.StringValue("Child Role"),
+			"ParentRoleId": storage.IDValue(ancestorRole),
+		},
+	}
+	org.Objects["Group"].Records[roleGroup] = storage.Record{
+		ID:     roleGroup,
+		Object: "Group",
+		Fields: map[string]storage.Value{
+			"Name":      storage.StringValue("Ancestor Role Group"),
+			"Type":      storage.StringValue("Role"),
+			"RelatedId": storage.IDValue(ancestorRole),
+		},
+	}
+	org.Objects["AccountShare"].Records["00A000000000802"] = storage.Record{
+		ID:     "00A000000000802",
+		Object: "AccountShare",
+		Fields: map[string]storage.Value{
+			"AccountId":          storage.IDValue(accountID),
+			"UserOrGroupId":      storage.IDValue(roleGroup),
+			"AccountAccessLevel": storage.StringValue("Read"),
+		},
+	}
+	runSharingVisibilityQuery(t, org, storage.Record{
+		ID:     userID,
+		Object: "User",
+		Fields: map[string]storage.Value{"Id": storage.IDValue(userID), "UserRoleId": storage.IDValue(childRole)},
+	}, accountID, 1)
+}
+
+func TestExecWithSharingDeniesUnrelatedRole(t *testing.T) {
+	const (
+		accountID     = storage.ID("001000000000803")
+		userID        = storage.ID("005000000000803")
+		userRole      = storage.ID("00E000000000803")
+		unrelatedRole = storage.ID("00E000000000804")
+		roleGroup     = storage.ID("00G000000000804")
+	)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "AccountShare")
+	storage.EnsureStandardObject(&org, "Group")
+	storage.EnsureStandardObject(&org, "UserRole")
+	account := org.Objects["Account"]
+	account.Definition.SharingModel = "Private"
+	account.Records[accountID] = storage.Record{
+		ID:     accountID,
+		Object: "Account",
+		System: storage.SystemFields{OwnerID: "005000000000999"},
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Unrelated Role Account")},
+	}
+	org.Objects["Account"] = account
+	org.Objects["UserRole"].Records[userRole] = storage.Record{
+		ID:     userRole,
+		Object: "UserRole",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("User Role")},
+	}
+	org.Objects["UserRole"].Records[unrelatedRole] = storage.Record{
+		ID:     unrelatedRole,
+		Object: "UserRole",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Unrelated Role")},
+	}
+	org.Objects["Group"].Records[roleGroup] = storage.Record{
+		ID:     roleGroup,
+		Object: "Group",
+		Fields: map[string]storage.Value{
+			"Name":      storage.StringValue("Unrelated Role Group"),
+			"Type":      storage.StringValue("Role"),
+			"RelatedId": storage.IDValue(unrelatedRole),
+		},
+	}
+	org.Objects["AccountShare"].Records["00A000000000803"] = storage.Record{
+		ID:     "00A000000000803",
+		Object: "AccountShare",
+		Fields: map[string]storage.Value{
+			"AccountId":          storage.IDValue(accountID),
+			"UserOrGroupId":      storage.IDValue(roleGroup),
+			"AccountAccessLevel": storage.StringValue("Read"),
+		},
+	}
+	runSharingVisibilityQuery(t, org, storage.Record{
+		ID:     userID,
+		Object: "User",
+		Fields: map[string]storage.Value{"Id": storage.IDValue(userID), "UserRoleId": storage.IDValue(userRole)},
+	}, accountID, 0)
+}
+
+func runSharingVisibilityQuery(t *testing.T, org storage.OrgState, user interface{}, accountID storage.ID, want int) {
+	t.Helper()
+	program, err := CompileAnonymous(fmt.Sprintf(`
+System.assertEquals(%d, [SELECT Id FROM Account WHERE Id = '%s'].size());
+`, want, accountID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	switch current := user.(type) {
+	case storage.ID:
+		machine.SetCurrentUser(storage.Record{ID: current, Object: "User", Fields: map[string]storage.Value{"Id": storage.IDValue(current)}})
+	case storage.Record:
+		machine.SetCurrentUser(current)
+	default:
+		t.Fatalf("unsupported sharing test user %T", user)
+	}
+	machine.EnableTestContext()
+	machine.testContext.RunAsDepth = 1
+	if err := machine.RegisterClass(Class{Name: "SharingProbe", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "SharingProbe"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecWithSharingHonorsPublicReadObjectSharingModel(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(3, [SELECT Id FROM Account].size());
