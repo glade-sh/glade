@@ -300,7 +300,7 @@ func int32FromDecimalValue(name string, value Value) (int32, error) {
 		if integer.Cmp(big.NewInt(-2147483648)) < 0 || integer.Cmp(big.NewInt(2147483648)) >= 0 {
 			return 0, fmt.Errorf("%s value out of Integer range", name)
 		}
-		return int32(integer.Int64()), nil
+		return int32(integer.Int64()), nil // #nosec G115 -- integer is range-checked above before narrowing.
 	}
 	return int32FromFloat(name, value.Decimal)
 }
