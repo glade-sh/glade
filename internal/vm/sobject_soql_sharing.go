@@ -71,7 +71,7 @@ func (vm *VM) currentUserInPublicGroup(groupID storage.ID, userID string, visite
 	if !ok {
 		return false
 	}
-	group, ok := groups.Records[groupID]
+	_, group, ok := storage.LookupRecordByID(groups.Records, groupID)
 	if !ok {
 		return false
 	}
@@ -117,7 +117,7 @@ func (vm *VM) currentUserCanSeeUserThroughRoleHierarchy(sharedUserID storage.ID,
 	visited := make(map[storage.ID]bool)
 	for sharedRoleID != "" && !visited[sharedRoleID] {
 		visited[sharedRoleID] = true
-		role, ok := roles.Records[sharedRoleID]
+		_, role, ok := storage.LookupRecordByID(roles.Records, sharedRoleID)
 		if !ok {
 			return false
 		}
@@ -155,7 +155,7 @@ func (vm *VM) storedUserRoleID(userID storage.ID) storage.ID {
 	if !ok {
 		return ""
 	}
-	stored, ok := users.Records[userID]
+	_, stored, ok := storage.LookupRecordByID(users.Records, userID)
 	if !ok {
 		return ""
 	}

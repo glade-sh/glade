@@ -9829,10 +9829,12 @@ System.runAs(u) {
 
 func TestExecWithSharingHonorsPublicGroup(t *testing.T) {
 	const (
-		accountID   = storage.ID("001000000000801")
-		userID      = storage.ID("005000000000801")
-		rootGroup   = storage.ID("00G000000000801")
-		nestedGroup = storage.ID("00G000000000802")
+		accountID         = storage.ID("001000000000801")
+		userID            = storage.ID("005000000000801")
+		rootGroup         = storage.ID("00G000000000801")
+		nestedGroup       = storage.ID("00G000000000802")
+		rootGroupStored   = storage.ID("00G000000000801AAA")
+		nestedGroupStored = storage.ID("00G000000000802AAA")
 	)
 	org := testDataOrg()
 	storage.EnsureStandardObject(&org, "AccountShare")
@@ -9847,13 +9849,13 @@ func TestExecWithSharingHonorsPublicGroup(t *testing.T) {
 		Fields: map[string]storage.Value{"Name": storage.StringValue("Public Group Account")},
 	}
 	org.Objects["Account"] = account
-	org.Objects["Group"].Records[rootGroup] = storage.Record{
-		ID:     rootGroup,
+	org.Objects["Group"].Records[rootGroupStored] = storage.Record{
+		ID:     rootGroupStored,
 		Object: "Group",
 		Fields: map[string]storage.Value{"Name": storage.StringValue("Public Group"), "Type": storage.StringValue("Regular")},
 	}
-	org.Objects["Group"].Records[nestedGroup] = storage.Record{
-		ID:     nestedGroup,
+	org.Objects["Group"].Records[nestedGroupStored] = storage.Record{
+		ID:     nestedGroupStored,
 		Object: "Group",
 		Fields: map[string]storage.Value{"Name": storage.StringValue("Nested Public Group"), "Type": storage.StringValue("Regular")},
 	}
@@ -9881,11 +9883,14 @@ func TestExecWithSharingHonorsPublicGroup(t *testing.T) {
 
 func TestExecWithSharingHonorsRoleHierarchy(t *testing.T) {
 	const (
-		accountID    = storage.ID("001000000000802")
-		userID       = storage.ID("005000000000802")
-		sharedUserID = storage.ID("005000000000805")
-		ancestorRole = storage.ID("00E000000000801")
-		childRole    = storage.ID("00E000000000802")
+		accountID          = storage.ID("001000000000802")
+		userID             = storage.ID("005000000000802")
+		sharedUserID       = storage.ID("005000000000805")
+		ancestorRole       = storage.ID("00E000000000801")
+		childRole          = storage.ID("00E000000000802")
+		ancestorRoleStored = storage.ID("00E000000000801AAA")
+		childRoleStored    = storage.ID("00E000000000802AAA")
+		sharedUserStored   = storage.ID("005000000000805AAA")
 	)
 	org := testDataOrg()
 	storage.EnsureStandardObject(&org, "AccountShare")
@@ -9900,21 +9905,21 @@ func TestExecWithSharingHonorsRoleHierarchy(t *testing.T) {
 		Fields: map[string]storage.Value{"Name": storage.StringValue("Role Account")},
 	}
 	org.Objects["Account"] = account
-	org.Objects["UserRole"].Records[ancestorRole] = storage.Record{
-		ID:     ancestorRole,
+	org.Objects["UserRole"].Records[ancestorRoleStored] = storage.Record{
+		ID:     ancestorRoleStored,
 		Object: "UserRole",
 		Fields: map[string]storage.Value{"Name": storage.StringValue("Ancestor Role")},
 	}
-	org.Objects["UserRole"].Records[childRole] = storage.Record{
-		ID:     childRole,
+	org.Objects["UserRole"].Records[childRoleStored] = storage.Record{
+		ID:     childRoleStored,
 		Object: "UserRole",
 		Fields: map[string]storage.Value{
 			"Name":         storage.StringValue("Child Role"),
 			"ParentRoleId": storage.IDValue(ancestorRole),
 		},
 	}
-	org.Objects["User"].Records[sharedUserID] = storage.Record{
-		ID:     sharedUserID,
+	org.Objects["User"].Records[sharedUserStored] = storage.Record{
+		ID:     sharedUserStored,
 		Object: "User",
 		Fields: map[string]storage.Value{
 			"Id":         storage.IDValue(sharedUserID),
