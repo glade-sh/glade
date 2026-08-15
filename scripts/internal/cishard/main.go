@@ -561,8 +561,13 @@ func historyWeightsForPackage(packageName string, names []string, data []byte) (
 		totalDuration += *item.DurationMillis
 		weights[item.Name] = *item.DurationMillis
 	}
-	if len(weights) != len(want) {
-		return fallback, "history rejected: discovered test set mismatch; using deterministic fallback"
+	for _, name := range names {
+		if _, ok := weights[name]; !ok {
+			// A newly discovered test has no measured duration yet. Keeping the
+			// known history preserves the existing shard assignment and lets the
+			// new test join the currently lighter shard.
+			weights[name] = 0
+		}
 	}
 	return weights, ""
 }
