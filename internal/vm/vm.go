@@ -1177,6 +1177,10 @@ func formatPlatformDatetime(value time.Time) string {
 	return fmt.Sprintf("%s.%sZ", utc.Format("2006-01-02T15:04:05"), frac)
 }
 
+func formatPlatformDate(value time.Time) string {
+	return value.UTC().Format("2006-01-02")
+}
+
 func formatApexDatetimePattern(value time.Time, pattern, zoneID, zoneLabel string, offset time.Duration) (string, error) {
 	var b strings.Builder
 	for i := 0; i < len(pattern); {
