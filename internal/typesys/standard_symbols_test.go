@@ -101,6 +101,8 @@ func TestUserProfilesSetPhotoUsesIntegerFourthParameter(t *testing.T) {
 	userProfiles := requireStandardSymbol(t, StandardPlatformSymbols(), "ConnectApi.UserProfiles")
 	requireStandardMethod(t, userProfiles, "setPhoto", []string{"String", "String", "ConnectApi.BinaryInput"}, true)
 	requireStandardMethod(t, userProfiles, "setPhoto", []string{"String", "String", "String", "Integer"}, true)
+	requireStandardMethodReturn(t, userProfiles, "setPhoto", []string{"String", "String", "ConnectApi.BinaryInput"}, "ConnectApi.Photo", true)
+	requireStandardMethodReturn(t, userProfiles, "setPhoto", []string{"String", "String", "String", "Integer"}, "ConnectApi.Photo", true)
 	requireNoStandardMethod(t, userProfiles, "setPhoto", []string{"String", "String", "String", "Object"}, true)
 }
 

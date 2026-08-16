@@ -21,7 +21,11 @@ func TestRunProjectConnectApiIdentityUsesBuiltinDispatch(t *testing.T) {
     ConnectApi.UserProfile p = ConnectApi.UserProfiles.getUserProfile('i', '005-user');
     System.assertNotEquals(null, p);
     System.assertNotEquals(null, ConnectApi.UserProfiles.getPhoto('i', '005-user'));
-    ConnectApi.UserProfiles.setPhoto('i', '005-user', 'fileId', 1);
+    ConnectApi.Photo uploadedPhoto = ConnectApi.UserProfiles.setPhoto(
+      'i', '005-user', new ConnectApi.BinaryInput(Blob.valueOf('bytes'), 'image/png', 'avatar.png'));
+    System.assertNotEquals(null, uploadedPhoto);
+    ConnectApi.Photo versionedPhoto = ConnectApi.UserProfiles.setPhoto('i', '005-user', 'fileId', 1);
+    System.assertNotEquals(null, versionedPhoto);
     ConnectApi.UserProfiles.deletePhoto('i', '005-user');
   }
 }
