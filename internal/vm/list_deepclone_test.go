@@ -94,3 +94,38 @@ System.assertEquals('source', source.Name);
 		})
 	}
 }
+
+func TestListDeepCloneClearsAutonumberPerConcreteSObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+SObject first = new DeepCloneFirst__c(AutoFirst__c = 'FIRST');
+SObject second = new DeepCloneSecond__c(AutoSecond__c = 'SECOND');
+List<SObject> clones = new List<SObject>{first, second}.deepClone(false, false, false);
+System.assertEquals(null, clones[0].get('AutoFirst__c'));
+System.assertEquals(null, clones[1].get('AutoSecond__c'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["DeepCloneFirst__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "DeepCloneFirst__c",
+			Fields: map[string]storage.Field{
+				"AutoFirst__c": {APIName: "AutoFirst__c", Type: storage.FieldString, AutoNumber: true},
+			},
+		},
+	}
+	org.Objects["DeepCloneSecond__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "DeepCloneSecond__c",
+			Fields: map[string]storage.Field{
+				"AutoSecond__c": {APIName: "AutoSecond__c", Type: storage.FieldString, AutoNumber: true},
+			},
+		},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}

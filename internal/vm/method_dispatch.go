@@ -2939,7 +2939,6 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		preserveID := len(args) > 0 && args[0].Bool
 		preserveReadonlyTimestamps := len(args) > 1 && args[1].Bool
 		preserveAutonumber := len(args) > 2 && args[2].Bool
-		_, definition, _ := vm.describeObjectDefinition(listSObjectTypeName(receiver))
 		cloned := cloneValue(receiver)
 		for i := range cloned.List {
 			if cloned.List[i].Kind != ValueObject {
@@ -2954,6 +2953,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 				}
 			}
 			if !preserveAutonumber {
+				_, definition, _ := vm.describeObjectDefinition(cloned.List[i].Type)
 				for fieldName, field := range definition.Fields {
 					if field.AutoNumber {
 						deleteObjectField(cloned.List[i].Fields, fieldName)
