@@ -2936,7 +2936,32 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if listSObjectTypeName(receiver) == "" {
 			return Null, true, fmt.Errorf("Operation only applies to SObject list types: %s", receiver.Type)
 		}
-		return cloneValue(receiver), true, nil
+		preserveID := len(args) > 0 && args[0].Bool
+		preserveReadonlyTimestamps := len(args) > 1 && args[1].Bool
+		preserveAutonumber := len(args) > 2 && args[2].Bool
+		_, definition, _ := vm.describeObjectDefinition(listSObjectTypeName(receiver))
+		cloned := cloneValue(receiver)
+		for i := range cloned.List {
+			if cloned.List[i].Kind != ValueObject {
+				continue
+			}
+			if !preserveID {
+				deleteObjectField(cloned.List[i].Fields, "Id")
+			}
+			if !preserveReadonlyTimestamps {
+				for _, field := range []string{"CreatedById", "CreatedDate", "LastModifiedById", "LastModifiedDate"} {
+					deleteObjectField(cloned.List[i].Fields, field)
+				}
+			}
+			if !preserveAutonumber {
+				for fieldName, field := range definition.Fields {
+					if field.AutoNumber {
+						deleteObjectField(cloned.List[i].Fields, fieldName)
+					}
+				}
+			}
+		}
+		return cloned, true, nil
 	case "iterator":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("List.iterator expects 0 arguments")
