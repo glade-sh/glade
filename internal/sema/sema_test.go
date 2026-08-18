@@ -9714,6 +9714,47 @@ public class Hello {
 	}
 }
 
+func TestAnalyzeConnectApiOrderSummaryChangeMethodShapeBoundary(t *testing.T) {
+	root := t.TempDir()
+	validPath := filepath.Join(root, "ValidOrderSummaryShape.cls")
+	writeSemaFile(t, validPath, `
+public class ValidOrderSummaryShape {
+  public void run() {
+    ConnectApi.PreviewChangeOrderSummaryOutputRepresentation preview =
+      ConnectApi.OrderSummary.previewChange('1Os000000000001', new ConnectApi.ChangeOrderSummaryInputRepresentation());
+    ConnectApi.SubmitChangeOrderSummaryOutputRepresentation submitted =
+      ConnectApi.OrderSummary.submitChange('1Os000000000001', new ConnectApi.ChangeOrderSummaryInputRepresentation());
+  }
+}
+`)
+	valid := Analyze(typesys.Build(project.Project{Root: root, ApexFiles: []string{validPath}}, schema.Schema{}))
+	for _, diag := range valid.Diagnostics {
+		if diag.Code == "GLADESEMA009" || diag.Code == "GLADESEMA006" || diag.Code == "GLADESEMA018" {
+			t.Fatalf("valid OrderSummary shape diagnostic: %#v", valid.Diagnostics)
+		}
+	}
+
+	invalidPath := filepath.Join(root, "InvalidOrderSummaryShape.cls")
+	writeSemaFile(t, invalidPath, `
+public class InvalidOrderSummaryShape {
+  public void run() {
+    ConnectApi.OrderSummary.previewChange('1Os000000000001');
+    ConnectApi.OrderSummary.submitChange('1Os000000000001');
+  }
+}
+`)
+	invalid := Analyze(typesys.Build(project.Project{Root: root, ApexFiles: []string{invalidPath}}, schema.Schema{}))
+	count := 0
+	for _, diag := range invalid.Diagnostics {
+		if diag.Code == "GLADESEMA023" {
+			count++
+		}
+	}
+	if count != 2 {
+		t.Fatalf("invalid OrderSummary overload diagnostics = %d, want 2: %#v", count, invalid.Diagnostics)
+	}
+}
+
 func TestAnalyzeNestedEnumOverloadDeclaredLater(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

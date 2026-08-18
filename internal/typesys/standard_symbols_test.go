@@ -1099,6 +1099,15 @@ func TestStandardPlatformSymbolsIncludeConnectApiFeedInputShapes(t *testing.T) {
 	requireStandardProperty(t, reference, "id", "Id")
 }
 
+func TestStandardPlatformSymbolsIncludeDocumentedOrderSummaryChangeMethods(t *testing.T) {
+	symbol := requireStandardSymbol(t, StandardPlatformSymbols(), "ConnectApi.OrderSummary")
+	params := []string{"String", "ConnectApi.ChangeOrderSummaryInputRepresentation"}
+	requireStandardMethod(t, symbol, "previewChange", params, true)
+	requireStandardMethodType(t, symbol, "previewChange", "ConnectApi.PreviewChangeOrderSummaryOutputRepresentation")
+	requireStandardMethod(t, symbol, "submitChange", params, true)
+	requireStandardMethodType(t, symbol, "submitChange", "ConnectApi.SubmitChangeOrderSummaryOutputRepresentation")
+}
+
 func TestStandardPlatformSymbolsIncludeConnectApiNBARecommendationShapes(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 
