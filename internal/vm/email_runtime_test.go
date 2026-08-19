@@ -32,6 +32,119 @@ System.assertEquals('probe', inbound.headers[2].value);
 	}
 }
 
+func TestExtractInboundEmailParsesMultipartBodiesAndAttachments(t *testing.T) {
+	raw := "From: sender@example.com\r\n" +
+		"To: recipient@example.com\r\n" +
+		"Subject: multipart\r\n" +
+		"Content-Type: multipart/mixed; boundary=outer\r\n" +
+		"\r\n" +
+		"--outer\r\n" +
+		"Content-Type: multipart/alternative; boundary=alternative\r\n" +
+		"\r\n" +
+		"--alternative\r\n" +
+		"Content-Type: text/plain; charset=utf-8\r\n" +
+		"Content-Transfer-Encoding: quoted-printable\r\n" +
+		"\r\n" +
+		"Hello=20plain\r\n" +
+		"--alternative\r\n" +
+		"Content-Type: text/html; charset=utf-8\r\n" +
+		"\r\n" +
+		"<p>Hello HTML</p>\r\n" +
+		"--alternative--\r\n" +
+		"--outer\r\n" +
+		"Content-Type: text/plain; name=notes.txt; charset=utf-8\r\n" +
+		"Content-Disposition: attachment; filename=notes.txt\r\n" +
+		"Content-Transfer-Encoding: quoted-printable\r\n" +
+		"\r\n" +
+		"line=201\r\n" +
+		"--outer\r\n" +
+		"Content-Type: application/octet-stream\r\n" +
+		"Content-Disposition: attachment; filename=bytes.bin\r\n" +
+		"Content-Transfer-Encoding: base64\r\n" +
+		"\r\n" +
+		"AAEC\r\n" +
+		"--outer--\r\n"
+
+	machine := New(nil)
+	email, err := machine.extractInboundEmail([]Value{NewBlobValue(raw), Bool(false)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := stringValue(email.Fields["plainTextBody"]); got != "Hello plain" {
+		t.Fatalf("plainTextBody = %q", got)
+	}
+	if got := stringValue(email.Fields["htmlBody"]); got != "<p>Hello HTML</p>" {
+		t.Fatalf("htmlBody = %q", got)
+	}
+	textAttachments := email.Fields["textAttachments"]
+	if len(textAttachments.List) != 1 {
+		t.Fatalf("textAttachments = %#v", textAttachments)
+	}
+	textAttachment := textAttachments.List[0]
+	if got := stringValue(textAttachment.Fields["fileName"]); got != "notes.txt" {
+		t.Fatalf("text attachment fileName = %q", got)
+	}
+	if got := stringValue(textAttachment.Fields["body"]); got != "line 1" {
+		t.Fatalf("text attachment body = %q", got)
+	}
+	if got := stringValue(textAttachment.Fields["charset"]); got != "utf-8" {
+		t.Fatalf("text attachment charset = %q", got)
+	}
+	binaryAttachments := email.Fields["binaryAttachments"]
+	if len(binaryAttachments.List) != 1 {
+		t.Fatalf("binaryAttachments = %#v", binaryAttachments)
+	}
+	binaryBody, err := platformScalarText(binaryAttachments.List[0].Fields["body"], "Blob")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if binaryBody != string([]byte{0, 1, 2}) {
+		t.Fatalf("binary attachment body = %q", binaryBody)
+	}
+}
+
+func TestExtractInboundEmailIncludesForwardedAttachmentsOnlyWhenRequested(t *testing.T) {
+	raw := "Content-Type: multipart/mixed; boundary=outer\r\n\r\n" +
+		"--outer\r\n" +
+		"Content-Type: text/plain\r\n\r\n" +
+		"outer body\r\n" +
+		"--outer\r\n" +
+		"Content-Type: message/rfc822\r\n" +
+		"Content-Disposition: attachment; filename=forwarded.eml\r\n\r\n" +
+		"From: forwarded@example.com\r\n" +
+		"Content-Type: multipart/mixed; boundary=inner\r\n\r\n" +
+		"--inner\r\n" +
+		"Content-Type: application/octet-stream\r\n" +
+		"Content-Disposition: attachment; filename=inner.bin\r\n" +
+		"Content-Transfer-Encoding: base64\r\n\r\n" +
+		"AQI=\r\n" +
+		"--inner--\r\n" +
+		"--outer--\r\n"
+
+	machine := New(nil)
+	without, err := machine.extractInboundEmail([]Value{NewBlobValue(raw), Bool(false)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := len(without.Fields["binaryAttachments"].List); got != 0 {
+		t.Fatalf("without forwarded attachments = %d", got)
+	}
+	with, err := machine.extractInboundEmail([]Value{NewBlobValue(raw), Bool(true)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	attachments := with.Fields["binaryAttachments"]
+	if len(attachments.List) != 1 {
+		t.Fatalf("with forwarded attachments = %#v", attachments)
+	}
+	if got := stringValue(with.Fields["plainTextBody"]); got != "outer body" {
+		t.Fatalf("forwarded message changed plainTextBody = %q", got)
+	}
+	if got := stringValue(attachments.List[0].Fields["fileName"]); got != "inner.bin" {
+		t.Fatalf("forwarded fileName = %q", got)
+	}
+}
+
 func TestExecMessagingSingleEmailMessageGettersCanonicalize15CharacterIDs(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage();
