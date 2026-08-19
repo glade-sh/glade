@@ -488,12 +488,15 @@ func semaMethodHeader(header string) bool {
 			return false
 		}
 	}
-	open := strings.LastIndex(header, "(")
-	if open < 0 || !strings.HasSuffix(header, ")") {
+	if !strings.HasSuffix(header, ")") {
+		return false
+	}
+	open := matchingOpenParenBefore(header, len(header)-1)
+	if open < 0 {
 		return false
 	}
 	nameFields := strings.Fields(header[:open])
-	if len(nameFields) == 0 {
+	if len(nameFields) == 0 || strings.Contains(nameFields[len(nameFields)-1], ".") {
 		return false
 	}
 	return true
