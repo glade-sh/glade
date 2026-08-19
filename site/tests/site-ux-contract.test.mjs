@@ -56,7 +56,7 @@ test('redirect-only routes have no duplicate Markdown source', async () => {
 })
 
 test('CI enforces the rendered site gates', () => {
-  assert.match(ciWorkflow, /playwright install --with-deps chromium/)
+  assert.match(ciWorkflow, /playwright install (?:--with-deps )?chromium/)
   assert.match(ciWorkflow, /npm run check:built --prefix site/)
   assert.match(ciWorkflow, /npm run test:browser --prefix site/)
   assert.match(ciWorkflow, /npm run smoke:preview --prefix site/)

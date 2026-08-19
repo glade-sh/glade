@@ -62,7 +62,7 @@ jobs:
       - run: npm run check:built --prefix site
       - name: Install Playwright Chromium
         working-directory: site
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
       - name: Run rendered site checks
         env:
           GLADE_SITE_PREBUILT: "1"
