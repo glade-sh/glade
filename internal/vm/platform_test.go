@@ -2266,6 +2266,46 @@ System.assertEquals(36, tokenEvent.EventUuid.length());
 	}
 }
 
+func TestExecEventBusGetOperationIdReturnsPublishedEventUuid(t *testing.T) {
+	program, err := CompileAnonymous(`
+Event_Recipes_Demo__e first = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true);
+first.Title__c = 'first';
+Database.SaveResult firstResult = EventBus.publish(first);
+System.assertEquals(first.EventUuid, EventBus.getOperationId(firstResult));
+
+Event_Recipes_Demo__e second = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true);
+second.Title__c = 'second';
+List<Database.SaveResult> results = EventBus.publish(new List<Event_Recipes_Demo__e>{second});
+System.assertEquals(1, results.size());
+System.assertEquals(second.EventUuid, EventBus.getOperationId(results[0]));
+
+Event_Recipes_Demo__e missing = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true);
+Database.SaveResult failure = EventBus.publish(missing);
+System.assertEquals(null, EventBus.getOperationId(failure));
+System.assertEquals(null, EventBus.getOperationId(null));
+System.assertEquals(null, EventBus.getOperationId(new Account()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Event_Recipes_Demo__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Event_Recipes_Demo__e",
+			Fields: map[string]storage.Field{
+				"EventUuid": {APIName: "EventUuid", Type: storage.FieldString},
+				"Title__c":  {APIName: "Title__c", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecEventBusPublishCallbackDeliveredAtStopTest(t *testing.T) {
 	callbackProgram, err := CompileAnonymous(`
 List<String> eventUuids = result.getEventUuids();

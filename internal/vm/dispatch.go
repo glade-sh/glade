@@ -2134,6 +2134,8 @@ platformStaticCall:
 		return vm.businessHoursNextStartDate(args)
 	case "EventBus.publish":
 		return vm.eventBusPublish(args, result)
+	case "EventBus.getOperationId":
+		return eventBusGetOperationID(args)
 	case "EventBus.publishWithAccessLevel":
 		return vm.eventBusPublishWithAccessLevel(args, result)
 	case "EventBus.publishAfterCommit":

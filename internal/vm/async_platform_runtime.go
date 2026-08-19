@@ -9,6 +9,8 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+const eventBusOperationIDField = "__eventOperationId"
+
 func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return Null, fmt.Errorf("EventBus.publish expects event record or list and optional callback")
@@ -30,12 +32,12 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		if record.Kind != ValueObject {
 			return Null, fmt.Errorf("EventBus.publish expects SObject event record(s)")
 		}
+		eventUUID, hasEventUUID := platformEventUUID(record)
 		if len(args) == 2 {
-			uuid, ok := platformEventUUID(record)
-			if !ok {
+			if !hasEventUUID {
 				return Null, fmt.Errorf("EventBus.publish with callback requires platform event records with EventUuid")
 			}
-			eventUUIDs = append(eventUUIDs, uuid)
+			eventUUIDs = append(eventUUIDs, eventUUID)
 		}
 		stored, err := vm.recordFromValue(&record)
 		if err != nil {
@@ -63,6 +65,9 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		row.Fields["id"] = Null
 		row.Fields["error"] = String("")
 		row.Fields["errors"] = List()
+		if hasEventUUID {
+			row.Fields[eventBusOperationIDField] = String(eventUUID)
+		}
 		results = append(results, row)
 	}
 	if len(args) == 2 && args[1].Kind != ValueNull {
@@ -94,6 +99,20 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		return Null, nil
 	}
 	return results[0], nil
+}
+
+func eventBusGetOperationID(args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("EventBus.getOperationId expects result")
+	}
+	if args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "Database.SaveResult") {
+		return Null, nil
+	}
+	operationID, ok := args[0].Fields[eventBusOperationIDField]
+	if !ok || operationID.Kind != ValueString || operationID.Text == "" {
+		return Null, nil
+	}
+	return operationID, nil
 }
 
 func (vm *VM) eventBusPublishWithAccessLevel(args []Value, result *Result) (Value, error) {
