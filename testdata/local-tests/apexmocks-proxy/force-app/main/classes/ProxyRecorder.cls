@@ -1,4 +1,4 @@
-private class ProxyRecorder implements System.StubProvider {
+public class ProxyRecorder implements System.StubProvider {
   public Integer calls = 0;
   public String lastMethod;
   public String lastStringArg;

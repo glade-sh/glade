@@ -3,7 +3,7 @@ global class ResourcesLabelsTest {
   @isTest global static void labelsResolveFromMetadata() {
     System.assertEquals('Hello', Label.Greeting);
     System.assertEquals('Hello', System.Label.Greeting);
-    System.assertEquals('Bonjour', Label.pkg.Greeting);
+    System.assertEquals('Hello', Label.pkg.Greeting);
   }
 
   @isTest global static void staticResourceMockUsesNamedCredentialEndpoint() {

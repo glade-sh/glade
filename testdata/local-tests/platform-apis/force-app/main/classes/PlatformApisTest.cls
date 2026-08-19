@@ -25,7 +25,7 @@ private class PlatformApisTest {
     orgCache.put('name', 'Acme');
     System.assert(orgCache.contains('name'));
     System.assertEquals('Acme', (String) orgCache.get('name'));
-    System.assertEquals('Acme', (String) orgCache.remove('name'));
+    System.assertEquals('Acme', String.valueOf(orgCache.remove('name')));
     System.assertEquals(false, orgCache.contains('name'));
 
     Cache.SessionPartition sessionCache = Cache.Session.getPartition('local');
