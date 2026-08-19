@@ -172,6 +172,8 @@ func buildStandardPlatformSymbols() []TypeSymbol {
 	specs := append([]StandardSymbolSpec(nil), standardPlatformSymbolSpecs...)
 	specs = append(specs, productNamespaceSymbolSpecs...)
 	specs = append(specs, systemStubSymbolSpecs...)
+	specs = append(specs, plan7RichMessagingSymbolSpecs...)
+	specs = append(specs, plan7SFDWSymbolSpecs...)
 	specs = append(specs, dataSourcePlatformSymbolOverlays...)
 	specs = append(specs, standardPlatformSymbolOverlays...)
 	for _, name := range standardPlatformTypeNames {
