@@ -1,9 +1,15 @@
 package vm
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
+	"mime"
+	"mime/multipart"
+	"mime/quotedprintable"
 	"net/mail"
+	"net/textproto"
 	"sort"
 	"strings"
 	"unicode"
@@ -255,11 +261,11 @@ func (vm *VM) extractInboundEmail(args []Value) (Value, error) {
 		return args[0], nil
 	}
 	email := newInboundEmail()
-	parseInboundEmailSource(email, stringValue(args[0]))
+	parseInboundEmailSourceWithOptions(email, stringValue(args[0]), args[1].Bool)
 	return email, nil
 }
 
-func parseInboundEmailSource(email Value, raw string) {
+func parseInboundEmailSourceWithOptions(email Value, raw string, includeForwardedAttachments bool) {
 	if strings.TrimSpace(raw) == "" {
 		return
 	}
@@ -283,17 +289,160 @@ func parseInboundEmailSource(email Value, raw string) {
 		email.Fields["references"] = String(references)
 	}
 
-	body, err := io.ReadAll(message.Body)
-	if err != nil {
+	parseInboundEmailBody(email, message.Body, message.Header.Get("Content-Type"), message.Header.Get("Content-Transfer-Encoding"), includeForwardedAttachments)
+}
+
+func parseInboundEmailBody(email Value, body io.Reader, contentType, transferEncoding string, includeForwardedAttachments bool) {
+	mediaType, params, err := mime.ParseMediaType(contentType)
+	if err != nil || mediaType == "" {
+		mediaType = "text/plain"
+		params = nil
+	}
+	decoded := decodeInboundEmailBody(body, transferEncoding)
+	if strings.HasPrefix(mediaType, "multipart/") && params["boundary"] != "" {
+		reader := multipart.NewReader(bytes.NewReader(decoded), params["boundary"])
+		for {
+			part, err := reader.NextRawPart()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				break
+			}
+			parseInboundEmailPart(email, part, includeForwardedAttachments)
+		}
 		return
 	}
-	bodyText := strings.TrimSuffix(strings.ReplaceAll(string(body), "\r\n", "\n"), "\n")
-	contentType := strings.ToLower(message.Header.Get("Content-Type"))
-	if strings.HasPrefix(contentType, "text/html") {
+	setInboundEmailBody(email, mediaType, decoded)
+}
+
+func parseInboundEmailPart(email Value, part *multipart.Part, includeForwardedAttachments bool) {
+	mediaType, params, err := mime.ParseMediaType(part.Header.Get("Content-Type"))
+	if err != nil || mediaType == "" {
+		mediaType = "text/plain"
+		params = nil
+	}
+	decoded := decodeInboundEmailBody(part, part.Header.Get("Content-Transfer-Encoding"))
+	if mediaType == "message/rfc822" {
+		if !includeForwardedAttachments {
+			return
+		}
+		nested, err := mail.ReadMessage(bytes.NewReader(decoded))
+		if err == nil {
+			nestedEmail := newInboundEmail()
+			parseInboundEmailBody(nestedEmail, nested.Body, nested.Header.Get("Content-Type"), nested.Header.Get("Content-Transfer-Encoding"), true)
+			textAttachments := email.Fields["textAttachments"]
+			textAttachments.List = append(textAttachments.List, nestedEmail.Fields["textAttachments"].List...)
+			email.Fields["textAttachments"] = textAttachments
+			binaryAttachments := email.Fields["binaryAttachments"]
+			binaryAttachments.List = append(binaryAttachments.List, nestedEmail.Fields["binaryAttachments"].List...)
+			email.Fields["binaryAttachments"] = binaryAttachments
+		}
+		return
+	}
+	if strings.HasPrefix(mediaType, "multipart/") && params["boundary"] != "" {
+		parseInboundEmailBody(email, bytes.NewReader(decoded), part.Header.Get("Content-Type"), "", includeForwardedAttachments)
+		return
+	}
+
+	filename := inboundEmailPartFilename(part.Header, params)
+	disposition, _, _ := mime.ParseMediaType(part.Header.Get("Content-Disposition"))
+	if filename != "" || disposition == "attachment" {
+		headers := inboundEmailPartHeaders(part.Header)
+		if strings.HasPrefix(mediaType, "text/") {
+			attachment := newInboundEmailTextAttachment()
+			attachment.Fields["body"] = String(trimInboundEmailBody(decoded))
+			attachment.Fields["charset"] = String(params["charset"])
+			attachment.Fields["fileName"] = String(filename)
+			attachment.Fields["headers"] = List(headers...)
+			attachment.Fields["mimeTypeSubType"] = String(mediaType)
+			attachments := email.Fields["textAttachments"]
+			attachments.List = append(attachments.List, attachment)
+			email.Fields["textAttachments"] = attachments
+		} else {
+			attachment := newInboundEmailBinaryAttachment()
+			attachment.Fields["body"] = platformScalar("Blob", string(decoded))
+			attachment.Fields["fileName"] = String(filename)
+			attachment.Fields["headers"] = List(headers...)
+			attachment.Fields["mimeTypeSubType"] = String(mediaType)
+			attachments := email.Fields["binaryAttachments"]
+			attachments.List = append(attachments.List, attachment)
+			email.Fields["binaryAttachments"] = attachments
+		}
+		return
+	}
+	setInboundEmailBody(email, mediaType, decoded)
+}
+
+func decodeInboundEmailBody(body io.Reader, transferEncoding string) []byte {
+	var reader io.Reader = body
+	switch strings.ToLower(strings.TrimSpace(transferEncoding)) {
+	case "base64":
+		reader = base64.NewDecoder(base64.StdEncoding, body)
+	case "quoted-printable":
+		reader = quotedprintable.NewReader(body)
+	}
+	decoded, _ := io.ReadAll(reader)
+	return decoded
+}
+
+func setInboundEmailBody(email Value, mediaType string, body []byte) {
+	bodyText := trimInboundEmailBody(body)
+	switch {
+	case mediaType == "text/html":
 		email.Fields["htmlBody"] = String(bodyText)
-	} else {
+	case strings.HasPrefix(mediaType, "text/"):
 		email.Fields["plainTextBody"] = String(bodyText)
 	}
+}
+
+func trimInboundEmailBody(body []byte) string {
+	return strings.TrimSuffix(strings.ReplaceAll(string(body), "\r\n", "\n"), "\n")
+}
+
+func inboundEmailPartFilename(header textproto.MIMEHeader, contentTypeParams map[string]string) string {
+	_, dispositionParams, _ := mime.ParseMediaType(header.Get("Content-Disposition"))
+	filename := dispositionParams["filename"]
+	if filename == "" {
+		filename = contentTypeParams["name"]
+	}
+	if decoded, err := (&mime.WordDecoder{}).DecodeHeader(filename); err == nil {
+		filename = decoded
+	}
+	return filename
+}
+
+func inboundEmailPartHeaders(header textproto.MIMEHeader) []Value {
+	names := make([]string, 0, len(header))
+	for name := range header {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	headers := make([]Value, 0, len(names))
+	for _, name := range names {
+		headers = append(headers, newInboundEmailHeader(name, strings.Join(header[name], ", ")))
+	}
+	return headers
+}
+
+func newInboundEmailTextAttachment() Value {
+	attachment := Object("Messaging.InboundEmail.TextAttachment")
+	attachment.Fields["body"] = Null
+	attachment.Fields["bodyIsTruncated"] = Bool(false)
+	attachment.Fields["charset"] = Null
+	attachment.Fields["fileName"] = Null
+	attachment.Fields["headers"] = List()
+	attachment.Fields["mimeTypeSubType"] = Null
+	return attachment
+}
+
+func newInboundEmailBinaryAttachment() Value {
+	attachment := Object("Messaging.InboundEmail.BinaryAttachment")
+	attachment.Fields["body"] = Null
+	attachment.Fields["fileName"] = Null
+	attachment.Fields["headers"] = List()
+	attachment.Fields["mimeTypeSubType"] = Null
+	return attachment
 }
 
 func parseInboundEmailHeaders(raw string) []Value {
