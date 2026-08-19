@@ -38,7 +38,8 @@ public class PublicCorpusSymbols {
 
   public void deploy() {
     Metadata.DeployResult result = new Metadata.DeployResult();
-    result.errorStatusCode = Metadata.StatusCode.INTERNAL_ERROR;
+    result.errorStatusCode = 'INTERNAL_ERROR';
+    String errorStatusCode = result.errorStatusCode;
   }
 }
 `)
