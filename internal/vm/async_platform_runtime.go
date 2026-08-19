@@ -389,7 +389,7 @@ func (vm *VM) connectAPIUserSetPhoto(args []Value) (Value, error) {
 	if len(args) != 3 && len(args) != 4 {
 		return Null, fmt.Errorf("ConnectApi.UserProfiles.setPhoto expects 3 or 4 arguments")
 	}
-	return Null, nil
+	return Object("ConnectApi.Photo"), nil
 }
 
 func (vm *VM) connectAPIUserDeletePhoto(args []Value) (Value, error) {

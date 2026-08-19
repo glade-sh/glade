@@ -101,6 +101,8 @@ func TestUserProfilesSetPhotoUsesIntegerFourthParameter(t *testing.T) {
 	userProfiles := requireStandardSymbol(t, StandardPlatformSymbols(), "ConnectApi.UserProfiles")
 	requireStandardMethod(t, userProfiles, "setPhoto", []string{"String", "String", "ConnectApi.BinaryInput"}, true)
 	requireStandardMethod(t, userProfiles, "setPhoto", []string{"String", "String", "String", "Integer"}, true)
+	requireStandardMethodReturn(t, userProfiles, "setPhoto", []string{"String", "String", "ConnectApi.BinaryInput"}, "ConnectApi.Photo", true)
+	requireStandardMethodReturn(t, userProfiles, "setPhoto", []string{"String", "String", "String", "Integer"}, "ConnectApi.Photo", true)
 	requireNoStandardMethod(t, userProfiles, "setPhoto", []string{"String", "String", "String", "Object"}, true)
 }
 
@@ -1095,6 +1097,15 @@ func TestStandardPlatformSymbolsIncludeConnectApiFeedInputShapes(t *testing.T) {
 	requireStandardProperty(t, text, "text", "String")
 	reference := requireStandardSymbol(t, symbols, "ConnectApi.Reference")
 	requireStandardProperty(t, reference, "id", "Id")
+}
+
+func TestStandardPlatformSymbolsIncludeDocumentedOrderSummaryChangeMethods(t *testing.T) {
+	symbol := requireStandardSymbol(t, StandardPlatformSymbols(), "ConnectApi.OrderSummary")
+	params := []string{"String", "ConnectApi.ChangeOrderSummaryInputRepresentation"}
+	requireStandardMethod(t, symbol, "previewChange", params, true)
+	requireStandardMethodType(t, symbol, "previewChange", "ConnectApi.PreviewChangeOrderSummaryOutputRepresentation")
+	requireStandardMethod(t, symbol, "submitChange", params, true)
+	requireStandardMethodType(t, symbol, "submitChange", "ConnectApi.SubmitChangeOrderSummaryOutputRepresentation")
 }
 
 func TestStandardPlatformSymbolsIncludeConnectApiNBARecommendationShapes(t *testing.T) {

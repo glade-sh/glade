@@ -647,7 +647,7 @@ func callApexPagesKnowledgeArticleVersionStandardControllerMember(receiver Value
 		}
 		return Null, receiver, false, true, nil
 	case "selectDataCategory", "setDataCategory":
-		if len(args) == 0 {
+		if method == "selectDataCategory" && len(args) == 0 {
 			return Null, receiver, false, true, nil
 		}
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {

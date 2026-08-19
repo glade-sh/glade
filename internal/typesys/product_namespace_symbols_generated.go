@@ -124,7 +124,7 @@ var productNamespaceSymbolSpecs = []StandardSymbolSpec{
 		Methods: []StandardMethodSpec{
 			{Name: "deletePhoto", ReturnType: "void", Parameters: []string{"String", "String"}, Static: true},
 			{Name: "getUserProfile", ReturnType: "ConnectApi.UserProfile", Parameters: []string{"String", "String"}, Static: true},
-			{Name: "setPhoto", ReturnType: "void", Parameters: []string{"String", "String", "String", "Integer"}, Static: true},
+			{Name: "setPhoto", ReturnType: "ConnectApi.Photo", Parameters: []string{"String", "String", "String", "Integer"}, Static: true},
 		},
 	},
 	{

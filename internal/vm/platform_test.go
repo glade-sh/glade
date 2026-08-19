@@ -5333,6 +5333,34 @@ System.assertEquals(null, controller.getSourceId());
 	}
 }
 
+func TestExecKnowledgeArticleVersionStandardControllerSetDataCategoryRejectsZeroArguments(t *testing.T) {
+	program, err := CompileAnonymous(`
+Knowledge__kav article = new Knowledge__kav(Title = 'Local article');
+ApexPages.KnowledgeArticleVersionStandardController controller = new ApexPages.KnowledgeArticleVersionStandardController(article);
+controller.setDataCategory();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err == nil || err.Error() != "ApexPages.KnowledgeArticleVersionStandardController.setDataCategory expects group and category Strings" {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestExecKnowledgeArticleVersionStandardControllerSelectDataCategoryAllowsZeroArguments(t *testing.T) {
+	program, err := CompileAnonymous(`
+Knowledge__kav article = new Knowledge__kav(Title = 'Local article');
+ApexPages.KnowledgeArticleVersionStandardController controller = new ApexPages.KnowledgeArticleVersionStandardController(article);
+controller.selectDataCategory();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStandardControllerViewUsesTypedIDField(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id accountId = Id.valueOf('001000000000001');
@@ -16027,7 +16055,6 @@ System.assertNotEquals(null, viewPage);
 kavsc.cancel();
 kavsc.selectDataCategory('group', 'category');
 kavsc.setDataCategory('group', 'category');
-kavsc.setDataCategory();
 System.assertEquals(true, kavsc.equals(kavsc));
 System.assertEquals(false, kavsc.equals(null));
 System.assertNotEquals(0, kavsc.hashCode());

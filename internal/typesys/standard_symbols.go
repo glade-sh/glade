@@ -1396,6 +1396,10 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "ConnectApi.ManagedContentVersionCollection", Properties: []StandardPropertySpec{{Name: "items", Type: "List<ConnectApi.ManagedContentVersion>"}}},
 	{Name: "ConnectApi.OrganizationSettings", Properties: []StandardPropertySpec{{Name: "orgId", Type: "Id"}}},
 	{Name: "ConnectApi.OrchestrationInstanceCollection", Properties: []StandardPropertySpec{{Name: "instances", Type: "List<ConnectApi.OrchestrationInstance>"}}},
+	{Name: "ConnectApi.OrderSummary", Methods: []StandardMethodSpec{
+		{Name: "previewChange", ReturnType: "ConnectApi.PreviewChangeOrderSummaryOutputRepresentation", Parameters: []string{"String", "ConnectApi.ChangeOrderSummaryInputRepresentation"}, Static: true},
+		{Name: "submitChange", ReturnType: "ConnectApi.SubmitChangeOrderSummaryOutputRepresentation", Parameters: []string{"String", "ConnectApi.ChangeOrderSummaryInputRepresentation"}, Static: true},
+	}},
 	{Name: "ApexPages.StandardController", Methods: []StandardMethodSpec{
 		{Name: "getRecord", ReturnType: "SObject"},
 		{Name: "quickSave", ReturnType: "PageReference"},
