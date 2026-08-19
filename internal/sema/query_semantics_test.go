@@ -525,6 +525,20 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsAcceptsArrayCollectionBind(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    String[] names = new String[]{'Acme'};
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name IN :names];
+  }
+}
+	`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Name", Type: "Text"}}}}})
+	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("array collection bind rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestQuerySemanticsResolvesBindsInTheirLexicalMethodScope(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {
