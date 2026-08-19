@@ -9,8 +9,6 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-const eventBusOperationIDField = "__eventOperationId"
-
 func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return Null, fmt.Errorf("EventBus.publish expects event record or list and optional callback")
@@ -66,7 +64,7 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		row.Fields["error"] = String("")
 		row.Fields["errors"] = List()
 		if hasEventUUID {
-			row.Fields[eventBusOperationIDField] = String(eventUUID)
+			row.Fields[sobjectEventOperationIDField] = String(eventUUID)
 		}
 		results = append(results, row)
 	}
@@ -108,7 +106,7 @@ func eventBusGetOperationID(args []Value) (Value, error) {
 	if args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "Database.SaveResult") {
 		return Null, nil
 	}
-	operationID, ok := args[0].Fields[eventBusOperationIDField]
+	operationID, ok := args[0].Fields[sobjectEventOperationIDField]
 	if !ok || operationID.Kind != ValueString || operationID.Text == "" {
 		return Null, nil
 	}

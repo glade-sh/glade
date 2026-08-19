@@ -2272,6 +2272,10 @@ Event_Recipes_Demo__e first = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObj
 first.Title__c = 'first';
 Database.SaveResult firstResult = EventBus.publish(first);
 System.assertEquals(first.EventUuid, EventBus.getOperationId(firstResult));
+String serialized = JSON.serialize(firstResult);
+System.assertEquals(false, serialized.contains('__eventOperationId'));
+System.assertEquals(false, serialized.contains('__glade_event_operation_id'));
+System.assertEquals(false, serialized.contains('EventUuid'));
 
 Event_Recipes_Demo__e second = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true);
 second.Title__c = 'second';
