@@ -45,6 +45,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 	originalCallee := callee
 	callee = normalizeStaticCallCasing(callee)
+	if strings.HasPrefix(callee, "RemoteObjectController.") {
+		return vm.remoteObjectControllerResult(callee, args, result)
+	}
 	callContextClass := vm.currentClass
 	if callContextClass == "" {
 		callContextClass = vm.currentMethod.ClassName

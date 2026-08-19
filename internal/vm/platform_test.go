@@ -4414,17 +4414,51 @@ System.assertEquals(articleId, KbManagement.PublishingService.editPublishedTrans
 KbManagement.PublishingService.assignDraftArticleTask(articleId, '005000000000001AAA', 'Review', Datetime.now(), true);
 KbManagement.PublishingService.assignDraftTranslationTask(articleId, 'fr', 'Review', Datetime.now(), true);
 
-Map<String,Object> retrieved = RemoteObjectController.retrieve('Account', new List<String>{'Id'}, new Map<String,Object>());
-System.assertEquals(true, retrieved.get('success'));
-System.assertEquals(true, RemoteObjectController.create('Account', new Map<String,Object>{ 'Name' => 'Acme' }).get('success'));
 System.assertEquals(true, RemoteObjectController.updat('Account', new Map<String,Object>{ 'Id' => '001000000000001AAA' }).get('success'));
-System.assertEquals(true, RemoteObjectController.update('Account', new List<String>{ '001000000000001AAA' }, new Map<String,Object>{ 'Name' => 'Acme' }).get('success'));
-System.assertEquals(true, RemoteObjectController.del('Account', new List<String>{ '001000000000001AAA' }).get('success'));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRemoteObjectControllerLocalCRUDRoundTrip(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> created = RemoteObjectController.create('Account', new Map<String,Object>{'Name' => 'Remote Acme'});
+System.assertEquals(true, created.get('success'));
+List<Account> accounts = [SELECT Id FROM Account];
+System.assertEquals(1, accounts.size());
+String id = accounts[0].Id;
+Map<String,Object> retrieved = RemoteObjectController.retrieve('Account', new List<String>{'Id','Name'}, new Map<String,Object>{'Id' => id});
+System.assertEquals(true, retrieved.get('success'));
+System.assertEquals(1, ((List<Object>) retrieved.get('records')).size());
+Map<String,Object> updated = RemoteObjectController.update('Account', new List<String>{id}, new Map<String,Object>{'Name' => 'Remote Updated'});
+System.assertEquals(true, updated.get('success'));
+Map<String,Object> deleted = RemoteObjectController.del('Account', new List<String>{id});
+System.assertEquals(true, deleted.get('success'));
+Map<String,Object> afterDelete = RemoteObjectController.retrieve('Account', new List<String>{'Id'}, new Map<String,Object>{'Id' => id});
+System.assertEquals(true, afterDelete.get('success'));
+System.assertEquals(0, ((List<Object>) afterDelete.get('records')).size());
+Map<String,Object> unsupported = RemoteObjectController.retrieve('Account', new List<String>{'Id'}, new Map<String,Object>{'Name' => 'Remote Updated'});
+System.assertEquals(false, unsupported.get('success'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -849,6 +850,155 @@ func remoteObjectControllerResult(callee string, args []Value) (Value, error) {
 		result.MapKeys[encoded] = String(key)
 	}
 	return result, nil
+}
+
+func (vm *VM) remoteObjectControllerResult(callee string, args []Value, result *Result) (Value, error) {
+	if callee == "RemoteObjectController.updat" {
+		return remoteObjectControllerResult(callee, args)
+	}
+	if _, err := remoteObjectControllerResult(callee, args); err != nil {
+		return Null, err
+	}
+	if vm.Org == nil {
+		return remoteObjectControllerFailure("local org state is required"), nil
+	}
+	objectName, ok := vm.resolveObjectName(args[0].Text)
+	if !ok {
+		return remoteObjectControllerFailure(fmt.Sprintf("unknown object %s", args[0].Text)), nil
+	}
+	engine := vm.newDMLEngine(result)
+	switch callee {
+	case "RemoteObjectController.create":
+		value := remoteObjectControllerSObject(objectName, args[1])
+		record, err := vm.recordFromValue(&value)
+		if err != nil {
+			return remoteObjectControllerFailure(err.Error()), nil
+		}
+		return remoteObjectControllerDMLResults(engine.Insert([]storage.Record{record})), nil
+	case "RemoteObjectController.update", "RemoteObjectController.del":
+		values := Map()
+		if callee == "RemoteObjectController.update" {
+			values = args[2]
+		}
+		ids := args[1]
+		records := make([]storage.Record, 0, len(ids.List))
+		for _, id := range ids.List {
+			if id.Kind != ValueString {
+				return remoteObjectControllerFailure(fmt.Sprintf("%s expects string Ids", callee)), nil
+			}
+			value := remoteObjectControllerSObject(objectName, values)
+			value.Fields["Id"] = id
+			markExplicitSObjectField(&value, "Id")
+			record, err := vm.recordFromValue(&value)
+			if err != nil {
+				return remoteObjectControllerFailure(err.Error()), nil
+			}
+			records = append(records, record)
+		}
+		var dmlResults []dml.Result
+		if callee == "RemoteObjectController.update" {
+			dmlResults = engine.Update(records)
+		} else {
+			dmlResults = engine.Delete(records)
+		}
+		return remoteObjectControllerDMLResults(dmlResults), nil
+	case "RemoteObjectController.retrieve":
+		fields := make([]string, 0, len(args[1].List))
+		for _, field := range args[1].List {
+			fields = append(fields, field.Text)
+		}
+		ids, err := remoteObjectControllerIDs(args[2])
+		if err != nil {
+			return remoteObjectControllerFailure(err.Error()), nil
+		}
+		object := vm.Org.Objects[objectName]
+		out := make([]Value, 0, len(object.Records))
+		for id, record := range object.Records {
+			if record.System.IsDeleted {
+				continue
+			}
+			if len(ids) > 0 {
+				match := false
+				for _, candidate := range ids {
+					match = match || apexIDTextEqual(candidate, string(id))
+				}
+				if !match {
+					continue
+				}
+			}
+			row := Object(objectName)
+			row.Fields["Id"] = databaseResultIDValue(record.ID)
+			for _, field := range fields {
+				if value, ok := record.GetField(field); ok {
+					row.Fields[field] = vmValueFromStorage(value)
+				}
+			}
+			out = append(out, row)
+		}
+		return remoteObjectControllerMap(true, out, nil), nil
+	}
+	return remoteObjectControllerFailure(fmt.Sprintf("unsupported RemoteObjectController call %s", callee)), nil
+}
+
+func remoteObjectControllerSObject(objectName string, values Value) Value {
+	value := Object(objectName)
+	for key, field := range values.Map {
+		fieldName := mapStoredKey(values, key)
+		value.Fields[fieldName.Text] = field
+		markExplicitSObjectField(&value, fieldName.Text)
+	}
+	return value
+}
+
+func remoteObjectControllerIDs(criteria Value) ([]string, error) {
+	var ids []string
+	for key, value := range criteria.Map {
+		name := mapStoredKey(criteria, key)
+		if name.Kind != ValueString {
+			return nil, fmt.Errorf("RemoteObjectController.retrieve criteria only supports Id or ids")
+		}
+		switch strings.ToLower(name.Text) {
+		case "id":
+			if value.Kind != ValueString {
+				return nil, fmt.Errorf("RemoteObjectController.retrieve Id criteria requires String")
+			}
+			ids = append(ids, value.Text)
+		case "ids":
+			if value.Kind != ValueList {
+				return nil, fmt.Errorf("RemoteObjectController.retrieve ids criteria requires List<String>")
+			}
+			for _, id := range value.List {
+				if id.Kind != ValueString {
+					return nil, fmt.Errorf("RemoteObjectController.retrieve ids criteria requires List<String>")
+				}
+				ids = append(ids, id.Text)
+			}
+		default:
+			return nil, fmt.Errorf("RemoteObjectController.retrieve criteria only supports Id or ids")
+		}
+	}
+	return ids, nil
+}
+
+func remoteObjectControllerFailure(message string) Value {
+	return remoteObjectControllerMap(false, nil, []Value{String(message)})
+}
+
+func remoteObjectControllerMap(success bool, records, errors []Value) Value {
+	result := Map()
+	result.Map[mapKey(String("success"))] = Bool(success)
+	result.Map[mapKey(String("records"))] = List(records...)
+	result.Map[mapKey(String("errors"))] = List(errors...)
+	return result
+}
+
+func remoteObjectControllerDMLResults(dmlResults []dml.Result) Value {
+	for _, dmlResult := range dmlResults {
+		if !dmlResult.Success {
+			return remoteObjectControllerFailure(dmlResult.Error)
+		}
+	}
+	return remoteObjectControllerMap(true, nil, nil)
 }
 
 func (vm *VM) callIndustryControllerStatic(callee string, args []Value) (Value, bool, error) {
