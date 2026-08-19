@@ -2268,6 +2268,13 @@ System.assertEquals(36, tokenEvent.EventUuid.length());
 
 func TestExecEventBusGetOperationIdReturnsPublishedEventUuid(t *testing.T) {
 	program, err := CompileAnonymous(`
+Event_Recipes_Demo__e direct = new Event_Recipes_Demo__e(Title__c = 'direct');
+Database.SaveResult directResult = EventBus.publish(direct);
+String directOperationId = EventBus.getOperationId(directResult);
+System.assertNotEquals(null, directOperationId);
+System.assertEquals(36, directOperationId.length());
+System.assertEquals(null, direct.EventUuid);
+
 Event_Recipes_Demo__e first = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true);
 first.Title__c = 'first';
 Database.SaveResult firstResult = EventBus.publish(first);
@@ -2286,6 +2293,9 @@ System.assertEquals(second.EventUuid, EventBus.getOperationId(results[0]));
 Event_Recipes_Demo__e missing = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true);
 Database.SaveResult failure = EventBus.publish(missing);
 System.assertEquals(null, EventBus.getOperationId(failure));
+Event_Recipes_Demo__e missingDirect = new Event_Recipes_Demo__e();
+Database.SaveResult directFailure = EventBus.publish(missingDirect);
+System.assertEquals(null, EventBus.getOperationId(directFailure));
 System.assertEquals(null, EventBus.getOperationId(null));
 System.assertEquals(null, EventBus.getOperationId(new Account()));
 `)

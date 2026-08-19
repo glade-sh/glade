@@ -57,6 +57,10 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 			results = append(results, row)
 			continue
 		}
+		if !hasEventUUID {
+			eventUUID = vm.nextDeterministicUUID()
+			hasEventUUID = true
+		}
 		triggerRecords = append(triggerRecords, stored)
 		row := Object("Database.SaveResult")
 		row.Fields["success"] = Bool(true)
