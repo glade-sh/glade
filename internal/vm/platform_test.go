@@ -4429,19 +4429,28 @@ func TestExecRemoteObjectControllerLocalCRUDRoundTrip(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String,Object> created = RemoteObjectController.create('Account', new Map<String,Object>{'Name' => 'Remote Acme'});
 System.assertEquals(true, created.get('success'));
-List<Account> accounts = [SELECT Id FROM Account];
-System.assertEquals(1, accounts.size());
+System.assertEquals(true, RemoteObjectController.create('Account', new Map<String,Object>{'Name' => 'Remote Beta'}).get('success'));
+List<Account> accounts = [SELECT Id, Name FROM Account ORDER BY Name];
+System.assertEquals(2, accounts.size());
 String id = accounts[0].Id;
-Map<String,Object> retrieved = RemoteObjectController.retrieve('Account', new List<String>{'Id','Name'}, new Map<String,Object>{'Id' => id});
+String secondId = accounts[1].Id;
+Map<String,Object> retrieved = RemoteObjectController.retrieve('Account', new List<String>{'Id','Name'}, new Map<String,Object>{'ids' => new List<String>{secondId, id}});
 System.assertEquals(true, retrieved.get('success'));
-System.assertEquals(1, ((List<Object>) retrieved.get('records')).size());
+List<Account> retrievedRows = (List<Account>) retrieved.get('records');
+System.assertEquals(2, retrievedRows.size());
+System.assertEquals(secondId, retrievedRows[0].Id);
+System.assertEquals('Remote Beta', retrievedRows[0].Name);
 Map<String,Object> updated = RemoteObjectController.update('Account', new List<String>{id}, new Map<String,Object>{'Name' => 'Remote Updated'});
 System.assertEquals(true, updated.get('success'));
+Map<String,Object> updatedRetrieved = RemoteObjectController.retrieve('Account', new List<String>{'Id','Name'}, new Map<String,Object>{'Id' => id});
+List<Account> updatedRows = (List<Account>) updatedRetrieved.get('records');
+System.assertEquals('Remote Updated', updatedRows[0].Name);
 Map<String,Object> deleted = RemoteObjectController.del('Account', new List<String>{id});
 System.assertEquals(true, deleted.get('success'));
 Map<String,Object> afterDelete = RemoteObjectController.retrieve('Account', new List<String>{'Id'}, new Map<String,Object>{'Id' => id});
 System.assertEquals(true, afterDelete.get('success'));
 System.assertEquals(0, ((List<Object>) afterDelete.get('records')).size());
+System.assertEquals(true, RemoteObjectController.del('Account', new List<String>{secondId}).get('success'));
 Map<String,Object> unsupported = RemoteObjectController.retrieve('Account', new List<String>{'Id'}, new Map<String,Object>{'Name' => 'Remote Updated'});
 System.assertEquals(false, unsupported.get('success'));
 `)

@@ -45,9 +45,6 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 	originalCallee := callee
 	callee = normalizeStaticCallCasing(callee)
-	if strings.HasPrefix(callee, "RemoteObjectController.") {
-		return vm.remoteObjectControllerResult(callee, args, result)
-	}
 	callContextClass := vm.currentClass
 	if callContextClass == "" {
 		callContextClass = vm.currentMethod.ClassName
@@ -3004,7 +3001,7 @@ platformStaticCall:
 		}
 		return String(args[0].Text), nil
 	case "RemoteObjectController.retrieve", "RemoteObjectController.create", "RemoteObjectController.updat", "RemoteObjectController.update", "RemoteObjectController.del":
-		return remoteObjectControllerResult(callee, args)
+		return vm.remoteObjectControllerResult(callee, args, result)
 	case "SupportPredictiveService.findSimilarCases":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("SupportPredictiveService.findSimilarCases expects Case Id String")

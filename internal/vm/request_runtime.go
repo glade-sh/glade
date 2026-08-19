@@ -866,22 +866,21 @@ func (vm *VM) remoteObjectControllerResult(callee string, args []Value, result *
 	if !ok {
 		return remoteObjectControllerFailure(fmt.Sprintf("unknown object %s", args[0].Text)), nil
 	}
-	engine := vm.newDMLEngine(result)
 	switch callee {
 	case "RemoteObjectController.create":
 		value := remoteObjectControllerSObject(objectName, args[1])
-		record, err := vm.recordFromValue(&value)
+		dmlResults, err := vm.applyDML("insert", List(value), true, "", dml.Options{}, result)
 		if err != nil {
-			return remoteObjectControllerFailure(err.Error()), nil
+			return Null, err
 		}
-		return remoteObjectControllerDMLResults(engine.Insert([]storage.Record{record})), nil
+		return remoteObjectControllerDMLResults(dmlResults), nil
 	case "RemoteObjectController.update", "RemoteObjectController.del":
 		values := Map()
 		if callee == "RemoteObjectController.update" {
 			values = args[2]
 		}
 		ids := args[1]
-		records := make([]storage.Record, 0, len(ids.List))
+		records := make([]Value, 0, len(ids.List))
 		for _, id := range ids.List {
 			if id.Kind != ValueString {
 				return remoteObjectControllerFailure(fmt.Sprintf("%s expects string Ids", callee)), nil
@@ -889,17 +888,17 @@ func (vm *VM) remoteObjectControllerResult(callee string, args []Value, result *
 			value := remoteObjectControllerSObject(objectName, values)
 			value.Fields["Id"] = id
 			markExplicitSObjectField(&value, "Id")
-			record, err := vm.recordFromValue(&value)
-			if err != nil {
-				return remoteObjectControllerFailure(err.Error()), nil
-			}
-			records = append(records, record)
+			records = append(records, value)
 		}
 		var dmlResults []dml.Result
+		var err error
 		if callee == "RemoteObjectController.update" {
-			dmlResults = engine.Update(records)
+			dmlResults, err = vm.applyDML("update", List(records...), true, "", dml.Options{}, result)
 		} else {
-			dmlResults = engine.Delete(records)
+			dmlResults, err = vm.applyDML("delete", List(records...), true, "", dml.Options{}, result)
+		}
+		if err != nil {
+			return Null, err
 		}
 		return remoteObjectControllerDMLResults(dmlResults), nil
 	case "RemoteObjectController.retrieve":
@@ -912,19 +911,28 @@ func (vm *VM) remoteObjectControllerResult(callee string, args []Value, result *
 			return remoteObjectControllerFailure(err.Error()), nil
 		}
 		object := vm.Org.Objects[objectName]
-		out := make([]Value, 0, len(object.Records))
-		for id, record := range object.Records {
+		orderedIDs := make([]storage.ID, 0, len(object.Records))
+		if len(ids) == 0 {
+			for id := range object.Records {
+				orderedIDs = append(orderedIDs, id)
+			}
+			sort.Slice(orderedIDs, func(i, j int) bool { return orderedIDs[i] < orderedIDs[j] })
+		} else {
+			seen := make(map[storage.ID]bool)
+			for _, requested := range ids {
+				for id, record := range object.Records {
+					if !seen[id] && !record.System.IsDeleted && apexIDTextEqual(requested, string(id)) {
+						orderedIDs = append(orderedIDs, id)
+						seen[id] = true
+					}
+				}
+			}
+		}
+		out := make([]Value, 0, len(orderedIDs))
+		for _, id := range orderedIDs {
+			record := object.Records[id]
 			if record.System.IsDeleted {
 				continue
-			}
-			if len(ids) > 0 {
-				match := false
-				for _, candidate := range ids {
-					match = match || apexIDTextEqual(candidate, string(id))
-				}
-				if !match {
-					continue
-				}
 			}
 			row := Object(objectName)
 			row.Fields["Id"] = databaseResultIDValue(record.ID)
