@@ -1773,7 +1773,7 @@ func browserWorkflowProblem(workflow string) string {
 		"lwcruntime/package-lock.json",
 		`npm ci --prefix third_party/lwc 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-third-party-lwc.log"`,
 		`npm ci --prefix lwcruntime 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-lwcruntime.log"`,
-		`./lwcruntime/node_modules/.bin/playwright install --with-deps chromium 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/playwright-install.log"`,
+		`./lwcruntime/node_modules/.bin/playwright install chromium 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/playwright-install.log"`,
 		`printf '{"scope":"%s"}\n' "$run_expensive" >"$GITHUB_WORKSPACE/ci-artifacts/browser/validation-summary.json"`,
 		"timeout-minutes: 10",
 		"uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0",
@@ -2029,7 +2029,7 @@ func TestCIBrowserWorkflowContract(t *testing.T) {
 		"checkout overwrites early evidence": func(s string) string {
 			return strings.Replace(s, "          path: source\n", "", 1)
 		},
-		"missing Chromium": func(s string) string { return strings.Replace(s, " --with-deps chromium", " --with-deps", 1) },
+		"missing Chromium": func(s string) string { return strings.Replace(s, "playwright install chromium", "playwright install", 1) },
 		"missing selector": func(s string) string {
 			return strings.Replace(s, "|TestGeneratedPhase3BaseComponentsRunInBrowser", "", 1)
 		},

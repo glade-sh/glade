@@ -176,13 +176,13 @@ jobs:
           set -o pipefail
           npm ci --prefix lwcruntime 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-lwcruntime.log"
 
-      - name: Install Chromium with system dependencies
+      - name: Install Chromium
         if: steps.scope.outputs.run_expensive == 'true'
         timeout-minutes: 10
         working-directory: source
         run: |
           set -o pipefail
-          ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/playwright-install.log"
+          ./lwcruntime/node_modules/.bin/playwright install chromium 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/playwright-install.log"
 
       - name: Run browser authorities
         if: steps.scope.outputs.run_expensive == 'true'
