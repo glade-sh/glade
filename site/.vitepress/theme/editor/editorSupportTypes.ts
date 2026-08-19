@@ -22,6 +22,7 @@ export type EditorReceiver = {
 export type EditorSupportCatalog = {
   readonly schemaVersion: number
   readonly generatedFrom: string
+  readonly summary: Readonly<Record<EditorSupportStatus, number>>
   readonly statusLabels: Readonly<Record<EditorSupportStatus, string>>
   readonly receivers: Readonly<Record<string, EditorReceiver>>
   readonly rootCompletions: readonly EditorCompletion[]

@@ -36,6 +36,25 @@ func TestPreviewAnnotationsRemainDisabledAtLatestAPIVersion(t *testing.T) {
 	}
 }
 
+func TestLegacySiteURLHelpersUseEffectiveSourceAPIVersion(t *testing.T) {
+	source := `public class Probe { public void run() { String value = Site.getCurrentSiteUrl(); } }`
+	for _, test := range []struct {
+		apiVersion string
+		wantError  bool
+	}{
+		{apiVersion: "29.0", wantError: false},
+		{apiVersion: "30.0", wantError: true},
+	} {
+		t.Run(test.apiVersion, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, test.apiVersion)
+			gotError := hasDiagnosticCode(result.Diagnostics, "GLADESEMA028")
+			if gotError != test.wantError {
+				t.Fatalf("API %s Site.getCurrentSiteUrl error = %v, want %v: %#v", test.apiVersion, gotError, test.wantError, result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestSecurityEnforcedQueryIsRejectedAtAPIVersion67AndLater(t *testing.T) {
 	source := `
 public class Probe {

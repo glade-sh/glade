@@ -64,7 +64,11 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	if method.Unsupported != "" {
-		return Null, fmt.Errorf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
+		message := fmt.Sprintf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
+		if method.RuntimeLowering {
+			return Null, UnsupportedFeature(message)
+		}
+		return Null, fmt.Errorf("%s", message)
 	}
 	if methodHasModifier(method.Modifiers, "abstract") {
 		if receiver.Kind == ValueObject {
@@ -85,7 +89,11 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	if method.Unsupported != "" {
-		return Null, fmt.Errorf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
+		message := fmt.Sprintf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
+		if method.RuntimeLowering {
+			return Null, UnsupportedFeature(message)
+		}
+		return Null, fmt.Errorf("%s", message)
 	}
 	if methodHasModifier(method.Modifiers, "abstract") {
 		return Null, fmt.Errorf("cannot execute abstract method %s", method.Name)
@@ -222,6 +230,11 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			}
 		}
 		if generatedFamilyUnsupportedTypePrefix(className) && !vm.generatedPassiveDTOAccessorMethod(className, method) {
+			if cachePartitionPlatformObjectType(className) {
+				if value, handled, err := vm.callCachePartitionStaticDefault(className+"."+apexMethodMemberName(method.Name), args); handled || err != nil {
+					return value, err
+				}
+			}
 			if value, handled := vm.generatedUnsupportedFamilyExplicitMethodDefault(method, receiver, args); handled {
 				return value, nil
 			}
@@ -230,14 +243,20 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			}
 			return Null, newExceptionError("UnsupportedOperationException", method.Name+" local stub surface")
 		}
+		dataWeaveRuntime := receiver.Kind == ValueObject &&
+			(strings.EqualFold(receiver.Type, "DataWeave.Script") || strings.HasPrefix(receiver.Type, "DataWeaveScriptResource.")) &&
+			strings.EqualFold(apexMethodMemberName(method.Name), "execute")
+		if !dataWeaveRuntime && vm.generatedRuntimeDisposition(method, receiver) == generatedRuntimeUnsupported {
+			return Null, unsupportedCallError(method.Name)
+		}
 	}
 	if passiveGeneratedMethod(method) {
-		if receiver.Kind == ValueObject && userProvisioningBatchableType(receiver.Type) {
+		if receiver.Kind == ValueObject && vm.isUserProvisioningBatchableType(receiver.Type) {
 			callArgs := make([]Value, 0, len(method.Params))
 			for _, param := range method.Params {
 				callArgs = append(callArgs, frame[param.Name])
 			}
-			value, _, _, handled, err := callUserProvisioningBatchableMember(receiver, apexMethodMemberName(method.Name), callArgs)
+			value, _, _, handled, err := callUserProvisioningBatchableMember(vm, receiver, apexMethodMemberName(method.Name), callArgs)
 			if handled || err != nil {
 				return value, err
 			}
@@ -296,6 +315,8 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	callerTypes := vm.VarTypes
 	callerClass := vm.currentClass
 	callerMethod := vm.currentMethod
+	callerTrigger := vm.currentTrigger
+	callerSharingMode := vm.currentSharingMode()
 	callerStatement := vm.currentStatement
 	callerHasStatement := vm.hasStatement
 	vm.scopeStack = append(vm.scopeStack, caller)
@@ -303,14 +324,17 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	vm.VarTypes = frameTypes
 	vm.currentClass = method.ClassName
 	vm.currentMethod = method
+	vm.currentTrigger = false
 	if vm.currentClass == "" {
 		vm.currentClass = classNameFromMethod(method.Name)
 	}
 	vm.callStack = append(vm.callStack, callFrame{
-		Symbol: vm.apexMethodFrameSymbol(method),
-		File:   method.File,
-		Line:   method.Line,
-		Column: method.Column,
+		Symbol:      vm.apexMethodFrameSymbol(method),
+		File:        method.File,
+		Line:        method.Line,
+		Column:      method.Column,
+		APIVersion:  method.APIVersion,
+		SharingMode: callerSharingMode,
 	})
 	if traceIsEnabled(result) {
 		traceStart, traceStartedAt := traceSpanStart(result)
@@ -332,6 +356,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		vm.VarTypes = callerTypes
 		vm.currentClass = callerClass
 		vm.currentMethod = callerMethod
+		vm.currentTrigger = callerTrigger
 		vm.currentStatement = callerStatement
 		vm.hasStatement = callerHasStatement
 		vm.scopeStack = vm.scopeStack[:len(vm.scopeStack)-1]
@@ -911,6 +936,21 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 // enums, managed passive members, platform objects, user-class methods, and
 // SObject members. It is the ValueObject arm of callValueMember.
 func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	queueablePlatformObject := queueableDuplicateSignaturePlatformObjectType(receiver.Type)
+	if queueablePlatformObject && strings.EqualFold(receiver.Type, "Builder") {
+		_, queueablePlatformObject = vm.lookupClass(receiver.Type)
+		queueablePlatformObject = !queueablePlatformObject
+	}
+	if queueablePlatformObject {
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+			if mutated {
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
+			}
+			return value, true, err
+		}
+	}
 	if isStubProxy(receiver) {
 		value, handled, err := vm.callStubProxyMember(receiver, method, args, result)
 		if handled || err != nil {
@@ -992,6 +1032,40 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 		}
 	}
 	if localRuntimeHarnessPlatformObjectType(receiver.Type) {
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+			if mutated {
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
+			}
+			return value, true, err
+		}
+	}
+	if componentApexRuntimeType(receiver.Type) {
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+			if mutated {
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
+			}
+			return value, true, err
+		}
+	}
+	// These platform objects also have generated standard-symbol classes. The
+	// platform implementation must win over the generated passive method body;
+	// otherwise project test runs return the passive default (usually null)
+	// while direct VM execution reaches the real local contract.
+	if authJWTOrCanvasPlatformObjectType(receiver.Type) {
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+			if mutated {
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
+			}
+			return value, true, err
+		}
+	}
+	if isExceptionType(receiver.Type) {
 		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
 			if mutated {
 				if err := vm.storeReceiver(receiverName, updated); err != nil {
@@ -1141,6 +1215,18 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 		}
 	}
 	return value, true, err
+}
+
+func authJWTOrCanvasPlatformObjectType(typeName string) bool {
+	switch {
+	case strings.EqualFold(typeName, "Auth.JWT"),
+		strings.EqualFold(typeName, "Canvas.RenderContext"),
+		strings.EqualFold(typeName, "Canvas.ApplicationContext"),
+		strings.EqualFold(typeName, "Canvas.EnvironmentContext"):
+		return true
+	default:
+		return false
+	}
 }
 
 // callNonObjectValueMember dispatches a member call whose receiver is a
@@ -1343,10 +1429,11 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable",
 		"getTabs", "isSelected", "getSObjectName", "isCustom", "getIconUrl", "getIcons",
 		"getContentType", "getHeight", "getTheme", "getWidth",
-		"to15", "to18", "getSObjectType",
+		"getColor", "getContext",
+		"to15", "getSObjectType",
 		"toStartOfMonth", "toEndOfMonth", "format", "formatGmt", "toString",
 		"date", "dateGmt", "time", "timeGmt", "year", "month", "day", "getTime",
-		"addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds", "addMilliseconds",
+		"addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds",
 		"daysBetween", "monthsBetween", "isSameDay", "dayOfYear", "daysInMonth", "isLeapYear",
 		"equals", "hashCode", "newInstance", "isAssignableFrom", "getNamespace", "getPackageName",
 		"send", "toExternalForm", "getProtocol", "getHost", "getAuthority",
@@ -1641,7 +1728,16 @@ func localRuntimeHarnessPlatformObjectType(typeName string) bool {
 		strings.EqualFold(typeName, "invocable.action"),
 		strings.EqualFold(typeName, "invocable.action.result"),
 		strings.EqualFold(typeName, "testasynchttp"),
-		strings.EqualFold(typeName, "functions.functioninvokemock"):
+		strings.EqualFold(typeName, "functions.functioninvokemock"),
+		strings.EqualFold(typeName, "apex.stack"),
+		strings.EqualFold(typeName, "chatteranswers.accountcreator"),
+		strings.EqualFold(typeName, "datacloud.findduplicatesresult"),
+		strings.EqualFold(typeName, "commerce_inventory.commerceinventoryservice"),
+		strings.EqualFold(typeName, "commerce_inventory.inventorylevelsresponse"),
+		strings.EqualFold(typeName, "commerce_inventory.inventoryreservation"),
+		strings.EqualFold(typeName, "commerce_inventory.inventorycheckavailability"),
+		strings.EqualFold(typeName, "commerce_ordermanagement.productexpandservice"),
+		strings.EqualFold(typeName, "commerce_ordermanagement.productexpandresponse"):
 		return true
 	default:
 		return false
@@ -2837,7 +2933,35 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 				return Null, true, fmt.Errorf("List.deepClone preserve options expect Boolean arguments")
 			}
 		}
-		return cloneValue(receiver), true, nil
+		if listSObjectTypeName(receiver) == "" {
+			return Null, true, fmt.Errorf("Operation only applies to SObject list types: %s", receiver.Type)
+		}
+		preserveID := len(args) > 0 && args[0].Bool
+		preserveReadonlyTimestamps := len(args) > 1 && args[1].Bool
+		preserveAutonumber := len(args) > 2 && args[2].Bool
+		cloned := cloneValue(receiver)
+		for i := range cloned.List {
+			if cloned.List[i].Kind != ValueObject {
+				continue
+			}
+			if !preserveID {
+				deleteObjectField(cloned.List[i].Fields, "Id")
+			}
+			if !preserveReadonlyTimestamps {
+				for _, field := range []string{"CreatedById", "CreatedDate", "LastModifiedById", "LastModifiedDate"} {
+					deleteObjectField(cloned.List[i].Fields, field)
+				}
+			}
+			if !preserveAutonumber {
+				_, definition, _ := vm.describeObjectDefinition(cloned.List[i].Type)
+				for fieldName, field := range definition.Fields {
+					if field.AutoNumber {
+						deleteObjectField(cloned.List[i].Fields, fieldName)
+					}
+				}
+			}
+		}
+		return cloned, true, nil
 	case "iterator":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("List.iterator expects 0 arguments")
@@ -3109,8 +3233,13 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		cloned.Set = append([]Value(nil), receiver.Set...)
 		return cloned, true, nil
 	case "deepClone":
-		if len(args) != 0 {
-			return Null, true, unsupportedCallError("Set.deepClone with preserve options")
+		if len(args) > 3 {
+			return Null, true, fmt.Errorf("Set.deepClone expects at most 3 Boolean arguments")
+		}
+		for _, arg := range args {
+			if arg.Kind != ValueBool {
+				return Null, true, fmt.Errorf("Set.deepClone preserve options expect Boolean arguments")
+			}
 		}
 		return cloneValue(receiver), true, nil
 	case "iterator":
@@ -3292,8 +3421,8 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("Map.containsValue expects 1 argument")
 		}
-		for _, value := range receiver.Map {
-			if value.Equal(args[0]) {
+		for _, rawKey := range orderedValueMapKeys(receiver) {
+			if receiver.Map[rawKey].Equal(args[0]) {
 				return Bool(true), true, nil
 			}
 		}
@@ -3310,7 +3439,7 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			delete(receiver.Map, key)
 			delete(receiver.MapKeys, key)
 			if len(receiver.MapOrder) > 0 {
-				filtered := receiver.MapOrder[:0]
+				filtered := make([]string, 0, len(receiver.MapOrder))
 				for _, orderedKey := range receiver.MapOrder {
 					if orderedKey != key {
 						filtered = append(filtered, orderedKey)
@@ -3331,6 +3460,9 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if out, ok := vm.sObjectFieldMapCanonicalKeySet(receiver); ok {
 			return out, true, nil
 		}
+		if out, ok := fieldSetMapCanonicalKeySet(receiver); ok {
+			return out, true, nil
+		}
 		out := Set()
 		for _, rawKey := range orderedValueMapKeys(receiver) {
 			out.Set = append(out.Set, mapStoredKey(receiver, rawKey))
@@ -3349,6 +3481,9 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if out, ok := sObjectFieldMapCanonicalValues(receiver); ok {
 			return out, true, nil
 		}
+		if out, ok := fieldSetMapCanonicalValues(receiver); ok {
+			return out, true, nil
+		}
 		out := List()
 		for _, key := range orderedValueMapKeys(receiver) {
 			out.List = append(out.List, receiver.Map[key])
@@ -3364,12 +3499,18 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if size, ok := sObjectFieldMapCanonicalSize(receiver); ok {
 			return Int(int64(size)), true, nil
 		}
+		if size, ok := fieldSetMapCanonicalSize(receiver); ok {
+			return Int(int64(size)), true, nil
+		}
 		return Int(int64(len(receiver.Map))), true, nil
 	case "isEmpty":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Map.isEmpty expects 0 arguments")
 		}
 		if size, ok := sObjectFieldMapCanonicalSize(receiver); ok {
+			return Bool(size == 0), true, nil
+		}
+		if size, ok := fieldSetMapCanonicalSize(receiver); ok {
 			return Bool(size == 0), true, nil
 		}
 		return Bool(len(receiver.Map) == 0), true, nil

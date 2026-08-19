@@ -70,6 +70,30 @@ func TestExecTestLoadDataFullLocalNamespaceAndRelationshipExternalID(t *testing.
 	}
 }
 
+func TestTestLoadDataAcceptsUnqualifiedNamespacedRelationshipHeader(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["pkg__Parent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "pkg__Parent__c",
+			Fields: map[string]storage.Field{
+				"pkg__External_Id__c": {APIName: "pkg__External_Id__c", Type: storage.FieldString, ExternalID: true},
+			},
+		},
+	}
+	child := storage.ObjectDefinition{
+		APIName: "pkg__Child__c",
+		Fields: map[string]storage.Field{
+			"pkg__Parent__c": {APIName: "pkg__Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__Parent__c"}, RelationshipName: "pkg__Parent__r"},
+		},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if !machine.testLoadDataRelationshipHeader(child, "Parent__r.External_Id__c") {
+		t.Fatal("unqualified relationship header was not resolved against the package namespace")
+	}
+}
+
 func TestExecTestLoadDataFullLocalNamespaceAndRelationshipDiagnostics(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Namespace = "pkg"

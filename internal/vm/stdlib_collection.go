@@ -71,9 +71,9 @@ func callMapStdlibMember(receiver Value, method string, args []Value) (Value, Va
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Map.clear expects 0 arguments")
 		}
-		for key := range receiver.Map {
-			delete(receiver.Map, key)
-		}
+		receiver.Map = map[string]Value{}
+		receiver.MapKeys = map[string]Value{}
+		receiver.MapOrder = nil
 		return Null, receiver, true, true, nil
 	case "remove":
 		if len(args) != 1 {
@@ -86,6 +86,16 @@ func callMapStdlibMember(receiver Value, method string, args []Value) (Value, Va
 		value, ok := receiver.Map[key]
 		if ok {
 			delete(receiver.Map, key)
+			delete(receiver.MapKeys, key)
+			if len(receiver.MapOrder) > 0 {
+				filtered := make([]string, 0, len(receiver.MapOrder))
+				for _, orderedKey := range receiver.MapOrder {
+					if orderedKey != key {
+						filtered = append(filtered, orderedKey)
+					}
+				}
+				receiver.MapOrder = filtered
+			}
 			return value, receiver, true, true, nil
 		}
 		return Null, receiver, false, true, nil
@@ -122,6 +132,16 @@ func callMapStdlibMember(receiver Value, method string, args []Value) (Value, Va
 			}
 		}
 		return Bool(ok), receiver, false, true, nil
+	case "containsValue":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("Map.containsValue expects 1 argument")
+		}
+		for _, value := range receiver.Map {
+			if value.Equal(args[0]) {
+				return Bool(true), receiver, false, true, nil
+			}
+		}
+		return Bool(false), receiver, false, true, nil
 	case "getSObjectType":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Map.getSObjectType expects 0 arguments")

@@ -712,6 +712,46 @@ public class QueryProbe {
 	}
 }
 
+func TestSemaBindingResolverFindsOuterLocalInsideRunAs(t *testing.T) {
+	source := `
+@IsTest
+private class QueryProbe {
+  @IsTest static void run() {
+    Account evtReg = new Account();
+    User testUser = new User();
+    System.runAs(testUser) {
+      List<Account> accounts = [SELECT Id FROM Account WHERE Id = :evtReg.Id];
+    }
+  }
+}`
+	locations := semaMethodLocations(source, newSemaCodeSpans(source))
+	if len(locations) != 1 {
+		t.Fatalf("method locations = %d, want 1: %#v", len(locations), locations)
+	}
+	offset := strings.Index(source, ":evtReg")
+	bindings := newSemaBindingResolver(source, newSemaCodeSpans(source)).bindingsAt(offset)
+	if got := bindings["evtreg"]; got != "Account" {
+		t.Fatalf("evtReg binding = %q, want Account; all = %#v", got, bindings)
+	}
+}
+
+func TestSemaBindingResolverFindsPropertyAccessorLocal(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public List<Account> accounts {
+    private get {
+      String name = 'Acme';
+      return [SELECT Id FROM Account WHERE Name = :name];
+    }
+  }
+}`
+	offset := strings.Index(source, ":name")
+	bindings := newSemaBindingResolver(source, newSemaCodeSpans(source)).bindingsAt(offset)
+	if got := bindings["name"]; got != "String" {
+		t.Fatalf("name binding = %q, want String; all = %#v", got, bindings)
+	}
+}
+
 func TestQuerySemanticsAcceptsInstanceFieldDeclaredAfterMethod(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {

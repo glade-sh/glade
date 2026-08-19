@@ -82,7 +82,15 @@ func storagePermissionValueMatches(value storage.Value, permission string) bool 
 	return false
 }
 func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
-	if method == "isQueryable" || method == "isSearchable" {
+	if method == "isSearchable" {
+		if vm != nil {
+			if _, definition, ok := vm.describeObjectDefinition(objectName); ok {
+				return vm.describePreparedDefinition(objectName, definition).EnableSearch
+			}
+		}
+		return true
+	}
+	if method == "isQueryable" {
 		return true
 	}
 	if vm.Org == nil {
@@ -214,7 +222,18 @@ func fieldPermissionObjectMethod(method string) string {
 		return ""
 	}
 }
-func (vm *VM) stripInaccessibleRecords(accessType string, records Value, enforceRootObjectCRUD bool) (Value, Value, Value, error) {
+func (vm *VM) stripInaccessibleRecords(accessType string, records Value, enforceRootObjectCRUD bool, scopedPermissionSetID string) (Value, Value, Value, error) {
+	if scopedPermissionSetID != "" {
+		resolved := false
+		if vm != nil && vm.Org != nil {
+			if state, ok := vm.Org.Objects["PermissionSet"]; ok {
+				_, _, resolved = storage.LookupRecordByID(state.Records, storage.ID(scopedPermissionSetID))
+			}
+		}
+		if !resolved {
+			return Null, Null, Null, newExceptionError("NoDataFoundException", fmt.Sprintf("Invalid permission set id: %s", scopedPermissionSetID))
+		}
+	}
 	out := cloneValue(records)
 	out.Type = records.Type
 	removedFields := Map()
@@ -222,7 +241,7 @@ func (vm *VM) stripInaccessibleRecords(accessType string, records Value, enforce
 	modifiedIndexes := Set()
 	modifiedIndexes.Type = "Set<Integer>"
 	for i := range out.List {
-		modified, err := vm.stripInaccessibleRecord(accessType, &out.List[i], enforceRootObjectCRUD, removedFields)
+		modified, err := vm.stripInaccessibleRecord(accessType, &out.List[i], enforceRootObjectCRUD, removedFields, scopedPermissionSetID)
 		if err != nil {
 			return Null, Null, Null, err
 		}
@@ -263,6 +282,38 @@ func (vm *VM) enforceUserModeDMLAccess(op string, value Value, accessLevel Value
 			if !vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID) {
 				return newExceptionError("SecurityException", fmt.Sprintf("Access to field '%s.%s' denied", objectName, canonicalField))
 			}
+		}
+	}
+	return nil
+}
+
+func (vm *VM) enforceDMLRecordAccess(op string, value Value, externalIDField string, userMode bool) error {
+	if vm == nil || vm.Org == nil || (op != "update" && op != "delete" && op != "undelete" && op != "upsert") {
+		return nil
+	}
+	if !userMode && (vm.currentTrigger || !strings.EqualFold(vm.currentSharingMode(), "with sharing")) {
+		return nil
+	}
+	for _, item := range dmlAccessRecords(value) {
+		record, err := vm.recordFromValue(&item)
+		if err != nil {
+			return err
+		}
+		var stored storage.Record
+		var found bool
+		if strings.EqualFold(op, "upsert") {
+			kind, existing, classifyErr := vm.classifyUpsert(record, externalIDField)
+			if classifyErr != nil {
+				return classifyErr
+			}
+			if kind == "update" && existing.ID != "" {
+				stored, found = vm.findOrgRecord(record.Object, existing.ID)
+			}
+		} else if record.ID != "" {
+			stored, found = vm.findOrgRecord(record.Object, record.ID)
+		}
+		if found && !vm.userModeRecordVisible(record.Object, stored, vm.currentUserID()) {
+			return newExceptionError("SecurityException", fmt.Sprintf("Access to record '%s' denied", stored.ID))
 		}
 	}
 	return nil
@@ -318,7 +369,7 @@ func userModeDMLPermissions(op string) (string, string) {
 		return "", ""
 	}
 }
-func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceRootObjectCRUD bool, removedFields Value) (bool, error) {
+func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceRootObjectCRUD bool, removedFields Value, scopedPermissionSetID string) (bool, error) {
 	if record == nil || record.Kind != ValueObject {
 		return false, nil
 	}
@@ -330,7 +381,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 		}
 	}
 	objectPermission := stripInaccessibleObjectPermission(accessType)
-	if enforceRootObjectCRUD && objectPermission != "" && !vm.currentUserObjectPermission(objectName, objectPermission) {
+	if enforceRootObjectCRUD && objectPermission != "" && !vm.currentUserObjectPermissionWithScope(objectName, objectPermission, scopedPermissionSetID) {
 		return false, newExceptionError("NoAccessException", "No access to entity: "+objectName)
 	}
 	fieldPermission := stripInaccessibleFieldPermission(accessType)
@@ -349,7 +400,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 						childObjectName = resolved
 					}
 				}
-				if objectPermission != "" && !vm.currentUserObjectPermission(childObjectName, objectPermission) {
+				if objectPermission != "" && !vm.currentUserObjectPermissionWithScope(childObjectName, objectPermission, scopedPermissionSetID) {
 					delete(record.Fields, field)
 					unmarkQueriedSObjectField(record, field)
 					markStrippedChildRelationship(record, field)
@@ -360,7 +411,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 			}
 			childModified := false
 			for i := range value.List {
-				modifiedChild, err := vm.stripInaccessibleRecord(accessType, &value.List[i], enforceRootObjectCRUD, removedFields)
+				modifiedChild, err := vm.stripInaccessibleRecord(accessType, &value.List[i], enforceRootObjectCRUD, removedFields, scopedPermissionSetID)
 				if err != nil {
 					return false, err
 				}
@@ -384,7 +435,11 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 		if strings.EqualFold(canonicalField, "Id") {
 			continue
 		}
-		if fieldPermission == "" || vm.currentUserFieldPermission(objectName, canonicalField, fieldPermission) || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField) {
+		fieldAllowed := vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
+		if scopedPermissionSetID == "" {
+			fieldAllowed = fieldAllowed || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField)
+		}
+		if fieldPermission == "" || fieldAllowed {
 			continue
 		}
 		delete(record.Fields, field)
@@ -406,7 +461,11 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 				continue
 			}
 			canonicalField := vm.resolveSObjectFieldName(objectName, field)
-			if fieldPermission == "" || vm.currentUserFieldPermission(objectName, canonicalField, fieldPermission) || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField) {
+			fieldAllowed := vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
+			if scopedPermissionSetID == "" {
+				fieldAllowed = fieldAllowed || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField)
+			}
+			if fieldPermission == "" || fieldAllowed {
 				continue
 			}
 			unmarkQueriedSObjectField(record, canonicalField)

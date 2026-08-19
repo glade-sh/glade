@@ -1,3 +1,7 @@
+<script setup>
+import releaseManifest from '../../release-manifest.json'
+</script>
+
 # CLI reference
 
 <div class="docs-intro">
@@ -13,6 +17,8 @@
 All commands are local unless you point Glade at an external path or start a server. Most project commands accept `--project PROJECT_ROOT` and default to the current directory when a project is discoverable.
 
 Human output is terminal text. Use `--json` or `--format` for scripts. See [CLI output modes](/guide/cli-output), [Automation and JSON](/guide/automation), and [Exit codes](/guide/exit-codes) for the stable contract.
+
+**Verified with Glade {{ releaseManifest.version }}.**
 
 <div class="docs-command-filter">
   <label for="cli-command-filter">Filter commands</label>
@@ -86,7 +92,6 @@ GLADE_UPDATE_ALLOW_SHELL=1 glade update
 Check the local environment and project discovery basics.
 
 ```bash
-glade doctor
 glade doctor --project .
 ```
 
@@ -204,7 +209,7 @@ glade refactor rename --project . --file force-app/main/default/classes/Refineme
 
 ## `glade schema load`
 
-Load supported Salesforce metadata from an SFDX project.
+Load supported Salesforce metadata from a Salesforce DX project.
 
 ```bash
 glade schema load --project .

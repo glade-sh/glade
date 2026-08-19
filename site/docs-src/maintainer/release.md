@@ -113,6 +113,16 @@ GLADE_HOME="$(mktemp -d)" GLADE_PLUGIN_REGISTRY_URL="https://plugins.glade.sh/in
 The docs site is the single public docs surface. User docs live under
 `/guide/...`. Maintainer docs live under `/maintainer/...`.
 
+After the stable download pointer moves, sync the checked site input on the
+docs change and review it before merge:
+
+```bash
+cd site
+npm run release:sync
+npm run release:sync:check
+git diff -- release-manifest.json
+```
+
 Cloudflare Pages project `glade-sh` publishes from product `main`. After the
 merge, require the Git integration deployment or deploy the clean, exact main
 build:
@@ -125,10 +135,12 @@ npx --yes wrangler pages deploy .vitepress/dist --project-name glade-sh --branch
   --commit-hash "$(git -C .. rev-parse HEAD)" --commit-dirty=false
 ```
 
-Postflight the rendered release and registry wording:
+The deployment is not accepted until the blocking post-deploy reconciliation
+passes. It checks the exact commit, stable manifest, GitHub latest release,
+checksums, advertised archives, installer, search, canonical routes, redirects,
+registry, sitemap, and malformed copy tokens:
 
 ```bash
-curl -fsSL https://glade.sh/ | grep -F 'Latest stable release:<span class="home-release-version">vX.Y.Z</span>'
-curl -fsSL https://glade.sh/guide/plugins/first-party | grep -F 'https://plugins.glade.sh/index.json'
-curl -fsSL https://glade.sh/install.sh | head -n 5
+expected_sha="$(git -C .. rev-parse HEAD)"
+npm run smoke:postdeploy -- --base-url https://glade.sh --expected-commit "$expected_sha"
 ```

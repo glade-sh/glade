@@ -2,7 +2,7 @@
 
 Glade runs Apex tests from local Salesforce source without a Salesforce org.
 There is no org login, scratch org, source push, or metadata deploy in the
-normal loop. Glade reads the SFDX project on disk, loads supported metadata, and
+normal loop. Glade reads the Salesforce DX project on disk, loads supported metadata, and
 runs tests in the local VM.
 
 ## Project Setup
@@ -10,7 +10,7 @@ runs tests in the local VM.
 Start from a Salesforce-shaped project with `sfdx-project.json` at the root:
 
 ```text
-macrodata-apex/
+apex-project/
   sfdx-project.json
   force-app/main/default/classes/
   force-app/main/default/triggers/
@@ -20,7 +20,7 @@ macrodata-apex/
 Then run from the project root:
 
 ```bash
-glade doctor
+glade doctor --project .
 glade check --project .
 glade test --project .
 ```

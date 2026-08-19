@@ -24,7 +24,7 @@ Human output may change when it makes the command clearer. Do not parse it in CI
 Use `--json` when a script needs stable fields.
 
 ```bash
-glade doctor --json
+glade doctor --project . --json
 glade check --project . --json
 glade test --project . --json --no-progress
 glade exec --json "System.debug('local');"

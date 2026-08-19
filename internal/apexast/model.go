@@ -20,19 +20,22 @@ const (
 )
 
 type Declaration struct {
-	Kind           DeclarationKind  `json:"kind"`
-	Name           string           `json:"name,omitempty"`
-	Type           string           `json:"type,omitempty"`
-	Modifiers      []string         `json:"modifiers,omitempty"`
-	Annotations    []Annotation     `json:"annotations,omitempty"`
-	Parameters     []Parameter      `json:"parameters,omitempty"`
-	Accessors      []Accessor       `json:"accessors,omitempty"`
-	ObjectName     string           `json:"objectName,omitempty"`
-	Events         []string         `json:"events,omitempty"`
-	TypeParameters []string         `json:"typeParameters,omitempty"`
-	HasBody        bool             `json:"hasBody,omitempty"`
-	Range          diagnostic.Range `json:"range"`
-	Members        []Declaration    `json:"members,omitempty"`
+	Kind           DeclarationKind   `json:"kind"`
+	Name           string            `json:"name,omitempty"`
+	SuperClass     string            `json:"superClass,omitempty"`
+	Interfaces     []string          `json:"interfaces,omitempty"`
+	Type           string            `json:"type,omitempty"`
+	Modifiers      []string          `json:"modifiers,omitempty"`
+	Annotations    []Annotation      `json:"annotations,omitempty"`
+	Parameters     []Parameter       `json:"parameters,omitempty"`
+	Accessors      []Accessor        `json:"accessors,omitempty"`
+	ObjectName     string            `json:"objectName,omitempty"`
+	Events         []string          `json:"events,omitempty"`
+	TypeParameters []string          `json:"typeParameters,omitempty"`
+	HasBody        bool              `json:"hasBody,omitempty"`
+	BodyRange      *diagnostic.Range `json:"bodyRange,omitempty"`
+	Range          diagnostic.Range  `json:"range"`
+	Members        []Declaration     `json:"members,omitempty"`
 }
 
 type Annotation struct {
@@ -48,11 +51,12 @@ type AnnotationArgument struct {
 }
 
 type Accessor struct {
-	Kind        string           `json:"kind"`
-	Modifiers   []string         `json:"modifiers,omitempty"`
-	Annotations []Annotation     `json:"annotations,omitempty"`
-	Range       diagnostic.Range `json:"range"`
-	HasBody     bool             `json:"hasBody,omitempty"`
+	Kind        string            `json:"kind"`
+	Modifiers   []string          `json:"modifiers,omitempty"`
+	Annotations []Annotation      `json:"annotations,omitempty"`
+	Range       diagnostic.Range  `json:"range"`
+	HasBody     bool              `json:"hasBody,omitempty"`
+	BodyRange   *diagnostic.Range `json:"bodyRange,omitempty"`
 }
 
 type Parameter struct {

@@ -216,6 +216,8 @@ func (writer *runtimePatchFingerprintWriter) program(tag byte, program ir.Progra
 	writer.raw(tag)
 	writer.instructions(0x01, program.Instructions, true, depth+1)
 	writer.string(0x02, program.Source)
+	writer.string(0x03, program.APIVersion)
+	writer.boolean(0x04, program.Trigger)
 }
 
 func (writer *runtimePatchFingerprintWriter) instructions(tag byte, instructions []ir.Instruction, preserveNil bool, depth int) {
@@ -252,6 +254,7 @@ func (writer *runtimePatchFingerprintWriter) instruction(instruction ir.Instruct
 	writer.instructions(0x0f, instruction.Finally, false, depth+1)
 	writer.cases(0x10, instruction.Cases, depth+1)
 	writer.integer(0x11, int64(instruction.Pos))
+	writer.integer(0x12, int64(instruction.DMLMode))
 }
 
 func (writer *runtimePatchFingerprintWriter) instructionPointer(tag byte, instruction *ir.Instruction, depth int) {
@@ -344,6 +347,7 @@ func (writer *runtimePatchFingerprintWriter) class(class vm.Class) {
 	writer.string(0x01, class.Name)
 	writer.string(0x02, class.Namespace)
 	writer.string(0x03, class.SuperClass)
+	writer.string(0x14, class.APIVersion)
 	writer.strings(0x04, class.Interfaces, true)
 	writer.fields(0x05, class.Fields)
 	writer.fields(0x06, class.StaticFields)
@@ -420,6 +424,7 @@ func (writer *runtimePatchFingerprintWriter) triggers(tag byte, triggers []vm.Tr
 		writer.string(0x03, trigger.Object)
 		writer.string(0x04, trigger.Timing)
 		writer.string(0x05, trigger.Operation)
+		writer.string(0x0a, trigger.APIVersion)
 		writer.program(0x06, trigger.Program, 0)
 		writer.string(0x07, trigger.File)
 		writer.integer(0x08, int64(trigger.Line))

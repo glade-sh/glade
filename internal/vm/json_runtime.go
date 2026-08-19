@@ -49,7 +49,7 @@ func jsonFromValue(value Value, suppressObjectNulls bool) any {
 			seen := map[string]bool{}
 			for _, key := range orderedJSONMapKeys(value) {
 				item, ok := value.Map[key]
-				if !ok {
+				if !ok || seen[key] {
 					continue
 				}
 				out = append(out, orderedJSONField{name: mapStoredKey(value, key).String(), value: jsonFromValue(item, suppressObjectNulls)})
@@ -98,7 +98,7 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 			seen := map[string]bool{}
 			for _, key := range orderedJSONMapKeys(value) {
 				item, ok := value.Map[key]
-				if !ok {
+				if !ok || seen[key] {
 					continue
 				}
 				name := mapStoredKey(value, key).String()
@@ -135,7 +135,10 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 			if vm != nil && vm.Org != nil {
 				version = storage.EffectiveRESTAPIVersion(vm.Org.APIVersion)
 			}
-			return jsonSObjectFromValue(value, suppressObjectNulls, vm.jsonFromValueForSerialize, version)
+			// Salesforce preserves null SObject fields for JSON.serialize, even
+			// when the overload's Boolean argument is true. That flag only
+			// suppresses nulls on Apex objects and collections.
+			return jsonSObjectFromValue(value, false, vm.jsonFromValueForSerialize, version)
 		}
 		base := orderedJSONObject{}
 		seen := map[string]bool{}
@@ -480,31 +483,7 @@ func isImplicitFalseIsDeleted(value Value, field string, item Value) bool {
 }
 
 func orderedJSONMapKeys(value Value) []string {
-	for _, names := range [][]string{
-		{"parameters", "failureReason", "failureCode", "trigger", "status", "completed", "started", "source", "providerId", "id"},
-		{"messageParams", "messageTemplate"},
-		{"type", "password", "username"},
-	} {
-		if !jsonMapHasAnyNamedKey(value, names) {
-			continue
-		}
-		var out []string
-		seen := map[string]bool{}
-		for _, name := range names {
-			key := mapKey(String(name))
-			if _, ok := value.Map[key]; ok {
-				out = append(out, key)
-				seen[key] = true
-			}
-		}
-		for _, key := range value.MapOrder {
-			if !seen[key] {
-				out = append(out, key)
-			}
-		}
-		return out
-	}
-	return value.MapOrder
+	return reverseMapOrder(value.MapOrder)
 }
 
 func jsonObjectMap(raw any) (map[string]any, bool) {
@@ -552,17 +531,17 @@ func jsonObjectFields(raw any) ([]orderedJSONField, bool) {
 	return out, true
 }
 
-func jsonMapHasAnyNamedKey(value Value, names []string) bool {
-	for _, name := range names {
-		if _, ok := value.Map[mapKey(String(name))]; ok {
-			return true
-		}
+func reverseMapOrder(order []string) []string {
+	reversed := make([]string, len(order))
+	for i, key := range order {
+		reversed[len(reversed)-1-i] = key
 	}
-	return false
+	return reversed
 }
 
 func (vm *VM) jsonSerializableFieldNames(typeName string) []string {
 	var fields []string
+	seen := make(map[string]struct{})
 	var visit func(string)
 	visit = func(name string) {
 		class, ok := vm.lookupClass(name)
@@ -572,7 +551,14 @@ func (vm *VM) jsonSerializableFieldNames(typeName string) []string {
 		if class.SuperClass != "" {
 			visit(class.SuperClass)
 		}
-		fields = append(fields, class.FieldOrder...)
+		for _, field := range class.FieldOrder {
+			key := strings.ToLower(field)
+			if _, ok := seen[key]; ok {
+				continue
+			}
+			seen[key] = struct{}{}
+			fields = append(fields, field)
+		}
 	}
 	visit(typeName)
 	return fields
@@ -759,13 +745,11 @@ func decodeJSONUntypedToken(decoder *json.Decoder, source string) (Value, error)
 			line, column := jsonNumberStartLineColumn(source, decoder.InputOffset(), value.String())
 			return Null, &jsonNumberInputError{text: value.String(), line: line, column: column}
 		}
-		decimal, err := strconv.ParseFloat(value.String(), 64)
+		decimal, err := decimalFromText(value.String())
 		if err != nil {
 			return Null, err
 		}
-		out := Decimal(decimal)
-		out.Text = value.String()
-		return out, nil
+		return decimal, nil
 	default:
 		return valueFromJSON(value), nil
 	}
@@ -786,20 +770,41 @@ func jsonNumberStartLineColumn(source string, endOffset int64, number string) (i
 	if start < 0 {
 		start = 0
 	}
-	line := 1
-	column := 1
-	for i, r := range source {
-		if i >= start {
-			break
-		}
-		if r == '\n' {
-			line++
-			column = 1
+	if boundary := jsonNumberErrorBoundary(source, start); boundary >= 0 {
+		return sourceLineColumn(source, boundary)
+	}
+	return sourceLineColumn(source, start)
+}
+
+func jsonNumberErrorBoundary(source string, end int) int {
+	if end <= 0 {
+		return -1
+	}
+	inString := false
+	escaped := false
+	boundary := -1
+	for index, char := range source[:end] {
+		if inString {
+			switch {
+			case escaped:
+				escaped = false
+			case char == '\\':
+				escaped = true
+			case char == '"':
+				inString = false
+			}
 			continue
 		}
-		column++
+		if char == '"' {
+			inString = true
+			continue
+		}
+		switch char {
+		case ',':
+			boundary = index
+		}
 	}
-	return line, column
+	return boundary
 }
 
 func decodeJSONValueForDeserialize(text string, strict bool) (any, error) {
@@ -918,9 +923,7 @@ func valueFromJSON(raw any) Value {
 				return Int(converted)
 			}
 		}
-		if converted, err := strconv.ParseFloat(text, 64); err == nil {
-			decimal := Decimal(converted)
-			decimal.Text = text
+		if decimal, err := decimalFromText(text); err == nil {
 			return decimal
 		}
 		return String(text)
@@ -1061,7 +1064,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 					continue
 				}
 				if !jsonAllowedFieldContains(allowed, key) && !vm.jsonStrictAllowsRelationshipPayload(typeName, key, fields[key]) {
-					if typedObjectIsSObject && len(fields) == 1 {
+					if typedObjectIsSObject {
 						return Null, newExceptionError("JSONException", fmt.Sprintf("No such column '%s' on sobject of type %s", key, typeName))
 					}
 					return Null, newExceptionError("JSONException", fmt.Sprintf("JSON.deserializeStrict found unknown field %q for %s", key, typeName))
@@ -2023,20 +2026,32 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 			if text, textOK := raw.(string); textOK {
 				parsed, err := strconv.ParseInt(strings.TrimSpace(text), 10, 64)
 				if err == nil {
+					if canonical == "Long" {
+						return longIntValue(parsed), true, nil
+					}
 					return Int(parsed), true, nil
 				}
 			}
 			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
+		if canonical == "Long" {
+			return longIntValue(value), true, nil
+		}
 		return Int(value), true, nil
 	case "Decimal", "Double":
 		if number, ok := raw.(json.Number); ok {
+			if canonical == "Decimal" {
+				decimal, err := decimalFromText(number.String())
+				if err != nil {
+					return Null, true, jsonTypeMappingError(canonical, raw)
+				}
+				return decimal, true, nil
+			}
 			parsed, err := strconv.ParseFloat(number.String(), 64)
 			if err != nil {
 				return Null, true, jsonTypeMappingError(canonical, raw)
 			}
-			decimal := Decimal(parsed)
-			decimal.Text = number.String()
+			decimal := decimalAsDouble(Decimal(parsed))
 			return decimal, true, nil
 		}
 		value, ok := jsonDecimalNumber(raw)
@@ -2046,12 +2061,19 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 				if trimmed == "" {
 					return Null, true, nil
 				}
-				parsed, err := strconv.ParseFloat(trimmed, 64)
-				if err == nil {
-					return Decimal(parsed), true, nil
+				if canonical == "Decimal" {
+					decimal, err := decimalFromText(trimmed)
+					if err == nil {
+						return decimal, true, nil
+					}
+				} else if parsed, err := strconv.ParseFloat(trimmed, 64); err == nil {
+					return decimalAsDouble(Decimal(parsed)), true, nil
 				}
 			}
 			return Null, true, jsonTypeMappingError(canonical, raw)
+		}
+		if canonical == "Double" {
+			return decimalAsDouble(Decimal(value)), true, nil
 		}
 		return Decimal(value), true, nil
 	case "Date":

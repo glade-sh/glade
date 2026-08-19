@@ -1,7 +1,7 @@
 # Set Up a Glade Org and Import Data With sf
 
 <div class="docs-intro">
-  <p class="docs-intro-eyebrow">Guided help</p>
+  <p class="docs-intro-eyebrow">Task guide</p>
   <p>Create a local Glade org target, register it with the Salesforce CLI, and import sample data.</p>
   <ul>
     <li>Create and start a Glade org.</li>
@@ -12,7 +12,7 @@
 
 ## Before you start
 
-- `glade doctor` passes from the SFDX project root.
+- `glade doctor --project .` passes from the Salesforce DX project root.
 - The Salesforce CLI `sf` is installed.
 - The project has a Salesforce tree import plan and data files.
 - Pick a local target alias and use it consistently in every command below.

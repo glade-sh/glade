@@ -506,19 +506,20 @@ func TestAliasSnapshotMutationPropagationKeepsRealDataChange(t *testing.T) {
 	}
 }
 
-func TestExecGeneratedPlatformStaticMethodFallsBackToTypedDefault(t *testing.T) {
-	program, err := CompileAnonymous(`
-List<Id> similarIdeas = Ideas.findSimilar(new Idea(Title = 'Acme'));
-System.assertEquals(0, similarIdeas.size());
-System.assertEquals(0, Ideas.getAllRecentReplies('005000000000001', '0DB000000000001').size());
-System.assertEquals(0, Ideas.getReadRecentReplies('005000000000001', '0DB000000000001').size());
-System.assertEquals(0, Ideas.getUnreadRecentReplies('005000000000001', '0DB000000000001').size());
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := Execute(program, nil); err != nil {
-		t.Fatal(err)
+func TestExecGeneratedPlatformStaticMethodIsUnsupportedWithoutContract(t *testing.T) {
+	for _, source := range []string{
+		`Ideas.findSimilar(new Idea(Title = 'Acme'));`,
+		`Ideas.getAllRecentReplies('005000000000001', '0DB000000000001');`,
+		`Ideas.getReadRecentReplies('005000000000001', '0DB000000000001');`,
+		`Ideas.getUnreadRecentReplies('005000000000001', '0DB000000000001');`,
+	} {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "unsupported call") {
+			t.Fatalf("%s error = %v, want unsupported call", source, err)
+		}
 	}
 }
 
@@ -768,7 +769,7 @@ func writeDataCategoryVMTestFile(t *testing.T, path, content string) {
 	}
 }
 
-func TestGeneratedPlatformFallbackSelectsTypeAwareOverload(t *testing.T) {
+func TestGeneratedPlatformFallbackRejectsUnclassifiedStaticMethod(t *testing.T) {
 	original := generatedPlatformMethods()
 	generatedPlatformMethodIndex = map[string]map[string][]Method{
 		"generated.overload": {
@@ -793,14 +794,10 @@ func TestGeneratedPlatformFallbackSelectsTypeAwareOverload(t *testing.T) {
 	defer func() { generatedPlatformMethodIndex = original }()
 
 	machine := New(nil)
-	value, handled := machine.generatedPlatformStaticDefault("Generated.Overload.pick", []Value{Bool(true)})
-	if !handled || value.Kind != ValueBool || value.Bool {
-		t.Fatalf("Boolean overload default = %#v, handled %v; want false Boolean", value, handled)
-	}
-
-	value, handled = machine.generatedPlatformStaticDefault("Generated.Overload.pick", []Value{Int(1)})
-	if !handled || value.Kind != ValueInt || value.Int != 0 {
-		t.Fatalf("Integer overload default = %#v, handled %v; want zero Integer", value, handled)
+	for _, args := range [][]Value{{Bool(true)}, {Int(1)}} {
+		if _, err := machine.call("Generated.Overload.pick", args, nil, &Result{}); err == nil || !strings.Contains(err.Error(), "unsupported call") {
+			t.Fatalf("Generated.Overload.pick(%v) error = %v, want unsupported call", args, err)
+		}
 	}
 }
 
@@ -1637,6 +1634,16 @@ System.assertEquals('Original', insertedOpp.Name);
 func TestCompileAnonymousRejectsReservedLocalIdentifier(t *testing.T) {
 	if _, err := CompileAnonymous("String CuRrEnCy = 'USD';"); err == nil || !strings.Contains(strings.ToLower(err.Error()), "identifier name is reserved: currency") {
 		t.Fatalf("CompileAnonymous reserved identifier error = %v", err)
+	}
+}
+
+func TestCompileAnonymousDoesNotClassifyParserRejectedCaret(t *testing.T) {
+	_, err := CompileAnonymous("^")
+	if err == nil {
+		t.Fatal("CompileAnonymous(^) unexpectedly succeeded")
+	}
+	if _, ok := err.(*RuntimeLoweringError); ok {
+		t.Fatalf("CompileAnonymous(^) returned runtime-lowering error for parser-rejected source: %v", err)
 	}
 }
 
@@ -5259,6 +5266,26 @@ System.assertEquals(null, new Account(CreatedById = UserInfo.getUserId()).getSOb
 	}
 }
 
+func TestExecSObjectGetSObjectUsesExplicitStandardRelationshipName(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account();
+User owner = new User(Id = UserInfo.getUserId(), LastName = 'Owner');
+account.putSObject('Owner', owner);
+System.assertEquals('Owner', account.getSObject('Owner').get('LastName'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "User")
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecContactChildRelationshipSubqueriesStaySeparated(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'Acme');
@@ -6767,6 +6794,13 @@ func TestConstructBareRuntimeVersionDoesNotResolveToGeneratedNestedType(t *testi
 	}
 	if value.Type != "Version" {
 		t.Fatalf("construct Version type = %q; want Version", value.Type)
+	}
+}
+
+func TestConstructPackageVersionRejectsConstruction(t *testing.T) {
+	machine := New(nil)
+	if _, err := machine.constructValue("Package.Version", []Value{Int(1), Int(19)}, nil, &Result{}); err == nil {
+		t.Fatal("Package.Version construction succeeded, want Salesforce API 67 rejection")
 	}
 }
 

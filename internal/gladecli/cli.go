@@ -2711,7 +2711,13 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		machine.SetOrg(&org)
 		machine.SetCurrentNamespace(org.Namespace)
 	}
-	analysis := sema.AnalyzeAnonymous(projectIndex, anonymousSource)
+	preparedAnonymous, err := prepareAnonymousSource(anonymousSource, projectIndex.Project.SourceAPIVersion)
+	if err != nil {
+		return err
+	}
+	defer preparedAnonymous.close()
+	analysisIndex := mergeAnonymousIndex(projectIndex, preparedAnonymous.index)
+	analysis := sema.AnalyzeAnonymous(analysisIndex, preparedAnonymous.body)
 	if len(analysis.Diagnostics) > 0 {
 		first := analysis.Diagnostics[0]
 		return fmt.Errorf("%s: %s", first.Code, first.Message)
@@ -2721,7 +2727,12 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 			return err
 		}
 	}
-	program, err := vm.CompileAnonymous(anonymousSource)
+	if len(preparedAnonymous.index.Types) > 0 {
+		if err := registerAnonymousRuntime(machine, preparedAnonymous.runtime); err != nil {
+			return err
+		}
+	}
+	program, err := vm.CompileAnonymous(preparedAnonymous.body)
 	if err != nil {
 		return err
 	}

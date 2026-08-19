@@ -104,6 +104,32 @@ func TestStandardDescribeCatalogV2CaseInsensitiveLookup(t *testing.T) {
 	}
 }
 
+func TestEnsureStandardObjectFieldsHydratesMergeableDescribeMetadata(t *testing.T) {
+	account := ObjectDefinition{APIName: "Account"}
+	EnsureStandardObjectFields(&account)
+	if got := account.Metadata["mergeable"]; got != "true" {
+		t.Fatalf("Account mergeable metadata = %q, want true", got)
+	}
+
+	caseDefinition := ObjectDefinition{APIName: "Case"}
+	EnsureStandardObjectFields(&caseDefinition)
+	if got := caseDefinition.Metadata["mergeable"]; got != "false" {
+		t.Fatalf("Case mergeable metadata = %q, want false", got)
+	}
+
+	stubOnly := ObjectDefinition{APIName: "AcceptedEventRelation"}
+	EnsureStandardObjectFields(&stubOnly)
+	if got := stubOnly.Metadata["mergeable"]; got != "false" {
+		t.Fatalf("AcceptedEventRelation mergeable metadata = %q, want false", got)
+	}
+
+	explicit := ObjectDefinition{APIName: "Account", Metadata: map[string]string{"mergeable": "false"}}
+	EnsureStandardObjectFields(&explicit)
+	if got := explicit.Metadata["mergeable"]; got != "false" {
+		t.Fatalf("explicit Account mergeable metadata = %q, want false", got)
+	}
+}
+
 func TestStandardDescribeCatalogV2UnknownName(t *testing.T) {
 	if _, ok, err := lookupStandardDescribeCatalogV2("DefinitelyNotAStandardObject"); err != nil || ok {
 		t.Fatalf("unknown lookup: ok=%v err=%v", ok, err)
@@ -195,6 +221,66 @@ func TestStandardDescribeCatalogV2CacheCanonicalLookupsDecodeOnce(t *testing.T) 
 	}
 	if got := standardDescribeCatalogV2CacheEntryCount(cache); got != 1 {
 		t.Fatalf("canonical lookup cache entries = %d, want 1", got)
+	}
+}
+
+func TestStandardDescribeCatalogV2RawCacheCanonicalLookupsDecodeOnce(t *testing.T) {
+	var decodes atomic.Int64
+	cache := newStandardDescribeCatalogV2RawCache(func(entry standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error) {
+		decodes.Add(1)
+		return decodeStandardDescribeCatalogV2Member(standardDescribeCatalogV2Pack, entry)
+	})
+
+	var first standardDescribeObject
+	for index, name := range []string{"CareProgram", "careprogram", "  CAREPROGRAM  "} {
+		got, ok, err := cache.entryForName(name)
+		if err != nil || !ok {
+			t.Fatalf("lookup %q: ok=%v err=%v", name, ok, err)
+		}
+		if index == 0 {
+			first = got
+		} else if !reflect.DeepEqual(got, first) {
+			t.Fatalf("lookup %q differs from canonical lookup", name)
+		}
+	}
+	if got := decodes.Load(); got != 1 {
+		t.Fatalf("canonical raw lookup decodes = %d, want 1", got)
+	}
+	if got := standardDescribeCatalogV2RawCacheEntryCount(cache); got != 1 {
+		t.Fatalf("canonical raw lookup cache entries = %d, want 1", got)
+	}
+}
+
+func standardDescribeCatalogV2RawCacheEntryCount(cache *standardDescribeCatalogV2RawCache) int {
+	count := 0
+	cache.entries.Range(func(_, _ any) bool {
+		count++
+		return true
+	})
+	return count
+}
+
+func TestStandardDescribeCatalogV2ProjectedCacheReusesRawDecode(t *testing.T) {
+	var decodes atomic.Int64
+	previous := standardDescribeCatalogV2RawProductionCache
+	standardDescribeCatalogV2RawProductionCache = newStandardDescribeCatalogV2RawCache(func(entry standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error) {
+		decodes.Add(1)
+		return decodeStandardDescribeCatalogV2Member(standardDescribeCatalogV2Pack, entry)
+	})
+	defer func() { standardDescribeCatalogV2RawProductionCache = previous }()
+
+	cache := newStandardDescribeCatalogV2Cache(standardDescribeCatalogV2EntryForResolvedIndexEntry)
+	if _, ok, err := cache.entryForName("CareProgram"); err != nil || !ok {
+		t.Fatalf("projected lookup failed: ok=%v err=%v", ok, err)
+	}
+	if got := decodes.Load(); got != 1 {
+		t.Fatalf("projected lookup raw decodes = %d, want one shared decode", got)
+	}
+	if _, ok, err := standardDescribeCatalogV2RawProductionCache.entryForName("careprogram"); err != nil || !ok {
+		t.Fatalf("raw lookup failed: ok=%v err=%v", ok, err)
+	}
+	if got := decodes.Load(); got != 1 {
+		t.Fatalf("raw decodes = %d, want one shared decode", got)
 	}
 }
 

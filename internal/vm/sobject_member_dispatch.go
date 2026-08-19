@@ -32,7 +32,7 @@ func (vm *VM) callSObjectFieldAddError(path []string, args []Value) (Value, bool
 	if err != nil {
 		return Null, true, err
 	}
-	addSObjectError(&root, message, []string{field})
+	addSObjectError(&root, message, []string{field}, true)
 	vm.advanceAliasContainmentMutation()
 	if err := vm.storeReceiver(path[0], root); err != nil {
 		return Null, true, err
@@ -107,7 +107,7 @@ func sObjectAddErrorFieldName(value Value) (string, bool) {
 	case ValueString:
 		return value.Text, true
 	case ValueObject:
-		if strings.EqualFold(value.Type, "Schema.SObjectField") {
+		if isSObjectFieldTokenType(value.Type) {
 			if field, ok := value.Fields["field"]; ok && field.Kind == ValueString {
 				return field.Text, true
 			}
@@ -266,6 +266,76 @@ func sObjectFieldMapCanonicalSize(value Value) (int, bool) {
 	}
 	return len(seen), true
 }
+
+const fieldSetMapRuntime = "fieldsetmap"
+
+func isFieldSetMapValue(value Value) bool {
+	return value.Kind == ValueMap && strings.EqualFold(value.Runtime, fieldSetMapRuntime)
+}
+
+func fieldSetMapCanonicalKeySet(value Value) (Value, bool) {
+	if !isFieldSetMapValue(value) {
+		return Null, false
+	}
+	out := Set()
+	out.Type = "Set<String>"
+	seen := map[string]bool{}
+	for _, rawKey := range orderedValueMapKeys(value) {
+		item := value.Map[rawKey]
+		name, ok := fieldSetMapCanonicalName(item)
+		if !ok || seen[strings.ToLower(name)] {
+			continue
+		}
+		seen[strings.ToLower(name)] = true
+		out.Set = append(out.Set, String(name))
+	}
+	return out, true
+}
+
+func fieldSetMapCanonicalValues(value Value) (Value, bool) {
+	if !isFieldSetMapValue(value) {
+		return Null, false
+	}
+	out := List()
+	out.Type = "List<Schema.FieldSet>"
+	seen := map[string]bool{}
+	for _, rawKey := range orderedValueMapKeys(value) {
+		item := value.Map[rawKey]
+		name, ok := fieldSetMapCanonicalName(item)
+		if !ok || seen[strings.ToLower(name)] {
+			continue
+		}
+		seen[strings.ToLower(name)] = true
+		out.List = append(out.List, item)
+	}
+	return out, true
+}
+
+func fieldSetMapCanonicalSize(value Value) (int, bool) {
+	if !isFieldSetMapValue(value) {
+		return 0, false
+	}
+	seen := map[string]bool{}
+	for _, item := range value.Map {
+		name, ok := fieldSetMapCanonicalName(item)
+		if ok {
+			seen[strings.ToLower(name)] = true
+		}
+	}
+	return len(seen), true
+}
+
+func fieldSetMapCanonicalName(value Value) (string, bool) {
+	if value.Kind != ValueObject || !strings.EqualFold(value.Type, "Schema.FieldSet") {
+		return "", false
+	}
+	name, ok := value.Fields["name"]
+	if !ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "" {
+		return "", false
+	}
+	return name.Text, true
+}
+
 func sObjectFieldMapCanonicalFieldName(value Value) (string, bool) {
 	if value.Kind != ValueObject || !strings.EqualFold(value.Type, "Schema.SObjectField") {
 		return "", false
@@ -416,7 +486,8 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if err != nil {
 			return Null, true, err
 		}
-		addSObjectError(&receiver, message, fields)
+		replaceExisting := len(args) == 0 || args[0].Kind != ValueObject || !isSObjectFieldTokenType(args[0].Type)
+		addSObjectError(&receiver, message, fields, replaceExisting)
 		vm.advanceAliasContainmentMutation()
 		return Null, true, nil
 	case "hasErrors":
@@ -767,7 +838,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if _, value, ok := objectFieldValue(receiver, "Id"); ok {
 			sourceID = cloneValue(value)
 		}
-		cloned.Fields[sobjectCloneMarkerField] = Bool(true)
+		cloned.Fields[sobjectCloneMarkerField] = Bool(sourceID.Kind != ValueNull)
 		cloned.Fields[sobjectCloneSourceIDField] = sourceID
 		preserveID := len(args) > 0 && args[0].Bool
 		if !preserveID {
@@ -787,6 +858,13 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
 		_, value, ok := objectFieldValue(receiver, field)
+		if !ok && !strings.EqualFold(field, fieldArg) {
+			if actualField, explicitValue, found := objectFieldValue(receiver, fieldArg); found {
+				field = actualField
+				value = explicitValue
+				ok = true
+			}
+		}
 		if !ok || value.Kind == ValueNull {
 			if fieldTokenArg {
 				if relationshipName := lookupFieldRelationshipName(field); relationshipName != "" {

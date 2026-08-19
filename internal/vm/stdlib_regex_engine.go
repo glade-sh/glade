@@ -2,7 +2,6 @@ package vm
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
@@ -11,52 +10,42 @@ import (
 
 const regexp2MatchTimeout = 2 * time.Second
 
-func compileRegexp2Pattern(callee, source string, flags int64) (string, *regexp2.Regexp, error) {
-	regexp2Source, err := compileRegexp2Source(callee, source, flags)
+func compileRegexp2Pattern(callee, source string) (string, *regexp2.Regexp, error) {
+	return compileRegexp2PatternWithException(callee, source, "PatternSyntaxException")
+}
+
+func compileRegexp2PatternWithException(callee, source, exceptionType string) (string, *regexp2.Regexp, error) {
+	regexp2Source, err := compileRegexp2Source(callee, source)
 	if err != nil {
 		return "", nil, err
 	}
 	compileSource := regexp2CompileSourceForSyntax(regexp2Source)
 	re, err := regexp2.Compile(compileSource, regexp2.None)
 	if err != nil {
-		return "", nil, newPatternSyntaxExceptionError(source, err)
+		return "", nil, newRegexSyntaxError(exceptionType, source, err)
 	}
 	re.MatchTimeout = regexp2MatchTimeout
 	return regexp2Source, re, nil
 }
 
-func compileRegexp2Source(callee, source string, flags int64) (string, error) {
-	if flags < 0 {
-		return "", unsupportedCallError(callee + " negative regex flags")
+func compileRegexp2Source(callee, source string) (string, error) {
+	converted, err := javaRegexQuoteEscapesToGo(source)
+	if err != nil {
+		return "", unsupportedCallError(callee + " " + err.Error())
 	}
-	if unsupported := flags &^ patternSupportedFlags; unsupported != 0 {
-		return "", unsupportedCallError(callee + " " + unsupportedPatternFlagsFeature(unsupported))
+	regexp2Source := converted
+	unicodeCharacterClass := false
+	regexp2Source, unicodeCharacterClass = rewriteInlineUnicodeCharacterClassFlagForRegexp2(regexp2Source, unicodeCharacterClass)
+	regexp2Source = rewriteJavaRegexEscapesForRegexp2(regexp2Source)
+	regexp2Source = rewriteJavaUnicodeClassesForRegexp2(regexp2Source)
+	regexp2Source = rewriteJavaShorthandClassesForRegexp2(regexp2Source, unicodeCharacterClass)
+	regexp2Source, err = rewriteJavaClassAlgebraForRegexp2(regexp2Source)
+	if err != nil {
+		return "", unsupportedCallError(callee + " " + err.Error())
 	}
-	regexp2Source := source
-	if flags&patternFlagLiteral != 0 {
-		regexp2Source = regexp.QuoteMeta(source)
-	} else {
-		converted, err := javaRegexQuoteEscapesToGo(source)
-		if err != nil {
-			return "", unsupportedCallError(callee + " " + err.Error())
-		}
-		regexp2Source = converted
-		unicodeCharacterClass := flags&patternFlagUnicodeCharacterClass != 0
-		regexp2Source, unicodeCharacterClass = rewriteInlineUnicodeCharacterClassFlagForRegexp2(regexp2Source, unicodeCharacterClass)
-		regexp2Source = rewriteJavaRegexEscapesForRegexp2(regexp2Source)
-		regexp2Source = rewriteJavaUnicodeClassesForRegexp2(regexp2Source)
-		regexp2Source = rewriteJavaShorthandClassesForRegexp2(regexp2Source, unicodeCharacterClass)
-		regexp2Source, err = rewriteJavaClassAlgebraForRegexp2(regexp2Source)
-		if err != nil {
-			return "", unsupportedCallError(callee + " " + err.Error())
-		}
-		regexp2Source = rewriteSimplePossessiveQuantifiersForRegexp2(regexp2Source)
-		if feature := unsupportedRegexp2JavaRegexFeature(regexp2Source); feature != "" {
-			return "", unsupportedCallError(callee + " " + feature)
-		}
-	}
-	if prefix := patternFlagPrefix(flags); prefix != "" {
-		regexp2Source = prefix + regexp2Source
+	regexp2Source = rewriteSimplePossessiveQuantifiersForRegexp2(regexp2Source)
+	if feature := unsupportedRegexp2JavaRegexFeature(regexp2Source); feature != "" {
+		return "", unsupportedCallError(callee + " " + feature)
 	}
 	return regexp2Source, nil
 }
@@ -533,11 +522,7 @@ func matcherRegexp2PlanForInput(matcher Value, input string) (*regexp2Plan, erro
 	if err != nil {
 		return nil, err
 	}
-	flags := int64(0)
-	if value, ok := matcher.Fields["flags"]; ok && value.Kind == ValueInt {
-		flags = value.Int
-	}
-	return compileRegexp2PlanForInput("Pattern.compile", source, flags, input)
+	return compileRegexp2PlanForInput("Pattern.compile", source, input)
 }
 
 func matcherOriginalRegexSource(matcher Value) (string, error) {
@@ -561,11 +546,7 @@ func patternRegexp2Source(pattern Value) (string, error) {
 	if !ok || source.Kind != ValueString {
 		return "", fmt.Errorf("Pattern missing source")
 	}
-	flags := int64(0)
-	if value, ok := pattern.Fields["flags"]; ok && value.Kind == ValueInt {
-		flags = value.Int
-	}
-	regexp2Source, _, err := compileRegexp2Pattern("Pattern.compile", source.Text, flags)
+	regexp2Source, _, err := compileRegexp2Pattern("Pattern.compile", source.Text)
 	return regexp2Source, err
 }
 
@@ -575,13 +556,6 @@ func patternSourceOnly(pattern Value) (string, error) {
 		return "", fmt.Errorf("Pattern missing source")
 	}
 	return source.Text, nil
-}
-
-func patternFlags(pattern Value) int64 {
-	if value, ok := pattern.Fields["flags"]; ok && value.Kind == ValueInt {
-		return value.Int
-	}
-	return 0
 }
 
 func matcherSourceOnly(receiver Value) (string, error) {
@@ -695,11 +669,7 @@ func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegion
 }
 
 func splitRegexRegexp2(name, pattern, text string, limit int64) ([]string, error) {
-	return splitRegexRegexp2WithFlags(name, pattern, 0, text, limit)
-}
-
-func splitRegexRegexp2WithFlags(name, pattern string, flags int64, text string, limit int64) ([]string, error) {
-	plan, err := compileRegexp2PlanForInput(name, pattern, flags, text)
+	plan, err := compileRegexp2PlanForInput(name, pattern, text)
 	if err != nil {
 		return nil, err
 	}

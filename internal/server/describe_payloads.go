@@ -78,7 +78,7 @@ func describePayload(def storage.ObjectDefinition, org *storage.OrgState) map[st
 		"custom":              strings.HasSuffix(def.APIName, "__c") || strings.HasSuffix(def.APIName, "__mdt"),
 		"keyPrefix":           def.KeyPrefix,
 		"fields":              fields,
-		"searchable":          true,
+		"searchable":          def.EnableSearch,
 		"queryable":           true,
 		"createable":          true,
 		"updateable":          true,
@@ -979,15 +979,18 @@ func deletedPayload(object storage.ObjectState, r *http.Request) (deletedResourc
 			continue
 		}
 		stamp := recordChangeTimestamp(record.System)
-		if stamp == "" || !timestampInBounds(stamp, bounds) {
+		if stamp == "" {
+			continue
+		}
+		if earliest == "" || compareTimestamps(stamp, earliest) < 0 {
+			earliest = stamp
+		}
+		if !timestampInBounds(stamp, bounds) {
 			continue
 		}
 		stringID := string(id)
 		ids = append(ids, stringID)
 		deletedDates[stringID] = stamp
-		if earliest == "" || compareTimestamps(stamp, earliest) < 0 {
-			earliest = stamp
-		}
 		if compareTimestamps(stamp, latest) > 0 {
 			latest = stamp
 		}

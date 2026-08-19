@@ -1,11 +1,11 @@
 # Run the first local check
 
 <div class="docs-intro">
-  <p class="docs-intro-eyebrow">Guided help</p>
+  <p class="docs-intro-eyebrow">Task guide</p>
   <p>Initialize a Salesforce DX project, prove the local environment, and run the first local check from a terminal.</p>
   <ul>
     <li>Initialize a Salesforce DX project.</li>
-    <li>Run `glade doctor`.</li>
+    <li>Run `glade doctor --project .`.</li>
     <li>Read the first `glade check` result.</li>
   </ul>
 </div>
@@ -22,10 +22,10 @@
 ```bash
 test -f glade.yml || glade init --project . --yes
 glade config validate --project .
-glade doctor
+glade doctor --project .
 ```
 
-Expected: `glade.yml` exists and `glade doctor` ends with `Ready.`
+Expected: `glade.yml` exists and `glade doctor --project .` ends with `Ready.`
 
 ![Terminal showing glade doctor ready output](/help/screenshots/first-local-check-01-doctor.png)
 
@@ -41,7 +41,7 @@ Expected: `glade check` exits `0` for clean source or exits `1` with file and li
 
 ## Common wrong turn
 
-`glade: command not found` means the install directory is not on `PATH`. Add `~/.local/bin` to `PATH`, restart the terminal, and run `glade doctor` again.
+`glade: command not found` means the install directory is not on `PATH`. Add `~/.local/bin` to `PATH`, restart the terminal, and run `glade version` again.
 
 ## Next
 

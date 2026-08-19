@@ -23,7 +23,7 @@ func TestSObjectDescribeOverlayCopiesEveryMutableCollectionBranch(t *testing.T) 
 	if got := template.Fields["name"].Text; got != "pkg__Widget__c" {
 		t.Fatalf("template name changed to %q", got)
 	}
-	if got := template.Fields["sObjectDescribeOption"].Text; got != "FULL" {
+	if got := template.Fields["sObjectDescribeOption"].Text; got != "DEFERRED" {
 		t.Fatalf("template option changed to %q", got)
 	}
 	deep := cloneValue(template)

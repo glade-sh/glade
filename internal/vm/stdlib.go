@@ -17,14 +17,14 @@ import (
 func callStdlibMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	switch receiver.Kind {
 	case ValueInt:
-		method = canonicalStdlibMemberName(method, "format", "intValue", "longValue", "doubleValue", "decimalValue")
+		method = canonicalStdlibMemberName(method, "format", "intValue", "longValue", "decimalValue")
 		return callIntegerMember(receiver, method, args)
 	case ValueString:
 		method = canonicalStdlibMemberName(method, stringStdlibMethodNames...)
 		value, handled, err := callStringMember(receiver, method, args)
 		return value, receiver, false, handled, err
 	case ValueDecimal:
-		method = canonicalStdlibMemberName(method, "abs", "setScale", "round", "intValue", "longValue", "doubleValue", "format", "toPlainString", "divide", "scale", "precision", "stripTrailingZeros")
+		method = canonicalStdlibMemberName(method, "abs", "setScale", "round", "intValue", "longValue", "doubleValue", "format", "toPlainString", "divide", "pow", "scale", "precision", "stripTrailingZeros")
 		return callDecimalMember(receiver, method, args)
 	case ValueList:
 		method = canonicalStdlibMemberName(method, "add", "addAll", "clear", "clone", "contains", "deepClone", "get", "getSObjectType", "isEmpty", "iterator", "remove", "set", "size", "sort")
@@ -33,7 +33,7 @@ func callStdlibMember(receiver Value, method string, args []Value) (Value, Value
 		method = canonicalStdlibMemberName(method, "add", "addAll", "clear", "clone", "contains", "containsAll", "deepClone", "isEmpty", "iterator", "remove", "removeAll", "retainAll", "size")
 		return callSetStdlibMember(receiver, method, args)
 	case ValueMap:
-		method = canonicalStdlibMemberName(method, "clear", "clone", "containsKey", "deepClone", "get", "isEmpty", "keySet", "put", "putAll", "remove", "size", "values")
+		method = canonicalStdlibMemberName(method, "clear", "clone", "containsKey", "containsValue", "deepClone", "get", "isEmpty", "keySet", "put", "putAll", "remove", "size", "values")
 		return callMapStdlibMember(receiver, method, args)
 	case ValueObject:
 		if isIteratorValue(receiver) {
@@ -57,25 +57,25 @@ func canonicalStdlibMemberName(method string, known ...string) string {
 
 var stringStdlibMethodNames = []string{
 	"abbreviate", "capitalize", "center", "charAt", "codePointAt", "codePointBefore", "codePointCount",
-	"commonPrefix", "compareTo", "contains", "containsAny", "containsIgnoreCase", "containsNone",
+	"compareTo", "contains", "containsAny", "containsIgnoreCase", "containsNone",
 	"containsOnly", "containsWhitespace", "countMatches", "deleteWhitespace", "difference", "endsWith",
 	"endsWithIgnoreCase", "equals", "equalsIgnoreCase", "escapeCsv", "escapeEcmaScript", "escapeHtml3",
-	"escapeHtml4", "escapeJava", "escapeUnicode", "escapeXml", "escapeXml10", "escapeXml11", "format",
+	"escapeHtml4", "escapeJava", "escapeUnicode", "escapeXml", "format",
 	"getChars", "getLevenshteinDistance", "hashCode", "indexOf", "indexOfAny", "indexOfAnyBut",
 	"indexOfChar", "indexOfDifference", "indexOfIgnoreCase",
 	"isAllLowerCase", "isAllUpperCase", "isAlpha", "isAlphaSpace", "isAlphanumeric", "isAlphanumericSpace",
 	"isAsciiPrintable", "isBlank", "isEmpty", "isNotBlank", "isNotEmpty", "isNumeric", "isNumericSpace",
-	"isWhitespace", "lastIndexOf", "lastIndexOfAny", "lastIndexOfChar", "lastIndexOfIgnoreCase",
-	"lastOrdinalIndexOf", "left", "leftPad", "length", "mid", "normalizeSpace", "offsetByCodePoints",
-	"ordinalIndexOf", "overlay", "remove", "removeEnd", "removeEndIgnoreCase",
-	"removeIgnoreCase", "removeStart", "removeStartIgnoreCase", "repeat", "replace", "replaceAll",
-	"replaceFirst", "replaceIgnoreCase", "replaceOnce", "reverse", "right", "rightPad", "rotate", "split",
-	"splitByCharacterType", "splitByCharacterTypeCamelCase", "startsWith", "startsWithIgnoreCase", "strip",
-	"stripEnd", "stripHtmlTags", "stripStart", "stripToEmpty", "stripToNull", "substring", "substringAfter",
+	"isWhitespace", "lastIndexOf", "lastIndexOfChar", "lastIndexOfIgnoreCase",
+	"left", "leftPad", "length", "mid", "normalizeSpace", "offsetByCodePoints",
+	"overlay", "remove", "removeEnd", "removeEndIgnoreCase",
+	"removeStart", "removeStartIgnoreCase", "repeat", "replace", "replaceAll",
+	"replaceFirst", "reverse", "right", "rightPad", "split",
+	"splitByCharacterType", "splitByCharacterTypeCamelCase", "startsWith", "startsWithIgnoreCase",
+	"stripHtmlTags", "substring", "substringAfter",
 	"substringAfterLast", "substringBefore", "substringBeforeLast", "substringBetween", "swapCase",
 	"toCharArray", "toLowerCase", "toString", "toUpperCase", "trim", "uncapitalize", "unescapeCsv",
 	"unescapeEcmaScript", "unescapeHtml3", "unescapeHtml4", "unescapeJava", "unescapeUnicode",
-	"unescapeXml", "unescapeXml10", "unescapeXml11", "valueOf",
+	"unescapeXml", "valueOf",
 }
 
 func decimalRoundingMode(value Value) (string, error) {
@@ -90,17 +90,6 @@ func decimalRoundingMode(value Value) (string, error) {
 	}
 }
 
-func decimalOperand(value Value) (float64, bool) {
-	switch value.Kind {
-	case ValueDecimal:
-		return value.Decimal, true
-	case ValueInt:
-		return float64(value.Int), true
-	default:
-		return 0, false
-	}
-}
-
 func decimalPlainText(value Value) string {
 	text := strings.TrimSpace(value.Text)
 	if text != "" {
@@ -111,14 +100,22 @@ func decimalPlainText(value Value) string {
 
 func decimalScale(value Value) int {
 	text := decimalPlainText(value)
-	if exponent := strings.IndexAny(text, "eE"); exponent >= 0 {
-		text = text[:exponent]
+	expVal := 0
+	if expIdx := strings.IndexAny(text, "eE"); expIdx >= 0 {
+		expStr := text[expIdx+1:]
+		if expStr != "" {
+			expParsed, err := strconv.Atoi(expStr)
+			if err == nil {
+				expVal = expParsed
+			}
+		}
+		text = text[:expIdx]
 	}
 	dot := strings.IndexByte(text, '.')
 	if dot < 0 {
-		return 0
+		return -expVal
 	}
-	return len(text) - dot - 1
+	return (len(text) - dot - 1) - expVal
 }
 
 func decimalPrecision(value Value) int {
@@ -155,22 +152,6 @@ func formatIntegerWithGrouping(value int64) string {
 	return sign + addThousandsSeparators(text)
 }
 
-func formatDecimalWithGrouping(value float64) string {
-	text := strconv.FormatFloat(value, 'f', -1, 64)
-	sign := ""
-	if strings.HasPrefix(text, "-") {
-		sign = "-"
-		text = text[1:]
-	}
-	whole := text
-	fraction := ""
-	if dot := strings.IndexByte(text, '.'); dot >= 0 {
-		whole = text[:dot]
-		fraction = text[dot:]
-	}
-	return sign + addThousandsSeparators(whole) + fraction
-}
-
 func addThousandsSeparators(text string) string {
 	if len(text) <= 3 {
 		return text
@@ -186,21 +167,6 @@ func addThousandsSeparators(text string) string {
 		out.WriteString(text[i : i+3])
 	}
 	return out.String()
-}
-
-func roundDecimalToScale(callee string, value float64, scaleValue int64, mode string) (float64, error) {
-	const maxLocalScale int64 = 15
-	if err := ensureFiniteDecimal(callee, value); err != nil {
-		return 0, err
-	}
-	if scaleValue > maxLocalScale || scaleValue < -maxLocalScale {
-		return 0, unsupportedCallError(fmt.Sprintf("%s absolute scale greater than %d is not supported by the local decimal model", callee, maxLocalScale))
-	}
-	rounded, err := roundLocalDecimalStringToScale(callee, value, scaleValue, mode)
-	if err != nil {
-		return 0, err
-	}
-	return rounded, nil
 }
 
 func roundDecimalValueToScale(callee string, value Value, scaleValue int64, mode string) (Value, error) {
@@ -230,22 +196,6 @@ func ensureFiniteDecimal(callee string, value float64) error {
 		return fmt.Errorf("%s value must be finite", callee)
 	}
 	return nil
-}
-
-func roundLocalDecimalStringToScale(callee string, value float64, scaleValue int64, mode string) (float64, error) {
-	rat := new(big.Rat)
-	if _, ok := rat.SetString(strconv.FormatFloat(value, 'f', -1, 64)); !ok {
-		return 0, fmt.Errorf("%s value cannot be represented by local decimal model", callee)
-	}
-	resultRat, err := roundRatToScale(callee, rat, scaleValue, mode)
-	if err != nil {
-		return 0, err
-	}
-	result, _ := resultRat.Float64()
-	if math.IsInf(result, 0) || math.IsNaN(result) {
-		return 0, fmt.Errorf("%s rounded value must be finite", callee)
-	}
-	return result, nil
 }
 
 func roundRatToScale(callee string, rat *big.Rat, scaleValue int64, mode string) (*big.Rat, error) {
@@ -279,13 +229,28 @@ func roundRatToScale(callee string, rat *big.Rat, scaleValue int64, mode string)
 }
 
 func ratFixedText(rat *big.Rat, scaleValue int64) string {
-	if scaleValue < 0 {
-		if rat.IsInt() {
-			return rat.Num().String()
-		}
-		return rat.FloatString(0)
+	if scaleValue >= 0 {
+		return rat.FloatString(int(scaleValue))
 	}
-	return rat.FloatString(int(scaleValue))
+	numStr := rat.Num().String()
+	sign := ""
+	if len(numStr) > 0 && numStr[0] == '-' {
+		sign = "-"
+		numStr = numStr[1:]
+	}
+	stripped := strings.TrimRight(numStr, "0")
+	if stripped == "" {
+		stripped = "0"
+	}
+	exponent := len(numStr) - 1
+	if stripped == "0" {
+		exponent = int(-scaleValue)
+	}
+	mantissa := stripped
+	if len(mantissa) > 1 {
+		mantissa = mantissa[:1] + "." + mantissa[1:]
+	}
+	return sign + mantissa + "E+" + strconv.Itoa(exponent)
 }
 
 func roundScaledRat(callee string, value *big.Rat, mode string) (*big.Int, error) {
@@ -342,11 +307,13 @@ func roundingModeStatic(args []Value) (Value, error) {
 	if len(args) != 1 || args[0].Kind != ValueString {
 		return Null, fmt.Errorf("RoundingMode.valueOf expects String")
 	}
-	mode := args[0].Text
-	if !isDecimalRoundingModeName(mode) {
-		return Null, fmt.Errorf("unsupported Decimal rounding mode %q", mode)
+	input := args[0].Text
+	mode, ok := canonicalDecimalRoundingModeName(input)
+	if !ok {
+		return Null, fmt.Errorf("unsupported Decimal rounding mode %q", input)
 	}
-	return Value{Kind: ValueObject, Type: "RoundingMode", Text: mode}, nil
+	value, _ := namedEnumStaticValue("RoundingMode", roundingModeNames, "RoundingMode."+mode)
+	return value, nil
 }
 
 var stringMemberMethodNames = []string{
@@ -358,7 +325,6 @@ var stringMemberMethodNames = []string{
 	"containsNone",
 	"indexOfAny",
 	"indexOfAnyBut",
-	"lastIndexOfAny",
 	"containsWhitespace",
 	"countMatches",
 	"escapeCsv",
@@ -368,11 +334,7 @@ var stringMemberMethodNames = []string{
 	"unescapeHtml3",
 	"unescapeHtml4",
 	"escapeXml",
-	"escapeXml10",
-	"escapeXml11",
 	"unescapeXml",
-	"unescapeXml10",
-	"unescapeXml11",
 	"escapeJava",
 	"unescapeJava",
 	"escapeEcmaScript",
@@ -390,16 +352,11 @@ var stringMemberMethodNames = []string{
 	"uncapitalize",
 	"indexOf",
 	"lastIndexOf",
-	"ordinalIndexOf",
-	"lastOrdinalIndexOf",
 	"replace",
-	"replaceOnce",
-	"replaceIgnoreCase",
 	"replaceAll",
 	"replaceFirst",
 	"template",
 	"remove",
-	"removeIgnoreCase",
 	"removeStart",
 	"removeStartIgnoreCase",
 	"removeEnd",
@@ -430,11 +387,9 @@ var stringMemberMethodNames = []string{
 	"mid",
 	"reverse",
 	"overlay",
-	"rotate",
 	"swapCase",
 	"abbreviate",
 	"difference",
-	"commonPrefix",
 	"getLevenshteinDistance",
 	"splitByCharacterType",
 	"splitByCharacterTypeCamelCase",
@@ -444,12 +399,7 @@ var stringMemberMethodNames = []string{
 	"substringBeforeLast",
 	"substringBetween",
 	"deleteWhitespace",
-	"strip",
-	"stripStart",
-	"stripEnd",
 	"stripHtmlTags",
-	"stripToNull",
-	"stripToEmpty",
 	"normalizeSpace",
 	"isWhitespace",
 	"isAlpha",
@@ -576,8 +526,6 @@ func stringStatic(callee string, args []Value) (Value, error) {
 			return Null, err
 		}
 		return Int(int64(distance)), nil
-	case "String.stripAll":
-		return stringStaticStripAll(args)
 	case "String.fromCharArray":
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, fmt.Errorf("String.fromCharArray expects List<Integer>")
@@ -632,7 +580,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 			}
 			return Int(int64(converted)), nil
 		case ValueDecimal:
-			converted, err := int32FromFloat(callee, args[0].Decimal)
+			converted, err := int32FromDecimalValue(callee, args[0])
 			if err != nil {
 				return Null, err
 			}
@@ -651,19 +599,19 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		case ValueNull:
 			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 		case ValueInt:
-			return args[0], nil
+			return longIntValue(args[0].Int), nil
 		case ValueDecimal:
-			converted, err := int64FromFloat(callee, args[0].Decimal)
+			converted, err := int64FromDecimalValue(callee, args[0])
 			if err != nil {
 				return Null, err
 			}
-			return Int(converted), nil
+			return longIntValue(converted), nil
 		case ValueString:
 			parsed, err := strconv.ParseInt(strings.TrimSpace(args[0].Text), 10, 64)
 			if err != nil {
 				return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s invalid integer %q", callee, args[0].Text))
 			}
-			return Int(parsed), nil
+			return longIntValue(parsed), nil
 		default:
 			return Null, fmt.Errorf("%s expects String or numeric argument", callee)
 		}
@@ -671,13 +619,33 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		if args[0].Kind == ValueNull {
 			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 		}
+		tagDouble := func(value Value) Value {
+			if callee == "Double.valueOf" {
+				return decimalAsDouble(value)
+			}
+			return value
+		}
 		switch args[0].Kind {
 		case ValueDecimal:
-			return args[0], nil
+			if callee == "Decimal.valueOf" && isFloatBackedDecimal(args[0]) {
+				return Decimal(args[0].Decimal), nil
+			}
+			return tagDouble(args[0]), nil
 		case ValueInt:
-			return Decimal(float64(args[0].Int)), nil
+			value, err := decimalFromText(strconv.FormatInt(args[0].Int, 10))
+			if err != nil {
+				return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s invalid numeric argument", callee))
+			}
+			return tagDouble(value), nil
 		case ValueString:
 			text := strings.TrimSpace(args[0].Text)
+			if callee == "Decimal.valueOf" {
+				value, err := decimalFromText(text)
+				if err != nil {
+					return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s invalid decimal %q", callee, args[0].Text))
+				}
+				return value, nil
+			}
 			parsed, err := strconv.ParseFloat(text, 64)
 			if err != nil {
 				return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s invalid decimal %q", callee, args[0].Text))
@@ -687,7 +655,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 			}
 			value := Decimal(parsed)
 			value.Text = text
-			return value, nil
+			return tagDouble(value), nil
 		default:
 			return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s expects String or numeric argument", callee))
 		}
@@ -746,43 +714,6 @@ func roundHalfEven(n float64) float64 {
 	return t - 1
 }
 
-func decimalDivide(dividend, divisor float64, scale int64, mode string) (float64, error) {
-	const maxLocalScale int64 = 15
-	if err := ensureFiniteDecimal("Decimal.divide", dividend); err != nil {
-		return 0, err
-	}
-	if err := ensureFiniteDecimal("Decimal.divide", divisor); err != nil {
-		return 0, err
-	}
-	if divisor == 0 {
-		return 0, fmt.Errorf("Decimal.divide division by zero")
-	}
-	if scale > maxLocalScale {
-		return 0, unsupportedCallError(fmt.Sprintf("Decimal.divide scale greater than %d is not supported by the local decimal model", maxLocalScale))
-	}
-	divRat := new(big.Rat)
-	if _, ok := divRat.SetString(strconv.FormatFloat(dividend, 'f', -1, 64)); !ok {
-		return 0, fmt.Errorf("Decimal.divide dividend cannot be represented")
-	}
-	divsRat := new(big.Rat)
-	if _, ok := divsRat.SetString(strconv.FormatFloat(divisor, 'f', -1, 64)); !ok {
-		return 0, fmt.Errorf("Decimal.divide divisor cannot be represented")
-	}
-	result := new(big.Rat).Quo(divRat, divsRat)
-	factor := new(big.Int).Exp(big.NewInt(10), big.NewInt(scale), nil)
-	scaled := new(big.Rat).Mul(result, new(big.Rat).SetInt(factor))
-	rounded, err := roundScaledRat("Decimal.divide", scaled, mode)
-	if err != nil {
-		return 0, err
-	}
-	resultRat := new(big.Rat).SetFrac(rounded, factor)
-	f, _ := resultRat.Float64()
-	if math.IsInf(f, 0) || math.IsNaN(f) {
-		return 0, fmt.Errorf("Decimal.divide result must be finite")
-	}
-	return f, nil
-}
-
 func int32FromFloat(name string, value float64) (int32, error) {
 	const int32MinFloat = -2147483648.0
 	const int32MaxExclusiveFloat = 2147483648.0
@@ -795,39 +726,18 @@ func int32FromFloat(name string, value float64) (int32, error) {
 	return int32(value), nil
 }
 
-const (
-	patternFlagUnixLines             int64 = 1
-	patternFlagCaseInsensitive       int64 = 2
-	patternFlagComments              int64 = 4
-	patternFlagMultiline             int64 = 8
-	patternFlagLiteral               int64 = 16
-	patternFlagDotall                int64 = 32
-	patternFlagUnicodeCase           int64 = 64
-	patternFlagCanonEq               int64 = 128
-	patternFlagUnicodeCharacterClass int64 = 256
-)
-
-const patternSupportedFlags = patternFlagCaseInsensitive | patternFlagMultiline | patternFlagLiteral | patternFlagDotall | patternFlagUnicodeCase | patternFlagUnicodeCharacterClass
-
 func patternCompile(args []Value) (Value, error) {
-	if len(args) != 1 && len(args) != 2 {
-		return Null, fmt.Errorf("Pattern.compile expects regex String and optional Integer flags")
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, fmt.Errorf("Pattern.compile expects regex String")
 	}
-	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
-		return Null, fmt.Errorf("Pattern.compile expects regex String and optional Integer flags")
-	}
-	flags := int64(0)
-	if len(args) == 2 {
-		flags = args[1].Int
-	}
-	regexp2Source, _, err := compileRegexp2Pattern("Pattern.compile", args[0].Text, flags)
+	regexp2Source, _, err := compileRegexp2PatternWithException("Pattern.compile", args[0].Text, "StringException")
 	if err != nil {
 		return Null, err
 	}
 	pattern := Object("Pattern")
 	pattern.Fields["source"] = args[0]
 	pattern.Fields["regexp2Source"] = String(regexp2Source)
-	if regexpSource, lookaheadSource, backreferencePairs, err := compilePatternSourceWithMetadata("Pattern.compile", args[0].Text, flags); err == nil {
+	if regexpSource, lookaheadSource, backreferencePairs, err := compilePatternSourceWithMetadata("Pattern.compile", args[0].Text); err == nil {
 		if _, err := regexp.Compile(regexpSource); err == nil {
 			pattern.Fields["regexpSource"] = String(regexpSource)
 			if lookaheadSource != "" {
@@ -840,7 +750,6 @@ func patternCompile(args []Value) (Value, error) {
 			}
 		}
 	}
-	pattern.Fields["flags"] = Int(flags)
 	return pattern, nil
 }
 
@@ -856,13 +765,13 @@ func patternMatches(args []Value) (Value, error) {
 	if err != nil {
 		return Null, err
 	}
-	plan, err := compileRegexp2PlanForInput("Pattern.matches", pattern, 0, input)
+	plan, err := compileRegexp2PlanForInputWithException("Pattern.matches", pattern, input, "StringException")
 	if err != nil {
 		return Null, err
 	}
 	match, err := plan.findValidStartingAt(input, 0)
 	if err != nil {
-		return Null, newPatternSyntaxExceptionError(pattern, err)
+		return Null, newRegexSyntaxError("StringException", pattern, err)
 	}
 	inputRunes := utf8.RuneCountInString(input)
 	matched := match != nil && match.Index == 0 && match.Length == inputRunes
@@ -870,9 +779,16 @@ func patternMatches(args []Value) (Value, error) {
 }
 
 func newPatternSyntaxExceptionError(pattern string, err error) error {
+	return newRegexSyntaxError("PatternSyntaxException", pattern, err)
+}
+
+func newRegexSyntaxError(exceptionType, pattern string, err error) error {
 	description := err.Error()
 	if strings.Contains(description, "unterminated [] set") {
 		description = "missing closing ]"
+	}
+	if exceptionType != "PatternSyntaxException" {
+		return newExceptionError("System."+exceptionType, description)
 	}
 	value := Object("PatternSyntaxException")
 	value.Fields["message"] = String(description)
@@ -899,11 +815,6 @@ func matcherQuoteReplacement(args []Value) (Value, error) {
 	}
 	quoted := strings.NewReplacer(`\`, `\\`, `$`, `\$`).Replace(args[0].Text)
 	return String(quoted), nil
-}
-
-func compilePatternSource(callee, source string, flags int64) (string, error) {
-	regexpSource, _, _, err := compilePatternSourceWithMetadata(callee, source, flags)
-	return regexpSource, err
 }
 
 type regexNegativeLookaheadAssertion struct {
@@ -952,44 +863,27 @@ func compilePatternMatchesSource(source string) (string, []string, []regexNegati
 	return regexpSource, positiveLookaheads, negativeLookaheads, nil
 }
 
-func compilePatternSourceWithMetadata(callee, source string, flags int64) (string, string, string, error) {
-	if flags < 0 {
-		return "", "", "", unsupportedCallError(callee + " negative regex flags")
-	}
-	if unsupported := flags &^ patternSupportedFlags; unsupported != 0 {
-		return "", "", "", unsupportedCallError(callee + " " + unsupportedPatternFlagsFeature(unsupported))
-	}
+func compilePatternSourceWithMetadata(callee, source string) (string, string, string, error) {
 	regexpSource := source
 	lookaheadSource := ""
 	backreferencePairs := ""
-	if flags&patternFlagLiteral != 0 {
-		regexpSource = regexp.QuoteMeta(source)
-	} else {
-		converted, err := javaRegexQuoteEscapesToGo(source)
-		if err != nil {
-			return "", "", "", unsupportedCallError(callee + " " + err.Error())
-		}
-		regexpSource = converted
-		regexpSource, backreferencePairs = rewriteJavaNumericBackreferences(regexpSource)
-		regexpSource = stripFixedCountPossessiveQuantifiers(regexpSource)
-		if stripped, lookahead, ok := stripTerminalPositiveLookahead(regexpSource); ok {
-			regexpSource = stripped
-			lookaheadSource = stripFixedCountPossessiveQuantifiers(lookahead)
-		}
-		if feature := unsupportedJavaRegexFeature(regexpSource); feature != "" {
-			return "", "", "", unsupportedCallError(callee + " " + feature)
-		}
-		if lookaheadSource != "" {
-			if feature := unsupportedJavaRegexFeature(lookaheadSource); feature != "" {
-				return "", "", "", unsupportedCallError(callee + " " + feature)
-			}
-		}
+	converted, err := javaRegexQuoteEscapesToGo(source)
+	if err != nil {
+		return "", "", "", unsupportedCallError(callee + " " + err.Error())
 	}
-	prefix := patternFlagPrefix(flags)
-	if prefix != "" {
-		regexpSource = prefix + regexpSource
-		if lookaheadSource != "" {
-			lookaheadSource = prefix + lookaheadSource
+	regexpSource = converted
+	regexpSource, backreferencePairs = rewriteJavaNumericBackreferences(regexpSource)
+	regexpSource = stripFixedCountPossessiveQuantifiers(regexpSource)
+	if stripped, lookahead, ok := stripTerminalPositiveLookahead(regexpSource); ok {
+		regexpSource = stripped
+		lookaheadSource = stripFixedCountPossessiveQuantifiers(lookahead)
+	}
+	if feature := unsupportedJavaRegexFeature(regexpSource); feature != "" {
+		return "", "", "", unsupportedCallError(callee + " " + feature)
+	}
+	if lookaheadSource != "" {
+		if feature := unsupportedJavaRegexFeature(lookaheadSource); feature != "" {
+			return "", "", "", unsupportedCallError(callee + " " + feature)
 		}
 	}
 	return regexpSource, lookaheadSource, backreferencePairs, nil
@@ -1085,47 +979,6 @@ func decodeRegexBackreferencePairs(encoded string) []regexBackreferencePair {
 		pairs = append(pairs, regexBackreferencePair{group: group, matchGroup: matchGroup})
 	}
 	return pairs
-}
-
-func patternFlagPrefix(flags int64) string {
-	var enabled strings.Builder
-	if flags&patternFlagCaseInsensitive != 0 {
-		enabled.WriteByte('i')
-	}
-	if flags&patternFlagMultiline != 0 {
-		enabled.WriteByte('m')
-	}
-	if flags&patternFlagDotall != 0 {
-		enabled.WriteByte('s')
-	}
-	if enabled.Len() == 0 {
-		return ""
-	}
-	return "(?" + enabled.String() + ")"
-}
-
-func unsupportedPatternFlagsFeature(flags int64) string {
-	names := []string{}
-	if flags&patternFlagUnixLines != 0 {
-		names = append(names, "UNIX_LINES")
-	}
-	if flags&patternFlagComments != 0 {
-		names = append(names, "COMMENTS")
-	}
-	if flags&patternFlagCanonEq != 0 {
-		names = append(names, "CANON_EQ")
-	}
-	if flags&patternFlagUnicodeCharacterClass != 0 {
-		names = append(names, "UNICODE_CHARACTER_CLASS")
-	}
-	known := patternFlagUnixLines | patternFlagComments | patternFlagCanonEq | patternFlagUnicodeCharacterClass
-	if unknown := flags &^ (patternSupportedFlags | known); unknown != 0 {
-		names = append(names, fmt.Sprintf("unknown flags 0x%x", unknown))
-	}
-	if len(names) == 0 {
-		return "unsupported regex flags"
-	}
-	return "unsupported regex flags " + strings.Join(names, ",")
 }
 
 func patternRegexpSource(pattern Value) (string, error) {
@@ -2545,14 +2398,10 @@ func stringRegexSplit(text string, args []Value) ([]string, error) {
 }
 
 func splitRegex(name, pattern, text string, limit int64) ([]string, error) {
-	return splitRegexWithFlags(name, pattern, 0, text, limit)
-}
-
-func splitRegexWithFlags(name, pattern string, flags int64, text string, limit int64) ([]string, error) {
 	if pattern == "" {
 		return splitStringCharacters(text, limit), nil
 	}
-	return splitRegexRegexp2WithFlags(name, pattern, flags, text, limit)
+	return splitRegexRegexp2(name, pattern, text, limit)
 }
 
 func splitStringCharacters(text string, limit int64) []string {
@@ -2667,7 +2516,7 @@ func patternSplitValue(pattern Value, args []Value) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return splitRegexWithFlags("Pattern.split", source, patternFlags(pattern), args[0].Text, limit)
+	return splitRegex("Pattern.split", source, args[0].Text, limit)
 }
 
 func unsupportedJavaRegexFeature(source string) string {
@@ -3427,6 +3276,15 @@ func formatString(pattern string, args []Value, display func(Value) (string, err
 }
 
 func formatStringTokenCached(token string, args []Value, display func(Value) (string, error), cache map[int]string) (string, error) {
+	if index, formatType, typed, err := formatStringTypedTokenParts(token); typed {
+		if err != nil {
+			return "", err
+		}
+		if index >= len(args) {
+			return "{" + strconv.Itoa(index) + "}", nil
+		}
+		return formatStringTypedToken(formatType, args[index])
+	}
 	index, ok, err := formatStringTokenIndex(token)
 	if err != nil {
 		return "", err
@@ -3466,8 +3324,14 @@ func formatStringToken(token string, args []Value, display func(Value) (string, 
 	if token == "" {
 		return "", fmt.Errorf("String.format empty argument index")
 	}
-	if strings.Contains(token, ",") {
-		return "", unsupportedCallError("String.format MessageFormat typed format elements")
+	if index, formatType, typed, err := formatStringTypedTokenParts(token); typed {
+		if err != nil {
+			return "", err
+		}
+		if index >= len(args) {
+			return "{" + strconv.Itoa(index) + "}", nil
+		}
+		return formatStringTypedToken(formatType, args[index])
 	}
 	index, err := strconv.Atoi(token)
 	if err != nil || index < 0 {
@@ -3477,6 +3341,47 @@ func formatStringToken(token string, args []Value, display func(Value) (string, 
 		return "{" + token + "}", nil
 	}
 	return display(args[index])
+}
+
+func formatStringTypedTokenParts(token string) (int, string, bool, error) {
+	comma := strings.IndexByte(token, ',')
+	if comma < 0 {
+		return 0, "", false, nil
+	}
+	indexToken := strings.TrimSpace(token[:comma])
+	if indexToken == "" {
+		return 0, "", true, fmt.Errorf("String.format empty argument index")
+	}
+	index, err := strconv.Atoi(indexToken)
+	if err != nil || index < 0 {
+		return 0, "", true, fmt.Errorf("String.format invalid argument index %q", token)
+	}
+	formatToken := strings.TrimSpace(token[comma+1:])
+	if styleComma := strings.IndexByte(formatToken, ','); styleComma >= 0 {
+		formatToken = strings.TrimSpace(formatToken[:styleComma])
+	}
+	if formatToken == "" {
+		return 0, "", true, newExceptionError("StringException", fmt.Sprintf("Bad argument syntax: [at pattern index %d] %q", comma, token+"}"))
+	}
+	switch strings.ToLower(formatToken) {
+	case "number", "date", "time", "choice":
+	default:
+		return 0, "", true, newExceptionError("StringException", fmt.Sprintf("Unknown format type %q", formatToken))
+	}
+	return index, formatToken, true, nil
+}
+
+func formatStringTypedToken(formatType string, value Value) (string, error) {
+	switch strings.ToLower(formatType) {
+	case "number":
+		return "", newExceptionError("StringException", "Cannot format given Object as a Number")
+	case "date", "time":
+		return "", newExceptionError("StringException", "Cannot format given Object (java.lang.String) as a Date")
+	case "choice":
+		return "", newExceptionError("StringException", fmt.Sprintf("'%s' is not a Number", value.String()))
+	default:
+		return "", newExceptionError("StringException", fmt.Sprintf("Unknown format type %q", formatType))
+	}
 }
 
 func stringAbbreviate(text string, args []Value) (string, error) {
@@ -3847,6 +3752,9 @@ func callObjectMember(receiver Value, method string, args []Value) (Value, bool,
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Object.toString expects 0 arguments")
 		}
+		if receiver.Kind == ValueList || receiver.Kind == ValueSet || receiver.Kind == ValueMap {
+			return String(apexCollectionString(receiver)), true, nil
+		}
 		return String(receiver.String()), true, nil
 	case "equals":
 		if len(args) != 1 {
@@ -3861,6 +3769,9 @@ func callObjectMember(receiver Value, method string, args []Value) (Value, bool,
 	case "clone":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Object.clone expects 0 arguments")
+		}
+		if receiver.Kind == ValueObject && strings.EqualFold(receiver.Type, "AccessLevel") {
+			return accessLevelClone(receiver), true, nil
 		}
 		return cloneValue(receiver), true, nil
 	default:
@@ -3929,6 +3840,20 @@ func valueHashCode(value Value) int32 {
 		}
 		return hash
 	case ValueObject:
+		if isDescribeSObjectResultType(value.Type) {
+			if sObjectType, ok := value.Fields["sObjectType"]; ok && sObjectType.Kind == ValueObject && strings.EqualFold(sObjectType.Type, "Schema.SObjectType") {
+				if objectName, ok := sObjectType.Fields["object"]; ok && objectName.Kind == ValueString {
+					return javaStringHashCode(strings.ToLower(sObjectType.Type) + ":" + schemaTokenObjectKey(objectName.Text))
+				}
+			}
+		}
+		if isDescribeFieldResultType(value.Type) {
+			objectName, objectOK := value.Fields["sObjectName"]
+			fieldName, fieldOK := value.Fields["name"]
+			if objectOK && fieldOK && objectName.Kind == ValueString && fieldName.Kind == ValueString {
+				return javaStringHashCode("schema.describefieldresult:" + strings.ToLower(objectName.Text) + "." + strings.ToLower(fieldName.Text))
+			}
+		}
 		if value.Type == "Type" {
 			if typeName := typeValueText(value); typeName != "" {
 				return javaStringHashCode(typeName)
@@ -3990,17 +3915,6 @@ func (vm *VM) callIdMember(receiver Value, method string, args []Value) (Value, 
 			return String(idText), true, nil
 		}
 		return String(idText[:15]), true, nil
-	case "to18":
-		if len(args) != 0 {
-			return Null, true, fmt.Errorf("Id.to18 expects 0 arguments")
-		}
-		if err := validateApexID(idText); err != nil {
-			return Null, true, err
-		}
-		if len(idText) == 18 {
-			return String(idText), true, nil
-		}
-		return String(apexIDTo18(idText)), true, nil
 	case "getsobjecttype":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Id.getSObjectType expects 0 arguments")
@@ -4049,7 +3963,7 @@ func displayIDText(text string) string {
 
 func idMemberReceiver(value Value, method string) bool {
 	switch strings.ToLower(method) {
-	case "equals", "to15", "to18", "getsobjecttype":
+	case "equals", "to15", "getsobjecttype":
 	default:
 		return false
 	}

@@ -1,7 +1,7 @@
 # Debug Apex in VS Code With Breakpoints
 
 <div class="docs-intro">
-  <p class="docs-intro-eyebrow">Guided help</p>
+  <p class="docs-intro-eyebrow">Task guide</p>
   <p>Set a normal Apex gutter breakpoint and debug a local test through Glade DAP.</p>
   <ul>
     <li>Set a breakpoint in a path the selected test executes.</li>

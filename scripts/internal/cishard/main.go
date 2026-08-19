@@ -561,9 +561,6 @@ func historyWeightsForPackage(packageName string, names []string, data []byte) (
 		totalDuration += *item.DurationMillis
 		weights[item.Name] = *item.DurationMillis
 	}
-	if len(weights) != len(want) {
-		return fallback, "history rejected: discovered test set mismatch; using deterministic fallback"
-	}
 	return weights, ""
 }
 

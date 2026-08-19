@@ -3,6 +3,7 @@ package typesys
 import (
 	"encoding/json"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 
@@ -33,7 +34,9 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 
 	deployResult := requireStandardSymbol(t, symbols, "Metadata.DeployResult")
 	requireStandardProperty(t, deployResult, "errorMessage", "String")
-	requireStandardProperty(t, deployResult, "errorStatusCode", "Metadata.StatusCode")
+	requireStandardProperty(t, deployResult, "errorStatusCode", "String")
+	deployMessage := requireStandardSymbol(t, symbols, "Metadata.DeployMessage")
+	requireStandardProperty(t, deployMessage, "problemType", "Metadata.DeployProblemType")
 
 	settings := requireStandardSymbol(t, symbols, "ConnectApi.OrganizationSettings")
 	requireStandardProperty(t, settings, "userSettings", "ConnectApi.UserSettings")
@@ -49,6 +52,176 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 		if symbol.Kind != apexast.DeclarationInterface {
 			t.Fatalf("%s kind = %q, want interface", name, symbol.Kind)
 		}
+	}
+}
+
+func TestStandardPlatformSymbolsDatabaseSyncAccessorsUseDateReturns(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	deletedRecord := requireStandardSymbol(t, symbols, "Database.DeletedRecord")
+	deletedResult := requireStandardSymbol(t, symbols, "Database.GetDeletedResult")
+	updatedResult := requireStandardSymbol(t, symbols, "Database.GetUpdatedResult")
+
+	requireStandardMethodReturn(t, deletedRecord, "getDeletedDate", []string{}, "Date", false)
+	requireStandardMethodReturn(t, deletedResult, "getEarliestDateAvailable", []string{}, "Date", false)
+	requireStandardMethodReturn(t, deletedResult, "getLatestDateCovered", []string{}, "Date", false)
+	requireStandardMethodReturn(t, updatedResult, "getLatestDateCovered", []string{}, "Date", false)
+}
+
+func TestUserProfilesSetPhotoUsesIntegerFourthParameter(t *testing.T) {
+	var productSpec *StandardSymbolSpec
+	for i := range productNamespaceSymbolSpecs {
+		if strings.EqualFold(productNamespaceSymbolSpecs[i].Name, "ConnectApi.UserProfiles") {
+			productSpec = &productNamespaceSymbolSpecs[i]
+			break
+		}
+	}
+	if productSpec == nil {
+		t.Fatal("missing product namespace ConnectApi.UserProfiles symbol spec")
+	}
+
+	var rawInteger, rawObject bool
+	for _, method := range productSpec.Methods {
+		if !strings.EqualFold(method.Name, "setPhoto") || !method.Static {
+			continue
+		}
+		switch strings.Join(method.Parameters, ",") {
+		case "String,String,String,Integer":
+			rawInteger = true
+		case "String,String,String,Object":
+			rawObject = true
+		}
+	}
+	if !rawInteger {
+		t.Fatal("product namespace ConnectApi.UserProfiles.setPhoto is missing the Integer overload")
+	}
+	if rawObject {
+		t.Fatal("product namespace ConnectApi.UserProfiles.setPhoto retains the stale Object overload")
+	}
+
+	userProfiles := requireStandardSymbol(t, StandardPlatformSymbols(), "ConnectApi.UserProfiles")
+	requireStandardMethod(t, userProfiles, "setPhoto", []string{"String", "String", "ConnectApi.BinaryInput"}, true)
+	requireStandardMethod(t, userProfiles, "setPhoto", []string{"String", "String", "String", "Integer"}, true)
+	requireStandardMethodReturn(t, userProfiles, "setPhoto", []string{"String", "String", "ConnectApi.BinaryInput"}, "ConnectApi.Photo", true)
+	requireStandardMethodReturn(t, userProfiles, "setPhoto", []string{"String", "String", "String", "Integer"}, "ConnectApi.Photo", true)
+	requireNoStandardMethod(t, userProfiles, "setPhoto", []string{"String", "String", "String", "Object"}, true)
+}
+
+func TestGeneratedSystemStubSymbolsBusinessHoursUseApi67Signatures(t *testing.T) {
+	var businessHours *StandardSymbolSpec
+	for i := range systemStubSymbolSpecs {
+		if strings.EqualFold(systemStubSymbolSpecs[i].Name, "BusinessHours") {
+			businessHours = &systemStubSymbolSpecs[i]
+			break
+		}
+	}
+	if businessHours == nil {
+		t.Fatal("missing generated BusinessHours symbol spec")
+	}
+
+	for _, want := range []struct {
+		name   string
+		params []string
+	}{{"add", []string{"Id", "Datetime", "Long"}},
+		{"addGmt", []string{"Id", "Datetime", "Long"}},
+		{"diff", []string{"String", "Datetime", "Datetime"}},
+		{"isWithin", []string{"String", "Datetime"}},
+		{"nextStartDate", []string{"Id", "Datetime"}}} {
+		found := false
+		for _, method := range businessHours.Methods {
+			if !strings.EqualFold(method.Name, want.name) {
+				continue
+			}
+			found = true
+			if len(method.ParameterSpecs) != len(want.params) {
+				t.Fatalf("generated BusinessHours.%s params = %#v, want %#v", want.name, method.ParameterSpecs, want.params)
+			}
+			for i, param := range method.ParameterSpecs {
+				if !strings.EqualFold(param.Type, want.params[i]) {
+					t.Fatalf("generated BusinessHours.%s parameter %d = %q, want %q", want.name, i, param.Type, want.params[i])
+				}
+			}
+		}
+		if !found {
+			t.Fatalf("missing generated BusinessHours.%s method", want.name)
+		}
+	}
+}
+
+func TestGeneratedSystemStubSymbolsProcessPluginIsInterface(t *testing.T) {
+	plugin := requireStandardSymbol(t, StandardPlatformSymbols(), "Process.Plugin")
+	if plugin.Kind != apexast.DeclarationInterface {
+		t.Fatalf("Process.Plugin kind = %q, want interface", plugin.Kind)
+	}
+}
+
+func TestGeneratedSystemStubSymbolsSystemDebugUsesSalesforceSignatures(t *testing.T) {
+	var system *StandardSymbolSpec
+	for i := range systemStubSymbolSpecs {
+		if strings.EqualFold(systemStubSymbolSpecs[i].Name, "System") {
+			system = &systemStubSymbolSpecs[i]
+			break
+		}
+	}
+	if system == nil {
+		t.Fatal("missing generated System symbol spec")
+	}
+	for _, method := range system.Methods {
+		if !strings.EqualFold(method.Name, "debug") || !method.Static {
+			continue
+		}
+		params := method.ParameterSpecs
+		if len(params) == 0 && len(method.Parameters) > 0 {
+			params = make([]StandardParameterSpec, len(method.Parameters))
+			for i, typ := range method.Parameters {
+				params[i].Type = typ
+			}
+		}
+		if len(params) == 2 && strings.EqualFold(params[0].Type, "Object") && strings.EqualFold(params[1].Type, "Object") {
+			t.Fatalf("generated System.debug retains Salesforce-invalid Object,Object overload: %#v", method)
+		}
+	}
+}
+
+func TestStandardPlatformSymbolsDataWeaveMatchesSalesforceCompileShape(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	for _, name := range []string{"DataWeave.Script", "DataWeave.Result"} {
+		symbol := requireStandardSymbol(t, symbols, name)
+		for _, member := range symbol.Members {
+			if member.Kind == apexast.DeclarationConstructor {
+				t.Fatalf("Salesforce-invalid DataWeave constructor on %s: %#v", name, member)
+			}
+		}
+	}
+	result := requireStandardSymbol(t, symbols, "DataWeave.Result")
+	for _, member := range result.Members {
+		if member.Kind == apexast.DeclarationMethod && strings.EqualFold(member.Name, "getMimeType") {
+			t.Fatalf("Salesforce-invalid DataWeave.Result.getMimeType member: %#v", member)
+		}
+		if member.Kind == apexast.DeclarationProperty && (strings.EqualFold(member.Name, "value") || strings.EqualFold(member.Name, "valueAsString") || strings.EqualFold(member.Name, "mimeType")) {
+			t.Fatalf("Salesforce-invalid DataWeave.Result.%s property: %#v", member.Name, member)
+		}
+	}
+}
+
+func TestStandardPlatformSymbolsBusinessHoursUseApi67Signatures(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	businessHours := requireStandardSymbol(t, symbols, "BusinessHours")
+
+	for _, method := range []struct {
+		name   string
+		params []string
+	}{{"add", []string{"Id", "Datetime", "Long"}},
+		{"addGmt", []string{"Id", "Datetime", "Long"}},
+		{"diff", []string{"String", "Datetime", "Datetime"}},
+		{"isWithin", []string{"String", "Datetime"}},
+		{"nextStartDate", []string{"Id", "Datetime"}}} {
+		requireStandardMethod(t, businessHours, method.name, method.params, true)
+		staleType := "String"
+		if method.params[0] == "String" {
+			staleType = "Id"
+		}
+		staleParams := append([]string{staleType}, method.params[1:]...)
+		requireNoStandardMethod(t, businessHours, method.name, staleParams, true)
 	}
 }
 
@@ -216,18 +389,10 @@ func TestStandardPlatformSymbolsQualifySearchSuggestionOptions(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 	search := requireStandardSymbol(t, symbols, "Search")
 
-	for _, member := range search.Members {
-		if member.Kind != apexast.DeclarationMethod || !strings.EqualFold(member.Name, "suggest") {
-			continue
-		}
-		for _, param := range member.Parameters {
-			if strings.EqualFold(param.Name, "options") && param.Type == "Object" {
-				t.Fatalf("Search.suggest has Object options parameter; use Search.SuggestionOption: %#v", member.Parameters)
-			}
-		}
-	}
 	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Search.SuggestionOption"}, true)
 	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Search.SuggestionOption", "AccessLevel"}, true)
+	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Object"}, true)
+	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Object", "Object"}, true)
 }
 
 func TestStandardPlatformSymbolsIncludeApexPagesControllerShapeRows(t *testing.T) {
@@ -299,14 +464,150 @@ func TestStandardPlatformSymbolsIncludeAsyncMethodShapeRows(t *testing.T) {
 	requireNoStandardSymbol(t, symbols, "System.isQueueable")
 }
 
-func TestStandardPlatformSymbolsIncludeBaseExceptionConstructors(t *testing.T) {
+func TestStandardPlatformSymbolsMatchAPI67ExceptionConstructorVisibility(t *testing.T) {
 	symbols := StandardPlatformSymbols()
+	want := map[string][]string{
+		"Exception":                      {},
+		"InvalidParameterValueException": {"String,String"},
+		"NoAccessException":              {""},
+		"NoDataFoundException":           {""},
+		"NullPointerException":           {""},
+	}
+	for name, expected := range want {
+		t.Run(name, func(t *testing.T) {
+			actual := standardConstructorSignatures(requireStandardSymbol(t, symbols, name))
+			sort.Strings(expected)
+			if len(actual) != len(expected) || strings.Join(actual, "\x00") != strings.Join(expected, "\x00") {
+				t.Fatalf("%s constructors = %#v, want exactly %#v", name, actual, expected)
+			}
+		})
+	}
 
 	exception := requireStandardSymbol(t, symbols, "Exception")
-	requireStandardConstructor(t, exception, []string{})
-	requireStandardConstructor(t, exception, []string{"Exception"})
-	requireStandardConstructor(t, exception, []string{"String"})
-	requireStandardConstructor(t, exception, []string{"String", "Exception"})
+	if !hasModifier(exception.Modifiers, "abstract") || !exception.ConstructorsAuthoritative {
+		t.Fatalf("Exception platform metadata = modifiers:%#v constructorsAuthoritative:%v", exception.Modifiers, exception.ConstructorsAuthoritative)
+	}
+	encoded, err := json.Marshal(exception)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(encoded), "constructorsAuthoritative") || strings.Contains(string(encoded), "__glade_") {
+		t.Fatalf("internal constructor metadata leaked into symbol JSON: %s", encoded)
+	}
+}
+
+func TestStandardPlatformSymbolsMatchAPI67ReportsConstructorVisibility(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	// API 67 rejects no-arg constructors on these 29 Reports types.
+	hiddenNoArg := []string{
+		"reports.AggregateColumn",
+		"reports.DetailColumn",
+		"reports.Dimension",
+		"reports.FilterOperator",
+		"reports.FilterValue",
+		"reports.GroupingColumn",
+		"reports.GroupingValue",
+		"reports.ReportCurrency",
+		"reports.ReportDataCell",
+		"reports.ReportDescribeResult",
+		"reports.ReportDetailRow",
+		"reports.ReportDivisionInfo",
+		"reports.ReportExtendedMetadata",
+		"reports.ReportFact",
+		"reports.ReportFactWithDetails",
+		"reports.ReportFactWithSummaries",
+		"reports.ReportInstance",
+		"reports.ReportInstanceAttributes",
+		"reports.ReportResults",
+		"reports.ReportScopeInfo",
+		"reports.ReportScopeValue",
+		"reports.ReportTypeColumn",
+		"reports.ReportTypeColumnCategory",
+		"reports.ReportTypeMetadata",
+		"reports.StandardDateFilterDuration",
+		"reports.StandardDateFilterDurationGroup",
+		"reports.StandardFilterInfo",
+		"reports.StandardFilterInfoPicklist",
+		"reports.SummaryValue",
+	}
+	for _, name := range hiddenNoArg {
+		sym := requireStandardSymbol(t, symbols, name)
+		sigs := standardConstructorSignatures(sym)
+		if len(sigs) != 0 {
+			t.Fatalf("%s constructors = %#v, want no constructors", name, sigs)
+		}
+	}
+
+	// The eight permitted no-arg Report constructors remain accepted.
+	permittedNoArg := []string{
+		"reports.BucketField",
+		"reports.BucketFieldValue",
+		"reports.ReportCsf",
+		"reports.ReportFilter",
+		"reports.ReportManager",
+		"reports.ReportMetadata",
+		"reports.ReportType",
+		"reports.SortColumn",
+	}
+	for _, name := range permittedNoArg {
+		sym := requireStandardSymbol(t, symbols, name)
+		sigs := standardConstructorSignatures(sym)
+		if len(sigs) == 0 {
+			t.Fatalf("%s has no constructors, want at least no-arg constructor", name)
+		}
+		hasNoArg := false
+		for _, sig := range sigs {
+			if sig == "" {
+				hasNoArg = true
+				break
+			}
+		}
+		if !hasNoArg {
+			t.Fatalf("%s constructors = %#v, missing no-arg constructor", name, sigs)
+		}
+	}
+}
+
+func TestStandardPlatformSymbolsSelectOptionHasOnlyDocumentedConstructors(t *testing.T) {
+	selectOption := requireStandardSymbol(t, StandardPlatformSymbols(), "SelectOption")
+	want := [][]string{{"String", "String"}, {"String", "String", "Boolean"}}
+	var got [][]string
+	for _, member := range selectOption.Members {
+		if member.Kind != apexast.DeclarationConstructor {
+			continue
+		}
+		params := make([]string, len(member.Parameters))
+		for i, parameter := range member.Parameters {
+			params[i] = parameter.Type
+		}
+		got = append(got, params)
+	}
+	if len(got) != len(want) {
+		t.Fatalf("SelectOption constructors = %#v, want exactly %#v", got, want)
+	}
+	for _, params := range want {
+		found := false
+		for _, candidate := range got {
+			if len(candidate) != len(params) {
+				continue
+			}
+			match := true
+			for i := range params {
+				if !strings.EqualFold(candidate[i], params[i]) {
+					match = false
+					break
+				}
+			}
+			if match {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("SelectOption constructors = %#v, missing %#v", got, params)
+		}
+	}
 }
 
 func TestStandardPlatformSymbolsCorrectInboundEmailAndUnsupportedOperationExceptionShapes(t *testing.T) {
@@ -326,6 +627,11 @@ func TestStandardPlatformSymbolsCorrectInboundEmailAndUnsupportedOperationExcept
 	unsupported := requireStandardSymbol(t, symbols, "UnsupportedOperationException")
 	if unsupported.SuperClass != "Exception" {
 		t.Fatalf("UnsupportedOperationException superclass = %q, want Exception", unsupported.SuperClass)
+	}
+
+	visualforce := requireStandardSymbol(t, symbols, "VisualforceException")
+	if visualforce.SuperClass != "Exception" {
+		t.Fatalf("VisualforceException superclass = %q, want Exception", visualforce.SuperClass)
 	}
 }
 
@@ -400,20 +706,37 @@ func TestStandardPlatformSymbolsIncludeLabelLimitsDecimalAndTargetExceptionShape
 	requireStandardMethodType(t, limits, "getLimitAsyncCalls", "Integer")
 
 	invalidParameter := requireStandardSymbol(t, symbols, "InvalidParameterValueException")
-	requireStandardConstructor(t, invalidParameter, []string{})
-	requireStandardConstructor(t, invalidParameter, []string{"Exception"})
-	requireStandardConstructor(t, invalidParameter, []string{"String"})
+	if got := standardConstructorSignatures(invalidParameter); len(got) != 1 || got[0] != "String,String" {
+		t.Fatalf("InvalidParameterValueException constructors = %#v, want String,String", got)
+	}
 
 	for _, name := range []string{"NoAccessException", "NoDataFoundException", "NullPointerException"} {
 		exceptionType := requireStandardSymbol(t, symbols, name)
-		requireStandardConstructor(t, exceptionType, []string{"Exception"})
-		requireStandardConstructor(t, exceptionType, []string{"String"})
-		requireStandardConstructor(t, exceptionType, []string{"String", "Exception"})
+		if got := standardConstructorSignatures(exceptionType); len(got) != 1 || got[0] != "" {
+			t.Fatalf("%s constructors = %#v, want only zero-argument constructor", name, got)
+		}
 	}
 
 	touchHandled := requireStandardSymbol(t, symbols, "TouchHandledException")
-	requireStandardConstructor(t, touchHandled, []string{})
-	requireStandardConstructor(t, touchHandled, []string{"String", "Exception"})
+	if got := standardConstructorSignatures(touchHandled); len(got) != 1 || got[0] != "String" {
+		t.Fatalf("TouchHandledException constructors = %#v, want only String constructor", got)
+	}
+}
+
+func standardConstructorSignatures(symbol TypeSymbol) []string {
+	var signatures []string
+	for _, member := range symbol.Members {
+		if member.Kind != apexast.DeclarationConstructor {
+			continue
+		}
+		params := make([]string, len(member.Parameters))
+		for i, parameter := range member.Parameters {
+			params[i] = parameter.Type
+		}
+		signatures = append(signatures, strings.Join(params, ","))
+	}
+	sort.Strings(signatures)
+	return signatures
 }
 
 func TestStandardPlatformSymbolsIncludeServiceBackedSystemAndStdlibShapes(t *testing.T) {
@@ -423,14 +746,20 @@ func TestStandardPlatformSymbolsIncludeServiceBackedSystemAndStdlibShapes(t *tes
 	requireStandardSymbol(t, symbols, "DataSource")
 
 	asyncSaveCallback := requireStandardSymbol(t, symbols, "DataSource.AsyncSaveCallback")
-	if asyncSaveCallback.Kind != apexast.DeclarationInterface {
-		t.Fatalf("DataSource.AsyncSaveCallback kind = %q, want interface", asyncSaveCallback.Kind)
+	if asyncSaveCallback.Kind != apexast.DeclarationClass {
+		t.Fatalf("DataSource.AsyncSaveCallback kind = %q, want class", asyncSaveCallback.Kind)
+	}
+	if !hasModifier(asyncSaveCallback.Modifiers, "abstract") {
+		t.Fatalf("DataSource.AsyncSaveCallback modifiers = %#v, want abstract", asyncSaveCallback.Modifiers)
 	}
 	requireStandardMethod(t, asyncSaveCallback, "processSave", []string{"Database.SaveResult"}, false)
 
 	asyncDeleteCallback := requireStandardSymbol(t, symbols, "DataSource.AsyncDeleteCallback")
-	if asyncDeleteCallback.Kind != apexast.DeclarationInterface {
-		t.Fatalf("DataSource.AsyncDeleteCallback kind = %q, want interface", asyncDeleteCallback.Kind)
+	if asyncDeleteCallback.Kind != apexast.DeclarationClass {
+		t.Fatalf("DataSource.AsyncDeleteCallback kind = %q, want class", asyncDeleteCallback.Kind)
+	}
+	if !hasModifier(asyncDeleteCallback.Modifiers, "abstract") {
+		t.Fatalf("DataSource.AsyncDeleteCallback modifiers = %#v, want abstract", asyncDeleteCallback.Modifiers)
 	}
 	requireStandardMethod(t, asyncDeleteCallback, "processDelete", []string{"Database.DeleteResult"}, false)
 
@@ -470,6 +799,7 @@ func TestStandardPlatformSymbolsIncludeServiceBackedSystemAndStdlibShapes(t *tes
 	eventBus := requireStandardSymbol(t, symbols, "EventBus")
 	requireStandardMethod(t, eventBus, "publishWithAccessLevel", []string{"SObject", "AccessLevel"}, true)
 	requireStandardMethod(t, eventBus, "publishWithAccessLevel", []string{"SObject", "Object", "AccessLevel"}, true)
+	requireStandardMethod(t, eventBus, "publishWithAccessLevel", []string{"List<SObject>", "AccessLevel"}, true)
 	requireStandardMethod(t, eventBus, "publishWithAccessLevel", []string{"List<SObject>", "Object", "AccessLevel"}, true)
 
 	pushPayload := requireStandardSymbol(t, symbols, "Messaging.PushNotificationPayload")
@@ -490,10 +820,23 @@ func TestStandardPlatformSymbolsIncludeSearchQuery(t *testing.T) {
 	search := requireStandardSymbol(t, symbols, "Search")
 	requireStandardMethod(t, search, "query", []string{"String"}, true)
 	requireStandardMethod(t, search, "query", []string{"String", "AccessLevel"}, true)
+	requireStandardMethod(t, search, "query", []string{"String", "Object"}, true)
 	requireStandardMethod(t, search, "find", []string{"String", "AccessLevel"}, true)
+	requireStandardMethod(t, search, "find", []string{"String", "Object"}, true)
 	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Search.SuggestionOption"}, true)
 	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Search.SuggestionOption", "AccessLevel"}, true)
+	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Object"}, true)
+	requireStandardMethod(t, search, "suggest", []string{"String", "String", "Object", "Object"}, true)
 	requireStandardMethodType(t, search, "query", "List<List<SObject>>")
+
+	limits := requireStandardSymbol(t, symbols, "Limits")
+	requireStandardMethod(t, limits, "getScheduledJobs", nil, true)
+	requireStandardMethod(t, limits, "getLimitScheduledJobs", nil, true)
+
+	invalidHeader := requireStandardSymbol(t, symbols, "InvalidHeaderException")
+	if invalidHeader.SuperClass != "Exception" {
+		t.Fatalf("InvalidHeaderException superclass = %q, want Exception", invalidHeader.SuperClass)
+	}
 
 	date := requireStandardSymbol(t, symbols, "Date")
 	requireStandardMethod(t, date, "daysInMonth", []string{"Integer", "Integer"}, true)
@@ -590,15 +933,15 @@ func TestStandardPlatformSymbolsIncludeDataSourceCompileShapes(t *testing.T) {
 
 	database := requireStandardSymbol(t, symbols, "Database")
 	for _, method := range []string{"insertAsync", "updateAsync"} {
+		requireStandardMethod(t, database, method, []string{"SObject", "DataSource.AsyncSaveCallback", "AccessLevel"}, true)
+	}
+	requireStandardMethod(t, database, "deleteAsync", []string{"SObject", "DataSource.AsyncDeleteCallback", "AccessLevel"}, true)
+	for _, method := range []string{"insertAsync", "updateAsync"} {
 		requireStandardMethod(t, database, method, []string{"Object", "AccessLevel"}, true)
 		requireStandardMethod(t, database, method, []string{"List<Object>", "AccessLevel"}, true)
-		requireStandardMethod(t, database, method, []string{"Object", "Database.AllowCallouts", "AccessLevel"}, true)
-		requireStandardMethod(t, database, method, []string{"List<Object>", "Database.AllowCallouts", "AccessLevel"}, true)
 	}
 	requireStandardMethod(t, database, "deleteAsync", []string{"Object", "AccessLevel"}, true)
 	requireStandardMethod(t, database, "deleteAsync", []string{"List<Object>", "AccessLevel"}, true)
-	requireStandardMethod(t, database, "deleteAsync", []string{"Object", "Database.AllowCallouts", "AccessLevel"}, true)
-	requireStandardMethod(t, database, "deleteAsync", []string{"List<Object>", "Database.AllowCallouts", "AccessLevel"}, true)
 }
 
 func TestStandardPlatformSymbolsIncludeDatabaseAccessLevelAliasShapes(t *testing.T) {
@@ -756,6 +1099,15 @@ func TestStandardPlatformSymbolsIncludeConnectApiFeedInputShapes(t *testing.T) {
 	requireStandardProperty(t, reference, "id", "Id")
 }
 
+func TestStandardPlatformSymbolsIncludeDocumentedOrderSummaryChangeMethods(t *testing.T) {
+	symbol := requireStandardSymbol(t, StandardPlatformSymbols(), "ConnectApi.OrderSummary")
+	params := []string{"String", "ConnectApi.ChangeOrderSummaryInputRepresentation"}
+	requireStandardMethod(t, symbol, "previewChange", params, true)
+	requireStandardMethodType(t, symbol, "previewChange", "ConnectApi.PreviewChangeOrderSummaryOutputRepresentation")
+	requireStandardMethod(t, symbol, "submitChange", params, true)
+	requireStandardMethodType(t, symbol, "submitChange", "ConnectApi.SubmitChangeOrderSummaryOutputRepresentation")
+}
+
 func TestStandardPlatformSymbolsIncludeConnectApiNBARecommendationShapes(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 
@@ -794,6 +1146,162 @@ func TestStandardPlatformSymbolsIncludeMetadataLayoutItemShapes(t *testing.T) {
 
 	relatedList := requireStandardSymbol(t, symbols, "Metadata.RelatedListItem")
 	requireStandardProperty(t, relatedList, "relatedList", "String")
+}
+
+func TestUserProvisioningBatchableLifecycleFixtureShapes(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	collecting := requireStandardSymbol(t, symbols, "UserProvisioning.CollectingBatchable")
+	requireStandardConstructor(t, collecting, []string{"String", "String", "String"})
+	requireStandardMethod(t, collecting, "clone", nil, false)
+	requireStandardMethod(t, collecting, "start", []string{"Database.BatchableContext"}, false)
+	requireStandardMethod(t, collecting, "execute", []string{"Database.BatchableContext", "List<UserProvisioningRequest>"}, false)
+	requireStandardMethod(t, collecting, "finish", []string{"Database.BatchableContext"}, false)
+	requireStandardMethod(t, collecting, "flowInputPreprocessing", []string{"Map<String,Object>"}, false)
+	requireStandardMethod(t, collecting, "flowPostProcessing", []string{"UserProvisioning.ProvisioningProcessHandlerOutput", "SObject"}, false)
+	requireStandardMethod(t, collecting, "getEventPrefix", nil, false)
+	requireStandardMethod(t, collecting, "getFlowName", nil, false)
+	requireStandardMethod(t, collecting, "getFlowNamespace", nil, false)
+	requireStandardMethod(t, collecting, "getPerBatchUPL", nil, false)
+	requireStandardMethod(t, collecting, "getPerBatchUPR", nil, false)
+	requireStandardMethod(t, collecting, "getUprToNewUplMap", nil, false)
+	requireStandardMethod(t, collecting, "hasFlow", nil, false)
+	requireStandardMethod(t, collecting, "hasFlowOrApex", nil, false)
+	requireStandardMethod(t, collecting, "postBatchProcessing", nil, false)
+
+	committing := requireStandardSymbol(t, symbols, "UserProvisioning.CommittingBatchable")
+	requireStandardConstructor(t, committing, []string{"String"})
+	requireStandardMethod(t, committing, "clone", nil, false)
+	requireStandardMethod(t, committing, "start", []string{"Database.BatchableContext"}, false)
+	requireStandardMethod(t, committing, "execute", []string{"Database.BatchableContext", "List<SObject>"}, false)
+	requireStandardMethod(t, committing, "finish", []string{"Database.BatchableContext"}, false)
+
+	deleting := requireStandardSymbol(t, symbols, "UserProvisioning.DeletingBatchable")
+	requireStandardConstructor(t, deleting, []string{"String"})
+	requireStandardMethod(t, deleting, "clone", nil, false)
+	requireStandardMethod(t, deleting, "start", []string{"Database.BatchableContext"}, false)
+	requireStandardMethod(t, deleting, "execute", []string{"Database.BatchableContext", "List<SObject>"}, false)
+	requireStandardMethod(t, deleting, "finish", []string{"Database.BatchableContext"}, false)
+
+	linking := requireStandardSymbol(t, symbols, "UserProvisioning.LinkingBatchable")
+	requireStandardConstructor(t, linking, []string{"String"})
+	requireStandardMethod(t, linking, "clone", nil, false)
+	requireStandardMethod(t, linking, "start", []string{"Database.BatchableContext"}, false)
+	requireStandardMethod(t, linking, "execute", []string{"Database.BatchableContext", "List<SObject>"}, false)
+	requireStandardMethod(t, linking, "finish", []string{"Database.BatchableContext"}, false)
+	requireStandardMethod(t, linking, "getFlowName", nil, false)
+	requireStandardMethod(t, linking, "getFlowNamespace", nil, false)
+	requireStandardMethod(t, linking, "hasFlow", nil, false)
+	requireStandardMethod(t, linking, "hasFlowOrApex", nil, false)
+
+	plugin := requireStandardSymbol(t, symbols, "UserProvisioning.PluginBatchable")
+	requireStandardConstructor(t, plugin, []string{"List<SObject>"})
+	requireStandardMethod(t, plugin, "clone", nil, false)
+	requireStandardMethod(t, plugin, "start", []string{"Database.BatchableContext"}, false)
+	requireStandardMethod(t, plugin, "execute", []string{"Database.BatchableContext", "List<UserProvisioningRequest>"}, false)
+	requireStandardMethod(t, plugin, "flowInputPreprocessing", []string{"Map<String,Object>"}, false)
+	requireStandardMethod(t, plugin, "flowPostProcessing", []string{"UserProvisioning.ProvisioningProcessHandlerOutput", "SObject"}, false)
+	requireStandardMethod(t, plugin, "getEventPrefix", nil, false)
+	requireStandardMethod(t, plugin, "getFlowName", nil, false)
+	requireStandardMethod(t, plugin, "getFlowNamespace", nil, false)
+	requireStandardMethod(t, plugin, "getPerBatchUPL", nil, false)
+	requireStandardMethod(t, plugin, "getPerBatchUPR", nil, false)
+	requireStandardMethod(t, plugin, "getUprToNewUplMap", nil, false)
+	requireStandardMethod(t, plugin, "hasFlow", nil, false)
+	requireStandardMethod(t, plugin, "hasFlowOrApex", nil, false)
+	requireStandardMethod(t, plugin, "postBatchProcessing", nil, false)
+
+	provisioning := requireStandardSymbol(t, symbols, "UserProvisioning.ProvisioningBatchable")
+	requireStandardConstructor(t, provisioning, []string{"List<SObject>"})
+	requireStandardMethod(t, provisioning, "clone", nil, false)
+	requireStandardMethod(t, provisioning, "start", []string{"Database.BatchableContext"}, false)
+	requireStandardMethod(t, provisioning, "execute", []string{"Database.BatchableContext", "List<UserProvisioningRequest>"}, false)
+	requireStandardMethod(t, provisioning, "finish", []string{"Database.BatchableContext"}, false)
+	requireStandardMethod(t, provisioning, "flowInputPreprocessing", []string{"Map<String,Object>"}, false)
+	requireStandardMethod(t, provisioning, "flowPostProcessing", []string{"UserProvisioning.ProvisioningProcessHandlerOutput", "SObject"}, false)
+	requireStandardMethod(t, provisioning, "getEventPrefix", nil, false)
+	requireStandardMethod(t, provisioning, "getFlowName", nil, false)
+	requireStandardMethod(t, provisioning, "getFlowNamespace", nil, false)
+	requireStandardMethod(t, provisioning, "getPerBatchUPL", nil, false)
+	requireStandardMethod(t, provisioning, "getPerBatchUPR", nil, false)
+	requireStandardMethod(t, provisioning, "getUprToNewUplMap", nil, false)
+	requireStandardMethod(t, provisioning, "hasFlow", nil, false)
+	requireStandardMethod(t, provisioning, "hasFlowOrApex", nil, false)
+	requireStandardMethod(t, provisioning, "postBatchProcessing", nil, false)
+
+	requesting := requireStandardSymbol(t, symbols, "UserProvisioning.RequestingBatchable")
+	requireStandardConstructor(t, requesting, []string{"List<SObject>"})
+	requireStandardMethod(t, requesting, "clone", nil, false)
+	requireStandardMethod(t, requesting, "start", []string{"Database.BatchableContext"}, false)
+	requireStandardMethod(t, requesting, "execute", []string{"Database.BatchableContext", "List<UserProvisioningRequest>"}, false)
+	requireStandardMethod(t, requesting, "finish", []string{"Database.BatchableContext"}, false)
+
+	cleaning := requireStandardSymbol(t, symbols, "UserProvisioning.UPASCleaningBatchable")
+	requireStandardConstructor(t, cleaning, []string{"String"})
+	requireStandardMethod(t, cleaning, "clone", nil, false)
+	requireStandardMethod(t, cleaning, "start", []string{"Database.BatchableContext"}, false)
+	requireStandardMethod(t, cleaning, "execute", []string{"Database.BatchableContext", "List<SObject>"}, false)
+	requireStandardMethod(t, cleaning, "finish", []string{"Database.BatchableContext"}, false)
+
+	output := requireStandardSymbol(t, symbols, "UserProvisioning.ProvisioningProcessHandlerOutput")
+	requireStandardConstructor(t, output, nil)
+
+	request := requireStandardSymbol(t, symbols, "UserProvisioningRequest")
+	if request.Kind != apexast.DeclarationClass {
+		t.Fatalf("UserProvisioningRequest kind = %v, want class", request.Kind)
+	}
+
+	batchableInterfaces := map[string]string{
+		"UserProvisioning.CollectingBatchable":   "Database.Batchable<UserProvisioningRequest>",
+		"UserProvisioning.ProvisioningBatchable": "Database.Batchable<UserProvisioningRequest>",
+		"UserProvisioning.RequestingBatchable":   "Database.Batchable<UserProvisioningRequest>",
+		"UserProvisioning.CommittingBatchable":   "Database.Batchable<SObject>",
+		"UserProvisioning.DeletingBatchable":     "Database.Batchable<SObject>",
+		"UserProvisioning.LinkingBatchable":      "Database.Batchable<SObject>",
+		"UserProvisioning.UPASCleaningBatchable": "Database.Batchable<SObject>",
+	}
+	for name, want := range batchableInterfaces {
+		symbol := requireStandardSymbol(t, symbols, name)
+		if !containsStringFold(symbol.Interfaces, want) {
+			t.Fatalf("%s interfaces = %v, want %s", name, symbol.Interfaces, want)
+		}
+	}
+
+	plugin = requireStandardSymbol(t, symbols, "UserProvisioning.PluginBatchable")
+	if !containsStringFold(plugin.Modifiers, "abstract") {
+		t.Fatalf("PluginBatchable modifiers = %v, want abstract", plugin.Modifiers)
+	}
+	if !containsStringFold(plugin.Interfaces, "Database.Batchable<UserProvisioningRequest>") {
+		t.Fatalf("PluginBatchable interfaces = %v, want Database.Batchable<UserProvisioningRequest>", plugin.Interfaces)
+	}
+	for _, method := range []string{"flowInputPreprocessing", "flowPostProcessing", "getEventPrefix", "postBatchProcessing"} {
+		for _, member := range plugin.Members {
+			if member.Kind == apexast.DeclarationMethod && strings.EqualFold(member.Name, method) {
+				if !containsStringFold(member.Modifiers, "virtual") {
+					t.Fatalf("PluginBatchable.%s modifiers = %v, want virtual", method, member.Modifiers)
+				}
+				goto foundPluginMethod
+			}
+		}
+		t.Fatalf("PluginBatchable.%s missing", method)
+	foundPluginMethod:
+	}
+}
+
+func TestUserProvisioningPluginOverlayIsAbstract(t *testing.T) {
+	symbol := requireStandardSymbol(t, StandardPlatformSymbols(), "UserProvisioning.UserProvisioningPlugin")
+	if !containsStringFold(symbol.Modifiers, "abstract") {
+		t.Fatalf("UserProvisioningPlugin modifiers = %v, want abstract", symbol.Modifiers)
+	}
+	for _, member := range symbol.Members {
+		if member.Kind == apexast.DeclarationMethod && member.Name == "buildDescribeCall" {
+			if !containsStringFold(member.Modifiers, "abstract") {
+				t.Fatalf("buildDescribeCall modifiers = %v, want abstract", member.Modifiers)
+			}
+			return
+		}
+	}
+	t.Fatal("buildDescribeCall method missing")
 }
 
 func TestStandardPlatformSymbolsIncludeUserInfoStubMethodsAndFieldTokenProperties(t *testing.T) {
@@ -965,6 +1473,13 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 		t.Fatalf("StatusCode kind = %q, want enum", statusCode.Kind)
 	}
 	requireStandardProperty(t, statusCode, "APEX_FAILED", "StatusCode")
+	requireStandardProperty(t, statusCode, "PRINCIPAL_NOT_ASSIGNED", "StatusCode")
+	requireStandardProperty(t, statusCode, "PRINCIPAL_NOT_CONFIGURED", "StatusCode")
+	requireStandardProperty(t, statusCode, "PRINCIPAL_UNAUTHENTICATED", "StatusCode")
+	requireStandardProperty(t, statusCode, "COMMERCE_SEARCH_RULES_SYNC_FAILED", "StatusCode")
+
+	quiddity := requireStandardSymbol(t, symbols, "Quiddity")
+	requireStandardProperty(t, quiddity, "RUN_INTEGRATION_TESTS", "Quiddity")
 
 	typeClass := requireStandardSymbol(t, symbols, "Type")
 	requireStandardMethod(t, typeClass, "isAssignableFrom", []string{"Type"}, false)
@@ -1055,6 +1570,7 @@ func TestStandardPlatformSymbolsKeepCoreStringMethodTypes(t *testing.T) {
 	requireStandardMethodType(t, stringType, "split", "List<String>")
 	requireStandardMethodType(t, stringType, "toLowerCase", "String")
 	requireStandardMethodType(t, stringType, "isNotBlank", "Boolean")
+	requireStandardMethodReturn(t, stringType, "template", []string{"Map"}, "String", false)
 }
 
 func TestStandardPlatformSymbolsIncludeCoreRuntimeCollectionObjectShapes(t *testing.T) {
@@ -1191,6 +1707,21 @@ func TestStandardPlatformSymbolsResolveInvocableActionDTOReferences(t *testing.T
 	err := requireStandardSymbol(t, symbols, "Invocable.Action.Error")
 	requireStandardMethodType(t, err, "getCode", "String")
 	requireStandardMethodType(t, err, "getMessage", "String")
+}
+
+func TestStandardPlatformSymbolsInvocableActionDTOCloneShapes(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	for _, name := range []string{
+		"Invocable.Action.AdditionalAttribute",
+		"Invocable.Action.DescribeResult",
+		"Invocable.Action.GenericType",
+		"Invocable.Action.InputParameter",
+		"Invocable.Action.OutputParameter",
+		"Invocable.Action.PicklistValue",
+	} {
+		symbol := requireStandardSymbol(t, symbols, name)
+		requireStandardMethodReturn(t, symbol, "clone", []string{}, "Object", false)
+	}
 }
 
 func TestStandardPlatformSymbolsIncludeDomXmlNodeInsertBefore(t *testing.T) {
@@ -1397,6 +1928,29 @@ func hasGeneratedEnumValuesMethod(spec StandardSymbolSpec, typeName string) bool
 		}
 	}
 	return false
+}
+
+func TestStandardPlatformSymbolsDoNotExposeJavaPatternFlags(t *testing.T) {
+	pattern := requireStandardSymbol(t, StandardPlatformSymbols(), "Pattern")
+	requireStandardMethod(t, pattern, "compile", []string{"String"}, true)
+	requireNoStandardMethod(t, pattern, "compile", []string{"String", "Integer"}, true)
+	for _, name := range []string{
+		"CASE_INSENSITIVE",
+		"COMMENTS",
+		"MULTILINE",
+		"LITERAL",
+		"DOTALL",
+		"UNICODE_CASE",
+		"UNIX_LINES",
+		"CANON_EQ",
+		"UNICODE_CHARACTER_CLASS",
+	} {
+		for _, member := range pattern.Members {
+			if member.Kind == apexast.DeclarationProperty && strings.EqualFold(member.Name, name) {
+				t.Fatalf("unexpected Pattern.%s property: %#v", name, member)
+			}
+		}
+	}
 }
 
 func requireStandardSymbol(t *testing.T, symbols []TypeSymbol, name string) TypeSymbol {

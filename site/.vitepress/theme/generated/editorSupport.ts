@@ -4,10 +4,17 @@ import type { EditorSupportCatalog } from '../editor/editorSupportTypes'
 export const editorSupportCatalog = {
   "schemaVersion": 1,
   "generatedFrom": "docs/STDLIB_COVERAGE.md",
+  "summary": {
+    "supported": 267,
+    "partial": 0,
+    "stub": 0,
+    "unsupported": 19,
+    "unknown": 0
+  },
   "statusLabels": {
     "supported": "Runs locally",
-    "partial": "Runs with limits",
-    "stub": "Runs with limits",
+    "partial": "Runs locally with limits",
+    "stub": "Runs locally with limits",
     "unsupported": "Requires Salesforce",
     "unknown": "Not measured"
   },
@@ -84,7 +91,7 @@ export const editorSupportCatalog = {
           "type": "property",
           "detail": "Describe token",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -125,9 +132,9 @@ export const editorSupportCatalog = {
           "apply": "findSimilar()",
           "type": "method",
           "detail": "Answers API",
-          "status": "unsupported",
-          "statusLabel": "Requires Salesforce",
-          "info": "Zone similar-question search requires Answers service data and returns a stable UnsupportedFeature diagnostic locally.",
+          "status": "supported",
+          "statusLabel": "Runs locally",
+          "info": "Returns a deterministic empty `List<Id>` locally. Glade does not perform hosted Answers similarity search.",
           "signature": "findSimilar(Question)",
           "source": "docs/STDLIB_COVERAGE.md"
         }
@@ -365,7 +372,7 @@ export const editorSupportCatalog = {
           "status": "supported",
           "statusLabel": "Runs locally",
           "info": "Runs deterministic local week-schedule math from seeded BusinessHours, Holiday, OperatingHours, and OperatingHoursHoliday records with timezone handling, all-day closures, partial-day closures, recurring holidays, and linked holidays.",
-          "signature": "add(String, Datetime, Long)",
+          "signature": "add(Id, Datetime, Long)",
           "source": "docs/STDLIB_COVERAGE.md"
         },
         {
@@ -376,7 +383,7 @@ export const editorSupportCatalog = {
           "status": "supported",
           "statusLabel": "Runs locally",
           "info": "Runs deterministic local calendar math from seeded BusinessHours, Holiday, OperatingHours, and OperatingHoursHoliday records with GMT Datetime output.",
-          "signature": "addGmt(String, Datetime, Long)",
+          "signature": "addGmt(Id, Datetime, Long)",
           "source": "docs/STDLIB_COVERAGE.md"
         },
         {
@@ -387,7 +394,7 @@ export const editorSupportCatalog = {
           "status": "supported",
           "statusLabel": "Runs locally",
           "info": "Counts deterministic local business milliseconds across seeded week schedules, timezones, all-day closures, partial-day closures, recurring holidays, and linked holidays.",
-          "signature": "diff(String, Datetime, Datetime)",
+          "signature": "diff(Id, Datetime, Datetime)",
           "source": "docs/STDLIB_COVERAGE.md"
         },
         {
@@ -398,7 +405,7 @@ export const editorSupportCatalog = {
           "status": "supported",
           "statusLabel": "Runs locally",
           "info": "Checks seeded local week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays.",
-          "signature": "isWithin(String, Datetime)",
+          "signature": "isWithin(Id, Datetime)",
           "source": "docs/STDLIB_COVERAGE.md"
         },
         {
@@ -409,7 +416,7 @@ export const editorSupportCatalog = {
           "status": "supported",
           "statusLabel": "Runs locally",
           "info": "Finds the next deterministic local start from seeded week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays.",
-          "signature": "nextStartDate(String, Datetime)",
+          "signature": "nextStartDate(Id, Datetime)",
           "source": "docs/STDLIB_COVERAGE.md"
         }
       ]
@@ -1118,9 +1125,9 @@ export const editorSupportCatalog = {
           "apply": "divide()",
           "type": "method",
           "detail": "Decimal API",
-          "status": "supported",
-          "statusLabel": "Runs locally",
-          "info": "Divides local Decimal values with explicit scale and RoundingMode.",
+          "status": "unsupported",
+          "statusLabel": "Requires Salesforce",
+          "info": "Exact Decimal division is fail-closed pending the bounded Salesforce oracle and Task 4.2 implementation.",
           "signature": "divide(Decimal,Integer,RoundingMode)",
           "source": "docs/STDLIB_COVERAGE.md"
         },
@@ -1131,7 +1138,7 @@ export const editorSupportCatalog = {
           "detail": "Decimal API",
           "status": "supported",
           "statusLabel": "Runs locally",
-          "info": "Returns local Decimal value.",
+          "info": "Returns an explicitly Double-backed local value.",
           "signature": "doubleValue",
           "source": "docs/STDLIB_COVERAGE.md"
         },
@@ -1481,7 +1488,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Collection clone",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Collection support with named limits"
         }
       ]
@@ -1496,7 +1503,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Schema.SObjectField",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -2080,7 +2087,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "CRUD metadata",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -2089,7 +2096,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "CRUD metadata",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -2098,7 +2105,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Lookup targets",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Local metadata with named limits"
         }
       ]
@@ -2131,7 +2138,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Field describe map",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -2164,7 +2171,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Map<String, Schema.SObjectField>",
           "status": "partial",
-          "statusLabel": "Runs with limits",
+          "statusLabel": "Runs locally with limits",
           "info": "Local metadata with named limits"
         }
       ]
@@ -3302,7 +3309,7 @@ export const editorSupportCatalog = {
       "type": "class",
       "detail": "Metadata",
       "status": "partial",
-      "statusLabel": "Runs with limits",
+      "statusLabel": "Runs locally with limits",
       "info": "Configured metadata with named limits"
     },
     {
@@ -3337,9 +3344,9 @@ export const editorSupportCatalog = {
       "apply": "Answers",
       "type": "class",
       "detail": "Hosted API",
-      "status": "unsupported",
-      "statusLabel": "Requires Salesforce",
-      "info": "Requires Salesforce"
+      "status": "supported",
+      "statusLabel": "Runs locally",
+      "info": "Deterministic empty list, hosted search not performed"
     }
   ],
   "demoReceivers": {

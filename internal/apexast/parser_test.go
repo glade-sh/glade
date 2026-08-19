@@ -1,6 +1,12 @@
 package apexast
 
-import "testing"
+import (
+	"reflect"
+	"strings"
+	"testing"
+
+	"github.com/glade-sh/glade/internal/diagnostic"
+)
 
 func TestParseClass(t *testing.T) {
 	src := `
@@ -324,6 +330,78 @@ func TestParseSyntaxError(t *testing.T) {
 	}
 	if got.End.Offset < got.Start.Offset {
 		t.Fatalf("diagnostic range went backwards: %#v", got)
+	}
+}
+
+func TestParseMultilineStringLiteralPreservesMethodRange(t *testing.T) {
+	source := "public class Probe {\n  public String run() { return '''\nhello\n'''; }\n}\n"
+	file := NewParser().ParseSource("Probe.cls", source)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	if len(file.Declarations) != 1 || len(file.Declarations[0].Members) != 1 {
+		t.Fatalf("declarations = %#v", file.Declarations)
+	}
+	method := file.Declarations[0].Members[0]
+	if method.Range.End.Offset <= method.Range.Start.Offset {
+		t.Fatalf("method range = %#v", method.Range)
+	}
+	if !strings.Contains(source[method.Range.Start.Offset:method.Range.End.Offset], "'''") {
+		t.Fatalf("method range does not contain multiline literal: %q", source[method.Range.Start.Offset:method.Range.End.Offset])
+	}
+}
+
+func TestParseInheritanceAndBodyRanges(t *testing.T) {
+	source := `public class Child extends /* { superclass comment } */ Base implements One, /* { interface comment } */ Map<String, List<Integer>> {
+	  public String Name { get { /* { getter comment } */ return value; } set { /* } setter comment { */ value = value; } }
+	  public void run() { /* { method comment } */ System.debug('}'); }
+}
+public interface ChildContract extends BaseContract, Generic<String> { void run(); }
+trigger ChildTrigger on Account (before insert) { /* } trigger comment { */ System.debug('}'); }`
+	file := NewParser().ParseSource("Inheritance.cls", source)
+	if len(file.Diagnostics) != 0 || len(file.Declarations) != 3 {
+		t.Fatalf("parse = %#v", file)
+	}
+	bodyText := func(r *diagnostic.Range) string {
+		if r == nil {
+			return ""
+		}
+		return source[r.Start.Offset:r.End.Offset]
+	}
+	child := file.Declarations[0]
+	if child.SuperClass != "Base" || len(child.Interfaces) != 2 || child.Interfaces[0] != "One" || child.Interfaces[1] != "Map<String, List<Integer>>" {
+		t.Fatalf("class facts = %#v", child)
+	}
+	if bodyText(child.BodyRange) == "" || bodyText(child.Members[0].Accessors[0].BodyRange) != "{ /* { getter comment } */ return value; }" || bodyText(child.Members[1].BodyRange) != "{ /* { method comment } */ System.debug('}'); }" {
+		t.Fatalf("class body facts = %#v", child)
+	}
+	contract := file.Declarations[1]
+	if len(contract.Interfaces) != 2 || contract.Interfaces[0] != "BaseContract" || contract.Interfaces[1] != "Generic<String>" {
+		t.Fatalf("interface facts = %#v", contract)
+	}
+	if bodyText(file.Declarations[2].BodyRange) != "{ /* } trigger comment { */ System.debug('}'); }" {
+		t.Fatalf("trigger body = %q", bodyText(file.Declarations[2].BodyRange))
+	}
+}
+
+func TestParseInheritanceSkipsCommentsAndPreservesTypeNodes(t *testing.T) {
+	for _, test := range []struct {
+		source     string
+		superClass string
+		interfaces []string
+	}{
+		{source: "public class Child EXTENDS Base implements One, Two {}", superClass: "Base", interfaces: []string{"One", "Two"}},
+		{source: "public interface Contract eXtEnDs BaseContract, Generic<String> {}", interfaces: []string{"BaseContract", "Generic<String>"}},
+		{source: "public class GenericChild extends Base</* { superclass type comment } */Account> implements Generic</* { interface type comment } */String> {}", superClass: "Base<Account>", interfaces: []string{"Generic<String>"}},
+	} {
+		file := NewParser().ParseSource("Inheritance.cls", test.source)
+		if len(file.Diagnostics) != 0 || len(file.Declarations) != 1 {
+			t.Fatalf("parse %q = %#v", test.source, file)
+		}
+		decl := file.Declarations[0]
+		if decl.SuperClass != test.superClass || !reflect.DeepEqual(decl.Interfaces, test.interfaces) {
+			t.Fatalf("facts for %q = superclass %q interfaces %#v", test.source, decl.SuperClass, decl.Interfaces)
+		}
 	}
 }
 

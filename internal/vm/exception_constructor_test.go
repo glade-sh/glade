@@ -1,0 +1,84 @@
+package vm
+
+import "testing"
+
+func TestExecProcedureExceptionGetTypeNameIsSystemQualified(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('System.ProcedureException', new ProcedureException().getTypeName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func registerCustomException(t *testing.T, machine *VM, name string) {
+	t.Helper()
+	if err := machine.RegisterClass(Class{Name: name, SuperClass: "Exception"}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeGeneratedStandardExceptionsPreserveCatchTypeAndMessage(t *testing.T) {
+	machine := New(nil)
+	for _, test := range []struct {
+		name    string
+		message string
+	}{
+		{name: "Exception", message: "base runtime"},
+		{name: "InvalidParameterValueException", message: "invalid runtime"},
+		{name: "NoAccessException", message: "access runtime"},
+		{name: "NoDataFoundException", message: "data runtime"},
+		{name: "NullPointerException", message: "null runtime"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			err := newExceptionError(test.name, test.message)
+			thrown, ok := err.(*apexThrowError)
+			if !ok {
+				t.Fatalf("newExceptionError() = %#v, want apex throw", err)
+			}
+			if thrown.value.Type != test.name {
+				t.Fatalf("runtime type = %q, want %q", thrown.value.Type, test.name)
+			}
+			message, ok := thrown.value.Fields["message"]
+			if !ok || message.Kind != ValueString || message.Text != test.message {
+				t.Fatalf("runtime message = %#v, want %q", message, test.message)
+			}
+			if !machine.exceptionMatches("Exception", thrown.value) || !machine.exceptionMatches(test.name, thrown.value) {
+				t.Fatalf("runtime %s did not match its concrete or base catch type", test.name)
+			}
+		})
+	}
+}
+
+func TestTouchHandledExceptionStringConstructorUsesScriptMessage(t *testing.T) {
+	program, err := CompileAnonymous(`
+TouchHandledException exceptionValue = new TouchHandledException('ignored message');
+System.assertEquals('Script-thrown exception', exceptionValue.getMessage());
+exceptionValue.setMessage('changed message');
+System.assertEquals('changed message', exceptionValue.getMessage());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestInvalidParameterValueExceptionAcceptsSalesforceStringPair(t *testing.T) {
+	program, err := CompileAnonymous(`
+Exception value = new InvalidParameterValueException('parameter', 'value');
+System.assertEquals('System.InvalidParameterValueException', value.getTypeName());
+value.setMessage('changed');
+System.assertEquals('changed', value.getMessage());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}

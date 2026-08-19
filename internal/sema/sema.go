@@ -1299,10 +1299,38 @@ type semaBodyExpressionScan struct {
 func newSemaBodyExpressionScan(body string) *semaBodyExpressionScan {
 	return &semaBodyExpressionScan{
 		body:              body,
-		localDeclMatches:  localDeclPattern.FindAllStringSubmatchIndex(body, -1),
+		localDeclMatches:  findSemaLocalDeclMatches(body),
 		assignmentMatches: assignmentPattern.FindAllStringSubmatchIndex(body, -1),
 		returnMatches:     returnPattern.FindAllStringSubmatchIndex(body, -1),
 	}
+}
+
+func findSemaLocalDeclMatches(body string) [][]int {
+	var matches [][]int
+	for searchStart := 0; searchStart <= len(body); {
+		relative := localDeclPattern.FindStringSubmatchIndex(body[searchStart:])
+		if relative == nil {
+			break
+		}
+		match := make([]int, len(relative))
+		for i, index := range relative {
+			if index >= 0 {
+				match[i] = index + searchStart
+			} else {
+				match[i] = -1
+			}
+		}
+		matches = append(matches, match)
+		next := match[1]
+		if last := match[1] - 1; last >= match[0] && (body[last] == ';' || body[last] == '\n') {
+			next = last
+		}
+		if next <= searchStart {
+			next = searchStart + 1
+		}
+		searchStart = next
+	}
+	return matches
 }
 
 func semaBodyExpressions(body string) []semaArg {
@@ -1438,10 +1466,6 @@ func semaOffsetInIgnoredText(body string, pos int) bool {
 		}
 	}
 	if inBlock {
-		return true
-	}
-	lineStart := strings.LastIndexAny(body[:pos], "\r\n") + 1
-	if comment := strings.Index(body[lineStart:pos], "//"); comment >= 0 {
 		return true
 	}
 	return false
@@ -2188,6 +2212,24 @@ func semaCommonType(leftType, rightType string, model *semaTypeMemberView) strin
 type semaCollectionSignature struct {
 	returnType string
 	params     [][]string
+}
+
+// Salesforce accepts Search.suggest's options argument through an Object
+// variable when that value contains a Search.SuggestionOption. Keep the
+// compiler permissive at this boundary; the runtime validates the concrete
+// value before dispatch.
+func semaSearchSuggestObjectOverload(receiverType, method string, argTypes []string) bool {
+	receiverType = semaCanonicalPlatformAlias(receiverType)
+	if !strings.EqualFold(receiverType, "Search") || !strings.EqualFold(method, "suggest") {
+		return false
+	}
+	if len(argTypes) != 3 && len(argTypes) != 4 {
+		return false
+	}
+	if !strings.EqualFold(argTypes[0], "String") || !strings.EqualFold(argTypes[1], "String") || !strings.EqualFold(argTypes[2], "Object") {
+		return false
+	}
+	return len(argTypes) == 3 || strings.EqualFold(argTypes[3], "AccessLevel")
 }
 
 func semaPlatformMethodSignatureFor(model *semaTypeMemberView, receiverType, method string) (semaCollectionSignature, bool) {
@@ -3044,8 +3086,14 @@ func (a *Analyzer) hasKnown(name string) bool {
 	if name == "" {
 		return true
 	}
-	if _, ok := a.known[a.canonicalName(name)]; ok {
+	if reference, ok := a.known[a.canonicalName(name)]; ok {
+		if semaAPI67RejectedPlatformType(name) && reference.Kind == TypePlatform {
+			return false
+		}
 		return true
+	}
+	if semaAPI67RejectedPlatformType(name) {
+		return false
 	}
 	canonical := semaCanonicalPlatformAlias(name)
 	if !strings.EqualFold(canonical, name) {
@@ -3731,6 +3779,7 @@ var platformTypes = []string{
 	"AsyncApexJob",
 	"BatchApexErrorEvent",
 	"BrandTemplate",
+	"BusinessHours",
 	"Cache",
 	"Cache.CacheBuilder",
 	"Cache.Org",

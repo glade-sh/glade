@@ -1,7 +1,15 @@
 package vm
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
+	"io"
+	"mime"
+	"mime/multipart"
+	"mime/quotedprintable"
+	"net/mail"
+	"net/textproto"
 	"sort"
 	"strings"
 	"unicode"
@@ -19,7 +27,7 @@ func newSendEmailError(message string) Value {
 	err := Object("Messaging.SendEmailError")
 	err.Fields["fields"] = List()
 	err.Fields["message"] = String(message)
-	err.Fields["statusCode"] = Null
+	err.Fields["statusCode"] = Value{Kind: ValueObject, Type: "StatusCode", Text: "REQUIRED_FIELD_MISSING"}
 	err.Fields["targetObjectId"] = Null
 	return err
 }
@@ -36,7 +44,7 @@ func newRenderEmailTemplateBodyResult(mergedBody string) Value {
 	result := Object("Messaging.RenderEmailTemplateBodyResult")
 	result.Fields["success"] = Bool(true)
 	result.Fields["mergedBody"] = String(mergedBody)
-	result.Fields["errors"] = List()
+	result.Fields["errors"] = Null
 	return result
 }
 func newFailedSendEmailResult(message string) Value {
@@ -61,6 +69,7 @@ func newSingleEmailMessage() Value {
 	} {
 		message.Fields[field] = Null
 	}
+	message.Fields["customHeaders"] = typedMap("Map<String,String>")
 	message.Fields["unsubscribeUrls"] = List()
 	for _, field := range []string{
 		"saveAsActivity", "treatBodiesAsTemplate", "treatTargetObjectAsRecipient",
@@ -73,14 +82,15 @@ func newSingleEmailMessage() Value {
 func newMassEmailMessage() Value {
 	message := Object("Messaging.MassEmailMessage")
 	for _, field := range []string{"targetObjectIds", "whatIds"} {
-		message.Fields[field] = List()
+		message.Fields[field] = Null
 	}
 	for _, field := range []string{
-		"templateId", "description", "optOutPolicy", "replyTo", "senderDisplayName",
+		"templateId", "optOutPolicy", "replyTo", "senderDisplayName",
 		"subject", "emailPriority",
 	} {
 		message.Fields[field] = Null
 	}
+	message.Fields["description"] = String("Mass Email (API)")
 	for _, field := range []string{"saveAsActivity", "bccSender", "useSignature"} {
 		message.Fields[field] = Bool(false)
 	}
@@ -100,6 +110,12 @@ func newInboundEmail() Value {
 	email.Fields["htmlBodyIsTruncated"] = Bool(false)
 	email.Fields["plainTextBodyIsTruncated"] = Bool(false)
 	return email
+}
+func newInboundEmailHeader(name, value string) Value {
+	header := Object("Messaging.InboundEmail.Header")
+	header.Fields["name"] = String(name)
+	header.Fields["value"] = String(value)
+	return header
 }
 func newInboundEnvelope() Value {
 	envelope := Object("Messaging.InboundEnvelope")
@@ -244,7 +260,266 @@ func (vm *VM) extractInboundEmail(args []Value) (Value, error) {
 	if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Messaging.InboundEmail") {
 		return args[0], nil
 	}
-	return newInboundEmail(), nil
+	email := newInboundEmail()
+	parseInboundEmailSourceWithOptions(email, stringValue(args[0]), args[1].Bool)
+	return email, nil
+}
+
+func parseInboundEmailSourceWithOptions(email Value, raw string, includeForwardedAttachments bool) {
+	if strings.TrimSpace(raw) == "" {
+		return
+	}
+	message, err := mail.ReadMessage(strings.NewReader(raw))
+	if err != nil {
+		return
+	}
+
+	email.Fields["headers"] = List(parseInboundEmailHeaders(raw)...)
+	setInboundEmailAddressFields(email, message.Header)
+	if subject := message.Header.Get("Subject"); subject != "" {
+		email.Fields["subject"] = String(subject)
+	}
+	if messageID := message.Header.Get("Message-ID"); messageID != "" {
+		email.Fields["messageId"] = String(messageID)
+	}
+	if inReplyTo := message.Header.Get("In-Reply-To"); inReplyTo != "" {
+		email.Fields["inReplyTo"] = String(inReplyTo)
+	}
+	if references := message.Header.Get("References"); references != "" {
+		email.Fields["references"] = String(references)
+	}
+
+	parseInboundEmailBody(email, message.Body, message.Header.Get("Content-Type"), message.Header.Get("Content-Transfer-Encoding"), includeForwardedAttachments)
+}
+
+func parseInboundEmailBody(email Value, body io.Reader, contentType, transferEncoding string, includeForwardedAttachments bool) {
+	mediaType, params, err := mime.ParseMediaType(contentType)
+	if err != nil || mediaType == "" {
+		mediaType = "text/plain"
+		params = nil
+	}
+	decoded := decodeInboundEmailBody(body, transferEncoding)
+	if strings.HasPrefix(mediaType, "multipart/") && params["boundary"] != "" {
+		reader := multipart.NewReader(bytes.NewReader(decoded), params["boundary"])
+		for {
+			part, err := reader.NextRawPart()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				break
+			}
+			parseInboundEmailPart(email, part, includeForwardedAttachments)
+		}
+		return
+	}
+	setInboundEmailBody(email, mediaType, decoded)
+}
+
+func parseInboundEmailPart(email Value, part *multipart.Part, includeForwardedAttachments bool) {
+	mediaType, params, err := mime.ParseMediaType(part.Header.Get("Content-Type"))
+	if err != nil || mediaType == "" {
+		mediaType = "text/plain"
+		params = nil
+	}
+	decoded := decodeInboundEmailBody(part, part.Header.Get("Content-Transfer-Encoding"))
+	if mediaType == "message/rfc822" {
+		if !includeForwardedAttachments {
+			return
+		}
+		nested, err := mail.ReadMessage(bytes.NewReader(decoded))
+		if err == nil {
+			nestedEmail := newInboundEmail()
+			parseInboundEmailBody(nestedEmail, nested.Body, nested.Header.Get("Content-Type"), nested.Header.Get("Content-Transfer-Encoding"), true)
+			textAttachments := email.Fields["textAttachments"]
+			textAttachments.List = append(textAttachments.List, nestedEmail.Fields["textAttachments"].List...)
+			email.Fields["textAttachments"] = textAttachments
+			binaryAttachments := email.Fields["binaryAttachments"]
+			binaryAttachments.List = append(binaryAttachments.List, nestedEmail.Fields["binaryAttachments"].List...)
+			email.Fields["binaryAttachments"] = binaryAttachments
+		}
+		return
+	}
+	if strings.HasPrefix(mediaType, "multipart/") && params["boundary"] != "" {
+		parseInboundEmailBody(email, bytes.NewReader(decoded), part.Header.Get("Content-Type"), "", includeForwardedAttachments)
+		return
+	}
+
+	filename := inboundEmailPartFilename(part.Header, params)
+	disposition, _, _ := mime.ParseMediaType(part.Header.Get("Content-Disposition"))
+	if filename != "" || disposition == "attachment" {
+		headers := inboundEmailPartHeaders(part.Header)
+		if strings.HasPrefix(mediaType, "text/") {
+			attachment := newInboundEmailTextAttachment()
+			attachment.Fields["body"] = String(trimInboundEmailBody(decoded))
+			attachment.Fields["charset"] = String(params["charset"])
+			attachment.Fields["fileName"] = String(filename)
+			attachment.Fields["headers"] = List(headers...)
+			attachment.Fields["mimeTypeSubType"] = String(mediaType)
+			attachments := email.Fields["textAttachments"]
+			attachments.List = append(attachments.List, attachment)
+			email.Fields["textAttachments"] = attachments
+		} else {
+			attachment := newInboundEmailBinaryAttachment()
+			attachment.Fields["body"] = platformScalar("Blob", string(decoded))
+			attachment.Fields["fileName"] = String(filename)
+			attachment.Fields["headers"] = List(headers...)
+			attachment.Fields["mimeTypeSubType"] = String(mediaType)
+			attachments := email.Fields["binaryAttachments"]
+			attachments.List = append(attachments.List, attachment)
+			email.Fields["binaryAttachments"] = attachments
+		}
+		return
+	}
+	setInboundEmailBody(email, mediaType, decoded)
+}
+
+func decodeInboundEmailBody(body io.Reader, transferEncoding string) []byte {
+	var reader io.Reader = body
+	switch strings.ToLower(strings.TrimSpace(transferEncoding)) {
+	case "base64":
+		reader = base64.NewDecoder(base64.StdEncoding, body)
+	case "quoted-printable":
+		reader = quotedprintable.NewReader(body)
+	}
+	decoded, _ := io.ReadAll(reader)
+	return decoded
+}
+
+func setInboundEmailBody(email Value, mediaType string, body []byte) {
+	bodyText := trimInboundEmailBody(body)
+	switch {
+	case mediaType == "text/html":
+		email.Fields["htmlBody"] = String(bodyText)
+	case strings.HasPrefix(mediaType, "text/"):
+		email.Fields["plainTextBody"] = String(bodyText)
+	}
+}
+
+func trimInboundEmailBody(body []byte) string {
+	return strings.TrimSuffix(strings.ReplaceAll(string(body), "\r\n", "\n"), "\n")
+}
+
+func inboundEmailPartFilename(header textproto.MIMEHeader, contentTypeParams map[string]string) string {
+	_, dispositionParams, _ := mime.ParseMediaType(header.Get("Content-Disposition"))
+	filename := dispositionParams["filename"]
+	if filename == "" {
+		filename = contentTypeParams["name"]
+	}
+	if decoded, err := (&mime.WordDecoder{}).DecodeHeader(filename); err == nil {
+		filename = decoded
+	}
+	return filename
+}
+
+func inboundEmailPartHeaders(header textproto.MIMEHeader) []Value {
+	names := make([]string, 0, len(header))
+	for name := range header {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	headers := make([]Value, 0, len(names))
+	for _, name := range names {
+		headers = append(headers, newInboundEmailHeader(name, strings.Join(header[name], ", ")))
+	}
+	return headers
+}
+
+func newInboundEmailTextAttachment() Value {
+	attachment := Object("Messaging.InboundEmail.TextAttachment")
+	attachment.Fields["body"] = Null
+	attachment.Fields["bodyIsTruncated"] = Bool(false)
+	attachment.Fields["charset"] = Null
+	attachment.Fields["fileName"] = Null
+	attachment.Fields["headers"] = List()
+	attachment.Fields["mimeTypeSubType"] = Null
+	return attachment
+}
+
+func newInboundEmailBinaryAttachment() Value {
+	attachment := Object("Messaging.InboundEmail.BinaryAttachment")
+	attachment.Fields["body"] = Null
+	attachment.Fields["fileName"] = Null
+	attachment.Fields["headers"] = List()
+	attachment.Fields["mimeTypeSubType"] = Null
+	return attachment
+}
+
+func parseInboundEmailHeaders(raw string) []Value {
+	normalized := strings.ReplaceAll(raw, "\r\n", "\n")
+	end := strings.Index(normalized, "\n\n")
+	if end < 0 {
+		end = len(normalized)
+	}
+	lines := strings.Split(normalized[:end], "\n")
+	headers := make([]Value, 0, len(lines))
+	var name, value string
+	flush := func() {
+		if name != "" {
+			headers = append(headers, newInboundEmailHeader(name, strings.TrimSpace(value)))
+		}
+		name = ""
+		value = ""
+	}
+	for _, line := range lines {
+		if (strings.HasPrefix(line, " ") || strings.HasPrefix(line, "\t")) && name != "" {
+			value += " " + strings.TrimSpace(line)
+			continue
+		}
+		colon := strings.IndexByte(line, ':')
+		if colon <= 0 {
+			continue
+		}
+		flush()
+		name = strings.TrimSpace(line[:colon])
+		value = strings.TrimSpace(line[colon+1:])
+	}
+	flush()
+	return headers
+}
+
+func setInboundEmailAddressFields(email Value, headers mail.Header) {
+	if raw := headers.Get("From"); raw != "" {
+		if address, err := mail.ParseAddress(raw); err == nil {
+			email.Fields["fromAddress"] = String(address.Address)
+			if address.Name != "" {
+				email.Fields["fromName"] = String(address.Name)
+			}
+		} else {
+			email.Fields["fromAddress"] = String(strings.TrimSpace(raw))
+		}
+	}
+	if raw := headers.Get("Reply-To"); raw != "" {
+		if address, err := mail.ParseAddress(raw); err == nil {
+			email.Fields["replyTo"] = String(address.Address)
+		} else {
+			email.Fields["replyTo"] = String(strings.TrimSpace(raw))
+		}
+	}
+	email.Fields["toAddresses"] = parseInboundEmailAddressList(headers.Get("To"))
+	email.Fields["ccAddresses"] = parseInboundEmailAddressList(headers.Get("Cc"))
+}
+
+func parseInboundEmailAddressList(raw string) Value {
+	if strings.TrimSpace(raw) == "" {
+		return List()
+	}
+	addresses, err := mail.ParseAddressList(raw)
+	if err != nil {
+		parts := strings.Split(raw, ",")
+		values := make([]Value, 0, len(parts))
+		for _, part := range parts {
+			if address := strings.TrimSpace(part); address != "" {
+				values = append(values, String(address))
+			}
+		}
+		return List(values...)
+	}
+	values := make([]Value, 0, len(addresses))
+	for _, address := range addresses {
+		values = append(values, String(address.Address))
+	}
+	return List(values...)
 }
 func localEmailValidationError(message Value) string {
 	if message.Type != "Messaging.SingleEmailMessage" {
@@ -253,7 +528,7 @@ func localEmailValidationError(message Value) string {
 	if emailFieldString(message, "plainTextBody") != "" || emailFieldString(message, "htmlBody") != "" || emailFieldString(message, "templateId") != "" {
 		return ""
 	}
-	return "Email body or template ID is required"
+	return "Email body is required."
 }
 func emailFieldString(message Value, field string) string {
 	if message.Kind != ValueObject || message.Fields == nil {
@@ -303,6 +578,25 @@ func emailFieldStrings(message Value, field string) []string {
 	}
 	return nil
 }
+
+func emailFieldStringMap(message Value, field string) map[string]string {
+	_, value, _ := objectFieldValue(message, field)
+	if value.Kind != ValueMap {
+		return nil
+	}
+	out := make(map[string]string, len(value.Map))
+	for key, item := range value.Map {
+		name := value.MapKeys[key]
+		if name.Kind != ValueString {
+			name = valueFromMapKey(key)
+		}
+		if name.Kind == ValueString {
+			out[name.Text] = stringValue(item)
+		}
+	}
+	return out
+}
+
 func (vm *VM) captureEmail(message Value, sendOptions Value) CapturedEmail {
 	captured := CapturedEmail{Kind: message.Type}
 	switch message.Type {
@@ -323,6 +617,7 @@ func (vm *VM) captureEmail(message Value, sendOptions Value) CapturedEmail {
 		captured.ReplyTo = emailFieldString(message, "replyTo")
 		captured.SenderDisplayName = emailFieldString(message, "senderDisplayName")
 		captured.Charset = emailFieldString(message, "charset")
+		captured.CustomHeaders = emailFieldStringMap(message, "customHeaders")
 		captured.OrgWideEmailAddressID = emailFieldString(message, "orgWideEmailAddressId")
 		captured.OptOutPolicy = emailFieldString(message, "optOutPolicy")
 		captured.EmailPriority = emailFieldString(message, "emailPriority")
@@ -1262,9 +1557,21 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 		}
 		value := args[0]
 		if idText, ok := typedIDValueText(value); ok {
-			value = String(idText)
+			value = String(displayIDText(idText))
+		} else if value.Kind == ValueString && singleEmailIDSetter(method) {
+			value = String(displayIDText(value.Text))
 		}
 		receiver.Fields[emailMessageFieldName(method)] = value
+		return Null, receiver, true, true, nil
+	case "setCustomHeaders":
+		if len(args) != 1 || (args[0].Kind != ValueMap && args[0].Kind != ValueNull) {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.setCustomHeaders expects Map<String,String>")
+		}
+		if args[0].Kind == ValueNull {
+			receiver.Fields["customHeaders"] = typedMap("Map<String,String>")
+		} else {
+			receiver.Fields["customHeaders"] = cloneValue(args[0])
+		}
 		return Null, receiver, true, true, nil
 	case "setSaveAsActivity", "setTreatBodiesAsTemplate", "setTreatTargetObjectAsRecipient", "setUseSignature", "setBccSender", "setOneClickPost":
 		if len(args) != 1 || args[0].Kind != ValueBool {
@@ -1282,7 +1589,7 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 		"getSubject", "getPlainTextBody", "getHtmlBody", "getReplyTo", "getSenderDisplayName",
 		"getCharset", "getInReplyTo", "getReferences", "getOrgWideEmailAddressId",
 		"getTargetObjectId", "getTemplateId", "getTemplateName", "getWhatId", "getOptOutPolicy", "getEmailPriority",
-		"getUnsubscribeComment", "getUnsubscribeUrls",
+		"getUnsubscribeComment", "getUnsubscribeUrls", "getCustomHeaders",
 		"getSaveAsActivity", "getTreatBodiesAsTemplate", "getTreatTargetObjectAsRecipient", "getUseSignature", "getBccSender", "getOneClickPost":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects 0 arguments", method)
@@ -1295,6 +1602,15 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 		return receiver.Fields[emailMessageFieldName(method)], receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
+	}
+}
+
+func singleEmailIDSetter(method string) bool {
+	switch method {
+	case "setOrgWideEmailAddressId", "setTargetObjectId", "setTemplateId", "setWhatId":
+		return true
+	default:
+		return false
 	}
 }
 func callMassEmailMessageMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -1328,7 +1644,11 @@ func callMassEmailMessageMember(receiver Value, method string, args []Value) (Va
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects 0 arguments", method)
 		}
-		return receiver.Fields[emailMessageFieldName(method)], receiver, false, true, nil
+		value := receiver.Fields[emailMessageFieldName(method)]
+		if (method == "getTargetObjectIds" || method == "getWhatIds") && value.Kind == ValueNull {
+			value = List()
+		}
+		return value, receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}

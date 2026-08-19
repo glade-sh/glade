@@ -10,6 +10,7 @@ const failures = []
 const indexableTitles = new Map()
 const indexableDescriptions = new Map()
 const fragmentIDs = new Map()
+const siteBuildPath = path.join(distRoot, 'site-build.json')
 
 async function exists(file) {
   try { return (await stat(file)).isFile() } catch { return false }
@@ -133,8 +134,12 @@ for (const file of pages) {
   if (h1Count !== 1 && !relative.endsWith('404.html')) failures.push(`${relative}: expected one H1, found ${h1Count}`)
 
   const ids = [...html.matchAll(/\sid=["']([^"']+)["']/g)].map((match) => match[1])
-  if (new Set(ids).size !== ids.length) failures.push(`${relative}: duplicate HTML ids`)
+  if (new Set(ids).size !== ids.length) failures.push(`${relative}: duplicate id`)
   fragmentIDs.set(file, new Set(ids))
+
+  if (/&lt;[a-z0-9-]+ [a-z0-9-]+&gt;/i.test(html)) {
+    failures.push(`${relative}: malformed angle-bracket placeholder`)
+  }
 
   const attributes = [...html.matchAll(/(?:href|src)=["']([^"']+)["']/g)].map((match) => match[1])
   for (const value of attributes) {
@@ -161,8 +166,16 @@ for (const file of pages) {
   }
 }
 
-for (const required of ['_headers', '_redirects', 'robots.txt', 'sitemap.xml', 'install.sh']) {
+for (const required of ['_headers', '_redirects', 'robots.txt', 'sitemap.xml', 'install.sh', 'site-build.json']) {
   if (!(await exists(path.join(distRoot, required)))) failures.push(`missing built public artifact /${required}`)
+}
+
+if (await exists(siteBuildPath)) {
+  const siteBuild = JSON.parse(await readFile(siteBuildPath, 'utf8'))
+  const releaseManifest = JSON.parse(await readFile(path.join(siteRoot, 'release-manifest.json'), 'utf8'))
+  if (siteBuild.schemaVersion !== 1) failures.push('site-build.json: unsupported schema')
+  if (siteBuild.releaseVersion !== releaseManifest.version) failures.push('site-build.json: release version differs from checked manifest')
+  if (!siteBuild.siteCommit || !siteBuild.builtAt) failures.push('site-build.json: missing build identity')
 }
 
 const sitemap = await readFile(path.join(distRoot, 'sitemap.xml'), 'utf8').catch(() => '')
@@ -194,7 +207,7 @@ if (!globalRule || globalRule.headers.has('cache-control')) failures.push('_head
 if (globalRule?.headers.get('x-frame-options') !== 'DENY' || !globalRule?.headers.has('permissions-policy')) {
   failures.push('_headers: global security headers are missing')
 }
-for (const routePrefix of ['/', '/guide/*', '/reference/*', '/help/*', '/maintainer/*', '/install.sh']) {
+for (const routePrefix of ['/', '/guide/*', '/reference/*', '/help/*', '/maintainer/*', '/private-corpus-assurance.html', '/install.sh']) {
   const rule = headerRules.find((candidate) => candidate.path === routePrefix)
   if (!/max-age=0, must-revalidate/.test(rule?.headers.get('cache-control') || '')) {
     failures.push(`_headers: ${routePrefix} does not revalidate`)

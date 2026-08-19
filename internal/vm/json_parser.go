@@ -86,6 +86,11 @@ func (vm *VM) callJSONParserMember(receiver Value, method string, args []Value) 
 		}
 		token, ok := jsonParserCurrent(receiver)
 		if !ok {
+			if cleared, ok := jsonParserCurrentTokenEvenIfCleared(receiver); ok {
+				if name := jsonParserTokenName(cleared); name != "" {
+					return String(name), receiver, false, true, nil
+				}
+			}
 			return Null, receiver, false, true, nil
 		}
 		if jsonParserTokenKind(token) == "FIELD_NAME" {
@@ -509,6 +514,9 @@ func jsonParserIntegerValue(receiver Value, method string) (Value, error) {
 	if err != nil {
 		return Null, jsonParserException("JSONParser.%s cannot parse integer: %v", method, err)
 	}
+	if strings.EqualFold(method, "getLongValue") {
+		return longIntValue(value), nil
+	}
 	return Int(value), nil
 }
 
@@ -521,12 +529,18 @@ func jsonParserDecimalValue(receiver Value, method string) (Value, error) {
 	if kind != "VALUE_NUMBER_INT" && kind != "VALUE_NUMBER_FLOAT" {
 		return Null, jsonParserException("JSONParser.%s requires numeric token", method)
 	}
-	value, err := strconv.ParseFloat(jsonParserTokenText(token), 64)
+	text := jsonParserTokenText(token)
+	if strings.EqualFold(method, "getDoubleValue") {
+		value, err := strconv.ParseFloat(text, 64)
+		if err != nil {
+			return Null, jsonParserException("JSONParser.%s cannot parse decimal: %v", method, err)
+		}
+		return decimalAsDouble(Decimal(value)), nil
+	}
+	decimal, err := decimalFromText(text)
 	if err != nil {
 		return Null, jsonParserException("JSONParser.%s cannot parse decimal: %v", method, err)
 	}
-	decimal := Decimal(value)
-	decimal.Text = jsonParserTokenText(token)
 	return decimal, nil
 }
 
@@ -625,20 +639,6 @@ func jsonParserTokenStringField(token Value, field string) string {
 		return value.Text
 	}
 	return ""
-}
-
-var jsonTokenNames = []string{
-	"START_OBJECT",
-	"END_OBJECT",
-	"START_ARRAY",
-	"END_ARRAY",
-	"FIELD_NAME",
-	"VALUE_STRING",
-	"VALUE_NUMBER_INT",
-	"VALUE_NUMBER_FLOAT",
-	"VALUE_TRUE",
-	"VALUE_FALSE",
-	"VALUE_NULL",
 }
 
 func jsonTokenValue(name string) Value {

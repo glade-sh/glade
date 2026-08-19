@@ -342,6 +342,9 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 	if strings.EqualFold(from, to) || strings.EqualFold(to, "Object") {
 		return true
 	}
+	if _, ok := vm.generatedPlatformTypeDistance(from, to, make(map[string]bool)); ok {
+		return true
+	}
 	if vm.namespaceAliasEquivalent(from, to) {
 		return true
 	}
@@ -419,6 +422,28 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 		return true
 	}
 	return false
+}
+
+func (vm *VM) generatedPlatformTypeDistance(typeName, target string, seen map[string]bool) (int, bool) {
+	typeName = canonicalRuntimePlatformType(typeName)
+	target = canonicalRuntimePlatformType(target)
+	if strings.EqualFold(typeName, target) {
+		return 0, true
+	}
+	key := strings.ToLower(strings.TrimSpace(typeName))
+	if key == "" || seen[key] {
+		return 0, false
+	}
+	seen[key] = true
+	generation, ok := generatedPlatformTypes()[key]
+	if !ok || strings.TrimSpace(generation.SuperClass) == "" {
+		return 0, false
+	}
+	distance, ok := vm.generatedPlatformTypeDistance(generation.SuperClass, target, seen)
+	if !ok {
+		return 0, false
+	}
+	return distance + 1, true
 }
 func stripLeadingTypeNamespace(typeName string) string {
 	first := strings.Index(typeName, ".")
@@ -1160,16 +1185,32 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 		return vm.coerceAssignable(typeName, value.List[0])
 	}
+	if (strings.EqualFold(typeName, "Integer") || strings.EqualFold(typeName, "Long")) && value.Kind == ValueInt {
+		return integerValueForType(value, typeName), nil
+	}
 	if (strings.EqualFold(typeName, "Decimal") || strings.EqualFold(typeName, "Double")) && value.Kind == ValueInt {
-		decimal := Decimal(float64(value.Int))
-		decimal.Text = strconv.FormatInt(value.Int, 10)
+		decimal, err := decimalFromText(strconv.FormatInt(value.Int, 10))
+		if err != nil {
+			return Null, err
+		}
+		if strings.EqualFold(typeName, "Double") {
+			decimal = decimalAsDouble(decimal)
+		}
 		return decimal, nil
 	}
 	if (strings.EqualFold(typeName, "Integer") || strings.EqualFold(typeName, "Long")) && untypedIntegralDecimalLiteral(value) {
-		if value.Decimal < float64(math.MinInt64) || value.Decimal > float64(math.MaxInt64) {
+		if strings.EqualFold(typeName, "Integer") {
+			converted, err := int32FromDecimalValue("decimal assignment", value)
+			if err != nil {
+				return Null, fmt.Errorf("cannot assign decimal to %s", typeName)
+			}
+			return Int(int64(converted)), nil
+		}
+		converted, err := int64FromDecimalValue("decimal assignment", value)
+		if err != nil {
 			return Null, fmt.Errorf("cannot assign decimal to %s", typeName)
 		}
-		return Int(int64(value.Decimal)), nil
+		return longIntValue(converted), nil
 	}
 	if collectionBase(typeName) == "List" && value.Kind == ValueList {
 		sourceTypes := []string{value.Type, value.Runtime, value.Static}
@@ -1291,10 +1332,10 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			value.Type = typeName
 			return value, nil
 		}
-		resultType := typeName
 		if strings.EqualFold(valueType, "sObject") && mapConcreteSObjectValueType(sourceType) != "" {
-			resultType = sourceType
+			return value, nil
 		}
+		resultType := typeName
 		type coercedEntry struct {
 			key      string
 			keyValue Value

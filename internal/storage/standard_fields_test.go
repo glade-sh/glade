@@ -67,3 +67,78 @@ func stringSliceContains(values []string, target string) bool {
 	}
 	return false
 }
+
+func TestStandardObjectDefinitionLeadEmailIDLookup(t *testing.T) {
+	def, ok := StandardObjectDefinition("Lead")
+	if !ok {
+		t.Fatal("StandardObjectDefinition Lead not found")
+	}
+	email, ok := def.Fields["Email"]
+	if !ok {
+		t.Fatal("Lead.Email field not found")
+	}
+	if !email.IDLookup {
+		t.Fatal("Lead.Email IDLookup = false, want true")
+	}
+}
+
+func TestStandardObjectDefinitionAccountNameIDLookupFalse(t *testing.T) {
+	def, ok := StandardObjectDefinition("Account")
+	if !ok {
+		t.Fatal("StandardObjectDefinition Account not found")
+	}
+	name, ok := def.Fields["Name"]
+	if !ok {
+		t.Fatal("Account.Name field not found")
+	}
+	if name.IDLookup {
+		t.Fatal("Account.Name IDLookup = true, want false")
+	}
+}
+
+func TestMergeStandardFieldsCaseVariantOrderIsDeterministic(t *testing.T) {
+	fields := map[string]Field{
+		"UserName": {APIName: "UserName", Label: "User Name"},
+		"Username": {APIName: "Username", Label: "Username"},
+	}
+	for i := 0; i < 10; i++ {
+		definition := ObjectDefinition{Fields: make(map[string]Field)}
+		mergeStandardFields(&definition, fields)
+		if _, ok := definition.Fields["UserName"]; !ok {
+			t.Fatalf("merge retained %v on run %d, want UserName", definition.Fields, i+1)
+		}
+		if _, ok := definition.Fields["Username"]; ok {
+			t.Fatalf("merge retained case-variant Username on run %d", i+1)
+		}
+	}
+}
+
+func TestStandardObjectDefinitionNoFeatureGatedFieldsFromEnrichment(t *testing.T) {
+	def, ok := StandardObjectDefinition("Account")
+	if !ok {
+		t.Fatal("StandardObjectDefinition Account not found")
+	}
+	if _, ok := def.Fields["PersonEmail"]; ok {
+		t.Fatal("Account should not have PersonEmail without PersonAccounts feature")
+	}
+	if _, ok := def.Fields["FirstName"]; ok {
+		t.Fatal("Account should not have FirstName without PersonAccounts feature")
+	}
+}
+
+func TestV2DescribeIDLookupDecodeRoundTrip(t *testing.T) {
+	describe, ok, err := lookupStandardDescribeCatalogV2("Lead")
+	if err != nil || !ok {
+		t.Fatalf("lookup Lead v2: ok=%v err=%v", ok, err)
+	}
+	var emailIDLookup bool
+	for _, field := range describe.Fields {
+		if field.Name == "Email" {
+			emailIDLookup = field.IDLookup
+			break
+		}
+	}
+	if !emailIDLookup {
+		t.Fatal("v2 describe Lead.Email idLookup not decoded")
+	}
+}

@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+No changes yet.
+
+## v0.2.11 - 2026-08-12
+
+Glade v0.2.11 expands checked Salesforce compatibility, publishes exact-candidate
+private-corpus assurance, and makes local correctness and release checks faster
+without broadening the documented support boundary.
+
+Salesforce compatibility and private-corpus assurance:
+
+- Expanded API 67-backed compiler, semantic, schema, standard-library, and VM
+  contracts used by the frozen two-repository private corpus. The product
+  default local API version remains `v65.0`; API 67 is the comparison contract,
+  not a silent default-version change.
+- Replayed every required project check and real local test shard against the
+  exact candidate. Both neutral repositories passed all eight authoritative
+  replay records.
+- Reconciled 321 observed usage keys with zero unknown usage. The sealed result
+  contains 184 required surfaces: 178 compile-ready and test-ready,
+  54 runtime-parity-ready from fresh Salesforce proof,
+  107 explicit zero-credit non-parity outcomes, and six hosted-deferred surfaces.
+- Added a self-contained [private-corpus assurance explorer](https://glade.sh/private-corpus-assurance.html)
+  for filtering the sealed outcome by namespace, repository, disposition,
+  evidence, exclusion, and text. These overlapping, surface-specific outcomes
+  are not a claim of blanket Salesforce parity.
+
 Performance and correctness:
 
 - Added an exact, checksummed semantic result cache for `glade check` and the
@@ -30,6 +56,22 @@ Local checks and releases:
 - Added a measurement wrapper that records release check time, memory, file I/O,
   toolchain, commit, and caller-declared cache state without changing the
   correctness gate or priming caches.
+
+Distribution and upgrades:
+
+- The release workflow publishes parser-capable macOS and Linux archives for
+  AMD64 and ARM64, `SHA256SUMS.txt`, CycloneDX SBOMs, and provenance
+  attestations. Verify the checksum and run `glade doctor` as described in the
+  [distribution workflow](https://github.com/glade-sh/glade/blob/v0.2.11/docs/DISTRIBUTION_WORKFLOW.md).
+- No migration is required for documented use. The default local API version
+  remains `v65.0`, and semantic cache entries are disposable and fail closed
+  when their source, schema, dependency, analyzer, platform, or option identity
+  changes.
+- Known hosted gaps remain explicit in
+  [KNOWN_GAPS.md](https://github.com/glade-sh/glade/blob/v0.2.11/docs/KNOWN_GAPS.md)
+  and in the assurance snapshot. Local deterministic mocks, zero-credit
+  non-parity outcomes, and hosted-deferred surfaces are not hosted Salesforce
+  support.
 
 ## v0.2.10 - 2026-07-27
 

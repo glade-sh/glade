@@ -325,8 +325,8 @@ func callOrgInstrumentationServiceMember(receiver Value, method string, args []V
 	}
 }
 
-func callUserProvisioningBatchableMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
-	if !userProvisioningBatchableType(receiver.Type) {
+func callUserProvisioningBatchableMember(vm *VM, receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if !vm.isUserProvisioningBatchableType(receiver.Type) {
 		return Null, receiver, false, false, nil
 	}
 	switch strings.ToLower(method) {
@@ -390,6 +390,38 @@ func callUserProvisioningBatchableMember(receiver Value, method string, args []V
 		return Bool(false), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
+	}
+}
+
+func (vm *VM) isUserProvisioningBatchableType(typeName string) bool {
+	if userProvisioningBatchableType(typeName) {
+		return true
+	}
+	class, ok := vm.lookupClass(typeName)
+	if !ok {
+		return false
+	}
+	seen := map[string]bool{}
+	for current := class; ; {
+		name := runtimeClassName(current)
+		key := strings.ToLower(strings.TrimSpace(name))
+		if key != "" && seen[key] {
+			return false
+		}
+		if key != "" {
+			seen[key] = true
+		}
+		if userProvisioningBatchableType(name) {
+			return true
+		}
+		if strings.TrimSpace(current.SuperClass) == "" {
+			return false
+		}
+		next, ok := vm.lookupClass(current.SuperClass)
+		if !ok {
+			return userProvisioningBatchableType(current.SuperClass)
+		}
+		current = next
 	}
 }
 

@@ -25,7 +25,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-const runtimePatchABI = "apextest-runtime-patch-v2"
+const runtimePatchABI = "apextest-runtime-patch-v3"
 
 // runtimePatchAuthority is attached only to runtimes compiled from a complete,
 // immutable Index source snapshot. Disk-restored entries intentionally have no
@@ -1368,7 +1368,7 @@ func runtimePatchCloneProgram(in ir.Program, active map[*ir.Expr]bool, depth int
 	if !ok {
 		return ir.Program{}, false
 	}
-	return ir.Program{Instructions: instructions, Source: in.Source}, true
+	return ir.Program{Instructions: instructions, Source: in.Source, APIVersion: in.APIVersion, Trigger: in.Trigger}, true
 }
 
 func runtimePatchCloneInstructions(in []ir.Instruction, active map[*ir.Expr]bool, depth int) ([]ir.Instruction, bool) {

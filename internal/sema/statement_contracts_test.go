@@ -55,6 +55,16 @@ func TestStatementContractsAllowInstructionsAfterThrow(t *testing.T) {
 	}
 }
 
+func TestStatementContractsAllowFallbackAfterTerminatingTry(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { private String load(String value) { try { return value; } catch (Exception error) { return 'fallback'; } return null; } }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("fallback after a terminating try must remain compiler-compatible: %#v", result.Diagnostics)
+	}
+}
+
 func TestSwitchContractsRejectUnsupportedSelectorsAndDuplicateValues(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{
@@ -277,10 +287,11 @@ func TestStatementContractsAllowLoopAndExceptionControls(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{
 		"Probe.cls": `
+public class ControlException extends Exception {}
 public class Probe {
   public void run() {
     while (true) { break; }
-    try { throw new Exception(); } catch (Exception error) { System.debug(error); }
+    try { throw new ControlException(); } catch (Exception error) { System.debug(error); }
   }
 }`,
 	})

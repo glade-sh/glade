@@ -123,7 +123,7 @@ onBeforeUnmount(() => {
     <div class="glade-cm-proof" aria-label="CodeMirror editor capabilities">
       <span><strong>Apex syntax</strong> annotations, SOQL, SObjects, and platform classes</span>
       <span><strong>Autocomplete</strong> describe, Database, Schema fields, DML results, maps, and local context</span>
-      <span><strong>Boundary labels</strong> Runs locally, Runs with limits, Requires Salesforce</span>
+      <span><strong>Boundary labels</strong> Runs locally, Runs locally with limits, Requires Salesforce</span>
     </div>
   </section>
 </template>

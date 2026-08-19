@@ -12,8 +12,8 @@ const check = process.argv.includes("--check");
 
 const statusLabels = {
   supported: "Runs locally",
-  partial: "Runs with limits",
-  stub: "Runs with limits",
+  partial: "Runs locally with limits",
+  stub: "Runs locally with limits",
   unsupported: "Requires Salesforce",
   unknown: "Not measured"
 };
@@ -233,6 +233,7 @@ function buildCatalog(markdown) {
   return {
     schemaVersion: 1,
     generatedFrom: "docs/STDLIB_COVERAGE.md",
+    summary: summarizeCoverage(markdown),
     statusLabels,
     receivers: mergeReceivers(parseCoverage(markdown), curatedReceivers),
     rootCompletions: [
@@ -242,10 +243,19 @@ function buildCatalog(markdown) {
       item("Limits", "class", "Governor counters", "supported", "Local counters for SOQL, DML, CPU, heap, and async", "Limits"),
       item("JSON", "class", "Serialization", "supported", "Local JSON helpers", "JSON"),
       item("UserInfo", "class", "User context", "supported", "Local identity helpers", "UserInfo"),
-      item("Answers", "class", "Hosted API", "unsupported", "Requires Salesforce", "Answers")
+      item("Answers", "class", "Hosted API", "supported", "Deterministic empty list, hosted search not performed", "Answers")
     ],
     demoReceivers
   };
+}
+
+function summarizeCoverage(markdown) {
+  const summary = { supported: 0, partial: 0, stub: 0, unsupported: 0, unknown: 0 };
+  for (const line of markdown.split("\n")) {
+    const match = /^\| [^|]+ \| `[^`]+` \| `([^`]+)` \| [^|]+ \|$/.exec(line);
+    if (match && Object.hasOwn(summary, match[1])) summary[match[1]] += 1;
+  }
+  return summary;
 }
 
 function renderTs(catalog) {

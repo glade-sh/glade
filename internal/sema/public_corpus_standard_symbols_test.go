@@ -38,7 +38,8 @@ public class PublicCorpusSymbols {
 
   public void deploy() {
     Metadata.DeployResult result = new Metadata.DeployResult();
-    result.errorStatusCode = Metadata.StatusCode.INTERNAL_ERROR;
+    result.errorStatusCode = 'INTERNAL_ERROR';
+    String errorStatusCode = result.errorStatusCode;
   }
 }
 `)
@@ -50,6 +51,22 @@ public class PublicCorpusSymbols {
 	assertNoDiagnosticContaining(t, result, "GLADESEMA018", "sequenceNumber")
 	assertNoDiagnosticContaining(t, result, "GLADESEMA018", "OrchestrationInstanceStatus")
 	assertNoDiagnosticContaining(t, result, "GLADESEMA018", "errorStatusCode")
+}
+
+func TestPublicCorpusMetadataDeployProblemTypeAssignment(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "MetadataDeployProblemType.cls"), `
+public class MetadataDeployProblemType {
+  public void deployMessage() {
+    Metadata.DeployMessage message = new Metadata.DeployMessage();
+    message.problemType = Metadata.DeployProblemType.Info;
+    System.assertEquals(Metadata.DeployProblemType.Info, message.problemType);
+  }
+}
+`)
+	result := analyzeStandardSymbolProject(root, filepath.Join(root, "MetadataDeployProblemType.cls"))
+	assertNoDiagnosticContaining(t, result, "GLADESEMA018", "problemType")
 }
 
 func TestPublicCorpusSObjectFieldDirectBooleanAccessors(t *testing.T) {

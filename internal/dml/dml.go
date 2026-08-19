@@ -319,7 +319,7 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 			continue
 		}
 		if !stored.System.IsDeleted {
-			results[i] = failedResult(record.ID, fmt.Sprintf("dml: record %s is not deleted", record.ID), "ENTITY_IS_NOT_DELETED", nil)
+			results[i] = failedResult(record.ID, "Entity is not in the recycle bin", "UNDELETE_FAILED", nil)
 			continue
 		}
 		if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {

@@ -1,7 +1,7 @@
 # Use Anonymous Apex Scratch in VS Code
 
 <div class="docs-intro">
-  <p class="docs-intro-eyebrow">Guided help</p>
+  <p class="docs-intro-eyebrow">Task guide</p>
   <p>Open a scratch Apex file, run it locally, and read the generated debug log.</p>
   <ul>
     <li>Open a small scratch editor.</li>
@@ -34,7 +34,7 @@ Expected: Glade runs local anonymous Apex against the active DB and prints a Sal
 
 ## Common wrong turn
 
-If the command says no SFDX project is open, open the project root folder, not a single `.cls` file.
+If the command says no Salesforce DX project is open, open the project root folder, not a single `.cls` file.
 
 ## Next
 

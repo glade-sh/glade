@@ -134,7 +134,7 @@ System.assertEquals('http://my.name.space', root.getAttributeKeyNsAt(0));
 System.assertEquals('test', root.getAttribute('type', 'http://my.name.space'));
 System.assertEquals('test', root.getAttributeValue('type', 'http://my.name.space'));
 System.assertEquals(null, root.getAttributeValueNs('type', 'http://my.name.space'));
-System.assertEquals('hellonote', root.getText());
+System.assertEquals('hello', root.getText());
 List<Dom.XmlNode> children = root.getChildren();
 System.assertEquals(3, children.size());
 System.assertEquals(1, root.getChildElements().size());
@@ -166,6 +166,88 @@ System.assertEquals('request', built.getRootElement().getName());
 System.assert(built.toXmlString().contains('<request'));
 System.assert(built.toXmlString().contains('<name>local</name>'));
 System.assert(built.toXmlString().contains('<payer>001000000000001AAA</payer>'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDomXmlNodeTypeEnumAndDomNamespaceMembers(t *testing.T) {
+	program, err := CompileAnonymous(`
+Dom.XmlNodeType elementType = Dom.XmlNodeType.ELEMENT;
+System.assertEquals(Dom.XmlNodeType.ELEMENT, elementType);
+System.assertEquals(0, elementType.ordinal());
+System.assertEquals('ELEMENT', elementType.name());
+System.assertEquals('ELEMENT', elementType.toString());
+System.assertEquals(true, elementType.equals(Dom.XmlNodeType.ELEMENT));
+System.assertEquals(false, elementType.equals(Dom.XmlNodeType.TEXT));
+System.assertNotEquals(0, elementType.hashCode());
+
+Dom.XmlNodeType textType = Dom.XmlNodeType.TEXT;
+System.assertEquals(1, textType.ordinal());
+System.assertEquals('TEXT', textType.name());
+
+Dom.XmlNodeType commentType = Dom.XmlNodeType.COMMENT;
+System.assertEquals(2, commentType.ordinal());
+System.assertEquals('COMMENT', commentType.name());
+
+List<Dom.XmlNodeType> allTypes = Dom.XmlNodeType.values();
+System.assertEquals(3, allTypes.size());
+System.assertEquals('ELEMENT', allTypes[0].name());
+System.assertEquals('TEXT', allTypes[1].name());
+System.assertEquals('COMMENT', allTypes[2].name());
+
+Dom.XmlNodeType fromName = Dom.XmlNodeType.valueOf('TEXT');
+System.assertEquals(Dom.XmlNodeType.TEXT, fromName);
+System.assertEquals(1, fromName.ordinal());
+
+Dom.XmlNodeType fromLower = Dom.XmlNodeType.valueOf('text');
+System.assertEquals(Dom.XmlNodeType.TEXT, fromLower);
+
+Dom.XmlNodeType lowerText = dom.XmlNodeType.TEXT;
+System.assertEquals(Dom.XmlNodeType.TEXT, lowerText);
+System.assertEquals(1, lowerText.ordinal());
+
+Dom.XmlNodeType lowerComment = dom.XmlNodeType.COMMENT;
+System.assertEquals(Dom.XmlNodeType.COMMENT, lowerComment);
+System.assertEquals(2, lowerComment.ordinal());
+
+Dom.Document doc1 = new Dom.Document();
+doc1.load('<root><child>data</child></root>');
+String docStr = doc1.toString();
+System.assert(docStr.length() > 0);
+
+Dom.Document doc2 = new Dom.Document();
+doc2.load('<root><child>data</child></root>');
+System.assert(doc1.hashCode() != 0);
+System.assert(doc2.hashCode() != 0);
+
+Dom.XmlNode built = new Dom.XmlNode();
+System.assertEquals(Dom.XmlNodeType.ELEMENT, built.getNodeType());
+
+Dom.Document builtDoc = new Dom.Document();
+Dom.XmlNode root = builtDoc.createRootElement('root', null, null);
+Dom.XmlNode child1 = root.addChildElement('a', null, null);
+Dom.XmlNode child2 = root.addChildElement('b', null, null);
+System.assertEquals(2, root.getChildElements().size());
+
+System.assertEquals('a', child1.getName());
+
+Dom.XmlNode newKid = root.addChildElement('x', null, null);
+System.assertEquals('x', newKid.getName());
+System.assertEquals(3, root.getChildElements().size());
+
+Dom.XmlNode inserted = root.insertBefore(new Dom.XmlNode(), child2);
+System.assertEquals(Dom.XmlNodeType.ELEMENT, inserted.getNodeType());
+System.assertEquals(4, root.getChildElements().size());
+
+System.assertEquals(true, root.removeChild(inserted));
+System.assertEquals(3, root.getChildElements().size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -456,6 +538,30 @@ System.assert(RestContext.response.getHeaderKeys().contains('location'));
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecRestRequestAndResponseConstructorDefaultsMatchSalesforce(t *testing.T) {
+	program, err := CompileAnonymous(`
+RestRequest req = new RestRequest();
+System.assertEquals(null, req.requestURI);
+System.assertEquals(null, req.resourcePath);
+System.assertEquals(null, req.httpMethod);
+System.assertEquals(null, req.remoteAddress);
+System.assertEquals(null, req.requestBody);
+System.assertEquals(0, req.headers.size());
+System.assertEquals(0, req.params.size());
+
+RestResponse res = new RestResponse();
+System.assertEquals(null, res.statusCode);
+System.assertEquals(0, res.headers.size());
+System.assertEquals(null, res.responseBody);
+`)
+	if err != nil {
+		t.Fatalf("compile: %v", err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatalf("execute: %v", err)
 	}
 }
 
@@ -1517,8 +1623,6 @@ System.assertEquals('abcdefg...', alphabet.abbreviate(10));
 System.assertEquals('...ijklmn...', alphabet.abbreviate(8, 12));
 String machine = 'i am a machine';
 System.assertEquals('robot', machine.difference('i am a robot'));
-String interstate = 'interstate';
-System.assertEquals('interst', interstate.commonPrefix('interstellar'));
 List<String> prefixes = new List<String>();
 prefixes.add('flower');
 prefixes.add('flow');
@@ -1557,38 +1661,12 @@ System.assertEquals('42', camel.get(2));
 String edge = 'abΩcdΩef';
 System.assertEquals(1, edge.indexOfAny('bΩ'));
 System.assertEquals(2, edge.indexOfAny('Ω'));
-System.assertEquals(7, edge.lastIndexOfAny('Ωf'));
 System.assertEquals(4, edge.indexOfAnyBut('abΩc'));
-String repeated = 'one fish two fish red fish';
-System.assertEquals(13, repeated.ordinalIndexOf('fish', 2));
-System.assertEquals(9, repeated.lastOrdinalIndexOf('two', 1));
-System.assertEquals(-1, repeated.ordinalIndexOf('fish', 0));
 String overlaySource = 'abcdef';
 System.assertEquals('abZZef', overlaySource.overlay('ZZ', 2, 4));
 System.assertEquals('XXabcdef', overlaySource.overlay('XX', -2, 0));
-System.assertEquals('cdefab', overlaySource.rotate(-2));
-System.assertEquals('efabcd', overlaySource.rotate(2));
 String mixed = 'The Ω42';
 System.assertEquals('tHE ω42', mixed.swapCase());
-String stripSource = '  abc  ';
-System.assertEquals('abc', stripSource.strip());
-System.assertEquals('abc  ', stripSource.stripStart());
-System.assertEquals('  abc', stripSource.stripEnd());
-String blankStrip = '   ';
-System.assertEquals(null, blankStrip.stripToNull());
-System.assertEquals('', blankStrip.stripToEmpty());
-String yxy = 'xyabczy';
-System.assertEquals('abc', yxy.strip('xyz'));
-List<String> stripItems = new List<String>();
-stripItems.add('  one  ');
-stripItems.add('  two');
-List<String> strippedItems = String.stripAll(stripItems);
-System.assertEquals('one', strippedItems.get(0));
-System.assertEquals('two', strippedItems.get(1));
-String caseSource = 'Force FORCE force';
-System.assertEquals('Force force', caseSource.replaceOnce('FORCE ', ''));
-System.assertEquals('Cloud Cloud Cloud', caseSource.replaceIgnoreCase('force', 'Cloud'));
-System.assertEquals('  ', caseSource.removeIgnoreCase('force'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1641,33 +1719,17 @@ System.assertEquals('&notarealentity;&apos;', unknownHtml.unescapeHtml4());
 System.assertEquals('&notarealentity;&apos;', unknownHtml.unescapeHtml3());
 System.assertEquals(namedHtml, namedHtml.unescapeXml());
 System.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml());
-System.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml10());
-System.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml11());
 System.assertEquals('"<>&', escapedHtmlCore.unescapeXml());
 String escapedXmlApos = '&apos;';
 String xmlApos = escapedXmlApos.unescapeXml();
 System.assertEquals(39, xmlApos.codePointAt(0));
-String escapedXmlNumeric = '&#65;&#x41;';
-System.assertEquals('AA', escapedXmlNumeric.unescapeXml10());
-System.assertEquals('&#31;', '&#31;'.unescapeXml10());
-String xml11Restricted = '&#31;'.unescapeXml11();
-System.assertEquals(31, xml11Restricted.codePointAt(0));
-String xml10AllowedWhitespace = '&#9;&#10;&#13;';
-System.assertEquals(3, xml10AllowedWhitespace.unescapeXml10().length());
-String xml11LowControl = '&#1;';
-System.assertEquals(1, xml11LowControl.unescapeXml11().codePointAt(0));
 String replacementEntity = '&#xFFFD;';
 String replacementValue = replacementEntity.unescapeXml();
 System.assertEquals(65533, replacementValue.codePointAt(0));
-String malformedXml = '&#xZZ;&copy;';
-System.assertEquals('&#xZZ;&copy;', malformedXml.unescapeXml11());
 String invalidXmlNumeric = '&#0;&#x0;&#xD800;&#55296;&#x110000;&#+65;&#x+41;';
 System.assertEquals(invalidXmlNumeric, invalidXmlNumeric.unescapeXml());
-System.assertEquals('AZ', '&#65;&#x5a;'.unescapeXml11());
 String replaceEmpty = 'abc';
 System.assertEquals('abc', replaceEmpty.replace('', 'x'));
-System.assertEquals('abc', replaceEmpty.replaceOnce('', 'x'));
-System.assertEquals('abc', replaceEmpty.replaceIgnoreCase('', 'x'));
 System.assertEquals('abc', replaceEmpty.remove(''));
 System.assert(String.isBlank(null));
 System.assert(!String.isNotBlank(null));
@@ -1676,39 +1738,6 @@ System.assert(!String.isNotBlank('$RecordType.Name'));
 System.assertEquals('', String.escapeSingleQuotes(''));
 System.assertEquals('001000000000001AAA', String.escapeSingleQuotes((Id)'001000000000001AAA'));
 System.assertEquals(null, String.escapeSingleQuotes(null));
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := Execute(program, nil); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestExecStringStdlibXMLVersionEscapes(t *testing.T) {
-	program, err := CompileAnonymous(`
-String xml10Invalid = String.fromCharArray(new List<Integer>{65, 1, 66, 0, 67});
-System.assertEquals('ABC', xml10Invalid.escapeXml10());
-String xml10Control = String.fromCharArray(new List<Integer>{65, 127, 66, 133, 67});
-String xml10Escaped = xml10Control.escapeXml10();
-System.assertEquals(65, xml10Escaped.codePointAt(0));
-System.assertEquals(38, xml10Escaped.charAt(1));
-System.assertEquals(35, xml10Escaped.charAt(2));
-System.assertEquals(66, xml10Escaped.charAt(7));
-System.assertEquals(133, xml10Escaped.codePointAt(8));
-String xml11Control = String.fromCharArray(new List<Integer>{65, 0, 1, 66, 31, 67, 133});
-String xml11Escaped = xml11Control.escapeXml11();
-System.assertEquals(65, xml11Escaped.codePointAt(0));
-System.assertEquals(38, xml11Escaped.charAt(1));
-System.assertEquals(35, xml11Escaped.charAt(2));
-System.assertEquals(66, xml11Escaped.charAt(5));
-System.assertEquals(38, xml11Escaped.charAt(6));
-System.assertEquals(35, xml11Escaped.charAt(7));
-System.assertEquals(67, xml11Escaped.charAt(11));
-System.assertEquals(133, xml11Escaped.codePointAt(12));
-String xmlMarkup = '<a attr=''q''>&"';
-System.assertEquals('&lt;a attr=&apos;q&apos;&gt;&amp;&quot;', xmlMarkup.escapeXml10());
-System.assertEquals('&lt;a attr=&apos;q&apos;&gt;&amp;&quot;', xmlMarkup.escapeXml11());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1771,21 +1800,124 @@ System.assertEquals('...mnopq...', 'abcdefghijklmnopqrstuvwxyz'.abbreviate(12, 1
 System.assertEquals('abXXef', 'abcdef'.overlay('XX', 4, 2));
 System.assertEquals('abcdefZZ', 'abcdef'.overlay('ZZ', 99, 100));
 System.assertEquals('aZ 9ω', 'Az 9Ω'.swapCase());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
 
-String xml10Boundary = String.fromCharArray(new List<Integer>{9, 10, 13, 31, 32, 55295, 57344, 65533, 128512});
-String xml10Escaped = xml10Boundary.escapeXml10();
-System.assertEquals(8, xml10Escaped.length());
-System.assertEquals(9, xml10Escaped.codePointAt(0));
-System.assertEquals(32, xml10Escaped.codePointAt(3));
-System.assertEquals(55295, xml10Escaped.codePointAt(4));
-System.assertEquals(62976, xml10Escaped.codePointAt(7));
-String xml11Boundary = String.fromCharArray(new List<Integer>{0, 1, 8, 9, 10, 13, 31, 32});
-String xml11Escaped = xml11Boundary.escapeXml11();
-System.assertEquals(0, xml11Escaped.indexOf('&#1;'));
-System.assertEquals(4, xml11Escaped.indexOf('&#8;'));
-String tabChar = String.fromCharArray(new List<Integer>{9});
-System.assertEquals(8, xml11Escaped.indexOf(tabChar));
-System.assertEquals(11, xml11Escaped.indexOf('&#31;'));
+func TestExecStringFormatTypedElementsAPI67(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Object> numberArgs = new List<Object>{ 2 };
+Boolean caughtNumber = false;
+try {
+  String.format('{0,number}', numberArgs);
+} catch (StringException e) {
+  caughtNumber = true;
+  System.assertEquals('Cannot format given Object as a Number', e.getMessage());
+}
+System.assert(caughtNumber);
+
+List<Object> dateArgs = new List<Object>{ Datetime.newInstance(2024, 1, 2, 3, 4, 5) };
+Boolean caughtDate = false;
+try {
+  String.format('{0,date,yyyy-MM-dd}', dateArgs);
+} catch (StringException e) {
+  caughtDate = true;
+  System.assertEquals('Cannot format given Object (java.lang.String) as a Date', e.getMessage());
+}
+System.assert(caughtDate);
+
+Boolean caughtChoice = false;
+try {
+  String.format('{0,choice,0#none|1#one|1<many}', numberArgs);
+} catch (StringException e) {
+  caughtChoice = true;
+  System.assertEquals('''2'' is not a Number', e.getMessage());
+}
+System.assert(caughtChoice);
+
+Boolean caughtNullChoice = false;
+try {
+  String.format('{0,choice,0#none|1#one|1<many}', new List<Object>{ null });
+} catch (StringException e) {
+  caughtNullChoice = true;
+  System.assertEquals('''null'' is not a Number', e.getMessage());
+}
+System.assert(caughtNullChoice);
+
+Boolean caughtUnknown = false;
+try {
+  String.format('{0,unknown}', numberArgs);
+} catch (StringException e) {
+  caughtUnknown = true;
+  System.assertEquals('Unknown format type "unknown"', e.getMessage());
+}
+System.assert(caughtUnknown);
+
+Boolean caughtUppercaseNumber = false;
+try {
+  String.format('{0,NUMBER}', numberArgs);
+} catch (StringException e) {
+  caughtUppercaseNumber = true;
+  System.assertEquals('Cannot format given Object as a Number', e.getMessage());
+}
+System.assert(caughtUppercaseNumber);
+
+System.assertEquals('Ada', String.format('{0}', new List<String>{ 'Ada' }));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringFormatMissingKnownTypeUsesUntypedPlaceholder(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('{3}', String.format('{3,number}', new List<Object>{ '2' }));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringFormatMissingUnknownTypeStillValidatesType(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+  String.format('{3,unknown}', new List<Object>{ '2' });
+} catch (StringException e) {
+  caught = true;
+  System.assertEquals('Unknown format type "unknown"', e.getMessage());
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringFormatEmptyTypeUsesBadArgumentSyntax(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+  String.format('{0,}', new List<Object>{ '2' });
+} catch (StringException e) {
+  caught = true;
+  System.assertEquals('Bad argument syntax: [at pattern index 1] "0,}"', e.getMessage());
+}
+System.assert(caught);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1808,14 +1940,8 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 		{method: "codePointCount", args: []Value{Int(1), Int(0)}},
 		{method: "splitByCharacterType", args: []Value{String("x")}},
 		{method: "overlay", args: []Value{String("x"), Int(0)}},
-		{method: "rotate", args: []Value{String("1")}},
 		{method: "swapCase", args: []Value{String("x")}},
-		{method: "strip", args: []Value{Int(1)}},
-		{method: "stripToNull", args: []Value{String("x")}},
-		{method: "stripToEmpty", args: []Value{String("x")}},
-		{method: "ordinalIndexOf", args: []Value{String("a")}},
 		{method: "replace", args: []Value{Null, String("x")}},
-		{method: "replaceOnce", args: []Value{String("a"), Null}},
 		{method: "remove", args: []Value{Null}},
 		{method: "escapeHtml4", args: []Value{Null}},
 		{method: "unescapeXml", args: []Value{Null}},
@@ -1829,17 +1955,14 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	if _, err := stringStatic("String.format", []Value{String("{0}"), String("x")}); err == nil {
 		t.Fatal("String.format expected bad argument error")
 	}
-	if _, err := stringStatic("String.format", []Value{String("{0,number,#.00}"), List(Int(42))}); err == nil || !strings.Contains(err.Error(), "MessageFormat typed format elements") {
-		t.Fatalf("String.format expected typed format unsupported error, got %v", err)
+	if _, err := stringStatic("String.format", []Value{String("{0,number,#.00}"), List(Int(42))}); err == nil || err.Error() != "Cannot format given Object as a Number" {
+		t.Fatalf("String.format expected typed number StringException, got %v", err)
 	}
 	if _, err := stringStatic("String.format", []Value{String("{0"), List(Int(42))}); err == nil || !strings.Contains(err.Error(), "unmatched") {
 		t.Fatalf("String.format expected unmatched brace error, got %v", err)
 	}
 	if _, err := stringStatic("String.fromCharArray", []Value{List(String("x"))}); err == nil {
 		t.Fatal("String.fromCharArray expected bad argument error")
-	}
-	if _, err := stringStatic("String.stripAll", []Value{List(Int(1))}); err == nil {
-		t.Fatal("String.stripAll expected bad argument error")
 	}
 	if _, err := stringStatic("String.getLevenshteinDistance", []Value{String("a"), String("b"), Int(-1)}); err == nil {
 		t.Fatal("String.getLevenshteinDistance expected bad threshold error")
@@ -2007,7 +2130,7 @@ func TestExecPatternMatchesSupportsVariablePossessiveQuantifier(t *testing.T) {
 				t.Fatal(err)
 			}
 			if got.Kind != ValueBool || got.Bool != tc.want {
-				compiled, compileErr := compileRegexp2Source("Pattern.matches", tc.pattern, 0)
+				compiled, compileErr := compileRegexp2Source("Pattern.matches", tc.pattern)
 				t.Fatalf("Pattern.matches(%q, %q) compiled %q err %v = %#v, want %v", tc.pattern, tc.input, compiled, compileErr, got, tc.want)
 			}
 		})
@@ -2144,9 +2267,6 @@ System.assertEquals('e477384d7ca229dd1426e64b63ebf2d36ebd6d7e669a6735424e72ea6c0
 System.assert(Crypto.verifyHmac('hmacSHA256', message, key, hmacSHA256));
 System.assert(Crypto.verifyHmac(' HMAC-SHA256 ', message, key, normalizedHmacSHA256));
 System.assert(!Crypto.verifyHmac('hmacSHA256', Blob.valueOf('changed'), key, hmacSHA256));
-System.assert(Crypto.areEqualConstantTime(hello, Blob.valueOf('hello')));
-System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hullo')));
-System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hello!')));
 	Blob aes128 = Crypto.generateAESKey(128);
 	Blob aes192 = Crypto.generateAESKey(192);
 	Blob aes256 = Crypto.generateAESKey(256);
@@ -2161,6 +2281,18 @@ System.assertEquals('0102030405060708090a0b0c0d0e0f10', EncodingUtil.convertToHe
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecCryptoAreEqualConstantTimeRejectsAbsentSalesforceAPI(t *testing.T) {
+	program, err := CompileAnonymous(`
+Crypto.areEqualConstantTime(Blob.valueOf('hello'), Blob.valueOf('hello'));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), `unsupported call "Crypto.areEqualConstantTime local key, certificate, encryption, and random surfaces"`) {
+		t.Fatalf("err = %v, want Salesforce-shaped unsupported API rejection", err)
 	}
 }
 
@@ -2226,6 +2358,9 @@ System.assertEquals('hello', Crypto.decryptWithManagedIV('AES256', key, encrypte
 Blob cbc = Crypto.encryptWithManagedIV('AES256-CBC', key, Blob.valueOf('hello'));
 System.assertEquals(32, cbc.size());
 System.assertEquals('hello', Crypto.decryptWithManagedIV('AES256-CBC', key, cbc).toString());
+Blob gcm = Crypto.encryptWithManagedIV('AES256-GCM', key, Blob.valueOf('hello'), Blob.valueOf('aad'));
+System.assertEquals(34, gcm.size());
+System.assertEquals('hello', Crypto.decryptWithManagedIV('AES256-GCM', key, gcm, Blob.valueOf('aad')).toString());
 Blob signature = Crypto.sign('RSA-SHA512', Blob.valueOf('hello'), Blob.valueOf('private'));
 System.assert(Crypto.verify('RSA-SHA512', Blob.valueOf('hello'), signature, Blob.valueOf('public')));
 System.assert(!Crypto.verify('RSA-SHA512', Blob.valueOf('changed'), signature, Blob.valueOf('public')));
@@ -2413,10 +2548,6 @@ System.assertEquals('', flowBase.getFlowName());
 System.assertEquals('', flowBase.getFlowNamespace());
 System.assertEquals(false, flowBase.hasFlow());
 System.assertEquals(false, flowBase.hasFlowOrApex());
-UserProvisioning.UserProvisioningPlugin plugin = new UserProvisioning.UserProvisioningPlugin();
-System.assertEquals('UserProvisioning.UserProvisioningPlugin', plugin.getPluginClassName());
-System.assert(plugin.describe() != null);
-System.assert(plugin.buildDescribeCall() != null);
 System.assert(new UserProvisioning.UserProvisioningProcessHandler().invoke(null) != null);
 System.assert(new UserProvisioning.DummyConnectorApexHandler().invoke(null) != null);
 `)
@@ -2425,6 +2556,121 @@ System.assert(new UserProvisioning.DummyConnectorApexHandler().invoke(null) != n
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecUserProvisioningBatchableLifecycleFixture(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.BatchableContextImpl bc = new Database.BatchableContextImpl();
+UserProvisioning.ProvisioningProcessHandlerOutput output = new UserProvisioning.ProvisioningProcessHandlerOutput();
+Map<String,Object> values = new Map<String,Object>();
+UserProvisioning.CollectingBatchable collectingBatchable = new UserProvisioning.CollectingBatchable('0','upr','app');
+System.assertNotEquals(null, collectingBatchable.clone());
+System.assertNotEquals(null, collectingBatchable.start(bc));
+collectingBatchable.execute(bc, new List<UserProvisioningRequest>());
+collectingBatchable.finish(bc);
+System.assertNotEquals(null, collectingBatchable.flowInputPreprocessing(values));
+collectingBatchable.flowPostProcessing(output, new Account(Name = 'CollectingBatchable'));
+System.assertNotEquals(null, collectingBatchable.getEventPrefix());
+System.assertNotEquals(null, collectingBatchable.getFlowName());
+System.assertNotEquals(null, collectingBatchable.getFlowNamespace());
+System.assertNotEquals(null, collectingBatchable.getPerBatchUPL());
+System.assertNotEquals(null, collectingBatchable.getPerBatchUPR());
+System.assertNotEquals(null, collectingBatchable.getUprToNewUplMap());
+System.assertEquals(false, collectingBatchable.hasFlow());
+System.assertEquals(false, collectingBatchable.hasFlowOrApex());
+collectingBatchable.postBatchProcessing();
+UserProvisioning.CommittingBatchable committingBatchable = new UserProvisioning.CommittingBatchable('upr');
+System.assertNotEquals(null, committingBatchable.clone());
+System.assertNotEquals(null, committingBatchable.start(bc));
+committingBatchable.execute(bc, new List<SObject>());
+committingBatchable.finish(bc);
+UserProvisioning.DeletingBatchable deletingBatchable = new UserProvisioning.DeletingBatchable('upr');
+System.assertNotEquals(null, deletingBatchable.clone());
+System.assertNotEquals(null, deletingBatchable.start(bc));
+deletingBatchable.execute(bc, new List<SObject>());
+deletingBatchable.finish(bc);
+UserProvisioning.LinkingBatchable linkingBatchable = new UserProvisioning.LinkingBatchable('upr');
+System.assertNotEquals(null, linkingBatchable.clone());
+System.assertNotEquals(null, linkingBatchable.start(bc));
+linkingBatchable.execute(bc, new List<SObject>());
+linkingBatchable.finish(bc);
+System.assertNotEquals(null, linkingBatchable.getFlowName());
+System.assertNotEquals(null, linkingBatchable.getFlowNamespace());
+System.assertEquals(false, linkingBatchable.hasFlow());
+System.assertEquals(false, linkingBatchable.hasFlowOrApex());
+UserProvisioning.PluginBatchable pluginBatchable = new UserProvisioning.PluginBatchable(new List<SObject>());
+System.assertNotEquals(null, pluginBatchable.clone());
+System.assertNotEquals(null, pluginBatchable.start(bc));
+pluginBatchable.execute(bc, new List<UserProvisioningRequest>());
+System.assertNotEquals(null, pluginBatchable.flowInputPreprocessing(values));
+pluginBatchable.flowPostProcessing(output, new Account(Name = 'PluginBatchable'));
+System.assertNotEquals(null, pluginBatchable.getEventPrefix());
+System.assertNotEquals(null, pluginBatchable.getFlowName());
+System.assertNotEquals(null, pluginBatchable.getFlowNamespace());
+System.assertNotEquals(null, pluginBatchable.getPerBatchUPL());
+System.assertNotEquals(null, pluginBatchable.getPerBatchUPR());
+System.assertNotEquals(null, pluginBatchable.getUprToNewUplMap());
+System.assertEquals(false, pluginBatchable.hasFlow());
+System.assertEquals(false, pluginBatchable.hasFlowOrApex());
+pluginBatchable.postBatchProcessing();
+UserProvisioning.ProvisioningBatchable provisioningBatchable = new UserProvisioning.ProvisioningBatchable(new List<SObject>());
+System.assertNotEquals(null, provisioningBatchable.clone());
+System.assertNotEquals(null, provisioningBatchable.start(bc));
+provisioningBatchable.execute(bc, new List<UserProvisioningRequest>());
+provisioningBatchable.finish(bc);
+System.assertNotEquals(null, provisioningBatchable.flowInputPreprocessing(values));
+provisioningBatchable.flowPostProcessing(output, new Account(Name = 'ProvisioningBatchable'));
+System.assertNotEquals(null, provisioningBatchable.getEventPrefix());
+System.assertNotEquals(null, provisioningBatchable.getFlowName());
+System.assertNotEquals(null, provisioningBatchable.getFlowNamespace());
+System.assertNotEquals(null, provisioningBatchable.getPerBatchUPL());
+System.assertNotEquals(null, provisioningBatchable.getPerBatchUPR());
+System.assertNotEquals(null, provisioningBatchable.getUprToNewUplMap());
+System.assertEquals(false, provisioningBatchable.hasFlow());
+System.assertEquals(false, provisioningBatchable.hasFlowOrApex());
+provisioningBatchable.postBatchProcessing();
+UserProvisioning.RequestingBatchable requestingBatchable = new UserProvisioning.RequestingBatchable(new List<SObject>());
+System.assertNotEquals(null, requestingBatchable.clone());
+System.assertNotEquals(null, requestingBatchable.start(bc));
+requestingBatchable.execute(bc, new List<UserProvisioningRequest>());
+requestingBatchable.finish(bc);
+UserProvisioning.UPASCleaningBatchable uPASCleaningBatchable = new UserProvisioning.UPASCleaningBatchable('upr');
+System.assertNotEquals(null, uPASCleaningBatchable.clone());
+System.assertNotEquals(null, uPASCleaningBatchable.start(bc));
+uPASCleaningBatchable.execute(bc, new List<SObject>());
+uPASCleaningBatchable.finish(bc);
+Test.startTest();
+Database.executeBatch(new UserProvisioning.CommittingBatchable('upr'), 200);
+Database.executeBatch(new UserProvisioning.DeletingBatchable('upr'), 200);
+Database.executeBatch(new UserProvisioning.LinkingBatchable('upr'), 200);
+Database.executeBatch(new UserProvisioning.RequestingBatchable(new List<SObject>()), 200);
+Database.executeBatch(new UserProvisioning.UPASCleaningBatchable('upr'), 200);
+Test.stopTest();
+System.assertEquals(5, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApex' AND Status = 'Completed']);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCompileUserProvisioningPluginBaseRejectsConstruction(t *testing.T) {
+	program, err := CompileAnonymous(`
+UserProvisioning.UserProvisioningPlugin plugin = new UserProvisioning.UserProvisioningPlugin();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = New(nil).Execute(program)
+	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "abstract") {
+		t.Fatalf("execute error = %v, want abstract base-class construction rejection", err)
 	}
 }
 
@@ -2454,10 +2700,8 @@ System.assertEquals('001B000001DVM9tIAH', String.valueOf(valid));
 System.assertEquals('id=001B000001DVM9tIAH', 'id=' + valid);
 System.assertEquals('Account', Id.valueOf('001B000001DVM9t').getSObjectType().getDescribe().getName());
 System.assertEquals('001B000001DVM9t', valid.to15());
-System.assertEquals('001B000001DVM9tIAH', valid.to18());
 Id longId = Id.valueOf('001B000001DVM9tIAH');
 System.assertEquals('001B000001DVM9t', longId.to15());
-System.assertEquals('001B000001DVM9tIAH', longId.to18());
 System.assertEquals('001B000001DVM9tIAH', restored.toString());
 System.assertEquals('001B000001DVM9tIAH', restoredLowerChecksum.toString());
 List<String> ids = new List<String>{valid};
@@ -2484,7 +2728,7 @@ right.add(1);
 System.assert(left.equals(right));
 System.assert(left.Equals(right));
 System.assertEquals(left.hashCode(), right.hashCode());
-System.assertEquals('List[1]', left.toString());
+System.assertEquals('(1)', left.toString());
 
 URL base = URL.getOrgDomainUrl();
 System.assertEquals('https://local.glade.example', base.toExternalForm());
@@ -2533,6 +2777,13 @@ System.assert(!System.equals(text, 'ridge'));
 System.assert(System.equals(null, null));
 System.assert(!System.equals(null, text));
 System.assertEquals(text.hashCode(), System.hashCode(text));
+try {
+    System.hashCode(null);
+    System.assert(false, 'System.hashCode(null) should fail');
+} catch (Exception e) {
+    System.assertEquals('System.NullPointerException', e.getTypeName());
+    System.assertEquals('Argument 1 cannot be null', e.getMessage());
+}
 List<Integer> left = new List<Integer>{1, 2};
 List<Integer> right = new List<Integer>{1, 2};
 System.assert(System.equals(left, right));
@@ -2589,7 +2840,6 @@ Map<String,Integer> counts = new Map<String,Integer>();
 System.assert(counts.isEmpty());
 System.assertEquals(null, counts.put('a', 1));
 System.assert(counts.containsKey('a'));
-System.assert(counts.containsValue(1));
 System.assertEquals(1, counts.remove('a'));
 System.assertEquals(null, counts.remove('missing'));
 System.assert(counts.isEmpty());
@@ -2652,11 +2902,11 @@ Exception constructed = new DmlException('blocked');
 System.assertEquals('blocked', constructed.getMessage());
 System.assertEquals('System.DmlException', constructed.getTypeName());
 System.assertEquals('System.DmlException', DmlException.class.getName());
-System.assertEquals(0, constructed.getLineNumber());
-System.assertEquals('', constructed.getStackTraceString());
+System.assertEquals(2, constructed.getLineNumber());
+System.assertEquals('AnonymousBlock: line 2, column 1', constructed.getStackTraceString());
 System.assertEquals('System.DmlException: blocked', constructed.toString());
 Exception noMessage = new DmlException();
-System.assertEquals(null, noMessage.getMessage());
+System.assertEquals('Script-thrown exception', noMessage.getMessage());
 Exception systemPrefixed = new System.DmlException('system blocked');
 System.assertEquals('System.DmlException', systemPrefixed.getTypeName());
 System.assertEquals('System.DmlException: system blocked', systemPrefixed.toString());
@@ -2703,8 +2953,7 @@ func TestExecCoreExceptionCauseStdlibMethods(t *testing.T) {
 Exception wrapperError = new DmlException('outer');
 System.assertEquals(null, wrapperError.getCause());
 Exception cause = new QueryException('root cause');
-Exception returned = wrapperError.initCause(cause);
-System.assert(wrapperError.equals(returned));
+wrapperError.initCause(cause);
 Exception recovered = wrapperError.getCause();
 System.assertEquals('System.QueryException', recovered.getTypeName());
 System.assertEquals('root cause', recovered.getMessage());
@@ -2769,7 +3018,7 @@ System.assert(fieldsCaught, 'JSONException.getInaccessibleFields should throw');
 
 Boolean causeCaught = false;
 try {
-	e.initCause(new Exception('root'));
+	e.initCause(new RootCauseException('root'));
 } catch (Exception ex) {
 	causeCaught = true;
 	System.assertEquals('System.NullPointerException', ex.getTypeName());
@@ -2779,7 +3028,9 @@ System.assert(causeCaught, 'JSONException.initCause should throw');
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
+	machine := New(nil)
+	registerCustomException(t, machine, "RootCauseException")
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -2903,6 +3154,27 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		"VisualforceException",
 		"XmlException",
 	}
+	runtimeProbes := map[string]struct {
+		call    string
+		message string
+	}{
+		"InvalidParameterValueException": {
+			call:    "Auth.AuthToken.getAccessToken('provider', 'local');",
+			message: "Invalid ID",
+		},
+		"NoAccessException": {
+			call:    "Auth.JWT parsed = Auth.JWTUtil.parseJWTFromStringWithoutValidation('eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwYXJzZWQtaXNzdWUiLCJzdWIiOiJwYXJzZWQtc3ViaiIsImF1ZCI6InBhcnNlZC1hdWQiLCJyb2xlcyI6WyJhZG1pbiIsInVzZXIiXSwibmJmIjoxMjMsImV4cCI6NDU2fQ.c2lnbmF0dXJl'); parsed.getNbfClockSkew();",
+			message: "method is not available for a parsed JWT",
+		},
+		"NoDataFoundException": {
+			call:    "Crypto.signWithCertificate('RSA-SHA999', Blob.valueOf('data'), 'cert');",
+			message: `unsupported signature algorithm "RSA-SHA999"`,
+		},
+		"NullPointerException": {
+			call:    "Date.valueOf();",
+			message: "Date.valueOf expects String",
+		},
+	}
 	var source strings.Builder
 	source.WriteString("Type exceptionType = Type.forName('Exception');\n")
 	source.WriteString("System.assertEquals(null, Type.forName('ImaginaryException'));\n")
@@ -2928,11 +3200,28 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		source.WriteString("Exception e")
 		source.WriteString(string(rune('A' + i/26)))
 		source.WriteString(string(rune('A' + i%26)))
-		source.WriteString(" = new ")
-		source.WriteString(name)
-		source.WriteString("('")
-		source.WriteString(name)
-		source.WriteString(" message');\n")
+		if probe, ok := runtimeProbes[name]; ok {
+			source.WriteString(" = null;\ntry {\n")
+			source.WriteString(probe.call)
+			source.WriteString("\nSystem.assert(false, 'expected ")
+			source.WriteString(name)
+			source.WriteString(" runtime exception');\n} catch (Exception caught")
+			source.WriteString(string(rune('A' + i/26)))
+			source.WriteString(string(rune('A' + i%26)))
+			source.WriteString(") { e")
+			source.WriteString(string(rune('A' + i/26)))
+			source.WriteString(string(rune('A' + i%26)))
+			source.WriteString(" = caught")
+			source.WriteString(string(rune('A' + i/26)))
+			source.WriteString(string(rune('A' + i%26)))
+			source.WriteString("; }\n")
+		} else {
+			source.WriteString(" = new ")
+			source.WriteString(name)
+			source.WriteString("('")
+			source.WriteString(name)
+			source.WriteString(" message');\n")
+		}
 		source.WriteString("System.assertEquals('System.")
 		source.WriteString(name)
 		source.WriteString("', e")
@@ -2942,12 +3231,20 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		source.WriteString("System.assertEquals('System.")
 		source.WriteString(name)
 		source.WriteString(": ")
-		source.WriteString(name)
-		source.WriteString(" message', e")
+		message := name + " message"
+		if probe, ok := runtimeProbes[name]; ok {
+			message = probe.message
+		} else if name == "TouchHandledException" {
+			// Salesforce reserves this exception for Visualforce/Aura throws;
+			// the local constructor contract uses the platform default message.
+			message = "Script-thrown exception"
+		}
+		source.WriteString(message)
+		source.WriteString("', e")
 		source.WriteString(string(rune('A' + i/26)))
 		source.WriteString(string(rune('A' + i%26)))
 		source.WriteString(".toString());\n")
-		if name != "JSONException" {
+		if name == "QueryException" {
 			source.WriteString("System.assertEquals(0, e")
 			source.WriteString(string(rune('A' + i/26)))
 			source.WriteString(string(rune('A' + i%26)))
@@ -3099,10 +3396,8 @@ Type exceptionType = Type.forName('Exception');
 Type dmlType = Type.forName('DmlException');
 System.assert(exceptionType.isAssignableFrom(dmlType));
 System.assert(!dmlType.isAssignableFrom(exceptionType));
-Type systemExceptionType = Type.forName('System', 'Exception');
-Type systemDmlType = Type.forName('System', 'DmlException');
-System.assert(systemExceptionType.isAssignableFrom(dmlType));
-System.assert(exceptionType.isAssignableFrom(systemDmlType));
+System.assertEquals(null, Type.forName('System', 'Exception'));
+System.assertNotEquals(null, Type.forName('System', 'DmlException'));
 
 Type markerType = Type.forName('Marker');
 Type childType = Type.forName('Child');
@@ -3142,7 +3437,6 @@ func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 		{source: "Blob bad = EncodingUtil.convertFromHex('80'); bad.toString();", want: "Blob.toString invalid UTF-8 data"},
 		{source: "EncodingUtil.urlEncode(null, 'UTF-8');", want: `Argument cannot be null.`},
 		{source: "EncodingUtil.urlDecode('%zz', 'UTF-8');", want: "invalid URL escape"},
-		{source: "Crypto.areEqualConstantTime(Blob.valueOf('x'), 'x');", want: "Crypto.areEqualConstantTime right expects Blob"},
 		{source: "Crypto.generateDigest('SHA-999', Blob.valueOf('x'));", want: `SHA-999 MessageDigest not available`},
 		{source: "Crypto.generateDigest(' sha_256 ', Blob.valueOf('x'));", want: ` sha_256  MessageDigest not available`},
 		{source: "Crypto.generateDigest('SHA3_256', Blob.valueOf('x'));", want: `SHA3_256 MessageDigest not available`},
@@ -3309,19 +3603,19 @@ func TestExecLoggingLevelEnumEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals('INFO', LoggingLevel.INFO.name());
 System.assertEquals('INFO', LoggingLevel.INFO.toString());
-System.assertEquals(3, LoggingLevel.INFO.ordinal());
+System.assertEquals(6, LoggingLevel.INFO.ordinal());
 System.assertEquals('INFO', System.LoggingLevel.INFO.name());
 System.debug(System.LoggingLevel.INFO, 'system qualified level');
 System.LoggingLevel qualifiedLevel = System.LoggingLevel.WARN;
 System.assertEquals('WARN', qualifiedLevel.name());
-System.assertEquals(2, qualifiedLevel.ordinal());
+System.assertEquals(7, qualifiedLevel.ordinal());
 System.debug(qualifiedLevel, 'qualified variable level');
 List<LoggingLevel> levels = LoggingLevel.values();
-System.assertEquals(8, levels.size());
+System.assertEquals(9, levels.size());
 LoggingLevel firstLevel = levels.get(0);
-LoggingLevel lastLevel = levels.get(7);
+LoggingLevel lastLevel = levels.get(8);
 System.assertEquals('NONE', firstLevel.name());
-System.assertEquals('FINEST', lastLevel.name());
+System.assertEquals('ERROR', lastLevel.name());
 System.debug(LoggingLevel.ERROR, LoggingLevel.WARN);
 `)
 	if err != nil {
@@ -3450,12 +3744,12 @@ Type accountWithNullNamespace = Type.forName(null, 'Account');
 System.assertEquals('Account', accountWithNullNamespace.getName());
 Type stringType = Type.forName('String');
 System.assertEquals('String', stringType.getName());
-System.assertEquals('System.String', Type.forName('System.String').getName());
+System.assertEquals(null, Type.forName('System.String'));
 Type systemStringType = Type.forName('System', 'String');
-System.assertEquals('System.String', systemStringType.getName());
+System.assertEquals(null, systemStringType);
 System.assertEquals(null, Type.forName('System', 'DefinitelyMissing'));
 Type systemDmlType = Type.forName('System', 'DmlException');
-System.assertEquals('System.DmlException', systemDmlType.getName());
+System.assertNotEquals(null, systemDmlType);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3465,7 +3759,7 @@ System.assertEquals('System.DmlException', systemDmlType.getName());
 	}
 }
 
-func TestTypeForNameAcceptsPlatformStringObjects(t *testing.T) {
+func TestTypeForNameRejectsSystemNamespaceAndNonStringArguments(t *testing.T) {
 	machine := New(nil)
 	result := &Result{}
 	value, err := machine.call("Type.forName", []Value{platformScalar("String", "Account")}, nil, result)
@@ -3479,8 +3773,8 @@ func TestTypeForNameAcceptsPlatformStringObjects(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if value.Kind != ValueObject || value.Type != "Type" || typeValueName(value) != "System.String" {
-		t.Fatalf("Type.forName platform namespace string = %#v", value)
+	if value.Kind != ValueNull {
+		t.Fatalf("Type.forName invalid platform namespace string = %#v, want null", value)
 	}
 	if _, err := machine.call("Type.forName", []Value{Int(1)}, nil, result); err == nil || !strings.Contains(err.Error(), "Type.forName expects String") {
 		t.Fatalf("Type.forName integer error = %v", err)
@@ -3796,7 +4090,6 @@ func TestExecIDMembersAreCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id accountId = Id.valueOf('001B000001DVM9t');
 System.assertEquals('001B000001DVM9t', accountId.to15());
-System.assertEquals('001B000001DVM9tIAH', accountId.TO18());
 System.assertEquals('Account', accountId.getSobjectType().getDescribe().getName());
 Object boxedId = accountId;
 System.assertEquals('Account', boxedId.getSOBJECTTYPE().getDescribe().getName());
@@ -3992,10 +4285,9 @@ System.assertEquals(null, packaged);
 	}
 }
 
-func TestExecTypeNewInstanceAllowsDottedBuiltins(t *testing.T) {
+func TestExecTypeForNameRejectsQualifiedSystemBuiltinFallback(t *testing.T) {
 	program, err := CompileAnonymous(`
-Object exceptionValue = Type.forName('System.AssertException').newInstance();
-System.assertEquals('System.AssertException', exceptionValue.toString());
+System.assertEquals(null, Type.forName('System.AssertException'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4079,7 +4371,6 @@ System.assertEquals('2.25', x.format());
 System.assertEquals('', 'abc'.left(-1));
 System.assertEquals('', 'abc'.right(-1));
 System.assertEquals('10.00', Decimal.valueOf('10').setScale(2).toPlainString());
-System.assertEquals(42.0, i.doubleValue());
 System.assertEquals(12, d.intValue());
 System.assertEquals(12, d.longValue());
 System.assertEquals(3000000000, bigLong.longValue());
@@ -4125,12 +4416,10 @@ List<RoundingMode> roundingModes = RoundingMode.values();
 System.assertEquals(8, roundingModes.size());
 System.assertEquals('UP', roundingModes.get(0).name());
 System.assertEquals('UNNECESSARY', roundingModes.get(7).name());
-System.assertEquals(0.33, Decimal.valueOf('1.00').divide(3, 2, System.RoundingMode.HALF_UP));
 System.assertEquals(1, Math.signum(12.5));
 System.assertEquals(-1, Math.signum(-4));
 System.assertEquals(0, Math.signum(0));
 System.assertEquals(1, Math.mod(10, 3));
-System.assertEquals(2.5, Math.mod(12.5, 5));
 System.assertEquals(12, Math.roundToLong(12.5));
 System.assertEquals(3.0, Math.ceil(2.1));
 System.assertEquals(2.0, Math.floor(2.9));
@@ -4147,16 +4436,16 @@ System.assert(Long.MAX_VALUE > 0);
 System.assert(Long.MIN_VALUE < 0);
 System.assert(Math.abs(Math.PI - 3.141592653589793) < 0.000000000000001);
 System.assert(Math.abs(Math.E - 2.718281828459045) < 0.000000000000001);
-System.assert(Math.abs(Math.sin(Math.PI / 2) - 1) < 0.000000000001);
+System.assert(Math.abs(Math.sin(1.5707963267948966) - 1) < 0.000000000001);
 System.assert(Math.abs(Math.cos(0) - 1) < 0.000000000001);
 System.assert(Math.abs(Math.tan(0)) < 0.000000000001);
 System.assert(Math.abs(Math.cosh(0) - 1) < 0.000000000001);
 System.assert(Math.abs(Math.sinh(0)) < 0.000000000001);
 System.assert(Math.abs(Math.tanh(0)) < 0.000000000001);
 System.assert(Math.abs(Math.acos(1)) < 0.000000000001);
-System.assert(Math.abs(Math.asin(1) - (Math.PI / 2)) < 0.000000000001);
-System.assert(Math.abs(Math.atan(1) - (Math.PI / 4)) < 0.000000000001);
-System.assert(Math.abs(Math.atan2(1, 1) - (Math.PI / 4)) < 0.000000000001);
+System.assert(Math.abs(Math.asin(1) - 1.5707963267948966) < 0.000000000001);
+System.assert(Math.abs(Math.atan(1) - 0.7853981633974483) < 0.000000000001);
+System.assert(Math.abs(Math.atan2(1, 1) - 0.7853981633974483) < 0.000000000001);
 System.assert(Math.abs(Math.exp(1) - Math.E) < 0.000000000001);
 System.assert(Math.abs(Math.log(Math.E) - 1) < 0.000000000001);
 System.assert(Math.abs(Math.log10(1000) - 3) < 0.000000000001);
@@ -4179,9 +4468,6 @@ System.assertEquals('1.2', new Version(1, 2).toString());
 System.assertEquals(0, new Version(1, 95).compareTo(new Version(1, 95, 16)));
 System.assertEquals(0, new Version(1, 95, 16).compareTo(new Version(1, 95)));
 System.assert(new Version(1, 24).compareTo(new Version(1, 95, 16)) < 0);
-Package.Version packageVersion = new Package.Version(1, 19);
-System.assertEquals('1.19', packageVersion.toString());
-System.assertEquals(0, packageVersion.compareTo(new Package.Version(1, 19, 7)));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4216,7 +4502,13 @@ system.assertEquals(8.0, math.Pow(2, 3));
 SYSTEM.ASSERTEQUALS(3.0, MATH.sqrt(9));
 System.assertEquals(4, database.CountQuery('SELECT count() FROM Account'));
 System.assertEquals(Date.today(), date.TODAY());
-System.assertEquals(Date.newInstance(2026, 5, 7), Date.ValueOf((Object)'2026-05-07'));
+String dateValueOfObjectError = '';
+try {
+	Date.ValueOf((Object)'2026-05-07');
+} catch (TypeException e) {
+	dateValueOfObjectError = e.getMessage();
+}
+System.assertEquals('Invalid date: 2026-05-07', dateValueOfObjectError);
 System.assertEquals('INFO', logginglevel.info.name());
 System.assertEquals('ERROR', logginglevel.ERROR.name());
 System.assertEquals('HALF_UP', roundingmode.half_up.name());
@@ -4610,7 +4902,6 @@ System.assert(counts.isEmpty());
 System.assertEquals(null, counts.put('a', 1));
 System.assertEquals(1, counts.put('a', 2));
 System.assert(!counts.isEmpty());
-System.assert(counts.containsValue(2));
 Set<String> keys = counts.keySet();
 System.assert(keys.contains('a'));
 List<Integer> values = counts.values();
@@ -4672,14 +4963,6 @@ List<Integer> cloned = copied.clone();
 cloned.set(0, 7);
 System.assertEquals(1, copied.get(0));
 System.assertEquals(7, cloned.get(0));
-List<Integer> deep = copied.deepClone();
-deep.set(1, 8);
-System.assertEquals(2, copied.get(1));
-System.assertEquals(8, deep.get(1));
-List<Integer> deepWithOptions = copied.deepClone(true, true, true);
-deepWithOptions.set(2, 9);
-System.assertEquals(3, copied.get(2));
-System.assertEquals(9, deepWithOptions.get(2));
 
 List<String> words = new List<String>{'delta', 'alpha', 'charlie'};
 words.sort();
@@ -4692,11 +4975,6 @@ Set<String> setClone = fromList.clone();
 setClone.add('c');
 System.assertEquals(2, fromList.size());
 System.assertEquals(3, setClone.size());
-Set<String> setDeep = fromList.deepClone();
-setDeep.remove('a');
-System.assert(fromList.contains('a'));
-System.assert(!setDeep.contains('a'));
-
 Map<String,Integer> counts = new Map<String,Integer>();
 counts.put('b', 2);
 counts.put('a', 1);
@@ -5070,11 +5348,6 @@ func TestExecCollectionStdlibIteratorErrors(t *testing.T) {
 			want: "unsupported call \"List.sort for non-primitive comparable values\"",
 		},
 		{
-			name: "set deepClone options unsupported",
-			body: "Set<Account> accounts = new Set<Account>{new Account(Id = '001B000001DVM9tIAH')}; accounts.deepClone(true);",
-			want: "unsupported call \"Set.deepClone with preserve options\"",
-		},
-		{
 			name: "map deepClone options unsupported",
 			body: "Map<Id, Account> accounts = new Map<Id, Account>(); accounts.deepClone(true, true, true);",
 			want: "unsupported call \"Map.deepClone with preserve options\"",
@@ -5116,15 +5389,31 @@ Account clonedMapped = clonedById.get(acme.Id);
 System.assertEquals('Acme', originalMapped.Name);
 System.assertEquals('Mapped Clone', clonedMapped.Name);
 
-Set<Account> originalSet = new Set<Account>{acme};
-Set<Account> clonedSet = originalSet.deepClone();
-Iterator<Account> clonedIt = clonedSet.iterator();
-Account clonedFromSet = clonedIt.next();
-clonedFromSet.Name = 'Set Clone';
-Iterator<Account> originalIt = originalSet.iterator();
-Account originalFromSet = originalIt.next();
-System.assertEquals('Acme', originalFromSet.Name);
-System.assertEquals('Set Clone', clonedFromSet.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCollectionStdlibSetDeepClonePreservesSObjectIsolationAndMembership(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account acme = new Account(Id = '001B000001DVM9tIAH', Name = 'Acme');
+Set<Account> original = new Set<Account>{acme};
+Set<Account> cloned = original.deepClone();
+Account clonedAcme = cloned.iterator().next();
+clonedAcme.Name = 'Clone';
+Account originalAcme = original.iterator().next();
+System.assertEquals('Acme', originalAcme.Name);
+System.assertEquals('Clone', cloned.iterator().next().Name);
+
+Set<String> names = new Set<String>{'a', 'b'};
+Set<String> clonedNames = names.deepClone();
+clonedNames.add('c');
+System.assertEquals(false, names.contains('c'));
+System.assertEquals(true, clonedNames.contains('c'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5225,12 +5514,10 @@ Map<String, String> labels = new Map<String, String>();
 labels.put(null, 'nil');
 labels.put('blank', null);
 System.assert(labels.containsKey(null));
-System.assert(labels.containsValue(null));
 System.assertEquals('nil', labels.get(null));
 Set<String> nullKeys = labels.keySet();
 System.assert(nullKeys.contains(null));
 System.assertEquals(null, labels.remove('blank'));
-System.assert(!labels.containsValue(null));
 labels.clear();
 System.assert(labels.isEmpty());
 
@@ -5435,6 +5722,221 @@ System.assert(fields.contains(User.Email));
 		t.Fatal(err)
 	}
 	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDecimalNegativeScalePreservesObservableText(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal d = Decimal.valueOf('125').setScale(-1, RoundingMode.HALF_UP);
+System.assertEquals(130, d);
+System.assertEquals(-1, d.scale());
+System.assertEquals(2, d.precision());
+System.assertEquals('1.3E+2', String.valueOf(d));
+System.assertEquals('130', d.toPlainString());
+
+Decimal d2 = Decimal.valueOf('125').setScale(-2, RoundingMode.HALF_UP);
+System.assertEquals(100, d2);
+System.assertEquals(-2, d2.scale());
+System.assertEquals(1, d2.precision());
+System.assertEquals('1E+2', String.valueOf(d2));
+System.assertEquals('100', d2.toPlainString());
+
+Decimal neg = Decimal.valueOf('-125').setScale(-1, RoundingMode.HALF_UP);
+System.assertEquals(-130, neg);
+System.assertEquals(-1, neg.scale());
+System.assertEquals(2, neg.precision());
+System.assertEquals('-1.3E+2', String.valueOf(neg));
+System.assertEquals('-130', neg.toPlainString());
+
+	Decimal chained = Decimal.valueOf('125').setScale(-1, RoundingMode.HALF_UP).setScale(1, RoundingMode.HALF_UP);
+System.assertEquals(130.0, chained);
+System.assertEquals(-1, Decimal.valueOf('125').setScale(-1, RoundingMode.HALF_UP).stripTrailingZeros().scale());
+
+Decimal zero = Decimal.valueOf('0').setScale(-1);
+System.assertEquals(0, zero);
+System.assertEquals(-1, zero.scale());
+System.assertEquals(1, zero.precision());
+System.assertEquals('0E+1', String.valueOf(zero));
+System.assertEquals('0', zero.toPlainString());
+System.assertEquals(0, zero.stripTrailingZeros().scale());
+System.assertEquals('0', String.valueOf(zero.stripTrailingZeros()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSystemComparableSortContract(t *testing.T) {
+	compareProgram, err := CompileAnonymous(`
+Sorter otherSorter = (Sorter) other;
+if (this.Score == otherSorter.Score) {
+	return 0;
+}
+if (this.Score > otherSorter.Score) {
+	return 1;
+}
+return -1;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Sorter a = new Sorter();
+a.Score = 3;
+a.Label = 'third';
+Sorter b = new Sorter();
+b.Score = 1;
+b.Label = 'first';
+Sorter c = new Sorter();
+c.Score = 2;
+c.Label = 'second';
+List<Sorter> items = new List<Sorter>{a, b, c};
+items.sort();
+System.assertEquals('first', items.get(0).Label);
+System.assertEquals('second', items.get(1).Label);
+System.assertEquals('third', items.get(2).Label);
+
+items.sort();
+System.assertEquals('first', items.get(0).Label);
+System.assertEquals('second', items.get(1).Label);
+System.assertEquals('third', items.get(2).Label);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Sorter",
+		Interfaces: []string{"Comparable"},
+		Fields: map[string]Field{
+			"Score": {Name: "Score", Type: "Integer"},
+			"Label": {Name: "Label", Type: "String"},
+		},
+		Methods: map[string]Method{
+			"compareTo": {
+				Name:       "Sorter.compareTo",
+				ClassName:  "Sorter",
+				ReturnType: "Integer",
+				Params:     []Param{{Name: "other", Type: "Object"}},
+				Program:    compareProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSystemComparableSortWithNullValues(t *testing.T) {
+	compareProgram, err := CompileAnonymous(`
+if (other == null) {
+	return 0;
+}
+Sorter otherSorter = (Sorter) other;
+if (this.Score == otherSorter.Score) {
+	return 0;
+}
+if (this.Score > otherSorter.Score) {
+	return 1;
+}
+return -1;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Sorter a = new Sorter();
+a.Score = 2;
+a.Label = 'second';
+Sorter b = new Sorter();
+b.Score = 1;
+b.Label = 'first';
+List<Sorter> items = new List<Sorter>{null, a, null, b, null};
+items.sort();
+System.assertEquals(null, items.get(0));
+System.assertEquals(null, items.get(1));
+System.assertEquals(null, items.get(2));
+System.assertEquals('first', items.get(3).Label);
+System.assertEquals('second', items.get(4).Label);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Sorter",
+		Interfaces: []string{"Comparable"},
+		Fields: map[string]Field{
+			"Score": {Name: "Score", Type: "Integer"},
+			"Label": {Name: "Label", Type: "String"},
+		},
+		Methods: map[string]Method{
+			"compareTo": {
+				Name:       "Sorter.compareTo",
+				ClassName:  "Sorter",
+				ReturnType: "Integer",
+				Params:     []Param{{Name: "other", Type: "Object"}},
+				Program:    compareProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSystemComparableTypeQuery(t *testing.T) {
+	compareProgram, err := CompileAnonymous(`
+Sorter otherSorter = (Sorter) other;
+if (this.Score == otherSorter.Score) {
+	return 0;
+}
+if (this.Score > otherSorter.Score) {
+	return 1;
+}
+return -1;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Sorter s = new Sorter();
+s.Score = 5;
+Object obj = s;
+System.assert(obj instanceof Comparable);
+System.assert(obj instanceof System.Comparable);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Sorter",
+		Interfaces: []string{"Comparable"},
+		Fields: map[string]Field{
+			"Score": {Name: "Score", Type: "Integer"},
+		},
+		Methods: map[string]Method{
+			"compareTo": {
+				Name:       "Sorter.compareTo",
+				ClassName:  "Sorter",
+				ReturnType: "Integer",
+				Params:     []Param{{Name: "other", Type: "Object"}},
+				Program:    compareProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

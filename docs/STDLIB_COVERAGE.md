@@ -7,7 +7,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Area | API | Status | Notes |
 | --- | --- | --- | --- |
 | AccessLevel | `AccessLevel.withPermissionSetId(String)` | `supported` | Creates a local permission-set-scoped user-mode token used by supported SOQL and DML permission checks. |
-| Answers | `Answers.findSimilar(Question)` | `unsupported` | Zone similar-question search requires Answers service data and returns a stable UnsupportedFeature diagnostic locally. |
+| Answers | `Answers.findSimilar(Question)` | `supported` | Returns a deterministic empty `List<Id>` locally. Glade does not perform hosted Answers similarity search. |
 | ApexPages | `ApexPages.Message` | `supported` | Constructor, getters, add/get/has message state, and Visualforce action reset behavior are modeled. |
 | ApexPages | `ApexPages.addMessage` | `supported` | Stores page messages on the VM instance. |
 | ApexPages | `ApexPages.addMessage(ApexPages.Message)` | `supported` | Stores page messages on the VM instance. |
@@ -36,11 +36,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Boolean | `Boolean.valueOf(Object)` | `supported` | Converts supported local field/object values into Boolean values. |
 | Boolean | `Boolean.valueOf(String)` | `supported` | Converts strings to Boolean using Apex-shaped true/false parsing. |
 | BusinessHours | `BusinessHours malformed local holiday metadata` | `unsupported` | Malformed seeded holiday metadata raises a stable UnsupportedFeature diagnostic naming the unsupported local field shape. |
-| BusinessHours | `BusinessHours.add(String, Datetime, Long)` | `supported` | Runs deterministic local week-schedule math from seeded BusinessHours, Holiday, OperatingHours, and OperatingHoursHoliday records with timezone handling, all-day closures, partial-day closures, recurring holidays, and linked holidays. |
-| BusinessHours | `BusinessHours.addGmt(String, Datetime, Long)` | `supported` | Runs deterministic local calendar math from seeded BusinessHours, Holiday, OperatingHours, and OperatingHoursHoliday records with GMT Datetime output. |
-| BusinessHours | `BusinessHours.diff(String, Datetime, Datetime)` | `supported` | Counts deterministic local business milliseconds across seeded week schedules, timezones, all-day closures, partial-day closures, recurring holidays, and linked holidays. |
-| BusinessHours | `BusinessHours.isWithin(String, Datetime)` | `supported` | Checks seeded local week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays. |
-| BusinessHours | `BusinessHours.nextStartDate(String, Datetime)` | `supported` | Finds the next deterministic local start from seeded week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays. |
+| BusinessHours | `BusinessHours.add(Id, Datetime, Long)` | `supported` | Runs deterministic local week-schedule math from seeded BusinessHours, Holiday, OperatingHours, and OperatingHoursHoliday records with timezone handling, all-day closures, partial-day closures, recurring holidays, and linked holidays. |
+| BusinessHours | `BusinessHours.addGmt(Id, Datetime, Long)` | `supported` | Runs deterministic local calendar math from seeded BusinessHours, Holiday, OperatingHours, and OperatingHoursHoliday records with GMT Datetime output. |
+| BusinessHours | `BusinessHours.diff(Id, Datetime, Datetime)` | `supported` | Counts deterministic local business milliseconds across seeded week schedules, timezones, all-day closures, partial-day closures, recurring holidays, and linked holidays. |
+| BusinessHours | `BusinessHours.isWithin(Id, Datetime)` | `supported` | Checks seeded local week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays. |
+| BusinessHours | `BusinessHours.nextStartDate(Id, Datetime)` | `supported` | Finds the next deterministic local start from seeded week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays. |
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA-1/SHA1, SHA-256/SHA256, SHA-384/SHA384, SHA-512/SHA512, and SHA3-256/384/512 digests are fixture-pinned, with Salesforce-shaped SecurityException diagnostics for unknown names. |
 | Database | `Database.UnitOfWork` | `supported` | Queues local DML operations and applies them on commitWork; discardWork drops pending local work. |
 | Database | `Database.convertLead` | `supported` | Local lead conversion creates Account, Contact, and optional Opportunity records and updates Lead conversion fields. |
@@ -96,8 +96,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Datetime | `Datetime.newInstance` | `supported` | Validates date and time parts. |
 | Datetime | `Datetime.now` | `supported` | Returns the deterministic local runtime datetime. |
 | Datetime | `Datetime.valueOf` | `supported` | Parses supported datetime strings. |
-| Decimal | `Decimal.divide(Decimal,Integer,RoundingMode)` | `supported` | Divides local Decimal values with explicit scale and RoundingMode. |
-| Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
+| Decimal | `Decimal.divide(Decimal,Integer,RoundingMode)` | `unsupported` | Exact Decimal division is fail-closed pending the bounded Salesforce oracle and Task 4.2 implementation. |
+| Decimal | `Decimal.doubleValue` | `supported` | Returns an explicitly Double-backed local value. |
 | Decimal | `Decimal.intValue` | `supported` | Truncates to integer. |
 | Decimal | `Decimal.round` | `supported` | Oracle-pinned finite Decimal rounding uses Salesforce default HALF_EVEN ties and explicit RoundingMode behavior. |
 | Decimal | `Decimal.setScale` | `supported` | Oracle-pinned finite Decimal scaling covers positive and negative scales, RoundingMode ties, UNNECESSARY MathException, and Salesforce scale bounds. |

@@ -138,13 +138,27 @@ func TestRuntimePatchFingerprintBindsBehaviorAffectingPayload(t *testing.T) {
 		name   string
 		mutate func(*runtimeCacheEntry)
 	}{
+		{name: "class api version", mutate: func(entry *runtimeCacheEntry) {
+			entry.Classes[0].APIVersion = "67.0"
+		}},
 		{"method", func(entry *runtimeCacheEntry) {
 			method := entry.Methods["Example.run"]
 			method.Program.Source = "changed source"
 			entry.Methods["Example.run"] = method
 		}},
+		{"method API version", func(entry *runtimeCacheEntry) {
+			method := entry.Methods["Example.run"]
+			method.APIVersion = "67.0"
+			entry.Methods["Example.run"] = method
+		}},
+		{"dml mode", func(entry *runtimeCacheEntry) {
+			method := entry.Methods["Example.run"]
+			method.Program.Instructions[0].DMLMode = ir.DMLModeUser
+			entry.Methods["Example.run"] = method
+		}},
 		{"class", func(entry *runtimeCacheEntry) { entry.Classes[0].Name = "ChangedClass" }},
 		{"trigger", func(entry *runtimeCacheEntry) { entry.Triggers[0].Timing = "after" }},
+		{"trigger API version", func(entry *runtimeCacheEntry) { entry.Triggers[0].APIVersion = "67.0" }},
 		{"field value", func(entry *runtimeCacheEntry) {
 			field := entry.Classes[0].StaticFields["State"]
 			field.Value = vm.Int(99)
@@ -274,8 +288,8 @@ func TestRuntimePatchFingerprintRejectsCyclesAndExcessiveDepth(t *testing.T) {
 }
 
 func TestRuntimePatchFingerprintStreamingABIAndCounters(t *testing.T) {
-	if runtimePatchABI != "apextest-runtime-patch-v2" {
-		t.Fatalf("runtime patch ABI = %q, want apextest-runtime-patch-v2", runtimePatchABI)
+	if runtimePatchABI != "apextest-runtime-patch-v3" {
+		t.Fatalf("runtime patch ABI = %q, want apextest-runtime-patch-v3", runtimePatchABI)
 	}
 	if testRuntimeCacheABI != "apextest-runtime-v6" {
 		t.Fatalf("runtime cache ABI = %q, want apextest-runtime-v6", testRuntimeCacheABI)

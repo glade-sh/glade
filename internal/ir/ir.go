@@ -3,6 +3,8 @@ package ir
 type Program struct {
 	Instructions []Instruction `json:"instructions"`
 	Source       string        `json:"source,omitempty"`
+	APIVersion   string        `json:"apiVersion,omitempty"`
+	Trigger      bool          `json:"trigger,omitempty"`
 }
 
 type Instruction struct {
@@ -11,6 +13,7 @@ type Instruction struct {
 	CatchTypes []string      `json:"catchTypes,omitempty"`
 	Name       string        `json:"name,omitempty"`
 	Expr       Expr          `json:"expr,omitempty"`
+	DMLMode    DMLMode       `json:"dmlMode,omitempty"`
 	Field      string        `json:"field,omitempty"`
 	Init       *Instruction  `json:"init,omitempty"`
 	Inits      []Instruction `json:"inits,omitempty"`
@@ -34,25 +37,33 @@ type CatchClause struct {
 
 type Op string
 
+type DMLMode uint8
+
 const (
-	OpDeclare  Op = "declare"
-	OpAssign   Op = "assign"
-	OpExpr     Op = "expr"
-	OpReturn   Op = "return"
+	DMLModeDefault DMLMode = iota
+	DMLModeUser
+	DMLModeSystem
+)
+
+const (
+	OpDeclare   Op = "declare"
+	OpAssign    Op = "assign"
+	OpExpr      Op = "expr"
+	OpReturn    Op = "return"
 	OpBlock     Op = "block"
 	OpDeclGroup Op = "declGroup"
 	OpIf        Op = "if"
-	OpWhile    Op = "while"
-	OpDoWhile  Op = "doWhile"
-	OpFor      Op = "for"
-	OpForEach  Op = "forEach"
-	OpBreak    Op = "break"
-	OpContinue Op = "continue"
-	OpThrow    Op = "throw"
-	OpTry      Op = "try"
-	OpSwitch   Op = "switch"
-	OpRunAs    Op = "runAs"
-	OpDML      Op = "dml"
+	OpWhile     Op = "while"
+	OpDoWhile   Op = "doWhile"
+	OpFor       Op = "for"
+	OpForEach   Op = "forEach"
+	OpBreak     Op = "break"
+	OpContinue  Op = "continue"
+	OpThrow     Op = "throw"
+	OpTry       Op = "try"
+	OpSwitch    Op = "switch"
+	OpRunAs     Op = "runAs"
+	OpDML       Op = "dml"
 )
 
 type Expr struct {

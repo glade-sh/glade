@@ -354,7 +354,7 @@ func (vm *VM) sortComparableValues(values []Value, result *Result) error {
 			return compare < 0
 		}
 		if collectionNumericKind(left.Kind) && collectionNumericKind(right.Kind) {
-			return collectionNumericValue(left) < collectionNumericValue(right)
+			return collectionNumericLess(left, right)
 		}
 		if left.Kind != right.Kind {
 			return collectionSortKindRank(left.Kind) < collectionSortKindRank(right.Kind)
@@ -628,6 +628,14 @@ func collectionNumericValue(value Value) float64 {
 		return float64(value.Int)
 	}
 	return value.Decimal
+}
+func collectionNumericLess(left, right Value) bool {
+	leftRat, leftOK := valueDecimalRat(left)
+	rightRat, rightOK := valueDecimalRat(right)
+	if leftOK && rightOK {
+		return leftRat.Cmp(rightRat) < 0
+	}
+	return collectionNumericValue(left) < collectionNumericValue(right)
 }
 func collectionSortKindRank(kind ValueKind) int {
 	switch kind {

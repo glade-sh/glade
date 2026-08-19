@@ -44,6 +44,59 @@ public class ChainedAssignment {
 	assertNoDiagnosticContaining(t, result, "GLADESEMA018", "mockResult with void")
 }
 
+func TestPublicCorpusRejectsVoidMethodAsAssignmentValue(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "VoidExpressionAssignment.cls"), `
+public class VoidExpressionAssignment {
+  public void doNothing() {}
+  public String getValue() { return 'value'; }
+  public void run() {
+    Object invalid = doNothing();
+    Object valid = getValue();
+    doNothing();
+  }
+}
+`)
+	result := analyzePublicCorpusFiles(t, root, "VoidExpressionAssignment.cls")
+	var assignmentDiagnostics []string
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA018" {
+			assignmentDiagnostics = append(assignmentDiagnostics, diag.Message)
+		}
+	}
+	if len(assignmentDiagnostics) != 1 || assignmentDiagnostics[0] != `method "run" initializes Object local "invalid" with void` {
+		t.Fatalf("void assignment diagnostics = %#v, want one diagnostic for invalid assignment; all diagnostics = %#v", assignmentDiagnostics, result.Diagnostics)
+	}
+}
+
+func TestPublicCorpusRejectsVoidMethodAsArgumentValue(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "VoidExpressionArgument.cls"), `
+public class VoidExpressionArgument {
+  public void doNothing() {}
+  public String getValue() { return 'value'; }
+  public void consume(Object value) {}
+  public void run() {
+    consume(doNothing());
+    consume(getValue());
+    doNothing();
+  }
+}
+`)
+	result := analyzePublicCorpusFiles(t, root, "VoidExpressionArgument.cls")
+	var argumentDiagnostics []string
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA009" {
+			argumentDiagnostics = append(argumentDiagnostics, diag.Message)
+		}
+	}
+	if len(argumentDiagnostics) != 1 || argumentDiagnostics[0] != `method "run" has no matching overload for call "consume" with 1 argument(s)` {
+		t.Fatalf("void argument diagnostics = %#v, want one diagnostic for invalid argument; all diagnostics = %#v", argumentDiagnostics, result.Diagnostics)
+	}
+}
+
 func TestPublicCorpusNestedFluentReturnKeepsOwnerType(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

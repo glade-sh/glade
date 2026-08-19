@@ -2,6 +2,7 @@ package vm
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -9,6 +10,103 @@ import (
 )
 
 const testBusinessHoursID = "01m000000000001AAA"
+
+func TestBusinessHoursAcceptsSalesforceStringIDCoercion(t *testing.T) {
+	vm := New(nil)
+	vm.Org = &storage.OrgState{}
+	now := platformScalar("Datetime", "2026-06-15T16:00:00.000Z")
+
+	_, err := vm.businessHoursIsWithin([]Value{String("not-an-id"), now})
+	var thrown *apexThrowError
+	if !errors.As(err, &thrown) {
+		t.Fatalf("String argument error = %v, want Salesforce MathException", err)
+	}
+	message, ok := thrown.value.Fields["message"]
+	if !ok || thrown.value.Type != "System.MathException" || message.Kind != ValueString || message.Text != businessHoursRecordNotFoundMessage {
+		t.Fatalf("String argument error = %#v, want MathException %q", thrown.value, businessHoursRecordNotFoundMessage)
+	}
+}
+
+func TestExecBusinessHoursMissingIDExceptionsMatchSalesforce(t *testing.T) {
+	const missingID = "01m000000000002AAA"
+	const missingMessage = "BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup."
+	tests := []struct {
+		name        string
+		call        string
+		nullType    string
+		nullMessage string
+	}{
+		{name: "add", call: "BusinessHours.add(%s, nowValue, 1)", nullType: "System.NullPointerException", nullMessage: "Business Hours Id cannot be null"},
+		{name: "addGmt", call: "BusinessHours.addGmt(%s, nowValue, 1)", nullType: "System.MathException", nullMessage: missingMessage},
+		{name: "diff", call: "BusinessHours.diff(%s, nowValue, nowValue)", nullType: "System.NullPointerException", nullMessage: "Business Hours Id cannot be null"},
+		{name: "isWithin", call: "BusinessHours.isWithin(%s, nowValue)", nullType: "System.NullPointerException", nullMessage: "Business Hours Id cannot be null"},
+		{name: "nextStartDate", call: "BusinessHours.nextStartDate(%s, nowValue)", nullType: "System.NullPointerException", nullMessage: "Business Hours Id cannot be null"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			program, err := CompileAnonymous(fmt.Sprintf(`
+Datetime nowValue = Datetime.now();
+Id nullId = null;
+Id missingId = '%s';
+String caught = '';
+try {
+		%s;
+		System.assert(false, 'expected null Id exception');
+} catch (Exception e) {
+		caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assertEquals('%s:%s', caught);
+caught = '';
+try {
+		%s;
+		System.assert(false, 'expected missing record exception');
+} catch (Exception e) {
+		caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assertEquals('System.MathException:%s', caught);
+`, missingID, fmt.Sprintf(tt.call, "nullId"), tt.nullType, tt.nullMessage, fmt.Sprintf(tt.call, "missingId"), missingMessage))
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			machine.Org = &storage.OrgState{}
+			if _, err := machine.Execute(program); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+
+	t.Run("String coercion", func(t *testing.T) {
+		program, err := CompileAnonymous(fmt.Sprintf(`
+Datetime nowValue = Datetime.now();
+String businessHoursId = '%s';
+String caught = '';
+try {
+	BusinessHours.isWithin(businessHoursId, nowValue);
+	System.assert(false, 'expected String variable missing record exception');
+} catch (Exception e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assertEquals('System.MathException:%s', caught);
+caught = '';
+try {
+	BusinessHours.isWithin('not-an-id', nowValue);
+	System.assert(false, 'expected String literal missing record exception');
+} catch (Exception e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assertEquals('System.MathException:%s', caught);
+`, missingID, missingMessage, missingMessage))
+		if err != nil {
+			t.Fatal(err)
+		}
+		machine := New(nil)
+		machine.Org = &storage.OrgState{}
+		if _, err := machine.Execute(program); err != nil {
+			t.Fatal(err)
+		}
+	})
+}
 
 func TestExecBusinessHoursAllDayHolidaySkipsBusinessWindow(t *testing.T) {
 	program, err := CompileAnonymous(`

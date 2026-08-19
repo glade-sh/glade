@@ -288,11 +288,11 @@ func (c querySemanticsChecker) checkFileWithFacts(file string, facts *sourceFact
 		bindings := bindingResolver.bindingsAt(literal.queryOffset)
 		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings, c.knownTypes)...)
 		diagnostics = append(diagnostics, soslAssignmentDiagnostics(source, literal, ctx)...)
-		diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, query.LimitBind, "LIMIT")...)
+		diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, query.Limit.Bind, "LIMIT")...)
 		diagnostics = append(diagnostics, queryStringBindDiagnostics(ctx, bindings, query.DivisionBind, "WITH DIVISION")...)
 		for _, returning := range query.Returning {
-			diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, returning.LimitBind, "RETURNING LIMIT")...)
-			diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, returning.OffsetBind, "RETURNING OFFSET")...)
+			diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, returning.Limit.Bind, "RETURNING LIMIT")...)
+			diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, returning.Offset.Bind, "RETURNING OFFSET")...)
 		}
 		diagnostics = append(diagnostics, c.soslFieldBindDiagnostics(query, ctx, bindings)...)
 	}
@@ -302,18 +302,20 @@ func (c querySemanticsChecker) checkFileWithFacts(file string, facts *sourceFact
 func (c querySemanticsChecker) soslFieldBindDiagnostics(query sosl.Query, ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, returning := range query.Returning {
-		for _, bind := range returning.WhereBinds {
-			field, ok := c.field(returning.Object, bind.Field)
-			if !ok {
-				continue
-			}
-			typeName := bindings[strings.ToLower(bind.Name)]
-			if typeName == "" || queryFieldAcceptsBindType(field.Type, typeName) {
-				continue
-			}
-			offset := findQueryIdentifier(ctx.queryText, ":"+bind.Name, 0)
-			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("query bind variable %q of type %s is incompatible with field %s", bind.Name, typeName, field.Name), ":"+bind.Name, offset))
+		if returning.Where == nil || returning.Where.Bind == "" {
+			continue
 		}
+		bind := returning.Where
+		field, ok := c.field(returning.Object, bind.Field)
+		if !ok {
+			continue
+		}
+		typeName := bindings[strings.ToLower(bind.Bind)]
+		if typeName == "" || queryFieldAcceptsBindType(field.Type, typeName) {
+			continue
+		}
+		offset := findQueryIdentifier(ctx.queryText, ":"+bind.Bind, 0)
+		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("query bind variable %q of type %s is incompatible with field %s", bind.Bind, typeName, field.Name), ":"+bind.Bind, offset))
 	}
 	return diagnostics
 }
@@ -486,12 +488,25 @@ func semaMethodHeader(header string) bool {
 			return false
 		}
 	}
-	open := strings.LastIndex(header, "(")
-	if open < 0 || !strings.HasSuffix(header, ")") {
+	accessor := strings.Fields(header)
+	if len(accessor) == 1 && strings.EqualFold(accessor[0], "get") {
+		return true
+	}
+	if len(accessor) == 2 && strings.EqualFold(accessor[1], "get") {
+		switch strings.ToLower(accessor[0]) {
+		case "private", "protected", "public", "global":
+			return true
+		}
+	}
+	if !strings.HasSuffix(header, ")") {
+		return false
+	}
+	open := matchingOpenParenBefore(header, len(header)-1)
+	if open < 0 {
 		return false
 	}
 	nameFields := strings.Fields(header[:open])
-	if len(nameFields) == 0 {
+	if len(nameFields) == 0 || strings.Contains(nameFields[len(nameFields)-1], ".") {
 		return false
 	}
 	return true
@@ -993,19 +1008,19 @@ func (c querySemanticsChecker) checkSOSLQuery(query sosl.Query, ctx queryTextCon
 		}
 		cursor = maxInt(objectCursor+len(returning.Object), cursor)
 		for _, field := range returning.Fields {
-			fieldCursor := findQueryIdentifier(ctx.queryText, field, cursor)
+			fieldCursor := findQueryIdentifier(ctx.queryText, field.Field, cursor)
 			if !c.hasFieldMetadata(object.Name) {
-				cursor = maxInt(fieldCursor+len(field), cursor)
+				cursor = maxInt(fieldCursor+len(field.Field), cursor)
 				continue
 			}
-			if strings.Contains(field, ".") && len(c.checkSOQLField(object.Name, field, ctx, cursor)) == 0 {
-				cursor = maxInt(fieldCursor+len(field), cursor)
+			if strings.Contains(field.Field, ".") && len(c.checkSOQLField(object.Name, field.Field, ctx, cursor)) == 0 {
+				cursor = maxInt(fieldCursor+len(field.Field), cursor)
 				continue
 			}
-			if _, ok := c.field(object.Name, field); !ok {
-				diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_SOSL_FIELD", fmt.Sprintf("SOSL RETURNING references unknown field %s.%s", object.Name, field), field, fieldCursor))
+			if _, ok := c.field(object.Name, field.Field); !ok {
+				diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_SOSL_FIELD", fmt.Sprintf("SOSL RETURNING references unknown field %s.%s", object.Name, field.Field), field.Field, fieldCursor))
 			}
-			cursor = maxInt(fieldCursor+len(field), cursor)
+			cursor = maxInt(fieldCursor+len(field.Field), cursor)
 		}
 	}
 	return diagnostics
@@ -2131,7 +2146,8 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 					Range:    &member.Range,
 				})
 			}
-			if !hasModifier(member.Modifiers, "override") && hasOverridden && !hasModifier(overridden.Modifiers, "abstract") && !objectFallback {
+			abstractOverrideNotRequired := hasModifier(overridden.Modifiers, "abstract") && !typeUsesAPIVersionAtLeast(typ, 66)
+			if !hasModifier(member.Modifiers, "override") && hasOverridden && !abstractOverrideNotRequired && !objectFallback {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
 					Code:     "GLADESEMA016",
@@ -2305,6 +2321,9 @@ func semaInheritedMethodVisible(child typesys.TypeSymbol, owner typeMembers, mem
 			hasAnnotation(member.Annotations, "TestVisible")
 	}
 	if strings.EqualFold(strings.TrimSpace(child.Namespace), strings.TrimSpace(owner.namespace)) {
+		return true
+	}
+	if owner.platform && hasModifier(member.Modifiers, "public") {
 		return true
 	}
 	return hasModifier(member.Modifiers, "global") || hasModifier(member.Modifiers, "protected")
@@ -2544,6 +2563,10 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 			continue
 		}
 		field, found := semaResolveFieldPath(model, receiverType, fieldName)
+		if found && !semaProjectTypeShadowsPlatform(model, receiverType) && semaAPI67ReadOnlyPlatformField(field.owner+"."+field.member.Name) {
+			diagnostics = append(diagnostics, unsupportedLocalFeatureDiagnostic(typ, member, receiver+"."+fieldName, bodyOffset+match[2], bodyOffset+match[5], source))
+			continue
+		}
 		if found && hasModifier(field.member.Modifiers, "static") {
 			diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, receiver+"."+fieldName, "static fields cannot be accessed through an instance", bodyOffset+match[2], bodyOffset+match[5], source))
 		}
@@ -2695,6 +2718,9 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	if semaProjectTypeShadowsPlatform(model, receiverType) {
 		return nil, false
 	}
+	if semaAPI67RejectedPlatformCallAtVersion(typ.EffectiveAPIVersion, receiverType, method, receiverMode) {
+		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, start, end, source)}, true
+	}
 	if strings.EqualFold(receiverType, "System") && strings.EqualFold(method, "runAs") && len(args) == 1 {
 		return nil, true
 	}
@@ -2721,7 +2747,13 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	for i, arg := range args {
 		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
 	}
+	if semaAPI67RejectedPlatformCallArgs(receiverType, method, argTypes) {
+		return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true
+	}
 	if semaDatabaseDMLReturnType(receiverType, method, argTypes) != "" && len(args) <= 4 {
+		return nil, true
+	}
+	if semaSearchSuggestObjectOverload(receiverType, method, argTypes) {
 		return nil, true
 	}
 	if semaArgsMatchAny(sig.params, argTypes, model) || semaCollectionFieldPathArgsMatch(sig.params, args, scope, model) {

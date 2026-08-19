@@ -32,7 +32,7 @@ identity:
       "registry": "https://plugins.glade.sh/index.json",
       "os": "darwin",
       "arch": "arm64",
-      "sha256": "<archive sha256>",
+      "sha256": "<archive-sha256>",
       "trust": "first-party",
       "publisher": "glade"
     }

@@ -53,6 +53,20 @@ func apexConditionBool(value Value, context string) (bool, error) {
 }
 
 func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, error) {
+	if program.APIVersion != "" || program.Trigger {
+		callerMethod := vm.currentMethod
+		callerTrigger := vm.currentTrigger
+		if program.APIVersion != "" {
+			vm.currentMethod.APIVersion = program.APIVersion
+		}
+		if program.Trigger {
+			vm.currentTrigger = true
+		}
+		defer func() {
+			vm.currentMethod = callerMethod
+			vm.currentTrigger = callerTrigger
+		}()
+	}
 	for seq, inst := range program.Instructions {
 		if err := vm.incrementCPUBudget(1); err != nil {
 			return execOutcome{}, err
@@ -198,7 +212,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 				return out, err
 			}
 		case ir.OpDML:
-			if err := vm.executeDML(inst.Name, inst.Expr, inst.Field, result); err != nil {
+			if err := vm.executeDML(inst.Name, inst.Expr, inst.Field, inst.DMLMode, result); err != nil {
 				return execOutcome{}, err
 			}
 		default:

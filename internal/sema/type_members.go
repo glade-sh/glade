@@ -17,6 +17,7 @@ type typeMembers struct {
 	shortKey                          string
 	namespace                         string
 	dependency                        bool
+	platform                          bool
 	sobject                           bool
 	externalPackageSObject            bool
 	partialSObject                    bool
@@ -25,6 +26,7 @@ type typeMembers struct {
 	superClass                        string
 	interfaces                        []string
 	modifiers                         []string
+	constructorsAuthoritative         bool
 	methods                           map[string][]typesys.MemberSymbol
 	constructors                      []typesys.MemberSymbol
 	fields                            map[string]typesys.MemberSymbol
@@ -340,16 +342,18 @@ func (m *semaLazyPlatformTypeMemberModel) hasField(key string) bool {
 
 func semaTypeMembersFromPlatformSymbol(symbol typesys.TypeSymbol) typeMembers {
 	members := typeMembers{
-		name:       semaTypeMembersName(symbol),
-		shortKey:   semaShortTypeKey(symbol.Name),
-		namespace:  symbol.Namespace,
-		dependency: true,
-		kind:       symbol.Kind,
-		superClass: symbol.SuperClass,
-		interfaces: append([]string(nil), symbol.Interfaces...),
-		modifiers:  append([]string(nil), symbol.Modifiers...),
-		methods:    make(map[string][]typesys.MemberSymbol),
-		fields:     make(map[string]typesys.MemberSymbol),
+		name:                      semaTypeMembersName(symbol),
+		shortKey:                  semaShortTypeKey(symbol.Name),
+		namespace:                 symbol.Namespace,
+		dependency:                true,
+		platform:                  true,
+		kind:                      symbol.Kind,
+		superClass:                symbol.SuperClass,
+		interfaces:                append([]string(nil), symbol.Interfaces...),
+		modifiers:                 append([]string(nil), symbol.Modifiers...),
+		constructorsAuthoritative: symbol.ConstructorsAuthoritative,
+		methods:                   make(map[string][]typesys.MemberSymbol),
+		fields:                    make(map[string]typesys.MemberSymbol),
 	}
 	for _, member := range symbol.Members {
 		member = semaCloneMemberSymbol(member)
@@ -512,7 +516,7 @@ func buildSemaTriggerBodyWorkItems(index typesys.Index, sources *semaSources) []
 		if !ok {
 			continue
 		}
-		body, bodyOffset, extracted := extractBodyForSema(source, trigger.Range)
+		body, bodyOffset, extracted := semaBodyFromRange(source, trigger.BodyRange)
 		if !extracted {
 			continue
 		}
@@ -564,6 +568,7 @@ func semaTriggerBodyDeclaration(trigger typesys.TriggerSymbol) (typesys.TypeSymb
 		Name:      trigger.Name,
 		Type:      "void",
 		Modifiers: []string{"static"},
+		BodyRange: trigger.BodyRange,
 		Range:     trigger.Range,
 	}
 	return typ, member
@@ -682,8 +687,8 @@ func buildSemaMethodBodyWorkItems(index typesys.Index, sources *semaSources) []s
 		typeIndex := bodySource.typeIndex
 		typ := index.Types[typeIndex]
 		source := bodySource.source
-		appendBody := func(memberIndex, accessorIndex int, bodyRange diagnostic.Range) {
-			body, bodyOffset, extracted := extractBodyForSema(source, bodyRange)
+		appendBody := func(memberIndex, accessorIndex int, bodyRange *diagnostic.Range) {
+			body, bodyOffset, extracted := semaBodyFromRange(source, bodyRange)
 			if !extracted {
 				return
 			}
@@ -699,11 +704,11 @@ func buildSemaMethodBodyWorkItems(index typesys.Index, sources *semaSources) []s
 		for memberIndex, member := range typ.Members {
 			switch member.Kind {
 			case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
-				appendBody(memberIndex, semaMethodBodyNoAccessor, member.Range)
+				appendBody(memberIndex, semaMethodBodyNoAccessor, member.BodyRange)
 			case apexast.DeclarationProperty:
 				for accessorIndex, accessor := range member.Accessors {
 					if accessor.HasBody {
-						appendBody(memberIndex, accessorIndex, accessor.Range)
+						appendBody(memberIndex, accessorIndex, accessor.BodyRange)
 					}
 				}
 			}
@@ -769,19 +774,19 @@ func collectSemaMethodBodySources(index typesys.Index, sources *semaSources) ([]
 
 func countExtractableSemaMethodBodyRanges(typ typesys.TypeSymbol, source string) int {
 	count := 0
-	countRange := func(bodyRange diagnostic.Range) {
-		if _, _, extracted := extractBodyForSema(source, bodyRange); extracted {
+	countRange := func(bodyRange *diagnostic.Range) {
+		if _, _, extracted := semaBodyFromRange(source, bodyRange); extracted {
 			count++
 		}
 	}
 	for _, member := range typ.Members {
 		switch member.Kind {
 		case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
-			countRange(member.Range)
+			countRange(member.BodyRange)
 		case apexast.DeclarationProperty:
 			for _, accessor := range member.Accessors {
 				if accessor.HasBody {
-					countRange(accessor.Range)
+					countRange(accessor.BodyRange)
 				}
 			}
 		}
@@ -862,17 +867,18 @@ func semaModelWithCurrentType(model *semaTypeMemberView, typ typesys.TypeSymbol)
 
 func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
 	members := typeMembers{
-		name:         semaTypeMembersName(typ),
-		shortKey:     semaShortTypeKey(typ.Name),
-		namespace:    typ.Namespace,
-		dependency:   typ.Dependency,
-		nestingDepth: typ.NestingDepth,
-		kind:         typ.Kind,
-		superClass:   typ.SuperClass,
-		interfaces:   append([]string(nil), typ.Interfaces...),
-		modifiers:    append([]string(nil), typ.Modifiers...),
-		methods:      make(map[string][]typesys.MemberSymbol),
-		fields:       make(map[string]typesys.MemberSymbol),
+		name:                      semaTypeMembersName(typ),
+		shortKey:                  semaShortTypeKey(typ.Name),
+		namespace:                 typ.Namespace,
+		dependency:                typ.Dependency,
+		nestingDepth:              typ.NestingDepth,
+		kind:                      typ.Kind,
+		superClass:                typ.SuperClass,
+		interfaces:                append([]string(nil), typ.Interfaces...),
+		modifiers:                 append([]string(nil), typ.Modifiers...),
+		constructorsAuthoritative: typ.ConstructorsAuthoritative,
+		methods:                   make(map[string][]typesys.MemberSymbol),
+		fields:                    make(map[string]typesys.MemberSymbol),
 	}
 	for _, member := range typ.Members {
 		member = semaCloneMemberSymbol(member)
@@ -915,17 +921,18 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 	projectNamespace := index.Project.Namespace
 	for _, typ := range index.Types {
 		members := typeMembers{
-			name:         semaTypeMembersName(typ),
-			shortKey:     semaShortTypeKey(typ.Name),
-			namespace:    typ.Namespace,
-			dependency:   typ.Dependency,
-			nestingDepth: typ.NestingDepth,
-			kind:         typ.Kind,
-			superClass:   typ.SuperClass,
-			interfaces:   append([]string(nil), typ.Interfaces...),
-			modifiers:    append([]string(nil), typ.Modifiers...),
-			methods:      make(map[string][]typesys.MemberSymbol),
-			fields:       make(map[string]typesys.MemberSymbol),
+			name:                      semaTypeMembersName(typ),
+			shortKey:                  semaShortTypeKey(typ.Name),
+			namespace:                 typ.Namespace,
+			dependency:                typ.Dependency,
+			nestingDepth:              typ.NestingDepth,
+			kind:                      typ.Kind,
+			superClass:                typ.SuperClass,
+			interfaces:                append([]string(nil), typ.Interfaces...),
+			modifiers:                 append([]string(nil), typ.Modifiers...),
+			constructorsAuthoritative: typ.ConstructorsAuthoritative,
+			methods:                   make(map[string][]typesys.MemberSymbol),
+			fields:                    make(map[string]typesys.MemberSymbol),
 		}
 		for _, member := range typ.Members {
 			member = semaCloneMemberSymbol(member)

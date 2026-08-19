@@ -5,7 +5,7 @@ validation gate where hosted behavior matters.
 
 ## Before you start
 
-Run from an SFDX project root. Make sure `glade doctor` can find the project and
+Run from a Salesforce DX project root. Make sure `glade doctor --project .` can find the project and
 toolchain. Use committed fixtures for records, metadata, and mocks that the test
 expects.
 

@@ -10,12 +10,17 @@ on:
         description: Version label for artifact names.
         required: false
         default: dev
+      glade_tools_sha:
+        description: Full lowercase 40-hex glade-tools commit with Salesforce authority.
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   required-ci-attestation:
+    needs: salesforce-authority
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -37,9 +42,38 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+  salesforce-authority:
+    runs-on: ubuntu-latest
+    permissions:
+      checks: read
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify Salesforce release authority
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GLADE_TOOLS_SHA: ${{ inputs.glade_tools_sha }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            glade_tools_sha="$(scripts/verify-salesforce-check.sh --tag-tools-sha "$GITHUB_REF_NAME")"
+          else
+            glade_tools_sha="$GLADE_TOOLS_SHA"
+          fi
+          scripts/verify-salesforce-check.sh "$GITHUB_SHA" "$glade_tools_sha" > salesforce-release-authority.json
+      - name: Upload Salesforce release authority
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: salesforce-release-authority
+          path: salesforce-release-authority.json
+          if-no-files-found: error
+          retention-days: 90
+
   prepare:
     needs: required-ci-attestation
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') && needs.required-ci-attestation.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -65,8 +99,8 @@ jobs:
           fi
 
   shared-payload:
-    needs: [required-ci-attestation, prepare]
-    if: always() && (needs.required-ci-attestation.result == 'success' || needs.required-ci-attestation.result == 'skipped') && (needs.prepare.result == 'success' || needs.prepare.result == 'skipped')
+    needs: [required-ci-attestation, salesforce-authority, prepare]
+    if: always() && needs.salesforce-authority.result == 'success' && (needs.required-ci-attestation.result == 'success' || needs.required-ci-attestation.result == 'skipped') && (needs.prepare.result == 'success' || needs.prepare.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -133,7 +167,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.5"
+          go-version: "1.26.6"
           cache: false
       - name: Resolve Go cache paths
         id: go-cache-paths
@@ -147,9 +181,9 @@ jobs:
           path: |
             ${{ steps.go-cache-paths.outputs.gomod }}
             ${{ steps.go-cache-paths.outputs.gobuild }}
-          key: release-v1-go-${{ runner.os }}-${{ matrix.archive }}-1.26.5-${{ hashFiles('go.sum') }}-${{ github.sha }}
+          key: release-v1-go-${{ runner.os }}-${{ matrix.archive }}-1.26.6-${{ hashFiles('go.sum') }}-${{ github.sha }}
           restore-keys: |
-            release-v1-go-${{ runner.os }}-${{ matrix.archive }}-1.26.5-${{ hashFiles('go.sum') }}-
+            release-v1-go-${{ runner.os }}-${{ matrix.archive }}-1.26.6-${{ hashFiles('go.sum') }}-
       - name: Download shared release payload
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:

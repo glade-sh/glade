@@ -12,6 +12,74 @@ func passiveGeneratedMethod(method Method) bool {
 	return methodHasModifier(method.Modifiers, "passive-generated") &&
 		len(method.Program.Instructions) == 0
 }
+
+type generatedRuntimeDisposition uint8
+
+const (
+	generatedRuntimeConcrete generatedRuntimeDisposition = iota
+	generatedRuntimePassiveDTO
+	generatedRuntimeUnsupported
+)
+
+func (vm *VM) generatedRuntimeDisposition(method Method, receiver Value) generatedRuntimeDisposition {
+	if !passiveGeneratedMethod(method) {
+		return generatedRuntimeConcrete
+	}
+	className := generatedMethodClassName(method, receiver)
+	if _, generated := generatedPlatformTypes()[strings.ToLower(className)]; !generated {
+		if _, local := vm.lookupClass(className); local {
+			return generatedRuntimeConcrete
+		}
+	}
+	if (vm.isPassivePlatformDTOType(className) || generatedPlatformTopLevelPassiveTypeName(className) || generatedPlatformBuilderTypeName(className)) && generatedPassiveDTOOperation(method) {
+		return generatedRuntimePassiveDTO
+	}
+	return generatedRuntimeUnsupported
+}
+
+func generatedPlatformBuilderTypeName(typeName string) bool {
+	return strings.HasSuffix(strings.TrimSpace(typeName), "Builder") && generatedPlatformTypeName(typeName)
+}
+
+func generatedMethodClassName(method Method, receiver Value) string {
+	if className := strings.TrimSpace(method.ClassName); className != "" {
+		return className
+	}
+	if receiver.Kind == ValueObject {
+		return receiver.Type
+	}
+	className, _, _ := strings.Cut(method.Name, ".")
+	return strings.TrimSpace(className)
+}
+
+func generatedPassiveDTOOperation(method Method) bool {
+	if method.IsConstructor {
+		return true
+	}
+	name := strings.ToLower(apexMethodMemberName(method.Name))
+	switch name {
+	case "clone", "getasmap", "equals", "hashcode", "tostring":
+		return true
+	case "":
+		return false
+	}
+	if strings.HasPrefix(name, "get") || strings.HasPrefix(name, "is") {
+		return len(method.Params) == 0
+	}
+	if method.IsStatic && name == "builder" && strings.HasSuffix(method.ReturnType, ".Builder") {
+		return true
+	}
+	if strings.HasSuffix(strings.TrimSpace(method.ClassName), "Builder") {
+		if name == "build" && len(method.Params) == 0 && generatedPlatformTypeName(method.ReturnType) {
+			return true
+		}
+		if len(method.Params) == 1 && strings.EqualFold(strings.TrimSpace(method.ReturnType), strings.TrimSpace(method.ClassName)) {
+			return true
+		}
+	}
+	return strings.HasPrefix(name, "set") && len(method.Params) == 1
+}
+
 func (vm *VM) generatedPassiveDTOAccessorMethod(className string, method Method) bool {
 	return generatedPlatformTypeName(className) &&
 		vm.isPassivePlatformDTOType(className) &&
@@ -289,6 +357,15 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 	if !ok || generated.Kind == apexast.DeclarationInterface || generated.Kind == apexast.DeclarationEnum || vm.isSObjectLikeType(generated.Name) {
 		return Null, false, nil
 	}
+	if generated.IsAbstract {
+		return Null, true, fmt.Errorf("cannot instantiate abstract class %s", generated.Name)
+	}
+	if value, handled, err := vm.constructGeneratedMetadataDTO(generated, args, namedArgs); handled || err != nil {
+		return value, handled, err
+	}
+	if strings.EqualFold(generated.Name, "Site.UrlRewriter") {
+		return Null, true, fmt.Errorf("Site.UrlRewriter cannot be constructed")
+	}
 	if strings.EqualFold(generated.Name, "Auth.AuthConfiguration") {
 		value, err := constructAuthConfigurationValue(args, namedArgs)
 		return value, true, err
@@ -333,9 +410,44 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 	return object, true, nil
 }
 
+func (vm *VM) constructGeneratedMetadataDTO(generated generatedPlatformType, args []Value, namedArgs map[string]Value) (Value, bool, error) {
+	var object Value
+	switch strings.ToLower(generated.Name) {
+	case "metadata.asyncresult":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s constructor expects 0 arguments", generated.Name)
+		}
+		object = metadataAsyncResultObject("0Af000000000001", true, "Succeeded", "")
+	case "metadata.deploydetails":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s constructor expects 0 arguments", generated.Name)
+		}
+		object = metadataDeployDetailsObject()
+	case "metadata.deploymessage":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s constructor expects 0 arguments", generated.Name)
+		}
+		object = metadataDeployMessageObject()
+	case "metadata.deployresult":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s constructor expects 0 arguments", generated.Name)
+		}
+		object = metadataDeployResultConstructorObject()
+	default:
+		return Null, false, nil
+	}
+	if err := vm.bindGeneratedPlatformNamedFields(&object, namedArgs); err != nil {
+		return Null, true, err
+	}
+	return object, true, nil
+}
+
 func initializeGeneratedPlatformValue(object *Value) {
 	if object == nil || object.Kind != ValueObject {
 		return
+	}
+	if strings.EqualFold(object.Type, "Metadata.DeployResult") {
+		object.Fields["messages"] = List()
 	}
 	if strings.EqualFold(object.Type, "Database.QueryLocator") || strings.EqualFold(object.Type, "QueryLocator") {
 		object.Fields["Records"] = List()

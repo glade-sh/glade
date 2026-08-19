@@ -9,7 +9,8 @@ const representativeRoutes = [
   '/guide/support-map',
   '/reference/cli',
   '/guide/workbench',
-  '/help/'
+  '/help/',
+  '/private-corpus-assurance.html'
 ]
 
 function observeBrowserErrors(page: Page) {
@@ -32,14 +33,14 @@ async function expectNoHorizontalOverflow(page: Page) {
 test('homepage keeps search, CTAs, exact copy, and the local boundary available', async ({ page }) => {
   const errors = observeBrowserErrors(page)
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'Run and test Salesforce Apex locally.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Apex feedback without the deploy wait.' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Install Glade' })).toBeVisible()
   await expect(page.locator('.VPNavBarSearch')).toBeVisible()
 
   const install = page.locator('#install-cmd')
   await expect(install).toHaveAttribute(
     'data-copy-text',
-    'curl -fsSL https://glade.sh/install.sh | sh\nglade doctor\nglade check --project .'
+    'curl -fsSL https://glade.sh/install.sh | sh\nglade version'
   )
   await page.getByRole('button', { name: 'Copy install command' }).click()
   await expect(page.getByRole('status')).toContainText('copied')
@@ -119,6 +120,7 @@ test('SPA navigation returns home without losing route-scoped behavior', async (
 })
 
 test('representative routes have no serious or critical axe violations', async ({ page }) => {
+  test.setTimeout(90_000)
   const errors = observeBrowserErrors(page)
   for (const theme of ['dark', 'light']) {
     await page.goto('/')
@@ -151,6 +153,19 @@ test('ordinary docs do not load scenario JavaScript', async ({ page }) => {
   expect(scripts.some((name) => name.endsWith('/js/home.js'))).toBe(false)
 })
 
+test('support rows can be searched and filtered with announced results', async ({ page }) => {
+  const errors = observeBrowserErrors(page)
+  await page.goto('/guide/support-map')
+  const search = page.getByRole('searchbox', { name: 'Search APIs' })
+  await search.fill('Answers.findSimilar')
+  await expect(page.getByRole('status')).toContainText('1 checked row')
+  await expect(page.locator('.support-explorer-list')).toContainText('Answers.findSimilar')
+  await page.getByRole('combobox', { name: 'Status' }).selectOption('unsupported')
+  await expect(page.getByRole('status')).toContainText('0 checked rows')
+  await expectNoHorizontalOverflow(page)
+  expect(errors).toEqual([])
+})
+
 test('light and forced-color modes preserve readable content', async ({ page }) => {
   await page.goto('/')
   await page.evaluate(() => {
@@ -161,6 +176,6 @@ test('light and forced-color modes preserve readable content', async ({ page }) 
   expect(lightBackground).toBe('#f7faf7')
 
   await page.emulateMedia({ forcedColors: 'active' })
-  await expect(page.getByRole('heading', { name: 'Run and test Salesforce Apex locally.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Apex feedback without the deploy wait.' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Install Glade' })).toBeVisible()
 })

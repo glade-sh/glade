@@ -12,6 +12,21 @@ System.assertEquals(1, reader.next());
 System.assert(reader.isStartElement());
 System.assertEquals(XmlTag.START_ELEMENT, reader.getEventType());
 System.assertEquals('root', reader.getLocalName());
+System.assertEquals('Line: 1 Column: 44', reader.getLocation());
+System.assertEquals(null, reader.getNamespace());
+System.assertEquals('', reader.getPrefix());
+try {
+  reader.getPIData();
+  System.assert(false);
+} catch (XmlException e) {
+  System.assert(e.getMessage().contains('Illegal State'));
+}
+try {
+  reader.getPITarget();
+  System.assert(false);
+} catch (XmlException e) {
+  System.assert(e.getMessage().contains('Illegal State'));
+}
 System.assertEquals(2, reader.getAttributeCount());
 System.assertEquals('id', reader.getAttributeLocalName(0));
 System.assertEquals('7', reader.getAttributeValueAt(0));
@@ -38,13 +53,26 @@ System.assertEquals('child', reader.getLocalName());
 	}
 }
 
+func TestExecXmlStreamReaderReturnsDeclaredVersion(t *testing.T) {
+	program, err := CompileAnonymous(`
+XmlStreamReader reader = new XmlStreamReader('<?xml version="1.0"?><root/>');
+System.assertEquals('1.0', reader.getVersion());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecXmlStreamReaderSafeDefaultsAndCaseInsensitiveMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 XmlStreamReader reader = new XmlStreamReader('<root/>');
 reader.SETCOALESCING(true);
 reader.setNamespaceAware(false);
 System.assertEquals('', reader.getLocation());
-System.assertEquals('1.0', reader.getVersion());
+System.assertEquals(null, reader.getVersion());
 System.assertEquals(1, reader.NeXtTaG());
 System.assertEquals(null, reader.getAttributeValue('', 'missing'));
 System.assertEquals(null, reader.getAttributeLocalName(99));

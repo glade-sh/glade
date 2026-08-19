@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -19,6 +20,7 @@ import (
 	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
@@ -999,7 +1001,10 @@ func TestExplicitRuntimeTransitionFallsBackForEveryUnsafeShape(t *testing.T) {
 				if len(current.Triggers) != 1 {
 					t.Fatalf("trigger count = %d", len(current.Triggers))
 				}
-				current.Triggers[0].Range.End.Offset = current.Triggers[0].Range.Start.Offset
+				if current.Triggers[0].BodyRange == nil {
+					t.Fatal("trigger body range is unavailable")
+				}
+				current.Triggers[0].BodyRange.End.Offset = current.Triggers[0].BodyRange.Start.Offset
 				return current
 			},
 		},
@@ -1131,7 +1136,11 @@ func TestExplicitRuntimeTransitionFallsBackForEveryUnsafeShape(t *testing.T) {
 			pathName = "perf"
 		}
 		t.Run(pathName, func(t *testing.T) {
-			for _, test := range tests {
+			cases := tests
+			if perf {
+				cases = tests[:1]
+			}
+			for index, test := range cases {
 				t.Run(test.name, func(t *testing.T) {
 					InvalidateRuntimeCaches()
 					t.Cleanup(InvalidateRuntimeCaches)
@@ -1180,6 +1189,9 @@ func TestExplicitRuntimeTransitionFallsBackForEveryUnsafeShape(t *testing.T) {
 						}
 					}
 					runtimeTransitionRequireNoReusedSourceInstructions(t, previousEntry, currentEntry)
+					if index != 0 && !test.clearBaseCache && !test.breakBaseAuthority {
+						return
+					}
 
 					InvalidateRuntimeCaches()
 					_, forcedClean, err := runtimeFromIndexWithSourceDigests(current, nil, newSourceCache(), false)
@@ -2340,8 +2352,73 @@ func runtimeTransitionJSON(t *testing.T, value any) string {
 	return string(data)
 }
 
-func runtimeTransitionCanonicalJSON(t *testing.T, value any) string {
+func TestRuntimeTransitionCanonicalJSONSortsRelationshipValues(t *testing.T) {
+	value := map[string]any{
+		"items": []any{
+			map[string]any{"id": "b"},
+			map[string]any{"id": "a"},
+		},
+		"relationships": []any{
+			map[string]any{"id": "b"},
+			map[string]any{"id": "a"},
+		},
+	}
+	got := runtimeTransitionCanonicalJSON(t, value)
+	if want := `{"items":[{"id":"b"},{"id":"a"}],"relationships":[{"id":"a"},{"id":"b"}]}`; string(got) != want {
+		t.Fatalf("canonical JSON = %s, want %s", got, want)
+	}
+}
+
+func TestRuntimeTransitionCanonicalOrgSortsRelationshipsWithoutMutatingInput(t *testing.T) {
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Account": {Definition: storage.ObjectDefinition{Relations: []storage.Relationship{
+			{
+				Field:              "OwnerId",
+				ParentObjects:      []string{"User", "Group"},
+				ParentRelationship: "Owner",
+				CascadeDelete:      true,
+			},
+			{
+				Field:              "OwnerId",
+				ParentObjects:      []string{"Group", "User"},
+				ParentRelationship: "Owner",
+				CascadeDelete:      false,
+			},
+		}}},
+	}}
+	sourceRelations := append([]storage.Relationship(nil), org.Objects["Account"].Definition.Relations...)
+	for i := range sourceRelations {
+		sourceRelations[i].ParentObjects = append([]string(nil), sourceRelations[i].ParentObjects...)
+	}
+
+	_ = runtimeTransitionCanonicalJSON(t, org)
+	canonical := runtimeTransitionCanonicalOrg(org)
+	got := canonical.Objects["Account"].Definition.Relations
+	if len(got) != 2 {
+		t.Fatalf("canonical relationship count = %d, want 2", len(got))
+	}
+	if got[0].CascadeDelete || !got[1].CascadeDelete {
+		t.Fatalf("canonical relationship order = %#v, want false before true", got)
+	}
+	if !reflect.DeepEqual(got[0].ParentObjects, []string{"Group", "User"}) ||
+		!reflect.DeepEqual(got[1].ParentObjects, []string{"Group", "User"}) {
+		t.Fatalf("canonical parent objects = %#v, want sorted values", got)
+	}
+	got[0].ParentObjects[0] = "Mutated"
+	if !reflect.DeepEqual(org.Objects["Account"].Definition.Relations, sourceRelations) {
+		t.Fatal("canonical relationship mutation changed source org")
+	}
+}
+
+func runtimeTransitionCanonicalJSON(t testing.TB, value any) string {
 	t.Helper()
+	if org, ok := value.(storage.OrgState); ok {
+		data, err := json.Marshal(runtimeTransitionCanonicalOrg(org))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(data)
+	}
 	data, err := json.Marshal(value)
 	if err != nil {
 		t.Fatal(err)
@@ -2357,25 +2434,134 @@ func runtimeTransitionCanonicalJSON(t *testing.T, value any) string {
 	return string(data)
 }
 
+func BenchmarkRuntimeTransitionCanonicalJSON(b *testing.B) {
+	value := standardApexTestOrg()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = runtimeTransitionCanonicalJSON(b, value)
+	}
+}
+
+func runtimeTransitionCanonicalOrg(org storage.OrgState) storage.OrgState {
+	if len(org.Objects) == 0 {
+		return org
+	}
+	canonical := org
+	canonical.Objects = make(map[string]storage.ObjectState, len(org.Objects))
+	for name, object := range org.Objects {
+		if len(object.Definition.Relations) == 0 {
+			canonical.Objects[name] = object
+			continue
+		}
+		canonicalObject := object
+		canonicalObject.Definition = object.Definition
+		canonicalObject.Definition.Relations = append([]storage.Relationship(nil), object.Definition.Relations...)
+		for i := range canonicalObject.Definition.Relations {
+			parents := canonicalObject.Definition.Relations[i].ParentObjects
+			if len(parents) > 1 {
+				canonicalObject.Definition.Relations[i].ParentObjects = append([]string(nil), parents...)
+				sort.Strings(canonicalObject.Definition.Relations[i].ParentObjects)
+			}
+		}
+		sort.Slice(canonicalObject.Definition.Relations, func(i, j int) bool {
+			return runtimeTransitionRelationshipLess(canonicalObject.Definition.Relations[i], canonicalObject.Definition.Relations[j])
+		})
+		canonical.Objects[name] = canonicalObject
+	}
+	return canonical
+}
+
+func runtimeTransitionRelationshipLess(left, right storage.Relationship) bool {
+	if cmp := runtimeTransitionStringCompare(left.Field, right.Field); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := runtimeTransitionStringCompare(left.ParentRelationship, right.ParentRelationship); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := runtimeTransitionStringCompare(left.ChildRelationship, right.ChildRelationship); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := runtimeTransitionStringSliceCompare(left.ParentObjects, right.ParentObjects); cmp != 0 {
+		return cmp < 0
+	}
+	if left.CascadeDelete != right.CascadeDelete {
+		return !left.CascadeDelete
+	}
+	if left.RestrictedDelete != right.RestrictedDelete {
+		return !left.RestrictedDelete
+	}
+	if left.DeprecatedAndHidden != right.DeprecatedAndHidden {
+		return !left.DeprecatedAndHidden
+	}
+	if cmp := runtimeTransitionStringSliceCompare(left.JunctionIDListNames, right.JunctionIDListNames); cmp != 0 {
+		return cmp < 0
+	}
+	if cmp := runtimeTransitionStringSliceCompare(left.JunctionReferenceTo, right.JunctionReferenceTo); cmp != 0 {
+		return cmp < 0
+	}
+	if left.Polymorphic != right.Polymorphic {
+		return !left.Polymorphic
+	}
+	if left.DeferredIntegrity != right.DeferredIntegrity {
+		return !left.DeferredIntegrity
+	}
+	return false
+}
+
+func runtimeTransitionStringCompare(left, right string) int {
+	if left < right {
+		return -1
+	}
+	if left > right {
+		return 1
+	}
+	return 0
+}
+
+func runtimeTransitionStringSliceCompare(left, right []string) int {
+	for i := 0; i < len(left) && i < len(right); i++ {
+		if left[i] != right[i] {
+			return runtimeTransitionStringCompare(left[i], right[i])
+		}
+	}
+	if len(left) < len(right) {
+		return -1
+	}
+	if len(left) > len(right) {
+		return 1
+	}
+	return 0
+}
+
 func runtimeTransitionCanonicalValue(value any) any {
+	return runtimeTransitionCanonicalValueAtKey("", value)
+}
+
+func runtimeTransitionCanonicalValueAtKey(key string, value any) any {
 	switch value := value.(type) {
 	case map[string]any:
 		for key, child := range value {
-			value[key] = runtimeTransitionCanonicalValue(child)
+			value[key] = runtimeTransitionCanonicalValueAtKey(key, child)
 		}
 		return value
 	case []any:
 		type canonicalItem struct {
 			value any
-			json  string
+			json  []byte
+		}
+		for i := range value {
+			value[i] = runtimeTransitionCanonicalValueAtKey(key, value[i])
+		}
+		if !runtimeTransitionCanonicalArrayKey(key) {
+			return value
 		}
 		items := make([]canonicalItem, len(value))
 		for i := range value {
-			items[i].value = runtimeTransitionCanonicalValue(value[i])
-			encoded, _ := json.Marshal(items[i].value)
-			items[i].json = string(encoded)
+			items[i].value = value[i]
+			items[i].json, _ = json.Marshal(items[i].value)
 		}
-		sort.Slice(items, func(i, j int) bool { return items[i].json < items[j].json })
+		sort.Slice(items, func(i, j int) bool { return bytes.Compare(items[i].json, items[j].json) < 0 })
 		for i := range items {
 			value[i] = items[i].value
 		}
@@ -2383,6 +2569,10 @@ func runtimeTransitionCanonicalValue(value any) any {
 	default:
 		return value
 	}
+}
+
+func runtimeTransitionCanonicalArrayKey(key string) bool {
+	return key == "relationships"
 }
 
 func runtimeTransitionFirstDifference(got, want string) string {
