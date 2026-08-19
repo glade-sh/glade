@@ -1021,7 +1021,11 @@ func remoteObjectControllerMutationResult(callee string, dmlResults []dml.Result
 	for _, dmlResult := range dmlResults {
 		errors := List()
 		if !dmlResult.Success {
-			errors = List(String(dmlResult.Error))
+			messages := make([]Value, 0, len(dmlResultErrors(dmlResult)))
+			for _, dmlError := range dmlResultErrors(dmlResult) {
+				messages = append(messages, String(dmlError.Message))
+			}
+			errors = List(messages...)
 		}
 		rows = append(rows, remoteObjectControllerResponse(map[string]Value{
 			"id": databaseResultIDValue(dmlResult.ID), "errors": errors,

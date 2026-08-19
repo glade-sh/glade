@@ -4447,14 +4447,28 @@ System.assertEquals(id, updated.get('id'));
 Map<String,Object> updatedRetrieved = RemoteObjectController.retrieve('Account', new List<String>{'Id','Name'}, new Map<String,Object>{'Id' => id});
 List<Account> updatedRows = (List<Account>) updatedRetrieved.get('records');
 System.assertEquals('Remote Updated', updatedRows[0].Name);
-Map<String,Object> batchUpdated = RemoteObjectController.update('Account', new List<String>{id, secondId}, new Map<String,Object>{'Name' => 'Remote Batch'});
-System.assertEquals(2, ((List<Object>) batchUpdated.get('results')).size());
+String invalidId = '001000000000099AAA';
+Map<String,Object> batchUpdated = RemoteObjectController.update('Account', new List<String>{id, invalidId}, new Map<String,Object>{'Name' => 'Remote Batch'});
+List<Map<String,Object>> batchRows = (List<Map<String,Object>>) batchUpdated.get('results');
+System.assertEquals(2, batchRows.size());
+System.assertEquals(id, batchRows[0].get('id'));
+System.assertEquals(0, ((List<Object>) batchRows[0].get('errors')).size());
+System.assertEquals(invalidId, batchRows[1].get('id'));
+System.assert(((List<Object>) batchRows[1].get('errors')).size() > 0);
+Map<String,Object> batchUpdatedRetrieved = RemoteObjectController.retrieve('Account', new List<String>{'Id','Name'}, new Map<String,Object>{'Id' => id});
+System.assertEquals('Remote Batch', ((List<Account>) batchUpdatedRetrieved.get('records'))[0].Name);
 Map<String,Object> batchDeleted = RemoteObjectController.del('Account', new List<String>{id, secondId});
-System.assertEquals(2, ((List<Object>) batchDeleted.get('results')).size());
+List<Map<String,Object>> deleteRows = (List<Map<String,Object>>) batchDeleted.get('results');
+System.assertEquals(2, deleteRows.size());
+System.assertEquals(0, ((List<Object>) deleteRows[0].get('errors')).size());
 Map<String,Object> afterDelete = RemoteObjectController.retrieve('Account', new List<String>{'Id'}, new Map<String,Object>{'Id' => id});
 System.assertEquals('Account', afterDelete.get('type'));
 System.assertEquals(0, afterDelete.get('size'));
 System.assertEquals(0, ((List<Object>) afterDelete.get('records')).size());
+Map<String,Object> emptyUpdate = RemoteObjectController.update('Account', new List<String>(), new Map<String,Object>{'Name' => 'Nope'});
+System.assertEquals(1, emptyUpdate.keySet().size());
+System.assert(emptyUpdate.keySet().contains('error'));
+System.assertEquals(null, emptyUpdate.get('id'));
 Map<String,Object> unsupported = RemoteObjectController.retrieve('Account', new List<String>{'Id'}, new Map<String,Object>{'Name' => 'Remote Updated'});
 System.assertEquals(null, unsupported.get('records'));
 System.assertNotEquals(null, unsupported.get('error'));
@@ -4475,6 +4489,20 @@ System.assertNotEquals(null, unsupported.get('error'));
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestRemoteObjectControllerRetrieveRejectsNonStringField(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Account"}, Records: map[storage.ID]storage.Record{}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	value, err := machine.remoteObjectControllerResult("RemoteObjectController.retrieve", []Value{String("Account"), List(Int(1)), Map()}, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueMap || value.Map[mapKey(String("error"))].Kind != ValueString {
+		t.Fatalf("malformed field list response = %#v", value)
 	}
 }
 
