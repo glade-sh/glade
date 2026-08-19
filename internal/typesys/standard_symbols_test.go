@@ -34,7 +34,7 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 
 	deployResult := requireStandardSymbol(t, symbols, "Metadata.DeployResult")
 	requireStandardProperty(t, deployResult, "errorMessage", "String")
-	requireStandardProperty(t, deployResult, "errorStatusCode", "Metadata.StatusCode")
+	requireStandardProperty(t, deployResult, "errorStatusCode", "String")
 	deployMessage := requireStandardSymbol(t, symbols, "Metadata.DeployMessage")
 	requireStandardProperty(t, deployMessage, "problemType", "Metadata.DeployProblemType")
 

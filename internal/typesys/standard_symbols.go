@@ -1383,7 +1383,6 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "DataSource.AsyncSaveCallback", Kind: apexast.DeclarationClass, Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{{Name: "processSave", ReturnType: "void", Modifiers: []string{"virtual"}, Parameters: []string{"Database.SaveResult"}}}},
 	{Name: "Metadata.DeployResult", Properties: []StandardPropertySpec{
 		{Name: "errorMessage", Type: "String"},
-		{Name: "errorStatusCode", Type: "Metadata.StatusCode", Force: true},
 		{Name: "success", Type: "Boolean"},
 	}},
 	{Name: "ApexPages.Message", Methods: []StandardMethodSpec{{Name: "getSeverity", ReturnType: "ApexPages.Severity"}}},
