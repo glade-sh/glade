@@ -488,6 +488,16 @@ func semaMethodHeader(header string) bool {
 			return false
 		}
 	}
+	accessor := strings.Fields(header)
+	if len(accessor) == 1 && strings.EqualFold(accessor[0], "get") {
+		return true
+	}
+	if len(accessor) == 2 && strings.EqualFold(accessor[1], "get") {
+		switch strings.ToLower(accessor[0]) {
+		case "private", "protected", "public", "global":
+			return true
+		}
+	}
 	if !strings.HasSuffix(header, ")") {
 		return false
 	}
