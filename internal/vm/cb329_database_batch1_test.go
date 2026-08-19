@@ -5,6 +5,7 @@ import "testing"
 func TestCB329DatabaseBatch1CursorDeleteFilterEnum(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(Database.Cursor.DeleteFilter.DELETED_ROWS_ONLY, Database.Cursor.DeleteFilter.valueOf('DELETED_ROWS_ONLY'));
+System.assertEquals(Database.Cursor.DeleteFilter.DELETED_ROWS_ONLY.hashCode(), Database.Cursor.DeleteFilter.valueOf('DELETED_ROWS_ONLY').hashCode());
 System.assertEquals(Database.Cursor.DeleteFilter.NO_DELETED_ROWS, Database.Cursor.DeleteFilter.values()[1]);
 System.assertEquals(0, Database.Cursor.DeleteFilter.DELETED_ROWS_ONLY.ordinal());
 System.assertEquals('DELETED_ROWS_ONLY', Database.Cursor.DeleteFilter.DELETED_ROWS_ONLY.name());

@@ -1455,7 +1455,7 @@ func callGeneratedPlatformEnumMember(generated generatedPlatformType, receiver V
 		return Int(int64(generatedPlatformEnumOrdinal(generated, receiver.Text))), true, nil
 	case "hashCode":
 		if generated.EnumHashBase == nil {
-			return Null, false, nil
+			return Int(int64(javaStringHashCode(generated.Name + "." + receiver.Text))), true, nil
 		}
 		ordinal := generatedPlatformEnumOrdinal(generated, receiver.Text)
 		if ordinal < 0 {
