@@ -265,10 +265,6 @@ func (vm *VM) extractInboundEmail(args []Value) (Value, error) {
 	return email, nil
 }
 
-func parseInboundEmailSource(email Value, raw string) {
-	parseInboundEmailSourceWithOptions(email, raw, false)
-}
-
 func parseInboundEmailSourceWithOptions(email Value, raw string, includeForwardedAttachments bool) {
 	if strings.TrimSpace(raw) == "" {
 		return
