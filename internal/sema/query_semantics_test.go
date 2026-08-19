@@ -735,6 +735,23 @@ private class QueryProbe {
 	}
 }
 
+func TestSemaBindingResolverFindsPropertyAccessorLocal(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public List<Account> accounts {
+    private get {
+      String name = 'Acme';
+      return [SELECT Id FROM Account WHERE Name = :name];
+    }
+  }
+}`
+	offset := strings.Index(source, ":name")
+	bindings := newSemaBindingResolver(source, newSemaCodeSpans(source)).bindingsAt(offset)
+	if got := bindings["name"]; got != "String" {
+		t.Fatalf("name binding = %q, want String; all = %#v", got, bindings)
+	}
+}
+
 func TestQuerySemanticsAcceptsInstanceFieldDeclaredAfterMethod(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {
