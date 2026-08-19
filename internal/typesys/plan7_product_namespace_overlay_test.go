@@ -66,3 +66,35 @@ func TestPlan7RichMessagingOverlayContainsNewPaymentContracts(t *testing.T) {
 		t.Fatal("RichMessaging.CurrencyAmount.currency was not merged into standard symbols")
 	}
 }
+
+func TestPlan7SFDWOverlayContainsConsumptionContracts(t *testing.T) {
+	byName := make(map[string]StandardSymbolSpec, len(plan7SFDWSymbolSpecs))
+	for _, spec := range plan7SFDWSymbolSpecs {
+		if !strings.HasPrefix(spec.Name, "sfdw.") {
+			t.Fatalf("unrelated Plan 7 overlay type %q", spec.Name)
+		}
+		byName[strings.ToLower(spec.Name)] = spec
+	}
+
+	alert, ok := byName[strings.ToLower("sfdw.ConsumptionAlert")]
+	if !ok {
+		t.Fatal("missing sfdw.ConsumptionAlert")
+	}
+	if len(alert.Constructors) != 1 || strings.Join(alert.Constructors[0], ",") != "String,Integer,Boolean,Datetime" {
+		t.Fatalf("ConsumptionAlert constructors = %#v", alert.Constructors)
+	}
+	if len(alert.Properties) != 4 {
+		t.Fatalf("ConsumptionAlert properties = %#v", alert.Properties)
+	}
+
+	card, ok := byName[strings.ToLower("sfdw.ConsumptionCard")]
+	if !ok {
+		t.Fatal("missing sfdw.ConsumptionCard")
+	}
+	if len(card.Constructors) != 1 || strings.Join(card.Constructors[0], ",") != "String,String,String,Double,Double,List<sfdw.ConsumptionAlert>" {
+		t.Fatalf("ConsumptionCard constructors = %#v", card.Constructors)
+	}
+	if len(card.Properties) != 6 {
+		t.Fatalf("ConsumptionCard properties = %#v", card.Properties)
+	}
+}
