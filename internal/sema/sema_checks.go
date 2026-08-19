@@ -664,6 +664,12 @@ func (c querySemanticsChecker) queryFieldBindDiagnostics(query soql.Query, ctx q
 
 func queryBindCollectionElementType(typeName string) (string, bool) {
 	typeName = strings.TrimSpace(typeName)
+	if strings.HasSuffix(typeName, "[]") {
+		elementType := strings.TrimSpace(strings.TrimSuffix(typeName, "[]"))
+		if elementType != "" {
+			return elementType, true
+		}
+	}
 	open := strings.Index(typeName, "<")
 	if open <= 0 || !strings.HasSuffix(typeName, ">") {
 		return "", false
