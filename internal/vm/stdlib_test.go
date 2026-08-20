@@ -684,6 +684,20 @@ System.assertEquals(true, sid.isHttpOnly());
 	}
 }
 
+func TestExecPageReferenceParameterClearUpdatesURL(t *testing.T) {
+	program, err := CompileAnonymous(`
+PageReference page = new PageReference('/apex/Trail?id=001000000000001&mode=edit');
+page.getParameters().clear();
+System.assertEquals('/apex/Trail', page.getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecLocationAndQueueableDuplicateSignatureValueObjects(t *testing.T) {
 	program, err := CompileAnonymous(`
 Location left = Location.newInstance(37.7749, -122.4194);
