@@ -477,12 +477,12 @@ func databaseDMLOptionsAllOrNone(value Value, fallback bool) bool {
 }
 
 func databaseDMLOptions(value Value) (dml.Options, error) {
+	// DuplicateRuleHeader has no effect because local orgs have no duplicate rules.
 	for _, field := range []struct {
 		name       string
 		inspectMap bool
 	}{
 		{name: "AssignmentRuleHeader", inspectMap: true},
-		{name: "DuplicateRuleHeader", inspectMap: true},
 		{name: "EmailHeader", inspectMap: true},
 		{name: "LocaleOptions"},
 		{name: "LocalizeErrors"},
