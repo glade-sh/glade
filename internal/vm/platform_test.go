@@ -1395,6 +1395,52 @@ Test.stopTest();
 	}
 }
 
+func TestExecFlowInterviewRuntimePrecedesGeneratedStub(t *testing.T) {
+	program, err := CompileAnonymous(`
+Flow.Interview interview = Flow.Interview.createInterview('LocalFlow', new Map<String,Object>{ 'answer' => 42 });
+interview.start();
+System.assertEquals(42, (Integer)interview.getVariableValue('answer'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Flow.Interview",
+		Dependency: true,
+		Methods: map[string]Method{
+			"start":            {Name: "Flow.Interview.start", ClassName: "Flow.Interview", ReturnType: "void", Unsupported: "Flow.Interview.start", Dependency: true},
+			"getVariableValue": {Name: "Flow.Interview.getVariableValue", ClassName: "Flow.Interview", ReturnType: "Object", Params: []Param{{Name: "name", Type: "String"}}, Unsupported: "Flow.Interview.getVariableValue", Dependency: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFlowInterviewMissingFlowIsCatchable(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+    Flow.Interview.createInterview('MissingFlow', new Map<String,Object>()).start();
+} catch (FlowException e) {
+    caught = true;
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecQuickActionDescribeAndTemplateDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<QuickAction.DescribeAvailableQuickActionResult> available =
