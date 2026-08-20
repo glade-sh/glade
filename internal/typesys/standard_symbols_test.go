@@ -67,6 +67,17 @@ func TestStandardPlatformSymbolsDatabaseSyncAccessorsUseDateReturns(t *testing.T
 	requireStandardMethodReturn(t, updatedResult, "getLatestDateCovered", []string{}, "Date", false)
 }
 
+func TestStandardPlatformSymbolsRegistrationHandlerHasNoUserProperty(t *testing.T) {
+	registration := requireStandardSymbol(t, StandardPlatformSymbols(), "Auth.RegistrationHandler")
+	for _, member := range registration.Members {
+		if member.Kind == apexast.DeclarationProperty && strings.EqualFold(member.Name, "User") {
+			t.Fatalf("Auth.RegistrationHandler exposes undocumented User property: %#v", member)
+		}
+	}
+	requireStandardMethod(t, registration, "createUser", []string{"Id", "Auth.UserData"}, false)
+	requireStandardMethod(t, registration, "updateUser", []string{"Id", "Id", "Auth.UserData"}, false)
+}
+
 func TestUserProfilesSetPhotoUsesIntegerFourthParameter(t *testing.T) {
 	var productSpec *StandardSymbolSpec
 	for i := range productNamespaceSymbolSpecs {
