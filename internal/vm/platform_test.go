@@ -670,6 +670,36 @@ System.assertEquals(alpha.Id, rows[0].Id);
 	}
 }
 
+func TestExecSearchQueryAppliesReturningWhereInBind(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account alpha = new Account(Name = 'Alpha Account');
+Account beta = new Account(Name = 'Beta Account');
+insert new List<Account>{alpha, beta};
+Test.setFixedSearchResults(new List<Id>{alpha.Id, beta.Id});
+Set<Id> accountIds = new Set<Id>{alpha.Id};
+List<Account> rows = (List<Account>)Search.query('FIND {Account*} IN ALL FIELDS RETURNING Account(Id, Name WHERE Id IN :accountIds)')[0];
+System.assertEquals(1, rows.size());
+System.assertEquals(alpha.Id, rows[0].Id);
+accountIds.clear();
+rows = (List<Account>)Search.query('FIND {Account*} IN ALL FIELDS RETURNING Account(Id, Name WHERE Id IN :accountIds)')[0];
+System.assertEquals(0, rows.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSearchQueryReturningWhereMatchesTextCaseInsensitively(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account alpha = new Account(Name = 'Alpha Account');

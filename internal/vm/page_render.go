@@ -19,6 +19,10 @@ func UnsupportedFeature(message string) error {
 	return unsupportedCallError(message)
 }
 
+func NewVisualforceException(message string) error {
+	return newExceptionError("VisualforceException", message)
+}
+
 func (vm *VM) ConstructController(className string) (Value, error) {
 	return vm.constructValue(className, nil, nil, nil)
 }
