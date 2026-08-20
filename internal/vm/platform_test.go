@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/storage"
@@ -11420,6 +11421,23 @@ System.assertEquals('Waiting', ct.State);
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestStopTestRunsScheduledApexLaterInCurrentYear(t *testing.T) {
+	machine := New(nil)
+	machine.EnableTestContext()
+	machine.fakeNow = time.Date(2026, 1, 1, 0, 0, 1, 0, time.UTC)
+	machine.testContext.Stopped = true
+	machine.testContext.Draining = true
+
+	job := AsyncJob{Kind: "ScheduledApex", NotBefore: machine.fakeNow.Add(time.Minute)}
+	if !machine.asyncJobDue(job) {
+		t.Fatal("scheduled Apex later in the current test year was not due at Test.stopTest")
+	}
+	job.NotBefore = time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
+	if machine.asyncJobDue(job) {
+		t.Fatal("far-future scheduled Apex became due at Test.stopTest")
 	}
 }
 

@@ -660,8 +660,10 @@ func (vm *VM) nextDrainableAsyncJobIndex(jobs []AsyncJob, startIndex int) int {
 	return -1
 }
 func (vm *VM) asyncJobDue(job AsyncJob) bool {
-	if vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining && job.Kind == "Queueable" {
-		return true
+	if vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining {
+		if job.Kind == "Queueable" || (job.Kind == "ScheduledApex" && !job.NotBefore.IsZero() && job.NotBefore.UTC().Year() == vm.fakeNow.UTC().Year()) {
+			return true
+		}
 	}
 	return job.NotBefore.IsZero() || !job.NotBefore.After(vm.fakeNow)
 }
