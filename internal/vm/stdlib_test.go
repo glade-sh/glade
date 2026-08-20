@@ -2468,8 +2468,13 @@ System.assertEquals(0, rows.size());
 }
 
 func TestExecContextAndOrgInstrumentationLocalSurfaces(t *testing.T) {
+	if !generatedPlatformRuntimePrecedenceType("Context.IndustriesContext") {
+		t.Fatal("Context.IndustriesContext must use platform runtime before generated methods")
+	}
 	program, err := CompileAnonymous(`
 Context.IndustriesContext context = new Context.IndustriesContext();
+Context.IndustriesContext clonedContext = (Context.IndustriesContext)context.clone();
+System.assertNotEquals(null, clonedContext);
 Map<String,Object> input = new Map<String,Object>{'recordId' => '001000000000001'};
 System.assertEquals('001000000000001', context.buildContext(input).get('recordId'));
 System.assertEquals('001000000000001', context.getContext(input).get('recordId'));
