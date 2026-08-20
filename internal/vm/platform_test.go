@@ -12323,6 +12323,29 @@ func TestRecordAsyncJobReusesExistingApexClassRow(t *testing.T) {
 	}
 }
 
+func TestRecordApexClassDoesNotMutateFrozenSharedRecords(t *testing.T) {
+	base := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"ApexClass": {
+			Definition: storage.ObjectDefinition{APIName: "ApexClass"},
+			Records: map[storage.ID]storage.Record{
+				"01pExistingAAA": {ID: "01pExistingAAA", Object: "ApexClass"},
+			},
+		},
+	}}
+	clone := base.CloneRuntimeFrozenShared()
+	machine := New(nil)
+	machine.SetOrg(&clone)
+
+	id := machine.recordApexClass("NewWorker")
+
+	if got := len(base.Objects["ApexClass"].Records); got != 1 {
+		t.Fatalf("shared base ApexClass rows = %d, want 1", got)
+	}
+	if _, ok := machine.Org.Objects["ApexClass"].Records[id]; !ok {
+		t.Fatalf("clone ApexClass row %s was not recorded", id)
+	}
+}
+
 func TestExecBatchFinishSeesCompletedAsyncApexJob(t *testing.T) {
 	startProgram, err := CompileAnonymous(`return new List<SObject>();`)
 	if err != nil {
