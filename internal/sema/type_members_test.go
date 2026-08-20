@@ -447,6 +447,18 @@ func TestStandardChildRelationshipMembersDoNotExposeSharedCache(t *testing.T) {
 	}
 }
 
+func TestCustomObjectHasContentDocumentLinksRelationship(t *testing.T) {
+	model := buildTypeMembers(typesys.Index{Objects: []schema.Object{{Name: "NPDB__c"}}})
+	members, _, ok := semaLookupTypeMembers(newSemaTypeMemberState(model).view(), "NPDB__c")
+	if !ok {
+		t.Fatal("missing custom object members")
+	}
+	field, ok := members.fields[normalizeName("ContentDocumentLinks")]
+	if !ok || field.Type != "List<ContentDocumentLink>" {
+		t.Fatalf("ContentDocumentLinks = %#v, present=%v", field, ok)
+	}
+}
+
 func TestBuildTypeMembersDoesNotRetainPerAnalysisStandardPlaceholders(t *testing.T) {
 	resetSemaStandardSObjectMembersCacheForTest()
 	defer resetSemaStandardSObjectMembersCacheForTest()

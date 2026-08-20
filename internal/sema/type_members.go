@@ -1040,6 +1040,17 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 			objectMembers.fields = make(map[string]typesys.MemberSymbol)
 		}
 		semaAddSObjectProviderMembers(&objectMembers, newSemaSObjectFieldProvider(projectNamespace, object), projectNamespace, index.Objects)
+		if object.CustomSettingsType == "" && strings.HasSuffix(strings.ToLower(object.Name), "__c") {
+			key := normalizeName("ContentDocumentLinks")
+			if _, declared := objectMembers.fields[key]; !declared {
+				objectMembers.fields[key] = typesys.MemberSymbol{
+					Kind:      apexast.DeclarationField,
+					Name:      "ContentDocumentLinks",
+					Type:      "List<ContentDocumentLink>",
+					Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
+				}
+			}
+		}
 		for _, field := range object.Fields {
 			childRelationshipNames := []string{}
 			if field.ChildRelationshipName != "" {
