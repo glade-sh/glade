@@ -152,19 +152,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if err := ensureFiniteDecimal("Decimal.format", receiver.Decimal); err != nil {
 			return Null, receiver, false, true, err
 		}
-		text := decimalPlainText(receiver)
-		if strings.ContainsAny(text, "eE") {
-			rat, ok := new(big.Rat).SetString(text)
-			if !ok {
-				return Null, receiver, false, true, fmt.Errorf("Decimal.format value cannot be represented")
-			}
-			if rat.IsInt() {
-				text = rat.Num().String()
-			} else {
-				text = rat.FloatString(decimalScale(receiver))
-			}
-		}
-		return String(formatDecimalTextWithGrouping(text)), receiver, false, true, nil
+		return String(formatDecimalTextWithGrouping(decimalDisplayText(receiver))), receiver, false, true, nil
 	case "toPlainString":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.toPlainString expects 0 arguments")
