@@ -998,15 +998,27 @@ func soslRecordMatchesWhere(record storage.Record, where *sosl.Condition) bool {
 		return true
 	}
 	value, ok := record.GetField(where.Field)
+	text := storageValueText(value)
+	if strings.EqualFold(where.Field, "Id") {
+		text, ok = string(record.ID), record.ID != ""
+	}
 	matches := false
-	if where.ValueIsNull {
+	if strings.EqualFold(where.Operator, "IN") {
+		if ok {
+			for _, candidate := range where.Values {
+				if strings.EqualFold(text, candidate) {
+					return true
+				}
+			}
+		}
+		return false
+	} else if where.ValueIsNull {
 		matches = !ok || value.Kind == storage.ValueNull
 	} else if where.Bind != "" {
 		// Binds are expanded before parsing for the runtime path. A residual bind
 		// is therefore not a local match and must not fabricate a hit.
 		matches = false
 	} else if ok {
-		text := storageValueText(value)
 		if strings.EqualFold(where.Operator, "LIKE") {
 			matches = strings.Contains(strings.ToLower(text), strings.ToLower(strings.Trim(where.Value, "%")))
 		} else {
