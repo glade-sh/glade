@@ -1055,7 +1055,7 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 	// platform implementation must win over the generated passive method body;
 	// otherwise project test runs return the passive default (usually null)
 	// while direct VM execution reaches the real local contract.
-	if authJWTOrCanvasPlatformObjectType(receiver.Type) {
+	if generatedPlatformRuntimePrecedenceType(receiver.Type) {
 		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
 			if mutated {
 				if err := vm.storeReceiver(receiverName, updated); err != nil {
@@ -1217,12 +1217,13 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 	return value, true, err
 }
 
-func authJWTOrCanvasPlatformObjectType(typeName string) bool {
+func generatedPlatformRuntimePrecedenceType(typeName string) bool {
 	switch {
 	case strings.EqualFold(typeName, "Auth.JWT"),
 		strings.EqualFold(typeName, "Canvas.RenderContext"),
 		strings.EqualFold(typeName, "Canvas.ApplicationContext"),
-		strings.EqualFold(typeName, "Canvas.EnvironmentContext"):
+		strings.EqualFold(typeName, "Canvas.EnvironmentContext"),
+		strings.EqualFold(typeName, "Context.IndustriesContext"):
 		return true
 	default:
 		return false

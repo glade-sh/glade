@@ -189,16 +189,17 @@ func callContextIndustriesContextMember(receiver Value, method string, args []Va
 		return Null, receiver, false, false, nil
 	}
 	name := strings.ToLower(method)
-	if len(args) != 1 || args[0].Kind != ValueMap {
-		return Null, receiver, false, true, fmt.Errorf("Context.IndustriesContext.%s expects Map<String,Object>", method)
-	}
 	switch name {
-	case "deletecontext", "evictcontextdefinition":
-		return Null, receiver, false, true, nil
-	case "addrecordstocontext", "buildcontext", "filteringcontext", "getcontext",
+	case "deletecontext", "evictcontextdefinition", "addrecordstocontext", "buildcontext", "filteringcontext", "getcontext",
 		"getcontexttranslation", "leanerquerytags", "persistcontext",
 		"querycontextrecordsandchildren", "queryrecordstatus", "querytags",
 		"updatecontextattributes":
+		if len(args) != 1 || args[0].Kind != ValueMap {
+			return Null, receiver, false, true, fmt.Errorf("Context.IndustriesContext.%s expects Map<String,Object>", method)
+		}
+		if name == "deletecontext" || name == "evictcontextdefinition" {
+			return Null, receiver, false, true, nil
+		}
 		return args[0], receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
