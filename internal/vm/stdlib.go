@@ -468,29 +468,6 @@ func stringStatic(callee string, args []Value) (Value, error) {
 			return String(displayIDText(idText)), nil
 		}
 		return String(args[0].String()), nil
-	case "String.join":
-		if len(args) != 2 || args[1].Kind != ValueString {
-			return Null, fmt.Errorf("String.join expects List or Set and separator String")
-		}
-		if args[0].Kind == ValueNull {
-			return Null, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
-		}
-		if args[0].Kind != ValueList && args[0].Kind != ValueSet {
-			return Null, fmt.Errorf("String.join expects List or Set and separator String")
-		}
-		values := args[0].List
-		if args[0].Kind == ValueSet {
-			values = args[0].Set
-		}
-		parts := make([]string, 0, len(values))
-		for _, item := range values {
-			if item.Kind == ValueNull {
-				parts = append(parts, "")
-				continue
-			}
-			parts = append(parts, item.String())
-		}
-		return String(strings.Join(parts, args[1].Text)), nil
 	case "String.format":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueList {
 			return Null, fmt.Errorf("String.format expects format String and List arguments")
@@ -554,6 +531,28 @@ func stringStatic(callee string, args []Value) (Value, error) {
 	default:
 		return Null, unsupportedCallError(callee)
 	}
+}
+
+func (vm *VM) stringJoin(args []Value, result *Result) (Value, error) {
+	if len(args) != 2 || args[1].Kind != ValueString {
+		return Null, fmt.Errorf("String.join expects List, Set, or Iterable and separator String")
+	}
+	if args[0].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
+	}
+	values, err := vm.iterableCollectionMembers(args[0], result, "String.join")
+	if err != nil {
+		return Null, err
+	}
+	parts := make([]string, 0, len(values))
+	for _, item := range values {
+		if item.Kind == ValueNull {
+			parts = append(parts, "")
+			continue
+		}
+		parts = append(parts, item.String())
+	}
+	return String(strings.Join(parts, args[1].Text)), nil
 }
 
 func stringIsBlankText(text string) bool {
