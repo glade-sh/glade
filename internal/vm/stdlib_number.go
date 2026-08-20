@@ -238,7 +238,31 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if args[1].Kind != ValueInt {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects Integer scale")
 		}
-		return Null, receiver, false, true, unsupportedCallError("Decimal division exact semantics are deferred")
+		mode := "HALF_EVEN"
+		if len(args) == 3 {
+			parsedMode, err := decimalRoundingMode(args[2])
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			mode = parsedMode
+		}
+		dividend, dividendOK := valueDecimalRat(receiver)
+		divisor, divisorOK := valueDecimalRat(args[0])
+		if !dividendOK || !divisorOK {
+			return Null, receiver, false, true, unsupportedCallError("Decimal division exact semantics are deferred")
+		}
+		if divisor.Sign() == 0 {
+			return Null, receiver, false, true, newExceptionError("MathException", "Divide by 0")
+		}
+		quotient := new(big.Rat).Quo(dividend, divisor)
+		rounded, err := roundRatToScale("Decimal.divide", quotient, args[1].Int, mode)
+		if err != nil {
+			if mode == "UNNECESSARY" {
+				return Null, receiver, false, true, newExceptionError("MathException", "Scale insufficient to represent division")
+			}
+			return Null, receiver, false, true, err
+		}
+		return decimalFromRat(rounded, args[1].Int), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}

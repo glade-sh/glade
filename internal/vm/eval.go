@@ -158,12 +158,6 @@ func evalBinary(op string, left, right Value) (Value, error) {
 		return intBinary(op, left, right, func(a, b int64) int64 { return a * b })
 	case "/":
 		if left.Kind == ValueDecimal || right.Kind == ValueDecimal {
-			if decimalOf(right) == 0 {
-				return Null, newExceptionError("MathException", "Divide by 0")
-			}
-			if !isFloatBackedDecimal(left) && !isFloatBackedDecimal(right) {
-				return Null, unsupportedCallError("Decimal division exact semantics are deferred")
-			}
 			return decimalBinary(op, left, right, func(a, b float64) float64 { return a / b })
 		}
 		if right.Kind == ValueInt && right.Int == 0 {
@@ -476,8 +470,14 @@ func decimalBinary(op string, left, right Value, fn func(float64, float64) float
 	if !isNumeric(left) || !isNumeric(right) {
 		return Null, fmt.Errorf("operator %s requires numeric operands", op)
 	}
-	if op == "/" && !isFloatBackedDecimal(left) && !isFloatBackedDecimal(right) {
-		return Null, unsupportedCallError("Decimal division exact semantics are deferred")
+	if op == "/" {
+		if rightRat, ok := valueDecimalRat(right); ok {
+			if rightRat.Sign() == 0 {
+				return Null, newExceptionError("MathException", "Divide by 0")
+			}
+		} else if decimalOf(right) == 0 {
+			return Null, newExceptionError("MathException", "Divide by 0")
+		}
 	}
 	result, ok := preciseDecimalBinary(op, left, right)
 	if !ok {
@@ -519,7 +519,8 @@ func preciseDecimalBinary(op string, left, right Value) (Value, bool) {
 		if rightRat.Sign() == 0 {
 			return Null, false
 		}
-		return Null, false
+		result.Quo(leftRat, rightRat)
+		return decimalRatToPrecision(result, 33)
 	default:
 		return Null, false
 	}
@@ -529,6 +530,43 @@ func preciseDecimalBinary(op string, left, right Value) (Value, bool) {
 	}
 	out.Text = normalizeComputedDecimalText(out.Text)
 	return out, true
+}
+
+func decimalRatToPrecision(value *big.Rat, precision int64) (Value, bool) {
+	if value.Sign() == 0 {
+		return decimalFromRat(value, 0), true
+	}
+	exponent := decimalRatExponent(value)
+	scale := precision - 1 - exponent
+	rounded, err := roundRatToScaleUnchecked("Decimal division", value, scale, "HALF_EVEN")
+	if err != nil {
+		return Null, false
+	}
+	out := decimalFromRat(rounded, scale)
+	if math.IsInf(out.Decimal, 0) || math.IsNaN(out.Decimal) {
+		return Null, false
+	}
+	out.Text = normalizeComputedDecimalText(out.Text)
+	return out, true
+}
+
+func decimalRatExponent(value *big.Rat) int64 {
+	numerator := new(big.Int).Abs(value.Num())
+	denominator := value.Denom()
+	exponent := int64(len(numerator.String()) - len(denominator.String()))
+	absExponent := exponent
+	if absExponent < 0 {
+		absExponent = -absExponent
+	}
+	factor := new(big.Int).Exp(big.NewInt(10), big.NewInt(absExponent), nil)
+	if exponent >= 0 {
+		if numerator.Cmp(new(big.Int).Mul(denominator, factor)) < 0 {
+			exponent--
+		}
+	} else if new(big.Int).Mul(numerator, factor).Cmp(denominator) < 0 {
+		exponent--
+	}
+	return exponent
 }
 
 func normalizeComputedDecimalText(text string) string {

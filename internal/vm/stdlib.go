@@ -203,6 +203,10 @@ func roundRatToScale(callee string, rat *big.Rat, scaleValue int64, mode string)
 	if scaleValue > maxSalesforceDecimalScale || scaleValue < -maxSalesforceDecimalScale {
 		return nil, newExceptionError("MathException", fmt.Sprintf("Invalid scale: %d", scaleValue))
 	}
+	return roundRatToScaleUnchecked(callee, rat, scaleValue, mode)
+}
+
+func roundRatToScaleUnchecked(callee string, rat *big.Rat, scaleValue int64, mode string) (*big.Rat, error) {
 	absScale := scaleValue
 	if absScale < 0 {
 		absScale = -absScale
