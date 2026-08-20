@@ -7563,3 +7563,37 @@ func TestCronNextFireTimeOneShotFixedDate(t *testing.T) {
 		t.Fatal("expected past one-shot cron to not fire")
 	}
 }
+
+func TestExecStringJoinUsesCustomIterableIterator(t *testing.T) {
+	iteratorProgram, err := CompileAnonymous(`
+return new List<String>{'first', 'second'}.iterator();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Client client = new Client();
+System.assertEquals('first,second', String.join(client, ','));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Client",
+		Interfaces: []string{"Iterable<String>"},
+		Methods: map[string]Method{
+			"iterator": {
+				Name:       "Client.iterator",
+				ClassName:  "Client",
+				ReturnType: "Iterator<String>",
+				Program:    iteratorProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -13624,3 +13624,17 @@ func hasDiagnosticCode(diagnostics []diagnostic.Diagnostic, code string) bool {
 	}
 	return false
 }
+
+func TestAnalyzeStringJoinAcceptsIterable(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Probe.cls")
+	writeSemaFile(t, path, `
+public class Probe {
+    public static String joinValues(Iterable<String> values) {
+        return String.join(values, ',');
+    }
+}
+`)
+	result := Analyze(typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{}))
+	assertNoDiagnosticContaining(t, result, "GLADESEMA023", "join")
+}

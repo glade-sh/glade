@@ -1570,6 +1570,7 @@ func TestStandardPlatformSymbolsKeepCoreStringMethodTypes(t *testing.T) {
 	requireStandardMethodType(t, stringType, "split", "List<String>")
 	requireStandardMethodType(t, stringType, "toLowerCase", "String")
 	requireStandardMethodType(t, stringType, "isNotBlank", "Boolean")
+	requireStandardMethodReturn(t, stringType, "join", []string{"Object", "String"}, "String", true)
 	requireStandardMethodReturn(t, stringType, "template", []string{"Map"}, "String", false)
 }
 

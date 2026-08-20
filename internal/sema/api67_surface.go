@@ -224,7 +224,7 @@ func semaAPI67RejectedPlatformCallArgs(receiverType, method string, argTypes []s
 			return true
 		}
 		base, _ := semaGenericBaseAndArgs(argTypes[0])
-		return !strings.EqualFold(base, "List") && !strings.EqualFold(base, "Set")
+		return !strings.EqualFold(base, "List") && !strings.EqualFold(base, "Set") && !strings.EqualFold(base, "Iterable")
 	}
 	if !strings.EqualFold(method, "pow") && !strings.EqualFold(method, "valueOf") {
 		return false

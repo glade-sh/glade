@@ -642,7 +642,7 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 	case "string":
 		switch method {
 		case "join":
-			return semaCollectionSignature{returnType: "String", params: [][]string{{"List<Object>", "String"}, {"Set<Object>", "String"}}}, true
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"Object", "String"}}}, true
 		case "getchars":
 			return semaCollectionSignature{returnType: "List<Integer>", params: [][]string{{}}}, true
 		case "fromchararray":

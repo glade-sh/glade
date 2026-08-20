@@ -1619,8 +1619,7 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "RUN_INTEGRATION_TESTS", Type: "Quiddity", Static: true},
 	}},
 	{Name: "String", Methods: []StandardMethodSpec{
-		{Name: "join", ReturnType: "String", Parameters: []string{"List<Object>", "String"}, Static: true},
-		{Name: "join", ReturnType: "String", Parameters: []string{"Set<Object>", "String"}, Static: true},
+		{Name: "join", ReturnType: "String", Parameters: []string{"Object", "String"}, Static: true},
 		{Name: "template", ReturnType: "String", Parameters: []string{"Map"}},
 	}},
 	// API 67 rejects no-arg constructors on these 29 Reports
