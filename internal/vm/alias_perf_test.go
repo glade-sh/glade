@@ -120,6 +120,48 @@ func TestScopeAliasPerfDisabledLeavesCountersZero(t *testing.T) {
 	}
 }
 
+func TestConstructedObjectMutationSkipsNestedScopeUntilEscape(t *testing.T) {
+	machine := New(nil)
+	record, err := machine.constructValue("Account", nil, nil, resultForLookup())
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine.Globals["record"] = record
+	records := List()
+	records.Type = "List<Account>"
+	for range 5_000 {
+		records.List = append(records.List, Object("Account"))
+	}
+	machine.Globals["records"] = records
+	machine.rememberLocalOnlyCollection(records)
+
+	localRecorder := NewPerfRecorder()
+	machine.SetPerfRecorder(localRecorder)
+	if err := machine.assignPath(record, []string{"Name"}, String("before")); err != nil {
+		t.Fatal(err)
+	}
+	if visits := localRecorder.Snapshot().ScopeAlias.RecursiveVisits; visits != 0 {
+		t.Fatalf("local object mutation recursively visited %d scope values, want 0", visits)
+	}
+
+	updated := machine.Globals["record"]
+	if _, _, err := machine.callListValueMember("records", records, "add", []Value{updated}, resultForLookup()); err != nil {
+		t.Fatal(err)
+	}
+	escapedRecorder := NewPerfRecorder()
+	machine.SetPerfRecorder(escapedRecorder)
+	if err := machine.assignPath(updated, []string{"Name"}, String("after")); err != nil {
+		t.Fatal(err)
+	}
+	if visits := escapedRecorder.Snapshot().ScopeAlias.RecursiveVisits; visits == 0 {
+		t.Fatal("escaped object mutation did not inspect nested scope aliases")
+	}
+	got := machine.Globals["records"]
+	if name := got.List[len(got.List)-1].Fields["Name"]; name.Kind != ValueString || name.Text != "after" {
+		t.Fatalf("escaped nested alias Name = %#v, want after", name)
+	}
+}
+
 func TestStaticAndScopeAliasDurationsRemainSeparate(t *testing.T) {
 	ResetPerfCounters()
 	SetPerfCountersEnabled(true)

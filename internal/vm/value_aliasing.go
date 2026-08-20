@@ -144,7 +144,7 @@ func (vm *VM) propagateCollectionMutationFromSnapshot(previous aliasSnapshot, up
 	vm.collectionMutationSeq++
 	vm.recordCollectionMutation(updated.Ref)
 	vm.propagateTopLevelCollectionAliases(vm.Globals, updated)
-	localOnly := vm.localOnlyCollectionAlias(previous)
+	localOnly := vm.localOnlyAlias(previous)
 	if !localOnly {
 		vm.propagateAliasSnapshotToScope(vm.Globals, previous, updated)
 	}
@@ -161,8 +161,17 @@ func (vm *VM) rememberLocalOnlyCollection(value Value) {
 	}
 	vm.localOnlyCollectionRefs[value.Ref] = true
 }
+func (vm *VM) rememberLocalOnlyObject(value Value) {
+	if vm == nil || value.Ref == 0 || value.Kind != ValueObject {
+		return
+	}
+	if vm.localOnlyObjectRefs == nil {
+		vm.localOnlyObjectRefs = make(map[uint64]bool)
+	}
+	vm.localOnlyObjectRefs[value.Ref] = true
+}
 func (vm *VM) markCollectionRefsEscaped(values ...Value) {
-	if vm == nil || vm.localOnlyCollectionRefs == nil {
+	if vm == nil || (vm.localOnlyCollectionRefs == nil && vm.localOnlyObjectRefs == nil) {
 		return
 	}
 	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
@@ -174,12 +183,15 @@ func (vm *VM) markCollectionRefsEscaped(values ...Value) {
 	}
 }
 func (vm *VM) markRootCollectionRefsEscaped(values ...Value) {
-	if vm == nil || vm.localOnlyCollectionRefs == nil {
+	if vm == nil || (vm.localOnlyCollectionRefs == nil && vm.localOnlyObjectRefs == nil) {
 		return
 	}
 	for _, value := range values {
 		if value.Ref != 0 && mutableCollectionKind(value.Kind) {
 			delete(vm.localOnlyCollectionRefs, value.Ref)
+		}
+		if value.Ref != 0 && value.Kind == ValueObject {
+			delete(vm.localOnlyObjectRefs, value.Ref)
 		}
 	}
 }
@@ -191,6 +203,9 @@ func (vm *VM) markCollectionRefsEscapedSeen(value Value, seen map[uint64]bool) {
 		seen[value.Ref] = true
 		if mutableCollectionKind(value.Kind) {
 			delete(vm.localOnlyCollectionRefs, value.Ref)
+		}
+		if value.Kind == ValueObject {
+			delete(vm.localOnlyObjectRefs, value.Ref)
 		}
 	}
 	switch value.Kind {
@@ -215,8 +230,14 @@ func (vm *VM) markCollectionRefsEscapedSeen(value Value, seen map[uint64]bool) {
 		}
 	}
 }
-func (vm *VM) localOnlyCollectionAlias(snapshot aliasSnapshot) bool {
-	return vm != nil && snapshot.ref != 0 && mutableCollectionKind(snapshot.kind) && vm.localOnlyCollectionRefs != nil && vm.localOnlyCollectionRefs[snapshot.ref]
+func (vm *VM) localOnlyAlias(snapshot aliasSnapshot) bool {
+	if vm == nil || snapshot.ref == 0 {
+		return false
+	}
+	if snapshot.kind == ValueObject {
+		return vm.localOnlyObjectRefs != nil && vm.localOnlyObjectRefs[snapshot.ref]
+	}
+	return mutableCollectionKind(snapshot.kind) && vm.localOnlyCollectionRefs != nil && vm.localOnlyCollectionRefs[snapshot.ref]
 }
 func mutableCollectionKind(kind ValueKind) bool {
 	switch kind {
@@ -655,7 +676,7 @@ func (vm *VM) propagateAliasSnapshotToScope(scope map[string]Value, previous ali
 		}
 		return
 	}
-	if vm.localOnlyCollectionAlias(previous) {
+	if vm.localOnlyAlias(previous) {
 		if perfOn {
 			probe.roots = uint64(len(scope))
 			started := time.Now()
@@ -724,7 +745,7 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 	if !previous.valid() {
 		return
 	}
-	if vm.localOnlyCollectionAlias(previous) {
+	if vm.localOnlyAlias(previous) {
 		return
 	}
 	recorder := vm.perfRecorder
