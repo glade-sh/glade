@@ -29,11 +29,22 @@ func TestParseRuntimeSubsetCarriesSearchAndReturningClauses(t *testing.T) {
 	if account.Object != "Account" || !reflect.DeepEqual(account.Fields, []sosl.SelectExpr{{Field: "Id"}, {Field: "AnnualRevenue", Func: "FORMAT", Alias: "formatted"}}) {
 		t.Fatalf("account projection = %#v", account)
 	}
-	if account.Where == nil || *account.Where != (sosl.Condition{Field: "Name", Operator: "LIKE", Bind: "name"}) {
+	if account.Where == nil || !reflect.DeepEqual(*account.Where, sosl.Condition{Field: "Name", Operator: "LIKE", Bind: "name"}) {
 		t.Fatalf("account condition = %#v", account.Where)
 	}
 	if !reflect.DeepEqual(account.OrderBy, []sosl.OrderSpec{{Field: "Name", Desc: true}}) || account.Limit != (sosl.Window{Bind: "perObject"}) || account.Offset != (sosl.Window{Value: 2, HasValue: true}) {
 		t.Fatalf("account windows/order = %#v", account)
+	}
+}
+
+func TestParseSOSLReturningWhereIn(t *testing.T) {
+	query, err := sosl.Parse("FIND {Acme} RETURNING Account(Id WHERE Id IN ('001A', '001B'))")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := sosl.Condition{Field: "Id", Operator: "IN", Values: []string{"001A", "001B"}}
+	if query.Returning[0].Where == nil || !reflect.DeepEqual(*query.Returning[0].Where, want) {
+		t.Fatalf("where = %#v, want %#v", query.Returning[0].Where, want)
 	}
 }
 
