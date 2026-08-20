@@ -121,6 +121,20 @@ func TestLoadProjectMarksFieldOnlyObjectPartial(t *testing.T) {
 	}
 }
 
+func TestLoadProjectAssociatesNestedFieldDirectoryWithObject(t *testing.T) {
+	root := t.TempDir()
+	fieldPath := filepath.Join(root, "force-app/main/objects/ErrorEvent__e/fields/fields/CorrelationId__c.field-meta.xml")
+	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>CorrelationId__c</fullName><label>Correlation ID</label><type>Text</type></CustomField>`)
+
+	s, err := LoadProject(project.Project{FieldFiles: []string{fieldPath}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(s.Objects) != 1 || s.Objects[0].Name != "ErrorEvent__e" || len(s.Objects[0].Fields) != 1 || s.Objects[0].Fields[0].Name != "CorrelationId__c" {
+		t.Fatalf("nested field metadata = %#v", s.Objects)
+	}
+}
+
 func TestLoadProjectRecordTypeDefaultIgnoresPicklistValueDefaults(t *testing.T) {
 	root := t.TempDir()
 	objectPath := filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml")

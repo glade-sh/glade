@@ -1056,13 +1056,18 @@ func nestedCustomMetadataTypeName(path string) string {
 }
 
 func objectNameFromFieldPath(path string) string {
-	dir := filepath.Dir(filepath.Dir(path))
-	parent := filepath.Base(filepath.Dir(path))
-	if parent == "fields" {
-		return filepath.Base(dir)
+	fieldDir := filepath.Dir(path)
+	if strings.EqualFold(filepath.Base(filepath.Dir(fieldDir)), "objects") {
+		return filepath.Base(fieldDir)
 	}
-	if filepath.Base(dir) == "objects" {
-		return parent
+	for dir := fieldDir; ; dir = filepath.Dir(dir) {
+		objectDir := filepath.Dir(dir)
+		if strings.EqualFold(filepath.Base(dir), "fields") && strings.EqualFold(filepath.Base(filepath.Dir(objectDir)), "objects") {
+			return filepath.Base(objectDir)
+		}
+		if parent := filepath.Dir(dir); parent == dir {
+			break
+		}
 	}
 	return ""
 }
