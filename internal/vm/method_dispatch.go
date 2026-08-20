@@ -1725,6 +1725,7 @@ func localRuntimeHarnessPlatformObjectType(typeName string) bool {
 	switch {
 	case strings.EqualFold(typeName, "eventbus.testbroker"),
 		strings.EqualFold(typeName, "externalservicetest"),
+		strings.EqualFold(typeName, "flow.interview"),
 		strings.EqualFold(typeName, "invocable.action"),
 		strings.EqualFold(typeName, "invocable.action.result"),
 		strings.EqualFold(typeName, "testasynchttp"),
