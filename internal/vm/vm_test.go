@@ -397,8 +397,8 @@ func TestCurrentCallerNamespaceUsesActiveTriggerWhenNamesCollide(t *testing.T) {
 	machine := New(nil)
 	if err := machine.RegisterTrigger(Trigger{
 		Name:      "OrderItemTrigger",
-		Namespace: "namz",
-		Object:    "znu__OrderItem__c",
+		Namespace: "pkgone",
+		Object:    "pkgtwo__OrderItem__c",
 		Timing:    triggerTimingBefore,
 		Operation: "insert",
 	}); err != nil {
@@ -407,11 +407,11 @@ func TestCurrentCallerNamespaceUsesActiveTriggerWhenNamesCollide(t *testing.T) {
 	machine.currentTrigger = true
 	machine.currentClass = "OrderItemTrigger"
 	machine.currentMethod = Method{Name: "OrderItemTrigger", ClassName: "OrderItemTrigger"}
-	machine.currentNamespace = "znu"
-	machine.activeTriggerNamespaces = []string{"znu"}
+	machine.currentNamespace = "pkgtwo"
+	machine.activeTriggerNamespaces = []string{"pkgtwo"}
 
-	if got := machine.currentCallerNamespace(); got != "znu" {
-		t.Fatalf("current caller namespace = %q, want active trigger namespace znu", got)
+	if got := machine.currentCallerNamespace(); got != "pkgtwo" {
+		t.Fatalf("current caller namespace = %q, want active trigger namespace pkgtwo", got)
 	}
 }
 
