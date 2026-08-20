@@ -32,3 +32,21 @@ func TestRenderPageSetsProjectNamespaceForMemberAccess(t *testing.T) {
 		t.Fatalf("ConstructController with namespace = %v", err)
 	}
 }
+
+func TestExternalPageReferenceContentThrowsCatchableVisualforceException(t *testing.T) {
+	program, err := vm.CompileAnonymous(`
+Boolean caught = false;
+try {
+    new PageReference('http://www.google.com/').getContent();
+} catch (VisualforceException e) {
+    caught = true;
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := vm.New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}

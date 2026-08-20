@@ -368,7 +368,7 @@ func RenderPageURL(machine *vm.VM, pageURL string, asPDF bool) (vm.Value, error)
 	}
 	pageName := pageNameFromURL(pageURL)
 	if pageName == "" {
-		return vm.Null, fmt.Errorf("invalid Visualforce page URL %q", pageURL)
+		return vm.Null, vm.NewVisualforceException(fmt.Sprintf("invalid Visualforce page URL %q", pageURL))
 	}
 	env := renderEnvironmentFromVM(machine)
 	if env.Project.Root == "" {
