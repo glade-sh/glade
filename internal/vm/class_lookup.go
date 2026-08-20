@@ -72,6 +72,9 @@ func (vm *VM) classNamespace(className string) string {
 	return class.Namespace
 }
 func (vm *VM) currentCallerNamespace() string {
+	if vm.currentTrigger && len(vm.activeTriggerNamespaces) > 0 {
+		return strings.TrimSpace(vm.activeTriggerNamespaces[len(vm.activeTriggerNamespaces)-1])
+	}
 	if vm.currentMethodMatchesExecutionClass() {
 		if ns := vm.classNamespace(vm.currentMethod.ClassName); ns != "" {
 			return ns

@@ -393,6 +393,28 @@ func TestTriggerNamespaceByNameCachesCurrentNamespaceFallback(t *testing.T) {
 	}
 }
 
+func TestCurrentCallerNamespaceUsesActiveTriggerWhenNamesCollide(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "OrderItemTrigger",
+		Namespace: "namz",
+		Object:    "znu__OrderItem__c",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentTrigger = true
+	machine.currentClass = "OrderItemTrigger"
+	machine.currentMethod = Method{Name: "OrderItemTrigger", ClassName: "OrderItemTrigger"}
+	machine.currentNamespace = "znu"
+	machine.activeTriggerNamespaces = []string{"znu"}
+
+	if got := machine.currentCallerNamespace(); got != "znu" {
+		t.Fatalf("current caller namespace = %q, want active trigger namespace znu", got)
+	}
+}
+
 func TestAliasSnapshotMutationPropagationSkipsNoopMetadataChange(t *testing.T) {
 	original := Object("Account")
 	original.Ref = 42
