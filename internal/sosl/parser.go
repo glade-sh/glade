@@ -37,6 +37,7 @@ type Condition struct {
 	Field       string
 	Operator    string
 	Value       string
+	Values      []string
 	ValueIsNull bool
 	Bind        string
 }
@@ -344,8 +345,34 @@ func (p *parser) parseCondition() (Condition, error) {
 		operation = "!="
 	case operator.kind == tokenWord && strings.EqualFold(operator.text, "LIKE"):
 		operation = "LIKE"
+	case operator.kind == tokenWord && strings.EqualFold(operator.text, "IN"):
+		operation = "IN"
 	default:
 		return Condition{}, p.errorf("unsupported SOSL WHERE operator %q", operator.text)
+	}
+	if operation == "IN" {
+		if p.accept(tokenColon) {
+			bind := p.next()
+			if bind.kind != tokenWord {
+				return Condition{}, p.errorf("expected SOSL WHERE value bind")
+			}
+			return Condition{Field: field.text, Operator: operation, Bind: bind.text}, nil
+		}
+		if !p.accept(tokenLParen) {
+			return Condition{}, p.errorf("expected SOSL WHERE IN values")
+		}
+		var values []string
+		for !p.accept(tokenRParen) {
+			value, bind, _, err := p.parseValue("SOSL WHERE IN value")
+			if err != nil || bind != "" {
+				return Condition{}, p.errorf("expected SOSL WHERE IN value")
+			}
+			values = append(values, value)
+			if !p.accept(tokenComma) && p.peek().kind != tokenRParen {
+				return Condition{}, p.errorf("expected SOSL WHERE IN comma or end")
+			}
+		}
+		return Condition{Field: field.text, Operator: operation, Values: values}, nil
 	}
 	value, bind, nullValue, err := p.parseValue("SOSL WHERE value")
 	if err != nil {
