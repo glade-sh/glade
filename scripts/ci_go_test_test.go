@@ -581,7 +581,7 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 	refresh := jobs["apextest-history"]
 	for _, want := range []string{
 		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "apextest-duration-history-v1", "runner.os", "runner.arch", "1.26.6", "hashFiles('go.sum')",
-		"CI_APEXTEST_HISTORY_PATH", "github.sha", "github.run_id", "github.run_attempt",
+		"CI_APEXTEST_HISTORY_PATH", "CI_DURATION_HISTORY_CACHE_REF", "github.event.pull_request.base.sha", "github.event.before",
 	} {
 		if !strings.Contains(matrix, want) {
 			t.Errorf("matrix history restore missing %q", want)
@@ -592,7 +592,7 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 	}
 	for _, want := range []string{
 		"needs: apextest", "if: ${{ success() }}", "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0", "apex-shard-*", "scripts/ci-go-test.sh apex-history-refresh",
-		"actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0", "apextest-duration-history-v1", "github.sha", "github.run_id", "github.run_attempt",
+		"actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0", "apextest-duration-history-v1", "github.sha",
 	} {
 		if !strings.Contains(refresh, want) {
 			t.Errorf("single-writer refresh job missing %q", want)
@@ -606,6 +606,35 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 	}
 	if matches, _ := filepath.Glob(filepath.Join("..", "**", "*duration-history*.json")); len(matches) != 0 {
 		t.Fatalf("tracked duration history candidates: %v", matches)
+	}
+}
+
+func TestCIDurationHistoryUsesOneImmutablePredecessorKeyPerRun(t *testing.T) {
+	workflowPath := filepath.Join("..", ".github", "workflows", "ci.yml")
+	data, err := os.ReadFile(workflowPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	jobs := workflowJobBlocks(t, string(data))
+	for _, name := range []string{"sema", "apextest"} {
+		job := jobs[name]
+		if !strings.Contains(job, `CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}`) {
+			t.Errorf("%s does not pin duration history to one predecessor commit", name)
+		}
+		start := strings.Index(job, "- name: Restore ")
+		end := strings.Index(job[start+1:], "- name: Restore ")
+		if start < 0 || end < 0 {
+			t.Fatalf("%s duration history restore step not found", name)
+		}
+		restore := job[start : start+1+end]
+		for _, forbidden := range []string{"restore-keys:", "github.run_id", "github.run_attempt", "matrix.shard"} {
+			if strings.Contains(restore, forbidden) {
+				t.Errorf("%s duration history restore contains race-prone %q", name, forbidden)
+			}
+		}
+		if !strings.Contains(restore, "${{ env.CI_DURATION_HISTORY_CACHE_REF }}") {
+			t.Errorf("%s duration history restore does not use the pinned predecessor", name)
+		}
 	}
 }
 
