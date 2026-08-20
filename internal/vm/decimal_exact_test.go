@@ -447,18 +447,41 @@ func TestExecMathAbsRejectsIntegerOverflow(t *testing.T) {
 	}
 }
 
-func TestExecDecimalDivisionIsExplicitlyUnsupported(t *testing.T) {
-	for _, source := range []string{
-		"Decimal result = Decimal.valueOf('9007199254740993') / Decimal.valueOf('1');",
-		"Decimal result = Decimal.valueOf('9007199254740993').divide(Decimal.valueOf('1'), 0);",
-	} {
-		program, err := CompileAnonymous(source)
-		if err != nil {
-			t.Fatalf("compile Decimal division probe %q: %v", source, err)
-		}
-		if _, err := Execute(program, nil); err == nil {
-			t.Fatalf("Decimal division unexpectedly succeeded: %s", source)
-		}
+func TestExecDecimalDivisionMatchesSalesforcePrecisionAndRounding(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal oneThird = Decimal.valueOf('1') / Decimal.valueOf('3');
+System.assertEquals('0.333333333333333333333333333333333', oneThird.toPlainString());
+System.assertEquals(33, oneThird.scale());
+System.assertEquals(33, oneThird.precision());
+System.assertEquals('-0.333333333333333333333333333333333', (Decimal.valueOf('-1') / Decimal.valueOf('3')).toPlainString());
+System.assertEquals('0.25', (Decimal.valueOf('2') / Decimal.valueOf('8')).toPlainString());
+Decimal precisionTie = Decimal.valueOf('1') / Decimal.valueOf('281474976710656');
+System.assertEquals('0.00000000000000355271367880050092935562133789062', precisionTie.toPlainString());
+System.assertEquals(47, precisionTie.scale());
+System.assertEquals(33, precisionTie.precision());
+System.assertEquals('9007199254740993', (Decimal.valueOf('9007199254740993') / Decimal.valueOf('1')).toPlainString());
+Decimal largeThird = Decimal.valueOf('9999999999999999999999999999999999') / Decimal.valueOf('3');
+System.assertEquals('3333333333333333333333333333333330', largeThird.toPlainString());
+System.assertEquals(-1, largeThird.scale());
+System.assertEquals(33, largeThird.precision());
+System.assertEquals('176366841446208112716049382700176', (Decimal.valueOf('1234567890123456789012345678901234') / Decimal.valueOf('7')).toPlainString());
+System.assertEquals('0.12', Decimal.valueOf('1').divide(Decimal.valueOf('8'), 2).toPlainString());
+System.assertEquals('1.4', Decimal.valueOf('1.35').divide(Decimal.valueOf('1'), 1, RoundingMode.HALF_EVEN).toPlainString());
+System.assertEquals('-1.3', Decimal.valueOf('-1.25').divide(Decimal.valueOf('1'), 1, RoundingMode.HALF_UP).toPlainString());
+Boolean zeroRejected = false;
+try { Decimal unused = Decimal.valueOf('1') / Decimal.valueOf('0'); }
+catch (MathException error) { zeroRejected = error.getMessage() == 'Divide by 0'; }
+System.assert(zeroRejected);
+Boolean scaleRejected = false;
+try { Decimal unused = Decimal.valueOf('1').divide(Decimal.valueOf('3'), 2, RoundingMode.UNNECESSARY); }
+catch (MathException error) { scaleRejected = error.getMessage() == 'Scale insufficient to represent division'; }
+System.assert(scaleRejected);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 
