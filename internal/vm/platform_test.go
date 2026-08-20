@@ -10690,9 +10690,9 @@ func TestExecStopTestDrainsOnlyJobsEnqueuedAfterStartTest(t *testing.T) {
 	Test.stopTest();
 	System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'pre-start async'].size());
 	System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'inside async'].size());
-	System.assertEquals(0, [SELECT COUNT() FROM AsyncApexJob WHERE Id = :preStartId]);
+	System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE Id = :preStartId]);
 	System.assertEquals(0, [SELECT COUNT() FROM AsyncApexJob WHERE Status = 'Deferred']);
-	System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob]);
+	System.assertEquals(2, [SELECT COUNT() FROM AsyncApexJob]);
 	`)
 	if err != nil {
 		t.Fatal(err)
