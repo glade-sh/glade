@@ -14552,7 +14552,6 @@ func TestExecDatabaseDMLOptionsRejectConfiguredUnsupportedHeader(t *testing.T) {
 		want   string
 	}{
 		{name: "assignment rule", config: "opts.AssignmentRuleHeader.AssignmentRuleId = '01Q000000000001';", want: `unsupported call "Database.DMLOptions.AssignmentRuleHeader local DML option behavior"`},
-		{name: "duplicate rule", config: "opts.DuplicateRuleHeader.AllowSave = true;", want: `unsupported call "Database.DMLOptions.DuplicateRuleHeader local DML option behavior"`},
 		{name: "email", config: "opts.EmailHeader.TriggerUserEmail = true;", want: `unsupported call "Database.DMLOptions.EmailHeader local DML option behavior"`},
 		{name: "locale", config: "opts.LocaleOptions = new Database.LocaleOptions();", want: `unsupported call "Database.DMLOptions.LocaleOptions local DML option behavior"`},
 		{name: "localize errors", config: "opts.LocalizeErrors = false;", want: `unsupported call "Database.DMLOptions.LocalizeErrors local DML option behavior"`},
@@ -14572,6 +14571,27 @@ func TestExecDatabaseDMLOptionsRejectConfiguredUnsupportedHeader(t *testing.T) {
 				t.Fatalf("error = %#v, want UnsupportedFeature %q", err, tc.want)
 			}
 		})
+	}
+}
+
+func TestExecDatabaseDMLOptionsDuplicateRuleHeaderIsNoOpWithoutRules(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.DMLOptions opts = new Database.DMLOptions();
+opts.DuplicateRuleHeader.AllowSave = true;
+opts.DuplicateRuleHeader.RunAsCurrentUser = true;
+List<Database.SaveResult> results = Database.insert(new List<Account>{new Account(Name = 'Acme')}, opts);
+System.assertEquals(1, results.size());
+System.assertEquals(true, results[0].isSuccess());
+System.assertEquals(1, [SELECT Id FROM Account].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
