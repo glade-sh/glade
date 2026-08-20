@@ -71,8 +71,8 @@ func callMapStdlibMember(receiver Value, method string, args []Value) (Value, Va
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Map.clear expects 0 arguments")
 		}
-		receiver.Map = map[string]Value{}
-		receiver.MapKeys = map[string]Value{}
+		clear(receiver.Map)
+		clear(receiver.MapKeys)
 		receiver.MapOrder = nil
 		return Null, receiver, true, true, nil
 	case "remove":
