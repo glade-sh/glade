@@ -3441,7 +3441,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					}
 				}
 				if !found {
-					return Null, receiver, false, true, fmt.Errorf("Flow.Interview.start: flow %q not found", flowName)
+					return Null, receiver, false, true, newExceptionError("FlowException", fmt.Sprintf("Flow.Interview.start: flow %q not found", flowName))
 				}
 			}
 			receiver.Fields["started"] = Bool(true)
