@@ -748,6 +748,7 @@ func (vm *VM) recordApexClassRecord(className string) storage.ID {
 	if vm.Org == nil || className == "" {
 		return fallbackID
 	}
+	storage.EnsureMutableObjectRecords(vm.Org, "ApexClass")
 	object := vm.Org.Objects["ApexClass"]
 	namespace, localName := splitApexClassName(className)
 	if namespace == "" {
