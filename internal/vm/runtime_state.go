@@ -195,6 +195,7 @@ type VM struct {
 	staticAliasChildHints       map[staticAliasChildHintKey]staticAliasChildHint
 	staticAliasDirectChildren   map[staticFieldRef]staticAliasDirectChildIndex
 	localOnlyCollectionRefs     map[uint64]bool
+	localOnlyObjectRefs         map[uint64]bool
 	collectionMutationSeq       uint64
 	aliasContainmentMutationSeq uint64
 	aliasContainmentCache       map[aliasContainmentCacheKey]uint64

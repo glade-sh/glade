@@ -311,6 +311,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		frameworkUOWRuntime := vm.isSObjectUnitOfWorkRuntimeType(typeName)
 		isSObjectCtor := vm.isSObjectType(typeName)
 		object := Object(typeName)
+		vm.rememberLocalOnlyObject(object)
 		if !passiveDTO {
 			for field, value := range namedArgs {
 				object.Fields[field] = value
@@ -1125,6 +1126,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 	}
 	object := Object(objectType)
+	vm.rememberLocalOnlyObject(object)
 	if isExceptionType(objectType) {
 		stack := vm.rawStackFrames()
 		if vm.currentMethod.Name == "" && len(stack) > 0 {
