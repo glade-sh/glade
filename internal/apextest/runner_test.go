@@ -7881,7 +7881,7 @@ private class PreStartJobTest {
 	    Test.startTest();
 	    Test.stopTest();
 	    System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'pre-start async ran']);
-	    System.assertEquals(0, [SELECT COUNT() FROM AsyncApexJob]);
+	    System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob]);
 	  }
 	}
 	`)

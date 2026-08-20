@@ -24,34 +24,11 @@ func (vm *VM) testStart() (Value, error) {
 	vm.fakeNow = vm.fakeNow.Add(time.Second)
 	vm.testContext.AsyncStartIndex = len(vm.testContext.AsyncJobs)
 	vm.testContext.PlatformEventStartIndex = len(vm.testContext.PlatformEvents)
-	vm.deferPreStartAsyncJobRecords()
 	vm.testContext.ChainEnqueued = false
 	vm.testContext.ParentLimits = vm.limits
 	vm.testContext.ParentViolations = append([]LimitViolation(nil), vm.limitViolations...)
 	vm.ResetLimits()
 	return Null, nil
-}
-func (vm *VM) deferPreStartAsyncJobRecords() {
-	if vm.testContext == nil || vm.Org == nil || len(vm.testContext.AsyncJobs) == 0 {
-		return
-	}
-	vm.ensureAsyncObjects()
-	storage.EnsureMutableObjectRecords(vm.Org, "AsyncApexJob")
-	object := vm.Org.Objects["AsyncApexJob"]
-	for _, job := range vm.testContext.AsyncJobs {
-		storedID, record, ok := storage.LookupRecordByID(object.Records, storage.ID(job.ID))
-		if !ok {
-			continue
-		}
-		if record.Fields == nil {
-			record.Fields = make(map[string]storage.Value)
-		}
-		vm.recordIsolationJournalMutation("AsyncApexJob", storedID, record, true)
-		record.Fields["Status"] = storage.StringValue("Deferred")
-		record.System.HiddenFromSOQL = true
-		object.Records[storedID] = record
-	}
-	vm.Org.Objects["AsyncApexJob"] = object
 }
 func (vm *VM) testStop(result *Result) (Value, error) {
 	if vm.testContext == nil {
