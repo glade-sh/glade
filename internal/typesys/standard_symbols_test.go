@@ -1587,6 +1587,8 @@ func TestStandardPlatformSymbolsKeepCoreStringMethodTypes(t *testing.T) {
 	requireStandardMethodType(t, stringType, "toLowerCase", "String")
 	requireStandardMethodType(t, stringType, "isNotBlank", "Boolean")
 	requireStandardMethodReturn(t, stringType, "join", []string{"Object", "String"}, "String", true)
+	requireStandardMethodReturn(t, stringType, "join", []string{"List<Object>", "String"}, "String", true)
+	requireStandardMethodReturn(t, stringType, "join", []string{"Set<Object>", "String"}, "String", true)
 	requireStandardMethodReturn(t, stringType, "template", []string{"Map"}, "String", false)
 }
 
