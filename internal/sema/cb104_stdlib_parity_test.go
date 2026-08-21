@@ -96,3 +96,14 @@ func TestCB104StdlibExactCompileParity(t *testing.T) {
 		t.Fatalf("CB104 table counts = accepted %d, rejected %d; want 22 and 32", accepted, rejected)
 	}
 }
+
+func TestStringJoinExactCollectionOverloadsCompile(t *testing.T) {
+	source := `
+String listJoined = String.join(new List<Object>{'a'}, ',');
+String setJoined = String.join(new Set<Object>{'a'}, ',');
+`
+	result := AnalyzeAnonymous(typesys.Index{}, source)
+	if result.HasErrors() {
+		t.Fatalf("exact String.join collection overloads rejected: %#v", result.Diagnostics)
+	}
+}
