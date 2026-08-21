@@ -713,7 +713,7 @@ test("guided help screenshot capture uses terminal copy and clean VS Code profil
   ].join("\n");
 
   assert.doesNotMatch(publicHelpCopy, /Ghostty|ghostty/);
-  assert.doesNotMatch(publicHelpCopy, /\/Users\/matt|apollo|matt@/i);
+  assert.doesNotMatch(publicHelpCopy, /\/Users\/[^/\s]+|\b[a-z][\w.-]*@[a-z][\w.-]*\.local\b/i);
   assert.match(captureHelpScreenshotsScript, /--user-data-dir/);
   assert.match(captureHelpScreenshotsScript, /--extensions-dir/);
   assert.match(captureHelpScreenshotsScript, /VSCODE_PROFILE_ROOT="\$\{TMPDIR:-\/tmp\}\/glade-help-vscode"/);
@@ -931,7 +931,7 @@ test("guided help screenshot runner names every capture target", () => {
   assert.doesNotMatch(captureHelpScreenshotTargetScript, /tell application "\$app_name"/);
   assert.match(captureHelpScreenshotTargetScript, /screencapture/);
   assert.match(captureHelpScreenshotTargetScript, /PROMPT='macrodata-apex % '/);
-  assert.doesNotMatch(captureHelpScreenshotTargetScript, /apollo/i);
+  assert.doesNotMatch(captureHelpScreenshotTargetScript, /\b[a-z][\w.-]*\.local\b/i);
 
   for (const name of screenshotNames) {
     const target = name.replace(/\.png$/, "");

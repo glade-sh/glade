@@ -2,7 +2,6 @@ import { defineConfig } from 'vitepress'
 import routeManifest from '../routes.json'
 
 const tunnelAllowedHosts = [
-  'apollo.local',
   '.trycloudflare.com',
   '.ngrok-free.app',
   '.ngrok.app',
