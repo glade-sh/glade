@@ -410,6 +410,12 @@ export default class TileLike extends LightningElement {
 }
 
 func TestCompileEnablesLwcOnDirective(t *testing.T) {
+	dataHome := t.TempDir()
+	t.Setenv("XDG_DATA_HOME", dataHome)
+	root, err := FindRepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
 	fixtureDir := filepath.Join(t.TempDir(), "lwc-on-fixture")
 	componentDir := filepath.Join(fixtureDir, "force-app", "main", "default", "lwc", "dynamicOn")
 	writeCompileFixtureFile(t, filepath.Join(componentDir, "dynamicOn.js"), `import { LightningElement } from 'lwc';
@@ -424,11 +430,14 @@ export default class DynamicOn extends LightningElement {
 		t.Fatal(err)
 	}
 	outDir := filepath.Join(t.TempDir(), "dist")
-	if _, err := Compile(p, Options{OutDir: outDir, Namespace: "c"}); err != nil {
+	if _, err := Compile(p, Options{OutDir: outDir, Namespace: "c", RepoRoot: root}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(outDir, "c", "dynamicOn", "dynamicOn.html.js")); err != nil {
 		t.Fatalf("missing compiled lwc:on template: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dataHome, "glade")); !os.IsNotExist(err) {
+		t.Fatalf("compile wrote user-global toolchain: %v", err)
 	}
 }
 
