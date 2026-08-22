@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/sosl"
 	"github.com/glade-sh/glade/internal/storage"
@@ -52,6 +53,9 @@ func (vm *VM) executeSOQLRowsWithExpanderAndScope(raw string, execResult *Result
 	}
 	if strings.TrimSpace(query.SecurityMode) == "" {
 		query.SecurityMode = accessLevelMode
+	}
+	if strings.EqualFold(query.SecurityMode, "USER_MODE") && apexversion.Before(vm.currentMethod.APIVersion, 66) && strings.EqualFold(vm.executionUser.Fields["UserType"].String(), "AutomatedProcess") {
+		return nil, newExceptionError("QueryException", "Automated Process User requires API version 66.0 or later for WITH USER_MODE")
 	}
 	countsQueryLimit := vm.soqlCountsQueryLimit(query)
 	if countsQueryLimit {

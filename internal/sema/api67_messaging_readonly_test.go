@@ -30,7 +30,7 @@ message.usermail = null;
 `
 
 func TestAPI67MessagingReadOnlyPropertiesAnonymous(t *testing.T) {
-	result := AnalyzeAnonymous(typesys.Index{}, cb133MessagingReads)
+	result := AnalyzeAnonymous(typesys.Index{}, cb133MessagingReads, "67.0")
 	if result.HasErrors() {
 		t.Fatalf("Messaging read-only properties and getters should compile: %#v", result.Diagnostics)
 	}
@@ -47,7 +47,7 @@ func TestAPI67MessagingReadOnlyPropertiesClass(t *testing.T) {
 }
 
 func TestAPI67MessagingAssignmentsRejectedAnonymous(t *testing.T) {
-	assertCB133MessagingAssignmentsRejected(t, AnalyzeAnonymous(typesys.Index{}, cb133MessagingAssignments))
+	assertCB133MessagingAssignmentsRejected(t, AnalyzeAnonymous(typesys.Index{}, cb133MessagingAssignments, "67.0"))
 }
 
 func TestAPI67MessagingAssignmentsRejectedClass(t *testing.T) {
@@ -65,7 +65,7 @@ func TestAPI67MessagingUndeclaredResultConstructorsRejectedAnonymous(t *testing.
 		"Messaging.SendEmailResult",
 		"Messaging.SendEmailError",
 	} {
-		result := AnalyzeAnonymous(typesys.Index{}, typeName+" value = new "+typeName+"();")
+		result := AnalyzeAnonymous(typesys.Index{}, typeName+" value = new "+typeName+"();", "67.0")
 		if !result.HasErrors() {
 			t.Fatalf("expected Salesforce API 67 to reject undeclared constructor: %s", typeName)
 		}

@@ -2,10 +2,10 @@ package sema
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/typesys"
 )
@@ -228,9 +228,8 @@ func methodContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymb
 	return diagnostics
 }
 
-func typeUsesAPIVersionAtLeast(typ typesys.TypeSymbol, minimum float64) bool {
-	version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64)
-	return err == nil && version >= minimum
+func typeUsesAPIVersionAtLeast(typ typesys.TypeSymbol, minimum int) bool {
+	return apexversion.AtLeast(typ.EffectiveAPIVersion, minimum)
 }
 
 func hasAnyAccessModifier(modifiers []string) bool {

@@ -1829,14 +1829,37 @@ func TestNormalizeRESTAPIVersion(t *testing.T) {
 	}
 }
 
-func TestEffectiveRESTAPIVersion(t *testing.T) {
-	if got := EffectiveRESTAPIVersion(""); got != DefaultRESTAPIVersion {
-		t.Fatalf("blank -> %q want %s", got, DefaultRESTAPIVersion)
+func TestResolveRESTAPIVersion(t *testing.T) {
+	for _, test := range []struct {
+		raw  string
+		want string
+	}{
+		{raw: "", want: DefaultRESTAPIVersion},
+		{raw: "   ", want: DefaultRESTAPIVersion},
+		{raw: "v65.0", want: "65.0"},
+		{raw: "65.00", want: "65.0"},
+	} {
+		got, err := ResolveRESTAPIVersion(test.raw)
+		if err != nil || got != test.want {
+			t.Fatalf("ResolveRESTAPIVersion(%q) = %q, %v; want %q", test.raw, got, err, test.want)
+		}
 	}
-	if got := EffectiveRESTAPIVersion("   "); got != DefaultRESTAPIVersion {
-		t.Fatalf("whitespace-only -> %q want %s", got, DefaultRESTAPIVersion)
+	for _, raw := range []string{"v", "+65.0", "64.0", "68.0", "67.1", "junk"} {
+		if got, err := ResolveRESTAPIVersion(raw); err == nil {
+			t.Fatalf("ResolveRESTAPIVersion(%q) = %q, nil", raw, got)
+		}
 	}
-	if got := EffectiveRESTAPIVersion("v70.0"); got != "70.0" {
-		t.Fatalf("explicit -> %q want 70.0", got)
+}
+
+func TestSupportedRESTAPIVersion(t *testing.T) {
+	for _, version := range []string{"60.0", "65.0", "66.0", "67.0"} {
+		if !IsSupportedRESTAPIVersion(version) {
+			t.Fatalf("%s is not supported", version)
+		}
+	}
+	for _, version := range []string{"59.0", "64.0", "68.0", "67.1", "junk"} {
+		if IsSupportedRESTAPIVersion(version) {
+			t.Fatalf("%s is supported", version)
+		}
 	}
 }

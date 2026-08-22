@@ -157,7 +157,7 @@ func TestPropertyGetterMutationRemainsAcceptedAtTestedAPIVersions(t *testing.T) 
 	for _, apiVersion := range []string{"41.0", "42.0"} {
 		t.Run(apiVersion, func(t *testing.T) {
 			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, apiVersion)
-			if result.HasErrors() {
+			if hasErrorOtherThan(result.Diagnostics, "GLADESEMA_VERSION") {
 				t.Fatalf("API %s getter mutation control was rejected: %#v", apiVersion, result.Diagnostics)
 			}
 		})
@@ -193,5 +193,25 @@ func TestAbstractMethodVersionGateUsesEffectiveSourceAPIVersion(t *testing.T) {
 	result := Analyze(typesys.Build(project.Project{Root: root, SourceAPIVersion: "64.0", ApexFiles: []string{path}}, schema.Schema{}))
 	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
 		t.Fatalf("effective API 65 source was accepted: %#v", result.Diagnostics)
+	}
+}
+
+func TestInvocableParameterConstructorVisibilityFollowsAPIVersion(t *testing.T) {
+	sources := map[string]string{
+		"Payload.cls": `public class Payload { private Payload() {} }`,
+		"Action.cls": `public class Action {
+  @InvocableMethod public static List<Payload> run(List<Payload> values) { return values; }
+}`,
+	}
+	if result := analyzeDeclarationProjectWithAPIVersion(t, sources, "65.0"); result.HasErrors() {
+		t.Fatalf("API 65 diagnostics = %#v", result.Diagnostics)
+	}
+	result := analyzeDeclarationProjectWithAPIVersion(t, sources, "66.0")
+	if !result.HasErrors() || !resultDiagnosticsContain(result, "visible no-argument constructor") {
+		t.Fatalf("API 66 diagnostics = %#v", result.Diagnostics)
+	}
+	sources["Payload.cls"] = `public class Payload { public Payload() {} }`
+	if result := analyzeDeclarationProjectWithAPIVersion(t, sources, "66.0"); result.HasErrors() {
+		t.Fatalf("API 66 visible-constructor diagnostics = %#v", result.Diagnostics)
 	}
 }

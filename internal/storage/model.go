@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -9,24 +11,54 @@ import (
 
 const FixtureVersion = "glade.storage.v1"
 
-// DefaultRESTAPIVersion is the REST API release string advertised by local HTTP
-// surfaces when [OrgState.APIVersion] is empty (no leading "v").
-const DefaultRESTAPIVersion = "65.0"
-
 // NormalizeRESTAPIVersion trims whitespace and strips an optional leading "v".
 func NormalizeRESTAPIVersion(s string) string {
 	s = strings.TrimSpace(s)
 	return strings.TrimPrefix(s, "v")
 }
 
-// EffectiveRESTAPIVersion returns the canonical REST API release (no leading "v")
-// for persisted org version s, or [DefaultRESTAPIVersion] when s is blank.
-func EffectiveRESTAPIVersion(s string) string {
-	v := NormalizeRESTAPIVersion(s)
-	if v != "" {
-		return v
+// ResolveRESTAPIVersion returns a canonical supported REST API version.
+func ResolveRESTAPIVersion(raw string) (string, error) {
+	requested := strings.TrimSpace(raw)
+	if requested == "" {
+		return DefaultRESTAPIVersion, nil
 	}
-	return DefaultRESTAPIVersion
+	parts := strings.Split(NormalizeRESTAPIVersion(requested), ".")
+	if len(parts) != 2 {
+		return "", unsupportedRESTAPIVersion(requested)
+	}
+	major, majorOK := unsignedRESTVersionComponent(parts[0])
+	minor, minorOK := unsignedRESTVersionComponent(parts[1])
+	if !majorOK || !minorOK || major < 1 || minor != 0 {
+		return "", unsupportedRESTAPIVersion(requested)
+	}
+	version := fmt.Sprintf("%d.0", major)
+	if !slices.Contains(SupportedRESTAPIVersions, version) {
+		return "", unsupportedRESTAPIVersion(requested)
+	}
+	return version, nil
+}
+
+func IsSupportedRESTAPIVersion(raw string) bool {
+	version, err := ResolveRESTAPIVersion(raw)
+	return err == nil && slices.Contains(SupportedRESTAPIVersions, version)
+}
+
+func unsignedRESTVersionComponent(raw string) (int, bool) {
+	if raw == "" {
+		return 0, false
+	}
+	for _, char := range raw {
+		if char < '0' || char > '9' {
+			return 0, false
+		}
+	}
+	value, err := strconv.Atoi(raw)
+	return value, err == nil
+}
+
+func unsupportedRESTAPIVersion(requested string) error {
+	return fmt.Errorf("unsupported REST API version %q; supported versions: %s", requested, strings.Join(SupportedRESTAPIVersions, ", "))
 }
 
 type OrgState struct {

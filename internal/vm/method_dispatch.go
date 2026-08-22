@@ -270,7 +270,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 					dataWeaveArgs = append(dataWeaveArgs, value)
 				}
 			}
-			value, _, _, handled, err := callDataWeaveScriptMember(receiver, "execute", dataWeaveArgs)
+			value, _, _, handled, err := vm.callDataWeaveScriptMember(receiver, "execute", dataWeaveArgs)
 			if handled || err != nil {
 				return value, err
 			}

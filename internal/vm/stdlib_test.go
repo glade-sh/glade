@@ -1315,6 +1315,71 @@ System.assertEquals('"Hello World"', namespaced.execute().getValueAsString());
 	}
 }
 
+func TestNestedSOQLAPIVersion66(t *testing.T) {
+	program, err := CompileAnonymousWithOptions(`
+Account account = new Account(Name = 'Acme');
+insert account;
+insert new Contact(AccountId = account.Id, LastName = 'Child');
+List<Account> rows = [SELECT Id, (SELECT Id FROM Contacts) FROM Account WHERE Id = :account.Id];
+DataWeave.Result result = DataWeave.Script.createScript('records').execute(new Map<String,Object>{'records' => rows});
+List<Account> transformed = (List<Account>) result.getValue();
+System.assertEquals(1, transformed[0].Contacts.size());
+`, CompileOptions{APIVersion: "66.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestNestedSOQLAPIVersion65ThrowsDataWeaveScriptException(t *testing.T) {
+	program, err := CompileAnonymousWithOptions(`
+Account account = new Account(Name = 'Acme');
+insert account;
+insert new Contact(AccountId = account.Id, LastName = 'Child');
+List<Account> rows = [SELECT Id, (SELECT Id FROM Contacts) FROM Account WHERE Id = :account.Id];
+try {
+	DataWeave.Script.createScript('records').execute(new Map<String,Object>{'records' => rows});
+	System.assert(false, 'expected DataWeaveScriptException');
+} catch (Exception ex) {
+	Assert.isInstanceOfType(ex, DataWeaveScriptException.class);
+}
+`, CompileOptions{APIVersion: "65.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStringTemplateNamedInterpolation(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> values = new Map<String,Object>{'name' => 'Ada', 'count' => 2};
+System.assertEquals('Hello Ada: 2', 'Hello ${name}: ${count}'.template(values));
+System.assertEquals('Escaped ${name}', 'Escaped $${name}'.template(values));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDataWeaveScriptErrorThrowsScriptException(t *testing.T) {
 	program, err := CompileAnonymous(`
 try {

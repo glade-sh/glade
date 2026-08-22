@@ -113,7 +113,7 @@ func testToolingMetadataComponentSource(t *testing.T) SourceMetadata {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(root) })
-	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel></CustomObject>`)
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Rating__c.field-meta.xml"), `<CustomField><fullName>Rating__c</fullName><label>Rating</label><type>Text</type><length>40</length></CustomField>`)
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/layouts/Account-Account Layout.layout-meta.xml"), `<Layout/>`)

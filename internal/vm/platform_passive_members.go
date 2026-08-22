@@ -786,7 +786,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return callRestResponseMember(receiver, method, args)
 	}
 	if strings.EqualFold(receiver.Type, "DataWeave.Script") {
-		return callDataWeaveScriptMember(receiver, method, args)
+		return vm.callDataWeaveScriptMember(receiver, method, args)
 	}
 	if strings.EqualFold(receiver.Type, "DataWeave.Result") {
 		return callDataWeaveResultMember(receiver, method, args)
@@ -1079,16 +1079,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		case "getNumRecords":
 			return databaseCursorNumRecords(receiver, method, args)
 		case "fetch":
-			return databaseCursorFetch(receiver, method, args, false)
+			return vm.databaseCursorFetch(receiver, method, args, false)
 		}
 	case "Database.PaginationCursor":
 		switch method {
 		case "getNumRecords":
 			return databaseCursorNumRecords(receiver, method, args)
 		case "fetchPage":
-			return databaseCursorFetch(receiver, method, args, false)
+			return vm.databaseCursorFetch(receiver, method, args, false)
 		case "fetchDeleted":
-			return databaseCursorFetch(receiver, method, args, true)
+			return vm.databaseCursorFetch(receiver, method, args, true)
 		}
 	case "Database.GetDeletedResult":
 		switch method {
@@ -3797,7 +3797,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	}
 	if strings.HasPrefix(receiver.Type, "DataWeaveScriptResource.") {
-		return callDataWeaveScriptMember(receiver, method, args)
+		return vm.callDataWeaveScriptMember(receiver, method, args)
 	}
 	if value, updated, mutated, handled, err := vm.callPassivePlatformDTOObjectMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, handled, err

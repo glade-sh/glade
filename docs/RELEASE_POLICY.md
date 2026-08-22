@@ -37,12 +37,34 @@ source tree, not broad promises that every Salesforce behavior is implemented.
 
 ## Salesforce API Versions
 
-The current default local API version is `v65.0`. Support is tracked by checked
-docs and tests, not by a blanket Salesforce API support claim.
+Glade uses moving correctness. The checked source window is exactly 65.0,
+66.0, and 67.0; the checked endpoint window is 60.0, 65.0, 66.0, and 67.0.
+The default for both axes remains 65.0. Versions outside the declared window
+fail explicitly. Glade does not silently choose the nearest version and does
+not promise exact behavior for every historical source version.
 
-When behavior differs by Salesforce API version, add the version to the
-capability notes or split the capability into version-scoped entries before
-marking it `supported`.
+Source version, HTTP endpoint version, org profile, and LWC bundle metadata are
+independent. An endpoint version never changes source semantics. Each LWC
+bundle must declare an exact supported `apiVersion`; module availability follows
+that bundle value.
+
+Salesforce release support is generated from the checked Glade Tools release
+contract. Each release snapshot carries a checked source receipt for the exact
+Atlas tree, per-family hashes, normalized inventory, and current-only LWC
+source/filter decision. A promotion must pass generated-file drift checks, the
+full Glade Go suite with the real LWC compiler, exact case or product-test
+bindings, all source/endpoint/org windows, complete surface and behavior
+denominators, and complete release-note routing. Static documentation or a
+classification label does not receive execution credit.
+
+For a new Salesforce release, export the versioned documentation and release
+notes with the existing Glade Tools exporters, add and classify the adjacent
+delta, route every release-note document, regenerate the compact availability
+tables, and extend the declared window only after the exact boundary tests pass.
+Keep current-only LWC source provenance distinct from versioned Atlas exports.
+The correctness gate also requires both candidate binaries to embed the clean
+Git revision named by the gate and records their hashes in its provenance
+artifact.
 
 ## Upgrade Policy
 

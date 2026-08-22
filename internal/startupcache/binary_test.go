@@ -1222,7 +1222,7 @@ func newExactInvalidationFixture(t *testing.T, setup func(root string)) (string,
 	t.Helper()
 	root := t.TempDir()
 	classPath := filepath.Join(root, "force-app", "main", "default", "classes", "Exact.cls")
-	writeStartupCacheTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"64.0"}`)
+	writeStartupCacheTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"66.0"}`)
 	writeStartupCacheTestFile(t, classPath, "public class Exact { Integer value = 1; }\n")
 	if setup != nil {
 		setup(root)

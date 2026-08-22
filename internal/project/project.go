@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 )
@@ -354,6 +355,10 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	defer delete(stack, absRoot)
 
 	cfg, err := loadSFDXProject(absRoot)
+	if err != nil {
+		return Project{}, err
+	}
+	cfg.SourceAPIVersion, err = apexversion.ResolveSource(cfg.SourceAPIVersion)
 	if err != nil {
 		return Project{}, err
 	}

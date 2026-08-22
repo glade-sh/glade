@@ -14,7 +14,7 @@ import (
 
 func TestCLIOutputContractJSONProgressSplit(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/PassingTest.cls"), `@IsTest
 private class PassingTest {
   @IsTest static void ok() {
@@ -68,7 +68,7 @@ func TestCLIOutputContractDBSeedJSONProgressSplit(t *testing.T) {
 
 func TestCLIOutputContractNoProgressSuppressesStderr(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Hello.cls"), "public class Hello {}")
 
 	var stdout, stderr bytes.Buffer
@@ -83,7 +83,7 @@ func TestCLIOutputContractNoProgressSuppressesStderr(t *testing.T) {
 
 func TestCLIOutputContractDevLWCBoundsRoutesAndKeepsReadyFileComplete(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	for i := 0; i < 20; i++ {
 		name := strings.ToLower("routeProbe"+string(rune('A'+(i%26)))) + strings.Repeat("x", i/26)
 		writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc", name, name+".js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><isExposed>true</isExposed></LightningComponentBundle>`)

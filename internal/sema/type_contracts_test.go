@@ -227,7 +227,7 @@ func TestTypeContractAllowsIterableInstanceofAtAllTestedAPIVersions(t *testing.T
 			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
 				"Probe.cls": `public class Probe { public Boolean run(List<Account> values) { return values instanceof Iterable<SObject>; } }`,
 			}, apiVersion)
-			if result.HasErrors() {
+			if hasErrorOtherThan(result.Diagnostics, "GLADESEMA_VERSION") {
 				t.Fatalf("Iterable instanceof control was rejected: %#v", result.Diagnostics)
 			}
 		})

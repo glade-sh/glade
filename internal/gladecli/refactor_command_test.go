@@ -125,7 +125,7 @@ func TestWriteRefactorRenameTextCapsEditsUnlessFull(t *testing.T) {
 func writeRefactorRenameProject(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/InvoiceService.cls"), `public class InvoiceService {
     public Decimal total(Account account) {
         return account.Name == null ? 0 : 1;

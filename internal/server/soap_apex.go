@@ -36,7 +36,7 @@ type toolingExecuteAnonymousSOAPResult struct {
 	ExceptionStackTrace *string `json:"exceptionStackTrace"`
 }
 
-func (s *Server) handleSOAPApex(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleSOAPApex(w http.ResponseWriter, r *http.Request, apiVersion string) {
 	source, err := parseSOAPExecuteAnonymous(r.Body)
 	if err != nil {
 		var parseErr soapParseError
@@ -48,7 +48,7 @@ func (s *Server) handleSOAPApex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := s.runToolingExecuteAnonymousForSOAP(r, source)
+	result, err := s.runToolingExecuteAnonymousForSOAP(r, source, apiVersion)
 	if err != nil {
 		writeSOAPFault(w, http.StatusInternalServerError, "sf:SERVER", err.Error())
 		return
@@ -119,17 +119,17 @@ func parseExecuteAnonymousString(decoder *xml.Decoder, method xml.StartElement) 
 	}
 }
 
-func (s *Server) runToolingExecuteAnonymousForSOAP(r *http.Request, source string) (toolingExecuteAnonymousSOAPResult, error) {
+func (s *Server) runToolingExecuteAnonymousForSOAP(r *http.Request, source, apiVersion string) (toolingExecuteAnonymousSOAPResult, error) {
 	body, err := json.Marshal(map[string]string{"anonymousBody": source})
 	if err != nil {
 		return toolingExecuteAnonymousSOAPResult{}, err
 	}
-	req := httptest.NewRequest(http.MethodPost, "/services/data/v"+s.advertisedRESTAPIVersion()+"/tooling/executeAnonymous", bytes.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/services/data/v"+apiVersion+"/tooling/executeAnonymous", bytes.NewReader(body))
 	req.Header = r.Header.Clone()
 	req.Header.Set("Content-Type", "application/json")
 
 	rec := httptest.NewRecorder()
-	s.handleExecuteAnonymous(rec, req)
+	s.handleExecuteAnonymous(rec, req, apiVersion)
 	if rec.Code != http.StatusOK {
 		return toolingExecuteAnonymousSOAPResult{}, soapToolingError(rec.Body.Bytes())
 	}

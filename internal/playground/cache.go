@@ -11,18 +11,19 @@ import (
 )
 
 type CacheKey struct {
-	WorkspaceHash string
-	AnonymousBody string
-	SeedHash      string
-	ProjectRoot   string
-	LimitMode     string
-	RunMode       string
-	Version       string
+	WorkspaceHash    string
+	AnonymousBody    string
+	SeedHash         string
+	ProjectRoot      string
+	LimitMode        string
+	RunMode          string
+	Version          string
+	SourceAPIVersion string
 }
 
 func (k CacheKey) String() string {
 	h := sha256.New()
-	for _, part := range []string{k.WorkspaceHash, k.AnonymousBody, k.SeedHash, k.ProjectRoot, k.LimitMode, k.RunMode, k.Version} {
+	for _, part := range []string{k.WorkspaceHash, k.AnonymousBody, k.SeedHash, k.ProjectRoot, k.LimitMode, k.RunMode, k.Version, k.SourceAPIVersion} {
 		h.Write([]byte(part))
 		h.Write([]byte{0})
 	}

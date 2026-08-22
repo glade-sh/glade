@@ -9,6 +9,130 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 )
 
+func TestBuildCompileConfigAPIVersionMatrix(t *testing.T) {
+	for _, test := range []struct {
+		projectVersion string
+		bundleVersion  string
+		want           int
+		wantError      string
+	}{
+		{projectVersion: "65.0", bundleVersion: "65.0", want: 65},
+		{projectVersion: "65.0", bundleVersion: "66.0", want: 66},
+		{projectVersion: "66.0", bundleVersion: "67.0", want: 67},
+		{projectVersion: "67.0", bundleVersion: "64.0", wantError: "unsupported source API version"},
+		{projectVersion: "67.0", bundleVersion: "", wantError: "missing component API version"},
+	} {
+		t.Run(test.projectVersion+"_bundle_"+test.bundleVersion, func(t *testing.T) {
+			root := t.TempDir()
+			bundle := filepath.Join(root, "force-app", "main", "default", "lwc", "probe")
+			js := filepath.Join(bundle, "probe.js")
+			html := filepath.Join(bundle, "probe.html")
+			meta := filepath.Join(bundle, "probe.js-meta.xml")
+			writeCompileFixtureFile(t, js, "export default class Probe {}")
+			writeCompileFixtureFile(t, html, "<template></template>")
+			writeCompileFixtureFile(t, meta, `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+test.bundleVersion+`</apiVersion></LightningComponentBundle>`)
+			p := project.Project{Root: root, SourceAPIVersion: test.projectVersion, LWCFiles: []string{js}, LWCHTMLFiles: []string{html}, LWCMetaFiles: []string{meta}}
+			cfg, err := buildCompileConfig(p, root, filepath.Join(root, "dist"), "c")
+			if test.wantError != "" {
+				if err == nil || !strings.Contains(err.Error(), test.wantError) {
+					t.Fatalf("buildCompileConfig error = %v", err)
+				}
+				return
+			}
+			if err != nil || cfg.LWCAPIVersions["force-app/main/default/lwc/probe"] != test.want {
+				t.Fatalf("buildCompileConfig = %#v, %v; want API %d", cfg, err, test.want)
+			}
+		})
+	}
+}
+
+func TestLWCModuleAvailabilityFollowsBundleAPIVersion(t *testing.T) {
+	if os.Getenv("GLADE_LWC_COMPILE") == "" {
+		if _, err := os.Stat(filepath.Join("..", "..", "..", "third_party", "lwc", "node_modules")); err != nil {
+			t.Skip("run npm install in third_party/lwc or set GLADE_LWC_COMPILE=1")
+		}
+	}
+	repoRoot, err := FindRepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct {
+		version   string
+		wantError bool
+	}{{"65.0", true}, {"66.0", false}, {"67.0", false}} {
+		t.Run(test.version, func(t *testing.T) {
+			root := t.TempDir()
+			bundle := filepath.Join(root, "force-app", "main", "default", "lwc", "probe")
+			writeCompileFixtureFile(t, filepath.Join(bundle, "probe.js"), `import api from 'experience/blockBuilderApi';
+export default class Probe { async load() { return import('experience/blockBuilderApi'); } }`)
+			writeCompileFixtureFile(t, filepath.Join(bundle, "probe.html"), "<template></template>")
+			writeCompileFixtureFile(t, filepath.Join(bundle, "probe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+test.version+`</apiVersion></LightningComponentBundle>`)
+			p, err := project.Load(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = Compile(p, Options{OutDir: filepath.Join(root, "dist"), Namespace: "c", RepoRoot: repoRoot})
+			if test.wantError {
+				if err == nil || !strings.Contains(err.Error(), `LWC module "experience/blockBuilderApi" requires API version 66.0 or later; bundle uses 65.0`) {
+					t.Fatalf("Compile error = %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestComplexTemplateExpressionsFollowBundleAPIVersion(t *testing.T) {
+	for _, test := range []struct {
+		version   string
+		wantError bool
+	}{{"65.0", true}, {"66.0", false}, {"67.0", false}} {
+		t.Run(test.version, func(t *testing.T) {
+			err := compileTemplateAtAPIVersion(t, test.version, `<template><p>{items.length > 0 ? 'yes' : 'no'}</p></template>`)
+			if (err != nil) != test.wantError {
+				t.Fatalf("Compile error = %v, wantError %t", err, test.wantError)
+			}
+		})
+	}
+}
+
+func TestHTMLDetailsNameFollowsBundleAPIVersion(t *testing.T) {
+	for _, test := range []struct {
+		version   string
+		wantError bool
+	}{{"65.0", true}, {"66.0", true}, {"67.0", false}} {
+		t.Run(test.version, func(t *testing.T) {
+			err := compileTemplateAtAPIVersion(t, test.version, `<template><details name="group"><summary>One</summary></details></template>`)
+			if (err != nil) != test.wantError {
+				t.Fatalf("Compile error = %v, wantError %t", err, test.wantError)
+			}
+		})
+	}
+}
+
+func compileTemplateAtAPIVersion(t *testing.T, version, template string) error {
+	t.Helper()
+	if os.Getenv("GLADE_LWC_COMPILE") == "" {
+		if _, err := os.Stat(filepath.Join("..", "..", "..", "third_party", "lwc", "node_modules")); err != nil {
+			t.Skip("run npm install in third_party/lwc or set GLADE_LWC_COMPILE=1")
+		}
+	}
+	root := t.TempDir()
+	bundle := filepath.Join(root, "force-app", "main", "default", "lwc", "probe")
+	writeCompileFixtureFile(t, filepath.Join(bundle, "probe.js"), `export default class Probe { items = []; }`)
+	writeCompileFixtureFile(t, filepath.Join(bundle, "probe.html"), template)
+	writeCompileFixtureFile(t, filepath.Join(bundle, "probe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+version+`</apiVersion></LightningComponentBundle>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Compile(p, Options{OutDir: filepath.Join(root, "dist"), Namespace: "c"})
+	return err
+}
+
 func TestCompileProjectLWCBundles(t *testing.T) {
 	if os.Getenv("GLADE_LWC_COMPILE") == "" {
 		if _, err := os.Stat(filepath.Join("..", "..", "..", "third_party", "lwc", "node_modules")); err != nil {
@@ -92,7 +216,7 @@ export default class Widget extends LightningElement {
   label = labels;
 }`)
 	writeCompileFixtureFile(t, filepath.Join(bundleDir, "labels.js"), `export const labels = { title: "Hello" };`)
-	writeCompileFixtureFile(t, filepath.Join(bundleDir, "widget.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><isExposed>true</isExposed></LightningComponentBundle>`)
+	writeCompileFixtureFile(t, filepath.Join(bundleDir, "widget.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><isExposed>true</isExposed></LightningComponentBundle>`)
 
 	p, err := project.Load(fixtureDir)
 	if err != nil {
@@ -123,7 +247,7 @@ func TestCompileEmitsUtilityOnlyLWCModules(t *testing.T) {
 	utilityDir := filepath.Join(fixtureDir, "force-app", "main", "default", "lwc", "bUtils")
 	writeCompileFixtureFile(t, filepath.Join(utilityDir, "bUtils.js"), `export { classSet } from './classSet';`)
 	writeCompileFixtureFile(t, filepath.Join(utilityDir, "classSet.js"), `export function classSet(values) { return values; }`)
-	writeCompileFixtureFile(t, filepath.Join(utilityDir, "bUtils.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><isExposed>false</isExposed></LightningComponentBundle>`)
+	writeCompileFixtureFile(t, filepath.Join(utilityDir, "bUtils.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><isExposed>false</isExposed></LightningComponentBundle>`)
 
 	p, err := project.Load(fixtureDir)
 	if err != nil {
@@ -184,7 +308,7 @@ export default helper;`)
 	writeCompileFixtureFile(t, filepath.Join(componentDir, "forms", "card.css"), `.card { display: block; }`)
 	writeCompileFixtureFile(t, filepath.Join(componentDir, "forms", "formatCard.js"), `export default function formatCard() { return true; }`)
 	writeCompileFixtureFile(t, filepath.Join(componentDir, "forms", "cash.html"), `<template><section>Cash</section></template>`)
-	writeCompileFixtureFile(t, filepath.Join(componentDir, "paymentForm.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><isExposed>true</isExposed></LightningComponentBundle>`)
+	writeCompileFixtureFile(t, filepath.Join(componentDir, "paymentForm.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><isExposed>true</isExposed></LightningComponentBundle>`)
 
 	p, err := project.Load(fixtureDir)
 	if err != nil {
@@ -241,7 +365,7 @@ export default class TileLike extends LightningElement {
 }`)
 	writeCompileFixtureFile(t, filepath.Join(componentDir, "standardTile.html"), `<template><section>{label}</section></template>`)
 	writeCompileFixtureFile(t, filepath.Join(componentDir, "standardTile.css"), `section { display: block; }`)
-	writeCompileFixtureFile(t, filepath.Join(componentDir, "tileLike.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><isExposed>true</isExposed></LightningComponentBundle>`)
+	writeCompileFixtureFile(t, filepath.Join(componentDir, "tileLike.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><isExposed>true</isExposed></LightningComponentBundle>`)
 
 	p, err := project.Load(fixtureDir)
 	if err != nil {
@@ -293,7 +417,7 @@ export default class DynamicOn extends LightningElement {
   handlers = { click: () => {} };
 }`)
 	writeCompileFixtureFile(t, filepath.Join(componentDir, "dynamicOn.html"), `<template><button lwc:on={handlers}>Dynamic</button></template>`)
-	writeCompileFixtureFile(t, filepath.Join(componentDir, "dynamicOn.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><isExposed>true</isExposed></LightningComponentBundle>`)
+	writeCompileFixtureFile(t, filepath.Join(componentDir, "dynamicOn.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><isExposed>true</isExposed></LightningComponentBundle>`)
 
 	p, err := project.Load(fixtureDir)
 	if err != nil {

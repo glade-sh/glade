@@ -1210,12 +1210,15 @@ func resourceDiscoveryPayload(version string) map[string]string {
 }
 
 func (s *Server) apiVersionDiscoveryPayload() []apiVersionEntry {
-	adv := s.advertisedRESTAPIVersion()
-	return []apiVersionEntry{{
-		Version: adv,
-		Label:   "GLADE Local API v" + adv,
-		URL:     "/services/data/v" + adv,
-	}}
+	versions := make([]apiVersionEntry, 0, len(storage.SupportedRESTAPIVersions))
+	for _, version := range storage.SupportedRESTAPIVersions {
+		versions = append(versions, apiVersionEntry{
+			Version: version,
+			Label:   "GLADE Local API v" + version,
+			URL:     "/services/data/v" + version,
+		})
+	}
+	return versions
 }
 
 func unsupportedRESTNamespaceMessage(namespace string) (string, bool) {

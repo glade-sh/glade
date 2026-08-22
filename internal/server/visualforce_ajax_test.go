@@ -323,7 +323,7 @@ func TestLatestVisualforceFormValuesPreservesRepeatedFieldValues(t *testing.T) {
 func newVisualforceFixtureServer(t *testing.T, pageName, pageMarkup, controllerSource string) *Server {
 	t.Helper()
 	root := t.TempDir()
-	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages", pageName), pageMarkup)
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/AjaxController.cls"), controllerSource)
 	p, err := project.Load(root)

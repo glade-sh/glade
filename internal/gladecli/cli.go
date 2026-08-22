@@ -2717,7 +2717,7 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	}
 	defer preparedAnonymous.close()
 	analysisIndex := mergeAnonymousIndex(projectIndex, preparedAnonymous.index)
-	analysis := sema.AnalyzeAnonymous(analysisIndex, preparedAnonymous.body)
+	analysis := sema.AnalyzeAnonymous(analysisIndex, preparedAnonymous.body, preparedAnonymous.apiVersion)
 	if len(analysis.Diagnostics) > 0 {
 		first := analysis.Diagnostics[0]
 		return fmt.Errorf("%s: %s", first.Code, first.Message)
@@ -2732,7 +2732,7 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 			return err
 		}
 	}
-	program, err := vm.CompileAnonymous(preparedAnonymous.body)
+	program, err := vm.CompileAnonymousWithOptions(preparedAnonymous.body, vm.CompileOptions{APIVersion: preparedAnonymous.apiVersion})
 	if err != nil {
 		return err
 	}

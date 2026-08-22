@@ -72,7 +72,7 @@ func TestCaptureSnapshotTracksAuthoritativeProjectConfigs(t *testing.T) {
 	root := t.TempDir()
 	manifestPath := filepath.Join(root, "sfdx-project.json")
 	configPath := filepath.Join(root, "glade.yml")
-	writeWatchFile(t, manifestPath, `{"sourceApiVersion":"63.0","packageDirectories":[]}`)
+	writeWatchFile(t, manifestPath, `{"sourceApiVersion":"65.0","packageDirectories":[]}`)
 	writeWatchFile(t, configPath, "project:\n  defaultNamespace: localpkg\n")
 
 	before, err := CaptureSnapshot(root)
@@ -86,7 +86,7 @@ func TestCaptureSnapshotTracksAuthoritativeProjectConfigs(t *testing.T) {
 		t.Fatalf("snapshot omitted %s: %#v", configPath, before.Files)
 	}
 
-	writeWatchFile(t, manifestPath, `{"sourceApiVersion":"64.00","packageDirectories":[]}`)
+	writeWatchFile(t, manifestPath, `{"sourceApiVersion":"66.00","packageDirectories":[]}`)
 	writeWatchFile(t, configPath, "project:\n  defaultNamespace: otherpackage\n")
 	after, err := CaptureSnapshot(root)
 	if err != nil {

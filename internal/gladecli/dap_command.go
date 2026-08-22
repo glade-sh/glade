@@ -74,21 +74,21 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		return err
 	}
 	trace.mark("source")
-	preparedAnonymous, err := prepareAnonymousSource(source, "67.0")
-	if err != nil {
-		return err
-	}
-	defer preparedAnonymous.close()
-	program, err := vm.CompileAnonymous(preparedAnonymous.body)
-	if err != nil {
-		return err
-	}
-	trace.mark("compile-anonymous")
-	org, runtime, err := loadDAPStartupState(projectRoot)
+	org, runtime, apiVersion, err := loadDAPStartupState(projectRoot)
 	if err != nil {
 		return err
 	}
 	trace.mark("load-startup-state")
+	preparedAnonymous, err := prepareAnonymousSource(source, apiVersion)
+	if err != nil {
+		return err
+	}
+	defer preparedAnonymous.close()
+	program, err := vm.CompileAnonymousWithOptions(preparedAnonymous.body, vm.CompileOptions{APIVersion: preparedAnonymous.apiVersion})
+	if err != nil {
+		return err
+	}
+	trace.mark("compile-anonymous")
 	if dbPath != "" {
 		loadedStore, dbOrg, err := openDBStore(dbPath, projectRoot)
 		if err != nil {

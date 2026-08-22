@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"unicode"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/soql"
@@ -110,7 +110,7 @@ func (a *Analyzer) checkMemberTypes(index typesys.Index) []diagnostic.Diagnostic
 				continue
 			}
 			for _, ref := range extractTypeNames(member.Type) {
-				if a.hasKnown(ref) {
+				if a.hasKnownAtVersion(ref, typ.EffectiveAPIVersion) {
 					continue
 				}
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
@@ -137,7 +137,7 @@ func (a *Analyzer) checkMethodParameters(index typesys.Index) []diagnostic.Diagn
 			}
 			for _, param := range member.Parameters {
 				for _, ref := range extractTypeNames(param.Type) {
-					if a.hasKnown(ref) {
+					if a.hasKnownAtVersion(ref, typ.EffectiveAPIVersion) {
 						continue
 					}
 					diagnostics = append(diagnostics, diagnostic.Diagnostic{
@@ -194,7 +194,7 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 			continue
 		}
 		sourceChecker := checker
-		if version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64); err == nil {
+		if version, ok := apexversion.Major(typ.EffectiveAPIVersion); ok {
 			sourceChecker.apiVersion = version
 		}
 		diagnostics = append(diagnostics, sourceChecker.checkFileWithFacts(typ.File, facts)...)
@@ -204,7 +204,7 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 
 type querySemanticsChecker struct {
 	namespace      string
-	apiVersion     float64
+	apiVersion     int
 	objects        map[string]schema.Object
 	providers      map[string]semaSObjectFieldProvider
 	declaredFields map[string]int
@@ -221,7 +221,7 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 		knownTypes:     make(map[string]bool, len(index.Types)),
 		hasBaseline:    len(declaredObjects) > 0,
 	}
-	checker.apiVersion, _ = strconv.ParseFloat(strings.TrimSpace(index.Project.SourceAPIVersion), 64)
+	checker.apiVersion, _ = apexversion.Major(index.Project.SourceAPIVersion)
 	for _, typ := range index.Types {
 		checker.knownTypes[strings.ToLower(typ.Name)] = true
 		checker.knownTypes[strings.ToLower(typ.LocalName)] = true
@@ -820,7 +820,7 @@ func semaSOQLNumericAggregateFieldType(fieldType string) bool {
 	}
 }
 
-func queryVersionDiagnostics(query soql.Query, ctx queryTextContext, apiVersion float64) []diagnostic.Diagnostic {
+func queryVersionDiagnostics(query soql.Query, ctx queryTextContext, apiVersion int) []diagnostic.Diagnostic {
 	if apiVersion >= 67 && strings.EqualFold(query.SecurityMode, "SECURITY_ENFORCED") {
 		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", "WITH SECURITY_ENFORCED is no longer supported at API 67.0; use WITH USER_MODE", "SECURITY_ENFORCED", findQueryIdentifier(ctx.queryText, "SECURITY_ENFORCED", 0))}
 	}
@@ -2724,6 +2724,9 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	if semaProjectTypeShadowsPlatform(model, receiverType) {
 		return nil, false
 	}
+	if semaPlatformTypeUnavailable(typ.EffectiveAPIVersion, receiverType) || semaPlatformMemberUnavailable(typ.EffectiveAPIVersion, receiverType, method) {
+		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, start, end, source)}, true
+	}
 	if semaAPI67RejectedPlatformCallAtVersion(typ.EffectiveAPIVersion, receiverType, method, receiverMode) {
 		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, start, end, source)}, true
 	}
@@ -2736,7 +2739,8 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	if _, ok := semaCollectionMethodSignature(receiverType, method); ok {
 		return nil, false
 	}
-	if candidates := resolveMemberMethods(model, receiverType, method); len(candidates) != 0 && !semaResolvedMembersAllPlatformBacked(model, candidates) && !semaCallSpellsUnqualifiedPlatformReceiver(source, start, end, receiverType) {
+	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), receiverMode)
+	if len(candidates) != 0 && !semaResolvedMembersAllPlatformBacked(model, candidates) && !semaCallSpellsUnqualifiedPlatformReceiver(source, start, end, receiverType) {
 		return nil, false
 	}
 	if staticDiagnostic, blocked := checkGeneratedPlatformStaticAccess(typ, member, receiverType, method, receiverMode, start, end, source, model); blocked {
@@ -2752,6 +2756,9 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	argTypes := make([]string, len(args))
 	for i, arg := range args {
 		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
+	}
+	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && semaResolvedMembersAllPlatformBacked(model, candidates) && semaPlatformResolvedMemberUnavailable(typ.EffectiveAPIVersion, candidate) {
+		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, start, end, source)}, true
 	}
 	if semaAPI67RejectedPlatformCallArgs(receiverType, method, argTypes) {
 		return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true

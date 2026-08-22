@@ -162,6 +162,27 @@ func TestInvokeAuraActionReturnsAuraHandledExceptionShape(t *testing.T) {
 	}
 }
 
+func TestPaginationCursorAuraSerialization(t *testing.T) {
+	program, err := CompileAnonymousWithOptions(`return Database.getPaginationCursor('SELECT Id FROM Account');`, CompileOptions{APIVersion: "66.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterMethod(Method{Name: "CursorController.load", ClassName: "CursorController", ReturnType: "Database.PaginationCursor", IsStatic: true, Modifiers: []string{"AuraEnabled"}, APIVersion: "66.0", Program: program}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.InvokeAuraAction("CursorController", "load", nil)
+	if err != nil || !result.Success {
+		t.Fatalf("result = %#v, err = %v", result, err)
+	}
+	cursor, ok := result.ReturnValue.(map[string]any)
+	if !ok || cursor["Query"] != "SELECT Id FROM Account" {
+		t.Fatalf("returnValue = %#v", result.ReturnValue)
+	}
+}
+
 func TestInvokeVisualforceActionUsesCurrentPageAndMessages(t *testing.T) {
 	program, err := CompileAnonymous(`
 String mode = ApexPages.currentPage().getParameters().get('mode');

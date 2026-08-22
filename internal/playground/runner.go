@@ -44,6 +44,7 @@ type cachedRuntimeTemplate struct {
 	workspaceHash string
 	projectRoot   string
 	version       string
+	apiVersion    string
 	template      *vm.VM
 	org           storage.OrgState
 	diagnostics   []diagnostic.Diagnostic
@@ -165,17 +166,24 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 	if err != nil {
 		return RunResult{}, err
 	}
+	compileStart := time.Now()
+	runtime, indexDiagnostics, runtimeErr := r.loadRuntimeTemplate(runtimeSourceHash)
+	apiVersion := ""
+	if runtime != nil {
+		apiVersion = runtime.apiVersion
+	}
 	seedHash := r.workspace.FileHash("seed.json")
 	cacheKey := CacheKey{
-		WorkspaceHash: workspaceHash,
-		AnonymousBody: req.AnonymousBody,
-		SeedHash:      seedHash,
-		ProjectRoot:   r.workspace.ProjectRoot,
-		LimitMode:     string(req.LimitMode),
-		RunMode:       string(req.Mode),
-		Version:       r.version,
+		WorkspaceHash:    workspaceHash,
+		AnonymousBody:    req.AnonymousBody,
+		SeedHash:         seedHash,
+		ProjectRoot:      r.workspace.ProjectRoot,
+		LimitMode:        string(req.LimitMode),
+		RunMode:          string(req.Mode),
+		Version:          r.version,
+		SourceAPIVersion: apiVersion,
 	}.String()
-	if req.UseCache {
+	if runtimeErr == nil && req.UseCache {
 		if cached, ok, err := r.cache.Load(cacheKey); err != nil {
 			return RunResult{}, err
 		} else if ok && r.lastOrg != nil && r.lastOrgCacheKey == cacheKey {
@@ -192,17 +200,15 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 		StartedAt: started,
 	}
 
-	compileStart := time.Now()
-	runtime, indexDiagnostics, err := r.loadRuntimeTemplate(runtimeSourceHash)
-	if err != nil {
+	if runtimeErr != nil {
 		result.Status = RunStatusCompileError
-		result.Diagnostics = append(result.Diagnostics, Diagnostic{Severity: "error", Message: err.Error()})
+		result.Diagnostics = append(result.Diagnostics, Diagnostic{Severity: "error", Message: runtimeErr.Error()})
 		result.CompletedAt = time.Now().UTC()
 		return result, nil
 	}
 	result.Diagnostics = append(result.Diagnostics, diagnosticsFromIndex(indexDiagnostics)...)
 
-	program, err := vm.CompileAnonymous(req.AnonymousBody)
+	program, err := vm.CompileAnonymousWithOptions(req.AnonymousBody, vm.CompileOptions{APIVersion: runtime.apiVersion})
 	result.CompileMS = millisSince(compileStart)
 	if err != nil {
 		result.Status = RunStatusCompileError
@@ -284,6 +290,7 @@ func (r *Runner) loadRuntimeTemplate(workspaceHash string) (*cachedRuntimeTempla
 		workspaceHash: workspaceHash,
 		projectRoot:   r.workspace.ProjectRoot,
 		version:       r.version,
+		apiVersion:    index.Project.SourceAPIVersion,
 		template:      template,
 		org:           apextest.OrgFromIndex(index),
 		diagnostics:   append([]diagnostic.Diagnostic(nil), indexDiagnostics...),

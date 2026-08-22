@@ -49,3 +49,12 @@ func TestCacheKeyChangesWithAnonymousBody(t *testing.T) {
 		t.Fatalf("cache key did not change")
 	}
 }
+
+func TestCacheKeyChangesWithSourceAPIVersion(t *testing.T) {
+	first := CacheKey{WorkspaceHash: "workspace", SourceAPIVersion: "65.0"}
+	second := first
+	second.SourceAPIVersion = "66.0"
+	if first.String() == second.String() {
+		t.Fatal("cache key did not change")
+	}
+}

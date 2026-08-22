@@ -15,7 +15,7 @@ func TestValidatedInputDrivesFreshReadWithoutRebuildingManifest(t *testing.T) {
 	root := t.TempDir()
 	classPath := filepath.Join(root, "force-app", "main", "default", "classes", "Proof.cls")
 	configPath := filepath.Join(root, "sfdx-project.json")
-	writeStartupCacheTestFile(t, configPath, `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"64.0"}`)
+	writeStartupCacheTestFile(t, configPath, `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"66.0"}`)
 	writeStartupCacheTestFile(t, classPath, "public class Proof {}\n")
 	loaded, err := project.Load(root)
 	if err != nil {
@@ -60,7 +60,7 @@ func TestValidatedInputDrivesFreshReadWithoutRebuildingManifest(t *testing.T) {
 func TestValidatedInputDigestDetectsMetadataPreservingConfigMutation(t *testing.T) {
 	root := t.TempDir()
 	configPath := filepath.Join(root, "sfdx-project.json")
-	writeStartupCacheTestFile(t, configPath, `{"packageDirectories":[],"sourceApiVersion":"64.0"}`)
+	writeStartupCacheTestFile(t, configPath, `{"packageDirectories":[],"sourceApiVersion":"66.0"}`)
 	beforeInfo, err := os.Stat(configPath)
 	if err != nil {
 		t.Fatal(err)

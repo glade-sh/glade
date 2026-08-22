@@ -673,7 +673,7 @@ func projectOrgAndDBBinding(root string) (storage.OrgState, storage.ProjectBindi
 	return org, storage.ProjectBinding{
 		ProjectRoot:       filepath.Clean(projectRoot),
 		SchemaFingerprint: fingerprint,
-		SourceAPIVersion:  org.APIVersion,
+		SourceAPIVersion:  p.SourceAPIVersion,
 		Namespace:         org.Namespace,
 	}, true, nil
 }
@@ -807,7 +807,7 @@ func orgForProject(root string) (storage.OrgState, error) {
 
 func orgStateFromIndex(root string, p project.Project, index typesys.Index) (storage.OrgState, error) {
 	org := storage.NewOrgState()
-	org.APIVersion = index.Project.SourceAPIVersion
+	org.APIVersion = storage.DefaultRESTAPIVersion
 	org.Namespace = index.Project.Namespace
 	registry := sobject.BuildDescribeRegistry(gladeschema.Schema{Objects: append([]gladeschema.Object(nil), index.Objects...)})
 	for name, describe := range registry.Objects {
