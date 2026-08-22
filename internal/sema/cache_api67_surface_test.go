@@ -22,9 +22,9 @@ func TestAPI67CacheRejectedShapes(t *testing.T) {
 		"validateKey through instance":                   `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKey(false, 'a');`,
 		"validateKeyValue through instance":              `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeyValue(false, 'a', 'v');`,
 		"validateKeys through instance":                  `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeys(false, new Set<String>{'a'});`,
-		"Cache.Partition.validateKeys removed":           `Cache.Partition.validateKeys(false, new Set<String>{'a'});`,
-		"Cache.OrgPartition.validateKeys removed":        `Cache.OrgPartition.validateKeys(false, new Set<String>{'a'});`,
-		"Cache.SessionPartition.validateKeys removed":    `Cache.SessionPartition.validateKeys(false, new Set<String>{'a'});`,
+		"Partition validateKeys List removed":            `Cache.Partition.validateKeys(false, new List<String>{'a'});`,
+		"OrgPartition validateKeys List removed":         `Cache.OrgPartition.validateKeys(false, new List<String>{'a'});`,
+		"SessionPartition validateKeys List removed":     `Cache.SessionPartition.validateKeys(false, new List<String>{'a'});`,
 	}
 	for name, source := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -57,6 +57,57 @@ func TestAPI67CacheAcceptedShapes(t *testing.T) {
 				t.Fatalf("rejected allowed Salesforce cache call: %#v", result.Diagnostics)
 			}
 		})
+	}
+}
+
+func TestCacheValidateKeysOverloadsFollowAPIVersion(t *testing.T) {
+	for _, test := range []struct {
+		version      string
+		collection   string
+		wantRejected bool
+	}{
+		{"54.0", "List", false},
+		{"55.0", "List", true},
+		{"67.0", "List", true},
+		{"54.0", "Set", false},
+		{"55.0", "Set", false},
+		{"67.0", "Set", false},
+	} {
+		for _, receiver := range []string{"Cache.Partition", "Cache.OrgPartition", "Cache.SessionPartition"} {
+			source := `public class Probe { public static void run() { ` + receiver + `.validateKeys(false, new ` + test.collection + `<String>{'alpha', 'beta'}); } }`
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, test.version)
+			if rejected := resultDiagnosticsContain(result, "validateKeys"); rejected != test.wantRejected {
+				t.Fatalf("API %s %s.validateKeys(Boolean, %s<String>) rejected = %t, want %t: %#v", test.version, receiver, test.collection, rejected, test.wantRejected, result.Diagnostics)
+			}
+		}
+	}
+}
+
+func TestCacheValidateKeysRejectsNonStringCollections(t *testing.T) {
+	for _, test := range []struct {
+		version    string
+		collection string
+		element    string
+		value      string
+	}{
+		{version: "54.0", collection: "Set", element: "Integer", value: "1"},
+		{version: "55.0", collection: "Set", element: "Integer", value: "1"},
+		{version: "67.0", collection: "Set", element: "Integer", value: "1"},
+		{version: "54.0", collection: "List", element: "Integer", value: "1"},
+		{version: "55.0", collection: "List", element: "Integer", value: "1"},
+		{version: "67.0", collection: "List", element: "Integer", value: "1"},
+		{version: "67.0", collection: "Set", element: "Boolean", value: "true"},
+	} {
+		for _, receiver := range []string{"Cache.Partition", "Cache.OrgPartition", "Cache.SessionPartition"} {
+			source := receiver + `.validateKeys(false, new ` + test.collection + `<` + test.element + `>{` + test.value + `});`
+			result := AnalyzeAnonymous(typesys.Index{}, source, test.version)
+			if test.version != "67.0" {
+				result = analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": `public class Probe { public static void run() { ` + source + ` } }`}, test.version)
+			}
+			if !resultDiagnosticsContain(result, "validateKeys") {
+				t.Fatalf("API %s accepted %s.validateKeys(Boolean, %s<%s>): %#v", test.version, receiver, test.collection, test.element, result.Diagnostics)
+			}
+		}
 	}
 }
 

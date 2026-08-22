@@ -4,6 +4,14 @@ Reconciles the `Cache.Org`, `Cache.Session`, `Cache.Partition`, `Cache.OrgPartit
 and `Cache.SessionPartition` Apex surface with Salesforce API 67, from the
 `core-runtime-cache-partition-evidence` dry-run observations.
 
+## Current contract correction
+
+This is a historical dry-run record, not the current authority for
+`validateKeys`. A later verified Salesforce receipt establishes that all three
+partition receivers accept `validateKeys(Boolean, Set<String>)` at API 54, 55,
+and 67. `validateKeys(Boolean, List<String>)` is accepted only at API 54 and
+rejected at API 55 and 67. The collection element type is exactly `String`.
+
 ## Salesforce facts (raw dry-run observations)
 
 - `getAvgValueSize` was removed after version 49.0.
@@ -13,13 +21,19 @@ and `Cache.SessionPartition` Apex surface with Salesforce API 67, from the
   `createFullyQualifiedPartition(String,String)`, `validatePartitionName(String)`,
   `validateKey(Boolean,String)`, and `validateKeyValue(Boolean,String,Object)`
   are static methods and must not be callable through an instance.
-- `Cache.Partition.validateKeys`, `Cache.OrgPartition.validateKeys`, and
-  `Cache.SessionPartition.validateKeys` were removed after version 54.0.
+- The historical dry-run reported `Cache.Partition.validateKeys`,
+  `Cache.OrgPartition.validateKeys`, and `Cache.SessionPartition.validateKeys`
+  as removed after version 54.0. That observation is superseded by the current
+  contract correction above.
 - Fixture casts show builder-scoped `remove` returns `Boolean`, not `String`.
 - `Cache.Session.isAvailable()` and partition `isAvailable()` are not in the
   rejection list and stay in the surface.
 
-## Files changed
+## Historical change snapshot
+
+The following describes the historical packet that produced these dry-run
+observations. It is superseded wherever it conflicts with the current contract
+correction above.
 
 - `internal/typesys/product_namespace_symbols_generated.go` — dropped
   `Cache.Org.isAvailable`.
