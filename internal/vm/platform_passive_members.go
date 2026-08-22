@@ -803,6 +803,26 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	}
 	switch receiver.Type {
+	case "eventbus.TriggerContext", "EventBus.TriggerContext":
+		switch strings.ToLower(method) {
+		case "getresumecheckpoint":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.getResumeCheckpoint expects 0 arguments", receiver.Type)
+			}
+			if vm.eventBusTriggerContext == nil {
+				return Null, receiver, false, true, nil
+			}
+			return vm.eventBusTriggerContext.checkpoint, receiver, false, true, nil
+		case "setresumecheckpoint":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("%s.setResumeCheckpoint expects String", receiver.Type)
+			}
+			if vm.eventBusTriggerContext == nil || args[0].Text != vm.eventBusTriggerContext.replayID {
+				return Null, receiver, false, true, newExceptionError("eventbus.InvalidReplayIdException", "The replay ID is invalid")
+			}
+			vm.eventBusTriggerContext.checkpoint = args[0]
+			return Null, receiver, true, true, nil
+		}
 	case "eventbus.SuccessResult", "eventbus.FailureResult", "EventBus.SuccessResult", "EventBus.FailureResult":
 		switch method {
 		case "getEventUuids":

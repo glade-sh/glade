@@ -398,6 +398,9 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("eventbus.TriggerContext.currentContext expects 0 arguments")
 		}
+		if vm.eventBusTriggerContext != nil {
+			return vm.eventBusTriggerContext.value, nil
+		}
 		return Object("eventbus.TriggerContext"), nil
 	}
 

@@ -9,6 +9,12 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+type eventBusTriggerContext struct {
+	value      Value
+	replayID   string
+	checkpoint Value
+}
+
 func dmlExceptionFromTriggerError(op string, err error) error {
 	var thrown *apexThrowError
 	if !errors.As(err, &thrown) {
@@ -445,6 +451,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	callerNamespace := vm.currentNamespace
 	callerMethod := vm.currentMethod
 	callerTrigger := vm.currentTrigger
+	callerEventBusContext := vm.eventBusTriggerContext
 	callerTriggerGlobals := vm.triggerGlobals
 	callerTriggerNamespaces := vm.activeTriggerNamespaces
 	callerStatement := vm.currentStatement
@@ -465,6 +472,17 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		APIVersion: trigger.APIVersion,
 	}
 	vm.currentTrigger = true
+	vm.eventBusTriggerContext = nil
+	if hasSuffixFold(trigger.Object, "__e") {
+		replayID := ""
+		if len(records) > 0 {
+			replayID = recordFieldString(records[0], "ReplayId")
+		}
+		vm.eventBusTriggerContext = &eventBusTriggerContext{
+			value:    Object("eventbus.TriggerContext"),
+			replayID: replayID,
+		}
+	}
 	if vm.currentNamespace != "" {
 		vm.activeTriggerNamespaces = append(vm.activeTriggerNamespaces, vm.currentNamespace)
 	}
@@ -478,6 +496,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		vm.currentNamespace = callerNamespace
 		vm.currentMethod = callerMethod
 		vm.currentTrigger = callerTrigger
+		vm.eventBusTriggerContext = callerEventBusContext
 		vm.currentStatement = callerStatement
 		vm.hasStatement = callerHasStatement
 	}()

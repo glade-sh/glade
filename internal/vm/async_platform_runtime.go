@@ -30,6 +30,9 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		if record.Kind != ValueObject {
 			return Null, fmt.Errorf("EventBus.publish expects SObject event record(s)")
 		}
+		if _, replayID, ok := objectFieldValue(record, "ReplayId"); !ok || replayID.Kind == ValueNull {
+			putVMFieldPath(record, "ReplayId", String(vm.nextEventBusReplayID()))
+		}
 		eventUUID, hasEventUUID := platformEventUUID(record)
 		if len(args) == 2 {
 			if !hasEventUUID {
@@ -101,6 +104,11 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		return Null, nil
 	}
 	return results[0], nil
+}
+
+func (vm *VM) nextEventBusReplayID() string {
+	vm.eventBusReplaySequence++
+	return fmt.Sprintf("%d", vm.eventBusReplaySequence)
 }
 
 func eventBusGetOperationID(args []Value) (Value, error) {

@@ -1842,6 +1842,75 @@ System.assertNotEquals(null, ctx);
 	}
 }
 
+func TestExecEventBusTriggerContextResumeCheckpoint(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+eventbus.TriggerContext ctx = eventbus.TriggerContext.currentContext();
+String replayId = (String) Trigger.new[0].ReplayId;
+System.assertEquals(null, ctx.getResumeCheckpoint());
+ctx.setResumeCheckpoint(replayId);
+System.assertEquals(replayId, ctx.getResumeCheckpoint());
+try {
+	ctx.setResumeCheckpoint('invalid');
+	System.assert(false);
+} catch (Exception err) {
+	System.assertEquals('eventbus.InvalidReplayIdException', err.getTypeName());
+}
+System.assertEquals(replayId, ctx.getResumeCheckpoint());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Database.SaveResult result = EventBus.publish(new Local_Event__e(Name__c = 'Trail'));
+System.assert(result.isSuccess());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Event__e",
+			KeyPrefix: "e00",
+			Fields: map[string]storage.Field{
+				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "LocalEventTrigger",
+		Object:    "Local_Event__e",
+		Timing:    triggerTimingAfter,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEventBusTriggerContextRejectsCheckpointOutsideTrigger(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+	eventbus.TriggerContext.currentContext().setResumeCheckpoint('1');
+	System.assert(false);
+} catch (Exception err) {
+	System.assertEquals('eventbus.InvalidReplayIdException', err.getTypeName());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecEventBusPublishReturnsFailureForMissingRequiredPlatformEventField(t *testing.T) {
 	program, err := CompileAnonymous(`
 Database.SaveResult result = EventBus.publish(new Local_Event__e(Name__c = 'Trail'));
