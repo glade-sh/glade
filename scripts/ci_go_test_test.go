@@ -578,17 +578,31 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 	workflow := string(data)
 	jobs := workflowJobBlocks(t, workflow)
 	matrix := jobs["apextest"]
+	input := jobs["apextest-history-input"]
 	refresh := jobs["apextest-history"]
+	for _, want := range []string{
+		"needs: apextest-history-input", "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0",
+		"name: apextest-history-input", "path: /tmp/glade-apextest-duration-history", "CI_APEXTEST_HISTORY_PATH",
+	} {
+		if !strings.Contains(matrix, want) {
+			t.Errorf("matrix history input missing %q", want)
+		}
+	}
+	if strings.Contains(matrix, "apextest-duration-history-v1") || strings.Contains(matrix, "CI_DURATION_HISTORY_CACHE_REF") {
+		t.Error("matrix job must not restore duration history independently")
+	}
+	if strings.Contains(matrix, "actions/cache/save") || strings.Contains(input, "actions/cache/save") {
+		t.Error("Apex duration history input and matrix jobs must be read-only")
+	}
 	for _, want := range []string{
 		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "apextest-duration-history-v1", "runner.os", "runner.arch", "1.26.6", "hashFiles('go.sum')",
 		"CI_APEXTEST_HISTORY_PATH", "CI_DURATION_HISTORY_CACHE_REF", "github.event.pull_request.base.sha", "github.event.before",
+		"mkdir -p ci-artifacts/apextest-history-input", "apextest-duration-history.json", "name: apextest-history-input",
+		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0",
 	} {
-		if !strings.Contains(matrix, want) {
-			t.Errorf("matrix history restore missing %q", want)
+		if !strings.Contains(input, want) {
+			t.Errorf("history input job missing %q", want)
 		}
-	}
-	if strings.Contains(matrix, "actions/cache/save") {
-		t.Error("matrix job must be read-only for duration history")
 	}
 	for _, want := range []string{
 		"needs: apextest", "if: ${{ success() }}", "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0", "apex-shard-*", "scripts/ci-go-test.sh apex-history-refresh",
@@ -617,16 +631,17 @@ func TestCIDurationHistoryUsesOneImmutablePredecessorKeyPerRun(t *testing.T) {
 	}
 	jobs := workflowJobBlocks(t, string(data))
 	for _, name := range []string{"sema", "apextest"} {
+		if name == "apextest" {
+			name = "apextest-history-input"
+		}
 		job := jobs[name]
 		if !strings.Contains(job, `CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}`) {
 			t.Errorf("%s does not pin duration history to one predecessor commit", name)
 		}
-		start := strings.Index(job, "- name: Restore ")
-		end := strings.Index(job[start+1:], "- name: Restore ")
-		if start < 0 || end < 0 {
+		if !strings.Contains(job, "- name: Restore ") {
 			t.Fatalf("%s duration history restore step not found", name)
 		}
-		restore := job[start : start+1+end]
+		restore := workflowStepBlock(t, job, "      - name: Restore ")
 		for _, forbidden := range []string{"restore-keys:", "github.run_id", "github.run_attempt", "matrix.shard"} {
 			if strings.Contains(restore, forbidden) {
 				t.Errorf("%s duration history restore contains race-prone %q", name, forbidden)
@@ -1413,7 +1428,7 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 	guard := "    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}"
 	for _, jobName := range []string{
 		"site", "vet", "gladecli", "node-integration", "sema", "server-and-playground",
-		"test", "smoke-runtime", "smoke-distribution", "apextest",
+		"test", "smoke-runtime", "smoke-distribution", "apextest-history-input", "apextest",
 	} {
 		job := jobs[jobName]
 		if strings.Count(job, guard) != 1 {
@@ -1468,7 +1483,7 @@ func TestCIBenchmarkCachePairContractRejectsAnyCacheBeforeValidation(t *testing.
 			workflowName: "ci.yml",
 			jobNames: []string{
 				"site", "vet", "gladecli", "node-integration", "sema", "server-and-playground",
-				"test", "smoke-runtime", "smoke-distribution", "apextest",
+				"test", "smoke-runtime", "smoke-distribution", "apextest-history-input", "apextest",
 			},
 			validationCommand: `scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`,
 		},
@@ -2871,6 +2886,8 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		"apextest", "apextest-history", "gladecli", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
 		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "vet",
 	}
+	wantJobs = append(wantJobs, "apextest-history-input")
+	sort.Strings(wantJobs)
 	gotJobs := make([]string, 0, len(jobs))
 	for name := range jobs {
 		gotJobs = append(gotJobs, name)
@@ -2883,6 +2900,12 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		job := jobs[name]
 		if !strings.Contains(job, "runs-on: ubuntu-latest") {
 			t.Errorf("%s is not an ubuntu-latest job", name)
+		}
+		if input, serialized := map[string]string{"apextest": "apextest-history-input"}[name]; serialized {
+			if !strings.Contains(job, "needs: "+input) {
+				t.Errorf("%s must depend on %s", name, input)
+			}
+			continue
 		}
 		if !map[string]bool{"apextest-history": true, "required-ci": true, "required-scheduled-ci": true, "sema-history": true, "sema-equivalence": true}[name] && strings.Contains(job, "needs:") {
 			t.Errorf("root job %s must not be serialized with needs", name)
@@ -3006,13 +3029,24 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 func TestCIParallelDAGPreservesApexAndUsesRootCheckout(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	apex := jobs["apextest"]
+	input := jobs["apextest-history-input"]
 	history := jobs["apextest-history"]
 	for _, marker := range []string{
-		"shard: [0, 1]", "timeout-minutes: 35", "scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
-		"CI_APEXTEST_HISTORY_PATH", "actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0", "name: apex-shard-${{ matrix.shard }}",
+		"needs: apextest-history-input", "shard: [0, 1]", "timeout-minutes: 35", "scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
+		"CI_APEXTEST_HISTORY_PATH", "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0", "name: apextest-history-input",
+		"actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0", "name: apex-shard-${{ matrix.shard }}",
 	} {
 		if !strings.Contains(apex, marker) {
 			t.Errorf("Apex matrix contract missing %q", marker)
+		}
+	}
+	for _, marker := range []string{
+		"CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}",
+		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "apextest-duration-history-v1",
+		"mkdir -p ci-artifacts/apextest-history-input", "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0",
+	} {
+		if !strings.Contains(input, marker) {
+			t.Errorf("Apex history input contract missing %q", marker)
 		}
 	}
 	for _, marker := range []string{
