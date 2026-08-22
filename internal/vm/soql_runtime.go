@@ -2288,19 +2288,6 @@ func (vm *VM) expandSOQLBindsWith(raw string, lookup func(string) (Value, error)
 	return out.String(), nil
 }
 
-func (vm *VM) queryLocatorFromSOQL(query string, result *Result) (Value, error) {
-	value, err := vm.executeSOQL(query, result)
-	if err != nil {
-		return Null, err
-	}
-	locator := Object("Database.QueryLocator")
-	locator.Fields["Records"] = value
-	locator.Fields["Query"] = String(query)
-	if err := vm.incrementQueryLocatorRows(value); err != nil {
-		return Null, err
-	}
-	return locator, nil
-}
 func (vm *VM) executeSOQL(raw string, execResult *Result) (Value, error) {
 	if soql.IsSOSLFind(raw) {
 		return vm.executeSOSL(raw, execResult)

@@ -39,6 +39,33 @@ func TestAnalyzeAnonymousRejectsNonSalesforcePatternSurface(t *testing.T) {
 	}
 }
 
+func TestAnalyzeAnonymousDatabaseGetQueryLocatorRequiresInlineQueryForList(t *testing.T) {
+	result := AnalyzeAnonymous(typesys.Index{}, `
+List<SObject> rows = new List<SObject>{new Account(Name = 'Locator Target')};
+Database.QueryLocator locator = Database.getQueryLocator(rows);
+`, "67.0")
+	found := false
+	for _, diagnostic := range result.Diagnostics {
+		if diagnostic.Message == "Argument must be an inline query" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("accepted List argument: %#v", result.Diagnostics)
+	}
+
+	for _, source := range []string{
+		`Database.QueryLocator locator = Database.getQueryLocator([SELECT Id FROM Account]);`,
+		`Database.QueryLocator locator = Database.getQueryLocator([SELECT Id FROM Account], AccessLevel.USER_MODE);`,
+		`Database.QueryLocator locator = Database.getQueryLocator('SELECT Id FROM Account');`,
+		`Database.QueryLocator locator = Database.getQueryLocator('SELECT Id FROM Account', AccessLevel.USER_MODE);`,
+	} {
+		if result := AnalyzeAnonymous(typesys.Index{}, source, "67.0"); result.HasErrors() {
+			t.Fatalf("rejected allowed query locator call %q: %#v", source, result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeAnonymousFollowsSourceAPIVersion(t *testing.T) {
 	const source = `List<Account> rows = [SELECT Id FROM Account WITH SECURITY_ENFORCED];`
 	if result := AnalyzeAnonymous(typesys.Index{}, source, "66.0"); result.HasErrors() {
