@@ -635,8 +635,9 @@ func (vm *VM) testInstall(args []Value, result *Result) (Value, error) {
 	}
 	context := Object("InstallContext")
 	context.Fields["PreviousVersion"] = args[1]
-	context.Fields["InstallerId"] = Null
-	context.Fields["installerId"] = Null
+	installerID := platformScalar("Id", vm.currentUserInfoField("Id", "system"))
+	context.Fields["InstallerId"] = installerID
+	context.Fields["installerId"] = installerID
 	if len(args) == 3 {
 		context.Fields["IsPush"] = args[2]
 	}
