@@ -2397,6 +2397,16 @@ func semaLookupTypeMembers(model *semaTypeMemberView, typeName string) (typeMemb
 	if members, schemaKey, ok := semaExplicitSchemaSObjectMembers(typeName, model); ok {
 		return members, schemaKey, true
 	}
+	if semaExplicitPlatformQualifiedName(typeName) {
+		canonical := semaCanonicalPlatformAlias(typeName)
+		if strings.EqualFold(canonical, "Location") && model != nil && model.state != nil && model.state.platform != nil {
+			if model.state.platform.platform != nil {
+				if symbol, ok := model.state.platform.platform.symbolsByKey[normalizeName(canonical)]; ok {
+					return semaTypeMembersFromPlatformSymbol(*symbol), normalizeName(canonical), true
+				}
+			}
+		}
+	}
 	key := normalizeName(typeName)
 	if members, ok := model.lookup(key); ok {
 		return semaEnsureStandardSObjectTypeMembers(model, key, members), key, true
