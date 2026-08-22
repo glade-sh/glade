@@ -555,7 +555,7 @@ func TestCIApexDurationHistoryImbalanceGuard(t *testing.T) {
 	}
 }
 
-func TestCIDurationHistoryWorkflowOwnership(t *testing.T) {
+func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 	scriptData, err := os.ReadFile("ci-go-test.sh")
 	if err != nil {
 		t.Fatal(err)
@@ -578,40 +578,18 @@ func TestCIDurationHistoryWorkflowOwnership(t *testing.T) {
 	workflow := string(data)
 	jobs := workflowJobBlocks(t, workflow)
 	matrix := jobs["apextest"]
-	input := jobs["apextest-history-input"]
-	for _, want := range []string{
-		"needs: apextest-history-input",
-		"actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0",
-		"name: apextest-history-input",
-		"path: /tmp/glade-apextest-duration-history",
-		"CI_APEXTEST_HISTORY_PATH",
-	} {
-		if !strings.Contains(matrix, want) {
-			t.Errorf("apextest matrix history input missing %q", want)
-		}
-	}
-	if strings.Contains(matrix, "apextest-duration-history-v1") {
-		t.Error("apextest matrix must not restore duration history independently")
-	}
+	refresh := jobs["apextest-history"]
 	for _, want := range []string{
 		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "apextest-duration-history-v1", "runner.os", "runner.arch", "1.26.6", "hashFiles('go.sum')",
-		"CI_DURATION_HISTORY_CACHE_REF", "github.event.pull_request.base.sha", "github.event.before",
-		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0",
+		"CI_APEXTEST_HISTORY_PATH", "CI_DURATION_HISTORY_CACHE_REF", "github.event.pull_request.base.sha", "github.event.before",
 	} {
-		if !strings.Contains(input, want) {
-			t.Errorf("apextest history input missing %q", want)
+		if !strings.Contains(matrix, want) {
+			t.Errorf("matrix history restore missing %q", want)
 		}
 	}
-	if _, exists := jobs["sema-history-input"]; exists {
-		t.Error("sema must not stage shared duration history")
+	if strings.Contains(matrix, "actions/cache/save") {
+		t.Error("matrix job must be read-only for duration history")
 	}
-	sema := jobs["sema"]
-	for _, forbidden := range []string{"needs:", "CI_SEMA_HISTORY_PATH", "sema-duration-history-v1", "Download shared sema duration history"} {
-		if strings.Contains(sema, forbidden) {
-			t.Errorf("sema matrix retains duration-history coordination %q", forbidden)
-		}
-	}
-	refresh := jobs["apextest-history"]
 	for _, want := range []string{
 		"needs: apextest", "if: ${{ success() }}", "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0", "apex-shard-*", "scripts/ci-go-test.sh apex-history-refresh",
 		"actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0", "apextest-duration-history-v1", "github.sha",
@@ -620,19 +598,8 @@ func TestCIDurationHistoryWorkflowOwnership(t *testing.T) {
 			t.Errorf("single-writer refresh job missing %q", want)
 		}
 	}
-	semaRefresh := jobs["sema-history"]
-	for _, want := range []string{"needs: sema", "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0", "sema-shard-*", "scripts/ci-go-test.sh sema-history-refresh"} {
-		if !strings.Contains(semaRefresh, want) {
-			t.Errorf("sema reconciliation missing %q", want)
-		}
-	}
-	for _, forbidden := range []string{"actions/cache/save", "sema-duration-history-v1", "Upload sema duration history evidence"} {
-		if strings.Contains(semaRefresh, forbidden) {
-			t.Errorf("sema reconciliation retains duration-history writer %q", forbidden)
-		}
-	}
-	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 15 {
-		t.Errorf("cache save count = %d, want existing DAG writers plus Apex history writer", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
+	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 16 {
+		t.Errorf("cache save count = %d, want existing DAG writers plus Apex and sema history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 	if strings.Count(workflow, "shard: [0, 1]") != 2 {
 		t.Error("workflow must contain the Apex and sema two-native-shard matrices")
@@ -649,16 +616,17 @@ func TestCIDurationHistoryUsesOneImmutablePredecessorKeyPerRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	jobs := workflowJobBlocks(t, string(data))
-	for _, name := range []string{"apextest-history-input"} {
+	for _, name := range []string{"sema", "apextest"} {
 		job := jobs[name]
 		if !strings.Contains(job, `CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}`) {
 			t.Errorf("%s does not pin duration history to one predecessor commit", name)
 		}
 		start := strings.Index(job, "- name: Restore ")
-		if start < 0 {
+		end := strings.Index(job[start+1:], "- name: Restore ")
+		if start < 0 || end < 0 {
 			t.Fatalf("%s duration history restore step not found", name)
 		}
-		restore := workflowStepBlock(t, job, "      - name: Restore ")
+		restore := job[start : start+1+end]
 		for _, forbidden := range []string{"restore-keys:", "github.run_id", "github.run_attempt", "matrix.shard"} {
 			if strings.Contains(restore, forbidden) {
 				t.Errorf("%s duration history restore contains race-prone %q", name, forbidden)
@@ -1445,7 +1413,7 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 	guard := "    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}"
 	for _, jobName := range []string{
 		"site", "vet", "gladecli", "node-integration", "sema", "server-and-playground",
-		"test", "smoke-runtime", "smoke-distribution", "apextest-history-input", "apextest",
+		"test", "smoke-runtime", "smoke-distribution", "apextest",
 	} {
 		job := jobs[jobName]
 		if strings.Count(job, guard) != 1 {
@@ -1500,7 +1468,7 @@ func TestCIBenchmarkCachePairContractRejectsAnyCacheBeforeValidation(t *testing.
 			workflowName: "ci.yml",
 			jobNames: []string{
 				"site", "vet", "gladecli", "node-integration", "sema", "server-and-playground",
-				"test", "smoke-runtime", "smoke-distribution", "apextest-history-input", "apextest",
+				"test", "smoke-runtime", "smoke-distribution", "apextest",
 			},
 			validationCommand: `scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`,
 		},
@@ -2090,9 +2058,7 @@ func TestCIBrowserWorkflowContract(t *testing.T) {
 		"checkout overwrites early evidence": func(s string) string {
 			return strings.Replace(s, "          path: source\n", "", 1)
 		},
-		"missing Chromium": func(s string) string {
-			return strings.Replace(s, "playwright install chromium", "playwright install", 1)
-		},
+		"missing Chromium": func(s string) string { return strings.Replace(s, "playwright install chromium", "playwright install", 1) },
 		"missing selector": func(s string) string {
 			return strings.Replace(s, "|TestGeneratedPhase3BaseComponentsRunInBrowser", "", 1)
 		},
@@ -2902,7 +2868,7 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 func TestCIParallelDAGTopology(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	wantJobs := []string{
-		"apextest", "apextest-history", "apextest-history-input", "gladecli", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
+		"apextest", "apextest-history", "gladecli", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
 		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "vet",
 	}
 	gotJobs := make([]string, 0, len(jobs))
@@ -2917,12 +2883,6 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		job := jobs[name]
 		if !strings.Contains(job, "runs-on: ubuntu-latest") {
 			t.Errorf("%s is not an ubuntu-latest job", name)
-		}
-		if input, serialized := map[string]string{"apextest": "apextest-history-input"}[name]; serialized {
-			if !strings.Contains(job, "needs: "+input) {
-				t.Errorf("%s must depend on %s", name, input)
-			}
-			continue
 		}
 		if !map[string]bool{"apextest-history": true, "required-ci": true, "required-scheduled-ci": true, "sema-history": true, "sema-equivalence": true}[name] && strings.Contains(job, "needs:") {
 			t.Errorf("root job %s must not be serialized with needs", name)
@@ -3038,8 +2998,8 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 			t.Errorf("%s lacks the ci-test digest seed fallback", jobName)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 15 {
-		t.Errorf("cache save count = %d, want existing DAG and Apex history writer", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
+	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 16 {
+		t.Errorf("cache save count = %d, want existing DAG and two history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 }
 
