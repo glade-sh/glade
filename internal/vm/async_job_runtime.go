@@ -482,16 +482,29 @@ func (vm *VM) drainTestPlatformEventsFrom(result *Result, startIndex int, stopTi
 				vm.testContext.Draining = wasDraining
 				vm.testContext.CurrentUser = previousUser
 				if err != nil {
+					vm.requeueEventBusRetry(err)
 					return err
 				}
 				continue
 			}
 			if _, err := vm.runTriggers(triggerTimingAfter, "insert", grouped[objectName], nil, result); err != nil {
+				vm.requeueEventBusRetry(err)
 				return err
 			}
 		}
 	}
 	return nil
+}
+
+func (vm *VM) requeueEventBusRetry(err error) {
+	if vm == nil || vm.testContext == nil {
+		return
+	}
+	var retry *eventBusTriggerRetryError
+	if !errors.As(err, &retry) || len(retry.records) == 0 {
+		return
+	}
+	vm.testContext.PlatformEvents = append(vm.testContext.PlatformEvents, retry.records...)
 }
 func (vm *VM) automatedProcessUser() Value {
 	if vm == nil || vm.Org == nil {
