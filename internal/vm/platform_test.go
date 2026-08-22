@@ -7844,7 +7844,7 @@ if (context.previousVersion() == null) {
 	System.assert(context.previousVersion().compareTo(new Version(1, 47, 1)) < 0);
 	System.assertEquals('1.47.0', context.previousVersion().toString());
 	System.assert(!context.isPush());
-	System.assertEquals(null, context.installerId);
+	System.assertEquals(UserInfo.getUserId(), context.installerId());
 }
 `)
 	if err != nil {
@@ -7853,6 +7853,7 @@ if (context.previousVersion() == null) {
 	machine := New(nil)
 	org := testDataOrg()
 	machine.SetOrg(&org)
+	machine.SetCurrentUser(storage.Record{ID: "005000000000999", Object: "User"})
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
 		Name:       "InstallScript",
