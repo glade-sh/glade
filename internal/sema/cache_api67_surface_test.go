@@ -60,12 +60,24 @@ func TestAPI67CacheAcceptedShapes(t *testing.T) {
 	}
 }
 
-func TestCacheValidateKeysSetOverloadsAtSupportedAPIVersions(t *testing.T) {
-	for _, version := range []string{"65.0", "66.0", "67.0"} {
+func TestCacheValidateKeysOverloadsFollowAPIVersion(t *testing.T) {
+	for _, test := range []struct {
+		version      string
+		collection   string
+		wantRejected bool
+	}{
+		{"54.0", "List", false},
+		{"55.0", "List", true},
+		{"67.0", "List", true},
+		{"54.0", "Set", false},
+		{"55.0", "Set", false},
+		{"67.0", "Set", false},
+	} {
 		for _, receiver := range []string{"Cache.Partition", "Cache.OrgPartition", "Cache.SessionPartition"} {
-			result := AnalyzeAnonymous(typesys.Index{}, receiver+`.validateKeys(false, new Set<String>{'alpha', 'beta'});`, version)
-			if result.HasErrors() {
-				t.Fatalf("API %s %s.validateKeys(Boolean, Set<String>) rejected: %#v", version, receiver, result.Diagnostics)
+			source := `public class Probe { public static void run() { ` + receiver + `.validateKeys(false, new ` + test.collection + `<String>{'alpha', 'beta'}); } }`
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, test.version)
+			if rejected := resultDiagnosticsContain(result, "validateKeys"); rejected != test.wantRejected {
+				t.Fatalf("API %s %s.validateKeys(Boolean, %s<String>) rejected = %t, want %t: %#v", test.version, receiver, test.collection, rejected, test.wantRejected, result.Diagnostics)
 			}
 		}
 	}

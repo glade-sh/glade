@@ -918,8 +918,8 @@ func (vm *VM) callCachePartitionStaticDefault(callee string, args []Value) (Valu
 	}
 	switch strings.ToLower(methodName) {
 	case "validatekeys":
-		if len(args) != 2 || args[0].Kind != ValueBool || args[1].Kind != ValueSet {
-			return Null, true, fmt.Errorf("%s expects Boolean and Set<String>", callee)
+		if len(args) != 2 || args[0].Kind != ValueBool || (args[1].Kind != ValueList && args[1].Kind != ValueSet) {
+			return Null, true, fmt.Errorf("%s expects Boolean and List<String> or Set<String>", callee)
 		}
 		return Null, true, nil
 	case "validatecachebuilder", "validatekey", "validatekeyvalue", "validatepartitionname":
