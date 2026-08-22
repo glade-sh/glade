@@ -872,7 +872,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	}},
 	{Name: "Version", Constructors: [][]string{{"Integer", "Integer"}, {"Integer", "Integer", "Integer"}}, Methods: []StandardMethodSpec{{Name: "compareTo", ReturnType: "Integer", Parameters: []string{"Version"}}}},
 	{Name: "InstallContext", Methods: []StandardMethodSpec{{Name: "previousVersion", ReturnType: "Version"}, {Name: "isPush", ReturnType: "Boolean"}, {Name: "installerId", ReturnType: "Id"}}, Properties: []StandardPropertySpec{{Name: "installerId", Type: "Id"}, {Name: "InstallerId", Type: "Id"}}},
-	{Name: "UninstallContext", Methods: []StandardMethodSpec{{Name: "organizationId", ReturnType: "Id"}}, Properties: []StandardPropertySpec{{Name: "organizationId", Type: "Id"}, {Name: "OrganizationId", Type: "Id"}}},
+	{Name: "UninstallContext", Methods: []StandardMethodSpec{{Name: "organizationId", ReturnType: "Id"}}},
 	{Name: "InstallHandler", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "onInstall", ReturnType: "void", Parameters: []string{"InstallContext"}}}},
 	{Name: "UninstallHandler", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "onUninstall", ReturnType: "void", Parameters: []string{"UninstallContext"}}}},
 	{Name: "IntegrationTest", Methods: []StandardMethodSpec{{Name: "commitTestOnly", ReturnType: "void", Static: true}}},

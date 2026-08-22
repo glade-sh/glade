@@ -1009,7 +1009,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return Null, receiver, false, true, nil
 		}
 	case "UninstallContext":
-		if method != "organizationId" {
+		if !strings.EqualFold(method, "organizationId") {
 			break
 		}
 		if len(args) != 0 {

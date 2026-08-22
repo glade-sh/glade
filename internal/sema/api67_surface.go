@@ -256,6 +256,9 @@ func semaAPI67RejectedPlatformField(path string) bool {
 	}
 	receiver := strings.TrimSpace(path[:dot])
 	field := normalizeName(path[dot+1:])
+	if strings.EqualFold(semaCanonicalPlatformAlias(receiver), "UninstallContext") {
+		return field == "organizationid"
+	}
 	if strings.EqualFold(receiver, "Database.AllowCallouts") || strings.EqualFold(receiver, "System.Database.AllowCallouts") {
 		return true
 	}

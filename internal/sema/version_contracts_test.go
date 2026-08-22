@@ -215,3 +215,28 @@ func TestInvocableParameterConstructorVisibilityFollowsAPIVersion(t *testing.T) 
 		t.Fatalf("API 66 visible-constructor diagnostics = %#v", result.Diagnostics)
 	}
 }
+
+func TestAPI67UninstallContextOrganizationIdPropertyIsRejected(t *testing.T) {
+	source := `global class Probe implements UninstallHandler {
+  global void onUninstall(UninstallContext context) {
+    Id organizationId = context.OrganizationId;
+  }
+}`
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, "67.0")
+	if !result.HasErrors() || !resultDiagnosticsContain(result, "OrganizationId") {
+		t.Fatalf("API 67 accepted Salesforce-rejected UninstallContext.OrganizationId property: %#v", result.Diagnostics)
+	}
+}
+
+func TestAPI67UninstallContextOrganizationIdMethodsAreAccepted(t *testing.T) {
+	source := `global class Probe implements UninstallHandler {
+  global void onUninstall(UninstallContext context) {
+    Id lower = context.organizationId();
+    Id upper = context.OrganizationId();
+  }
+}`
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, "67.0")
+	if result.HasErrors() {
+		t.Fatalf("API 67 rejected UninstallContext organization-ID methods: %#v", result.Diagnostics)
+	}
+}
