@@ -1323,7 +1323,9 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	}},
 	{Name: "UserProvisioning.UserProvisioningPlugin", Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{
 		{Name: "buildDescribeCall", ReturnType: "Process.PluginDescribeResult", Modifiers: []string{"abstract"}},
+		{Name: "invoke", ReturnType: "Process.PluginResult", Parameters: []string{"Process.PluginRequest"}, Modifiers: []string{"abstract"}},
 	}},
+	{Name: "UserProvisioning.FlowProvisionBase", Modifiers: []string{"abstract"}, Interfaces: []string{"Database.Batchable<SObject>"}},
 	{Name: "UserProvisioning.CollectingBatchable", Interfaces: []string{"Database.Batchable<UserProvisioningRequest>"}},
 	{Name: "UserProvisioning.CommittingBatchable", Interfaces: []string{"Database.Batchable<SObject>"}},
 	{Name: "UserProvisioning.DeletingBatchable", Interfaces: []string{"Database.Batchable<SObject>"}},
