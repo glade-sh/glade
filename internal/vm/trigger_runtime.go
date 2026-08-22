@@ -10,9 +10,39 @@ import (
 )
 
 type eventBusTriggerContext struct {
-	value      Value
-	replayID   string
-	checkpoint Value
+	value         Value
+	replayIDs     map[string]struct{}
+	checkpoint    string
+	hasCheckpoint bool
+}
+
+type eventBusTriggerRetryError struct {
+	cause   error
+	records []storage.Record
+}
+
+func (e *eventBusTriggerRetryError) Error() string {
+	return e.cause.Error()
+}
+
+func (e *eventBusTriggerRetryError) Unwrap() error {
+	return e.cause
+}
+
+func (vm *VM) wrapEventBusTriggerFailure(trigger Trigger, records []storage.Record, err error) error {
+	if !hasSuffixFold(trigger.Object, "__e") || vm.eventBusTriggerContext == nil {
+		return err
+	}
+	retryRecords := append([]storage.Record(nil), records...)
+	if vm.eventBusTriggerContext.hasCheckpoint {
+		for index, record := range records {
+			if recordFieldString(record, "ReplayId") == vm.eventBusTriggerContext.checkpoint {
+				retryRecords = append([]storage.Record(nil), records[index+1:]...)
+				break
+			}
+		}
+	}
+	return &eventBusTriggerRetryError{cause: err, records: retryRecords}
 }
 
 func dmlExceptionFromTriggerError(op string, err error) error {
@@ -474,13 +504,13 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	vm.currentTrigger = true
 	vm.eventBusTriggerContext = nil
 	if hasSuffixFold(trigger.Object, "__e") {
-		replayID := ""
-		if len(records) > 0 {
-			replayID = recordFieldString(records[0], "ReplayId")
+		replayIDs := make(map[string]struct{}, len(records))
+		for _, record := range records {
+			replayIDs[recordFieldString(record, "ReplayId")] = struct{}{}
 		}
 		vm.eventBusTriggerContext = &eventBusTriggerContext{
-			value:    Object("eventbus.TriggerContext"),
-			replayID: replayID,
+			value:     Object("eventbus.TriggerContext"),
+			replayIDs: replayIDs,
 		}
 	}
 	if vm.currentNamespace != "" {
@@ -512,7 +542,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 				return failures, nil
 			}
 		}
-		return nil, err
+		return nil, vm.wrapEventBusTriggerFailure(trigger, records, err)
 	}
 	if out.signal == signalThrow {
 		if updated.Kind == ValueList {
@@ -521,7 +551,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 				return failures, nil
 			}
 		}
-		return nil, &apexThrowError{value: out.thrown, stack: append([]callFrame(nil), vm.callStack...)}
+		return nil, vm.wrapEventBusTriggerFailure(trigger, records, &apexThrowError{value: out.thrown, stack: append([]callFrame(nil), vm.callStack...)})
 	}
 	if updated.Kind == ValueList {
 		failures := dmlResultsFromSObjectErrors(records, updated.List)

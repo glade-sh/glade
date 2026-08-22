@@ -1845,7 +1845,7 @@ System.assertNotEquals(null, ctx);
 func TestExecEventBusTriggerContextResumeCheckpoint(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 eventbus.TriggerContext ctx = eventbus.TriggerContext.currentContext();
-String replayId = (String) Trigger.new[0].ReplayId;
+String replayId = (String) Trigger.new[1].ReplayId;
 System.assertEquals(null, ctx.getResumeCheckpoint());
 ctx.setResumeCheckpoint(replayId);
 System.assertEquals(replayId, ctx.getResumeCheckpoint());
@@ -1861,8 +1861,11 @@ System.assertEquals(replayId, ctx.getResumeCheckpoint());
 		t.Fatal(err)
 	}
 	program, err := CompileAnonymous(`
-Database.SaveResult result = EventBus.publish(new Local_Event__e(Name__c = 'Trail'));
-System.assert(result.isSuccess());
+List<Database.SaveResult> results = EventBus.publish(new List<Local_Event__e>{
+	new Local_Event__e(Name__c = 'First'),
+	new Local_Event__e(Name__c = 'Second')
+});
+System.assertEquals(2, results.size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1897,7 +1900,7 @@ System.assert(result.isSuccess());
 func TestExecEventBusTriggerContextRejectsCheckpointOutsideTrigger(t *testing.T) {
 	program, err := CompileAnonymous(`
 try {
-	eventbus.TriggerContext.currentContext().setResumeCheckpoint('1');
+	eventbus.TriggerContext.currentContext().setResumeCheckpoint(null);
 	System.assert(false);
 } catch (Exception err) {
 	System.assertEquals('eventbus.InvalidReplayIdException', err.getTypeName());
@@ -1907,6 +1910,133 @@ try {
 		t.Fatal(err)
 	}
 	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEventBusCheckpointRetriesOnlyEventsAfterCheckpoint(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+Local_Event__e eventRecord = (Local_Event__e) Trigger.new[0];
+if (eventRecord.Name__c == 'First') {
+	eventbus.TriggerContext.currentContext().setResumeCheckpoint(eventRecord.ReplayId);
+	throw new DmlException('retry after checkpoint');
+}
+insert new Account(Name = 'resumed ' + eventRecord.Name__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+EventBus.publish(new List<Local_Event__e>{
+	new Local_Event__e(Name__c = 'First'),
+	new Local_Event__e(Name__c = 'Second')
+});
+try {
+	Test.getEventBus().deliver();
+	System.assert(false);
+} catch (DmlException err) {
+}
+Test.getEventBus().deliver();
+Test.stopTest();
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'resumed Second'].size());
+System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'resumed First'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Event__e",
+			KeyPrefix: "e00",
+			Fields: map[string]storage.Field{
+				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "LocalEventTrigger",
+		Object:    "Local_Event__e",
+		Timing:    triggerTimingAfter,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEventBusFailureWithoutCheckpointRetriesWholeBatch(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+if (RetryState.Attempts == null || RetryState.Attempts == 0) {
+	RetryState.Attempts++;
+	throw new DmlException('retry whole batch');
+}
+for (Local_Event__e eventRecord : Trigger.new) {
+	insert new Account(Name = 'whole ' + eventRecord.Name__c);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+EventBus.publish(new List<Local_Event__e>{
+	new Local_Event__e(Name__c = 'First'),
+	new Local_Event__e(Name__c = 'Second')
+});
+try {
+	Test.getEventBus().deliver();
+	System.assert(false);
+} catch (DmlException err) {
+}
+Test.getEventBus().deliver();
+Test.stopTest();
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'whole First'].size());
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'whole Second'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Event__e",
+			KeyPrefix: "e00",
+			Fields: map[string]storage.Field{
+				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "RetryState",
+		StaticFields: map[string]Field{
+			"Attempts": {Name: "Attempts", Type: "Integer", Static: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "LocalEventTrigger",
+		Object:    "Local_Event__e",
+		Timing:    triggerTimingAfter,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
