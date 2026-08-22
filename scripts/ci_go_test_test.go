@@ -555,7 +555,7 @@ func TestCIApexDurationHistoryImbalanceGuard(t *testing.T) {
 	}
 }
 
-func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
+func TestCIDurationHistoryWorkflowOwnership(t *testing.T) {
 	scriptData, err := os.ReadFile("ci-go-test.sh")
 	if err != nil {
 		t.Fatal(err)
@@ -577,19 +577,43 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 	}
 	workflow := string(data)
 	jobs := workflowJobBlocks(t, workflow)
-	matrix := jobs["apextest"]
-	refresh := jobs["apextest-history"]
-	for _, want := range []string{
-		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "apextest-duration-history-v1", "runner.os", "runner.arch", "1.26.6", "hashFiles('go.sum')",
-		"CI_APEXTEST_HISTORY_PATH", "CI_DURATION_HISTORY_CACHE_REF", "github.event.pull_request.base.sha", "github.event.before",
+	for _, tc := range []struct {
+		matrix string
+		input  string
+		prefix string
+		path   string
+		env    string
+	}{
+		{matrix: "apextest", input: "apextest-history-input", prefix: "apextest", path: "/tmp/glade-apextest-duration-history", env: "CI_APEXTEST_HISTORY_PATH"},
+		{matrix: "sema", input: "sema-history-input", prefix: "sema", path: "/tmp/glade-sema-duration-history", env: "CI_SEMA_HISTORY_PATH"},
 	} {
-		if !strings.Contains(matrix, want) {
-			t.Errorf("matrix history restore missing %q", want)
+		matrix := jobs[tc.matrix]
+		input := jobs[tc.input]
+		for _, want := range []string{
+			"needs: " + tc.input,
+			"actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0",
+			"name: " + tc.input,
+			"path: " + tc.path,
+			tc.env,
+		} {
+			if !strings.Contains(matrix, want) {
+				t.Errorf("%s matrix history input missing %q", tc.matrix, want)
+			}
+		}
+		if strings.Contains(matrix, tc.prefix+"-duration-history-v1") {
+			t.Errorf("%s matrix must not restore duration history independently", tc.matrix)
+		}
+		for _, want := range []string{
+			"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", tc.prefix + "-duration-history-v1", "runner.os", "runner.arch", "1.26.6", "hashFiles('go.sum')",
+			"CI_DURATION_HISTORY_CACHE_REF", "github.event.pull_request.base.sha", "github.event.before",
+			"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0",
+		} {
+			if !strings.Contains(input, want) {
+				t.Errorf("%s history input missing %q", tc.input, want)
+			}
 		}
 	}
-	if strings.Contains(matrix, "actions/cache/save") {
-		t.Error("matrix job must be read-only for duration history")
-	}
+	refresh := jobs["apextest-history"]
 	for _, want := range []string{
 		"needs: apextest", "if: ${{ success() }}", "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0", "apex-shard-*", "scripts/ci-go-test.sh apex-history-refresh",
 		"actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0", "apextest-duration-history-v1", "github.sha",
@@ -616,17 +640,16 @@ func TestCIDurationHistoryUsesOneImmutablePredecessorKeyPerRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	jobs := workflowJobBlocks(t, string(data))
-	for _, name := range []string{"sema", "apextest"} {
+	for _, name := range []string{"sema-history-input", "apextest-history-input"} {
 		job := jobs[name]
 		if !strings.Contains(job, `CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}`) {
 			t.Errorf("%s does not pin duration history to one predecessor commit", name)
 		}
 		start := strings.Index(job, "- name: Restore ")
-		end := strings.Index(job[start+1:], "- name: Restore ")
-		if start < 0 || end < 0 {
+		if start < 0 {
 			t.Fatalf("%s duration history restore step not found", name)
 		}
-		restore := job[start : start+1+end]
+		restore := workflowStepBlock(t, job, "      - name: Restore ")
 		for _, forbidden := range []string{"restore-keys:", "github.run_id", "github.run_attempt", "matrix.shard"} {
 			if strings.Contains(restore, forbidden) {
 				t.Errorf("%s duration history restore contains race-prone %q", name, forbidden)
@@ -1412,8 +1435,8 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 	}
 	guard := "    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}"
 	for _, jobName := range []string{
-		"site", "vet", "gladecli", "node-integration", "sema", "server-and-playground",
-		"test", "smoke-runtime", "smoke-distribution", "apextest",
+		"site", "vet", "gladecli", "node-integration", "sema-history-input", "sema", "server-and-playground",
+		"test", "smoke-runtime", "smoke-distribution", "apextest-history-input", "apextest",
 	} {
 		job := jobs[jobName]
 		if strings.Count(job, guard) != 1 {
@@ -1467,8 +1490,8 @@ func TestCIBenchmarkCachePairContractRejectsAnyCacheBeforeValidation(t *testing.
 		{
 			workflowName: "ci.yml",
 			jobNames: []string{
-				"site", "vet", "gladecli", "node-integration", "sema", "server-and-playground",
-				"test", "smoke-runtime", "smoke-distribution", "apextest",
+				"site", "vet", "gladecli", "node-integration", "sema-history-input", "sema", "server-and-playground",
+				"test", "smoke-runtime", "smoke-distribution", "apextest-history-input", "apextest",
 			},
 			validationCommand: `scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`,
 		},
@@ -2058,7 +2081,9 @@ func TestCIBrowserWorkflowContract(t *testing.T) {
 		"checkout overwrites early evidence": func(s string) string {
 			return strings.Replace(s, "          path: source\n", "", 1)
 		},
-		"missing Chromium": func(s string) string { return strings.Replace(s, "playwright install chromium", "playwright install", 1) },
+		"missing Chromium": func(s string) string {
+			return strings.Replace(s, "playwright install chromium", "playwright install", 1)
+		},
 		"missing selector": func(s string) string {
 			return strings.Replace(s, "|TestGeneratedPhase3BaseComponentsRunInBrowser", "", 1)
 		},
@@ -2868,7 +2893,7 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 func TestCIParallelDAGTopology(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	wantJobs := []string{
-		"apextest", "apextest-history", "gladecli", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
+		"apextest", "apextest-history", "apextest-history-input", "gladecli", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history", "sema-history-input",
 		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "vet",
 	}
 	gotJobs := make([]string, 0, len(jobs))
@@ -2883,6 +2908,12 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		job := jobs[name]
 		if !strings.Contains(job, "runs-on: ubuntu-latest") {
 			t.Errorf("%s is not an ubuntu-latest job", name)
+		}
+		if input, serialized := map[string]string{"apextest": "apextest-history-input", "sema": "sema-history-input"}[name]; serialized {
+			if !strings.Contains(job, "needs: "+input) {
+				t.Errorf("%s must depend on %s", name, input)
+			}
+			continue
 		}
 		if !map[string]bool{"apextest-history": true, "required-ci": true, "required-scheduled-ci": true, "sema-history": true, "sema-equivalence": true}[name] && strings.Contains(job, "needs:") {
 			t.Errorf("root job %s must not be serialized with needs", name)
