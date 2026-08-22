@@ -849,6 +849,8 @@ func cachePartitionPlatformObjectType(typeName string) bool {
 func generatedPlatformObjectMemberReceiver(typeName string) bool {
 	return isExceptionType(typeName) ||
 		cachePartitionPlatformObjectType(typeName) ||
+		strings.EqualFold(typeName, "UserProvisioning.FlowProvisionBase") ||
+		strings.EqualFold(typeName, "UserProvisioning.UserProvisioningPlugin") ||
 		strings.EqualFold(typeName, "Cache.SecondaryKeyApi")
 }
 

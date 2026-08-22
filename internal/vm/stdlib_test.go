@@ -2627,11 +2627,6 @@ UserProvisioning.UPASCleaningBatchable cleaning = new UserProvisioning.UPASClean
 System.assertEquals('', cleaning.start(null).getQuery());
 cleaning.execute(null, new List<SObject>());
 cleaning.finish(null);
-UserProvisioning.FlowProvisionBase flowBase = new UserProvisioning.FlowProvisionBase();
-System.assertEquals('', flowBase.getFlowName());
-System.assertEquals('', flowBase.getFlowNamespace());
-System.assertEquals(false, flowBase.hasFlow());
-System.assertEquals(false, flowBase.hasFlowOrApex());
 System.assert(new UserProvisioning.UserProvisioningProcessHandler().invoke(null) != null);
 System.assert(new UserProvisioning.DummyConnectorApexHandler().invoke(null) != null);
 `)
@@ -2748,6 +2743,19 @@ System.assertEquals(5, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchA
 func TestCompileUserProvisioningPluginBaseRejectsConstruction(t *testing.T) {
 	program, err := CompileAnonymous(`
 UserProvisioning.UserProvisioningPlugin plugin = new UserProvisioning.UserProvisioningPlugin();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = New(nil).Execute(program)
+	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "abstract") {
+		t.Fatalf("execute error = %v, want abstract base-class construction rejection", err)
+	}
+}
+
+func TestExecUserProvisioningFlowProvisionBaseRejectsConstruction(t *testing.T) {
+	program, err := CompileAnonymous(`
+UserProvisioning.FlowProvisionBase flow = new UserProvisioning.FlowProvisionBase('upr');
 `)
 	if err != nil {
 		t.Fatal(err)
