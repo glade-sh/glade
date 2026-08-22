@@ -466,13 +466,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if value, updated, mutated, handled, err := vm.callRegisteredPlatformObjectMemberPhase("user-provisioning", receiver, method, args, result); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
-	if strings.EqualFold(receiver.Type, "UserProvisioning.FlowProvisionBase") {
+	if vm.typeMatches(runtimeObjectType(receiver), "UserProvisioning.FlowProvisionBase", make(map[string]bool)) {
 		switch strings.ToLower(method) {
 		case "getflowname", "getflownamespace":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("UserProvisioning.FlowProvisionBase.%s expects 0 arguments", method)
 			}
-			return String(""), receiver, false, true, nil
+			return Null, receiver, false, true, nil
 		case "hasflow", "hasfloworapex":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("UserProvisioning.FlowProvisionBase.%s expects 0 arguments", method)
@@ -480,7 +480,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return Bool(false), receiver, false, true, nil
 		}
 	}
-	if strings.EqualFold(receiver.Type, "UserProvisioning.UserProvisioningPlugin") {
+	if vm.typeMatches(runtimeObjectType(receiver), "UserProvisioning.UserProvisioningPlugin", make(map[string]bool)) {
 		switch strings.ToLower(method) {
 		case "builddescribecall", "describe":
 			if len(args) != 0 {
@@ -491,7 +491,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("UserProvisioning.UserProvisioningPlugin.getPluginClassName expects 0 arguments")
 			}
-			return String("UserProvisioning.UserProvisioningPlugin"), receiver, false, true, nil
+			return String(shortTypeName(runtimeObjectType(receiver))), receiver, false, true, nil
 		}
 	}
 	if strings.EqualFold(receiver.Type, "UserProvisioning.UserProvisioningProcessHandler") ||

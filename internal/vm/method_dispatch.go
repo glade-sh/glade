@@ -187,7 +187,8 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	if err, handled := vm.generatedUnsupportedFamilyExplicitMethodError(method, receiver, args); handled {
 		return Null, err
 	}
-	if receiver.Kind == ValueObject && passiveGeneratedMethod(method) && generatedPlatformObjectMemberReceiver(receiver.Type) {
+	if receiver.Kind == ValueObject && passiveGeneratedMethod(method) &&
+		(generatedPlatformObjectMemberReceiver(receiver.Type) || generatedPlatformObjectMemberReceiver(generatedMethodClassName(method, receiver))) {
 		callArgs := make([]Value, 0, len(method.Params))
 		for _, param := range method.Params {
 			callArgs = append(callArgs, frame[param.Name])
