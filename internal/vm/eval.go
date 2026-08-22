@@ -285,7 +285,22 @@ func evalBinary(op string, left, right Value) (Value, error) {
 			return Bool(leftBool && rightBool), nil
 		}
 		return Bool(leftBool || rightBool), nil
-	case "&", "|":
+	case "&", "|", "^":
+		if left.Kind == ValueInt && right.Kind == ValueInt {
+			return intBinary(op, left, right, func(a, b int64) int64 {
+				switch op {
+				case "&":
+					return a & b
+				case "|":
+					return a | b
+				default:
+					return a ^ b
+				}
+			})
+		}
+		if op == "^" {
+			return Null, fmt.Errorf("operator %s requires Integer operands", op)
+		}
 		leftBool, leftOK := booleanOperand(left)
 		rightBool, rightOK := booleanOperand(right)
 		if !leftOK || !rightOK {

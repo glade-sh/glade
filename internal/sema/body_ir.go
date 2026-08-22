@@ -2689,7 +2689,12 @@ func semaBinaryType(op, leftType, rightType string) string {
 		return semaNumericResultType(leftType, rightType)
 	case "-", "*", "/", "%":
 		return semaNumericResultType(leftType, rightType)
-	case "<<", ">>", ">>>", "|", "&", "^":
+	case "&", "|":
+		if strings.EqualFold(leftType, "Boolean") && strings.EqualFold(rightType, "Boolean") {
+			return "Boolean"
+		}
+		return semaIntegralResultType(leftType, rightType)
+	case "<<", ">>", ">>>", "^":
 		return semaIntegralResultType(leftType, rightType)
 	}
 	return ""

@@ -209,6 +209,11 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 				if left != "" && right != "" && !semaDateDayArithmetic(current.Operator, left, right) && !isSemaNumericType(left) && !isSemaNumericType(right) && !strings.EqualFold(left, "String") && !strings.EqualFold(right, "String") {
 					appendDiagnostic("operator + requires numeric or String operands")
 				}
+			case "&", "|", "^":
+				booleanPair := current.Operator != "^" && strings.EqualFold(left, "Boolean") && strings.EqualFold(right, "Boolean")
+				if left != "" && right != "" && !booleanPair && (!isSemaIntegralType(left) || !isSemaIntegralType(right)) {
+					appendDiagnostic("bitwise operator requires Integer or Long operands")
+				}
 			case "<", "<=", ">", ">=":
 				if left != "" && right != "" && !semaOrderablePrimitivePair(left, right) && (!isSemaNumericType(left) || !isSemaNumericType(right)) {
 					appendDiagnostic("ordering operator requires numeric operands")
