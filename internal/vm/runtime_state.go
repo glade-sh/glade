@@ -89,6 +89,8 @@ type VM struct {
 	currentNamespace        string
 	currentMethod           Method
 	currentTrigger          bool
+	eventBusTriggerContext  *eventBusTriggerContext
+	eventBusReplaySequence  int64
 	entrySharingMode        string
 	reflectionConstructType string
 	testContext             *TestContext
