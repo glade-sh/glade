@@ -2548,6 +2548,32 @@ func (vm *VM) sObjectFieldArg(receiverType string, value Value) (string, error) 
 	return "", fmt.Errorf("expected field name")
 }
 
+func (vm *VM) sObjectChildRelationshipNameForFieldToken(receiverType string, value Value) (string, bool) {
+	if vm == nil || vm.Org == nil || value.Kind != ValueObject || !isSObjectFieldTokenType(value.Type) {
+		return "", false
+	}
+	receiverObject, receiverOK := vm.describeObjectTokenName(receiverType)
+	objectValue, objectOK := value.Fields["object"]
+	fieldValue, fieldOK := value.Fields["field"]
+	if !receiverOK || !objectOK || objectValue.Kind != ValueString || !fieldOK || fieldValue.Kind != ValueString {
+		return "", false
+	}
+	_, definition, ok := vm.describeObjectDefinition(objectValue.Text)
+	if !ok {
+		return "", false
+	}
+	fieldName, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, fieldValue.Text)
+	if !ok {
+		return "", false
+	}
+	for _, relationship := range definition.Relations {
+		if strings.EqualFold(relationship.Field, fieldName) && relationshipTargetsObject(relationship, receiverObject) && relationship.ChildRelationship != "" {
+			return relationship.ChildRelationship, true
+		}
+	}
+	return "", false
+}
+
 var errSObjectFieldTokenWrongObject = errors.New("field token belongs to another SObject type")
 
 func (vm *VM) describeObjectTokenName(objectName string) (string, bool) {

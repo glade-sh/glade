@@ -902,7 +902,13 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("SObject.getSObjects expects relationship name String or Schema.SObjectField")
 		}
+		fieldTokenArg := args[0].Kind == ValueObject && isSObjectFieldTokenType(args[0].Type)
 		fieldArg, err := vm.sObjectFieldArg(receiver.Type, args[0])
+		if fieldTokenArg {
+			if relationshipName, ok := vm.sObjectChildRelationshipNameForFieldToken(receiver.Type, args[0]); ok {
+				fieldArg, err = relationshipName, nil
+			}
+		}
 		if err != nil {
 			return Null, true, fmt.Errorf("SObject.getSObjects expects relationship name String or Schema.SObjectField")
 		}
@@ -914,24 +920,39 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		}
 		if _, value, ok := vm.loadedChildRelationshipValue(receiver, field); ok {
 			if value.Kind == ValueNull {
+				if fieldTokenArg {
+					return Null, true, nil
+				}
 				return List(), true, nil
 			}
 			if value.Kind != ValueList {
 				return Null, true, fmt.Errorf("SObject.getSObjects field %s is not a List", field)
 			}
+			if fieldTokenArg && len(value.List) == 0 {
+				return Null, true, nil
+			}
 			return value, true, nil
 		}
 		if _, hasQueriedFields := receiver.Fields[sobjectQueriedFieldsField]; !hasQueriedFields {
 			if value, ok := vm.lazyChildRelationshipValue(receiver, field); ok {
+				if fieldTokenArg && value.Kind == ValueList && len(value.List) == 0 {
+					return Null, true, nil
+				}
 				return value, true, nil
 			}
 		}
 		_, value, ok := objectFieldValue(receiver, field)
 		if !ok || value.Kind == ValueNull {
+			if fieldTokenArg {
+				return Null, true, nil
+			}
 			return List(), true, nil
 		}
 		if value.Kind != ValueList {
 			return Null, true, fmt.Errorf("SObject.getSObjects field %s is not a List", field)
+		}
+		if fieldTokenArg && len(value.List) == 0 {
+			return Null, true, nil
 		}
 		return value, true, nil
 	default:
