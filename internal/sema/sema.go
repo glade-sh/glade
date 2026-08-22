@@ -3856,6 +3856,7 @@ var platformTypes = []string{
 	"WebServiceMock",
 	"InstallContext",
 	"InstallHandler",
+	"UninstallContext",
 	"Iterable",
 	"Iterator",
 	"JSONGenerator",

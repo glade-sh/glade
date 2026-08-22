@@ -228,6 +228,17 @@ func TestAPI67UninstallContextOrganizationIdPropertyIsRejected(t *testing.T) {
 	}
 }
 
+func TestAPI67ProjectUninstallContextOrganizationIdPropertyIsAccepted(t *testing.T) {
+	sources := map[string]string{
+		"UninstallContext.cls": `public class UninstallContext { public Id OrganizationId; }`,
+		"Probe.cls":            `public class Probe { public Id run(UninstallContext context) { return context.OrganizationId; } }`,
+	}
+	result := analyzeDeclarationProjectWithAPIVersion(t, sources, "67.0")
+	if result.HasErrors() {
+		t.Fatalf("API 67 rejected project-defined UninstallContext.OrganizationId property: %#v", result.Diagnostics)
+	}
+}
+
 func TestAPI67UninstallContextOrganizationIdMethodsAreAccepted(t *testing.T) {
 	source := `global class Probe implements UninstallHandler {
   global void onUninstall(UninstallContext context) {
