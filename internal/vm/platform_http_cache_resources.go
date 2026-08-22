@@ -12,6 +12,12 @@ import (
 )
 
 func callCookieMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if method == "equals" {
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("Cookie.equals expects 1 argument")
+		}
+		return Bool(receiver.Equal(args[0])), receiver, false, true, nil
+	}
 	if len(args) != 0 {
 		return Null, receiver, false, true, fmt.Errorf("Cookie.%s expects 0 arguments", method)
 	}
