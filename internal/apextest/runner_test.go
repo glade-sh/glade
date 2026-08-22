@@ -4601,6 +4601,47 @@ private class DispatchPatternsTest {
 	}
 }
 
+func TestRunCoversUserProvisioningInheritedRuntime(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/UserProvisioningInheritedRuntimeTest.cls"), `
+@IsTest
+private class UserProvisioningInheritedRuntimeTest {
+  private class ConcreteFlow extends UserProvisioning.FlowProvisionBase {
+    ConcreteFlow() { super(''); }
+    public Iterable<SObject> start(Database.BatchableContext context) { return new List<SObject>(); }
+    public void execute(Database.BatchableContext context, List<SObject> scope) {}
+    public void finish(Database.BatchableContext context) {}
+  }
+
+  private class ConcretePlugin extends UserProvisioning.UserProvisioningPlugin {
+    ConcretePlugin() { super(); }
+    public override Process.PluginDescribeResult buildDescribeCall() { return null; }
+    public override Process.PluginResult invoke(Process.PluginRequest request) { return null; }
+  }
+
+  @IsTest static void matchesSalesforce() {
+    UserProvisioning.FlowProvisionBase flow = new ConcreteFlow();
+    System.assertEquals(null, flow.getFlowName());
+    System.assertEquals(null, flow.getFlowNamespace());
+    System.assertEquals(false, flow.hasFlow());
+    System.assertEquals(false, flow.hasFlowOrApex());
+
+    UserProvisioning.UserProvisioningPlugin plugin = new ConcretePlugin();
+    System.assertEquals(null, plugin.buildDescribeCall());
+    System.assertNotEquals(null, plugin.describe());
+    System.assertEquals('ConcretePlugin', plugin.getPluginClassName());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	summary := run.Summary()
+	if summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v case = %#v problem = %#v", summary, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestRunCoversNestedServiceFactoryWithTypeMap(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

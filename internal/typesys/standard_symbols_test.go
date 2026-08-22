@@ -1309,15 +1309,28 @@ func TestUserProvisioningPluginOverlayIsAbstract(t *testing.T) {
 	if !containsStringFold(symbol.Modifiers, "abstract") {
 		t.Fatalf("UserProvisioningPlugin modifiers = %v, want abstract", symbol.Modifiers)
 	}
-	for _, member := range symbol.Members {
-		if member.Kind == apexast.DeclarationMethod && member.Name == "buildDescribeCall" {
-			if !containsStringFold(member.Modifiers, "abstract") {
-				t.Fatalf("buildDescribeCall modifiers = %v, want abstract", member.Modifiers)
+	for _, method := range []string{"buildDescribeCall", "invoke"} {
+		for _, member := range symbol.Members {
+			if member.Kind == apexast.DeclarationMethod && member.Name == method {
+				if !containsStringFold(member.Modifiers, "abstract") {
+					t.Fatalf("%s modifiers = %v, want abstract", method, member.Modifiers)
+				}
+				goto foundPluginMethod
 			}
-			return
 		}
+		t.Fatalf("%s method missing", method)
+	foundPluginMethod:
 	}
-	t.Fatal("buildDescribeCall method missing")
+}
+
+func TestUserProvisioningFlowProvisionBaseOverlayIsAbstract(t *testing.T) {
+	symbol := requireStandardSymbol(t, StandardPlatformSymbols(), "UserProvisioning.FlowProvisionBase")
+	if !containsStringFold(symbol.Modifiers, "abstract") {
+		t.Fatalf("FlowProvisionBase modifiers = %v, want abstract", symbol.Modifiers)
+	}
+	if !containsStringFold(symbol.Interfaces, "Database.Batchable<SObject>") {
+		t.Fatalf("FlowProvisionBase interfaces = %v, want Database.Batchable<SObject>", symbol.Interfaces)
+	}
 }
 
 func TestStandardPlatformSymbolsIncludeUserInfoStubMethodsAndFieldTokenProperties(t *testing.T) {
