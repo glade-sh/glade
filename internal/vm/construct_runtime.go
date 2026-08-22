@@ -103,6 +103,12 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 		if len(namedArgs) > 0 {
 			return Null, true, fmt.Errorf("List constructor does not accept named fields")
 		}
+		if !literalArgs && len(args) == 1 && args[0].Kind == ValueInt {
+			v, err := vm.constructArrayValue(typeName, args[0])
+			vm.markCollectionRefsEscaped(v)
+			vm.rememberLocalOnlyCollection(v)
+			return v, true, err
+		}
 		if !literalArgs && len(args) == 1 && args[0].Kind == ValueList {
 			if elementType, ok := collectionElementType(typeName); ok && collectionBase(elementType) != "" {
 				if element, err := vm.coerceAssignable(elementType, args[0]); err == nil {
