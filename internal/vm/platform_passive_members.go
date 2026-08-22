@@ -1003,7 +1003,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("InstallContext.installerId expects 0 arguments")
 			}
-			if value, ok := receiver.Fields["InstallerId"]; ok {
+			if value, ok := receiver.Fields["__installerId"]; ok {
 				return value, receiver, false, true, nil
 			}
 			return Null, receiver, false, true, nil

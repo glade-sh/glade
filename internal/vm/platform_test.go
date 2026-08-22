@@ -7845,6 +7845,7 @@ if (context.previousVersion() == null) {
 	System.assertEquals('1.47.0', context.previousVersion().toString());
 	System.assert(!context.isPush());
 	System.assertEquals(UserInfo.getUserId(), context.installerId());
+	System.assertEquals(null, context.InstallerId);
 }
 `)
 	if err != nil {
