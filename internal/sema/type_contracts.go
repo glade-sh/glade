@@ -21,6 +21,7 @@ var (
 
 func (a *Analyzer) checkSourceTypeContracts(index typesys.Index) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
+	seenSources := make(map[string]bool)
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) {
 			continue
@@ -34,6 +35,11 @@ func (a *Analyzer) checkSourceTypeContracts(index typesys.Index) []diagnostic.Di
 		if a.sources == nil {
 			continue
 		}
+		sourceKey := semaSourceCacheKey(typ.File, typ.Namespace, typ.SourceNamespaceRemaps)
+		if seenSources[sourceKey] {
+			continue
+		}
+		seenSources[sourceKey] = true
 		facts, ok := a.sources.factsForType(typ)
 		if !ok {
 			continue
