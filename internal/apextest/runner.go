@@ -2748,7 +2748,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 	if opts.LimitCapsSet {
 		machine.SetLimitCaps(opts.LimitCaps)
 	}
-	machine.SetOrg(&setupOrg)
+	machine.SetRuntimeTemplateOrg(&setupOrg)
 	machine.SetContext(ctx)
 	machine.EnableTestContext()
 	machine.SetCurrentPageURLNull()
@@ -2825,9 +2825,9 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 		org = cloneRuntimeOrgForClass(org, testCase.ClassName, "test", counters)
 	}
 	if journal != nil && !cloneOrg {
-		machine.SetOrg(journal.Org())
+		machine.SetRuntimeTemplateOrg(journal.Org())
 	} else {
-		machine.SetOrg(&org)
+		machine.SetRuntimeTemplateOrg(&org)
 	}
 	machine.SetIsolationJournal(journal)
 	machine.EnableTestContext()

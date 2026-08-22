@@ -1132,6 +1132,26 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 	}
 }
 
+// SetRuntimeTemplateOrg installs a fresh clone of the schema generation that
+// this VM was cloned from. All other org changes must use SetOrg.
+func (vm *VM) SetRuntimeTemplateOrg(org *storage.OrgState) {
+	stamp := runtimeSchemaStampHintForOrg(org)
+	if stamp == "" || stamp != vm.metadataCacheStamp {
+		vm.SetOrg(org)
+		return
+	}
+	vm.Org = org
+	if vm.soqlExecutionCache == nil {
+		vm.soqlExecutionCache = soql.NewExecutionCache()
+	}
+	if vm.Org != nil {
+		vm.Org.Now = func() time.Time { return vm.fakeNow }
+	}
+	if vm.testContext != nil && isPlaceholderCurrentUser(vm.testContext.CurrentUser) {
+		vm.testContext.CurrentUser = vm.defaultTestCurrentUser()
+	}
+}
+
 // PrimeMetadataSchema records the compact schema stamp for org without touching
 // the org or clearing caches. Clones may tentatively share the base cache graph,
 // but SetOrg always detaches it before installing mutable org state.
