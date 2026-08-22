@@ -39,11 +39,11 @@ func (a *Analyzer) checkSourceTypeContracts(index typesys.Index) []diagnostic.Di
 		if seenSources[sourceKey] {
 			continue
 		}
-		seenSources[sourceKey] = true
 		facts, ok := a.sources.factsForType(typ)
 		if !ok {
 			continue
 		}
+		seenSources[sourceKey] = true
 		source := facts.sourceText()
 		spans := facts.codeSpans()
 		for _, match := range typeContractRawCollectionConstructor.FindAllStringIndex(source, -1) {
