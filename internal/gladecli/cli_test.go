@@ -353,6 +353,8 @@ func TestUpdateInstallCommandQuotesSingleQuotes(t *testing.T) {
 func TestToolchainStatusJSONReportsMissingToolchain(t *testing.T) {
 	root := t.TempDir()
 	t.Chdir(root)
+	t.Setenv("GLADE_HOME", "")
+	t.Setenv("GLADE_ROOT", "")
 	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "xdg"))
 
 	var stdout, stderr bytes.Buffer
