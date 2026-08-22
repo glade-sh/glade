@@ -1158,10 +1158,10 @@ func TestBuildArtifactSemanticGateDoesNotReuseRestoredLegacyMetadataGeneration(t
 	helperPath := filepath.Join(root, "SemanticMetadataHelper.cls")
 	metadataPath := helperPath + "-meta.xml"
 	writeFile(t, helperPath, `public class SemanticMetadataHelper { public static Integer value() { return 1; } }`)
-	writeFile(t, metadataPath, `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	writeFile(t, metadataPath, `<ApexClass><apiVersion>65.0</apiVersion></ApexClass>`)
 	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{helperPath}}, gladeschema.Schema{})
 
-	writeFile(t, metadataPath, `<ApexClass><apiVersion>62.0</apiVersion></ApexClass>`)
+	writeFile(t, metadataPath, `<ApexClass><apiVersion>66.0</apiVersion></ApexClass>`)
 	legacySources := newSourceCache()
 	legacyGeneration, err := prepareRuntimeGeneration(index, nil, legacySources)
 	if err != nil {
@@ -1175,7 +1175,7 @@ func TestBuildArtifactSemanticGateDoesNotReuseRestoredLegacyMetadataGeneration(t
 		t.Fatalf("legacy semantic cache counters = %#v, want one miss", phases)
 	}
 
-	writeFile(t, metadataPath, `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	writeFile(t, metadataPath, `<ApexClass><apiVersion>65.0</apiVersion></ApexClass>`)
 	artifactSources := newSourceCache()
 	if err := artifactSources.seedBuildArtifacts(index, &artifacts); err != nil {
 		t.Fatal(err)
@@ -3448,24 +3448,24 @@ private class CacheExactTest {
 		{
 			name: "add Apex metadata sidecar",
 			mutate: func(t *testing.T, _ string, helperPath string) {
-				writeFile(t, helperPath+"-meta.xml", apexMeta("61.0"))
+				writeFile(t, helperPath+"-meta.xml", apexMeta("65.0"))
 			},
-			assert: assertAPIVersion("61.0"),
+			assert: assertAPIVersion("65.0"),
 		},
 		{
 			name: "edit Apex metadata sidecar",
 			setup: func(t *testing.T, _ string, helperPath string) {
-				writeFile(t, helperPath+"-meta.xml", apexMeta("61.0"))
+				writeFile(t, helperPath+"-meta.xml", apexMeta("65.0"))
 			},
 			mutate: func(t *testing.T, _ string, helperPath string) {
-				writeFile(t, helperPath+"-meta.xml", apexMeta("62.0"))
+				writeFile(t, helperPath+"-meta.xml", apexMeta("66.0"))
 			},
-			assert: assertAPIVersion("62.0"),
+			assert: assertAPIVersion("66.0"),
 		},
 		{
 			name: "delete Apex metadata sidecar",
 			setup: func(t *testing.T, _ string, helperPath string) {
-				writeFile(t, helperPath+"-meta.xml", apexMeta("61.0"))
+				writeFile(t, helperPath+"-meta.xml", apexMeta("65.0"))
 			},
 			mutate: func(t *testing.T, _ string, helperPath string) {
 				if err := os.Remove(helperPath + "-meta.xml"); err != nil {
@@ -4524,12 +4524,12 @@ public abstract class PrivateSelectorBase {
   String fieldListString() {
     return getSObjectFieldList();
   }
-  abstract String getSObjectFieldList();
+  protected abstract String getSObjectFieldList();
 }
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/PrivateSelectorChild.cls"), `
 public class PrivateSelectorChild extends PrivateSelectorBase {
-  private override String getSObjectFieldList() {
+  protected override String getSObjectFieldList() {
     return 'private-fields';
   }
 }
@@ -10223,11 +10223,11 @@ func TestOrgFromIndexIncludesGeneratedStandardSchema(t *testing.T) {
 	}
 }
 
-func TestOrgFromIndexUsesProjectSourceAPIVersion(t *testing.T) {
+func TestOrgFromIndexKeepsEndpointDefaultIndependentOfSourceVersion(t *testing.T) {
 	org := orgFromIndex(typesys.Index{Project: typesys.ProjectInfo{SourceAPIVersion: "67.0"}})
 
-	if org.APIVersion != "67.0" {
-		t.Fatalf("org API version = %q, want 67.0", org.APIVersion)
+	if org.APIVersion != storage.DefaultRESTAPIVersion {
+		t.Fatalf("org API version = %q, want %s", org.APIVersion, storage.DefaultRESTAPIVersion)
 	}
 }
 

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/glade-sh/glade/internal/apexversion"
 )
 
 type LimitMode string
@@ -14,25 +16,27 @@ const (
 )
 
 type Limits struct {
-	Queries             int `json:"queries"`
-	QueryRows           int `json:"queryRows"`
-	DMLStatements       int `json:"dmlStatements"`
-	DMLRows             int `json:"dmlRows"`
-	HeapSize            int `json:"heapSize"`
-	CPUTimeMS           int `json:"cpuTimeMs"`
-	Callouts            int `json:"callouts"`
-	AsyncJobs           int `json:"asyncJobs"`
-	FutureCalls         int `json:"futureCalls"`
-	QueueableJobs       int `json:"queueableJobs"`
-	BatchJobs           int `json:"batchJobs"`
-	ScheduledJobs       int `json:"scheduledJobs"`
-	EmailInvokes        int `json:"emailInvocations"`
-	SOSLQueries         int `json:"soslQueries"`
-	QueryLocatorRows    int `json:"queryLocatorRows"`
-	RunAs               int `json:"runAs"`
-	Savepoints          int `json:"savepoints"`
-	SavepointRollbacks  int `json:"savepointRollbacks"`
-	PublishImmediateDML int `json:"publishImmediateDml"`
+	Queries                  int `json:"queries"`
+	QueryRows                int `json:"queryRows"`
+	DMLStatements            int `json:"dmlStatements"`
+	DMLRows                  int `json:"dmlRows"`
+	HeapSize                 int `json:"heapSize"`
+	CPUTimeMS                int `json:"cpuTimeMs"`
+	Callouts                 int `json:"callouts"`
+	AsyncJobs                int `json:"asyncJobs"`
+	FutureCalls              int `json:"futureCalls"`
+	QueueableJobs            int `json:"queueableJobs"`
+	BatchJobs                int `json:"batchJobs"`
+	ScheduledJobs            int `json:"scheduledJobs"`
+	EmailInvokes             int `json:"emailInvocations"`
+	SOSLQueries              int `json:"soslQueries"`
+	QueryLocatorRows         int `json:"queryLocatorRows"`
+	ApexPaginationCursors    int `json:"apexPaginationCursors"`
+	ApexPaginationCursorRows int `json:"apexPaginationCursorRows"`
+	RunAs                    int `json:"runAs"`
+	Savepoints               int `json:"savepoints"`
+	SavepointRollbacks       int `json:"savepointRollbacks"`
+	PublishImmediateDML      int `json:"publishImmediateDml"`
 }
 
 type LimitCaps struct {
@@ -164,6 +168,12 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 	case "queryLocatorRows":
 		vm.limits.QueryLocatorRows += delta
 		return vm.checkLimit(name, vm.limits.QueryLocatorRows, vm.limitCaps.QueryLocatorRows)
+	case "apexPaginationCursors":
+		vm.limits.ApexPaginationCursors += delta
+		return vm.checkLimit(name, vm.limits.ApexPaginationCursors, 50)
+	case "apexPaginationCursorRows":
+		vm.limits.ApexPaginationCursorRows += delta
+		return vm.checkLimit(name, vm.limits.ApexPaginationCursorRows, 100000)
 	case "runAs":
 		vm.limits.RunAs += delta
 		return vm.checkLimit(name, vm.limits.RunAs, vm.limitCaps.RunAs)
@@ -319,16 +329,21 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limits.PublishImmediateDML)), true
 	case "getLimitPublishImmediateDML":
 		return Int(int64(vm.limitCaps.PublishImmediateDML)), true
-	case "getAggregateQueries", "getApexCursorRows", "getApexCursors", "getApexPaginationCursorRows",
-		"getApexPaginationCursors", "getDatabaseTime",
+	case "getApexPaginationCursorRows":
+		return Int(int64(vm.limits.ApexPaginationCursorRows)), true
+	case "getApexPaginationCursors":
+		return Int(int64(vm.limits.ApexPaginationCursors)), true
+	case "getAggregateQueries", "getApexCursorRows", "getApexCursors", "getDatabaseTime",
 		"getFetchCallsOnApexCursor", "getFieldSetsDescribes", "getFieldsDescribes",
 		"getFindSimilarCalls", "getMobilePushApexCalls", "getPicklistDescribes",
 		"getRecordTypesDescribes", "getScriptStatements":
 		return Int(0), true
 	case "getLimitAggregateQueries":
 		return Int(300), true
-	case "getLimitApexCursorRows", "getLimitApexPaginationCursorRows":
+	case "getLimitApexCursorRows":
 		return Int(10000), true
+	case "getLimitApexPaginationCursorRows":
+		return Int(100000), true
 	case "getLimitApexCursors", "getLimitApexPaginationCursors":
 		return Int(50), true
 	case "getLimitChildRelationshipsDescribes", "getLimitFieldSetsDescribes",
@@ -392,6 +407,12 @@ func (vm *VM) orgLimitValues() []Value {
 		{name: "HourlyTimeBasedWorkflow", used: 0, limit: 1000},
 		{name: "MassEmail", used: vm.limits.EmailInvokes, limit: vm.limitCaps.EmailInvokes},
 		{name: "SingleEmail", used: vm.limits.EmailInvokes, limit: vm.limitCaps.EmailInvokes},
+	}
+	if vm != nil && apexversion.AtLeast(vm.currentMethod.APIVersion, 67) {
+		specs = append(specs,
+			orgLimitSpec{name: "DailyAsyncApexElasticExecutions", used: vm.limits.AsyncJobs, limit: 2 * vm.limitCaps.AsyncJobs},
+			orgLimitSpec{name: "DailyAsyncApexProcessed", used: vm.limits.AsyncJobs, limit: vm.limitCaps.AsyncJobs},
+		)
 	}
 	values := make([]Value, 0, len(specs))
 	for _, spec := range specs {

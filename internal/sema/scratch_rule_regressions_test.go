@@ -160,7 +160,7 @@ func runScratchBackedRuleCases(t *testing.T, area string, ids ...string) {
 		seen[id] = true
 		t.Run(rule.ID, func(t *testing.T) {
 			result := analyzeScratchBackedRuleCase(t, rule)
-			gotReject := result.HasErrors()
+			gotReject := hasErrorOtherThan(result.Diagnostics, "GLADESEMA_VERSION")
 			wantReject := rule.Oracle == "reject"
 			if gotReject != wantReject {
 				t.Fatalf("API %d %s result rejected=%v, want %v; diagnostics=%#v", rule.APIVersion, rule.SourceKind, gotReject, wantReject, result.Diagnostics)

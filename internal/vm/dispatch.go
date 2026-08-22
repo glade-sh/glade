@@ -776,6 +776,11 @@ platformStaticCall:
 		cursor := Object(cursorType)
 		cursor.Fields["Records"] = value
 		cursor.Fields["Query"] = args[0]
+		if cursorType == "Database.PaginationCursor" {
+			if err := vm.incrementLimit("apexPaginationCursors", 1); err != nil {
+				return Null, err
+			}
+		}
 		return cursor, nil
 	case "Database.getCursorWithBinds", "Database.getPaginationCursorWithBinds":
 		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueMap {
@@ -792,6 +797,11 @@ platformStaticCall:
 		cursor := Object(cursorType)
 		cursor.Fields["Records"] = value
 		cursor.Fields["Query"] = args[0]
+		if cursorType == "Database.PaginationCursor" {
+			if err := vm.incrementLimit("apexPaginationCursors", 1); err != nil {
+				return Null, err
+			}
+		}
 		return cursor, nil
 	case "Security.stripInaccessible":
 		if len(args) < 2 || len(args) > 4 {
@@ -1742,15 +1752,15 @@ platformStaticCall:
 			if err != nil {
 				return Null, err
 			}
-				managed := managedIV([]byte(key), []byte(clearText))
-				const managedIVSize = 12
-				iv := managed[:managedIVSize]
+			managed := managedIV([]byte(key), []byte(clearText))
+			const managedIVSize = 12
+			iv := managed[:managedIVSize]
 			cipherText, err := encryptAESGCM(args[0].Text, []byte(key), iv, []byte(clearText), []byte(additionalData))
 			if err != nil {
 				return Null, newExceptionError("System.InvalidParameterValueException", err.Error())
 			}
 			envelope := make([]byte, 1+len(iv)+len(cipherText))
-				envelope[0] = managedIVSize
+			envelope[0] = managedIVSize
 			copy(envelope[1:], iv)
 			copy(envelope[1+len(iv):], cipherText)
 			return platformScalar("Blob", string(envelope)), nil

@@ -15,7 +15,7 @@ func TestLoadSFDXProject(t *testing.T) {
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{
   "packageDirectories": [{"path":"force-app","default":true}],
   "namespace": "pkg",
-  "sourceApiVersion": "61.0"
+  "sourceApiVersion": "65.0"
 }`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/Hello.cls"), "public class Hello {}")
 	writeFile(t, filepath.Join(root, "force-app/main/triggers/Hello.trigger"), "trigger Hello on Account (before insert) {}")
@@ -70,7 +70,7 @@ func TestLoadSFDXProject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.Namespace != "pkg" || p.SourceAPIVersion != "61.0" {
+	if p.Namespace != "pkg" || p.SourceAPIVersion != "65.0" {
 		t.Fatalf("project metadata = %#v", p)
 	}
 	if len(p.ApexFiles) != 2 || len(p.ObjectFiles) != 2 || len(p.FieldFiles) != 1 || len(p.FieldSetFiles) != 1 || len(p.RecordTypeFiles) != 1 || len(p.ValidationRuleFiles) != 1 {
@@ -96,6 +96,32 @@ func TestLoadSFDXProject(t *testing.T) {
 	}
 	if len(p.AuraFiles) != 2 || len(p.LWCFiles) != 1 {
 		t.Fatalf("unexpected UI controller file counts: %#v", p)
+	}
+}
+
+func TestLoadResolvesSupportedSourceAPIVersion(t *testing.T) {
+	for _, test := range []struct {
+		raw, want string
+		wantError bool
+	}{
+		{raw: "", want: "65.0"},
+		{raw: "67.0", want: "67.0"},
+		{raw: "64.0", wantError: true},
+	} {
+		t.Run(test.raw, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"`+test.raw+`"}`)
+			got, err := Load(root)
+			if test.wantError {
+				if err == nil || !strings.Contains(err.Error(), test.raw) {
+					t.Fatalf("Load error = %v", err)
+				}
+				return
+			}
+			if err != nil || got.SourceAPIVersion != test.want {
+				t.Fatalf("Load = %q, %v; want %q", got.SourceAPIVersion, err, test.want)
+			}
+		})
 	}
 }
 

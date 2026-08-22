@@ -9,7 +9,7 @@ import (
 
 func TestDetectFFLibInventoryDetectsDomainSelectorServiceAndFactory(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, root, "sfdx-project.json", `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, root, "sfdx-project.json", `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	classes := filepath.Join(root, "force-app", "main", "default", "classes")
 	writeTestFile(t, classes, "AccountDomain.cls", `public class AccountDomain extends fflib_SObjectDomain {}`)
 	writeTestFile(t, classes, "AccountSelector.cls", `public class AccountSelector implements fflib_ISObjectSelector {}`)

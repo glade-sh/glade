@@ -641,7 +641,7 @@ func TestRunTestAutomaticHistoryOnlyPreservesNormalRun(t *testing.T) {
 func writePerfCheckProject(t *testing.T, diagnostics bool) string {
 	t.Helper()
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"64.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"66.0"}`)
 	body := `public class PerfCheck { public Integer value() { return 42; } }`
 	if diagnostics {
 		body = `public class PerfCheck { public MissingType value() { return null; } }`
@@ -653,7 +653,7 @@ func writePerfCheckProject(t *testing.T, diagnostics bool) string {
 func writePerfTestProject(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"64.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"66.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/PerfWiringTest.cls"), `
 @isTest
 private class PerfWiringTest {

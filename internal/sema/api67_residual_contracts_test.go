@@ -8,7 +8,7 @@ import (
 )
 
 func TestAPI67ResidualRejectsTimeZoneDisplayNameBooleanByCall(t *testing.T) {
-	result := AnalyzeAnonymous(typesys.Index{}, `TimeZone zone = TimeZone.getTimeZone('UTC'); zone.getDisplayName(false);`)
+	result := AnalyzeAnonymous(typesys.Index{}, `TimeZone zone = TimeZone.getTimeZone('UTC'); zone.getDisplayName(false);`, "67.0")
 	for _, diagnostic := range result.Diagnostics {
 		if strings.Contains(diagnostic.Message, "getDisplayName") {
 			return
@@ -30,7 +30,7 @@ func TestAPI67CompileShapeRejectsAbstractAndVoidAssignmentBatch(t *testing.T) {
 	}
 	for name, source := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := AnalyzeAnonymous(typesys.Index{}, source)
+			result := AnalyzeAnonymous(typesys.Index{}, source, "67.0")
 			if len(result.Diagnostics) == 0 {
 				t.Fatalf("accepted Salesforce-rejected compile-shape probe: %s", source)
 			}
@@ -45,7 +45,7 @@ func TestAPI67CompileShapePreservesAllowedConstructorNeighbors(t *testing.T) {
 		"Auth.VerificationResult documented constructor": `Auth.VerificationResult value = new Auth.VerificationResult(null, true, 'ok');`,
 	} {
 		t.Run(name, func(t *testing.T) {
-			result := AnalyzeAnonymous(typesys.Index{}, source)
+			result := AnalyzeAnonymous(typesys.Index{}, source, "67.0")
 			if result.HasErrors() {
 				t.Fatalf("rejected allowed Salesforce constructor: %#v", result.Diagnostics)
 			}
@@ -70,7 +70,7 @@ func TestAPI67CompileShapeRejectsInternalNoArgConstructors(t *testing.T) {
 	}
 	for name, source := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := AnalyzeAnonymous(typesys.Index{}, source)
+			result := AnalyzeAnonymous(typesys.Index{}, source, "67.0")
 			if len(result.Diagnostics) == 0 {
 				t.Fatalf("accepted Salesforce-rejected internal constructor: %s", source)
 			}
@@ -93,7 +93,7 @@ func TestAPI67CompileShapeRejectsNonConstructibleAndHiddenConstructors(t *testin
 	}
 	for name, source := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := AnalyzeAnonymous(typesys.Index{}, source)
+			result := AnalyzeAnonymous(typesys.Index{}, source, "67.0")
 			if len(result.Diagnostics) == 0 {
 				t.Fatalf("accepted Salesforce-rejected nonconstructible constructor: %s", source)
 			}
@@ -112,7 +112,7 @@ func TestAPI67CompileShapeRejectsHiddenAuthCallsAndContinuationState(t *testing.
 	}
 	for name, source := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := AnalyzeAnonymous(typesys.Index{}, source)
+			result := AnalyzeAnonymous(typesys.Index{}, source, "67.0")
 			if len(result.Diagnostics) == 0 {
 				t.Fatalf("accepted Salesforce-rejected hidden member: %s", source)
 			}
@@ -169,7 +169,7 @@ func TestAPI67ResidualRejectsAcquiredNonSalesforceSurfaces(t *testing.T) {
 	}
 	for name, source := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := AnalyzeAnonymous(typesys.Index{}, source)
+			result := AnalyzeAnonymous(typesys.Index{}, source, "67.0")
 			if len(result.Diagnostics) == 0 {
 				t.Fatalf("accepted API 67-rejected source: %s", source)
 			}
@@ -195,7 +195,7 @@ func TestAPI67ResidualPreservesCanonicalSurfaces(t *testing.T) {
 		"event bus object callback access":  `Database.SaveResult result = EventBus.publishWithAccessLevel(new Account(Name = 'a'), null, AccessLevel.USER_MODE);`,
 	} {
 		t.Run(name, func(t *testing.T) {
-			result := AnalyzeAnonymous(typesys.Index{}, source)
+			result := AnalyzeAnonymous(typesys.Index{}, source, "67.0")
 			if result.HasErrors() {
 				t.Fatalf("rejected canonical API source: %#v", result.Diagnostics)
 			}
@@ -206,7 +206,7 @@ func TestAPI67ResidualPreservesCanonicalSurfaces(t *testing.T) {
 func TestAPI67ResidualRejectsRemovedSiteURLHelpers(t *testing.T) {
 	for _, method := range []string{"getCurrentSiteUrl", "getCustomWebAddress", "getPrefix"} {
 		t.Run(method, func(t *testing.T) {
-			result := AnalyzeAnonymous(typesys.Index{}, "Site."+method+"();")
+			result := AnalyzeAnonymous(typesys.Index{}, "Site."+method+"();", "67.0")
 			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA028") {
 				t.Fatalf("accepted removed Site.%s: %#v", method, result.Diagnostics)
 			}
@@ -223,7 +223,7 @@ func TestAPI67ResidualRejectsInvalidDatabaseAllowCalloutsType(t *testing.T) {
 		`Database.deleteAsync(new Account(Id = '001000000000001AAA'), Database.AllowCallouts.ALLOW, AccessLevel.SYSTEM_MODE);`,
 		`Database.deleteAsync(new List<Account>{new Account(Id = '001000000000001AAA')}, Database.AllowCallouts.ALLOW, AccessLevel.SYSTEM_MODE);`,
 	} {
-		result := AnalyzeAnonymous(typesys.Index{}, source)
+		result := AnalyzeAnonymous(typesys.Index{}, source, "67.0")
 		if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA028") {
 			t.Fatalf("accepted invalid Database.AllowCallouts type in %q: %#v", source, result.Diagnostics)
 		}
@@ -242,7 +242,7 @@ func TestCB68RejectsThreeAcquiredNonSurfaces(t *testing.T) {
 	}
 	for name, source := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := AnalyzeAnonymous(typesys.Index{}, source)
+			result := AnalyzeAnonymous(typesys.Index{}, source, "67.0")
 			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA028") {
 				t.Fatalf("accepted acquired non-Salesforce surface %q: %#v", source, result.Diagnostics)
 			}
@@ -257,7 +257,7 @@ func TestCB68PreservesNeighboringValidPlatformSurfaces(t *testing.T) {
 		"ConnectApi real type":                `ConnectApi.OrganizationSettings settings = ConnectApi.Organization.getSettings();`,
 	} {
 		t.Run(name, func(t *testing.T) {
-			result := AnalyzeAnonymous(typesys.Index{}, source)
+			result := AnalyzeAnonymous(typesys.Index{}, source, "67.0")
 			if result.HasErrors() {
 				t.Fatalf("rejected valid neighboring platform surface: %#v", result.Diagnostics)
 			}

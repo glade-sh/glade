@@ -1,11 +1,13 @@
 package gladecli
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -27,5 +29,17 @@ func TestOrgStateFromIndexReturnsCustomMetadataApplyError(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "Missing__c") {
 		t.Fatalf("orgStateFromIndex() error = %v, want metadata object detail", err)
+	}
+}
+
+func TestProjectBindingKeepsSourceVersionIndependentOfEndpoint(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	org, binding, ok, err := projectOrgAndDBBinding(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok || org.APIVersion != storage.DefaultRESTAPIVersion || binding.SourceAPIVersion != "67.0" {
+		t.Fatalf("ok=%v org endpoint=%q binding source=%q", ok, org.APIVersion, binding.SourceAPIVersion)
 	}
 }

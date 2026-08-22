@@ -61,7 +61,7 @@ func TestNullPointerZeroConstructorRemainsAcceptedAtAPIVersions40And41(t *testin
 			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
 				"Probe.cls": `public class Probe { public void run() { throw new NullPointerException(); } }`,
 			}, apiVersion)
-			if result.HasErrors() {
+			if hasErrorOtherThan(result.Diagnostics, "GLADESEMA_VERSION") {
 				t.Fatalf("API %s rejected throw new NullPointerException(): %#v", apiVersion, result.Diagnostics)
 			}
 		})

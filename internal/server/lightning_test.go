@@ -264,7 +264,7 @@ func TestVisualforceIncludeLightningWithoutToolchainShowsLocalNotice(t *testing.
 	t.Cleanup(func() { ensureLightningRoot = previous })
 
 	root := t.TempDir()
-	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/pages/WidgetHost.page"), `<apex:page><apex:includeLightning/><div id="probe">page body</div></apex:page>`)
 	p, err := project.Load(root)
 	if err != nil {
@@ -305,7 +305,7 @@ func TestLightningModulesServesSiblingModuleWithoutJSExtension(t *testing.T) {
 import { labels } from './labels';
 export default class Widget extends LightningElement { label = labels; }`)
 	writeLightningFixtureFile(t, filepath.Join(bundleDir, "labels.js"), `export const labels = { title: "Hello" };`)
-	writeLightningFixtureFile(t, filepath.Join(bundleDir, "widget.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><isExposed>true</isExposed></LightningComponentBundle>`)
+	writeLightningFixtureFile(t, filepath.Join(bundleDir, "widget.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><isExposed>true</isExposed></LightningComponentBundle>`)
 
 	p, err := project.Load(fixtureDir)
 	if err != nil {
@@ -631,7 +631,7 @@ func TestLightningLabelShimFallsBackForUnknownPlatformLabel(t *testing.T) {
 
 func TestLightningLabelShimUsesSourceLabelsWhenOrgMissingLabel(t *testing.T) {
 	root := t.TempDir()
-	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"62.0"}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"66.0"}`)
 	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/translations/en_US.translation-meta.xml"), `<Translations xmlns="http://soap.sforce.com/2006/04/metadata">
   <customLabels>
     <name>lightning_LightningRecordForm_save</name>
@@ -1959,7 +1959,7 @@ func TestLightningWireGetRecordCreateDefaultsUsesSourceLayoutFields(t *testing.T
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(root) })
-	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/layouts/Account-Account Layout.layout-meta.xml"), `<Layout>
 		<layoutSections>
 			<label>Account Information</label>
@@ -2055,7 +2055,7 @@ func TestLightningWireGetLayoutReturnsSourceLayout(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(root) })
-	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/layouts/Account-Account Layout.layout-meta.xml"), `<Layout>
 		<layoutSections>
 			<label>Account Information</label>

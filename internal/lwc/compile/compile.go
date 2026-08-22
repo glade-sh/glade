@@ -8,7 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/gladehome"
+	"github.com/glade-sh/glade/internal/lwc"
 	"github.com/glade-sh/glade/internal/project"
 )
 
@@ -30,12 +32,14 @@ type Manifest struct {
 }
 
 type compileConfig struct {
-	ProjectRoot  string   `json:"projectRoot"`
-	OutDir       string   `json:"outDir"`
-	Namespace    string   `json:"namespace"`
-	LWCFiles     []string `json:"lwcFiles"`
-	LWCHTMLFiles []string `json:"lwcHtmlFiles"`
-	LWCMetaFiles []string `json:"lwcMetaFiles"`
+	ProjectRoot           string                       `json:"projectRoot"`
+	OutDir                string                       `json:"outDir"`
+	Namespace             string                       `json:"namespace"`
+	LWCFiles              []string                     `json:"lwcFiles"`
+	LWCHTMLFiles          []string                     `json:"lwcHtmlFiles"`
+	LWCMetaFiles          []string                     `json:"lwcMetaFiles"`
+	LWCAPIVersions        map[string]int               `json:"lwcApiVersions"`
+	LWCModuleAvailability map[string]apexversion.Range `json:"lwcModuleAvailability"`
 }
 
 type compileResult struct {
@@ -78,13 +82,9 @@ func Compile(p project.Project, opts Options) (Manifest, error) {
 	if err != nil {
 		return Manifest{}, err
 	}
-	cfg := compileConfig{
-		ProjectRoot:  projectRoot,
-		OutDir:       outDir,
-		Namespace:    namespace,
-		LWCFiles:     relativize(projectRoot, p.LWCFiles),
-		LWCHTMLFiles: relativize(projectRoot, p.LWCHTMLFiles),
-		LWCMetaFiles: relativize(projectRoot, p.LWCMetaFiles),
+	cfg, err := buildCompileConfig(p, projectRoot, outDir, namespace)
+	if err != nil {
+		return Manifest{}, err
 	}
 	payload, err := json.Marshal(cfg)
 	if err != nil {
@@ -108,6 +108,58 @@ func Compile(p project.Project, opts Options) (Manifest, error) {
 		result.Modules = map[string]ModuleEntry{}
 	}
 	return Manifest{Modules: result.Modules, OutDir: outDir}, nil
+}
+
+func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string) (compileConfig, error) {
+	versions := make(map[string]int, len(p.LWCMetaFiles))
+	roots := make([]string, 0, len(p.LWCMetaFiles))
+	for _, metaPath := range p.LWCMetaFiles {
+		root := filepath.Clean(filepath.Dir(metaPath))
+		relative, err := filepath.Rel(projectRoot, root)
+		if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+			return compileConfig{}, fmt.Errorf("LWC metadata escapes project root: %s", metaPath)
+		}
+		key := filepath.ToSlash(relative)
+		if _, exists := versions[key]; exists {
+			return compileConfig{}, fmt.Errorf("multiple LWC metadata files for bundle %s", key)
+		}
+		meta, err := lwc.ParseComponentMeta(metaPath)
+		if err != nil {
+			return compileConfig{}, err
+		}
+		if strings.TrimSpace(meta.APIVersion) == "" {
+			return compileConfig{}, fmt.Errorf("missing component API version: %s", filepath.ToSlash(metaPath))
+		}
+		resolved, err := apexversion.ResolveSource(meta.APIVersion)
+		if err != nil {
+			return compileConfig{}, fmt.Errorf("%s: %w", filepath.ToSlash(metaPath), err)
+		}
+		major, _ := apexversion.Major(resolved)
+		versions[key] = major
+		roots = append(roots, root)
+	}
+	for _, sourcePath := range append(append([]string{}, p.LWCFiles...), p.LWCHTMLFiles...) {
+		matches := 0
+		for _, root := range roots {
+			relative, err := filepath.Rel(root, sourcePath)
+			if err == nil && relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+				matches++
+			}
+		}
+		if matches != 1 {
+			return compileConfig{}, fmt.Errorf("LWC source %s belongs to %d metadata bundles", filepath.ToSlash(sourcePath), matches)
+		}
+	}
+	return compileConfig{
+		ProjectRoot:           projectRoot,
+		OutDir:                outDir,
+		Namespace:             namespace,
+		LWCFiles:              relativize(projectRoot, p.LWCFiles),
+		LWCHTMLFiles:          relativize(projectRoot, p.LWCHTMLFiles),
+		LWCMetaFiles:          relativize(projectRoot, p.LWCMetaFiles),
+		LWCAPIVersions:        versions,
+		LWCModuleAvailability: generatedLWCModuleAvailability,
+	}, nil
 }
 
 // FindRepoRoot returns the glade source checkout (for testdata and development files).

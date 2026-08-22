@@ -8,6 +8,7 @@ const defaultToolchainDir = path.dirname(fileURLToPath(import.meta.url));
 const toolchainDir = process.env.GLADE_LWC_TOOLCHAIN_DIR || defaultToolchainDir;
 const requireFromToolchain = createRequire(path.join(toolchainDir, "compile.mjs"));
 const { transformSync } = requireFromToolchain("@lwc/compiler");
+const { parse } = requireFromToolchain("@babel/parser");
 
 function readStdin() {
   return new Promise((resolve, reject) => {
@@ -36,12 +37,25 @@ function writeCompiled(outFile, code) {
   fs.writeFileSync(outFile, code, "utf8");
 }
 
-function transformOptions(namespace, name) {
+function transformOptions(namespace, name, apiVersion) {
   return {
     namespace,
     name,
+    apiVersion,
     enableLwcOn: true,
+    experimentalComplexExpressions: apiVersion >= 66,
   };
+}
+
+function transformTemplate(source, filename, namespace, name, apiVersion) {
+  const result = transformSync(source, filename, transformOptions(namespace, name, apiVersion));
+  const unsupportedDetailsName = result.warnings?.find(
+    (warning) => warning.code === 1057 && warning.message.includes("name is not valid attribute for details")
+  );
+  if (apiVersion < 67 && unsupportedDetailsName) {
+    throw new Error(unsupportedDetailsName.message);
+  }
+  return result;
 }
 
 function rewriteStylesheetImports(code, bundleName) {
@@ -60,15 +74,16 @@ function rewriteStylesheetImports(code, bundleName) {
     );
 }
 
-function compileBundle(bundleDir, bundleName, namespace, outDir) {
+function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, moduleAvailability) {
   const jsPath = path.join(bundleDir, `${bundleName}.js`);
   const htmlPath = path.join(bundleDir, `${bundleName}.html`);
   const cssPath = path.join(bundleDir, `${bundleName}.css`);
   if (!fs.existsSync(jsPath)) {
     return null;
   }
+  preflightBundleImports(bundleDir, apiVersion, moduleAvailability);
   if (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath)) {
-    return compileUtilityModule(bundleDir, bundleName, namespace, outDir);
+    return compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion);
   }
 
   const moduleKey = `${namespace}/${bundleName}`;
@@ -77,7 +92,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir) {
 
   {
     const htmlSource = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, "utf8") : "<template></template>";
-    const htmlResult = transformSync(htmlSource, htmlPath, transformOptions(namespace, bundleName));
+    const htmlResult = transformTemplate(htmlSource, htmlPath, namespace, bundleName, apiVersion);
     writeCompiled(
       path.join(bundleOut, `${bundleName}.html.js`),
       rewriteStylesheetImports(htmlResult.code, bundleName)
@@ -86,7 +101,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir) {
 
   if (fs.existsSync(cssPath)) {
     const cssSource = fs.readFileSync(cssPath, "utf8");
-    const cssResult = transformSync(cssSource, cssPath, transformOptions(namespace, bundleName));
+    const cssResult = transformSync(cssSource, cssPath, transformOptions(namespace, bundleName, apiVersion));
     writeCompiled(path.join(bundleOut, `${bundleName}.css.js`), cssResult.code);
     writeCompiled(
       path.join(bundleOut, `${bundleName}.scoped.css.js`),
@@ -101,13 +116,13 @@ function compileBundle(bundleDir, bundleName, namespace, outDir) {
   }
 
   const jsSource = fs.readFileSync(jsPath, "utf8");
-  const jsResult = transformSync(jsSource, jsPath, transformOptions(namespace, bundleName));
+  const jsResult = transformSync(jsSource, jsPath, transformOptions(namespace, bundleName, apiVersion));
   const jsCode = rewriteStylesheetImports(jsResult.code, bundleName);
 
   const entryFile = path.join(bundleOut, `${bundleName}.js`);
   writeCompiled(entryFile, jsCode);
   compileSiblingModules(bundleDir, bundleName, bundleOut);
-  compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut);
+  compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion);
 
   return {
     qualified: `${namespace}:${bundleName}`,
@@ -117,7 +132,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir) {
   };
 }
 
-function compileUtilityModule(bundleDir, bundleName, namespace, outDir) {
+function compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion) {
   const jsPath = path.join(bundleDir, `${bundleName}.js`);
   const moduleKey = `${namespace}/${bundleName}`;
   const bundleOut = path.join(outDir, moduleKey);
@@ -126,7 +141,7 @@ function compileUtilityModule(bundleDir, bundleName, namespace, outDir) {
   const entryFile = path.join(bundleOut, `${bundleName}.js`);
   writeCompiled(entryFile, fs.readFileSync(jsPath, "utf8"));
   compileSiblingModules(bundleDir, bundleName, bundleOut);
-  compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut);
+  compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion);
 
   return {
     qualified: `${namespace}:${bundleName}`,
@@ -155,7 +170,7 @@ function compileSiblingModules(bundleDir, bundleName, bundleOut) {
   });
 }
 
-function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut) {
+function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion) {
   walkBundleFiles(bundleDir, (sourcePath) => {
     const rel = path.relative(bundleDir, sourcePath);
     if (rel === `${bundleName}.html`) {
@@ -166,7 +181,7 @@ function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bund
     }
     const templateName = path.basename(rel, ".html");
     const htmlSource = fs.readFileSync(sourcePath, "utf8");
-    const htmlResult = transformSync(htmlSource, sourcePath, transformOptions(namespace, templateName));
+    const htmlResult = transformTemplate(htmlSource, sourcePath, namespace, templateName, apiVersion);
     writeCompiled(
       path.join(bundleOut, `${rel}.js`),
       rewriteTemplateRelativeImports(htmlResult.code)
@@ -174,7 +189,7 @@ function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bund
 
     const cssPath = sourcePath.slice(0, -".html".length) + ".css";
     if (fs.existsSync(cssPath)) {
-      compileCSSModule(cssPath, templateName, namespace, bundleDir, bundleOut);
+      compileCSSModule(cssPath, templateName, namespace, bundleDir, bundleOut, apiVersion);
     } else {
       writeCompiled(
         path.join(bundleOut, `${path.relative(bundleDir, cssPath)}.js`),
@@ -189,11 +204,56 @@ function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bund
   });
 }
 
-function compileCSSModule(cssPath, name, namespace, bundleDir, bundleOut) {
+function compileCSSModule(cssPath, name, namespace, bundleDir, bundleOut, apiVersion) {
   const cssSource = fs.readFileSync(cssPath, "utf8");
-  const cssResult = transformSync(cssSource, cssPath, transformOptions(namespace, name));
+  const cssResult = transformSync(cssSource, cssPath, transformOptions(namespace, name, apiVersion));
   const rel = path.relative(bundleDir, cssPath);
   writeCompiled(path.join(bundleOut, `${rel}.js`), cssResult.code);
+}
+
+function preflightBundleImports(bundleDir, apiVersion, availability) {
+  walkBundleFiles(bundleDir, (sourcePath) => {
+    if (!sourcePath.endsWith(".js")) {
+      return;
+    }
+    const source = fs.readFileSync(sourcePath, "utf8");
+    const ast = parse(source, {
+      sourceType: "module",
+      plugins: ["decorators-legacy", "classProperties", "classPrivateProperties", "classPrivateMethods"],
+    });
+    walkAST(ast, (node) => {
+      let specifier = null;
+      if ((node.type === "ImportDeclaration" || node.type === "ExportNamedDeclaration" || node.type === "ExportAllDeclaration") && node.source?.type === "StringLiteral") {
+        specifier = node.source.value;
+      } else if (node.type === "CallExpression" && node.callee?.type === "Import" && node.arguments?.[0]?.type === "StringLiteral") {
+        specifier = node.arguments[0].value;
+      } else if (node.type === "ImportExpression" && node.source?.type === "StringLiteral") {
+        specifier = node.source.value;
+      }
+      const range = specifier && availability?.[specifier];
+      if (!range) {
+        return;
+      }
+      if (range.since && apiVersion < range.since) {
+        throw new Error(`LWC module "${specifier}" requires API version ${range.since}.0 or later; bundle uses ${apiVersion}.0`);
+      }
+      if (range.until && apiVersion >= range.until) {
+        throw new Error(`LWC module "${specifier}" is unavailable at API version ${apiVersion}.0`);
+      }
+    });
+  });
+}
+
+function walkAST(value, visit) {
+  if (!value || typeof value !== "object") {
+    return;
+  }
+  if (typeof value.type === "string") {
+    visit(value);
+  }
+  for (const child of Array.isArray(value) ? value : Object.values(value)) {
+    walkAST(child, visit);
+  }
 }
 
 function rewriteTemplateRelativeImports(code) {
@@ -248,7 +308,12 @@ async function main() {
   fs.mkdirSync(outDir, { recursive: true });
   for (const bundleDir of lwcRoots) {
     const bundleName = path.basename(bundleDir);
-    const entry = compileBundle(bundleDir, bundleName, namespace, outDir);
+    const bundleKey = path.relative(projectRoot, bundleDir).split(path.sep).join("/");
+    const apiVersion = config.lwcApiVersions?.[bundleKey];
+    if (!Number.isInteger(apiVersion)) {
+      throw new Error(`missing component API version for bundle ${bundleKey}`);
+    }
+    const entry = compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, config.lwcModuleAvailability || {});
     if (entry) {
       modules[entry.qualified] = {
         moduleKey: entry.moduleKey,

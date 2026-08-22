@@ -88,7 +88,7 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 	case len(parts) >= 2 && parts[0] == "glade":
 		s.handleToolingGladeCodeIntel(w, r, parts[1:])
 	case len(parts) == 1 && parts[0] == "executeAnonymous":
-		s.handleExecuteAnonymous(w, r)
+		s.handleExecuteAnonymous(w, r, version)
 	case len(parts) == 1 && parts[0] == "query":
 		s.handleToolingQuery(w, r, version, false)
 	case len(parts) == 1 && parts[0] == "queryAll":
@@ -117,6 +117,7 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 			return
 		}
 		object, ok := s.Source.ToolingOrg.Objects[parts[1]]
+		ok = ok && toolingObjectAvailable(version, parts[1])
 		if !ok {
 			if isToolingMetadataObject(parts[1]) {
 				writeSalesforceError(w, errUnsupportedFeature, "Tooling sObject describe for "+parts[1]+" is not implemented in the local server")
@@ -126,14 +127,14 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 			return
 		}
 		writeJSON(w, http.StatusOK, toolingDescribePayload(object.Definition))
-	case len(parts) == 2 && parts[0] == "sobjects" && s.isModeledToolingObject(parts[1]):
+	case len(parts) == 2 && parts[0] == "sobjects" && s.isModeledToolingObject(version, parts[1]):
 		if r.Method != http.MethodGet {
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
 		object := s.Source.ToolingOrg.Objects[parts[1]]
 		writeJSON(w, http.StatusOK, toolingObjectResourcePayload(object.Definition, version))
-	case len(parts) == 3 && parts[0] == "sobjects" && s.isModeledToolingObject(parts[1]):
+	case len(parts) == 3 && parts[0] == "sobjects" && s.isModeledToolingObject(version, parts[1]):
 		if r.Method != http.MethodGet {
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
@@ -168,12 +169,17 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 	}
 }
 
-func (s *Server) isModeledToolingObject(name string) bool {
+func (s *Server) isModeledToolingObject(version, name string) bool {
 	if s.Source.ToolingOrg.Objects == nil {
 		return false
 	}
 	_, ok := s.Source.ToolingOrg.Objects[name]
-	return ok
+	return ok && toolingObjectAvailable(version, name)
+}
+
+func toolingObjectAvailable(version, name string) bool {
+	rng, versioned := generatedToolingObjectAvailability[name]
+	return !versioned || rng.Allows(storage.NormalizeRESTAPIVersion(version))
 }
 
 func (s *Server) handleToolingQuery(w http.ResponseWriter, r *http.Request, version string, allRows bool) {
@@ -187,7 +193,7 @@ func (s *Server) handleToolingQuery(w http.ResponseWriter, r *http.Request, vers
 		writeSalesforceError(w, errMalformedQuery, err.Error())
 		return
 	}
-	if !s.isModeledToolingObject(query.Object) {
+	if !s.isModeledToolingObject(version, query.Object) {
 		if _, ok := storage.ResolveObjectName(*s.Org, query.Object); ok || isToolingLocalSchemaQueryObject(query.Object) {
 			s.handleQuery(w, r, version, "tooling/query", allRows)
 			return
@@ -227,6 +233,9 @@ func (s *Server) toolingSObjectsPayload(version string) map[string]any {
 	sort.Strings(names)
 	objects := make([]map[string]any, 0, len(names))
 	for _, name := range names {
+		if !toolingObjectAvailable(version, name) {
+			continue
+		}
 		def := s.Source.ToolingOrg.Objects[name].Definition
 		objects = append(objects, map[string]any{
 			"name":         name,

@@ -1059,9 +1059,9 @@ func TestWatchIndexStateLifecycleMatchesFreshLoad(t *testing.T) {
 	manifestPath := filepath.Join(root, "sfdx-project.json")
 	configPath := filepath.Join(root, "glade.yml")
 	dependencyRoot := filepath.Join(root, "deps", "stage")
-	writeTestFile(t, manifestPath, `{"namespace":"localpkg","sourceApiVersion":"63.0","packageDirectories":[{"path":"force-app","default":true},{"path":"packages/extra"}]}`)
+	writeTestFile(t, manifestPath, `{"namespace":"localpkg","sourceApiVersion":"65.0","packageDirectories":[{"path":"force-app","default":true},{"path":"packages/extra"}]}`)
 	writeTestFile(t, configPath, "project:\n  namespaceRemaps: [\"BasePkg:stagepkg\"]\n  managedPackageDependencies: [\"stagepkg:deps/stage:1.0\"]\n")
-	writeTestFile(t, filepath.Join(dependencyRoot, "sfdx-project.json"), `{"namespace":"BasePkg","sourceApiVersion":"62.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(dependencyRoot, "sfdx-project.json"), `{"namespace":"BasePkg","sourceApiVersion":"66.0","packageDirectories":[{"path":"force-app","default":true}]}`)
 	helperPath := filepath.Join(root, "force-app/main/default/classes/Helper.cls")
 	servicePath := filepath.Join(root, "packages/extra/classes/Service.cls")
 	lifecycleClassPath := filepath.Join(root, "force-app/main/default/classes/LifecycleClass.cls")
@@ -1389,7 +1389,7 @@ func TestWatchIndexStateLifecycleMatchesFreshLoad(t *testing.T) {
 		{
 			name: "project configuration modified",
 			mutate: func(t *testing.T) []watch.Change {
-				writeTestFile(t, manifestPath, `{"namespace":"localpkg","sourceApiVersion":"64.0","packageDirectories":[{"path":"force-app","default":true},{"path":"packages/extra"}]}`)
+				writeTestFile(t, manifestPath, `{"namespace":"localpkg","sourceApiVersion":"66.0","packageDirectories":[{"path":"force-app","default":true},{"path":"packages/extra"}]}`)
 				return []watch.Change{change(manifestPath, watch.ChangeModified)}
 			},
 			wantMode:        watch.SelectionAll,

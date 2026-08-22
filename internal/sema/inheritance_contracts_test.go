@@ -270,7 +270,7 @@ public class Child extends Base {
 	for _, apiVersion := range []string{"64.0", "65.0"} {
 		t.Run(apiVersion, func(t *testing.T) {
 			result := analyzeDeclarationProjectWithAPIVersion(t, files, apiVersion)
-			if result.HasErrors() {
+			if hasErrorOtherThan(result.Diagnostics, "GLADESEMA_VERSION") {
 				t.Fatalf("API %s abstract implementation without override was rejected: %#v", apiVersion, result.Diagnostics)
 			}
 		})

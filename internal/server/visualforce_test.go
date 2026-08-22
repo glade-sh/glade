@@ -201,7 +201,7 @@ func TestHandleVisualforcePageGetRendersPDFPage(t *testing.T) {
 func newVisualforceUploadFixtureServer(t *testing.T) *Server {
 	t.Helper()
 	root := t.TempDir()
-	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages/Upload.page"), `<apex:page controller="UploadController">
 <apex:form>
   <apex:inputFile id="upload" value="{!body}" fileName="{!fileName}" contentType="{!mimeType}" fileSize="{!byteCount}"/>

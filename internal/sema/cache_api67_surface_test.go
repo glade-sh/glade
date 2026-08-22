@@ -28,7 +28,7 @@ func TestAPI67CacheRejectedShapes(t *testing.T) {
 	}
 	for name, source := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := AnalyzeAnonymous(typesys.Index{}, source)
+			result := AnalyzeAnonymous(typesys.Index{}, source, "67.0")
 			if len(result.Diagnostics) == 0 {
 				t.Fatalf("accepted Salesforce-API-67-rejected cache call: %s", source)
 			}
@@ -52,7 +52,7 @@ func TestAPI67CacheAcceptedShapes(t *testing.T) {
 	}
 	for name, source := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := AnalyzeAnonymous(typesys.Index{}, source)
+			result := AnalyzeAnonymous(typesys.Index{}, source, "67.0")
 			if result.HasErrors() {
 				t.Fatalf("rejected allowed Salesforce cache call: %#v", result.Diagnostics)
 			}
@@ -61,7 +61,7 @@ func TestAPI67CacheAcceptedShapes(t *testing.T) {
 }
 
 func TestAPI67CachePartitionStaticOnlyDiagnosticMessage(t *testing.T) {
-	result := AnalyzeAnonymous(typesys.Index{}, `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.createFullyQualifiedKey('a', 'b', 'c');`)
+	result := AnalyzeAnonymous(typesys.Index{}, `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.createFullyQualifiedKey('a', 'b', 'c');`, "67.0")
 	for _, diagnostic := range result.Diagnostics {
 		if strings.Contains(diagnostic.Message, "createFullyQualifiedKey") {
 			return

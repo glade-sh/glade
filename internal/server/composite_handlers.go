@@ -12,7 +12,9 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -206,7 +208,7 @@ func hasServerModifier(modifiers []string, expected string) bool {
 	return false
 }
 
-func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, apiVersion string) {
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
 		writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 		return
@@ -231,7 +233,25 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) 
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, "anonymousBody is required", nil))
 		return
 	}
-	program, err := vm.CompileAnonymous(source)
+	apiVersion, err := storage.ResolveRESTAPIVersion(apiVersion)
+	if err != nil {
+		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, err.Error(), nil))
+		return
+	}
+	index := typesys.Index{Project: typesys.ProjectInfo{
+		Root:             s.Source.Project.Root,
+		Namespace:        s.Source.Project.Namespace,
+		SourceAPIVersion: s.Source.Project.SourceAPIVersion,
+	}}
+	if s.Index != nil {
+		index = *s.Index
+	}
+	analysis := sema.AnalyzeAnonymous(index, source, apiVersion)
+	if len(analysis.Diagnostics) > 0 {
+		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, analysis.Diagnostics[0].Message, nil))
+		return
+	}
+	program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: apiVersion})
 	if err != nil {
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, err.Error(), nil))
 		return

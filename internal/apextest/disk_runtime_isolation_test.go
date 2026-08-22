@@ -52,7 +52,7 @@ func TestParallelMethodDiskRuntimeGuardRemainsEnabled(t *testing.T) {
 func TestDiskRuntimePublicationRejectsChangedValidatedInputGeneration(t *testing.T) {
 	root := t.TempDir()
 	configPath := filepath.Join(root, "sfdx-project.json")
-	if err := os.WriteFile(configPath, []byte(`{"packageDirectories":[],"sourceApiVersion":"64.0"}`), 0o600); err != nil {
+	if err := os.WriteFile(configPath, []byte(`{"packageDirectories":[],"sourceApiVersion":"66.0"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	beforeInfo, err := os.Stat(configPath)

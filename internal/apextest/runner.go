@@ -4152,9 +4152,7 @@ func orgFromIndex(index typesys.Index, caches ...*sourceCache) storage.OrgState 
 	sources.configureNamespaceRemaps(index.Types, index.Triggers)
 	caches = []*sourceCache{sources}
 	org := standardApexTestOrg()
-	if strings.TrimSpace(index.Project.SourceAPIVersion) != "" {
-		org.APIVersion = storage.EffectiveRESTAPIVersion(index.Project.SourceAPIVersion)
-	}
+	org.APIVersion = storage.DefaultRESTAPIVersion
 	org.Namespace = index.Project.Namespace
 	org.OrgID = "00D000000000001"
 	registry := sobject.BuildDescribeRegistry(schemaFromIndex(index))

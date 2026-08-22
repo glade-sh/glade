@@ -562,7 +562,11 @@ func userRecord(object storage.ObjectState, id storage.ID) (storage.Record, bool
 	return record, true
 }
 
-func (s *Server) identityPayload(r *http.Request, pathUserID storage.ID) map[string]any {
+func (s *Server) identityPayload(r *http.Request, pathUserID storage.ID) (map[string]any, error) {
+	version, err := s.advertisedRESTAPIVersion()
+	if err != nil {
+		return nil, err
+	}
 	user := s.currentUser(r, pathUserID)
 	username := userString(user, "Username", "system@example.invalid")
 	displayName := userDisplayName(user, username)
@@ -572,7 +576,6 @@ func (s *Server) identityPayload(r *http.Request, pathUserID storage.ID) map[str
 		active = value.Boolean
 	}
 	base := "http://" + r.Host
-	version := s.advertisedRESTAPIVersion()
 	orgID := nonEmpty(s.Org.OrgID, "00D000000000001")
 	userID := string(user.ID)
 	identityURL := base + "/id/" + orgID + "/" + userID
@@ -593,12 +596,15 @@ func (s *Server) identityPayload(r *http.Request, pathUserID storage.ID) map[str
 			"search":     base + "/services/data/v" + version + "/search/",
 			"query":      base + "/services/data/v" + version + "/query/",
 		},
-	}
+	}, nil
 }
 
-func (s *Server) userInfoPayload(r *http.Request) map[string]any {
+func (s *Server) userInfoPayload(r *http.Request) (map[string]any, error) {
 	user := s.currentUser(r, "")
-	identity := s.identityPayload(r, user.ID)
+	identity, err := s.identityPayload(r, user.ID)
+	if err != nil {
+		return nil, err
+	}
 	username := userString(user, "Username", "system@example.invalid")
 	return map[string]any{
 		"sub":                identity["user_id"],
@@ -615,12 +621,15 @@ func (s *Server) userInfoPayload(r *http.Request) map[string]any {
 		"locale":             "en_US",
 		"updated_at":         nil,
 		"urls":               identity["urls"],
-	}
+	}, nil
 }
 
-func (s *Server) localTokenPayload(r *http.Request) map[string]any {
+func (s *Server) localTokenPayload(r *http.Request) (map[string]any, error) {
 	user := s.currentUser(r, "")
-	identity := s.identityPayload(r, user.ID)
+	identity, err := s.identityPayload(r, user.ID)
+	if err != nil {
+		return nil, err
+	}
 	base := "http://" + r.Host
 	userID := string(user.ID)
 	return map[string]any{
@@ -631,7 +640,7 @@ func (s *Server) localTokenPayload(r *http.Request) map[string]any {
 		"signature":    "local",
 		"token_type":   "Bearer",
 		"scope":        "api refresh_token",
-	}
+	}, nil
 }
 
 func localAccessToken(userID string) string {

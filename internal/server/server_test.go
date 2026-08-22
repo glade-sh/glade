@@ -77,7 +77,7 @@ func testSourceMetadata(t *testing.T) SourceMetadata {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(root) })
-	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/LocalOne.cls"), "public class LocalOne {}")
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/LocalTwo.cls"), "public class LocalTwo {}")
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/triggers/AccountTrigger.trigger"), "trigger AccountTrigger on Account (before insert) {}")
@@ -132,13 +132,190 @@ func TestVersionDiscoveryRoot(t *testing.T) {
 		if err := json.Unmarshal(rec.Body.Bytes(), &versions); err != nil {
 			t.Fatalf("%s unmarshal: %v body=%s", path, err, rec.Body.String())
 		}
-		if len(versions) != 1 {
+		if len(versions) != len(storage.SupportedRESTAPIVersions) {
 			t.Fatalf("%s versions = %#v", path, versions)
 		}
-		if versions[0].Version != storage.DefaultRESTAPIVersion || versions[0].Label != "GLADE Local API v"+storage.DefaultRESTAPIVersion || versions[0].URL != serverTestDataPath {
-			t.Fatalf("%s version entry = %#v", path, versions[0])
+		for i, version := range storage.SupportedRESTAPIVersions {
+			want := apiVersionEntry{Version: version, Label: "GLADE Local API v" + version, URL: "/services/data/v" + version}
+			if versions[i] != want {
+				t.Fatalf("%s version[%d] = %#v, want %#v", path, i, versions[i], want)
+			}
 		}
 	}
+}
+
+func TestUnsupportedAPIVersionRouting(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	for _, version := range []string{"64.0", "68.0", "67.1", "junk"} {
+		for _, route := range []struct {
+			name string
+			path string
+			soap bool
+		}{
+			{name: "rest", path: "/services/data/v" + version + "/sobjects"},
+			{name: "tooling", path: "/services/data/v" + version + "/tooling"},
+			{name: "composite", path: "/services/data/v" + version + "/composite"},
+			{name: "soap", path: "/services/Soap/u/" + version + "/00D000000000001", soap: true},
+			{name: "bulk-v1", path: "/services/async/" + version + "/job"},
+		} {
+			t.Run(route.name+"/"+version, func(t *testing.T) {
+				rec := httptest.NewRecorder()
+				handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, route.path, strings.NewReader("")))
+				if route.soap {
+					if rec.Code != http.StatusInternalServerError || !strings.Contains(rec.Body.String(), "sf:INVALID_VERSION") || !strings.Contains(rec.Body.String(), "unsupported API version "+version) {
+						t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+					}
+					return
+				}
+				requested := version
+				if route.name != "bulk-v1" {
+					requested = "v" + version
+				}
+				assertSalesforceError(t, rec, http.StatusNotFound, "NOT_FOUND", "unsupported API version "+requested)
+			})
+		}
+	}
+}
+
+func TestSupportedAPIVersionRouting(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	for _, version := range storage.SupportedRESTAPIVersions {
+		t.Run(version, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v"+version+"/sobjects", nil))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+			}
+		})
+	}
+}
+
+func TestUnsupportedStoredRESTAPIVersion(t *testing.T) {
+	org := testOrg()
+	org.APIVersion = "64.0"
+	storage.EnsureDeterministicPlatformData(&org)
+	handler := New(&org)
+	for _, test := range []struct {
+		method string
+		path   string
+	}{
+		{method: http.MethodGet, path: "/id/00D000000000001/005000000000001"},
+		{method: http.MethodGet, path: "/services/oauth2/userinfo"},
+		{method: http.MethodPost, path: "/services/oauth2/token"},
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(test.method, test.path, nil))
+		assertSalesforceError(t, rec, http.StatusNotFound, "NOT_FOUND", "unsupported API version 64.0")
+	}
+}
+
+func TestToolingPlatformEventMigrationAPI67IsExplicitlyUnsupported(t *testing.T) {
+	org := testOrg()
+	handler := NewWithSource(&org, testSourceMetadata(t))
+
+	discovery := httptest.NewRecorder()
+	handler.ServeHTTP(discovery, httptest.NewRequest(http.MethodGet, "/services/data/v67.0/tooling/sobjects", nil))
+	if discovery.Code != http.StatusOK || strings.Contains(discovery.Body.String(), "PlatformEventMigration") {
+		t.Fatalf("status = %d body=%s", discovery.Code, discovery.Body.String())
+	}
+
+	describe := httptest.NewRecorder()
+	handler.ServeHTTP(describe, httptest.NewRequest(http.MethodGet, "/services/data/v67.0/tooling/sobjects/PlatformEventMigration/describe", nil))
+	assertSalesforceError(t, describe, http.StatusNotFound, "NOT_FOUND", "unknown tooling endpoint")
+}
+
+func TestToolingAPIVersionAvailability(t *testing.T) {
+	for _, objectName := range []string{
+		"CustomNotifActionDef",
+		"CustomNotificationActionGroup",
+		"ExtConvParticipantIntegDef",
+		"SandboxProcessStage",
+	} {
+		objectName := objectName
+		t.Run("tooling:"+strings.ToLower(objectName), func(t *testing.T) {
+			org := testOrg()
+			handler := NewWithSource(&org, testSourceMetadata(t))
+			for _, test := range []struct {
+				version string
+				present bool
+			}{{"65.0", false}, {"66.0", true}, {"67.0", true}} {
+				discovery := httptest.NewRecorder()
+				handler.ServeHTTP(discovery, httptest.NewRequest(http.MethodGet, "/services/data/v"+test.version+"/tooling/sobjects", nil))
+				if discovery.Code != http.StatusOK || strings.Contains(discovery.Body.String(), `"name":"`+objectName+`"`) != test.present {
+					t.Fatalf("API %s discovery status=%d present=%t body=%s", test.version, discovery.Code, test.present, discovery.Body.String())
+				}
+
+				describe := httptest.NewRecorder()
+				handler.ServeHTTP(describe, httptest.NewRequest(http.MethodGet, "/services/data/v"+test.version+"/tooling/sobjects/"+objectName+"/describe", nil))
+				if test.present && describe.Code != http.StatusOK {
+					t.Fatalf("API %s describe status=%d body=%s", test.version, describe.Code, describe.Body.String())
+				}
+				if !test.present && describe.Code != http.StatusNotFound {
+					t.Fatalf("API %s describe status=%d body=%s", test.version, describe.Code, describe.Body.String())
+				}
+			}
+		})
+	}
+}
+
+func TestSourceMetadataKeepsEndpointDefaultIndependentOfSourceVersion(t *testing.T) {
+	source, err := NewSourceMetadataFromProject(project.Project{SourceAPIVersion: "67.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if source.ToolingOrg.APIVersion != storage.DefaultRESTAPIVersion {
+		t.Fatalf("tooling endpoint version = %q", source.ToolingOrg.APIVersion)
+	}
+}
+
+func TestToolingExecuteAnonymousPreservesRequestVersion(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	const body = `{"anonymousBody":"List<Account> rows = [SELECT Id FROM Account WITH SECURITY_ENFORCED];"}`
+	for _, test := range []struct {
+		version      string
+		wantCompiled string
+		wantProblem  string
+	}{
+		{version: "66.0", wantCompiled: `"compiled":true`},
+		{version: "67.0", wantCompiled: `"compiled":false`, wantProblem: "WITH SECURITY_ENFORCED"},
+	} {
+		t.Run(test.version, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v"+test.version+"/tooling/executeAnonymous", strings.NewReader(body)))
+			if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), test.wantCompiled) || !strings.Contains(rec.Body.String(), test.wantProblem) {
+				t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+			}
+		})
+	}
+}
+
+func TestToolingExecuteAnonymousRejectsEndpointOutsideSourceWindow(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v60.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"System.debug('legacy');"}`)))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"compiled":false`) || !strings.Contains(rec.Body.String(), "unsupported source API version") {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestInvocableParameterConstructorValidationAPI66IsExplicitlyUnsupported(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v66.0/actions/custom/apex/ReleaseContractProbe", strings.NewReader(`[]`)))
+	assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Invocable Apex REST actions are not implemented in the local server")
+}
+
+func TestOpenAPISpecWildcardIsExplicitlyUnsupported(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v67.0/async/specifications/oas3?resources=/sobjects/*", nil))
+	assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "OpenAPI specification generation is not implemented in the local server")
 }
 
 func TestVersionDiscoveryRootMethodNotAllowed(t *testing.T) {

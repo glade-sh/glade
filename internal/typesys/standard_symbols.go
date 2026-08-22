@@ -1313,6 +1313,14 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 }
 
 var standardPlatformSymbolOverlays = []StandardSymbolSpec{
+	{Name: "Database.DeleteFilter", Kind: apexast.DeclarationEnum},
+	{Name: "commercepayments.PostAuthorizationResponse", Methods: []StandardMethodSpec{
+		{Name: "setCardPaymentMethodResponse", ReturnType: "void", Parameters: []string{"commercepayments.CardPaymentMethodResponse"}},
+		{Name: "setPaymentMethodDetailsResponse", ReturnType: "void", Parameters: []string{"commercepayments.PaymentMethodDetailsResponse"}},
+	}},
+	{Name: "ConnectApi.OptimizationFiles", Methods: []StandardMethodSpec{
+		{Name: "FetchOptimizationFiles", ReturnType: "ConnectApi.FetchFilesOutputRepresentation", Parameters: []string{"ConnectApi.fetchFilesInput"}, Static: true},
+	}},
 	{Name: "UserProvisioning.UserProvisioningPlugin", Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{
 		{Name: "buildDescribeCall", ReturnType: "Process.PluginDescribeResult", Modifiers: []string{"abstract"}},
 	}},

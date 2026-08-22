@@ -5,6 +5,6 @@
       "default": true
     }
   ],
-  "sourceApiVersion": "64.0",
+  "sourceApiVersion": "66.0",
   "namespace": "ns"
 }

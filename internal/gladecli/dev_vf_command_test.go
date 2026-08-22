@@ -16,7 +16,7 @@ import (
 
 func TestPrintDevVFStartupSummaryListsPagesAndWatchedFiles(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/pages/Core.page"), `<apex:page/>`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/pages/CardHost.page"), `<apex:page/>`)
 	p, err := project.Load(root)
@@ -42,7 +42,7 @@ func TestPrintDevVFStartupSummaryListsPagesAndWatchedFiles(t *testing.T) {
 
 func TestPrintDevVFStartupSummaryBoundsPages(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	for i := 0; i < 12; i++ {
 		name := "Page" + string(rune('A'+i))
 		writeTestFile(t, filepath.Join(root, "force-app/main/default/pages", name+".page"), `<apex:page/>`)
@@ -87,7 +87,7 @@ func TestRunDevVFHelpUsesVisualforceHelp(t *testing.T) {
 
 func TestWriteDevVFReadyFileWritesURLAddressAndPages(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/pages/Core.page"), `<apex:page/>`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/pages/CardHost.page"), `<apex:page/>`)
 	p, err := project.Load(root)

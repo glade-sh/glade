@@ -34,6 +34,46 @@ func TestCurrentSourceExecutionPolicyUsesAPIVersionAndTriggerFrame(t *testing.T)
 	}
 }
 
+func TestWithUserModeAutomatedProcessFollowsAPIVersion(t *testing.T) {
+	for _, test := range []struct {
+		version   string
+		wantError bool
+	}{{"65.0", true}, {"66.0", false}, {"67.0", false}} {
+		t.Run(test.version, func(t *testing.T) {
+			machine := New(io.Discard)
+			org := testDataOrg()
+			machine.SetOrg(&org)
+			machine.currentMethod = Method{APIVersion: test.version}
+			machine.executionUser = Object("User")
+			machine.executionUser.Fields["Id"] = String("005000000000002")
+			machine.executionUser.Fields["UserType"] = String("AutomatedProcess")
+			_, err := machine.executeSOQL("SELECT Id FROM Account WITH USER_MODE", &Result{})
+			if (err != nil) != test.wantError {
+				t.Fatalf("executeSOQL error = %v, wantError %t", err, test.wantError)
+			}
+		})
+	}
+}
+
+func TestElasticAsyncLimitKeysAPI67(t *testing.T) {
+	for _, test := range []struct {
+		version string
+		present bool
+	}{{"65.0", false}, {"66.0", false}, {"67.0", true}} {
+		machine := New(io.Discard)
+		machine.currentMethod = Method{APIVersion: test.version}
+		present := map[string]bool{}
+		for _, limit := range machine.orgLimitValues() {
+			present[limit.Fields["name"].String()] = true
+		}
+		for _, name := range []string{"DailyAsyncApexElasticExecutions", "DailyAsyncApexProcessed"} {
+			if present[name] != test.present {
+				t.Fatalf("API %s %s present = %t, want %t", test.version, name, present[name], test.present)
+			}
+		}
+	}
+}
+
 func TestDefaultSharingAndInheritedSharingResolution(t *testing.T) {
 	machine := New(io.Discard)
 	machine.currentMethod = Method{APIVersion: "67.0"}

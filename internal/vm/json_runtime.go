@@ -133,7 +133,7 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 		if value.Type == "" || sObjectValueType(value.Type) {
 			version := storage.DefaultRESTAPIVersion
 			if vm != nil && vm.Org != nil {
-				version = storage.EffectiveRESTAPIVersion(vm.Org.APIVersion)
+				version = vm.Org.APIVersion
 			}
 			// Salesforce preserves null SObject fields for JSON.serialize, even
 			// when the overload's Boolean argument is true. That flag only
@@ -409,8 +409,9 @@ func jsonSObjectFromValue(value Value, suppressObjectNulls bool, convert func(Va
 	if value.Type != "" {
 		attributes := map[string]any{"type": value.Type}
 		if id, ok := value.Fields["Id"]; ok && !strings.Contains(value.Type, ".") {
-			if idText, ok := idValueText(id); ok && idText != "" {
-				attributes["url"] = "/services/data/v" + storage.EffectiveRESTAPIVersion(apiVersion) + "/sobjects/" + value.Type + "/" + displayIDText(idText)
+			version, err := storage.ResolveRESTAPIVersion(apiVersion)
+			if idText, ok := idValueText(id); err == nil && ok && idText != "" {
+				attributes["url"] = "/services/data/v" + version + "/sobjects/" + value.Type + "/" + displayIDText(idText)
 			}
 		}
 		out = append(out, orderedJSONField{name: "attributes", value: attributes})

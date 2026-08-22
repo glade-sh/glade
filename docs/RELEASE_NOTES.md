@@ -2,7 +2,32 @@
 
 ## Unreleased
 
-No changes yet.
+Salesforce release upgrades:
+
+- Added moving-correctness support for source API 65.0, 66.0, and 67.0 while
+  retaining endpoint API 60.0, 65.0, 66.0, and 67.0. The default remains 65.0;
+  unsupported versions fail instead of falling back.
+- Made Apex semantic availability, LWC module availability, REST and Tooling
+  routing, anonymous execution, DAP, playground caching, and org bindings keep
+  their explicit source or endpoint API version.
+- Added generated availability tables from the checked Salesforce release
+  contract, including API-versioned Tooling discovery and explicit unsupported
+  boundaries for `System.IntegrationTest` and `PlatformEventMigration`.
+- Added release-bound behavior for API 66 complex LWC expressions, invocable
+  parameter constructor visibility, and Automated Process `WITH USER_MODE`,
+  plus API 67 `<details name>`, elastic async-limit keys, sharing defaults, and
+  database user-mode defaults.
+- Kept hosted-only Named Credentials identity-provider changes, Invocable Apex
+  REST actions, and OpenAPI specification generation as tested, explicit
+  non-parity instead of claiming local runtime support.
+- Bound each release inventory to an exporter-generated source receipt that
+  preserves the exact Atlas family hashes and the `latest` current-only LWC
+  source/filter provenance.
+- The Salesforce promotion gate now checks generated drift, installs the real
+  LWC compiler, rejects binaries not built from the named clean commits,
+  records candidate hashes and the complete Go test event log, and closes exact
+  surface, behavior, source, endpoint, org-profile, release-note, and
+  no-fallback denominators before promotion.
 
 ## v0.2.11 - 2026-08-12
 

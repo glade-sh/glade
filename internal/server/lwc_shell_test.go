@@ -299,7 +299,7 @@ func TestLWCShellRendersApplicationNavAndConsoleMode(t *testing.T) {
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js", `import { LightningElement } from "lwc"; export default class ContextProbe extends LightningElement {}`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.html", `<template><p>Context</p></template>`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-	  <apiVersion>64.0</apiVersion>
+	  <apiVersion>65.0</apiVersion>
 	  <isExposed>true</isExposed>
 	  <targets>
 	    <target>lightning__Tab</target>
@@ -784,7 +784,7 @@ func TestLWCShellAppRouteFallsBackToApplicationDefaultTab(t *testing.T) {
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js", `import { LightningElement } from "lwc"; export default class ContextProbe extends LightningElement {}`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.html", `<template><p>Context</p></template>`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-	  <apiVersion>64.0</apiVersion>
+	  <apiVersion>65.0</apiVersion>
 	  <isExposed>true</isExposed>
 	  <targets>
 	    <target>lightning__Tab</target>
@@ -1485,6 +1485,7 @@ func TestResolveLWCShellRequestValidatesDirectComponentRoute(t *testing.T) {
 func TestResolveLWCShellRequestAppliesDirectComponentMetadataDefaults(t *testing.T) {
 	root := t.TempDir()
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <apiVersion>65.0</apiVersion>
 	  <isExposed>true</isExposed>
 	  <targets><target>lightning__RecordPage</target></targets>
 	  <targetConfigs>
@@ -1930,8 +1931,9 @@ func TestLWCShellUnsupportedComponentReturnsDiagnostics(t *testing.T) {
 
 func TestLWCShellMixedPageDiagnosticsStillRendersValidComponents(t *testing.T) {
 	root := t.TempDir()
-	writeLWCShellServerTestFile(t, root, "sfdx-project.json", `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeLWCShellServerTestFile(t, root, "sfdx-project.json", `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <apiVersion>65.0</apiVersion>
 	  <isExposed>true</isExposed>
 	  <targets><target>lightning__RecordPage</target></targets>
 	</LightningComponentBundle>`)
@@ -1977,8 +1979,9 @@ export default class ContextProbe extends LightningElement {}`)
 
 func TestLWCShellKeepsAuraAndPlatformComponentsAsPlaceholders(t *testing.T) {
 	root := t.TempDir()
-	writeLWCShellServerTestFile(t, root, "sfdx-project.json", `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"PKG","sourceApiVersion":"61.0"}`)
+	writeLWCShellServerTestFile(t, root, "sfdx-project.json", `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"PKG","sourceApiVersion":"65.0"}`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <apiVersion>65.0</apiVersion>
 	  <isExposed>true</isExposed>
 	  <targets><target>lightning__AppPage</target></targets>
 	</LightningComponentBundle>`)
@@ -2137,6 +2140,7 @@ func writeCommunityProbeBundle(t *testing.T, root, target string) {
 export default class CommunityProbe extends LightningElement {}`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/communityProbe/communityProbe.html", `<template><p>community</p></template>`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/communityProbe/communityProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <apiVersion>65.0</apiVersion>
 	  <isExposed>true</isExposed>
 	  <targets><target>`+target+`</target></targets>
 	</LightningComponentBundle>`)
@@ -2148,6 +2152,7 @@ func writeUtilityProbeBundle(t *testing.T, root string) {
 export default class UtilityProbe extends LightningElement {}`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/utilityProbe/utilityProbe.html", `<template><p>utility</p></template>`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/utilityProbe/utilityProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <apiVersion>65.0</apiVersion>
 	  <isExposed>true</isExposed>
 	  <targets><target>lightning__UtilityBar</target></targets>
 	</LightningComponentBundle>`)
@@ -2159,6 +2164,7 @@ func writeFlowProbeBundle(t *testing.T, root string) {
 export default class FlowProbe extends LightningElement {}`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/flowProbe/flowProbe.html", `<template><lightning-flow flow-api-name="Membership_Flow"></lightning-flow></template>`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/flowProbe/flowProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <apiVersion>65.0</apiVersion>
 	  <isExposed>true</isExposed>
 	  <targets><target>lightning__FlowScreen</target></targets>
 	</LightningComponentBundle>`)

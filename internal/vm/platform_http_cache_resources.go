@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -46,7 +47,7 @@ func callCookieMember(receiver Value, method string, args []Value) (Value, Value
 	}
 }
 
-func callDataWeaveScriptMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+func (vm *VM) callDataWeaveScriptMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	method = canonicalStdlibMemberName(method, "execute")
 	if method != "execute" {
 		return Null, receiver, false, false, nil
@@ -58,6 +59,9 @@ func callDataWeaveScriptMember(receiver Value, method string, args []Value) (Val
 		inputs = args[0]
 	default:
 		return Null, receiver, false, true, fmt.Errorf("DataWeave.Script.execute expects optional Map<String,Object>")
+	}
+	if !apexversion.AtLeast(vm.currentMethod.APIVersion, 66) && vm.dataWeaveInputHasChildQuery(inputs) {
+		return Null, receiver, false, true, newExceptionError("DataWeaveScriptException", "Nested SOQL query results require API version 66.0 or later")
 	}
 	scriptName := dataWeaveScriptName(receiver)
 	if scriptName == "" {
@@ -71,6 +75,35 @@ func callDataWeaveScriptMember(receiver Value, method string, args []Value) (Val
 		return Null, receiver, false, true, newExceptionError("DataWeaveScriptException", "Division by zero")
 	}
 	return newDataWeaveResult(scriptName, inputs), receiver, false, true, nil
+}
+
+func (vm *VM) dataWeaveInputHasChildQuery(inputs Value) bool {
+	for _, input := range inputs.Map {
+		if inlineSOQLQueryText(input) == "" {
+			continue
+		}
+		for _, record := range input.List {
+			if vm.sObjectHasChildQueryResult(record) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (vm *VM) sObjectHasChildQueryResult(record Value) bool {
+	if record.Kind != ValueObject || !vm.isSObjectLikeType(record.Type) {
+		return false
+	}
+	for _, field := range record.Fields {
+		if field.Kind == ValueList {
+			return true
+		}
+		if vm.sObjectHasChildQueryResult(field) {
+			return true
+		}
+	}
+	return false
 }
 
 func callDataWeaveResultMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {

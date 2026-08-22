@@ -138,7 +138,7 @@ func TestAnalyzeAllowsEveryDocumentedSystemQualifiedTypeSpelling(t *testing.T) {
 		// The generated catalog still contains the stale qualified PushUpgrade
 		// alias. Salesforce rejects that spelling; the canonical unqualified
 		// type remains covered by the residual contract tests.
-		if semaAPI67RejectedPlatformType("System." + name) {
+		if semaAPI67RejectedPlatformType("System."+name) || semaPlatformTypeUnavailable("67.0", "System."+name) {
 			continue
 		}
 		typeNames = append(typeNames, "System."+name)
