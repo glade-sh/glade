@@ -1214,6 +1214,15 @@ func TestSetRuntimeTemplateOrgRetainsMatchingSchemaCaches(t *testing.T) {
 	if clone.jsonChildRelTypeCache == shared {
 		t.Fatal("mutated runtime template retained schema cache")
 	}
+
+	org = template.CloneRuntimeOrg()
+	org.RuntimeSchemaStamp = "different-runtime-schema"
+	clone = base.CloneRuntime(nil)
+	shared = clone.jsonChildRelTypeCache
+	clone.SetRuntimeTemplateOrg(&org)
+	if clone.jsonChildRelTypeCache == shared {
+		t.Fatal("mismatched runtime template retained schema cache")
+	}
 }
 
 func TestSetOrgSamePointerClearsFieldDescribeCacheAfterLabelMutation(t *testing.T) {
