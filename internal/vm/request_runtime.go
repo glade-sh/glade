@@ -94,7 +94,7 @@ func quiddityShortCode(name string) string {
 func (vm *VM) requestVersionValue() Value {
 	version := storage.DefaultRESTAPIVersion
 	if vm != nil && vm.Org != nil {
-		version = storage.EffectiveRESTAPIVersion(vm.Org.APIVersion)
+		version, _ = storage.ResolveRESTAPIVersion(vm.Org.APIVersion)
 	}
 	major, minor := parseMajorMinorVersion(version)
 	out := Object("Version")

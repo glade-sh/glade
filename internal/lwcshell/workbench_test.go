@@ -110,7 +110,7 @@ export default class ContextProbe extends LightningElement {
   @api disabled = false;
 }`)
 	metaPath := writeProjectFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-  <apiVersion>61.0</apiVersion>
+  <apiVersion>65.0</apiVersion>
   <isExposed>true</isExposed>
   <masterLabel>Context Probe</masterLabel>
   <targets>
@@ -215,7 +215,7 @@ func TestDiscoverShellRoutesIncludesCommunityContextPresets(t *testing.T) {
 func TestDiscoverShellRoutesIncludesUrlAddressableAndQuickActions(t *testing.T) {
 	root := t.TempDir()
 	metaPath := writeProjectFile(t, root, "force-app/main/default/lwc/actionProbe/actionProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-  <apiVersion>61.0</apiVersion>
+  <apiVersion>65.0</apiVersion>
   <isExposed>true</isExposed>
   <targets>
     <target>lightning__RecordAction</target>
@@ -235,7 +235,7 @@ func TestDiscoverShellRoutesIncludesUrlAddressableAndQuickActions(t *testing.T) 
   <type>LightningWebComponent</type>
 </QuickAction>`)
 	flowMetaPath := writeProjectFile(t, root, "force-app/main/default/lwc/flowActionProbe/flowActionProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-  <apiVersion>61.0</apiVersion>
+  <apiVersion>65.0</apiVersion>
   <isExposed>true</isExposed>
   <targets>
     <target>lightning__FlowAction</target>

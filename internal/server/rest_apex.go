@@ -25,13 +25,23 @@ func (s *Server) handleOAuth(w http.ResponseWriter, r *http.Request, parts []str
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
-		writeJSON(w, http.StatusOK, s.userInfoPayload(r))
+		payload, err := s.userInfoPayload(r)
+		if err != nil {
+			writeSalesforceError(w, errUnknownEndpoint, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, payload)
 	case "token":
 		if r.Method != http.MethodPost {
 			writeMethodNotAllowed(w, http.MethodPost)
 			return
 		}
-		writeJSON(w, http.StatusOK, s.localTokenPayload(r))
+		payload, err := s.localTokenPayload(r)
+		if err != nil {
+			writeSalesforceError(w, errUnknownEndpoint, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, payload)
 	case "revoke", "introspect":
 		if r.Method != http.MethodPost {
 			writeMethodNotAllowed(w, http.MethodPost)

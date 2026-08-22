@@ -1066,7 +1066,7 @@ func databaseCursorNumRecords(receiver Value, method string, args []Value) (Valu
 	return Int(int64(len(records.List))), receiver, false, true, nil
 }
 
-func databaseCursorFetch(receiver Value, method string, args []Value, deleted bool) (Value, Value, bool, bool, error) {
+func (vm *VM) databaseCursorFetch(receiver Value, method string, args []Value, deleted bool) (Value, Value, bool, bool, error) {
 	if len(args) != 2 || args[0].Kind != ValueInt || args[1].Kind != ValueInt {
 		return Null, receiver, false, true, fmt.Errorf("%s.%s expects start and page size Integers", receiver.Type, method)
 	}
@@ -1096,6 +1096,11 @@ func databaseCursorFetch(receiver Value, method string, args []Value, deleted bo
 	page.Type = "List<SObject>"
 	if deleted {
 		return Int(0), receiver, false, true, nil
+	}
+	if strings.EqualFold(receiver.Type, "Database.PaginationCursor") {
+		if err := vm.incrementLimit("apexPaginationCursorRows", len(page.List)); err != nil {
+			return Null, receiver, false, true, err
+		}
 	}
 	if strings.EqualFold(receiver.Type, "Database.Cursor") {
 		return page, receiver, false, true, nil

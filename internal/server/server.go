@@ -1,7 +1,9 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/glade-sh/glade/internal/apextest"
@@ -76,11 +78,15 @@ func setDevNoStore(w http.ResponseWriter) {
 	w.Header().Set("Expires", "0")
 }
 
-func (s *Server) advertisedRESTAPIVersion() string {
+func (s *Server) advertisedRESTAPIVersion() (string, error) {
 	if s != nil && s.Org != nil {
-		return storage.EffectiveRESTAPIVersion(s.Org.APIVersion)
+		version, err := storage.ResolveRESTAPIVersion(s.Org.APIVersion)
+		if err != nil {
+			return "", fmt.Errorf("unsupported API version %s", strings.TrimSpace(s.Org.APIVersion))
+		}
+		return version, nil
 	}
-	return storage.DefaultRESTAPIVersion
+	return storage.DefaultRESTAPIVersion, nil
 }
 
 type resetScopeInfo struct {
@@ -274,7 +280,12 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request, parts [
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
-		writeJSON(w, http.StatusOK, s.identityPayload(r, storage.ID(parts[2])))
+		payload, err := s.identityPayload(r, storage.ID(parts[2]))
+		if err != nil {
+			writeSalesforceError(w, errUnknownEndpoint, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, payload)
 		return
 	}
 	if len(parts) == 2 && parts[0] == "services" && parts[1] == "data" {
@@ -284,6 +295,26 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request, parts [
 		}
 		writeJSON(w, http.StatusOK, s.apiVersionDiscoveryPayload())
 		return
+	}
+	if requested, ok := requestAPIVersion(parts); ok {
+		version, err := storage.ResolveRESTAPIVersion(requested)
+		if err != nil {
+			message := "unsupported API version " + requested
+			if parts[1] == "Soap" {
+				writeSOAPFault(w, http.StatusInternalServerError, "sf:INVALID_VERSION", message)
+			} else {
+				writeSalesforceError(w, errUnknownEndpoint, message)
+			}
+			return
+		}
+		switch parts[1] {
+		case "data":
+			parts[2] = "v" + version
+		case "Soap":
+			parts[3] = version
+		case "async":
+			parts[2] = version
+		}
 	}
 	if len(parts) >= 3 && parts[0] == "services" && parts[1] == "Soap" {
 		s.handleSOAP(w, r, parts[2:])
@@ -345,6 +376,18 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request, parts [
 		s.handleMetadataRESTWithJobs(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "composite":
 		s.handleCompositeBreadth(w, r, parts[2], rest[1:])
+	case len(rest) >= 3 && rest[0] == "actions" && rest[1] == "custom" && rest[2] == "apex":
+		if r.Method != http.MethodPost {
+			writeMethodNotAllowed(w, http.MethodPost)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Invocable Apex REST actions are not implemented in the local server")
+	case len(rest) >= 3 && rest[0] == "async" && rest[1] == "specifications" && rest[2] == "oas3":
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "OpenAPI specification generation is not implemented in the local server")
 	case len(rest) >= 1 && rest[0] == "glade":
 		s.handleGLADE(w, r, rest[1:])
 	case len(rest) >= 1:
@@ -360,6 +403,21 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request, parts [
 	default:
 		writeSalesforceError(w, errUnknownEndpoint)
 	}
+}
+
+func requestAPIVersion(parts []string) (string, bool) {
+	if len(parts) < 3 || parts[0] != "services" {
+		return "", false
+	}
+	switch parts[1] {
+	case "data", "async":
+		return parts[2], true
+	case "Soap":
+		if len(parts) >= 4 {
+			return parts[3], true
+		}
+	}
+	return "", false
 }
 
 func (s *Server) hasLWCWorkbenchProject() bool {

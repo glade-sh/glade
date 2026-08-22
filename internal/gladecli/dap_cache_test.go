@@ -18,7 +18,7 @@ func TestLoadDAPStartupStateCachesReusesAndInvalidates(t *testing.T) {
 
 	cachePath := filepath.Join(root, ".glade", "dap", "startup.json")
 
-	_, runtimeOne, err := loadDAPStartupState(root)
+	_, runtimeOne, _, err := loadDAPStartupState(root)
 	if err != nil {
 		t.Fatalf("first load: %v", err)
 	}
@@ -35,7 +35,7 @@ func TestLoadDAPStartupStateCachesReusesAndInvalidates(t *testing.T) {
 	}
 
 	time.Sleep(2 * time.Millisecond)
-	_, runtimeTwo, err := loadDAPStartupState(root)
+	_, runtimeTwo, _, err := loadDAPStartupState(root)
 	if err != nil {
 		t.Fatalf("second load: %v", err)
 	}
@@ -57,7 +57,7 @@ func TestLoadDAPStartupStateCachesReusesAndInvalidates(t *testing.T) {
 		t.Fatalf("edit source for invalidation: %v", err)
 	}
 	time.Sleep(2 * time.Millisecond)
-	_, runtimeThree, err := loadDAPStartupState(root)
+	_, runtimeThree, _, err := loadDAPStartupState(root)
 	if err != nil {
 		t.Fatalf("reload after edit: %v", err)
 	}
@@ -73,6 +73,31 @@ func TestLoadDAPStartupStateCachesReusesAndInvalidates(t *testing.T) {
 	}
 	if parsedOne.BuiltAt == parsedThree.BuiltAt || parsedTwo.BuiltAt == parsedThree.BuiltAt {
 		t.Fatalf("cache was not rebuilt after source change")
+	}
+}
+
+func TestDAPCacheKeyIncludesSourceAPIVersion(t *testing.T) {
+	root := t.TempDir()
+	writeTestProject(t, root)
+	projectFile := filepath.Join(root, "sfdx-project.json")
+	writeTestFile(t, projectFile, `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+
+	_, _, firstVersion, err := loadDAPStartupState(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first := readDAPCacheEntry(t, filepath.Join(root, ".glade", "dap", "startup.json"))
+
+	time.Sleep(2 * time.Millisecond)
+	writeTestFile(t, projectFile, `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"66.0"}`)
+	_, _, secondVersion, err := loadDAPStartupState(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second := readDAPCacheEntry(t, filepath.Join(root, ".glade", "dap", "startup.json"))
+
+	if firstVersion != "65.0" || secondVersion != "66.0" || first.BuiltAt == second.BuiltAt {
+		t.Fatalf("versions = %q, %q; builtAt = %q, %q", firstVersion, secondVersion, first.BuiltAt, second.BuiltAt)
 	}
 }
 

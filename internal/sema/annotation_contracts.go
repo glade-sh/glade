@@ -8,6 +8,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apexlang"
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/typesys"
 )
@@ -128,6 +129,7 @@ func checkAnnotationContracts(index typesys.Index) []diagnostic.Diagnostic {
 				}
 			}
 			diagnostics = append(diagnostics, checkMemberAnnotationContracts(typ, member)...)
+			diagnostics = append(diagnostics, checkInvocableParameterConstructors(index, typ, member)...)
 		}
 		if testSetups > 1 {
 			diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, typ.Range, "an IsTest class can declare only one TestSetup method"))
@@ -145,6 +147,54 @@ func checkAnnotationContracts(index typesys.Index) []diagnostic.Diagnostic {
 		}
 	}
 	return diagnostics
+}
+
+func checkInvocableParameterConstructors(index typesys.Index, owner typesys.TypeSymbol, member typesys.MemberSymbol) []diagnostic.Diagnostic {
+	if apexversion.Before(owner.EffectiveAPIVersion, 66) || !hasAnnotation(member.Annotations, "InvocableMethod") {
+		return nil
+	}
+	typeNames := []string{member.Type}
+	for _, parameter := range member.Parameters {
+		typeNames = append(typeNames, parameter.Type)
+	}
+	seen := map[string]bool{}
+	for _, typeName := range typeNames {
+		arguments, ok := genericTypeArguments(typeName)
+		if !ok || len(arguments) != 1 {
+			continue
+		}
+		name := normalizeName(strings.TrimSpace(arguments[0]))
+		if seen[name] {
+			continue
+		}
+		seen[name] = true
+		for _, candidate := range index.Types {
+			if candidate.Kind != apexast.DeclarationClass || normalizeName(candidate.Name) != name {
+				continue
+			}
+			if !invocableTypeHasVisibleNoArgConstructor(candidate, owner.Namespace) {
+				return []diagnostic.Diagnostic{annotationContractDiagnostic(owner.File, member.Range, fmt.Sprintf("InvocableMethod parameter type %s requires a visible no-argument constructor at API version 66.0 or later", candidate.Name))}
+			}
+		}
+	}
+	return nil
+}
+
+func invocableTypeHasVisibleNoArgConstructor(typ typesys.TypeSymbol, ownerNamespace string) bool {
+	visible := func(modifiers []string) bool {
+		return hasModifier(modifiers, "global") || typ.Namespace == ownerNamespace && hasModifier(modifiers, "public")
+	}
+	hasExplicit := false
+	for _, member := range typ.Members {
+		if member.Kind != apexast.DeclarationConstructor {
+			continue
+		}
+		hasExplicit = true
+		if len(member.Parameters) == 0 && visible(member.Modifiers) {
+			return true
+		}
+	}
+	return !hasExplicit && visible(typ.Modifiers)
 }
 
 func checkTypeAnnotationContracts(typ typesys.TypeSymbol) []diagnostic.Diagnostic {
@@ -218,7 +268,7 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 			valid := member.Kind == apexast.DeclarationMethod && hasEitherModifier(member.Modifiers, "public", "global")
 			if valid && hasModifier(member.Modifiers, "static") {
 				valid = hasAnnotation(typ.Annotations, "RestResource") && memberHasRESTVerb(member)
-				if version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64); err == nil && version < 49 {
+				if apexversion.Before(typ.EffectiveAPIVersion, 49) {
 					valid = valid && hasAnnotation(member.Annotations, "RemoteAction")
 				}
 			}
@@ -295,14 +345,12 @@ func jsonAccessArgumentsAllowed(annotation apexast.Annotation) bool {
 	return true
 }
 
-func annotationAPIVersionAtLeast(typ typesys.TypeSymbol, minimum float64) bool {
-	version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64)
-	return err == nil && version >= minimum
+func annotationAPIVersionAtLeast(typ typesys.TypeSymbol, minimum int) bool {
+	return apexversion.AtLeast(typ.EffectiveAPIVersion, minimum)
 }
 
-func annotationAPIVersionBefore(typ typesys.TypeSymbol, minimum float64) bool {
-	version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64)
-	return err == nil && version < minimum
+func annotationAPIVersionBefore(typ typesys.TypeSymbol, minimum int) bool {
+	return apexversion.Before(typ.EffectiveAPIVersion, minimum)
 }
 
 func isTestMethodArgumentsAllowed(typ typesys.TypeSymbol, annotation apexast.Annotation) bool {
@@ -395,14 +443,14 @@ func isTestTypeArgumentsAllowed(typ typesys.TypeSymbol, annotation apexast.Annot
 			if !strings.EqualFold(argument.Value, "true") && !strings.EqualFold(argument.Value, "false") {
 				return false
 			}
-			if version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64); err == nil && version < 66 {
+			if apexversion.Before(typ.EffectiveAPIVersion, 66) {
 				return false
 			}
 		case "testfor":
 			if _, ok := apexStringLiteralValue(argument.Value); !ok {
 				return false
 			}
-			if version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64); err == nil && version < 66 {
+			if apexversion.Before(typ.EffectiveAPIVersion, 66) {
 				return false
 			}
 		default:
@@ -423,7 +471,7 @@ func auraEnabledArgumentsAllowed(typ typesys.TypeSymbol, annotation apexast.Anno
 			if !strings.EqualFold(strings.Trim(argument.Value, "'\""), "global") {
 				return false
 			}
-			if version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64); err == nil && version < 55 {
+			if apexversion.Before(typ.EffectiveAPIVersion, 55) {
 				return false
 			}
 		default:

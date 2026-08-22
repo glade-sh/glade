@@ -78,7 +78,7 @@ func TestRunDevLWCHelpUsesLWCHelp(t *testing.T) {
 
 func TestDevLWCRoutesListComponentsPagesTabsAndVisualforce(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
   <isExposed>true</isExposed>
   <targets>
@@ -145,7 +145,7 @@ func TestDevLWCRoutesListComponentsPagesTabsAndVisualforce(t *testing.T) {
 
 func TestWriteDevLWCReadyFileWritesShellRoutes(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
   <isExposed>true</isExposed>
 </LightningComponentBundle>`)
@@ -365,7 +365,7 @@ func TestDevLWCOptionsApplyContextPresetAndExplicitOverrides(t *testing.T) {
 func TestRunDevLWCOpenUsesStubbedOpener(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
   <isExposed>true</isExposed>
 </LightningComponentBundle>`)
@@ -398,7 +398,7 @@ func TestRunDevLWCOpenUsesStubbedOpener(t *testing.T) {
 func TestRunDevLWCOpenDefaultsToWorkbench(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
   <isExposed>true</isExposed>
 </LightningComponentBundle>`)
@@ -423,7 +423,7 @@ func TestRunDevLWCOpenDefaultsToWorkbench(t *testing.T) {
 func TestRunDevLWCOpenDefaultsToWorkbenchWhenProjectHasDefaultContext(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
   <isExposed>true</isExposed>
 </LightningComponentBundle>`)
@@ -466,7 +466,7 @@ func TestRunDevLWCOpenDefaultsToWorkbenchWhenProjectHasDefaultContext(t *testing
 func TestRunDevLWCWithOpenURLErrorClosesListener(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
   <isExposed>true</isExposed>
 </LightningComponentBundle>`)
@@ -489,7 +489,7 @@ func TestRunDevLWCWithOpenURLErrorClosesListener(t *testing.T) {
 
 func TestRunDevLWCUsesDBForLocalBuilderSearch(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
   <isExposed>true</isExposed>
 </LightningComponentBundle>`)

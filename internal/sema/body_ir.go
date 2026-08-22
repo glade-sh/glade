@@ -24,7 +24,7 @@ func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSy
 	diagnostics = append(diagnostics, irDiagnostics...)
 	for _, ctor := range constructorTypes(body) {
 		for _, ref := range extractTypeNames(ctor.text) {
-			if !a.hasKnown(ref) {
+			if !a.hasKnownAtVersion(ref, typ.EffectiveAPIVersion) {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
 					Code:     "GLADESEMA006",
@@ -945,7 +945,7 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 		}
 		switch inst.Op {
 		case ir.OpDeclare:
-			if semaAPI67RejectedPlatformType(inst.Type) && !semaProjectTypeShadowsPlatform(model, inst.Type) {
+			if (semaAPI67RejectedPlatformType(inst.Type) || semaPlatformTypeUnavailable(typ.EffectiveAPIVersion, inst.Type)) && !semaProjectTypeShadowsPlatform(model, inst.Type) {
 				diagnostics = append(diagnostics, unsupportedLocalFeatureDiagnostic(typ, member, inst.Type, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(inst.Type)), source))
 			}
 			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, inst.Expr, scope, inst.Pos, bodyOffset, source, model, constructability)...)
@@ -1324,7 +1324,7 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 				fieldPath = receiverType + expr.Name[dot:]
 			}
 		}
-		if semaAPI67RejectedPlatformField(fieldPath) && !semaProjectTypeShadowsPlatform(model, fieldReceiver) {
+		if (semaAPI67RejectedPlatformField(fieldPath) || semaPlatformFieldPathUnavailable(typ.EffectiveAPIVersion, fieldPath)) && !semaProjectTypeShadowsPlatform(model, fieldReceiver) {
 			return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, expr.Name, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Name)), source)}
 		}
 		if diag, ok := a.irVariableDiagnostic(typ, member, expr.Name, *scope, model, bodyOffset+pos, source); ok {
@@ -1878,13 +1878,17 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 	if semaProjectTypeShadowsPlatform(model, receiverType) {
 		return nil, false
 	}
+	if semaPlatformTypeUnavailable(typ.EffectiveAPIVersion, receiverType) || semaPlatformMemberUnavailable(typ.EffectiveAPIVersion, receiverType, method) {
+		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source)}, true
+	}
 	if semaDatabaseDynamicQueryCall(receiverType, method) {
 		return nil, true
 	}
 	if _, ok := semaCollectionMethodSignature(receiverType, method); ok {
 		return nil, false
 	}
-	if candidates := resolveMemberMethods(model, receiverType, method); len(candidates) != 0 && !semaResolvedMembersAllPlatformBacked(model, candidates) {
+	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), receiverMode)
+	if len(candidates) != 0 && !semaResolvedMembersAllPlatformBacked(model, candidates) {
 		return nil, false
 	}
 	sig, ok := semaPlatformMethodSignatureForMode(model, receiverType, method, receiverMode)
@@ -1894,6 +1898,9 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 	argTypes := make([]string, len(args))
 	for i, arg := range args {
 		argTypes[i] = a.inferIRExprType(arg, scope, model, typ.Name)
+	}
+	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && semaResolvedMembersAllPlatformBacked(model, candidates) && semaPlatformResolvedMemberUnavailable(typ.EffectiveAPIVersion, candidate) {
+		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source)}, true
 	}
 	if semaAPI67RejectedPlatformCallArgs(receiverType, method, argTypes) {
 		return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source)}, true
@@ -1913,11 +1920,18 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
 	typeName := strings.TrimPrefix(expr.Callee, "new:")
 	resolvedTypeName := resolveNestedTypeReference(model, typ.Name, typeName)
-	if semaAPI67RejectedPlatformConstructor(typeName) && !semaProjectTypeShadowsPlatform(model, typeName) {
+	if (semaAPI67RejectedPlatformConstructor(typeName) || semaPlatformTypeUnavailable(typ.EffectiveAPIVersion, typeName)) && !semaProjectTypeShadowsPlatform(model, typeName) {
+		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, "new "+typeName, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
+	}
+	constructorName := resolvedTypeName
+	if dot := strings.LastIndexByte(constructorName, '.'); dot >= 0 {
+		constructorName = constructorName[dot+1:]
+	}
+	if semaPlatformMemberUnavailable(typ.EffectiveAPIVersion, resolvedTypeName, constructorName) && !semaProjectTypeShadowsPlatform(model, typeName) {
 		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, "new "+typeName, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
 	}
 	for _, ref := range extractTypeNames(typeName) {
-		if !a.hasKnown(ref) {
+		if !a.hasKnownAtVersion(ref, typ.EffectiveAPIVersion) {
 			return []diagnostic.Diagnostic{{
 				Severity: diagnostic.Error,
 				Code:     "GLADESEMA006",
@@ -3052,7 +3066,7 @@ func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.Memb
 			scopeStart = match[1]
 		}
 		for _, ref := range extractTypeNames(typeName) {
-			if !a.hasKnown(ref) {
+			if !a.hasKnownAtVersion(ref, typ.EffectiveAPIVersion) {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
 					Code:     "GLADESEMA006",
@@ -3094,7 +3108,7 @@ func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.Memb
 			continue
 		}
 		for _, ref := range extractTypeNames(local.typeName) {
-			if !a.hasKnown(ref) {
+			if !a.hasKnownAtVersion(ref, typ.EffectiveAPIVersion) {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
 					Code:     "GLADESEMA006",
@@ -3117,7 +3131,7 @@ func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.Memb
 		name := strings.TrimSpace(body[match[4]:match[5]])
 		scopeStart, scopeEnd := blockBoundsAfter(body, match[1])
 		for _, ref := range extractTypeNames(strings.ReplaceAll(typeName, "|", ",")) {
-			if !a.hasKnown(ref) {
+			if !a.hasKnownAtVersion(ref, typ.EffectiveAPIVersion) {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
 					Code:     "GLADESEMA006",

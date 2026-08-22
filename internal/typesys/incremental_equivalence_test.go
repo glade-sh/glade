@@ -613,7 +613,7 @@ func TestUpdateApexFilesRejectsDormantProjectIdentityDrift(t *testing.T) {
 			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) {
 				writeFile(t, filepath.Join(fixture.consumerRoot, "sfdx-project.json"), `{
   "namespace": "localpkg",
-  "sourceApiVersion": "63.0",
+  "sourceApiVersion": "65.0",
   "packageDirectories": [{"path": "force-app"}, {"path": "force-app/main/default", "default": true}]
 }`)
 			},
@@ -1390,7 +1390,7 @@ func TestUpdateApexFilesFallbackFailurePreservesPreviousSnapshot(t *testing.T) {
 	path := filepath.Join(root, "Broken.cls")
 	writeFile(t, path, "public class Broken {}")
 	previous := Index{
-		Project: ProjectInfo{Root: root, Namespace: "localpkg", SourceAPIVersion: "63.0"},
+		Project: ProjectInfo{Root: root, Namespace: "localpkg", SourceAPIVersion: "65.0"},
 		Types: []TypeSymbol{{
 			Kind:       apexast.DeclarationClass,
 			Name:       "BeforeFallback",
@@ -1619,7 +1619,7 @@ func newIncrementalEquivalenceFixtureWithDiagnostics(t *testing.T, withDiagnosti
 
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{
   "namespace": "localpkg",
-  "sourceApiVersion": "63.0",
+  "sourceApiVersion": "65.0",
   "packageDirectories": [{"path": "force-app", "default": true}]
 }`)
 	gladeConfig := `project:
@@ -1635,7 +1635,7 @@ func newIncrementalEquivalenceFixtureWithDiagnostics(t *testing.T, withDiagnosti
 	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), gladeConfig)
 	writeFile(t, filepath.Join(dependencyRoot, "sfdx-project.json"), `{
   "namespace": "BasePkg",
-  "sourceApiVersion": "62.0",
+  "sourceApiVersion": "66.0",
   "packageDirectories": [{"path": "force-app", "default": true}]
 }`)
 	writeFile(t, fixture.localClass, "public class LocalService { public static String value() { return 'initial'; } }")
@@ -1656,7 +1656,7 @@ func newIncrementalEquivalenceFixtureWithDiagnostics(t *testing.T, withDiagnosti
 		Namespace:        "artifactpkg",
 		PackageName:      "Artifact Package",
 		Version:          "3.1.0",
-		SourceAPIVersion: "61.0",
+		SourceAPIVersion: "67.0",
 		Capture: packageartifact.CaptureProvenance{
 			Source:     "fixture",
 			CapturedAt: time.Date(2026, time.July, 14, 12, 0, 0, 0, time.UTC),
@@ -1697,7 +1697,7 @@ func newIncrementalEquivalenceFixtureWithDiagnostics(t *testing.T, withDiagnosti
 	}
 
 	initial := fixture.buildFresh(t)
-	if initial.Project.Namespace != "localpkg" || initial.Project.SourceAPIVersion != "63.0" {
+	if initial.Project.Namespace != "localpkg" || initial.Project.SourceAPIVersion != "65.0" {
 		t.Fatalf("project identity = %#v", initial.Project)
 	}
 	if len(initial.CustomMetadataRecords) < 2 || len(initial.CodeIntelSymbols) == 0 || len(initial.CodeIntelUses) == 0 {
@@ -1868,7 +1868,7 @@ func TestUpdateApexFilesPreservesEnumMembersAndHasBody(t *testing.T) {
   public abstract void draw();
   public void paint() {}
 }`)
-	proj := project.Project{Root: root, ApexFiles: []string{enumPath, classPath}}
+	proj := project.Project{Root: root, SourceAPIVersion: "65.0", ApexFiles: []string{enumPath, classPath}}
 	previous := Build(proj, schema.Schema{})
 	writeFile(t, enumPath, `public enum Color { Red, Green, Blue }`)
 	writeFile(t, classPath, `public abstract class Shape {
@@ -1877,7 +1877,7 @@ func TestUpdateApexFilesPreservesEnumMembersAndHasBody(t *testing.T) {
   public Shape() {}
 }`)
 	updated := UpdateApexFiles(previous, []string{enumPath, classPath}, nil)
-	fresh := Build(project.Project{Root: root, ApexFiles: []string{enumPath, classPath}}, schema.Schema{})
+	fresh := Build(proj, schema.Schema{})
 	compareIncrementalTypeSymbolAtPath(t, enumPath, updated, fresh)
 	compareIncrementalTypeSymbolAtPath(t, classPath, updated, fresh)
 	color, ok := incrementalTypeSymbolAtPath(updated, enumPath)
@@ -1979,7 +1979,7 @@ func writeIncrementalSFDXProject(t *testing.T, root, namespace string) {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{
   "namespace": "`+namespace+`",
-  "sourceApiVersion": "63.0",
+  "sourceApiVersion": "65.0",
   "packageDirectories": [{"path": "force-app", "default": true}]
 }`)
 }

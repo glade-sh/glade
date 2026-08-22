@@ -1,6 +1,9 @@
 package apexversion
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestMajor(t *testing.T) {
 	for _, test := range []struct {
@@ -44,6 +47,39 @@ func TestEnabledBoundaries(t *testing.T) {
 	for _, raw := range []string{"", "not-a-version", "67.x"} {
 		if Enabled(raw, SecureDefaults) || Enabled(raw, LegacySiteURLHelpers) {
 			t.Errorf("Enabled(%q, ...) accepted malformed version", raw)
+		}
+	}
+}
+
+func TestResolveSourceNormalizesSupportedVersions(t *testing.T) {
+	for raw, want := range map[string]string{
+		"":      "65.0",
+		"v65.0": "65.0",
+		"65.00": "65.0",
+		"66.0":  "66.0",
+		"67.0":  "67.0",
+	} {
+		got, err := ResolveSource(raw)
+		if err != nil || got != want {
+			t.Errorf("ResolveSource(%q) = %q, %v; want %q", raw, got, err, want)
+		}
+	}
+}
+
+func TestResolveSourceRejectsUnsupportedWithoutFallback(t *testing.T) {
+	for _, raw := range []string{"64.0", "68.0", "67.1", "v", "+65.0", "junk"} {
+		got, err := ResolveSource(raw)
+		if err == nil || got != "" || !strings.Contains(err.Error(), raw) || !strings.Contains(err.Error(), "65.0, 66.0, 67.0") {
+			t.Errorf("ResolveSource(%q) = %q, %v", raw, got, err)
+		}
+	}
+}
+
+func TestRangeAllowsSinceInclusiveUntilExclusive(t *testing.T) {
+	rng := Range{Since: 66, Until: 68}
+	for raw, want := range map[string]bool{"65.0": false, "66.0": true, "67.0": true, "68.0": false, "junk": false} {
+		if got := rng.Allows(raw); got != want {
+			t.Errorf("Range.Allows(%q) = %t, want %t", raw, got, want)
 		}
 	}
 }

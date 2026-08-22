@@ -7,16 +7,18 @@ import (
 )
 
 func TestAnalyzeAnonymousUsesBodyContracts(t *testing.T) {
-	result := AnalyzeAnonymous(typesys.Index{}, `String value = 'x'; insert value;`)
+	result := AnalyzeAnonymous(typesys.Index{}, `String value = 'x'; insert value;`, "67.0")
 	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA034") {
 		t.Fatalf("expected anonymous DML diagnostic: %#v", result.Diagnostics)
 	}
 }
 
-func TestAnalyzeAnonymousAcceptsMultilineStringLiteral(t *testing.T) {
-	result := AnalyzeAnonymous(typesys.Index{}, "String value = '''\nhello\n''';")
-	if result.HasErrors() {
-		t.Fatalf("multiline string diagnostics = %#v", result.Diagnostics)
+func TestMultilineStringLiteralAvailableAcrossSupportedVersions(t *testing.T) {
+	for _, version := range []string{"65.0", "66.0", "67.0"} {
+		result := AnalyzeAnonymous(typesys.Index{}, "String value = '''\nhello\n''';", version)
+		if result.HasErrors() {
+			t.Fatalf("API %s multiline string diagnostics = %#v", version, result.Diagnostics)
+		}
 	}
 }
 
@@ -29,10 +31,20 @@ func TestAnalyzeAnonymousRejectsNonSalesforcePatternSurface(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result := AnalyzeAnonymous(typesys.Index{}, tc.source)
+			result := AnalyzeAnonymous(typesys.Index{}, tc.source, "67.0")
 			if len(result.Diagnostics) == 0 {
 				t.Fatalf("expected non-Salesforce Pattern API to be rejected, got no diagnostics")
 			}
 		})
+	}
+}
+
+func TestAnalyzeAnonymousFollowsSourceAPIVersion(t *testing.T) {
+	const source = `List<Account> rows = [SELECT Id FROM Account WITH SECURITY_ENFORCED];`
+	if result := AnalyzeAnonymous(typesys.Index{}, source, "66.0"); result.HasErrors() {
+		t.Fatalf("66.0 diagnostics = %#v", result.Diagnostics)
+	}
+	if result := AnalyzeAnonymous(typesys.Index{}, source, "67.0"); !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT") {
+		t.Fatalf("67.0 diagnostics = %#v", result.Diagnostics)
 	}
 }

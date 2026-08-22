@@ -1,9 +1,24 @@
 package apexversion
 
 import (
+	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 )
+
+type Range struct {
+	Since int `json:"since,omitempty"`
+	Until int `json:"until,omitempty"`
+}
+
+func (r Range) Allows(raw string) bool {
+	major, ok := Major(raw)
+	if !ok || major < r.Since {
+		return false
+	}
+	return r.Until == 0 || major < r.Until
+}
 
 type Feature uint8
 
@@ -48,6 +63,42 @@ func unsignedComponent(raw string) (int, bool) {
 	}
 	value, err := strconv.Atoi(raw)
 	return value, err == nil
+}
+
+func ResolveSource(raw string) (string, error) {
+	requested := strings.TrimSpace(raw)
+	if requested == "" {
+		return DefaultSourceAPIVersion, nil
+	}
+	numeric := strings.TrimPrefix(requested, "v")
+	parts := strings.Split(numeric, ".")
+	if len(parts) != 2 {
+		return "", unsupportedSourceVersion(requested)
+	}
+	major, majorOK := unsignedComponent(parts[0])
+	minor, minorOK := unsignedComponent(parts[1])
+	if !majorOK || !minorOK || major < 1 || minor != 0 {
+		return "", unsupportedSourceVersion(requested)
+	}
+	normalized := fmt.Sprintf("%d.0", major)
+	if !slices.Contains(SupportedSourceAPIVersions, normalized) {
+		return "", unsupportedSourceVersion(requested)
+	}
+	return normalized, nil
+}
+
+func unsupportedSourceVersion(requested string) error {
+	return fmt.Errorf("unsupported source API version %q; supported versions: %s", requested, strings.Join(SupportedSourceAPIVersions, ", "))
+}
+
+func AtLeast(raw string, minimum int) bool {
+	major, ok := Major(raw)
+	return ok && major >= minimum
+}
+
+func Before(raw string, minimum int) bool {
+	major, ok := Major(raw)
+	return ok && major < minimum
 }
 
 func Enabled(raw string, feature Feature) bool {

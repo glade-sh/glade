@@ -73,7 +73,7 @@ func TestPollingWatcherReportsLightningWebComponentChanges(t *testing.T) {
 func TestPollingWatcherReportsProjectConfigChanges(t *testing.T) {
 	root := t.TempDir()
 	configPath := filepath.Join(root, "sfdx-project.json")
-	writeWatchFile(t, configPath, `{"sourceApiVersion":"63.0","packageDirectories":[]}`)
+	writeWatchFile(t, configPath, `{"sourceApiVersion":"65.0","packageDirectories":[]}`)
 	initial, err := CaptureSnapshot(root)
 	if err != nil {
 		t.Fatal(err)
@@ -83,7 +83,7 @@ func TestPollingWatcherReportsProjectConfigChanges(t *testing.T) {
 	watcher := NewPollingWatcher(ctx, Config{Root: root, Debounce: 10 * time.Millisecond}, initial)
 	defer watcher.Close()
 
-	writeWatchFile(t, configPath, `{"sourceApiVersion":"64.00","packageDirectories":[]}`)
+	writeWatchFile(t, configPath, `{"sourceApiVersion":"66.00","packageDirectories":[]}`)
 	select {
 	case changes := <-watcher.Changes():
 		assertChange(t, changes, configPath, ChangeModified, FileKindIgnored)

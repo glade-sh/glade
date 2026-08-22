@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
@@ -21,10 +21,11 @@ import (
 // project compiler used for Apex classes, then registered only on this VM.
 // The body keeps its original byte offsets so diagnostics remain useful.
 type preparedAnonymousSource struct {
-	body    string
-	index   typesys.Index
-	runtime apextest.CompiledProjectRuntime
-	cleanup func()
+	body       string
+	apiVersion string
+	index      typesys.Index
+	runtime    apextest.CompiledProjectRuntime
+	cleanup    func()
 }
 
 func (p preparedAnonymousSource) close() {
@@ -34,7 +35,11 @@ func (p preparedAnonymousSource) close() {
 }
 
 func prepareAnonymousSource(source, apiVersion string) (preparedAnonymousSource, error) {
-	prepared := preparedAnonymousSource{body: source}
+	apiVersion, err := apexversion.ResolveSource(apiVersion)
+	if err != nil {
+		return preparedAnonymousSource{}, err
+	}
+	prepared := preparedAnonymousSource{body: source, apiVersion: apiVersion}
 	parsed := apexast.NewParser().ParseSource("__glade_anonymous.cls", source)
 	var declarations []struct {
 		start int
@@ -95,9 +100,6 @@ func prepareAnonymousSource(source, apiVersion string) (preparedAnonymousSource,
 		}
 	}
 	prepared.body = string(body)
-	if strings.TrimSpace(apiVersion) == "" {
-		apiVersion = "67.0"
-	}
 	index := typesys.Build(project.Project{
 		Root:             tempRoot,
 		SourceAPIVersion: apiVersion,

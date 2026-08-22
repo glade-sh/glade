@@ -27,7 +27,7 @@ const SemanticABI = "sema-v2"
 // PlatformABI identifies the built-in Salesforce platform model consumed by
 // semantic analysis. Changes to built-in signatures, aliases, or visibility
 // must bump this value so persisted semantic results fail closed.
-const PlatformABI = "salesforce-platform-v1"
+const PlatformABI = "salesforce-platform-v2"
 
 type Result struct {
 	Project     typesys.ProjectInfo      `json:"project"`
@@ -190,6 +190,7 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 	}
 
 	if opts.Diagnostics {
+		result.Diagnostics = append(result.Diagnostics, sourceAPIVersionDiagnostics(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkTriggers(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkDeclarationContracts(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkMemberTypes(index)...)
@@ -1029,7 +1030,7 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 	scopeStart, scopeEnd := blockBoundsAt(body, match[0])
 	visibleStart := semaLocalVisibleStart(body, match[1]-1, match[5])
 	for _, ref := range extractTypeNames(typeName) {
-		if !a.hasKnown(ref) {
+		if !a.hasKnownAtVersion(ref, typ.EffectiveAPIVersion) {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
 				Code:     "GLADESEMA006",
@@ -1561,7 +1562,7 @@ func (a *Analyzer) expressionTypeReferenceDiagnostics(typ typesys.TypeSymbol, me
 			continue
 		}
 		seen[key] = true
-		if !a.hasKnown(ref) {
+		if !a.hasKnownAtVersion(ref, typ.EffectiveAPIVersion) {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
 				Code:     "GLADESEMA006",

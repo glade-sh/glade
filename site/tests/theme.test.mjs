@@ -174,10 +174,14 @@ test("release notes cover the v0.2.11 release", () => {
   assert.match(releaseNotes, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.11\/docs\/KNOWN_GAPS\.md/);
 });
 
-test("unreleased notes reset after the release cut", () => {
+test("unreleased notes describe Salesforce moving correctness", () => {
   const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(unreleased, "release notes should contain an Unreleased section");
-  assert.match(unreleased[1], /No changes yet\./);
+  assert.doesNotMatch(unreleased[1], /No changes yet\./);
+  assert.match(unreleased[1], /moving-correctness/i);
+  assert.match(unreleased[1], /unsupported versions fail/i);
+  assert.match(unreleased[1], /explicit\s+non-parity/i);
+  assert.match(unreleased[1], /source receipt/i);
   assert.doesNotMatch(releaseNotes, /profiled large [A-Z]{2} test methods/);
 });
 

@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-const soapApexTestPath = "/services/Soap/s/60.0/00DLOCAL000000001"
+const soapApexTestPath = "/services/Soap/s/65.0/00DLOCAL000000001"
 
 func TestSOAPApexExecuteAnonymousInsertsIntoLocalOrg(t *testing.T) {
 	org := testOrg()
@@ -83,6 +83,31 @@ func TestSOAPApexExecuteAnonymousCompileFailureReturnsSOAPResult(t *testing.T) {
 	}
 	if len(org.Objects["Account"].Records) != 0 {
 		t.Fatalf("compile failure committed records = %#v", org.Objects["Account"].Records)
+	}
+}
+
+func TestSOAPApexExecuteAnonymousVersion60IsExplicitlyUnsupported(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/Soap/s/60.0/00DLOCAL000000001", strings.NewReader(soapEnvelope(`
+		<apex:executeAnonymous><apex:String>System.debug('legacy');</apex:String></apex:executeAnonymous>`))))
+	result := decodeSOAPResult(t, rec.Body.String())
+	if rec.Code != http.StatusOK || result["compiled"] != "false" || !strings.Contains(result["compileProblem"], "unsupported source API version") {
+		t.Fatalf("status = %d result=%#v body=%s", rec.Code, result, rec.Body.String())
+	}
+}
+
+func TestSOAPApexExecuteAnonymousPreservesURIVersion(t *testing.T) {
+	org := testOrg()
+	org.APIVersion = "65.0"
+	handler := New(&org)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/Soap/s/67.0/00DLOCAL000000001", strings.NewReader(soapEnvelope(`
+		<apex:executeAnonymous><apex:String>List&lt;Account&gt; rows = [SELECT Id FROM Account WITH SECURITY_ENFORCED];</apex:String></apex:executeAnonymous>`))))
+	result := decodeSOAPResult(t, rec.Body.String())
+	if rec.Code != http.StatusOK || result["compiled"] != "false" || !strings.Contains(result["compileProblem"], "WITH SECURITY_ENFORCED") {
+		t.Fatalf("status = %d result=%#v body=%s", rec.Code, result, rec.Body.String())
 	}
 }
 

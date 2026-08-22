@@ -13,7 +13,7 @@ func (s *Server) handleSOAP(w http.ResponseWriter, r *http.Request, parts []stri
 		return
 	}
 	if len(parts) == 3 && parts[0] == "s" {
-		s.handleSOAPApex(w, r)
+		s.handleSOAPApex(w, r, parts[1])
 		return
 	}
 	if len(parts) >= 2 && parts[0] == "u" {

@@ -10,28 +10,28 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-const dapCacheVersion = 3
+const dapCacheVersion = 4
 
-func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, error) {
+func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
 	root, err := filepath.Abs(projectRoot)
 	if err != nil {
-		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, err
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
 	}
 	root = filepath.Clean(root)
 	cache, err := startupcache.Read(root, startupcache.SubdirDAP)
 	if err != nil {
-		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, err
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
 	}
 	if cache != nil && startupcache.Fresh(cache, root, dapCacheVersion) {
-		return cache.Org, compiledRuntimeFromCache(cache.Runtime), nil
+		return cache.Org, compiledRuntimeFromCache(cache.Runtime), cache.Manifest.SourceAPIVersion, nil
 	}
 	p, index, err := loadProjectIndex(root)
 	if err != nil {
-		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, err
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
 	}
 	org, err := orgStateFromIndex(root, p, index)
 	if err != nil {
-		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, err
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
 	}
 	runtime := apextest.CompileProjectRuntimeForRequest(index)
 	built := startupcache.NewEntry(root, p, index, org, compiledRuntimeToCache(runtime))
@@ -40,7 +40,7 @@ func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.Compile
 		// Caching is an optimization; keep serving from rebuilt state even if
 		// cache persistence fails.
 	}
-	return built.Org, runtime, nil
+	return built.Org, runtime, p.SourceAPIVersion, nil
 }
 
 func compiledRuntimeFromCache(runtime startupcache.CompiledRuntime) apextest.CompiledProjectRuntime {

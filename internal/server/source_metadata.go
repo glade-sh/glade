@@ -137,11 +137,8 @@ func NewSourceMetadataFromProject(p project.Project) (SourceMetadata, error) {
 		Compact:     make(map[string][]compactLayoutMetadata),
 		componentBy: make(map[string]metadataComponent),
 	}
-	meta.ToolingOrg.APIVersion = p.SourceAPIVersion
+	meta.ToolingOrg.APIVersion = storage.DefaultRESTAPIVersion
 	meta.ToolingOrg.Namespace = p.Namespace
-	if meta.ToolingOrg.APIVersion == "" {
-		meta.ToolingOrg.APIVersion = storage.DefaultRESTAPIVersion
-	}
 	if err := meta.loadToolingObjects(); err != nil {
 		return SourceMetadata{}, err
 	}
@@ -248,6 +245,9 @@ func (m *SourceMetadata) loadToolingObjects() error {
 		"CompactLayout":  toolingObjectDefinition("CompactLayout", "Compact Layout", "0CL", []string{"DeveloperName", "FullName", "MasterLabel", "SobjectType", "NamespacePrefix", "ManageableState"}),
 		"RecordType":     toolingObjectDefinition("RecordType", "Record Type", "012", []string{"DeveloperName", "FullName", "Name", "SobjectType", "Active", "IsActive"}),
 		"ValidationRule": toolingObjectDefinition("ValidationRule", "Validation Rule", "03d", []string{"ValidationName", "FullName", "EntityDefinitionId", "Active", "ErrorMessage", "Description"}),
+	}
+	for name := range generatedToolingObjectAvailability {
+		defs[name] = toolingObjectDefinition(name, name, "", []string{"DeveloperName", "FullName"})
 	}
 	for name, def := range defs {
 		m.ToolingOrg.Objects[name] = storage.ObjectState{Definition: def, Records: make(map[storage.ID]storage.Record)}

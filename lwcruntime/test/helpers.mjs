@@ -40,12 +40,24 @@ export function requireLWCToolchain(t) {
 
 export function compileFixture(fixtureRel, outDir) {
   const fixture = path.join(repoRoot, fixtureRel);
+  const lwcMetaFiles = walkFiles(fixture, ".js-meta.xml");
+  const lwcApiVersions = {};
+  for (const rel of lwcMetaFiles) {
+    const source = fs.readFileSync(path.join(fixture, rel), "utf8");
+    const match = source.match(/<apiVersion>\s*([0-9]+)(?:\.[0-9]+)?\s*<\/apiVersion>/);
+    if (!match) {
+      throw new Error(`missing component API version: ${rel}`);
+    }
+    lwcApiVersions[path.dirname(rel).split(path.sep).join("/")] = Number(match[1]);
+  }
   const config = JSON.stringify({
     projectRoot: fixture,
     outDir,
     namespace: "c",
     lwcFiles: walkFiles(fixture, ".js"),
     lwcHtmlFiles: walkFiles(fixture, ".html"),
+    lwcMetaFiles,
+    lwcApiVersions,
   });
   const result = spawnSync("node", ["compile.mjs"], {
     cwd: path.join(repoRoot, "third_party/lwc"),

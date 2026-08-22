@@ -82,7 +82,7 @@ func TestCB104StdlibExactCompileParity(t *testing.T) {
 			rejected++
 		}
 		t.Run(row.surfaceID, func(t *testing.T) {
-			result := AnalyzeAnonymous(typesys.Index{}, row.source)
+			result := AnalyzeAnonymous(typesys.Index{}, row.source, "67.0")
 			if result.HasErrors() == !row.accepted {
 				return
 			}
@@ -102,7 +102,7 @@ func TestStringJoinExactCollectionOverloadsCompile(t *testing.T) {
 String listJoined = String.join(new List<Object>{'a'}, ',');
 String setJoined = String.join(new Set<Object>{'a'}, ',');
 `
-	result := AnalyzeAnonymous(typesys.Index{}, source)
+	result := AnalyzeAnonymous(typesys.Index{}, source, "67.0")
 	if result.HasErrors() {
 		t.Fatalf("exact String.join collection overloads rejected: %#v", result.Diagnostics)
 	}

@@ -2762,7 +2762,7 @@ for (String fieldName : fields.keySet()) {
 
 func TestRunPackageBuildUsesRequestedNamespace(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"PKG","sourceApiVersion":"61.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"PKG","sourceApiVersion":"65.0","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Address.cls"), `
 global class Address {
   global String street;
@@ -2804,7 +2804,7 @@ public class Hidden {
 	if err := json.Unmarshal(data, &artifact); err != nil {
 		t.Fatal(err)
 	}
-	if artifact.Namespace != "pkg" || artifact.Version != "test-version" || artifact.SourceAPIVersion != "61.0" || artifact.SourceHash == "" {
+	if artifact.Namespace != "pkg" || artifact.Version != "test-version" || artifact.SourceAPIVersion != "65.0" || artifact.SourceHash == "" {
 		t.Fatalf("artifact metadata = %#v", artifact)
 	}
 	if len(artifact.ApexTypes) != 1 || artifact.ApexTypes[0].Name != "Address" || artifact.ApexTypes[0].Namespace != "pkg" {
@@ -2832,7 +2832,7 @@ public class Hidden {
 
 func TestRunPackageRichArtifactWorkflow(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"PKG","sourceApiVersion":"61.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"PKG","sourceApiVersion":"65.0","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Address.cls"), `
 global class Address {
   global String street;
@@ -3252,7 +3252,7 @@ func TestRunParseProgressWritesToStderr(t *testing.T) {
 
 func TestRunInspectSymbolsJSON(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"pkg","sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"pkg","sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Hello.cls"), "public class Hello { public void run() {} }")
 	writeTestFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Thing</label></CustomObject>`)
 
@@ -3268,7 +3268,7 @@ func TestRunInspectSymbolsJSON(t *testing.T) {
 
 func TestRunInspectSymbolsTextIsScannableAndRelative(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"pkg","sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"pkg","sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Hello.cls"), "public class Hello { public void run() {} }")
 	writeTestFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Thing</label></CustomObject>`)
 
@@ -3314,7 +3314,7 @@ func TestInspectPerformanceMovedToPlugin(t *testing.T) {
 
 func TestRunInspectSymbolsProgressWritesToStderr(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Hello.cls"), "public class Hello { public void run() {} }")
 
 	var stdout, stderr bytes.Buffer
@@ -3920,7 +3920,7 @@ func TestRunDAP(t *testing.T) {
 
 func TestRunDAPAcceptsDBFlag(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	dbPath := filepath.Join(root, ".glade", "envs", "dev.sqlite")
 	initMessage, err := encodeDAPRequest(dap.CommandInitialize, 1, map[string]any{"clientID": "test"})
 	if err != nil {
@@ -4016,7 +4016,7 @@ func TestRunDAPLaunchAcceptsIDEProjectRootAndAnonymousBody(t *testing.T) {
 
 func TestRunDAPWithDBPersistsOnCleanTermination(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	dbPath := filepath.Join(root, ".glade", "envs", "dev.sqlite")
 
 	inR, inW := io.Pipe()
@@ -4063,7 +4063,7 @@ func TestRunDAPWithDBPersistsOnCleanTermination(t *testing.T) {
 
 func TestRunDAPLaunchCanExecutePrivateTestMethodInClass(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/SampleTest.cls"), `
 @IsTest
 private class SampleTest {
@@ -4110,7 +4110,7 @@ private class SampleTest {
 
 func TestRunDAPLaunchTestMethodDoesNotPersistDBWrites(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/SampleTest.cls"), `
 @IsTest
 private class SampleTest {
@@ -4188,6 +4188,67 @@ func TestRunExec(t *testing.T) {
 	}
 }
 
+func TestSupportedSourceAPIVersionExecutionMatrix(t *testing.T) {
+	for _, apiVersion := range []string{"65.0", "66.0", "67.0"} {
+		t.Run(apiVersion, func(t *testing.T) {
+			root := t.TempDir()
+			writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"`+apiVersion+`"}`)
+			p, index, err := loadProjectIndex(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			prepared, err := prepareAnonymousSource("Integer value = 1 + 1; System.assertEquals(2, value);", p.SourceAPIVersion)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer prepared.close()
+			if result := sema.AnalyzeAnonymous(index, prepared.body, prepared.apiVersion); result.HasErrors() {
+				t.Fatalf("diagnostics = %#v", result.Diagnostics)
+			}
+			program, err := vm.CompileAnonymousWithOptions(prepared.body, vm.CompileOptions{APIVersion: prepared.apiVersion})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if program.APIVersion != apiVersion {
+				t.Fatalf("program API version = %q, want %q", program.APIVersion, apiVersion)
+			}
+			org, err := orgStateFromIndex(root, p, index)
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := vm.New(nil)
+			machine.SetOrg(&org)
+			if _, err := machine.Execute(program); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestRunExecFollowsSourceAPIVersion(t *testing.T) {
+	const source = `List<Account> rows = [SELECT Id FROM Account WITH SECURITY_ENFORCED];`
+	for _, test := range []struct {
+		apiVersion string
+		wantError  bool
+	}{
+		{apiVersion: "66.0"},
+		{apiVersion: "67.0", wantError: true},
+	} {
+		t.Run(test.apiVersion, func(t *testing.T) {
+			root := t.TempDir()
+			writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"`+test.apiVersion+`"}`)
+			var stdout, stderr bytes.Buffer
+			code := Run(context.Background(), []string{"exec", "--project", root, source}, &stdout, &stderr)
+			if (code != 0) != test.wantError {
+				t.Fatalf("code = %d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+			}
+			if test.wantError && !strings.Contains(stderr.String(), "GLADESEMA_QUERY_CONTRACT") {
+				t.Fatalf("stderr = %q", stderr.String())
+			}
+		})
+	}
+}
+
 func TestRunExecRejectsReservedLocalIdentifiersWithAndWithoutProject(t *testing.T) {
 	projectRoot := t.TempDir()
 	writeTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"66.0"}`)
@@ -4240,7 +4301,7 @@ func TestRunExecSummaryCapsDebugLines(t *testing.T) {
 
 func TestRunExecWithDBPersistsAnonymousDML(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	dbPath := filepath.Join(root, ".glade", "envs", "dev.sqlite")
 
 	var stdout, stderr bytes.Buffer
@@ -4272,7 +4333,7 @@ func TestRunExecWithDBPersistsAnonymousDML(t *testing.T) {
 
 func TestRunExecWithProjectRegistersLocalClasses(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/LocalProbe.cls"), `
 public class LocalProbe {
   public static String value() {
@@ -4325,7 +4386,7 @@ System.assertEquals('ok', probe.value());`,
 
 func TestRunExecWithProjectRejectsAnonymousSemanticDiagnosticsBeforeExecution(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"exec", "--project", root, "String value = 'x'; insert value;"}, &stdout, &stderr)
 	if code == 0 || !strings.Contains(stderr.String(), "GLADESEMA034") {
@@ -4348,7 +4409,7 @@ func TestRunExecWithProjectUsesLocalPlatformHarnesses(t *testing.T) {
 
 func TestRunExecLoadsCurrentProjectOrgFeaturesByDefault(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [MultiCurrency]\n")
 	t.Chdir(root)
 
@@ -4364,7 +4425,7 @@ func TestRunExecLoadsCurrentProjectOrgFeaturesByDefault(t *testing.T) {
 
 func TestRunExecWithDBDryRunDoesNotPersist(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	dbPath := filepath.Join(root, ".glade", "envs", "dev.sqlite")
 
 	var stdout, stderr bytes.Buffer
@@ -4396,7 +4457,7 @@ func TestRunExecWithDBDryRunDoesNotPersist(t *testing.T) {
 
 func TestRunExecWithDBDoesNotPersistOnExecutionError(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	dbPath := filepath.Join(root, ".glade", "envs", "dev.sqlite")
 
 	var stdout, stderr bytes.Buffer
@@ -6474,7 +6535,7 @@ func TestRunReportListRejectsIgnoredOutputFlag(t *testing.T) {
 func writePerformanceScanProject(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"64.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"66.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Risk.cls"), `
 public class Risk {
     @AuraEnabled
@@ -6502,7 +6563,7 @@ func writeTestFile(t *testing.T, path, content string) {
 
 func writeProjectWithWidgetField(t *testing.T, root, fieldName string) {
 	t.Helper()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/classes/WidgetService.cls"), "public class WidgetService { public void run() {} }")
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/objects/Widget__c/Widget__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Widget</label><pluralLabel>Widgets</pluralLabel></CustomObject>`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/objects/Widget__c/fields/"+fieldName+".field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>`+fieldName+`</fullName><label>`+fieldName+`</label><type>Text</type></CustomField>`)

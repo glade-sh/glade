@@ -39,7 +39,7 @@ func TestSetupBundleIncludesLabelsSibling(t *testing.T) {
 func writeSetupLabelsFixture(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
-	writeSetupLabelsFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"62.0"}`)
+	writeSetupLabelsFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"66.0"}`)
 	bundleDir := filepath.Join(root, "force-app", "main", "default", "lwc", "setup")
 	writeSetupLabelsFile(t, filepath.Join(bundleDir, "setup.html"), `<template><span>{label}</span></template>`)
 	writeSetupLabelsFile(t, filepath.Join(bundleDir, "setup.js"), `import { LightningElement } from 'lwc';
@@ -51,7 +51,7 @@ export default class Setup extends LightningElement {
 `)
 	writeSetupLabelsFile(t, filepath.Join(bundleDir, "labels.js"), `export const labels = { Greeting: "Hello from Glade" };`)
 	writeSetupLabelsFile(t, filepath.Join(bundleDir, "setup.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-  <apiVersion>62.0</apiVersion>
+  <apiVersion>66.0</apiVersion>
   <isExposed>true</isExposed>
 </LightningComponentBundle>`)
 	return root

@@ -2607,6 +2607,21 @@ System.assertNotEquals(null, fetched);
 	}
 }
 
+func TestNamedCredentialsExternalAuthIdentityProviderChangesAreExplicitlyUnsupported(t *testing.T) {
+	for _, source := range []string{
+		`ConnectApi.NamedCredentials.deleteExternalAuthIdentityProvider('provider');`,
+		`ConnectApi.NamedCredentials.updateExternalAuthIdentityProvider('provider', new ConnectApi.ExternalAuthIdentityProviderInput());`,
+	} {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := New(nil).Execute(program); err == nil || !strings.Contains(err.Error(), "ConnectApi.ConnectApiException") {
+			t.Fatalf("source %q error = %v", source, err)
+		}
+	}
+}
+
 func TestExecConnectApiPrimaryUsageFallbackThrowsConnectApiException(t *testing.T) {
 	cases := []struct {
 		name string
@@ -10893,6 +10908,35 @@ func TestExecPassiveLimitsGettersHaveStableValues(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+func TestExecPaginationCursorGovernorAccounting(t *testing.T) {
+	program, err := CompileAnonymousWithOptions(`
+insert new Account(Name = 'Acme');
+insert new Account(Name = 'Beta');
+
+System.assertEquals(0, Limits.getApexPaginationCursors());
+System.assertEquals(50, Limits.getLimitApexPaginationCursors());
+System.assertEquals(0, Limits.getApexPaginationCursorRows());
+System.assertEquals(100000, Limits.getLimitApexPaginationCursorRows());
+
+Database.PaginationCursor cursor = Database.getPaginationCursor('SELECT Id FROM Account ORDER BY Name');
+System.assertEquals(1, Limits.getApexPaginationCursors());
+System.assertEquals(0, Limits.getApexPaginationCursorRows());
+cursor.fetchPage(0, 1);
+System.assertEquals(1, Limits.getApexPaginationCursorRows());
+cursor.fetchPage(1, 1);
+System.assertEquals(2, Limits.getApexPaginationCursorRows());
+`, CompileOptions{APIVersion: "66.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

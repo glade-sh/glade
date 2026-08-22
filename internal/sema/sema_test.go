@@ -231,7 +231,7 @@ public class UsesXor {
 }
 
 func TestAnalyzeAnonymousStillRejectsRuntimeUnlowerableSource(t *testing.T) {
-	result := AnalyzeAnonymous(typesys.Index{}, "Integer flags = 1 ^ 2;")
+	result := AnalyzeAnonymous(typesys.Index{}, "Integer flags = 1 ^ 2;", "67.0")
 	if !result.HasErrors() {
 		t.Fatalf("runtime-unlowerable anonymous source unexpectedly passed: %#v", result.Diagnostics)
 	}
@@ -9727,7 +9727,7 @@ public class ValidOrderSummaryShape {
   }
 }
 `)
-	valid := Analyze(typesys.Build(project.Project{Root: root, ApexFiles: []string{validPath}}, schema.Schema{}))
+	valid := Analyze(typesys.Build(project.Project{Root: root, SourceAPIVersion: "66.0", ApexFiles: []string{validPath}}, schema.Schema{}))
 	for _, diag := range valid.Diagnostics {
 		if diag.Code == "GLADESEMA009" || diag.Code == "GLADESEMA006" || diag.Code == "GLADESEMA018" {
 			t.Fatalf("valid OrderSummary shape diagnostic: %#v", valid.Diagnostics)
@@ -9743,7 +9743,7 @@ public class InvalidOrderSummaryShape {
   }
 }
 `)
-	invalid := Analyze(typesys.Build(project.Project{Root: root, ApexFiles: []string{invalidPath}}, schema.Schema{}))
+	invalid := Analyze(typesys.Build(project.Project{Root: root, SourceAPIVersion: "66.0", ApexFiles: []string{invalidPath}}, schema.Schema{}))
 	count := 0
 	for _, diag := range invalid.Diagnostics {
 		if diag.Code == "GLADESEMA023" {
@@ -13619,6 +13619,15 @@ func slicesEqual(a, b []string) bool {
 func hasDiagnosticCode(diagnostics []diagnostic.Diagnostic, code string) bool {
 	for _, diag := range diagnostics {
 		if diag.Code == code {
+			return true
+		}
+	}
+	return false
+}
+
+func hasErrorOtherThan(diagnostics []diagnostic.Diagnostic, ignoredCode string) bool {
+	for _, diag := range diagnostics {
+		if diag.Severity == diagnostic.Error && diag.Code != ignoredCode {
 			return true
 		}
 	}
