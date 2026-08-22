@@ -204,7 +204,7 @@ func lex(source string) ([]token, error) {
 				}
 			}
 			switch source[i] {
-			case '(', ')', '{', '}', '[', ']', ';', ',', '.', ':', '?', '+', '-', '*', '/', '%', '=', '<', '>', '!', '&', '|':
+			case '(', ')', '{', '}', '[', ']', ';', ',', '.', ':', '?', '+', '-', '*', '/', '%', '=', '<', '>', '!', '&', '|', '^':
 				tokens = append(tokens, token{kind: tokenSymbol, text: source[i : i+1], pos: start})
 				i++
 			default:
@@ -1138,7 +1138,7 @@ func (p *parser) parseOr() (ir.Expr, error) {
 	if err != nil {
 		return ir.Expr{}, err
 	}
-	for p.matchAnySymbol("||", "|") {
+	for p.match(tokenSymbol, "||") {
 		right, err := p.parseAnd()
 		if err != nil {
 			return ir.Expr{}, err
@@ -1149,16 +1149,61 @@ func (p *parser) parseOr() (ir.Expr, error) {
 }
 
 func (p *parser) parseAnd() (ir.Expr, error) {
-	left, err := p.parseEquality()
+	left, err := p.parseBitwiseOr()
 	if err != nil {
 		return ir.Expr{}, err
 	}
-	for p.matchAnySymbol("&&", "&") {
-		right, err := p.parseEquality()
+	for p.match(tokenSymbol, "&&") {
+		right, err := p.parseBitwiseOr()
 		if err != nil {
 			return ir.Expr{}, err
 		}
 		left = binary("&&", left, right)
+	}
+	return left, nil
+}
+
+func (p *parser) parseBitwiseOr() (ir.Expr, error) {
+	left, err := p.parseBitwiseXor()
+	if err != nil {
+		return ir.Expr{}, err
+	}
+	for p.match(tokenSymbol, "|") {
+		right, err := p.parseBitwiseXor()
+		if err != nil {
+			return ir.Expr{}, err
+		}
+		left = binary("|", left, right)
+	}
+	return left, nil
+}
+
+func (p *parser) parseBitwiseXor() (ir.Expr, error) {
+	left, err := p.parseBitwiseAnd()
+	if err != nil {
+		return ir.Expr{}, err
+	}
+	for p.match(tokenSymbol, "^") {
+		right, err := p.parseBitwiseAnd()
+		if err != nil {
+			return ir.Expr{}, err
+		}
+		left = binary("^", left, right)
+	}
+	return left, nil
+}
+
+func (p *parser) parseBitwiseAnd() (ir.Expr, error) {
+	left, err := p.parseEquality()
+	if err != nil {
+		return ir.Expr{}, err
+	}
+	for p.match(tokenSymbol, "&") {
+		right, err := p.parseEquality()
+		if err != nil {
+			return ir.Expr{}, err
+		}
+		left = binary("&", left, right)
 	}
 	return left, nil
 }

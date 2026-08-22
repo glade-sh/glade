@@ -1659,13 +1659,21 @@ func TestCompileAnonymousRejectsReservedLocalIdentifier(t *testing.T) {
 	}
 }
 
-func TestCompileAnonymousDoesNotClassifyParserRejectedCaret(t *testing.T) {
-	_, err := CompileAnonymous("^")
-	if err == nil {
-		t.Fatal("CompileAnonymous(^) unexpectedly succeeded")
+func TestExecXorIntegerAndLongOperators(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer value = 5 ^ 3;
+Long longValue = 1L ^ 3L;
+System.assertEquals(6, value);
+System.assertEquals(2L, longValue);
+System.assert(!((1L ^ 3L) instanceof Integer));
+System.assertEquals(1, 1 | 2 ^ 3);
+System.assertEquals(3, 1 ^ 3 & 2);
+`)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if _, ok := err.(*RuntimeLoweringError); ok {
-		t.Fatalf("CompileAnonymous(^) returned runtime-lowering error for parser-rejected source: %v", err)
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

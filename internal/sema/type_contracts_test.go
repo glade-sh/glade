@@ -199,6 +199,7 @@ func TestTypeContractRejectsInvalidOperators(t *testing.T) {
 		"negates integer":          "!1",
 		"orders booleans":          "true < false",
 		"multiplies string":        "'value' * 2",
+		"xors string":              "'value' ^ 2",
 		"casts incompatible types": "(String) 1",
 		"impossible instanceof":    "1 instanceof String",
 		"incompatible coalesce":    "'value' ?? 1",
