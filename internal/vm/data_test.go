@@ -7434,6 +7434,37 @@ System.assertEquals('Child', contacts[0].LastName);
 	}
 }
 
+func TestExecSObjectGetSObjectsWithFieldToken(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account unqueried = new Account(Name = 'unqueried');
+System.assertEquals(null, unqueried.getSObjects(Contact.AccountId));
+
+Account emptyParent = new Account(Name = 'empty');
+insert emptyParent;
+Account emptyRow = [SELECT Id, (SELECT Id FROM Contacts) FROM Account WHERE Id = :emptyParent.Id];
+System.assertEquals(null, emptyRow.getSObjects(Contact.AccountId));
+
+Account populatedParent = new Account(Name = 'populated');
+insert populatedParent;
+insert new Contact(LastName = 'child', AccountId = populatedParent.Id);
+Account populatedRow = [SELECT Id, (SELECT Id, LastName FROM Contacts) FROM Account WHERE Id = :populatedParent.Id];
+List<SObject> children = populatedRow.getSObjects(Contact.AccountId);
+System.assertEquals(1, children.size());
+System.assertEquals('child', ((Contact)children[0]).LastName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecListRelationshipBookkeeping(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<SObject> rows = new List<SObject>();
