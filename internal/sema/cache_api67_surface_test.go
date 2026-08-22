@@ -22,9 +22,9 @@ func TestAPI67CacheRejectedShapes(t *testing.T) {
 		"validateKey through instance":                   `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKey(false, 'a');`,
 		"validateKeyValue through instance":              `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeyValue(false, 'a', 'v');`,
 		"validateKeys through instance":                  `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeys(false, new Set<String>{'a'});`,
-		"Cache.Partition.validateKeys removed":           `Cache.Partition.validateKeys(false, new Set<String>{'a'});`,
-		"Cache.OrgPartition.validateKeys removed":        `Cache.OrgPartition.validateKeys(false, new Set<String>{'a'});`,
-		"Cache.SessionPartition.validateKeys removed":    `Cache.SessionPartition.validateKeys(false, new Set<String>{'a'});`,
+		"Partition validateKeys List removed":            `Cache.Partition.validateKeys(false, new List<String>{'a'});`,
+		"OrgPartition validateKeys List removed":         `Cache.OrgPartition.validateKeys(false, new List<String>{'a'});`,
+		"SessionPartition validateKeys List removed":     `Cache.SessionPartition.validateKeys(false, new List<String>{'a'});`,
 	}
 	for name, source := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -57,6 +57,17 @@ func TestAPI67CacheAcceptedShapes(t *testing.T) {
 				t.Fatalf("rejected allowed Salesforce cache call: %#v", result.Diagnostics)
 			}
 		})
+	}
+}
+
+func TestCacheValidateKeysSetOverloadsAtSupportedAPIVersions(t *testing.T) {
+	for _, version := range []string{"65.0", "66.0", "67.0"} {
+		for _, receiver := range []string{"Cache.Partition", "Cache.OrgPartition", "Cache.SessionPartition"} {
+			result := AnalyzeAnonymous(typesys.Index{}, receiver+`.validateKeys(false, new Set<String>{'alpha', 'beta'});`, version)
+			if result.HasErrors() {
+				t.Fatalf("API %s %s.validateKeys(Boolean, Set<String>) rejected: %#v", version, receiver, result.Diagnostics)
+			}
+		}
 	}
 }
 

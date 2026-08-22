@@ -918,7 +918,10 @@ func (vm *VM) callCachePartitionStaticDefault(callee string, args []Value) (Valu
 	}
 	switch strings.ToLower(methodName) {
 	case "validatekeys":
-		return Null, true, unsupportedCallError(callee + " removed after API version 54.0")
+		if len(args) != 2 || args[0].Kind != ValueBool || args[1].Kind != ValueSet {
+			return Null, true, fmt.Errorf("%s expects Boolean and Set<String>", callee)
+		}
+		return Null, true, nil
 	case "validatecachebuilder", "validatekey", "validatekeyvalue", "validatepartitionname":
 		return Null, true, nil
 	case "createfullyqualifiedpartition":

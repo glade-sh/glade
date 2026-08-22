@@ -198,9 +198,6 @@ func semaAPI67RejectedPlatformCallAtVersion(version, receiverType, method, recei
 		switch method {
 		case "getavgvaluesize", "getmaxvaluesize":
 			return !apexversion.Enabled(version, apexversion.LegacyCacheValueSize)
-		case "validatekeys":
-			// Salesforce removed the static validateKeys helpers after API version 54.0.
-			return !apexversion.Enabled(version, apexversion.LegacyCacheValidateKeys)
 		case "createfullyqualifiedkey", "createfullyqualifiedpartition",
 			"validatepartitionname", "validatekey", "validatekeyvalue":
 			// Salesforce declares these partition helpers static; calling
@@ -219,6 +216,14 @@ func semaAPI67RejectedPlatformCallAtVersion(version, receiverType, method, recei
 }
 
 func semaAPI67RejectedPlatformCallArgs(receiverType, method string, argTypes []string) bool {
+	receiverBase, _ := semaGenericBaseAndArgs(semaCanonicalPlatformAlias(receiverType))
+	if (strings.EqualFold(receiverBase, "Cache.Partition") || strings.EqualFold(receiverBase, "Cache.OrgPartition") || strings.EqualFold(receiverBase, "Cache.SessionPartition")) && strings.EqualFold(method, "validateKeys") {
+		if len(argTypes) != 2 {
+			return true
+		}
+		base, _ := semaGenericBaseAndArgs(argTypes[1])
+		return !strings.EqualFold(base, "Set")
+	}
 	if strings.EqualFold(receiverType, "String") && strings.EqualFold(method, "join") {
 		if len(argTypes) != 2 {
 			return true

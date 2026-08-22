@@ -3080,9 +3080,9 @@ func TestExecPlatformCacheAPI67RejectedShapes(t *testing.T) {
 		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validatePartitionName('a');`,
 		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKey(false, 'a');`,
 		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeyValue(false, 'a', 'v');`,
-		`Cache.Partition.validateKeys(false, new Set<String>{'a'});`,
-		`Cache.OrgPartition.validateKeys(false, new Set<String>{'a'});`,
-		`Cache.SessionPartition.validateKeys(false, new Set<String>{'a'});`,
+		`Cache.Partition.validateKeys(false, new List<String>{'a'});`,
+		`Cache.OrgPartition.validateKeys(false, new List<String>{'a'});`,
+		`Cache.SessionPartition.validateKeys(false, new List<String>{'a'});`,
 		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeys(false, new Set<String>{'a'});`,
 		`Cache.SessionPartition p = Cache.Session.getPartition('local'); p.validateKeys(false, new Set<String>{'a'});`,
 		`Cache.Partition p = Cache.Org.getPartition('local'); p.validateKeyValue(false, 'a', 'v');`,
@@ -3095,6 +3095,22 @@ func TestExecPlatformCacheAPI67RejectedShapes(t *testing.T) {
 		if _, err := New(nil).Execute(program); err == nil {
 			t.Fatalf("Cache API 67 rejected shape executed without error: %s", source)
 		}
+	}
+}
+
+func TestExecPlatformCacheValidateKeysSetOverloads(t *testing.T) {
+	program, err := CompileAnonymous(`
+Set<String> keys = new Set<String>{'alpha', 'beta'};
+Cache.Partition.validateKeys(false, keys);
+Cache.OrgPartition.validateKeys(false, keys);
+Cache.SessionPartition.validateKeys(false, keys);
+System.assertEquals(new Set<String>{'alpha', 'beta'}, keys);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

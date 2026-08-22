@@ -1448,8 +1448,10 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	// Keep this pre-resolution guard for rejected qualified platform receivers.
 	// The later platform path is shared, but unknown dotted receivers can exit
 	// through permissive fallback before it is reached.
-	if receiver, method, ok := splitSemaMethodPath(expr.Callee); ok && !scope.hasNonFieldBinding(receiver) && !semaProjectTypeShadowsPlatform(model, receiver) && semaAPI67RejectedPlatformCallAtVersion(typ.EffectiveAPIVersion, receiver, method, "class") {
-		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiver+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
+	if receiver, method, ok := splitSemaMethodPath(expr.Callee); ok && !scope.hasNonFieldBinding(receiver) && !semaProjectTypeShadowsPlatform(model, receiver) {
+		if semaAPI67RejectedPlatformCallAtVersion(typ.EffectiveAPIVersion, receiver, method, "class") || (strings.EqualFold(method, "validateKeys") && semaAPI67RejectedPlatformCallArgs(receiver, method, irCallArgTypes(a, expr.Args, scope, model, typ.Name))) {
+			return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiver+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
+		}
 	}
 	receiverType := typ.Name
 	method := expr.Callee
