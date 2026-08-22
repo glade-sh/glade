@@ -7886,7 +7886,7 @@ System.assertEquals(1, UninstallScript.count);
 	}
 	onUninstall, err := CompileAnonymous(`
 System.assertNotEquals(null, context);
-System.assertEquals('00D000000000001', String.valueOf(context.organizationId()));
+System.assertEquals(UserInfo.getOrganizationId(), context.OrganizationId());
 UninstallScript.count++;
 `)
 	if err != nil {
