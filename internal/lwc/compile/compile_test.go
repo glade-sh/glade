@@ -115,6 +115,11 @@ func TestHTMLDetailsNameFollowsBundleAPIVersion(t *testing.T) {
 
 func compileTemplateAtAPIVersion(t *testing.T, version, template string) error {
 	t.Helper()
+	if os.Getenv("GLADE_LWC_COMPILE") == "" {
+		if _, err := os.Stat(filepath.Join("..", "..", "..", "third_party", "lwc", "node_modules")); err != nil {
+			t.Skip("run npm install in third_party/lwc or set GLADE_LWC_COMPILE=1")
+		}
+	}
 	root := t.TempDir()
 	bundle := filepath.Join(root, "force-app", "main", "default", "lwc", "probe")
 	writeCompileFixtureFile(t, filepath.Join(bundle, "probe.js"), `export default class Probe { items = []; }`)
