@@ -180,12 +180,17 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		hasReceiver := expr.Left != nil
 		receiverResolved := false
 		callee := expr.Callee
+		queryLocatorCallee := ""
 		if hasReceiver {
 			if receiverName := exprReceiverName(*expr.Left); receiverName != "" {
 				member := strings.TrimPrefix(expr.Callee, "__safe_call:")
-				if canonical, ok := canonicalBuiltinStaticCall(receiverName + "." + member); ok {
+				staticCallee := receiverName + "." + member
+				if canonical, ok := canonicalBuiltinStaticCall(staticCallee); ok {
 					hasReceiver = false
 					callee = canonical
+					if strings.EqualFold(canonical, "Database.getQueryLocator") {
+						queryLocatorCallee = staticCallee
+					}
 				} else if vm.staticReceiverName(receiverName, member) && !vm.hasRuntimeReceiver(receiverName) {
 					hasReceiver = false
 					callee = receiverName + "." + member
@@ -223,12 +228,20 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 				return receiver, nil
 			}
 		}
-		if !hasReceiver && strings.EqualFold(callee, "Database.getQueryLocator") && len(expr.Args) == 1 && expr.Args[0].Kind == ir.ExprSOQL {
-			return vm.queryLocatorFromSOQL(expr.Args[0].Value, result)
+		if queryLocatorCallee == "" && !hasReceiver {
+			if canonical, ok := canonicalBuiltinStaticCall(callee); ok && strings.EqualFold(canonical, "Database.getQueryLocator") {
+				queryLocatorCallee = callee
+				callee = canonical
+			}
 		}
+		inlineQueryLocator := queryLocatorCallee != "" && vm.shouldUseBuiltinStaticPrecedence(queryLocatorCallee, callee) && len(expr.Args) > 0 && expr.Args[0].Kind == ir.ExprSOQL
 		args := make([]Value, 0, len(expr.Args))
-		for _, arg := range expr.Args {
-			value, err := vm.eval(arg, result)
+		for i, arg := range expr.Args {
+			value := String(arg.Value)
+			var err error
+			if !inlineQueryLocator || i != 0 {
+				value, err = vm.eval(arg, result)
+			}
 			if err != nil {
 				return Null, err
 			}
@@ -254,6 +267,9 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 				return value, err
 			}
 			return Null, unsupportedCallError(expr.Callee)
+		}
+		if queryLocatorCallee != "" {
+			callee = queryLocatorCallee
 		}
 		return vm.call(callee, args, namedArgs, result)
 	case ir.ExprSOQL:

@@ -709,27 +709,25 @@ platformStaticCall:
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("Database.getQueryLocator expects query String or inline SOQL and optional AccessLevel")
 		}
-		if args[0].Kind != ValueString && args[0].Kind != ValueList {
+		if args[0].Kind == ValueList {
+			return Null, fmt.Errorf("Argument must be an inline query")
+		}
+		if args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Database.getQueryLocator expects query String or inline SOQL")
 		}
 		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
 			return Null, fmt.Errorf("Database.getQueryLocator expects AccessLevel")
 		}
-		query := ""
-		value := args[0]
-		if args[0].Kind == ValueString {
-			var err error
-			query = args[0].Text
-			if len(args) == 2 {
-				value, err = vm.executeSOQLWithAccessLevel(args[0].Text, args[1], result)
-			} else {
-				value, err = vm.executeSOQL(args[0].Text, result)
-			}
-			if err != nil {
-				return Null, err
-			}
+		query := args[0].Text
+		var value Value
+		var err error
+		if len(args) == 2 {
+			value, err = vm.executeSOQLWithAccessLevel(query, args[1], result)
 		} else {
-			query = inlineSOQLQueryText(args[0])
+			value, err = vm.executeSOQL(query, result)
+		}
+		if err != nil {
+			return Null, err
 		}
 		locator := Object("Database.QueryLocator")
 		locator.Fields["Records"] = value

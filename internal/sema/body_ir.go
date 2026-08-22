@@ -1558,6 +1558,22 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if !semaProjectTypeShadowsPlatform(model, receiverType) && semaAPI67RejectedPlatformCallArgs(typ.EffectiveAPIVersion, receiverType, method, irCallArgTypes(a, expr.Args, scope, model, typ.Name)) {
 		return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(expr.Args), bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source)}
 	}
+	if !semaProjectTypeShadowsPlatform(model, receiverType) &&
+		strings.EqualFold(semaCanonicalPlatformAlias(receiverType), "Database") &&
+		strings.EqualFold(method, "getQueryLocator") &&
+		len(expr.Args) > 0 && expr.Args[0].Kind != ir.ExprSOQL {
+		argType := a.inferIRExprType(expr.Args[0], scope, model, typ.Name)
+		argBase, _ := semaGenericBaseAndArgs(argType)
+		if strings.EqualFold(argBase, "List") || strings.EqualFold(argType, "Database.QueryResult") {
+			return []diagnostic.Diagnostic{{
+				Severity: diagnostic.Error,
+				Code:     "GLADESEMA009",
+				Message:  "Argument must be an inline query",
+				File:     typ.File,
+				Range:    semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(method))),
+			}}
+		}
+	}
 	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), receiverMode)
 	if !explicitReceiver {
 		candidates = resolveImplicitMemberMethods(model, receiverType, method)

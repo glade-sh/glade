@@ -8432,6 +8432,17 @@ Account inlineRow = inlineIterator.next();
 System.assertEquals('Acme', inlineRow.Name);
 System.assert(!inlineIterator.hasNext());
 
+String wanted = 'Acme';
+Database.QueryLocator inlineAccessLocator = Database.getQueryLocator([SELECT Id, Name FROM Account WHERE Name = :wanted], AccessLevel.USER_MODE);
+System.assertEquals('SELECT Id , Name FROM Account WHERE Name = : wanted', inlineAccessLocator.getQuery());
+System.assertEquals(4, Limits.getQueries());
+System.assertEquals(4, Limits.getQueryRows());
+System.assertEquals(3, Limits.getQueryLocatorRows());
+Object inlineAccessIterator = inlineAccessLocator.iterator();
+System.assert(inlineAccessIterator.hasNext());
+System.assertEquals('Acme', ((Account)inlineAccessIterator.next()).Name);
+System.assert(!inlineAccessIterator.hasNext());
+
 Database.QueryLocator accessLocator = Database.getQueryLocator('SELECT Id, Name FROM Account', AccessLevel.USER_MODE);
 System.assertEquals('SELECT Id, Name FROM Account', accessLocator.getQuery());
 Object accessIterator = accessLocator.iterator();
@@ -8461,24 +8472,65 @@ System.assertEquals(0, emptyInlineQueried.size());
 	}
 }
 
-func TestExecDatabaseGetQueryLocatorObjectHeldList(t *testing.T) {
+func TestExecDatabaseGetQueryLocatorInlineUserModeChecksFieldPermissions(t *testing.T) {
 	program, err := CompileAnonymous(`
-insert new Account(Name = 'Object-One');
-insert new Account(Name = 'Object-Two');
-List<Account> rows = [SELECT Id, Name FROM Account ORDER BY Name];
-Object objectRows = rows;
-Database.QueryLocator plainLocator = Database.getQueryLocator(objectRows);
-Database.QueryLocator accessLocator = Database.getQueryLocator(objectRows, AccessLevel.USER_MODE);
-System.assertEquals('SELECT Id , Name FROM Account ORDER BY Name', plainLocator.getQuery());
-System.assertEquals('SELECT Id , Name FROM Account ORDER BY Name', accessLocator.getQuery());
-Object plainIterator = plainLocator.iterator();
-Object accessIterator = accessLocator.iterator();
-System.assert(plainIterator.hasNext());
-System.assert(accessIterator.hasNext());
-Account plainRow = plainIterator.next();
-Account accessRow = accessIterator.next();
-System.assertEquals('Object-One', plainRow.Name);
-System.assertEquals('Object-One', accessRow.Name);
+PermissionSet ps = new PermissionSet(Name = 'ReadAccount', Label = 'Read Account');
+insert ps;
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
+User u = new User(
+  Username = 'locator-user@example.invalid',
+  Alias = 'locuser',
+  Email = 'locator-user@example.invalid',
+  LastName = 'Locator',
+  ProfileId = p.Id,
+  TimeZoneSidKey = 'UTC',
+  LocaleSidKey = 'en_US',
+  LanguageLocaleKey = 'en_US',
+  EmailEncodingKey = 'UTF-8'
+);
+insert u;
+insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id);
+System.runAs(u) {
+  Boolean caught = false;
+  try {
+    Database.getQueryLocator([SELECT Id, Score__c FROM Account], AccessLevel.USER_MODE);
+  } catch (QueryException qe) {
+    caught = qe.getMessage().contains('Score__c');
+  }
+  System.assert(caught);
+  Database.QueryLocator locator = Database.getQueryLocator([SELECT Id, Score__c FROM Account], AccessLevel.SYSTEM_MODE);
+  System.assert(locator.iterator().hasNext());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	account := org.Objects["Account"]
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldDecimal}
+	account.Records["001000000000901AAA"] = storage.Record{
+		ID:     "001000000000901AAA",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":     storage.StringValue("Acme"),
+			"Score__c": storage.DecimalValue("7"),
+		},
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseGetQueryLocatorRejectsListArgument(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SObject> rows = new List<SObject>{new Account(Name = 'Locator Target')};
+Database.getQueryLocator(rows);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -8486,6 +8538,55 @@ System.assertEquals('Object-One', accessRow.Name);
 	machine := New(nil)
 	org := testDataOrg()
 	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "Argument must be an inline query") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestExecDatabaseGetQueryLocatorHonorsPlatformShadowing(t *testing.T) {
+	listProgram, err := CompileAnonymous(`return rows.size();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stringAccessProgram, err := CompileAnonymous(`return 99;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Shadow');
+System.assertEquals(1, Database.getQueryLocator([SELECT Id FROM Account]));
+Object platformLocator = System.Database.getQueryLocator([SELECT Id FROM Account], AccessLevel.SYSTEM_MODE);
+System.assertEquals('SELECT Id FROM Account', platformLocator.getQuery());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "Database",
+		Methods: map[string]Method{
+			"listQueryLocator": {
+				Name:       "Database.getQueryLocator",
+				ClassName:  "Database",
+				ReturnType: "Integer",
+				Params:     []Param{{Name: "rows", Type: "Object"}},
+				IsStatic:   true,
+				Program:    listProgram,
+			},
+			"stringAccessQueryLocator": {
+				Name:       "Database.getQueryLocator",
+				ClassName:  "Database",
+				ReturnType: "Integer",
+				Params:     []Param{{Name: "query", Type: "String"}, {Name: "access", Type: "AccessLevel"}},
+				IsStatic:   true,
+				Program:    stringAccessProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
