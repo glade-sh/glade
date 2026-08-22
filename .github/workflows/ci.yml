@@ -309,41 +309,8 @@ jobs:
           status="$(git status --porcelain --untracked-files=all -- internal/playground/static)"
           test -z "$status"
 
-  sema-history-input:
-    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    env:
-      CI_SEMA_HISTORY_PATH: /tmp/glade-sema-duration-history/sema-duration-history.json
-      CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Validate benchmark cache pair
-        if: github.event_name == 'workflow_dispatch'
-        run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
-      - name: Restore sema duration history
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: /tmp/glade-sema-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}sema-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.6-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
-      - name: Stage sema duration history
-        run: |
-          mkdir -p ci-artifacts/sema-history-input
-          if [[ -s "$CI_SEMA_HISTORY_PATH" ]]; then
-            cp "$CI_SEMA_HISTORY_PATH" ci-artifacts/sema-history-input/sema-duration-history.json
-          fi
-          : >ci-artifacts/sema-history-input/ready
-      - name: Upload sema duration history input
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: sema-history-input
-          path: ci-artifacts/sema-history-input/
-          if-no-files-found: error
-
   sema:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    needs: sema-history-input
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -355,7 +322,6 @@ jobs:
       GOMODCACHE: /tmp/go-mod-ci-sema-${{ matrix.shard }}
       GOCACHE: /tmp/go-build-ci-sema-${{ matrix.shard }}
       CI_SEMA_ARTIFACT_DIR: ci-artifacts/sema-${{ matrix.shard }}
-      CI_SEMA_HISTORY_PATH: /tmp/glade-sema-duration-history/sema-duration-history.json
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Validate benchmark cache pair
@@ -365,11 +331,6 @@ jobs:
         with:
           go-version: "1.26.6"
           cache: false
-      - name: Download shared sema duration history
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          name: sema-history-input
-          path: /tmp/glade-sema-duration-history
       - name: Restore and save isolated sema module cache
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
@@ -408,18 +369,6 @@ jobs:
           path: /tmp/sema-history-input
       - name: Refresh sema duration history
         run: scripts/ci-go-test.sh sema-history-refresh /tmp/sema-history-input/sema-shard-0 /tmp/sema-history-input/sema-shard-1 /tmp/glade-sema-duration-history/sema-duration-history.json
-      - name: Save sema duration history
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: /tmp/glade-sema-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}sema-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.6-${{ hashFiles('go.sum') }}-${{ github.sha }}
-      - name: Upload sema duration history evidence
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: sema-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
-          path: /tmp/glade-sema-duration-history/sema-duration-history.json
-          if-no-files-found: error
 
   sema-full:
     if: ${{ github.event_name == 'schedule' }}

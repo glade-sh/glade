@@ -1305,7 +1305,6 @@ var requiredUploads = []requiredUpload{
 	{"ci.yml", "gladecli", "go-test-gladecli", []string{"ci-artifacts/go-test/test-gladecli.json", "ci-artifacts/go-test/resource-gladecli.json"}},
 	{"ci.yml", "node-integration", "go-test-node-integration", []string{"ci-artifacts/go-test-node-integration/test-node-integration.json", "ci-artifacts/go-test-node-integration/expected.txt", "ci-artifacts/go-test-node-integration/discovery.txt", "ci-artifacts/go-test-node-integration/validation-summary.json", "ci-artifacts/go-test-node-integration/resource-usage.json"}},
 	{"ci.yml", "sema", "sema-shard-${{ matrix.shard }}", []string{"ci-artifacts/sema-${{ matrix.shard }}/"}},
-	{"ci.yml", "sema-history", "sema-duration-history-${{ github.run_id }}-${{ github.run_attempt }}", []string{"/tmp/glade-sema-duration-history/sema-duration-history.json"}},
 	{"ci.yml", "sema-full", "sema-full", []string{"ci-artifacts/sema-full/"}},
 	{"ci.yml", "sema-equivalence", "sema-equivalence-${{ github.run_id }}-${{ github.run_attempt }}", []string{"/tmp/sema-equivalence/equivalence.json"}},
 	{"ci.yml", "server-and-playground", "go-test-server-and-playground", []string{"ci-artifacts/go-test/test-server-and-playground.json", "ci-artifacts/go-test/resource-server-and-playground.json"}},
