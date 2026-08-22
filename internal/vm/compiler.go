@@ -193,7 +193,7 @@ func lex(source string) ([]token, error) {
 			if i+1 < len(source) {
 				two := source[i : i+2]
 				switch two {
-				case "==", "!=", "<>", "<=", ">=", "&&", "||", "++", "--", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "<<", "??":
+				case "==", "!=", "<>", "<=", ">=", "&&", "||", "++", "--", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<", "??":
 					tokens = append(tokens, token{kind: tokenSymbol, text: two, pos: start})
 					i += 2
 					goto next
@@ -856,7 +856,7 @@ func (p *parser) parseAssignmentLike(requireSemicolon bool) (ir.Instruction, boo
 		p.pos = save
 		return ir.Instruction{}, false, nil
 	}
-	if p.match(tokenSymbol, "=") || p.match(tokenSymbol, "+=") || p.match(tokenSymbol, "-=") || p.match(tokenSymbol, "*=") || p.match(tokenSymbol, "/=") || p.match(tokenSymbol, "%=") || p.match(tokenSymbol, "&=") || p.match(tokenSymbol, "|=") || p.match(tokenSymbol, "<<=") || p.match(tokenSymbol, ">>=") {
+	if p.match(tokenSymbol, "=") || p.match(tokenSymbol, "+=") || p.match(tokenSymbol, "-=") || p.match(tokenSymbol, "*=") || p.match(tokenSymbol, "/=") || p.match(tokenSymbol, "%=") || p.match(tokenSymbol, "&=") || p.match(tokenSymbol, "|=") || p.match(tokenSymbol, "^=") || p.match(tokenSymbol, "<<=") || p.match(tokenSymbol, ">>=") {
 		op := p.tokens[p.pos-1].text
 		expr, err := p.parseAssignmentExpression()
 		if err != nil {
@@ -900,7 +900,7 @@ func (p *parser) parseComplexAssignmentLike(requireSemicolon bool) (ir.Instructi
 		p.pos = save
 		return ir.Instruction{}, false, nil
 	}
-	if !p.match(tokenSymbol, "=") && !p.match(tokenSymbol, "+=") && !p.match(tokenSymbol, "-=") && !p.match(tokenSymbol, "*=") && !p.match(tokenSymbol, "/=") && !p.match(tokenSymbol, "%=") && !p.match(tokenSymbol, "&=") && !p.match(tokenSymbol, "|=") && !p.match(tokenSymbol, "<<=") && !p.match(tokenSymbol, ">>=") {
+	if !p.match(tokenSymbol, "=") && !p.match(tokenSymbol, "+=") && !p.match(tokenSymbol, "-=") && !p.match(tokenSymbol, "*=") && !p.match(tokenSymbol, "/=") && !p.match(tokenSymbol, "%=") && !p.match(tokenSymbol, "&=") && !p.match(tokenSymbol, "|=") && !p.match(tokenSymbol, "^=") && !p.match(tokenSymbol, "<<=") && !p.match(tokenSymbol, ">>=") {
 		p.pos = save
 		return ir.Instruction{}, false, nil
 	}
@@ -976,7 +976,7 @@ func (p *parser) parseAssignableName() (string, bool) {
 func (p *parser) parseAssignmentExpression() (ir.Expr, error) {
 	save := p.pos
 	name, ok := p.parseAssignableName()
-	if ok && p.peekAnySymbol("=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "<<=", ">>=") && !p.peekNext(tokenSymbol, ">") {
+	if ok && p.peekAnySymbol("=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=") && !p.peekNext(tokenSymbol, ">") {
 		op := p.advance().text
 		value, err := p.parseAssignmentExpression()
 		if err != nil {

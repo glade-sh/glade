@@ -205,6 +205,8 @@ public class UsesXor {
   public void run() {
     Integer flags = 1 ^ 2;
     Long wideFlags = 1L ^ 2L;
+    flags ^= 2;
+    wideFlags ^= 2L;
   }
 }
 	`

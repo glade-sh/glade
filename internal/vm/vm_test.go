@@ -2709,12 +2709,18 @@ value >>= 1;
 System.assertEquals(6, value);
 value %= 4;
 System.assertEquals(2, value);
+value ^= 5;
+System.assertEquals(7, value);
 System.assertEquals(16, 1 << 4);
 Boolean ready = true;
 ready &= false;
 System.assertEquals(false, ready);
 ready |= true;
 System.assertEquals(true, ready);
+Long wide = 1L;
+wide ^= 3L;
+System.assertEquals(2L, wide);
+System.assert(!(wide instanceof Integer));
 `)
 	if err != nil {
 		t.Fatal(err)
