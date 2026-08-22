@@ -1322,6 +1322,7 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 			fieldReceiver = fieldReceiver[:dot]
 			if receiverType, ok := scope.lookup(fieldReceiver); ok {
 				fieldPath = receiverType + expr.Name[dot:]
+				fieldReceiver = receiverType
 			}
 		}
 		if (semaAPI67RejectedPlatformField(fieldPath) || semaPlatformFieldPathUnavailable(typ.EffectiveAPIVersion, fieldPath)) && !semaProjectTypeShadowsPlatform(model, fieldReceiver) {

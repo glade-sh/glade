@@ -7878,7 +7878,8 @@ if (context.previousVersion() == null) {
 
 func TestExecTestUninstallInvokesUninstallHandler(t *testing.T) {
 	program, err := CompileAnonymous(`
-Test.testUninstall(new UninstallScript());
+UninstallHandler handler = new UninstallScript();
+Test.testUninstall(handler);
 System.assertEquals(1, UninstallScript.count);
 `)
 	if err != nil {
@@ -7886,6 +7887,7 @@ System.assertEquals(1, UninstallScript.count);
 	}
 	onUninstall, err := CompileAnonymous(`
 System.assertNotEquals(null, context);
+System.assertEquals(UserInfo.getOrganizationId(), context.organizationId());
 System.assertEquals(UserInfo.getOrganizationId(), context.OrganizationId());
 UninstallScript.count++;
 `)
