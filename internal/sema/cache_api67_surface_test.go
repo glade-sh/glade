@@ -83,6 +83,34 @@ func TestCacheValidateKeysOverloadsFollowAPIVersion(t *testing.T) {
 	}
 }
 
+func TestCacheValidateKeysRejectsNonStringCollections(t *testing.T) {
+	for _, test := range []struct {
+		version    string
+		collection string
+		element    string
+		value      string
+	}{
+		{version: "54.0", collection: "Set", element: "Integer", value: "1"},
+		{version: "55.0", collection: "Set", element: "Integer", value: "1"},
+		{version: "67.0", collection: "Set", element: "Integer", value: "1"},
+		{version: "54.0", collection: "List", element: "Integer", value: "1"},
+		{version: "55.0", collection: "List", element: "Integer", value: "1"},
+		{version: "67.0", collection: "List", element: "Integer", value: "1"},
+		{version: "67.0", collection: "Set", element: "Boolean", value: "true"},
+	} {
+		for _, receiver := range []string{"Cache.Partition", "Cache.OrgPartition", "Cache.SessionPartition"} {
+			source := receiver + `.validateKeys(false, new ` + test.collection + `<` + test.element + `>{` + test.value + `});`
+			result := AnalyzeAnonymous(typesys.Index{}, source, test.version)
+			if test.version != "67.0" {
+				result = analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": `public class Probe { public static void run() { ` + source + ` } }`}, test.version)
+			}
+			if !resultDiagnosticsContain(result, "validateKeys") {
+				t.Fatalf("API %s accepted %s.validateKeys(Boolean, %s<%s>): %#v", test.version, receiver, test.collection, test.element, result.Diagnostics)
+			}
+		}
+	}
+}
+
 func TestAPI67CachePartitionStaticOnlyDiagnosticMessage(t *testing.T) {
 	result := AnalyzeAnonymous(typesys.Index{}, `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.createFullyQualifiedKey('a', 'b', 'c');`, "67.0")
 	for _, diagnostic := range result.Diagnostics {

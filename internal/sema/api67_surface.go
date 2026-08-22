@@ -221,7 +221,10 @@ func semaAPI67RejectedPlatformCallArgs(version, receiverType, method string, arg
 		if len(argTypes) != 2 {
 			return true
 		}
-		base, _ := semaGenericBaseAndArgs(argTypes[1])
+		base, args := semaGenericBaseAndArgs(argTypes[1])
+		if len(args) != 1 || !strings.EqualFold(semaCanonicalPlatformAlias(args[0]), "String") {
+			return true
+		}
 		return !strings.EqualFold(base, "Set") && (!strings.EqualFold(base, "List") || !apexversion.Enabled(version, apexversion.LegacyCacheValidateKeys))
 	}
 	if strings.EqualFold(receiverType, "String") && strings.EqualFold(method, "join") {
