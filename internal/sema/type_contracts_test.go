@@ -8,6 +8,25 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+func TestTypeContractScansNestedClassSourceOnce(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"ContainerProbe.cls": `public class ContainerProbe {
+  public class NestedProbe {}
+  public void run() { System.debug(new List()); }
+}`,
+	})
+	count := 0
+	for _, diagnostic := range result.Diagnostics {
+		if diagnostic.Code == "GLADESEMA019" && strings.Contains(diagnostic.Message, "raw collection construction") {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("raw collection diagnostics = %d, want 1: %#v", count, result.Diagnostics)
+	}
+}
+
 func TestDatabaseInsertAsyncSingleRecordCallbackAccessLevelResolves(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{

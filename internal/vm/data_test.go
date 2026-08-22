@@ -1190,6 +1190,41 @@ func TestSetOrgDirectSchemaMapMutationClearsRelationshipCaches(t *testing.T) {
 	}
 }
 
+func TestSetRuntimeTemplateOrgRetainsMatchingSchemaCaches(t *testing.T) {
+	template := storage.NewRuntimeTemplate(storage.NewOrgState())
+	template.Org.Objects["Parent__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Parent__c",
+		Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+	}}
+	PrimeRuntimeTemplateSchema(&template)
+
+	base := New(nil)
+	base.PrimeMetadataSchema(&template.Org)
+	clone := base.CloneRuntime(nil)
+	shared := clone.jsonChildRelTypeCache
+	org := template.CloneRuntimeOrg()
+	clone.SetRuntimeTemplateOrg(&org)
+	if clone.jsonChildRelTypeCache != shared {
+		t.Fatal("matching runtime template detached schema cache")
+	}
+
+	org.ClearRuntimeSchemaStamp()
+	shared = clone.jsonChildRelTypeCache
+	clone.SetRuntimeTemplateOrg(&org)
+	if clone.jsonChildRelTypeCache == shared {
+		t.Fatal("mutated runtime template retained schema cache")
+	}
+
+	org = template.CloneRuntimeOrg()
+	org.RuntimeSchemaStamp = "different-runtime-schema"
+	clone = base.CloneRuntime(nil)
+	shared = clone.jsonChildRelTypeCache
+	clone.SetRuntimeTemplateOrg(&org)
+	if clone.jsonChildRelTypeCache == shared {
+		t.Fatal("mismatched runtime template retained schema cache")
+	}
+}
+
 func TestSetOrgSamePointerClearsFieldDescribeCacheAfterLabelMutation(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Thing__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
