@@ -428,7 +428,7 @@ func TestRunMarksRuntimeUnlowerableBodyUnsupported(t *testing.T) {
 	path := filepath.Join(root, "RuntimeGapTest.cls")
 	writeFile(t, path, `
 public class RuntimeGapHelper {
-  public static void run() { Integer flags = 1 ^ 2; }
+  public static void run() { Integer flags = 1 >>> 2; }
 }
 @isTest
 private class RuntimeGapTest {
