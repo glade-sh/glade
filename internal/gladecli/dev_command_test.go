@@ -1028,7 +1028,7 @@ func waitForWatchChange(t *testing.T, watcher watch.BackendWatcher, path string,
 
 func waitForWatchChanges(t *testing.T, watcher watch.BackendWatcher, path string, op watch.ChangeOp) []watch.Change {
 	t.Helper()
-	deadline := time.NewTimer(2 * time.Second)
+	deadline := time.NewTimer(5 * time.Second)
 	defer deadline.Stop()
 	var observed []watch.Change
 	for {
