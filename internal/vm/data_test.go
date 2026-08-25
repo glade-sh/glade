@@ -7338,7 +7338,8 @@ func TestExecPutSObjectStoresLoadedParentRelationship(t *testing.T) {
 Child__c child = new Child__c();
 child.putSObject(Child__c.Parent__c, new Account(Id = '001000000000001AAA', Name = 'Token Parent'));
 System.assertEquals('Token Parent', child.getSObject(Child__c.Parent__c).Name);
-child.putSObject('Parent__r', new Account(Id = '001000000000002AAA', Name = 'String Parent'));
+Account previous = child.putSObject('Parent__r', new Account(Id = '001000000000002AAA', Name = 'String Parent'));
+System.assertEquals('Token Parent', previous.Name);
 System.assertEquals('String Parent', child.getSObject('Parent__r').Name);
 System.assertEquals('String Parent', child.getSobject('Parent__r').Name);
 `)

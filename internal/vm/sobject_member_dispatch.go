@@ -641,11 +641,15 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if relationshipName == "" {
 			return Null, true, fmt.Errorf("SObject.putSObject relationship name is blank")
 		}
+		previous := Null
+		if _, value, ok := objectFieldValue(receiver, relationshipName); ok {
+			previous = value
+		}
 		vm.setExplicitSObjectFieldValue(&receiver, relationshipName, args[1])
 		markQueriedSObjectField(&receiver, relationshipName)
 		vm.propagateAliasSnapshotToScope(vm.Globals, previousReceiver, receiver)
 		vm.propagateAliasSnapshotToStatics(previousReceiver, receiver)
-		return Null, true, nil
+		return previous, true, nil
 	case "isSet":
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("SObject.isSet expects field name String or Schema.SObjectField")

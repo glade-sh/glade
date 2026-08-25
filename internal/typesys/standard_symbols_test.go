@@ -67,6 +67,22 @@ func TestStandardPlatformSymbolsDatabaseSyncAccessorsUseDateReturns(t *testing.T
 	requireStandardMethodReturn(t, updatedResult, "getLatestDateCovered", []string{}, "Date", false)
 }
 
+func TestStandardPlatformSymbolsDatabaseCallbackAndDMLOptionsOverloads(t *testing.T) {
+	database := requireStandardSymbol(t, StandardPlatformSymbols(), "Database")
+	for _, method := range []struct {
+		name   string
+		params []string
+	}{
+		{"deleteAsync", []string{"Object", "DataSource.AsyncDeleteCallback"}},
+		{"insertAsync", []string{"Object", "DataSource.AsyncSaveCallback"}},
+		{"updateAsync", []string{"Object", "DataSource.AsyncSaveCallback"}},
+		{"convertLead", []string{"Database.LeadConvert", "Database.DMLOptions"}},
+		{"convertLead", []string{"List<Database.LeadConvert>", "Database.DMLOptions"}},
+	} {
+		requireStandardMethod(t, database, method.name, method.params, true)
+	}
+}
+
 func TestStandardPlatformSymbolsRegistrationHandlerHasNoUserProperty(t *testing.T) {
 	registration := requireStandardSymbol(t, StandardPlatformSymbols(), "Auth.RegistrationHandler")
 	for _, member := range registration.Members {
