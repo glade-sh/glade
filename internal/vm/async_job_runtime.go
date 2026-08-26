@@ -1555,7 +1555,7 @@ func asyncContext(typeName, jobID string) Value {
 	return ctx
 }
 func finalizerContext(jobID string, parentErr error) Value {
-	ctx := asyncContext("FinalizerContext", jobID)
+	ctx := asyncContext("FinalizerContextImpl", jobID)
 	ctx.Fields["Result"] = parentJobResultValue("SUCCESS")
 	ctx.Fields["Exception"] = Null
 	if parentErr != nil {
