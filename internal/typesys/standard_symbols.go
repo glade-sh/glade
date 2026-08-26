@@ -892,6 +892,11 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	// carry the platform exception superclass.
 	{Name: "VisualforceException", SuperClass: "Exception"},
 	{Name: "FlowException", SuperClass: "Exception"},
+	{Name: "DuplicateMessageException", SuperClass: "Exception"},
+	{Name: "EmailException", SuperClass: "Exception"},
+	{Name: "EmailTemplateRenderException", SuperClass: "Exception"},
+	{Name: "EventObjectException", SuperClass: "Exception"},
+	{Name: "ExternalObjectException", SuperClass: "Exception"},
 	{Name: "Decimal", Methods: []StandardMethodSpec{{Name: "divide", ReturnType: "Decimal", Parameters: []string{"Decimal", "Integer", "RoundingMode"}}}},
 	{Name: "Label", Methods: []StandardMethodSpec{{Name: "get", ReturnType: "String", Parameters: []string{"String", "String"}, Static: true}, {Name: "get", ReturnType: "String", Parameters: []string{"String", "String", "String"}, Static: true}, {Name: "translationExists", ReturnType: "Boolean", Parameters: []string{"String", "String", "String"}, Static: true}}},
 	{Name: "System.Label", Methods: []StandardMethodSpec{{Name: "get", ReturnType: "String", Parameters: []string{"String", "String"}, Static: true}, {Name: "get", ReturnType: "String", Parameters: []string{"String", "String", "String"}, Static: true}, {Name: "translationExists", ReturnType: "Boolean", Parameters: []string{"String", "String", "String"}, Static: true}}},

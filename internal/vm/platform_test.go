@@ -552,6 +552,30 @@ System.assertEquals(0, similarQuestions.size());
 	}
 }
 
+func TestExecAnswersSetBestReplyDeterministicMock(t *testing.T) {
+	program, err := CompileAnonymous(`Answers.setBestReply('question', 'reply');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecBusinessRuleDynamicDebugDeterministicMocks(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(0, BusinessRule.DynamicRuleDebugService.getInputDataTableMapFromContextInstance('ctx', 'rule', 'ns').size());
+System.assertEquals(0, BusinessRule.DynamicRuleDebugService.getRuleLibraryContents('rule', 'ns').size());
+System.assertEquals(0, BusinessRule.DynamicRuleDebugService.getRulePayloads(new List<String>{'rule'}, 'ns').size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSearchQueryUsesFixedSearchResults(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'Nook Inc');
@@ -6734,6 +6758,24 @@ System.assertEquals('Auth.JWTValidationException', validationType);
 		t.Fatal(err)
 	}
 	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAuthJWTConstructorPrecedesRegisteredStubClass(t *testing.T) {
+	program, err := CompileAnonymous(`
+Auth.JWT jwt = new Auth.JWT();
+System.assertEquals(30, jwt.getNbfClockSkew());
+System.assertEquals(300, jwt.getValidityLength());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Auth.JWT"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

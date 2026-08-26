@@ -381,6 +381,16 @@ func (r *semaBindingResolver) bindingsAt(offset int) map[string]string {
 	bindings := make(map[string]string)
 	location, ok := r.methodAt(offset)
 	if !ok {
+		braces := semaOpenBraces(r.source, 0, offset, r.spans)
+		if typeStart, _ := semaEnclosingTypeRange(r.source, braces, r.spans); typeStart >= 0 {
+			return bindings
+		}
+		for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(r.source, -1) {
+			if len(match) != 6 || match[0] >= offset || offset > semaEnclosingCodeBraceEnd(r.source, 0, match[0], r.spans) {
+				continue
+			}
+			bindings[strings.ToLower(r.source[match[4]:match[5]])] = strings.TrimSpace(r.source[match[2]:match[3]])
+		}
 		return bindings
 	}
 	scope, ok := r.methods[location.methodStart]

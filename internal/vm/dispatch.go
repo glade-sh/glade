@@ -989,6 +989,11 @@ platformStaticCall:
 			return Null, fmt.Errorf("Answers.findSimilar expects Question")
 		}
 		return typedList("List<Id>"), nil
+	case "Answers.setBestReply":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, fmt.Errorf("Answers.setBestReply expects question and reply Id Strings")
+		}
+		return Null, nil
 	case "Database.merge":
 		return vm.executeDatabaseMerge(args, result)
 	case "Limits.getQueries", "Limits.getLimitQueries", "Limits.getQueryRows", "Limits.getLimitQueryRows",
@@ -2706,6 +2711,16 @@ platformStaticCall:
 		}
 		if strings.EqualFold(callee, "BusinessRule.DecisionMatrixRowMigratorService.migrate") && len(args) != 1 {
 			return Null, fmt.Errorf("%s expects decision matrix version Id", callee)
+		}
+		return typedMap("Map<String,Object>"), nil
+	case "BusinessRule.DynamicRuleDebugService.getInputDataTableMapFromContextInstance":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("%s expects context instance, rule library, and namespace", callee)
+		}
+		return typedMap("Map<String,Object>"), nil
+	case "BusinessRule.DynamicRuleDebugService.getRuleLibraryContents", "BusinessRule.DynamicRuleDebugService.getRulePayloads":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("%s expects rule input and namespace", callee)
 		}
 		return typedMap("Map<String,Object>"), nil
 	case "wave.Templates.cdpQueryMetadata", "wave.Templates.getSObject", "wave.Templates.getTemplate", "wave.Templates.getTemplateConfig", "wave.Templates.getTemplates":

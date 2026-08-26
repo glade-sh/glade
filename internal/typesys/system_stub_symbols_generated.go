@@ -118013,8 +118013,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 	},
 	{
-		Name:       "Process.Plugin",
-		Kind:       apexast.DeclarationInterface,
+		Name: "Process.Plugin",
+		Kind: apexast.DeclarationInterface,
 		Methods: []StandardMethodSpec{
 			{Name: "describe", ReturnType: "Process.PluginDescribeResult"},
 			{Name: "invoke", ReturnType: "Process.PluginResult", ParameterSpecs: []StandardParameterSpec{{Name: "param1", Type: "Process.PluginRequest"}}},
@@ -119205,11 +119205,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 	},
 	{
-		Name:       "QuickAction.QuickActionDefaultsHandler",
-		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
+		Name: "QuickAction.QuickActionDefaultsHandler",
+		Kind: apexast.DeclarationInterface,
 		Methods: []StandardMethodSpec{
 			{Name: "onInitDefaults", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "param1", Type: "List<QuickAction.QuickActionDefaults>"}}},
 		},

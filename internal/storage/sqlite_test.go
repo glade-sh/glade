@@ -44,6 +44,31 @@ func TestSQLiteStorePersistsOrgState(t *testing.T) {
 	}
 }
 
+func TestSQLiteStorePersistsOrgMetadata(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "glade.db")
+	store, err := OpenSQLite(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	org := NewOrgState()
+	org.Metadata.DataCategoryGroups = []DataCategoryGroup{{
+		Name: "Products", SObjectName: "Knowledge__kav",
+		Categories: []DataCategory{{Name: "Hardware"}},
+	}}
+	if err := store.Save(org); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(loaded.Metadata.DataCategoryGroups) != 1 || loaded.Metadata.DataCategoryGroups[0].Name != "Products" || len(loaded.Metadata.DataCategoryGroups[0].Categories) != 1 {
+		t.Fatalf("loaded metadata = %#v", loaded.Metadata)
+	}
+}
+
 func TestSQLiteStoreAppliesMigrations(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "glade.db")
 	store, err := OpenSQLite(path)

@@ -94,6 +94,19 @@ func TestStandardPlatformSymbolsRegistrationHandlerHasNoUserProperty(t *testing.
 	requireStandardMethod(t, registration, "updateUser", []string{"Id", "Id", "Auth.UserData"}, false)
 }
 
+func TestStandardPlatformSymbolsQuickActionDefaultsHandlerIsInterface(t *testing.T) {
+	handler := requireStandardSymbol(t, StandardPlatformSymbols(), "QuickAction.QuickActionDefaultsHandler")
+	if handler.Kind != apexast.DeclarationInterface {
+		t.Fatalf("QuickAction.QuickActionDefaultsHandler kind = %q, want interface", handler.Kind)
+	}
+	for _, member := range handler.Members {
+		if member.Kind == apexast.DeclarationConstructor {
+			t.Fatalf("QuickAction.QuickActionDefaultsHandler exposes constructor: %#v", member)
+		}
+	}
+	requireStandardMethod(t, handler, "onInitDefaults", []string{"List<QuickAction.QuickActionDefaults>"}, false)
+}
+
 func TestUserProfilesSetPhotoUsesIntegerFourthParameter(t *testing.T) {
 	var productSpec *StandardSymbolSpec
 	for i := range productNamespaceSymbolSpecs {
@@ -664,6 +677,15 @@ func TestStandardPlatformSymbolsCorrectInboundEmailAndUnsupportedOperationExcept
 	flow := requireStandardSymbol(t, symbols, "FlowException")
 	if flow.SuperClass != "Exception" {
 		t.Fatalf("FlowException superclass = %q, want Exception", flow.SuperClass)
+	}
+}
+
+func TestStandardPlatformSymbolsCorrectGeneratedSystemExceptionSuperclasses(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	for _, name := range []string{"DuplicateMessageException", "EmailException", "EmailTemplateRenderException", "EventObjectException", "ExternalObjectException"} {
+		if symbol := requireStandardSymbol(t, symbols, name); symbol.SuperClass != "Exception" {
+			t.Fatalf("%s superclass = %q, want Exception", name, symbol.SuperClass)
+		}
 	}
 }
 

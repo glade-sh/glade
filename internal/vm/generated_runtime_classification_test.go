@@ -14,3 +14,16 @@ func TestGeneratedRuntimeDispositionRejectsNonDTOFallback(t *testing.T) {
 		t.Fatalf("Ideas.findSimilar disposition = %d, want unsupported", got)
 	}
 }
+
+func TestGeneratedPlatformObjectMemberReceiverIncludesExplicitRuntimeHandlers(t *testing.T) {
+	for _, typeName := range []string{
+		"UserProvisioning.UserProvisioningProcessHandler",
+		"UserProvisioning.DummyConnectorApexHandler",
+		"workflow.Action",
+		"workflow.ActionDml",
+	} {
+		if !generatedPlatformObjectMemberReceiver(typeName) {
+			t.Fatalf("%s must route passive-generated methods through the platform handler", typeName)
+		}
+	}
+}
