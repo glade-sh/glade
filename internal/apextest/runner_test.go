@@ -4642,6 +4642,36 @@ private class UserProvisioningInheritedRuntimeTest {
 	}
 }
 
+func TestRunCoversUserProvisioningBatchableRuntime(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/UserProvisioningBatchableRuntimeTest.cls"), `
+@IsTest
+private class UserProvisioningBatchableRuntimeTest {
+  private class ConcretePluginBatchable extends UserProvisioning.PluginBatchable {
+    ConcretePluginBatchable() { super(new List<SObject>()); }
+    public override Map<String,Object> flowInputPreprocessing(Map<String,Object> values) {
+      values.put('sourceOverride', true);
+      return values;
+    }
+  }
+
+  @IsTest static void matchesSalesforce() {
+    UserProvisioning.CollectingBatchable batch = new UserProvisioning.CollectingBatchable('0', 'upr', 'app');
+    System.assertNotEquals(null, batch.flowInputPreprocessing(new Map<String,Object>()));
+    UserProvisioning.PluginBatchable plugin = new ConcretePluginBatchable();
+    System.assertEquals(true, plugin.flowInputPreprocessing(new Map<String,Object>()).get('sourceOverride'));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	summary := run.Summary()
+	if summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v case = %#v problem = %#v", summary, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestRunCoversNestedServiceFactoryWithTypeMap(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
