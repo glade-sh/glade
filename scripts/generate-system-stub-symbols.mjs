@@ -824,6 +824,13 @@ function applyGeneratedCompatibilityOverrides(specs) {
 		processPlugin.constructors = [];
 	}
 
+	const quickActionDefaultsHandler = byName.get("quickaction.quickactiondefaultshandler");
+	if (quickActionDefaultsHandler) {
+		quickActionDefaultsHandler.kind = "DeclarationInterface";
+		quickActionDefaultsHandler.superClass = "";
+		quickActionDefaultsHandler.constructors = [];
+	}
+
 	const unsupportedOperationException = byName.get("unsupportedoperationexception");
 	if (unsupportedOperationException) {
 		unsupportedOperationException.superClass = "Exception";

@@ -275,6 +275,16 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	if strings.EqualFold(typeName, "Auth.VerificationResult") {
 		return constructAuthVerificationResult(args, namedArgs)
 	}
+	if strings.EqualFold(typeName, "Auth.JWT") {
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Auth.JWT constructor expects 0 arguments")
+		}
+		jwt := newAuthJWT()
+		for field, value := range namedArgs {
+			jwt.Fields[field] = value
+		}
+		return jwt, nil
+	}
 	if value, handled, err := constructProcessPluginDescribeResultParameter(typeName, args, namedArgs); handled || err != nil {
 		return value, err
 	}
@@ -738,15 +748,6 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		return constructAuthVerificationResult(args, namedArgs)
 	case "Auth.AuthConfiguration":
 		return constructAuthConfigurationValue(args, namedArgs)
-	case "Auth.JWT":
-		if len(args) != 0 {
-			return Null, fmt.Errorf("Auth.JWT constructor expects 0 arguments")
-		}
-		jwt := newAuthJWT()
-		for field, value := range namedArgs {
-			jwt.Fields[field] = value
-		}
-		return jwt, nil
 	case "Package.Version":
 		return Null, fmt.Errorf("Package.Version cannot be constructed")
 	case "Version":

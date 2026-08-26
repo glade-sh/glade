@@ -749,6 +749,14 @@ private class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsAcceptsAnonymousBlockLocalBind(t *testing.T) {
+	source := "Id accountId = '001000000000001'; Integer count = [SELECT COUNT() FROM Account WHERE Id = :accountId];"
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("anonymous.apex", source)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("anonymous-block local bind rejected: %#v", diagnostics)
+	}
+}
+
 func TestSemaBindingResolverFindsPropertyAccessorLocal(t *testing.T) {
 	source := `
 public class QueryProbe {

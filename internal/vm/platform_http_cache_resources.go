@@ -851,6 +851,10 @@ func generatedPlatformObjectMemberReceiver(typeName string) bool {
 		cachePartitionPlatformObjectType(typeName) ||
 		strings.EqualFold(typeName, "UserProvisioning.FlowProvisionBase") ||
 		strings.EqualFold(typeName, "UserProvisioning.UserProvisioningPlugin") ||
+		strings.EqualFold(typeName, "UserProvisioning.UserProvisioningProcessHandler") ||
+		strings.EqualFold(typeName, "UserProvisioning.DummyConnectorApexHandler") ||
+		strings.EqualFold(typeName, "workflow.Action") ||
+		strings.EqualFold(typeName, "workflow.ActionDml") ||
 		strings.EqualFold(typeName, "Cache.SecondaryKeyApi")
 }
 

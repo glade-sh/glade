@@ -5739,6 +5739,14 @@ public class UsesSearchQuery {
 	}
 }
 
+func TestAnalyzeLocalNamedSearchUsesResolvedReceiver(t *testing.T) {
+	t.Parallel()
+	result := AnalyzeAnonymous(typesys.Index{}, `SearchException search = new SearchException('search'); System.assertEquals('search', search.getMessage());`, "67.0")
+	if result.HasErrors() {
+		t.Fatalf("local SearchException receiver rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeDatabaseQueryAssignsSingleAndListSObjectContexts(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
