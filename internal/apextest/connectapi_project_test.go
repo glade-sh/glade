@@ -36,3 +36,28 @@ func TestRunProjectConnectApiIdentityUsesBuiltinDispatch(t *testing.T) {
 		t.Fatalf("summary = %#v cases=%#v problem=%#v", got, run.Suites[0].Cases, run.Suites[0].Cases[0].Problem)
 	}
 }
+
+func TestRunProjectConnectApiManagedContentUsesBuiltinDispatch(t *testing.T) {
+	project := newSalesforceSurfaceProject(t, `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	project.writeClass("ConnectApiManagedContentTest", `
+@isTest private class ConnectApiManagedContentTest {
+  @isTest static void testGetAllManagedContent() {
+    ConnectApi.ManagedContentVersionCollection result =
+      ConnectApi.ManagedContent.getAllManagedContent(null, 0, 1, 'en_US', 'News');
+    System.assertEquals(1, result.items.size());
+  }
+
+  @isTest static void testGetManagedContentByContentKeys() {
+    ConnectApi.ManagedContentVersionCollection result =
+      ConnectApi.ManagedContent.getManagedContentByContentKeys(
+        null, new List<String>{ 'home-hero' }, 0, 1, 'en_US', 'News', false);
+    System.assertEquals('home-hero', result.items[0].contentKey);
+  }
+}
+`)
+
+	run := project.run()
+	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
+		t.Fatalf("summary = %#v cases=%#v problem=%q", got, run.Suites[0].Cases, firstRunProblem(run))
+	}
+}

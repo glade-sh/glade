@@ -200,6 +200,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"JSON.deserializeUntyped", "JSON.deserialize", "JSON.deserializeStrict",
 		"Type.forName",
 		"ConnectApi.Organization.getSettings", "ConnectApi.ChatterUsers.getFollowings", "ConnectApi.Communities.getCommunity", "ConnectApi.Communities.getCommunities",
+		"ConnectApi.ManagedContent.getAllManagedContent", "ConnectApi.ManagedContent.getManagedContentByContentKeys",
 		"System.ConnectApi.Communities.getCommunity", "System.ConnectApi.Communities.getCommunities",
 		"ConnectApi.NamedCredentials.getNamedCredentials", "ConnectApi.NamedCredentials.createExternalCredential",
 		"ConnectApi.NamedCredentials.createNamedCredential", "ConnectApi.NamedCredentials.getExternalCredential",
