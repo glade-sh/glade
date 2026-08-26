@@ -7959,6 +7959,9 @@ public class FinalizerJob implements Queueable, Finalizer {
   public void execute(FinalizerContext fc) {
     System.assertEquals(ParentJobResult.SUCCESS, fc.getResult());
     System.assertNotEquals('', fc.getAsyncApexJobId());
+    Object raw = fc;
+    FinalizerContextImpl concrete = (FinalizerContextImpl)raw;
+    System.assertEquals(fc.getAsyncApexJobId(), concrete.getAsyncApexJobId());
     System.assertEquals(null, fc.getException());
     insert new Account(Name = 'finalizer ran');
   }

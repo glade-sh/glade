@@ -370,6 +370,9 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 	if messagingEmailAssignable(from, to) {
 		return true
 	}
+	if strings.EqualFold(shortTypeName(to), "FinalizerContext") && strings.EqualFold(shortTypeName(from), "FinalizerContextImpl") {
+		return true
+	}
 	if strings.EqualFold(to, "Cache.Partition") &&
 		(strings.EqualFold(from, "Cache.OrgPartition") || strings.EqualFold(from, "Cache.SessionPartition")) {
 		return true
