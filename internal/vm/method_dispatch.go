@@ -187,6 +187,16 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	if err, handled := vm.generatedUnsupportedFamilyExplicitMethodError(method, receiver, args); handled {
 		return Null, err
 	}
+	if passiveGeneratedMethod(method) && receiver.Kind == ValueObject && vm.isUserProvisioningBatchableType(receiver.Type) {
+		callArgs := make([]Value, 0, len(method.Params))
+		for _, param := range method.Params {
+			callArgs = append(callArgs, frame[param.Name])
+		}
+		value, _, _, handled, err := callUserProvisioningBatchableMember(vm, receiver, apexMethodMemberName(method.Name), callArgs)
+		if handled || err != nil {
+			return value, err
+		}
+	}
 	if receiver.Kind == ValueObject && passiveGeneratedMethod(method) &&
 		(generatedPlatformObjectMemberReceiver(receiver.Type) || generatedPlatformObjectMemberReceiver(generatedMethodClassName(method, receiver))) {
 		callArgs := make([]Value, 0, len(method.Params))
@@ -252,16 +262,6 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 	}
 	if passiveGeneratedMethod(method) {
-		if receiver.Kind == ValueObject && vm.isUserProvisioningBatchableType(receiver.Type) {
-			callArgs := make([]Value, 0, len(method.Params))
-			for _, param := range method.Params {
-				callArgs = append(callArgs, frame[param.Name])
-			}
-			value, _, _, handled, err := callUserProvisioningBatchableMember(vm, receiver, apexMethodMemberName(method.Name), callArgs)
-			if handled || err != nil {
-				return value, err
-			}
-		}
 		if receiver.Kind == ValueObject &&
 			(strings.EqualFold(receiver.Type, "DataWeave.Script") || strings.HasPrefix(receiver.Type, "DataWeaveScriptResource.")) &&
 			strings.EqualFold(apexMethodMemberName(method.Name), "execute") {
