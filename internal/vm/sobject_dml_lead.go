@@ -116,7 +116,7 @@ func (vm *VM) convertLeadAccountID(convert Value, lead storage.Record, result *R
 		return "", err
 	}
 	if hasDMLFailures(results) {
-		return "", databaseDMLException("convertLead", results)
+		return "", databaseDMLException("convertLead", results, vm.dmlExceptionObjectTypes(account))
 	}
 	return results[0].ID, nil
 }
@@ -146,7 +146,7 @@ func (vm *VM) convertLeadContactID(convert Value, lead storage.Record, accountID
 		return "", err
 	}
 	if hasDMLFailures(results) {
-		return "", databaseDMLException("convertLead", results)
+		return "", databaseDMLException("convertLead", results, vm.dmlExceptionObjectTypes(contact))
 	}
 	return results[0].ID, nil
 }
@@ -187,7 +187,7 @@ func (vm *VM) convertLeadOpportunityID(convert Value, lead storage.Record, accou
 		return "", err
 	}
 	if hasDMLFailures(results) {
-		return "", databaseDMLException("convertLead", results)
+		return "", databaseDMLException("convertLead", results, vm.dmlExceptionObjectTypes(opportunity))
 	}
 	return results[0].ID, nil
 }
