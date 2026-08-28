@@ -637,10 +637,29 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 				return List(), receiver, false, true, nil
 			case "getDmlFields":
-				if value, ok := detail.Fields["fields"]; ok {
+				value, ok := detail.Fields["fields"]
+				if !ok || value.Kind != ValueList {
+					return List(), receiver, false, true, nil
+				}
+				objectType := ""
+				if object, ok := detail.Fields["objectType"]; ok && object.Kind == ValueString {
+					objectType = object.Text
+				}
+				if objectType == "" {
 					return value, receiver, false, true, nil
 				}
-				return List(), receiver, false, true, nil
+				fields := typedList("List<Schema.SObjectField>")
+				for _, field := range value.List {
+					if field.Kind != ValueString {
+						continue
+					}
+					token, found := vm.lookupSObjectFieldToken([]string{objectType, field.Text})
+					if !found {
+						token = vm.sObjectFieldToken(objectType, field.Text)
+					}
+					fields.List = append(fields.List, token)
+				}
+				return fields, receiver, false, true, nil
 			case "getDmlId":
 				if value, ok := detail.Fields["id"]; ok {
 					return value, receiver, false, true, nil

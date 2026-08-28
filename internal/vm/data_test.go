@@ -15494,16 +15494,24 @@ try {
 	System.assertEquals('REQUIRED_FIELD_MISSING', e.getDmlStatusCode(0));
 	System.assertEquals(StatusCode.REQUIRED_FIELD_MISSING, e.getDmlType(0));
 	System.assertEquals(partial.get(0).getErrors().get(0).getMessage(), e.getDmlMessage(0));
-	System.assertEquals(partial.get(0).getErrors().get(0).getFields().get(0), e.getDmlFields(0).get(0));
+	System.assertEquals(Account.Name, e.getDmlFields(0).get(0));
 	System.assertEquals(null, e.getDmlId(0));
 	System.assertEquals(1, e.getDmlIndex(1));
 	System.assertEquals('DUPLICATE_VALUE', e.getDmlStatusCode(1));
 	System.assertEquals(0, e.getDmlFields(1).size());
 	System.assertEquals(2, e.getDmlIndex(2));
 	System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', e.getDmlStatusCode(2));
-	System.assertEquals('Name', e.getDmlFields(2).get(0));
+	System.assertEquals(Account.Name, e.getDmlFields(2).get(0));
 }
 System.assert(caught);
+Boolean singleCaught = false;
+try {
+	Database.insert(new Account(), true);
+} catch (DmlException e) {
+	singleCaught = true;
+	System.assertEquals(Account.Name, e.getDmlFields(0).get(0));
+}
+System.assert(singleCaught);
 List<Account> rows = [SELECT Id FROM Account WHERE Code__c IN ('M', 'B')];
 System.assertEquals(0, rows.size());
 `)

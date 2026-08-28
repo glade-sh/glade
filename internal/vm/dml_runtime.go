@@ -232,7 +232,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 	}
 	if allOrNone && hasDMLFailures(results) {
 		vm.addVisualforceDMLPageMessages(results)
-		return Null, databaseDMLException(op, results)
+		return Null, databaseDMLException(op, results, vm.dmlExceptionObjectTypes(args[0]))
 	}
 	values := make([]Value, 0, len(results))
 	for _, dmlResult := range results {
@@ -699,7 +699,7 @@ func (vm *VM) executeDatabaseRecordAction(op string, args []Value, result *Resul
 		return Null, err
 	}
 	if allOrNone && hasDMLFailures(results) {
-		return Null, databaseDMLException(op, results)
+		return Null, databaseDMLException(op, results, vm.dmlExceptionObjectTypes(args[0]))
 	}
 	values := make([]Value, 0, len(results))
 	for _, dmlResult := range results {
@@ -1228,7 +1228,7 @@ func databaseRecordActionResultType(op string) string {
 	}
 }
 
-func databaseDMLException(op string, results []dml.Result) error {
+func databaseDMLException(op string, results []dml.Result, objectTypes []string) error {
 	message := "DML operation failed"
 	if op != "" {
 		message = "Database." + op + " failed"
@@ -1245,7 +1245,7 @@ func databaseDMLException(op string, results []dml.Result) error {
 	}
 	value := Object("DmlException")
 	value.Fields["message"] = String(message)
-	value.Fields["__dmlErrors"] = dmlExceptionErrorDetails(results)
+	value.Fields["__dmlErrors"] = dmlExceptionErrorDetails(results, objectTypes)
 	return &apexThrowError{value: value}
 }
 
@@ -1264,7 +1264,7 @@ func exceptionMessage(value Value) string {
 	return ""
 }
 
-func dmlExceptionErrorDetails(results []dml.Result) Value {
+func dmlExceptionErrorDetails(results []dml.Result, objectTypes []string) Value {
 	details := List()
 	for index, result := range results {
 		if result.Success || result.Error == "" {
@@ -1272,12 +1272,33 @@ func dmlExceptionErrorDetails(results []dml.Result) Value {
 		}
 		for _, err := range dmlResultErrors(result) {
 			detail := databaseErrorValue(err)
+			if index < len(objectTypes) {
+				detail.Fields["objectType"] = String(objectTypes[index])
+			}
 			detail.Fields["id"] = databaseResultIDValue(result.ID)
 			detail.Fields["index"] = Int(int64(index))
 			details.List = append(details.List, detail)
 		}
 	}
 	return details
+}
+
+func (vm *VM) dmlExceptionObjectTypes(value Value) []string {
+	if value.Kind == ValueList {
+		objectTypes := make([]string, 0, len(value.List))
+		for _, item := range value.List {
+			if item.Kind == ValueObject {
+				objectTypes = append(objectTypes, vm.canonicalSObjectValueType(item))
+			} else {
+				objectTypes = append(objectTypes, "")
+			}
+		}
+		return objectTypes
+	}
+	if value.Kind == ValueObject {
+		return []string{vm.canonicalSObjectValueType(value)}
+	}
+	return nil
 }
 
 func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) {
@@ -1384,7 +1405,7 @@ func (vm *VM) executeDatabaseMergeWithMode(args []Value, mode ir.DMLMode, result
 			results[i] = failure
 		}
 		if allOrNone {
-			return Null, databaseDMLException("merge", results)
+			return Null, databaseDMLException("merge", results, vm.dmlExceptionObjectTypes(duplicateInput))
 		}
 		return vm.mergeResultValue(args[1].Kind == ValueList, duplicates, results), nil
 	}
@@ -1398,7 +1419,7 @@ func (vm *VM) executeDatabaseMergeWithMode(args []Value, mode ir.DMLMode, result
 	if hasDMLFailures(beforeDeleteFailures) {
 		if allOrNone {
 			*vm.Org = backup
-			return Null, databaseDMLException("merge", beforeDeleteFailures)
+			return Null, databaseDMLException("merge", beforeDeleteFailures, vm.dmlExceptionObjectTypes(duplicateInput))
 		}
 		mergeDuplicates, mergeDuplicateBefore, _ = filterDMLInputs(duplicates, duplicateBefore, nil, beforeDeleteFailures)
 		if len(mergeDuplicates) == 0 {
@@ -1421,7 +1442,7 @@ func (vm *VM) executeDatabaseMergeWithMode(args []Value, mode ir.DMLMode, result
 		}
 	}
 	if allOrNone && hasDMLFailures(results) {
-		return Null, databaseDMLException("merge", results)
+		return Null, databaseDMLException("merge", results, vm.dmlExceptionObjectTypes(duplicateInput))
 	}
 	successfulDuplicates := make([]storage.Record, 0, len(duplicates))
 	successfulDuplicateBefore := make([]storage.Record, 0, len(mergeDuplicateBefore))
@@ -4924,7 +4945,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 	for _, dmlResult := range results {
 		if !dmlResult.Success {
 			vm.addVisualforceDMLPageMessages(results)
-			return databaseDMLException(op, results)
+			return databaseDMLException(op, results, vm.dmlExceptionObjectTypes(value))
 		}
 	}
 	if expr.Kind == ir.ExprVariable {
