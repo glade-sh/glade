@@ -1341,7 +1341,7 @@ func TestAnalyzeDatabaseDMLCollectionOverloads(t *testing.T) {
 	writeSemaFile(t, filepath.Join(root, "UsesDatabaseDML.cls"), `
 public class UsesDatabaseDML {
   public static void insertAccountsViaDatabaseMethod(List<String> names, Boolean allOrNothing, System.AccessLevel accessLevel) {}
-  public static void run(List<Account> accounts, List<Object> objects, Account account, Id recordId, List<Id> recordIds, Database.DMLOptions opts) {
+  public static void run(List<Account> accounts, List<Object> objects, Object objectValue, Account account, Id recordId, List<Id> recordIds, Database.DMLOptions opts) {
     insertAccountsViaDatabaseMethod(new List<String>{'Texas'}, false, AccessLevel.SYSTEM_MODE);
     List<Database.SaveResult> insertResults = Database.insert(accounts);
     List<Database.SaveResult> partialInsertResults = Database.insert(accounts, false);
@@ -1368,6 +1368,10 @@ public class UsesDatabaseDML {
     List<Database.UpsertResult> objectPartialUpsertResults = Database.upsert(objects, Account.External_Id__c, false);
     List<Database.UpsertResult> objectModeUpsertResults = Database.upsert(objects, Account.External_Id__c, AccessLevel.USER_MODE);
     List<Database.UpsertResult> objectPartialModeUpsertResults = Database.upsert(objects, Account.External_Id__c, false, AccessLevel.USER_MODE);
+    Database.UpsertResult objectUpsertResult = Database.upsert(objectValue, Account.External_Id__c);
+    Database.UpsertResult objectPartialUpsertResult = Database.upsert(objectValue, Account.External_Id__c, false);
+    Database.UpsertResult objectModeUpsertResult = Database.upsert(objectValue, Account.External_Id__c, AccessLevel.USER_MODE);
+    Database.UpsertResult objectPartialModeUpsertResult = Database.upsert(objectValue, Account.External_Id__c, false, AccessLevel.USER_MODE);
     Database.UpsertResult singleUserModeUpsertNoExternalId = Database.upsert(account, false, AccessLevel.USER_MODE);
     Database.UpsertResult systemModeSingleUpsert = Database.upsert(account, Account.External_Id__c, false, AccessLevel.SYSTEM_MODE);
     Database.UndeleteResult idUndelete = Database.undelete(recordId);

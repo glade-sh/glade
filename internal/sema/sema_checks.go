@@ -2773,15 +2773,13 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	if semaAPI67RejectedPlatformCallArgs(typ.EffectiveAPIVersion, receiverType, method, argTypes) {
 		return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true
 	}
-	if _, ok := semaDatabaseUpsertObjectListFieldParams(receiverType, method); ok {
-		fieldArgTypes := argTypes
-		if len(args) >= 2 && semaLooksLikeSObjectFieldTokenInModel(args[1].text, model) {
-			fieldArgTypes = append([]string(nil), argTypes...)
-			fieldArgTypes[1] = "Schema.SObjectField"
-		}
-		if semaDatabaseUpsertObjectListFieldCall(receiverType, method, fieldArgTypes, model) {
-			return nil, true
-		}
+	fieldArgTypes := argTypes
+	if len(args) >= 2 && semaLooksLikeSObjectFieldTokenInModel(args[1].text, model) {
+		fieldArgTypes = append([]string(nil), argTypes...)
+		fieldArgTypes[1] = "Schema.SObjectField"
+	}
+	if semaDatabaseUpsertObjectFieldCall(receiverType, method, fieldArgTypes, model) {
+		return nil, true
 	}
 	if semaDatabaseDMLReturnType(receiverType, method, argTypes) != "" && len(args) <= 4 && semaFirstArgMatchesAny(sig.params, argTypes[0], model) {
 		return nil, true
