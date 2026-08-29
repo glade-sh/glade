@@ -2144,6 +2144,23 @@ func semaDatabaseDMLReturnType(receiverType, method string, argTypes []string) s
 	}
 }
 
+func semaDatabaseUpsertObjectListFieldParams(receiverType, method string) ([][]string, bool) {
+	if !strings.EqualFold(semaCanonicalPlatformAlias(receiverType), "Database") || normalizeName(method) != "upsert" {
+		return nil, false
+	}
+	return [][]string{
+		{"List<Object>", "Schema.SObjectField"},
+		{"List<Object>", "Schema.SObjectField", "Boolean"},
+		{"List<Object>", "Schema.SObjectField", "AccessLevel"},
+		{"List<Object>", "Schema.SObjectField", "Boolean", "AccessLevel"},
+	}, true
+}
+
+func semaDatabaseUpsertObjectListFieldCall(receiverType, method string, argTypes []string, model *semaTypeMemberView) bool {
+	params, ok := semaDatabaseUpsertObjectListFieldParams(receiverType, method)
+	return ok && len(argTypes) > 0 && strings.EqualFold(semaCanonicalAssignableType(argTypes[0]), "List<Object>") && semaArgsMatchAny(params, argTypes, model)
+}
+
 func semaDatabaseDynamicQueryTextCall(callee string) bool {
 	receiver, method, ok := strings.Cut(strings.TrimSpace(callee), ".")
 	return ok && semaDatabaseDynamicQueryCall(receiver, method)
