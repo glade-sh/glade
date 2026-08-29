@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"sort"
@@ -42,6 +43,22 @@ const (
 )
 
 var Null = Value{Kind: ValueNull}
+
+func (v Value) MarshalJSON() ([]byte, error) {
+	type jsonValue Value
+	if !strings.EqualFold(v.Type, "AccessLevel") {
+		return json.Marshal(jsonValue(v))
+	}
+	out := jsonValue(v)
+	out.Fields = make(map[string]Value, len(v.Fields))
+	for name, value := range v.Fields {
+		if strings.EqualFold(name, "SYSTEM_MODE") || strings.EqualFold(name, "USER_MODE") {
+			continue
+		}
+		out.Fields[name] = value
+	}
+	return json.Marshal(out)
+}
 
 var nextValueRef atomic.Uint64
 
