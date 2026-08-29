@@ -158,10 +158,10 @@ Integer recordTypeCount = firstRecordTypes.size();
 firstRecordTypes.clear();
 System.assertEquals(recordTypeCount, Widget__c.SObjectType.getDescribe().getRecordTypeInfos().size());
 
-List<Schema.FieldSetMember> firstMembers = Widget__c.SObjectType.getDescribe().fieldSets.get('Summary').getFields();
+List<Schema.FieldSetMember> firstMembers = Widget__c.SObjectType.getDescribe().fieldSets.getMap().get('Summary').getFields();
 Integer memberCount = firstMembers.size();
 firstMembers.clear();
-System.assertEquals(memberCount, Widget__c.SObjectType.getDescribe().fieldSets.get('Summary').getFields().size());
+System.assertEquals(memberCount, Widget__c.SObjectType.getDescribe().fieldSets.getMap().get('Summary').getFields().size());
 
 Map<String, Schema.FieldSet> firstFieldSets = Widget__c.SObjectType.getDescribe().fieldSets.getMap();
 Integer fieldSetCount = firstFieldSets.size();
