@@ -143230,6 +143230,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "CART_NOT_FOUND", Type: "StatusCode", Static: true},
 			{Name: "CART_DELIVERY_GROUP_NOT_FOUND", Type: "StatusCode", Static: true},
 			{Name: "CHECKOUT_CONFLICT", Type: "StatusCode", Static: true},
+			{Name: "CART_OPERATION_IN_PROGRESS", Type: "StatusCode", Static: true},
 			{Name: "ORDER_ALREADY_SUBMITTED", Type: "StatusCode", Static: true},
 			{Name: "CHECKOUT_VALIDATION", Type: "StatusCode", Static: true},
 			{Name: "CHECKOUT_INVENTORY_RESERVATION", Type: "StatusCode", Static: true},
