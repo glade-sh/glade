@@ -4604,6 +4604,35 @@ func TestRunExecJSON(t *testing.T) {
 	}
 }
 
+func TestRunExecJSONHandlesAccessLevelValues(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"exec", "--json", "Object accessMode = AccessLevel.USER_MODE;"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	var data struct {
+		Vars map[string]vm.Value `json:"vars"`
+	}
+	envelope := decodeCLIEnvelopeData(t, stdout.Bytes(), "exec", &data)
+	if envelope.Status != "passed" || envelope.ExitCode != 0 {
+		t.Fatalf("exec JSON status = %#v", envelope)
+	}
+	accessMode := data.Vars["accessMode"]
+	if accessMode.Kind != vm.ValueObject || accessMode.Type != "AccessLevel" || accessMode.Text != "USER_MODE" {
+		t.Fatalf("accessMode = %#v", accessMode)
+	}
+	permissions := accessMode.Fields["currentAccessPermissions"]
+	if permissions.Kind != vm.ValueString || permissions.Text != "USER_MODE" || accessMode.Fields["permSetId"].Kind != vm.ValueNull {
+		t.Fatalf("accessMode fields = %#v", accessMode.Fields)
+	}
+	if _, ok := accessMode.Fields["SYSTEM_MODE"]; ok {
+		t.Fatalf("accessMode retained cyclic SYSTEM_MODE: %#v", accessMode.Fields)
+	}
+	if _, ok := accessMode.Fields["USER_MODE"]; ok {
+		t.Fatalf("accessMode retained cyclic USER_MODE: %#v", accessMode.Fields)
+	}
+}
+
 func TestRunExecLimitProfileJSONAndExplicitCaps(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{
