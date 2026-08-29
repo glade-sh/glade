@@ -158,6 +158,8 @@ func semaAPI67RejectedPlatformCallAtVersion(version, receiverType, method, recei
 		return method == "lock" || method == "unlock"
 	case "quickaction":
 		return method == "describeavailableactions"
+	case "schema.sobjecttypefieldsets":
+		return method == "get" && apexversion.AtLeast(version, 67)
 	case "canvas.environmentcontext":
 		return method == "getparameters" || (method == "getparametersasjson" && receiverMode == "class")
 	case "canvas.lifecyclehandler":

@@ -1839,7 +1839,7 @@ public class UsesDescribeSObjectResultFields {
     Schema.SObjectField fieldToken = describe.fields.getMap().get('RecordTypeId');
     Schema.SObjectField methodToken = describe.getFields().get('Name');
     Schema.FieldSet fieldSetToken = describe.fieldSets.getMap().get('AccountSummary');
-    Schema.FieldSet methodFieldSetToken = describe.getFieldSets().get('AccountSummary');
+    Schema.FieldSet methodFieldSetToken = describe.getFieldSets().getMap().get('AccountSummary');
     return fieldToken == null ? methodToken : fieldToken;
   }
 }
@@ -2288,13 +2288,13 @@ public class UsesSchemaSObjectTypeFieldSets {
     List<Schema.FieldSetMember> direct = Schema.SObjectType.Account.fieldSets.AccountSummary.getFields();
     List<Schema.FieldSetMember> shortName = Account.SObjectType.FieldSets.AccountSummary.getFields();
     List<Schema.FieldSetMember> fromMap = Schema.SObjectType.Account.fieldSets.getMap().get('AccountSummary').getFields();
-    List<Schema.FieldSetMember> fromGet = Schema.SObjectType.Account.fieldSets.get('AccountSummary').getFields();
   }
 }
 `)
 	index := typesys.Build(project.Project{
-		Root:      root,
-		ApexFiles: []string{filepath.Join(root, "UsesSchemaSObjectTypeFieldSets.cls")},
+		Root:             root,
+		SourceAPIVersion: "67.0",
+		ApexFiles:        []string{filepath.Join(root, "UsesSchemaSObjectTypeFieldSets.cls")},
 	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
 
 	result := Analyze(index)

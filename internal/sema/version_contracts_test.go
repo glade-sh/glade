@@ -55,6 +55,28 @@ func TestLegacySiteURLHelpersUseEffectiveSourceAPIVersion(t *testing.T) {
 	}
 }
 
+func TestSObjectTypeFieldSetsGetFollowsSourceAPIVersion(t *testing.T) {
+	source := `public class Probe { public void run() { Schema.DescribeSObjectResult accountDescribe = Account.SObjectType.getDescribe(); Schema.FieldSet value = accountDescribe.fieldSets.get('Summary'); } }`
+	for _, test := range []struct {
+		apiVersion string
+		wantError  bool
+	}{
+		{apiVersion: "66.0", wantError: false},
+		{apiVersion: "67.0", wantError: true},
+	} {
+		t.Run(test.apiVersion, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, test.apiVersion)
+			if test.wantError {
+				if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA028") {
+					t.Fatalf("API %s accepted SObjectTypeFieldSets.get: %#v", test.apiVersion, result.Diagnostics)
+				}
+			} else if result.HasErrors() {
+				t.Fatalf("API %s rejected SObjectTypeFieldSets.get: %#v", test.apiVersion, result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestSecurityEnforcedQueryIsRejectedAtAPIVersion67AndLater(t *testing.T) {
 	source := `
 public class Probe {
