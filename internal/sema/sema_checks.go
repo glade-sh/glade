@@ -2773,7 +2773,7 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	if semaAPI67RejectedPlatformCallArgs(typ.EffectiveAPIVersion, receiverType, method, argTypes) {
 		return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true
 	}
-	if semaDatabaseDMLReturnType(receiverType, method, argTypes) != "" && len(args) <= 4 {
+	if semaDatabaseDMLReturnType(receiverType, method, argTypes) != "" && len(args) <= 4 && semaFirstArgMatchesAny(sig.params, argTypes[0], model) {
 		return nil, true
 	}
 	if semaSearchSuggestObjectOverload(receiverType, method, argTypes) {
