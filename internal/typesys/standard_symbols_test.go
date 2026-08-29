@@ -1540,6 +1540,7 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 		t.Fatalf("StatusCode kind = %q, want enum", statusCode.Kind)
 	}
 	requireStandardProperty(t, statusCode, "APEX_FAILED", "StatusCode")
+	requireStandardProperty(t, statusCode, "CART_OPERATION_IN_PROGRESS", "StatusCode")
 	requireStandardProperty(t, statusCode, "PRINCIPAL_NOT_ASSIGNED", "StatusCode")
 	requireStandardProperty(t, statusCode, "PRINCIPAL_NOT_CONFIGURED", "StatusCode")
 	requireStandardProperty(t, statusCode, "PRINCIPAL_UNAUTHENTICATED", "StatusCode")

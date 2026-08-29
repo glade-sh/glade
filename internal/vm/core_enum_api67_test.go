@@ -98,3 +98,21 @@ System.assert(!quiddities.get(0).equals(quiddities.get(1)));
 		t.Fatal(err)
 	}
 }
+
+func TestExecAPI67SystemStatusCodeCurrentOrdinal(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<System.StatusCode> values = System.StatusCode.values();
+System.assertEquals(623, values.size());
+System.StatusCode current = System.StatusCode.CART_OPERATION_IN_PROGRESS;
+System.assertEquals(410, current.ordinal());
+System.assertEquals('CART_OPERATION_IN_PROGRESS', values.get(410).name());
+System.assertEquals(410, values.get(410).ordinal());
+System.assertEquals(current.name(), System.StatusCode.valueOf('CART_OPERATION_IN_PROGRESS').name());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}

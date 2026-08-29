@@ -40,7 +40,7 @@ for (System.StatusCode value : System.StatusCode.values()) {
 String digest = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', Blob.valueOf(String.join(records, '\n'))));
 System.debug('GLADE_ORACLE_SYSTEM_STATUS_CODE_CONTRACT=' + index + '|' + digest);
 `,
-			want: "GLADE_ORACLE_SYSTEM_STATUS_CODE_CONTRACT=622|5b8a54e66ccedd283e72e9e091c0d860c9ab81068546d4d1268cf90e1eb0b750",
+			want: "GLADE_ORACLE_SYSTEM_STATUS_CODE_CONTRACT=623|64e6f3fe8a2d2ccb74d6227500415163fecec6d3d60932210b096dd263f1e837",
 		},
 		{
 			name: "Metadata.StatusCode",
