@@ -1378,6 +1378,8 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "Collator", ReplaceConstructors: true},
 	{Name: "FinalizerContextImpl", ReplaceConstructors: true},
 	{Name: "UIRequest", ReplaceConstructors: true},
+	{Name: "Cache.Org", ReplaceConstructors: true},
+	{Name: "Cache.Session", ReplaceConstructors: true},
 	// API 67 platform enum hashes use a stable family seed plus declaration
 	// ordinal. Keep the seeds on the merged type metadata, not on members.
 	{Name: "Schema.SoapType", EnumHashBase: standardEnumHashBase(884834318)},

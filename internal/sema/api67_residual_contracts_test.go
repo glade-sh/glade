@@ -80,6 +80,8 @@ func TestAPI67CompileShapeRejectsInternalNoArgConstructors(t *testing.T) {
 
 func TestAPI67CompileShapeRejectsNonConstructibleAndHiddenConstructors(t *testing.T) {
 	tests := map[string]string{
+		"Cache.Org":                   `Cache.Org value = new Cache.Org();`,
+		"Cache.Session":               `Cache.Session value = new Cache.Session();`,
 		"System.Aura":                 `System.Aura value = new System.Aura();`,
 		"System.Collator":             `System.Collator value = new System.Collator();`,
 		"System.FinalizerContextImpl": `System.FinalizerContextImpl value = new System.FinalizerContextImpl();`,
