@@ -41,6 +41,7 @@ type StandardMethodSpec struct {
 	ParameterSpecs []StandardParameterSpec
 	Modifiers      []string
 	Static         bool
+	Force          bool
 }
 
 type StandardPropertySpec struct {
@@ -456,6 +457,9 @@ func appendUniqueStandardMethods(values, additions []StandardMethodSpec) []Stand
 }
 
 func shouldReplaceStandardMethod(existing, addition StandardMethodSpec) bool {
+	if addition.Force {
+		return true
+	}
 	if standardModifierContains(addition.Modifiers, "abstract") && !standardModifierContains(existing.Modifiers, "abstract") {
 		return true
 	}
@@ -1319,6 +1323,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 
 var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "Database.DeleteFilter", Kind: apexast.DeclarationEnum},
+	{Name: "Database.DeletedRecord", Methods: []StandardMethodSpec{{Name: "getDeletedDate", ReturnType: "Datetime", Force: true}}},
 	{Name: "commercepayments.PostAuthorizationResponse", Methods: []StandardMethodSpec{
 		{Name: "setCardPaymentMethodResponse", ReturnType: "void", Parameters: []string{"commercepayments.CardPaymentMethodResponse"}},
 		{Name: "setPaymentMethodDetailsResponse", ReturnType: "void", Parameters: []string{"commercepayments.PaymentMethodDetailsResponse"}},
