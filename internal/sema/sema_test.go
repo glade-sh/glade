@@ -1341,7 +1341,7 @@ func TestAnalyzeDatabaseDMLCollectionOverloads(t *testing.T) {
 	writeSemaFile(t, filepath.Join(root, "UsesDatabaseDML.cls"), `
 public class UsesDatabaseDML {
   public static void insertAccountsViaDatabaseMethod(List<String> names, Boolean allOrNothing, System.AccessLevel accessLevel) {}
-  public static void run(List<Account> accounts, Account account, Id recordId, List<Id> recordIds, Database.DMLOptions opts) {
+  public static void run(List<Account> accounts, List<Object> objects, Account account, Id recordId, List<Id> recordIds, Database.DMLOptions opts) {
     insertAccountsViaDatabaseMethod(new List<String>{'Texas'}, false, AccessLevel.SYSTEM_MODE);
     List<Database.SaveResult> insertResults = Database.insert(accounts);
     List<Database.SaveResult> partialInsertResults = Database.insert(accounts, false);
@@ -1364,6 +1364,10 @@ public class UsesDatabaseDML {
     Database.UpsertResult singleSystemModeUpsert = Database.upsert(account, AccessLevel.SYSTEM_MODE);
     List<Database.UpsertResult> systemModeUpsertNoExternalId = Database.upsert(accounts, true, AccessLevel.SYSTEM_MODE);
     List<Database.UpsertResult> userModeUpsertResults = Database.upsert(accounts, Account.External_Id__c, false, AccessLevel.USER_MODE);
+    List<Database.UpsertResult> objectUpsertResults = Database.upsert(objects, Account.External_Id__c);
+    List<Database.UpsertResult> objectPartialUpsertResults = Database.upsert(objects, Account.External_Id__c, false);
+    List<Database.UpsertResult> objectModeUpsertResults = Database.upsert(objects, Account.External_Id__c, AccessLevel.USER_MODE);
+    List<Database.UpsertResult> objectPartialModeUpsertResults = Database.upsert(objects, Account.External_Id__c, false, AccessLevel.USER_MODE);
     Database.UpsertResult singleUserModeUpsertNoExternalId = Database.upsert(account, false, AccessLevel.USER_MODE);
     Database.UpsertResult systemModeSingleUpsert = Database.upsert(account, Account.External_Id__c, false, AccessLevel.SYSTEM_MODE);
     Database.UndeleteResult idUndelete = Database.undelete(recordId);
@@ -1389,7 +1393,6 @@ public class UsesDatabaseDML {
 			{Name: "External_Id__c", Type: "Text"},
 		},
 	}}})
-
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
@@ -1401,10 +1404,12 @@ func TestAnalyzeDatabaseUpsertRequiresSObjectOperands(t *testing.T) {
 	tests := []struct {
 		name      string
 		valueType string
+		arguments string
 		wantError bool
 	}{
 		{name: "object", valueType: "Object", wantError: true},
 		{name: "object list", valueType: "List<Object>", wantError: true},
+		{name: "string list with external ID", valueType: "List<String>", arguments: ", Account.External_Id__c", wantError: true},
 		{name: "sobject", valueType: "SObject"},
 		{name: "sobject list", valueType: "List<SObject>"},
 		{name: "concrete sobject", valueType: "Account"},
@@ -1414,8 +1419,8 @@ func TestAnalyzeDatabaseUpsertRequiresSObjectOperands(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			root := t.TempDir()
 			path := filepath.Join(root, "Probe.cls")
-			writeSemaFile(t, path, "public class Probe { public void run("+test.valueType+" value) { Database.upsert(value); } }")
-			result := Analyze(typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{}))
+			writeSemaFile(t, path, "public class Probe { public void run("+test.valueType+" value) { Database.upsert(value"+test.arguments+"); } }")
+			result := Analyze(typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "External_Id__c", Type: "Text"}}}}}))
 			if result.HasErrors() != test.wantError {
 				t.Fatalf("Database.upsert(%s) diagnostics: %#v", test.valueType, result.Diagnostics)
 			}
