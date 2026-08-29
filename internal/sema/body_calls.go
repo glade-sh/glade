@@ -2097,7 +2097,6 @@ func semaGenericAssignableToType(paramType, argType string, model *semaTypeMembe
 			semaKnownStandardObjectListAssignable(paramArgs[0], argArgs[0], model) ||
 			semaTypeMatches(model, argArgs[0], paramArgs[0], make(map[string]bool)) ||
 			semaAssignableToType(paramArgs[0], argArgs[0], model) ||
-			semaAssignableToType(argArgs[0], paramArgs[0], model) ||
 			semaCustomAPITypeLocalNamesMatch(paramArgs[0], argArgs[0])
 	case "map":
 		if len(paramArgs) == 0 {
@@ -2111,6 +2110,15 @@ func semaGenericAssignableToType(paramType, argType string, model *semaTypeMembe
 	default:
 		return false
 	}
+}
+
+func semaFirstArgMatchesAny(params [][]string, arg string, model *semaTypeMemberView) bool {
+	for _, candidate := range params {
+		if len(candidate) != 0 && semaAssignableToType(candidate[0], arg, model) {
+			return true
+		}
+	}
+	return false
 }
 
 func semaKnownStandardObjectListAssignable(paramElementType, argElementType string, model *semaTypeMemberView) bool {

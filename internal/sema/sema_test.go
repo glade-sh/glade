@@ -1396,6 +1396,33 @@ public class UsesDatabaseDML {
 	}
 }
 
+func TestAnalyzeDatabaseUpsertRequiresSObjectOperands(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name      string
+		valueType string
+		wantError bool
+	}{
+		{name: "object", valueType: "Object", wantError: true},
+		{name: "object list", valueType: "List<Object>", wantError: true},
+		{name: "sobject", valueType: "SObject"},
+		{name: "sobject list", valueType: "List<SObject>"},
+		{name: "concrete sobject", valueType: "Account"},
+		{name: "concrete sobject list", valueType: "List<Account>"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			root := t.TempDir()
+			path := filepath.Join(root, "Probe.cls")
+			writeSemaFile(t, path, "public class Probe { public void run("+test.valueType+" value) { Database.upsert(value); } }")
+			result := Analyze(typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{}))
+			if result.HasErrors() != test.wantError {
+				t.Fatalf("Database.upsert(%s) diagnostics: %#v", test.valueType, result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestAnalyzeCaseInsensitivePlatformEnumAndDateStatics(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
