@@ -10055,7 +10055,7 @@ System.assertEquals(expectedDate, updated.getLatestDateCovered());
 	}
 }
 
-func TestExecDatabaseSyncResultAccessorsReturnDate(t *testing.T) {
+func TestExecDatabaseSyncResultAccessorsUseSalesforceTypes(t *testing.T) {
 	program, err := CompileAnonymous(`
 Date expectedEarliest = Date.newInstance(2026, 4, 1);
 Date expectedLatest = Date.newInstance(2026, 5, 2);
@@ -10063,7 +10063,7 @@ Datetime start = Datetime.newInstanceGmt(2026, 5, 2, 11, 59, 0);
 Datetime finish = Datetime.newInstanceGmt(2026, 5, 2, 12, 5, 0);
 
 Database.DeletedRecord deletedRecord = new Database.DeletedRecord();
-	Date deletedDate = deletedRecord.getDeletedDate();
+	Datetime deletedDate = deletedRecord.getDeletedDate();
 	System.assertEquals(null, deletedDate);
 	Account deletedAccount = new Account(Name = 'M6 Date Return');
 	insert deletedAccount;
@@ -10072,8 +10072,9 @@ Database.DeletedRecord deletedRecord = new Database.DeletedRecord();
 	Datetime deletedWindowEnd = Datetime.now().addMinutes(1);
 	Database.GetDeletedResult observedDeleted = Database.getDeleted('Account', deletedWindowStart, deletedWindowEnd);
 	System.assertEquals(1, observedDeleted.getDeletedRecords().size());
-	Date observedDeletedDate = observedDeleted.getDeletedRecords()[0].getDeletedDate();
-	System.assertEquals(Date.newInstance(deletedWindowStart.year(), deletedWindowStart.month(), deletedWindowStart.day()), observedDeletedDate);
+	Datetime observedDeletedDate = observedDeleted.getDeletedRecords()[0].getDeletedDate();
+	System.assert(observedDeletedDate >= deletedWindowStart);
+	System.assert(observedDeletedDate <= deletedWindowEnd);
 
 	Database.GetDeletedResult deleted = Database.getDeleted('Account', start, finish);
 	Date earliest = deleted.getEarliestDateAvailable();

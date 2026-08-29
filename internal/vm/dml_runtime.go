@@ -77,7 +77,7 @@ func (vm *VM) databaseGetDeleted(args []Value) (Value, error) {
 			stamp, _ := databaseSyncRecordStamp(record)
 			deleted := Object("Database.DeletedRecord")
 			deleted.Fields["id"] = platformScalar("Id", id)
-			deleted.Fields["deletedDate"] = platformScalar("Date", formatPlatformDate(stamp))
+			deleted.Fields["deletedDate"] = platformScalar("Datetime", formatPlatformDatetime(stamp))
 			records = append(records, deleted)
 		}
 	}
