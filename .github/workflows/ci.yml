@@ -779,6 +779,7 @@ jobs:
         shard: [0, 1]
     env:
       GOMAXPROCS: "2"
+      GOMEMLIMIT: "6GiB"
       GOMODCACHE: /tmp/go-mod-ci-apextest-${{ matrix.shard }}
       GOCACHE: /tmp/go-build-ci-apextest-${{ matrix.shard }}
       CI_APEXTEST_ARTIFACT_DIR: ci-artifacts/apextest-${{ matrix.shard }}
