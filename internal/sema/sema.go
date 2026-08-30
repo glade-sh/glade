@@ -2144,21 +2144,20 @@ func semaDatabaseDMLReturnType(receiverType, method string, argTypes []string) s
 	}
 }
 
-func semaDatabaseUpsertObjectListFieldParams(receiverType, method string) ([][]string, bool) {
-	if !strings.EqualFold(semaCanonicalPlatformAlias(receiverType), "Database") || normalizeName(method) != "upsert" {
-		return nil, false
+func semaDatabaseUpsertObjectFieldCall(receiverType, method string, argTypes []string, model *semaTypeMemberView) bool {
+	if !strings.EqualFold(semaCanonicalPlatformAlias(receiverType), "Database") || normalizeName(method) != "upsert" || len(argTypes) < 2 {
+		return false
 	}
-	return [][]string{
-		{"List<Object>", "Schema.SObjectField"},
-		{"List<Object>", "Schema.SObjectField", "Boolean"},
-		{"List<Object>", "Schema.SObjectField", "AccessLevel"},
-		{"List<Object>", "Schema.SObjectField", "Boolean", "AccessLevel"},
-	}, true
-}
-
-func semaDatabaseUpsertObjectListFieldCall(receiverType, method string, argTypes []string, model *semaTypeMemberView) bool {
-	params, ok := semaDatabaseUpsertObjectListFieldParams(receiverType, method)
-	return ok && len(argTypes) > 0 && strings.EqualFold(semaCanonicalAssignableType(argTypes[0]), "List<Object>") && semaArgsMatchAny(params, argTypes, model)
+	first := semaCanonicalAssignableType(argTypes[0])
+	if !strings.EqualFold(first, "Object") && !strings.EqualFold(first, "List<Object>") {
+		return false
+	}
+	return semaArgsMatchAny([][]string{
+		{first, "Schema.SObjectField"},
+		{first, "Schema.SObjectField", "Boolean"},
+		{first, "Schema.SObjectField", "AccessLevel"},
+		{first, "Schema.SObjectField", "Boolean", "AccessLevel"},
+	}, argTypes, model)
 }
 
 func semaDatabaseDynamicQueryTextCall(callee string) bool {
