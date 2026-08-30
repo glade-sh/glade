@@ -4,7 +4,7 @@ import "testing"
 
 func TestExecXmlStreamReaderNavigatesElementsTextAndAttributes(t *testing.T) {
 	program, err := CompileAnonymous(`
-XmlStreamReader reader = new XmlStreamReader('<root xmlns:p="urn:p" p:id="7" name="Acme"><child> text </child></root>');
+XmlStreamReader reader = new XmlStreamReader('<root xmlns:p="urn:p" p:id="7" name="Acme"><child> text </child> </root>');
 System.assertEquals(XmlTag.START_DOCUMENT, reader.getEventType());
 System.assert(reader.hasNext());
 
@@ -43,6 +43,10 @@ System.assertEquals(' text ', reader.getText());
 System.assertEquals(2, reader.nextTag());
 System.assert(reader.isEndElement());
 System.assertEquals('child', reader.getLocalName());
+System.assertEquals(4, reader.next());
+System.assert(reader.isCharacters());
+System.assert(reader.isWhitespace());
+System.assertEquals(' ', reader.getText());
 `)
 	if err != nil {
 		t.Fatal(err)
