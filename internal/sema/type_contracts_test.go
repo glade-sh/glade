@@ -98,6 +98,19 @@ func TestDatabaseSynchronousDMLObjectOverloadsResolve(t *testing.T) {
 	}
 }
 
+func TestIdeaStandardSetControllerAcceptsObjectSelection(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() {
+  ApexPages.IdeaStandardSetController controller = new ApexPages.IdeaStandardSetController();
+  controller.setSelected(new List<Object>());
+} }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected IdeaStandardSetController List<Object> selection to compile: %#v", result.Diagnostics)
+	}
+}
+
 func TestDataSourceAsyncSaveCallbackUsesClassInheritance(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{
