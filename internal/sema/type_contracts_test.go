@@ -55,6 +55,49 @@ func TestDatabaseAsyncListObjectWithoutOptionsResolves(t *testing.T) {
 	}
 }
 
+func TestDatabaseSynchronousDMLObjectOverloadsResolve(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run(Object row, List<Object> rows, Database.DMLOptions options) {
+  Database.insert(row, false);
+  Database.insert(row, false, AccessLevel.USER_MODE);
+  Database.insert(rows);
+  Database.insert(rows, AccessLevel.USER_MODE);
+  Database.insert(rows, false);
+  Database.insert(rows, false, AccessLevel.USER_MODE);
+  Database.insert(row, options);
+  Database.insert(row, options, AccessLevel.USER_MODE);
+  Database.insert(rows, options);
+  Database.insert(rows, options, AccessLevel.USER_MODE);
+  Database.update(row, false);
+  Database.update(row, false, AccessLevel.USER_MODE);
+  Database.update(rows);
+  Database.update(rows, AccessLevel.USER_MODE);
+  Database.update(rows, false);
+  Database.update(rows, false, AccessLevel.USER_MODE);
+  Database.update(row, options);
+  Database.update(row, options, AccessLevel.USER_MODE);
+  Database.update(rows, options);
+  Database.update(rows, options, AccessLevel.USER_MODE);
+  Database.delete(row, false);
+  Database.delete(row, false, AccessLevel.USER_MODE);
+  Database.delete(rows);
+  Database.delete(rows, AccessLevel.USER_MODE);
+  Database.delete(rows, false);
+  Database.delete(rows, false, AccessLevel.USER_MODE);
+  Database.undelete(row, false);
+  Database.undelete(row, false, AccessLevel.USER_MODE);
+  Database.undelete(rows);
+  Database.undelete(rows, AccessLevel.USER_MODE);
+  Database.undelete(rows, false);
+  Database.undelete(rows, false, AccessLevel.USER_MODE);
+} }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected synchronous Object and List<Object> DML overloads to compile: %#v", result.Diagnostics)
+	}
+}
+
 func TestDataSourceAsyncSaveCallbackUsesClassInheritance(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{

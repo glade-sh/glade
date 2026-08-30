@@ -2144,6 +2144,26 @@ func semaDatabaseDMLReturnType(receiverType, method string, argTypes []string) s
 	}
 }
 
+func semaDatabaseDMLObjectCall(receiverType, method string, argTypes []string, model *semaTypeMemberView) bool {
+	if !strings.EqualFold(semaCanonicalPlatformAlias(receiverType), "Database") || len(argTypes) == 0 {
+		return false
+	}
+	first := semaCanonicalAssignableType(argTypes[0])
+	if !strings.EqualFold(first, "Object") && !strings.EqualFold(first, "List<Object>") {
+		return false
+	}
+	var params [][]string
+	switch normalizeName(method) {
+	case "insert", "update":
+		params = [][]string{{first}, {first, "Boolean"}, {first, "Database.DMLOptions"}, {first, "AccessLevel"}, {first, "Boolean", "AccessLevel"}, {first, "Database.DMLOptions", "AccessLevel"}}
+	case "delete", "undelete":
+		params = [][]string{{first}, {first, "Boolean"}, {first, "AccessLevel"}, {first, "Boolean", "AccessLevel"}}
+	default:
+		return false
+	}
+	return semaArgsMatchAny(params, argTypes, model)
+}
+
 func semaDatabaseUpsertObjectFieldCall(receiverType, method string, argTypes []string, model *semaTypeMemberView) bool {
 	if !strings.EqualFold(semaCanonicalPlatformAlias(receiverType), "Database") || normalizeName(method) != "upsert" || len(argTypes) < 2 {
 		return false
