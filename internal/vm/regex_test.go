@@ -149,6 +149,43 @@ System.assertEquals('\\$1\\\\x', Matcher.quoteReplacement('$1\\x'));
 	}
 }
 
+func TestExecMatcherEndStateAfterFailedFind(t *testing.T) {
+	program, err := CompileAnonymous(`
+Matcher matcher = Pattern.compile('z').matcher('abc');
+System.assertEquals(false, matcher.find());
+System.assertEquals(true, matcher.hitEnd());
+System.assertEquals(false, matcher.requireEnd());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMatcherEndStateUpdatesAfterMatchOperation(t *testing.T) {
+	program, err := CompileAnonymous(`
+Matcher lookingAt = Pattern.compile('z').matcher('abc');
+System.assertEquals(false, lookingAt.find());
+System.assertEquals(false, lookingAt.lookingAt());
+System.assertEquals(false, lookingAt.hitEnd());
+System.assertEquals(false, lookingAt.requireEnd());
+
+Matcher matches = Pattern.compile('z').matcher('abc');
+System.assertEquals(false, matches.find());
+System.assertEquals(false, matches.matches());
+System.assertEquals(false, matches.hitEnd());
+System.assertEquals(false, matches.requireEnd());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPatternRejectsNonSalesforceSurface(t *testing.T) {
 	tests := []struct {
 		name   string
