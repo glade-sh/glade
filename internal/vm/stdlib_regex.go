@@ -88,6 +88,8 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
+		receiver.Fields["hitEnd"] = Bool(false)
+		receiver.Fields["requireEnd"] = Bool(false)
 		if indices == nil {
 			matcherClearMatch(receiver)
 			return Bool(false), receiver, true, true, nil
@@ -107,6 +109,8 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
+		receiver.Fields["hitEnd"] = Bool(false)
+		receiver.Fields["requireEnd"] = Bool(false)
 		if indices == nil {
 			matcherClearMatch(receiver)
 			return Bool(false), receiver, true, true, nil
@@ -142,6 +146,8 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if startByte > region.endByte {
 			matcherClearMatch(receiver)
 			receiver.Fields["index"] = Int(int64(region.endByte + 1))
+			receiver.Fields["hitEnd"] = Bool(true)
+			receiver.Fields["requireEnd"] = Bool(false)
 			return Bool(false), receiver, true, true, nil
 		}
 		indices, err := matcherRegexp2FindIndices(receiver, input, region, startByte)
@@ -151,9 +157,13 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if indices == nil {
 			matcherClearMatch(receiver)
 			receiver.Fields["index"] = Int(int64(region.endByte + 1))
+			receiver.Fields["hitEnd"] = Bool(true)
+			receiver.Fields["requireEnd"] = Bool(false)
 			return Bool(false), receiver, true, true, nil
 		}
 		matcherSaveMatch(receiver, indices)
+		receiver.Fields["hitEnd"] = Bool(false)
+		receiver.Fields["requireEnd"] = Bool(false)
 		next := indices[1]
 		if indices[0] == indices[1] {
 			next = nextRegexSearchIndex(input, next)
@@ -322,7 +332,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.%s expects 0 arguments", method)
 		}
-		return Bool(false), receiver, false, true, nil
+		return Bool(matcherBoolField(receiver, method, false)), receiver, false, true, nil
 	case "pattern":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.pattern expects 0 arguments")
