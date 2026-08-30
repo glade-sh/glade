@@ -40,6 +40,21 @@ func TestDatabaseInsertAsyncSingleRecordCallbackAccessLevelResolves(t *testing.T
 	}
 }
 
+func TestDatabaseAsyncListObjectWithoutOptionsResolves(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() {
+  List<Object> rows = new List<Object>{new Account(Name = 'Async')};
+  List<Database.SaveResult> inserted = Database.insertAsync(rows);
+  List<Database.SaveResult> updated = Database.updateAsync(rows);
+  List<Database.DeleteResult> deleted = Database.deleteAsync(rows);
+} }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected zero-option List<Object> async DML overloads to compile: %#v", result.Diagnostics)
+	}
+}
+
 func TestDataSourceAsyncSaveCallbackUsesClassInheritance(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{
