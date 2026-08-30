@@ -209,29 +209,19 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, err
 		}
 		return Int(int64(end)), receiver, false, true, nil
-	case "replaceAll":
+	case "replaceAll", "replaceFirst":
+		matcherClearMatch(receiver)
+		receiver.Fields["index"] = Int(0)
+		receiver.Fields["regionStart"] = Int(0)
+		receiver.Fields["regionEnd"] = Int(int64(apexStringLength(input)))
 		region, err := matcherRegion(receiver, input)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		replaced, err := matcherReplaceRegexp2("Matcher.replaceAll", receiver, input, region, args, true)
+		replaced, err := matcherReplaceRegexp2("Matcher."+method, receiver, input, region, args, method == "replaceAll")
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		matcherClearMatch(receiver)
-		receiver.Fields["index"] = Int(int64(region.startByte))
-		return String(replaced), receiver, true, true, nil
-	case "replaceFirst":
-		region, err := matcherRegion(receiver, input)
-		if err != nil {
-			return Null, receiver, false, true, err
-		}
-		replaced, err := matcherReplaceRegexp2("Matcher.replaceFirst", receiver, input, region, args, false)
-		if err != nil {
-			return Null, receiver, false, true, err
-		}
-		matcherClearMatch(receiver)
-		receiver.Fields["index"] = Int(int64(region.startByte))
 		return String(replaced), receiver, true, true, nil
 	case "reset":
 		if len(args) != 0 && (len(args) != 1 || args[0].Kind != ValueString) {
