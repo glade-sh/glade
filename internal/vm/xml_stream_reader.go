@@ -202,11 +202,7 @@ func xmlStreamReaderTokens(source string) ([]Value, error) {
 			tokens = append(tokens, item)
 		case xml.CharData:
 			text := string([]byte(token))
-			kind := "CHARACTERS"
-			if strings.TrimSpace(text) == "" {
-				kind = "SPACE"
-			}
-			item := xmlStreamReaderToken(kind, "", "", text, Null, Null)
+			item := xmlStreamReaderToken("CHARACTERS", "", "", text, Null, Null)
 			item.Fields["location"] = String(xmlStreamReaderLocation(source, int(decoder.InputOffset())))
 			tokens = append(tokens, item)
 		case xml.Comment:

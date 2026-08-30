@@ -14,6 +14,7 @@ func newXmlStreamWriter() Value {
 	writer := Object("XmlStreamWriter")
 	writer.Fields["xml"] = String("")
 	writer.Fields["stack"] = List()
+	writer.Fields["namespaceStack"] = List()
 	writer.Fields["openStart"] = Bool(false)
 	writer.Fields["closed"] = Bool(false)
 	writer.Fields["defaultNamespace"] = String("")
@@ -36,12 +37,17 @@ func callXmlStreamWriterMember(receiver Value, method string, args []Value) (Val
 		receiver = xmlStreamWriterCloseOpenStart(receiver)
 		receiver.Fields["closed"] = Bool(true)
 		return Null, receiver, true, true, nil
-	case "getXmlString", "toString":
+	case "getXmlString":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.%s expects 0 arguments", method)
 		}
 		receiver = xmlStreamWriterCloseOpenStart(receiver)
 		return String(xmlStreamWriterText(receiver)), receiver, false, true, nil
+	case "toString":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.toString expects 0 arguments")
+		}
+		return String("System.XmlStreamWriter[]"), receiver, false, true, nil
 	case "setDefaultNamespace":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.setDefaultNamespace expects String")
@@ -64,15 +70,11 @@ func callXmlStreamWriterMember(receiver Value, method string, args []Value) (Val
 		}
 		receiver = xmlStreamWriterCloseOpenStart(receiver)
 		receiver = xmlStreamWriterAppend(receiver, "<"+name)
+		receiver = xmlStreamWriterPushElement(receiver, name)
 		if args[2].Text != "" {
-			if args[0].Text == "" {
-				receiver = xmlStreamWriterAppend(receiver, ` xmlns="`+xmlStreamWriterEscapeAttr(args[2].Text)+`"`)
-			} else {
-				receiver = xmlStreamWriterAppend(receiver, ` xmlns:`+args[0].Text+`="`+xmlStreamWriterEscapeAttr(args[2].Text)+`"`)
-			}
+			receiver = xmlStreamWriterDeclareNamespace(receiver, args[0].Text, args[2].Text)
 		}
 		receiver.Fields["openStart"] = Bool(true)
-		receiver = xmlStreamWriterPushElement(receiver, name)
 		return Null, receiver, true, true, nil
 	case "writeEndElement":
 		if len(args) != 0 {
@@ -158,11 +160,7 @@ func callXmlStreamWriterMember(receiver Value, method string, args []Value) (Val
 			prefix = args[0].Text
 			uri = args[1].Text
 		}
-		name := "xmlns"
-		if prefix != "" {
-			name += ":" + prefix
-		}
-		receiver = xmlStreamWriterAppend(receiver, " "+name+`="`+xmlStreamWriterEscapeAttr(uri)+`"`)
+		receiver = xmlStreamWriterDeclareNamespace(receiver, prefix, uri)
 		return Null, receiver, true, true, nil
 	case "writeEmptyElement":
 		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString {
@@ -174,13 +172,11 @@ func callXmlStreamWriterMember(receiver Value, method string, args []Value) (Val
 		}
 		receiver = xmlStreamWriterCloseOpenStart(receiver)
 		receiver = xmlStreamWriterAppend(receiver, "<"+name)
+		receiver = xmlStreamWriterPushElement(receiver, name)
 		if args[2].Text != "" {
-			if args[0].Text == "" {
-				receiver = xmlStreamWriterAppend(receiver, ` xmlns="`+xmlStreamWriterEscapeAttr(args[2].Text)+`"`)
-			} else {
-				receiver = xmlStreamWriterAppend(receiver, ` xmlns:`+args[0].Text+`="`+xmlStreamWriterEscapeAttr(args[2].Text)+`"`)
-			}
+			receiver = xmlStreamWriterDeclareNamespace(receiver, args[0].Text, args[2].Text)
 		}
+		_, receiver, _ = xmlStreamWriterPopElement(receiver)
 		receiver = xmlStreamWriterAppend(receiver, "/>")
 		return Null, receiver, true, true, nil
 	default:
@@ -229,6 +225,12 @@ func xmlStreamWriterPushElement(receiver Value, name string) Value {
 	}
 	stack.List = append(stack.List, String(name))
 	receiver.Fields["stack"] = stack
+	namespaceStack := receiver.Fields["namespaceStack"]
+	if namespaceStack.Kind != ValueList {
+		namespaceStack = List()
+	}
+	namespaceStack.List = append(namespaceStack.List, Map())
+	receiver.Fields["namespaceStack"] = namespaceStack
 	return receiver
 }
 
@@ -240,10 +242,41 @@ func xmlStreamWriterPopElement(receiver Value) (string, Value, bool) {
 	last := stack.List[len(stack.List)-1]
 	stack.List = stack.List[:len(stack.List)-1]
 	receiver.Fields["stack"] = stack
+	namespaceStack := receiver.Fields["namespaceStack"]
+	if namespaceStack.Kind == ValueList && len(namespaceStack.List) > 0 {
+		namespaceStack.List = namespaceStack.List[:len(namespaceStack.List)-1]
+		receiver.Fields["namespaceStack"] = namespaceStack
+	}
 	if last.Kind != ValueString {
 		return "", receiver, false
 	}
 	return last.Text, receiver, true
+}
+
+func xmlStreamWriterDeclareNamespace(receiver Value, prefix, uri string) Value {
+	namespaceStack := receiver.Fields["namespaceStack"]
+	for i := len(namespaceStack.List) - 1; i >= 0; i-- {
+		if namespaceStack.List[i].Kind != ValueMap {
+			continue
+		}
+		if current, ok := namespaceStack.List[i].Map[prefix]; ok && current.Kind == ValueString {
+			if current.Text == uri {
+				return receiver
+			}
+			break
+		}
+	}
+	name := "xmlns"
+	if prefix != "" {
+		name += ":" + prefix
+	}
+	receiver = xmlStreamWriterAppend(receiver, " "+name+`="`+xmlStreamWriterEscapeAttr(uri)+`"`)
+	if namespaceStack.Kind == ValueList && len(namespaceStack.List) > 0 {
+		last := len(namespaceStack.List) - 1
+		namespaceStack.List[last].Map[prefix] = String(uri)
+		receiver.Fields["namespaceStack"] = namespaceStack
+	}
+	return receiver
 }
 
 func xmlStreamWriterQualifiedName(prefix, localName string) string {
