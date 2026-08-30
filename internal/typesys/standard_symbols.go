@@ -1446,6 +1446,9 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "setPageSize", ReturnType: "void", Parameters: []string{"Integer"}},
 		{Name: "setSelected", ReturnType: "void", Parameters: []string{"List<Object>"}},
 	}},
+	{Name: "ApexPages.IdeaStandardSetController", Methods: []StandardMethodSpec{
+		{Name: "setSelected", ReturnType: "void", Parameters: []string{"List<Object>"}},
+	}},
 	{Name: "ApexPages.KnowledgeArticleVersionStandardController", Methods: []StandardMethodSpec{
 		{Name: "setDataCategory", ReturnType: "void", Parameters: []string{"String", "String"}},
 	}},
