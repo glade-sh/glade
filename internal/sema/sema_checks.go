@@ -2773,6 +2773,9 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	if semaAPI67RejectedPlatformCallArgs(typ.EffectiveAPIVersion, receiverType, method, argTypes) {
 		return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true
 	}
+	if semaDatabaseDMLObjectCall(receiverType, method, argTypes, model) {
+		return nil, true
+	}
 	fieldArgTypes := argTypes
 	if len(args) >= 2 && semaLooksLikeSObjectFieldTokenInModel(args[1].text, model) {
 		fieldArgTypes = append([]string(nil), argTypes...)

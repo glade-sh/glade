@@ -1924,6 +1924,9 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 	if semaAPI67RejectedPlatformCallArgs(typ.EffectiveAPIVersion, receiverType, method, argTypes) {
 		return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source)}, true
 	}
+	if semaDatabaseDMLObjectCall(receiverType, method, argTypes, model) {
+		return nil, true
+	}
 	if semaDatabaseUpsertObjectFieldCall(receiverType, method, argTypes, model) {
 		return nil, true
 	}
