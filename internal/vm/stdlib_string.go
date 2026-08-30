@@ -597,12 +597,12 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.isAllLowerCase expects 0 arguments")
 		}
-		return Bool(stringAllLetters(receiver.Text, unicode.IsLower)), true, nil
+		return Bool(stringAllRunes(receiver.Text, unicode.IsLower, false)), true, nil
 	case "isAllUpperCase":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.isAllUpperCase expects 0 arguments")
 		}
-		return Bool(stringAllLetters(receiver.Text, unicode.IsUpper)), true, nil
+		return Bool(stringAllRunes(receiver.Text, unicode.IsUpper, false)), true, nil
 	case "isAsciiPrintable":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.isAsciiPrintable expects 0 arguments")

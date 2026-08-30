@@ -1109,7 +1109,7 @@ platformStaticCall:
 		if args[0].Kind != ValueString {
 			return Null, newExceptionError("System.TypeException", "Boolean.valueOf expects String or Boolean")
 		}
-		return Bool(strings.EqualFold(strings.TrimSpace(args[0].Text), "true")), nil
+		return Bool(strings.EqualFold(args[0].Text, "true")), nil
 	case "AccessLevel.withPermissionSetId":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("AccessLevel.withPermissionSetId expects String")

@@ -1991,20 +1991,6 @@ func stringAllRunes(text string, pred func(rune) bool, emptyValue bool) bool {
 	return true
 }
 
-func stringAllLetters(text string, pred func(rune) bool) bool {
-	hasLetter := false
-	for _, r := range text {
-		if !unicode.IsLetter(r) {
-			continue
-		}
-		hasLetter = true
-		if !pred(r) {
-			return false
-		}
-	}
-	return hasLetter
-}
-
 func stringOrdinalIndexOf(text, needle string, ordinal int, last bool) int {
 	if ordinal <= 0 || needle == "" {
 		return -1
@@ -3392,7 +3378,7 @@ func stringAbbreviate(text string, args []Value) (string, error) {
 		return abbreviateRunes([]rune(text), 0, int(args[0].Int))
 	}
 	if len(args) == 2 && args[0].Kind == ValueInt && args[1].Kind == ValueInt {
-		return abbreviateRunes([]rune(text), int(args[0].Int), int(args[1].Int))
+		return abbreviateRunes([]rune(text), int(args[1].Int), int(args[0].Int))
 	}
 	return "", fmt.Errorf("String.abbreviate expects maxWidth or offset and maxWidth")
 }
