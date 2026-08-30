@@ -528,7 +528,7 @@ func TestRunDevLWCUsesDBForLocalBuilderSearch(t *testing.T) {
 	}()
 
 	ready := waitForDevLWCReadyFileOrDone(t, readyPath, done, &stdout, &stderr)
-	client := http.Client{Timeout: 5 * time.Second}
+	client := http.Client{Timeout: devLWCReadyFileTimeout}
 	resp, err := client.Get(ready.URL + "/lightning/local/records.json?object=Account&q=database")
 	if err != nil {
 		cancel()
