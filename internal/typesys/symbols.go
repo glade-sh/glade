@@ -1696,6 +1696,9 @@ func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent str
 		if member.Name == "" {
 			continue
 		}
+		if member.Kind == apexast.DeclarationMethod && hasModifier(member.Modifiers, "testmethod") {
+			sym.IsTest = true
+		}
 		sym.Members = append(sym.Members, MemberSymbol{
 			Kind:        member.Kind,
 			Name:        member.Name,

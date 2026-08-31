@@ -2825,6 +2825,65 @@ private class HttpHarnessTest {
 	}
 }
 
+func TestRunnerDoesNotLeakHTTPMocksAcrossMethods(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		methods string
+	}{
+		{
+			name: "mock first",
+			methods: `
+  @isTest static void installsMock() {
+    Test.setMock(HttpCalloutMock.class, new ResponseMock());
+    System.assertEquals(201, send().getStatusCode());
+  }
+  @isTest static void usesFreshContext() {
+    System.assertEquals(200, send().getStatusCode());
+  }`,
+		},
+		{
+			name: "mock second",
+			methods: `
+  @isTest static void usesFreshContext() {
+    System.assertEquals(200, send().getStatusCode());
+  }
+  @isTest static void installsMock() {
+    Test.setMock(HttpCalloutMock.class, new ResponseMock());
+    System.assertEquals(201, send().getStatusCode());
+  }`,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeFile(t, filepath.Join(root, "force-app/main/classes/MockIsolationTest.cls"), `
+@isTest
+private class MockIsolationTest {
+  private class ResponseMock implements HttpCalloutMock {
+    public HttpResponse respond(HttpRequest request) {
+      HttpResponse response = new HttpResponse();
+      response.setStatusCode(201);
+      return response;
+    }
+  }
+  private static HttpResponse send() {
+    HttpRequest request = new HttpRequest();
+    request.setEndpoint('https://example.invalid/probe');
+    request.setMethod('GET');
+    return new Http().send(request);
+  }
+`+tc.methods+`
+}
+`)
+
+			run := Run(loadTestIndex(t, root), Options{Parallelism: 1, NoDiskCache: true})
+			if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
+				t.Fatalf("summary = %#v statuses=%#v problem=%q", got, runCaseStatuses(run), firstRunProblem(run))
+			}
+		})
+	}
+}
+
 func TestRunResolvesLowercaseClassPropertyBeforeDML(t *testing.T) {
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
@@ -3006,6 +3065,56 @@ private class SeeAllDataTest {
 	}
 	if seen["siloed"] {
 		t.Fatalf("plain @isTest method marked SeeAllData: %#v", cases)
+	}
+}
+
+func TestRunnerAppliesSeeAllDataToExecution(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SeeAllDataBlockedTest.cls"), `
+@isTest
+private class SeeAllDataBlockedTest {
+  @isTest static void blockedWithoutSeeAllData() {
+    ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId());
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SeeAllDataEnabledTest.cls"), `
+@isTest
+private class SeeAllDataEnabledTest {
+  @isTest(SeeAllData=true) static void allowedWithSeeAllData() {
+    ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{Parallelism: 1, NoDiskCache: true})
+	statuses := runCaseStatuses(run)
+	if got := run.Summary(); got.Total != 2 || got.Passed != 1 || got.Failed != 1 ||
+		statuses["blockedWithoutSeeAllData"] != testreport.StatusFail ||
+		statuses["allowedWithSeeAllData"] != testreport.StatusPass {
+		t.Fatalf("summary = %#v statuses=%#v problem=%q", got, statuses, firstRunProblem(run))
+	}
+	if problem := firstRunProblem(run); !strings.Contains(problem, "requires SeeAllData=true") {
+		t.Fatalf("problem = %q, want SeeAllData execution gate", problem)
+	}
+}
+
+func TestRunnerRunsLegacyTestMethod(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LegacyStyleTest.cls"), `
+private class LegacyStyleTest {
+  static testMethod void legacyRuns() {
+    System.assertEquals(4, 2 + 2);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{NoDiskCache: true})
+	statuses := runCaseStatuses(run)
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 || statuses["legacyRuns"] != testreport.StatusPass {
+		t.Fatalf("summary = %#v statuses=%#v problem=%q", got, statuses, firstRunProblem(run))
 	}
 }
 
