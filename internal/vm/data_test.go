@@ -12667,7 +12667,7 @@ insert new Account(Name = 'Acme', Rating = 'Hot');
 insert new Account(Name = 'Beta', Rating = 'Warm');
 Map<String,Object> binds = new Map<String,Object>();
 binds.put('wanted', 'Acme');
-List<Account> rows = Database.queryWithBinds('SELECT Id, Name FROM Account WHERE Name = :wanted', binds);
+List<Account> rows = Database.queryWithBinds('SELECT Id, Name FROM Account WHERE Name = :wanted', binds, AccessLevel.SYSTEM_MODE);
 System.assertEquals(1, rows.size());
 Account row = rows.get(0);
 System.assertEquals('Acme', row.Name);
@@ -12681,7 +12681,7 @@ System.assertEquals(1, rows.size());
 System.assertEquals('Beta', rows.get(0).Name);
 Boolean caught = false;
 try {
-    Database.queryWithBinds('SELECT Id FROM Account WHERE Name = :missing', binds);
+    Database.queryWithBinds('SELECT Id FROM Account WHERE Name = :missing', binds, AccessLevel.SYSTEM_MODE);
 } catch (QueryException qe) {
     caught = true;
     String message = qe.getMessage();
@@ -12715,6 +12715,17 @@ Database.queryWithBinds('SELECT Id FROM Account WHERE Name = :wanted', binds, 'U
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(badProgram); err == nil || !strings.Contains(err.Error(), "AccessLevel") {
 		t.Fatalf("expected AccessLevel error, got %v", err)
+	}
+
+	missingAccessLevel, err := CompileAnonymous(`
+Map<String,Object> binds = new Map<String,Object>();
+Database.queryWithBinds('SELECT Id FROM Account', binds);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(missingAccessLevel); err == nil || !strings.Contains(err.Error(), "AccessLevel") {
+		t.Fatalf("expected required AccessLevel error, got %v", err)
 	}
 }
 
