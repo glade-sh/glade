@@ -182,14 +182,23 @@ func TestEventPublishCallbacksAreInterfaces(t *testing.T) {
 	}
 }
 
-func TestSandboxPostCopyAndSoqlStubProviderAreInterfaces(t *testing.T) {
+func TestSandboxPostCopyIsInterface(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{
-		"SandboxCopy.cls":  `public class SandboxCopy implements SandboxPostCopy { public void runApexClass(SandboxContext context) {} }`,
-		"SoqlProvider.cls": `public class SoqlProvider implements SoqlStubProvider { public List<SObject> handleSoqlQuery(Schema.SObjectType targetType, String query, Map<String,Object> binds) { return new List<SObject>(); } }`,
+		"SandboxCopy.cls": `public class SandboxCopy implements SandboxPostCopy { public void runApexClass(SandboxContext context) {} }`,
 	})
 	if result.HasErrors() {
-		t.Fatalf("expected SandboxPostCopy and SoqlStubProvider interface implementations to compile: %#v", result.Diagnostics)
+		t.Fatalf("expected SandboxPostCopy interface implementation to compile: %#v", result.Diagnostics)
+	}
+}
+
+func TestSoqlStubProviderUsesClassInheritance(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"SoqlProvider.cls": `public class SoqlProvider extends SoqlStubProvider { public override List<SObject> handleSoqlQuery(Schema.SObjectType targetType, String query, Map<String,Object> binds) { return new List<SObject>(); } }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected SoqlStubProvider class inheritance to compile: %#v", result.Diagnostics)
 	}
 }
 

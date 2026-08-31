@@ -1401,7 +1401,7 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "Finalizer", Kind: apexast.DeclarationInterface},
 	{Name: "Readiness.ProductEvaluator", Kind: apexast.DeclarationInterface},
 	{Name: "SandboxPostCopy", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "runApexClass", ReturnType: "void", Parameters: []string{"SandboxContext"}}}},
-	{Name: "SoqlStubProvider", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "handleSoqlQuery", ReturnType: "List<SObject>", Parameters: []string{"Schema.SObjectType", "String", "Map<String,Object>"}}}},
+	{Name: "SoqlStubProvider", Kind: apexast.DeclarationClass, Methods: []StandardMethodSpec{{Name: "handleSoqlQuery", ReturnType: "List<SObject>", Modifiers: []string{"virtual"}, Parameters: []string{"Schema.SObjectType", "String", "Map<String,Object>"}}}},
 	{Name: "DataSource.AsyncDeleteCallback", Kind: apexast.DeclarationClass, Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{{Name: "processDelete", ReturnType: "void", Modifiers: []string{"virtual"}, Parameters: []string{"Database.DeleteResult"}}}},
 	{Name: "DataSource.AsyncSaveCallback", Kind: apexast.DeclarationClass, Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{{Name: "processSave", ReturnType: "void", Modifiers: []string{"virtual"}, Parameters: []string{"Database.SaveResult"}}}},
 	{Name: "Metadata.DeployResult", Properties: []StandardPropertySpec{
