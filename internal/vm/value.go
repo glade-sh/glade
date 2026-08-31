@@ -631,6 +631,9 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 		}
 		return true
 	case ValueObject:
+		if strings.EqualFold(v.Type, "Matcher") || strings.EqualFold(other.Type, "Matcher") {
+			return strings.EqualFold(v.Type, other.Type) && v.Ref != 0 && v.Ref == other.Ref
+		}
 		if isDescribeSObjectResultType(v.Type) || isDescribeSObjectResultType(other.Type) {
 			return isDescribeSObjectResultType(v.Type) && isDescribeSObjectResultType(other.Type) && describeSObjectResultIdentityEqual(v, other)
 		}

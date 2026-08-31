@@ -64,6 +64,13 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 		return Null, receiver, false, false, nil
 	}
 }
+
+func matcherMutatorResult(receiver Value) Value {
+	result := receiver
+	result.Ref = newValueRef()
+	return result
+}
+
 func callMatcherMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	method = canonicalStdlibMemberName(method,
 		"matches", "lookingAt", "find", "group", "groupCount", "start", "end",
@@ -249,7 +256,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		receiver.Fields["regionEnd"] = args[1]
 		matcherClearMatch(receiver)
 		receiver.Fields["index"] = Int(int64(startByte))
-		return receiver, receiver, true, true, nil
+		return matcherMutatorResult(receiver), receiver, true, true, nil
 	case "regionStart":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.regionStart expects 0 arguments")
@@ -293,7 +300,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, err
 		}
 		receiver.Fields["index"] = Int(int64(region.startByte))
-		return receiver, receiver, true, true, nil
+		return matcherMutatorResult(receiver), receiver, true, true, nil
 	case "appendReplacement", "appendTail":
 		return Null, receiver, false, true, unsupportedCallError("Matcher." + method + " requires Java StringBuffer append semantics")
 	case "hasAnchoringBounds":
@@ -311,13 +318,13 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, fmt.Errorf("Matcher.useAnchoringBounds expects Boolean")
 		}
 		receiver.Fields["anchoringBounds"] = args[0]
-		return receiver, receiver, true, true, nil
+		return matcherMutatorResult(receiver), receiver, true, true, nil
 	case "useTransparentBounds":
 		if len(args) != 1 || args[0].Kind != ValueBool {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.useTransparentBounds expects Boolean")
 		}
 		receiver.Fields["transparentBounds"] = args[0]
-		return receiver, receiver, true, true, nil
+		return matcherMutatorResult(receiver), receiver, true, true, nil
 	case "hitEnd", "requireEnd":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.%s expects 0 arguments", method)
