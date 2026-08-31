@@ -135,11 +135,7 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.unescapeUnicode expects 0 arguments")
 		}
-		unescaped, err := unescapeJavaLike("String.unescapeUnicode", receiver.Text)
-		if err != nil {
-			return Null, true, err
-		}
-		return String(unescaped), true, nil
+		return receiver, true, nil
 	case "startsWith":
 		prefix, err := stringArg("String.startsWith", args)
 		if err != nil {
@@ -235,9 +231,6 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		target, replacement, ok := stringReplacementArgs(args)
 		if !ok {
 			return Null, true, fmt.Errorf("String.replace expects target and replacement Strings")
-		}
-		if target == "" {
-			return receiver, true, nil
 		}
 		return String(strings.ReplaceAll(receiver.Text, target, replacement)), true, nil
 	case "replaceAll":

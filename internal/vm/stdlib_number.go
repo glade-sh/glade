@@ -51,7 +51,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if args[0].Kind != ValueInt {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.setScale expects Integer scale")
 		}
-		mode := "HALF_UP"
+		mode := "HALF_EVEN"
 		if len(args) == 2 {
 			parsedMode, err := decimalRoundingMode(args[1])
 			if err != nil {
