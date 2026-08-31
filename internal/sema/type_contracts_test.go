@@ -118,6 +118,27 @@ func TestDatabaseUpdateObjectBooleanVersionBoundary(t *testing.T) {
 	}
 }
 
+func TestDatabaseEmptyRecycleBinIdVersionBoundary(t *testing.T) {
+	t.Parallel()
+	invalid := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run(Id recordId) { Database.emptyRecycleBin(recordId); } }`,
+	}, "67.0")
+	if !invalid.HasErrors() {
+		t.Fatal("API 67 accepted Database.emptyRecycleBin(Id)")
+	}
+
+	valid := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run(List<Id> recordIds, SObject row, List<SObject> rows) {
+  List<Database.EmptyRecycleBinResult> ids = Database.emptyRecycleBin(recordIds);
+  Database.EmptyRecycleBinResult one = Database.emptyRecycleBin(row);
+  List<Database.EmptyRecycleBinResult> many = Database.emptyRecycleBin(rows);
+} }`,
+	}, "67.0")
+	if valid.HasErrors() {
+		t.Fatalf("API 67 rejected documented emptyRecycleBin overloads: %#v", valid.Diagnostics)
+	}
+}
+
 func TestIdeaStandardSetControllerAcceptsObjectSelection(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{
