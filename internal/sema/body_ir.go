@@ -2662,7 +2662,7 @@ func semaResolvedIRCallReturnType(a *Analyzer, model *semaTypeMemberView, receiv
 	if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
 		return sig.returnType
 	}
-	if semaDatabaseDynamicQueryCall(receiverType, method) {
+	if semaDatabaseDynamicQueryResultCall(receiverType, method) {
 		return "Database.QueryResult"
 	}
 	if returnType := semaDatabaseDMLReturnType(receiverType, method, argTypes); returnType != "" {

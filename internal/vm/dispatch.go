@@ -650,19 +650,16 @@ platformStaticCall:
 		}
 		return vm.executeSOQL(args[0].Text, result)
 	case "Database.queryWithBinds":
-		if len(args) != 2 && len(args) != 3 {
-			return Null, fmt.Errorf("Database.queryWithBinds expects query String, bind Map, and optional AccessLevel")
+		if len(args) != 3 {
+			return Null, fmt.Errorf("Database.queryWithBinds expects query String, bind Map, and AccessLevel")
 		}
 		if args[0].Kind != ValueString || args[1].Kind != ValueMap {
 			return Null, fmt.Errorf("Database.queryWithBinds expects query String and bind Map")
 		}
-		if len(args) == 3 && (args[2].Kind != ValueObject || args[2].Type != "AccessLevel") {
+		if args[2].Kind != ValueObject || args[2].Type != "AccessLevel" {
 			return Null, fmt.Errorf("Database.queryWithBinds expects AccessLevel")
 		}
-		if len(args) == 3 {
-			return vm.executeSOQLWithBindMapAccessLevel(args[0].Text, args[1], args[2], result)
-		}
-		return vm.executeSOQLWithBindMap(args[0].Text, args[1], result)
+		return vm.executeSOQLWithBindMapAccessLevel(args[0].Text, args[1], args[2], result)
 	case "Database.countQuery":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("Database.countQuery expects query String and optional AccessLevel")
