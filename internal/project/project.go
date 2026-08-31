@@ -689,8 +689,30 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 		diagnostics = append(diagnostics, configDiagnostics...)
 	}
 	for _, packageName := range packageNames {
-		depRoot, ok := findLocalSFDXPackageDependencyRoot(root, packageName, dependencyCfgOK)
-		if !ok || sameFilePath(depRoot, root) || managedPackageDependencySourceLoaded(deps, depRoot) || managedPackageDependencyNamespaceLoaded(deps, packageName) {
+		if managedPackageDependencyNamespaceLoaded(deps, packageName) {
+			continue
+		}
+		depRoots := findLocalSFDXPackageDependencyRoots(root, packageName, dependencyCfgOK)
+		if len(depRoots) == 0 {
+			diagnostics = append(diagnostics, DependencyDiagnostic{
+				Namespace: packageName,
+				Status:    "missing",
+				Code:      "dependency_missing",
+				Message:   "declared SFDX package dependency has no configured source or artifact",
+			})
+			continue
+		}
+		if len(depRoots) > 1 {
+			diagnostics = append(diagnostics, DependencyDiagnostic{
+				Namespace: packageName,
+				Status:    "ambiguous",
+				Code:      "dependency_ambiguous",
+				Message:   "declared SFDX package dependency matches multiple local projects: " + strings.Join(depRoots, ", "),
+			})
+			continue
+		}
+		depRoot := depRoots[0]
+		if managedPackageDependencySourceLoaded(deps, depRoot) {
 			continue
 		}
 		loaded, err := load(depRoot, stack, true)
@@ -779,13 +801,14 @@ func sfdxPackageDependencyNames(cfg sfdxProject) []string {
 	return names
 }
 
-func findLocalSFDXPackageDependencyRoot(root, packageName string, allowSiblingScan bool) (string, bool) {
+func findLocalSFDXPackageDependencyRoots(root, packageName string, allowSiblingScan bool) []string {
 	wanted := normalizeSFDXPackageName(packageName)
 	if wanted == "" {
-		return "", false
+		return nil
 	}
 	root = filepath.Clean(root)
 	seen := make(map[string]bool)
+	var matches []string
 	for _, candidate := range localSFDXPackageDependencyCandidates(root, packageName, allowSiblingScan) {
 		if sameFilePath(candidate, root) || seen[candidate] {
 			continue
@@ -795,9 +818,20 @@ func findLocalSFDXPackageDependencyRoot(root, packageName string, allowSiblingSc
 		if err != nil || !sfdxProjectDeclaresPackage(cfg, wanted) {
 			continue
 		}
-		return candidate, true
+		duplicate := false
+		for _, match := range matches {
+			if sameFilePath(match, candidate) {
+				duplicate = true
+				break
+			}
+		}
+		if duplicate {
+			continue
+		}
+		matches = append(matches, candidate)
 	}
-	return "", false
+	sort.Strings(matches)
+	return matches
 }
 
 func findReferencedNamespaceSiblingSFDXPackageDependencyRoots(root string, packageNames []string, p Project, allowSiblingScan bool) []string {

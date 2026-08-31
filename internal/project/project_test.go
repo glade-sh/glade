@@ -535,6 +535,79 @@ func TestLoadResolvesLocalSFDXPackageDependencies(t *testing.T) {
 	}
 }
 
+func TestLoadRejectsAmbiguousLocalSFDXPackageDependency(t *testing.T) {
+	root := t.TempDir()
+	workspaceRoot := filepath.Join(root, "workspace")
+	modulesRoot := filepath.Join(workspaceRoot, "modules")
+	firstRoot := filepath.Join(modulesRoot, "first")
+	secondRoot := filepath.Join(modulesRoot, "second")
+	consumerRoot := filepath.Join(modulesRoot, "consumer")
+	writeFile(t, filepath.Join(workspaceRoot, "glade.yml"), `project:
+  defaultNamespace: workspace
+`)
+	for _, depRoot := range []string{firstRoot, secondRoot} {
+		writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{
+  "namespace": "shared",
+  "packageDirectories": [{"path":"force-app","default":true,"package":"SharedPkg"}]
+}`)
+	}
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{
+  "packageDirectories": [{
+    "path":"force-app",
+    "default":true,
+    "package":"Consumer",
+    "dependencies": [{"package":"SharedPkg"}]
+  }]
+}`)
+
+	p, err := Load(consumerRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 0 {
+		t.Fatalf("dependencies = %#v, want no ambiguous selection", p.ManagedPackageDependencies)
+	}
+	if len(p.DependencyDiagnostics) != 1 {
+		t.Fatalf("diagnostics = %#v, want one ambiguity", p.DependencyDiagnostics)
+	}
+	diagnostic := p.DependencyDiagnostics[0]
+	if diagnostic.Namespace != "SharedPkg" || diagnostic.Status != "ambiguous" || diagnostic.Code != "dependency_ambiguous" {
+		t.Fatalf("diagnostic = %#v", diagnostic)
+	}
+	wantRoots := []string{firstRoot, secondRoot}
+	if !strings.Contains(diagnostic.Message, wantRoots[0]) || !strings.Contains(diagnostic.Message, wantRoots[1]) || strings.Index(diagnostic.Message, wantRoots[0]) > strings.Index(diagnostic.Message, wantRoots[1]) {
+		t.Fatalf("diagnostic message = %q, want sorted roots %#v", diagnostic.Message, wantRoots)
+	}
+}
+
+func TestLoadReportsMissingLocalSFDXPackageDependency(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{
+  "packageDirectories": [{
+    "path":"force-app",
+    "default":true,
+    "package":"Consumer",
+    "dependencies": [{"package":"MissingPkg"}]
+  }]
+}`)
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 0 {
+		t.Fatalf("dependencies = %#v, want no missing selection", p.ManagedPackageDependencies)
+	}
+	if len(p.DependencyDiagnostics) != 1 {
+		t.Fatalf("diagnostics = %#v, want one missing dependency", p.DependencyDiagnostics)
+	}
+	diagnostic := p.DependencyDiagnostics[0]
+	if diagnostic.Namespace != "MissingPkg" || diagnostic.Status != "missing" || diagnostic.Code != "dependency_missing" ||
+		diagnostic.Message != "declared SFDX package dependency has no configured source or artifact" {
+		t.Fatalf("diagnostic = %#v", diagnostic)
+	}
+}
+
 func TestLoadDoesNotScanUnrelatedGrandchildrenForSFDXPackageDependencies(t *testing.T) {
 	root := t.TempDir()
 	consumerRoot := filepath.Join(root, "workspace", "consumer")
