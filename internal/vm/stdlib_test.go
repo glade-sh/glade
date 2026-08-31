@@ -300,7 +300,7 @@ System.assert(Test.isSoqlStubDefined(Account.SObjectType));
 List<Account> inlineRows = [SELECT Id, Name FROM Account];
 System.assertEquals(1, inlineRows.size());
 System.assertEquals('001000000000123', inlineRows[0].Id);
-List<Account> rows = Database.queryWithBinds('SELECT Id, Name FROM Account WHERE Name = :name', new Map<String,Object>{'name' => 'Acme'});
+List<Account> rows = Database.queryWithBinds('SELECT Id, Name FROM Account WHERE Name = :name', new Map<String,Object>{'name' => 'Acme'}, AccessLevel.SYSTEM_MODE);
 System.assertEquals(1, rows.size());
 System.assertEquals('001000000000123', rows[0].Id);
 System.assert(rows[0].Name.contains('SELECT Id, Name FROM Account WHERE Name ='));

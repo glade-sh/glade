@@ -5795,9 +5795,9 @@ public class UsesDatabaseQuery {
     List<Object> objects = Database.query(query);
     List<Account> accounts = Database.query(query);
     List<AggregateResult> grouped = Database.query(query);
-    SObject singleWithBinds = Database.queryWithBinds(query, binds);
-    List<Object> objectsWithBinds = Database.queryWithBinds(query, binds);
-    List<Account> accountsWithBinds = Database.queryWithBinds(query, binds);
+    SObject singleWithBinds = Database.queryWithBinds(query, binds, AccessLevel.SYSTEM_MODE);
+    List<Object> objectsWithBinds = Database.queryWithBinds(query, binds, AccessLevel.SYSTEM_MODE);
+    List<Account> accountsWithBinds = Database.queryWithBinds(query, binds, AccessLevel.SYSTEM_MODE);
   }
 }
 `)
@@ -5808,6 +5808,26 @@ public class UsesDatabaseQuery {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected Database.query diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeDatabaseQueryWithBindsRequiresAccessLevel(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesDatabaseQueryWithBinds.cls"), `
+public class UsesDatabaseQueryWithBinds {
+  public List<SObject> run(String query, Map<String, Object> binds) {
+    return Database.queryWithBinds(query, binds);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesDatabaseQueryWithBinds.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if !result.HasErrors() {
+		t.Fatalf("expected missing AccessLevel diagnostic: %#v", result.Diagnostics)
 	}
 }
 
