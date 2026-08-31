@@ -2044,7 +2044,7 @@ func semaResolvedCallReturnType(model *semaTypeMemberView, receiverType, method 
 	if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
 		return sig.returnType
 	}
-	if semaDatabaseDynamicQueryCall(receiverType, method) {
+	if semaDatabaseDynamicQueryResultCall(receiverType, method) {
 		return "Database.QueryResult"
 	}
 	if returnType := semaDatabaseDMLReturnType(receiverType, method, argTypes); returnType != "" {
@@ -2107,6 +2107,10 @@ func semaClassLiteralStubbedType(model *semaTypeMemberView, currentType, expr st
 }
 
 func semaDatabaseDynamicQueryCall(receiverType, method string) bool {
+	return strings.EqualFold(semaCanonicalPlatformAlias(receiverType), "Database") && strings.EqualFold(method, "query")
+}
+
+func semaDatabaseDynamicQueryResultCall(receiverType, method string) bool {
 	if !strings.EqualFold(semaCanonicalPlatformAlias(receiverType), "Database") {
 		return false
 	}
