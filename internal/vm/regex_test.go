@@ -169,6 +169,66 @@ System.assertEquals(false, matcher.requireEnd());
 	}
 }
 
+func TestMatcherMutatorsReturnDistinctSharedWrappersAndFailedFindHitsEnd(t *testing.T) {
+	pattern, err := patternCompile([]Value{String("a")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	matcher, _, _, handled, err := callPatternMember(pattern, "matcher", []Value{String("aba")})
+	if err != nil || !handled {
+		t.Fatal(err)
+	}
+
+	otherPattern, err := patternCompile([]Value{String("b")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mutators := []struct {
+		method string
+		args   []Value
+	}{
+		{method: "region", args: []Value{Int(0), Int(2)}},
+		{method: "usePattern", args: []Value{otherPattern}},
+		{method: "useAnchoringBounds", args: []Value{Bool(false)}},
+		{method: "useTransparentBounds", args: []Value{Bool(true)}},
+	}
+	for _, tc := range mutators {
+		returned, updated, mutated, handled, err := callMatcherMember(matcher, tc.method, tc.args)
+		if err != nil || !handled || !mutated {
+			t.Fatalf("%s: handled=%v mutated=%v err=%v", tc.method, handled, mutated, err)
+		}
+		if returned.Ref == matcher.Ref {
+			t.Fatalf("%s returned receiver Ref %d", tc.method, matcher.Ref)
+		}
+		if returned.Equal(matcher) {
+			t.Fatalf("%s returned wrapper equals receiver", tc.method)
+		}
+		if updated.Ref != matcher.Ref {
+			t.Fatalf("%s updated receiver Ref = %d, want %d", tc.method, updated.Ref, matcher.Ref)
+		}
+		returned.Fields["shared"] = String(tc.method)
+		if got := matcher.Fields["shared"]; got.Kind != ValueString || got.Text != tc.method {
+			t.Fatalf("%s returned wrapper does not share matcher fields", tc.method)
+		}
+	}
+
+	failedPattern, err := patternCompile([]Value{String("z")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	failedMatcher, _, _, _, err := callPatternMember(failedPattern, "matcher", []Value{String("abc")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found, updated, mutated, handled, err := callMatcherMember(failedMatcher, "find", nil)
+	if err != nil || !handled || !mutated || found.Kind != ValueBool || found.Bool {
+		t.Fatalf("find: value=%#v handled=%v mutated=%v err=%v", found, handled, mutated, err)
+	}
+	if !matcherBoolField(updated, "hitEnd", false) || matcherBoolField(updated, "requireEnd", true) {
+		t.Fatalf("failed find end state: hitEnd=%v requireEnd=%v", matcherBoolField(updated, "hitEnd", false), matcherBoolField(updated, "requireEnd", true))
+	}
+}
+
 func TestExecMatcherEndStateUpdatesAfterMatchOperation(t *testing.T) {
 	program, err := CompileAnonymous(`
 Matcher lookingAt = Pattern.compile('z').matcher('abc');
