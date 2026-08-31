@@ -1685,7 +1685,7 @@ System.assertEquals(quoted, escapedQuoted.unescapeJava());
 String omega = 'AΩ';
 System.assertEquals('A\u03A9', omega.escapeUnicode());
 String escapedOmega = omega.escapeUnicode();
-System.assertEquals(omega, escapedOmega.unescapeUnicode());
+System.assertEquals('A\u03A9', escapedOmega.unescapeUnicode());
 System.assertEquals('Bob\''s', String.escapeSingleQuotes('Bob''s'));
 List<String> formatArgs = new List<String>();
 formatArgs.add('Ada');
@@ -1872,7 +1872,8 @@ String raw = String.fromCharArray(new List<Integer>{8, 9, 10, 12, 13, 34, 39, 47
 System.assertEquals(raw, raw.escapeJava().unescapeJava());
 System.assertEquals(raw, raw.escapeEcmaScript().unescapeEcmaScript());
 String unicodeRaw = String.fromCharArray(new List<Integer>{8, 9, 10, 12, 13, 34, 39, 47, 937, 128512});
-System.assertEquals(unicodeRaw, unicodeRaw.escapeUnicode().unescapeUnicode());
+String escapedUnicodeRaw = unicodeRaw.escapeUnicode();
+System.assertEquals(escapedUnicodeRaw, escapedUnicodeRaw.unescapeUnicode());
 System.assertEquals('/', '/'.escapeJava());
 System.assertEquals('\/', '/'.escapeEcmaScript());
 
@@ -2057,8 +2058,8 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	if _, err := stringStatic("String.getLevenshteinDistance", []Value{String("a"), String("b"), Int(-1)}); err == nil {
 		t.Fatal("String.getLevenshteinDistance expected bad threshold error")
 	}
-	if _, _, err := callStringMember(String(`\u00ZZ`), "unescapeUnicode", nil); err == nil {
-		t.Fatal("String.unescapeUnicode expected bad escape error")
+	if got, handled, err := callStringMember(String(`\u00ZZ`), "unescapeUnicode", nil); err != nil || !handled || got.Text != `\u00ZZ` {
+		t.Fatalf("String.unescapeUnicode = %#v handled=%v err=%v", got, handled, err)
 	}
 	if _, handled, err := callStringMember(String("${name}"), "template", []Value{String("bad")}); !handled || err == nil {
 		t.Fatalf("String.template expected bad argument error, handled=%v err=%v", handled, err)
