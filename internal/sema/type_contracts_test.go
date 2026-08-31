@@ -57,7 +57,7 @@ func TestDatabaseAsyncListObjectWithoutOptionsResolves(t *testing.T) {
 
 func TestDatabaseSynchronousDMLObjectOverloadsResolve(t *testing.T) {
 	t.Parallel()
-	result := analyzeDeclarationProject(t, map[string]string{
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
 		"Probe.cls": `public class Probe { public void run(Object row, List<Object> rows, Database.DMLOptions options) {
   Database.insert(row, false);
   Database.insert(row, false, AccessLevel.USER_MODE);
@@ -92,9 +92,29 @@ func TestDatabaseSynchronousDMLObjectOverloadsResolve(t *testing.T) {
   Database.undelete(rows, false);
   Database.undelete(rows, false, AccessLevel.USER_MODE);
 } }`,
-	})
+	}, "66.0")
 	if result.HasErrors() {
 		t.Fatalf("expected synchronous Object and List<Object> DML overloads to compile: %#v", result.Diagnostics)
+	}
+}
+
+func TestDatabaseUpdateObjectBooleanVersionBoundary(t *testing.T) {
+	t.Parallel()
+	invalid := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run(Object row) { Database.update(row, false); } }`,
+	}, "67.0")
+	if !invalid.HasErrors() {
+		t.Fatal("API 67 accepted Database.update(Object, Boolean)")
+	}
+
+	valid := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run(SObject row, List<SObject> rows) {
+  Database.SaveResult one = Database.update(row, false);
+  List<Database.SaveResult> many = Database.update(rows, false);
+} }`,
+	}, "67.0")
+	if valid.HasErrors() {
+		t.Fatalf("API 67 rejected valid SObject Database.update calls: %#v", valid.Diagnostics)
 	}
 }
 

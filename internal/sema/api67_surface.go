@@ -219,6 +219,9 @@ func semaAPI67RejectedPlatformCallAtVersion(version, receiverType, method, recei
 
 func semaAPI67RejectedPlatformCallArgs(version, receiverType, method string, argTypes []string) bool {
 	receiverBase, _ := semaGenericBaseAndArgs(semaCanonicalPlatformAlias(receiverType))
+	if apexversion.AtLeast(version, 67) && strings.EqualFold(receiverBase, "Database") && strings.EqualFold(method, "update") && len(argTypes) == 2 {
+		return strings.EqualFold(semaCanonicalAssignableType(argTypes[0]), "Object") && strings.EqualFold(semaCanonicalAssignableType(argTypes[1]), "Boolean")
+	}
 	if (strings.EqualFold(receiverBase, "Cache.Partition") || strings.EqualFold(receiverBase, "Cache.OrgPartition") || strings.EqualFold(receiverBase, "Cache.SessionPartition")) && strings.EqualFold(method, "validateKeys") {
 		if len(argTypes) != 2 {
 			return true
