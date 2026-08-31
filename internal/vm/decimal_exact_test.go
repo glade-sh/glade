@@ -191,6 +191,20 @@ System.assertEquals(-1, Math.signum(doubleValue));
 	}
 }
 
+func TestExecDecimalSetScaleDefaultsToHalfEven(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal value = Decimal.valueOf('12.345');
+System.assertEquals('12.34', value.setScale(2).toPlainString());
+System.assertEquals('12.35', value.setScale(2, RoundingMode.HALF_UP).toPlainString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMathModRejectsDecimalOperands(t *testing.T) {
 	program, err := CompileAnonymous(`
 Math.mod(Decimal.valueOf('5.5'), Decimal.valueOf('2'));

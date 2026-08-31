@@ -4832,7 +4832,7 @@ Decimal bankersDown = Decimal.valueOf('2.685');
 Decimal bankersUp = Decimal.valueOf('2.675');
 Decimal negative = Decimal.valueOf('-1.005');
 Decimal negativeDirected = Decimal.valueOf('-1.25');
-System.assertEquals(1.01, nickel.setScale(2));
+System.assertEquals(1.00, nickel.setScale(2));
 System.assertEquals(1.00, nickel.setScale(2, RoundingMode.valueOf('HALF_DOWN')));
 System.assertEquals(2.68, bankersDown.setScale(2, RoundingMode.valueOf('HALF_EVEN')));
 System.assertEquals(2.68, bankersUp.setScale(2, RoundingMode.valueOf('HALF_EVEN')));

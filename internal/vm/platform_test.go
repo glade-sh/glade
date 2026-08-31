@@ -14276,7 +14276,7 @@ System.assertEquals(3.0, Math.sqrt(9));
 System.assertEquals(2.0, Math.floor(2.9));
 System.assertEquals(3.0, Math.ceil(2.1));
 Decimal amount = 12.345;
-System.assertEquals(12.35, amount.setScale(2));
+System.assertEquals(12.34, amount.setScale(2));
 System.assertEquals(12, amount.intValue());
 System.assertEquals(12, amount.round());
 Date d = Date.today();
