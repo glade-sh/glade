@@ -90,6 +90,18 @@ System.assert(String.isNotEmpty('x'));
 	}
 }
 
+func TestExecStringReplaceEmptyTarget(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('xaxbxcx', 'abc'.replace('', 'x'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStringSubstringUsesApexUTF16Indexes(t *testing.T) {
 	program, err := CompileAnonymous(`
 String text = 'a😀b';
@@ -1808,7 +1820,6 @@ System.assertEquals(65533, replacementValue.codePointAt(0));
 String invalidXmlNumeric = '&#0;&#x0;&#xD800;&#55296;&#x110000;&#+65;&#x+41;';
 System.assertEquals(invalidXmlNumeric, invalidXmlNumeric.unescapeXml());
 String replaceEmpty = 'abc';
-System.assertEquals('abc', replaceEmpty.replace('', 'x'));
 System.assertEquals('abc', replaceEmpty.remove(''));
 System.assert(String.isBlank(null));
 System.assert(!String.isNotBlank(null));

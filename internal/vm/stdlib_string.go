@@ -236,9 +236,6 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if !ok {
 			return Null, true, fmt.Errorf("String.replace expects target and replacement Strings")
 		}
-		if target == "" {
-			return receiver, true, nil
-		}
 		return String(strings.ReplaceAll(receiver.Text, target, replacement)), true, nil
 	case "replaceAll":
 		replaced, err := stringRegexReplace("String.replaceAll", receiver.Text, args, true)
