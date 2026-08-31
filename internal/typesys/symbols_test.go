@@ -3,6 +3,7 @@ package typesys
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -270,6 +271,7 @@ func TestBuildLoadsManagedPackageArtifactSymbols(t *testing.T) {
 	if err := os.WriteFile(artifactPath, []byte(`{
   "namespace": "pkg",
   "version": "1.0",
+  "sourceHash": "abc",
   "apexTypes": [
     {
       "kind": "class",
@@ -314,6 +316,40 @@ func TestBuildLoadsManagedPackageArtifactSymbols(t *testing.T) {
 	}
 }
 
+func TestBuildRejectsInvalidManagedPackageArtifactMetadata(t *testing.T) {
+	root := t.TempDir()
+	artifactPath := filepath.Join(root, "pkg.glade-package.json")
+	if err := os.WriteFile(artifactPath, []byte(`{
+  "schemaVersion": 2,
+  "namespace": "pkg",
+  "version": "1.0",
+  "sourceHash": "abc",
+  "apexTypes": [{"kind":"class","name":"Address","namespace":"pkg"}]
+}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	idx := Build(project.Project{
+		Root: root,
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:    "pkg",
+			ArtifactPath: artifactPath,
+			Version:      "1.0",
+			Status:       "loaded",
+		}},
+	}, schema.Schema{})
+
+	if len(idx.Types) != 0 {
+		t.Fatalf("types = %#v", idx.Types)
+	}
+	if len(idx.Dependencies) != 1 || idx.Dependencies[0].Status != "load_error" {
+		t.Fatalf("dependencies = %#v", idx.Dependencies)
+	}
+	if len(idx.Diagnostics) != 1 || idx.Diagnostics[0].Code != "dependency_load_error" || !strings.Contains(idx.Diagnostics[0].Message, "sourceApiVersion is required") {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+}
+
 func TestBuildLoadsCapturedManagedPackageArtifactMetadata(t *testing.T) {
 	root := t.TempDir()
 	packagesDir := filepath.Join(root, "packages")
@@ -325,6 +361,7 @@ func TestBuildLoadsCapturedManagedPackageArtifactMetadata(t *testing.T) {
 		Namespace:           "pkg",
 		PackageName:         "Billing Core",
 		Version:             "1.2.3",
+		SourceAPIVersion:    "67.0",
 		LabelNames:          []string{"pkg__Billing_Error"},
 		StaticResourceNames: []string{"pkg__BillingAssets"},
 		LightningBundles: []packageartifact.LightningBundle{{
@@ -380,6 +417,9 @@ func TestBuildLoadsCapturedManagedPackageArtifactMetadata(t *testing.T) {
 	}
 	if len(idx.Types) != 1 || idx.Types[0].Name != "BillingGateway" || !idx.Types[0].Artifact {
 		t.Fatalf("types = %#v", idx.Types)
+	}
+	if got := idx.Types[0].EffectiveAPIVersion; got != "67.0" {
+		t.Fatalf("effectiveApiVersion = %q, want 67.0", got)
 	}
 	if !codeIntelIDPresent(idx.CodeIntelSymbols, "metadata:label:pkg__Billing_Error") {
 		t.Fatalf("missing label symbol: %#v", idx.CodeIntelSymbols)

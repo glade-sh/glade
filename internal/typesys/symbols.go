@@ -335,6 +335,22 @@ func appendArtifactDependency(idx *Index, dep project.ManagedPackageDependency) 
 		})
 		return
 	}
+	if issues := packageartifact.Validate(artifact); len(issues) > 0 {
+		diag := diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "dependency_load_error",
+			Message:  fmt.Sprintf("managed package dependency %s artifact invalid: %s", dep.Namespace, strings.Join(issues, "; ")),
+		}
+		idx.Diagnostics = append(idx.Diagnostics, diag)
+		idx.Dependencies = append(idx.Dependencies, DependencyInfo{
+			Namespace:   dep.Namespace,
+			SourceRoot:  dep.ArtifactPath,
+			Version:     dep.Version,
+			Status:      "load_error",
+			Diagnostics: []diagnostic.Diagnostic{diag},
+		})
+		return
+	}
 	namespace := dep.Namespace
 	if namespace == "" {
 		namespace = artifact.Namespace
@@ -344,7 +360,7 @@ func appendArtifactDependency(idx *Index, dep project.ManagedPackageDependency) 
 		version = artifact.Version
 	}
 	for _, typ := range artifact.ApexTypes {
-		idx.Types = append(idx.Types, typeSymbolFromArtifact(namespace, version, typ))
+		idx.Types = append(idx.Types, typeSymbolFromArtifact(namespace, version, artifact.SourceAPIVersion, typ))
 	}
 	idx.Objects = append(idx.Objects, artifact.Objects...)
 	idx.CustomMetadataRecords = append(idx.CustomMetadataRecords, artifact.CustomMetadataRecords...)
@@ -364,7 +380,7 @@ func appendArtifactDependency(idx *Index, dep project.ManagedPackageDependency) 
 	})
 }
 
-func typeSymbolFromArtifact(namespace, version string, typ packageartifact.ApexType) TypeSymbol {
+func typeSymbolFromArtifact(namespace, version, sourceAPIVersion string, typ packageartifact.ApexType) TypeSymbol {
 	if typ.Namespace == "" {
 		typ.Namespace = namespace
 	}
@@ -376,20 +392,21 @@ func typeSymbolFromArtifact(namespace, version string, typ packageartifact.ApexT
 	}
 	typ.Dependency = true
 	return TypeSymbol{
-		Kind:       typ.Kind,
-		Name:       typ.Name,
-		File:       typ.File,
-		Namespace:  typ.Namespace,
-		SourceRoot: typ.SourceRoot,
-		Version:    typ.Version,
-		Dependency: typ.Dependency,
-		Artifact:   true,
-		Modifiers:  append([]string(nil), typ.Modifiers...),
-		IsTest:     typ.IsTest,
-		SuperClass: typ.SuperClass,
-		Interfaces: append([]string(nil), typ.Interfaces...),
-		Range:      typ.Range,
-		Members:    memberSymbolsFromArtifact(typ.Members),
+		Kind:                typ.Kind,
+		Name:                typ.Name,
+		File:                typ.File,
+		Namespace:           typ.Namespace,
+		SourceRoot:          typ.SourceRoot,
+		Version:             typ.Version,
+		EffectiveAPIVersion: sourceAPIVersion,
+		Dependency:          typ.Dependency,
+		Artifact:            true,
+		Modifiers:           append([]string(nil), typ.Modifiers...),
+		IsTest:              typ.IsTest,
+		SuperClass:          typ.SuperClass,
+		Interfaces:          append([]string(nil), typ.Interfaces...),
+		Range:               typ.Range,
+		Members:             memberSymbolsFromArtifact(typ.Members),
 	}
 }
 

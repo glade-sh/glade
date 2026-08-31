@@ -866,6 +866,48 @@ func TestLoadReportsManagedPackageArtifactSchemaVersionAsLoadError(t *testing.T)
 	}
 }
 
+func TestLoadReportsManagedPackageArtifactSourceAPIVersion(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		artifact string
+		want     string
+	}{
+		{
+			name:     "missing",
+			artifact: `{"schemaVersion":2,"namespace":"pkg","version":"1.0","sourceHash":"abc"}`,
+			want:     "sourceApiVersion is required",
+		},
+		{
+			name:     "unsupported",
+			artifact: `{"schemaVersion":2,"namespace":"pkg","version":"1.0","sourceHash":"abc","sourceApiVersion":"64.0"}`,
+			want:     "unsupported source API version",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "packages", "pkg.glade-package.json"), test.artifact)
+			writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeFile(t, filepath.Join(root, "consumer", "glade.yml"), `project:
+  managedPackageDependencies: ["pkg:artifact:../packages/pkg.glade-package.json:1.0"]
+`)
+
+			p, err := Load(filepath.Join(root, "consumer"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(p.ManagedPackageDependencies) != 1 || p.ManagedPackageDependencies[0].Status != "load_error" {
+				t.Fatalf("dependencies = %#v", p.ManagedPackageDependencies)
+			}
+			if len(p.DependencyDiagnostics) != 1 || p.DependencyDiagnostics[0].Code != "dependency_load_error" {
+				t.Fatalf("diagnostics = %#v", p.DependencyDiagnostics)
+			}
+			if !strings.Contains(p.DependencyDiagnostics[0].Message, test.want) {
+				t.Fatalf("diagnostic message = %q, want %q", p.DependencyDiagnostics[0].Message, test.want)
+			}
+		})
+	}
+}
+
 func TestLoadReportsManagedPackageArtifactMissingVersionAsLoadError(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "packages", "pkg.glade-package.json"), `{"namespace":"pkg","sourceHash":"abc"}`)

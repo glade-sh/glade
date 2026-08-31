@@ -1151,11 +1151,12 @@ type managedPackageArtifactError struct {
 }
 
 type managedPackageArtifactMetadata struct {
-	SchemaVersion int    `json:"schemaVersion"`
-	Namespace     string `json:"namespace"`
-	Version       string `json:"version"`
-	SourceHash    string `json:"sourceHash"`
-	ApexTypes     []struct {
+	SchemaVersion    int    `json:"schemaVersion"`
+	Namespace        string `json:"namespace"`
+	Version          string `json:"version"`
+	SourceHash       string `json:"sourceHash"`
+	SourceAPIVersion string `json:"sourceApiVersion"`
+	ApexTypes        []struct {
 		Name      string `json:"name"`
 		Namespace string `json:"namespace"`
 	} `json:"apexTypes"`
@@ -1233,6 +1234,13 @@ func validateManagedPackageArtifactMetadata(metadata managedPackageArtifactMetad
 	}
 	if strings.TrimSpace(metadata.SourceHash) == "" {
 		issues = append(issues, "sourceHash is required")
+	}
+	if metadata.SchemaVersion == 2 {
+		if strings.TrimSpace(metadata.SourceAPIVersion) == "" {
+			issues = append(issues, "sourceApiVersion is required")
+		} else if _, err := apexversion.ResolveSource(metadata.SourceAPIVersion); err != nil {
+			issues = append(issues, err.Error())
+		}
 	}
 	for _, typ := range metadata.ApexTypes {
 		if strings.TrimSpace(typ.Name) == "" {

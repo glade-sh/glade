@@ -838,9 +838,11 @@ func TestValidateBuildArtifactsRequiresOnlySourceBackedApexSymbols(t *testing.T)
 	writeFile(t, artifactPath, `{
   "namespace": "external",
   "version": "1.0",
+  "sourceHash": "snapshot-backed",
   "apexTypes": [{
     "kind": "class",
     "name": "SerializedDependency",
+    "namespace": "external",
     "file": "serialized/external/SerializedDependency.cls",
     "modifiers": ["global"]
   }]
@@ -901,9 +903,11 @@ func TestRunCasesContextMixedGeneratedSymbolsRejectsMutatedApexSnapshotWithoutCa
 	writeFile(t, artifactPath, `{
   "namespace": "external",
   "version": "1.0",
+  "sourceHash": "snapshot-mixed",
   "apexTypes": [{
     "kind": "class",
     "name": "SerializedMixedDependency",
+    "namespace": "external",
     "file": "serialized/external/SerializedMixedDependency.cls",
     "modifiers": ["global"]
   }]
@@ -12680,9 +12684,10 @@ func writeFile(t *testing.T, path, content string) {
 func writeCapturedBillingArtifact(t *testing.T, path string) {
 	t.Helper()
 	artifact, err := packageartifact.BuildCaptured(packageartifact.BuildCapturedOptions{
-		Namespace: "pkg",
-		Version:   "1.0",
-		Capture:   packageartifact.CaptureProvenance{Source: "org"},
+		Namespace:        "pkg",
+		Version:          "1.0",
+		SourceAPIVersion: "65.0",
+		Capture:          packageartifact.CaptureProvenance{Source: "org"},
 		ApexTypes: []packageartifact.ApexType{{
 			Kind:      apexast.DeclarationClass,
 			Name:      "BillingGateway",
