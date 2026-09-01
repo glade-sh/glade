@@ -484,6 +484,12 @@ func semaCommonSObjectSchemaFields(object schema.Object) []schema.Field {
 			schema.Field{Name: "QualifiedAPIName", Type: "Text"},
 		)
 	}
+	if strings.HasSuffix(strings.ToLower(object.Name), "__e") {
+		common = append(common,
+			schema.Field{Name: "EventUuid", Type: "Text"},
+			schema.Field{Name: "ReplayId", Type: "Text"},
+		)
+	}
 	if strings.EqualFold(object.CustomSettingsType, "Hierarchy") || semaSchemaHasField(object.Fields, "SetupOwnerId") {
 		common = append(common, schema.Field{Name: "SetupOwnerId", Type: "Lookup", ReferenceTo: []string{"Name"}, RelationshipName: "SetupOwner"})
 	}
