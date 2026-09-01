@@ -35,7 +35,7 @@ func (p preparedAnonymousSource) close() {
 }
 
 func prepareAnonymousSource(source, apiVersion string) (preparedAnonymousSource, error) {
-	apiVersion, err := apexversion.PreserveSource(apiVersion)
+	apiVersion, err := apexversion.ResolveSource(apiVersion)
 	if err != nil {
 		return preparedAnonymousSource{}, err
 	}

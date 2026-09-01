@@ -22,7 +22,7 @@ import (
 // SemanticABI identifies the behavior of semantic diagnostics, inference,
 // visibility, and exported types. Any change to those behaviors must bump this
 // value so persisted semantic results fail closed.
-const SemanticABI = "sema-v4"
+const SemanticABI = "sema-v5"
 
 // PlatformABI identifies the built-in Salesforce platform model consumed by
 // semantic analysis. Changes to built-in signatures, aliases, or visibility

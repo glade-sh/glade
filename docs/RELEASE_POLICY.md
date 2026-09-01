@@ -49,7 +49,8 @@ version.
 Source version, HTTP endpoint version, org profile, and LWC bundle metadata are
 independent. An endpoint version never changes source semantics. Each LWC
 bundle must declare an exact supported `apiVersion`; module availability follows
-that bundle value.
+that bundle value. Execute Anonymous also remains limited to the checked source
+window.
 
 Salesforce release support is generated from the checked Glade Tools release
 contract. Each release snapshot carries a checked source receipt for the exact

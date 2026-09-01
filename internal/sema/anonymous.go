@@ -15,7 +15,7 @@ import (
 // offsets, so consumers do not need to compensate for a wrapper class.
 func AnalyzeAnonymous(index typesys.Index, source, apiVersion string) Result {
 	rng := diagnostic.Range{Start: diagnostic.Position{Line: 1, Column: 1, Offset: 0}, End: diagnostic.Position{Line: 1, Column: 1 + len(source), Offset: len(source)}}
-	apiVersion, err := apexversion.PreserveSource(apiVersion)
+	apiVersion, err := apexversion.ResolveSource(apiVersion)
 	if err != nil {
 		item := diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_VERSION", Message: err.Error(), Range: &rng}
 		return Result{Project: index.Project, Summary: Summary{Diagnostics: 1}, Diagnostics: []diagnostic.Diagnostic{item}}

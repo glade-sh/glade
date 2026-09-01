@@ -4240,7 +4240,7 @@ func TestRunExec(t *testing.T) {
 }
 
 func TestSupportedSourceAPIVersionExecutionMatrix(t *testing.T) {
-	for _, apiVersion := range []string{"43.0", "61.0", "65.0", "66.0", "67.0"} {
+	for _, apiVersion := range []string{"65.0", "66.0", "67.0"} {
 		t.Run(apiVersion, func(t *testing.T) {
 			root := t.TempDir()
 			writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"`+apiVersion+`"}`)

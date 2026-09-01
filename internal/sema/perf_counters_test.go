@@ -237,7 +237,7 @@ func TestAnalyzeOptionsFingerprintIsStable(t *testing.T) {
 }
 
 func TestSemanticABIIsVersioned(t *testing.T) {
-	if SemanticABI == "" {
-		t.Fatal("SemanticABI must not be empty")
+	if SemanticABI != "sema-v5" {
+		t.Fatalf("SemanticABI = %q, want sema-v5", SemanticABI)
 	}
 }

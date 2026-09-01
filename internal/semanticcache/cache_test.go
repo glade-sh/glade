@@ -95,6 +95,22 @@ func TestCacheIdentityAndOptionMissReasons(t *testing.T) {
 	}
 }
 
+func TestCacheRejectsPriorSemanticABI(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "semantic.json")
+	current := testIdentity()
+	prior := current
+	prior.SemanticABI = "sema-v4"
+	if err := storeTestPath(path, prior, smallTestResult()); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := loadTestPath(path, current)
+	if !reflect.DeepEqual(got, sema.Result{}) {
+		t.Fatalf("prior semantic ABI returned cached result: %#v", got)
+	}
+	assertMissReason(t, err, MissIdentityMismatch)
+}
+
 func TestCacheAbsentFileReportsAbsent(t *testing.T) {
 	got, err := loadTestPath(filepath.Join(t.TempDir(), "missing.json"), testIdentity())
 	if !reflect.DeepEqual(got, sema.Result{}) {
