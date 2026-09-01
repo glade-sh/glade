@@ -101,7 +101,7 @@ public class PlatformEventIdentity {
   public void run(Demo_Event__e eventRecord, Widget__c widget) {
     String eventUuid = eventRecord.EventUuid;
     String replayId = eventRecord.ReplayId;
-    List<Demo_Event__e> events = [SELECT Payload__c, EventUuid, ReplayId FROM Demo_Event__e];
+    List<Demo_Event__e> events = [SELECT Payload__c, EventUuid, ReplayId, Invented__c FROM Demo_Event__e];
 
     String missingCustom = eventRecord.Invented__c;
     String missingPlain = eventRecord.Invented;
@@ -142,6 +142,16 @@ public class PlatformEventIdentity {
 		if !found {
 			t.Fatalf("missing closed-schema diagnostic for %s: %#v", missing, result.Diagnostics)
 		}
+	}
+	queryMissing := false
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA_QUERY_FIELD" && strings.Contains(diag.Message, "Demo_Event__e.Invented__c") {
+			queryMissing = true
+			break
+		}
+	}
+	if !queryMissing {
+		t.Fatalf("missing closed-schema query diagnostic for Invented__c: %#v", result.Diagnostics)
 	}
 }
 
