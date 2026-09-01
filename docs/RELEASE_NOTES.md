@@ -32,6 +32,8 @@ Salesforce release upgrades:
   diagnostic.
 - Project-referenced numeric fields no longer depend on whether an integer or
   decimal literal was observed first.
+- Custom platform-event `EventUuid` and `ReplayId` fields now resolve for Apex
+  access and SOQL queries.
 
 ## v0.2.11 - 2026-08-12
 
