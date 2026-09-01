@@ -109,10 +109,21 @@ public class PlatformEventIdentity {
   }
 }
 `)
-	result := analyzePublicCorpusWithSchema(t, root, schema.Schema{Objects: []schema.Object{
+	objects := []schema.Object{
 		{Name: "Demo_Event__e", Fields: []schema.Field{{Name: "Payload__c", Type: "Text"}}},
 		{Name: "Widget__c", Fields: []schema.Field{{Name: "Name", Type: "Text"}}},
-	}}, "PlatformEventIdentity.cls")
+	}
+	provider := newSemaSObjectFieldProvider("", objects[0])
+	members, _, _ := semaLookupTypeMembers(buildSemaTypeMemberView(typesys.Index{Objects: objects}), "Demo_Event__e")
+	for _, name := range []string{"EventUuid", "ReplayId"} {
+		field, fieldOK := provider.lookup(name)
+		member, memberOK := members.fields[normalizeName(name)]
+		if !fieldOK || field.Type != "Text" || !memberOK || member.Type != "String" {
+			t.Fatalf("Demo_Event__e.%s provider=%#v,%v member=%#v,%v; want Text provider and String member", name, field, fieldOK, member, memberOK)
+		}
+	}
+
+	result := analyzePublicCorpusWithSchema(t, root, schema.Schema{Objects: objects}, "PlatformEventIdentity.cls")
 
 	for _, diag := range result.Diagnostics {
 		if diag.Code == "GLADESEMA021" && strings.Contains(diag.Message, "Demo_Event__e") &&
