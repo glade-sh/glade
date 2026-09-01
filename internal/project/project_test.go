@@ -99,6 +99,26 @@ func TestLoadSFDXProject(t *testing.T) {
 	}
 }
 
+func TestLoadCarriesSchemaSnapshotBinding(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "glade.yml"), `project:
+  schemaSnapshot: .glade/schema/org.json
+  schemaSnapshotSHA256: abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789
+`)
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := p.SchemaSnapshot, filepath.Join(root, ".glade", "schema", "org.json"); got != want {
+		t.Fatalf("schema snapshot = %q, want %q", got, want)
+	}
+	if got, want := p.SchemaSnapshotSHA256, "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"; got != want {
+		t.Fatalf("schema snapshot SHA-256 = %q, want %q", got, want)
+	}
+}
+
 func TestLoadResolvesSupportedSourceAPIVersion(t *testing.T) {
 	for _, test := range []struct {
 		raw, want string

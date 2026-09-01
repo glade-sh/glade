@@ -43,6 +43,8 @@ type Project struct {
 	Root                       string                     `json:"root"`
 	Namespace                  string                     `json:"namespace,omitempty"`
 	SourceAPIVersion           string                     `json:"sourceApiVersion,omitempty"`
+	SchemaSnapshot             string                     `json:"schemaSnapshot,omitempty"`
+	SchemaSnapshotSHA256       string                     `json:"schemaSnapshotSHA256,omitempty"`
 	PackageDirectories         []PackageDirectory         `json:"packageDirectories"`
 	ApexFiles                  []string                   `json:"apexFiles"`
 	ObjectFiles                []string                   `json:"objectFiles"`
@@ -400,6 +402,8 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 		PackageDirectories: cfg.PackageDirectories,
 	}
 	if cfgErr == nil {
+		p.SchemaSnapshot = gladeCfg.Project.SchemaSnapshot
+		p.SchemaSnapshotSHA256 = gladeCfg.Project.SchemaSnapshotSHA256
 		p.NamespaceRemaps = gladeCfg.Project.NamespaceRemaps
 		p.ManagedPackageDependencies, p.DependencyDiagnostics = loadManagedPackageDependencies(gladeCfg.Project.ManagedPackageDependencies, gladeCfg.Project.NamespaceRemaps, stack)
 		p.PackageShims, p.DependencyDiagnostics = loadPackageShims(gladeCfg.Project.PackageShims, stack, p.DependencyDiagnostics)

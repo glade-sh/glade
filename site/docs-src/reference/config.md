@@ -53,6 +53,8 @@ project:
   namespaceRemaps: []
   managedPackageDependencies: []
   packageShims: []
+  schemaSnapshot: .glade/schema/org.json
+  schemaSnapshotSHA256: <64-character-sha256>
 org:
   features: [PersonAccounts]
 ```
@@ -65,7 +67,30 @@ org:
 | `project.namespaceRemaps` | Namespace aliases for local source dependencies. |
 | `project.managedPackageDependencies` | Managed package source or artifact references. |
 | `project.packageShims` | Local source roots that provide test/runtime bodies for captured package artifacts. |
+| `project.schemaSnapshot` | Imported describe schema used by local `check` and `test`. Relative paths resolve from `glade.yml`. |
+| `project.schemaSnapshotSHA256` | Required SHA-256 of the exact snapshot file bytes. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
+
+## Pinned describe schema
+
+Import an already captured Salesforce describe response, then hash the exact
+output file:
+
+```bash
+glade schema import describe \
+  --input reports/org-describe.json \
+  --output .glade/schema/org.json
+shasum -a 256 .glade/schema/org.json
+```
+
+Copy the first `shasum` column into `schemaSnapshotSHA256`. Both keys are
+required together. Glade refuses changed bytes and reports both the configured
+and actual digest, so update the digest only after intentionally replacing the
+snapshot. Local metadata overrides overlapping snapshot objects and fields.
+
+The `.glade/symbols` code-intelligence cache remains advisory. It is not read by
+the local Apex runtime; only this explicitly configured snapshot feeds `check`
+and `test`.
 
 ## Namespace remaps
 
