@@ -360,7 +360,7 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	if err != nil {
 		return Project{}, err
 	}
-	cfg.SourceAPIVersion, err = apexversion.ResolveSource(cfg.SourceAPIVersion)
+	cfg.SourceAPIVersion, err = apexversion.PreserveSource(cfg.SourceAPIVersion)
 	if err != nil {
 		return Project{}, err
 	}
@@ -1276,7 +1276,7 @@ func validateManagedPackageArtifactMetadata(metadata managedPackageArtifactMetad
 	if metadata.SchemaVersion == 2 {
 		if strings.TrimSpace(metadata.SourceAPIVersion) == "" {
 			issues = append(issues, "sourceApiVersion is required")
-		} else if _, err := apexversion.ResolveSource(metadata.SourceAPIVersion); err != nil {
+		} else if _, err := apexversion.PreserveSource(metadata.SourceAPIVersion); err != nil {
 			issues = append(issues, err.Error())
 		}
 	}

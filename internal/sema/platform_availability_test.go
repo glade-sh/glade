@@ -199,9 +199,9 @@ func resultDiagnosticsContain(result Result, text string) bool {
 	return false
 }
 
-func TestAnalyzeRejectsUnsupportedEffectiveSourceAPIVersion(t *testing.T) {
-	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": "public class Probe {}"}, "64.0")
+func TestAnalyzeRejectsFutureEffectiveSourceAPIVersion(t *testing.T) {
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": "public class Probe {}"}, "68.0")
 	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_VERSION") {
-		t.Fatalf("unsupported effective API version was not diagnosed: %#v", result.Diagnostics)
+		t.Fatalf("future effective API version was not diagnosed: %#v", result.Diagnostics)
 	}
 }

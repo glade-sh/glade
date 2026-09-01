@@ -119,14 +119,16 @@ func TestLoadCarriesSchemaSnapshotBinding(t *testing.T) {
 	}
 }
 
-func TestLoadResolvesSupportedSourceAPIVersion(t *testing.T) {
+func TestLoadPreservesValidApexSourceAPIVersion(t *testing.T) {
 	for _, test := range []struct {
 		raw, want string
 		wantError bool
 	}{
 		{raw: "", want: "65.0"},
+		{raw: "43.0", want: "43.0"},
+		{raw: "61.0", want: "61.0"},
 		{raw: "67.0", want: "67.0"},
-		{raw: "64.0", wantError: true},
+		{raw: "68.0", wantError: true},
 	} {
 		t.Run(test.raw, func(t *testing.T) {
 			root := t.TempDir()
@@ -971,8 +973,8 @@ func TestLoadReportsManagedPackageArtifactSourceAPIVersion(t *testing.T) {
 			want:     "sourceApiVersion is required",
 		},
 		{
-			name:     "unsupported",
-			artifact: `{"schemaVersion":2,"namespace":"pkg","version":"1.0","sourceHash":"abc","sourceApiVersion":"64.0"}`,
+			name:     "future",
+			artifact: `{"schemaVersion":2,"namespace":"pkg","version":"1.0","sourceHash":"abc","sourceApiVersion":"68.0"}`,
 			want:     "unsupported source API version",
 		},
 	} {

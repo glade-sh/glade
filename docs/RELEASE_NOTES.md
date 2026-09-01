@@ -7,6 +7,10 @@ Salesforce release upgrades:
 - Added moving-correctness support for source API 65.0, 66.0, and 67.0 while
   retaining endpoint API 60.0, 65.0, 66.0, and 67.0. The default remains 65.0;
   unsupported versions fail instead of falling back.
+- Preserved valid historical Apex source versions through project loading,
+  analysis, execution, and package artifacts without adding them to the checked
+  65.0-67.0 parity window. Historical versions receive no parity credit, and
+  LWC bundle versions remain limited to the checked window.
 - Made Apex semantic availability, LWC module availability, REST and Tooling
   routing, anonymous execution, DAP, playground caching, and org bindings keep
   their explicit source or endpoint API version.

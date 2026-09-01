@@ -22,6 +22,26 @@ func analyzeDeclarationProjectWithAPIVersion(t *testing.T, files map[string]stri
 	return Analyze(typesys.Build(project.Project{Root: root, SourceAPIVersion: apiVersion, ApexFiles: paths}, schema.Schema{}))
 }
 
+func TestAnalyzePreservesHistoricalPerFileSourceAPIVersions(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "Legacy.cls")
+	triggerPath := filepath.Join(root, "LegacyTrigger.trigger")
+	writeSemaFile(t, classPath, "public class Legacy {}")
+	writeSemaFile(t, classPath+"-meta.xml", "<ApexClass><apiVersion>43.0</apiVersion></ApexClass>")
+	writeSemaFile(t, triggerPath, "trigger LegacyTrigger on Account (before insert) {}")
+	writeSemaFile(t, triggerPath+"-meta.xml", "<ApexTrigger><apiVersion>61.0</apiVersion></ApexTrigger>")
+	index := typesys.Build(project.Project{Root: root, SourceAPIVersion: "65.0", ApexFiles: []string{classPath, triggerPath}}, schema.Schema{})
+	if got := index.Types[0].EffectiveAPIVersion; got != "43.0" {
+		t.Fatalf("class API version = %q, want 43.0", got)
+	}
+	if got := index.Triggers[0].EffectiveAPIVersion; got != "61.0" {
+		t.Fatalf("trigger API version = %q, want 61.0", got)
+	}
+	if result := Analyze(index); hasDiagnosticCode(result.Diagnostics, "GLADESEMA_VERSION") {
+		t.Fatalf("historical effective API versions were rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestPreviewAnnotationsRemainDisabledAtLatestAPIVersion(t *testing.T) {
 	for name, source := range map[string]string{
 		"IntegrationTest": `@IntegrationTest public class Probe {}`,

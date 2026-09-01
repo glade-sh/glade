@@ -329,7 +329,7 @@ func requiredSourceAPIVersion(raw string) (string, error) {
 	if raw == "" {
 		return "", errors.New("sourceApiVersion is required")
 	}
-	return apexversion.ResolveSource(raw)
+	return apexversion.PreserveSource(raw)
 }
 
 func Compare(from, to Artifact) Diff {

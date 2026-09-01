@@ -39,9 +39,12 @@ source tree, not broad promises that every Salesforce behavior is implemented.
 
 Glade uses moving correctness. The checked source window is exactly 65.0,
 66.0, and 67.0; the checked endpoint window is 60.0, 65.0, 66.0, and 67.0.
-The default for both axes remains 65.0. Versions outside the declared window
-fail explicitly. Glade does not silently choose the nearest version and does
-not promise exact behavior for every historical source version.
+The default for both axes remains 65.0. Well-formed positive whole historical
+Apex source versions are preserved for compatibility but remain outside the
+checked window and receive no parity or official-correctness credit. Malformed
+and future source versions fail explicitly. Glade does not silently choose the
+nearest version and does not promise exact behavior for every historical source
+version.
 
 Source version, HTTP endpoint version, org profile, and LWC bundle metadata are
 independent. An endpoint version never changes source semantics. Each LWC

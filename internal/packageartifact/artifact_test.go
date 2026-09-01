@@ -46,8 +46,8 @@ func TestBuildAppliesInstalledNamespaceToCustomSchema(t *testing.T) {
 	}
 }
 
-func TestBuildRequiresSupportedSourceAPIVersion(t *testing.T) {
-	for _, sourceAPIVersion := range []string{"", "64.0", "67.1"} {
+func TestBuildRequiresValidSourceAPIVersion(t *testing.T) {
+	for _, sourceAPIVersion := range []string{"", "68.0", "67.1"} {
 		t.Run(sourceAPIVersion, func(t *testing.T) {
 			_, err := Build("pkg", "1.0", project.Project{
 				Root:             t.TempDir(),
@@ -57,6 +57,21 @@ func TestBuildRequiresSupportedSourceAPIVersion(t *testing.T) {
 				t.Fatalf("Build accepted sourceApiVersion %q", sourceAPIVersion)
 			}
 		})
+	}
+}
+
+func TestBuildPreservesHistoricalSourceAPIVersion(t *testing.T) {
+	for _, sourceAPIVersion := range []string{"43.0", "61.0"} {
+		artifact, err := Build("pkg", "1.0", project.Project{Root: t.TempDir(), SourceAPIVersion: sourceAPIVersion}, schema.Schema{}, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if artifact.SourceAPIVersion != sourceAPIVersion {
+			t.Fatalf("sourceApiVersion = %q, want %q", artifact.SourceAPIVersion, sourceAPIVersion)
+		}
+		if issues := Validate(artifact); len(issues) != 0 {
+			t.Fatalf("Validate issues = %#v", issues)
+		}
 	}
 }
 
@@ -289,8 +304,8 @@ func TestBuildCapturedArtifactPreservesOrgProvenanceAndMetadataNames(t *testing.
 	}
 }
 
-func TestBuildCapturedRequiresSupportedSourceAPIVersion(t *testing.T) {
-	for _, sourceAPIVersion := range []string{"", "64.0", "67.1"} {
+func TestBuildCapturedRequiresValidSourceAPIVersion(t *testing.T) {
+	for _, sourceAPIVersion := range []string{"", "68.0", "67.1"} {
 		t.Run(sourceAPIVersion, func(t *testing.T) {
 			_, err := BuildCaptured(BuildCapturedOptions{
 				Namespace:        "pkg",
@@ -316,14 +331,14 @@ func TestBuildCapturedNormalizesSupportedSourceAPIVersion(t *testing.T) {
 	}
 }
 
-func TestValidateRequiresSupportedSourceAPIVersionForCurrentSchema(t *testing.T) {
+func TestValidateRequiresValidSourceAPIVersionForCurrentSchema(t *testing.T) {
 	for _, test := range []struct {
 		name    string
 		version string
 		want    string
 	}{
 		{name: "missing", want: "sourceApiVersion is required"},
-		{name: "unsupported", version: "64.0", want: "unsupported source API version"},
+		{name: "future", version: "68.0", want: "unsupported source API version"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			issues := Validate(Artifact{

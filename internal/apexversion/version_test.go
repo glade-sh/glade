@@ -75,6 +75,31 @@ func TestResolveSourceRejectsUnsupportedWithoutFallback(t *testing.T) {
 	}
 }
 
+func TestPreserveSourceKeepsHistoricalVersionsAndRejectsMalformedOrFuture(t *testing.T) {
+	for _, raw := range []string{"1.0", "43.0", "61.0"} {
+		got, err := PreserveSource(raw)
+		if err != nil || got != raw {
+			t.Errorf("PreserveSource(%q) = %q, %v", raw, got, err)
+		}
+	}
+	for _, raw := range []string{"68.0", "67.1", "v", "+65.0", "junk"} {
+		got, err := PreserveSource(raw)
+		if err == nil || got != "" {
+			t.Errorf("PreserveSource(%q) = %q, %v", raw, got, err)
+		}
+	}
+}
+
+func TestPreserveSourceRejectsWithoutCheckedVersions(t *testing.T) {
+	versions := SupportedSourceAPIVersions
+	SupportedSourceAPIVersions = nil
+	t.Cleanup(func() { SupportedSourceAPIVersions = versions })
+
+	if got, err := PreserveSource("43.0"); err == nil || got != "" {
+		t.Errorf("PreserveSource(\"43.0\") = %q, %v", got, err)
+	}
+}
+
 func TestRangeAllowsSinceInclusiveUntilExclusive(t *testing.T) {
 	rng := Range{Since: 66, Until: 68}
 	for raw, want := range map[string]bool{"65.0": false, "66.0": true, "67.0": true, "68.0": false, "junk": false} {
