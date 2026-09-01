@@ -28,6 +28,10 @@ Salesforce release upgrades:
   records candidate hashes and the complete Go test event log, and closes exact
   surface, behavior, source, endpoint, org-profile, release-note, and
   no-fallback denominators before promotion.
+- Standard SObject instance-field assignments no longer produce a static-field
+  diagnostic.
+- Project-referenced numeric fields no longer depend on whether an integer or
+  decimal literal was observed first.
 
 ## v0.2.11 - 2026-08-12
 
