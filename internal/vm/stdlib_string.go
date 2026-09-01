@@ -135,7 +135,11 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.unescapeUnicode expects 0 arguments")
 		}
-		return receiver, true, nil
+		unescaped, err := unescapeJavaLike("String.unescapeUnicode", receiver.Text)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(unescaped), true, nil
 	case "startsWith":
 		prefix, err := stringArg("String.startsWith", args)
 		if err != nil {
