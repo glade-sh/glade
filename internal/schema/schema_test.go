@@ -1,8 +1,12 @@
 package schema
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/namespaceremap"
@@ -496,5 +500,67 @@ func TestObjectTriggerCapabilityRequiresDescribeEvidence(t *testing.T) {
 	}
 	if supported, known := (Object{Name: "Account", Triggerable: &yes}).SupportsTriggers(); !known || !supported {
 		t.Fatalf("describe-provided true = supported %t, known %t", supported, known)
+	}
+}
+
+func TestLoadProjectUsesPinnedSchemaSnapshot(t *testing.T) {
+	root := t.TempDir()
+	snapshotPath := filepath.Join(root, "org.schema.json")
+	snapshotData, err := json.Marshal(Schema{Objects: []Object{{
+		Name:  "Account",
+		Label: "Snapshot Account",
+		Fields: []Field{
+			{Name: "Org_Only__c", Label: "Org Only", Type: "Text"},
+			{Name: "Shared__c", Label: "Snapshot Shared", Type: "Text"},
+		},
+	}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, snapshotPath, string(snapshotData))
+	digestBytes := sha256.Sum256(snapshotData)
+	digest := hex.EncodeToString(digestBytes[:])
+
+	objectPath := filepath.Join(root, "force-app/main/objects/Account/Account.object-meta.xml")
+	localOnlyPath := filepath.Join(root, "force-app/main/objects/Account/fields/Local_Only__c.field-meta.xml")
+	sharedPath := filepath.Join(root, "force-app/main/objects/Account/fields/Shared__c.field-meta.xml")
+	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Local Account</label></CustomObject>`)
+	writeFile(t, localOnlyPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Local_Only__c</fullName><label>Local Only</label><type>Text</type></CustomField>`)
+	writeFile(t, sharedPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Shared__c</fullName><label>Local Shared</label><type>Number</type></CustomField>`)
+
+	base := project.Project{
+		SchemaSnapshot:       snapshotPath,
+		SchemaSnapshotSHA256: digest,
+		ObjectFiles:          []string{objectPath},
+		FieldFiles:           []string{localOnlyPath, sharedPath},
+	}
+	loaded, err := LoadProject(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(loaded.Objects) != 1 || loaded.Objects[0].Name != "Account" || loaded.Objects[0].Label != "Local Account" {
+		t.Fatalf("objects = %#v", loaded.Objects)
+	}
+	fields := fieldsByName(loaded.Objects[0].Fields)
+	if len(fields) != 3 || fields["Org_Only__c"].Label != "Org Only" || fields["Local_Only__c"].Label != "Local Only" ||
+		fields["Shared__c"].Label != "Local Shared" || fields["Shared__c"].Type != "Number" {
+		t.Fatalf("fields = %#v", fields)
+	}
+
+	wrong := base
+	wrong.SchemaSnapshotSHA256 = strings.Repeat("0", 64)
+	if _, err := LoadProject(wrong); err == nil || !strings.Contains(err.Error(), wrong.SchemaSnapshotSHA256) || !strings.Contains(err.Error(), digest) {
+		t.Fatalf("wrong-hash error = %v, want configured and actual digests", err)
+	}
+
+	for name, invalid := range map[string]project.Project{
+		"missing digest": {SchemaSnapshot: snapshotPath},
+		"missing path":   {SchemaSnapshotSHA256: digest},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := LoadProject(invalid); err == nil {
+				t.Fatal("expected incomplete snapshot binding error")
+			}
+		})
 	}
 }

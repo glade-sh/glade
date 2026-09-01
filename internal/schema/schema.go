@@ -1,7 +1,12 @@
 package schema
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"encoding/xml"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -296,6 +301,19 @@ func LoadProject(p project.Project) (Schema, error) {
 		}
 	}
 
+	snapshotObjects, err := loadPinnedSchemaSnapshot(p)
+	if err != nil {
+		return Schema{}, err
+	}
+	for i := range snapshotObjects {
+		object := snapshotObjects[i]
+		if existing := byName[object.Name]; existing != nil {
+			mergeObjectMetadata(existing, object)
+		} else {
+			byName[object.Name] = &object
+		}
+	}
+
 	for _, path := range p.FieldFiles {
 		objectName := namespaceProjectObjectName(p.Namespace, remapProjectAPIName(p, objectNameFromFieldPath(path)))
 		if objectName == "" {
@@ -313,7 +331,11 @@ func LoadProject(p project.Project) (Schema, error) {
 			object = &Object{Name: objectName, Partial: true}
 			byName[objectName] = object
 		}
-		object.Fields = append(object.Fields, field)
+		if i := fieldIndex(object.Fields, field.Name); i >= 0 {
+			object.Fields[i] = field
+		} else {
+			object.Fields = append(object.Fields, field)
+		}
 	}
 
 	for _, path := range p.RecordTypeFiles {
@@ -330,7 +352,11 @@ func LoadProject(p project.Project) (Schema, error) {
 			object = &Object{Name: objectName, Partial: true}
 			byName[objectName] = object
 		}
-		object.RecordTypes = append(object.RecordTypes, recordType)
+		if i := recordTypeIndex(object.RecordTypes, recordType.DeveloperName); i >= 0 {
+			object.RecordTypes[i] = recordType
+		} else {
+			object.RecordTypes = append(object.RecordTypes, recordType)
+		}
 	}
 
 	for _, path := range p.ValidationRuleFiles {
@@ -348,7 +374,11 @@ func LoadProject(p project.Project) (Schema, error) {
 			object = &Object{Name: objectName, Partial: true}
 			byName[objectName] = object
 		}
-		object.ValidationRules = append(object.ValidationRules, rule)
+		if i := validationRuleIndex(object.ValidationRules, rule.Name); i >= 0 {
+			object.ValidationRules[i] = rule
+		} else {
+			object.ValidationRules = append(object.ValidationRules, rule)
+		}
 	}
 
 	addReferencedCustomObjects(byName)
@@ -394,6 +424,31 @@ func LoadProject(p project.Project) (Schema, error) {
 	return out, nil
 }
 
+func loadPinnedSchemaSnapshot(p project.Project) ([]Object, error) {
+	path := strings.TrimSpace(p.SchemaSnapshot)
+	configured := strings.ToLower(strings.TrimSpace(p.SchemaSnapshotSHA256))
+	if path == "" && configured == "" {
+		return nil, nil
+	}
+	if path == "" || configured == "" {
+		return nil, errors.New("project.schemaSnapshot and project.schemaSnapshotSHA256 must be configured together")
+	}
+	data, err := os.ReadFile(path) // #nosec G304 -- path is an explicit project configuration value bound to a required SHA-256.
+	if err != nil {
+		return nil, err
+	}
+	sum := sha256.Sum256(data)
+	actual := hex.EncodeToString(sum[:])
+	if configured != actual {
+		return nil, fmt.Errorf("schema snapshot SHA-256 mismatch: configured %s, actual %s", configured, actual)
+	}
+	var snapshot Schema
+	if err := json.Unmarshal(data, &snapshot); err != nil {
+		return nil, fmt.Errorf("load schema snapshot %q: %w", path, err)
+	}
+	return snapshot.Objects, nil
+}
+
 func mergeObjectMetadata(dst *Object, src Object) {
 	if dst.Label == "" {
 		dst.Label = src.Label
@@ -414,47 +469,47 @@ func mergeObjectMetadata(dst *Object, src Object) {
 		dst.NameField = src.NameField
 	}
 	for _, field := range src.Fields {
-		if !hasFieldNamed(dst.Fields, field.Name) {
+		if fieldIndex(dst.Fields, field.Name) < 0 {
 			dst.Fields = append(dst.Fields, field)
 		}
 	}
 	for _, recordType := range src.RecordTypes {
-		if !hasRecordTypeNamed(dst.RecordTypes, recordType.DeveloperName) {
+		if recordTypeIndex(dst.RecordTypes, recordType.DeveloperName) < 0 {
 			dst.RecordTypes = append(dst.RecordTypes, recordType)
 		}
 	}
 	for _, rule := range src.ValidationRules {
-		if !hasValidationRuleNamed(dst.ValidationRules, rule.Name) {
+		if validationRuleIndex(dst.ValidationRules, rule.Name) < 0 {
 			dst.ValidationRules = append(dst.ValidationRules, rule)
 		}
 	}
 }
 
-func hasFieldNamed(fields []Field, name string) bool {
-	for _, field := range fields {
+func fieldIndex(fields []Field, name string) int {
+	for i, field := range fields {
 		if strings.EqualFold(field.Name, name) {
-			return true
+			return i
 		}
 	}
-	return false
+	return -1
 }
 
-func hasRecordTypeNamed(recordTypes []RecordType, name string) bool {
-	for _, recordType := range recordTypes {
+func recordTypeIndex(recordTypes []RecordType, name string) int {
+	for i, recordType := range recordTypes {
 		if strings.EqualFold(recordType.DeveloperName, name) {
-			return true
+			return i
 		}
 	}
-	return false
+	return -1
 }
 
-func hasValidationRuleNamed(rules []ValidationRule, name string) bool {
-	for _, rule := range rules {
+func validationRuleIndex(rules []ValidationRule, name string) int {
+	for i, rule := range rules {
 		if strings.EqualFold(rule.Name, name) {
-			return true
+			return i
 		}
 	}
-	return false
+	return -1
 }
 
 func addReferencedCustomObjects(byName map[string]*Object) {

@@ -1,6 +1,8 @@
 package config
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
@@ -24,6 +26,8 @@ type ProjectConfig struct {
 	NamespaceRemaps            []namespaceremap.Rule      `json:"namespaceRemaps,omitempty"`
 	ManagedPackageDependencies []ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
 	PackageShims               []PackageShim              `json:"packageShims,omitempty"`
+	SchemaSnapshot             string                     `json:"schemaSnapshot,omitempty"`
+	SchemaSnapshotSHA256       string                     `json:"schemaSnapshotSHA256,omitempty"`
 }
 
 type ManagedPackageDependency struct {
@@ -74,7 +78,7 @@ func LoadFile(path string) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	resolveManagedPackageDependencyPaths(&cfg, filepath.Dir(path))
+	resolveProjectPaths(&cfg, filepath.Dir(path))
 	return cfg, nil
 }
 
@@ -155,6 +159,10 @@ func parseYAMLSubset(src string) (Config, error) {
 				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
 			}
 			cfg.Project.PackageShims = shims
+		case "project.schemaSnapshot":
+			cfg.Project.SchemaSnapshot = trimScalar(value)
+		case "project.schemaSnapshotSHA256":
+			cfg.Project.SchemaSnapshotSHA256 = strings.ToLower(trimScalar(value))
 		case "org.features":
 			values, err := parseInlineList(value)
 			if err != nil {
@@ -165,7 +173,15 @@ func parseYAMLSubset(src string) (Config, error) {
 			return Config{}, fmt.Errorf("glade.yml:%d: unsupported config key %q", lineNo+1, key)
 		}
 	}
-
+	if (cfg.Project.SchemaSnapshot == "") != (cfg.Project.SchemaSnapshotSHA256 == "") {
+		return Config{}, errors.New("project.schemaSnapshot and project.schemaSnapshotSHA256 must be configured together")
+	}
+	if digest := cfg.Project.SchemaSnapshotSHA256; digest != "" {
+		decoded, err := hex.DecodeString(digest)
+		if err != nil || len(decoded) != sha256.Size {
+			return Config{}, errors.New("project.schemaSnapshotSHA256 must be a 64-character hexadecimal SHA-256 digest")
+		}
+	}
 	return cfg, nil
 }
 
@@ -370,7 +386,10 @@ func managedPackageArtifactSpecLooksLikePath(spec string) bool {
 	return strings.ContainsAny(spec, `/\`) || strings.HasSuffix(strings.ToLower(spec), ".json")
 }
 
-func resolveManagedPackageDependencyPaths(cfg *Config, baseDir string) {
+func resolveProjectPaths(cfg *Config, baseDir string) {
+	if path := cfg.Project.SchemaSnapshot; path != "" && !filepath.IsAbs(path) {
+		cfg.Project.SchemaSnapshot = filepath.Clean(filepath.Join(baseDir, filepath.FromSlash(path)))
+	}
 	for i := range cfg.Project.ManagedPackageDependencies {
 		path := cfg.Project.ManagedPackageDependencies[i].SourceRoot
 		if path != "" && !filepath.IsAbs(path) {

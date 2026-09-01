@@ -229,7 +229,10 @@ glade schema import describe --input reports/org-describe.json --output schema/l
 ```
 
 `--project-cache PROJECT_ROOT` writes schema symbols under `.glade/symbols` for
-offline definition, reference, and rename queries.
+offline definition, reference, and rename queries. That cache is advisory and
+does not feed local Apex execution. To use imported describe data in `check` and
+`test`, configure the output file and its exact SHA-256 as
+`project.schemaSnapshot` and `project.schemaSnapshotSHA256` in `glade.yml`.
 
 ## `glade check`
 

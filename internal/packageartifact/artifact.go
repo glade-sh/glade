@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
@@ -189,6 +190,10 @@ type Diff struct {
 }
 
 func Build(namespace, version string, p project.Project, s schema.Schema, apexTypes []ApexType) (Artifact, error) {
+	sourceAPIVersion, err := requiredSourceAPIVersion(p.SourceAPIVersion)
+	if err != nil {
+		return Artifact{}, err
+	}
 	sourceHash, err := SourceHash(p)
 	if err != nil {
 		return Artifact{}, err
@@ -201,7 +206,7 @@ func Build(namespace, version string, p project.Project, s schema.Schema, apexTy
 		Version:               version,
 		SourceRoot:            p.Root,
 		SourceHash:            sourceHash,
-		SourceAPIVersion:      p.SourceAPIVersion,
+		SourceAPIVersion:      sourceAPIVersion,
 		BuiltAt:               time.Now().UTC(),
 		ApexTypes:             globalContractTypes(apexTypes),
 		Objects:               namespaceObjects(namespace, s.Objects),
@@ -227,6 +232,10 @@ func BuildCaptured(opts BuildCapturedOptions) (Artifact, error) {
 	if namespace == "" {
 		return Artifact{}, errors.New("namespace is required")
 	}
+	sourceAPIVersion, err := requiredSourceAPIVersion(opts.SourceAPIVersion)
+	if err != nil {
+		return Artifact{}, err
+	}
 	builtAt := time.Now().UTC()
 	if !opts.Capture.CapturedAt.IsZero() {
 		builtAt = opts.Capture.CapturedAt.UTC()
@@ -236,7 +245,7 @@ func BuildCaptured(opts BuildCapturedOptions) (Artifact, error) {
 		Namespace:             namespace,
 		PackageName:           strings.TrimSpace(opts.PackageName),
 		Version:               strings.TrimSpace(opts.Version),
-		SourceAPIVersion:      strings.TrimSpace(opts.SourceAPIVersion),
+		SourceAPIVersion:      sourceAPIVersion,
 		BuiltAt:               builtAt,
 		Capture:               opts.Capture,
 		ApexTypes:             sortedApexTypes(globalContractTypes(cloneApexTypes(opts.ApexTypes))),
@@ -288,6 +297,11 @@ func Validate(artifact Artifact) []string {
 	if schemaVersion > CurrentSchemaVersion {
 		issues = append(issues, fmt.Sprintf("unsupported artifact schemaVersion %d", artifact.SchemaVersion))
 	}
+	if schemaVersion >= 2 && schemaVersion <= CurrentSchemaVersion {
+		if _, err := requiredSourceAPIVersion(artifact.SourceAPIVersion); err != nil {
+			issues = append(issues, err.Error())
+		}
+	}
 	if strings.TrimSpace(artifact.Namespace) == "" {
 		issues = append(issues, "namespace is required")
 	}
@@ -308,6 +322,14 @@ func Validate(artifact Artifact) []string {
 		}
 	}
 	return issues
+}
+
+func requiredSourceAPIVersion(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", errors.New("sourceApiVersion is required")
+	}
+	return apexversion.ResolveSource(raw)
 }
 
 func Compare(from, to Artifact) Diff {

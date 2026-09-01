@@ -3,6 +3,7 @@ package packageartifact
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 )
 
 func TestBuildAppliesInstalledNamespaceToCustomSchema(t *testing.T) {
-	artifact, err := Build("pkg", "1.0", project.Project{Root: t.TempDir()}, schema.Schema{Objects: []schema.Object{
+	artifact, err := Build("pkg", "1.0", project.Project{Root: t.TempDir(), SourceAPIVersion: "65.0"}, schema.Schema{Objects: []schema.Object{
 		{
 			Name: "CartItemLine__c",
 			Fields: []schema.Field{
@@ -42,6 +43,20 @@ func TestBuildAppliesInstalledNamespaceToCustomSchema(t *testing.T) {
 	}
 	if artifact.Objects[1].Name != "Account" {
 		t.Fatalf("standard object name = %q", artifact.Objects[1].Name)
+	}
+}
+
+func TestBuildRequiresSupportedSourceAPIVersion(t *testing.T) {
+	for _, sourceAPIVersion := range []string{"", "64.0", "67.1"} {
+		t.Run(sourceAPIVersion, func(t *testing.T) {
+			_, err := Build("pkg", "1.0", project.Project{
+				Root:             t.TempDir(),
+				SourceAPIVersion: sourceAPIVersion,
+			}, schema.Schema{}, nil)
+			if err == nil {
+				t.Fatalf("Build accepted sourceApiVersion %q", sourceAPIVersion)
+			}
+		})
 	}
 }
 
@@ -129,6 +144,7 @@ func TestBuildEmitsCodeIntelContractSymbols(t *testing.T) {
 
 	artifact, err := Build("pkg", "1.0", project.Project{
 		Root:                root,
+		SourceAPIVersion:    "65.0",
 		LabelFiles:          []string{labelPath},
 		StaticResourceMetas: []string{staticPath},
 	}, schema.Schema{
@@ -270,6 +286,56 @@ func TestBuildCapturedArtifactPreservesOrgProvenanceAndMetadataNames(t *testing.
 	}
 	if !artifactHasCodeIntelSymbol(artifact, "metadata:static_resource:pkg__BillingAssets") {
 		t.Fatalf("missing static resource symbol in %#v", artifact.CodeIntelSymbols)
+	}
+}
+
+func TestBuildCapturedRequiresSupportedSourceAPIVersion(t *testing.T) {
+	for _, sourceAPIVersion := range []string{"", "64.0", "67.1"} {
+		t.Run(sourceAPIVersion, func(t *testing.T) {
+			_, err := BuildCaptured(BuildCapturedOptions{
+				Namespace:        "pkg",
+				SourceAPIVersion: sourceAPIVersion,
+			})
+			if err == nil {
+				t.Fatalf("BuildCaptured accepted sourceApiVersion %q", sourceAPIVersion)
+			}
+		})
+	}
+}
+
+func TestBuildCapturedNormalizesSupportedSourceAPIVersion(t *testing.T) {
+	artifact, err := BuildCaptured(BuildCapturedOptions{
+		Namespace:        "pkg",
+		SourceAPIVersion: "v67.0",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if artifact.SourceAPIVersion != "67.0" {
+		t.Fatalf("sourceApiVersion = %q, want 67.0", artifact.SourceAPIVersion)
+	}
+}
+
+func TestValidateRequiresSupportedSourceAPIVersionForCurrentSchema(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		version string
+		want    string
+	}{
+		{name: "missing", want: "sourceApiVersion is required"},
+		{name: "unsupported", version: "64.0", want: "unsupported source API version"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			issues := Validate(Artifact{
+				SchemaVersion:    CurrentSchemaVersion,
+				Namespace:        "pkg",
+				SourceHash:       "abc",
+				SourceAPIVersion: test.version,
+			})
+			if len(issues) != 1 || !strings.Contains(issues[0], test.want) {
+				t.Fatalf("issues = %#v, want %q", issues, test.want)
+			}
+		})
 	}
 }
 

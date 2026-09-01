@@ -3,6 +3,8 @@ package gladecli
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -94,6 +96,74 @@ func TestSchemaImportDescribeProjectCacheRequiresProjectRoot(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "not a Glade project root") {
 		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestSchemaImportDescribeFeedsPinnedCheckAndTest(t *testing.T) {
+	root := t.TempDir()
+	input := filepath.Join(root, "reports", "org-describe.json")
+	output := filepath.Join(root, ".glade", "schema", "org.json")
+	if err := os.MkdirAll(filepath.Dir(input), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Dir(output), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"force-app","default":true}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	describe := `{"objects":[{"name":"Account","label":"Account","labelPlural":"Accounts","fields":[{"name":"Id","type":"id","label":"Account ID","nillable":false},{"name":"Org_Only__c","type":"string","label":"Org Only","nillable":true,"createable":true,"updateable":true}]}]}`
+	if err := os.WriteFile(input, []byte(describe), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	if code := Run(context.Background(), []string{"schema", "import", "describe", "--input", input, "--output", output}, &stdout, &stderr); code != 0 {
+		t.Fatalf("schema import exit=%d stderr=%s", code, stderr.String())
+	}
+	snapshot, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	digestBytes := sha256.Sum256(snapshot)
+	digest := hex.EncodeToString(digestBytes[:])
+	if err := os.WriteFile(filepath.Join(root, "glade.yml"), []byte("project:\n  schemaSnapshot: .glade/schema/org.json\n  schemaSnapshotSHA256: "+digest+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/SnapshotProbe.cls"), `
+public class SnapshotProbe {
+  public static Account build() {
+    return new Account(Org_Only__c = 'local');
+  }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/SnapshotProbeTest.cls"), `
+@isTest
+private class SnapshotProbeTest {
+  @isTest static void usesImportedField() {
+    System.assertEquals('local', SnapshotProbe.build().Org_Only__c);
+  }
+}
+`)
+
+	stdout.Reset()
+	stderr.Reset()
+	if code := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress"}, &stdout, &stderr); code != 0 {
+		t.Fatalf("check exit=%d stderr=%s stdout=%s", code, stderr.String(), stdout.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	if code := Run(context.Background(), []string{"test", "--project", root, "--json", "--no-progress", "--no-cache"}, &stdout, &stderr); code != 0 {
+		t.Fatalf("test exit=%d stderr=%s stdout=%s", code, stderr.String(), stdout.String())
+	}
+	var run struct {
+		Summary testreport.Summary `json:"summary"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &run); err != nil {
+		t.Fatal(err)
+	}
+	if run.Summary.Total != 1 || run.Summary.Passed != 1 {
+		t.Fatalf("test summary = %#v", run.Summary)
 	}
 }
 

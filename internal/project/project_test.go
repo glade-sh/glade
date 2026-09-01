@@ -99,6 +99,26 @@ func TestLoadSFDXProject(t *testing.T) {
 	}
 }
 
+func TestLoadCarriesSchemaSnapshotBinding(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "glade.yml"), `project:
+  schemaSnapshot: .glade/schema/org.json
+  schemaSnapshotSHA256: abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789
+`)
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := p.SchemaSnapshot, filepath.Join(root, ".glade", "schema", "org.json"); got != want {
+		t.Fatalf("schema snapshot = %q, want %q", got, want)
+	}
+	if got, want := p.SchemaSnapshotSHA256, "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"; got != want {
+		t.Fatalf("schema snapshot SHA-256 = %q, want %q", got, want)
+	}
+}
+
 func TestLoadResolvesSupportedSourceAPIVersion(t *testing.T) {
 	for _, test := range []struct {
 		raw, want string
@@ -535,6 +555,79 @@ func TestLoadResolvesLocalSFDXPackageDependencies(t *testing.T) {
 	}
 }
 
+func TestLoadRejectsAmbiguousLocalSFDXPackageDependency(t *testing.T) {
+	root := t.TempDir()
+	workspaceRoot := filepath.Join(root, "workspace")
+	modulesRoot := filepath.Join(workspaceRoot, "modules")
+	firstRoot := filepath.Join(modulesRoot, "first")
+	secondRoot := filepath.Join(modulesRoot, "second")
+	consumerRoot := filepath.Join(modulesRoot, "consumer")
+	writeFile(t, filepath.Join(workspaceRoot, "glade.yml"), `project:
+  defaultNamespace: workspace
+`)
+	for _, depRoot := range []string{firstRoot, secondRoot} {
+		writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{
+  "namespace": "shared",
+  "packageDirectories": [{"path":"force-app","default":true,"package":"SharedPkg"}]
+}`)
+	}
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{
+  "packageDirectories": [{
+    "path":"force-app",
+    "default":true,
+    "package":"Consumer",
+    "dependencies": [{"package":"SharedPkg"}]
+  }]
+}`)
+
+	p, err := Load(consumerRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 0 {
+		t.Fatalf("dependencies = %#v, want no ambiguous selection", p.ManagedPackageDependencies)
+	}
+	if len(p.DependencyDiagnostics) != 1 {
+		t.Fatalf("diagnostics = %#v, want one ambiguity", p.DependencyDiagnostics)
+	}
+	diagnostic := p.DependencyDiagnostics[0]
+	if diagnostic.Namespace != "SharedPkg" || diagnostic.Status != "ambiguous" || diagnostic.Code != "dependency_ambiguous" {
+		t.Fatalf("diagnostic = %#v", diagnostic)
+	}
+	wantRoots := []string{firstRoot, secondRoot}
+	if !strings.Contains(diagnostic.Message, wantRoots[0]) || !strings.Contains(diagnostic.Message, wantRoots[1]) || strings.Index(diagnostic.Message, wantRoots[0]) > strings.Index(diagnostic.Message, wantRoots[1]) {
+		t.Fatalf("diagnostic message = %q, want sorted roots %#v", diagnostic.Message, wantRoots)
+	}
+}
+
+func TestLoadReportsMissingLocalSFDXPackageDependency(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{
+  "packageDirectories": [{
+    "path":"force-app",
+    "default":true,
+    "package":"Consumer",
+    "dependencies": [{"package":"MissingPkg"}]
+  }]
+}`)
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 0 {
+		t.Fatalf("dependencies = %#v, want no missing selection", p.ManagedPackageDependencies)
+	}
+	if len(p.DependencyDiagnostics) != 1 {
+		t.Fatalf("diagnostics = %#v, want one missing dependency", p.DependencyDiagnostics)
+	}
+	diagnostic := p.DependencyDiagnostics[0]
+	if diagnostic.Namespace != "MissingPkg" || diagnostic.Status != "missing" || diagnostic.Code != "dependency_missing" ||
+		diagnostic.Message != "declared SFDX package dependency has no configured source or artifact" {
+		t.Fatalf("diagnostic = %#v", diagnostic)
+	}
+}
+
 func TestLoadDoesNotScanUnrelatedGrandchildrenForSFDXPackageDependencies(t *testing.T) {
 	root := t.TempDir()
 	consumerRoot := filepath.Join(root, "workspace", "consumer")
@@ -863,6 +956,48 @@ func TestLoadReportsManagedPackageArtifactSchemaVersionAsLoadError(t *testing.T)
 	}
 	if !strings.Contains(p.DependencyDiagnostics[0].Message, "unsupported artifact schemaVersion 99") {
 		t.Fatalf("diagnostic message = %q", p.DependencyDiagnostics[0].Message)
+	}
+}
+
+func TestLoadReportsManagedPackageArtifactSourceAPIVersion(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		artifact string
+		want     string
+	}{
+		{
+			name:     "missing",
+			artifact: `{"schemaVersion":2,"namespace":"pkg","version":"1.0","sourceHash":"abc"}`,
+			want:     "sourceApiVersion is required",
+		},
+		{
+			name:     "unsupported",
+			artifact: `{"schemaVersion":2,"namespace":"pkg","version":"1.0","sourceHash":"abc","sourceApiVersion":"64.0"}`,
+			want:     "unsupported source API version",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "packages", "pkg.glade-package.json"), test.artifact)
+			writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeFile(t, filepath.Join(root, "consumer", "glade.yml"), `project:
+  managedPackageDependencies: ["pkg:artifact:../packages/pkg.glade-package.json:1.0"]
+`)
+
+			p, err := Load(filepath.Join(root, "consumer"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(p.ManagedPackageDependencies) != 1 || p.ManagedPackageDependencies[0].Status != "load_error" {
+				t.Fatalf("dependencies = %#v", p.ManagedPackageDependencies)
+			}
+			if len(p.DependencyDiagnostics) != 1 || p.DependencyDiagnostics[0].Code != "dependency_load_error" {
+				t.Fatalf("diagnostics = %#v", p.DependencyDiagnostics)
+			}
+			if !strings.Contains(p.DependencyDiagnostics[0].Message, test.want) {
+				t.Fatalf("diagnostic message = %q, want %q", p.DependencyDiagnostics[0].Message, test.want)
+			}
+		})
 	}
 }
 

@@ -214,6 +214,54 @@ project:
 	}
 }
 
+func TestLoadSchemaSnapshotBinding(t *testing.T) {
+	root := t.TempDir()
+	cfgPath := filepath.Join(root, "nested", "glade.yml")
+	if err := os.MkdirAll(filepath.Dir(cfgPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(cfgPath, []byte(`
+project:
+  schemaSnapshot: .glade/schema/org.json
+  schemaSnapshotSHA256: ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := LoadFile(cfgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantPath := filepath.Join(root, "nested", ".glade", "schema", "org.json")
+	if cfg.Project.SchemaSnapshot != wantPath {
+		t.Fatalf("schema snapshot = %q, want %q", cfg.Project.SchemaSnapshot, wantPath)
+	}
+	if got, want := cfg.Project.SchemaSnapshotSHA256, "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"; got != want {
+		t.Fatalf("schema snapshot SHA-256 = %q, want %q", got, want)
+	}
+}
+
+func TestParseYAMLSubsetRejectsInvalidSchemaSnapshotBinding(t *testing.T) {
+	for name, source := range map[string]string{
+		"missing digest": `project:
+  schemaSnapshot: schema.json`,
+		"missing path": `project:
+  schemaSnapshotSHA256: abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789`,
+		"short digest": `project:
+  schemaSnapshot: schema.json
+  schemaSnapshotSHA256: abcdef`,
+		"non-hex digest": `project:
+  schemaSnapshot: schema.json
+  schemaSnapshotSHA256: zzzzzz0123456789abcdef0123456789abcdef0123456789abcdef0123456789`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := parseYAMLSubset(source); err == nil {
+				t.Fatal("expected invalid schema snapshot binding error")
+			}
+		})
+	}
+}
+
 func TestLoadFileResolvesManagedPackageArtifactPaths(t *testing.T) {
 	root := t.TempDir()
 	cfgPath := filepath.Join(root, "nested", "glade.yml")
