@@ -2583,7 +2583,7 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 			diagnostics = append(diagnostics, unsupportedLocalFeatureDiagnostic(typ, member, receiver+"."+fieldName, bodyOffset+match[2], bodyOffset+match[5], source))
 			continue
 		}
-		if found && hasModifier(field.member.Modifiers, "static") {
+		if found && hasModifier(field.member.Modifiers, "static") && !hasModifier(field.member.Modifiers, semaSyntheticStandardSObjectFieldModifier) {
 			diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, receiver+"."+fieldName, "static fields cannot be accessed through an instance", bodyOffset+match[2], bodyOffset+match[5], source))
 		}
 	}
