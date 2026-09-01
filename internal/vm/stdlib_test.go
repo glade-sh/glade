@@ -1685,7 +1685,7 @@ System.assertEquals(quoted, escapedQuoted.unescapeJava());
 String omega = 'AΩ';
 System.assertEquals('A\u03A9', omega.escapeUnicode());
 String escapedOmega = omega.escapeUnicode();
-System.assertEquals('A\u03A9', escapedOmega.unescapeUnicode());
+System.assertEquals(omega, escapedOmega.unescapeUnicode());
 System.assertEquals('Bob\''s', String.escapeSingleQuotes('Bob''s'));
 List<String> formatArgs = new List<String>();
 formatArgs.add('Ada');
@@ -1873,7 +1873,7 @@ System.assertEquals(raw, raw.escapeJava().unescapeJava());
 System.assertEquals(raw, raw.escapeEcmaScript().unescapeEcmaScript());
 String unicodeRaw = String.fromCharArray(new List<Integer>{8, 9, 10, 12, 13, 34, 39, 47, 937, 128512});
 String escapedUnicodeRaw = unicodeRaw.escapeUnicode();
-System.assertEquals(escapedUnicodeRaw, escapedUnicodeRaw.unescapeUnicode());
+System.assertEquals(unicodeRaw, escapedUnicodeRaw.unescapeUnicode());
 System.assertEquals('/', '/'.escapeJava());
 System.assertEquals('\/', '/'.escapeEcmaScript());
 
@@ -2058,8 +2058,8 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	if _, err := stringStatic("String.getLevenshteinDistance", []Value{String("a"), String("b"), Int(-1)}); err == nil {
 		t.Fatal("String.getLevenshteinDistance expected bad threshold error")
 	}
-	if got, handled, err := callStringMember(String(`\u00ZZ`), "unescapeUnicode", nil); err != nil || !handled || got.Text != `\u00ZZ` {
-		t.Fatalf("String.unescapeUnicode = %#v handled=%v err=%v", got, handled, err)
+	if _, _, err := callStringMember(String(`\u00ZZ`), "unescapeUnicode", nil); err == nil {
+		t.Fatal("String.unescapeUnicode expected bad escape error")
 	}
 	if _, handled, err := callStringMember(String("${name}"), "template", []Value{String("bad")}); !handled || err == nil {
 		t.Fatalf("String.template expected bad argument error, handled=%v err=%v", handled, err)
@@ -2287,6 +2287,13 @@ func TestStringEscapeJavaLikeOctalAndUnicodeEdges(t *testing.T) {
 	}
 	if got, want := escapeUnicode("A\x00Ω😀"), `A\u0000\u03A9\uD83D\uDE00`; got != want {
 		t.Fatalf("escapeUnicode = %q, want %q", got, want)
+	}
+}
+
+func TestStringUnescapeUnicodeDecodesRawEscape(t *testing.T) {
+	got, handled, err := callStringMember(String(`A\u03A9`), "unescapeUnicode", nil)
+	if err != nil || !handled || got.Text != "AΩ" {
+		t.Fatalf("String.unescapeUnicode = %#v handled=%v err=%v, want AΩ", got, handled, err)
 	}
 }
 
