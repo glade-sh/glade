@@ -118,6 +118,27 @@ func TestDatabaseUpdateObjectBooleanVersionBoundary(t *testing.T) {
 	}
 }
 
+func TestDatabaseEmptyRecycleBinIdVersionBoundary(t *testing.T) {
+	t.Parallel()
+	invalid := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run(Id recordId) { Database.emptyRecycleBin(recordId); } }`,
+	}, "67.0")
+	if !invalid.HasErrors() {
+		t.Fatal("API 67 accepted Database.emptyRecycleBin(Id)")
+	}
+
+	valid := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run(List<Id> recordIds, SObject row, List<SObject> rows) {
+  List<Database.EmptyRecycleBinResult> ids = Database.emptyRecycleBin(recordIds);
+  Database.EmptyRecycleBinResult one = Database.emptyRecycleBin(row);
+  List<Database.EmptyRecycleBinResult> many = Database.emptyRecycleBin(rows);
+} }`,
+	}, "67.0")
+	if valid.HasErrors() {
+		t.Fatalf("API 67 rejected documented emptyRecycleBin overloads: %#v", valid.Diagnostics)
+	}
+}
+
 func TestIdeaStandardSetControllerAcceptsObjectSelection(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{
@@ -161,14 +182,23 @@ func TestEventPublishCallbacksAreInterfaces(t *testing.T) {
 	}
 }
 
-func TestSandboxPostCopyAndSoqlStubProviderAreInterfaces(t *testing.T) {
+func TestSandboxPostCopyIsInterface(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{
-		"SandboxCopy.cls":  `public class SandboxCopy implements SandboxPostCopy { public void runApexClass(SandboxContext context) {} }`,
-		"SoqlProvider.cls": `public class SoqlProvider implements SoqlStubProvider { public List<SObject> handleSoqlQuery(Schema.SObjectType targetType, String query, Map<String,Object> binds) { return new List<SObject>(); } }`,
+		"SandboxCopy.cls": `public class SandboxCopy implements SandboxPostCopy { public void runApexClass(SandboxContext context) {} }`,
 	})
 	if result.HasErrors() {
-		t.Fatalf("expected SandboxPostCopy and SoqlStubProvider interface implementations to compile: %#v", result.Diagnostics)
+		t.Fatalf("expected SandboxPostCopy interface implementation to compile: %#v", result.Diagnostics)
+	}
+}
+
+func TestSoqlStubProviderUsesClassInheritance(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"SoqlProvider.cls": `public class SoqlProvider extends SoqlStubProvider { public override List<SObject> handleSoqlQuery(Schema.SObjectType targetType, String query, Map<String,Object> binds) { return new List<SObject>(); } }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("expected SoqlStubProvider class inheritance to compile: %#v", result.Diagnostics)
 	}
 }
 
