@@ -24,12 +24,36 @@ func (vm *VM) testStart() (Value, error) {
 	vm.fakeNow = vm.fakeNow.Add(time.Second)
 	vm.testContext.AsyncStartIndex = len(vm.testContext.AsyncJobs)
 	vm.testContext.PlatformEventStartIndex = len(vm.testContext.PlatformEvents)
+	vm.hidePreStartBatchWorkerRecords()
 	vm.testContext.ChainEnqueued = false
 	vm.testContext.ParentLimits = vm.limits
 	vm.testContext.ParentViolations = append([]LimitViolation(nil), vm.limitViolations...)
 	vm.ResetLimits()
 	return Null, nil
 }
+
+func (vm *VM) hidePreStartBatchWorkerRecords() {
+	if vm.Org == nil {
+		return
+	}
+	object, ok := vm.Org.Objects["AsyncApexJob"]
+	if !ok {
+		return
+	}
+	storage.EnsureMutableObjectRecords(vm.Org, "AsyncApexJob")
+	object = vm.Org.Objects["AsyncApexJob"]
+	for id, record := range object.Records {
+		jobType, ok := record.GetField("JobType")
+		if !ok || jobType.Kind != storage.ValueString || !strings.EqualFold(jobType.String, "BatchApexWorker") || record.System.HiddenFromSOQL {
+			continue
+		}
+		vm.recordIsolationJournalMutation("AsyncApexJob", id, record, true)
+		record.System.HiddenFromSOQL = true
+		object.Records[id] = record
+	}
+	vm.Org.Objects["AsyncApexJob"] = object
+}
+
 func (vm *VM) testStop(result *Result) (Value, error) {
 	if vm.testContext == nil {
 		return Null, fmt.Errorf("Test.stopTest is only available in test context")

@@ -8164,10 +8164,11 @@ WebServiceCallout.invoke(
   new Object(),
   'request',
   response,
-  new String[]{'https://example.test', 'soapAction', 'requestNS', 'requestName', 'responseNS', 'responseName', 'GeneratedResponse'}
+  new String[]{'https://example.test', 'soapAction', 'requestNS', 'renameMetadata', 'responseNS', 'responseName', 'GeneratedResponse'}
 );
 GeneratedResponse shell = (GeneratedResponse)response.get('response_x');
-System.assertEquals('mocked', shell.result);
+System.assertNotEquals(null, shell.result);
+System.assertEquals(true, shell.result.success);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -8175,7 +8176,9 @@ System.assertEquals('mocked', shell.result);
 	doInvoke, err := CompileAnonymous(`
 GeneratedResponse shell = (GeneratedResponse)response.get('response_x');
 System.assertNotEquals(null, shell);
-shell.result = 'mocked';
+GeneratedSaveResult saveResult = new GeneratedSaveResult();
+saveResult.success = true;
+shell.result = saveResult;
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -8183,9 +8186,17 @@ shell.result = 'mocked';
 	machine := New(nil)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
+		Name: "GeneratedSaveResult",
+		Fields: map[string]Field{
+			"success": {Name: "success", Type: "Boolean"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
 		Name: "GeneratedResponse",
 		Fields: map[string]Field{
-			"result": {Name: "result", Type: "String"},
+			"result": {Name: "result", Type: "GeneratedSaveResult"},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -8221,6 +8232,37 @@ shell.result = 'mocked';
 	}
 	if result.Limits.Callouts != 1 {
 		t.Fatalf("callouts = %d, want 1", result.Limits.Callouts)
+	}
+}
+
+func TestExecWebServiceCalloutRenameMetadataWithoutMockLeavesGeneratedResultNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Object> response = new Map<String, Object>();
+WebServiceCallout.invoke(
+  new Object(),
+  'request',
+  response,
+  new String[]{'https://example.test', 'soapAction', 'requestNS', 'renameMetadata', 'responseNS', 'responseName', 'GeneratedRenameResponse'}
+);
+GeneratedRenameResponse shell = (GeneratedRenameResponse)response.get('response_x');
+System.assertNotEquals(null, shell);
+System.assertEquals(null, shell.result);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "GeneratedRenameResponse",
+		Fields: map[string]Field{
+			"result": {Name: "result", Type: "GeneratedSaveResult"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = machine.Execute(program); err != nil {
+		t.Fatalf("err = %v", err)
 	}
 }
 
@@ -11140,6 +11182,80 @@ func TestExecStopTestDrainsOnlyJobsEnqueuedAfterStartTest(t *testing.T) {
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecStartTestHidesOnlyPreStartBatchWorkerRows(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<SObject>{ new Account(Id = '001000000000001') };`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`return;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	enqueueProgram, err := CompileAnonymous(`Database.executeBatch(new VisibilityBatch(), 1);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals(2, [SELECT COUNT() FROM AsyncApexJob]);
+System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApexWorker']);
+Test.startTest();
+System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE Id = '707000000000001']);
+System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob]);
+System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApex']);
+System.assertEquals(0, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApexWorker']);
+String insideId = Database.executeBatch(new VisibilityBatch(), 1);
+Test.stopTest();
+System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE Id = '707000000000001']);
+System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE Id = :insideId]);
+System.assertEquals(3, [SELECT COUNT() FROM AsyncApexJob]);
+System.assertEquals(2, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApex']);
+System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApexWorker']);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "VisibilityBatch",
+		Interfaces: []string{"Database.Batchable<SObject>"},
+		Methods: map[string]Method{
+			"start":   {Name: "VisibilityBatch.start", ClassName: "VisibilityBatch", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "VisibilityBatch.execute", ClassName: "VisibilityBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+			"finish":  {Name: "VisibilityBatch.finish", ClassName: "VisibilityBatch", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.Execute(enqueueProgram)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.DrainAsync(&result); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	workers := 0
+	hiddenWorkers := 0
+	for _, record := range org.Objects["AsyncApexJob"].Records {
+		jobType, ok := record.Fields["JobType"]
+		if !ok || jobType.Kind != storage.ValueString || jobType.String != "BatchApexWorker" {
+			continue
+		}
+		workers++
+		if record.System.HiddenFromSOQL {
+			hiddenWorkers++
+		}
+	}
+	if workers != 2 || hiddenWorkers != 1 {
+		t.Fatalf("worker rows = %d hidden = %d, want 2 physical and 1 pre-start hidden", workers, hiddenWorkers)
 	}
 }
 

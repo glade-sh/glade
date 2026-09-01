@@ -515,11 +515,7 @@ func (vm *VM) webServiceCalloutInvoke(args []Value, result *Result) (Value, erro
 	}
 	if vm.testContext == nil || vm.testContext.WebServiceMock.Kind != ValueObject {
 		operation := scalarText(args[3].List[3])
-		if strings.EqualFold(operation, "renameMetadata") {
-			saveResult := Object("MetadataService.SaveResult")
-			saveResult.Fields["success"] = Bool(true)
-			response.Fields["result"] = saveResult
-		} else {
+		if !strings.EqualFold(operation, "renameMetadata") {
 			response.Fields["result"] = List()
 		}
 		args[2].Map[responseKey] = response
