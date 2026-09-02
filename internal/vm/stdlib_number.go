@@ -222,7 +222,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects divisor, scale, and optional RoundingMode")
 		}
 		divisorValue, err := coerceAssignable("Decimal", args[0])
-		if err != nil {
+		if err != nil || divisorValue.Kind != ValueDecimal {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects Decimal divisor")
 		}
 		if args[1].Kind != ValueInt {

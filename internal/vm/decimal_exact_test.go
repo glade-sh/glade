@@ -525,6 +525,13 @@ System.assertEquals('2.50', Decimal.valueOf('10').divide(4, 2).toPlainString());
 	}
 }
 
+func TestDecimalDivideRejectsNullDivisorWithExistingError(t *testing.T) {
+	_, _, _, handled, err := callDecimalMember(Decimal(10), "divide", []Value{Null, Int(2)})
+	if !handled || err == nil || err.Error() != "Decimal.divide expects Decimal divisor" {
+		t.Fatalf("null Decimal divisor = handled %v, err %v; want exact divisor error", handled, err)
+	}
+}
+
 func TestExecDoubleRejectsDecimalOnlyMembers(t *testing.T) {
 	for _, source := range []string{
 		"Double value = Double.valueOf('1.25'); value.toPlainString();",
