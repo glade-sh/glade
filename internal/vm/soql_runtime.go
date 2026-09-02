@@ -1007,15 +1007,17 @@ func soslRecordMatchesWhere(record storage.Record, where *sosl.Condition) bool {
 		text, ok = string(record.ID), record.ID != ""
 	}
 	matches := false
-	if strings.EqualFold(where.Operator, "IN") {
+	notIn := strings.EqualFold(where.Operator, "NOT IN")
+	if strings.EqualFold(where.Operator, "IN") || notIn {
 		if ok {
 			for _, candidate := range where.Values {
 				if strings.EqualFold(text, candidate) {
-					return true
+					matches = true
+					break
 				}
 			}
 		}
-		return false
+		return matches != notIn
 	} else if where.ValueIsNull {
 		matches = !ok || value.Kind == storage.ValueNull
 	} else if where.Bind != "" {

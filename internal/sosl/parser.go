@@ -347,10 +347,12 @@ func (p *parser) parseCondition() (Condition, error) {
 		operation = "LIKE"
 	case operator.kind == tokenWord && strings.EqualFold(operator.text, "IN"):
 		operation = "IN"
+	case operator.kind == tokenWord && strings.EqualFold(operator.text, "NOT") && p.acceptKeyword("IN"):
+		operation = "NOT IN"
 	default:
 		return Condition{}, p.errorf("unsupported SOSL WHERE operator %q", operator.text)
 	}
-	if operation == "IN" {
+	if operation == "IN" || operation == "NOT IN" {
 		if p.accept(tokenColon) {
 			bind := p.next()
 			if bind.kind != tokenWord {
