@@ -79,9 +79,10 @@ Git integration should deploy `main`. If it does not, build a clean local
 
 ```bash
 npm ci
-npm run build
+release_sha="$(git -C .. rev-parse HEAD)"
+CF_PAGES_COMMIT_SHA="$release_sha" npm run build
 npx --yes wrangler pages deploy .vitepress/dist --project-name glade-sh --branch main \
-  --commit-hash "$(git -C .. rev-parse HEAD)" --commit-dirty=false
+  --commit-hash "$release_sha" --commit-dirty=false
 ```
 
 After the production deployment, reconcile the deployed commit and stable
