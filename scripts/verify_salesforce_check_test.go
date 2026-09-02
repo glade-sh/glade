@@ -27,6 +27,14 @@ func TestVerifySalesforceCheckAcceptsOneExactAuthority(t *testing.T) {
 			t.Fatalf("evidence missing %s\n%s", want, out)
 		}
 	}
+	invocation, err := os.ReadFile(filepath.Join(root, "gh.args"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantEndpoint := "repos/glade-sh/glade/commits/" + testGladeSHA + "/check-runs?per_page=100&filter=latest&check_name=Salesforce%20Correctness"
+	if !strings.Contains(string(invocation), wantEndpoint) {
+		t.Fatalf("check-runs request does not filter by exact check name: %s", invocation)
+	}
 }
 
 func TestVerifySalesforceCheckRejectsUntrustedOrAmbiguousResults(t *testing.T) {
@@ -118,14 +126,14 @@ func makeSalesforceCheckFixture(t *testing.T) string {
 	if err := os.WriteFile(filepath.Join(root, ".github", "release-authorities.json"), anchor, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	writeExecutable(t, filepath.Join(root, "bin", "gh"), "#!/usr/bin/env bash\nset -euo pipefail\nprintf '%s' \"$FAKE_GH_RESPONSE\"\n")
+	writeExecutable(t, filepath.Join(root, "bin", "gh"), "#!/usr/bin/env bash\nset -euo pipefail\nprintf '%s\\n' \"$*\" > \"$FAKE_GH_ARGS\"\nprintf '%s' \"$FAKE_GH_RESPONSE\"\n")
 	return root
 }
 
 func runSalesforceCheckFixture(root, response string, args ...string) (string, error) {
 	cmd := exec.Command(filepath.Join(root, "scripts", "verify-salesforce-check.sh"), args...)
 	cmd.Dir = root
-	cmd.Env = append(os.Environ(), "PATH="+filepath.Join(root, "bin")+":"+os.Getenv("PATH"), "GITHUB_REPOSITORY=glade-sh/glade", "FAKE_GH_RESPONSE="+response)
+	cmd.Env = append(os.Environ(), "PATH="+filepath.Join(root, "bin")+":"+os.Getenv("PATH"), "GITHUB_REPOSITORY=glade-sh/glade", "FAKE_GH_ARGS="+filepath.Join(root, "gh.args"), "FAKE_GH_RESPONSE="+response)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }
