@@ -1474,7 +1474,9 @@ test("Cloudflare Pages build publishes the install route itself", () => {
   assert.match(siteReadme, /Production branch: main/);
   assert.match(siteReadme, /npm ci/);
   assert.match(siteReadme, /wrangler pages deploy \.vitepress\/dist --project-name glade-sh --branch main/);
-  assert.match(siteReadme, /rev-parse HEAD/);
+  assert.match(siteReadme, /release_sha="\$\(git -C \.\. rev-parse HEAD\)"/);
+  assert.match(siteReadme, /CF_PAGES_COMMIT_SHA="\$release_sha" npm run build/);
+  assert.match(siteReadme, /--commit-hash "\$release_sha"/);
   assert.match(siteReadme, /npm run smoke:postdeploy/);
   assert.match(siteReadme, /\/site-build\.json/);
   assert.match(siteReadme, /stable release manifest/);
