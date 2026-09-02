@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-Next-release product-candidate validation:
+No changes yet.
+
+## v0.2.12 - 2026-09-02
+
+Release-candidate validation:
 
 - The [named product candidate validation](PRIVATE_CORPUS_ASSURANCE.md#next-release-product-candidate-validation)
   passed `private-corpus-001` check exit 0/0
@@ -14,14 +18,16 @@ Next-release product-candidate validation:
   multiset match. Public diagnostics are the known baseline, not passes.
 - The Salesforce current-release gate recorded 475/475 pass, zero
   fail/inconclusive, and cleanup PASS. This validates the named product
-  candidate; a later tracked release candidate still requires fresh exact-SHA
-  release gates.
+  candidate. Promotion is valid only after these counts are reproduced by fresh
+  exact-SHA gates for the tagged candidate; no prior candidate evidence carries
+  forward.
 
 Salesforce release upgrades:
 
 - Added moving-correctness support for source API 65.0, 66.0, and 67.0 while
   retaining endpoint API 60.0, 65.0, 66.0, and 67.0. The default remains 65.0;
-  unsupported versions fail instead of falling back.
+  malformed or future Apex project versions and unsupported Execute Anonymous,
+  LWC, or endpoint versions fail rather than silently falling back.
 - Preserved valid historical Apex project versions through project loading,
   per-file analysis, `glade check`, `glade test`, and package artifacts without
   adding them to the checked 65.0-67.0 parity window. Historical versions
@@ -54,6 +60,24 @@ Salesforce release upgrades:
   decimal literal was observed first.
 - Custom platform-event `EventUuid` and `ReplayId` fields now resolve for Apex
   access and SOQL queries.
+
+Local checks and releases:
+
+- Local-test progress event rendering is serialized so concurrent workers
+  cannot corrupt terminal or NDJSON output.
+
+Distribution and upgrades:
+
+- The release workflow publishes parser-capable macOS and Linux archives for
+  AMD64 and ARM64, `SHA256SUMS.txt`, CycloneDX SBOMs, and provenance
+  attestations. Verify the checksum and run `glade doctor` as described in the
+  [distribution workflow](https://github.com/glade-sh/glade/blob/v0.2.12/docs/DISTRIBUTION_WORKFLOW.md).
+- No migration is required for documented CLI flags, database schemas, or server
+  API behavior. The default local API version remains `v65.0`.
+- Known hosted gaps remain explicit in
+  [KNOWN_GAPS.md](https://github.com/glade-sh/glade/blob/v0.2.12/docs/KNOWN_GAPS.md).
+  Local deterministic mocks and explicit non-parity outcomes are not hosted
+  Salesforce support.
 
 ## v0.2.11 - 2026-08-12
 

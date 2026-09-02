@@ -174,15 +174,29 @@ test("release notes cover the v0.2.11 release", () => {
   assert.match(releaseNotes, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.11\/docs\/KNOWN_GAPS\.md/);
 });
 
-test("unreleased notes describe Salesforce moving correctness", () => {
+test("release notes promote v0.2.12 candidate validation", () => {
+  const candidate = releaseNotes.match(/^## v0\.2\.12 - 2026-09-02\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
+  assert.ok(candidate, "release notes should contain a v0.2.12 section");
+  const candidateText = candidate[1].replace(/\s+/g, " ");
+  assert.match(candidateText, /Release-candidate validation:/);
+  assert.match(candidateText, /Promotion is valid only after these counts are reproduced by fresh exact-SHA gates for the tagged candidate; no prior candidate evidence carries forward\./);
+  assert.match(candidateText, /moving-correctness/i);
+  assert.match(candidateText, /malformed or future Apex project versions and unsupported Execute Anonymous, LWC, or endpoint versions fail rather than silently falling back\./);
+  assert.doesNotMatch(candidateText, /unsupported versions fail/i);
+  assert.match(candidateText, /explicit non-parity/i);
+  assert.match(candidateText, /source receipt/i);
+  assert.match(candidateText, /Local-test progress event rendering is serialized so concurrent workers cannot corrupt terminal or NDJSON output\./);
+  assert.match(candidateText, /macOS and Linux archives for AMD64 and ARM64, `SHA256SUMS\.txt`, CycloneDX SBOMs, and provenance attestations\./);
+  assert.match(candidateText, /No migration is required for documented CLI flags, database schemas, or server API behavior\./);
+  assert.match(candidateText, /default local API version remains `v65\.0`/);
+  assert.match(candidateText, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.12\/docs\/DISTRIBUTION_WORKFLOW\.md/);
+  assert.match(candidateText, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.12\/docs\/KNOWN_GAPS\.md/);
+});
+
+test("unreleased notes use the empty placeholder", () => {
   const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(unreleased, "release notes should contain an Unreleased section");
-  assert.doesNotMatch(unreleased[1], /No changes yet\./);
-  assert.match(unreleased[1], /moving-correctness/i);
-  assert.match(unreleased[1], /unsupported versions fail/i);
-  assert.match(unreleased[1], /explicit\s+non-parity/i);
-  assert.match(unreleased[1], /source receipt/i);
-  assert.doesNotMatch(releaseNotes, /profiled large [A-Z]{2} test methods/);
+  assert.equal(unreleased[1].trim(), "No changes yet.");
 });
 
 test("release docs publish the sealed private-corpus assurance snapshot", () => {
@@ -218,9 +232,8 @@ test("release docs distinguish the named next-release candidate from the v0.2.11
     assert.match(page, /40 expected\/40 observed\s+diagnostics/);
     assert.match(page, /475\/475 pass/);
   }
-  for (const page of [repoPrivateCorpusAssurance, releaseNotes]) {
-    assert.match(page, /later tracked release candidate[\s\S]*fresh exact-SHA\s+release gates/i);
-  }
+  assert.match(repoPrivateCorpusAssurance, /later tracked release candidate[\s\S]*fresh exact-SHA\s+release gates/i);
+  assert.match(releaseNotes, /Promotion is valid only after these counts are reproduced by fresh\s+exact-SHA gates for the tagged candidate; no prior candidate evidence carries\s+forward\./);
   for (const page of [repoPrivateCorpusAssurance, supportMap]) {
     assert.match(page, /published v0\.2\.11 (?:surface )?snapshot/i);
   }
