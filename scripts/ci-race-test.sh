@@ -144,7 +144,7 @@ union_validation="${artifact_dir}/union-validation.json"
 union_sentinel="${union_validation}.tmp.$$"
 if [[ "${package}" == "./internal/playground" ]]; then
 	sentinel_counts='[0,0,0,0,0,0,0,0,0]'
-elif [[ "${package}" == "./internal/apextest" ]]; then
+elif [[ "${package}" == "./internal/apextest" || "${package}" == "./internal/gladecli" || "${package}" == "./internal/server" ]]; then
 	sentinel_counts='[0,0,0,0,0,0,0,0]'
 else
 	sentinel_counts='[0,0,0,0]'
@@ -394,7 +394,7 @@ if [[ "${package}" == "./internal/playground" ]]; then
 elif [[ "${package}" == "./internal/apextest" ]]; then
 	planner_shards=8
 	plan_mode=apextest
-elif [[ "${package}" == "./internal/server" ]]; then
+elif [[ "${package}" == "./internal/gladecli" || "${package}" == "./internal/server" ]]; then
 	planner_shards=8
 fi
 if [[ -n "${shard_planner}" ]]; then
@@ -682,7 +682,7 @@ fi
 lane_names=()
 if [[ "${package}" == "./internal/playground" ]]; then
 	lane_names=(group-0 group-1 group-2 group-3 ordinary-0 ordinary-1 ordinary-2 ordinary-3 ordinary-4)
-elif [[ "${package}" == "./internal/server" ]]; then
+elif [[ "${package}" == "./internal/gladecli" || "${package}" == "./internal/server" ]]; then
 	lane_names=(shard-0 shard-1 shard-2 shard-3 shard-4 shard-5 shard-6 shard-7)
 else
 	lane_names=(shard-0 shard-1 shard-2 shard-3)
@@ -759,7 +759,7 @@ import tempfile
 discovery_path, package, output_path, *event_paths = sys.argv[1:]
 if package == "github.com/glade-sh/glade/internal/playground":
     expected_lanes = 9
-elif package == "github.com/glade-sh/glade/internal/server":
+elif package in ("github.com/glade-sh/glade/internal/gladecli", "github.com/glade-sh/glade/internal/server"):
     expected_lanes = 8
 else:
     expected_lanes = 4

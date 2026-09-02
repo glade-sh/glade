@@ -855,7 +855,7 @@ func TestCIRacePackageRunnerGenericHeavyPackagesUseBoundedSequentialExactShards(
 			root := t.TempDir()
 			logPath := filepath.Join(root, "calls.log")
 			testNames := []string{"TestAlpha", "TestBeta", "TestDelta", "TestGamma"}
-			if pkg == "./internal/server" {
+			if pkg == "./internal/gladecli" || pkg == "./internal/server" {
 				testNames = append(testNames, "TestEta", "TestIota", "TestKappa", "TestTheta")
 			}
 			goCommand := writeRaceFixture(t, "fake-go", `#!/usr/bin/env bash
@@ -891,7 +891,7 @@ printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s","Test":"%s","E
 			}
 			log := string(data)
 			shardCount := 4
-			if pkg == "./internal/server" {
+			if pkg == "./internal/gladecli" || pkg == "./internal/server" {
 				shardCount = 8
 			}
 			var wantOrder []string
@@ -957,6 +957,34 @@ printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s","Test":"%s","E
 				union.DiscoveredCount != shardCount || !reflect.DeepEqual(union.ShardCounts, wantShardCounts) ||
 				union.NamesSHA256 != namesHash || !union.Valid {
 				t.Fatalf("union evidence = %#v", union)
+			}
+		})
+	}
+}
+
+func TestCIRacePackageRunnerEightShardSentinelMatchesTopology(t *testing.T) {
+	for _, pkg := range []string{"./internal/gladecli", "./internal/server"} {
+		t.Run(filepath.Base(pkg), func(t *testing.T) {
+			root := t.TempDir()
+			goCommand := writeRaceFixture(t, "fake-go", "#!/usr/bin/env bash\nexit 23\n")
+			resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
+			slug := strings.ReplaceAll(strings.TrimPrefix(pkg, "./"), "/", "-")
+			if out, err := runRacePackage(t, root, []string{
+				"CI_RACE_GO_COMMAND=" + goCommand,
+				"CI_RACE_RESOURCE_RUNNER=" + resource,
+			}, pkg, slug); err == nil {
+				t.Fatalf("discovery failure accepted:\n%s", out)
+			}
+			data, err := os.ReadFile(filepath.Join(root, "ci-artifacts/race", slug, "union-validation.json"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			var sentinel struct {
+				ShardCounts []int `json:"shard_counts"`
+				Valid       bool  `json:"valid"`
+			}
+			if err := json.Unmarshal(data, &sentinel); err != nil || sentinel.Valid || !reflect.DeepEqual(sentinel.ShardCounts, make([]int, 8)) {
+				t.Fatalf("eight-shard sentinel = %#v, err=%v", sentinel, err)
 			}
 		})
 	}
