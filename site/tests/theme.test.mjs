@@ -174,12 +174,12 @@ test("release notes cover the v0.2.11 release", () => {
   assert.match(releaseNotes, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.11\/docs\/KNOWN_GAPS\.md/);
 });
 
-test("release notes promote v0.2.12 candidate validation", () => {
+test("release notes record final v0.2.12 validation", () => {
   const candidate = releaseNotes.match(/^## v0\.2\.12 - 2026-09-02\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(candidate, "release notes should contain a v0.2.12 section");
   const candidateText = candidate[1].replace(/\s+/g, " ");
-  assert.match(candidateText, /Release-candidate validation:/);
-  assert.match(candidateText, /Promotion is valid only after these counts are reproduced by fresh exact-SHA gates for the tagged candidate; no prior candidate evidence carries forward\./);
+  assert.match(candidateText, /Tagged v0\.2\.12 validation:/);
+  assert.match(candidateText, /final tagged validation is separate from the published v0\.2\.11 surface snapshot and does not claim blanket Salesforce parity\./);
   assert.match(candidateText, /moving-correctness/i);
   assert.match(candidateText, /malformed or future Apex project versions and unsupported Execute Anonymous, LWC, or endpoint versions fail rather than silently falling back\./);
   assert.doesNotMatch(candidateText, /unsupported versions fail/i);
@@ -221,9 +221,9 @@ test("release docs publish the sealed private-corpus assurance snapshot", () => 
   assert.doesNotMatch(privateCorpusAssuranceExplorer, /https?:\/\/|\/Users\/|@agentforce\.com|00D[A-Za-z0-9]{12,}/);
 });
 
-test("release docs distinguish the named next-release candidate from the v0.2.11 snapshot", () => {
+test("release docs distinguish tagged v0.2.12 validation from the v0.2.11 snapshot", () => {
   for (const page of [repoPrivateCorpusAssurance, supportMap, releaseNotes]) {
-    assert.match(page, /named product candidate/i);
+    assert.match(page, /tagged v0\.2\.12/i);
     assert.match(page, /private-corpus-001/);
     assert.match(page, /12,315\/12,315/);
     assert.match(page, /private-corpus-002/);
@@ -232,18 +232,28 @@ test("release docs distinguish the named next-release candidate from the v0.2.11
     assert.match(page, /40 expected\/40 observed\s+diagnostics/);
     assert.match(page, /475\/475 pass/);
   }
-  assert.match(repoPrivateCorpusAssurance, /later tracked release candidate[\s\S]*fresh exact-SHA\s+release gates/i);
-  assert.match(releaseNotes, /Promotion is valid only after these counts are reproduced by fresh\s+exact-SHA gates for the tagged candidate; no prior candidate evidence carries\s+forward\./);
   for (const page of [repoPrivateCorpusAssurance, supportMap]) {
     assert.match(page, /published v0\.2\.11 (?:surface )?snapshot/i);
   }
-  assert.match(repoPrivateCorpusAssurance, /68289fa1afe679b6593b5dfe8cba28bdf2f0ac10/);
-  assert.match(repoPrivateCorpusAssurance, /f54e1a5d39a34ef58e60946bfea4a1b3fed5e18cef92f4b066ccab81738e7f20/);
-  assert.match(repoPrivateCorpusAssurance, /4a776eadf71f8c1ca9b0e6099fa089692741f6983ddb862bb3da8a507d4d6d56/);
+  for (const value of [
+    "3a454dee3cb35c604cb1bf25e6a8972b63dd7c81",
+    "9bd1d8efbeb53af707ec5df649103f3f462fc800410922ce54f3b89a67c5bf83",
+    "18dd0e23cb540fdacdaaafa51b69c35d25426436",
+    "b9805c4c5fadf1c8869810f685193f2f5d405bf836410059148e8c14ed565249",
+    "845206007a796ffb0235a555ce879d7daa5a1d2b4cfa05a8fe36e03424ddb1e2",
+    "118c8b1d5b7075ff22a90ffa5df2cd1fc1aeb445ef9f5312b2379ba9fec88335",
+    "61bb8f208128a184df750fe115f2852886d1e8376235e5c325771a6055e7dc10",
+    "adb078a3d844ce3b4454a90185a1c978b0b2a828d48ada2c84e5333276fef8d8",
+    "4b7e11bac77192605ea7dd5af33a7f3d10982cab61ee14fe37864e571e9af708",
+    "c8829d8da76bc625c2f0056596fab5b31c3f68518844b94b7b0299982a11083c",
+  ]) {
+    assert.match(repoPrivateCorpusAssurance, new RegExp(value));
+  }
+  assert.doesNotMatch(repoPrivateCorpusAssurance, /68289fa1afe679b6593b5dfe8cba28bdf2f0ac10|1f1e64fbf02962f5e36b8d71164f6c65fd6ee03b/);
   assert.match(repoPrivateCorpusAssurance, /public\s+diagnostics are the known baseline, not passes/i);
-  assert.match(repoDocsIndex, /published v0\.2\.11\s+surface snapshot and current named product-candidate validation/i);
+  assert.match(repoDocsIndex, /published v0\.2\.11\s+surface snapshot and tagged v0\.2\.12 validation/i);
   assert.match(supportMap, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.11\/docs\/PRIVATE_CORPUS_ASSURANCE\.md/);
-  assert.match(releaseNotes, /PRIVATE_CORPUS_ASSURANCE\.md#next-release-product-candidate-validation/);
+  assert.match(releaseNotes, /PRIVATE_CORPUS_ASSURANCE\.md#tagged-v0212-product-validation/);
 });
 
 test("current docs describe the live registry and release safety", () => {

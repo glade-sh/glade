@@ -64,17 +64,17 @@ The first-party Glade Tools assurance workflow owns scope freezing, usage
 reconciliation, local proof, repository replay, Salesforce execution, cleanup,
 and the acyclic receipt. Base Glade owns the compiler and runtime being tested.
 
-## Next-release product-candidate validation
+## Tagged v0.2.12 product validation
 
-This separate result validates the named product candidate below. It does not
-alter the published v0.2.11 surface snapshot or its explorer.
+This final tagged result validates v0.2.12 separately. It does not alter the
+published v0.2.11 surface snapshot or its explorer.
 
 | Input | Identity |
 | --- | --- |
-| Glade product commit | `68289fa1afe679b6593b5dfe8cba28bdf2f0ac10` |
-| Glade binary SHA-256 | `f54e1a5d39a34ef58e60946bfea4a1b3fed5e18cef92f4b066ccab81738e7f20` |
-| Glade Tools commit | `1f1e64fbf02962f5e36b8d71164f6c65fd6ee03b` |
-| Glade Tools binary SHA-256 | `4a776eadf71f8c1ca9b0e6099fa089692741f6983ddb862bb3da8a507d4d6d56` |
+| Glade product commit | `3a454dee3cb35c604cb1bf25e6a8972b63dd7c81` |
+| Glade binary SHA-256 | `9bd1d8efbeb53af707ec5df649103f3f462fc800410922ce54f3b89a67c5bf83` |
+| Glade Tools commit | `18dd0e23cb540fdacdaaafa51b69c35d25426436` |
+| Glade Tools binary SHA-256 | `b9805c4c5fadf1c8869810f685193f2f5d405bf836410059148e8c14ed565249` |
 
 - `private-corpus-001`: check exit 0/0 diagnostics; tests 12,315/12,315 with
   0 failed/compile/runtime/unsupported.
@@ -83,14 +83,18 @@ alter the published v0.2.11 surface snapshot or its explorer.
 - Public corpus: 86 projects, 40 expected/40 observed diagnostics, zero
   missing/unexpected/unclassified, and an exact identity multiset match. Public
   diagnostics are the known baseline, not passes.
-- Salesforce current-release gate: 475/475 pass, zero fail/inconclusive, and
+- Local Apex release gate: 9/9 composed checks pass.
+- Salesforce tagged-release gate: 475/475 pass, zero fail/inconclusive, and
   cleanup PASS.
 
 | Receipt | SHA-256 |
 | --- | --- |
-| `private-corpus-001` | `46072ae30fb166ff385795853a792b6ed3016b03143e4b652df765a42c222e40` |
-| `private-corpus-002` | `9fadc7e4873d719bc10c1eaae7c7306ac5ad298e0007582be006c3017489c218` |
-| Public corpus | `af6cc9b56f851d5ff15a4ce59b386d5901b0441023bdf0d9ee6c503b785c05f2` |
-| Salesforce authority | `e2cdb5d12801cd78a47e8b957ad52d17fc018ec1c6f537f58f1a225e77e6d978` |
+| Candidate release authority | `845206007a796ffb0235a555ce879d7daa5a1d2b4cfa05a8fe36e03424ddb1e2` |
+| `private-corpus-001` authority | `118c8b1d5b7075ff22a90ffa5df2cd1fc1aeb445ef9f5312b2379ba9fec88335` |
+| `private-corpus-002` authority | `61bb8f208128a184df750fe115f2852886d1e8376235e5c325771a6055e7dc10` |
+| Final public-corpus receipt | `adb078a3d844ce3b4454a90185a1c978b0b2a828d48ada2c84e5333276fef8d8` |
+| Local Apex release summary | `4b7e11bac77192605ea7dd5af33a7f3d10982cab61ee14fe37864e571e9af708` |
+| Salesforce release authority | `c8829d8da76bc625c2f0056596fab5b31c3f68518844b94b7b0299982a11083c` |
 
-A later tracked release candidate still requires fresh exact-SHA release gates.
+The tagged validation is bounded to these exact receipts and does not claim
+blanket Salesforce parity.

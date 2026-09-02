@@ -80,10 +80,11 @@ The exact candidate, receipt hashes, replay result, and interpretation rules
 are recorded in the
 [release assurance note](https://github.com/glade-sh/glade/blob/v0.2.11/docs/PRIVATE_CORPUS_ASSURANCE.md).
 
-## Next-release product-candidate validation
+## Tagged v0.2.12 product validation
 
-The named product candidate `68289fa1afe679b6593b5dfe8cba28bdf2f0ac10`
-(binary SHA-256 `f54e1a5d39a34ef58e60946bfea4a1b3fed5e18cef92f4b066ccab81738e7f20`)
+The tagged v0.2.12 product commit
+`3a454dee3cb35c604cb1bf25e6a8972b63dd7c81` (binary SHA-256
+`9bd1d8efbeb53af707ec5df649103f3f462fc800410922ce54f3b89a67c5bf83`)
 was checked separately from the published v0.2.11 surface snapshot.
 
 - `private-corpus-001`: check exit 0/0 diagnostics; tests 12,315/12,315 with
@@ -93,10 +94,11 @@ was checked separately from the published v0.2.11 surface snapshot.
 - Public corpus: 86 projects, 40 expected/40 observed diagnostics, zero
   missing/unexpected/unclassified, and an exact identity multiset match. Public
   diagnostics are the known baseline, not passes.
-- Salesforce current-release validation: 475/475 pass, zero fail/inconclusive, and
+- Salesforce tagged-release validation: 475/475 pass, zero fail/inconclusive, and
   cleanup PASS.
 
-A later tracked release candidate still requires fresh exact-SHA validation.
+This final tagged validation is bounded to its exact receipts and does not claim
+blanket Salesforce parity.
 
 ## Runs locally
 

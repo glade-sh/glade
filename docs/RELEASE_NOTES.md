@@ -6,9 +6,9 @@ No changes yet.
 
 ## v0.2.12 - 2026-09-02
 
-Release-candidate validation:
+Tagged v0.2.12 validation:
 
-- The [named product candidate validation](PRIVATE_CORPUS_ASSURANCE.md#next-release-product-candidate-validation)
+- The [tagged product validation](PRIVATE_CORPUS_ASSURANCE.md#tagged-v0212-product-validation)
   passed `private-corpus-001` check exit 0/0
   diagnostics and tests 12,315/12,315 with 0 failed/compile/runtime/unsupported;
   `private-corpus-002` check exit 0/0 diagnostics and tests 782/782 with the
@@ -16,11 +16,10 @@ Release-candidate validation:
 - The public corpus covered 86 projects with 40 expected/40 observed
   diagnostics, zero missing/unexpected/unclassified, and an exact identity
   multiset match. Public diagnostics are the known baseline, not passes.
-- The Salesforce current-release gate recorded 475/475 pass, zero
-  fail/inconclusive, and cleanup PASS. This validates the named product
-  candidate. Promotion is valid only after these counts are reproduced by fresh
-  exact-SHA gates for the tagged candidate; no prior candidate evidence carries
-  forward.
+- The Salesforce tagged-release gate recorded 475/475 pass, zero
+  fail/inconclusive, and cleanup PASS. This final tagged validation is separate
+  from the published v0.2.11 surface snapshot and does not claim blanket
+  Salesforce parity.
 
 Salesforce release upgrades:
 
