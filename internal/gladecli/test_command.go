@@ -1356,6 +1356,7 @@ type cliTestProgressReporter struct {
 	phase     string
 	immediate cliui.Event
 	mu        sync.Mutex
+	renderMu  sync.Mutex
 	finished  bool
 	events    chan apextest.TestProgress
 	closeOnce sync.Once
@@ -1372,7 +1373,7 @@ func newCLITestProgressReporter(renderer cliui.Renderer) *cliTestProgressReporte
 	}
 	r.wg.Add(1)
 	go r.loop()
-	r.renderer.Render(cliui.Event{
+	r.render(cliui.Event{
 		Kind:  cliui.EventPhaseStart,
 		Phase: "test",
 		Label: "Discovering tests",
@@ -1423,7 +1424,7 @@ func (r *cliTestProgressReporter) loop() {
 			return
 		}
 		if ev, ok := r.pendingRender(); ok {
-			r.renderer.Render(ev)
+			r.render(ev)
 		}
 		dirty = false
 	}
@@ -1616,15 +1617,27 @@ func (r *cliTestProgressReporter) pendingRender() (cliui.Event, bool) {
 
 func (r *cliTestProgressReporter) flushNow() {
 	if ev, ok := r.pendingRender(); ok && r.renderer != nil {
-		r.renderer.Render(ev)
+		r.render(ev)
 	}
+}
+
+func (r *cliTestProgressReporter) render(ev cliui.Event) {
+	r.renderMu.Lock()
+	defer r.renderMu.Unlock()
+	r.renderer.Render(ev)
+}
+
+func (r *cliTestProgressReporter) renderFinish(result cliui.Result) {
+	r.renderMu.Lock()
+	defer r.renderMu.Unlock()
+	r.renderer.Finish(result)
 }
 
 func (r *cliTestProgressReporter) warn(message string) {
 	if r == nil || r.renderer == nil {
 		return
 	}
-	r.renderer.Render(cliui.Event{
+	r.render(cliui.Event{
 		Kind:  cliui.EventWarn,
 		Phase: "test",
 		Label: message,
@@ -1650,14 +1663,14 @@ func (r *cliTestProgressReporter) finish() {
 		current = r.total
 	}
 	elapsed := cliui.FormatDuration(time.Since(r.started))
-	r.renderer.Render(cliui.Event{
+	r.render(cliui.Event{
 		Kind:    cliui.EventPhaseTick,
 		Phase:   "test",
 		Label:   "tests complete",
 		Current: current,
 		Total:   r.total,
 	})
-	r.renderer.Finish(cliui.Result{
+	r.renderFinish(cliui.Result{
 		OK:       ok,
 		Label:    fmt.Sprintf("%d passed, %d failed, %d errors · %s", r.passed, r.failed, r.errors, elapsed),
 		ExitCode: exitCodeForOK(ok),
