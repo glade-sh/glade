@@ -41,7 +41,7 @@ Base `glade` consumes or publishes them; it does not regenerate them.
   coverage.
 - [LWC_SUPPORT.md](LWC_SUPPORT.md) — local LWC support boundary.
 - [PRIVATE_CORPUS_ASSURANCE.md](PRIVATE_CORPUS_ASSURANCE.md) — published v0.2.11
-  surface snapshot and current named product-candidate validation.
+  surface snapshot and tagged v0.2.12 validation.
 - [RELEASE_NOTES.md](RELEASE_NOTES.md) — stable and unreleased product changes.
 
 ## If You Want To Contribute

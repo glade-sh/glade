@@ -1093,7 +1093,7 @@ func TestReleaseNotesScriptExtractsVersionSectionWithRealLineBreaks(t *testing.T
 	}
 }
 
-func TestReleaseNotesScriptExtractsV0212CandidateSection(t *testing.T) {
+func TestReleaseNotesScriptExtractsV0212TaggedSection(t *testing.T) {
 	cmd := exec.Command("bash", "release-notes.sh", "v0.2.12")
 	cmd.Dir = "."
 	out, err := cmd.CombinedOutput()
@@ -1103,8 +1103,8 @@ func TestReleaseNotesScriptExtractsV0212CandidateSection(t *testing.T) {
 	notes := string(out)
 	normalizedNotes := strings.Join(strings.Fields(notes), " ")
 	for _, want := range []string{
-		"Release-candidate validation:",
-		"Promotion is valid only after these counts are reproduced by fresh exact-SHA gates for the tagged candidate; no prior candidate evidence carries forward.",
+		"Tagged v0.2.12 validation:",
+		"This final tagged validation is separate from the published v0.2.11 surface snapshot and does not claim blanket Salesforce parity.",
 		"moving-correctness",
 		"malformed or future Apex project versions and unsupported Execute Anonymous, LWC, or endpoint versions fail rather than silently falling back.",
 		"explicit non-parity",
