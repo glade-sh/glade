@@ -376,6 +376,9 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	planJob := workflow[planIndex:earlyIndex]
 	earlyJob := workflow[earlyIndex:raceIndex]
 	raceJob := workflow[raceIndex:apexIndex]
+	if !strings.Contains(earlyJob, "- name: Run early race detector\n        env:\n          GOMAXPROCS: ${{ matrix.package == './internal/gladecli' && '1' || '2' }}\n          PACKAGE: ${{ matrix.package }}") {
+		t.Fatal("race workflow must run the Glade CLI race shards with one Go scheduler thread")
+	}
 	if !strings.Contains(planJob, `scripts/ci-race-packages.sh partition "$packages"`) {
 		t.Error("race plan must derive early and generic packages from its one full manifest")
 	}

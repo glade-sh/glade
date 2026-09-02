@@ -150,6 +150,7 @@ jobs:
           echo "slug=$slug" >>"$GITHUB_OUTPUT"
       - name: Run early race detector
         env:
+          GOMAXPROCS: ${{ matrix.package == './internal/gladecli' && '1' || '2' }}
           PACKAGE: ${{ matrix.package }}
           SLUG: ${{ steps.artifact.outputs.slug }}
         run: scripts/ci-race-test.sh "$PACKAGE" "$SLUG"
