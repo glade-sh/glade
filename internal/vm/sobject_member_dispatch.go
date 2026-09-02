@@ -24,7 +24,21 @@ func (vm *VM) callSObjectFieldAddError(path []string, args []Value) (Value, bool
 	if !ok || root.Kind != ValueObject || !vm.isSObjectType(root.Type) {
 		return Null, false, nil
 	}
-	field := vm.resolveSObjectFieldName(root.Type, path[1])
+	value, handled, err := vm.callSObjectFieldValueAddError(&root, path[1], args)
+	if !handled || err != nil {
+		return value, handled, err
+	}
+	if err := vm.storeReceiver(path[0], root); err != nil {
+		return Null, true, err
+	}
+	return value, true, nil
+}
+
+func (vm *VM) callSObjectFieldValueAddError(root *Value, field string, args []Value) (Value, bool, error) {
+	if root == nil || root.Kind != ValueObject || !vm.isSObjectType(root.Type) {
+		return Null, false, nil
+	}
+	field = vm.resolveSObjectFieldName(root.Type, field)
 	if !vm.sObjectFieldExists(root.Type, field) {
 		return Null, false, nil
 	}
@@ -32,11 +46,8 @@ func (vm *VM) callSObjectFieldAddError(path []string, args []Value) (Value, bool
 	if err != nil {
 		return Null, true, err
 	}
-	addSObjectError(&root, message, []string{field}, true)
+	addSObjectError(root, message, []string{field}, true)
 	vm.advanceAliasContainmentMutation()
-	if err := vm.storeReceiver(path[0], root); err != nil {
-		return Null, true, err
-	}
 	return Null, true, nil
 }
 func listAppendSObjects(receiver Value, field string, args []Value, context string) (Value, error) {

@@ -17351,6 +17351,53 @@ System.assertEquals('Clock__c', errors.get(9).getFields().get(0));
 	}
 }
 
+func TestExecChainedSObjectFieldAddErrorProducesFieldError(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+Map<Id, Account> currentRows = new Map<Id, Account>();
+for (Account row : Trigger.new) {
+	currentRows.put(row.Id, row);
+}
+for (Account row : Trigger.new) {
+	currentRows.get(row.Id).AnnualRevenue.addError('blocked');
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Allowed', AnnualRevenue = 1);
+insert account;
+account.AnnualRevenue = 2;
+Database.SaveResult result = Database.update(account, false);
+System.assert(!result.isSuccess());
+List<Object> errors = result.getErrors();
+System.assertEquals(1, errors.size());
+System.assertEquals('blocked', errors.get(0).getMessage());
+System.assertEquals('AnnualRevenue', errors.get(0).getFields().get(0));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["AnnualRevenue"] = storage.Field{APIName: "AnnualRevenue", Type: storage.FieldDecimal}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeUpdateChainedFieldAddError",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "update",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRepeatedFieldAddErrorUsesLastFieldError(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 for (Account a : Trigger.new) {
@@ -17396,16 +17443,18 @@ System.assertEquals('Rating', errors.get(0).getFields().get(0));
 }
 
 func TestExecStandalonePrimitiveAddErrorStaysUnsupported(t *testing.T) {
-	program, err := CompileAnonymous(`
-String localValue = 'not a field';
-localValue.addError('bad');
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	machine := New(nil)
-	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), `unsupported call "localValue.addError"`) {
-		t.Fatalf("expected standalone primitive addError to stay unsupported, got %v", err)
+	for _, source := range []string{
+		"String localValue = 'not a field';",
+		"Decimal localValue = 1;",
+	} {
+		program, err := CompileAnonymous(source + "\nlocalValue.addError('bad');")
+		if err != nil {
+			t.Fatal(err)
+		}
+		machine := New(nil)
+		if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), `unsupported call "localValue.addError"`) {
+			t.Fatalf("expected standalone primitive addError to stay unsupported for %q, got %v", source, err)
+		}
 	}
 }
 
