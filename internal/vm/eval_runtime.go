@@ -358,16 +358,12 @@ func (vm *VM) evalBinary(op string, left, right Value, result *Result) (Value, e
 			if err != nil {
 				return Null, err
 			}
-			if left.Kind == ValueDecimal {
-				leftText = decimalDisplayText(left)
-			}
+			leftText = concatStringText(left, leftText)
 			rightText, err := vm.displayString(right, result)
 			if err != nil {
 				return Null, err
 			}
-			if right.Kind == ValueDecimal {
-				rightText = decimalDisplayText(right)
-			}
+			rightText = concatStringText(right, rightText)
 			return String(leftText + rightText), nil
 		}
 		return evalBinary(op, left, right)

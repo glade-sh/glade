@@ -63,6 +63,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
+		value.ExplicitScale = true
 		return value, receiver, false, true, nil
 	case "round":
 		if len(args) > 1 {
@@ -220,7 +221,8 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) < 2 || len(args) > 3 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects divisor, scale, and optional RoundingMode")
 		}
-		if args[0].Kind != ValueDecimal {
+		divisorValue, err := coerceAssignable("Decimal", args[0])
+		if err != nil {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects Decimal divisor")
 		}
 		if args[1].Kind != ValueInt {
@@ -235,7 +237,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 			mode = parsedMode
 		}
 		dividend, dividendOK := valueDecimalRat(receiver)
-		divisor, divisorOK := valueDecimalRat(args[0])
+		divisor, divisorOK := valueDecimalRat(divisorValue)
 		if !dividendOK || !divisorOK {
 			return Null, receiver, false, true, unsupportedCallError("Decimal division exact semantics are deferred")
 		}

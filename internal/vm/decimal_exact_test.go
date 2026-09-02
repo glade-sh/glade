@@ -205,6 +205,20 @@ System.assertEquals('12.35', value.setScale(2, RoundingMode.HALF_UP).toPlainStri
 	}
 }
 
+func TestExecDecimalSetScalePreservesExplicitScaleInConcatenation(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal amount = Decimal.valueOf('10') + Decimal.valueOf('20');
+System.assertEquals('30.00', amount.setScale(2) + '');
+System.assertEquals('30', 30.00 + '');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMathModRejectsDecimalOperands(t *testing.T) {
 	program, err := CompileAnonymous(`
 Math.mod(Decimal.valueOf('5.5'), Decimal.valueOf('2'));
@@ -490,6 +504,18 @@ Boolean scaleRejected = false;
 try { Decimal unused = Decimal.valueOf('1').divide(Decimal.valueOf('3'), 2, RoundingMode.UNNECESSARY); }
 catch (MathException error) { scaleRejected = error.getMessage() == 'Scale insufficient to represent division'; }
 System.assert(scaleRejected);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDecimalDivideAcceptsIntegerDivisor(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('2.50', Decimal.valueOf('10').divide(4, 2).toPlainString());
 `)
 	if err != nil {
 		t.Fatal(err)
