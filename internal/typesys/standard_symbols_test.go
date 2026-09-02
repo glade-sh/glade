@@ -487,9 +487,15 @@ func TestStandardPlatformSymbolsIncludeAsyncMethodShapeRows(t *testing.T) {
 	requireStandardMethod(t, limits, "getQueueableJobs", nil, true)
 
 	queueableContext := requireStandardSymbol(t, symbols, "QueueableContext")
+	if queueableContext.Kind != apexast.DeclarationInterface {
+		t.Fatalf("QueueableContext kind = %q, want interface", queueableContext.Kind)
+	}
 	requireStandardMethod(t, queueableContext, "getJobId", nil, false)
 
 	schedulableContext := requireStandardSymbol(t, symbols, "SchedulableContext")
+	if schedulableContext.Kind != apexast.DeclarationInterface {
+		t.Fatalf("SchedulableContext kind = %q, want interface", schedulableContext.Kind)
+	}
 	requireStandardMethod(t, schedulableContext, "getTriggerId", nil, false)
 
 	asyncCondition := requireStandardSymbol(t, symbols, "TxnSecurity.AsyncCondition")

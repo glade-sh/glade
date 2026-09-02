@@ -36,6 +36,28 @@ func TestInheritanceContractsRejectInvalidInheritanceTargets(t *testing.T) {
 	}
 }
 
+func TestInheritanceContractsAllowStandardContextImplementationsAtAPI61(t *testing.T) {
+	for name, source := range map[string]string{
+		"QueueableContext": `
+public class Probe implements QueueableContext {
+  public Id getJobId() { return null; }
+}
+`,
+		"SchedulableContext": `
+public class Probe implements SchedulableContext {
+  public Id getTriggerId() { return null; }
+}
+`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, "61.0")
+			if result.HasErrors() {
+				t.Fatalf("valid %s implementation was rejected: %#v", name, result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestInheritanceContractsRejectExtendingNonVirtualSuperclass(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{
