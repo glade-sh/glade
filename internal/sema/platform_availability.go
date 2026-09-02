@@ -89,7 +89,7 @@ func semaPlatformTypeKeys(typeName string) []string {
 }
 
 func semaVersionAllows(version string, rng apexversion.Range) bool {
-	resolved, err := apexversion.ResolveSource(version)
+	resolved, err := apexversion.PreserveSource(version)
 	return err == nil && rng.Allows(resolved)
 }
 
@@ -109,7 +109,7 @@ func sourceAPIVersionDiagnostics(index typesys.Index) []diagnostic.Diagnostic {
 		if typ.Dependency || !typ.HasSourceSnapshot() {
 			continue
 		}
-		if _, err := apexversion.ResolveSource(typ.EffectiveAPIVersion); err != nil {
+		if _, err := apexversion.PreserveSource(typ.EffectiveAPIVersion); err != nil {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_VERSION", Message: fmt.Sprintf("%s %q: %v", typ.Kind, typ.Name, err), File: typ.File, Range: &typ.Range})
 		}
 	}
@@ -117,7 +117,7 @@ func sourceAPIVersionDiagnostics(index typesys.Index) []diagnostic.Diagnostic {
 		if trigger.Dependency || !trigger.HasSourceSnapshot() {
 			continue
 		}
-		if _, err := apexversion.ResolveSource(trigger.EffectiveAPIVersion); err != nil {
+		if _, err := apexversion.PreserveSource(trigger.EffectiveAPIVersion); err != nil {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_VERSION", Message: fmt.Sprintf("trigger %q: %v", trigger.Name, err), File: trigger.File, Range: &trigger.Range})
 		}
 	}

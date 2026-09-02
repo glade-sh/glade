@@ -30,7 +30,7 @@ repository="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}"
 
 response="$(mktemp)"
 trap 'rm -f "$response"' EXIT
-gh api --method GET "repos/$repository/commits/$glade_sha/check-runs?per_page=100&filter=latest" > "$response"
+gh api --method GET "repos/$repository/commits/$glade_sha/check-runs?per_page=100&filter=latest&check_name=Salesforce%20Correctness" > "$response"
 python3 - "$root/.github/release-authorities.json" "$response" "$repository" "$glade_sha" "$tools_sha" <<'PY'
 import json
 import re

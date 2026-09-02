@@ -179,6 +179,8 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		var receiver Value
 		hasReceiver := expr.Left != nil
 		receiverResolved := false
+		fieldAddError := ""
+		fieldAddErrorReceiver := ""
 		callee := expr.Callee
 		queryLocatorCallee := ""
 		if hasReceiver {
@@ -201,6 +203,16 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 					}
 				}
 			}
+		}
+		if hasReceiver && !receiverResolved && strings.EqualFold(callee, "addError") && expr.Left.Kind == ir.ExprCall && expr.Left.Left != nil && strings.HasPrefix(expr.Left.Callee, "__field:") {
+			var err error
+			receiver, err = vm.eval(*expr.Left.Left, result)
+			if err != nil {
+				return Null, err
+			}
+			receiverResolved = true
+			fieldAddError = strings.TrimPrefix(expr.Left.Callee, "__field:")
+			fieldAddErrorReceiver = exprReceiverName(*expr.Left.Left)
 		}
 		if hasReceiver && !receiverResolved {
 			var err error
@@ -257,6 +269,22 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		}
 		if hasReceiver {
 			receiverName := exprReceiverName(*expr.Left)
+			if fieldAddError != "" {
+				value, handled, err := vm.callSObjectFieldValueAddError(&receiver, fieldAddError, args)
+				if handled || err != nil {
+					if err == nil && fieldAddErrorReceiver != "" {
+						if err := vm.storeReceiver(fieldAddErrorReceiver, receiver); err != nil {
+							return Null, err
+						}
+					}
+					return value, err
+				}
+				value, err = vm.lookupPath(receiver, splitFieldPath(fieldAddError))
+				if err != nil {
+					return Null, err
+				}
+				receiver = value
+			}
 			if strings.EqualFold(callee, "values") || strings.EqualFold(callee, "valueOf") {
 				if value, handled, err := vm.callEnumStaticMember(receiverName, callee, args); handled || err != nil {
 					return value, err
@@ -358,16 +386,12 @@ func (vm *VM) evalBinary(op string, left, right Value, result *Result) (Value, e
 			if err != nil {
 				return Null, err
 			}
-			if left.Kind == ValueDecimal {
-				leftText = decimalDisplayText(left)
-			}
+			leftText = concatStringText(left, leftText)
 			rightText, err := vm.displayString(right, result)
 			if err != nil {
 				return Null, err
 			}
-			if right.Kind == ValueDecimal {
-				rightText = decimalDisplayText(right)
-			}
+			rightText = concatStringText(right, rightText)
 			return String(leftText + rightText), nil
 		}
 		return evalBinary(op, left, right)

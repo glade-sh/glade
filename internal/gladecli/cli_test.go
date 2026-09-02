@@ -3426,6 +3426,55 @@ func TestRunCheckJSON(t *testing.T) {
 	}
 }
 
+func TestRunCheckAndTestPreserveHistoricalSourceAPIVersions(t *testing.T) {
+	for _, apiVersion := range []string{"43.0", "61.0"} {
+		t.Run(apiVersion, func(t *testing.T) {
+			root := t.TempDir()
+			writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"`+apiVersion+`"}`)
+			writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/HistoricalVersionTest.cls"), `
+@isTest
+private class HistoricalVersionTest {
+  @isTest static void passes() { System.assertEquals(2, 1 + 1); }
+}
+`)
+
+			var stdout, stderr bytes.Buffer
+			if code := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress", "--no-cache"}, &stdout, &stderr); code != 0 {
+				t.Errorf("check exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+			} else {
+				var check struct {
+					Status  string `json:"status"`
+					Project struct {
+						SourceAPIVersion string `json:"sourceApiVersion"`
+					} `json:"project"`
+				}
+				if err := json.Unmarshal(stdout.Bytes(), &check); err != nil {
+					t.Fatal(err)
+				}
+				if check.Status != "passed" || check.Project.SourceAPIVersion != apiVersion {
+					t.Fatalf("check result = %#v, want passed sourceApiVersion %q", check, apiVersion)
+				}
+			}
+
+			stdout.Reset()
+			stderr.Reset()
+			if code := Run(context.Background(), []string{"test", "--project", root, "--class", "HistoricalVersionTest", "--json", "--no-progress", "--no-cache", "--no-serve"}, &stdout, &stderr); code != 0 {
+				t.Fatalf("test exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+			}
+			var run struct {
+				Status  string             `json:"status"`
+				Summary testreport.Summary `json:"summary"`
+			}
+			if err := json.Unmarshal(stdout.Bytes(), &run); err != nil {
+				t.Fatal(err)
+			}
+			if run.Status != "passed" || run.Summary.Total != 1 || run.Summary.Passed != 1 {
+				t.Fatalf("test result = %#v", run)
+			}
+		})
+	}
+}
+
 func TestRunCheckJSONOmitsDuplicateDataDiagnostics(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

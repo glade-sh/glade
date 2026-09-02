@@ -368,6 +368,20 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsAcceptsSOSLNotInCollectionBind(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    Set<Id> excludedIds = new Set<Id>();
+    List<List<SObject>> rows = [FIND 'acme' RETURNING Account(Id WHERE Id NOT IN :excludedIds)];
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Id", Type: "Id"}}}}})
+	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA_SOSL_PARSE") || hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("SOSL NOT IN collection bind rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestQuerySemanticsRequiresNumericSOSLLimitBindInOneLineMethod(t *testing.T) {
 	result := analyzeQueryProbe(t, "public class QueryProbe { public void run() { String limitValue = '1'; List<List<SObject>> rows = [FIND 'acme' RETURNING Account(Id) LIMIT :limitValue]; } }", schema.Schema{})
 	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND") {

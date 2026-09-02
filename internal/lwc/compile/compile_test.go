@@ -19,6 +19,8 @@ func TestBuildCompileConfigAPIVersionMatrix(t *testing.T) {
 		{projectVersion: "65.0", bundleVersion: "65.0", want: 65},
 		{projectVersion: "65.0", bundleVersion: "66.0", want: 66},
 		{projectVersion: "66.0", bundleVersion: "67.0", want: 67},
+		{projectVersion: "67.0", bundleVersion: "43.0", wantError: "unsupported source API version"},
+		{projectVersion: "67.0", bundleVersion: "61.0", wantError: "unsupported source API version"},
 		{projectVersion: "67.0", bundleVersion: "64.0", wantError: "unsupported source API version"},
 		{projectVersion: "67.0", bundleVersion: "", wantError: "missing component API version"},
 	} {

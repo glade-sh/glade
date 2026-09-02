@@ -3,6 +3,7 @@ package sosl_test
 import (
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/sosl"
@@ -45,6 +46,24 @@ func TestParseSOSLReturningWhereIn(t *testing.T) {
 	want := sosl.Condition{Field: "Id", Operator: "IN", Values: []string{"001A", "001B"}}
 	if query.Returning[0].Where == nil || !reflect.DeepEqual(*query.Returning[0].Where, want) {
 		t.Fatalf("where = %#v, want %#v", query.Returning[0].Where, want)
+	}
+}
+
+func TestParseSOSLReturningWhereNotInBind(t *testing.T) {
+	query, err := sosl.Parse("FIND {Acme} RETURNING Account(Id WHERE Id NOT IN :excludedIds)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := sosl.Condition{Field: "Id", Operator: "NOT IN", Bind: "excludedIds"}
+	if query.Returning[0].Where == nil || !reflect.DeepEqual(*query.Returning[0].Where, want) {
+		t.Fatalf("where = %#v, want %#v", query.Returning[0].Where, want)
+	}
+}
+
+func TestParseSOSLReturningWhereRejectsOtherNotForms(t *testing.T) {
+	_, err := sosl.Parse("FIND {Acme} RETURNING Account(Id WHERE Id NOT LIKE '001%')")
+	if err == nil || !strings.Contains(err.Error(), `unsupported SOSL WHERE operator "NOT"`) {
+		t.Fatalf("error = %v, want unsupported NOT operator", err)
 	}
 }
 

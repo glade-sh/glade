@@ -12789,6 +12789,59 @@ public class UsesInferredFeeFields {
 	}
 }
 
+func TestAnalyzeProjectReferencedNumericFieldInferenceAcceptsIntegerAndDecimalObservations(t *testing.T) {
+	t.Parallel()
+
+	t.Run("inferred numeric field", func(t *testing.T) {
+		root := t.TempDir()
+		writeSemaFile(t, filepath.Join(root, "UsesInferredNumericField.cls"), `
+public class UsesInferredNumericField {
+  public void seed() {
+    new Partial__c(Amount__c = 1);
+    new Partial__c(Amount__c = 1.5);
+  }
+
+  public void run(Partial__c record) {
+    record.Amount__c = 2.5;
+  }
+}
+`)
+		index := typesys.Build(project.Project{
+			Root:      root,
+			ApexFiles: []string{filepath.Join(root, "UsesInferredNumericField.cls")},
+		}, schema.Schema{Objects: []schema.Object{{Name: "Partial__c"}}})
+
+		result := Analyze(index)
+		assertNoDiagnosticContaining(t, result, "GLADESEMA018", "Amount__c")
+	})
+
+	t.Run("authoritative integer field", func(t *testing.T) {
+		root := t.TempDir()
+		writeSemaFile(t, filepath.Join(root, "UsesDeclaredIntegerField.cls"), `
+public class UsesDeclaredIntegerField {
+  public void run(Declared__c record) {
+    record.Count__c = 2.5;
+  }
+}
+`)
+		index := typesys.Build(project.Project{
+			Root:      root,
+			ApexFiles: []string{filepath.Join(root, "UsesDeclaredIntegerField.cls")},
+		}, schema.Schema{Objects: []schema.Object{{
+			Name:   "Declared__c",
+			Fields: []schema.Field{{Name: "Count__c", Type: "Integer"}},
+		}}})
+
+		result := Analyze(index)
+		for _, diag := range result.Diagnostics {
+			if diag.Code == "GLADESEMA018" && strings.Contains(diag.Message, "Count__c") {
+				return
+			}
+		}
+		t.Fatalf("authoritative Integer field should reject Decimal assignment: %#v", result.Diagnostics)
+	})
+}
+
 func TestAnalyzeProjectReferencedDateFactoryFieldTypeFlowsToCalls(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

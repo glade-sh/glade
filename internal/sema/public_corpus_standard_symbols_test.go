@@ -2,6 +2,7 @@ package sema
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -90,6 +91,79 @@ public class FieldAccessors {
 
 	assertNoDiagnosticContaining(t, result, "GLADESEMA008", "isCreateable")
 	assertNoDiagnosticContaining(t, result, "GLADESEMA018", "Boolean")
+}
+
+func TestPublicCorpusPlatformEventIdentityFields(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "PlatformEventIdentity.cls"), `
+public class PlatformEventIdentity {
+  public void run(Demo_Event__e eventRecord, Widget__c widget) {
+    String eventUuid = eventRecord.EventUuid;
+    String replayId = eventRecord.ReplayId;
+    List<Demo_Event__e> events = [SELECT Payload__c, EventUuid, ReplayId, Invented__c FROM Demo_Event__e];
+
+    String missingCustom = eventRecord.Invented__c;
+    String missingPlain = eventRecord.Invented;
+    String wrongObject = widget.EventUuid;
+  }
+}
+`)
+	objects := []schema.Object{
+		{Name: "Demo_Event__e", Fields: []schema.Field{{Name: "Payload__c", Type: "Text"}}},
+		{Name: "Widget__c", Fields: []schema.Field{{Name: "Name", Type: "Text"}}},
+	}
+	provider := newSemaSObjectFieldProvider("", objects[0])
+	members, _, _ := semaLookupTypeMembers(buildSemaTypeMemberView(typesys.Index{Objects: objects}), "Demo_Event__e")
+	for _, name := range []string{"EventUuid", "ReplayId"} {
+		field, fieldOK := provider.lookup(name)
+		member, memberOK := members.fields[normalizeName(name)]
+		if !fieldOK || field.Type != "Text" || !memberOK || member.Type != "String" {
+			t.Fatalf("Demo_Event__e.%s provider=%#v,%v member=%#v,%v; want Text provider and String member", name, field, fieldOK, member, memberOK)
+		}
+	}
+
+	result := analyzePublicCorpusWithSchema(t, root, schema.Schema{Objects: objects}, "PlatformEventIdentity.cls")
+
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA021" && strings.Contains(diag.Message, "Demo_Event__e") &&
+			(strings.Contains(diag.Message, "EventUuid") || strings.Contains(diag.Message, "ReplayId")) {
+			t.Fatalf("platform event identity field was unresolved: %#v", result.Diagnostics)
+		}
+		if diag.Code == "GLADESEMA_QUERY_FIELD" &&
+			(strings.Contains(diag.Message, "EventUuid") || strings.Contains(diag.Message, "ReplayId")) {
+			t.Fatalf("platform event identity query field was unresolved: %#v", result.Diagnostics)
+		}
+		if diag.Code == "GLADESEMA018" {
+			t.Fatalf("platform event identity field was not String: %#v", result.Diagnostics)
+		}
+	}
+	for _, missing := range []string{
+		`unknown field "Invented__c" on Demo_Event__e`,
+		`unknown field "Invented" on Demo_Event__e`,
+		`unknown field "EventUuid" on Widget__c`,
+	} {
+		found := false
+		for _, diag := range result.Diagnostics {
+			if diag.Code == "GLADESEMA021" && strings.Contains(diag.Message, missing) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("missing closed-schema diagnostic for %s: %#v", missing, result.Diagnostics)
+		}
+	}
+	queryMissing := false
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA_QUERY_FIELD" && strings.Contains(diag.Message, "Demo_Event__e.Invented__c") {
+			queryMissing = true
+			break
+		}
+	}
+	if !queryMissing {
+		t.Fatalf("missing closed-schema query diagnostic for Invented__c: %#v", result.Diagnostics)
+	}
 }
 
 func analyzeStandardSymbolProject(root string, files ...string) Result {

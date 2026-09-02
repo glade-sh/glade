@@ -17,10 +17,10 @@ import tempfile
 
 runner_a_dir, runner_b_dir, runner_c_dir, output_path, expected_head_sha = sys.argv[1:]
 package = "github.com/glade-sh/glade/internal/apextest"
-runner_indexes = {"a": [0, 3, 5], "b": [4, 7], "c": [1, 2, 6]}
+runner_indexes = {"a": [0, 3, 5, 8, 11, 13], "b": [4, 7, 12, 15], "c": [1, 2, 6, 9, 10, 14]}
 assignments = [index for indexes in runner_indexes.values() for index in indexes]
-if sorted(assignments) != list(range(8)) or len(assignments) != len(set(assignments)):
-    raise SystemExit("race apextest aggregate runner assignments do not exactly cover eight shards")
+if sorted(assignments) != list(range(16)) or len(assignments) != len(set(assignments)):
+    raise SystemExit("race apextest aggregate runner assignments do not exactly cover sixteen shards")
 test_pattern = re.compile(r"Test[A-Za-z0-9_]*\Z")
 sha_pattern = re.compile(r"[0-9a-f]{40}\Z")
 digest_pattern = re.compile(r"[0-9a-f]{64}\Z")
@@ -111,7 +111,7 @@ def validate_runner(root, expected_runner):
         raise SystemExit("race apextest aggregate plan identity mismatch")
     plan = load_json(os.path.join(root, "plan.json"), "plan")
     require_exact_object(plan, {"version", "package", "historyUsed", "shards"}, "plan")
-    if type(plan["version"]) is not int or plan["version"] != 1 or plan["package"] != package or not isinstance(plan["historyUsed"], bool) or not isinstance(plan["shards"], list) or len(plan["shards"]) != 8:
+    if type(plan["version"]) is not int or plan["version"] != 1 or plan["package"] != package or not isinstance(plan["historyUsed"], bool) or not isinstance(plan["shards"], list) or len(plan["shards"]) != 16:
         raise SystemExit("race apextest aggregate has invalid plan")
     union = []
     shard_tests = {}
@@ -135,7 +135,7 @@ def validate_runner(root, expected_runner):
         raise SystemExit("race apextest aggregate binary identity or cleanup mismatch")
     validate_resource(os.path.join(root, "build-resource.json"), "race-internal-apextest-build")
 
-    for index in range(8):
+    for index in range(16):
         shard_dir = os.path.join(root, f"shard-{index}")
         events_path = os.path.join(shard_dir, "events.json")
         resource_path = os.path.join(shard_dir, "resource.json")
@@ -148,7 +148,7 @@ def validate_runner(root, expected_runner):
             raise SystemExit(f"race apextest aggregate shard {index} selection does not match plan")
         validate_resource(resource_path, f"race-internal-apextest-shard-{index}")
         validate_events(events_path, shard_tests[index], index)
-    return runner, discovery, [len(shard_tests[index]) for index in range(8)]
+    return runner, discovery, [len(shard_tests[index]) for index in range(16)]
 
 runner_a, discovery_a, counts_a = validate_runner(runner_a_dir, "a")
 runner_b, discovery_b, counts_b = validate_runner(runner_b_dir, "b")

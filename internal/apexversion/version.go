@@ -67,28 +67,54 @@ func unsignedComponent(raw string) (int, bool) {
 
 func ResolveSource(raw string) (string, error) {
 	requested := strings.TrimSpace(raw)
-	if requested == "" {
-		return DefaultSourceAPIVersion, nil
-	}
-	numeric := strings.TrimPrefix(requested, "v")
-	parts := strings.Split(numeric, ".")
-	if len(parts) != 2 {
+	normalized, err := PreserveSource(requested)
+	if err != nil {
 		return "", unsupportedSourceVersion(requested)
 	}
-	major, majorOK := unsignedComponent(parts[0])
-	minor, minorOK := unsignedComponent(parts[1])
-	if !majorOK || !minorOK || major < 1 || minor != 0 {
-		return "", unsupportedSourceVersion(requested)
-	}
-	normalized := fmt.Sprintf("%d.0", major)
 	if !slices.Contains(SupportedSourceAPIVersions, normalized) {
 		return "", unsupportedSourceVersion(requested)
 	}
 	return normalized, nil
 }
 
+// PreserveSource canonicalizes a positive whole Apex source version without
+// moving historical versions into the checked Salesforce parity window.
+func PreserveSource(raw string) (string, error) {
+	requested := strings.TrimSpace(raw)
+	if requested == "" {
+		requested = DefaultSourceAPIVersion
+	}
+	if len(SupportedSourceAPIVersions) == 0 {
+		return "", unsupportedHistoricalSourceVersion(requested)
+	}
+	numeric := strings.TrimPrefix(requested, "v")
+	parts := strings.Split(numeric, ".")
+	if len(parts) != 2 {
+		return "", unsupportedHistoricalSourceVersion(requested)
+	}
+	major, majorOK := unsignedComponent(parts[0])
+	minor, minorOK := unsignedComponent(parts[1])
+	if !majorOK || !minorOK || major < 1 || minor != 0 {
+		return "", unsupportedHistoricalSourceVersion(requested)
+	}
+	normalized := fmt.Sprintf("%d.0", major)
+	latest := SupportedSourceAPIVersions[len(SupportedSourceAPIVersions)-1]
+	latestMajor, _ := Major(latest)
+	if major > latestMajor {
+		return "", unsupportedHistoricalSourceVersion(requested)
+	}
+	return normalized, nil
+}
+
 func unsupportedSourceVersion(requested string) error {
 	return fmt.Errorf("unsupported source API version %q; supported versions: %s", requested, strings.Join(SupportedSourceAPIVersions, ", "))
+}
+
+func unsupportedHistoricalSourceVersion(requested string) error {
+	if len(SupportedSourceAPIVersions) == 0 {
+		return fmt.Errorf("unsupported source API version %q for Apex; no checked source API versions configured", requested)
+	}
+	return fmt.Errorf("unsupported source API version %q for Apex; expected a whole version no later than %s", requested, SupportedSourceAPIVersions[len(SupportedSourceAPIVersions)-1])
 }
 
 func AtLeast(raw string, minimum int) bool {

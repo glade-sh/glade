@@ -144,7 +144,9 @@ union_validation="${artifact_dir}/union-validation.json"
 union_sentinel="${union_validation}.tmp.$$"
 if [[ "${package}" == "./internal/playground" ]]; then
 	sentinel_counts='[0,0,0,0,0,0,0,0,0]'
-elif [[ "${package}" == "./internal/apextest" ]]; then
+elif [[ "${package}" == "./internal/apextest" || "${package}" == "./internal/gladecli" ]]; then
+	sentinel_counts='[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]'
+elif [[ "${package}" == "./internal/server" ]]; then
 	sentinel_counts='[0,0,0,0,0,0,0,0]'
 else
 	sentinel_counts='[0,0,0,0]'
@@ -153,21 +155,21 @@ printf '{"schema_version":1,"package":"%s","discovered_count":0,"shard_counts":%
 mv "${union_sentinel}" "${union_validation}"
 
 if [[ "${package}" == "./internal/apextest" ]]; then
-	assigned_apextest_indexes=(0 1 2 3 4 5 6 7)
+	assigned_apextest_indexes=(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15)
 	if [[ -n "${apextest_shard_indexes}" || -n "${apextest_runner}" || -n "${apextest_head_sha}" ]]; then
 		if [[ ! "${apextest_head_sha}" =~ ^[0-9a-f]{40}$ ]]; then
 			printf '[ci] apextest runner requires a 40-character lowercase head SHA\n' >&2
 			exit 2
 		fi
 		case "${apextest_runner}:${apextest_shard_indexes}" in
-			a:0,3,5)
-				assigned_apextest_indexes=(0 3 5)
+			a:0,3,5,8,11,13)
+				assigned_apextest_indexes=(0 3 5 8 11 13)
 				;;
-			b:4,7)
-				assigned_apextest_indexes=(4 7)
+			b:4,7,12,15)
+				assigned_apextest_indexes=(4 7 12 15)
 				;;
-			c:1,2,6)
-				assigned_apextest_indexes=(1 2 6)
+			c:1,2,6,9,10,14)
+				assigned_apextest_indexes=(1 2 6 9 10 14)
 				;;
 			*)
 				printf '[ci] invalid apextest runner assignment %q:%q\n' "${apextest_runner}" "${apextest_shard_indexes}" >&2
@@ -392,8 +394,10 @@ if [[ "${package}" == "./internal/playground" ]]; then
 	planner_shards=5
 	plan_mode=playground
 elif [[ "${package}" == "./internal/apextest" ]]; then
-	planner_shards=8
+	planner_shards=16
 	plan_mode=apextest
+elif [[ "${package}" == "./internal/gladecli" ]]; then
+	planner_shards=16
 elif [[ "${package}" == "./internal/server" ]]; then
 	planner_shards=8
 fi
@@ -639,8 +643,8 @@ import sys
 import tempfile
 
 discovery_path, package, output_path, *event_paths = sys.argv[1:]
-if len(event_paths) != 8:
-    raise SystemExit("race apextest union validation requires exactly 8 shard event files")
+if len(event_paths) != 16:
+    raise SystemExit("race apextest union validation requires exactly 16 shard event files")
 with open(discovery_path, encoding="utf-8") as source:
     expected = source.read().splitlines()
 passed = []
@@ -682,6 +686,8 @@ fi
 lane_names=()
 if [[ "${package}" == "./internal/playground" ]]; then
 	lane_names=(group-0 group-1 group-2 group-3 ordinary-0 ordinary-1 ordinary-2 ordinary-3 ordinary-4)
+elif [[ "${package}" == "./internal/gladecli" ]]; then
+	lane_names=(shard-0 shard-1 shard-2 shard-3 shard-4 shard-5 shard-6 shard-7 shard-8 shard-9 shard-10 shard-11 shard-12 shard-13 shard-14 shard-15)
 elif [[ "${package}" == "./internal/server" ]]; then
 	lane_names=(shard-0 shard-1 shard-2 shard-3 shard-4 shard-5 shard-6 shard-7)
 else
@@ -759,6 +765,8 @@ import tempfile
 discovery_path, package, output_path, *event_paths = sys.argv[1:]
 if package == "github.com/glade-sh/glade/internal/playground":
     expected_lanes = 9
+elif package == "github.com/glade-sh/glade/internal/gladecli":
+    expected_lanes = 16
 elif package == "github.com/glade-sh/glade/internal/server":
     expected_lanes = 8
 else:

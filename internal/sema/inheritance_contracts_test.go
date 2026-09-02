@@ -36,6 +36,54 @@ func TestInheritanceContractsRejectInvalidInheritanceTargets(t *testing.T) {
 	}
 }
 
+func TestInheritanceContractsAllowStandardContextImplementationsAtAPI61(t *testing.T) {
+	for name, source := range map[string]string{
+		"QueueableContext": `
+public class Probe implements QueueableContext {
+  public Id getJobId() { return null; }
+}
+`,
+		"System.QueueableContext": `
+public class Probe implements System.QueueableContext {
+  public Id getJobId() { return null; }
+}
+`,
+		"SchedulableContext": `
+public class Probe implements SchedulableContext {
+  public Id getTriggerId() { return null; }
+}
+`,
+		"System.SchedulableContext": `
+public class Probe implements System.SchedulableContext {
+  public Id getTriggerId() { return null; }
+}
+`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, "61.0")
+			if result.HasErrors() {
+				t.Fatalf("valid %s implementation was rejected: %#v", name, result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestInheritanceContractsRequireQualifiedStandardContextMethodsAtAPI61(t *testing.T) {
+	for name, method := range map[string]string{
+		"System.QueueableContext":   "getJobId",
+		"System.SchedulableContext": "getTriggerId",
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+				"Probe.cls": "public class Probe implements " + name + " {}",
+			}, "61.0")
+			if !declarationDiagnosticMatching(result, `must implement interface method "`+method+`"`) {
+				t.Fatalf("missing %s requirement was not reported: %#v", method, result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestInheritanceContractsRejectExtendingNonVirtualSuperclass(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{

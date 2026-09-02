@@ -331,6 +331,9 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 		t.Fatal(err)
 	}
 	workflow := string(data)
+	if !strings.Contains(workflow, "permissions:\n  contents: read\n\nenv:\n  GOMEMLIMIT: \"6GiB\"\n\nconcurrency:") {
+		t.Fatal("race workflow must set the shared CI Go memory limit for all jobs")
+	}
 	for _, marker := range []string{
 		"name: Race", "branches: [main]", "schedule:", "workflow_dispatch:",
 		"fetch-depth: 0", "scripts/ci-race-packages.sh", "fromJSON(needs.plan.outputs.packages)",
@@ -340,7 +343,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 		"npm ci --prefix third_party/lwc", "matrix.package == './internal/gladecli'",
 		"early-packages", "generic-packages", "has-early-packages", "has-generic-packages", "race-early:",
 		"race-apextest-a:", "race-apextest-b:", "race-apextest-c:", "race-apextest-aggregate:",
-		"CI_RACE_APEXTEST_RUNNER: a", "CI_RACE_APEXTEST_SHARD_INDEXES: 0,3,5", "CI_RACE_APEXTEST_RUNNER: b", "CI_RACE_APEXTEST_SHARD_INDEXES: 4,7", "CI_RACE_APEXTEST_RUNNER: c", "CI_RACE_APEXTEST_SHARD_INDEXES: 1,2,6",
+		"CI_RACE_APEXTEST_RUNNER: a", "CI_RACE_APEXTEST_SHARD_INDEXES: 0,3,5,8,11,13", "CI_RACE_APEXTEST_RUNNER: b", "CI_RACE_APEXTEST_SHARD_INDEXES: 4,7,12,15", "CI_RACE_APEXTEST_RUNNER: c", "CI_RACE_APEXTEST_SHARD_INDEXES: 1,2,6,9,10,14",
 		"CI_RACE_HEAD_SHA: ${{ github.sha }}",
 		"if: always() && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')", "scripts/ci-race-apextest-aggregate.sh ci-artifacts/race/apextest-a ci-artifacts/race/apextest-b ci-artifacts/race/apextest-c", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0",
 	} {
@@ -373,6 +376,9 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	planJob := workflow[planIndex:earlyIndex]
 	earlyJob := workflow[earlyIndex:raceIndex]
 	raceJob := workflow[raceIndex:apexIndex]
+	if !strings.Contains(earlyJob, "- name: Run early race detector\n        env:\n          GOMAXPROCS: ${{ matrix.package == './internal/gladecli' && '1' || '2' }}\n          PACKAGE: ${{ matrix.package }}") {
+		t.Fatal("race workflow must run the Glade CLI race shards with one Go scheduler thread")
+	}
 	if !strings.Contains(planJob, `scripts/ci-race-packages.sh partition "$packages"`) {
 		t.Error("race plan must derive early and generic packages from its one full manifest")
 	}
@@ -556,21 +562,28 @@ tests=""
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --package) package="$2"; shift 2 ;;
-    --shards) [[ "$2" == 8 ]]; shift 2 ;;
+    --shards) [[ "$2" == 16 ]]; shift 2 ;;
     --tests) tests="$2"; shift 2 ;;
     *) exit 91 ;;
   esac
 done
 names=()
 while IFS= read -r name; do names+=("$name"); done <"$tests"
-[[ "${#names[@]}" == 8 ]]
+[[ "${#names[@]}" == 16 ]]
 printf '{"version":1,"package":"%s","historyUsed":false,"shards":[' "$package"
-for index in 0 1 2 3 4 5 6 7; do
+for index in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
   [[ "$index" == 0 ]] || printf ','
   printf '{"index":%s,"tests":["%s"],"estimatedDurationMillis":0,"regex":"^(?:%s)$"}' "$index" "${names[$index]}" "${names[$index]}"
 done
 printf ']}\n'
 `
+}
+
+func raceApextestTestNames() []string {
+	return []string{
+		"TestAlpha", "TestBeta", "TestDelta", "TestEpsilon", "TestEta", "TestGamma", "TestTheta", "TestZeta",
+		"TestIota", "TestKappa", "TestLambda", "TestMu", "TestNu", "TestOmicron", "TestPi", "TestRho",
+	}
 }
 
 func raceApextestGoFixture() string {
@@ -848,9 +861,15 @@ func TestCIRacePackageRunnerGenericHeavyPackagesUseBoundedSequentialExactShards(
 		t.Run(filepath.Base(pkg), func(t *testing.T) {
 			root := t.TempDir()
 			logPath := filepath.Join(root, "calls.log")
-			testNames := []string{"TestAlpha", "TestBeta", "TestDelta", "TestGamma"}
-			if pkg == "./internal/server" {
-				testNames = append(testNames, "TestEta", "TestIota", "TestKappa", "TestTheta")
+			shardCount := 4
+			if pkg == "./internal/gladecli" {
+				shardCount = 16
+			} else if pkg == "./internal/server" {
+				shardCount = 8
+			}
+			testNames := make([]string, shardCount)
+			for index := range testNames {
+				testNames[index] = fmt.Sprintf("TestCase%02d", index)
 			}
 			goCommand := writeRaceFixture(t, "fake-go", `#!/usr/bin/env bash
 if [[ "$*" == *"-list ."* ]]; then
@@ -884,10 +903,6 @@ printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s","Test":"%s","E
 				t.Fatal(err)
 			}
 			log := string(data)
-			shardCount := 4
-			if pkg == "./internal/server" {
-				shardCount = 8
-			}
 			var wantOrder []string
 			for shard := 0; shard < shardCount; shard++ {
 				wantOrder = append(wantOrder, "start race-"+slug+"-shard-"+fmt.Sprint(shard), "end race-"+slug+"-shard-"+fmt.Sprint(shard)+" 0")
@@ -918,7 +933,7 @@ printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s","Test":"%s","E
 				t.Fatalf("recorded benchmarks = %q, err=%v", benchmarks, err)
 			}
 			for shard := 0; shard < shardCount; shard++ {
-				base := filepath.Join(root, "ci-artifacts/race", slug, "shard-"+string(rune('0'+shard)))
+				base := filepath.Join(root, "ci-artifacts/race", slug, "shard-"+fmt.Sprint(shard))
 				for _, name := range []string{"events.json", "resource.json"} {
 					if _, err := os.Stat(filepath.Join(base, name)); err != nil {
 						t.Fatalf("shard %d %s: %v", shard, name, err)
@@ -956,10 +971,45 @@ printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s","Test":"%s","E
 	}
 }
 
-func TestCIRacePackageRunnerApextestBuildsOnceAndUsesEightDirectShards(t *testing.T) {
+func TestCIRacePackageRunnerSentinelMatchesTopology(t *testing.T) {
+	for _, fixture := range []struct {
+		pkg    string
+		shards int
+	}{
+		{pkg: "./internal/apextest", shards: 16},
+		{pkg: "./internal/gladecli", shards: 16},
+		{pkg: "./internal/server", shards: 8},
+	} {
+		t.Run(filepath.Base(fixture.pkg), func(t *testing.T) {
+			root := t.TempDir()
+			goCommand := writeRaceFixture(t, "fake-go", "#!/usr/bin/env bash\nexit 23\n")
+			resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
+			slug := strings.ReplaceAll(strings.TrimPrefix(fixture.pkg, "./"), "/", "-")
+			if out, err := runRacePackage(t, root, []string{
+				"CI_RACE_GO_COMMAND=" + goCommand,
+				"CI_RACE_RESOURCE_RUNNER=" + resource,
+			}, fixture.pkg, slug); err == nil {
+				t.Fatalf("discovery failure accepted:\n%s", out)
+			}
+			data, err := os.ReadFile(filepath.Join(root, "ci-artifacts/race", slug, "union-validation.json"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			var sentinel struct {
+				ShardCounts []int `json:"shard_counts"`
+				Valid       bool  `json:"valid"`
+			}
+			if err := json.Unmarshal(data, &sentinel); err != nil || sentinel.Valid || !reflect.DeepEqual(sentinel.ShardCounts, make([]int, fixture.shards)) {
+				t.Fatalf("%d-shard sentinel = %#v, err=%v", fixture.shards, sentinel, err)
+			}
+		})
+	}
+}
+
+func TestCIRacePackageRunnerApextestBuildsOnceAndUsesSixteenDirectShards(t *testing.T) {
 	root := t.TempDir()
 	logPath := filepath.Join(root, "calls.log")
-	testNames := []string{"TestAlpha", "TestBeta", "TestDelta", "TestEpsilon", "TestEta", "TestGamma", "TestTheta", "TestZeta"}
+	testNames := raceApextestTestNames()
 	goCommand := writeRaceFixture(t, "fake-go", raceApextestGoFixture())
 	planner := writeRaceFixture(t, "fake-planner", raceApextestPlannerFixture())
 	resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
@@ -978,13 +1028,13 @@ func TestCIRacePackageRunnerApextestBuildsOnceAndUsesEightDirectShards(t *testin
 		t.Fatal(err)
 	}
 	log := string(data)
-	if strings.Count(log, "go test ") != 1 || strings.Count(log, "go test -race -c -o") != 1 || strings.Count(log, "go tool test2json -p github.com/glade-sh/glade/internal/apextest") != 8 {
+	if strings.Count(log, "go test ") != 1 || strings.Count(log, "go test -race -c -o") != 1 || strings.Count(log, "go tool test2json -p github.com/glade-sh/glade/internal/apextest") != 16 {
 		t.Fatalf("apextest build/test2json calls:\n%s", log)
 	}
-	if strings.Count(log, "binary -test.list .") != 1 || strings.Count(log, "binary -test.v=test2json -test.count=1 -test.timeout=60m -test.run=") != 8 || strings.Contains(log, "go test -json -race") || strings.Contains(log, "go test -race -list") {
+	if strings.Count(log, "binary -test.list .") != 1 || strings.Count(log, "binary -test.v=test2json -test.count=1 -test.timeout=60m -test.run=") != 16 || strings.Contains(log, "go test -json -race") || strings.Contains(log, "go test -race -list") {
 		t.Fatalf("apextest direct binary calls:\n%s", log)
 	}
-	for shard := 0; shard < 8; shard++ {
+	for shard := 0; shard < 16; shard++ {
 		if !strings.Contains(log, "start race-internal-apextest-shard-"+fmt.Sprint(shard)) {
 			t.Fatalf("missing shard %d resource lane:\n%s", shard, log)
 		}
@@ -1010,7 +1060,7 @@ func TestCIRacePackageRunnerApextestBuildsOnceAndUsesEightDirectShards(t *testin
 		ShardCounts     []int `json:"shard_counts"`
 		Valid           bool  `json:"valid"`
 	}
-	if err != nil || json.Unmarshal(unionData, &union) != nil || union.DiscoveredCount != 8 || !reflect.DeepEqual(union.ShardCounts, []int{1, 1, 1, 1, 1, 1, 1, 1}) || !union.Valid {
+	if err != nil || json.Unmarshal(unionData, &union) != nil || union.DiscoveredCount != 16 || !reflect.DeepEqual(union.ShardCounts, []int{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}) || !union.Valid {
 		t.Fatalf("apextest union = %#v err=%v data=%s", union, err, unionData)
 	}
 	entries, err := os.ReadDir(root)
@@ -1027,7 +1077,7 @@ func TestCIRacePackageRunnerApextestBuildsOnceAndUsesEightDirectShards(t *testin
 func TestCIRacePackageRunnerApextestRunsOnlyAssignedShards(t *testing.T) {
 	root := t.TempDir()
 	logPath := filepath.Join(root, "calls.log")
-	testNames := []string{"TestAlpha", "TestBeta", "TestDelta", "TestEpsilon", "TestEta", "TestGamma", "TestTheta", "TestZeta"}
+	testNames := raceApextestTestNames()
 	goCommand := writeRaceFixture(t, "fake-go", raceApextestGoFixture())
 	planner := writeRaceFixture(t, "fake-planner", raceApextestPlannerFixture())
 	resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
@@ -1036,7 +1086,7 @@ func TestCIRacePackageRunnerApextestRunsOnlyAssignedShards(t *testing.T) {
 		"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_SHARD_PLANNER=" + planner,
 		"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_GIT_COMMAND=" + gitCommand, "CI_RACE_CALL_LOG=" + logPath,
 		"CI_RACE_TEST_NAMES=" + strings.Join(testNames, "\n") + "\n",
-		"CI_RACE_BINARY_DISCOVERY_PASS=1", "CI_RACE_APEXTEST_SHARD_INDEXES=1,2,6",
+		"CI_RACE_BINARY_DISCOVERY_PASS=1", "CI_RACE_APEXTEST_SHARD_INDEXES=1,2,6,9,10,14",
 		"CI_RACE_APEXTEST_RUNNER=c", "CI_RACE_HEAD_SHA=0123456789abcdef0123456789abcdef01234567",
 		"TMPDIR=" + root,
 	}, "./internal/apextest", "internal-apextest")
@@ -1048,16 +1098,16 @@ func TestCIRacePackageRunnerApextestRunsOnlyAssignedShards(t *testing.T) {
 		t.Fatal(err)
 	}
 	log := string(logData)
-	if strings.Count(log, "start race-internal-apextest-shard-") != 3 {
+	if strings.Count(log, "start race-internal-apextest-shard-") != 6 {
 		t.Fatalf("assigned runner started unexpected shard lanes:\n%s", log)
 	}
-	for _, index := range []int{1, 2, 6} {
+	for _, index := range []int{1, 2, 6, 9, 10, 14} {
 		if !strings.Contains(log, fmt.Sprintf("start race-internal-apextest-shard-%d", index)) {
 			t.Fatalf("assigned runner omitted shard %d:\n%s", index, log)
 		}
 	}
 	artifactDir := filepath.Join(root, "ci-artifacts", "race", "internal-apextest")
-	for _, index := range []int{1, 2, 6} {
+	for _, index := range []int{1, 2, 6, 9, 10, 14} {
 		if _, err := os.Stat(filepath.Join(artifactDir, fmt.Sprintf("shard-%d", index), "events.json")); err != nil {
 			t.Fatalf("assigned shard %d evidence: %v", index, err)
 		}
@@ -1076,7 +1126,7 @@ func TestCIRacePackageRunnerApextestRunsOnlyAssignedShards(t *testing.T) {
 		DiscoveredCount int    `json:"discovered_count"`
 		BinaryRemoved   bool   `json:"binary_removed"`
 	}
-	if err := json.Unmarshal(runnerData, &runner); err != nil || runner.Runner != "c" || runner.HeadSHA != "0123456789abcdef0123456789abcdef01234567" || !reflect.DeepEqual(runner.AssignedIndexes, []int{1, 2, 6}) || runner.DiscoveredCount != 8 || !runner.BinaryRemoved {
+	if err := json.Unmarshal(runnerData, &runner); err != nil || runner.Runner != "c" || runner.HeadSHA != "0123456789abcdef0123456789abcdef01234567" || !reflect.DeepEqual(runner.AssignedIndexes, []int{1, 2, 6, 9, 10, 14}) || runner.DiscoveredCount != 16 || !runner.BinaryRemoved {
 		t.Fatalf("runner validation = %#v err=%v data=%s", runner, err, runnerData)
 	}
 }
@@ -1084,7 +1134,7 @@ func TestCIRacePackageRunnerApextestRunsOnlyAssignedShards(t *testing.T) {
 func TestCIRacePackageRunnerApextestRejectsUnexpectedCheckoutHead(t *testing.T) {
 	root := t.TempDir()
 	logPath := filepath.Join(root, "calls.log")
-	testNames := []string{"TestAlpha", "TestBeta", "TestDelta", "TestEpsilon", "TestEta", "TestGamma", "TestTheta", "TestZeta"}
+	testNames := raceApextestTestNames()
 	goCommand := writeRaceFixture(t, "fake-go", raceApextestGoFixture())
 	planner := writeRaceFixture(t, "fake-planner", raceApextestPlannerFixture())
 	resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
@@ -1093,7 +1143,7 @@ func TestCIRacePackageRunnerApextestRejectsUnexpectedCheckoutHead(t *testing.T) 
 		"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_SHARD_PLANNER=" + planner,
 		"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_GIT_COMMAND=" + gitCommand,
 		"CI_RACE_CALL_LOG=" + logPath, "CI_RACE_TEST_NAMES=" + strings.Join(testNames, "\n") + "\n",
-		"CI_RACE_APEXTEST_SHARD_INDEXES=1,2,6", "CI_RACE_APEXTEST_RUNNER=c",
+		"CI_RACE_APEXTEST_SHARD_INDEXES=1,2,6,9,10,14", "CI_RACE_APEXTEST_RUNNER=c",
 		"CI_RACE_HEAD_SHA=0123456789abcdef0123456789abcdef01234567", "TMPDIR=" + root,
 	}, "./internal/apextest", "internal-apextest")
 	if err == nil || !strings.Contains(out, "checkout HEAD does not match expected head") {
@@ -1118,7 +1168,7 @@ func writeApextestAggregateArtifact(t *testing.T, root, runner string, indexes [
 	if err := os.WriteFile(filepath.Join(artifactDir, "discovery.txt"), []byte(discovery), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	shards := make([]map[string]any, 8)
+	shards := make([]map[string]any, 16)
 	for index := range shards {
 		shardTests := make([]string, 0, 42)
 		for nameIndex := index; nameIndex < len(names); nameIndex += len(shards) {
@@ -1186,9 +1236,9 @@ func writeApextestAggregateArtifact(t *testing.T, root, runner string, indexes [
 func TestCIRaceApextestAggregateRejectsMismatchedEvidence(t *testing.T) {
 	root := t.TempDir()
 	headSHA := "0123456789abcdef0123456789abcdef01234567"
-	writeApextestAggregateArtifact(t, root, "a", []int{0, 3, 5}, headSHA, 332)
-	writeApextestAggregateArtifact(t, root, "b", []int{4, 7}, headSHA, 332)
-	writeApextestAggregateArtifact(t, root, "c", []int{1, 2, 6}, headSHA, 332)
+	writeApextestAggregateArtifact(t, root, "a", []int{0, 3, 5, 8, 11, 13}, headSHA, 332)
+	writeApextestAggregateArtifact(t, root, "b", []int{4, 7, 12, 15}, headSHA, 332)
+	writeApextestAggregateArtifact(t, root, "c", []int{1, 2, 6, 9, 10, 14}, headSHA, 332)
 	script, err := filepath.Abs("ci-race-apextest-aggregate.sh")
 	if err != nil {
 		t.Fatal(err)
@@ -1216,9 +1266,9 @@ func TestCIRaceApextestAggregateRejectsMismatchedEvidence(t *testing.T) {
 func TestCIRaceApextestAggregateDerivesDiscoveryCount(t *testing.T) {
 	root := t.TempDir()
 	headSHA := "0123456789abcdef0123456789abcdef01234567"
-	writeApextestAggregateArtifact(t, root, "a", []int{0, 3, 5}, headSHA, 333)
-	writeApextestAggregateArtifact(t, root, "b", []int{4, 7}, headSHA, 333)
-	writeApextestAggregateArtifact(t, root, "c", []int{1, 2, 6}, headSHA, 333)
+	writeApextestAggregateArtifact(t, root, "a", []int{0, 3, 5, 8, 11, 13}, headSHA, 333)
+	writeApextestAggregateArtifact(t, root, "b", []int{4, 7, 12, 15}, headSHA, 333)
+	writeApextestAggregateArtifact(t, root, "c", []int{1, 2, 6, 9, 10, 14}, headSHA, 333)
 	script, err := filepath.Abs("ci-race-apextest-aggregate.sh")
 	if err != nil {
 		t.Fatal(err)
@@ -1284,7 +1334,7 @@ func TestCIRaceApextestAggregateRejectsAdversarialEvidence(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"assigned_indexes":[1,2,6]`, `"assigned_indexes":[1,2]`, 1)), 0o600); err != nil {
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"assigned_indexes":[1,2,6,9,10,14]`, `"assigned_indexes":[1,2,6,9,10]`, 1)), 0o600); err != nil {
 				t.Fatal(err)
 			}
 		}},
@@ -1295,7 +1345,7 @@ func TestCIRaceApextestAggregateRejectsAdversarialEvidence(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"assigned_indexes":[1,2,6]`, `"assigned_indexes":[1,2,2,6]`, 1)), 0o600); err != nil {
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"assigned_indexes":[1,2,6,9,10,14]`, `"assigned_indexes":[1,2,6,9,10,10,14]`, 1)), 0o600); err != nil {
 				t.Fatal(err)
 			}
 		}},
@@ -1387,9 +1437,9 @@ func TestCIRaceApextestAggregateRejectsAdversarialEvidence(t *testing.T) {
 	for _, fixture := range tests {
 		t.Run(fixture.name, func(t *testing.T) {
 			root := t.TempDir()
-			writeApextestAggregateArtifact(t, root, "a", []int{0, 3, 5}, headSHA, 333)
-			writeApextestAggregateArtifact(t, root, "b", []int{4, 7}, headSHA, 333)
-			writeApextestAggregateArtifact(t, root, "c", []int{1, 2, 6}, headSHA, 333)
+			writeApextestAggregateArtifact(t, root, "a", []int{0, 3, 5, 8, 11, 13}, headSHA, 333)
+			writeApextestAggregateArtifact(t, root, "b", []int{4, 7, 12, 15}, headSHA, 333)
+			writeApextestAggregateArtifact(t, root, "c", []int{1, 2, 6, 9, 10, 14}, headSHA, 333)
 			fixture.mutate(t, root)
 			script, err := filepath.Abs("ci-race-apextest-aggregate.sh")
 			if err != nil {
@@ -1444,16 +1494,16 @@ func TestCIRacePackageRunnerApextestRejectsBuildAndDirectCorruption(t *testing.T
 		t.Run(fixture.name, func(t *testing.T) {
 			root := t.TempDir()
 			logPath := filepath.Join(root, "calls.log")
-			testNames := []string{"TestAlpha", "TestBeta", "TestDelta", "TestEpsilon", "TestEta", "TestGamma", "TestTheta", "TestZeta"}
+			testNames := raceApextestTestNames()
 			goCommand := writeRaceFixture(t, "fake-go", raceApextestGoFixture())
 			plannerText := raceApextestPlannerFixture()
 			switch fixture.planner {
 			case "omission":
-				plannerText = strings.Replace(plannerText, `[[ "${#names[@]}" == 8 ]]`, `names=("${names[@]:0:7}" "TestUnknown")`, 1)
+				plannerText = strings.Replace(plannerText, `[[ "${#names[@]}" == 16 ]]`, `names=("${names[@]:0:15}" "TestUnknown")`, 1)
 			case "duplicate":
-				plannerText = strings.Replace(plannerText, `[[ "${#names[@]}" == 8 ]]`, `names[7]="${names[0]}"`, 1)
+				plannerText = strings.Replace(plannerText, `[[ "${#names[@]}" == 16 ]]`, `names[15]="${names[0]}"`, 1)
 			case "empty":
-				plannerText = strings.Replace(plannerText, `for index in 0 1 2 3 4 5 6 7; do`, `names[7]=""; for index in 0 1 2 3 4 5 6 7; do`, 1)
+				plannerText = strings.Replace(plannerText, `for index in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do`, `names[15]=""; for index in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do`, 1)
 			case "schema":
 				plannerText = strings.Replace(plannerText, `"historyUsed":false`, `"historyUsed":false,"extra":true`, 1)
 			}
@@ -1516,7 +1566,7 @@ func TestCIRacePackageRunnerApextestSignalStopsActiveLaneAndRemovesBinary(t *tes
 			root := t.TempDir()
 			logPath := filepath.Join(root, "calls.log")
 			runnerPIDPath := filepath.Join(root, "runner.pid")
-			testNames := []string{"TestAlpha", "TestBeta", "TestDelta", "TestEpsilon", "TestEta", "TestGamma", "TestTheta", "TestZeta"}
+			testNames := raceApextestTestNames()
 			goCommand := writeRaceFixture(t, "fake-go", raceApextestGoFixture())
 			planner := writeRaceFixture(t, "fake-planner", raceApextestPlannerFixture())
 			resource := writeRaceFixture(t, "fake-resource", `#!/usr/bin/env bash

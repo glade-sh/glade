@@ -487,10 +487,34 @@ func TestStandardPlatformSymbolsIncludeAsyncMethodShapeRows(t *testing.T) {
 	requireStandardMethod(t, limits, "getQueueableJobs", nil, true)
 
 	queueableContext := requireStandardSymbol(t, symbols, "QueueableContext")
+	if queueableContext.Kind != apexast.DeclarationInterface {
+		t.Fatalf("QueueableContext kind = %q, want interface", queueableContext.Kind)
+	}
 	requireStandardMethod(t, queueableContext, "getJobId", nil, false)
 
 	schedulableContext := requireStandardSymbol(t, symbols, "SchedulableContext")
+	if schedulableContext.Kind != apexast.DeclarationInterface {
+		t.Fatalf("SchedulableContext kind = %q, want interface", schedulableContext.Kind)
+	}
 	requireStandardMethod(t, schedulableContext, "getTriggerId", nil, false)
+
+	systemQueueableContext := requireStandardSymbol(t, symbols, "System.QueueableContext")
+	if systemQueueableContext.Kind != apexast.DeclarationInterface {
+		t.Fatalf("System.QueueableContext kind = %q, want interface", systemQueueableContext.Kind)
+	}
+	requireStandardMethod(t, systemQueueableContext, "getJobId", nil, false)
+
+	systemSchedulableContext := requireStandardSymbol(t, symbols, "System.SchedulableContext")
+	if systemSchedulableContext.Kind != apexast.DeclarationInterface {
+		t.Fatalf("System.SchedulableContext kind = %q, want interface", systemSchedulableContext.Kind)
+	}
+	requireStandardMethod(t, systemSchedulableContext, "getTriggerId", nil, false)
+
+	for _, name := range []string{"QueueableContextImpl", "SchedulableContextImpl"} {
+		if symbol := requireStandardSymbol(t, symbols, name); symbol.Kind != apexast.DeclarationClass {
+			t.Fatalf("%s kind = %q, want class", name, symbol.Kind)
+		}
+	}
 
 	asyncCondition := requireStandardSymbol(t, symbols, "TxnSecurity.AsyncCondition")
 	if asyncCondition.Kind != apexast.DeclarationInterface {

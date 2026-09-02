@@ -137,7 +137,7 @@ func evalBinary(op string, left, right Value) (Value, error) {
 			return value, err
 		}
 		if isStringConcatOperand(left) || isStringConcatOperand(right) {
-			return String(concatStringText(left) + concatStringText(right)), nil
+			return String(concatStringText(left, left.String()) + concatStringText(right, right.String())), nil
 		}
 		if left.Kind == ValueDecimal || right.Kind == ValueDecimal {
 			return decimalBinary(op, left, right, func(a, b float64) float64 { return a + b })
@@ -377,11 +377,14 @@ func isStringConcatOperand(value Value) bool {
 	return value.Kind == ValueObject && strings.EqualFold(value.Type, "Schema.SObjectField")
 }
 
-func concatStringText(value Value) string {
+func concatStringText(value Value, fallback string) string {
 	if value.Kind == ValueDecimal {
+		if value.ExplicitScale {
+			return decimalPlainText(value)
+		}
 		return decimalDisplayText(value)
 	}
-	return value.String()
+	return fallback
 }
 
 func comparablePlatformScalarText(left, right Value) ([2]string, bool) {

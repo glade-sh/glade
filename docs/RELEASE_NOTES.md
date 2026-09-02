@@ -7,6 +7,11 @@ Salesforce release upgrades:
 - Added moving-correctness support for source API 65.0, 66.0, and 67.0 while
   retaining endpoint API 60.0, 65.0, 66.0, and 67.0. The default remains 65.0;
   unsupported versions fail instead of falling back.
+- Preserved valid historical Apex project versions through project loading,
+  per-file analysis, `glade check`, `glade test`, and package artifacts without
+  adding them to the checked 65.0-67.0 parity window. Historical versions
+  receive no parity credit. Execute Anonymous and LWC bundle versions remain
+  limited to the checked window.
 - Made Apex semantic availability, LWC module availability, REST and Tooling
   routing, anonymous execution, DAP, playground caching, and org bindings keep
   their explicit source or endpoint API version.
@@ -28,6 +33,12 @@ Salesforce release upgrades:
   records candidate hashes and the complete Go test event log, and closes exact
   surface, behavior, source, endpoint, org-profile, release-note, and
   no-fallback denominators before promotion.
+- Standard SObject instance-field assignments no longer produce a static-field
+  diagnostic.
+- Project-referenced numeric fields no longer depend on whether an integer or
+  decimal literal was observed first.
+- Custom platform-event `EventUuid` and `ReplayId` fields now resolve for Apex
+  access and SOQL queries.
 
 ## v0.2.11 - 2026-08-12
 

@@ -205,6 +205,20 @@ System.assertEquals('12.35', value.setScale(2, RoundingMode.HALF_UP).toPlainStri
 	}
 }
 
+func TestExecDecimalSetScalePreservesExplicitScaleInConcatenation(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal amount = Decimal.valueOf('10') + Decimal.valueOf('20');
+System.assertEquals('30.00', amount.setScale(2) + '');
+System.assertEquals('30', 30.00 + '');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMathModRejectsDecimalOperands(t *testing.T) {
 	program, err := CompileAnonymous(`
 Math.mod(Decimal.valueOf('5.5'), Decimal.valueOf('2'));
@@ -496,6 +510,25 @@ System.assert(scaleRejected);
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecDecimalDivideAcceptsIntegerDivisor(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('2.50', Decimal.valueOf('10').divide(4, 2).toPlainString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDecimalDivideRejectsNullDivisorWithExistingError(t *testing.T) {
+	_, _, _, handled, err := callDecimalMember(Decimal(10), "divide", []Value{Null, Int(2)})
+	if !handled || err == nil || err.Error() != "Decimal.divide expects Decimal divisor" {
+		t.Fatalf("null Decimal divisor = handled %v, err %v; want exact divisor error", handled, err)
 	}
 }
 

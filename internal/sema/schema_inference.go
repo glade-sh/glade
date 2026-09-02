@@ -879,10 +879,8 @@ func semaProjectReferencedSchemaFieldTypeFromValue(value string) string {
 		return "Text"
 	case strings.EqualFold(value, "true"), strings.EqualFold(value, "false"):
 		return "Checkbox"
-	case decimalLiteralPattern.MatchString(value):
+	case decimalLiteralPattern.MatchString(value), intLiteralPattern.MatchString(value):
 		return "Number"
-	case intLiteralPattern.MatchString(value):
-		return "Integer"
 	case !strings.Contains(value, "("):
 		return ""
 	}
