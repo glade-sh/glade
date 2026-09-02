@@ -1093,6 +1093,40 @@ func TestReleaseNotesScriptExtractsVersionSectionWithRealLineBreaks(t *testing.T
 	}
 }
 
+func TestReleaseNotesScriptExtractsV0212CandidateSection(t *testing.T) {
+	cmd := exec.Command("bash", "release-notes.sh", "v0.2.12")
+	cmd.Dir = "."
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("release-notes.sh v0.2.12 failed: %v\n%s", err, out)
+	}
+	notes := string(out)
+	normalizedNotes := strings.Join(strings.Fields(notes), " ")
+	for _, want := range []string{
+		"Release-candidate validation:",
+		"Promotion is valid only after these counts are reproduced by fresh exact-SHA gates for the tagged candidate; no prior candidate evidence carries forward.",
+		"moving-correctness",
+		"malformed or future Apex project versions and unsupported Execute Anonymous, LWC, or endpoint versions fail rather than silently falling back.",
+		"explicit non-parity",
+		"source receipt",
+		"Local-test progress event rendering is serialized so concurrent workers cannot corrupt terminal or NDJSON output.",
+		"macOS and Linux archives for AMD64 and ARM64, `SHA256SUMS.txt`, CycloneDX SBOMs, and provenance attestations.",
+		"No migration is required for documented CLI flags, database schemas, or server API behavior.",
+		"default local API version remains `v65.0`",
+		"https://github.com/glade-sh/glade/blob/v0.2.12/docs/DISTRIBUTION_WORKFLOW.md",
+		"https://github.com/glade-sh/glade/blob/v0.2.12/docs/KNOWN_GAPS.md",
+	} {
+		if !strings.Contains(normalizedNotes, want) {
+			t.Fatalf("release notes missing %q\n%s", want, notes)
+		}
+	}
+	for _, notWant := range []string{"## v0.2.12", "## v0.2.11", "## Unreleased"} {
+		if strings.Contains(notes, notWant) {
+			t.Fatalf("release notes unexpectedly contain %q\n%s", notWant, notes)
+		}
+	}
+}
+
 func TestCIWorkflowDoesNotCheckoutGladeTools(t *testing.T) {
 	workflowPath := filepath.Join("..", ".github", "workflows", "ci.yml")
 	workflow, err := os.ReadFile(workflowPath)
