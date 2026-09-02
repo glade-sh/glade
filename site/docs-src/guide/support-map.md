@@ -58,11 +58,11 @@ runtime-support credit and local test execution reports `UnsupportedFeature`.
 
 <GladeSupportExplorer />
 
-## Current release assurance
+## Published v0.2.11 surface snapshot
 
-The next release was exercised against a frozen two-repository private corpus
-using the exact Glade candidate and real project checks and tests. Public
-artifacts identify the repositories only as `private-corpus-001` and
+The following counts are the published v0.2.11 surface snapshot from a frozen
+two-repository private corpus. Public artifacts identify the repositories only as
+`private-corpus-001` and
 `private-corpus-002`.
 
 - 321 observed usage keys reconciled with zero unknown usage.
@@ -78,7 +78,25 @@ the [self-contained assurance explorer](/private-corpus-assurance.html) to
 filter by namespace, repository, disposition, evidence, exclusion, or text.
 The exact candidate, receipt hashes, replay result, and interpretation rules
 are recorded in the
-[release assurance note](https://github.com/glade-sh/glade/blob/main/docs/PRIVATE_CORPUS_ASSURANCE.md).
+[release assurance note](https://github.com/glade-sh/glade/blob/v0.2.11/docs/PRIVATE_CORPUS_ASSURANCE.md).
+
+## Next-release product-candidate validation
+
+The named product candidate `68289fa1afe679b6593b5dfe8cba28bdf2f0ac10`
+(binary SHA-256 `f54e1a5d39a34ef58e60946bfea4a1b3fed5e18cef92f4b066ccab81738e7f20`)
+was checked separately from the published v0.2.11 surface snapshot.
+
+- `private-corpus-001`: check exit 0/0 diagnostics; tests 12,315/12,315 with
+  0 failed/compile/runtime/unsupported.
+- `private-corpus-002`: check exit 0/0 diagnostics; tests 782/782 with
+  0 failed/compile/runtime/unsupported.
+- Public corpus: 86 projects, 40 expected/40 observed diagnostics, zero
+  missing/unexpected/unclassified, and an exact identity multiset match. Public
+  diagnostics are the known baseline, not passes.
+- Salesforce current-release validation: 475/475 pass, zero fail/inconclusive, and
+  cleanup PASS.
+
+A later tracked release candidate still requires fresh exact-SHA validation.
 
 ## Runs locally
 
