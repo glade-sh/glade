@@ -207,6 +207,32 @@ test("release docs publish the sealed private-corpus assurance snapshot", () => 
   assert.doesNotMatch(privateCorpusAssuranceExplorer, /https?:\/\/|\/Users\/|@agentforce\.com|00D[A-Za-z0-9]{12,}/);
 });
 
+test("release docs distinguish the named next-release candidate from the v0.2.11 snapshot", () => {
+  for (const page of [repoPrivateCorpusAssurance, supportMap, releaseNotes]) {
+    assert.match(page, /named product candidate/i);
+    assert.match(page, /private-corpus-001/);
+    assert.match(page, /12,315\/12,315/);
+    assert.match(page, /private-corpus-002/);
+    assert.match(page, /782\/782/);
+    assert.match(page, /86 projects/);
+    assert.match(page, /40 expected\/40 observed\s+diagnostics/);
+    assert.match(page, /475\/475 pass/);
+  }
+  for (const page of [repoPrivateCorpusAssurance, releaseNotes]) {
+    assert.match(page, /later tracked release candidate[\s\S]*fresh exact-SHA\s+release gates/i);
+  }
+  for (const page of [repoPrivateCorpusAssurance, supportMap]) {
+    assert.match(page, /published v0\.2\.11 (?:surface )?snapshot/i);
+  }
+  assert.match(repoPrivateCorpusAssurance, /68289fa1afe679b6593b5dfe8cba28bdf2f0ac10/);
+  assert.match(repoPrivateCorpusAssurance, /f54e1a5d39a34ef58e60946bfea4a1b3fed5e18cef92f4b066ccab81738e7f20/);
+  assert.match(repoPrivateCorpusAssurance, /4a776eadf71f8c1ca9b0e6099fa089692741f6983ddb862bb3da8a507d4d6d56/);
+  assert.match(repoPrivateCorpusAssurance, /public\s+diagnostics are the known baseline, not passes/i);
+  assert.match(repoDocsIndex, /published v0\.2\.11\s+surface snapshot and current named product-candidate validation/i);
+  assert.match(supportMap, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.11\/docs\/PRIVATE_CORPUS_ASSURANCE\.md/);
+  assert.match(releaseNotes, /PRIVATE_CORPUS_ASSURANCE\.md#next-release-product-candidate-validation/);
+});
+
 test("current docs describe the live registry and release safety", () => {
   for (const publicPage of [index, plugins, firstPartyPlugins, pluginInstallManage, pluginLockCi, testerFieldGuide]) {
     assert.doesNotMatch(publicPage, /registry (?:commands (?:are )?)?is (?:still )?preview|registry is not live yet|once the registry .* serves|until the registry is published/i);

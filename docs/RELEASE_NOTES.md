@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+Next-release product-candidate validation:
+
+- The [named product candidate validation](PRIVATE_CORPUS_ASSURANCE.md#next-release-product-candidate-validation)
+  passed `private-corpus-001` check exit 0/0
+  diagnostics and tests 12,315/12,315 with 0 failed/compile/runtime/unsupported;
+  `private-corpus-002` check exit 0/0 diagnostics and tests 782/782 with the
+  same zero failures.
+- The public corpus covered 86 projects with 40 expected/40 observed
+  diagnostics, zero missing/unexpected/unclassified, and an exact identity
+  multiset match. Public diagnostics are the known baseline, not passes.
+- The Salesforce current-release gate recorded 475/475 pass, zero
+  fail/inconclusive, and cleanup PASS. This validates the named product
+  candidate; a later tracked release candidate still requires fresh exact-SHA
+  release gates.
+
 Salesforce release upgrades:
 
 - Added moving-correctness support for source API 65.0, 66.0, and 67.0 while

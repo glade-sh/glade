@@ -1,7 +1,7 @@
 # Private-Corpus Salesforce Assurance
 
-This release snapshot records how the exact Glade candidate behaves against two
-authoritative repositories. Public artifacts identify them only as
+This published v0.2.11 surface snapshot records how the exact Glade candidate
+behaves against two authoritative repositories. Public artifacts identify them only as
 `private-corpus-001` and `private-corpus-002`.
 
 The result is surface-specific. It is not a claim of blanket Salesforce parity.
@@ -63,3 +63,34 @@ non-parity behavior.
 The first-party Glade Tools assurance workflow owns scope freezing, usage
 reconciliation, local proof, repository replay, Salesforce execution, cleanup,
 and the acyclic receipt. Base Glade owns the compiler and runtime being tested.
+
+## Next-release product-candidate validation
+
+This separate result validates the named product candidate below. It does not
+alter the published v0.2.11 surface snapshot or its explorer.
+
+| Input | Identity |
+| --- | --- |
+| Glade product commit | `68289fa1afe679b6593b5dfe8cba28bdf2f0ac10` |
+| Glade binary SHA-256 | `f54e1a5d39a34ef58e60946bfea4a1b3fed5e18cef92f4b066ccab81738e7f20` |
+| Glade Tools commit | `1f1e64fbf02962f5e36b8d71164f6c65fd6ee03b` |
+| Glade Tools binary SHA-256 | `4a776eadf71f8c1ca9b0e6099fa089692741f6983ddb862bb3da8a507d4d6d56` |
+
+- `private-corpus-001`: check exit 0/0 diagnostics; tests 12,315/12,315 with
+  0 failed/compile/runtime/unsupported.
+- `private-corpus-002`: check exit 0/0 diagnostics; tests 782/782 with
+  0 failed/compile/runtime/unsupported.
+- Public corpus: 86 projects, 40 expected/40 observed diagnostics, zero
+  missing/unexpected/unclassified, and an exact identity multiset match. Public
+  diagnostics are the known baseline, not passes.
+- Salesforce current-release gate: 475/475 pass, zero fail/inconclusive, and
+  cleanup PASS.
+
+| Receipt | SHA-256 |
+| --- | --- |
+| `private-corpus-001` | `46072ae30fb166ff385795853a792b6ed3016b03143e4b652df765a42c222e40` |
+| `private-corpus-002` | `9fadc7e4873d719bc10c1eaae7c7306ac5ad298e0007582be006c3017489c218` |
+| Public corpus | `af6cc9b56f851d5ff15a4ce59b386d5901b0441023bdf0d9ee6c503b785c05f2` |
+| Salesforce authority | `e2cdb5d12801cd78a47e8b957ad52d17fc018ec1c6f537f58f1a225e77e6d978` |
+
+A later tracked release candidate still requires fresh exact-SHA release gates.

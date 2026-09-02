@@ -40,8 +40,8 @@ Base `glade` consumes or publishes them; it does not regenerate them.
 - [STDLIB_COVERAGE.md](STDLIB_COVERAGE.md) — method-level platform library
   coverage.
 - [LWC_SUPPORT.md](LWC_SUPPORT.md) — local LWC support boundary.
-- [PRIVATE_CORPUS_ASSURANCE.md](PRIVATE_CORPUS_ASSURANCE.md) — exact-candidate
-  compile, test, runtime-parity, and non-parity release evidence.
+- [PRIVATE_CORPUS_ASSURANCE.md](PRIVATE_CORPUS_ASSURANCE.md) — published v0.2.11
+  surface snapshot and current named product-candidate validation.
 - [RELEASE_NOTES.md](RELEASE_NOTES.md) — stable and unreleased product changes.
 
 ## If You Want To Contribute
