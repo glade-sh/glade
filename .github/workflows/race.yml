@@ -228,7 +228,7 @@ jobs:
     env:
       GOMAXPROCS: "2"
       CI_RACE_APEXTEST_RUNNER: a
-      CI_RACE_APEXTEST_SHARD_INDEXES: 0,3,5
+      CI_RACE_APEXTEST_SHARD_INDEXES: 0,3,5,8,11,13
       CI_RACE_HEAD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -254,7 +254,7 @@ jobs:
     env:
       GOMAXPROCS: "2"
       CI_RACE_APEXTEST_RUNNER: b
-      CI_RACE_APEXTEST_SHARD_INDEXES: 4,7
+      CI_RACE_APEXTEST_SHARD_INDEXES: 4,7,12,15
       CI_RACE_HEAD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -280,7 +280,7 @@ jobs:
     env:
       GOMAXPROCS: "2"
       CI_RACE_APEXTEST_RUNNER: c
-      CI_RACE_APEXTEST_SHARD_INDEXES: 1,2,6
+      CI_RACE_APEXTEST_SHARD_INDEXES: 1,2,6,9,10,14
       CI_RACE_HEAD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
