@@ -331,6 +331,9 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 		t.Fatal(err)
 	}
 	workflow := string(data)
+	if !strings.Contains(workflow, "permissions:\n  contents: read\n\nenv:\n  GOMEMLIMIT: \"6GiB\"\n\nconcurrency:") {
+		t.Fatal("race workflow must set the shared CI Go memory limit for all jobs")
+	}
 	for _, marker := range []string{
 		"name: Race", "branches: [main]", "schedule:", "workflow_dispatch:",
 		"fetch-depth: 0", "scripts/ci-race-packages.sh", "fromJSON(needs.plan.outputs.packages)",

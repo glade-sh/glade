@@ -10,6 +10,9 @@ on:
 permissions:
   contents: read
 
+env:
+  GOMEMLIMIT: "6GiB"
+
 concurrency:
   group: race-${{ github.run_id }}
   cancel-in-progress: false
