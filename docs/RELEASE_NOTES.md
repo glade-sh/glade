@@ -4,6 +4,13 @@
 
 No changes yet.
 
+## v0.2.13 - 2026-09-03
+
+- Updated site and release documentation consistency after the `v0.2.12` line:
+  - Hardened immutable release publishing behavior and checks.
+  - Synced the site release manifest and manual Pages build metadata.
+  - Finalized release-readiness wording and consistency across docs/UI surfaces.
+
 ## v0.2.12 - 2026-09-02
 
 Tagged v0.2.12 validation:
