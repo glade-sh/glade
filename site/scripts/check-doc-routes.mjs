@@ -23,7 +23,7 @@ function configuredRoutes(config) {
   const routes = new Set()
   const pattern = /\blink:\s*['"]([^'"]+)['"]/g
   for (const match of config.matchAll(pattern)) {
-    const route = match[1]
+    const route = match[1].split(/[?#]/, 1)[0]
     if (route.startsWith('/') && !route.startsWith('//')) routes.add(route.replace(/\/$/, '') || '/')
   }
   return routes

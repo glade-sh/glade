@@ -136,7 +136,7 @@ export default defineConfig({
       { text: 'Docs', link: '/guide/' },
       { text: 'Workflows', link: '/guide/workflows' },
       { text: 'Reference', link: '/reference/cli' },
-      { text: 'Support & trust', link: '/guide/support-map' },
+      { text: 'Support', link: '/help/' },
       { text: 'Install', link: '/guide/installation' }
     ],
     sidebar: {
@@ -144,6 +144,7 @@ export default defineConfig({
       {
         text: 'Start',
         items: [
+          { text: 'Documentation home', link: '/guide/' },
           { text: 'What is Glade?', link: '/guide/overview' },
           { text: 'Install', link: '/guide/installation' },
           { text: 'First local check', link: '/guide/quickstart' },
@@ -157,7 +158,7 @@ export default defineConfig({
         items: [
           { text: 'Run Apex tests', link: '/guide/workflows/apex-tests' },
           { text: 'Debug Apex', link: '/guide/workflows/debug-apex' },
-          { text: 'Execute anonymous Apex and SOQL', link: '/guide/workbench' },
+          { text: 'Execute anonymous Apex and SOQL', link: '/guide/workbench#exec' },
           { text: 'Work with local data', link: '/guide/workflows/local-data' },
           { text: 'Preview LWC', link: '/guide/workflows/lwc-preview' },
           { text: 'Preview Visualforce', link: '/guide/workflows/visualforce-preview' },

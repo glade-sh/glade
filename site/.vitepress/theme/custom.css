@@ -164,7 +164,6 @@ html {
   --glade-contour-opacity: 0.12;
   --glade-bg-grid-line: rgba(155,232,112,0.035);
   --glade-bg-grid-line-soft: rgba(255,255,255,0.024);
-  --glade-bg-wash: linear-gradient(180deg, rgba(21, 34, 41, 0.72) 0%, rgba(7, 11, 13, 0) 430px);
   --glade-nav-bg: var(--bg);
   --glade-surface: rgba(16, 25, 30, 0.92);
   --glade-surface-solid: var(--surface);
@@ -334,6 +333,8 @@ body:has(.VPHome)::before {
 }
 
 .VPNavBarMenuLink[href="/guide/installation"] {
+  align-self: center;
+  height: 38px;
   min-height: 38px;
   padding-inline: 14px;
   border: 1px solid var(--glade-strong);
@@ -669,6 +670,10 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
   grid-template-columns: 1fr;
 }
 
+.docs-workflow-grid > .docs-route-card:only-child {
+  grid-column: 1 / -1;
+}
+
 .docs-route-card,
 .docs-install-card,
 .docs-command-card {
@@ -794,7 +799,7 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
 .docs-status-org {
   --chip-line: color-mix(in srgb, var(--info) 64%, transparent);
   --chip-bg: color-mix(in srgb, var(--info) 16%, transparent);
-  --chip-text: #d8ebff;
+  --chip-text: var(--info);
 }
 
 .support-explorer {

@@ -22,7 +22,12 @@ test('mobile navigation, skip link, sidebar, and search remain reachable', async
   await menuButton.click()
   await expect(page.locator('.VPNavScreen')).toBeVisible()
   await expect(page.locator('.VPNavBarSearch')).toBeVisible()
-  await menuButton.click()
+  const docsLink = page.locator('.VPNavScreen').getByRole('link', { name: 'Docs', exact: true })
+  await docsLink.focus()
+  await docsLink.press('Escape')
+  await expect(page.locator('.VPNavScreen')).toBeHidden()
+  await expect(menuButton).toHaveAttribute('aria-expanded', 'false')
+  await expect(menuButton).toBeFocused()
 
   const localNav = page.getByRole('button', { name: /menu/i }).last()
   if (await localNav.isVisible()) {

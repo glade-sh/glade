@@ -1,4 +1,4 @@
-# Security & Trust
+# Security & trust
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Security</p>

@@ -30,5 +30,14 @@ the shortest diagnostic path before linking back to a task guide.
   <a class="docs-route-card" href="/help/troubleshooting"><strong>Troubleshoot Glade</strong><span>Recover when Glade cannot find the project, doctor fails, tests or breakpoints are missing, or local tools drift.</span></a>
 </div>
 
+## Check support and trust
+
+Confirm what Glade runs locally and review the release and plugin trust boundaries.
+
+<div class="docs-route-grid">
+  <a class="docs-route-card" href="/guide/support-map"><strong>What Glade runs locally</strong><span>Search supported APIs, named limits, and paths that still require Salesforce.</span></a>
+  <a class="docs-route-card" href="/guide/security-trust"><strong>Security & trust</strong><span>Verify releases, checksums, SBOMs, attestations, and plugin execution boundaries.</span></a>
+</div>
+
 Use the [error reference](/reference/errors) when output includes a stable Glade
 error code.

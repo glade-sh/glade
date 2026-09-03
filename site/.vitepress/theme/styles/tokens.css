@@ -38,7 +38,6 @@ html:not(.dark) {
   --glade-bg-grid-line: rgba(18, 43, 25, 0.045);
   --glade-bg-grid-line-soft: rgba(18, 43, 25, 0.035);
   --glade-nav-bg: #f7faf7;
-  --glade-bg-wash: linear-gradient(180deg, rgba(223, 235, 226, 0.72) 0%, rgba(247, 250, 247, 0) 430px);
   --glade-surface: rgba(255, 255, 255, 0.94);
   --glade-surface-solid: var(--surface);
   --glade-surface-soft: rgba(18, 43, 25, 0.045);

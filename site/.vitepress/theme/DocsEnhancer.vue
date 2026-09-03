@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onContentUpdated, useRoute } from 'vitepress'
-import { nextTick, onMounted, watch } from 'vue'
+import { nextTick, onMounted, onUnmounted, watch } from 'vue'
 
 const route = useRoute()
 const loadedScripts = new Map<string, Promise<void>>()
@@ -27,7 +27,7 @@ function updateSidebarCurrent() {
   const currentPath = window.location.pathname.replace(/\/$/, '')
 
   document.querySelectorAll('.VPSidebarItem.is-link > .item > a.link').forEach((link) => {
-    const href = link.getAttribute('href')?.replace(/\/$/, '')
+    const href = link.getAttribute('href')?.split('#', 1)[0].replace(/\/$/, '')
     if (href && href === currentPath) {
       const item = link.closest('.VPSidebarItem')
       item?.classList.add('is-active')
@@ -46,6 +46,14 @@ function repairSidebarDisclosureControls() {
     caret.removeAttribute('tabindex')
     caret.removeAttribute('aria-label')
   })
+}
+
+function closeMobileNavigationOnEscape(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return
+  const button = document.querySelector<HTMLButtonElement>('.VPNavBarHamburger[aria-expanded="true"]')
+  if (!button) return
+  button.click()
+  button.focus({ preventScroll: true })
 }
 
 function setupCommandFilter() {
@@ -121,7 +129,11 @@ async function enhanceDocs() {
   })
 }
 
-onMounted(enhanceDocs)
+onMounted(() => {
+  document.addEventListener('keydown', closeMobileNavigationOnEscape)
+  enhanceDocs()
+})
+onUnmounted(() => document.removeEventListener('keydown', closeMobileNavigationOnEscape))
 onContentUpdated(enhanceDocs)
 watch(() => route.path, enhanceDocs)
 </script>

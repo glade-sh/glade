@@ -61,29 +61,29 @@ Use the editor as a live capability map: type a dot, read the label, and see the
       </div>
     </div>
     <div class="home-workflow-tabs" role="tablist" aria-label="Demo workflows">
-      <button id="scenario-tab-check" class="home-workflow-tab active" type="button" role="tab" data-scenario-id="check" data-active="true" aria-selected="true" aria-controls="workbench-demo-panel">
+      <button id="check" class="home-workflow-tab active" type="button" role="tab" data-scenario-id="check" data-active="true" aria-selected="true" aria-controls="workbench-demo-panel">
         <span class="home-scenario-kicker"><span>Check</span><em class="home-selected-indicator" data-selected-label>Selected</em></span>
         <strong>Catch deploy issues</strong>
         <small>1 diagnostic caught</small>
       </button>
-      <button id="scenario-tab-test" class="home-workflow-tab" type="button" role="tab" data-scenario-id="test" data-active="false" aria-selected="false" aria-controls="workbench-demo-panel" tabindex="-1">
+      <button id="test" class="home-workflow-tab" type="button" role="tab" data-scenario-id="test" data-active="false" aria-selected="false" aria-controls="workbench-demo-panel" tabindex="-1">
         <span class="home-scenario-kicker"><span>Test</span><em class="home-selected-indicator" data-selected-label></em></span>
         <strong>Run focused tests</strong>
         <small>1 passed · 0 failed</small>
       </button>
-      <button id="scenario-tab-exec" class="home-workflow-tab" type="button" role="tab" data-scenario-id="exec" data-active="false" aria-selected="false" aria-controls="workbench-demo-panel" tabindex="-1">
+      <button id="exec" class="home-workflow-tab" type="button" role="tab" data-scenario-id="exec" data-active="false" aria-selected="false" aria-controls="workbench-demo-panel" tabindex="-1">
         <span class="home-scenario-kicker"><span>Exec</span><em class="home-selected-indicator" data-selected-label></em></span>
         <strong>Execute Apex locally</strong>
         <small>USER_DEBUG emitted</small>
       </button>
-      <button id="scenario-tab-debug" class="home-workflow-tab" type="button" role="tab" data-scenario-id="debug" data-active="false" aria-selected="false" aria-controls="workbench-demo-panel" tabindex="-1">
+      <button id="debug" class="home-workflow-tab" type="button" role="tab" data-scenario-id="debug" data-active="false" aria-selected="false" aria-controls="workbench-demo-panel" tabindex="-1">
         <span class="home-scenario-kicker"><span>Debug</span><em class="home-selected-indicator" data-selected-label></em></span>
         <strong>Profile debug logs</strong>
         <small>4 events parsed</small>
       </button>
     </div>
     <div class="home-result-summary" data-result-summary data-result-state="failed" aria-live="polite">FAILED · 1 diagnostic · 1 type checked · exit code 1</div>
-    <div id="workbench-demo-panel" class="home-workbench-grid" role="tabpanel" aria-labelledby="scenario-tab-check" tabindex="0">
+    <div id="workbench-demo-panel" class="home-workbench-grid" role="tabpanel" aria-labelledby="check" tabindex="0">
       <section class="home-command-panel" aria-label="Command output">
         <div class="home-panel-top">
           <strong>Command output</strong>
