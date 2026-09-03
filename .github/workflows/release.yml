@@ -90,13 +90,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
+          expected_target="$(git rev-list -n 1 "$GITHUB_REF_NAME")"
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             echo "Release $GITHUB_REF_NAME already exists; reusing it without mutation"
           else
             gh release create "$GITHUB_REF_NAME" \
+              --target "$expected_target" \
+              --draft \
               --title "$GITHUB_REF_NAME" \
               --notes-file release-notes.md
           fi
+          release_tag="$(gh release view "$GITHUB_REF_NAME" --json tagName --jq .tagName)"
+          test "$release_tag" = "$GITHUB_REF_NAME"
+          test "$(git rev-list -n 1 "$release_tag")" = "$expected_target"
 
   shared-payload:
     needs: [required-ci-attestation, salesforce-authority, prepare]
@@ -268,6 +274,9 @@ jobs:
       id-token: write
       attestations: write
     steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
       - name: Download platform workflow artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -296,7 +305,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh release upload "$GITHUB_REF_NAME" \
+          scripts/release-asset-upload.sh "$GITHUB_REF_NAME" \
             dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz \
             dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz.sha256 \
             dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz.sbom.json \
@@ -388,8 +397,51 @@ jobs:
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ github.ref_name }}
         run: |
-          gh release upload "$GITHUB_REF_NAME" \
+          scripts/release-asset-upload.sh "$GITHUB_REF_NAME" \
             dist/SHA256SUMS.txt \
             dist/index.json \
             dist/release-manifest.json \
             dist/glade-release-artifacts-$VERSION.tar.gz
+      - name: Verify complete release asset set
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          expected_assets="$(printf '%s\n' \
+            "SHA256SUMS.txt" \
+            "glade-release-artifacts-$GITHUB_REF_NAME.tar.gz" \
+            "glade_${GITHUB_REF_NAME}_darwin_amd64.tar.gz" \
+            "glade_${GITHUB_REF_NAME}_darwin_amd64.tar.gz.sbom.json" \
+            "glade_${GITHUB_REF_NAME}_darwin_amd64.tar.gz.sha256" \
+            "glade_${GITHUB_REF_NAME}_darwin_arm64.tar.gz" \
+            "glade_${GITHUB_REF_NAME}_darwin_arm64.tar.gz.sbom.json" \
+            "glade_${GITHUB_REF_NAME}_darwin_arm64.tar.gz.sha256" \
+            "glade_${GITHUB_REF_NAME}_linux_amd64.tar.gz" \
+            "glade_${GITHUB_REF_NAME}_linux_amd64.tar.gz.sbom.json" \
+            "glade_${GITHUB_REF_NAME}_linux_amd64.tar.gz.sha256" \
+            "glade_${GITHUB_REF_NAME}_linux_arm64.tar.gz" \
+            "glade_${GITHUB_REF_NAME}_linux_arm64.tar.gz.sbom.json" \
+            "glade_${GITHUB_REF_NAME}_linux_arm64.tar.gz.sha256" \
+            "index.json" \
+            "release-manifest-darwin-amd64.json" \
+            "release-manifest-darwin-arm64.json" \
+            "release-manifest-linux-amd64.json" \
+            "release-manifest-linux-arm64.json" \
+            "release-manifest.json" | LC_ALL=C sort)"
+          actual_assets="$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | LC_ALL=C sort)"
+          test "$actual_assets" = "$expected_assets"
+      - name: Publish immutable GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          release_draft="$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft)"
+          if [[ "$release_draft" == true ]]; then
+            gh release edit "$GITHUB_REF_NAME" --draft=false
+          elif [[ "$release_draft" != false ]]; then
+            echo "unexpected release draft state: $release_draft" >&2
+            exit 1
+          else
+            echo "Release $GITHUB_REF_NAME already published; immutable release requires no mutation"
+          fi

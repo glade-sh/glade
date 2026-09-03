@@ -40,7 +40,7 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 		"release-v1-npm-",
 		"cyclonedx-gomod@v1.10.0",
 		"Upload platform release assets",
-		"gh release upload",
+		"scripts/release-asset-upload.sh",
 		"gh release download",
 		"glade-release-artifacts-$VERSION.tar.gz",
 	} {
@@ -95,8 +95,14 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 	if got := strings.Count(attestBlock, "actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0"); got != 2 {
 		t.Fatalf("tag-only attestation action count = %d, want 2", got)
 	}
-	if strings.Contains(attestBlock, "actions/checkout@") {
-		t.Fatal("tag-only attestation job does not need a source checkout")
+	checkoutIndex := strings.Index(attestBlock, "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3")
+	downloadIndex := strings.Index(attestBlock, "- name: Download platform workflow artifacts")
+	uploadIndex := strings.Index(attestBlock, "scripts/release-asset-upload.sh")
+	if checkoutIndex < 0 || downloadIndex < 0 || uploadIndex < 0 || checkoutIndex > downloadIndex || downloadIndex > uploadIndex {
+		t.Fatal("attestation job requires a source checkout before downloading and uploading release assets")
+	}
+	if !strings.Contains(attestBlock, "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3\n        with:\n          persist-credentials: false") {
+		t.Fatal("attestation source checkout must not persist credentials")
 	}
 	if !strings.Contains(workflowText, "publish:\n    needs: attest-and-upload") {
 		t.Fatal("publish job can run before all tag-only attestation jobs complete")
@@ -141,8 +147,20 @@ func TestReleaseWorkflowDoesNotOverwritePublishedAssets(t *testing.T) {
 	}
 	text := string(workflow)
 
-	if strings.Contains(text, "gh release edit") {
-		t.Fatal("release workflow must not mutate an existing release")
+	if strings.Contains(text, "gh release upload") {
+		t.Fatal("release workflow must route every asset through checksum-aware release-asset-upload.sh")
+	}
+	if !strings.Contains(text, "scripts/release-asset-upload.sh") {
+		t.Fatal("release workflow must use the checksum-aware release asset uploader")
+	}
+	uploader := string(mustReadFile(t, "release-asset-upload.sh"))
+	for _, want := range []string{"--json isDraft", "release download", "cmp -s", "published asset differs", "published release cannot accept missing asset", "release upload"} {
+		if !strings.Contains(uploader, want) {
+			t.Fatalf("checksum-aware release asset uploader missing %q", want)
+		}
+	}
+	if strings.Contains(uploader, "--clobber") {
+		t.Fatal("checksum-aware release asset uploader can replace a published asset")
 	}
 	uploads := releaseWorkflowCommands(text, "upload")
 	for _, command := range uploads {
@@ -159,7 +177,16 @@ func TestReleaseWorkflowDoesNotOverwritePublishedAssets(t *testing.T) {
 	if got := strings.Count(prepare, "gh release create"); got != 1 {
 		t.Fatalf("prepare release create count = %d, want 1", got)
 	}
-	for _, want := range []string{`--title "$GITHUB_REF_NAME"`, "--notes-file release-notes.md"} {
+	for _, want := range []string{
+		`expected_target="$(git rev-list -n 1 "$GITHUB_REF_NAME")"`,
+		`--target "$expected_target"`,
+		"--draft",
+		`--title "$GITHUB_REF_NAME"`,
+		"--notes-file release-notes.md",
+		`--json tagName --jq .tagName`,
+		`test "$release_tag" = "$GITHUB_REF_NAME"`,
+		`test "$(git rev-list -n 1 "$release_tag")" = "$expected_target"`,
+	} {
 		if !strings.Contains(prepare, want) {
 			t.Fatalf("new release creation missing checked release metadata %q", want)
 		}
@@ -167,7 +194,7 @@ func TestReleaseWorkflowDoesNotOverwritePublishedAssets(t *testing.T) {
 
 	attest := releaseWorkflowJobBlock(t, text, "attest-and-upload", "publish")
 	publish := releaseWorkflowJobBlockUntilEnd(t, text, "publish")
-	publishUploads := releaseWorkflowCommands(publish, "upload")
+	publishUploads := releaseWorkflowScriptCommands(publish, "scripts/release-asset-upload.sh")
 	if len(publishUploads) != 1 {
 		t.Fatalf("final publish upload command count = %d, want 1", len(publishUploads))
 	}
@@ -202,7 +229,7 @@ func TestReleaseWorkflowDoesNotOverwritePublishedAssets(t *testing.T) {
 		t.Fatal("final publish must name its aggregate assets explicitly")
 	}
 	seen := make(map[string]int)
-	for commandIndex, command := range uploads {
+	for commandIndex, command := range releaseWorkflowScriptCommands(text, "scripts/release-asset-upload.sh") {
 		for _, asset := range releaseWorkflowUploadAssets(command) {
 			if previous, exists := seen[asset]; exists {
 				t.Fatalf("published asset %q is uploaded by commands %d and %d", asset, previous, commandIndex)
@@ -224,10 +251,44 @@ func TestReleaseWorkflowDoesNotOverwritePublishedAssets(t *testing.T) {
 			t.Fatalf("release upload commands omit %q", want)
 		}
 	}
+	verifyIndex := strings.Index(publish, "- name: Verify complete release asset set")
+	publishIndex := strings.Index(publish, `gh release edit "$GITHUB_REF_NAME" --draft=false`)
+	if verifyIndex < 0 || publishIndex < 0 || verifyIndex > publishIndex {
+		t.Fatal("release must verify its complete asset set before publishing the draft")
+	}
+	for _, want := range []string{
+		`actual_assets="$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | LC_ALL=C sort)"`,
+		`test "$actual_assets" = "$expected_assets"`,
+		"release-manifest-darwin-amd64.json",
+		"release-manifest-darwin-arm64.json",
+		"release-manifest-linux-amd64.json",
+		"release-manifest-linux-arm64.json",
+	} {
+		if !strings.Contains(publish, want) {
+			t.Fatalf("complete asset verification missing %q", want)
+		}
+	}
+	for _, want := range []string{
+		`gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft`,
+		`if [[ "$release_draft" == true ]]; then`,
+		`elif [[ "$release_draft" != false ]]; then`,
+		"already published; immutable release requires no mutation",
+	} {
+		if !strings.Contains(publish, want) {
+			t.Fatalf("final publish is not safely draft-aware: missing %q", want)
+		}
+	}
 }
 
 func releaseWorkflowCommands(workflow, operation string) []string {
-	prefix := "gh release " + operation
+	return releaseWorkflowCommandsWithPrefix(workflow, "gh release "+operation)
+}
+
+func releaseWorkflowScriptCommands(workflow, script string) []string {
+	return releaseWorkflowCommandsWithPrefix(workflow, script)
+}
+
+func releaseWorkflowCommandsWithPrefix(workflow, prefix string) []string {
 	var commands []string
 	var command []string
 	for _, line := range strings.Split(workflow, "\n") {
