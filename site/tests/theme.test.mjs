@@ -38,6 +38,7 @@ const repoApexLanguageCompatibility = await readFile(new URL("../../docs/APEX_LA
 const repoDocsIndex = await readFile(new URL("../../docs/README.md", import.meta.url), "utf8");
 const reservedIdentifierImplementation = await readFile(new URL("../../third_party/glade-apex-parser/reserved_identifier_words.go", import.meta.url), "utf8");
 const repoCompatibilityDashboard = await readFile(new URL("../../docs/COMPATIBILITY_DASHBOARD.md", import.meta.url), "utf8");
+const repoStdlibCoverage = await readFile(new URL("../../docs/STDLIB_COVERAGE.md", import.meta.url), "utf8");
 const repoPrivateCorpusAssurance = await readFile(new URL("../../docs/PRIVATE_CORPUS_ASSURANCE.md", import.meta.url), "utf8").catch(() => "");
 const repoLwcSupport = await readFile(new URL("../../docs/LWC_SUPPORT.md", import.meta.url), "utf8");
 const releaseNotes = await readFile(new URL("../../docs/RELEASE_NOTES.md", import.meta.url), "utf8");
@@ -485,7 +486,7 @@ test("navigation exposes five top-level tasks and route-scoped sidebars", () => 
   assertConfigLink("Install", "/guide/installation");
   assertConfigLink("Workflows", "/guide/workflows");
   assertConfigLink("Reference", "/reference/cli");
-  assertConfigLink("Support & trust", "/guide/support-map");
+  assertConfigLink("Support", "/help/");
   assertConfigLink("Run Apex tests", "/guide/workflows/apex-tests");
   assertConfigLink("Debug Apex", "/guide/workflows/debug-apex");
   assertConfigLink("Preview LWC", "/guide/workflows/lwc-preview");
@@ -493,7 +494,7 @@ test("navigation exposes five top-level tasks and route-scoped sidebars", () => 
   assertConfigLink("Work with local data", "/guide/workflows/local-data");
   assertConfigLink("Add Glade to CI", "/guide/workflows/ci");
   assertConfigLink("Architecture and capabilities", "/guide/modules");
-  assertConfigLink("Execute anonymous Apex and SOQL", "/guide/workbench");
+  assertConfigLink("Execute anonymous Apex and SOQL", "/guide/workbench#exec");
   assertConfigLink("CLI reference", "/reference/cli");
   assertConfigLink("Configuration", "/reference/config");
   assertConfigLink("Error codes", "/reference/errors");
@@ -516,7 +517,7 @@ test("new docs pages use clear page roles and link to deeper references", () => 
 
   assert.match(workflowApexTests, /^# Run Apex tests/m);
   assert.match(workflowApexTests, /glade test --project \./);
-  assert.match(workflowApexTests, /\[Test runner\]\(\/guide\/modules#test-runner\)/);
+  assert.match(workflowApexTests, /\[Test runner architecture\]\(\/guide\/modules#test-runner\)/);
   assert.match(workflowDebugApex, /^# Debug Apex/m);
   assert.match(workflowDebugApex, /glade dap --project/);
   assert.match(workflowDebugApex, /\[Debug and profile\]\(\/guide\/modules#debug-and-profile\)/);
@@ -648,9 +649,9 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(repoSecurityPolicy, /Local laptop behavior/);
   assert.match(repoSecurityPolicy, /Glade does not require a Salesforce org login for supported local checks\./);
 
-  assert.match(config, /\{ text: 'Support & trust', link: '\/guide\/support-map' \}/);
+  assert.match(config, /\{ text: 'Support', link: '\/help\/' \}/);
   assert.match(config, /\{ text: 'Security & trust', link: '\/guide\/security-trust' \}/);
-  assert.match(securityTrust, /^# Security & Trust/m);
+  assert.match(securityTrust, /^# Security & trust/m);
   assert.match(securityTrust, /OpenSSF Scorecard/);
   assert.match(securityTrust, /Published repository-posture results/);
   assert.match(securityTrust, /govulncheck/);
@@ -1418,7 +1419,7 @@ test("theme uses bundled fonts, readable type, and task-oriented navigation", ()
   assert.match(config, /lastUpdated: false/);
   assert.match(config, /\['link', \{ rel: 'icon', type: 'image\/svg\+xml', href: '\/logo-mark\.svg' \}\]/);
   assert.match(config, /\{ text: 'Workflows', link: '\/guide\/workflows' \}/);
-  assert.match(config, /\{ text: 'Support & trust', link: '\/guide\/support-map' \}/);
+  assert.match(config, /\{ text: 'Support', link: '\/help\/' \}/);
   assert.match(config, /\{ text: 'Reference', link: '\/reference\/cli' \}/);
   assert.match(config, /\{ text: 'What is Glade\?', link: '\/guide\/overview' \}/);
   assert.match(config, /text: 'What is Glade\?'/);
@@ -1575,7 +1576,11 @@ test("guide landing, quickstart, and support map explain the current product", (
   assert.doesNotMatch(supportMap, /folded into this page/);
   assert.match(supportMap, /## Requires Salesforce/);
   assert.match(supportMap, /Counts come from the checked standard library capability report/);
-  assert.match(supportMap, /\| String, Decimal, Boolean, Math \| Runs locally \| 32 supported \/ 32 tracked \|/);
+  const stdlibRows = [...repoStdlibCoverage.matchAll(/^\| ([^|]+) \| `[^`]+` \| `(supported|partial|unsupported)` \|/gm)];
+  const scalarRows = stdlibRows.filter((match) => ["String", "Decimal", "Boolean", "Math"].includes(match[1].trim()));
+  const scalarSupported = scalarRows.filter((match) => match[2] === "supported").length;
+  const scalarUnsupported = scalarRows.filter((match) => match[2] === "unsupported").length;
+  assert.match(supportMap, new RegExp(`\\| String, Decimal, Boolean, Math \\| Supported local rows, Decimal division gap \\| ${scalarSupported} supported, ${scalarUnsupported} unsupported \\/ ${scalarRows.length} tracked \\|`));
   assert.match(supportMap, /\| ApexPages and PageReference \| Supported controller rows, hosted rendering gaps \| 15 supported, 2 unsupported \/ 17 tracked \|/);
   assert.match(supportMap, /\| UserInfo, URL, Label, and TrailblazerIdentity \| Broad local capability \| 24 supported \/ 24 tracked \|/);
   assert.match(supportMap, /\| Type, FeatureManagement, and Exception \| Supported local rows, hosted package gap \| 8 supported, 1 unsupported \/ 9 tracked \|/);
@@ -1585,8 +1590,8 @@ test("guide landing, quickstart, and support map explain the current product", (
   assert.match(supportMap, /## Capability claims/);
   assert.match(supportMap, /\| Capability features marked `supported` \| 31 \|/);
   assert.match(supportMap, /\| Capability features marked `partial` \| 0 \|/);
-  assert.match(supportMap, /\| Standard-library rows marked `supported` \| 268 \|/);
-  assert.match(supportMap, /\| Standard-library rows marked `unsupported` \| 18 \|/);
+  assert.ok(supportMap.includes("| Standard-library rows marked `supported` | " + stdlibRows.filter((match) => match[2] === "supported").length + " |"));
+  assert.ok(supportMap.includes("| Standard-library rows marked `unsupported` | " + stdlibRows.filter((match) => match[2] === "unsupported").length + " |"));
   assert.match(supportMap, /Approval list\s+processing/);
   assert.match(configuration, /namespaceRemaps: \[\]/);
   assert.match(configuration, /Namespace remaps/);

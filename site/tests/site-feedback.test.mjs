@@ -84,14 +84,17 @@ test('first-run copy establishes project context before project-aware doctor', (
   assert.match(quickstart, /glade doctor --project \./)
   assert.match(quickstart, /## You are done when/)
   assert.match(quickstart, /## Reset or clean up/)
+  assert.match(home, /github\.com\/glade-sh\/glade\/blob\/main\/site\/install\.sh/)
 })
 
 test('navigation uses jobs, one canonical surface location, and separate recovery', () => {
-  for (const label of ['Docs', 'Workflows', 'Reference', 'Support & trust', 'Install']) {
+  for (const label of ['Docs', 'Workflows', 'Reference', 'Support', 'Install']) {
     assert.match(config, new RegExp(`text: '${label}'`))
   }
+  assert.match(config, /\{ text: 'Support', link: '\/help\/' \}/)
+  assert.match(config, /\{ text: 'Documentation home', link: '\/guide\/' \}/)
   assert.match(themeCSS, /VPNavBarMenuLink\[href="\/guide\/installation"\]/)
-  for (const link of ['/guide/workbench', '/guide/plugins', '/guide/editor']) {
+  for (const link of ['/guide/workbench#exec', '/guide/plugins', '/guide/editor']) {
     assert.equal(config.split(`link: '${link}'`).length - 1, 1, `${link} should have one canonical sidebar location`)
   }
   assert.match(config, /text: 'Advanced',[\s\S]*collapsed: true/)
@@ -100,6 +103,8 @@ test('navigation uses jobs, one canonical surface location, and separate recover
   assert.match(routesSource, /"route": "\/help\/troubleshooting"/)
   assert.match(help, /Complete a task/)
   assert.match(help, /Fix a problem/)
+  assert.match(help, /What Glade runs locally/)
+  assert.match(help, /Security & trust/)
   assert.doesNotMatch(workflows, /Product areas/)
 })
 
@@ -109,6 +114,11 @@ test('homepage shows one real product view and job-oriented workflow choices', (
   for (const job of ['Run Apex tests', 'Debug or execute Apex', 'Work with local data', 'Add Glade to CI']) {
     assert.match(home, new RegExp(job))
   }
+  assert.match(home, /ResetPasswordResult\.getPassword[\s\S]*Requires Salesforce/)
+  assert.doesNotMatch(home, /Answers\.findSimilar[\s\S]*Requires Salesforce/)
+  assert.match(workflows, /href="\/guide\/workflows\/debug-apex"><strong>Debug Apex<\/strong>/)
+  assert.match(workflows, /href="\/guide\/workbench#exec"><strong>Execute Apex and SOQL<\/strong>/)
+  assert.match(workflows, /glade exec --project \. "System\.debug\('local'\);"/)
   assert.equal((home.match(/Salesforce remains the final validation gate\./g) || []).length, 1)
   assert.match(home, /Runs locally with limits/)
 })

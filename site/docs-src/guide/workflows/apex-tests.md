@@ -79,6 +79,7 @@ need Salesforce validation.
 
 ## Deeper reference
 
-- [Test runner](/guide/modules#test-runner)
+- [Detailed test runner guide](/guide/local-testing)
+- [Test runner architecture](/guide/modules#test-runner)
 - [Test startup cache](/guide/test-startup-cache)
 - [Exit codes](/guide/exit-codes)

@@ -107,5 +107,6 @@ glade test clear-cache --project .
 ## Choose the next workflow
 
 - [Run Apex tests](/guide/workflows/apex-tests)
-- [Debug or execute Apex](/guide/workflows/debug-apex)
+- [Debug Apex](/guide/workflows/debug-apex)
+- [Execute Apex and SOQL](/guide/workbench#exec)
 - [Work with local data](/guide/workflows/local-data)

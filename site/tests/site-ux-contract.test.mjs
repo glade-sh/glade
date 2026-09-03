@@ -15,7 +15,9 @@ const performanceBaseline = JSON.parse(await readFile(new URL('./performance-bas
 
 test('public IA has a guide landing, five-destination navigation, and scoped sidebars', () => {
   assert.match(guide, /^# Glade documentation/m)
-  for (const label of ['Docs', 'Install', 'Workflows', 'Reference', 'Support & trust']) assert.match(config, new RegExp(`text: '${label}'`))
+  for (const label of ['Docs', 'Install', 'Workflows', 'Reference', 'Support']) assert.match(config, new RegExp(`text: '${label}'`))
+  assert.match(config, /\{ text: 'Support', link: '\/help\/' \}/)
+  assert.match(config, /\{ text: 'Documentation home', link: '\/guide\/' \}/)
   for (const prefix of ['/guide/', '/reference/', '/help/', '/maintainer/']) assert.match(config, new RegExp(`'${prefix}': \\[`))
   assert.doesNotMatch(config, /text: 'Product areas'/)
   assert.match(redirects, /\/guide\/cli-reference \/reference\/cli 301/)

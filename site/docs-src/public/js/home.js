@@ -877,7 +877,7 @@
     var panel = document.getElementById("command-output-panel")
     if (panel) panel.setAttribute("aria-labelledby", "output-tab-" + activeOutputView)
     var workflowPanel = document.getElementById("workbench-demo-panel")
-    if (workflowPanel) workflowPanel.setAttribute("aria-labelledby", "scenario-tab-" + activeScenarioId)
+    if (workflowPanel) workflowPanel.setAttribute("aria-labelledby", activeScenarioId)
   }
 
   function runActiveScenario() {

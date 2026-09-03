@@ -161,7 +161,7 @@ UnsupportedFeature: unsupported call "Search.unavailable local search/SOSL surfa
 | Apex front end | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Parser, project loader, symbols, semantic checks, LSP, and diagnostics form the starting point. The checked compiler contract contains 400 language-rule rows. |
 | Runtime and tests | <span class="docs-status-chip docs-status-supported">Runs locally</span> | VM execution, local tests, SObjects, SOQL, DML, triggers, async drain, and local storage are the core contract. |
 | Local Salesforce API | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Useful for local REST, SObject CRUD/query, record count, Tooling `executeAnonymous`, and local source/schema metadata flows. It is not a hosted-org replacement. |
-| Standard library | <span class="docs-status-chip docs-status-supported">Runs locally</span> | The checked standard-library report has 268 supported rows, 18 unsupported hosted-boundary rows, and 0 partial rows. |
+| Standard library | <span class="docs-status-chip docs-status-limited">Runs locally with limits</span> | The checked standard-library report has 267 supported rows, 19 unsupported rows, and 0 partial rows. |
 | Platform service APIs | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Deterministic DTO and harness rows are modeled when the capability report says supported. Hosted service execution stays explicitly unsupported. |
 
 ## Standard library families
@@ -173,7 +173,7 @@ state.
 | --- | --- | ---: |
 | `Database` | Runs locally | 37 supported / 37 tracked |
 | Date, Datetime, Time, TimeZone | Runs locally | 26 supported / 26 tracked |
-| String, Decimal, Boolean, Math | Runs locally | 32 supported / 32 tracked |
+| String, Decimal, Boolean, Math | Supported local rows, Decimal division gap | 31 supported, 1 unsupported / 32 tracked |
 | System, Assert, Limits | Supported local rows, hosted gaps | 17 supported, 3 unsupported / 20 tracked |
 | Schema and SObject | Supported local rows, hosted gaps | 7 supported, 1 unsupported / 8 tracked |
 | Test helpers | Supported local rows, hosted gaps | 28 supported, 3 unsupported / 31 tracked |
@@ -203,9 +203,9 @@ Every remaining hosted-only behavior is split into an explicit unsupported row.
 | Capability features marked `supported` | 31 |
 | Capability features marked `partial` | 0 |
 | Capability features marked `unsupported` | 2 |
-| Standard-library rows marked `supported` | 268 |
+| Standard-library rows marked `supported` | 267 |
 | Standard-library rows marked `partial` | 0 |
-| Standard-library rows marked `unsupported` | 18 |
+| Standard-library rows marked `unsupported` | 19 |
 
 ## Drill down
 
@@ -217,6 +217,7 @@ Use this page first, then open the method-level report when you need the checked
 - Standard-object coverage: [`docs/STANDARD_OBJECT_COVERAGE.md`](https://github.com/glade-sh/glade/blob/main/docs/STANDARD_OBJECT_COVERAGE.md)
 - Standard-object schema: [`docs/STANDARD_OBJECT_SCHEMA.md`](https://github.com/glade-sh/glade/blob/main/docs/STANDARD_OBJECT_SCHEMA.md)
 - Local LWC shell guide: [Local LWC Shell](/guide/lwc-local-shell)
+- Release and plugin boundaries: [Security & trust](/guide/security-trust)
 
 One rule keeps the marks honest. Do not call an API supported until the row has
 implementation and compatibility evidence.

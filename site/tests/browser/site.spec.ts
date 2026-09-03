@@ -34,6 +34,7 @@ test('homepage keeps search, CTAs, exact copy, and the local boundary available'
   const errors = observeBrowserErrors(page)
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Apex feedback without the deploy wait.' })).toBeVisible()
+  await expect(page.getByRole('main')).toHaveCount(1)
   await expect(page.getByRole('link', { name: 'Install Glade' })).toBeVisible()
   await expect(page.locator('.VPNavBarSearch')).toBeVisible()
 
@@ -45,8 +46,51 @@ test('homepage keeps search, CTAs, exact copy, and the local boundary available'
   await page.getByRole('button', { name: 'Copy install command' }).click()
   await expect(page.getByRole('status')).toContainText('copied')
   await expect(page.getByText('Requires Salesforce', { exact: true })).toBeVisible()
+  await expect(page.getByText('ResetPasswordResult.getPassword', { exact: true })).toBeVisible()
   await expectNoHorizontalOverflow(page)
   expect(errors).toEqual([])
+})
+
+test('header install action stays compact while mobile navigation keeps a full touch target', async ({ page }) => {
+  await page.goto('/guide/')
+  const desktopInstall = page.locator('.VPNavBarMenuLink[href="/guide/installation"]')
+  if (await desktopInstall.isVisible()) {
+    const box = await desktopInstall.boundingBox()
+    expect(box?.height).toBeLessThanOrEqual(40)
+  } else {
+    await page.getByRole('button', { name: /mobile navigation/i }).click()
+    const mobileInstall = page.locator('.VPNavScreen').getByRole('link', { name: 'Install', exact: true })
+    const box = await mobileInstall.boundingBox()
+    expect(box?.height).toBeGreaterThanOrEqual(44)
+  }
+})
+
+test('primary documentation routes use one shared background treatment', async ({ page }) => {
+  const backgrounds = []
+  for (const route of ['/guide/', '/guide/workflows', '/reference/cli', '/help/', '/guide/support-map', '/guide/security-trust']) {
+    await page.goto(route)
+    backgrounds.push(await page.evaluate(() => ({
+      body: getComputedStyle(document.body).backgroundImage,
+      contour: getComputedStyle(document.body, '::before').backgroundImage,
+      opacity: getComputedStyle(document.body, '::before').opacity
+    })))
+  }
+  expect(backgrounds[0].body).toContain('radial-gradient')
+  expect(backgrounds[0].contour).not.toBe('none')
+  expect(Number(backgrounds[0].opacity)).toBeGreaterThan(0)
+  expect(backgrounds.every((background) => JSON.stringify(background) === JSON.stringify(backgrounds[0]))).toBe(true)
+})
+
+test('docs landing identifies itself in the sidebar', async ({ page }) => {
+  await page.goto('/guide/')
+  await expect(page.locator('.VPSidebar a[aria-current="page"]')).toHaveText('Documentation home')
+})
+
+test('support status legend remains readable in light mode', async ({ page }) => {
+  await page.goto('/')
+  await page.evaluate(() => localStorage.setItem('vitepress-theme-appearance', 'light'))
+  await page.goto('/guide/support-map')
+  await expect(page.locator('.docs-status-unknown').first()).toHaveCSS('color', 'rgb(40, 105, 183)')
 })
 
 test('quickstart supports direct navigation and code copy', async ({ page }) => {
@@ -78,6 +122,14 @@ test('CLI filter reports results and remains keyboard reachable', async ({ page 
 
 test('workbench tabs, output, hashes, run, copy, and editor names remain operable', async ({ page }) => {
   const errors = observeBrowserErrors(page)
+  await page.goto('/guide/workflows')
+  await page.getByRole('link', { name: 'Execute Apex and SOQL' }).click()
+  await expect(page).toHaveURL(/\/guide\/workbench#exec$/)
+  await expect(page.locator('.VPSidebar a[aria-current="page"]')).toHaveText('Execute anonymous Apex and SOQL')
+  await expect(page.getByRole('tab', { name: /Execute Apex locally/ })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.locator('#workbench-demo-panel')).toHaveAttribute('aria-labelledby', 'exec')
+  await expect(page.locator('[data-run-scenario]')).toHaveText('Execute snippet')
+
   await page.goto('/guide/workbench#check')
   await expect(page.getByRole('textbox', { name: 'Try capability-backed autocomplete.' })).toBeVisible()
 
@@ -90,6 +142,7 @@ test('workbench tabs, output, hashes, run, copy, and editor names remain operabl
   await checkTab.press('ArrowRight')
   const testTab = page.getByRole('tab', { name: /Run focused tests/ })
   await expect(testTab).toHaveAttribute('aria-selected', 'true')
+  await expect(page.locator('#workbench-demo-panel')).toHaveAttribute('aria-labelledby', 'test')
   await expect(page).toHaveURL(/#test$/)
 
   await page.getByRole('tab', { name: 'JSON', exact: true }).click()

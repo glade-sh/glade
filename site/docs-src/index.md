@@ -10,6 +10,7 @@ head:
 import releaseManifest from '../release-manifest.json'
 </script>
 
+<main>
 <section class="home-hero-shell" aria-label="Glade homepage hero">
   <div class="home-hero-copy">
     <p class="home-type-eyebrow">Local Apex runtime</p>
@@ -81,7 +82,7 @@ import releaseManifest from '../release-manifest.json'
   </div>
   <div class="home-workflow-grid">
     <a class="home-workflow-card" href="/guide/workflows/apex-tests"><strong>Run Apex tests</strong><span>Focus one class or method, run changed tests, or inspect failures.</span></a>
-    <a class="home-workflow-card" href="/guide/workflows/debug-apex"><strong>Debug or execute Apex</strong><span>Use breakpoints, anonymous Apex, SOQL, or saved-log profiling.</span></a>
+    <a class="home-workflow-card" href="/guide/workflows"><strong>Debug or execute Apex</strong><span>Choose breakpoints, profiling, anonymous Apex, or a SOQL query.</span></a>
     <a class="home-workflow-card" href="/guide/workflows/local-data"><strong>Work with local data</strong><span>Seed a named environment and use supported local API routes.</span></a>
     <a class="home-workflow-card" href="/guide/workflows/ci"><strong>Add Glade to CI</strong><span>Retain JSON, SARIF, JUnit, and stable exit-code evidence.</span></a>
   </div>
@@ -98,7 +99,7 @@ import releaseManifest from '../release-manifest.json'
       <div class="home-capability-list">
         <div class="home-capability-row"><code>Database.insert</code><span class="home-completion-status home-completion-status-supported">Runs locally</span></div>
         <div class="home-capability-row"><code>Schema.DescribeSObjectResult</code><span class="home-completion-status home-completion-status-limited">Runs locally with limits</span></div>
-        <div class="home-capability-row"><code>Answers.findSimilar</code><span class="home-completion-status home-completion-status-salesforce">Requires Salesforce</span></div>
+        <div class="home-capability-row"><code>ResetPasswordResult.getPassword</code><span class="home-completion-status home-completion-status-salesforce">Requires Salesforce</span></div>
       </div>
       <a href="/guide/support-map">Check the versioned support map</a>
     </div>
@@ -112,6 +113,7 @@ glade version</code>
     <p>Install and verify the binary, then continue inside your Salesforce DX project.</p>
     <button type="button" data-copy-target="install-cmd" aria-label="Copy install command">Copy install</button>
     <span class="home-copy-status" data-copy-status role="status" aria-live="polite"></span>
-    <p class="home-trust-links"><a href="https://github.com/glade-sh/glade/releases">Release notes</a> · <a href="https://github.com/glade-sh/glade/blob/main/install.sh">Installer source</a> · <a href="/guide/security-trust#release-proof">Checksums, SBOM, and attestations</a> · <a href="/guide/security-trust">Security</a></p>
+    <p class="home-trust-links"><a href="https://github.com/glade-sh/glade/releases">Release notes</a> · <a href="https://github.com/glade-sh/glade/blob/main/site/install.sh">Installer source</a> · <a href="/guide/security-trust#release-proof">Checksums, SBOM, and attestations</a> · <a href="/guide/security-trust">Security</a></p>
   </div>
 </section>
+</main>
