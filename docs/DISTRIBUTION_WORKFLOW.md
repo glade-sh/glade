@@ -43,12 +43,16 @@ git push <remote> vX.Y.Z
 The `Release` GitHub Actions workflow builds parser-capable macOS and Linux
 archives on matching CGO-enabled runners, verifies `glade doctor` reports
 `Ready.`, and publishes `SHA256SUMS.txt` plus release manifests for the
-installer. If the GitHub release is absent, the workflow creates it once with
-the matching section from [RELEASE_NOTES.md](RELEASE_NOTES.md). If it already
-exists, the workflow reuses its metadata, title, and body without editing them.
-It may add a uniquely named asset; a duplicate asset name fails rather than
-replace published bytes. The notes script fails if the section is missing,
-empty, or contains a literal `\n` sequence.
+installer. If the GitHub release is absent, the workflow creates it as a draft
+with the matching section from [RELEASE_NOTES.md](RELEASE_NOTES.md). It uploads
+and verifies the complete asset set, then publishes the draft as its last step.
+If it already exists, the workflow reuses its metadata, title, and body without
+editing them. An existing asset with identical bytes is skipped; differing bytes
+fail rather than replace published bytes. A published release is verified and
+left unchanged. Regenerated archives are not assumed byte-identical: a
+published rerun with differing bytes fails and leaves the release unchanged.
+The notes script fails if the section is missing, empty, or
+contains a literal `\n` sequence.
 
 GitHub product and plugin release assets and notes are immutable on rerun.
 Do not repair a published artifact in place. Cut a new version with corrected
