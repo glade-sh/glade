@@ -14,7 +14,7 @@
 
 - `glade doctor --project .` passes.
 - The project has at least one Apex test class.
-- VS Code uses a clean VS Code profile with Glade, Catppuccin Mocha, and the Salesforce Apex extension.
+- For the editor steps, VS Code has the bundled Glade extension installed. Keep your existing theme and profile.
 
 ## Steps
 

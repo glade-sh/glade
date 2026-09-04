@@ -12,10 +12,10 @@ community context metadata, starts a Glade-owned Lightning runtime, and opens
 local routes for component, record, app, home, tab, action, and Experience
 Cloud contexts.
 
-Run the toolchain install before opening LWC routes:
+Verify the bundled toolchain before opening LWC routes:
 
 ```bash
-glade toolchain install
+glade toolchain status
 ```
 
 Then start the local workbench from the project root:

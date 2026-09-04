@@ -32,6 +32,12 @@ the shortest diagnostic path before linking back to a task guide.
 
 ## Check support and trust
 
+[Report a bug or share workflow feedback](https://github.com/glade-sh/glade/issues/new/choose).
+Include the command, version, OS, expected/actual result, and a minimal public
+reproduction. Do not upload proprietary source, private package names,
+credentials, or customer records. Report vulnerabilities through the
+[private security route](/guide/security-trust), not public issues.
+
 Confirm what Glade runs locally and review the release and plugin trust boundaries.
 
 <div class="docs-route-grid">

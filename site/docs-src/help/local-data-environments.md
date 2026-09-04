@@ -14,7 +14,7 @@
 ## Before you start
 
 - Glade is initialized in a Salesforce DX project.
-- VS Code uses only Glade, Catppuccin Mocha, and the Salesforce Apex extension.
+- For the editor steps, VS Code has the bundled Glade extension installed; other extensions and themes can remain.
 - These environments are local SQLite files. They do not copy Salesforce org data unless you import or seed data yourself.
 
 ## Steps

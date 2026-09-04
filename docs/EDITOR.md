@@ -13,12 +13,19 @@ install the bundled VSIX:
 ```bash
 glade editor doctor vscode
 glade editor install vscode --force
+code --list-extensions --show-versions
 glade editor doctor vscode --editor cursor
 glade editor install vscode --editor windsurf --force
 ```
 
 Omit `--editor` for VS Code. Cursor and Windsurf use the same bundled VSIX
 through their own install targets.
+
+`editor doctor` checks editor and bundled VSIX availability; it does not prove
+the extension is installed or activated. Confirm `glade.vscode-glade` in the
+extension list, then open an Apex file in your project. No particular theme
+or clean profile is required. Marketplace publication is not part of this
+bundled-install path.
 
 From a source checkout, build the local VSIX once and run the same install
 command from anywhere inside the checkout:
@@ -115,10 +122,10 @@ LWC and Visualforce preview are CLI preview features. They remain available
 through `glade dev`, but the VS Code extension does not start, stop, list, or
 monitor those servers until the preview workflow is steadier.
 
-Install the toolchain once:
+Verify the bundled toolchain:
 
 ```bash
-glade toolchain install
+glade toolchain status
 ```
 
 Start the preview servers from a terminal:

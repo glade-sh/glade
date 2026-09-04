@@ -26,7 +26,7 @@ glade dev vf --project . --addr 127.0.0.1:0 --ready-file /tmp/glade-vf-ready.jso
 Check the local support endpoint:
 
 ```bash
-curl http://127.0.0.1:8080/services/data/v61.0/glade/visualforce/support
+curl http://127.0.0.1:8080/services/data/v65.0/glade/visualforce/support
 ```
 
 ## Expected output

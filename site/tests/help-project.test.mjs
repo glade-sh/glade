@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile as execFileCallback } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
@@ -18,6 +18,8 @@ test("help project creates a clean git baseline for screenshots", async () => {
     });
 
     assert.equal(setup.stdout.trim(), projectRoot);
+    const project = JSON.parse(await readFile(resolve(projectRoot, "sfdx-project.json"), "utf8"));
+    assert.equal(project.sourceApiVersion, "65.0", "the owned walkthrough must permit its anonymous-Apex steps");
 
     const head = await execFile("git", ["-C", projectRoot, "rev-parse", "--verify", "HEAD"]);
     assert.match(head.stdout.trim(), /^[0-9a-f]{40}$/);

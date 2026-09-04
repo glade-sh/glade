@@ -2,9 +2,18 @@
 
 Glade writes machine-readable check results and saved test reports for CI.
 
+## Advisory pilot
+
+Use this workflow while evaluating supported local paths. The example pins
+v0.2.13; change the pin deliberately after reviewing a new release. It does not
+use the forthcoming corrected bundled sample. The product does not install
+plugins here; pin a plugin lock file too if your workflow adds them.
+
 ```yaml
-name: glade
+name: glade-pilot
 on: [pull_request]
+permissions:
+  contents: read
 jobs:
   glade:
     runs-on: ubuntu-latest
@@ -12,15 +21,56 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: curl -fsSL https://glade.sh/install.sh | sh
+      - run: curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=v0.2.13 sh
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: glade version
       - run: glade doctor --project .
-      - run: glade check --project . --format sarif --output glade-check.sarif
-      - run: glade test changed --project . --since origin/main --json --no-progress
       - run: mkdir -p reports
-      - run: glade test --project . --junit reports/glade-junit.xml
+      - name: Assess local source
+        id: check
+        continue-on-error: true
+        run: glade check --project . --format sarif --output reports/glade-check.sarif --no-progress
+      - name: Run affected tests
+        id: tests
+        continue-on-error: true
+        run: glade test changed --project . --since origin/main --json --no-progress > reports/glade-test-changed.json
+      - name: Record assessment outcomes
+        if: always()
+        run: |
+          echo "check=${{ steps.check.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "tests=${{ steps.tests.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: glade-results
+          path: reports/
 ```
+
+Install and doctor failures remain setup failures. Assessment/test failures
+are visible in step outcomes and retained artifacts without blocking the pilot
+job. Do not mark this job as required until the team chooses the enforcing
+contract below.
+
+## Enforcing gate
+
+After comparing representative results with Salesforce, use the same pinned
+setup and replace the two assessment/test steps with these. There is no
+`continue-on-error`, so either failure fails the job. Keep the always-run
+outcome and artifact steps from the pilot.
+
+```yaml
+      - name: Check local source
+        id: check
+        run: glade check --project . --format sarif --output reports/glade-check.sarif --no-progress
+      - name: Run local tests
+        id: tests
+        run: glade test --project . --junit reports/glade-junit.xml --no-progress
+```
+
+Choose the test scope your team has validated; a local gate does not replace
+the final Salesforce validation. Before adopting either variant, intentionally
+fail a public test and confirm that the advisory job retains evidence while
+the enforcing job fails.
 
 ## Semantic checks
 

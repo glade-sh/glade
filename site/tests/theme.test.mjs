@@ -194,10 +194,13 @@ test("release notes record final v0.2.12 validation", () => {
   assert.match(candidateText, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.12\/docs\/KNOWN_GAPS\.md/);
 });
 
-test("unreleased notes use the empty placeholder", () => {
+test("unreleased notes distinguish candidate fixes from published evidence", () => {
   const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(unreleased, "release notes should contain an Unreleased section");
-  assert.equal(unreleased[1].trim(), "No changes yet.");
+  assert.match(unreleased[1], /source errors before cache reuse/);
+  assert.match(unreleased[1], /RefinementServiceTest/);
+  assert.match(unreleased[1], /not a published release/);
+  assert.match(unreleased[1], /Salesforce correctness evidence/);
 });
 
 test("release docs publish the sealed private-corpus assurance snapshot", () => {
@@ -494,7 +497,7 @@ test("navigation exposes five top-level tasks and route-scoped sidebars", () => 
   assertConfigLink("Work with local data", "/guide/workflows/local-data");
   assertConfigLink("Add Glade to CI", "/guide/workflows/ci");
   assertConfigLink("Architecture and capabilities", "/guide/modules");
-  assertConfigLink("Execute anonymous Apex and SOQL", "/guide/workbench#exec");
+  assertConfigLink("Run anonymous Apex and SOQL", "/help/anonymous-apex-scratch");
   assertConfigLink("CLI reference", "/reference/cli");
   assertConfigLink("Configuration", "/reference/config");
   assertConfigLink("Error codes", "/reference/errors");
@@ -572,7 +575,7 @@ test("Apex language compatibility docs publish the checked identifier contract",
     assert.deepEqual(documentedMatch[1].trim().toLowerCase().split(/\s+/), implementationWords);
   }
 
-  assert.match(repoReadme, /\[Apex language compatibility\]\(docs\/APEX_LANGUAGE_COMPATIBILITY\.md\)/);
+  assert.match(repoReadme, /\[Apex language contract\]\(docs\/APEX_LANGUAGE_COMPATIBILITY\.md\)/);
   assert.match(repoDocsIndex, /\[APEX_LANGUAGE_COMPATIBILITY\.md\]\(APEX_LANGUAGE_COMPATIBILITY\.md\)/);
   assert.match(repoCompatibility, /121 Salesforce reserved words/);
   assert.match(releaseNotes, /121 Salesforce reserved words/);
@@ -640,8 +643,8 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(repoReadme, /https:\/\/github\.com\/glade-sh\/glade\/actions\/workflows\/security\.yml/);
   assert.match(repoReadme, /api\.scorecard\.dev\/projects\/github\.com\/glade-sh\/glade\/badge/);
   assert.match(repoReadme, /scorecard\.dev\/viewer\/\?uri=github\.com\/glade-sh\/glade/);
-  assert.match(repoReadme, /\[Security & Trust\]\(docs\/SECURITY_TRUST\.md\)/);
-  assert.match(repoReadme, /\[Security policy\]\(SECURITY\.md\)/);
+  assert.match(repoReadme, /\[Security and release trust\]\(docs\/SECURITY_TRUST\.md\)/);
+  assert.match(repoReadme, /\[SECURITY\.md\]\(SECURITY\.md\)/);
 
   assert.match(repoSecurityPolicy, /^# Security Policy/m);
   assert.match(repoSecurityPolicy, /Supported versions/);
@@ -855,21 +858,21 @@ test("guided help screenshot capture uses terminal copy and clean VS Code profil
 
   assert.match(helpFirstLocalCheck, /terminal/);
   assert.match(helpChangedTestsBeforePr, /terminal/);
-  assert.match(helpDebugApexVsCode, /clean VS Code profile/);
+  assert.match(helpDebugApexVsCode, /existing theme and profile/);
   assert.match(helpDebugApexVsCode, /Open an Apex class or test file/);
-  assert.match(helpAnonymousApexScratch, /clean VS Code profile/);
+  assert.match(helpAnonymousApexScratch, /no particular theme or profile is required/);
   assert.match(helpScreenshotReadme, /salesforce\.salesforcedx-vscode-apex/);
   assert.match(helpScreenshotReadme, /Salesforce Core and Services dependencies/);
   assert.match(helpScreenshotReadme, /Do not disable Salesforce Core or Services/);
-  assert.match(helpRunOneApexTest, /Salesforce Apex extension/);
+  assert.match(helpRunOneApexTest, /bundled Glade extension installed/);
   assert.match(helpRunOneApexTest, /glade test --project \. --class <TestClass> --no-progress/);
   assert.match(helpRunOneApexTest, /Set a breakpoint on the line you want to inspect before starting the debug action/);
   assert.doesNotMatch(helpRunOneApexTest, /RefinementService|insert account|opensFile|macrodata-apex/);
   assert.doesNotMatch(helpRunOneApexTest, /RefinementServiceTest --json/);
   assert.match(captureHelpScreenshotTargetScript, /run-one-apex-test-01-cli\)[\s\S]*RefinementServiceTest --no-progress/);
   assert.doesNotMatch(captureHelpScreenshotTargetScript, /RefinementServiceTest --json/);
-  assert.match(helpAnonymousApexScratch, /Salesforce Apex extension/);
-  assert.match(helpLocalDataEnvironments, /Salesforce Apex extension/);
+  assert.match(helpAnonymousApexScratch, /bundled Glade extension installed/);
+  assert.match(helpLocalDataEnvironments, /bundled Glade extension installed/);
   assert.match(helpGladeOrgSfDataImport, /terminal/);
   assert.match(helpGladeOrgSfDataImport, /disposable Salesforce CLI home/);
   assert.match(helpGladeOrgSfDataImport, /SF_USE_GENERIC_UNIX_KEYCHAIN=true/);
@@ -1194,7 +1197,7 @@ test("apex highlighter calls out platform and qualified types", () => {
 });
 
 test("capability explorer exposes supported APIs and an accessible workflow demo", () => {
-  assert.match(workbench, /^# Capability explorer/m);
+  assert.match(workbench, /^# Website capability explorer/m);
   assert.match(workbench, /data-coverage-workbench/);
   assert.match(workbench, /class="coverage-workbench-cards"/);
   assert.match(workbench, /Database\.insert/);
@@ -1208,7 +1211,7 @@ test("capability explorer exposes supported APIs and an accessible workflow demo
   assert.match(workbench, /data-scenario-workbench/);
   assert.match(workbench, /aria-label="Local capability workflow demo"/);
   assert.match(workbench, /<p class="home-eyebrow">Workflow gallery<\/p>/);
-  assert.match(workbench, /Run a scenario to see the command, JSON, trace, local result, and copyable CLI form\./);
+  assert.match(workbench, /Replay a curated scenario to see the command, JSON, trace, local result, and copyable CLI form\./);
   assert.match(workbench, /data-scenario-id="check"/);
   assert.match(workbench, /data-scenario-id="test"/);
   assert.match(workbench, /data-scenario-id="exec"/);
@@ -1437,8 +1440,8 @@ test("theme uses bundled fonts, readable type, and task-oriented navigation", ()
   assert.match(config, /text: 'Preview LWC'/);
   assert.match(config, /text: 'Preview Visualforce'/);
   assert.match(config, /text: 'Use VS Code'/);
-  assert.match(config, /text: 'Execute anonymous Apex and SOQL'/);
-  assert.match(config, /text: 'Execute anonymous Apex and SOQL'/);
+  assert.match(config, /text: 'Run anonymous Apex and SOQL'/);
+  assert.match(config, /text: 'Run anonymous Apex and SOQL'/);
   assert.match(config, /text: 'Automation and JSON'/);
   assert.match(config, /text: 'Error codes'/);
   assert.match(config, /text: 'Reports and package artifacts'/);
@@ -1538,15 +1541,15 @@ test("guide landing, quickstart, and support map explain the current product", (
   assert.doesNotMatch(overview, /full Visualforce rendering or PDF generation/);
   assert.match(quickstart, /^# Run your first local Apex check/m);
   assert.match(quickstart, /class="docs-intro"/);
-  assert.match(quickstart, /Prove that Glade can discover a Salesforce DX project/);
-  assert.match(quickstart, /If the shell\s+cannot find `glade`/);
-  assert.match(quickstart, /clean result and exit code `0`/);
+  assert.match(quickstart, /Run a real local Apex test/);
+  assert.match(quickstart, /export PATH="\$HOME\/\.local\/bin:\$PATH"/);
+  assert.match(quickstart, /executed test\s+total must be at least one/);
   assert.match(quickstart, /glade check --project \./);
-  assert.match(quickstart, /glade test --project \. --class <YourTestClass>/);
+  assert.match(quickstart, /glade test --project \. --class RefinementServiceTest/);
   assert.doesNotMatch(quickstart, /--filter/);
   assert.match(quickstart, /## You are done when/);
   assert.match(quickstart, /## Reset or clean up/);
-  assert.match(quickstart, /Use Salesforce for\s+hosted services, deployment, and final production validation/);
+  assert.match(quickstart, /keep Salesforce for final validation/);
   assert.match(supportMap, /^# What Glade runs locally/m);
   assert.match(supportMap, /class="docs-support-legend"/);
   assert.match(supportMap, /class="docs-support-legend-card docs-support-legend-card-supported"/);
@@ -1606,7 +1609,7 @@ test("guide landing, quickstart, and support map explain the current product", (
   assert.match(css, /\.docs-support-legend\s*\{[\s\S]*position: static;[\s\S]*display: flex;[\s\S]*flex-wrap: wrap;[\s\S]*gap: 4px;[\s\S]*padding: 4px 6px;/);
   assert.doesNotMatch(css, /\.docs-support-legend\s*\{[\s\S]*position: sticky;/);
   assert.match(css, /\.docs-support-legend-card\s*\{[\s\S]*display: inline-flex;[\s\S]*align-items: center;[\s\S]*padding: 0;/);
-  assert.match(quickstart, /glade test --project \. --class <YourTestClass>/);
+  assert.match(quickstart, /glade test --project \. --class RefinementServiceTest/);
   assert.match(cliReference, /id="cli-command-filter"/);
   assert.match(cliReference, /class="docs-command-card"/);
   assert.match(cliReference, /--class RefinementServiceTest --method testRefinesFileRow/);
@@ -1642,7 +1645,8 @@ test("AI-assisted Apex guide gives agents a Glade TDD contract", () => {
   assert.match(aiAssistedApex, /^# AI-assisted Apex with Glade/m);
   assert.match(aiAssistedApex, /Paste the long prompt into a global skill,\s+repository instruction file, or\s+agent memory/);
   assert.match(aiAssistedApex, /Use this prompt for any Apex feature, bug fix, or refactor/);
-  assert.match(aiAssistedApex, /Write the smallest failing Apex test first/);
+  assert.match(aiAssistedApex, /For a bug fix or new behavior, write the smallest failing Apex test first/);
+  assert.match(aiAssistedApex, /For a behavior-preserving refactor, first record a passing baseline instead/);
   assert.match(aiAssistedApex, /Do not edit production Apex until a Glade test fails for the expected reason/);
   assert.match(aiAssistedApex, /mkdir -p reports/);
   assert.match(aiAssistedApex, /glade doctor/);
@@ -1670,7 +1674,8 @@ test("preview labels stay in the workflows and support reference", () => {
   assert.match(supportMap, /`lightning\/refresh`/);
   assert.match(supportMap, /packaged SLDS 2 and classic SLDS assets/);
   assert.doesNotMatch(index, /Visualforce and LWC local shells remain preview features\./);
-  assert.match(repoReadme, /Visualforce preview feature[\s\S]*glade dev vf/);
+  assert.match(repoReadme, /LWC\/Visualforce previews/);
+  assert.match(repoReadme, /https:\/\/glade\.sh\/guide\/workflows/);
   assert.match(repoCompatibility, /Visualforce dev rendering \| preview feature/i);
   assert.match(repoLwcSupport, /Direct component shell \| Preview feature/i);
   assert.match(repoLwcSupport, /Visualforce Lightning Out \| Preview feature/i);
@@ -1767,7 +1772,7 @@ test("route and content checks enforce the public documentation contract", () =>
   assert.match(testerFieldGuide, /Compare one representative local workflow with Salesforce/);
   assert.match(testerFieldGuide, /^## 2\. Establish project context/m);
   assert.match(testerFieldGuide, /glade editor install vscode --force/);
-  assert.match(testerFieldGuide, /fetch-depth: 0/);
+  assert.match(testerFieldGuide, /\/guide\/ci-artifacts#advisory-pilot/);
   assert.match(testerFieldGuide, /glade report refactor-proof --project \. --since origin\/main/);
   assert.match(testerFieldGuide, /glade dev vf --project \. --addr 127\.0\.0\.1:8080/);
   assert.match(testerFieldGuide, /glade dev lwc --project \. --open/);

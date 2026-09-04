@@ -35,10 +35,10 @@ compiler and rebuild or reinstall a parser-capable release artifact.
 
 ## Run LWCs Locally
 
-Install the local LWC toolchain first:
+Verify the toolchain bundled with the release:
 
 ```bash
-glade toolchain install
+glade toolchain status
 ```
 
 Start the LWC dev shell from a Salesforce-shaped project:
@@ -211,7 +211,7 @@ pin the source. The same server exposes the current standard-component support
 rows as local JSON:
 
 ```bash
-curl http://127.0.0.1:8080/services/data/v61.0/glade/visualforce/support
+curl http://127.0.0.1:8080/services/data/v65.0/glade/visualforce/support
 ```
 
 Use `--port 8080` for the common localhost shortcut. Use an ephemeral address

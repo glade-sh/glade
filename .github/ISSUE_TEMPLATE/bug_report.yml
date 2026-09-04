@@ -1,0 +1,43 @@
+name: Bug report
+description: Report a reproducible local behavior or setup problem.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste proprietary source, credentials, private package names, customer records, private paths, or unredacted support bundles. Closed issues are still public.
+        Report vulnerabilities privately: https://github.com/glade-sh/glade/security/advisories/new
+  - type: input
+    id: version
+    attributes:
+      label: Glade version
+      description: Paste the version, not a full unredacted support bundle.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: OS, architecture, and source API version
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Command and minimal public reproduction
+      description: Include the exact command, required public metadata, selected test names, and selected/executed test count. Use neutral project labels.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+      description: Include exit status and the smallest sanitized diagnostic. Separate local results from any authorized Salesforce comparison.
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Public disclosure check
+      options:
+        - label: This report contains only information I am authorized to share publicly.
+          required: true

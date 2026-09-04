@@ -131,7 +131,7 @@ function readApexIdentifier(stream: StringStream, state: ApexModeState) {
 
   if (state.expectTypeDeclaration) {
     kind = 'type-declaration'
-    style = 'definition(typeName)'
+    style = 'typeName'
     state.expectTypeDeclaration = false
   } else if (APEX_ANNOTATIONS.has(lower)) {
     kind = 'annotation-name'

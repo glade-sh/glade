@@ -108,7 +108,7 @@ for (const entry of routes) {
   const ogURL = metaContent(html, 'property', 'og:url')
   const twitterTitle = metaContent(html, 'name', 'twitter:title')
   const twitterDescription = metaContent(html, 'name', 'twitter:description')
-  if (entry.route === '/' && pageTitle !== 'Glade') failures.push('/: homepage title must be exactly Glade')
+  if (entry.route === '/' && pageTitle !== 'Glade — Local Apex Runtime for Salesforce Developers') failures.push('/: homepage title must describe the local Apex runtime')
   if (ogTitle !== pageTitle || twitterTitle !== pageTitle) failures.push(`${entry.route}: social titles must equal the page title`)
   if (ogDescription !== description || twitterDescription !== description) failures.push(`${entry.route}: social descriptions must equal the page description`)
   if (ogURL !== canonical) failures.push(`${entry.route}: social URL must equal the canonical`)

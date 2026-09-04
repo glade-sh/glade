@@ -31,13 +31,15 @@ Default workflow:
    mkdir -p reports
    glade doctor --project .
    glade config validate --project .
-3. Write the smallest failing Apex test first.
+3. For a bug fix or new behavior, write the smallest failing Apex test first.
    - Do not edit production Apex until a Glade test fails for the expected reason.
    - Prefer one focused test method that names the behavior.
    - Use existing test factories and fixtures when they exist.
-4. Prove the red step with the narrowest Glade command:
+   - For a behavior-preserving refactor, first record a passing baseline instead.
+4. Prove the red step (or refactor baseline) with the narrowest Glade command:
    glade test --project . --class <TestClass> --method <TestMethod> --json --no-progress
-5. Quote the exact command and the failing diagnostic.
+5. Quote the exact command and the failing diagnostic for a bug or new behavior;
+   for a refactor, record the named passing baseline instead.
 6. Make the smallest production change that should pass that test.
 7. Rerun the same focused Glade test until it passes.
 8. Run source checks:
@@ -51,6 +53,7 @@ Rules:
 - Do not connect to a Salesforce org for the first pass unless the user asks.
 - Check what Glade runs locally before treating unsupported platform services as bugs.
 - If Glade reports an unsupported feature, say so and keep Salesforce as the validation gate.
+- Do not rewrite valid Salesforce behavior to satisfy a Glade limitation. Report the mismatch and use authorized Salesforce validation for that path.
 - Salesforce remains the validation gate for live auth, hosted service engines, deploy/retrieve, exact Lightning Experience behavior, Streaming, Pub/Sub, GraphQL, and exact production governor accounting.
 - Do not invent one-off local escape hatches. Let the failing test and Glade diagnostic drive the change.
 ```
@@ -63,8 +66,9 @@ piece of work:
 ```text
 Implement this Apex change with TDD and Glade.
 
-Start from the Salesforce DX project root. Write the smallest failing Apex test first.
-Prove it fails with:
+Start from the Salesforce DX project root. For a bug or new behavior, write the smallest
+failing Apex test first. For a behavior-preserving refactor, retain a passing baseline.
+Check that baseline with:
 
 glade test --project . --class <TestClass> --method <TestMethod> --json --no-progress
 
@@ -76,12 +80,19 @@ glade test changed --project . --since origin/main --json --no-progress > report
 
 Report the exact commands and diagnostics. Do not claim success until the Glade
 commands pass or you have named the unsupported Salesforce boundary.
+Do not rewrite valid Salesforce behavior to satisfy a Glade limitation.
 ```
 
 ## How it should behave
 
-The agent should come back with the test it added or changed, the command that
-failed first, the production change, and the commands that passed at the end.
+Local test isolation is not an OS security sandbox. Core local checks do not
+upload source to a Glade service, but custom code, plugins, imports, and an
+external AI provider may use the network. Review what you authorize and do not
+send proprietary source or credentials to a provider without permission.
+
+The agent should return the test it added or changed, the initial failing
+command for a bug or new behavior (or passing baseline for a refactor), the
+production change, and the commands that passed at the end.
 
 For a bug fix, the first failing test should reproduce the bug. For a new
 feature, the first failing test should describe the smallest useful behavior.

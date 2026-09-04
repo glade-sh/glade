@@ -1,6 +1,8 @@
 {
   "routes": [
     { "source": "index.md", "route": "/", "classification": "nav" },
+    { "route": "/docs", "classification": "redirect", "destination": "/guide/" },
+    { "route": "/docs/", "classification": "redirect", "destination": "/guide/" },
     { "source": "guide/index.md", "route": "/guide/", "classification": "nav" },
     { "source": "guide/overview.md", "route": "/guide/overview", "classification": "nav" },
     { "source": "guide/installation.md", "route": "/guide/installation", "classification": "nav" },

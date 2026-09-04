@@ -9,9 +9,9 @@ head:
       href: /css/workbench.css
 ---
 
-# Capability explorer
+# Website capability explorer
 
-Type Apex expressions and see whether the API runs locally, runs locally with limits, or requires Salesforce.
+The website capability explorer maps checked APIs to their local boundary. Type Apex expressions and see whether the API runs locally, runs locally with limits, or requires Salesforce.
 
 Use the editor as a live capability map: type a dot, read the label, and see the boundary before you depend on an API.
 
@@ -52,12 +52,13 @@ Use the editor as a live capability map: type a dot, read the label, and see the
     <div class="home-workbench-head">
       <div>
         <p class="home-eyebrow">Workflow gallery</p>
-        <h2 class="home-h2">Run a scenario and see the proof.</h2>
-        <p class="home-p">Run a scenario to see the command, JSON, trace, local result, and copyable CLI form.</p>
+        <h2 class="home-h2">Replay an example workflow.</h2>
+        <p class="home-p">Replay a curated scenario to see the command, JSON, trace, local result, and copyable CLI form.</p>
       </div>
       <div class="home-workbench-actions">
         <span class="home-workflow-count" data-workflow-count aria-label="Workflow 1 of 4">1 / 4</span>
-        <button class="home-run-button" type="button" data-run-scenario data-run-state="idle">Run local check</button>
+        <button class="home-run-button" type="button" data-run-scenario data-run-state="idle">Replay example</button>
+        <p class="home-demo-notice">Illustrative replay — this page does not execute edited Apex.</p>
       </div>
     </div>
     <div class="home-workflow-tabs" role="tablist" aria-label="Demo workflows">

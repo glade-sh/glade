@@ -5,6 +5,10 @@ reports, and stable process exits.
 
 ## Before you start
 
+Choose the [pinned advisory pilot](/guide/ci-artifacts#advisory-pilot) while
+evaluating Glade. Use the [enforcing gate](/guide/ci-artifacts#enforcing-gate)
+only for paths your team has validated. Neither replaces Salesforce validation.
+
 Fetch enough git history for `origin/main`. Create `reports` before writing
 artifacts. Use JSON, SARIF, and JUnit for machines; keep human output for local
 runs.

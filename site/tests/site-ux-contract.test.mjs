@@ -47,6 +47,22 @@ test('routes classify every published page and metadata is generated per route',
   assert.match(config, /property: 'og:url'/)
 })
 
+test('homepage metadata names the local Apex runtime without losing its social card', () => {
+  assert.match(home, /^title: Glade — Local Apex Runtime for Salesforce Developers$/m)
+  assert.match(config, /route === '\/' \? 'Glade — Local Apex Runtime for Salesforce Developers'/)
+  assert.match(config, /property: 'og:image'/)
+  assert.match(config, /social-card\.png/)
+})
+
+test('legacy docs routes redirect to the guide without Markdown duplicates', () => {
+  for (const route of ['/docs', '/docs/']) {
+    const entry = routes.routes.find((candidate) => candidate.route === route)
+    assert.deepEqual(entry, { route, classification: 'redirect', destination: '/guide/' })
+  }
+  assert.match(redirects, /^\/docs \/guide\/ 301$/m)
+  assert.match(redirects, /^\/docs\/ \/guide\/ 301$/m)
+})
+
 test('redirect-only routes have no duplicate Markdown source', async () => {
   const redirectEntries = routes.routes.filter((entry) => entry.classification === 'redirect')
   assert.ok(redirectEntries.length > 0)

@@ -6,18 +6,26 @@ hosted Lightning Experience.
 
 ## Before you start
 
-Install the local toolchain once. Run from the project root so Glade can find
+Packaged releases include the local toolchain. Run from the project root so Glade can find
 source, `glade.lwc.json`, schema, labels, static resources, and local data.
 
 ## Steps
 
-Install the LWC toolchain:
+Verify the bundled LWC toolchain:
 
 ```bash
-glade toolchain install
+glade toolchain status
 ```
 
-Open the Workbench Console:
+Expected: the installed toolchain is available. A release user does not need
+a Glade source checkout. If it is missing, repair the packaged installation;
+source-copy installation belongs to the source-development workflow.
+
+Each LWC bundle must declare an exact supported API version (65.0, 66.0, or
+67.0). Source, bundle, and HTTP endpoint versions are independent; do not
+upgrade metadata merely to hide an unsupported-version result.
+
+Open the LWC Workbench Console:
 
 ```bash
 glade dev lwc --project . --open

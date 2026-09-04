@@ -25,9 +25,10 @@ Record:
 
 ```bash
 curl -fsSL https://glade.sh/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
 glade version
 cd path/to/salesforce-dx-project
-glade init --project . --yes
+test -f glade.yml || glade init --project . --yes
 glade config validate --project .
 glade doctor --project .
 ```
@@ -72,20 +73,11 @@ part of the chosen path—one debug session or Apex & SOQL scratch buffer.
 
 ## 6. Add a nonblocking CI trial
 
-Use a full git checkout for affected-test selection and create report
-directories before writing artifacts:
-
-```yaml
-- uses: actions/checkout@v4
-  with:
-    fetch-depth: 0
-- run: curl -fsSL https://glade.sh/install.sh | sh
-- run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-- run: glade doctor --project .
-- run: mkdir -p reports
-- run: glade check --project . --format sarif --output reports/glade-check.sarif
-- run: glade test changed --project . --since origin/main --json --no-progress > reports/glade-test-changed.json
-```
+Use the pinned [advisory pilot workflow](/guide/ci-artifacts#advisory-pilot).
+Its assessment and test steps use `continue-on-error: true`; setup failures
+remain failures, and artifacts upload with `if: always()`. Full git history
+is needed for affected-test selection. Do not make this job a required merge
+gate during evaluation.
 
 Keep the trial advisory until representative local results have been compared
 with Salesforce. Promote only the paths the team has reviewed.
@@ -115,8 +107,23 @@ Useful pilot feedback includes:
 - the support-map classification
 
 Open a reproducible [GitHub issue](https://github.com/glade-sh/glade/issues) for
-an unexplained supported-path mismatch. Do not include private project source
-unless you intend to share it.
+an unexplained supported-path mismatch. Use neutral project labels. Do not
+include proprietary source, private package names, credentials, customer
+records, or unredacted support bundles. Vulnerabilities belong in
+[private security reporting](/guide/security-trust), not public issues.
+
+Record a small manual table; no new telemetry is required:
+
+| Evaluation | Record |
+| --- | --- |
+| Environment | Neutral project label, OS/architecture, product/plugin versions, source API version |
+| First run | Install/doctor outcome, named tests selected/executed/passed, time to first useful result |
+| First mismatch | Expected/actual behavior, support classification, issue link and owner |
+| Next step | Could the tester tell what to do next? Would they use this loop again, and for what? |
+
+Start with 5–10 approved evaluators and report actual n/N outcomes. Try the
+sample before a focused test in a real project the tester is authorized to use.
+Fix repeated setup failures and false-success behavior before broader promotion.
 
 ## Pilot completion
 

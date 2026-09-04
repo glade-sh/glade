@@ -79,7 +79,7 @@ export default defineConfig({
   transformHead(ctx) {
     const route = routeFor(ctx.pageData.relativePath)
     const canonical = `https://glade.sh${route}`
-    const title = route === '/' ? 'Glade' : `${ctx.pageData.title} | Glade`
+    const title = route === '/' ? 'Glade — Local Apex Runtime for Salesforce Developers' : `${ctx.pageData.title} | Glade`
     const description = descriptionFor(ctx.pageData.relativePath, ctx.pageData.title)
     const type = route === '/' ? 'website' : 'article'
     const head: [string, Record<string, string>][] = [
@@ -158,7 +158,7 @@ export default defineConfig({
         items: [
           { text: 'Run Apex tests', link: '/guide/workflows/apex-tests' },
           { text: 'Debug Apex', link: '/guide/workflows/debug-apex' },
-          { text: 'Execute anonymous Apex and SOQL', link: '/guide/workbench#exec' },
+          { text: 'Run anonymous Apex and SOQL', link: '/help/anonymous-apex-scratch' },
           { text: 'Work with local data', link: '/guide/workflows/local-data' },
           { text: 'Preview LWC', link: '/guide/workflows/lwc-preview' },
           { text: 'Preview Visualforce', link: '/guide/workflows/visualforce-preview' },
@@ -171,7 +171,7 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: 'Architecture and capabilities', link: '/guide/modules' },
-          { text: 'Playground', link: '/guide/playground' }
+          { text: 'Local Playground', link: '/guide/playground' }
         ]
       },
       {

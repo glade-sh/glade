@@ -79,7 +79,7 @@ test('postdeploy smoke reconciles homepage, live manifest, latest release, check
 
 test('first-run copy establishes project context before project-aware doctor', () => {
   assert.match(home, /Apex feedback without the deploy wait\./)
-  assert.match(home, /curl -fsSL https:\/\/glade\.sh\/install\.sh \| sh\nglade version/)
+  assert.match(home, /curl -fsSL https:\/\/glade\.sh\/install\.sh \| sh<br>glade version/)
   assert.doesNotMatch(home, /glade doctor/)
   assert.match(quickstart, /glade doctor --project \./)
   assert.match(quickstart, /## You are done when/)
@@ -94,8 +94,9 @@ test('navigation uses jobs, one canonical surface location, and separate recover
   assert.match(config, /\{ text: 'Support', link: '\/help\/' \}/)
   assert.match(config, /\{ text: 'Documentation home', link: '\/guide\/' \}/)
   assert.match(themeCSS, /VPNavBarMenuLink\[href="\/guide\/installation"\]/)
-  for (const link of ['/guide/workbench#exec', '/guide/plugins', '/guide/editor']) {
-    assert.equal(config.split(`link: '${link}'`).length - 1, 1, `${link} should have one canonical sidebar location`)
+  for (const link of ['/help/anonymous-apex-scratch', '/guide/plugins', '/guide/editor']) {
+    const guideNavigation = config.slice(0, config.indexOf("text: 'Task guides'"))
+    assert.equal(guideNavigation.split(`link: '${link}'`).length - 1, 1, `${link} should have one guide-navigation location`)
   }
   assert.match(config, /text: 'Advanced',[\s\S]*collapsed: true/)
   assert.match(config, /text: 'Task guides'/)
@@ -117,7 +118,7 @@ test('homepage shows one real product view and job-oriented workflow choices', (
   assert.match(home, /ResetPasswordResult\.getPassword[\s\S]*Requires Salesforce/)
   assert.doesNotMatch(home, /Answers\.findSimilar[\s\S]*Requires Salesforce/)
   assert.match(workflows, /href="\/guide\/workflows\/debug-apex"><strong>Debug Apex<\/strong>/)
-  assert.match(workflows, /href="\/guide\/workbench#exec"><strong>Execute Apex and SOQL<\/strong>/)
+  assert.match(workflows, /href="\/help\/anonymous-apex-scratch"><strong>Execute Apex and SOQL<\/strong>/)
   assert.match(workflows, /glade exec --project \. "System\.debug\('local'\);"/)
   assert.equal((home.match(/Salesforce remains the final validation gate\./g) || []).length, 1)
   assert.match(home, /Runs locally with limits/)
