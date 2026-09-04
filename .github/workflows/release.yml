@@ -20,7 +20,6 @@ permissions:
 
 jobs:
   required-ci-attestation:
-    needs: salesforce-authority
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -72,8 +71,8 @@ jobs:
           retention-days: 90
 
   prepare:
-    needs: required-ci-attestation
-    if: startsWith(github.ref, 'refs/tags/') && needs.required-ci-attestation.result == 'success'
+    needs: [required-ci-attestation, salesforce-authority]
+    if: startsWith(github.ref, 'refs/tags/') && needs.required-ci-attestation.result == 'success' && needs.salesforce-authority.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -334,12 +333,24 @@ jobs:
             --pattern 'glade_*' \
             --pattern 'release-manifest-*.json' \
             --clobber
+      - name: Download Required CI approval
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: required-ci-attestation
+          path: dist
+      - name: Download Salesforce approval
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: salesforce-release-authority
+          path: dist
       - name: Build release notes
         shell: bash
         run: scripts/release-notes.sh "$GITHUB_REF_NAME" > release-notes.md
       - name: Assemble checksums
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
         run: |
           cd dist
@@ -351,6 +362,14 @@ jobs:
           import shutil
 
           version = os.environ["VERSION"]
+          with open("required-ci-attestation.json", encoding="utf-8") as f:
+              required_ci = json.load(f)
+          with open("salesforce-release-authority.json", encoding="utf-8") as f:
+              salesforce = json.load(f)
+          if required_ci["sha"] != os.environ["GITHUB_SHA"] or salesforce["gladeSHA"] != os.environ["GITHUB_SHA"]:
+              raise SystemExit("release approval SHA mismatch")
+          if required_ci["conclusion"] != "success":
+              raise SystemExit("Required CI approval is not successful")
           manifests = []
           for path in sorted(glob.glob("release-manifest-*.json")):
               with open(path, "r", encoding="utf-8") as f:
@@ -373,6 +392,7 @@ jobs:
               "installScript": "https://glade.sh/install.sh",
               "pluginRegistry": "https://plugins.glade.sh/index.json",
               "verification": verification,
+              "authority": {"requiredCI": required_ci, "salesforce": salesforce},
           }
           with open("release-manifest.json", "w", encoding="utf-8") as f:
               json.dump(combined, f, indent=2, sort_keys=True)
@@ -386,10 +406,15 @@ jobs:
               if os.path.isfile(path):
                   shutil.copyfile(path, os.path.join(version, os.path.basename(path)))
           shutil.copyfile("SHA256SUMS.txt", os.path.join(version, "SHA256SUMS.txt"))
+          for approval in ("required-ci-attestation.json", "salesforce-release-authority.json"):
+              shutil.copyfile(approval, os.path.join(version, approval))
           PY
           python3 ../scripts/release-index.py --version "$VERSION" --output index.json
           bundle="glade-release-artifacts-$VERSION.tar.gz"
-          tar -C . -czf "../$bundle" .
+          if gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | grep -Fxq "$bundle"; then
+            gh release download "$GITHUB_REF_NAME" --pattern "$bundle" --output "../$bundle"
+          fi
+          python3 ../scripts/release-bundle.py . "../$bundle"
           mv "../$bundle" .
       - name: Publish GitHub Release
         env:
@@ -401,6 +426,8 @@ jobs:
             dist/SHA256SUMS.txt \
             dist/index.json \
             dist/release-manifest.json \
+            dist/required-ci-attestation.json \
+            dist/salesforce-release-authority.json \
             dist/glade-release-artifacts-$VERSION.tar.gz
       - name: Verify complete release asset set
         shell: bash
@@ -424,6 +451,8 @@ jobs:
             "glade_${GITHUB_REF_NAME}_linux_arm64.tar.gz.sbom.json" \
             "glade_${GITHUB_REF_NAME}_linux_arm64.tar.gz.sha256" \
             "index.json" \
+            "required-ci-attestation.json" \
+            "salesforce-release-authority.json" \
             "release-manifest-darwin-amd64.json" \
             "release-manifest-darwin-arm64.json" \
             "release-manifest-linux-amd64.json" \

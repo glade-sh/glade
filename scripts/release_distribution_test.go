@@ -56,8 +56,8 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 	if got := strings.Count(sharedBlock, "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2"); got != 1 {
 		t.Fatalf("shared payload upload count = %d, want 1", got)
 	}
-	if got := strings.Count(workflowText, "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0"); got != 2 {
-		t.Fatalf("release artifact download count = %d, want shared plus platform handoff", got)
+	if got := strings.Count(workflowText, "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0"); got != 4 {
+		t.Fatalf("release artifact download count = %d, want payload, platform and both approvals", got)
 	}
 	if got := strings.Count(workflowText, "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0"); got != 1 {
 		t.Fatalf("setup-node count = %d, want shared job only", got)
@@ -123,8 +123,7 @@ func TestReleaseWorkflowRequiresSalesforceAuthorityBeforePrepare(t *testing.T) {
 		`scripts/verify-salesforce-check.sh "$GITHUB_SHA" "$glade_tools_sha" > salesforce-release-authority.json`,
 		"name: salesforce-release-authority",
 		"path: salesforce-release-authority.json",
-		"needs: salesforce-authority",
-		"needs: required-ci-attestation",
+		"needs: [required-ci-attestation, salesforce-authority]",
 	} {
 		if !strings.Contains(workflow, want) {
 			t.Fatalf("release workflow missing Salesforce authority contract %q", want)
@@ -202,11 +201,13 @@ func TestReleaseWorkflowDoesNotOverwritePublishedAssets(t *testing.T) {
 		"dist/SHA256SUMS.txt",
 		"dist/index.json",
 		"dist/release-manifest.json",
+		"dist/required-ci-attestation.json",
+		"dist/salesforce-release-authority.json",
 		"dist/glade-release-artifacts-$VERSION.tar.gz",
 	}
 	requireExactReleaseWorkflowAssets(t, releaseWorkflowUploadAssets(publishUploads[0]), finalAssets)
 	downloads := releaseWorkflowCommands(publish, "download")
-	if len(downloads) != 1 || !strings.Contains(downloads[0], "--clobber") {
+	if len(downloads) != 2 || !strings.Contains(downloads[0], "--clobber") {
 		t.Fatal("local release download command must retain --clobber for a clean workspace")
 	}
 	if !strings.Contains(publish, "VERSION: ${{ github.ref_name }}") {
@@ -245,6 +246,8 @@ func TestReleaseWorkflowDoesNotOverwritePublishedAssets(t *testing.T) {
 		"dist/SHA256SUMS.txt",
 		"dist/index.json",
 		"dist/release-manifest.json",
+		"dist/required-ci-attestation.json",
+		"dist/salesforce-release-authority.json",
 		"dist/glade-release-artifacts-$VERSION.tar.gz",
 	} {
 		if _, exists := seen[want]; !exists {

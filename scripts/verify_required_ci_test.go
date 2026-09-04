@@ -121,7 +121,7 @@ func TestReleaseTagAttestationWorkflowContract(t *testing.T) {
 	release := string(releaseData)
 	for _, marker := range []string{
 		"required-ci-attestation:", "actions: read", "scripts/verify-required-ci.sh", "required-ci-attestation.json",
-		"needs: required-ci-attestation", "attest-and-upload:", "needs: [prepare, build]", "Attest platform archive", "Attest platform SBOM",
+		"needs: [required-ci-attestation, salesforce-authority]", "attest-and-upload:", "needs: [prepare, build]", "Attest platform archive", "Attest platform SBOM",
 		"Verify platform attestations", "gh attestation verify", "--predicate-type https://cyclonedx.org/bom",
 		"Upload platform release assets", "publish:\n    needs: attest-and-upload",
 	} {

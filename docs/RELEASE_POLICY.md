@@ -107,9 +107,12 @@ Use this workflow for an easy, repeatable distribution pass.
    Salesforce correctness workflow in `glade-tools` for that exact Glade commit.
    Then cut and push one annotated tag at that commit. The tag message must
    contain exactly one lowercase full-SHA trailer for the tested Tools commit.
+   Reuse `bash scripts/release-preflight.sh "$GLADE_SHA" "$TOOLS_SHA"` before
+   tagging. Both SHAs must be frozen, full lowercase commit IDs. Do not create a
+   trigger commit or move a pushed tag to repair missing authority.
 
 ```bash
-git tag -a vX.Y.Z -m $'Release vX.Y.Z\n\nGlade-Tools-SHA: <lowercase-40-hex-glade-tools-sha>'
+git tag -a vX.Y.Z "$GLADE_SHA" -m 'Release vX.Y.Z' -m "Glade-Tools-SHA: $TOOLS_SHA"
 git push <remote> vX.Y.Z
 ```
 
@@ -123,6 +126,8 @@ git push <remote> vX.Y.Z
      are uploaded.
    - `SHA256SUMS.txt`, `index.json`, and `latest/release-manifest.json` are
      published with the release assets.
+   - The original Required CI and Salesforce approval JSON records are retained
+     with the immutable release and bind the exact product/Tools pair.
 
 4. Verify install from release artifacts.
 
@@ -141,6 +146,10 @@ tar -xzf glade_vX.Y.Z_linux_amd64.tar.gz
 
 6. Publish release notes.
    - Call out new supported behavior and remaining unsupported boundaries.
+   - Announce distribution complete only after the static channel and site point
+     to the version and default plus pinned installs report that version and a
+     ready doctor result. A green GitHub Release workflow proves GitHub
+     publication, not the later static-host or site publication.
 
 `Required CI` and `Salesforce Correctness` are automated exact-SHA release
 authorities. Browser, Race, Security, and the local `scripts/release-check.sh`

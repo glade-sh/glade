@@ -33,12 +33,27 @@ gate before tagging:
 (cd ../glade-tools && scripts/release-check.sh)
 ```
 
-## 2. Tag and Push
+## 2. Freeze the Approved Pair, Tag and Push
+
+Merge the release changes to `main` first. Freeze the product and Tools commits,
+wait for the product's exact-SHA main-push `Required CI`, and run Salesforce
+correctness for that exact pair. PR checks and manual CI runs do not qualify.
+The read-only preflight reuses the hosted approvals; it does not rerun tests or
+create tags. Keep its output with the release evidence.
 
 ```bash
-git tag vX.Y.Z
-git push <remote> vX.Y.Z
+VERSION=vX.Y.Z
+GLADE_SHA='<lowercase-40-hex-approved-product-commit>'
+TOOLS_SHA='<lowercase-40-hex-approved-tools-commit>'
+bash scripts/release-preflight.sh "$GLADE_SHA" "$TOOLS_SHA"
+git tag -a "$VERSION" "$GLADE_SHA" -m "Release $VERSION" -m "Glade-Tools-SHA: $TOOLS_SHA"
+git push origin "refs/tags/$VERSION"
 ```
+
+Do not move a pushed release tag or create an empty trigger commit to repair a
+failed approval. Both actions change the identity under review. A missing
+approval needs the existing exact candidate's workflow, not a new commit.
+Before any upload, retry only the failed jobs after the missing approval passes.
 
 The `Release` GitHub Actions workflow builds parser-capable macOS and Linux
 archives on matching CGO-enabled runners, verifies `glade doctor` reports
@@ -51,6 +66,10 @@ editing them. An existing asset with identical bytes is skipped; differing bytes
 fail rather than replace published bytes. A published release is verified and
 left unchanged. Regenerated archives are not assumed byte-identical: a
 published rerun with differing bytes fails and leaves the release unchanged.
+For interrupted draft publication, rerun only failed jobs so successful platform
+artifacts are reused. The aggregate bundle is deterministic; if it was already
+uploaded, its full file contents are checked and its original bytes are retained.
+Do not select "Re-run all jobs" after partial uploads.
 The notes script fails if the section is missing, empty, or
 contains a literal `\n` sequence.
 
@@ -58,10 +77,10 @@ GitHub product and plugin release assets and notes are immutable on rerun.
 Do not repair a published artifact in place. Cut a new version with corrected
 assets and notes instead.
 
-Tag `glade-tools` with the same version when the plugin rail is part of the
-release. Product CI falls back to `glade-tools` `main` when a matching tools tag
-does not exist, so a product-only tag does not fail before the plugin rail is
-cut.
+Tag `glade-tools` at the approved Tools SHA with the same version when plugin
+archives are part of the release. Product CI does not check out Tools. The
+product release always binds the explicit `Glade-Tools-SHA` trailer, never a
+fallback to moving Tools `main`.
 
 ## 3. Verify Artifacts
 
@@ -129,6 +148,27 @@ equivalent no-clobber primitive enforced by the publisher. Do not use a bare
 `wrangler r2 object put` command for versioned objects: it can replace
 published bytes.
 
+The checked publisher uses Wrangler's authenticated, temporary remote preview R2 binding, atomic
+`onlyIf` writes, SHA-256 validation, and complete readback. It does not deploy a
+persistent Worker or install product dependencies. Point `WRANGLER_MODULE` to an
+existing Wrangler package (4.37 or newer), and authenticate with `wrangler login`
+if its existing session cannot refresh. Supply the approved product commit, not
+the current working branch's HEAD.
+
+```bash
+export CLOUDFLARE_ACCOUNT_ID='<cloudflare-account-id>'
+export WRANGLER_MODULE='/absolute/path/to/node_modules/wrangler'
+node scripts/release-publish.mjs dist "$VERSION" "$GLADE_SHA"
+```
+
+The source must be the unpacked, checksum-verified GitHub bundle. Verify all
+platform provenance and CycloneDX attestations before publication. The publisher
+requires the original approval JSON in `dist/vX.Y.Z/`; for an older immutable
+release, download each named approval artifact from its successful Release run
+directly into that directory. Never synthesize or copy approvals from another
+candidate. Conflicting versioned bytes, stale approvals, a newer live channel,
+lost historical index entries, or changed channel ETags stop publication.
+
 Publish the pinned manifest, checksums, and every platform archive under
 `glade-downloads/vX.Y.Z/`. Read each versioned object back and compare its
 bytes and SHA-256 value with the GitHub Release artifact before publishing any
@@ -140,6 +180,26 @@ channel index and latest manifest. In other words, **mutable pointers last**:
 `downloads.glade.sh/index.json`,
 `downloads.glade.sh/latest/release-manifest.json`, and the plugin
 `index.json` are the only mutable publication objects.
+
+GitHub publication alone is not distribution completion. Keep the existing
+versioned bytes unchanged. Publish the approval JSON files under the versioned
+prefix along with the release manifest. Future releases also retain these files
+as immutable GitHub assets; do not add assets to an already immutable release.
+For an older release, recover its original approval JSON from the successful
+Release workflow and retain it as create-only static companion evidence.
+
+After channel publication, sync `site/release-manifest.json` using
+`npm run release:sync --prefix site`, publish the site, and complete the default
+and pinned install checks above. Both must report the intended version and a
+ready doctor result before announcing distribution complete.
+
+Run the completion check after the site deploys. It checks the public channel,
+pinned manifest, site version, and both installer paths without modifying the
+operator's installed Glade or home directory:
+
+```bash
+bash scripts/release-distribution-check.sh "$VERSION"
+```
 
 Then check:
 
