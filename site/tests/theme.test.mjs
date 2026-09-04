@@ -63,6 +63,7 @@ const installation = await readFile(new URL("../docs-src/guide/installation.md",
 const overview = await readFile(new URL("../docs-src/guide/overview.md", import.meta.url), "utf8");
 const securityTrust = await readFile(new URL("../docs-src/guide/security-trust.md", import.meta.url), "utf8").catch(() => "");
 const quickstart = await readFile(new URL("../docs-src/guide/quickstart.md", import.meta.url), "utf8");
+const examples = await readFile(new URL("../docs-src/guide/examples.md", import.meta.url), "utf8");
 const cliReference = await readFile(new URL("../docs-src/reference/cli.md", import.meta.url), "utf8");
 const localTesting = await readFile(new URL("../docs-src/guide/local-testing.md", import.meta.url), "utf8");
 const testStartupCache = await readFile(new URL("../docs-src/guide/test-startup-cache.md", import.meta.url), "utf8");
@@ -197,14 +198,27 @@ test("release notes record final v0.2.12 validation", () => {
 test("release notes move v0.2.14 candidate fixes into the versioned section", () => {
   const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(unreleased, "release notes should contain an Unreleased section");
-  assert.match(unreleased[1], /No changes have been recorded since v0\.2\.14\./);
+  const unreleasedText = unreleased[1].replace(/\s+/g, " ");
+  assert.match(unreleasedText, /v0\.2\.14 section below is the frozen release candidate/);
+  assert.match(unreleasedText, /latest published release remains v0\.2\.13/);
   assert.doesNotMatch(unreleased[1], /source errors before cache reuse|RefinementServiceTest/);
 
   const released = releaseNotes.match(/^## v0\.2\.14 - 2026-09-04\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(released, "release notes should contain a v0.2.14 section");
-  assert.match(released[1], /source errors before cache reuse/);
-  assert.match(released[1], /RefinementServiceTest/);
-  assert.doesNotMatch(released[1], /not a published release|owner approval .* required/i);
+  const releasedText = released[1].replace(/\s+/g, " ");
+  assert.match(releasedText, /source errors before cache reuse/);
+  assert.match(releasedText, /RefinementServiceTest/);
+  assert.match(releasedText, /broader distribution dependency inventory/);
+  assert.doesNotMatch(releasedText, /complete distribution inventory/);
+  assert.doesNotMatch(releasedText, /not a published release|owner approval .* required/i);
+
+  for (const page of [repoReadme, quickstart, examples]) {
+    const pageText = page.replace(/\s+/g, " ");
+    assert.match(pageText, /v0\.2\.14 release candidate/);
+    assert.match(pageText, /published v0\.2\.13/);
+  }
+  assert.doesNotMatch(plugins, /licensing decision pending/i);
+  assert.match(plugins, /Apache License 2\.0/);
 });
 
 test("release docs publish the sealed private-corpus assurance snapshot", () => {

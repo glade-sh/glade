@@ -25,7 +25,7 @@ your shell configuration to keep it in new terminals.
 See [Installation](/guide/installation) for version pinning and archive verification.
 
 ::: warning Sample version boundary
-The corrected bundled test below is part of the upcoming release candidate.
+The corrected bundled test below is part of the v0.2.14 release candidate.
 The published v0.2.13 `refinement-service` sample has a reserved-identifier
 error and no test class. On v0.2.13, use the existing-project route below;
 do not treat a playground Pass with source errors as successful validation.

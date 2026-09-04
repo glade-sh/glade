@@ -8,11 +8,11 @@ Use plugins when you need a first-party extension that stays outside the base ru
 Glade plugins are standalone executables installed and run through
 `glade plugins`.
 
-::: warning First-party licensing decision pending
-The Tools repository is public, but its source and binary licensing still
-needs an explicit owner decision. Do not infer those rights from Glade's
-license or treat plugin distribution as adoption-ready. The installation
-reference below documents existing behavior; the core quickstart needs no plugin.
+::: info First-party licensing
+Glade Tools source and v0.2.13 release-candidate plugin archives use the
+Apache License 2.0 and carry project and linked-component notices. Published
+plugin versions before v0.2.13 do not contain the new packaged notice set.
+Product and plugin versions remain independent; the core quickstart needs no plugin.
 :::
 
 ::: tip Default registry

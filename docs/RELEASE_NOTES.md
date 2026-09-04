@@ -2,12 +2,15 @@
 
 ## Unreleased
 
-No changes have been recorded since v0.2.14.
+The v0.2.14 section below is the frozen release candidate. The latest published
+release remains v0.2.13 until the exact-SHA release gates and immutable assets
+complete. Historical receipts do not validate the candidate.
 
 ## v0.2.14 - 2026-09-04
 
 v0.2.14 focuses on a reliable first local-Apex result, clearer product
-boundaries, safer public feedback, and complete distribution inventory.
+boundaries, safer public feedback, and broader distribution dependency
+inventory.
 
 - The local Playground rejects source errors before cache reuse or execution.
   Invalid source cannot report Pass or change the local database. Warning-only

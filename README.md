@@ -43,9 +43,9 @@ Continue with the [canonical quickstart](https://glade.sh/guide/quickstart):
 - **Try the sample:** load the built-in Refinement Service, then run its named test.
 - **Use my project:** initialize an existing Salesforce DX project and run one known test class before the full suite.
 
-The corrected sample/test is an **unreleased source change**. The published
-v0.2.13 sample has a reserved-identifier error and no test class. Use the
-existing-project route on that release; a playground Pass alongside source
+The corrected sample/test is in the **v0.2.14 release candidate**. The published
+v0.2.13 sample has a reserved-identifier error and no test class. Until v0.2.14
+is published, use the existing-project route; a playground Pass alongside source
 errors is not valid proof. The quickstart keeps the release boundary explicit.
 
 For a project with `RefinementServiceTest` (substitute your actual class):
