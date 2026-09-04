@@ -374,6 +374,15 @@ func TestReleaseManualBuildHasNoPublishingAuthority(t *testing.T) {
 	}
 }
 
+func TestProductLicenseIsCanonicalApache20(t *testing.T) {
+	contents := mustReadFile(t, filepath.Join("..", "LICENSE"))
+	actual := fmt.Sprintf("%x", sha256.Sum256(contents))
+	const canonicalApache20SHA256 = "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+	if actual != canonicalApache20SHA256 {
+		t.Fatalf("LICENSE sha256 = %s, want canonical Apache-2.0 %s", actual, canonicalApache20SHA256)
+	}
+}
+
 func TestReleaseBuildSharedPlatformAndDefaultModes(t *testing.T) {
 	root, npmLog := makeReleaseBuildFixture(t)
 	script := filepath.Join(root, "scripts", "release-build.sh")
@@ -439,8 +448,12 @@ func TestReleaseBuildSharedPlatformAndDefaultModes(t *testing.T) {
 	archiveListing := runCommandOutput(t, root, "tar", "-tzf", archive)
 	assertReleaseArchiveShareMatchesPayloadManifest(t, archive)
 	assertReleaseArchiveGoNotices(t, archive, "glade")
+	archiveFiles := releaseArchiveFiles(t, archive)
+	if notice, ok := archiveFiles["NOTICE"]; !ok || string(notice) != "Glade\nCopyright 2026 Matt Simonis\n" {
+		t.Fatalf("platform archive NOTICE = %q, present=%v", notice, ok)
+	}
 	for _, want := range []string{
-		"glade", "LICENSE", "THIRD_PARTY_NOTICES/NOTICE-MANIFEST.json", "THIRD_PARTY_NOTICES/go/LICENSE",
+		"glade", "LICENSE", "NOTICE", "THIRD_PARTY_NOTICES/NOTICE-MANIFEST.json", "THIRD_PARTY_NOTICES/go/LICENSE",
 		"THIRD_PARTY_NOTICES/modules/github.com/glade-sh/apex-parser/@v0.1.0/NOTICE.md",
 		"share/glade/editor/vscode-glade.vsix", "share/glade/third_party/lwc/package.json",
 	} {
@@ -707,6 +720,7 @@ func makeReleaseBuildFixture(t *testing.T) (string, string) {
 	writeExecutable(t, filepath.Join(root, "scripts", "release-build.sh"), string(releaseScript))
 	writeReleaseFixtureFile(t, filepath.Join(root, "scripts", "release-go-notices.py"), string(mustReadFile(t, filepath.Join("release-go-notices.py"))))
 	writeReleaseFixtureFile(t, filepath.Join(root, "LICENSE"), "fixture license\n")
+	writeReleaseFixtureFile(t, filepath.Join(root, "NOTICE"), "Glade\nCopyright 2026 Matt Simonis\n")
 	writeReleaseFixtureFile(t, filepath.Join(root, "third_party", "glade-apex-parser", "LICENSE"), "parser license\n")
 	writeReleaseFixtureFile(t, filepath.Join(root, "third_party", "glade-apex-parser", "NOTICE.md"), "parser notice\n")
 	writeReleaseFixtureFile(t, filepath.Join(root, "go-mod-cache", "example.com", "linked@v1.2.3", "LICENSE"), "linked license\n")

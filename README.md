@@ -26,6 +26,10 @@ Glade reads source and metadata from disk and executes supported behavior in
 its own runtime. The CLI, VS Code extension, and local browser tools are
 interfaces to that runtime—not a hidden Salesforce org.
 
+Glade is an independent open-source project and is not affiliated with,
+sponsored by, or endorsed by Salesforce. Salesforce and Apex are trademarks of
+Salesforce, Inc.
+
 ## Get your first result
 
 ```bash
@@ -98,9 +102,9 @@ extension workflows. `@glade/performance` provides advisory scans;
 maintainer-facing compatibility tooling. Product and plugin versions are
 independent—verify the pairing your team uses.
 
-See [plugin installation and trust](docs/PLUGINS.md). Tools licensing and
-distributed notices are being clarified before wider plugin adoption is
-recommended. Base Glade does not depend on Tools internals.
+See [plugin installation and trust](docs/PLUGINS.md). Glade Tools source and
+first-party plugin archives are licensed under Apache-2.0 and carry project and
+bundled dependency notices. Base Glade does not depend on Tools internals.
 
 ## Feedback and contributions
 
@@ -113,6 +117,9 @@ Use [private vulnerability reporting](https://github.com/glade-sh/glade/security
 for security issues. See [SECURITY.md](SECURITY.md) and
 [CONTRIBUTING.md](CONTRIBUTING.md). The [pilot guide](https://glade.sh/guide/tester-field-guide)
 helps teams evaluate one representative path before making it a merge gate.
+
+Glade source, documentation, examples, site source, and the VS Code extension
+are licensed under the [Apache License 2.0](LICENSE). Copyright 2026 Matt Simonis.
 
 ## References
 

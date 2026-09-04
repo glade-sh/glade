@@ -1,9 +1,19 @@
 const assert = require("assert");
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
 const root = path.resolve(__dirname, "..");
 const manifest = require(path.join(root, "package.json"));
+const lock = require(path.join(root, "package-lock.json"));
+assert.strictEqual(manifest.license, "Apache-2.0");
+const canonicalApache20SHA256 = "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30";
+const license = fs.readFileSync(path.join(root, "LICENSE"));
+assert.strictEqual(crypto.createHash("sha256").update(license).digest("hex"), canonicalApache20SHA256);
+assert.strictEqual(fs.readFileSync(path.join(root, "NOTICE"), "utf8"), "Glade\nCopyright 2026 Matt Simonis\n");
+assert.strictEqual(manifest.version, "0.0.2");
+assert.strictEqual(lock.version, manifest.version);
+assert.strictEqual(lock.packages[""].version, manifest.version);
 assert.strictEqual(manifest.homepage, "https://glade.sh/guide/editor");
 assert.deepStrictEqual(manifest.repository, {
   type: "git", url: "https://github.com/glade-sh/glade.git", directory: "contrib/vscode-glade",
@@ -53,6 +63,11 @@ for (const evidence of ["out/bundled-dependencies.json", "out/THIRD_PARTY_NOTICE
   assert(!ignore.includes(evidence), `.vscodeignore must retain ${evidence} for packaged notice coverage`);
 }
 assert(fs.existsSync(path.join(root, "scripts", "bundle-notices.mjs")), "bundle notice helper must exist");
+assert(
+  manifest.scripts.package.includes("node test/vsix-package.test.js"),
+  "VSIX packaging must inspect the final archive for project and dependency notices",
+);
+assert(fs.existsSync(path.join(root, "test", "vsix-package.test.js")), "VSIX archive test must exist");
 assert(!ignore.includes("prototypes/**"), ".vscodeignore must not carry stale prototype exclusions");
 assert(!fs.existsSync(path.join(root, "prototypes")), "standalone prototypes must not be tracked with the release extension");
 

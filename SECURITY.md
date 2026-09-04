@@ -16,9 +16,8 @@ Use [private vulnerability reporting](https://github.com/glade-sh/glade/security
 for Glade, or the [Tools private reporting route](https://github.com/glade-sh/glade-tools/security/advisories/new)
 for first-party plugins. Private reporting is enabled for both repositories.
 
-An alternate monitored contact is not yet published. If GitHub reporting is
-unavailable, retain the report privately and retry the private route; do not
-post vulnerability details in a public issue or discussion.
+If GitHub reporting is unavailable, email [security@glade.sh](mailto:security@glade.sh).
+Do not post vulnerability details in a public issue or discussion.
 
 Include:
 

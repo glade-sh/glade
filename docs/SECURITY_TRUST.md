@@ -7,7 +7,8 @@ of checked facts, not one badge.
 
 Report vulnerabilities through [Glade private reporting](https://github.com/glade-sh/glade/security/advisories/new)
 or [Tools private reporting](https://github.com/glade-sh/glade-tools/security/advisories/new),
-not public issues. See [the security policy](../SECURITY.md) for contact availability.
+not public issues. If GitHub reporting is unavailable, use
+[security@glade.sh](mailto:security@glade.sh).
 
 - `govulncheck` checks reachable vulnerabilities in Go dependencies and the Go
   standard library.

@@ -2,8 +2,10 @@
 
 Start with a [workflow question or bug report](https://github.com/glade-sh/glade/issues/new/choose).
 For security reports use [private reporting](https://github.com/glade-sh/glade/security/advisories/new),
-not a public issue. Be specific and respectful; discuss behavior and evidence,
-not the person reporting it. See [SECURITY.md](SECURITY.md) for contact availability.
+not a public issue. If GitHub reporting is unavailable, use
+[security@glade.sh](mailto:security@glade.sh). Be specific and respectful;
+discuss behavior and evidence, not the person reporting it. Send private conduct
+concerns to [conduct@glade.sh](mailto:conduct@glade.sh).
 
 ## Share a useful reproduction
 
@@ -53,3 +55,6 @@ build or a small local test gate is not release/Salesforce parity proof.
 Describe the change, red/green test commands, compatibility impact, and any
 unverified behavior in the PR. Keep generated binaries, local evidence dumps,
 private logs, and screenshots with private identifiers out of commits.
+
+Unless explicitly stated otherwise, contributions intentionally submitted for
+inclusion in Glade are licensed under the [Apache License 2.0](LICENSE).

@@ -18,9 +18,9 @@ release assets.
 
 Use [Glade private reporting](https://github.com/glade-sh/glade/security/advisories/new)
 or [Tools private reporting](https://github.com/glade-sh/glade-tools/security/advisories/new).
-Both repositories enable private reporting. No alternate monitored contact is
-currently published; if GitHub is unavailable, retain the report privately and
-retry. Do not put vulnerability details in public issues.
+Both repositories enable private reporting. If GitHub is unavailable, email
+[security@glade.sh](mailto:security@glade.sh). Do not put vulnerability details
+in public issues.
 
 ## Interpret CI evidence
 

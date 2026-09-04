@@ -22,6 +22,7 @@ func TestReleaseBundleAddsArchiveJavaScriptComponentsToSBOM(t *testing.T) {
 	vsix := releaseBundleVSIX(t)
 	writeReleaseBundleArchive(t, archive, map[string][]byte{
 		"LICENSE": []byte("Glade license\n"),
+		"NOTICE":  []byte("Glade\nCopyright 2026 Matt Simonis\n"),
 		"share/glade/third_party/lwc/package.json":                                []byte(`{"dependencies":{"@babel/parser":"7.0.0","@lwc/compiler":"8.0.0"}}`),
 		"share/glade/third_party/lwc/node_modules/@babel/parser/package.json":     []byte(`{"name":"@babel/parser","version":"7.0.0","license":"MIT"}`),
 		"share/glade/third_party/lwc/node_modules/@babel/parser/lib/package.json": []byte(`{"private":true}`),
@@ -88,8 +89,9 @@ func TestReleaseBundleRejectsUnboundVSIXEvidence(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			root := t.TempDir()
 			archive := filepath.Join(root, "glade.tar.gz")
-			writeReleaseBundleArchive(t, archive, map[string][]byte{
-				"LICENSE": []byte("Glade license\n"),
+				writeReleaseBundleArchive(t, archive, map[string][]byte{
+					"LICENSE": []byte("Glade license\n"),
+					"NOTICE":  []byte("Glade\nCopyright 2026 Matt Simonis\n"),
 				"share/glade/third_party/lwc/package.json":                            []byte(`{"dependencies":{"@babel/parser":"7.0.0"}}`),
 				"share/glade/third_party/lwc/node_modules/@babel/parser/package.json": []byte(`{"name":"@babel/parser","version":"7.0.0","license":"MIT"}`),
 				"share/glade/editor/vscode-glade.vsix":                                tc.vsix(t),
@@ -105,11 +107,53 @@ func TestReleaseBundleRejectsUnboundVSIXEvidence(t *testing.T) {
 	}
 }
 
+func TestReleaseBundleRejectsMissingProjectNotices(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		archiveNotice bool
+		vsix          []byte
+		want          string
+	}{
+		{name: "archive", vsix: releaseBundleVSIX(t), want: "archive is missing NOTICE"},
+		{name: "vsix", archiveNotice: true, vsix: releaseBundleVSIXWithoutProjectNotice(t), want: "VSIX is missing extension/NOTICE"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			archive := filepath.Join(root, "glade.tar.gz")
+			files := map[string][]byte{
+				"LICENSE": []byte("Glade license\n"),
+				"share/glade/third_party/lwc/package.json":                            []byte(`{"dependencies":{"@babel/parser":"7.0.0"}}`),
+				"share/glade/third_party/lwc/node_modules/@babel/parser/package.json": []byte(`{"name":"@babel/parser","version":"7.0.0","license":"MIT"}`),
+				"share/glade/editor/vscode-glade.vsix":                                tc.vsix,
+			}
+			if tc.archiveNotice {
+				files["NOTICE"] = []byte("Glade\nCopyright 2026 Matt Simonis\n")
+			}
+			writeReleaseBundleArchive(t, archive, files)
+			sbom := filepath.Join(root, "glade.sbom.json")
+			writeReleaseFixtureFile(t, sbom, `{"bomFormat":"CycloneDX","specVersion":"1.6","components":[]}`)
+			cmd := exec.Command("python3", "release-bundle.py", "sbom", archive, sbom)
+			out, err := cmd.CombinedOutput()
+			if err == nil || !strings.Contains(string(out), tc.want) {
+				t.Fatalf("project notice rejection = err %v, output %s; want %q", err, out, tc.want)
+			}
+		})
+	}
+}
+
 func releaseBundleVSIX(t *testing.T) []byte {
-	return releaseBundleVSIXWith(t, true, "")
+	return releaseBundleVSIXFixture(t, true, "", true)
 }
 
 func releaseBundleVSIXWith(t *testing.T, includeBundle bool, hashOverride string) []byte {
+	return releaseBundleVSIXFixture(t, includeBundle, hashOverride, true)
+}
+
+func releaseBundleVSIXWithoutProjectNotice(t *testing.T) []byte {
+	return releaseBundleVSIXFixture(t, true, "", false)
+}
+
+func releaseBundleVSIXFixture(t *testing.T, includeBundle bool, hashOverride string, includeNotice bool) []byte {
 	t.Helper()
 	var output bytes.Buffer
 	writer := zip.NewWriter(&output)
@@ -123,6 +167,9 @@ func releaseBundleVSIXWith(t *testing.T, includeBundle bool, hashOverride string
 		"extension/out/extension.meta.json":       `{"outputs":{"out/extension.js":{"inputs":{"node_modules/vscode-languageclient/lib/node/main.js":{"bytesInOutput":12},"node_modules/dev-only/index.js":{"bytesInOutput":0}}}}}`,
 		"extension/out/bundled-dependencies.json": fmt.Sprintf(`{"schemaVersion":1,"bundle":{"path":"out/extension.js","sha256":"%x"},"packages":[{"name":"vscode-languageclient","version":"10.1.0","license":"MIT","packagePath":"node_modules/vscode-languageclient","noticeFiles":["License.txt"]}]}`, bundleHash),
 		"extension/out/THIRD_PARTY_NOTICES.txt":   "vscode-languageclient@10.1.0\n--- License.txt ---\nMIT notice\n",
+	}
+	if includeNotice {
+		files["extension/NOTICE"] = "Glade\nCopyright 2026 Matt Simonis\n"
 	}
 	if includeBundle {
 		files["extension/out/extension.js"] = string(bundle)

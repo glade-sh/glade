@@ -263,8 +263,8 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/glade-sh/glade' }
     ],
     footer: {
-      message: 'Glade is local-first Apex tooling. Supported paths run locally; use Salesforce for hosted services, deployment, and final production validation. · <a href="/maintainer/">Maintainer</a> · <a href="/guide/security-trust">Security</a> · <a href="https://github.com/glade-sh/glade/releases">Releases</a> · <a href="https://github.com/glade-sh/glade/blob/main/LICENSE">Apache-2.0</a>',
-      copyright: 'Released by the Glade project.'
+      message: 'Glade is an independent project and is not affiliated with, sponsored by, or endorsed by Salesforce. Salesforce and Apex are trademarks of Salesforce, Inc. · <a href="/maintainer/">Maintainer</a> · <a href="/guide/security-trust">Security</a> · <a href="https://github.com/glade-sh/glade/releases">Releases</a> · <a href="https://github.com/glade-sh/glade/blob/main/LICENSE">Apache-2.0</a>',
+      copyright: 'Copyright 2026 Matt Simonis.'
     }
   }
 })

@@ -319,13 +319,14 @@ consume_platform_payload() {
 		exit 1
 	fi
 	cp "${ROOT}/LICENSE" "${platform_root}/LICENSE"
+	cp "${ROOT}/NOTICE" "${platform_root}/NOTICE"
 	if [[ "${goos}" == "windows" ]]; then
 		(
 			cd "${platform_root}"
-			zip -q "${DIST_DIR}/${archive}" "${binary}" LICENSE THIRD_PARTY_NOTICES share
+			zip -q "${DIST_DIR}/${archive}" "${binary}" LICENSE NOTICE THIRD_PARTY_NOTICES share
 		)
 	else
-		tar -C "${platform_root}" -czf "${DIST_DIR}/${archive}" "${binary}" LICENSE THIRD_PARTY_NOTICES share
+		tar -C "${platform_root}" -czf "${DIST_DIR}/${archive}" "${binary}" LICENSE NOTICE THIRD_PARTY_NOTICES share
 	fi
 	(
 		cd "${DIST_DIR}"

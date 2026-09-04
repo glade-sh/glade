@@ -2,7 +2,7 @@
   "name": "vscode-glade",
   "displayName": "Glade Local Apex",
   "description": "Run, test, debug, and inspect local Apex projects with Glade.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "glade",
   "license": "Apache-2.0",
   "homepage": "https://glade.sh/guide/editor",
@@ -729,7 +729,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "bundle": "esbuild src/extension.ts --bundle --minify --platform=node --format=cjs --target=node20 --external:vscode --outfile=out/extension.js --metafile=out/extension.meta.json && node scripts/bundle-notices.mjs",
-    "package": "mkdir -p dist && npm run compile && npm run bundle && vsce package --allow-missing-repository --out dist/vscode-glade-${npm_package_version}.vsix",
+    "package": "mkdir -p dist && npm run compile && npm run bundle && vsce package --allow-missing-repository --out dist/vscode-glade-${npm_package_version}.vsix && node test/vsix-package.test.js dist/vscode-glade-${npm_package_version}.vsix",
     "test": "npm run compile && node test/commands.test.js && node test/apexLogDetection.test.js && node test/apexLogCache.test.js && node test/apexLogDiagnostics.test.js && node test/apexLogProviders.test.js && node test/adapter.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/localOrgArgs.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/branding.test.js && node test/extensionHubRefresh.test.js && node test/startHereModel.test.js && node test/startHereState.test.js && node test/hubModel.test.js && node test/hubActions.test.js && node test/hubHtml.test.js && node test/hubController.test.js && node test/hubSalesforce.test.js && node test/pluginModules.test.js && node test/pluginController.test.js && node test/workbenchModel.test.js && node test/workbenchStore.test.js && node test/workbenchCli.test.js && node test/workbenchView.test.js && node test/sidebarViews.test.js"
   },
   "devDependencies": {

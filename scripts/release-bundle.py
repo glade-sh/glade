@@ -77,6 +77,8 @@ def add_archive_javascript_components(archive_path, sbom_path):
     members = archive_members(archive_path)
     if "LICENSE" not in members:
         raise SystemExit("archive is missing LICENSE notice")
+    if "NOTICE" not in members:
+        raise SystemExit("archive is missing NOTICE")
 
     try:
         document = json.loads(sbom_path.read_text(encoding="utf-8"))
@@ -121,6 +123,8 @@ def add_archive_javascript_components(archive_path, sbom_path):
             with zipfile.ZipFile(io.BytesIO(members[vsix_path])) as vsix:
                 if "extension/LICENSE.txt" not in vsix.namelist():
                     raise SystemExit("VSIX is missing extension/LICENSE.txt notice")
+                if "extension/NOTICE" not in vsix.namelist():
+                    raise SystemExit("VSIX is missing extension/NOTICE")
                 bundle = vsix.read("extension/out/extension.js")
                 meta = json.loads(vsix.read("extension/out/extension.meta.json"))
                 evidence = json.loads(vsix.read("extension/out/bundled-dependencies.json"))
