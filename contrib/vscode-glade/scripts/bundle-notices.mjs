@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { dirname, relative, resolve, sep } from "node:path";
+import { relative, resolve, sep } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const bundlePath = resolve(root, "out/extension.js");
