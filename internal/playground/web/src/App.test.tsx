@@ -139,10 +139,10 @@ test("does not render database filters before the Database output tab opens", ()
   expect(html).not.toContain("Custom settings")
 })
 
-test("links the playground docs action to the docs reference area", () => {
+test("links the playground docs action to the guide", () => {
   stubLocalStorage()
 
   const html = renderToString(<App />)
 
-  expect(html).toContain('href="https://glade.sh/docs/"')
+	expect(html).toContain('href="https://glade.sh/guide/"')
 })

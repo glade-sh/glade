@@ -1171,7 +1171,7 @@ export default function App() {
             Advanced
           </label>
           <Button variant="ghost" asChild>
-            <a href="https://glade.sh/docs/" target="_blank" rel="noreferrer">
+            <a href="https://glade.sh/guide/" target="_blank" rel="noreferrer">
               Docs
             </a>
           </Button>

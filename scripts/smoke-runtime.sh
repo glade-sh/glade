@@ -166,4 +166,96 @@ kill "${SERVER_PID}" 2>/dev/null || true
 wait "${SERVER_PID}" 2>/dev/null || true
 SERVER_PID=""
 
+PLAYGROUND_ADDR="$(python3 - <<'PY'
+import socket
+s = socket.socket()
+s.bind(("127.0.0.1", 0))
+host, port = s.getsockname()
+s.close()
+print(f"{host}:{port}")
+PY
+)"
+PLAYGROUND_DATA_ROOT="${TMP}/playground-live"
+"${GLADE}" playground --addr "${PLAYGROUND_ADDR}" --data-root "${PLAYGROUND_DATA_ROOT}" --db "${TMP}/playground-live.sqlite" --examples --no-open >"${TMP}/playground-live.log" 2>&1 &
+SERVER_PID="$!"
+playground_ready=0
+for _ in $(seq 1 300); do
+  if curl -fsS "http://${PLAYGROUND_ADDR}/playground/api/examples" >"${TMP}/playground-examples.json" 2>/dev/null; then
+    playground_ready=1
+    break
+  fi
+  sleep 0.1
+done
+if [[ "${playground_ready}" != "1" ]]; then
+  tail -c 4000 "${TMP}/playground-live.log" >&2
+  exit 1
+fi
+curl -fsS -X POST -H 'Content-Type: application/json' --data '{"id":"refinement-service"}' "http://${PLAYGROUND_ADDR}/playground/api/examples/load" >"${TMP}/refinement-meta.json"
+REFINEMENT_PROJECT="${PLAYGROUND_DATA_ROOT}/workspaces/default"
+"${GLADE}" check --project "${REFINEMENT_PROJECT}" --json >"${TMP}/refinement-check.json"
+grep -q '"diagnostics": 0' "${TMP}/refinement-check.json"
+"${GLADE}" test --project "${REFINEMENT_PROJECT}" --class RefinementServiceTest --json >"${TMP}/refinement-test.json"
+python3 - "${TMP}/refinement-test.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as f:
+    result = json.load(f)
+summary = result.get("summary", {})
+if summary.get("total", 0) < 1 or summary.get("passed", 0) < 1 or summary.get("errors", 0) != 0:
+    raise SystemExit(f"named RefinementServiceTest did not pass: {summary}")
+if not any(test.get("methodName") == "createsAndLabelsFileRow" for test in result.get("tests", [])):
+    raise SystemExit("createsAndLabelsFileRow was not executed")
+PY
+python3 - "${TMP}/refinement-meta.json" "${TMP}/refinement-run.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as f:
+    meta = json.load(f)
+with open(sys.argv[2], "w", encoding="utf-8") as f:
+    json.dump({"anonymousBody": meta["anonymousBody"], "mode": "scratch", "limitMode": "permissive"}, f)
+PY
+curl -fsS -X POST -H 'Content-Type: application/json' --data-binary @"${TMP}/refinement-run.json" "http://${PLAYGROUND_ADDR}/playground/api/run" >"${TMP}/refinement-run-result.json"
+python3 - "${TMP}/refinement-run-result.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as f:
+    result = json.load(f)
+if result.get("status") != "pass" or any(d.get("severity") == "error" for d in result.get("diagnostics", [])):
+    raise SystemExit(f"refinement example did not run cleanly: {result}")
+if "Refine 01 #F-100" not in "\n".join(result.get("logs", [])):
+    raise SystemExit(f"refinement label missing: {result}")
+if not any(diff.get("object") == "Account" and diff.get("inserted") == 1 for diff in result.get("orgDiff", [])):
+    raise SystemExit(f"refinement insert missing: {result}")
+PY
+curl -fsS "http://${PLAYGROUND_ADDR}/playground/api/database" >"${TMP}/refinement-before-invalid.json"
+python3 - "${TMP}/refinement-meta.json" "${TMP}/refinement-invalid-source.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as f:
+    meta = json.load(f)
+source = next(file for file in meta["files"] if file["path"].endswith("RefinementService.cls"))
+with open(sys.argv[2], "w", encoding="utf-8") as f:
+    json.dump({"path": source["path"], "version": source["version"], "content": "public class RefinementService { public static void broken( { }\n"}, f)
+PY
+curl -fsS -X PUT -H 'Content-Type: application/json' --data-binary @"${TMP}/refinement-invalid-source.json" "http://${PLAYGROUND_ADDR}/playground/api/files" >"${TMP}/refinement-invalid-save.json"
+curl -fsS -X POST -H 'Content-Type: application/json' --data-binary @"${TMP}/refinement-run.json" "http://${PLAYGROUND_ADDR}/playground/api/run" >"${TMP}/refinement-invalid-run.json"
+curl -fsS "http://${PLAYGROUND_ADDR}/playground/api/database" >"${TMP}/refinement-after-invalid.json"
+cmp -s "${TMP}/refinement-before-invalid.json" "${TMP}/refinement-after-invalid.json"
+python3 - "${TMP}/refinement-invalid-run.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as f:
+    result = json.load(f)
+if result.get("status") != "compile_error" or result.get("logs") or result.get("orgDiff"):
+    raise SystemExit(f"invalid source must not run or change the org: {result}")
+PY
+kill "${SERVER_PID}" 2>/dev/null || true
+wait "${SERVER_PID}" 2>/dev/null || true
+SERVER_PID=""
+
 echo "runtime smoke: ok"

@@ -42,8 +42,8 @@ func TestRuntimeSmokeUsesProvidedBinary(t *testing.T) {
 	}
 
 	invocation := regexp.MustCompile(`(?m)^"\$\{GLADE\}"(?:\s|$)`)
-	if got := len(invocation.FindAllStringIndex(runtimeSmoke, -1)); got != 12 {
-		t.Errorf("smoke-runtime.sh has %d Glade invocations through GLADE, want 12", got)
+	if got := len(invocation.FindAllStringIndex(runtimeSmoke, -1)); got != 15 {
+		t.Errorf("smoke-runtime.sh has %d Glade invocations through GLADE, want 15", got)
 	}
 	for _, line := range strings.Split(runtimeSmoke, "\n") {
 		trimmed := strings.TrimSpace(line)
@@ -78,6 +78,11 @@ func TestRuntimeSmokePreservesCoverage(t *testing.T) {
 		`grep -q 'Glade Local Data'`,
 		`"${GLADE}" playground`,
 		`grep -q 'http://127.0.0.1:1789/playground/'`,
+		`/playground/api/examples/load`,
+		`"id":"refinement-service"`,
+		`RefinementServiceTest`,
+		`"createsAndLabelsFileRow"`,
+		`invalid source must not run`,
 		`"${GLADE}" lsp`,
 		`grep -q 'textDocument/publishDiagnostics'`,
 		`"${GLADE}" server`,

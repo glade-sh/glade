@@ -183,14 +183,6 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 		Version:          r.version,
 		SourceAPIVersion: apiVersion,
 	}.String()
-	if runtimeErr == nil && req.UseCache {
-		if cached, ok, err := r.cache.Load(cacheKey); err != nil {
-			return RunResult{}, err
-		} else if ok && r.lastOrg != nil && r.lastOrgCacheKey == cacheKey {
-			cached.CacheHit = true
-			return cached, nil
-		}
-	}
 
 	result := RunResult{
 		RunID:     runID(started),
@@ -199,6 +191,7 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 		CacheKey:  cacheKey,
 		StartedAt: started,
 	}
+	result.Diagnostics = append(result.Diagnostics, diagnosticsFromIndex(indexDiagnostics)...)
 
 	if runtimeErr != nil {
 		result.Status = RunStatusCompileError
@@ -206,7 +199,20 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 		result.CompletedAt = time.Now().UTC()
 		return result, nil
 	}
-	result.Diagnostics = append(result.Diagnostics, diagnosticsFromIndex(indexDiagnostics)...)
+	if (diagnostic.Report{Diagnostics: indexDiagnostics}).HasErrors() {
+		result.Status = RunStatusCompileError
+		result.CompileMS = millisSince(compileStart)
+		result.CompletedAt = time.Now().UTC()
+		return result, nil
+	}
+	if req.UseCache {
+		if cached, ok, err := r.cache.Load(cacheKey); err != nil {
+			return RunResult{}, err
+		} else if ok && r.lastOrg != nil && r.lastOrgCacheKey == cacheKey {
+			cached.CacheHit = true
+			return cached, nil
+		}
+	}
 
 	program, err := vm.CompileAnonymousWithOptions(req.AnonymousBody, vm.CompileOptions{APIVersion: runtime.apiVersion})
 	result.CompileMS = millisSince(compileStart)
@@ -405,7 +411,12 @@ func loadWorkspaceIndex(root string) (typesys.Index, []diagnostic.Diagnostic, er
 func diagnosticsFromIndex(in []diagnostic.Diagnostic) []Diagnostic {
 	out := make([]Diagnostic, 0, len(in))
 	for _, d := range in {
-		out = append(out, Diagnostic{Severity: string(d.Severity), Message: d.Message, Line: d.Range.Start.Line, Column: d.Range.Start.Column})
+		result := Diagnostic{Severity: string(d.Severity), Message: d.Message}
+		if d.Range != nil {
+			result.Line = d.Range.Start.Line
+			result.Column = d.Range.Start.Column
+		}
+		out = append(out, result)
 	}
 	return out
 }

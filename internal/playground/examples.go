@@ -40,8 +40,8 @@ var exampleProjects = []exampleTemplate{
 		Files: map[string]string{
 			"sfdx-project.json": sfdxProjectJSON,
 			"force-app/main/default/classes/RefinementService.cls": `public class RefinementService {
-  public static Account createFileRow(String name, String number) {
-    Account account = new Account(Name = name, AccountNumber = number);
+  public static Account createFileRow(String name, String accountNumber) {
+    Account account = new Account(Name = name, AccountNumber = accountNumber);
     insert account;
     return [
       SELECT Id, Name, AccountNumber
@@ -49,6 +49,19 @@ var exampleProjects = []exampleTemplate{
       WHERE Id = :account.Id
       LIMIT 1
     ];
+  }
+}
+`,
+			"force-app/main/default/classes/RefinementServiceTest.cls": `@IsTest
+private class RefinementServiceTest {
+  @IsTest
+  static void createsAndLabelsFileRow() {
+    Account row = RefinementService.createFileRow('Refine 01', 'F-100');
+    System.assertNotEquals(null, row.Id);
+    System.assertEquals('F-100', row.AccountNumber);
+    System.assertEquals('Refine 01 #F-100', FileRow.label(row));
+    List<Account> saved = [SELECT Id FROM Account WHERE Id = :row.Id];
+    System.assertEquals(1, saved.size());
   }
 }
 `,
