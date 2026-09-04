@@ -2,10 +2,12 @@
 
 ## Unreleased
 
-This is an unreleased candidate, not a published release. The release version,
-cross-platform distribution checks, exact-candidate Salesforce correctness evidence,
-and owner approval are still required by [RELEASE_POLICY.md](RELEASE_POLICY.md).
-Historical receipts below do not validate this candidate.
+No changes have been recorded since v0.2.14.
+
+## v0.2.14 - 2026-09-04
+
+v0.2.14 focuses on a reliable first local-Apex result, clearer product
+boundaries, safer public feedback, and complete distribution inventory.
 
 - The local Playground rejects source errors before cache reuse or execution.
   Invalid source cannot report Pass or change the local database. Warning-only
@@ -23,8 +25,8 @@ Historical receipts below do not validate this candidate.
 - Website light-theme terminal contrast, highlighting warnings, anonymous-Apex
   navigation, and legacy `/docs` redirects are corrected.
 - Repository contribution and issue-report guidance now includes private-source
-  precautions and direct private vulnerability reporting. Tools licensing and a
-  monitored fallback security contact remain owner decisions.
+  precautions and direct private vulnerability reporting. Product source and
+  distributions carry the canonical Apache License 2.0 and project notice.
 - ZIP report export confines reads to the selected saved run, rejects linked
   entries, and publishes the archive without overwriting hard-linked source
   files. This change does not cover HTML export or every report reader.
@@ -38,12 +40,10 @@ Historical receipts below do not validate this candidate.
   linked Go modules, and the vendored parser, bound to the built binary hash.
   System/CGO notice sufficiency remains an owner/legal review boundary.
 
-Upgrade only after the new immutable release is approved and published: run
-`glade update`, then `glade version` and `glade doctor --project .` inside your
-project. No Windows archive or historical-version parity is introduced. Packaged
-targets remain macOS/Linux AMD64 and ARM64; the checked source window remains
-65.0, 66.0, and 67.0. Candidate platform, plugin, and extension pairings must be
-recorded in the release closeout before promotion.
+Upgrade with `glade update`, then run `glade version` and
+`glade doctor --project .` inside your project. No Windows archive or
+historical-version parity is introduced. Packaged targets remain macOS/Linux
+AMD64 and ARM64; the checked source window remains 65.0, 66.0, and 67.0.
 
 ## v0.2.13 - 2026-09-03
 

@@ -194,13 +194,17 @@ test("release notes record final v0.2.12 validation", () => {
   assert.match(candidateText, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.12\/docs\/KNOWN_GAPS\.md/);
 });
 
-test("unreleased notes distinguish candidate fixes from published evidence", () => {
+test("release notes move v0.2.14 candidate fixes into the versioned section", () => {
   const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(unreleased, "release notes should contain an Unreleased section");
-  assert.match(unreleased[1], /source errors before cache reuse/);
-  assert.match(unreleased[1], /RefinementServiceTest/);
-  assert.match(unreleased[1], /not a published release/);
-  assert.match(unreleased[1], /Salesforce correctness evidence/);
+  assert.match(unreleased[1], /No changes have been recorded since v0\.2\.14\./);
+  assert.doesNotMatch(unreleased[1], /source errors before cache reuse|RefinementServiceTest/);
+
+  const released = releaseNotes.match(/^## v0\.2\.14 - 2026-09-04\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
+  assert.ok(released, "release notes should contain a v0.2.14 section");
+  assert.match(released[1], /source errors before cache reuse/);
+  assert.match(released[1], /RefinementServiceTest/);
+  assert.doesNotMatch(released[1], /not a published release|owner approval .* required/i);
 });
 
 test("release docs publish the sealed private-corpus assurance snapshot", () => {
