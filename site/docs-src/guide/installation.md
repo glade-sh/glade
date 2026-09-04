@@ -43,8 +43,11 @@ Override the destination or pin a release when needed:
 
 ```bash
 curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR=/usr/local/bin sh
-curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=v0.2.13 sh
+curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=vX.Y.Z sh
 ```
+
+Replace `vX.Y.Z` with the exact published release you reviewed. CI examples in
+this guide pin their tested release directly.
 
 ## Update
 
