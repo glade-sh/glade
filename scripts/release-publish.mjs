@@ -113,6 +113,38 @@ export async function publishRelease(bucket, root, version, expectedSHA, expecte
   return { version, sourceSHA: expectedSHA, toolsSHA: sf.toolsSHA, versionedObjects: files.size }
 }
 
+export async function releaseR2Fetch(request, env) {
+  const key = new URL(request.url).searchParams.get('key') || ''
+  const mutable = key === 'index.json' || key === 'latest/release-manifest.json'
+  const filename = key.startsWith(`${env.VERSION}/`) ? key.slice(env.VERSION.length + 1) : ''
+  if (!mutable && (!filename || filename.includes('/') || filename.includes('..'))) return new Response(null, { status: 403 })
+  if (request.method === 'GET') {
+    const object = await env.BUCKET.get(key)
+    return object ? new Response(object.body, { headers: { etag: object.etag } }) : new Response(null, { status: 404 })
+  }
+  if (request.method !== 'PUT') return new Response(null, { status: 405 })
+  const options = JSON.parse(request.headers.get('x-r2-options') || '{}')
+  if (!(options.onlyIf?.etagDoesNotMatch === '*' || (mutable && options.onlyIf?.etagMatches)) || !/^[a-f0-9]{64}$/.test(options.sha256 || '')) return new Response(null, { status: 400 })
+  const object = await env.BUCKET.put(key, request.body, options)
+  return Response.json(object ? { etag: object.etag } : null)
+}
+
+export function previewBucket(fetch) {
+  return {
+    async get(key) {
+      const response = await fetch(`http://localhost/?key=${encodeURIComponent(key)}`, { signal: AbortSignal.timeout(120000) })
+      if (response.status === 404) return null
+      assert.ok(response.ok, `remote R2 read failed: ${response.status}`)
+      return { etag: response.headers.get('etag'), arrayBuffer: () => response.arrayBuffer() }
+    },
+    async put(key, body, options) {
+      const response = await fetch(`http://localhost/?key=${encodeURIComponent(key)}`, { method: 'PUT', body, headers: { 'x-r2-options': JSON.stringify(options) }, signal: AbortSignal.timeout(120000) })
+      assert.ok(response.ok, `remote R2 write failed: ${response.status}`)
+      return response.json()
+    },
+  }
+}
+
 async function main() {
   assert.equal(process.argv.length, 5, 'usage: release-publish.mjs <unpacked-bundle> <version> <approved-product-sha>')
   const [root, version, expectedSHA] = process.argv.slice(2)
@@ -122,20 +154,24 @@ async function main() {
   const expectedToolsSHA = execFileSync('bash', [fileURLToPath(new URL('./verify-salesforce-check.sh', import.meta.url)), '--tag-tools-sha', version], { encoding: 'utf8' }).trim()
   assert.match(process.env.CLOUDFLARE_ACCOUNT_ID || '', /^[a-f0-9]{32}$/, 'CLOUDFLARE_ACCOUNT_ID is required')
   const require = createRequire(import.meta.url)
-  const { getPlatformProxy } = require(process.env.WRANGLER_MODULE || 'wrangler')
+  const { unstable_dev } = require(process.env.WRANGLER_MODULE || 'wrangler')
   const temporary = await mkdtemp(path.join(os.tmpdir(), 'glade-release-publisher-'))
-  let proxy
+  let worker
   try {
     const configPath = path.join(temporary, 'wrangler.json')
     await writeFile(configPath, JSON.stringify({
       name: 'glade-release-publisher', compatibility_date: '2026-09-01',
       account_id: process.env.CLOUDFLARE_ACCOUNT_ID,
+      vars: { VERSION: version },
       r2_buckets: [{ binding: 'BUCKET', bucket_name: 'glade-downloads', remote: true }],
     }), { mode: 0o600 })
-    proxy = await getPlatformProxy({ configPath, persist: false, remoteBindings: true })
-    console.log(JSON.stringify(await publishRelease(proxy.env.BUCKET, root, version, expectedSHA, expectedToolsSHA)))
+    const script = path.join(temporary, 'publisher.mjs')
+    await writeFile(script, `export default { fetch: ${releaseR2Fetch.toString()} };\n`, { mode: 0o600 })
+    // Use asynchronous preview requests: getPlatformProxy can deadlock on remote bindings.
+    worker = await unstable_dev(script, { config: configPath, local: false, experimental: { disableExperimentalWarning: true, disableDevRegistry: true } })
+    console.log(JSON.stringify(await publishRelease(previewBucket((...args) => worker.fetch(...args)), root, version, expectedSHA, expectedToolsSHA)))
   } finally {
-    await proxy?.dispose()
+    await worker?.stop()
     await rm(temporary, { recursive: true, force: true })
   }
 }

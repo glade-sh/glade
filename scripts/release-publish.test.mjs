@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
-import { publishRelease } from './release-publish.mjs'
+import { publishRelease, previewBucket, releaseR2Fetch } from './release-publish.mjs'
 
 const version = 'v1.2.3', sha = '1'.repeat(40), toolsSHA = '2'.repeat(40)
 const hash = bytes => createHash('sha256').update(bytes).digest('hex')
@@ -51,7 +51,12 @@ async function fixture(t) {
 }
 
 test('publishes create-only files, verifies them, advances pointers last, and resumes', async t => {
-  const { root, bucket, calls } = await fixture(t)
+  const { root, bucket: storage, calls } = await fixture(t)
+  const env = { VERSION: version, BUCKET: {
+    async get(key) { const object = await storage.get(key); return object && { etag: object.etag, body: await object.arrayBuffer() } },
+    async put(key, body, options) { return storage.put(key, Buffer.from(await new Response(body).arrayBuffer()), options) },
+  } }
+  const bucket = previewBucket((url, init) => releaseR2Fetch(new Request(url, init), env))
   await publishRelease(bucket, root, version, sha, toolsSHA)
   const writes = calls.filter(([method]) => method === 'put')
   assert.equal(writes.length, 18)
@@ -62,6 +67,18 @@ test('publishes create-only files, verifies them, advances pointers last, and re
   }
   await publishRelease(bucket, root, version, sha, toolsSHA)
   assert.equal(calls.filter(([method]) => method === 'put').length, 18)
+})
+
+test('remote preview rejects unrelated keys and unconditional or versioned overwrite requests', async () => {
+  const env = { VERSION: version, BUCKET: { get() { assert.fail('unexpected read') }, put() { assert.fail('unexpected write') } } }
+  for (const [key, options, status] of [
+    ['v0.0.1/release-manifest.json', { onlyIf: { etagDoesNotMatch: '*' } }, 403],
+    [`${version}/release-manifest.json`, {}, 400],
+    [`${version}/release-manifest.json`, { onlyIf: { etagMatches: 'existing' } }, 400],
+  ]) {
+    const response = await releaseR2Fetch(new Request(`http://localhost/?key=${encodeURIComponent(key)}`, { method: 'PUT', body: 'x', headers: { 'x-r2-options': JSON.stringify({ sha256: 'a'.repeat(64), ...options }) } }), env)
+    assert.equal(response.status, status)
+  }
 })
 
 test('never overwrites a conflicting versioned object or advances pointers', async t => {

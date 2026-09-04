@@ -148,7 +148,7 @@ equivalent no-clobber primitive enforced by the publisher. Do not use a bare
 `wrangler r2 object put` command for versioned objects: it can replace
 published bytes.
 
-The checked publisher uses Wrangler's authenticated remote R2 binding, atomic
+The checked publisher uses Wrangler's authenticated, temporary remote preview R2 binding, atomic
 `onlyIf` writes, SHA-256 validation, and complete readback. It does not deploy a
 persistent Worker or install product dependencies. Point `WRANGLER_MODULE` to an
 existing Wrangler package (4.37 or newer), and authenticate with `wrangler login`
