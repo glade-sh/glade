@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -624,28 +625,66 @@ func runReportExportLatest(runsDir, output string, format string, w io.Writer) e
 		fmt.Fprintf(w, "Exported %s\n", output)
 		return nil
 	}
-	file, err := os.Create(output)
+	runsRoot, err := os.OpenRoot(runsDir)
+	if err != nil {
+		return err
+	}
+	defer runsRoot.Close()
+	runsPath, err := filepath.Abs(runsDir)
+	if err != nil {
+		return err
+	}
+	runPath, err := filepath.Abs(latest.RunDir)
+	if err != nil {
+		return err
+	}
+	physicalRun, err := filepath.EvalSymlinks(runPath)
+	if err != nil {
+		return err
+	}
+	outputDir, err := filepath.EvalSymlinks(filepath.Dir(output))
+	if err != nil {
+		return err
+	}
+	outputDir, err = filepath.Abs(outputDir)
+	if err != nil {
+		return err
+	}
+	outputPath := filepath.Join(outputDir, filepath.Base(output))
+	if outputRel, err := filepath.Rel(physicalRun, outputPath); err == nil && filepath.IsLocal(outputRel) {
+		return errors.New("report output must be outside the saved run directory")
+	}
+	rel, err := filepath.Rel(runsPath, runPath)
+	if err != nil || !filepath.IsLocal(rel) || rel == "." {
+		return errors.New("saved run must be inside the selected runs directory")
+	}
+	source, err := runsRoot.OpenRoot(rel)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+	file, err := os.CreateTemp(outputDir, ".glade-report-*.zip")
 	if err != nil {
 		return err
 	}
 	defer file.Close()
+	defer os.Remove(file.Name())
 	zw := zip.NewWriter(file)
-	err = filepath.WalkDir(latest.RunDir, func(path string, entry os.DirEntry, walkErr error) error {
+	err = fs.WalkDir(source.FS(), ".", func(path string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
 		if entry.IsDir() {
 			return nil
 		}
-		rel, err := filepath.Rel(latest.RunDir, path)
+		if !entry.Type().IsRegular() {
+			return fmt.Errorf("report export rejects non-regular entry %q", path)
+		}
+		data, err := source.ReadFile(path)
 		if err != nil {
 			return err
 		}
-		writer, err := zw.Create(rel)
-		if err != nil {
-			return err
-		}
-		data, err := os.ReadFile(path)
+		writer, err := zw.Create(path)
 		if err != nil {
 			return err
 		}
@@ -656,6 +695,12 @@ func runReportExportLatest(runsDir, output string, format string, w io.Writer) e
 		err = closeErr
 	}
 	if err != nil {
+		return err
+	}
+	if err := file.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(file.Name(), outputPath); err != nil {
 		return err
 	}
 	fmt.Fprintf(w, "Exported %s\n", output)
