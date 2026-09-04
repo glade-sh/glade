@@ -3,6 +3,10 @@
 Glade Local Apex adds a local Apex lane inside VS Code.
 It does not replace org-backed Salesforce commands.
 
+Glade is an independent open-source project and is not affiliated with,
+sponsored by, or endorsed by Salesforce. Salesforce and Apex are trademarks of
+Salesforce, Inc.
+
 ## Install
 
 Install from a Glade release:

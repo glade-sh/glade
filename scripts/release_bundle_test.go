@@ -89,9 +89,9 @@ func TestReleaseBundleRejectsUnboundVSIXEvidence(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			root := t.TempDir()
 			archive := filepath.Join(root, "glade.tar.gz")
-				writeReleaseBundleArchive(t, archive, map[string][]byte{
-					"LICENSE": []byte("Glade license\n"),
-					"NOTICE":  []byte("Glade\nCopyright 2026 Matt Simonis\n"),
+			writeReleaseBundleArchive(t, archive, map[string][]byte{
+				"LICENSE": []byte("Glade license\n"),
+				"NOTICE":  []byte("Glade\nCopyright 2026 Matt Simonis\n"),
 				"share/glade/third_party/lwc/package.json":                            []byte(`{"dependencies":{"@babel/parser":"7.0.0"}}`),
 				"share/glade/third_party/lwc/node_modules/@babel/parser/package.json": []byte(`{"name":"@babel/parser","version":"7.0.0","license":"MIT"}`),
 				"share/glade/editor/vscode-glade.vsix":                                tc.vsix(t),

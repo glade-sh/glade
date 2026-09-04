@@ -70,6 +70,42 @@ with open(archive, "wb") as raw:
 PY
 }
 
+normalize_vscode_extension_archive() {
+	local archive_path="$1"
+	VSCODE_EXTENSION_ARCHIVE="${archive_path}" python3 - <<'PY'
+import os
+from pathlib import Path, PurePosixPath
+from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile, ZipInfo
+
+archive_path = Path(os.environ["VSCODE_EXTENSION_ARCHIVE"])
+temporary_path = archive_path.with_name(archive_path.name + ".normalized")
+entries = []
+seen = set()
+
+with ZipFile(archive_path, "r") as source:
+    for member in source.infolist():
+        path = PurePosixPath(member.filename)
+        if not member.filename or "\\" in member.filename or path.is_absolute() or ".." in path.parts:
+            raise SystemExit(f"ERROR: unsafe VSIX member {member.filename!r}")
+        if member.filename in seen:
+            raise SystemExit(f"ERROR: duplicate VSIX member {member.filename!r}")
+        seen.add(member.filename)
+        entries.append((member.filename, member.is_dir(), b"" if member.is_dir() else source.read(member)))
+
+try:
+    with ZipFile(temporary_path, "w") as output:
+        for name, is_directory, contents in sorted(entries):
+            member = ZipInfo(name, (1980, 1, 1, 0, 0, 0))
+            member.create_system = 3
+            member.external_attr = ((0o40755 if is_directory else 0o100644) << 16) | (0x10 if is_directory else 0)
+            member.compress_type = ZIP_STORED if is_directory else ZIP_DEFLATED
+            output.writestr(member, contents, compresslevel=9)
+    os.replace(temporary_path, archive_path)
+finally:
+    temporary_path.unlink(missing_ok=True)
+PY
+}
+
 prepare_shared_payload() {
 	local output_dir="$1"
 	local payload_root="${workdir}/payload-root"
@@ -94,6 +130,7 @@ prepare_shared_payload() {
 			rm -f dist/vscode-glade-*.vsix
 			npm run package
 		)
+		normalize_vscode_extension_archive "${ROOT}"/contrib/vscode-glade/dist/vscode-glade-*.vsix
 		cp "${ROOT}"/contrib/vscode-glade/dist/vscode-glade-*.vsix "${share_root}/editor/vscode-glade.vsix"
 		vscode_extension_package="present"
 	fi

@@ -2,6 +2,8 @@ package scripts
 
 import (
 	"archive/tar"
+	"archive/zip"
+	"bytes"
 	"compress/gzip"
 	"crypto/sha256"
 	"encoding/json"
@@ -408,6 +410,13 @@ func TestReleaseBuildSharedPlatformAndDefaultModes(t *testing.T) {
 	secondPayloadSHA := filepath.Join(secondSharedDist, "glade-shared-payload.tar.gz.sha256")
 	firstHash := strings.Fields(string(mustReadFile(t, payloadSHA)))[0]
 	secondHash := strings.Fields(string(mustReadFile(t, secondPayloadSHA)))[0]
+	firstVSIX := releaseArchiveFiles(t, payload)["share/glade/editor/vscode-glade.vsix"]
+	secondVSIX := releaseArchiveFiles(t, filepath.Join(secondSharedDist, "glade-shared-payload.tar.gz"))["share/glade/editor/vscode-glade.vsix"]
+	assertCanonicalReleaseVSIX(t, firstVSIX)
+	assertCanonicalReleaseVSIX(t, secondVSIX)
+	if !bytes.Equal(firstVSIX, secondVSIX) {
+		t.Fatalf("packaged VSIX is not deterministic: first=%x second=%x", sha256.Sum256(firstVSIX), sha256.Sum256(secondVSIX))
+	}
 	if firstHash != secondHash {
 		t.Fatalf("shared payload is not deterministic: first=%s second=%s", firstHash, secondHash)
 	}
@@ -750,7 +759,24 @@ if [[ "${1:-}" == "ci" ]]; then
   ln -s ../fixture-tool/cli.js node_modules/.bin/fixture-tool
   ln -s ../jsesc/bin/jsesc node_modules/@locker/fixture-plugin/node_modules/.bin/jsesc
 fi
-if [[ "${1:-} ${2:-}" == "run package" ]]; then mkdir -p dist; printf 'vsix\n' > dist/vscode-glade-fixture.vsix; fi
+if [[ "${1:-} ${2:-}" == "run package" ]]; then
+  mkdir -p dist
+  sequence="$(grep -c 'run package' "${FAKE_NPM_LOG}")"
+  FAKE_VSIX_SEQUENCE="${sequence}" python3 - <<'PY'
+import os
+from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
+
+sequence = int(os.environ["FAKE_VSIX_SEQUENCE"])
+entries = [("extension/z.txt", b"z\n"), ("extension/a.txt", b"a\n")]
+if sequence % 2 == 0:
+    entries.reverse()
+with ZipFile("dist/vscode-glade-fixture.vsix", "w") as archive:
+    for name, body in entries:
+        info = ZipInfo(name, (2026, 9, 4, 13, 0, sequence * 2))
+        info.compress_type = ZIP_DEFLATED
+        archive.writestr(info, body)
+PY
+fi
 `)
 	fakeGlade := filepath.Join(root, "fake-glade")
 	writeExecutable(t, fakeGlade, `#!/usr/bin/env bash
@@ -871,6 +897,25 @@ func assertReleaseArchiveGoNotices(t *testing.T, archive, binary string) {
 	}
 	if !parserFound {
 		t.Fatal("archive Go notice manifest lacks vendored parser component")
+	}
+}
+
+func assertCanonicalReleaseVSIX(t *testing.T, contents []byte) {
+	t.Helper()
+	reader, err := zip.NewReader(bytes.NewReader(contents), int64(len(contents)))
+	if err != nil {
+		t.Fatalf("read packaged VSIX: %v", err)
+	}
+	previous := ""
+	for _, file := range reader.File {
+		if file.Name < previous {
+			t.Errorf("VSIX member order is not canonical: %q before %q", previous, file.Name)
+		}
+		previous = file.Name
+		if file.Modified.Year() != 1980 || file.Modified.Month() != 1 || file.Modified.Day() != 1 ||
+			file.Modified.Hour() != 0 || file.Modified.Minute() != 0 || file.Modified.Second() != 0 {
+			t.Errorf("VSIX member %q timestamp = %s, want 1980-01-01T00:00:00", file.Name, file.Modified)
+		}
 	}
 }
 
