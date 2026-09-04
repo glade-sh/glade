@@ -34,6 +34,9 @@ Historical receipts below do not validate this candidate.
   archive inventory includes packaged LWC/Babel and VSIX dependencies; the
   extension includes bundled dependency notices. Published v0.2.13 inventory
   remains Go-only. Scanner triage is not a zero-findings security certification.
+- Release archives include deterministic notice evidence for the Go distribution,
+  linked Go modules, and the vendored parser, bound to the built binary hash.
+  System/CGO notice sufficiency remains an owner/legal review boundary.
 
 Upgrade only after the new immutable release is approved and published: run
 `glade update`, then `glade version` and `glade doctor --project .` inside your

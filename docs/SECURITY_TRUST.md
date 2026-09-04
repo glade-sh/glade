@@ -32,6 +32,10 @@ and dependencies present in the bundled VSIX. The VSIX carries dependency
 notices and an inventory bound to its extension bundle hash. This is local
 candidate validation until the new release workflow publishes and verifies
 the exact archive and inventory attestations; it does not amend v0.2.13.
+The builder also packages notice evidence for the Go distribution, the linked
+Go modules named by the exact binary, and the vendored Apex parser. Those files
+support review; they are not a legal-sufficiency opinion about system or CGO
+libraries.
 
 Each release archive is built from tagged source by GitHub Actions. The release
 workflow publishes:

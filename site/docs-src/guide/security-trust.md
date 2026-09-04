@@ -54,6 +54,10 @@ notices and an inventory bound to its bundle hash. Exact archive and inventory
 attestations still require the approved release workflow; local validation does
 not amend the published v0.2.13 inventory.
 
+The builder also packages notice evidence for the Go distribution, linked Go
+modules named by the exact binary, and the vendored Apex parser. This supports
+review but does not decide the sufficiency of notices for system or CGO libraries.
+
 Tagged releases publish:
 
 - Platform archives for macOS and Linux.
