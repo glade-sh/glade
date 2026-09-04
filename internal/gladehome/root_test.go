@@ -176,3 +176,37 @@ func TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare(t *testing.T) {
 		t.Fatalf("root = %s, want %s", root, repo)
 	}
 }
+
+func TestToolchainStatusHonorsExplicitGladeHomeBeforeUserShare(t *testing.T) {
+	explicit := t.TempDir()
+	for _, rel := range []string{
+		"third_party/lwc/compile.mjs",
+		"third_party/lwc/node_modules/@lwc/compiler/package.json",
+		"lwcruntime/src/shims/wire-adapter.mjs",
+		"lwcruntime/src/shims/lds-cache.mjs",
+		"lwcruntime/src/shell/app.mjs",
+		"lwcruntime/src/slds/slds-loader.mjs",
+		"lwcruntime/src/lightning/button.mjs",
+	} {
+		writeMinimalToolchainFile(t, explicit, rel)
+	}
+	t.Setenv("XDG_DATA_HOME", t.TempDir())
+	global := UserShareDir()
+	for _, rel := range []string{
+		"third_party/lwc/compile.mjs",
+		"third_party/lwc/node_modules/@lwc/compiler/package.json",
+		"lwcruntime/src/shims/wire-adapter.mjs",
+		"lwcruntime/src/shims/lds-cache.mjs",
+		"lwcruntime/src/shell/app.mjs",
+		"lwcruntime/src/slds/slds-loader.mjs",
+		"lwcruntime/src/lightning/button.mjs",
+	} {
+		writeMinimalToolchainFile(t, global, rel)
+	}
+	t.Setenv("GLADE_HOME", explicit)
+
+	path, ok, detail := ToolchainStatus()
+	if !ok || path != filepath.Clean(explicit) || detail != "ok (explicit)" {
+		t.Fatalf("ToolchainStatus = (%q, %v, %q), want (%q, true, %q)", path, ok, detail, filepath.Clean(explicit), "ok (explicit)")
+	}
+}
