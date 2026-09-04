@@ -22,10 +22,16 @@ curl -fsSL --max-time 60 https://glade.sh/site-build.json \
 curl -fsSL --max-time 60 https://glade.sh/install.sh -o install.sh
 
 for requested in latest "$version"; do
-  export GLADE_HOME="$stage/$requested/home"
+  export HOME="$stage/$requested"
+  export XDG_DATA_HOME="$HOME/.local/share"
+  export XDG_CONFIG_HOME="$HOME/.config"
+  export GLADE_HOME="$XDG_DATA_HOME/glade"
   export GLADE_INSTALL_DIR="$stage/$requested/bin"
   GLADE_VERSION="$requested" sh "$stage/install.sh"
   test "$("$GLADE_INSTALL_DIR/glade" version)" = "glade $version"
+  mkdir -p "$stage/$requested/project"
+  cd "$stage/$requested/project"
+  "$GLADE_INSTALL_DIR/glade" init --project . --yes
   doctor="$("$GLADE_INSTALL_DIR/glade" doctor)"
   printf '%s\n' "$doctor"
   [[ "$doctor" == *"Ready."* ]] || { echo "installed doctor is not ready" >&2; exit 1; }
