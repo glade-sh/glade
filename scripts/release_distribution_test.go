@@ -39,6 +39,7 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 		"release-v1-go-",
 		"release-v1-npm-",
 		"cyclonedx-gomod@v1.10.0",
+		"scripts/release-bundle.py sbom",
 		"Upload platform release assets",
 		"scripts/release-asset-upload.sh",
 		"gh release download",

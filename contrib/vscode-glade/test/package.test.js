@@ -4,6 +4,11 @@ const path = require("path");
 
 const root = path.resolve(__dirname, "..");
 const manifest = require(path.join(root, "package.json"));
+assert.strictEqual(manifest.homepage, "https://glade.sh/guide/editor");
+assert.deepStrictEqual(manifest.repository, {
+  type: "git", url: "https://github.com/glade-sh/glade.git", directory: "contrib/vscode-glade",
+});
+assert.strictEqual(manifest.bugs?.url, "https://github.com/glade-sh/glade/issues");
 const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
 const mediaDir = path.join(root, "media");
 const ignore = fs.readFileSync(path.join(root, ".vscodeignore"), "utf8")
@@ -21,6 +26,14 @@ if (manifest.dependencies && Object.keys(manifest.dependencies).length > 0) {
     "runtime dependencies must be bundled before node_modules is excluded from the VSIX",
   );
   assert(bundleScript.includes("--minify"), "bundled extension JavaScript must be minified for VSIX packaging");
+  assert(
+    bundleScript.includes("--metafile=out/extension.meta.json"),
+    "VSIX packaging must retain esbuild input evidence for archive SBOM inventory",
+  );
+  assert(
+    bundleScript.includes("node scripts/bundle-notices.mjs"),
+    "VSIX packaging must retain hash-bound dependency and notice evidence",
+  );
   assert(bundleStep >= 0 && packageStep > bundleStep, "VSIX packaging must run after the bundle step");
   assert(
     ignore.includes("node_modules/**"),
@@ -31,6 +44,15 @@ if (manifest.dependencies && Object.keys(manifest.dependencies).length > 0) {
 assert(ignore.includes("out/**/*.js"), ".vscodeignore must exclude compiled module JavaScript");
 assert(ignore.includes("!out/extension.js"), ".vscodeignore must keep the bundled extension entrypoint");
 assert(ignore.includes("out/**/*.map"), ".vscodeignore must exclude compiled source maps from the VSIX");
+assert(ignore.includes("scripts/**"), ".vscodeignore must exclude the build-only notice helper from the VSIX");
+assert(
+  !ignore.includes("out/extension.meta.json"),
+  ".vscodeignore must retain bundled dependency evidence for archive SBOM inventory",
+);
+for (const evidence of ["out/bundled-dependencies.json", "out/THIRD_PARTY_NOTICES.txt"]) {
+  assert(!ignore.includes(evidence), `.vscodeignore must retain ${evidence} for packaged notice coverage`);
+}
+assert(fs.existsSync(path.join(root, "scripts", "bundle-notices.mjs")), "bundle notice helper must exist");
 assert(!ignore.includes("prototypes/**"), ".vscodeignore must not carry stale prototype exclusions");
 assert(!fs.existsSync(path.join(root, "prototypes")), "standalone prototypes must not be tracked with the release extension");
 
