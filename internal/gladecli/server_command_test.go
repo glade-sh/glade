@@ -3,9 +3,52 @@ package gladecli
 import (
 	"bytes"
 	"context"
+	"io"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
+
+func TestDevServersGuardPublicBindsBeforeProjectLoading(t *testing.T) {
+	t.Setenv("GLADE_SERVER_PUBLIC", "")
+	missingProject := filepath.Join(t.TempDir(), "missing")
+	writeTestFile(t, filepath.Join(missingProject, "sfdx-project.json"), "{")
+	for name, run := range map[string]func(context.Context, []string, io.Writer, io.Writer) error{
+		"vf":  runDevVF,
+		"lwc": runDevLWC,
+	} {
+		t.Run(name, func(t *testing.T) {
+			err := run(t.Context(), []string{"--project", missingProject, "--addr", "0.0.0.0:0"}, io.Discard, io.Discard)
+			if err == nil || !strings.Contains(err.Error(), "GLADE_SERVER_PUBLIC=1") {
+				t.Fatalf("public bind error = %v, want opt-in guidance before project loading", err)
+			}
+		})
+	}
+}
+
+func TestDevServersAllowPublicBindOptInBeforeProjectLoading(t *testing.T) {
+	t.Setenv("GLADE_SERVER_PUBLIC", "1")
+	missingProject := filepath.Join(t.TempDir(), "missing")
+	writeTestFile(t, filepath.Join(missingProject, "sfdx-project.json"), "{")
+	for name, run := range map[string]func(context.Context, []string, io.Writer, io.Writer) error{
+		"vf":  runDevVF,
+		"lwc": runDevLWC,
+	} {
+		t.Run(name, func(t *testing.T) {
+			err := run(t.Context(), []string{"--project", missingProject, "--addr", "0.0.0.0:0"}, io.Discard, io.Discard)
+			if err == nil || strings.Contains(err.Error(), "GLADE_SERVER_PUBLIC=1") {
+				t.Fatalf("opt-in error = %v, want later project loading error", err)
+			}
+		})
+	}
+}
+
+func TestLocalHTTPServersSetReadHeaderTimeout(t *testing.T) {
+	if localHTTPReadHeaderTimeout != 10*time.Second {
+		t.Fatalf("read header timeout = %s, want 10s", localHTTPReadHeaderTimeout)
+	}
+}
 
 func TestRunServerRejectsPublicBindWithoutOptIn(t *testing.T) {
 	t.Setenv("GLADE_SERVER_PUBLIC", "")
