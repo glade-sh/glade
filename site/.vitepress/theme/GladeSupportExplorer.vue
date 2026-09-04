@@ -5,15 +5,13 @@ import { editorSupportCatalog } from './generated/editorSupport'
 const query = ref('')
 const status = ref('all')
 
-const entries = Object.entries(editorSupportCatalog.receivers).flatMap(([receiver, value]) =>
-  value.items.map((item) => ({ ...item, receiver, id: `${receiver}.${item.signature || item.label}` }))
-)
+const entries = editorSupportCatalog.rows
 
 const filtered = computed(() => {
   const needle = query.value.trim().toLowerCase()
   return entries.filter((entry) => {
     const statusMatches = status.value === 'all' || entry.status === status.value || (status.value === 'partial' && entry.status === 'stub')
-    const textMatches = !needle || `${entry.receiver}.${entry.label} ${entry.signature || ''} ${entry.info || ''}`.toLowerCase().includes(needle)
+    const textMatches = !needle || `${entry.area}.${entry.api} ${entry.notes}`.toLowerCase().includes(needle)
     return statusMatches && textMatches
   })
 })
@@ -54,6 +52,7 @@ function statusClass(value: string) {
           <option value="supported">Runs locally</option>
           <option value="partial">Runs locally with limits</option>
           <option value="unsupported">Requires Salesforce</option>
+          <option value="unknown">Not measured</option>
         </select>
       </label>
     </div>
@@ -63,10 +62,10 @@ function statusClass(value: string) {
     <ul class="support-explorer-list" tabindex="0" aria-label="Matching checked API rows">
       <li v-for="entry in shown" :key="entry.id">
         <div>
-          <code>{{ entry.receiver }}.{{ entry.signature || entry.label }}</code>
-          <span :class="['docs-status-chip', statusClass(entry.status)]">{{ entry.statusLabel }}</span>
+          <code>{{ entry.api }}</code>
+          <span :class="['docs-status-chip', statusClass(entry.status)]">{{ editorSupportCatalog.statusLabels[entry.status] }}</span>
         </div>
-        <p>{{ entry.info }}</p>
+        <p>{{ entry.notes }}</p>
       </li>
     </ul>
     <p class="support-explorer-foot">Counts and rows come from <code>{{ editorSupportCatalog.generatedFrom }}</code>. Use the complete checked ledgers below for evidence and regression-test links.</p>

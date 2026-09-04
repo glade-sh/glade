@@ -152,13 +152,29 @@ function item(label, type, detail, status, info, apply) {
   };
 }
 
-function parseCoverage(markdown) {
-  const receivers = {};
+export function parseCoverageRows(markdown) {
+  const rows = [];
+  const seen = new Set();
   for (const line of markdown.split("\n")) {
     const match = /^\| ([^|]+) \| `([^`]+)` \| `([^`]+)` \| ([^|]+) \|$/.exec(line);
     if (!match) continue;
     const [, area, api, status, notes] = match;
-    const parsed = parseApi(api.trim(), area.trim(), status.trim(), notes.trim());
+    const trimmedArea = area.trim();
+    const trimmedAPI = api.trim();
+    const id = JSON.stringify([trimmedArea, trimmedAPI]);
+    const row = { id, area: trimmedArea, api: trimmedAPI, status: status.trim(), notes: notes.trim() };
+    if (!Object.hasOwn(statusLabels, row.status)) continue;
+    if (seen.has(row.id)) throw new Error(`duplicate support ledger row ${row.id}`);
+    seen.add(row.id);
+    rows.push(row);
+  }
+  return rows;
+}
+
+function parseCoverage(rows) {
+  const receivers = {};
+  for (const row of rows) {
+    const parsed = parseApi(row.api, row.area, row.status, row.notes);
     if (!parsed) continue;
     const receiver = receivers[parsed.receiver] || {
       label: parsed.receiver,
@@ -230,12 +246,14 @@ function mergeReceivers(generated, curated) {
 }
 
 function buildCatalog(markdown) {
+  const rows = parseCoverageRows(markdown);
   return {
     schemaVersion: 1,
     generatedFrom: "docs/STDLIB_COVERAGE.md",
-    summary: summarizeCoverage(markdown),
+    summary: summarizeRows(rows),
     statusLabels,
-    receivers: mergeReceivers(parseCoverage(markdown), curatedReceivers),
+    rows,
+    receivers: mergeReceivers(parseCoverage(rows), curatedReceivers),
     rootCompletions: [
       item("Account", "class", "SObject", "supported", "Schema-backed local SObject", "Account"),
       item("Database", "class", "DML and SOQL", "supported", "Partial-success DML and dynamic query paths", "Database"),
@@ -243,18 +261,15 @@ function buildCatalog(markdown) {
       item("Limits", "class", "Governor counters", "supported", "Local counters for SOQL, DML, CPU, heap, and async", "Limits"),
       item("JSON", "class", "Serialization", "supported", "Local JSON helpers", "JSON"),
       item("UserInfo", "class", "User context", "supported", "Local identity helpers", "UserInfo"),
-      item("Answers", "class", "Hosted API", "supported", "Deterministic empty list, hosted search not performed", "Answers")
+      item("Answers", "class", "Hosted API", "supported", "Deterministic empty list; not a hosted search service", "Answers")
     ],
     demoReceivers
   };
 }
 
-function summarizeCoverage(markdown) {
+function summarizeRows(rows) {
   const summary = { supported: 0, partial: 0, stub: 0, unsupported: 0, unknown: 0 };
-  for (const line of markdown.split("\n")) {
-    const match = /^\| [^|]+ \| `[^`]+` \| `([^`]+)` \| [^|]+ \|$/.exec(line);
-    if (match && Object.hasOwn(summary, match[1])) summary[match[1]] += 1;
-  }
+  for (const row of rows) summary[row.status] += 1;
   return summary;
 }
 
@@ -289,7 +304,9 @@ async function main() {
   await Promise.all([writeFile(jsonOut, json), writeFile(tsOut, ts)]);
 }
 
-main().catch((error) => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
+}
