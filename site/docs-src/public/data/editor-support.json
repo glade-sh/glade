@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatedFrom": "docs/STDLIB_COVERAGE.md",
   "summary": {
-    "supported": 267,
+    "supported": 269,
     "partial": 0,
     "stub": 0,
     "unsupported": 19,
@@ -15,6 +15,2024 @@
     "unsupported": "Requires Salesforce",
     "unknown": "Not measured"
   },
+  "rows": [
+    {
+      "id": "[\"AccessLevel\",\"AccessLevel.withPermissionSetId(String)\"]",
+      "area": "AccessLevel",
+      "api": "AccessLevel.withPermissionSetId(String)",
+      "status": "supported",
+      "notes": "Creates a local permission-set-scoped user-mode token used by supported SOQL and DML permission checks."
+    },
+    {
+      "id": "[\"Answers\",\"Answers.findSimilar(Question)\"]",
+      "area": "Answers",
+      "api": "Answers.findSimilar(Question)",
+      "status": "supported",
+      "notes": "Local execution returns a deterministic empty List<Id>; this harness does not implement the hosted similarity-search service."
+    },
+    {
+      "id": "[\"ApexPages\",\"ApexPages.Message\"]",
+      "area": "ApexPages",
+      "api": "ApexPages.Message",
+      "status": "supported",
+      "notes": "Constructor, getters, add/get/has message state, and Visualforce action reset behavior are modeled."
+    },
+    {
+      "id": "[\"ApexPages\",\"ApexPages.addMessage\"]",
+      "area": "ApexPages",
+      "api": "ApexPages.addMessage",
+      "status": "supported",
+      "notes": "Stores page messages on the VM instance."
+    },
+    {
+      "id": "[\"ApexPages\",\"ApexPages.addMessage(ApexPages.Message)\"]",
+      "area": "ApexPages",
+      "api": "ApexPages.addMessage(ApexPages.Message)",
+      "status": "supported",
+      "notes": "Stores page messages on the VM instance."
+    },
+    {
+      "id": "[\"ApexPages\",\"ApexPages.addMessages(Exception)\"]",
+      "area": "ApexPages",
+      "api": "ApexPages.addMessages(Exception)",
+      "status": "supported",
+      "notes": "Converts supported exception values into VM-local page messages."
+    },
+    {
+      "id": "[\"ApexPages\",\"ApexPages.addMessages(Object)\"]",
+      "area": "ApexPages",
+      "api": "ApexPages.addMessages(Object)",
+      "status": "supported",
+      "notes": "Converts supported exception and message values into VM-local page messages."
+    },
+    {
+      "id": "[\"ApexPages\",\"ApexPages.currentPage\"]",
+      "area": "ApexPages",
+      "api": "ApexPages.currentPage",
+      "status": "supported",
+      "notes": "Returns a deterministic local PageReference."
+    },
+    {
+      "id": "[\"ApexPages\",\"ApexPages.currentPage()\"]",
+      "area": "ApexPages",
+      "api": "ApexPages.currentPage()",
+      "status": "supported",
+      "notes": "Returns the VM-local PageReference."
+    },
+    {
+      "id": "[\"ApexPages\",\"ApexPages.getMessages\"]",
+      "area": "ApexPages",
+      "api": "ApexPages.getMessages",
+      "status": "supported",
+      "notes": "Returns VM-local page messages."
+    },
+    {
+      "id": "[\"ApexPages\",\"ApexPages.getMessages()\"]",
+      "area": "ApexPages",
+      "api": "ApexPages.getMessages()",
+      "status": "supported",
+      "notes": "Returns VM-local page messages."
+    },
+    {
+      "id": "[\"ApexPages\",\"ApexPages.hasMessages\"]",
+      "area": "ApexPages",
+      "api": "ApexPages.hasMessages",
+      "status": "supported",
+      "notes": "Checks VM-local page messages."
+    },
+    {
+      "id": "[\"ApexPages\",\"ApexPages.hasMessages()\"]",
+      "area": "ApexPages",
+      "api": "ApexPages.hasMessages()",
+      "status": "supported",
+      "notes": "Checks VM-local page messages."
+    },
+    {
+      "id": "[\"ApexPages\",\"ApexPages.hasMessages(ApexPages.Severity)\"]",
+      "area": "ApexPages",
+      "api": "ApexPages.hasMessages(ApexPages.Severity)",
+      "status": "supported",
+      "notes": "Checks VM-local page messages by severity."
+    },
+    {
+      "id": "[\"ApexPages\",\"Visualforce full rendering lifecycle\"]",
+      "area": "ApexPages",
+      "api": "Visualforce full rendering lifecycle",
+      "status": "unsupported",
+      "notes": "Full Visualforce rendering lifecycle requires the hosted renderer and is fenced by PageReference rendering diagnostics locally."
+    },
+    {
+      "id": "[\"Approval\",\"Approval.process hosted approval engine routing\"]",
+      "area": "Approval",
+      "api": "Approval.process hosted approval engine routing",
+      "status": "unsupported",
+      "notes": "Hosted criteria evaluation, queue/group approver routing, and live approval service routing require Salesforce approval services."
+    },
+    {
+      "id": "[\"Approval\",\"Approval.process(Approval.ProcessRequest)\"]",
+      "area": "Approval",
+      "api": "Approval.process(Approval.ProcessRequest)",
+      "status": "supported",
+      "notes": "Runs a seeded local ProcessDefinition, ProcessNode, ProcessInstance, and ProcessInstanceWorkitem engine for submit, approve, and reject request shapes."
+    },
+    {
+      "id": "[\"Approval\",\"Approval.process(Approval.ProcessRequest, Boolean)\"]",
+      "area": "Approval",
+      "api": "Approval.process(Approval.ProcessRequest, Boolean)",
+      "status": "supported",
+      "notes": "Runs the seeded local approval engine with allOrNone error shaping for submit, approve, and reject request shapes."
+    },
+    {
+      "id": "[\"Approval\",\"Approval.process(List<Approval.ProcessRequest>)\"]",
+      "area": "Approval",
+      "api": "Approval.process(List<Approval.ProcessRequest>)",
+      "status": "supported",
+      "notes": "Runs ordered local submit and workitem request lists and rolls back earlier successful local approval records when the default allOrNone path fails later in the list."
+    },
+    {
+      "id": "[\"Approval\",\"Approval.process(List<Approval.ProcessRequest>, Boolean)\"]",
+      "area": "Approval",
+      "api": "Approval.process(List<Approval.ProcessRequest>, Boolean)",
+      "status": "supported",
+      "notes": "Runs ordered local submit and workitem request lists, returning per-request errors when allOrNone is false and rolling back the local list transaction when allOrNone is true."
+    },
+    {
+      "id": "[\"Assert\",\"Assert.areEqual\"]",
+      "area": "Assert",
+      "api": "Assert.areEqual",
+      "status": "supported",
+      "notes": "Routes through local assertion failures with optional message text."
+    },
+    {
+      "id": "[\"Assert\",\"Assert.areNotEqual\"]",
+      "area": "Assert",
+      "api": "Assert.areNotEqual",
+      "status": "supported",
+      "notes": "Routes through local assertion failures with optional message text."
+    },
+    {
+      "id": "[\"Assert\",\"Assert.fail\"]",
+      "area": "Assert",
+      "api": "Assert.fail",
+      "status": "supported",
+      "notes": "Raises local System.AssertException with optional message text."
+    },
+    {
+      "id": "[\"Assert\",\"Assert.isFalse\"]",
+      "area": "Assert",
+      "api": "Assert.isFalse",
+      "status": "supported",
+      "notes": "Routes through local assertion failures with optional message text."
+    },
+    {
+      "id": "[\"Assert\",\"Assert.isNotNull\"]",
+      "area": "Assert",
+      "api": "Assert.isNotNull",
+      "status": "supported",
+      "notes": "Routes through local assertion failures with optional message text."
+    },
+    {
+      "id": "[\"Assert\",\"Assert.isNull\"]",
+      "area": "Assert",
+      "api": "Assert.isNull",
+      "status": "supported",
+      "notes": "Routes through local assertion failures with optional message text."
+    },
+    {
+      "id": "[\"Assert\",\"Assert.isTrue\"]",
+      "area": "Assert",
+      "api": "Assert.isTrue",
+      "status": "supported",
+      "notes": "Routes through local assertion failures with optional message text."
+    },
+    {
+      "id": "[\"Boolean\",\"Boolean.valueOf(Object)\"]",
+      "area": "Boolean",
+      "api": "Boolean.valueOf(Object)",
+      "status": "supported",
+      "notes": "Converts supported local field/object values into Boolean values."
+    },
+    {
+      "id": "[\"Boolean\",\"Boolean.valueOf(String)\"]",
+      "area": "Boolean",
+      "api": "Boolean.valueOf(String)",
+      "status": "supported",
+      "notes": "Converts strings to Boolean using Apex-shaped true/false parsing."
+    },
+    {
+      "id": "[\"BusinessHours\",\"BusinessHours malformed local holiday metadata\"]",
+      "area": "BusinessHours",
+      "api": "BusinessHours malformed local holiday metadata",
+      "status": "unsupported",
+      "notes": "Malformed seeded holiday metadata raises a stable UnsupportedFeature diagnostic naming the unsupported local field shape."
+    },
+    {
+      "id": "[\"BusinessHours\",\"BusinessHours.add(Id, Datetime, Long)\"]",
+      "area": "BusinessHours",
+      "api": "BusinessHours.add(Id, Datetime, Long)",
+      "status": "supported",
+      "notes": "Runs deterministic local week-schedule math from seeded BusinessHours, Holiday, OperatingHours, and OperatingHoursHoliday records with timezone handling, all-day closures, partial-day closures, recurring holidays, and linked holidays."
+    },
+    {
+      "id": "[\"BusinessHours\",\"BusinessHours.addGmt(Id, Datetime, Long)\"]",
+      "area": "BusinessHours",
+      "api": "BusinessHours.addGmt(Id, Datetime, Long)",
+      "status": "supported",
+      "notes": "Runs deterministic local calendar math from seeded BusinessHours, Holiday, OperatingHours, and OperatingHoursHoliday records with GMT Datetime output."
+    },
+    {
+      "id": "[\"BusinessHours\",\"BusinessHours.diff(String, Datetime, Datetime)\"]",
+      "area": "BusinessHours",
+      "api": "BusinessHours.diff(String, Datetime, Datetime)",
+      "status": "supported",
+      "notes": "Counts deterministic local business milliseconds across seeded week schedules, timezones, all-day closures, partial-day closures, recurring holidays, and linked holidays."
+    },
+    {
+      "id": "[\"BusinessHours\",\"BusinessHours.isWithin(String, Datetime)\"]",
+      "area": "BusinessHours",
+      "api": "BusinessHours.isWithin(String, Datetime)",
+      "status": "supported",
+      "notes": "Checks seeded local week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays."
+    },
+    {
+      "id": "[\"BusinessHours\",\"BusinessHours.nextStartDate(Id, Datetime)\"]",
+      "area": "BusinessHours",
+      "api": "BusinessHours.nextStartDate(Id, Datetime)",
+      "status": "supported",
+      "notes": "Finds the next deterministic local start from seeded week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays."
+    },
+    {
+      "id": "[\"Crypto\",\"Crypto.decryptWithManagedIV\"]",
+      "area": "Crypto",
+      "api": "Crypto.decryptWithManagedIV",
+      "status": "supported",
+      "notes": "Managed-IV AES-GCM decryption, including additional authenticated data, is executable in the local runtime; ciphertext values remain unstable."
+    },
+    {
+      "id": "[\"Crypto\",\"Crypto.encryptWithManagedIV\"]",
+      "area": "Crypto",
+      "api": "Crypto.encryptWithManagedIV",
+      "status": "supported",
+      "notes": "Managed-IV AES-GCM encryption, including additional authenticated data, is executable in the local runtime; ciphertext values remain unstable."
+    },
+    {
+      "id": "[\"Crypto\",\"Crypto.generateDigest\"]",
+      "area": "Crypto",
+      "api": "Crypto.generateDigest",
+      "status": "supported",
+      "notes": "MD5, SHA-1/SHA1, SHA-256/SHA256, SHA-384/SHA384, SHA-512/SHA512, and SHA3-256/384/512 digests are fixture-pinned, with Salesforce-shaped SecurityException diagnostics for unknown names."
+    },
+    {
+      "id": "[\"Database\",\"Database.UnitOfWork\"]",
+      "area": "Database",
+      "api": "Database.UnitOfWork",
+      "status": "supported",
+      "notes": "Queues local DML operations and applies them on commitWork; discardWork drops pending local work."
+    },
+    {
+      "id": "[\"Database\",\"Database.convertLead\"]",
+      "area": "Database",
+      "api": "Database.convertLead",
+      "status": "supported",
+      "notes": "Local lead conversion creates Account, Contact, and optional Opportunity records and updates Lead conversion fields."
+    },
+    {
+      "id": "[\"Database\",\"Database.countQuery\"]",
+      "area": "Database",
+      "api": "Database.countQuery",
+      "status": "supported",
+      "notes": "Dynamic SOQL count execution against the local org with local AccessLevel parsing."
+    },
+    {
+      "id": "[\"Database\",\"Database.countQueryWithBinds\"]",
+      "area": "Database",
+      "api": "Database.countQueryWithBinds",
+      "status": "supported",
+      "notes": "Bind-map dynamic SOQL count execution with local AccessLevel parsing."
+    },
+    {
+      "id": "[\"Database\",\"Database.delete\"]",
+      "area": "Database",
+      "api": "Database.delete",
+      "status": "supported",
+      "notes": "DML pipeline with result/error shapes and local AccessLevel parsing for supported SObjects."
+    },
+    {
+      "id": "[\"Database\",\"Database.deleteAsync\"]",
+      "area": "Database",
+      "api": "Database.deleteAsync",
+      "status": "supported",
+      "notes": "Local async delete alias runs through the DML pipeline and returns DeleteResult shape."
+    },
+    {
+      "id": "[\"Database\",\"Database.deleteImmediate\"]",
+      "area": "Database",
+      "api": "Database.deleteImmediate",
+      "status": "supported",
+      "notes": "Local immediate delete alias runs through the DML pipeline and returns DeleteResult shape."
+    },
+    {
+      "id": "[\"Database\",\"Database.emptyRecycleBin\"]",
+      "area": "Database",
+      "api": "Database.emptyRecycleBin",
+      "status": "supported",
+      "notes": "Local hard-delete result shape with allOrNone rollback for supported SObjects."
+    },
+    {
+      "id": "[\"Database\",\"Database.executeBatch\"]",
+      "area": "Database",
+      "api": "Database.executeBatch",
+      "status": "supported",
+      "notes": "Queues local Batchable jobs and drains start/execute chunks/finish during Test.stopTest."
+    },
+    {
+      "id": "[\"Database\",\"Database.getAsyncDeleteResult\"]",
+      "area": "Database",
+      "api": "Database.getAsyncDeleteResult",
+      "status": "supported",
+      "notes": "Returns materialized local DeleteResult values and rejects unknown async locator strings instead of fabricating pending results."
+    },
+    {
+      "id": "[\"Database\",\"Database.getAsyncLocator\"]",
+      "area": "Database",
+      "api": "Database.getAsyncLocator",
+      "status": "supported",
+      "notes": "Returns deterministic VM-local locator strings for local result and locator objects."
+    },
+    {
+      "id": "[\"Database\",\"Database.getAsyncSaveResult\"]",
+      "area": "Database",
+      "api": "Database.getAsyncSaveResult",
+      "status": "supported",
+      "notes": "Returns materialized local SaveResult values and rejects unknown async locator strings instead of fabricating pending results."
+    },
+    {
+      "id": "[\"Database\",\"Database.getCursor\"]",
+      "area": "Database",
+      "api": "Database.getCursor",
+      "status": "supported",
+      "notes": "Local cursor over supported SOQL results with deterministic fetch windows."
+    },
+    {
+      "id": "[\"Database\",\"Database.getCursorWithBinds\"]",
+      "area": "Database",
+      "api": "Database.getCursorWithBinds",
+      "status": "supported",
+      "notes": "Bind-map local cursor over supported SOQL results with deterministic fetch windows."
+    },
+    {
+      "id": "[\"Database\",\"Database.getDeleted\"]",
+      "area": "Database",
+      "api": "Database.getDeleted",
+      "status": "supported",
+      "notes": "Returns local soft-deleted record tombstones whose deletion timestamp falls within the requested sync window."
+    },
+    {
+      "id": "[\"Database\",\"Database.getPaginationCursor\"]",
+      "area": "Database",
+      "api": "Database.getPaginationCursor",
+      "status": "supported",
+      "notes": "Local pagination cursor over supported SOQL results with deterministic fetch windows."
+    },
+    {
+      "id": "[\"Database\",\"Database.getPaginationCursorWithBinds\"]",
+      "area": "Database",
+      "api": "Database.getPaginationCursorWithBinds",
+      "status": "supported",
+      "notes": "Bind-map local pagination cursor over supported SOQL results with deterministic fetch windows."
+    },
+    {
+      "id": "[\"Database\",\"Database.getQueryLocator\"]",
+      "area": "Database",
+      "api": "Database.getQueryLocator",
+      "status": "supported",
+      "notes": "Supported SOQL executes eagerly for local batch scopes with local AccessLevel parsing."
+    },
+    {
+      "id": "[\"Database\",\"Database.getQueryLocatorWithBinds\"]",
+      "area": "Database",
+      "api": "Database.getQueryLocatorWithBinds",
+      "status": "supported",
+      "notes": "Bind-map dynamic SOQL locator execution with iterable local query locators."
+    },
+    {
+      "id": "[\"Database\",\"Database.getUpdated\"]",
+      "area": "Database",
+      "api": "Database.getUpdated",
+      "status": "supported",
+      "notes": "Returns local record IDs whose system-modified timestamp falls within the requested sync window."
+    },
+    {
+      "id": "[\"Database\",\"Database.insert\"]",
+      "area": "Database",
+      "api": "Database.insert",
+      "status": "supported",
+      "notes": "DML pipeline with result/error shapes and local AccessLevel parsing for supported SObjects."
+    },
+    {
+      "id": "[\"Database\",\"Database.insertAsync\"]",
+      "area": "Database",
+      "api": "Database.insertAsync",
+      "status": "supported",
+      "notes": "Local async insert alias runs through the DML pipeline and returns SaveResult shape."
+    },
+    {
+      "id": "[\"Database\",\"Database.insertImmediate\"]",
+      "area": "Database",
+      "api": "Database.insertImmediate",
+      "status": "supported",
+      "notes": "Local immediate insert alias runs through the DML pipeline and returns SaveResult shape."
+    },
+    {
+      "id": "[\"Database\",\"Database.lock\"]",
+      "area": "Database",
+      "api": "Database.lock",
+      "status": "supported",
+      "notes": "Local row-lock result shape with allOrNone rollback for supported SObjects."
+    },
+    {
+      "id": "[\"Database\",\"Database.merge\"]",
+      "area": "Database",
+      "api": "Database.merge",
+      "status": "supported",
+      "notes": "Local merge behavior with result shape and AccessLevel parsing for supported schema-backed data."
+    },
+    {
+      "id": "[\"Database\",\"Database.query\"]",
+      "area": "Database",
+      "api": "Database.query",
+      "status": "supported",
+      "notes": "Dynamic SOQL execution against the local org with catchable QueryException parse errors."
+    },
+    {
+      "id": "[\"Database\",\"Database.queryWithBinds\"]",
+      "area": "Database",
+      "api": "Database.queryWithBinds",
+      "status": "supported",
+      "notes": "Bind-map dynamic SOQL execution with scalar and collection binds."
+    },
+    {
+      "id": "[\"Database\",\"Database.releaseSavepoint\"]",
+      "area": "Database",
+      "api": "Database.releaseSavepoint",
+      "status": "supported",
+      "notes": "Releases the selected local savepoint and later savepoints without rolling back org state."
+    },
+    {
+      "id": "[\"Database\",\"Database.rollback\"]",
+      "area": "Database",
+      "api": "Database.rollback",
+      "status": "supported",
+      "notes": "Restores the local org-state snapshot for the selected savepoint."
+    },
+    {
+      "id": "[\"Database\",\"Database.setSavepoint\"]",
+      "area": "Database",
+      "api": "Database.setSavepoint",
+      "status": "supported",
+      "notes": "Local org-state snapshots with later-savepoint invalidation."
+    },
+    {
+      "id": "[\"Database\",\"Database.treeSave\"]",
+      "area": "Database",
+      "api": "Database.treeSave",
+      "status": "supported",
+      "notes": "Local parent insert/update plus first-level child insert/update with NestedSaveResult relationship result shape."
+    },
+    {
+      "id": "[\"Database\",\"Database.undelete\"]",
+      "area": "Database",
+      "api": "Database.undelete",
+      "status": "supported",
+      "notes": "Soft-delete restoration with local AccessLevel parsing for supported local records."
+    },
+    {
+      "id": "[\"Database\",\"Database.unlock\"]",
+      "area": "Database",
+      "api": "Database.unlock",
+      "status": "supported",
+      "notes": "Local row-unlock result shape with allOrNone rollback for supported SObjects."
+    },
+    {
+      "id": "[\"Database\",\"Database.update\"]",
+      "area": "Database",
+      "api": "Database.update",
+      "status": "supported",
+      "notes": "DML pipeline with result/error shapes and local AccessLevel parsing for supported SObjects."
+    },
+    {
+      "id": "[\"Database\",\"Database.updateAsync\"]",
+      "area": "Database",
+      "api": "Database.updateAsync",
+      "status": "supported",
+      "notes": "Local async update alias runs through the DML pipeline and returns SaveResult shape."
+    },
+    {
+      "id": "[\"Database\",\"Database.updateImmediate\"]",
+      "area": "Database",
+      "api": "Database.updateImmediate",
+      "status": "supported",
+      "notes": "Local immediate update alias runs through the DML pipeline and returns SaveResult shape."
+    },
+    {
+      "id": "[\"Database\",\"Database.upsert\"]",
+      "area": "Database",
+      "api": "Database.upsert",
+      "status": "supported",
+      "notes": "Schema-backed external-ID matching with local AccessLevel parsing for supported local records."
+    },
+    {
+      "id": "[\"Date\",\"Date.addDays\"]",
+      "area": "Date",
+      "api": "Date.addDays",
+      "status": "supported",
+      "notes": "Local Gregorian day arithmetic."
+    },
+    {
+      "id": "[\"Date\",\"Date.addMonths\"]",
+      "area": "Date",
+      "api": "Date.addMonths",
+      "status": "supported",
+      "notes": "Local Gregorian month arithmetic with end-of-month clamping."
+    },
+    {
+      "id": "[\"Date\",\"Date.addYears\"]",
+      "area": "Date",
+      "api": "Date.addYears",
+      "status": "supported",
+      "notes": "Local Gregorian year arithmetic with leap-day clamping."
+    },
+    {
+      "id": "[\"Date\",\"Date.newInstance\"]",
+      "area": "Date",
+      "api": "Date.newInstance",
+      "status": "supported",
+      "notes": "Validates date parts."
+    },
+    {
+      "id": "[\"Date\",\"Date.today\"]",
+      "area": "Date",
+      "api": "Date.today",
+      "status": "supported",
+      "notes": "Returns the deterministic local runtime date."
+    },
+    {
+      "id": "[\"Date\",\"Date.valueOf\"]",
+      "area": "Date",
+      "api": "Date.valueOf",
+      "status": "supported",
+      "notes": "Parses supported date strings."
+    },
+    {
+      "id": "[\"Datetime\",\"Datetime.addDays\"]",
+      "area": "Datetime",
+      "api": "Datetime.addDays",
+      "status": "supported",
+      "notes": "UTC-local day arithmetic."
+    },
+    {
+      "id": "[\"Datetime\",\"Datetime.addHours\"]",
+      "area": "Datetime",
+      "api": "Datetime.addHours",
+      "status": "supported",
+      "notes": "UTC-local arithmetic."
+    },
+    {
+      "id": "[\"Datetime\",\"Datetime.addMinutes\"]",
+      "area": "Datetime",
+      "api": "Datetime.addMinutes",
+      "status": "supported",
+      "notes": "UTC-local arithmetic."
+    },
+    {
+      "id": "[\"Datetime\",\"Datetime.addMonths\"]",
+      "area": "Datetime",
+      "api": "Datetime.addMonths",
+      "status": "supported",
+      "notes": "UTC-local month arithmetic with end-of-month clamping."
+    },
+    {
+      "id": "[\"Datetime\",\"Datetime.addSeconds\"]",
+      "area": "Datetime",
+      "api": "Datetime.addSeconds",
+      "status": "supported",
+      "notes": "UTC-local arithmetic."
+    },
+    {
+      "id": "[\"Datetime\",\"Datetime.addYears\"]",
+      "area": "Datetime",
+      "api": "Datetime.addYears",
+      "status": "supported",
+      "notes": "UTC-local year arithmetic with leap-day clamping."
+    },
+    {
+      "id": "[\"Datetime\",\"Datetime.format\"]",
+      "area": "Datetime",
+      "api": "Datetime.format",
+      "status": "supported",
+      "notes": "Formats using the deterministic local timezone model."
+    },
+    {
+      "id": "[\"Datetime\",\"Datetime.formatGmt\"]",
+      "area": "Datetime",
+      "api": "Datetime.formatGmt",
+      "status": "supported",
+      "notes": "Formats using GMT."
+    },
+    {
+      "id": "[\"Datetime\",\"Datetime.newInstance\"]",
+      "area": "Datetime",
+      "api": "Datetime.newInstance",
+      "status": "supported",
+      "notes": "Validates date and time parts."
+    },
+    {
+      "id": "[\"Datetime\",\"Datetime.now\"]",
+      "area": "Datetime",
+      "api": "Datetime.now",
+      "status": "supported",
+      "notes": "Returns the deterministic local runtime datetime."
+    },
+    {
+      "id": "[\"Datetime\",\"Datetime.valueOf\"]",
+      "area": "Datetime",
+      "api": "Datetime.valueOf",
+      "status": "supported",
+      "notes": "Parses supported datetime strings."
+    },
+    {
+      "id": "[\"Decimal\",\"Decimal.divide(Decimal,Integer,RoundingMode)\"]",
+      "area": "Decimal",
+      "api": "Decimal.divide(Decimal,Integer,RoundingMode)",
+      "status": "unsupported",
+      "notes": "Text-backed Decimal division is tested locally, but untexted Decimal division remains explicitly unsupported."
+    },
+    {
+      "id": "[\"Decimal\",\"Decimal.doubleValue\"]",
+      "area": "Decimal",
+      "api": "Decimal.doubleValue",
+      "status": "supported",
+      "notes": "Returns an explicitly Double-backed local value."
+    },
+    {
+      "id": "[\"Decimal\",\"Decimal.intValue\"]",
+      "area": "Decimal",
+      "api": "Decimal.intValue",
+      "status": "supported",
+      "notes": "Truncates to integer."
+    },
+    {
+      "id": "[\"Decimal\",\"Decimal.round\"]",
+      "area": "Decimal",
+      "api": "Decimal.round",
+      "status": "supported",
+      "notes": "Oracle-pinned finite Decimal rounding uses Salesforce default HALF_EVEN ties and explicit RoundingMode behavior."
+    },
+    {
+      "id": "[\"Decimal\",\"Decimal.setScale\"]",
+      "area": "Decimal",
+      "api": "Decimal.setScale",
+      "status": "supported",
+      "notes": "Oracle-pinned finite Decimal scaling covers positive and negative scales, RoundingMode ties, UNNECESSARY MathException, and Salesforce scale bounds."
+    },
+    {
+      "id": "[\"EncodingUtil\",\"EncodingUtil.base64Decode\"]",
+      "area": "EncodingUtil",
+      "api": "EncodingUtil.base64Decode",
+      "status": "supported",
+      "notes": "Blob-shaped local value."
+    },
+    {
+      "id": "[\"EncodingUtil\",\"EncodingUtil.base64Encode\"]",
+      "area": "EncodingUtil",
+      "api": "EncodingUtil.base64Encode",
+      "status": "supported",
+      "notes": "Blob-shaped local value."
+    },
+    {
+      "id": "[\"EncodingUtil\",\"EncodingUtil.convertFromHex\"]",
+      "area": "EncodingUtil",
+      "api": "EncodingUtil.convertFromHex",
+      "status": "supported",
+      "notes": "Blob-shaped local value."
+    },
+    {
+      "id": "[\"EncodingUtil\",\"EncodingUtil.convertToHex\"]",
+      "area": "EncodingUtil",
+      "api": "EncodingUtil.convertToHex",
+      "status": "supported",
+      "notes": "Blob-shaped local value."
+    },
+    {
+      "id": "[\"EncodingUtil\",\"EncodingUtil.urlDecode\"]",
+      "area": "EncodingUtil",
+      "api": "EncodingUtil.urlDecode",
+      "status": "supported",
+      "notes": "Oracle-pinned URL form decoding covers UTF-8, US-ASCII replacement, ISO-8859-1 aliases, and UTF-16 mixed escaped/plain input."
+    },
+    {
+      "id": "[\"EncodingUtil\",\"EncodingUtil.urlEncode\"]",
+      "area": "EncodingUtil",
+      "api": "EncodingUtil.urlEncode",
+      "status": "supported",
+      "notes": "Oracle-pinned URL form encoding covers UTF-8, US-ASCII replacement, ISO-8859-1 aliases, and UTF-16 escaped output."
+    },
+    {
+      "id": "[\"Exception\",\"InvalidParameterValueException constructors\"]",
+      "area": "Exception",
+      "api": "InvalidParameterValueException constructors",
+      "status": "supported",
+      "notes": "Supports zero-arg, message, cause, and existing platform-specific constructor shapes."
+    },
+    {
+      "id": "[\"Exception\",\"NoAccessException constructors\"]",
+      "area": "Exception",
+      "api": "NoAccessException constructors",
+      "status": "supported",
+      "notes": "Supports zero-arg, message, cause, and message-plus-cause constructor shapes."
+    },
+    {
+      "id": "[\"Exception\",\"NoDataFoundException constructors\"]",
+      "area": "Exception",
+      "api": "NoDataFoundException constructors",
+      "status": "supported",
+      "notes": "Supports zero-arg, message, cause, and message-plus-cause constructor shapes."
+    },
+    {
+      "id": "[\"Exception\",\"NullPointerException constructors\"]",
+      "area": "Exception",
+      "api": "NullPointerException constructors",
+      "status": "supported",
+      "notes": "Supports zero-arg, message, cause, and message-plus-cause constructor shapes."
+    },
+    {
+      "id": "[\"FeatureManagement\",\"FeatureManagement.checkPermission\"]",
+      "area": "FeatureManagement",
+      "api": "FeatureManagement.checkPermission",
+      "status": "supported",
+      "notes": "Checks local runAs user permissions, permission sets, and custom-permission assignments."
+    },
+    {
+      "id": "[\"HTTP\",\"Http.send(HttpRequest)\"]",
+      "area": "HTTP",
+      "api": "Http.send(HttpRequest)",
+      "status": "supported",
+      "notes": "Routes local callouts through registered HttpCalloutMock implementations and records local callout limits."
+    },
+    {
+      "id": "[\"HTTP\",\"HttpRequest\"]",
+      "area": "HTTP",
+      "api": "HttpRequest",
+      "status": "supported",
+      "notes": "Endpoint, method, headers, timeout, body, blob body, and local DTO accessors are modeled."
+    },
+    {
+      "id": "[\"HTTP\",\"HttpRequest client certificate local mock metadata\"]",
+      "area": "HTTP",
+      "api": "HttpRequest client certificate local mock metadata",
+      "status": "supported",
+      "notes": "Client certificate name and PEM accessors read deterministic local certificate metadata for mock-backed callouts."
+    },
+    {
+      "id": "[\"HTTP\",\"HttpRequest client certificate real TLS handshake\"]",
+      "area": "HTTP",
+      "api": "HttpRequest client certificate real TLS handshake",
+      "status": "unsupported",
+      "notes": "Real mutual-TLS handshakes and Salesforce certificate-store delivery require hosted callout infrastructure."
+    },
+    {
+      "id": "[\"HTTP\",\"HttpResponse\"]",
+      "area": "HTTP",
+      "api": "HttpResponse",
+      "status": "supported",
+      "notes": "Status, status code, headers, body, blob body, and local DTO accessors are modeled."
+    },
+    {
+      "id": "[\"JSON\",\"JSON.deserialize\"]",
+      "area": "JSON",
+      "api": "JSON.deserialize",
+      "status": "supported",
+      "notes": "Oracle-pinned DTO, SObject, primitive, collection, Object, string-key, and scalar-key map paths preserve duplicate-key last-value behavior and field order."
+    },
+    {
+      "id": "[\"JSON\",\"JSON.deserializeStrict\"]",
+      "area": "JSON",
+      "api": "JSON.deserializeStrict",
+      "status": "supported",
+      "notes": "Oracle-pinned strict DTO and SObject paths accept known fields, reject unknown fields with Salesforce-shaped diagnostics, and keep the last duplicate SObject field value."
+    },
+    {
+      "id": "[\"JSON\",\"JSON.deserializeUntyped\"]",
+      "area": "JSON",
+      "api": "JSON.deserializeUntyped",
+      "status": "supported",
+      "notes": "Oracle-pinned untyped primitive, list, and map containers preserve order, collapse duplicate keys to the last value, and throw Salesforce-shaped oversized integer errors."
+    },
+    {
+      "id": "[\"JSON\",\"JSON.serialize\"]",
+      "area": "JSON",
+      "api": "JSON.serialize",
+      "status": "supported",
+      "notes": "Oracle-pinned serialization covers DTO, SObject, collection, map, primitive, enum, Object, and suppressApexObjectNulls paths with deterministic field order."
+    },
+    {
+      "id": "[\"JSON\",\"JSON.serializePretty\"]",
+      "area": "JSON",
+      "api": "JSON.serializePretty",
+      "status": "supported",
+      "notes": "Oracle-pinned pretty serialization covers DTO, SObject, collection, map, primitive, and Object paths with Salesforce-style spacing."
+    },
+    {
+      "id": "[\"Label\",\"Label.get(String,String)\"]",
+      "area": "Label",
+      "api": "Label.get(String,String)",
+      "status": "supported",
+      "notes": "Resolves local custom label metadata with existing platform and managed-namespace fallbacks."
+    },
+    {
+      "id": "[\"Label\",\"Label.get(String,String,String)\"]",
+      "area": "Label",
+      "api": "Label.get(String,String,String)",
+      "status": "supported",
+      "notes": "Resolves local custom label metadata for an explicit language, then falls back to the local label resolver."
+    },
+    {
+      "id": "[\"Label\",\"Label.translationExists(String,String,String)\"]",
+      "area": "Label",
+      "api": "Label.translationExists(String,String,String)",
+      "status": "supported",
+      "notes": "Returns true when local label metadata has a matching explicit language translation."
+    },
+    {
+      "id": "[\"Limits\",\"Exact Salesforce governor accounting profiles\"]",
+      "area": "Limits",
+      "api": "Exact Salesforce governor accounting profiles",
+      "status": "unsupported",
+      "notes": "Exact hosted governor deltas require Salesforce runtime accounting and remain outside local execution."
+    },
+    {
+      "id": "[\"Limits\",\"Limits.get*\"]",
+      "area": "Limits",
+      "api": "Limits.get*",
+      "status": "supported",
+      "notes": "Returns deterministic local counters and configurable caps for all tracked getter families, including zero-valued local service counters."
+    },
+    {
+      "id": "[\"Limits\",\"Limits.getAsyncCalls\"]",
+      "area": "Limits",
+      "api": "Limits.getAsyncCalls",
+      "status": "supported",
+      "notes": "Returns the local async-call counter."
+    },
+    {
+      "id": "[\"Limits\",\"Limits.getLimitAsyncCalls\"]",
+      "area": "Limits",
+      "api": "Limits.getLimitAsyncCalls",
+      "status": "supported",
+      "notes": "Returns the local async-call limit."
+    },
+    {
+      "id": "[\"Math\",\"Math.abs\"]",
+      "area": "Math",
+      "api": "Math.abs",
+      "status": "supported",
+      "notes": "Integer and Decimal values."
+    },
+    {
+      "id": "[\"Math\",\"Math.ceil\"]",
+      "area": "Math",
+      "api": "Math.ceil",
+      "status": "supported",
+      "notes": "Numeric values."
+    },
+    {
+      "id": "[\"Math\",\"Math.floor\"]",
+      "area": "Math",
+      "api": "Math.floor",
+      "status": "supported",
+      "notes": "Numeric values."
+    },
+    {
+      "id": "[\"Math\",\"Math.max\"]",
+      "area": "Math",
+      "api": "Math.max",
+      "status": "supported",
+      "notes": "Integer and Decimal values."
+    },
+    {
+      "id": "[\"Math\",\"Math.min\"]",
+      "area": "Math",
+      "api": "Math.min",
+      "status": "supported",
+      "notes": "Integer and Decimal values."
+    },
+    {
+      "id": "[\"Math\",\"Math.pow\"]",
+      "area": "Math",
+      "api": "Math.pow",
+      "status": "supported",
+      "notes": "Numeric values."
+    },
+    {
+      "id": "[\"Math\",\"Math.round\"]",
+      "area": "Math",
+      "api": "Math.round",
+      "status": "supported",
+      "notes": "Numeric values."
+    },
+    {
+      "id": "[\"Math\",\"Math.sqrt\"]",
+      "area": "Math",
+      "api": "Math.sqrt",
+      "status": "supported",
+      "notes": "Numeric values."
+    },
+    {
+      "id": "[\"Messaging\",\"Messaging.SendEmailOptions\"]",
+      "area": "Messaging",
+      "api": "Messaging.SendEmailOptions",
+      "status": "supported",
+      "notes": "Stores triggerUserEmail, triggerOtherEmail, and triggerAutoResponseEmail flags for local captured email records."
+    },
+    {
+      "id": "[\"Messaging\",\"Messaging.SingleEmailMessage\"]",
+      "area": "Messaging",
+      "api": "Messaging.SingleEmailMessage",
+      "status": "supported",
+      "notes": "Common DTO setters/getters, recipient fields, template fields, body fields, flags, and local file attachment values are modeled."
+    },
+    {
+      "id": "[\"Messaging\",\"Messaging.renderStoredEmailTemplate hosted usage mutation\"]",
+      "area": "Messaging",
+      "api": "Messaging.renderStoredEmailTemplate hosted usage mutation",
+      "status": "unsupported",
+      "notes": "Hosted EmailTemplate usage counters and send-side usage mutation require Salesforce email services."
+    },
+    {
+      "id": "[\"Messaging\",\"Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption)\"]",
+      "area": "Messaging",
+      "api": "Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption)",
+      "status": "supported",
+      "notes": "Renders local stored EmailTemplate subject, HTML, text bodies, merge fields, static-resource attachments, Attachment rows, and ContentDocumentLink attachments for NONE, METADATA_ONLY, BODY, and METADATA_WITH_BODY."
+    },
+    {
+      "id": "[\"Messaging\",\"Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption,Boolean)\"]",
+      "area": "Messaging",
+      "api": "Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption,Boolean)",
+      "status": "supported",
+      "notes": "Renders local stored templates like the four-argument overload and accepts updateEmailTemplateUsage without remote usage mutation."
+    },
+    {
+      "id": "[\"Messaging\",\"Messaging.sendEmail\"]",
+      "area": "Messaging",
+      "api": "Messaging.sendEmail",
+      "status": "supported",
+      "notes": "Returns ordered local SendEmailResult values, validates supported DTOs, captures sent messages with SendEmailOptions metadata, and increments local email limits."
+    },
+    {
+      "id": "[\"Messaging\",\"Messaging.sendEmail delivery transport\"]",
+      "area": "Messaging",
+      "api": "Messaging.sendEmail delivery transport",
+      "status": "unsupported",
+      "notes": "Outbound delivery depends on Salesforce email services and remains fenced behind stable UnsupportedFeature diagnostics locally."
+    },
+    {
+      "id": "[\"Messaging\",\"Messaging.sendEmail(Messaging.Email[],Boolean)\"]",
+      "area": "Messaging",
+      "api": "Messaging.sendEmail(Messaging.Email[],Boolean)",
+      "status": "supported",
+      "notes": "Returns ordered local SendEmailResult values for supported email message DTOs; outbound delivery remains hosted."
+    },
+    {
+      "id": "[\"PageReference\",\"PageReference\"]",
+      "area": "PageReference",
+      "api": "PageReference",
+      "status": "supported",
+      "notes": "Constructor, URL, redirect, mutable parameters, headers, cookies, and current-page state are modeled."
+    },
+    {
+      "id": "[\"PageReference\",\"PageReference(partialURL)\"]",
+      "area": "PageReference",
+      "api": "PageReference(partialURL)",
+      "status": "supported",
+      "notes": "Builds a VM-local PageReference from a partial URL with mutable parameters and headers."
+    },
+    {
+      "id": "[\"PageReference\",\"PageReference(record)\"]",
+      "area": "PageReference",
+      "api": "PageReference(record)",
+      "status": "supported",
+      "notes": "Builds a Visualforce PageReference from a local ApexPage SObject record."
+    },
+    {
+      "id": "[\"PageReference\",\"PageReference.getContent and getContentAsPDF\"]",
+      "area": "PageReference",
+      "api": "PageReference.getContent and getContentAsPDF",
+      "status": "unsupported",
+      "notes": "Visualforce rendering and PDF generation require the hosted rendering service and raise stable UnsupportedFeature diagnostics locally."
+    },
+    {
+      "id": "[\"Pattern\",\"Matcher.find\"]",
+      "area": "Pattern",
+      "api": "Matcher.find",
+      "status": "supported",
+      "notes": "Oracle- and fixture-pinned regexp2-backed Java regex matching covers lookaround, named groups/backrefs, atomic groups, possessive quantifiers, \\G, \\R, \\h/\\v, (?U), Java Unicode aliases, UAX #29 \\X and \\b{g}, nested class algebra, and Apex UTF-16 code-unit match indexes."
+    },
+    {
+      "id": "[\"Pattern\",\"Matcher.group\"]",
+      "area": "Pattern",
+      "api": "Matcher.group",
+      "status": "supported",
+      "notes": "Returns fixture-pinned whole-match and capture groups, including unmatched optional groups, over the supported Java regex path with Apex UTF-16 code-unit group bounds."
+    },
+    {
+      "id": "[\"Pattern\",\"Matcher.matches\"]",
+      "area": "Pattern",
+      "api": "Matcher.matches",
+      "status": "supported",
+      "notes": "Whole-region matching over the supported regexp2-backed Java regex path."
+    },
+    {
+      "id": "[\"Pattern\",\"Pattern.compile\"]",
+      "area": "Pattern",
+      "api": "Pattern.compile",
+      "status": "supported",
+      "notes": "Compiles the supported regexp2-backed Java regex path: common flags, quote escapes, lookaround, named groups/backrefs, atomic groups, possessive quantifiers, \\G, \\R, \\h/\\v, (?U), Java Unicode aliases, UAX #29 \\X and \\b{g}, and nested class algebra."
+    },
+    {
+      "id": "[\"Pattern\",\"Pattern.matches\"]",
+      "area": "Pattern",
+      "api": "Pattern.matches",
+      "status": "supported",
+      "notes": "Whole-string matching over the supported regexp2-backed Java regex path, including UAX #29 grapheme patterns."
+    },
+    {
+      "id": "[\"QuickAction\",\"QuickAction.describeAvailableActions\"]",
+      "area": "QuickAction",
+      "api": "QuickAction.describeAvailableActions",
+      "status": "supported",
+      "notes": "Local QuickAction metadata, predefined default values, and deterministic DTO results are modeled."
+    },
+    {
+      "id": "[\"QuickAction\",\"QuickAction.describeAvailableQuickActions(String)\"]",
+      "area": "QuickAction",
+      "api": "QuickAction.describeAvailableQuickActions(String)",
+      "status": "supported",
+      "notes": "Local QuickAction metadata, predefined default values, and deterministic DTO results are modeled."
+    },
+    {
+      "id": "[\"QuickAction\",\"QuickAction.describeQuickActions(List<String>)\"]",
+      "area": "QuickAction",
+      "api": "QuickAction.describeQuickActions(List<String>)",
+      "status": "supported",
+      "notes": "Local QuickAction metadata, predefined default values, and deterministic DTO results are modeled."
+    },
+    {
+      "id": "[\"QuickAction\",\"QuickAction.performQuickAction\"]",
+      "area": "QuickAction",
+      "api": "QuickAction.performQuickAction",
+      "status": "supported",
+      "notes": "Returns deterministic local QuickActionResult DTOs for supported request shapes."
+    },
+    {
+      "id": "[\"QuickAction\",\"QuickAction.performQuickAction(QuickAction.QuickActionRequest)\"]",
+      "area": "QuickAction",
+      "api": "QuickAction.performQuickAction(QuickAction.QuickActionRequest)",
+      "status": "supported",
+      "notes": "Returns deterministic local QuickActionResult DTOs for supported request shapes."
+    },
+    {
+      "id": "[\"QuickAction\",\"QuickAction.performQuickAction(QuickAction.QuickActionRequest,Boolean)\"]",
+      "area": "QuickAction",
+      "api": "QuickAction.performQuickAction(QuickAction.QuickActionRequest,Boolean)",
+      "status": "supported",
+      "notes": "Returns deterministic local QuickActionResult DTOs for supported request shapes."
+    },
+    {
+      "id": "[\"QuickAction\",\"QuickAction.performQuickActions(List<QuickAction.QuickActionRequest>)\"]",
+      "area": "QuickAction",
+      "api": "QuickAction.performQuickActions(List<QuickAction.QuickActionRequest>)",
+      "status": "supported",
+      "notes": "Returns deterministic local QuickActionResult DTOs for supported request shapes."
+    },
+    {
+      "id": "[\"QuickAction\",\"QuickAction.performQuickActions(List<QuickAction.QuickActionRequest>,Boolean)\"]",
+      "area": "QuickAction",
+      "api": "QuickAction.performQuickActions(List<QuickAction.QuickActionRequest>,Boolean)",
+      "status": "supported",
+      "notes": "Returns deterministic local QuickActionResult DTOs for supported request shapes."
+    },
+    {
+      "id": "[\"QuickAction\",\"QuickAction.retrieveQuickActionTemplate(String,Id)\"]",
+      "area": "QuickAction",
+      "api": "QuickAction.retrieveQuickActionTemplate(String,Id)",
+      "status": "supported",
+      "notes": "Local QuickAction metadata, predefined default values, and deterministic template DTOs are modeled."
+    },
+    {
+      "id": "[\"QuickAction\",\"QuickAction.retrieveQuickActionTemplates(List<String>,Id)\"]",
+      "area": "QuickAction",
+      "api": "QuickAction.retrieveQuickActionTemplates(List<String>,Id)",
+      "status": "supported",
+      "notes": "Local QuickAction metadata, predefined default values, and deterministic template DTOs are modeled."
+    },
+    {
+      "id": "[\"Request\",\"Request.getCurrent()\"]",
+      "area": "Request",
+      "api": "Request.getCurrent()",
+      "status": "supported",
+      "notes": "Returns deterministic local request context values for local Apex execution."
+    },
+    {
+      "id": "[\"Request\",\"Request.getQuiddity()\"]",
+      "area": "Request",
+      "api": "Request.getQuiddity()",
+      "status": "supported",
+      "notes": "Returns deterministic local request context values for local Apex execution."
+    },
+    {
+      "id": "[\"Request\",\"Request.getRequestId()\"]",
+      "area": "Request",
+      "api": "Request.getRequestId()",
+      "status": "supported",
+      "notes": "Returns deterministic local request context values for local Apex execution."
+    },
+    {
+      "id": "[\"Request\",\"RequestImpl.getCurrent()\"]",
+      "area": "Request",
+      "api": "RequestImpl.getCurrent()",
+      "status": "supported",
+      "notes": "Returns deterministic local request context values for local Apex execution."
+    },
+    {
+      "id": "[\"ResetPasswordResult\",\"ResetPasswordResult.getPassword()\"]",
+      "area": "ResetPasswordResult",
+      "api": "ResetPasswordResult.getPassword()",
+      "status": "unsupported",
+      "notes": "Password reset output is produced by Salesforce identity services and is not generated locally."
+    },
+    {
+      "id": "[\"SObject\",\"SObject.setOptions(Database.DMLOptions)\"]",
+      "area": "SObject",
+      "api": "SObject.setOptions(Database.DMLOptions)",
+      "status": "supported",
+      "notes": "Stores a cloned DMLOptions value on the local SObject for later DML option use."
+    },
+    {
+      "id": "[\"Sandbox\",\"SandboxContext.organizationId()\"]",
+      "area": "Sandbox",
+      "api": "SandboxContext.organizationId()",
+      "status": "supported",
+      "notes": "Invokes the local test harness implementation."
+    },
+    {
+      "id": "[\"Sandbox\",\"SandboxContext.sandboxId()\"]",
+      "area": "Sandbox",
+      "api": "SandboxContext.sandboxId()",
+      "status": "supported",
+      "notes": "Invokes the local test harness implementation."
+    },
+    {
+      "id": "[\"Sandbox\",\"SandboxContext.sandboxName()\"]",
+      "area": "Sandbox",
+      "api": "SandboxContext.sandboxName()",
+      "status": "supported",
+      "notes": "Invokes the local test harness implementation."
+    },
+    {
+      "id": "[\"Sandbox\",\"SandboxPostCopy.runApexClass(SandboxContext)\"]",
+      "area": "Sandbox",
+      "api": "SandboxPostCopy.runApexClass(SandboxContext)",
+      "status": "supported",
+      "notes": "Invokes the local test harness implementation."
+    },
+    {
+      "id": "[\"Schedulable\",\"Schedulable.execute(SchedulableContext)\"]",
+      "area": "Schedulable",
+      "api": "Schedulable.execute(SchedulableContext)",
+      "status": "supported",
+      "notes": "Queues and drains local Scheduled Apex jobs during Test.stopTest with deterministic CronTrigger IDs."
+    },
+    {
+      "id": "[\"Schedulable\",\"SchedulableContext.getTriggerId()\"]",
+      "area": "Schedulable",
+      "api": "SchedulableContext.getTriggerId()",
+      "status": "supported",
+      "notes": "Queues and drains local Scheduled Apex jobs during Test.stopTest with deterministic CronTrigger IDs."
+    },
+    {
+      "id": "[\"Schema\",\"DescribeFieldResult\"]",
+      "area": "Schema",
+      "api": "DescribeFieldResult",
+      "status": "supported",
+      "notes": "Returns local metadata-backed field labels, picklists, reference targets, and access, create, and update booleans."
+    },
+    {
+      "id": "[\"Schema\",\"DescribeSObjectResult\"]",
+      "area": "Schema",
+      "api": "DescribeSObjectResult",
+      "status": "supported",
+      "notes": "Returns local object labels, key prefixes, query and search flags, fields, record types, and child relationships."
+    },
+    {
+      "id": "[\"Schema\",\"Hosted org describe and data category services\"]",
+      "area": "Schema",
+      "api": "Hosted org describe and data category services",
+      "status": "unsupported",
+      "notes": "Live full-org describe breadth, admin-computed permissions, and hosted data category service lookup require Salesforce org services."
+    },
+    {
+      "id": "[\"Schema\",\"Schema.describeDataCategoryGroupStructures(List<Schema.DataCategoryGroupSobjectTypePair>,Boolean)\"]",
+      "area": "Schema",
+      "api": "Schema.describeDataCategoryGroupStructures(List<Schema.DataCategoryGroupSobjectTypePair>,Boolean)",
+      "status": "supported",
+      "notes": "Returns deterministic local data category structures from loaded org metadata."
+    },
+    {
+      "id": "[\"Schema\",\"Schema.describeDataCategoryGroups(List<String>)\"]",
+      "area": "Schema",
+      "api": "Schema.describeDataCategoryGroups(List<String>)",
+      "status": "supported",
+      "notes": "Returns deterministic local data category group describes from loaded org metadata and an empty typed list when absent."
+    },
+    {
+      "id": "[\"Schema\",\"Schema.describeSObjects(List<String>)\"]",
+      "area": "Schema",
+      "api": "Schema.describeSObjects(List<String>)",
+      "status": "supported",
+      "notes": "Returns local metadata object names, labels, key prefixes, access booleans, fields, record types, and SObjectType tokens."
+    },
+    {
+      "id": "[\"Schema\",\"Schema.getGlobalDescribe()\"]",
+      "area": "Schema",
+      "api": "Schema.getGlobalDescribe()",
+      "status": "supported",
+      "notes": "Returns a local describe map for loaded standard, custom, namespaced, and project objects."
+    },
+    {
+      "id": "[\"Search\",\"Hosted search ranking and analyzers\"]",
+      "area": "Search",
+      "api": "Hosted search ranking and analyzers",
+      "status": "unsupported",
+      "notes": "Ranking, stemming, synonyms, language analyzers, external indexes, and hosted suggestion services require Salesforce search infrastructure."
+    },
+    {
+      "id": "[\"Search\",\"Search.find\"]",
+      "area": "Search",
+      "api": "Search.find",
+      "status": "supported",
+      "notes": "Returns deterministic SearchResult DTOs from fixed search results or local org records."
+    },
+    {
+      "id": "[\"Search\",\"Search.find(String,AccessLevel)\"]",
+      "area": "Search",
+      "api": "Search.find(String,AccessLevel)",
+      "status": "supported",
+      "notes": "Uses deterministic local org search with AccessLevel permission checks."
+    },
+    {
+      "id": "[\"Search\",\"Search.find(String,Object)\"]",
+      "area": "Search",
+      "api": "Search.find(String,Object)",
+      "status": "supported",
+      "notes": "Accepts Object-cast AccessLevel values against deterministic local org search."
+    },
+    {
+      "id": "[\"Search\",\"Search.query / SOSL FIND\"]",
+      "area": "Search",
+      "api": "Search.query / SOSL FIND",
+      "status": "supported",
+      "notes": "Parses supported RETURNING clauses and returns deterministic rows from fixed search results or local org records."
+    },
+    {
+      "id": "[\"Search\",\"Search.query(String,AccessLevel)\"]",
+      "area": "Search",
+      "api": "Search.query(String,AccessLevel)",
+      "status": "supported",
+      "notes": "Uses deterministic local org SOSL with AccessLevel permission checks."
+    },
+    {
+      "id": "[\"Search\",\"Search.query(String,Object)\"]",
+      "area": "Search",
+      "api": "Search.query(String,Object)",
+      "status": "supported",
+      "notes": "Accepts Object-cast AccessLevel values against deterministic local org SOSL."
+    },
+    {
+      "id": "[\"Search\",\"Search.suggest\"]",
+      "area": "Search",
+      "api": "Search.suggest",
+      "status": "supported",
+      "notes": "Returns deterministic local org suggestion DTOs from name-like fields."
+    },
+    {
+      "id": "[\"Search\",\"Search.suggest(String,String,Object)\"]",
+      "area": "Search",
+      "api": "Search.suggest(String,String,Object)",
+      "status": "supported",
+      "notes": "Accepts Object-cast SuggestionOption values and returns deterministic local org suggestions."
+    },
+    {
+      "id": "[\"Search\",\"Search.suggest(String,String,Object,Object)\"]",
+      "area": "Search",
+      "api": "Search.suggest(String,String,Object,Object)",
+      "status": "supported",
+      "notes": "Accepts Object-cast SuggestionOption and AccessLevel values for deterministic local org suggestions."
+    },
+    {
+      "id": "[\"Search\",\"Search.suggest(String,String,Search.SuggestionOption)\"]",
+      "area": "Search",
+      "api": "Search.suggest(String,String,Search.SuggestionOption)",
+      "status": "supported",
+      "notes": "Returns deterministic local org suggestions and respects local limit options."
+    },
+    {
+      "id": "[\"Search\",\"Search.suggest(String,String,Search.SuggestionOption,AccessLevel)\"]",
+      "area": "Search",
+      "api": "Search.suggest(String,String,Search.SuggestionOption,AccessLevel)",
+      "status": "supported",
+      "notes": "Returns deterministic local org suggestions with AccessLevel permission checks."
+    },
+    {
+      "id": "[\"String\",\"String.contains\"]",
+      "area": "String",
+      "api": "String.contains",
+      "status": "supported",
+      "notes": "UTF-8 string contains."
+    },
+    {
+      "id": "[\"String\",\"String.endsWith\"]",
+      "area": "String",
+      "api": "String.endsWith",
+      "status": "supported",
+      "notes": "UTF-8 string suffix."
+    },
+    {
+      "id": "[\"String\",\"String.equalsIgnoreCase\"]",
+      "area": "String",
+      "api": "String.equalsIgnoreCase",
+      "status": "supported",
+      "notes": "Unicode simple fold."
+    },
+    {
+      "id": "[\"String\",\"String.indexOf\"]",
+      "area": "String",
+      "api": "String.indexOf",
+      "status": "supported",
+      "notes": "Rune-indexed Unicode code-point search; unlike substring, indexes are not UTF-16 code units."
+    },
+    {
+      "id": "[\"String\",\"String.isBlank\"]",
+      "area": "String",
+      "api": "String.isBlank",
+      "status": "supported",
+      "notes": "Null and whitespace."
+    },
+    {
+      "id": "[\"String\",\"String.isNotBlank\"]",
+      "area": "String",
+      "api": "String.isNotBlank",
+      "status": "supported",
+      "notes": "Null and whitespace."
+    },
+    {
+      "id": "[\"String\",\"String.join\"]",
+      "area": "String",
+      "api": "String.join",
+      "status": "supported",
+      "notes": "List values and separator."
+    },
+    {
+      "id": "[\"String\",\"String.lastIndexOf\"]",
+      "area": "String",
+      "api": "String.lastIndexOf",
+      "status": "supported",
+      "notes": "Rune-indexed Unicode code-point search; unlike substring, indexes are not UTF-16 code units."
+    },
+    {
+      "id": "[\"String\",\"String.length\"]",
+      "area": "String",
+      "api": "String.length",
+      "status": "supported",
+      "notes": "Counts Apex UTF-16 code units."
+    },
+    {
+      "id": "[\"String\",\"String.replace\"]",
+      "area": "String",
+      "api": "String.replace",
+      "status": "supported",
+      "notes": "Literal replacement."
+    },
+    {
+      "id": "[\"String\",\"String.split\"]",
+      "area": "String",
+      "api": "String.split",
+      "status": "supported",
+      "notes": "regexp2-backed Java Pattern split covers limits, empty-pattern splits, zero-width and nullable delimiters, numeric backreference delimiters, \\Q...\\E quote escapes, UAX #29 graphemes, nested class algebra, and Apex UTF-16 code-unit boundaries."
+    },
+    {
+      "id": "[\"String\",\"String.startsWith\"]",
+      "area": "String",
+      "api": "String.startsWith",
+      "status": "supported",
+      "notes": "UTF-8 string prefix."
+    },
+    {
+      "id": "[\"String\",\"String.substring\"]",
+      "area": "String",
+      "api": "String.substring",
+      "status": "supported",
+      "notes": "Indexes and slices by Apex UTF-16 code units."
+    },
+    {
+      "id": "[\"String\",\"String.toLowerCase\"]",
+      "area": "String",
+      "api": "String.toLowerCase",
+      "status": "supported",
+      "notes": "Go Unicode lowercasing."
+    },
+    {
+      "id": "[\"String\",\"String.toUpperCase\"]",
+      "area": "String",
+      "api": "String.toUpperCase",
+      "status": "supported",
+      "notes": "Go Unicode uppercasing."
+    },
+    {
+      "id": "[\"String\",\"String.trim\"]",
+      "area": "String",
+      "api": "String.trim",
+      "status": "supported",
+      "notes": "Unicode whitespace trim."
+    },
+    {
+      "id": "[\"String\",\"String.valueOf\"]",
+      "area": "String",
+      "api": "String.valueOf",
+      "status": "supported",
+      "notes": "Local value string conversion."
+    },
+    {
+      "id": "[\"System\",\"System.assert\"]",
+      "area": "System",
+      "api": "System.assert",
+      "status": "supported",
+      "notes": "Assertion failure returns runtime error."
+    },
+    {
+      "id": "[\"System\",\"System.assertEquals\"]",
+      "area": "System",
+      "api": "System.assertEquals",
+      "status": "supported",
+      "notes": "Assertion failure returns runtime error."
+    },
+    {
+      "id": "[\"System\",\"System.debug\"]",
+      "area": "System",
+      "api": "System.debug",
+      "status": "supported",
+      "notes": "Collected in result debug output."
+    },
+    {
+      "id": "[\"System\",\"System.enqueueJob hosted wall-clock queue scheduling\"]",
+      "area": "System",
+      "api": "System.enqueueJob hosted wall-clock queue scheduling",
+      "status": "unsupported",
+      "notes": "Wall-clock queue scheduling and cross-transaction async locks require Salesforce async infrastructure."
+    },
+    {
+      "id": "[\"System\",\"System.enqueueJob(Object,Object)\"]",
+      "area": "System",
+      "api": "System.enqueueJob(Object,Object)",
+      "status": "supported",
+      "notes": "Accepts Integer and AsyncOptions queueable delay values, duplicate signatures, and local AsyncOptions maximumQueueableStackDepth for Test.stopTest drain behavior."
+    },
+    {
+      "id": "[\"System\",\"System.runAs package install and license validation\"]",
+      "area": "System",
+      "api": "System.runAs package install and license validation",
+      "status": "unsupported",
+      "notes": "Package installation and license validation require hosted subscriber org state."
+    },
+    {
+      "id": "[\"System\",\"System.runAs(Object,Object)\"]",
+      "area": "System",
+      "api": "System.runAs(Object,Object)",
+      "status": "supported",
+      "notes": "Tracks local package-version test context during runAs execution."
+    },
+    {
+      "id": "[\"System\",\"System.runAs(Package.Version)\"]",
+      "area": "System",
+      "api": "System.runAs(Package.Version)",
+      "status": "supported",
+      "notes": "Tracks local package-version test context during runAs execution."
+    },
+    {
+      "id": "[\"System\",\"System.schedule(String,String,Object)\"]",
+      "area": "System",
+      "api": "System.schedule(String,String,Object)",
+      "status": "supported",
+      "notes": "Queues and drains local Scheduled Apex jobs during Test.stopTest with deterministic CronTrigger IDs."
+    },
+    {
+      "id": "[\"Test\",\"Test.createSoqlStub(Schema.SObjectType,SoqlStubProvider)\"]",
+      "area": "Test",
+      "api": "Test.createSoqlStub(Schema.SObjectType,SoqlStubProvider)",
+      "status": "supported",
+      "notes": "Registers test-local SOQL stubs per SObject type."
+    },
+    {
+      "id": "[\"Test\",\"Test.createStub(Type,StubProvider)\"]",
+      "area": "Test",
+      "api": "Test.createStub(Type,StubProvider)",
+      "status": "supported",
+      "notes": "Creates dynamic test stubs backed by StubProvider."
+    },
+    {
+      "id": "[\"Test\",\"Test.createStubQueryRow\"]",
+      "area": "Test",
+      "api": "Test.createStubQueryRow",
+      "status": "supported",
+      "notes": "Builds one local SObject row from a field map for SOQL stub providers."
+    },
+    {
+      "id": "[\"Test\",\"Test.createStubQueryRow(Schema.SObjectType,Map<String,Object>)\"]",
+      "area": "Test",
+      "api": "Test.createStubQueryRow(Schema.SObjectType,Map<String,Object>)",
+      "status": "supported",
+      "notes": "Builds one local SObject row from a field map for SOQL stub providers."
+    },
+    {
+      "id": "[\"Test\",\"Test.createStubQueryRows\"]",
+      "area": "Test",
+      "api": "Test.createStubQueryRows",
+      "status": "supported",
+      "notes": "Builds local SObject row lists from field maps for SOQL stub providers."
+    },
+    {
+      "id": "[\"Test\",\"Test.createStubQueryRows(Schema.SObjectType,List<Map<String,Object>>)\"]",
+      "area": "Test",
+      "api": "Test.createStubQueryRows(Schema.SObjectType,List<Map<String,Object>>)",
+      "status": "supported",
+      "notes": "Builds local SObject row lists from field maps for SOQL stub providers."
+    },
+    {
+      "id": "[\"Test\",\"Test.enableChangeDataCapture()\"]",
+      "area": "Test",
+      "api": "Test.enableChangeDataCapture()",
+      "status": "supported",
+      "notes": "Invokes the local test harness implementation."
+    },
+    {
+      "id": "[\"Test\",\"Test.getEventBus()\"]",
+      "area": "Test",
+      "api": "Test.getEventBus()",
+      "status": "supported",
+      "notes": "Returns a local event-bus test broker that delivers queued platform-event triggers."
+    },
+    {
+      "id": "[\"Test\",\"Test.getExternalService live service execution\"]",
+      "area": "Test",
+      "api": "Test.getExternalService live service execution",
+      "status": "unsupported",
+      "notes": "External Service execution requires hosted named credential and generated service infrastructure."
+    },
+    {
+      "id": "[\"Test\",\"Test.getExternalService()\"]",
+      "area": "Test",
+      "api": "Test.getExternalService()",
+      "status": "supported",
+      "notes": "Returns a deterministic local external-service harness."
+    },
+    {
+      "id": "[\"Test\",\"Test.getStandardPricebookId\"]",
+      "area": "Test",
+      "api": "Test.getStandardPricebookId",
+      "status": "supported",
+      "notes": "Returns the deterministic local standard pricebook ID in test context."
+    },
+    {
+      "id": "[\"Test\",\"Test.invokeContinuationMethod(Object,Continuation)\"]",
+      "area": "Test",
+      "api": "Test.invokeContinuationMethod(Object,Continuation)",
+      "status": "supported",
+      "notes": "Invokes the local test harness implementation."
+    },
+    {
+      "id": "[\"Test\",\"Test.invokePage(PageReference)\"]",
+      "area": "Test",
+      "api": "Test.invokePage(PageReference)",
+      "status": "supported",
+      "notes": "Returns a typed Component.apex.page handle in test context without rendering Visualforce."
+    },
+    {
+      "id": "[\"Test\",\"Test.isRunningTest\"]",
+      "area": "Test",
+      "api": "Test.isRunningTest",
+      "status": "supported",
+      "notes": "Reflects local test context."
+    },
+    {
+      "id": "[\"Test\",\"Test.loadData\"]",
+      "area": "Test",
+      "api": "Test.loadData",
+      "status": "supported",
+      "notes": "Loads CSV static-resource content with typed field coercion, DML routing, missing-resource errors, and bad-header diagnostics."
+    },
+    {
+      "id": "[\"Test\",\"Test.loadData packaged resource and relationship external-ID expansion\"]",
+      "area": "Test",
+      "api": "Test.loadData packaged resource and relationship external-ID expansion",
+      "status": "unsupported",
+      "notes": "Packaged static-resource namespace lookup and relationship external-ID fixture expansion require hosted packaging and schema behavior beyond local CSV loading."
+    },
+    {
+      "id": "[\"Test\",\"Test.newSendEmailQuickActionDefaults(Id,Id)\"]",
+      "area": "Test",
+      "api": "Test.newSendEmailQuickActionDefaults(Id,Id)",
+      "status": "supported",
+      "notes": "Builds deterministic local send-email QuickAction defaults for test execution."
+    },
+    {
+      "id": "[\"Test\",\"Test.setContinuationResponse(String,HttpResponse)\"]",
+      "area": "Test",
+      "api": "Test.setContinuationResponse(String,HttpResponse)",
+      "status": "supported",
+      "notes": "Invokes the local test harness implementation."
+    },
+    {
+      "id": "[\"Test\",\"Test.setCurrentPage(PageReference)\"]",
+      "area": "Test",
+      "api": "Test.setCurrentPage(PageReference)",
+      "status": "supported",
+      "notes": "Sets the VM-local current PageReference in test context."
+    },
+    {
+      "id": "[\"Test\",\"Test.setCurrentPageReference(Object)\"]",
+      "area": "Test",
+      "api": "Test.setCurrentPageReference(Object)",
+      "status": "supported",
+      "notes": "Accepts PageReference object values and stores the VM-local current page."
+    },
+    {
+      "id": "[\"Test\",\"Test.setCurrentPageReference(PageReference)\"]",
+      "area": "Test",
+      "api": "Test.setCurrentPageReference(PageReference)",
+      "status": "supported",
+      "notes": "Sets the VM-local current PageReference in test context."
+    },
+    {
+      "id": "[\"Test\",\"Test.setMock\"]",
+      "area": "Test",
+      "api": "Test.setMock",
+      "status": "supported",
+      "notes": "Registers HttpCalloutMock and WebServiceMock routes for local tests."
+    },
+    {
+      "id": "[\"Test\",\"Test.startTest\"]",
+      "area": "Test",
+      "api": "Test.startTest",
+      "status": "supported",
+      "notes": "Resets the active governor window for deterministic local counters."
+    },
+    {
+      "id": "[\"Test\",\"Test.startTest and stopTest hosted service accounting\"]",
+      "area": "Test",
+      "api": "Test.startTest and stopTest hosted service accounting",
+      "status": "unsupported",
+      "notes": "Hosted async service execution and exact Salesforce governor accounting require Salesforce runtime services."
+    },
+    {
+      "id": "[\"Test\",\"Test.stopTest\"]",
+      "area": "Test",
+      "api": "Test.stopTest",
+      "status": "supported",
+      "notes": "Restores outer governor counters and drains supported local async work."
+    },
+    {
+      "id": "[\"Test\",\"Test.testInstall(InstallHandler,Version)\"]",
+      "area": "Test",
+      "api": "Test.testInstall(InstallHandler,Version)",
+      "status": "supported",
+      "notes": "Invokes the local test harness implementation."
+    },
+    {
+      "id": "[\"Test\",\"Test.testInstall(InstallHandler,Version,Boolean)\"]",
+      "area": "Test",
+      "api": "Test.testInstall(InstallHandler,Version,Boolean)",
+      "status": "supported",
+      "notes": "Invokes the local test harness implementation."
+    },
+    {
+      "id": "[\"Test\",\"Test.testNotificationActionHandler(Messaging.NotificationActionHandler,Messaging.ActionableNotification)\"]",
+      "area": "Test",
+      "api": "Test.testNotificationActionHandler(Messaging.NotificationActionHandler,Messaging.ActionableNotification)",
+      "status": "supported",
+      "notes": "Invokes the local test harness implementation."
+    },
+    {
+      "id": "[\"Test\",\"Test.testSandboxPostCopyScript(SandboxPostCopy,Id,Id,String)\"]",
+      "area": "Test",
+      "api": "Test.testSandboxPostCopyScript(SandboxPostCopy,Id,Id,String)",
+      "status": "supported",
+      "notes": "Invokes the local test harness implementation."
+    },
+    {
+      "id": "[\"Test\",\"Test.testSandboxPostCopyScript(SandboxPostCopy,Id,Id,String,Boolean)\"]",
+      "area": "Test",
+      "api": "Test.testSandboxPostCopyScript(SandboxPostCopy,Id,Id,String,Boolean)",
+      "status": "supported",
+      "notes": "Invokes the local test harness implementation."
+    },
+    {
+      "id": "[\"Test\",\"Test.testUninstall(UninstallHandler)\"]",
+      "area": "Test",
+      "api": "Test.testUninstall(UninstallHandler)",
+      "status": "supported",
+      "notes": "Invokes the local test harness implementation."
+    },
+    {
+      "id": "[\"Time\",\"Time.hour\"]",
+      "area": "Time",
+      "api": "Time.hour",
+      "status": "supported",
+      "notes": "Local time component."
+    },
+    {
+      "id": "[\"Time\",\"Time.minute\"]",
+      "area": "Time",
+      "api": "Time.minute",
+      "status": "supported",
+      "notes": "Local time component."
+    },
+    {
+      "id": "[\"Time\",\"Time.newInstance\"]",
+      "area": "Time",
+      "api": "Time.newInstance",
+      "status": "supported",
+      "notes": "Validates time parts."
+    },
+    {
+      "id": "[\"Time\",\"Time.second\"]",
+      "area": "Time",
+      "api": "Time.second",
+      "status": "supported",
+      "notes": "Local time component."
+    },
+    {
+      "id": "[\"Time\",\"Time.valueOf\"]",
+      "area": "Time",
+      "api": "Time.valueOf",
+      "status": "supported",
+      "notes": "Parses supported time strings."
+    },
+    {
+      "id": "[\"TimeZone\",\"TimeZone.getDisplayName\"]",
+      "area": "TimeZone",
+      "api": "TimeZone.getDisplayName",
+      "status": "supported",
+      "notes": "Returns deterministic display names for local timezone values."
+    },
+    {
+      "id": "[\"TimeZone\",\"TimeZone.getID\"]",
+      "area": "TimeZone",
+      "api": "TimeZone.getID",
+      "status": "supported",
+      "notes": "Returns local timezone IDs."
+    },
+    {
+      "id": "[\"TimeZone\",\"TimeZone.getOffset\"]",
+      "area": "TimeZone",
+      "api": "TimeZone.getOffset",
+      "status": "supported",
+      "notes": "Returns offsets from the deterministic local timezone model."
+    },
+    {
+      "id": "[\"TimeZone\",\"TimeZone.getTimeZone\"]",
+      "area": "TimeZone",
+      "api": "TimeZone.getTimeZone",
+      "status": "supported",
+      "notes": "Resolves timezone IDs into local timezone values."
+    },
+    {
+      "id": "[\"TrailblazerIdentity\",\"TrailblazerIdentity.generateUserEmailVerificationToken(String,String,String)\"]",
+      "area": "TrailblazerIdentity",
+      "api": "TrailblazerIdentity.generateUserEmailVerificationToken(String,String,String)",
+      "status": "supported",
+      "notes": "Returns a deterministic local verification token for test execution."
+    },
+    {
+      "id": "[\"TrailblazerIdentity\",\"TrailblazerIdentity.getUserOrgInfo(List<String>)\"]",
+      "area": "TrailblazerIdentity",
+      "api": "TrailblazerIdentity.getUserOrgInfo(List<String>)",
+      "status": "supported",
+      "notes": "Returns an empty local UserOrgInfo list for deterministic test execution."
+    },
+    {
+      "id": "[\"TrailblazerIdentity\",\"TrailblazerIdentity.splunkLog(String,String)\"]",
+      "area": "TrailblazerIdentity",
+      "api": "TrailblazerIdentity.splunkLog(String,String)",
+      "status": "supported",
+      "notes": "Accepts local log calls and returns null for deterministic test execution."
+    },
+    {
+      "id": "[\"Type\",\"Type.forName\"]",
+      "area": "Type",
+      "api": "Type.forName",
+      "status": "supported",
+      "notes": "Resolves local classes, SObjects, built-ins, generic type names, generated platform types, and common platform namespace aliases."
+    },
+    {
+      "id": "[\"Type\",\"Type.forName hosted package namespace reflection\"]",
+      "area": "Type",
+      "api": "Type.forName hosted package namespace reflection",
+      "status": "unsupported",
+      "notes": "Live package namespace reflection beyond local source and generated platform aliases requires hosted org metadata."
+    },
+    {
+      "id": "[\"Type\",\"Type.getName\"]",
+      "area": "Type",
+      "api": "Type.getName",
+      "status": "supported",
+      "notes": "Returns local type token name."
+    },
+    {
+      "id": "[\"Type\",\"Type.newInstance\"]",
+      "area": "Type",
+      "api": "Type.newInstance",
+      "status": "supported",
+      "notes": "Constructs local classes through zero-argument constructor dispatch and rejects uninstantiable built-ins."
+    },
+    {
+      "id": "[\"UIRequest\",\"UIRequest.getCurrent()\"]",
+      "area": "UIRequest",
+      "api": "UIRequest.getCurrent()",
+      "status": "supported",
+      "notes": "Returns deterministic local request context values for local Apex execution."
+    },
+    {
+      "id": "[\"UIRequest\",\"UIRequest.getRequestHeader(String)\"]",
+      "area": "UIRequest",
+      "api": "UIRequest.getRequestHeader(String)",
+      "status": "supported",
+      "notes": "Returns deterministic local request context values for local Apex execution."
+    },
+    {
+      "id": "[\"URL\",\"URL.getOrgDomainUrl\"]",
+      "area": "URL",
+      "api": "URL.getOrgDomainUrl",
+      "status": "supported",
+      "notes": "Deterministic local org URL."
+    },
+    {
+      "id": "[\"URL\",\"URL.getSalesforceBaseUrl\"]",
+      "area": "URL",
+      "api": "URL.getSalesforceBaseUrl",
+      "status": "supported",
+      "notes": "Deterministic local base URL."
+    },
+    {
+      "id": "[\"Unsupported\",\"unimplemented platform/stdlib calls\"]",
+      "area": "Unsupported",
+      "api": "unimplemented platform/stdlib calls",
+      "status": "supported",
+      "notes": "Typed UnsupportedFeature errors with stable message text."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.getFirstName\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.getFirstName",
+      "status": "supported",
+      "notes": "Returns the current runAs/default user's local first name."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.getLanguage\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.getLanguage",
+      "status": "supported",
+      "notes": "Returns the current runAs/default user's local language value."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.getLastName\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.getLastName",
+      "status": "supported",
+      "notes": "Returns the current runAs/default user's local last name."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.getLocale\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.getLocale",
+      "status": "supported",
+      "notes": "Returns the current runAs/default user's local locale value."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.getName\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.getName",
+      "status": "supported",
+      "notes": "Returns the current runAs/default user's local display name."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.getOrganizationId\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.getOrganizationId",
+      "status": "supported",
+      "notes": "Returns the deterministic local org identity."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.getProfileId\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.getProfileId",
+      "status": "supported",
+      "notes": "Returns the current runAs/default user's local profile id."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.getSessionId\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.getSessionId",
+      "status": "supported",
+      "notes": "Returns the deterministic empty local session value."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.getTimeZone\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.getTimeZone",
+      "status": "supported",
+      "notes": "Returns the deterministic local user timezone."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.getUserEmail\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.getUserEmail",
+      "status": "supported",
+      "notes": "Returns the current runAs/default user's local email value."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.getUserId\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.getUserId",
+      "status": "supported",
+      "notes": "Returns the current runAs/default user's local user id."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.getUserName\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.getUserName",
+      "status": "supported",
+      "notes": "Returns the current runAs/default user's local username."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.getUserType\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.getUserType",
+      "status": "supported",
+      "notes": "Returns the current runAs/default user's local user type."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.hasPackageLicense(Id)\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.hasPackageLicense(Id)",
+      "status": "supported",
+      "notes": "Checks local PackageLicense and UserPackageLicense records for the current runAs/default user."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.isCurrentUserLicensedForPackage(Id)\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.isCurrentUserLicensedForPackage(Id)",
+      "status": "supported",
+      "notes": "Checks local PackageLicense and UserPackageLicense records for the current runAs/default user."
+    },
+    {
+      "id": "[\"UserInfo\",\"UserInfo.isMultiCurrencyOrganization\"]",
+      "area": "UserInfo",
+      "api": "UserInfo.isMultiCurrencyOrganization",
+      "status": "supported",
+      "notes": "Returns the local org multi-currency metadata flag."
+    },
+    {
+      "id": "[\"WebServiceCallout\",\"WebServiceCallout outbound SOAP transport\"]",
+      "area": "WebServiceCallout",
+      "api": "WebServiceCallout outbound SOAP transport",
+      "status": "unsupported",
+      "notes": "Real outbound SOAP transport requires external network service execution and is fenced locally."
+    },
+    {
+      "id": "[\"WebServiceCallout\",\"WebServiceCallout.invoke(Object,Object,Map,List)\"]",
+      "area": "WebServiceCallout",
+      "api": "WebServiceCallout.invoke(Object,Object,Map,List)",
+      "status": "supported",
+      "notes": "Validates SOAP options, routes generated SOAP callouts through registered WebServiceMock implementations, and materializes a deterministic local response shell when no mock is registered."
+    },
+    {
+      "id": "[\"WebServiceCallout\",\"WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)\"]",
+      "area": "WebServiceCallout",
+      "api": "WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)",
+      "status": "supported",
+      "notes": "Validates SOAP options, routes generated SOAP callouts through registered WebServiceMock implementations, and materializes a deterministic local response shell when no mock is registered."
+    }
+  ],
   "receivers": {
     "AccessLevel": {
       "label": "AccessLevel",
@@ -131,7 +2149,7 @@
           "detail": "Answers API",
           "status": "supported",
           "statusLabel": "Runs locally",
-          "info": "Returns a deterministic empty `List<Id>` locally. Glade does not perform hosted Answers similarity search.",
+          "info": "Local execution returns a deterministic empty List<Id>; this harness does not implement the hosted similarity-search service.",
           "signature": "findSimilar(Question)",
           "source": "docs/STDLIB_COVERAGE.md"
         }
@@ -391,7 +2409,7 @@
           "status": "supported",
           "statusLabel": "Runs locally",
           "info": "Counts deterministic local business milliseconds across seeded week schedules, timezones, all-day closures, partial-day closures, recurring holidays, and linked holidays.",
-          "signature": "diff(Id, Datetime, Datetime)",
+          "signature": "diff(String, Datetime, Datetime)",
           "source": "docs/STDLIB_COVERAGE.md"
         },
         {
@@ -402,7 +2420,7 @@
           "status": "supported",
           "statusLabel": "Runs locally",
           "info": "Checks seeded local week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays.",
-          "signature": "isWithin(Id, Datetime)",
+          "signature": "isWithin(String, Datetime)",
           "source": "docs/STDLIB_COVERAGE.md"
         },
         {
@@ -422,6 +2440,28 @@
       "label": "Crypto",
       "detail": "Crypto support",
       "items": [
+        {
+          "label": "decryptWithManagedIV",
+          "apply": "decryptWithManagedIV()",
+          "type": "method",
+          "detail": "Crypto API",
+          "status": "supported",
+          "statusLabel": "Runs locally",
+          "info": "Managed-IV AES-GCM decryption, including additional authenticated data, is executable in the local runtime; ciphertext values remain unstable.",
+          "signature": "decryptWithManagedIV",
+          "source": "docs/STDLIB_COVERAGE.md"
+        },
+        {
+          "label": "encryptWithManagedIV",
+          "apply": "encryptWithManagedIV()",
+          "type": "method",
+          "detail": "Crypto API",
+          "status": "supported",
+          "statusLabel": "Runs locally",
+          "info": "Managed-IV AES-GCM encryption, including additional authenticated data, is executable in the local runtime; ciphertext values remain unstable.",
+          "signature": "encryptWithManagedIV",
+          "source": "docs/STDLIB_COVERAGE.md"
+        },
         {
           "label": "generateDigest",
           "apply": "generateDigest()",
@@ -1124,7 +3164,7 @@
           "detail": "Decimal API",
           "status": "unsupported",
           "statusLabel": "Requires Salesforce",
-          "info": "Exact Decimal division is fail-closed pending the bounded Salesforce oracle and Task 4.2 implementation.",
+          "info": "Text-backed Decimal division is tested locally, but untexted Decimal division remains explicitly unsupported.",
           "signature": "divide(Decimal,Integer,RoundingMode)",
           "source": "docs/STDLIB_COVERAGE.md"
         },
@@ -2328,7 +4368,7 @@
           "detail": "String API",
           "status": "supported",
           "statusLabel": "Runs locally",
-          "info": "UTF-8 byte index behavior from Go strings.",
+          "info": "Rune-indexed Unicode code-point search; unlike substring, indexes are not UTF-16 code units.",
           "signature": "indexOf",
           "source": "docs/STDLIB_COVERAGE.md"
         },
@@ -2372,7 +4412,7 @@
           "detail": "String API",
           "status": "supported",
           "statusLabel": "Runs locally",
-          "info": "UTF-8 byte index behavior from Go strings.",
+          "info": "Rune-indexed Unicode code-point search; unlike substring, indexes are not UTF-16 code units.",
           "signature": "lastIndexOf",
           "source": "docs/STDLIB_COVERAGE.md"
         },
@@ -2427,7 +4467,7 @@
           "detail": "String API",
           "status": "supported",
           "statusLabel": "Runs locally",
-          "info": "Rune-indexed substring.",
+          "info": "Indexes and slices by Apex UTF-16 code units.",
           "signature": "substring",
           "source": "docs/STDLIB_COVERAGE.md"
         },
@@ -3343,7 +5383,7 @@
       "detail": "Hosted API",
       "status": "supported",
       "statusLabel": "Runs locally",
-      "info": "Deterministic empty list, hosted search not performed"
+      "info": "Deterministic empty list; not a hosted search service"
     }
   ],
   "demoReceivers": {

@@ -2,7 +2,51 @@
 
 ## Unreleased
 
-No changes yet.
+The v0.2.14 section below is the frozen release candidate. The latest published
+release remains v0.2.13 until the exact-SHA release gates and immutable assets
+complete. Historical receipts do not validate the candidate.
+
+## v0.2.14 - 2026-09-04
+
+v0.2.14 focuses on a reliable first local-Apex result, clearer product
+boundaries, safer public feedback, and broader distribution dependency
+inventory.
+
+- The local Playground rejects source errors before cache reuse or execution.
+  Invalid source cannot report Pass or change the local database. Warning-only
+  diagnostics remain visible without becoming errors.
+- The bundled `refinement-service` example avoids the reserved `number`
+  identifier and includes `RefinementServiceTest.createsAndLabelsFileRow`.
+  Shared runtime smoke now loads the example and requires a named, nonzero
+  passing test. The published v0.2.13 sample does not include this fix.
+- Onboarding distinguishes a real local sample from the website's illustrative
+  replay. It explains PATH repair, source versus endpoint API versions, installed
+  editor verification, advisory CI, and useful privacy-safe feedback.
+- The support explorer includes every standard-library ledger row, with filter
+  totals separate from curated autocomplete entries. Descriptions distinguish
+  local behavior from hosted Salesforce services.
+- Website light-theme terminal contrast, highlighting warnings, anonymous-Apex
+  navigation, and legacy `/docs` redirects are corrected.
+- Repository contribution and issue-report guidance now includes private-source
+  precautions and direct private vulnerability reporting. Product source and
+  distributions carry the canonical Apache License 2.0 and project notice.
+- ZIP report export confines reads to the selected saved run, rejects linked
+  entries, and publishes the archive without overwriting hard-linked source
+  files. This change does not cover HTML export or every report reader.
+- Local HTTP servers have a ten-second request-header timeout. VF/LWC previews
+  require the existing explicit opt-in before binding beyond loopback.
+- Bundled JavaScript dependencies receive targeted security updates. New
+  archive inventory includes packaged LWC/Babel and VSIX dependencies; the
+  extension includes bundled dependency notices. Published v0.2.13 inventory
+  remains Go-only. Scanner triage is not a zero-findings security certification.
+- Release archives include deterministic notice evidence for the Go distribution,
+  linked Go modules, and the vendored parser, bound to the built binary hash.
+  System/CGO notice sufficiency remains an owner/legal review boundary.
+
+Upgrade with `glade update`, then run `glade version` and
+`glade doctor --project .` inside your project. No Windows archive or
+historical-version parity is introduced. Packaged targets remain macOS/Linux
+AMD64 and ARM64; the checked source window remains 65.0, 66.0, and 67.0.
 
 ## v0.2.13 - 2026-09-03
 

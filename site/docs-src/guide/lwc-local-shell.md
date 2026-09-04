@@ -21,10 +21,10 @@ fixtures from the project on disk.
 
 ## Setup
 
-Install the local LWC toolchain:
+Verify the toolchain bundled with the release:
 
 ```bash
-glade toolchain install
+glade toolchain status
 ```
 
 Start the Workbench Console:

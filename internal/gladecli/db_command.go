@@ -335,7 +335,7 @@ func runDBUIWithOpenURLAndListen(ctx context.Context, args []string, w io.Writer
 		}
 	}
 	handler := dbUIRouteScopedHandler{next: server.NewWithStore(&org, store)}
-	httpServer := &http.Server{Addr: opts.addr, Handler: handler}
+	httpServer := &http.Server{Addr: opts.addr, Handler: handler, ReadHeaderTimeout: localHTTPReadHeaderTimeout}
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "db ui", Label: "Record manager ready", Current: 2, Total: 2})
 	renderer.Finish(cliui.Result{OK: true, Label: "db ui ready"})
 	printDBUIStartupSummary(w, url, actualAddr, dbPath, opts.root)

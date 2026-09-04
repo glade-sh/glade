@@ -249,6 +249,18 @@
   overflow-wrap: anywhere;
 }
 
+html:not(.dark) .home-loop-visual .home-loop-top strong {
+  color: #d5eadb;
+}
+
+html:not(.dark) .home-loop-visual .home-loop-top span {
+  color: #b7ff8a;
+}
+
+html:not(.dark) .home-loop-visual .home-loop-command code {
+  color: #d5eadb !important;
+}
+
 .home-loop-result {
   position: relative;
   z-index: 2;
@@ -357,7 +369,7 @@
   margin: 18px 0 0;
   border: 1px solid rgba(169,184,173,0.16);
   border-radius: 12px;
-  background: rgba(5, 9, 11, 0.52);
+  background: var(--surface-inset);
   padding: 20px;
 }
 
@@ -419,7 +431,7 @@
 }
 
 .home-completion-status-supported {
-  background: color-mix(in srgb, var(--glade-state-supported) 14%, transparent);
+  background: color-mix(in srgb, var(--glade-state-supported) 8%, transparent);
   color: var(--glade-state-supported);
 }
 
@@ -429,7 +441,7 @@
 }
 
 .home-completion-status-salesforce {
-  background: color-mix(in srgb, var(--info) 14%, transparent);
+  background: color-mix(in srgb, var(--info) 8%, transparent);
   color: var(--info);
 }
 
@@ -537,7 +549,7 @@
   min-width: 0;
   border: 1px solid rgba(169,184,173,0.18);
   border-radius: 12px;
-  background: rgba(9, 16, 18, 0.68);
+  background: var(--surface-inset);
   color: var(--vp-c-text-1);
   padding: 18px;
   text-decoration: none;
@@ -1123,6 +1135,13 @@
   justify-content: flex-start;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.home-demo-notice {
+  margin: 0;
+  color: var(--vp-c-text-2);
+  font-size: var(--fs-label);
+  line-height: var(--lh-ui);
 }
 
 @media (min-width: 780px) {

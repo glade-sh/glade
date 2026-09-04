@@ -6,7 +6,9 @@ Generated from the first-party compat plugin capability catalog.
 
 No post-MVP lane may stay `partial`. Each lane must be split into a complete local `supported` row plus exact hosted-service `unsupported` rows where needed. Local supported rows must cite deterministic tests, fixture evidence, or generated docs.
 
-## MVP Gate
+## Tracked local capability checks
+
+This internal checklist does not establish complete Salesforce parity.
 
 - Target: full-featured glade-parity MVP
 - Readiness: ready

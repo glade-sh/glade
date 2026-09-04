@@ -1,5 +1,10 @@
 # How Glade works
 
+Glade reads source and metadata from disk, checks it, and executes supported
+behavior in its own local runtime. The CLI, editor, and local browser tools
+provide different interfaces to that runtime. It is more than a static analyzer,
+not a hidden Salesforce org, and not a complete hosted-platform emulator.
+
 Use this overview to choose the Glade subsystem behind a local task. Each
 section names the owned behavior, the first command, and the Salesforce
 boundary. Open the linked workflow for step-by-step instructions.
@@ -78,7 +83,7 @@ preview routes plus bounded data and service shims. The Workbench Console
 provides Component Lab and Page Workbench views for those local routes.
 
 ```bash
-glade toolchain install
+glade toolchain status
 glade dev lwc --project . --open
 glade dev lwc --project . --context accountRecord --open
 ```
@@ -98,7 +103,7 @@ uploads, view state, and preview diagnostics.
 
 ```bash
 glade dev vf --project . --port 8080
-curl http://127.0.0.1:8080/services/data/v61.0/glade/visualforce/support
+curl http://127.0.0.1:8080/services/data/v65.0/glade/visualforce/support
 ```
 
 Use Salesforce for hosted chrome, exact lifecycle timing, every component

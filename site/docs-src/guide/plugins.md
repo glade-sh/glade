@@ -8,6 +8,13 @@ Use plugins when you need a first-party extension that stays outside the base ru
 Glade plugins are standalone executables installed and run through
 `glade plugins`.
 
+::: info First-party licensing
+Glade Tools source and v0.2.13 release-candidate plugin archives use the
+Apache License 2.0 and carry project and linked-component notices. Published
+plugin versions before v0.2.13 do not contain the new packaged notice set.
+Product and plugin versions remain independent; the core quickstart needs no plugin.
+:::
+
 ::: tip Default registry
 The default public registry at `https://plugins.glade.sh/index.json` serves
 `@glade/compat`, `@glade/orgpackage`, and `@glade/performance`.

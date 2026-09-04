@@ -1,11 +1,13 @@
 package playground
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -218,6 +220,225 @@ func TestRunnerUsesCacheForRepeatedRun(t *testing.T) {
 	}
 }
 
+func TestRunnerSourceErrorCannotReusePassingCache(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	runner := NewRunner(ws, RunnerOptions{Version: "test"})
+	req := RunRequest{AnonymousBody: "System.debug('cached');", Mode: RunModeScratch, LimitMode: "permissive", UseCache: true}
+
+	first, err := runner.Run(t.Context(), req)
+	if err != nil {
+		t.Fatalf("first Run() error = %v", err)
+	}
+	if first.Status != RunStatusPass {
+		t.Fatalf("first status = %q diagnostics=%#v", first.Status, first.Diagnostics)
+	}
+	before := runner.CurrentOrg()
+	if runner.lastOrgCacheKey != first.CacheKey {
+		t.Fatalf("last org cache key = %q, want %q", runner.lastOrgCacheKey, first.CacheKey)
+	}
+	if cached, ok, err := runner.cache.Load(first.CacheKey); err != nil || !ok || cached.Status != RunStatusPass {
+		t.Fatalf("passing cache eligibility = cached=%#v ok=%v err=%v", cached, ok, err)
+	}
+	runner.runtimeTemplate = nil
+	runner.loadWorkspaceIndex = func(root string) (typesys.Index, []diagnostic.Diagnostic, error) {
+		index, diagnostics, err := loadWorkspaceIndex(root)
+		return index, append(diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "GLADESCHEMA001",
+			Message:  "schema field is invalid",
+			Range:    &diagnostic.Range{Start: diagnostic.Position{Line: 7, Column: 3}},
+		}), err
+	}
+
+	result, err := runner.Run(t.Context(), req)
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if result.Status != RunStatusCompileError || result.CacheHit {
+		t.Fatalf("result = %#v, want uncached compile error", result)
+	}
+	if len(result.Diagnostics) != 1 || result.Diagnostics[0].Severity != "error" || result.Diagnostics[0].Message != "schema field is invalid" || result.Diagnostics[0].Line != 7 || result.Diagnostics[0].Column != 3 {
+		t.Fatalf("diagnostics = %#v", result.Diagnostics)
+	}
+	if len(result.Logs) != 0 || len(result.OrgDiff) != 0 || !samePlaygroundOrg(t, runner.CurrentOrg(), before) {
+		t.Fatalf("source error changed execution state: result=%#v", result)
+	}
+}
+
+func TestRunnerSchemaErrorsDoNotMutateAcrossColdAndWarmCaches(t *testing.T) {
+	for _, mode := range []RunMode{RunModeScratch, RunModePersist} {
+		for _, cacheState := range []string{"cold", "warm"} {
+			t.Run(string(mode)+"/"+cacheState, func(t *testing.T) {
+				dataRoot := t.TempDir()
+				dbPath := filepath.Join(dataRoot, "playground.sqlite")
+				ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+				if err != nil {
+					t.Fatalf("OpenWorkspace() error = %v", err)
+				}
+				runner := NewRunner(ws, RunnerOptions{Version: "test", DBPath: dbPath})
+				req := RunRequest{AnonymousBody: "insert new Account(Name = 'cached result');", Mode: mode, LimitMode: "permissive", UseCache: true}
+				if cacheState == "warm" {
+					first, err := runner.Run(t.Context(), req)
+					if err != nil || first.Status != RunStatusPass || len(first.OrgDiff) == 0 {
+						t.Fatalf("cache setup result=%#v err=%v", first, err)
+					}
+					if runner.lastOrgCacheKey != first.CacheKey {
+						t.Fatalf("last org cache key = %q, want %q", runner.lastOrgCacheKey, first.CacheKey)
+					}
+					runner.runtimeTemplate = nil
+				}
+				before := runner.Org()
+				visibleBefore := runner.CurrentOrg()
+				runner.loadWorkspaceIndex = schemaErrorLoader(t)
+
+				result, err := runner.Run(t.Context(), req)
+				if err != nil {
+					t.Fatalf("Run() error = %v", err)
+				}
+				assertSourceCompileError(t, result, "schema field is invalid")
+				if !samePlaygroundOrg(t, runner.Org(), before) || !samePlaygroundOrg(t, runner.CurrentOrg(), visibleBefore) {
+					t.Fatal("schema error changed in-memory org state")
+				}
+				reopened := NewRunner(ws, RunnerOptions{Version: "test", DBPath: dbPath})
+				if !samePlaygroundOrg(t, reopened.Org(), before) {
+					t.Fatal("schema error changed persisted state")
+				}
+			})
+		}
+	}
+}
+
+func TestRunnerSourceParseErrorsDoNotMutateAndRecover(t *testing.T) {
+	for _, mode := range []RunMode{RunModeScratch, RunModePersist} {
+		t.Run(string(mode), func(t *testing.T) {
+			dataRoot := t.TempDir()
+			dbPath := filepath.Join(dataRoot, "playground.sqlite")
+			ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+			if err != nil {
+				t.Fatalf("OpenWorkspace() error = %v", err)
+			}
+			runner := NewRunner(ws, RunnerOptions{Version: "test", DBPath: dbPath})
+			meta, err := ws.Metadata()
+			if err != nil {
+				t.Fatalf("Metadata() error = %v", err)
+			}
+			var source WorkspaceFile
+			for _, file := range meta.Files {
+				if file.Path == "force-app/main/default/classes/AccountPlayground.cls" {
+					source = file
+					break
+				}
+			}
+			if source.Path == "" {
+				t.Fatal("default source file not found")
+			}
+			bad, err := ws.SaveFile(FileSaveRequest{Path: source.Path, Version: source.Version, Content: "public class AccountPlayground { public static void broken( { }\n"})
+			if err != nil {
+				t.Fatalf("SaveFile() error = %v", err)
+			}
+			before := runner.Org()
+			visibleBefore := runner.CurrentOrg()
+			loads := 0
+			runner.loadWorkspaceIndex = func(root string) (typesys.Index, []diagnostic.Diagnostic, error) {
+				loads++
+				return loadWorkspaceIndex(root)
+			}
+
+			result, err := runner.Run(t.Context(), RunRequest{AnonymousBody: "insert new Account(Name = 'must not persist');", Mode: mode, LimitMode: "permissive", UseCache: true})
+			if err != nil {
+				t.Fatalf("Run() error = %v", err)
+			}
+			if result.Status != RunStatusCompileError || len(result.Diagnostics) == 0 {
+				t.Fatalf("result = %#v, want parse compile error", result)
+			}
+			if len(result.Logs) != 0 || len(result.OrgDiff) != 0 || !samePlaygroundOrg(t, runner.Org(), before) || !samePlaygroundOrg(t, runner.CurrentOrg(), visibleBefore) {
+				t.Fatalf("parse error changed execution state: result=%#v", result)
+			}
+			reopened := NewRunner(ws, RunnerOptions{Version: "test", DBPath: dbPath})
+			if !samePlaygroundOrg(t, reopened.Org(), before) {
+				t.Fatal("parse error changed persisted state")
+			}
+			warm, err := runner.Run(t.Context(), RunRequest{AnonymousBody: "insert new Account(Name = 'must not persist');", Mode: mode, LimitMode: "permissive", UseCache: true})
+			if err != nil {
+				t.Fatalf("warm Run() error = %v", err)
+			}
+			if warm.Status != RunStatusCompileError || len(warm.Logs) != 0 || len(warm.OrgDiff) != 0 || loads != 1 {
+				t.Fatalf("warm parse result=%#v loads=%d", warm, loads)
+			}
+
+			if _, err := ws.SaveFile(FileSaveRequest{Path: source.Path, Version: bad.File.Version, Content: "public class AccountPlayground { public static void recovered() {} }\n"}); err != nil {
+				t.Fatalf("SaveFile(recovered) error = %v", err)
+			}
+			recovered, err := runner.Run(t.Context(), RunRequest{AnonymousBody: "System.debug('recovered');", Mode: mode, LimitMode: "permissive", UseCache: false})
+			if err != nil {
+				t.Fatalf("recovery Run() error = %v", err)
+			}
+			if recovered.Status != RunStatusPass || len(recovered.Logs) != 1 || recovered.Logs[0] != "recovered" {
+				t.Fatalf("recovery result = %#v", recovered)
+			}
+		})
+	}
+}
+
+func schemaErrorLoader(t *testing.T) workspaceIndexLoader {
+	t.Helper()
+	return func(root string) (typesys.Index, []diagnostic.Diagnostic, error) {
+		index, diagnostics, err := loadWorkspaceIndex(root)
+		return index, append(diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "GLADESCHEMA001",
+			Message:  "schema field is invalid",
+			Range:    &diagnostic.Range{Start: diagnostic.Position{Line: 7, Column: 3}},
+		}), err
+	}
+}
+
+func assertSourceCompileError(t *testing.T, result RunResult, message string) {
+	t.Helper()
+	if result.Status != RunStatusCompileError || result.CacheHit || len(result.Logs) != 0 || len(result.OrgDiff) != 0 {
+		t.Fatalf("result = %#v, want uncached non-mutating compile error", result)
+	}
+	if len(result.Diagnostics) != 1 || result.Diagnostics[0].Severity != "error" || result.Diagnostics[0].Message != message || result.Diagnostics[0].Line != 7 || result.Diagnostics[0].Column != 3 {
+		t.Fatalf("diagnostics = %#v", result.Diagnostics)
+	}
+}
+
+func samePlaygroundOrg(t *testing.T, left, right storage.OrgState) bool {
+	t.Helper()
+	leftJSON, err := json.Marshal(left)
+	if err != nil {
+		t.Fatalf("marshal left org: %v", err)
+	}
+	rightJSON, err := json.Marshal(right)
+	if err != nil {
+		t.Fatalf("marshal right org: %v", err)
+	}
+	return string(leftJSON) == string(rightJSON)
+}
+
+func TestRunnerWarningDiagnosticsStillExecute(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	runner := NewRunner(ws, RunnerOptions{Version: "test"})
+	runner.loadWorkspaceIndex = func(root string) (typesys.Index, []diagnostic.Diagnostic, error) {
+		index, diagnostics, err := loadWorkspaceIndex(root)
+		return index, append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Warning, Message: "schema warning"}), err
+	}
+
+	result, err := runner.Run(t.Context(), RunRequest{AnonymousBody: "System.debug('warning still runs');", Mode: RunModeScratch, LimitMode: "permissive"})
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if result.Status != RunStatusPass || len(result.Diagnostics) != 1 || result.Diagnostics[0].Severity != "warning" || len(result.Logs) != 1 || result.Logs[0] != "warning still runs" {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
 func TestRunnerRecompilesWorkspaceClassAfterSourceChange(t *testing.T) {
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
@@ -422,6 +643,36 @@ func TestExampleProjectExecutionPlanCoversEveryProjectOnce(t *testing.T) {
 	}
 }
 
+func TestRefinementServiceExampleRunsNamedTest(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	meta, err := ws.LoadExample("refinement-service")
+	if err != nil {
+		t.Fatalf("LoadExample() error = %v", err)
+	}
+	index, diagnostics, err := loadWorkspaceIndex(ws.ProjectRoot)
+	if err != nil {
+		t.Fatalf("loadWorkspaceIndex() error = %v", err)
+	}
+	if (diagnostic.Report{Diagnostics: diagnostics}).HasErrors() {
+		t.Fatalf("check diagnostics = %#v", diagnostics)
+	}
+	run := apextest.Run(index, apextest.Options{SelectedClasses: []string{"RefinementServiceTest"}, NoDiskCache: true})
+	if summary := run.Summary(); summary.Total == 0 || summary.Passed == 0 || summary.Errors != 0 {
+		t.Fatalf("named test summary = %#v run=%#v", summary, run)
+	}
+	runner := NewRunner(ws, RunnerOptions{Version: "test"})
+	result, err := runner.Run(t.Context(), RunRequest{AnonymousBody: meta.AnonymousBody, Mode: RunModeScratch, LimitMode: "permissive"})
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if result.Status != RunStatusPass || hasErrorDiagnostic(result.Diagnostics) || !strings.Contains(strings.Join(result.Logs, "\n"), "Refine 01 #F-100") {
+		t.Fatalf("anonymous result = %#v", result)
+	}
+}
+
 type exampleProjectExecutionTestCase struct {
 	example     ExampleProject
 	expectedLog string
@@ -528,6 +779,9 @@ func runExampleProjectExecutionGroup(t *testing.T, group int) {
 			if result.Status != RunStatusPass {
 				t.Fatalf("status = %q diagnostics=%#v error=%s", result.Status, result.Diagnostics, result.ErrorMessage)
 			}
+			if hasErrorDiagnostic(result.Diagnostics) {
+				t.Fatalf("error diagnostics = %#v", result.Diagnostics)
+			}
 			if len(result.Logs) == 0 {
 				t.Fatalf("logs = %#v", result.Logs)
 			}
@@ -544,6 +798,15 @@ func runExampleProjectExecutionGroup(t *testing.T, group int) {
 			t.Fatalf("execution count for %q = %d, want 1", testCase.example.ID, executed[testCase.example.ID])
 		}
 	}
+}
+
+func hasErrorDiagnostic(diagnostics []Diagnostic) bool {
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Severity == "error" {
+			return true
+		}
+	}
+	return false
 }
 
 func TestRunnerReportsCompileErrorWithoutCommit(t *testing.T) {

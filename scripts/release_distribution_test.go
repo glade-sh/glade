@@ -2,6 +2,8 @@ package scripts
 
 import (
 	"archive/tar"
+	"archive/zip"
+	"bytes"
 	"compress/gzip"
 	"crypto/sha256"
 	"encoding/json"
@@ -39,6 +41,7 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 		"release-v1-go-",
 		"release-v1-npm-",
 		"cyclonedx-gomod@v1.10.0",
+		"scripts/release-bundle.py sbom",
 		"Upload platform release assets",
 		"scripts/release-asset-upload.sh",
 		"gh release download",
@@ -373,6 +376,15 @@ func TestReleaseManualBuildHasNoPublishingAuthority(t *testing.T) {
 	}
 }
 
+func TestProductLicenseIsCanonicalApache20(t *testing.T) {
+	contents := mustReadFile(t, filepath.Join("..", "LICENSE"))
+	actual := fmt.Sprintf("%x", sha256.Sum256(contents))
+	const canonicalApache20SHA256 = "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+	if actual != canonicalApache20SHA256 {
+		t.Fatalf("LICENSE sha256 = %s, want canonical Apache-2.0 %s", actual, canonicalApache20SHA256)
+	}
+}
+
 func TestReleaseBuildSharedPlatformAndDefaultModes(t *testing.T) {
 	root, npmLog := makeReleaseBuildFixture(t)
 	script := filepath.Join(root, "scripts", "release-build.sh")
@@ -398,6 +410,13 @@ func TestReleaseBuildSharedPlatformAndDefaultModes(t *testing.T) {
 	secondPayloadSHA := filepath.Join(secondSharedDist, "glade-shared-payload.tar.gz.sha256")
 	firstHash := strings.Fields(string(mustReadFile(t, payloadSHA)))[0]
 	secondHash := strings.Fields(string(mustReadFile(t, secondPayloadSHA)))[0]
+	firstVSIX := releaseArchiveFiles(t, payload)["share/glade/editor/vscode-glade.vsix"]
+	secondVSIX := releaseArchiveFiles(t, filepath.Join(secondSharedDist, "glade-shared-payload.tar.gz"))["share/glade/editor/vscode-glade.vsix"]
+	assertCanonicalReleaseVSIX(t, firstVSIX)
+	assertCanonicalReleaseVSIX(t, secondVSIX)
+	if !bytes.Equal(firstVSIX, secondVSIX) {
+		t.Fatalf("packaged VSIX is not deterministic: first=%x second=%x", sha256.Sum256(firstVSIX), sha256.Sum256(secondVSIX))
+	}
 	if firstHash != secondHash {
 		t.Fatalf("shared payload is not deterministic: first=%s second=%s", firstHash, secondHash)
 	}
@@ -437,7 +456,16 @@ func TestReleaseBuildSharedPlatformAndDefaultModes(t *testing.T) {
 	archive := filepath.Join(platformDist, "glade_vtest_linux_amd64.tar.gz")
 	archiveListing := runCommandOutput(t, root, "tar", "-tzf", archive)
 	assertReleaseArchiveShareMatchesPayloadManifest(t, archive)
-	for _, want := range []string{"glade", "LICENSE", "share/glade/editor/vscode-glade.vsix", "share/glade/third_party/lwc/package.json"} {
+	assertReleaseArchiveGoNotices(t, archive, "glade")
+	archiveFiles := releaseArchiveFiles(t, archive)
+	if notice, ok := archiveFiles["NOTICE"]; !ok || string(notice) != "Glade\nCopyright 2026 Matt Simonis\n" {
+		t.Fatalf("platform archive NOTICE = %q, present=%v", notice, ok)
+	}
+	for _, want := range []string{
+		"glade", "LICENSE", "NOTICE", "THIRD_PARTY_NOTICES/NOTICE-MANIFEST.json", "THIRD_PARTY_NOTICES/go/LICENSE",
+		"THIRD_PARTY_NOTICES/modules/github.com/glade-sh/apex-parser/@v0.1.0/NOTICE.md",
+		"share/glade/editor/vscode-glade.vsix", "share/glade/third_party/lwc/package.json",
+	} {
 		if !strings.Contains(archiveListing, want) {
 			t.Fatalf("platform archive missing %q\n%s", want, archiveListing)
 		}
@@ -466,6 +494,7 @@ func TestReleaseBuildSharedPlatformAndDefaultModes(t *testing.T) {
 		t.Fatalf("default mode archive: info=%v err=%v", info, err)
 	}
 	assertReleaseArchiveShareMatchesPayloadManifest(t, defaultArchive)
+	assertReleaseArchiveGoNotices(t, defaultArchive, "glade")
 	tarLog := string(mustReadFile(t, filepath.Join(root, "tar.log")))
 	creationCount := 0
 	for _, line := range strings.Split(strings.TrimSpace(tarLog), "\n") {
@@ -513,6 +542,23 @@ func TestReleaseBuildPlatformRejectsUnsafePayloadArchives(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, "escape")); !os.IsNotExist(err) {
 		t.Fatalf("traversal payload wrote outside extraction root: %v", err)
+	}
+}
+
+func TestReleaseBuildRejectsMissingLinkedModuleNotice(t *testing.T) {
+	root, npmLog := makeReleaseBuildFixture(t)
+	script := filepath.Join(root, "scripts", "release-build.sh")
+	if err := os.Remove(filepath.Join(root, "go-mod-cache", "example.com", "linked@v1.2.3", "LICENSE")); err != nil {
+		t.Fatal(err)
+	}
+	payloadDist := filepath.Join(root, "shared-dist")
+	runReleaseBuildFixture(t, root, script, npmLog, payloadDist, "shared-payload", false, nil)
+	out := runReleaseBuildFixtureError(t, root, script, npmLog, filepath.Join(root, "platform-dist"), map[string]string{
+		"RELEASE_SHARED_PAYLOAD_ARCHIVE": filepath.Join(payloadDist, "glade-shared-payload.tar.gz"),
+		"RELEASE_SHARED_PAYLOAD_SHA256":  filepath.Join(payloadDist, "glade-shared-payload.tar.gz.sha256"),
+	})
+	if !strings.Contains(out, "linked module source lacks notice evidence") {
+		t.Fatalf("missing linked notice rejection diagnostic:\n%s", out)
 	}
 }
 
@@ -630,7 +676,10 @@ func runReleaseBuildFixtureError(t *testing.T, root, script, npmLog, dist string
 	env := append(os.Environ(),
 		"PATH="+filepath.Join(root, "fake-bin")+":"+os.Getenv("PATH"),
 		"FAKE_NPM_LOG="+npmLog,
+		"FAKE_TAR_LOG="+filepath.Join(root, "tar.log"),
 		"FAKE_GLADE_BINARY="+filepath.Join(root, "fake-glade"),
+		"FAKE_GO_MOD_CACHE="+filepath.Join(root, "go-mod-cache"),
+		"FAKE_GO_ROOT="+filepath.Join(root, "go-install", "libexec"),
 		"FAIL_NPM=1",
 		"VERSION=vtest",
 		"DIST_DIR="+dist,
@@ -678,7 +727,16 @@ func makeReleaseBuildFixture(t *testing.T) (string, string) {
 	}
 	releaseScript := mustReadFile(t, filepath.Join("release-build.sh"))
 	writeExecutable(t, filepath.Join(root, "scripts", "release-build.sh"), string(releaseScript))
+	writeReleaseFixtureFile(t, filepath.Join(root, "scripts", "release-go-notices.py"), string(mustReadFile(t, filepath.Join("release-go-notices.py"))))
 	writeReleaseFixtureFile(t, filepath.Join(root, "LICENSE"), "fixture license\n")
+	writeReleaseFixtureFile(t, filepath.Join(root, "NOTICE"), "Glade\nCopyright 2026 Matt Simonis\n")
+	writeReleaseFixtureFile(t, filepath.Join(root, "third_party", "glade-apex-parser", "LICENSE"), "parser license\n")
+	writeReleaseFixtureFile(t, filepath.Join(root, "third_party", "glade-apex-parser", "NOTICE.md"), "parser notice\n")
+	writeReleaseFixtureFile(t, filepath.Join(root, "go-mod-cache", "example.com", "linked@v1.2.3", "LICENSE"), "linked license\n")
+	if err := os.MkdirAll(filepath.Join(root, "go-install", "libexec"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeReleaseFixtureFile(t, filepath.Join(root, "go-install", "LICENSE"), "Go distribution license\n")
 	writeReleaseFixtureFile(t, filepath.Join(root, "third_party", "lwc", "package.json"), "{}\n")
 	writeReleaseFixtureFile(t, filepath.Join(root, "contrib", "vscode-glade", "package.json"), "{}\n")
 	for _, dir := range []string{"experience", "lightning", "shell", "shims", "slds"} {
@@ -701,7 +759,24 @@ if [[ "${1:-}" == "ci" ]]; then
   ln -s ../fixture-tool/cli.js node_modules/.bin/fixture-tool
   ln -s ../jsesc/bin/jsesc node_modules/@locker/fixture-plugin/node_modules/.bin/jsesc
 fi
-if [[ "${1:-} ${2:-}" == "run package" ]]; then mkdir -p dist; printf 'vsix\n' > dist/vscode-glade-fixture.vsix; fi
+if [[ "${1:-} ${2:-}" == "run package" ]]; then
+  mkdir -p dist
+  sequence="$(grep -c 'run package' "${FAKE_NPM_LOG}")"
+  FAKE_VSIX_SEQUENCE="${sequence}" python3 - <<'PY'
+import os
+from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
+
+sequence = int(os.environ["FAKE_VSIX_SEQUENCE"])
+entries = [("extension/z.txt", b"z\n"), ("extension/a.txt", b"a\n")]
+if sequence % 2 == 0:
+    entries.reverse()
+with ZipFile("dist/vscode-glade-fixture.vsix", "w") as archive:
+    for name, body in entries:
+        info = ZipInfo(name, (2026, 9, 4, 13, 0, sequence * 2))
+        info.compress_type = ZIP_DEFLATED
+        archive.writestr(info, body)
+PY
+fi
 `)
 	fakeGlade := filepath.Join(root, "fake-glade")
 	writeExecutable(t, fakeGlade, `#!/usr/bin/env bash
@@ -716,7 +791,16 @@ esac
 	writeExecutable(t, filepath.Join(binDir, "go"), `#!/usr/bin/env bash
 set -euo pipefail
 if [[ "${1:-}" == "env" ]]; then
-  case "${2:-}" in GOOS) echo linux ;; GOARCH) echo amd64 ;; *) exit 2 ;; esac
+  case "${2:-}" in GOOS) echo linux ;; GOARCH) echo amd64 ;; GOMODCACHE) echo "${FAKE_GO_MOD_CACHE}" ;; GOROOT) echo "${FAKE_GO_ROOT}" ;; *) exit 2 ;; esac
+  exit 0
+fi
+if [[ "${1:-}" == "version" && "${2:-}" == "-m" ]]; then
+  cat <<'EOF'
+path fixture/glade
+dep example.com/linked v1.2.3
+dep github.com/glade-sh/apex-parser v0.1.0
+=> ./third_party/glade-apex-parser (devel)
+EOF
   exit 0
 fi
 if [[ "${1:-}" == "build" ]]; then
@@ -753,6 +837,8 @@ func runReleaseBuildFixture(t *testing.T, root, script, npmLog, dist, mode strin
 		"FAKE_NPM_LOG="+npmLog,
 		"FAKE_TAR_LOG="+filepath.Join(root, "tar.log"),
 		"FAKE_GLADE_BINARY="+filepath.Join(root, "fake-glade"),
+		"FAKE_GO_MOD_CACHE="+filepath.Join(root, "go-mod-cache"),
+		"FAKE_GO_ROOT="+filepath.Join(root, "go-install", "libexec"),
 		"VERSION=vtest",
 		"DIST_DIR="+dist,
 	)
@@ -766,6 +852,103 @@ func runReleaseBuildFixture(t *testing.T, root, script, npmLog, dist, mode strin
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("release-build mode %q failed: %v\n%s", mode, err, out)
+	}
+}
+
+func assertReleaseArchiveGoNotices(t *testing.T, archive, binary string) {
+	t.Helper()
+	files := releaseArchiveFiles(t, archive)
+	manifestBytes, ok := files["THIRD_PARTY_NOTICES/NOTICE-MANIFEST.json"]
+	if !ok {
+		t.Fatal("archive Go notice manifest is missing")
+	}
+	var manifest struct {
+		BinarySHA256 string `json:"binarySHA256"`
+		GoLicense    string `json:"goLicense"`
+		Components   []struct {
+			Module      string   `json:"module"`
+			NoticeFiles []string `json:"noticeFiles"`
+		} `json:"components"`
+	}
+	if err := json.Unmarshal(manifestBytes, &manifest); err != nil {
+		t.Fatalf("parse archive Go notice manifest: %v", err)
+	}
+	binaryBytes, ok := files[binary]
+	if !ok {
+		t.Fatalf("archive binary %q is missing", binary)
+	}
+	actualHash := sha256.Sum256(binaryBytes)
+	if manifest.BinarySHA256 != fmt.Sprintf("%x", actualHash) {
+		t.Fatalf("Go notice binary hash = %q, want %x", manifest.BinarySHA256, actualHash)
+	}
+	if manifest.GoLicense != "go/LICENSE" || len(files["THIRD_PARTY_NOTICES/go/LICENSE"]) == 0 {
+		t.Fatal("archive Go distribution notice is missing")
+	}
+	parserFound := false
+	for _, component := range manifest.Components {
+		if component.Module == "github.com/glade-sh/apex-parser" {
+			parserFound = true
+		}
+		for _, notice := range component.NoticeFiles {
+			if len(files["THIRD_PARTY_NOTICES/"+notice]) == 0 {
+				t.Fatalf("archive is missing nonempty component notice %q", notice)
+			}
+		}
+	}
+	if !parserFound {
+		t.Fatal("archive Go notice manifest lacks vendored parser component")
+	}
+}
+
+func assertCanonicalReleaseVSIX(t *testing.T, contents []byte) {
+	t.Helper()
+	reader, err := zip.NewReader(bytes.NewReader(contents), int64(len(contents)))
+	if err != nil {
+		t.Fatalf("read packaged VSIX: %v", err)
+	}
+	previous := ""
+	for _, file := range reader.File {
+		if file.Name < previous {
+			t.Errorf("VSIX member order is not canonical: %q before %q", previous, file.Name)
+		}
+		previous = file.Name
+		if file.Modified.Year() != 1980 || file.Modified.Month() != 1 || file.Modified.Day() != 1 ||
+			file.Modified.Hour() != 0 || file.Modified.Minute() != 0 || file.Modified.Second() != 0 {
+			t.Errorf("VSIX member %q timestamp = %s, want 1980-01-01T00:00:00", file.Name, file.Modified)
+		}
+	}
+}
+
+func releaseArchiveFiles(t *testing.T, archive string) map[string][]byte {
+	t.Helper()
+	file, err := os.Open(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	gzipReader, err := gzip.NewReader(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer gzipReader.Close()
+	files := make(map[string][]byte)
+	tarReader := tar.NewReader(gzipReader)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			return files
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if header.Typeflag != tar.TypeReg && header.Typeflag != tar.TypeRegA {
+			continue
+		}
+		contents, err := io.ReadAll(tarReader)
+		if err != nil {
+			t.Fatal(err)
+		}
+		files[header.Name] = contents
 	}
 }
 

@@ -26,6 +26,8 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
+const localHTTPReadHeaderTimeout = 10 * time.Second
+
 func runServer(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -437,7 +439,7 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 }
 
 func serveHTTPWithContext(ctx context.Context, addr string, handler http.Handler) error {
-	httpServer := &http.Server{Addr: addr, Handler: handler}
+	httpServer := &http.Server{Addr: addr, Handler: handler, ReadHeaderTimeout: localHTTPReadHeaderTimeout}
 	go func() {
 		<-ctx.Done()
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

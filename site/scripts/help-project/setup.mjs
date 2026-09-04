@@ -40,7 +40,7 @@ await writeFile(resolve(outRoot, "sfdx-project.json"), JSON.stringify({
   packageDirectories: [{ path: "force-app", default: true }],
   name: "macrodata-apex",
   namespace: "",
-  sourceApiVersion: "64.0"
+  sourceApiVersion: "65.0"
 }, null, 2) + "\n");
 
 await writeFile(resolve(outRoot, "glade.yml"), `project:
@@ -93,7 +93,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: curl -fsSL https://glade.sh/install.sh | sh
+      - run: curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=v0.2.13 sh
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: glade doctor
       - run: mkdir -p reports

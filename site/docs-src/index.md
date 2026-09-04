@@ -1,5 +1,7 @@
 ---
 layout: home
+title: Glade — Local Apex Runtime for Salesforce Developers
+titleTemplate: false
 head:
   - - link
     - rel: stylesheet
@@ -57,7 +59,7 @@ import releaseManifest from '../release-manifest.json'
   </div>
   <ol class="home-step-list">
     <li><strong>Choose the project and task.</strong><span>Enter a Salesforce DX project and pick a check, test, debug, data, or CI job.</span></li>
-    <li><strong>Run the supported path locally.</strong><span>Use the same runtime from the CLI, VS Code, Workbench, or automation.</span></li>
+    <li><strong>Run the supported path locally.</strong><span>Use the same runtime from the CLI, VS Code, local Playground, or automation.</span></li>
     <li><strong>Inspect concrete proof.</strong><span>Read the diagnostic, result, artifact, and exact Salesforce boundary.</span></li>
   </ol>
 </section>
@@ -107,13 +109,12 @@ import releaseManifest from '../release-manifest.json'
 </section>
 
 <section class="home-install-strip" aria-label="Install Glade">
-  <code id="install-cmd" data-copy-text="curl -fsSL https://glade.sh/install.sh | sh&#10;glade version">curl -fsSL https://glade.sh/install.sh | sh
-glade version</code>
+  <code id="install-cmd" data-copy-text="curl -fsSL https://glade.sh/install.sh | sh&#10;glade version">curl -fsSL https://glade.sh/install.sh | sh<br>glade version</code>
   <div>
     <p>Install and verify the binary, then continue inside your Salesforce DX project.</p>
     <button type="button" data-copy-target="install-cmd" aria-label="Copy install command">Copy install</button>
     <span class="home-copy-status" data-copy-status role="status" aria-live="polite"></span>
-    <p class="home-trust-links"><a href="https://github.com/glade-sh/glade/releases">Release notes</a> · <a href="https://github.com/glade-sh/glade/blob/main/site/install.sh">Installer source</a> · <a href="/guide/security-trust#release-proof">Checksums, SBOM, and attestations</a> · <a href="/guide/security-trust">Security</a></p>
+    <p class="home-trust-links"><a href="https://github.com/glade-sh/glade/releases">Release notes</a> · <a href="https://github.com/glade-sh/glade/blob/main/site/install.sh">Installer source</a> · <a href="/guide/security-trust#release-proof">Checksums, SBOM, and attestations</a> · <a href="/guide/security-trust">Security</a> · <a href="https://github.com/glade-sh/glade/issues/new/choose">Give feedback</a></p>
   </div>
 </section>
 </main>

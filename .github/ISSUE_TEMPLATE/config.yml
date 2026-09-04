@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private vulnerability report
+    url: https://github.com/glade-sh/glade/security/advisories/new
+    about: Keep security details out of public issues.
+  - name: Setup and troubleshooting
+    url: https://glade.sh/help/
+    about: Find the first-test guide and symptom-based recovery.

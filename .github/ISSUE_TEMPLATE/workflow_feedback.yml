@@ -1,0 +1,23 @@
+name: Workflow feedback
+description: Tell us what you wanted to do and where Glade helped or got in the way.
+body:
+  - type: markdown
+    attributes:
+      value: Do not include proprietary source, private package names, credentials, customer records, or unredacted support bundles. Use neutral project labels.
+  - type: textarea
+    id: goal
+    attributes:
+      label: What were you trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: experience
+    attributes:
+      label: What worked, and where did you get stuck?
+      description: Include Glade version, OS/architecture, and the first useful result or mismatch.
+    validations:
+      required: true
+  - type: textarea
+    id: improvement
+    attributes:
+      label: What would make this workflow useful enough to repeat?

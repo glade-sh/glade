@@ -36,6 +36,9 @@ func runDevLWCWithOpenURL(ctx context.Context, args []string, w io.Writer, progr
 		}
 		return err
 	}
+	if err := validateServerBindAllowed(opts.addr); err != nil {
+		return err
+	}
 	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: opts.progressMode})
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "dev lwc", Label: "Loading project"})
 	p, err := project.Load(opts.root)
@@ -115,7 +118,7 @@ func runDevLWCWithOpenURL(ctx context.Context, args []string, w io.Writer, progr
 			return err
 		}
 	}
-	httpServer := &http.Server{Addr: opts.addr, Handler: handler}
+	httpServer := &http.Server{Addr: opts.addr, Handler: handler, ReadHeaderTimeout: localHTTPReadHeaderTimeout}
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "dev lwc", Label: "Shell ready", Current: 6, Total: 6})
 	renderer.Finish(cliui.Result{OK: true, Label: "dev lwc ready"})
 	printDevLWCStartupSummary(w, actualAddr, p, selection)

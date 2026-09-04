@@ -19,7 +19,7 @@ Verified stable release: **{{ releaseManifest.version }}**
 | macOS | amd64 | supported release archive |
 | Linux | amd64 | supported release archive |
 | Linux | arm64 | supported release archive |
-| Windows | amd64/arm64 | [build from source](/guide/build-from-source) |
+| Windows | amd64/arm64 | no native release archive; source builds and WSL are not verified by this walkthrough |
 
 ## Install and verify
 
@@ -30,7 +30,14 @@ glade version
 
 The script installs the current stable release to `~/.local/bin` by default.
 Expected: `glade version` prints **{{ releaseManifest.version }}**. If the shell
-cannot find `glade`, add `~/.local/bin` to `PATH` and open a new shell.
+cannot find `glade`, repair the current shell with:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+glade version
+```
+
+Add the PATH line to your shell configuration to retain it in new terminals.
 
 Override the destination or pin a release when needed:
 
@@ -38,6 +45,9 @@ Override the destination or pin a release when needed:
 curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR=/usr/local/bin sh
 curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=vX.Y.Z sh
 ```
+
+Replace `vX.Y.Z` with the exact published release you reviewed. CI examples in
+this guide pin their tested release directly.
 
 ## Update
 

@@ -14,7 +14,15 @@ Security review works best when the facts are close to the installer. Glade
 keeps its security proof in the repository, the release workflow, and the
 release assets.
 
-## CI gates
+## Report a vulnerability privately
+
+Use [Glade private reporting](https://github.com/glade-sh/glade/security/advisories/new)
+or [Tools private reporting](https://github.com/glade-sh/glade-tools/security/advisories/new).
+Both repositories enable private reporting. If GitHub is unavailable, email
+[security@glade.sh](mailto:security@glade.sh). Do not put vulnerability details
+in public issues.
+
+## Interpret CI evidence
 
 | Gate | What it checks |
 | --- | --- |
@@ -28,7 +36,27 @@ release assets.
 `gosec` reports are uploaded while the existing baseline is triaged. New
 high-severity findings should be fixed or documented before release.
 
+The gosec upload uses `-no-fail`: green means the upload completed, not that no
+findings exist. A repository-posture score or dependency inventory finding is
+not proof of an exploitable runtime vulnerability. Review production scope,
+reachability, and the exact candidate before accepting or dismissing a finding.
+
 ## Release proof
+
+**Inventory scope:** the published v0.2.13 SBOM covers the Go executable. It
+does not inventory all bundled LWC/Babel JavaScript and VSIX dependencies.
+Attestation proves the inventory's origin, not its completeness. Keep this
+limitation in any supply-chain review of that release.
+
+The unreleased archive builder also inventories packaged LWC/Babel modules
+and dependencies present in the bundled VSIX. The extension includes dependency
+notices and an inventory bound to its bundle hash. Exact archive and inventory
+attestations still require the approved release workflow; local validation does
+not amend the published v0.2.13 inventory.
+
+The builder also packages notice evidence for the Go distribution, linked Go
+modules named by the exact binary, and the vendored Apex parser. This supports
+review but does not decide the sufficiency of notices for system or CGO libraries.
 
 Tagged releases publish:
 

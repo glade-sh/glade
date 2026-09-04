@@ -38,3 +38,8 @@ test('sidebar disclosure controls have one keyboard target', () => {
   assert.match(docsEnhancer, /\.item\[role="button"\] \.caret\[role="button"\]/)
   assert.match(docsEnhancer, /removeAttribute\('tabindex'\)/)
 })
+
+test('the capability explorer only uses valid CodeMirror stream highlighting tags', async () => {
+  const language = await readFile(new URL('../.vitepress/theme/editor/apexLanguage.ts', import.meta.url), 'utf8')
+  assert.doesNotMatch(language, /definition\(typeName\)/)
+})

@@ -70,6 +70,42 @@ with open(archive, "wb") as raw:
 PY
 }
 
+normalize_vscode_extension_archive() {
+	local archive_path="$1"
+	VSCODE_EXTENSION_ARCHIVE="${archive_path}" python3 - <<'PY'
+import os
+from pathlib import Path, PurePosixPath
+from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile, ZipInfo
+
+archive_path = Path(os.environ["VSCODE_EXTENSION_ARCHIVE"])
+temporary_path = archive_path.with_name(archive_path.name + ".normalized")
+entries = []
+seen = set()
+
+with ZipFile(archive_path, "r") as source:
+    for member in source.infolist():
+        path = PurePosixPath(member.filename)
+        if not member.filename or "\\" in member.filename or path.is_absolute() or ".." in path.parts:
+            raise SystemExit(f"ERROR: unsafe VSIX member {member.filename!r}")
+        if member.filename in seen:
+            raise SystemExit(f"ERROR: duplicate VSIX member {member.filename!r}")
+        seen.add(member.filename)
+        entries.append((member.filename, member.is_dir(), b"" if member.is_dir() else source.read(member)))
+
+try:
+    with ZipFile(temporary_path, "w") as output:
+        for name, is_directory, contents in sorted(entries):
+            member = ZipInfo(name, (1980, 1, 1, 0, 0, 0))
+            member.create_system = 3
+            member.external_attr = ((0o40755 if is_directory else 0o100644) << 16) | (0x10 if is_directory else 0)
+            member.compress_type = ZIP_STORED if is_directory else ZIP_DEFLATED
+            output.writestr(member, contents, compresslevel=9)
+    os.replace(temporary_path, archive_path)
+finally:
+    temporary_path.unlink(missing_ok=True)
+PY
+}
+
 prepare_shared_payload() {
 	local output_dir="$1"
 	local payload_root="${workdir}/payload-root"
@@ -94,6 +130,7 @@ prepare_shared_payload() {
 			rm -f dist/vscode-glade-*.vsix
 			npm run package
 		)
+		normalize_vscode_extension_archive "${ROOT}"/contrib/vscode-glade/dist/vscode-glade-*.vsix
 		cp "${ROOT}"/contrib/vscode-glade/dist/vscode-glade-*.vsix "${share_root}/editor/vscode-glade.vsix"
 		vscode_extension_package="present"
 	fi
@@ -233,6 +270,48 @@ verify_shared_payload() {
 	)
 }
 
+verify_go_notices() {
+	local release_root="$1"
+	local binary="$2"
+	RELEASE_NOTICE_ROOT="${release_root}/THIRD_PARTY_NOTICES" RELEASE_BINARY="${release_root}/${binary}" python3 - <<'PY'
+import hashlib
+import json
+import os
+from pathlib import Path, PurePosixPath
+
+root = Path(os.environ["RELEASE_NOTICE_ROOT"])
+binary = Path(os.environ["RELEASE_BINARY"])
+manifest_path = root / "NOTICE-MANIFEST.json"
+if not root.is_dir() or not manifest_path.is_file() or manifest_path.is_symlink():
+    raise SystemExit("ERROR: Go notice manifest is missing")
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+with binary.open("rb") as source:
+    binary_sha256 = hashlib.file_digest(source, "sha256").hexdigest()
+if manifest.get("binarySHA256") != binary_sha256:
+    raise SystemExit("ERROR: Go notice manifest binary hash mismatch")
+if manifest.get("goLicense") != "go/LICENSE":
+    raise SystemExit("ERROR: Go notice manifest lacks Go distribution license")
+components = manifest.get("components")
+if not isinstance(components, list) or not components:
+    raise SystemExit("ERROR: Go notice manifest has no linked modules")
+if not any(component.get("module") == "github.com/glade-sh/apex-parser" for component in components):
+    raise SystemExit("ERROR: Go notice manifest lacks vendored parser")
+paths = [manifest["goLicense"]]
+for component in components:
+    notices = component.get("noticeFiles")
+    if not isinstance(notices, list) or not notices:
+        raise SystemExit("ERROR: Go notice manifest has component without notice files")
+    paths.extend(notices)
+for relative in paths:
+    path = PurePosixPath(relative)
+    if not relative or path.is_absolute() or ".." in path.parts:
+        raise SystemExit("ERROR: Go notice manifest has unsafe notice path")
+    notice = root.joinpath(*path.parts)
+    if not notice.is_file() or notice.is_symlink() or notice.stat().st_size == 0:
+        raise SystemExit(f"ERROR: Go notice evidence is missing or invalid: {relative}")
+PY
+}
+
 consume_platform_payload() {
 	local payload_archive="$1"
 	local payload_checksum="$2"
@@ -268,6 +347,8 @@ consume_platform_payload() {
 		cd "${ROOT}"
 		CGO_ENABLED=1 go build -trimpath -ldflags "${LDFLAGS}" -o "${platform_root}/${binary}" ./cmd/glade
 	)
+	python3 "${ROOT}/scripts/release-go-notices.py" \
+		"${platform_root}/${binary}" "${ROOT}" "${platform_root}/THIRD_PARTY_NOTICES"
 	doctor_out="$("${platform_root}/${binary}" doctor --json 2>&1 || true)"
 	if [[ "${doctor_out}" != *'"parserOK": true'* ]]; then
 		echo "ERROR: built binary reports parser unavailable; aborting" >&2
@@ -275,13 +356,14 @@ consume_platform_payload() {
 		exit 1
 	fi
 	cp "${ROOT}/LICENSE" "${platform_root}/LICENSE"
+	cp "${ROOT}/NOTICE" "${platform_root}/NOTICE"
 	if [[ "${goos}" == "windows" ]]; then
 		(
 			cd "${platform_root}"
-			zip -q "${DIST_DIR}/${archive}" "${binary}" LICENSE share
+			zip -q "${DIST_DIR}/${archive}" "${binary}" LICENSE NOTICE THIRD_PARTY_NOTICES share
 		)
 	else
-		tar -C "${platform_root}" -czf "${DIST_DIR}/${archive}" "${binary}" LICENSE share
+		tar -C "${platform_root}" -czf "${DIST_DIR}/${archive}" "${binary}" LICENSE NOTICE THIRD_PARTY_NOTICES share
 	fi
 	(
 		cd "${DIST_DIR}"
@@ -298,6 +380,7 @@ consume_platform_payload() {
 		tar -C "${verifydir}" -xzf "${DIST_DIR}/${archive}"
 	fi
 	verify_shared_payload "${verifydir}"
+	verify_go_notices "${verifydir}" "${binary}"
 	local version_output doctor_json parser_smoke
 	version_output="$("${verifydir}/${binary}" version 2>&1)"
 	doctor_json="$("${verifydir}/${binary}" doctor --json 2>&1 || true)"

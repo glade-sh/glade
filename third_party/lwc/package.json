@@ -7,5 +7,8 @@
     "@lwc/compiler": "8.20.4",
     "@lwc/engine-dom": "8.20.4",
     "@lwc/synthetic-shadow": "8.20.4"
+  },
+  "overrides": {
+    "@babel/core": "7.29.7"
   }
 }

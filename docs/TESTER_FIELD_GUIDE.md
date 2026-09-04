@@ -25,7 +25,7 @@ Open a Salesforce DX project:
 ```bash
 cd path/to/sfdx-project
 test -f sfdx-project.json
-glade init --project . --yes
+test -f glade.yml || glade init --project . --yes
 glade config validate --project .
 glade config show --project .
 glade doctor --project .
@@ -37,14 +37,18 @@ Run the first local checks:
 
 ```bash
 glade check --project .
-glade test --project . --json
+glade test --project . --class RefinementServiceTest --json
 ```
+
+Substitute an existing test class from your project. Confirm the executed
+count is nonzero; a process that selects zero tests is not first-run proof.
 
 If a tester uses VS Code, install the bundled extension after the binary works:
 
 ```bash
 glade editor doctor vscode
 glade editor install vscode --force
+code --list-extensions --show-versions
 ```
 
 Open the Salesforce DX project root in VS Code. The extension adds Glade Home, the Glade
@@ -94,12 +98,15 @@ Give an AI coding agent this contract from the Salesforce DX project root:
 Use Glade for local Salesforce checks.
 Do not connect to a Salesforce org for the first pass.
 Run:
+  mkdir -p reports
   glade doctor --project .
   glade config validate --project .
   glade check --project . --format json --output reports/glade-check.json --no-progress
   glade test changed --project . --since origin/main --json --no-progress > reports/glade-test-changed.json
-If a command fails, quote the exact diagnostic, fix only the relevant source,
-and rerun the same command before claiming success.
+If a command fails, quote the exact diagnostic and classify the mismatch.
+Do not rewrite valid Salesforce behavior to satisfy a Glade limitation.
+For bugs or new behavior prove a failing test; preserve a passing baseline for refactors.
+Use authorized Salesforce validation when the path requires it.
 Check the Glade support map before treating unsupported platform services as bugs.
 ```
 
@@ -117,32 +124,11 @@ surface warnings.
 
 ## CI Pattern
 
-Use a full git fetch when CI needs `origin/main` for affected-test selection:
-
-```yaml
-name: glade
-on: [pull_request]
-jobs:
-  glade:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - run: curl -fsSL https://glade.sh/install.sh | sh
-      - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - run: glade doctor --project .
-      - run: mkdir -p reports
-      - run: glade check --project . --format sarif --output reports/glade-check.sarif
-      - run: glade test changed --project . --since origin/main --json --no-progress > reports/glade-test-changed.json
-      - run: glade test --project . --junit reports/glade-junit.xml
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: glade-results
-          path: |
-            reports/
-```
+Start with the canonical [advisory pilot](https://glade.sh/guide/ci-artifacts#advisory-pilot).
+It pins the release, preserves assessment failures and artifacts, and uses a
+full git fetch for affected-test selection. Setup failures still fail the job.
+Do not make it a required merge gate until the team chooses the separately
+documented enforcing contract and validates representative results.
 
 For richer saved run artifacts:
 

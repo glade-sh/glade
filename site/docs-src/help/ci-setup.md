@@ -20,6 +20,8 @@
 
 ### 1. Add the workflow
 
+For an evaluation, start with the [advisory pilot](/guide/ci-artifacts#advisory-pilot).
+The example below is an enforcing gate: check/test failures fail the job.
 Create `.github/workflows/glade.yml`:
 
 ```yaml
@@ -33,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: curl -fsSL https://glade.sh/install.sh | sh
+      - run: curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=v0.2.13 sh
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: glade version
       - run: glade doctor --project .

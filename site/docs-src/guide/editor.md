@@ -21,6 +21,7 @@ Install and verify the extension:
 ```bash
 glade editor install vscode --force
 glade editor doctor vscode
+code --list-extensions --show-versions
 ```
 
 Omit `--editor` for VS Code. Cursor and Windsurf use the same bundled VSIX:
@@ -30,9 +31,15 @@ glade editor install vscode --editor cursor --force
 glade editor install vscode --editor windsurf --force
 ```
 
-Expected: the doctor command reports the selected editor and installed Glade
-extension. The release archive stores the VSIX at
-`share/glade/editor/vscode-glade.vsix`.
+Expected: doctor checks the selected editor command and the bundled VSIX; it
+does not query the editor's installed-extension list. Confirm that
+`code --list-extensions --show-versions` includes `glade.vscode-glade@` followed
+by its installed version. For Cursor or Windsurf, use that editor's CLI.
+
+The extension is distributed in the release archive at
+`share/glade/editor/vscode-glade.vsix`, not through a promised Marketplace or
+Open VSX listing. Installing the VSIX does not require a particular theme or
+a clean profile. Reload the editor after installation.
 
 ## 1. Confirm the workspace
 

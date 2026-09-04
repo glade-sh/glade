@@ -322,7 +322,7 @@
       shortLabel: "Check",
       title: "Catch deploy issues",
       preview: "1 diagnostic caught",
-      actionLabel: "Run local check",
+      actionLabel: "Replay example",
       commandLabel: "glade check",
       command: "glade check --project . --no-progress",
       ciCommand: "glade check --project . --json --no-progress",
@@ -382,7 +382,7 @@
       shortLabel: "Test",
       title: "Run focused tests",
       preview: "1 passed · 0 failed",
-      actionLabel: "Run focused tests",
+      actionLabel: "Replay example",
       commandLabel: "glade test",
       command: "glade test --project . --class PassingTest --no-progress",
       ciCommand: "glade test --project . --class PassingTest --json --no-progress",
@@ -443,7 +443,7 @@
       shortLabel: "Exec",
       title: "Execute Apex locally",
       preview: "USER_DEBUG emitted",
-      actionLabel: "Execute snippet",
+      actionLabel: "Replay example",
       commandLabel: "glade exec",
       command: "glade exec \"System.debug('local');\"",
       ciCommand: "glade exec --json \"System.debug('local');\"",
@@ -496,7 +496,7 @@
       shortLabel: "Debug",
       title: "Profile debug logs",
       preview: "4 events parsed",
-      actionLabel: "Profile debug log",
+      actionLabel: "Replay example",
       commandLabel: "glade debug",
       command: "glade debug profile --log logs/apex-debug.log",
       ciCommand: "glade debug profile --log logs/apex-debug.log --json",
@@ -895,7 +895,7 @@
     renderChangedSummary(scenario.runningSummaryItems)
     if (runButton) {
       runButton.disabled = true
-      runButton.textContent = "Running..."
+      runButton.textContent = "Replaying..."
       runButton.setAttribute("data-run-state", "running")
     }
 
@@ -931,7 +931,7 @@
     renderOutputView(scenario)
     if (runButton) {
       runButton.disabled = false
-      runButton.textContent = "Run again"
+      runButton.textContent = "Replay again"
       runButton.setAttribute("data-run-state", "complete")
     }
   }

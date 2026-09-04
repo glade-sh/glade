@@ -241,8 +241,11 @@ func validateRoot(root string) (string, bool) {
 	return filepath.Clean(root), true
 }
 
-// ToolchainStatus describes whether the global LWC toolchain is ready.
+// ToolchainStatus describes whether the active LWC toolchain is ready.
 func ToolchainStatus() (path string, ok bool, detail string) {
+	if root, ok := explicitToolchainRoot(); ok {
+		return root, true, "ok (explicit)"
+	}
 	if root, ok := userShareRoot(); ok {
 		return root, true, "ok (global)"
 	}

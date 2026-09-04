@@ -232,6 +232,7 @@ jobs:
           tar -xzf "$archive" -C "$extract_dir" glade
           export PATH="${{ runner.temp }}/cyclonedx-bin:$PATH"
           cyclonedx-gomod bin -json -version "$VERSION" -output "$sbom" "$extract_dir/glade"
+          python3 scripts/release-bundle.py sbom "$archive" "$sbom"
           test -s "$sbom"
           python3 - "$sbom" <<'PY'
           import json

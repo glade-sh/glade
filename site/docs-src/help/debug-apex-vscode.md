@@ -12,8 +12,7 @@
 
 ## Before you start
 
-- The Glade VS Code extension is installed in a clean VS Code profile.
-- No unrelated VS Code extensions are installed in the capture profile.
+- The bundled Glade VS Code extension is installed. Keep your existing theme and profile.
 - A local data environment is selected.
 
 ## Steps

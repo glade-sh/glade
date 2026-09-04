@@ -19,9 +19,10 @@ local Salesforce API flow. Checked Apex/runtime reports carry the method-level
 detail. The LWC summary below links to the local shell guide and support table
 when you need route and module detail.
 
-**Verified with Glade {{ releaseManifest.version }}.** The generated
-standard-library counts and searchable rows below come from the checked coverage
-ledger in this repository state.
+**Stable download: Glade {{ releaseManifest.version }}.** The generated
+standard-library counts and searchable rows describe the checked source ledger
+in this repository state. The download version does not certify these rows or
+inherit the historical runtime/parity evidence below.
 
 ## Before you adopt Glade
 
@@ -30,6 +31,13 @@ ledger in this repository state.
 - Your project can tolerate explicit unsupported diagnostics for Salesforce-hosted services.
 - You will keep a Salesforce validation gate for features Glade does not model.
 - You will use first-party plugins for capability reports and advisory scans instead of expecting those scanners in base `glade --help`.
+
+Checked Apex source versions are **65.0, 66.0, and 67.0**. Well-formed historical
+source versions are preserved without checked correctness/parity credit.
+Execute Anonymous remains limited to the checked source window; each LWC
+bundle declares an exact supported version. Local HTTP endpoints separately
+support 60.0, 65.0, 66.0, and 67.0 (default 65.0). Do not change project metadata
+merely to avoid a version error. See the [quickstart version box](/guide/quickstart#api-versions-are-separate-contracts).
 
 ## Status key
 
@@ -57,6 +65,19 @@ cannot lower. That body is compile-ready for `glade check`, but it receives no
 runtime-support credit and local test execution reports `UnsupportedFeature`.
 
 <GladeSupportExplorer />
+
+## Release evidence and scope
+
+| Release / source | Evidence | Denominator and boundary | Receipt |
+| --- | --- | --- | --- |
+| v0.2.13 — `04c55539045d782ce56e2e5d92d4fb637ba03741` | Published distribution | Per-archive checksums and attestations; not a new corpus/parity result | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.13) |
+| v0.2.12 — `3a454dee3cb35c604cb1bf25e6a8972b63dd7c81` | Tagged local/corpus and Salesforce checks | 12,315 and 782 private tests; 86 public projects; 475 Salesforce checks, with their distinct accounting | [Tagged validation](https://github.com/glade-sh/glade/blob/v0.2.12/docs/PRIVATE_CORPUS_ASSURANCE.md#tagged-v0212-product-validation) |
+| v0.2.11 | Frozen surface snapshot | 184 required surfaces; overlapping compile/test/runtime/non-parity sets described below | [Bound source pair and receipts](https://github.com/glade-sh/glade/blob/v0.2.11/docs/PRIVATE_CORPUS_ASSURANCE.md) |
+
+No new candidate runtime/parity certification is implied by this table. The
+linked receipts carry exact product/Tools inputs where applicable; never combine
+results from different candidates. For the v0.2.12 release-note link that omitted
+`docs/`, use the tagged-validation link above. Historical receipts remain unchanged.
 
 ## Published v0.2.11 surface snapshot
 
@@ -203,7 +224,7 @@ Every remaining hosted-only behavior is split into an explicit unsupported row.
 | Capability features marked `supported` | 31 |
 | Capability features marked `partial` | 0 |
 | Capability features marked `unsupported` | 2 |
-| Standard-library rows marked `supported` | 267 |
+| Standard-library rows marked `supported` | 269 |
 | Standard-library rows marked `partial` | 0 |
 | Standard-library rows marked `unsupported` | 19 |
 

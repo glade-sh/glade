@@ -72,6 +72,9 @@ func runDevVF(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
+	if err := validateServerBindAllowed(addr); err != nil {
+		return err
+	}
 	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: progressModeForFlags(false, progress, progressJSON, noProgress)})
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "dev vf", Label: "Loading project"})
 	p, err := project.Load(root)
@@ -117,7 +120,7 @@ func runDevVF(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 			return err
 		}
 	}
-	httpServer := &http.Server{Addr: addr, Handler: handler}
+	httpServer := &http.Server{Addr: addr, Handler: handler, ReadHeaderTimeout: localHTTPReadHeaderTimeout}
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "dev vf", Label: "Server ready", Current: 4, Total: 4})
 	renderer.Finish(cliui.Result{OK: true, Label: "dev vf ready"})
 	printDevVFStartupSummary(w, actualAddr, p)

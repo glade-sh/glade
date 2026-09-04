@@ -7,7 +7,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Area | API | Status | Notes |
 | --- | --- | --- | --- |
 | AccessLevel | `AccessLevel.withPermissionSetId(String)` | `supported` | Creates a local permission-set-scoped user-mode token used by supported SOQL and DML permission checks. |
-| Answers | `Answers.findSimilar(Question)` | `supported` | Returns a deterministic empty `List<Id>` locally. Glade does not perform hosted Answers similarity search. |
+| Answers | `Answers.findSimilar(Question)` | `supported` | Local execution returns a deterministic empty List<Id>; this harness does not implement the hosted similarity-search service. |
 | ApexPages | `ApexPages.Message` | `supported` | Constructor, getters, add/get/has message state, and Visualforce action reset behavior are modeled. |
 | ApexPages | `ApexPages.addMessage` | `supported` | Stores page messages on the VM instance. |
 | ApexPages | `ApexPages.addMessage(ApexPages.Message)` | `supported` | Stores page messages on the VM instance. |
@@ -38,9 +38,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | BusinessHours | `BusinessHours malformed local holiday metadata` | `unsupported` | Malformed seeded holiday metadata raises a stable UnsupportedFeature diagnostic naming the unsupported local field shape. |
 | BusinessHours | `BusinessHours.add(Id, Datetime, Long)` | `supported` | Runs deterministic local week-schedule math from seeded BusinessHours, Holiday, OperatingHours, and OperatingHoursHoliday records with timezone handling, all-day closures, partial-day closures, recurring holidays, and linked holidays. |
 | BusinessHours | `BusinessHours.addGmt(Id, Datetime, Long)` | `supported` | Runs deterministic local calendar math from seeded BusinessHours, Holiday, OperatingHours, and OperatingHoursHoliday records with GMT Datetime output. |
-| BusinessHours | `BusinessHours.diff(Id, Datetime, Datetime)` | `supported` | Counts deterministic local business milliseconds across seeded week schedules, timezones, all-day closures, partial-day closures, recurring holidays, and linked holidays. |
-| BusinessHours | `BusinessHours.isWithin(Id, Datetime)` | `supported` | Checks seeded local week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays. |
+| BusinessHours | `BusinessHours.diff(String, Datetime, Datetime)` | `supported` | Counts deterministic local business milliseconds across seeded week schedules, timezones, all-day closures, partial-day closures, recurring holidays, and linked holidays. |
+| BusinessHours | `BusinessHours.isWithin(String, Datetime)` | `supported` | Checks seeded local week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays. |
 | BusinessHours | `BusinessHours.nextStartDate(Id, Datetime)` | `supported` | Finds the next deterministic local start from seeded week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays. |
+| Crypto | `Crypto.decryptWithManagedIV` | `supported` | Managed-IV AES-GCM decryption, including additional authenticated data, is executable in the local runtime; ciphertext values remain unstable. |
+| Crypto | `Crypto.encryptWithManagedIV` | `supported` | Managed-IV AES-GCM encryption, including additional authenticated data, is executable in the local runtime; ciphertext values remain unstable. |
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA-1/SHA1, SHA-256/SHA256, SHA-384/SHA384, SHA-512/SHA512, and SHA3-256/384/512 digests are fixture-pinned, with Salesforce-shaped SecurityException diagnostics for unknown names. |
 | Database | `Database.UnitOfWork` | `supported` | Queues local DML operations and applies them on commitWork; discardWork drops pending local work. |
 | Database | `Database.convertLead` | `supported` | Local lead conversion creates Account, Contact, and optional Opportunity records and updates Lead conversion fields. |
@@ -96,7 +98,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Datetime | `Datetime.newInstance` | `supported` | Validates date and time parts. |
 | Datetime | `Datetime.now` | `supported` | Returns the deterministic local runtime datetime. |
 | Datetime | `Datetime.valueOf` | `supported` | Parses supported datetime strings. |
-| Decimal | `Decimal.divide(Decimal,Integer,RoundingMode)` | `unsupported` | Exact Decimal division is fail-closed pending the bounded Salesforce oracle and Task 4.2 implementation. |
+| Decimal | `Decimal.divide(Decimal,Integer,RoundingMode)` | `unsupported` | Text-backed Decimal division is tested locally, but untexted Decimal division remains explicitly unsupported. |
 | Decimal | `Decimal.doubleValue` | `supported` | Returns an explicitly Double-backed local value. |
 | Decimal | `Decimal.intValue` | `supported` | Truncates to integer. |
 | Decimal | `Decimal.round` | `supported` | Oracle-pinned finite Decimal rounding uses Salesforce default HALF_EVEN ties and explicit RoundingMode behavior. |
@@ -198,16 +200,16 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.contains` | `supported` | UTF-8 string contains. |
 | String | `String.endsWith` | `supported` | UTF-8 string suffix. |
 | String | `String.equalsIgnoreCase` | `supported` | Unicode simple fold. |
-| String | `String.indexOf` | `supported` | UTF-8 byte index behavior from Go strings. |
+| String | `String.indexOf` | `supported` | Rune-indexed Unicode code-point search; unlike substring, indexes are not UTF-16 code units. |
 | String | `String.isBlank` | `supported` | Null and whitespace. |
 | String | `String.isNotBlank` | `supported` | Null and whitespace. |
 | String | `String.join` | `supported` | List values and separator. |
-| String | `String.lastIndexOf` | `supported` | UTF-8 byte index behavior from Go strings. |
+| String | `String.lastIndexOf` | `supported` | Rune-indexed Unicode code-point search; unlike substring, indexes are not UTF-16 code units. |
 | String | `String.length` | `supported` | Counts Apex UTF-16 code units. |
 | String | `String.replace` | `supported` | Literal replacement. |
 | String | `String.split` | `supported` | regexp2-backed Java Pattern split covers limits, empty-pattern splits, zero-width and nullable delimiters, numeric backreference delimiters, \Q...\E quote escapes, UAX #29 graphemes, nested class algebra, and Apex UTF-16 code-unit boundaries. |
 | String | `String.startsWith` | `supported` | UTF-8 string prefix. |
-| String | `String.substring` | `supported` | Rune-indexed substring. |
+| String | `String.substring` | `supported` | Indexes and slices by Apex UTF-16 code units. |
 | String | `String.toLowerCase` | `supported` | Go Unicode lowercasing. |
 | String | `String.toUpperCase` | `supported` | Go Unicode uppercasing. |
 | String | `String.trim` | `supported` | Unicode whitespace trim. |

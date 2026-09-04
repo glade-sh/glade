@@ -12,12 +12,12 @@ Archive provenance and CycloneDX attestations must verify before upload.
 
 ## Report a vulnerability
 
-Report private security issues through GitHub Security Advisories for the
-`glade-sh/glade` repository.
+Use [private vulnerability reporting](https://github.com/glade-sh/glade/security/advisories/new)
+for Glade, or the [Tools private reporting route](https://github.com/glade-sh/glade-tools/security/advisories/new)
+for first-party plugins. Private reporting is enabled for both repositories.
 
-If advisories are unavailable, send the smallest reproduction you can share to
-the maintainer through the project contact channel. Do not open a public issue
-for a vulnerability until there is a coordinated disclosure path.
+If GitHub reporting is unavailable, email [security@glade.sh](mailto:security@glade.sh).
+Do not post vulnerability details in a public issue or discussion.
 
 Include:
 
@@ -73,6 +73,10 @@ The repository runs:
 new high-severity findings as release blockers unless they are documented false
 positives.
 
+A green upload job does not mean zero source findings: gosec currently runs
+with `-no-fail`. Dependency presence, reachability, and repository-posture
+scores are different evidence. Review the underlying reports.
+
 ## Verify a release archive
 
 ```bash
@@ -98,3 +102,8 @@ tar -xzf "$GLADE_ARCHIVE"
 
 Compare the matching `*.sbom.json` release asset with your internal dependency
 allowlist when policy requires an inventory review.
+
+The v0.2.13 SBOM inventories the Go executable, not the entire archive's bundled
+JavaScript/VSIX dependencies. Its attestation authenticates that inventory; it
+does not make the inventory complete. Review packaged JavaScript separately
+until a release explicitly supplies complete-archive inventory evidence.

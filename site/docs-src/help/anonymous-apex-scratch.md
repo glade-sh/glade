@@ -12,8 +12,8 @@
 
 ## Before you start
 
-- VS Code is running with a clean VS Code profile.
-- Only Glade, Catppuccin Mocha, and the Salesforce Apex extension are installed.
+- VS Code has the bundled Glade extension installed; no particular theme or profile is required.
+- The project's Apex source version is eligible for Execute Anonymous (65.0, 66.0, or 67.0).
 - The active Glade local data environment is the one you want to write to.
 
 ## Steps

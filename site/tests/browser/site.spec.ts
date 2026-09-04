@@ -22,6 +22,16 @@ function observeBrowserErrors(page: Page) {
   return errors
 }
 
+function contrastRatio(foreground: string, background: string) {
+  const rgb = (color: string) => color.match(/\d+(?:\.\d+)?/g)!.slice(0, 3).map((value) => Number(value) * (color.startsWith('color(srgb') ? 255 : 1))
+  const luminance = (color: string) => rgb(color).map((channel) => {
+    const value = channel / 255
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+  }).reduce((total, channel, index) => total + channel * [0.2126, 0.7152, 0.0722][index], 0)
+  const [first, second] = [luminance(foreground), luminance(background)].sort((a, b) => b - a)
+  return (first + 0.05) / (second + 0.05)
+}
+
 async function expectNoHorizontalOverflow(page: Page) {
   const dimensions = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
@@ -34,6 +44,10 @@ test('homepage keeps search, CTAs, exact copy, and the local boundary available'
   const errors = observeBrowserErrors(page)
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Apex feedback without the deploy wait.' })).toBeVisible()
+  await expect(page).toHaveTitle('Glade — Local Apex Runtime for Salesforce Developers')
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://glade.sh/')
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', 'Glade — Local Apex Runtime for Salesforce Developers')
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', 'https://glade.sh/social-card.png')
   await expect(page.getByRole('main')).toHaveCount(1)
   await expect(page.getByRole('link', { name: 'Install Glade' })).toBeVisible()
   await expect(page.locator('.VPNavBarSearch')).toBeVisible()
@@ -124,11 +138,14 @@ test('workbench tabs, output, hashes, run, copy, and editor names remain operabl
   const errors = observeBrowserErrors(page)
   await page.goto('/guide/workflows')
   await page.getByRole('link', { name: 'Execute Apex and SOQL' }).click()
-  await expect(page).toHaveURL(/\/guide\/workbench#exec$/)
-  await expect(page.locator('.VPSidebar a[aria-current="page"]')).toHaveText('Execute anonymous Apex and SOQL')
+  await expect(page).toHaveURL(/\/help\/anonymous-apex-scratch$/)
+  await expect(page.getByRole('heading', { name: 'Use Anonymous Apex Scratch in VS Code' })).toBeVisible()
+
+  await page.goto('/guide/workbench#exec')
   await expect(page.getByRole('tab', { name: /Execute Apex locally/ })).toHaveAttribute('aria-selected', 'true')
   await expect(page.locator('#workbench-demo-panel')).toHaveAttribute('aria-labelledby', 'exec')
-  await expect(page.locator('[data-run-scenario]')).toHaveText('Execute snippet')
+  await expect(page.locator('[data-run-scenario]')).toHaveText('Replay example')
+  await expect(page.getByText('Illustrative replay — this page does not execute edited Apex.')).toBeVisible()
 
   await page.goto('/guide/workbench#check')
   await expect(page.getByRole('textbox', { name: 'Try capability-backed autocomplete.' })).toBeVisible()
@@ -170,6 +187,84 @@ test('SPA navigation returns home without losing route-scoped behavior', async (
   await expect(page.locator('link[href="/css/home.css"]')).toHaveCount(1)
   await expect(page.getByRole('button', { name: 'Copy install command' })).toBeVisible()
   expect(errors).toEqual([])
+})
+
+test('direct capability explorer loads and browser history keep its controls warning-free', async ({ page }) => {
+  const messages: string[] = []
+  page.on('console', (message) => {
+    if (message.type() === 'error' || message.type() === 'warning') messages.push(message.text())
+  })
+  page.on('pageerror', (error) => messages.push(error.message))
+
+  await page.goto('/guide/workbench#exec')
+  await expect(page.getByRole('button', { name: 'Replay example' })).toBeVisible()
+  await page.locator('.VPNavBarTitle a').click()
+  await expect(page).toHaveURL(/\/$/)
+  await page.goBack()
+  await expect(page).toHaveURL(/\/guide\/workbench#exec$/)
+  await expect(page.getByRole('button', { name: 'Replay example' })).toBeVisible()
+  await page.goForward()
+  await expect(page).toHaveURL(/\/$/)
+  expect(messages).toEqual([])
+})
+
+test('light terminal foregrounds meet normal text contrast on the dark command surface', async ({ page }) => {
+  await page.goto('/')
+  await page.evaluate(() => localStorage.setItem('vitepress-theme-appearance', 'light'))
+  await page.reload()
+  const styles = await page.evaluate(() => {
+    const card = document.querySelector('.home-loop-visual')!
+    const style = getComputedStyle(card)
+    const command = getComputedStyle(document.querySelector('.home-loop-command')!)
+    const code = getComputedStyle(document.querySelector('.home-loop-command code')!)
+    return {
+      base: style.backgroundColor, gradient: style.backgroundImage,
+      grid: getComputedStyle(card, '::before').backgroundImage,
+      heading: getComputedStyle(document.querySelector('.home-loop-top strong')!).color,
+      command: command.backgroundColor, codeBackground: code.backgroundColor, code: code.color
+    }
+  })
+  const rgba = (color: string) => {
+    const channels = color.match(/[\d.]+/g)!.map(Number)
+    return [...channels.slice(0, 3), channels[3] ?? 1]
+  }
+  const composite = (front: string, back: string) => {
+    const fg = rgba(front), bg = rgba(back)
+    return `rgb(${fg.slice(0, 3).map((value, index) => value * fg[3] + bg[index] * (1 - fg[3])).join(', ')})`
+  }
+  // Bound this two-stop card by both endpoints and the maximum grid overlay.
+  // Fail closed if its background structure changes; this is not a CSS renderer.
+  expect(rgba(styles.base)[3]).toBe(1)
+  const stops = styles.gradient.match(/rgba?\([^)]+\)/g) ?? []
+  const gridStops = (styles.grid.match(/rgba?\([^)]+\)/g) ?? []).filter((color) => rgba(color)[3] > 0)
+  expect(stops).toHaveLength(2)
+  expect(gridStops).toHaveLength(2)
+  for (const stop of stops) {
+    const card = composite(stop, styles.base)
+    for (const background of [card, gridStops.reduce((back, front) => composite(front, back), card)]) {
+      expect(contrastRatio(styles.heading, background), 'heading against card').toBeGreaterThanOrEqual(4.5)
+      const command = composite(styles.codeBackground, composite(styles.command, background))
+      expect(contrastRatio(styles.code, command), 'code against command').toBeGreaterThanOrEqual(4.5)
+    }
+  }
+  for (const selector of ['.home-loop-result strong', '.home-loop-state-label', '.home-loop-result p', '.home-loop-metrics span', '.home-loop-metrics strong']) {
+    for (const element of await page.locator(selector).all()) {
+      const colors = await element.evaluate((node) => ({
+        foreground: getComputedStyle(node).color,
+        background: getComputedStyle(node.closest('.home-loop-result, .home-loop-metrics > span')!).backgroundColor
+      }))
+      expect(contrastRatio(colors.foreground, colors.background), selector).toBeGreaterThanOrEqual(4.5)
+    }
+  }
+  for (const selector of ['.home-workflow-card strong', '.home-workflow-card span', '.home-support-preview code', '.home-support-preview a']) {
+    const colors = await page.locator(selector).first().evaluate((node) => ({
+      foreground: getComputedStyle(node).color,
+      surface: getComputedStyle(node.closest('.home-workflow-card, .home-support-preview')!).backgroundColor,
+      page: getComputedStyle(document.body).backgroundColor
+    }))
+    expect(contrastRatio(colors.foreground, composite(colors.surface, colors.page)), selector).toBeGreaterThanOrEqual(4.5)
+  }
+  expect(await page.locator('#install-cmd').innerText()).toContain('sh\nglade version')
 })
 
 test('representative routes have no serious or critical axe violations', async ({ page }) => {

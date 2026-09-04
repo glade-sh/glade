@@ -15,13 +15,14 @@ const securityPolicy = await readFile(new URL("../../SECURITY.md", import.meta.u
 test("homepage install copy preserves executable command line breaks", () => {
   assert.match(
     home,
-    /<code id="install-cmd"[^>]*>curl -fsSL https:\/\/glade\.sh\/install\.sh \| sh\nglade version<\/code>/
+    /<code id="install-cmd"[^>]*>curl -fsSL https:\/\/glade\.sh\/install\.sh \| sh<br>glade version<\/code>/
   );
   assert.match(homeScript, /return target\.getAttribute\("data-copy-text"\) \|\| target\.textContent\.trim\(\)/);
 });
 
-test("first-run docs initialize a project before doctor and avoid fixture-only test names", () => {
-  for (const firstRunDoc of [quickstart, helpFirstLocalCheck, repoInstallation]) {
+test("first-run docs establish sample or existing project context before doctor", () => {
+  const existingProjectRoute = quickstart.slice(quickstart.indexOf("## Use my Salesforce DX project"));
+  for (const firstRunDoc of [existingProjectRoute, helpFirstLocalCheck, repoInstallation]) {
     const commandBlocks = [...firstRunDoc.matchAll(/```bash\n([\s\S]*?)```/g)].map((match) => match[1]);
     const initBlock = commandBlocks.findIndex((block) => block.includes("glade init --project . --yes"));
     const doctorBlock = commandBlocks.findIndex((block) => block.includes("glade doctor"));
@@ -30,10 +31,12 @@ test("first-run docs initialize a project before doctor and avoid fixture-only t
     if (doctorBlock === initBlock) {
       assert.ok(commandBlocks[initBlock].indexOf("glade init --project . --yes") < commandBlocks[initBlock].indexOf("glade doctor"));
     }
-    assert.doesNotMatch(firstRunDoc, /RefinementServiceTest/);
   }
-  assert.match(quickstart, /glade test --project \.\n/);
-  assert.match(quickstart, /--class <YourTestClass>/);
+  assert.match(quickstart, /glade playground .*--example refinement-service --open/);
+  assert.match(quickstart, /glade doctor --project \.glade\/playground\/workspaces\/default/);
+  assert.match(quickstart, /--class RefinementServiceTest/);
+  assert.match(quickstart, /substitute your actual class name/);
+  assert.match(quickstart, /zero tests/);
   assert.match(siteInstallation, /first local check/);
   assert.doesNotMatch(siteInstallation, /```bash\nglade doctor\n/);
 });
