@@ -21,6 +21,7 @@ test("homepage install copy preserves executable command line breaks", () => {
 });
 
 test("first-run docs establish sample or existing project context before doctor", () => {
+  const sampleRoute = quickstart.slice(quickstart.indexOf("## Try the sample"), quickstart.indexOf("## Use my Salesforce DX project"));
   const existingProjectRoute = quickstart.slice(quickstart.indexOf("## Use my Salesforce DX project"));
   for (const firstRunDoc of [existingProjectRoute, helpFirstLocalCheck, repoInstallation]) {
     const commandBlocks = [...firstRunDoc.matchAll(/```bash\n([\s\S]*?)```/g)].map((match) => match[1]);
@@ -33,6 +34,8 @@ test("first-run docs establish sample or existing project context before doctor"
     }
   }
   assert.match(quickstart, /glade playground .*--example refinement-service --open/);
+  assert.match(sampleRoute, /glade init --project \.glade\/playground\/workspaces\/default --yes/);
+  assert.ok(sampleRoute.indexOf("glade init --project") < sampleRoute.indexOf("glade doctor --project"));
   assert.match(quickstart, /glade doctor --project \.glade\/playground\/workspaces\/default/);
   assert.match(quickstart, /--class RefinementServiceTest/);
   assert.match(quickstart, /substitute your actual class name/);
@@ -44,6 +47,16 @@ test("first-run docs establish sample or existing project context before doctor"
 test("installation choices link to canonical task guides", () => {
   for (const route of ["security-trust#release-proof", "editor", "workflows/ci", "build-from-source"]) {
     assert.match(siteInstallation, new RegExp(`href="/guide/${route}"`));
+  }
+});
+
+test("installation docs disclose both destinations and the observed footprint", () => {
+  for (const installationDoc of [siteInstallation, repoInstallation]) {
+    assert.match(installationDoc, /GLADE_INSTALL_DIR/);
+    assert.match(installationDoc, /GLADE_HOME/);
+    assert.match(installationDoc, /binary, including parser support/);
+    assert.match(installationDoc, /LWC runtime\/toolchain and bundled editor assets/);
+    assert.match(installationDoc, /about 220 MB/i);
   }
 });
 

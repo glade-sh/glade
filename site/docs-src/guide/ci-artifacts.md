@@ -4,10 +4,10 @@ Glade writes machine-readable check results and saved test reports for CI.
 
 ## Advisory pilot
 
-Use this workflow while evaluating supported local paths. The example pins
-v0.2.13; change the pin deliberately after reviewing a new release. It does not
-use the forthcoming corrected bundled sample. The product does not install
-plugins here; pin a plugin lock file too if your workflow adds them.
+Use this workflow while evaluating supported local paths. The example pins the
+v0.2.14 stable release; change the pin deliberately after reviewing a newer
+release. The product does not install plugins here; pin a plugin lock file too
+if your workflow adds them.
 
 ```yaml
 name: glade-pilot
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=v0.2.13 sh
+      - run: curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=v0.2.14 sh
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: glade version
       - run: glade doctor --project .

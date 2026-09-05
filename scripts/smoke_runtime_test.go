@@ -42,8 +42,8 @@ func TestRuntimeSmokeUsesProvidedBinary(t *testing.T) {
 	}
 
 	invocation := regexp.MustCompile(`(?m)^"\$\{GLADE\}"(?:\s|$)`)
-	if got := len(invocation.FindAllStringIndex(runtimeSmoke, -1)); got != 15 {
-		t.Errorf("smoke-runtime.sh has %d Glade invocations through GLADE, want 15", got)
+	if got := len(invocation.FindAllStringIndex(runtimeSmoke, -1)); got != 17 {
+		t.Errorf("smoke-runtime.sh has %d Glade invocations through GLADE, want 17", got)
 	}
 	for _, line := range strings.Split(runtimeSmoke, "\n") {
 		trimmed := strings.TrimSpace(line)
@@ -80,6 +80,9 @@ func TestRuntimeSmokePreservesCoverage(t *testing.T) {
 		`grep -q 'http://127.0.0.1:1789/playground/'`,
 		`/playground/api/examples/load`,
 		`"id":"refinement-service"`,
+		`"${GLADE}" init --project "${REFINEMENT_PROJECT}" --yes`,
+		`"${GLADE}" doctor --project "${REFINEMENT_PROJECT}"`,
+		`grep -q 'Ready.' "${TMP}/refinement-doctor.txt"`,
 		`RefinementServiceTest`,
 		`"createsAndLabelsFileRow"`,
 		`invalid source must not run`,

@@ -28,7 +28,11 @@ curl -fsSL https://glade.sh/install.sh | sh
 glade version
 ```
 
-The script installs the current stable release to `~/.local/bin` by default.
+The script installs the `glade` binary, including parser support, to
+`~/.local/bin`. It installs the LWC runtime/toolchain and bundled editor assets
+under `~/.local/share/glade` by default. Set `GLADE_INSTALL_DIR` and
+`GLADE_HOME` to change those destinations. A clean v0.2.14 macOS arm64 install
+used about 220 MB; size varies by release and platform.
 Expected: `glade version` prints **{{ releaseManifest.version }}**. If the shell
 cannot find `glade`, repair the current shell with:
 
@@ -39,10 +43,10 @@ glade version
 
 Add the PATH line to your shell configuration to retain it in new terminals.
 
-Override the destination or pin a release when needed:
+Override both destinations or pin a release when needed:
 
 ```bash
-curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR=/usr/local/bin sh
+curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR=/usr/local/bin GLADE_HOME="$HOME/.local/share/glade" sh
 curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=vX.Y.Z sh
 ```
 

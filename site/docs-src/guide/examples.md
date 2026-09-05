@@ -28,6 +28,5 @@ Useful first examples:
 
 The [sample quickstart](/guide/quickstart#try-the-sample) explains how to load
 the workspace, run its named test, and inspect a failure. The corrected
-`RefinementServiceTest` is part of the v0.2.14 release candidate; the published
-v0.2.13 sample has a source error and no test class. Use the existing-project
-quickstart on that release, and never accept Pass alongside source errors.
+`RefinementServiceTest` ships in the v0.2.14 stable release. Never accept Pass
+alongside source errors.

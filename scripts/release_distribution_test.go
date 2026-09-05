@@ -511,6 +511,21 @@ func TestReleaseBuildSharedPlatformAndDefaultModes(t *testing.T) {
 	}
 }
 
+func TestReleaseBuildRejectsDirtyWorktree(t *testing.T) {
+	root, npmLog := makeReleaseBuildFixture(t)
+	script := filepath.Join(root, "scripts", "release-build.sh")
+	payloadDist := filepath.Join(root, "shared-dist")
+	runReleaseBuildFixture(t, root, script, npmLog, payloadDist, "shared-payload", false, nil)
+	out := runReleaseBuildFixtureError(t, root, script, npmLog, filepath.Join(root, "platform-dist"), map[string]string{
+		"RELEASE_SHARED_PAYLOAD_ARCHIVE": filepath.Join(payloadDist, "glade-shared-payload.tar.gz"),
+		"RELEASE_SHARED_PAYLOAD_SHA256":  filepath.Join(payloadDist, "glade-shared-payload.tar.gz.sha256"),
+		"FAKE_GIT_STATUS":                 "?? .release-shared/payload.tar.gz\n",
+	})
+	if !strings.Contains(out, "release build requires a clean Git worktree") {
+		t.Fatalf("dirty-worktree rejection lacked release diagnostic:\n%s", out)
+	}
+}
+
 func TestReleaseBuildPlatformRejectsUnsafePayloadArchives(t *testing.T) {
 	root, npmLog := makeReleaseBuildFixture(t)
 	script := filepath.Join(root, "scripts", "release-build.sh")
@@ -747,6 +762,14 @@ func makeReleaseBuildFixture(t *testing.T) (string, string) {
 	if err := os.MkdirAll(binDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
+	writeExecutable(t, filepath.Join(binDir, "git"), `#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$*" == *"status --porcelain --untracked-files=all"* ]]; then
+  printf '%s' "${FAKE_GIT_STATUS:-}"
+  exit 0
+fi
+exit 2
+`)
 	npmLog := filepath.Join(root, "npm.log")
 	writeExecutable(t, filepath.Join(binDir, "npm"), `#!/usr/bin/env bash
 set -euo pipefail
@@ -1137,6 +1160,33 @@ func TestReleaseBuildKeepsDoctorJSONWhenDoctorReportsLocalDataFailure(t *testing
 	}
 }
 
+func TestReleaseBuildPreservesVCSMetadata(t *testing.T) {
+	releasePath := filepath.Join("..", "scripts", "release-build.sh")
+	releaseScript, err := os.ReadFile(releasePath)
+	if err != nil {
+		t.Fatalf("read %s: %v", releasePath, err)
+	}
+	if strings.Contains(string(releaseScript), "-buildvcs=false") {
+		t.Fatal("release-build.sh must preserve VCS metadata for the Salesforce correctness gate")
+	}
+	if !strings.Contains(string(releaseScript), `git -C "${ROOT}" status --porcelain --untracked-files=all`) {
+		t.Fatal("release-build.sh must fail before building from a dirty worktree")
+	}
+
+	workflowPath := filepath.Join("..", ".github", "workflows", "release.yml")
+	workflow, err := os.ReadFile(workflowPath)
+	if err != nil {
+		t.Fatalf("read %s: %v", workflowPath, err)
+	}
+	workflowText := string(workflow)
+	if !strings.Contains(workflowText, "path: ${{ runner.temp }}/glade-release-shared") {
+		t.Fatal("release workflow must download the shared payload outside the repository worktree")
+	}
+	if strings.Contains(workflowText, "path: .release-shared") || strings.Contains(workflowText, "${{ github.workspace }}/.release-shared") {
+		t.Fatal("release workflow must not dirty the repository with the shared payload")
+	}
+}
+
 func TestReleaseWorkflowUsesRepoReleaseNotes(t *testing.T) {
 	workflowPath := filepath.Join("..", ".github", "workflows", "release.yml")
 	workflow, err := os.ReadFile(workflowPath)
@@ -1444,7 +1494,7 @@ func TestInstallDocsPutEnvOnShellSideOfPipe(t *testing.T) {
 			t.Fatalf("%s puts GLADE_* env before curl instead of before sh", docPath)
 		}
 		for _, want := range []string{
-			"curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR=/usr/local/bin sh",
+			`curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR=/usr/local/bin GLADE_HOME="$HOME/.local/share/glade" sh`,
 			"curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=vX.Y.Z sh",
 		} {
 			if !strings.Contains(docText, want) {

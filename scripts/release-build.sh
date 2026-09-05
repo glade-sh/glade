@@ -343,6 +343,15 @@ consume_platform_payload() {
 	verify_shared_payload "${platform_root}"
 	vscode_extension_package="$(cat "${platform_root}/share/glade/VSCODE-EXTENSION-STATUS.txt")"
 
+	local git_status
+	if ! git_status="$(git -C "${ROOT}" status --porcelain --untracked-files=all)"; then
+		echo "ERROR: release build could not verify Git worktree state" >&2
+		exit 1
+	fi
+	if [[ -n "${git_status}" ]]; then
+		echo "ERROR: release build requires a clean Git worktree for embedded VCS metadata" >&2
+		exit 1
+	fi
 	(
 		cd "${ROOT}"
 		CGO_ENABLED=1 go build -trimpath -ldflags "${LDFLAGS}" -o "${platform_root}/${binary}" ./cmd/glade

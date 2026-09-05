@@ -14,11 +14,15 @@ For macOS and Linux:
 curl -fsSL https://glade.sh/install.sh | sh
 ```
 
-The script installs the latest release to `~/.local/bin` by default. Override
-the target directory or version when needed:
+The script installs the `glade` binary, including parser support, to
+`~/.local/bin`. It installs the LWC runtime/toolchain and bundled editor assets
+under `~/.local/share/glade` by default. Set `GLADE_INSTALL_DIR` and
+`GLADE_HOME` to change those destinations. A clean v0.2.14 macOS arm64 install
+used about 220 MB; size varies by release and platform. Override both
+destinations or pin a version when needed:
 
 ```bash
-curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR=/usr/local/bin sh
+curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR=/usr/local/bin GLADE_HOME="$HOME/.local/share/glade" sh
 curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=vX.Y.Z sh
 ```
 

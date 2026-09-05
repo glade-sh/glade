@@ -193,20 +193,21 @@ jobs:
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: glade-release-shared-payload
-          path: .release-shared
+          path: ${{ runner.temp }}/glade-release-shared
       - name: Verify shared release payload
         shell: bash
         run: |
-          expected="$(awk 'NR == 1 {print $1}' .release-shared/glade-shared-payload.tar.gz.sha256)"
-          actual="$(shasum -a 256 .release-shared/glade-shared-payload.tar.gz | awk '{print $1}')"
+          shared_dir="${RUNNER_TEMP}/glade-release-shared"
+          expected="$(awk 'NR == 1 {print $1}' "${shared_dir}/glade-shared-payload.tar.gz.sha256")"
+          actual="$(shasum -a 256 "${shared_dir}/glade-shared-payload.tar.gz" | awk '{print $1}')"
           test -n "$expected"
           test "$actual" = "$expected"
       - name: Build platform release artifacts
         shell: bash
         env:
           VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
-          RELEASE_SHARED_PAYLOAD_ARCHIVE: ${{ github.workspace }}/.release-shared/glade-shared-payload.tar.gz
-          RELEASE_SHARED_PAYLOAD_SHA256: ${{ github.workspace }}/.release-shared/glade-shared-payload.tar.gz.sha256
+          RELEASE_SHARED_PAYLOAD_ARCHIVE: ${{ runner.temp }}/glade-release-shared/glade-shared-payload.tar.gz
+          RELEASE_SHARED_PAYLOAD_SHA256: ${{ runner.temp }}/glade-release-shared/glade-shared-payload.tar.gz.sha256
         run: scripts/release-build.sh platform
       - name: Restore CycloneDX tool
         id: cyclonedx-cache

@@ -192,6 +192,9 @@ if [[ "${playground_ready}" != "1" ]]; then
 fi
 curl -fsS -X POST -H 'Content-Type: application/json' --data '{"id":"refinement-service"}' "http://${PLAYGROUND_ADDR}/playground/api/examples/load" >"${TMP}/refinement-meta.json"
 REFINEMENT_PROJECT="${PLAYGROUND_DATA_ROOT}/workspaces/default"
+"${GLADE}" init --project "${REFINEMENT_PROJECT}" --yes
+"${GLADE}" doctor --project "${REFINEMENT_PROJECT}" >"${TMP}/refinement-doctor.txt"
+grep -q 'Ready.' "${TMP}/refinement-doctor.txt"
 "${GLADE}" check --project "${REFINEMENT_PROJECT}" --json >"${TMP}/refinement-check.json"
 grep -q '"diagnostics": 0' "${TMP}/refinement-check.json"
 "${GLADE}" test --project "${REFINEMENT_PROJECT}" --class RefinementServiceTest --json >"${TMP}/refinement-test.json"
