@@ -39,17 +39,17 @@ const SOQL_FUNCTIONS = new Set(['avg', 'calendar_month', 'count', 'count_distinc
 const DECLARATION_KEYWORDS = new Set(['class', 'enum', 'interface', 'trigger'])
 
 export const gladeHighlight = HighlightStyle.define([
-  { tag: tags.keyword, color: '#cba6f7', fontWeight: '700' },
-  { tag: tags.atom, color: '#fab387' },
-  { tag: [tags.string, tags.character], color: '#a6e3a1' },
-  { tag: [tags.number, tags.bool], color: '#fab387' },
-  { tag: [tags.className, tags.typeName, tags.definition(tags.typeName)], color: '#f5c95f', fontWeight: '700' },
-  { tag: tags.standard(tags.variableName), color: '#89b4fa' },
-  { tag: [tags.propertyName, tags.attributeName], color: '#cdd6f4' },
-  { tag: tags.meta, color: '#fab387' },
-  { tag: tags.comment, color: '#7f849c', fontStyle: 'normal' },
-  { tag: tags.operator, color: '#89dceb' },
-  { tag: tags.punctuation, color: '#9399b2' }
+  { tag: tags.keyword, color: 'var(--glade-keyword)', fontWeight: '700' },
+  { tag: tags.atom, color: 'var(--glade-number)' },
+  { tag: [tags.string, tags.character], color: 'var(--glade-string)' },
+  { tag: [tags.number, tags.bool], color: 'var(--glade-number)' },
+  { tag: [tags.className, tags.typeName, tags.definition(tags.typeName)], color: 'var(--glade-number)', fontWeight: '700' },
+  { tag: tags.standard(tags.variableName), color: 'var(--glade-link)' },
+  { tag: [tags.propertyName, tags.attributeName], color: 'var(--glade-text)' },
+  { tag: tags.meta, color: 'var(--glade-number)' },
+  { tag: tags.comment, color: 'var(--glade-muted)', fontStyle: 'normal' },
+  { tag: tags.operator, color: 'var(--glade-accent)' },
+  { tag: tags.punctuation, color: 'var(--glade-subtle)' }
 ])
 
 export const apexLanguage = StreamLanguage.define<ApexModeState>({

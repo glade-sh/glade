@@ -1,3 +1,8 @@
+---
+pageType: guide
+canonicalTask: /guide/workflows/debug-apex
+---
+
 # Debug Apex
 
 Use Glade for local breakpoints and profile reports. Use Salesforce logs when
@@ -11,7 +16,13 @@ adapter.
 
 ## Steps
 
-Start the debug adapter:
+For breakpoints, first [install the bundled extension](/guide/editor), open a
+test class, set a gutter breakpoint in the executed path, then choose **Debug
+Local Test**. The editor launches the adapter and displays Variables and Call
+Stack when execution stops. [The illustrated walkthrough](/help/debug-apex-vscode)
+shows these exact native editor surfaces.
+
+For a client that manages DAP itself, start the debug adapter:
 
 ```bash
 glade dap --project .

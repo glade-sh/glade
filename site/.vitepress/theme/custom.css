@@ -1,9 +1,4 @@
 :root {
-  --vp-nav-height: 60px;
-  --vp-sidebar-width: 264px;
-  --vp-layout-max-width: 1360px;
-  --vp-font-family-base: 'Host Grotesk Variable', 'Host Grotesk', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --vp-font-family-mono: 'Monaspace Argon', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
   --glade-font-accent: var(--vp-font-family-base);
   --font-sans: var(--vp-font-family-base);
   --font-mono: var(--vp-font-family-mono);
@@ -52,34 +47,7 @@
   --radius-card: 16px;
   --radius-panel: 12px;
   --radius-pill: 999px;
-  --bg: #070b0d;
-  --bg-soft: #0b1215;
-  --surface: #10191e;
-  --surface-raised: #14232a;
-  --surface-active: #1b2f38;
-  --surface-inset: #081014;
-  --terminal: #05090b;
-  --line: #26363d;
-  --line-strong: #38505a;
-  --line-soft: rgba(255,255,255,0.07);
-  --text: #f3f7f5;
-  --text-muted: #a9b8ad;
-  --text-subtle: #7f9187;
-  --text-soft: var(--text-subtle);
   --text-disabled: #5f6f66;
-  --text-inverse: #061009;
-  --success-text: #dfffd1;
-  --danger-text: #ffd8d5;
-  --warning-text: #ffe7a6;
-  --glade: #9be870;
-  --glade-strong: #b7ff8a;
-  --glade-muted: rgba(155,232,112,0.14);
-  --glade-line: rgba(155,232,112,0.42);
-  --success: #9be870;
-  --warning: #f5c95f;
-  --danger: #ff6b61;
-  --info: #7db7ff;
-  --focus: #b7ff8a;
   --glade-page-gutter: 48px;
   --glade-shell-width: min(var(--glade-page-max), calc(100vw - var(--glade-page-gutter)));
   --glade-text-primary: var(--text);
@@ -89,13 +57,9 @@
   --glade-status-success: var(--success);
   --glade-status-warning: var(--warning);
   --glade-status-danger: var(--danger);
-  --glade-action-bg: var(--glade);
-  --glade-action-text: var(--text-inverse);
   --glade-action-border: var(--glade-strong);
-  --glade-action-soft: var(--glade-muted);
+  --glade-action-soft: var(--glade-active);
   --glade-surface-code: var(--surface);
-  --glade-button-primary-bg: var(--glade);
-  --glade-button-primary-text: var(--text-inverse);
   --glade-command-bg: var(--terminal);
   --glade-command-surface: var(--surface);
   --glade-command-text: var(--text);
@@ -109,7 +73,6 @@
   --glade-home-panel: var(--surface-raised);
   --glade-home-border: var(--line);
   --glade-home-shadow: 0 22px 52px rgba(0, 0, 0, 0.30);
-  --glade-contour-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='520' viewBox='0 0 900 520'%3E%3Cg fill='none' stroke='%23b7ff8a' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M-70 158C84 96 172 206 322 154c157-54 258-114 418-48 97 40 154 24 236-26'/%3E%3Cpath d='M-70 232c154-62 255 48 410-4 152-51 252-104 411-39 91 37 153 31 225-9'/%3E%3Cpath d='M-70 318c164-68 266 52 430-5 154-54 255-99 410-34 91 38 148 32 206-4'/%3E%3Cpath d='M-70 410c173-72 282 62 454 0 150-54 247-95 394-35 88 36 149 44 198 10'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 html {
@@ -132,16 +95,6 @@ html {
   --vp-c-text-1: var(--text);
   --vp-c-text-2: var(--text-muted);
   --vp-c-text-3: var(--text-soft);
-  --vp-c-brand-1: var(--glade);
-  --vp-c-brand-2: var(--glade-strong);
-  --vp-c-brand-3: var(--glade);
-  --vp-c-brand-soft: var(--glade-muted);
-  --vp-button-brand-border: var(--glade-strong);
-  --vp-button-brand-text: var(--text-inverse);
-  --vp-button-brand-bg: var(--glade);
-  --vp-button-brand-hover-border: var(--glade-strong);
-  --vp-button-brand-hover-text: var(--text-inverse);
-  --vp-button-brand-hover-bg: var(--glade-strong);
   --vp-button-alt-border: var(--line);
   --vp-button-alt-text: var(--text);
   --vp-button-alt-bg: rgba(255,255,255,0.04);
@@ -149,41 +102,19 @@ html {
   --vp-button-alt-hover-text: var(--text);
   --vp-button-alt-hover-bg: var(--surface);
   --vp-code-block-bg: var(--terminal);
-  --vp-code-line-highlight-color: var(--glade-muted);
+  --vp-code-line-highlight-color: var(--glade-active);
   --vp-home-hero-name-color: var(--glade);
   --vp-home-hero-name-background: none;
   --vp-home-hero-image-background-image: none;
   --vp-home-hero-image-filter: none;
-  --glade-accent: var(--glade);
-  --glade-accent-soft: var(--glade-muted);
   --glade-moss: var(--glade);
-  --glade-moss-soft: var(--glade-muted);
+  --glade-moss-soft: var(--glade-active);
   --glade-lichen: var(--glade-strong);
   --glade-bark: var(--surface-active);
-  --glade-success: var(--success);
-  --glade-contour-opacity: 0.12;
   --glade-bg-grid-line: rgba(155,232,112,0.035);
   --glade-bg-grid-line-soft: rgba(255,255,255,0.024);
-  --glade-nav-bg: var(--bg);
-  --glade-surface: rgba(16, 25, 30, 0.92);
-  --glade-surface-solid: var(--surface);
-  --glade-surface-soft: rgba(255,255,255,0.04);
-  --glade-surface-pressed: var(--surface-active);
-  --glade-border: var(--line);
   --glade-border-strong: var(--line-strong);
-  --glade-shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
-  --glade-shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.22);
-  --glade-code-bg: var(--terminal);
-  --glade-code-header: var(--surface-inset);
-  --glade-code-border: var(--line);
-  --glade-code-text: var(--text);
-  --glade-code-muted: var(--text-muted);
-  --glade-code-line: #53676f;
   --glade-syntax-comment: var(--text-soft);
-  --glade-syntax-keyword: var(--glade);
-  --glade-syntax-string: var(--warning);
-  --glade-syntax-number: var(--info);
-  --glade-syntax-type: var(--warning-text);
   --glade-home-surface: var(--surface);
   --glade-home-surface-soft: var(--bg-soft);
   --glade-home-panel: var(--surface-raised);
@@ -196,13 +127,7 @@ body {
   min-height: 100vh;
   letter-spacing: var(--body-track);
   overflow-x: clip;
-  background:
-    radial-gradient(900px 500px at 72% -8%, rgba(155, 232, 112, 0.11), transparent 62%),
-    radial-gradient(780px 500px at 30% 12%, rgba(125, 183, 255, 0.06), transparent 58%),
-    linear-gradient(var(--glade-bg-grid-line-soft) 1px, transparent 1px),
-    linear-gradient(90deg, var(--glade-bg-grid-line-soft) 1px, transparent 1px),
-    var(--vp-c-bg);
-  background-size: auto, auto, 48px 48px, 48px 48px, auto;
+  background: var(--vp-c-bg);
   font-weight: var(--body-weight);
   isolation: isolate;
 }
@@ -215,23 +140,6 @@ body {
 :where(a, button, [tabindex]):focus-visible {
   outline: 2px solid var(--glade-focus-ring);
   outline-offset: 3px;
-}
-
-body::before {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  background-image: var(--glade-contour-image);
-  background-position: center 68px;
-  background-repeat: no-repeat;
-  background-size: max(1450px, 120vw) auto;
-  content: "";
-  opacity: var(--glade-contour-opacity);
-  pointer-events: none;
-}
-
-body:has(.VPHome)::before {
-  opacity: 0;
 }
 
 #app {
@@ -312,7 +220,7 @@ body:has(.VPHome)::before {
   margin-left: -10px;
   padding-left: 10px;
   border-radius: 6px;
-  background: var(--glade-muted);
+  background: var(--glade-active);
   color: var(--glade-strong);
   font-weight: 700;
 }

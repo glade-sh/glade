@@ -1,3 +1,8 @@
+---
+pageType: hub
+canonicalTask: /guide/workflows
+---
+
 # Choose a Glade workflow
 
 <div class="docs-intro">
@@ -11,7 +16,7 @@
   <a class="docs-route-card" href="/guide/quickstart"><strong>Check Apex source</strong><span>Get a named local diagnostic or a clean result.<br>Start: <code>glade check --project .</code><br>Interface: CLI or VS Code · Requires: project</span></a>
   <a class="docs-route-card" href="/guide/workflows/apex-tests"><strong>Run Apex tests</strong><span>Run all, focused, changed, or failed tests locally.<br>Start: <code>glade test --project .</code><br>Interface: CLI or VS Code · Requires: project</span></a>
   <a class="docs-route-card" href="/guide/workflows/debug-apex"><strong>Debug Apex</strong><span>Use breakpoints or profile a saved log or local trace.<br>Start: <code>glade dap --project .</code><br>Interface: CLI or VS Code · Requires: project</span></a>
-  <a class="docs-route-card" href="/help/anonymous-apex-scratch"><strong>Execute Apex and SOQL</strong><span>Run anonymous Apex and queries against the local runtime.<br>Start: <code>glade exec --project . "System.debug('local');"</code><br>Interface: CLI, VS Code, or local Playground · Requires: project</span></a>
+  <a class="docs-route-card" href="/guide/playground"><strong>Execute Apex and SOQL</strong><span>Run anonymous Apex and queries with the CLI or your locally hosted Playground.<br>Start: <code>glade exec --project . "System.debug('local');"</code><br>Interface: CLI, VS Code, or local Playground · Requires: project</span></a>
 </div>
 
 ## Local state
@@ -26,6 +31,13 @@
   <a class="docs-route-card" href="/guide/workflows/lwc-preview"><strong>Preview LWC</strong><span>Open local component and page routes in the Workbench Console.<br>Start: <code>glade dev lwc --project . --open</code><br>Interface: browser · Requires: project and toolchain</span></a>
   <a class="docs-route-card" href="/guide/workflows/visualforce-preview"><strong>Preview Visualforce</strong><span>Serve supported pages and controller flows locally.<br>Start: <code>glade dev vf --project .</code><br>Interface: browser · Requires: project</span></a>
 </div>
+
+## Extend your workflow
+
+- [Use an AI assistant](/guide/ai-assisted-apex) with a repeatable local check and test loop.
+- [Review a large project](/guide/enterprise-workflows) with assessment, graph, and refactor reports.
+- [Choose plugins](/guide/plugins) for advisory scans or authorized package capture.
+- [Pilot Glade with a team](/guide/tester-field-guide) before promoting a local path to a CI gate.
 
 ## Team automation
 

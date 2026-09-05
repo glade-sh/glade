@@ -1,3 +1,8 @@
+---
+pageType: guide
+canonicalTask: /guide/tester-field-guide
+---
+
 # Pilot Glade on a real project
 
 <div class="docs-intro">
@@ -7,6 +12,16 @@
 
 Glade does not replace Salesforce. This pilot establishes where a faster local
 loop is useful and where hosted validation remains required.
+
+The git examples assume `origin/main` is your intended base ref and is available
+locally. Substitute the correct existing ref for your repository before running
+changed-test or refactor commands.
+
+## Before you start
+
+Choose a Salesforce DX project you are authorized to evaluate and a
+representative local task. The installation and initialization steps are
+included below; Salesforce comparison needs a separately authorized org.
 
 ## 1. Choose a representative path
 

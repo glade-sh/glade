@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onContentUpdated, useRoute } from 'vitepress'
+import { onContentUpdated, useRoute, withBase } from 'vitepress'
 import { nextTick, onMounted, onUnmounted, watch } from 'vue'
 
 const route = useRoute()
@@ -92,37 +92,141 @@ function setupCommandFilter() {
   })
 }
 
+function setupCommandLookup() {
+  document.querySelectorAll<HTMLInputElement>('[data-command-lookup]').forEach((input) => {
+    if (input.dataset.enhanced === 'true') return
+    const article = input.closest('.vp-doc')
+    if (!article) return
+    // Index the rendered reference itself so results cannot drift from its anchors.
+    const sections = Array.from(article.querySelectorAll<HTMLElement>('h2[id], h3[id]')).map((heading) => {
+      const fragments: string[] = []
+      let sibling = heading.nextElementSibling
+      while (sibling && !/^H[23]$/.test(sibling.tagName)) {
+        fragments.push(sibling.textContent || '')
+        sibling = sibling.nextElementSibling
+      }
+      return { id: heading.id, title: heading.textContent?.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s*#\s*$/, '').trim() || '', text: fragments.join(' ').replace(/\s+/g, ' ') }
+    })
+    const status = document.createElement('p')
+    status.dataset.commandLookupStatus = ''
+    status.setAttribute('role', 'status')
+    status.setAttribute('aria-live', 'polite')
+    const results = document.createElement('ul')
+    results.className = 'docs-command-lookup-results'
+    results.setAttribute('aria-label', 'Command and flag matches')
+    results.tabIndex = 0
+    results.hidden = true
+    input.insertAdjacentElement('afterend', status)
+    status.insertAdjacentElement('afterend', results)
+    const update = () => {
+      const needle = input.value.trim().toLowerCase()
+      results.replaceChildren()
+      results.hidden = !needle
+      if (!needle) {
+        status.textContent = 'Search command names, flags, and reference details. The complete reference stays below.'
+        return
+      }
+      const matches = sections.filter((section) => `${section.title} ${section.text}`.toLowerCase().includes(needle))
+      status.textContent = `${matches.length} reference section${matches.length === 1 ? '' : 's'} match “${input.value.trim()}”.${matches.length ? '' : ' Try a command name or a shorter flag.'}`
+      results.hidden = matches.length === 0
+      for (const match of matches) {
+        const item = document.createElement('li')
+        const link = document.createElement('a')
+        link.href = `#${match.id}`
+        link.textContent = match.title
+        const detail = document.createElement('p')
+        const offset = Math.max(0, match.text.toLowerCase().indexOf(needle) - 60)
+        detail.textContent = `${offset ? '…' : ''}${match.text.slice(offset, offset + 140)}${match.text.length > offset + 140 ? '…' : ''}`
+        item.append(link, detail)
+        results.append(item)
+      }
+    }
+    input.dataset.enhanced = 'true'
+    input.addEventListener('input', update)
+    update()
+  })
+}
+
 async function loadRouteAssets() {
-  await loadScript('/js/highlight.js')
-  if (route.path === '/' || route.path === '/guide/workbench') {
-    await loadScript('/js/home.js')
+  await loadScript(withBase('/js/highlight.js'))
+  if (route.path === withBase('/guide/workbench') || route.path === withBase('/guide/workbench.html')) {
+    await loadScript(withBase('/js/home.js'))
   }
 }
 
 function loadScript(src: string) {
   const existing = loadedScripts.get(src)
   if (existing) return existing
+
+  // This component is recreated when the custom home swaps with VitePress's
+  // default layout. Keep route assets process-wide so revisiting Workbench
+  // cannot evaluate their global event handlers again.
+  const assetURL = new URL(src, document.baseURI).href
+  const prior = Array.from(document.querySelectorAll<HTMLScriptElement>('script[data-glade-route-asset]'))
+    .find((script) => script.src === assetURL)
+  if (prior) {
+    const loaded = prior.dataset.gladeAssetState === 'loaded'
+      ? Promise.resolve()
+      : new Promise<void>((resolve, reject) => {
+          prior.addEventListener('load', () => resolve(), { once: true })
+          prior.addEventListener('error', () => reject(new Error(`could not load ${src}`)), { once: true })
+        })
+    loadedScripts.set(src, loaded)
+    return loaded
+  }
+
   const loaded = new Promise<void>((resolve, reject) => {
     const script = document.createElement('script')
     script.src = src
     script.async = true
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error(`could not load ${src}`))
+    script.dataset.gladeRouteAsset = src
+    script.dataset.gladeAssetState = 'loading'
+    script.onload = () => { script.dataset.gladeAssetState = 'loaded'; resolve() }
+    script.onerror = () => { loadedScripts.delete(src); script.remove(); reject(new Error(`could not load ${src}`)) }
     document.head.appendChild(script)
   })
   loadedScripts.set(src, loaded)
   return loaded
 }
 
+// VitePress's local-search dialog is teleported to body and does not restore
+// its opener on dismissal. Observe only body children, not the article subtree.
+let searchObserver: MutationObserver | undefined
+let searchOpener: HTMLElement | undefined
+let searchLocation = ''
+function rememberSearchOpener(event: MouseEvent | KeyboardEvent) {
+  if (!(event.target instanceof Element) || event.target.closest('.VPLocalSearchBox')) return
+  const trigger = event.target.closest<HTMLElement>('.VPNavBarSearchButton')
+  const shortcut = event instanceof KeyboardEvent && ((event.key === 'k' && (event.metaKey || event.ctrlKey)) || event.key === '/')
+  if (!trigger && !shortcut) return
+  searchOpener = trigger || document.activeElement as HTMLElement
+  searchLocation = window.location.href
+}
+function observeSearchDismissal() {
+  searchObserver = new MutationObserver((records) => {
+    for (const record of records) for (const node of record.removedNodes) {
+      if (!(node instanceof HTMLElement) || !node.classList.contains('VPLocalSearchBox')) continue
+      const opener = searchOpener
+      if (opener?.isConnected && searchLocation === window.location.href) opener.focus()
+      searchOpener = undefined
+    }
+  })
+  searchObserver.observe(document.body, { childList: true })
+}
+
+let enhancementRevision = 0
 async function enhanceDocs() {
   if (typeof document === 'undefined') return
 
-  await loadRouteAssets()
+  const revision = ++enhancementRevision
+  try { await loadRouteAssets() } catch (error) { console.error(error) }
 
   nextTick(() => {
+    if (revision !== enhancementRevision) return
     repairSidebarDisclosureControls()
     updateSidebarCurrent()
     setupCommandFilter()
+    setupCommandLookup()
     window.gladeHighlightAllCodeBlocks?.()
     window.gladeInitHomeDemos?.()
     window.dispatchEvent(new CustomEvent('glade:content-updated'))
@@ -131,9 +235,18 @@ async function enhanceDocs() {
 
 onMounted(() => {
   document.addEventListener('keydown', closeMobileNavigationOnEscape)
+  document.addEventListener('click', rememberSearchOpener, true)
+  document.addEventListener('keydown', rememberSearchOpener, true)
+  observeSearchDismissal()
   enhanceDocs()
 })
-onUnmounted(() => document.removeEventListener('keydown', closeMobileNavigationOnEscape))
+onUnmounted(() => {
+  enhancementRevision++
+  document.removeEventListener('keydown', closeMobileNavigationOnEscape)
+  document.removeEventListener('click', rememberSearchOpener, true)
+  document.removeEventListener('keydown', rememberSearchOpener, true)
+  searchObserver?.disconnect()
+})
 onContentUpdated(enhanceDocs)
 watch(() => route.path, enhanceDocs)
 </script>

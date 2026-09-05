@@ -48,7 +48,7 @@
   height: 7px;
   border-radius: 999px;
   background: var(--glade);
-  box-shadow: 0 0 18px rgba(155, 232, 112, 0.58);
+  box-shadow: 0 0 18px rgba(181, 170, 250, 0.58);
   content: "";
 }
 
@@ -152,9 +152,9 @@
   display: inline-flex;
   min-height: 28px;
   align-items: center;
-  border: 1px solid rgba(155, 232, 112, 0.34);
+  border: 1px solid rgba(181, 170, 250, 0.34);
   border-radius: 999px;
-  background: rgba(155, 232, 112, 0.08);
+  background: rgba(181, 170, 250, 0.08);
   color: var(--glade);
   font-family: var(--vp-font-family-mono);
   font-size: 12px;
@@ -286,7 +286,7 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
   height: 42px;
   place-items: center;
   border-radius: 999px;
-  background: rgba(155, 232, 112, 0.14);
+  background: rgba(181, 170, 250, 0.14);
   color: var(--glade);
   font-size: 22px;
   font-weight: 900;
@@ -483,7 +483,7 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
   width: 30px;
   height: 30px;
   place-items: center;
-  border: 1px solid rgba(155, 232, 112, 0.42);
+  border: 1px solid rgba(181, 170, 250, 0.42);
   border-radius: 50%;
   color: var(--glade);
   content: counter(local-step);
@@ -1062,13 +1062,9 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
   margin: 18px auto 38px;
   border-color: var(--line-strong);
   border-radius: 20px;
-  background: linear-gradient(180deg, rgba(16,26,31,0.94), rgba(10,17,20,0.96));
-  box-shadow: 0 22px 80px rgba(0,0,0,0.42);
-  padding: 18px 20px 20px;
-}
-
-.dark .home-workbench {
   background: var(--glade-home-surface);
+  box-shadow: var(--glade-home-shadow);
+  padding: 18px 20px 20px;
 }
 
 .home-workbench,
@@ -1087,7 +1083,7 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
 
 @media (min-width: 780px) {
   .home-workbench-head {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 15rem);
   }
 }
 
@@ -1228,7 +1224,7 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
 .home-workflow-tab[data-active="true"] {
   border-color: var(--glade-action-bg);
   background:
-    linear-gradient(180deg, rgba(155,232,112,0.14), rgba(10,19,12,0.18));
+    linear-gradient(180deg, rgba(181,170,250,0.14), rgba(10,19,12,0.18));
   box-shadow: 0 12px 32px rgba(126, 255, 99, 0.08);
   color: var(--vp-c-text-1);
 }
@@ -1240,6 +1236,7 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
 
 .home-scenario-kicker {
   display: flex;
+  flex-wrap: wrap;
   min-width: 0;
   align-items: center;
   justify-content: space-between;
@@ -1263,6 +1260,10 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
   color: var(--vp-c-text-1);
   font-style: normal;
   text-align: right;
+}
+
+.home-selected-indicator:empty {
+  display: none;
 }
 
 .home-workflow-tab strong {
@@ -1799,6 +1800,15 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
     align-items: center;
   }
 
+  .home-demo-notice {
+    grid-column: 1 / -1;
+  }
+
+  .home-workbench-head {
+    margin: -14px -14px 0;
+    padding: 14px;
+  }
+
   .home-workflow-count {
     justify-content: center;
   }
@@ -1813,6 +1823,7 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
 
   .home-workflow-tab {
     flex: none;
+    padding: 10px;
     scroll-snap-align: start;
   }
 

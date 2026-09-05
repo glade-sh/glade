@@ -1,7 +1,16 @@
+---
+pageType: guide
+canonicalTask: /guide/workflows/apex-tests
+---
+
 # Run Apex tests
 
 Run Apex tests locally before the org round trip. Keep Salesforce as the
 validation gate where hosted behavior matters.
+
+The git examples assume `origin/main` is your intended base ref and is available
+locally. Substitute the correct existing ref for your repository before running
+changed-test or refactor commands.
 
 ## Before you start
 
@@ -23,10 +32,10 @@ Run one class:
 glade test --project . --class RefinementServiceTest
 ```
 
-Run one method:
+Run one method (replace the example names with a test in your project):
 
 ```bash
-glade test --project . --class RefinementServiceTest --method testRefinesFileRow
+glade test --project . --class RefinementServiceTest --method opensFile
 ```
 
 Split a larger suite with exact class lists or deterministic shards:
@@ -64,6 +73,14 @@ Write JUnit for CI:
 mkdir -p reports
 glade test --project . --junit reports/glade-junit.xml
 ```
+
+## When no tests run
+
+Check `total`, `passed`, `failed`, `errors`, `skipped`, and `unsupported` in
+`--json` output. An affected selection can exit `0` with zero tests; run an
+explicit relevant class or suite before claiming execution evidence. The
+`RefinementServiceTest.opensFile` example is from the editor walkthrough.
+[Quickstart](/guide/quickstart#sample-project) owns the standalone sample.
 
 ## Expected output
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { withBase } from 'vitepress'
 import { EditorState } from '@codemirror/state'
 import { EditorView, basicSetup } from 'codemirror'
 import { autocompletion } from '@codemirror/autocomplete'
@@ -53,35 +54,38 @@ onMounted(() => {
         }),
         EditorView.theme({
           '&': {
-            backgroundColor: '#05090b',
-            color: '#f3f7f5'
+            backgroundColor: 'var(--glade-code)',
+            color: 'var(--glade-text)'
           },
           '.cm-content': {
-            caretColor: '#f3f7f5',
+            caretColor: 'var(--glade-text)',
             fontFamily: 'var(--vp-font-family-mono)',
             fontSize: '13px',
             lineHeight: '1.68',
             padding: '18px 0'
           },
           '.cm-cursor, .cm-dropCursor': {
-            borderLeftColor: '#9be870'
+            borderLeftColor: 'var(--glade-focus)'
           },
           '.cm-gutters': {
-            backgroundColor: '#081014',
-            borderRight: '1px solid #26363d',
-            color: '#53676f'
+            backgroundColor: 'var(--glade-rail)',
+            borderRight: '1px solid var(--glade-border)',
+            color: 'var(--glade-muted)'
+          },
+          '.cm-selectionBackground, &.cm-focused .cm-selectionBackground': {
+            backgroundColor: 'var(--glade-active)'
           },
           '.cm-activeLine, .cm-activeLineGutter': {
-            backgroundColor: 'rgba(155, 232, 112, 0.08)'
+            backgroundColor: 'var(--glade-active)'
           },
           '.cm-tooltip': {
-            border: '1px solid rgba(155, 232, 112, 0.42)',
-            backgroundColor: '#10191e',
-            color: '#f3f7f5'
+            border: '1px solid var(--glade-control)',
+            backgroundColor: 'var(--glade-elevated)',
+            color: 'var(--glade-text)'
           },
           '.cm-tooltip-autocomplete ul li[aria-selected]': {
-            backgroundColor: 'rgba(155, 232, 112, 0.18)',
-            color: '#f3f7f5'
+            backgroundColor: 'var(--glade-active)',
+            color: 'var(--glade-text)'
           }
         })
       ]
@@ -101,12 +105,13 @@ onBeforeUnmount(() => {
   <section class="glade-cm-workbench" data-codemirror-workbench aria-label="Interactive Apex editor">
     <div class="glade-cm-head">
       <div>
-        <p class="home-eyebrow">Interactive Editor</p>
+        <p class="home-eyebrow">Browser capability lookup</p>
         <h2 id="apex-editor-heading" class="home-h2">Try capability-backed autocomplete.</h2>
       </div>
-      <a href="/guide/support-map">What runs locally</a>
+      <a :href="withBase('/guide/support-map')">What runs locally</a>
     </div>
     <div id="apex-editor-instructions" class="glade-cm-support">
+      <p>Edits stay in this browser. This editor looks up capability labels; it does not execute Apex or send your source.</p>
       <span>Type a dot after the final describe, Account, Database, BusinessHours, Schema, describe.fields, results[0], or fieldMap.</span>
       <div>
         <code>Account.</code>

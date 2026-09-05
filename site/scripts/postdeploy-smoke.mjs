@@ -51,7 +51,8 @@ assert.match(homeResponse.headers.get('permissions-policy') || '', /camera=\(\)/
 const home = await homeResponse.text()
 const commit = home.match(/<meta[^>]+name="glade:commit"[^>]+content="([^"]+)"/)?.[1]
 assert.equal(commit, expectedCommit, 'deployed commit marker does not match the requested commit')
-assert.match(home, /class="home-cta primary"[^>]+href="\/guide\/quickstart"/, 'homepage primary CTA should start the first local check')
+assert.match(home, /class="button button-primary[^"]*"[^>]+href="#get-started"/, 'homepage primary CTA should reach installation')
+assert.match(home, /href="\/guide\/quickstart"/, 'installation should lead to the first local check')
 
 const assetPath = home.match(/(?:src|href)="(\/assets\/[^"]+\.(?:js|css))"/)?.[1]
 assert.ok(assetPath, 'homepage should reference a fingerprinted asset')
@@ -114,7 +115,7 @@ await page.addInitScript(() => {
 for (const route of ['/', '/guide/', '/guide/quickstart', '/reference/cli', '/guide/workbench']) {
   await page.goto(new URL(route, baseURL).toString())
 }
-await page.goto(baseURL.toString())
+await page.goto(new URL('/guide/', baseURL).toString())
 await page.getByRole('button', { name: /search/i }).first().click()
 await page.getByRole('searchbox').waitFor()
 await browser.close()

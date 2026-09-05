@@ -1,4 +1,6 @@
 ---
+pageType: recovery
+canonicalTask: /help/troubleshooting
 title: Troubleshoot Glade
 description: Recover from common Glade project discovery, doctor, test, VS Code, local target, and plugin setup problems.
 ---
@@ -17,7 +19,7 @@ recheck the project-aware environment:
 
 ```bash
 test -f sfdx-project.json
-glade init --project . --yes
+test -f glade.yml || glade init --project . --yes
 glade doctor --project .
 ```
 
@@ -32,7 +34,8 @@ problem. Re-run `glade version`, then follow [Installation](/guide/installation)
 
 ## A test is not discovered
 
-Run the project test inventory before adding a class selector:
+Run the project suite without a selector, then select a class found in its
+results. This command executes tests; it is not an inventory-only operation:
 
 ```bash
 glade test --project .
@@ -72,8 +75,23 @@ Commit the plugin lock file, use the same Glade version locally and in CI, and
 follow [Plugin lock files and CI](/guide/plugins/lock-ci). Plugins are separate
 executables; a base Glade install does not restore them implicitly.
 
+## A test command exits zero but runs no tests
+
+Read the JSON `summary.total` and the selected method names. Confirm the class
+and method exist in the active package directories. An empty changed-test
+selection can be legitimate; run a known relevant class or suite to establish
+execution evidence. Use the [first-run sample](/guide/quickstart#sample-project)
+when diagnosing installation separately from project behavior.
+
+## Verify recovery
+
+Repeat the exact command that failed in the same project and local environment.
+Check its diagnostic and executed-test counts as well as its exit code.
+
 ## Still blocked
 
 Include `glade version`, `glade doctor --project .`, the exact command, stable
 error code, and the smallest reproducible project state in a [GitHub
-issue](https://github.com/glade-sh/glade/issues).
+issue](https://github.com/glade-sh/glade/issues). Remove credentials, private
+source, and customer records first. Vulnerabilities use
+[private reporting](/guide/security-trust#report-a-vulnerability).

@@ -1,3 +1,8 @@
+---
+pageType: guide
+canonicalTask: /guide/workflows/lwc-preview
+---
+
 # Preview LWC locally
 
 Use the local shell for LWC routes, page targets, named contexts, and record

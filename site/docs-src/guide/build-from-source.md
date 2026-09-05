@@ -1,3 +1,8 @@
+---
+pageType: guide
+canonicalTask: /guide/build-from-source
+---
+
 # Build Glade from source
 
 <div class="docs-intro">

@@ -30,7 +30,7 @@ const [
 ] = await Promise.all([
   source('../package.json'),
   source('../release-manifest.json'),
-  source('../docs-src/index.md'),
+  source('../.vitepress/theme/home/GladeHome.vue'),
   source('../.vitepress/config.ts'),
   source('../docs-src/guide/quickstart.md'),
   source('../docs-src/guide/workflows.md'),
@@ -56,7 +56,7 @@ test('stable release and deployed commit share one generated site-build contract
   assert.equal(releaseManifest.channel, 'stable')
   assert.match(releaseManifest.version, /^v\d+\.\d+\.\d+$/)
   assert.ok(releaseManifest.assets.length >= 4)
-  assert.match(home, /import releaseManifest from '\.\.\/release-manifest\.json'/)
+  assert.match(home, /import releaseManifest from '(?:\.\.\/)+release-manifest\.json'/)
   assert.doesNotMatch(home, /releases\/tag\/v\d+\.\d+\.\d+|>v\d+\.\d+\.\d+</)
   assert.match(packageJSON, /write-site-build\.mjs/)
   assert.match(writeSiteBuild, /site-build\.json/)
@@ -78,9 +78,9 @@ test('postdeploy smoke reconciles homepage, live manifest, latest release, check
 })
 
 test('first-run copy establishes project context before project-aware doctor', () => {
-  assert.match(home, /Apex feedback without the deploy wait\./)
-  assert.match(home, /curl -fsSL https:\/\/glade\.sh\/install\.sh \| sh<br>glade version/)
-  assert.doesNotMatch(home, /glade doctor/)
+  assert.match(home, /Run Apex locally/)
+  assert.match(home, /INSTALL_COMMAND/)
+  assert.match(home, /Your Salesforce DX project/)
   assert.match(quickstart, /glade doctor --project \./)
   assert.match(quickstart, /## You are done when/)
   assert.match(quickstart, /## Reset or clean up/)
@@ -88,19 +88,18 @@ test('first-run copy establishes project context before project-aware doctor', (
 })
 
 test('navigation uses jobs, one canonical surface location, and separate recovery', () => {
-  for (const label of ['Docs', 'Workflows', 'Reference', 'Support', 'Install']) {
+  for (const label of ['Docs', 'Guides', 'Reference', 'Help', 'Install']) {
     assert.match(config, new RegExp(`text: '${label}'`))
   }
-  assert.match(config, /\{ text: 'Support', link: '\/help\/' \}/)
+  assert.match(config, /\{ text: 'Help', link: '\/help\/', activeMatch: '[^']+' \}/)
   assert.match(config, /\{ text: 'Documentation home', link: '\/guide\/' \}/)
   assert.match(themeCSS, /VPNavBarMenuLink\[href="\/guide\/installation"\]/)
-  for (const link of ['/help/anonymous-apex-scratch', '/guide/plugins', '/guide/editor']) {
-    const guideNavigation = config.slice(0, config.indexOf("text: 'Task guides'"))
-    assert.equal(guideNavigation.split(`link: '${link}'`).length - 1, 1, `${link} should have one guide-navigation location`)
+  for (const link of ['/guide/playground', '/guide/plugins', '/guide/editor']) {
+    assert.equal(config.split(`link: '${link}'`).length - 1, 1, `${link} should have one canonical sidebar location`)
   }
   assert.match(config, /text: 'Advanced',[\s\S]*collapsed: true/)
-  assert.match(config, /text: 'Task guides'/)
-  assert.match(config, /text: 'Troubleshooting'/)
+  assert.match(config, /text: 'Illustrated walkthroughs'/)
+  assert.match(config, /text: 'Fix a problem'/)
   assert.match(routesSource, /"route": "\/help\/troubleshooting"/)
   assert.match(help, /Complete a task/)
   assert.match(help, /Fix a problem/)
@@ -109,20 +108,14 @@ test('navigation uses jobs, one canonical surface location, and separate recover
   assert.doesNotMatch(workflows, /Product areas/)
 })
 
-test('homepage shows one real product view and job-oriented workflow choices', () => {
-  assert.match(home, /run-one-apex-test-02-codelens\.png/)
-  assert.match(home, /alt="[^"]*(?:Apex test|CodeLens)[^"]*"/i)
-  for (const job of ['Run Apex tests', 'Debug or execute Apex', 'Work with local data', 'Add Glade to CI']) {
-    assert.match(home, new RegExp(job))
-  }
-  assert.match(home, /ResetPasswordResult\.getPassword[\s\S]*Requires Salesforce/)
-  assert.doesNotMatch(home, /Answers\.findSimilar[\s\S]*Requires Salesforce/)
-  assert.match(workflows, /href="\/guide\/workflows\/debug-apex"><strong>Debug Apex<\/strong>/)
-  assert.match(workflows, /href="\/help\/anonymous-apex-scratch"><strong>Execute Apex and SOQL<\/strong>/)
-  assert.match(workflows, /glade exec --project \. "System\.debug\('local'\);"/)
-  assert.equal((home.match(/Salesforce remains the final validation gate\./g) || []).length, 1)
-  assert.match(home, /Runs locally with limits/)
-})
+test('homepage labels its simulated product view and preserves task destinations', () => {
+  assert.match(home, /Interactive preview · simulated output/);
+  for (const scenario of ['tests', 'debug', 'check']) assert.ok(home.includes(scenario));
+  assert.match(home, /Salesforce/);
+  assert.match(home, /onUnmounted/);
+  assert.match(workflows, /href="\/guide\/workflows\/debug-apex"><strong>Debug Apex<\/strong>/);
+  assert.match(workflows, /href="\/guide\/playground"><strong>Execute Apex and SOQL<\/strong>/);
+});
 
 test('support explorer is generated, searchable, status-filterable, and announced', () => {
   assert.match(themeIndex, /GladeSupportExplorer/)

@@ -1,14 +1,30 @@
+---
+pageType: troubleshooting
+canonicalTask: /guide/workflows/ci
+---
+
 # Troubleshoot Glade CI setup
 
 <div class="docs-intro">
-  <p class="docs-intro-eyebrow">Task guide</p>
-  <p>Add Glade checks, affected tests, JUnit, SARIF, and artifacts to a pull request workflow.</p>
-  <ul>
-    <li>Fetch full git history for changed-test selection.</li>
-    <li>Run `glade check`, changed tests, and JUnit output.</li>
-    <li>Upload reports even when a gate fails.</li>
-  </ul>
+  <p>Find the failed step, check its inputs, and recover the reports you need to diagnose it.</p>
 </div>
+
+## Diagnose a failed run
+
+| Symptom | Check next |
+| --- | --- |
+| `glade: command not found` | Confirm installation succeeded and `$HOME/.local/bin` was added to `$GITHUB_PATH` before the Glade steps. |
+| Project discovery fails | Run from the Salesforce DX project root. Use [the first local check](/guide/quickstart#_3-initialize-local-project-configuration) to create missing configuration safely, then rerun `glade doctor --project .`. |
+| Changed-test selection cannot find its base | Confirm `origin/main` exists locally with `git rev-parse --verify origin/main`. Fetch the intended base and enough history; substitute your repository's actual base ref. |
+| No tests are selected | Check the changed files and base ref. Follow [changed-test recovery](/help/changed-tests-before-pr); an empty selection does not prove the whole suite passes. |
+| Reports are missing after a failed gate | Create `reports` before writing files and upload with `if: always()`. A step that never ran cannot produce its report. |
+
+For a new workflow, start with [the CI quickstart](/guide/workflows/ci).
+The illustrated setup below preserves the complete workflow and artifact steps.
+
+The git examples assume `origin/main` is your intended base ref and is available
+locally. Substitute the correct existing ref for your repository before running
+changed-test or refactor commands.
 
 ## Before you start
 

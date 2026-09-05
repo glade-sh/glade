@@ -1,3 +1,8 @@
+---
+pageType: reference
+canonicalTask: /guide/workflows/debug-apex
+---
+
 # DAP reference
 
 <div class="docs-intro">
@@ -5,7 +10,7 @@
   <p>Start the Glade Debug Adapter Protocol process and understand the supported local breakpoint model.</p>
 </div>
 
-Verified against the stable Glade release shown in the site header.
+This reference describes the checked local implementation. The download release shown in the header does not establish protocol or Salesforce parity.
 
 ## Invocation
 

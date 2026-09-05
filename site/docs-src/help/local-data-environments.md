@@ -1,4 +1,9 @@
-# Work With Local Data Environments
+---
+pageType: guide
+canonicalTask: /guide/workflows/local-data
+---
+
+# Work with local data environments
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Task guide</p>
@@ -11,11 +16,19 @@
   </ul>
 </div>
 
+For the main task path, use [the guide](/guide/workflows/local-data). This walkthrough keeps the
+illustrated steps and recovery details for this interface.
+
 ## Before you start
 
 - Glade is initialized in a Salesforce DX project.
-- For the editor steps, VS Code has the bundled Glade extension installed; other extensions and themes can remain.
+- The [bundled Glade extension](/guide/editor) is installed for the editor steps; other extensions and themes can remain.
 - These environments are local SQLite files. They do not copy Salesforce org data unless you import or seed data yourself.
+
+The screenshots use a clean VS Code profile with Glade, Catppuccin Mocha,
+and the Salesforce Apex extension, with unrelated extensions omitted for
+capture. That records the illustrated environment; your normal profile and
+theme can be used for this task.
 
 ## Steps
 

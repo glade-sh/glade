@@ -68,7 +68,7 @@ async function capture(browser: Browser, route: string) {
   return result
 }
 
-test('asset size and calibrated performance stay inside their stored budgets', async ({ browser }) => {
+test('asset size and calibrated performance stay inside their stored budgets', async ({ browser }, testInfo) => {
   test.setTimeout(120_000)
   const policy = performancePolicy(baseline.runner, process.platform)
 
@@ -81,6 +81,8 @@ test('asset size and calibrated performance stay inside their stored budgets', a
       cls: median(samples, 'cls'),
       tbtMs: median(samples, 'tbtMs')
     }
+    await testInfo.attach(`metrics-${route === '/' ? 'home' : 'quickstart'}`, { body: JSON.stringify({ route, current, samples, runner: process.platform }), contentType: 'application/json' })
+    console.log(JSON.stringify({ route, current }))
     const stored = baseline.routes[route].median
 
     expect(current.jsCssBytes, `${route} JS/CSS bytes`).toBeLessThanOrEqual(stored.jsCssBytes * 1.05)

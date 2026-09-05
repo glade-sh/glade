@@ -1,3 +1,8 @@
+---
+pageType: guide
+canonicalTask: /guide/workflows/local-data
+---
+
 # Work with local data
 
 Use a local Glade org when tests, previews, or scripts need records without a
@@ -35,13 +40,16 @@ Query through sf:
 sf data query -o refinement-local -q "SELECT Id, Name FROM Account"
 ```
 
-Seed a local database:
+Seed the default project database (separate from the named local org created
+above). Add `--db .glade/orgs/refinement-local.sqlite` if the sf target should
+read the same seeded records:
 
 ```bash
 glade db seed --project . data/file-rows.json
 ```
 
-Import a small slice from an org already connected through the Salesforce CLI:
+The commands above use local state. The following import contacts the selected
+Salesforce org through `sf`; use an explicitly authorized target and data slice:
 
 ```bash
 glade db import sf --target-org devhub --project . --object Account --fields Id,Name --limit 25 --json

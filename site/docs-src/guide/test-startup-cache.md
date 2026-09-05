@@ -1,4 +1,9 @@
-# Test Startup Cache
+---
+pageType: reference
+canonicalTask: /guide/workflows/apex-tests
+---
+
+# Test startup cache
 
 `glade test` can reuse warmed project state between runs. That saves time on
 large projects, but a stale cache can make tests pass or fail against the wrong

@@ -1,4 +1,9 @@
-# Release Runbook
+---
+pageType: contributor
+canonicalTask: /maintainer/release
+---
+
+# Release runbook
 
 Run the local product gate from a clean checkout of the candidate. The
 distribution build rejects tracked and untracked changes so the binary embeds
@@ -141,7 +146,7 @@ npm run release:sync:check
 git diff -- release-manifest.json
 ```
 
-Cloudflare Pages project `glade-sh` publishes from product `main`. After the
+Cloudflare Pages project `glade-site` publishes from product `main`. After the
 merge, require the Git integration deployment or deploy the clean, exact main
 build. Run this and the following smoke command from `site/` in the checkout of
 the commit being deployed:
@@ -155,7 +160,7 @@ release_sha="$(git -C .. rev-parse HEAD)"
 test "$release_sha" = "$(git -C .. rev-parse origin/main)"
 test -z "$(git -C .. status --porcelain --untracked-files=all)"
 CF_PAGES_COMMIT_SHA="$release_sha" npm run build
-npx --yes wrangler pages deploy .vitepress/dist --project-name glade-sh --branch main \
+npx --yes wrangler pages deploy .vitepress/dist --project-name glade-site --branch main \
   --commit-hash "$release_sha" --commit-dirty=false
 )
 ```

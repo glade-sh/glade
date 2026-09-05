@@ -1,4 +1,9 @@
-# Run Changed Tests Before a PR
+---
+pageType: guide
+canonicalTask: /guide/affected-tests
+---
+
+# Run changed tests before a PR
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Task guide</p>
@@ -10,11 +15,20 @@
   </ul>
 </div>
 
+For the main task path, use [the guide](/guide/affected-tests). This walkthrough keeps the
+illustrated steps and recovery details for this interface.
+
+The git examples assume `origin/main` is your intended base ref and is available
+locally. Substitute the correct existing ref for your repository before running
+changed-test or refactor commands.
+
 ## Before you start
 
 - Your branch has access to `origin/main`.
 - `reports/` exists before commands write files there.
-- Screenshots for this article are captured in a terminal.
+- Run from the initialized Salesforce DX project root.
+
+The screenshots for this article were captured in a terminal.
 
 ## Steps
 
@@ -24,7 +38,9 @@
 glade test changed --project . --since origin/main --no-progress
 ```
 
-Expected: Glade selects the smallest test set it can prove from the diff and prints a local pass/fail summary.
+Expected: Glade selects tests conservatively from the diff and prints a local
+summary. Read the executed count: zero selected tests may exit `0`; run an
+explicit relevant class or suite when you need execution evidence.
 
 ![Terminal showing changed local tests](/help/screenshots/changed-tests-before-pr-01-changed-tests.png)
 

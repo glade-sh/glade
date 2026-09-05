@@ -1,6 +1,13 @@
+---
+pageType: reference
+canonicalTask: /guide/workflows/visualforce-preview
+---
+
 # Visualforce support matrix
 
-This page is a stable reference entry point. Use the linked detailed page or generated artifact when you need the full table.
+Inspect the running local renderer's support rows and its preview boundary.
+The endpoint reports the binary you started, so it stays bound to that local
+implementation.
 
 Use this page when checking the local Visualforce preview boundary.
 The support map carries the current local contract and hosted gaps.
@@ -13,6 +20,14 @@ Then check the detailed source for current limits.
 Glade serves Visualforce previews for local development.
 It does not promise Salesforce chrome, exact lifecycle timing, or byte-for-byte PDF output.
 Use Salesforce for hosted rendering proof.
+
+## Inspect the running implementation
+
+<!--@include: ../../../docs/LOCAL_TESTING.md#run-visualforce-pages-locally-->
+
+The local support JSON is an implementation inventory. It is not a Salesforce
+rendering comparison. Record the binary version and the tested page when
+reporting a mismatch.
 
 ## Detailed source
 

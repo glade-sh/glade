@@ -1,3 +1,8 @@
+---
+pageType: contributor
+canonicalTask: /maintainer/glade-tools
+---
+
 # glade-tools
 
 `glade-tools` is the first-party maintainer toolkit. It feeds selected

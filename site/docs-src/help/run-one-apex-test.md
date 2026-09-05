@@ -1,4 +1,9 @@
-# Run One Apex Test Locally
+---
+pageType: guide
+canonicalTask: /guide/workflows/apex-tests
+---
+
+# Run one Apex test locally
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Task guide</p>
@@ -10,11 +15,19 @@
   </ul>
 </div>
 
+For the main task path, use [the guide](/guide/workflows/apex-tests). This walkthrough keeps the
+illustrated steps and recovery details for this interface.
+
 ## Before you start
 
 - `glade doctor --project .` passes.
 - The project has at least one Apex test class.
-- For the editor steps, VS Code has the bundled Glade extension installed. Keep your existing theme and profile.
+- The [bundled Glade extension](/guide/editor) is installed and the project is open in VS Code. Keep your existing theme and profile.
+
+The screenshots use a clean VS Code profile with Glade, Catppuccin Mocha,
+and the Salesforce Apex extension, with unrelated extensions omitted for
+capture. That records the illustrated environment; your normal profile and
+theme can be used for this task.
 
 ## Steps
 
@@ -24,7 +37,9 @@
 glade test --project . --class <TestClass> --no-progress
 ```
 
-Expected: Glade prints one selected class and a pass or failure result.
+Expected: the named class contains at least one executed test method. Read
+selected and executed counts; an empty selection does not confirm that tests
+run. Unsupported outcomes are test errors, not passing results.
 
 ![Terminal showing one local Apex test run](/help/screenshots/run-one-apex-test-01-cli.png)
 

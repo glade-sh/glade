@@ -1,3 +1,8 @@
+---
+pageType: reference
+canonicalTask: /guide/modules
+---
+
 # How Glade works
 
 Glade reads source and metadata from disk, checks it, and executes supported
@@ -19,6 +24,10 @@ boundary. Open the linked workflow for step-by-step instructions.
 | [Debug and profile](#debug-and-profile) | Step through local Apex and analyze debug logs. | `glade dap --project .` |
 | [Editor and workbench](#editor-and-workbench) | Use local language, test, data, and debug tools in VS Code. | `glade editor doctor vscode` |
 | [Plugins](#plugins) | Run extension executables outside the base product. | `glade plugins list` |
+
+The git examples assume `origin/main` is your intended base ref and is available
+locally. Substitute the correct existing ref for your repository before running
+changed-test or refactor commands.
 
 ## Apex runtime
 

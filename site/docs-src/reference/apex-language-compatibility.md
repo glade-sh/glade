@@ -1,3 +1,8 @@
+---
+pageType: reference
+canonicalTask: /reference/apex-language-compatibility
+---
+
 # Apex language compatibility
 
 Glade checks Apex source against a Salesforce-backed compiler contract before

@@ -1,4 +1,6 @@
 ---
+pageType: interactive reference
+canonicalTask: /guide/workbench
 aside: false
 head:
   - - link
@@ -13,7 +15,21 @@ head:
 
 The website capability explorer maps checked APIs to their local boundary. Type Apex expressions and see whether the API runs locally, runs locally with limits, or requires Salesforce.
 
-Use the editor as a live capability map: type a dot, read the label, and see the boundary before you depend on an API.
+[Try the capability editor](#apex-editor-heading) · [Replay a workflow](#local-apex-workbench)
+
+Use the editor as a browser capability lookup: type a dot, read the label, and see the boundary before you depend on an API. Edits stay in your browser; this page does not execute Apex or send visitor source anywhere.
+
+<span id="capability-explorer"></span>
+
+<GladeEditorWorkbench />
+
+For actual execution on your machine, install Glade and run the [local Playground](/reference/cli#glade-playground):
+
+```bash
+glade playground --examples --addr 127.0.0.1:1789 --open
+```
+
+The local Playground serves your own Glade runtime. Its execution and local data are separate from the illustrations on this website.
 
 <section class="coverage-workbench" data-coverage-workbench aria-label="Glade interactive capability map">
   <div class="coverage-workbench-intro">
@@ -45,19 +61,18 @@ Use the editor as a live capability map: type a dot, read the label, and see the
   </div>
 </section>
 
-<GladeEditorWorkbench />
 
 <div class="workbench-page">
-  <section class="home-workbench home-panel" id="local-apex-workbench" data-scenario-workbench aria-label="Local capability workflow demo">
+  <section class="home-workbench home-panel" id="local-apex-workbench" data-scenario-workbench aria-label="Illustrative capability workflow replay">
     <div class="home-workbench-head">
       <div>
         <p class="home-eyebrow">Workflow gallery</p>
-        <h2 class="home-h2">Replay an example workflow.</h2>
-        <p class="home-p">Replay a curated scenario to see the command, JSON, trace, local result, and copyable CLI form.</p>
+        <h2 class="home-h2">Replay an illustrative workflow.</h2>
+        <p class="home-p">Replay prepared command output, JSON, trace, and results. This is a scripted illustration: no Apex runs here, and editing the capability lookup does not change these results. Copy a command to run it yourself in an initialized local project.</p>
       </div>
       <div class="home-workbench-actions">
         <span class="home-workflow-count" data-workflow-count aria-label="Workflow 1 of 4">1 / 4</span>
-        <button class="home-run-button" type="button" data-run-scenario data-run-state="idle">Replay example</button>
+        <button class="home-run-button" type="button" data-run-scenario data-run-state="idle">Replay scenario</button>
         <p class="home-demo-notice">Illustrative replay — this page does not execute edited Apex.</p>
       </div>
     </div>
@@ -106,7 +121,7 @@ Use the editor as a live capability map: type a dot, read the label, and see the
       </section>
       <section class="home-changed-panel" aria-label="What changed">
         <div class="home-panel-top">
-          <strong data-proof-title>Local result</strong>
+          <strong data-proof-title>Illustrative result</strong>
           <span data-support-status>supported locally</span>
         </div>
         <ul data-changed-summary>

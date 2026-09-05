@@ -1,3 +1,8 @@
+---
+pageType: reference
+canonicalTask: /guide/quickstart
+---
+
 # Config reference
 
 Glade reads `glade.yml` from the project tree and layers it with
@@ -39,6 +44,20 @@ glade init --project . --yes \
 ```
 
 Use `--force` to replace an existing file.
+
+## Inputs and constraints
+
+| Input | Type | When omitted | Constraint |
+| --- | --- | --- | --- |
+| `project.root` | path string | configuration/project discovery supplies the root | Relative paths resolve from the config directory. |
+| `project.packageDirs` | string list | discovered Salesforce DX package directories | Every selected directory must exist. |
+| `project.defaultNamespace` | string | project namespace when available | Keep dependency namespaces and remaps consistent. |
+| `project.namespaceRemaps` | string list | no remaps | Each entry pairs source and local namespaces. |
+| `project.managedPackageDependencies` | dependency list | no configured dependencies | Use a source path or the documented artifact syntax. |
+| `project.packageShims` | string list | no local method bodies from shims | A captured artifact still owns the contract. |
+| `project.schemaSnapshot` | path string | no imported describe snapshot | Requires `schemaSnapshotSHA256`. |
+| `project.schemaSnapshotSHA256` | string | no snapshot digest | Requires a snapshot and 64 hexadecimal characters matching its exact bytes. |
+| `org.features` | string list | discovered/default local feature set | Unsupported feature names fail validation. |
 
 ## Config file
 

@@ -1,7 +1,16 @@
+---
+pageType: guide
+canonicalTask: /guide/workflows/ci
+---
+
 # Glade CI quickstart
 
 Use Glade in CI when pull requests need local checks, affected tests, saved
 reports, and stable process exits.
+
+The git examples assume `origin/main` is your intended base ref and is available
+locally. Substitute the correct existing ref for your repository before running
+changed-test or refactor commands.
 
 ## Before you start
 
