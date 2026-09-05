@@ -208,6 +208,13 @@ test("release notes stage v0.2.15 while launch docs identify v0.2.14 as stable",
   assert.match(candidateText, /Runtime smoke initializes .* before `check` and `test`/);
   assert.match(candidateText, /Release builds stage the shared payload outside the Git worktree/);
   assert.match(candidateText, /golang\.org\/x\/text/);
+  assert.match(candidateText, /Security workflow/);
+  assert.match(candidateText, /macOS and Linux for AMD64 and ARM64/);
+  assert.match(candidateText, /`SHA256SUMS\.txt`, CycloneDX SBOMs, and GitHub artifact attestations/);
+  assert.match(candidateText, /No migration is required for documented CLI flags, persistent database schemas, or server API behavior/);
+  assert.match(candidateText, /Known-gap diagnostics are unchanged/);
+  assert.match(candidateText, /Windows archives and historical-version parity remain unsupported/);
+  assert.match(candidateText, /65\.0, 66\.0, and 67\.0/);
 
   const released = releaseNotes.match(/^## v0\.2\.14 - 2026-09-04\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(released, "release notes should contain a v0.2.14 section");
