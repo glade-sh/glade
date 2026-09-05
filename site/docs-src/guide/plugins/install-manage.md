@@ -1,6 +1,13 @@
+---
+pageType: guide
+canonicalTask: /guide/plugins/install-manage
+---
+
 # Install and manage plugins
 
-Use canonical coordinates for marketplace installs.
+Use canonical coordinates for registry installs. Review the executable and
+[plugin trust boundary](/guide/security-trust#plugins) before installation.
+`@acme/quality` below is an illustrative coordinate, not an advertised package.
 
 ::: tip Default registry
 The default public registry is `https://plugins.glade.sh/index.json`. It
@@ -22,6 +29,12 @@ The short aliases `performance` and `orgpackage` resolve to
 Registry installs appear by canonical coordinate in `plugins list`,
 `plugins which`, and `plugins doctor`. Linked development plugins without a
 catalog coordinate use their manifest name.
+
+## Before you start
+
+Confirm `glade version` works and inspect the configured registry with
+`glade plugins available`. Plugin installation does not require a Salesforce
+project. Review executable trust before installing or linking a package.
 
 ## Find and inspect
 

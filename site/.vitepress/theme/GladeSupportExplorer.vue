@@ -1,24 +1,67 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { editorSupportCatalog } from './generated/editorSupport'
 
 const query = ref('')
 const status = ref('all')
-
+const page = ref(1)
+const resultHeading = ref<HTMLElement | null>(null)
+const pageSize = 25
+const statuses = ['all', 'supported', 'partial', 'stub', 'unsupported', 'unknown']
 const entries = editorSupportCatalog.rows
-
 const filtered = computed(() => {
   const needle = query.value.trim().toLowerCase()
-  return entries.filter((entry) => {
-    const statusMatches = status.value === 'all' || entry.status === status.value || (status.value === 'partial' && entry.status === 'stub')
-    const textMatches = !needle || `${entry.area}.${entry.api} ${entry.notes}`.toLowerCase().includes(needle)
-    return statusMatches && textMatches
-  })
+  return entries.filter((entry) =>
+    (status.value === 'all' || entry.status === status.value) &&
+    (!needle || `${entry.area}.${entry.api} ${entry.notes}`.toLowerCase().includes(needle))
+  )
 })
-
-const shown = computed(() => filtered.value.slice(0, 50))
-const limitedCount = editorSupportCatalog.summary.partial + editorSupportCatalog.summary.stub
-
+const pageCount = computed(() => Math.max(1, Math.ceil(filtered.value.length / pageSize)))
+const shown = computed(() => filtered.value.slice((page.value - 1) * pageSize, page.value * pageSize))
+let restoring = false
+let mounted = false
+function readState() {
+  restoring = true
+  const params = new URLSearchParams(window.location.search)
+  query.value = params.get('q') || ''
+  const savedStatus = params.get('status') || 'all'
+  status.value = statuses.includes(savedStatus) ? savedStatus : 'all'
+  const savedPage = Number(params.get('page'))
+  page.value = Math.min(pageCount.value, Math.max(1, Number.isSafeInteger(savedPage) ? savedPage : 1))
+  restoring = false
+}
+function writeState(push = false) {
+  if (!mounted || restoring) return
+  const url = new URL(window.location.href)
+  for (const [key, value] of [['q', query.value.trim()], ['status', status.value === 'all' ? '' : status.value], ['page', page.value === 1 ? '' : String(page.value)]]) {
+    if (value) url.searchParams.set(key, value)
+    else url.searchParams.delete(key)
+  }
+  if (url.href !== window.location.href) window.history[push ? 'pushState' : 'replaceState'](window.history.state, '', url)
+}
+watch([query, status], () => {
+  if (restoring) return
+  page.value = 1
+  writeState()
+}, { flush: 'sync' })
+async function changePage(value: number) {
+  page.value = Math.max(1, Math.min(pageCount.value, value))
+  writeState(true)
+  await nextTick()
+  resultHeading.value?.focus({ preventScroll: true })
+  resultHeading.value?.scrollIntoView({ block: 'nearest' })
+}
+function clearFilters() {
+  query.value = ''
+  status.value = 'all'
+}
+onMounted(() => {
+  readState()
+  mounted = true
+  writeState()
+  window.addEventListener('popstate', readState)
+})
+onBeforeUnmount(() => window.removeEventListener('popstate', readState))
 function statusClass(value: string) {
   if (value === 'supported') return 'docs-status-supported'
   if (value === 'partial' || value === 'stub') return 'docs-status-partial'
@@ -32,42 +75,76 @@ function statusClass(value: string) {
     <div class="support-explorer-heading">
       <div>
         <p class="docs-card-kicker">Generated standard-library catalog</p>
-        <h2 id="support-explorer-heading">Search checked API rows</h2>
+        <h2 id="support-explorer-heading">Search API capabilities</h2>
       </div>
-      <dl class="support-explorer-summary">
-        <div><dt>Runs locally</dt><dd>{{ editorSupportCatalog.summary.supported }}</dd></div>
-        <div><dt>Runs locally with limits</dt><dd>{{ limitedCount }}</dd></div>
-        <div><dt>Requires Salesforce</dt><dd>{{ editorSupportCatalog.summary.unsupported }}</dd></div>
-      </dl>
+
     </div>
+
     <div class="support-explorer-controls">
-      <label>
-        Search APIs
-        <input v-model="query" type="search" placeholder="Try Database.insert or Answers" autocomplete="off">
-      </label>
-      <label>
-        Status
-        <select v-model="status">
-          <option value="all">All statuses</option>
-          <option value="supported">Runs locally</option>
-          <option value="partial">Runs locally with limits</option>
-          <option value="unsupported">Requires Salesforce</option>
-          <option value="unknown">Not measured</option>
-        </select>
-      </label>
+      <label>Search APIs<input v-model="query" type="search" placeholder="Try Database.insert or Answers" autocomplete="off"></label>
+      <label>Status<select v-model="status">
+        <option value="all">All raw statuses</option>
+        <option value="supported">supported — Runs locally</option>
+        <option value="partial">partial — Runs locally with limits</option>
+        <option value="stub">stub — Local stand-in</option>
+        <option value="unsupported">unsupported — Requires Salesforce</option>
+        <option value="unknown">unknown — Not measured</option>
+      </select></label>
+      <button class="support-explorer-button" type="button" @click="clearFilters">Clear filters</button>
     </div>
-    <p class="support-explorer-result" role="status" aria-live="polite">
-      {{ filtered.length }} checked row{{ filtered.length === 1 ? '' : 's' }} match.{{ filtered.length > shown.length ? ` Showing the first ${shown.length}.` : '' }}
+    <p>Runs locally describes a local implementation, including deterministic models. Runs locally with limits covers partial or stub rows. Requires Salesforce identifies unsupported rows. None of these labels alone establishes Salesforce parity.</p>
+    <p ref="resultHeading" class="support-explorer-result" role="status" aria-live="polite" tabindex="-1">
+      {{ filtered.length }} matching row{{ filtered.length === 1 ? '' : 's' }} of {{ entries.length }} checked ledger rows.
+      <template v-if="filtered.length">Showing {{ (page - 1) * pageSize + 1 }}–{{ Math.min(page * pageSize, filtered.length) }}. Page {{ page }} of {{ pageCount }}.</template>
+      <template v-else>Try a broader API name or clear the filters.</template>
     </p>
     <ul class="support-explorer-list" tabindex="0" aria-label="Matching checked API rows">
       <li v-for="entry in shown" :key="entry.id">
-        <div>
-          <code>{{ entry.api }}</code>
-          <span :class="['docs-status-chip', statusClass(entry.status)]">{{ editorSupportCatalog.statusLabels[entry.status] }}</span>
-        </div>
-        <p>{{ entry.notes }}</p>
+        <div><code>{{ entry.api }}</code><span :class="['docs-status-chip', statusClass(entry.status)]">{{ editorSupportCatalog.statusLabels[entry.status] }}</span></div>
+        <dl class="support-row-detail">
+          <div><dt>Execution classification</dt><dd><code>{{ entry.status }}</code></dd></div>
+          <div><dt>Modeled behavior and limits</dt><dd>{{ entry.notes || 'No behavior detail recorded.' }}</dd></div>
+          <div><dt>Evidence</dt><dd>Checked source: <a :href="`https://github.com/glade-sh/glade/blob/main/${editorSupportCatalog.generatedFrom}`">{{ editorSupportCatalog.generatedFrom }}</a>. This row does not attach a live Salesforce parity receipt.</dd></div>
+        </dl>
       </li>
     </ul>
-    <p class="support-explorer-foot">Counts and rows come from <code>{{ editorSupportCatalog.generatedFrom }}</code>. Use the complete checked ledgers below for evidence and regression-test links.</p>
+    <nav class="support-explorer-pagination" aria-label="Capability result pages">
+      <button class="support-explorer-button" type="button" :disabled="page === 1" @click="changePage(1)">First</button>
+      <button class="support-explorer-button" type="button" :disabled="page === 1" @click="changePage(page - 1)">Previous</button>
+      <span>Page {{ page }} of {{ pageCount }}</span>
+      <button class="support-explorer-button" type="button" :disabled="page >= pageCount" @click="changePage(page + 1)">Next</button>
+      <button class="support-explorer-button" type="button" :disabled="page >= pageCount" @click="changePage(pageCount)">Last</button>
+    </nav>
+      <dl class="support-explorer-summary">
+        <div><dt>Ledger: supported</dt><dd>{{ editorSupportCatalog.summary.supported }}</dd></div>
+        <div><dt>Ledger: partial / stub</dt><dd>{{ editorSupportCatalog.summary.partial }} / {{ editorSupportCatalog.summary.stub }}</dd></div>
+        <div><dt>Ledger: unsupported</dt><dd>{{ editorSupportCatalog.summary.unsupported }}</dd></div>
+        <div><dt>Ledger: unknown</dt><dd>{{ editorSupportCatalog.summary.unknown }}</dd></div>
+      </dl>
+    <p class="support-explorer-foot">Counts and rows come from <code>{{ editorSupportCatalog.generatedFrom }}</code>. Counts apply to this checked catalog, not the whole Salesforce platform. Follow the complete ledgers below for regression-test links and evidence scope.</p>
+    <noscript>Search and pagination need JavaScript. The complete checked ledgers linked below remain readable without it.</noscript>
   </section>
 </template>
+
+<style scoped>
+.support-explorer-heading h2 { margin: 0; padding: 0; border: 0; }
+.support-explorer-heading .docs-card-kicker { margin: 0 0 12px; }
+.support-explorer-heading, .support-explorer-summary, .support-explorer-controls { flex-wrap: wrap; }
+.support-explorer-controls label { min-width: 0; }
+.support-explorer-controls select, .support-explorer-controls input { width: 100%; min-width: 0; }
+.support-explorer-list li > div { flex-wrap: wrap; }
+.support-explorer-button { align-self: end; border: 1px solid var(--vp-c-divider); border-radius: 6px; padding: 8px 12px; min-height: 44px; color: var(--vp-c-text-1); background: var(--vp-c-bg-soft); font: inherit; cursor: pointer; }
+.support-explorer-button:disabled { opacity: .5; cursor: default; }
+.support-explorer-button:focus-visible, .support-explorer-result:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 3px; }
+.support-explorer-pagination { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+.support-explorer-list { padding: 0; list-style: none; }
+.support-explorer-list code { overflow-wrap: anywhere; }
+.support-row-detail { margin: 12px 0 0; font-size: 13px; }
+.support-row-detail > div { display: block; margin-top: 8px; }
+.support-row-detail dt { font-weight: 600; color: var(--vp-c-text-2); }
+.support-row-detail dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .support-explorer-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; text-align: left; }
+  .support-explorer-controls > .support-explorer-button { align-self: stretch; }
+}
+</style>

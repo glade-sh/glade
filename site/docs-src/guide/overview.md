@@ -1,3 +1,8 @@
+---
+pageType: guide
+canonicalTask: /guide/overview
+---
+
 # What is Glade?
 
 <div class="docs-intro">
@@ -14,6 +19,10 @@ Glade is a local Apex runtime and developer workbench. It loads Salesforce DX
 projects, parses and checks supported Apex, runs local Apex tests, executes
 anonymous Apex, serves local Visualforce pages and local Salesforce API routes,
 and exposes support gaps instead of hiding them.
+
+The git examples assume `origin/main` is your intended base ref and is available
+locally. Substitute the correct existing ref for your repository before running
+changed-test or refactor commands.
 
 ## Start with
 
@@ -35,7 +44,7 @@ and exposes support gaps instead of hiding them.
 ## First local loop
 
 ```bash
-glade init --project . --yes
+test -f glade.yml || glade init --project . --yes
 glade doctor --project .
 glade check --project .
 glade test --project . --class <YourTestClass>

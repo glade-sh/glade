@@ -1,3 +1,8 @@
+---
+pageType: guide
+canonicalTask: /guide/workflows/visualforce-preview
+---
+
 # Preview Visualforce locally
 
 Use the local server for Visualforce controller and page preview work. The local

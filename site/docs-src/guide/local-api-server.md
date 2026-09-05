@@ -1,3 +1,8 @@
+---
+pageType: reference
+canonicalTask: /guide/workflows/local-data
+---
+
 # Run local Salesforce API routes
 
 `glade server` starts local Salesforce-style HTTP routes backed by the same runtime used by the CLI. Use it for local integration tests, tools, and development loops that need REST-style org behavior without a live Salesforce org.
@@ -24,7 +29,9 @@ glade server --project . --limit-mode strict
 
 ## Seed local data
 
-Prepare a local database before starting the server:
+Prepare a disposable local database before starting the server. `db reset`
+clears existing rows at the specified path; inspect or export valuable data
+before choosing that reset step:
 
 ```bash
 glade db reset --db .glade/refinement-local.sqlite --json
@@ -35,6 +42,7 @@ glade db inspect --db .glade/refinement-local.sqlite --json
 
 ## REST routes
 
+<!-- #region local-api-route-reference -->
 The server exposes a Salesforce-style baseline for local work: API discovery,
 object describe and CRUD-style record operations, SOQL query execution, limits
 and record counts, source-backed Tooling metadata reads, virtual schema metadata
@@ -102,6 +110,8 @@ The local API server does not implement full OAuth or production Salesforce
 authentication. Do not expose it to untrusted networks unless an authenticating
 reverse proxy stands in front of it.
 :::
+
+<!-- #endregion local-api-route-reference -->
 
 ::: tip Try it
 Use the playground when you want the same local org ideas with a browser UI:

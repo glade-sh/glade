@@ -1,4 +1,9 @@
-# Use Anonymous Apex Scratch in VS Code
+---
+pageType: guide
+canonicalTask: /guide/editor
+---
+
+# Use anonymous Apex scratch in VS Code
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Task guide</p>
@@ -10,11 +15,19 @@
   </ul>
 </div>
 
+For the main task path, use [the guide](/guide/editor). This walkthrough keeps the
+illustrated steps and recovery details for this interface.
+
 ## Before you start
 
-- VS Code has the bundled Glade extension installed; no particular theme or profile is required.
+- The [bundled Glade extension](/guide/editor) is installed in VS Code; no particular theme or profile is required.
 - The project's Apex source version is eligible for Execute Anonymous (65.0, 66.0, or 67.0).
 - The active Glade local data environment is the one you want to write to.
+
+The screenshots use a clean VS Code profile with Glade, Catppuccin Mocha,
+and the Salesforce Apex extension, with unrelated extensions omitted for
+capture. That records the illustrated environment; your normal profile and
+theme can be used for this task.
 
 ## Steps
 

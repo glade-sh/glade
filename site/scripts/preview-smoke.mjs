@@ -43,7 +43,7 @@ for (const entry of routes.filter((route) => route.classification === 'redirect'
 assert.equal(redirectRules.size, routes.filter((route) => route.classification === 'redirect').length)
 
 const home = await get('/')
-assert.match(home.body, /Apex feedback without the deploy wait\./)
+assert.match(home.body, /Run Apex locally\./)
 assert.match(home.body, new RegExp(`https://github\\.com/glade-sh/glade/releases/tag/${releaseManifest.version}`))
 
 const install = await get('/install.sh')

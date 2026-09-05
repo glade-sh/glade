@@ -68,7 +68,7 @@ Connect the GitHub repository to Cloudflare Pages with Git integration.
 Use these settings:
 
 ```
-Project name: glade-sh
+Project name: glade-site
 Production branch: main
 Root directory: site
 Build command: npm run build
@@ -84,7 +84,7 @@ site/install.sh       -> /install.sh
 
 Cloudflare domain settings:
 
-1. Open **Workers & Pages → glade-sh → Custom domains**.
+1. Open **Workers & Pages → glade-site → Custom domains**.
 2. Add `glade.sh`.
 3. Let Cloudflare create the DNS record for the apex domain.
 
@@ -111,7 +111,7 @@ release_sha="$(git -C .. rev-parse HEAD)"
 test "$release_sha" = "$(git -C .. rev-parse origin/main)"
 test -z "$(git -C .. status --porcelain --untracked-files=all)"
 CF_PAGES_COMMIT_SHA="$release_sha" npm run build
-npx --yes wrangler pages deploy .vitepress/dist --project-name glade-sh --branch main \
+npx --yes wrangler pages deploy .vitepress/dist --project-name glade-site --branch main \
   --commit-hash "$release_sha" --commit-dirty=false
 )
 ```
@@ -128,3 +128,31 @@ npm run smoke:postdeploy -- --base-url https://glade.sh --expected-commit "$expe
 The smoke check covers public routes, redirects, security and cache headers,
 `/install.sh`, `/site-build.json`, the stable release manifest, GitHub latest,
 checksums, release assets, the plugin registry, and the sitemap.
+
+## Brand and reading system
+
+The approved dark homepage lives in `.vitepress/theme/home/GladeHome.vue`.
+Its fixed examples are illustrative; the website never executes visitor Apex.
+The normal VitePress layout owns documentation, guides, reference, compatibility,
+Help, and contributor pages. Article `pageType` and `canonicalTask` frontmatter
+record the reading role and primary task without moving public URLs.
+
+Shared light/dark colors and font roles live in
+`.vitepress/theme/styles/tokens.css`; `styles/reading.css` maps reading density
+to VitePress components. Inter and IBM Plex Mono are self-hosted dependencies.
+The home uses its own dark tokens and does not write the docs appearance
+preference. Large catalogs and demo modules load on demand; automatic link
+prefetch is disabled so ordinary articles do not fetch them.
+
+After source changes, rebuild before preview/browser checks and restart any
+preview server that was started against an older build. For a separate local
+review server:
+
+```bash
+npm run preview -- --host 127.0.0.1 --port 4174
+```
+
+The browser suite covers the approved home, command lookup, capability
+pagination, search, appearance, code copying, and no-JavaScript reading.
+Performance assertions retain the checked budget; attached metrics distinguish
+asset transfer, LCP, layout shift, and main-thread blocking.

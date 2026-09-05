@@ -1,3 +1,8 @@
+---
+pageType: reference
+canonicalTask: /guide/automation
+---
+
 # Exit codes
 
 Glade uses exit status for automation. Scripts should trust the process status first, then read JSON fields when they need detail.

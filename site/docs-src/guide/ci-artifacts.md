@@ -1,3 +1,8 @@
+---
+pageType: reference
+canonicalTask: /guide/workflows/ci
+---
+
 # CI reports and artifacts
 
 Glade writes machine-readable check results and saved test reports for CI.
@@ -71,6 +76,10 @@ Choose the test scope your team has validated; a local gate does not replace
 the final Salesforce validation. Before adopting either variant, intentionally
 fail a public test and confirm that the advisory job retains evidence while
 the enforcing job fails.
+
+The git examples assume `origin/main` is your intended base ref and is available
+locally. Substitute the correct existing ref for your repository before running
+changed-test or refactor commands.
 
 ## Semantic checks
 

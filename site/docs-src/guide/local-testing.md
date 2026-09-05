@@ -1,6 +1,17 @@
-# Run Apex Tests Locally
+---
+pageType: reference
+canonicalTask: /guide/workflows/apex-tests
+---
+
+# Run Apex tests locally
 
 `glade test` discovers Apex test classes from a Salesforce DX project, compiles supported code, runs tests in the local VM, and reports stable outcomes. It uses the same project loader, parser, semantic analyzer, storage, DML, SOQL, trigger, and limit stack as the rest of the CLI.
+
+The `RefinementServiceTest.opensFile` selectors below match the maintained
+editor walkthrough. Your project must contain that class and method, or you
+must substitute its actual test names. For a self-contained first run, use
+[`SampleTest.adds` in the quickstart](/guide/quickstart#sample-project).
+The terminal output below is illustrative; timings are not a benchmark.
 
 ## Run all tests
 
@@ -18,7 +29,7 @@ Passed:   1
 Failed:   0
 Runtime:  420ms
 
-  ✓  RefinementServiceTest.testRefinesFileRow  42ms
+  ✓  RefinementServiceTest.opensFile  42ms
 
 Next:
   glade test --watch
@@ -83,10 +94,10 @@ Run a test class:
 glade test --project . --class RefinementServiceTest
 ```
 
-Run a single method:
+Run a single method (replace the example names with a test in your project):
 
 ```bash
-glade test --project . --class RefinementServiceTest --method testRefinesFileRow
+glade test --project . --class RefinementServiceTest --method opensFile
 ```
 
 Use exact class and method selectors for the short inner loop. Then run the wider suite before shipping.
@@ -251,7 +262,7 @@ does not provide test execution evidence. Run an explicit relevant test or
 suite if an affected selection is empty.
 
 ```text
-  ✓  RefinementServiceTest.testRefinesFileRow  42ms
+  ✓  RefinementServiceTest.opensFile  42ms
   ✗  RefinementServiceTest.testRejectsBlankFileRow  12ms
 
   RefinementServiceTest.testRejectsBlankFileRow

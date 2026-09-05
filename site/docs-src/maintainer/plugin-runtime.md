@@ -1,4 +1,9 @@
-# Plugin Runtime
+---
+pageType: contributor
+canonicalTask: /maintainer/plugin-runtime
+---
+
+# Plugin runtime
 
 Plugins are executable processes. Glade installs them, checks their manifests,
 writes lock files, and invokes their commands.

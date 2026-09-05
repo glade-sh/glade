@@ -1,6 +1,12 @@
+---
+pageType: reference
+canonicalTask: /guide/support-map
+---
+
 # Apex support map
 
-This page is a stable reference entry point. Use the linked detailed page or generated artifact when you need the full table.
+Read the maintained local surface matrix, then use the capability explorer
+for receiver-level behavior and named limits.
 
 Use this page when deciding if an Apex loop belongs in Glade.
 The full support map carries the current local contract.
@@ -14,6 +20,14 @@ Then check the detailed source for limits before moving a team workflow.
 Glade runs local Apex development paths.
 It does not replace Salesforce for live services, auth, or exact production governor accounting.
 Use first-party plugins for generated capability reports.
+
+## Local surface matrix
+
+This table is included from the maintained repository compatibility source.
+Its raw status labels describe that source's local scope. They are not a
+platform-wide parity percentage or a verification claim for the current release.
+
+<!--@include: ../../../docs/COMPATIBILITY.md#initial-matrix-->
 
 ## Detailed source
 

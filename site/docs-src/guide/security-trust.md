@@ -1,3 +1,8 @@
+---
+pageType: guide
+canonicalTask: /guide/security-trust
+---
+
 # Security & trust
 
 <div class="docs-intro">
@@ -14,13 +19,26 @@ Security review works best when the facts are close to the installer. Glade
 keeps its security proof in the repository, the release workflow, and the
 release assets.
 
+## Before you start
+
+You can report a vulnerability or inspect release provenance without creating a
+project. Release verification needs a shell, `curl`, a checksum tool, and the
+GitHub CLI for attestations.
+
+<span id="report-a-vulnerability"></span>
+
 ## Report a vulnerability privately
 
 Use [Glade private reporting](https://github.com/glade-sh/glade/security/advisories/new)
 or [Tools private reporting](https://github.com/glade-sh/glade-tools/security/advisories/new).
 Both repositories enable private reporting. If GitHub is unavailable, email
-[security@glade.sh](mailto:security@glade.sh). Do not put vulnerability details
-in public issues.
+[security@glade.sh](mailto:security@glade.sh). Include the Glade version, OS and
+architecture, exact command, and the smallest reproduction you can share.
+Do not put vulnerability details, credentials, customer records, or private
+source in public issues. See the [security policy](https://github.com/glade-sh/glade/blob/main/SECURITY.md)
+for reporting details.
+
+<span id="ci-gates"></span>
 
 ## Interpret CI evidence
 
@@ -32,6 +50,9 @@ in public issues.
 | gosec | Go source-pattern findings uploaded as SARIF. |
 | npm audit | High-severity production dependency findings in packaged JavaScript. |
 | Dependency Review | Pull requests that add vulnerable dependencies. |
+
+A completed scan upload is not an absence-of-findings result. An SBOM is a
+dependency inventory; an attestation binds provenance, not runtime correctness.
 
 `gosec` reports are uploaded while the existing baseline is triaged. New
 high-severity findings should be fixed or documented before release.
@@ -104,6 +125,9 @@ No Salesforce org login is required for supported local checks.
 
 Glade uses the network when installing or updating release archives, installing
 the local LWC toolchain, or installing plugins from a registry or archive URL.
+Org-backed imports and package captures use Salesforce through explicitly
+selected workflows. AI assistants have their own provider and source-sharing
+settings. Local test isolation is not an OS sandbox.
 The local check, test, parse, exec, SOQL, DML, and local API paths do not send
 project source to a hosted Glade service.
 

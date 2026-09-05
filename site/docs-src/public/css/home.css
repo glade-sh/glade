@@ -48,7 +48,7 @@
   height: 7px;
   border-radius: 999px;
   background: var(--glade);
-  box-shadow: 0 0 18px rgba(155, 232, 112, 0.58);
+  box-shadow: 0 0 18px rgba(181, 170, 250, 0.58);
   content: "";
 }
 
@@ -152,9 +152,9 @@
   display: inline-flex;
   min-height: 28px;
   align-items: center;
-  border: 1px solid rgba(155, 232, 112, 0.34);
+  border: 1px solid rgba(181, 170, 250, 0.34);
   border-radius: 999px;
-  background: rgba(155, 232, 112, 0.08);
+  background: rgba(181, 170, 250, 0.08);
   color: var(--glade);
   font-family: var(--vp-font-family-mono);
   font-size: 12px;
@@ -286,7 +286,7 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
   height: 42px;
   place-items: center;
   border-radius: 999px;
-  background: rgba(155, 232, 112, 0.14);
+  background: rgba(181, 170, 250, 0.14);
   color: var(--glade);
   font-size: 22px;
   font-weight: 900;
@@ -483,7 +483,7 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
   width: 30px;
   height: 30px;
   place-items: center;
-  border: 1px solid rgba(155, 232, 112, 0.42);
+  border: 1px solid rgba(181, 170, 250, 0.42);
   border-radius: 50%;
   color: var(--glade);
   content: counter(local-step);
@@ -1228,7 +1228,7 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
 .home-workflow-tab[data-active="true"] {
   border-color: var(--glade-action-bg);
   background:
-    linear-gradient(180deg, rgba(155,232,112,0.14), rgba(10,19,12,0.18));
+    linear-gradient(180deg, rgba(181,170,250,0.14), rgba(10,19,12,0.18));
   box-shadow: 0 12px 32px rgba(126, 255, 99, 0.08);
   color: var(--vp-c-text-1);
 }

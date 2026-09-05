@@ -1,3 +1,8 @@
+---
+pageType: reference
+canonicalTask: /help/troubleshooting
+---
+
 # Error codes
 
 Actionable diagnostics include stable codes. Use `glade explain <code>` for

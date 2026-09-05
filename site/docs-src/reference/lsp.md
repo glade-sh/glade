@@ -1,3 +1,8 @@
+---
+pageType: reference
+canonicalTask: /guide/editor
+---
+
 # LSP reference
 
 <div class="docs-intro">
@@ -5,7 +10,7 @@
   <p>Invoke Glade language services, enable the optional VS Code client, and use the project graph from terminal tooling.</p>
 </div>
 
-Verified against the stable Glade release shown in the site header.
+This reference describes the checked local implementation. The download release shown in the header does not establish protocol or Salesforce parity.
 
 ## Invocation
 

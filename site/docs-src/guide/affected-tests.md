@@ -1,10 +1,21 @@
-# Run Only Affected Tests
+---
+pageType: guide
+canonicalTask: /guide/affected-tests
+---
+
+# Run only affected tests
 
 Affected-test selection trims the test set by comparing local changes against a static Apex reference graph. It is designed for the inner loop: run the tests most likely to observe the files you changed.
 
 ```text
 Changed file -> Apex reference graph -> selected tests
 ```
+
+## Before you start
+
+Run from an initialized Salesforce DX project with Apex tests. Choose an
+existing comparison ref for git-based selection. Watch mode instead observes
+edits to the current project.
 
 ## Changed files from git
 

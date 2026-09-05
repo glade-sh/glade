@@ -1,3 +1,8 @@
+---
+pageType: guide
+canonicalTask: /guide/editor
+---
+
 # Use Glade in VS Code
 
 <div class="docs-intro">
@@ -7,6 +12,10 @@
 
 Glade uses the same parser, semantic checks, VM, storage, test runner, LSP, and
 DAP as the CLI. Glade actions stay local; Salesforce actions stay org-backed.
+
+The git examples assume `origin/main` is your intended base ref and is available
+locally. Substitute the correct existing ref for your repository before running
+changed-test or refactor commands.
 
 ## Before you start
 
@@ -31,15 +40,17 @@ glade editor install vscode --editor cursor --force
 glade editor install vscode --editor windsurf --force
 ```
 
-Expected: doctor checks the selected editor command and the bundled VSIX; it
-does not query the editor's installed-extension list. Confirm that
+Expected: installation prints `installed vscode extension`. The doctor command
+checks the selected editor command and the bundled VSIX; it does not query the
+editor's installed-extension list. Confirm that
 `code --list-extensions --show-versions` includes `glade.vscode-glade@` followed
 by its installed version. For Cursor or Windsurf, use that editor's CLI.
 
 The extension is distributed in the release archive at
 `share/glade/editor/vscode-glade.vsix`, not through a promised Marketplace or
 Open VSX listing. Installing the VSIX does not require a particular theme or
-a clean profile. Reload the editor after installation.
+a clean profile. Reload the editor after installation and confirm that
+`Glade: Open Home` works.
 
 ## 1. Confirm the workspace
 

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
-const home = await readFile(new URL("../docs-src/index.md", import.meta.url), "utf8");
+const home = await readFile(new URL("../.vitepress/theme/home/GladeHome.vue", import.meta.url), "utf8");
 const homeScript = await readFile(new URL("../docs-src/public/js/home.js", import.meta.url), "utf8");
 const quickstart = await readFile(new URL("../docs-src/guide/quickstart.md", import.meta.url), "utf8");
 const helpFirstLocalCheck = await readFile(new URL("../docs-src/help/first-local-check.md", import.meta.url), "utf8");
@@ -12,11 +12,10 @@ const repoInstallation = await readFile(new URL("../../docs/INSTALL.md", import.
 const repoSecurityTrust = await readFile(new URL("../../docs/SECURITY_TRUST.md", import.meta.url), "utf8");
 const securityPolicy = await readFile(new URL("../../SECURITY.md", import.meta.url), "utf8");
 
-test("homepage install copy preserves executable command line breaks", () => {
-  assert.match(
-    home,
-    /<code id="install-cmd"[^>]*>curl -fsSL https:\/\/glade\.sh\/install\.sh \| sh<br>glade version<\/code>/
-  );
+test('homepage install copy preserves executable command line breaks', () => {
+  assert.match(home, /INSTALL_COMMAND/);
+  assert.match(home, /navigator.clipboard.writeText\(INSTALL_COMMAND\)/);
+  assert.match(home, /installCommand/);
   assert.match(homeScript, /return target\.getAttribute\("data-copy-text"\) \|\| target\.textContent\.trim\(\)/);
 });
 

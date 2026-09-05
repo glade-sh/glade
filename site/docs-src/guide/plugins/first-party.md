@@ -1,3 +1,8 @@
+---
+pageType: guide
+canonicalTask: /guide/plugins/first-party
+---
+
 # First-party plugins
 
 First-party plugins ship heavier Glade workflows without adding them to the
@@ -14,6 +19,12 @@ The default public registry is `https://plugins.glade.sh/index.json`. It serves 
 `glade plugins available` for the current published versions. Direct archives
 and local links remain available for offline, private, and development use.
 :::
+
+## Before you start
+
+Confirm `glade version` works. Choose the plugin for the task: advisory scans,
+org-backed package capture, or contributor compatibility work. A base local
+Apex check does not require a plugin.
 
 ## Maintainer support tools
 
@@ -65,6 +76,9 @@ Commands:
 
 - `glade orgpackage capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet`
 - `glade package capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet`
+
+Use an explicitly authorized Salesforce org for capture. The aliases and
+namespace in the command examples must match that org and package.
 
 The orgpackage plugin owns live Salesforce org capture for package artifacts.
 The base `glade package capture` command is a bridge to that plugin when it is

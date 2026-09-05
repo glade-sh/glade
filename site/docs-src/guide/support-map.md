@@ -1,18 +1,23 @@
+---
+pageType: compatibility
+canonicalTask: /guide/support-map
+---
+
 # What Glade runs locally
 
 <script setup>
+import GladeSupportExplorer from '../../.vitepress/theme/GladeSupportExplorer.vue'
+import { editorSupportCatalog } from '../../.vitepress/theme/generated/editorSupport'
 import releaseManifest from '../../release-manifest.json'
 </script>
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Capabilities</p>
   <p>Use this page to see what Glade runs locally, what runs with named limits, and what still requires Salesforce or a plugin.</p>
-  <ul>
-    <li>Start with the status legend.</li>
-    <li>Check what requires Salesforce before an adoption review.</li>
-    <li>Use the checked Apex/runtime reports for method-level detail.</li>
-  </ul>
 </div>
+
+<GladeSupportExplorer />
+
 
 Start here when deciding whether Glade can run a project, a test class, or a
 local Salesforce API flow. Checked Apex/runtime reports carry the method-level
@@ -56,15 +61,19 @@ merely to avoid a version error. See the [quickstart version box](/guide/quickst
   </div>
 </div>
 
-“Runs locally with limits” is the user-facing capability state. Generated
-evidence catalogs may use narrower row-level classifications; their counts
-apply only to the named catalog.
+Execution, modeled behavior, and evidence answer different questions. A
+`supported` row can execute a deterministic local model without reproducing a
+hosted service. `partial` and `stub` remain separate raw statuses in the lookup;
+`unknown` means not measured. Counts apply only to the named catalog.
+
+For example, `Answers.findSimilar` returns a deterministic empty list locally.
+That is local execution, not hosted similarity search. Read the behavior note
+and source evidence before using a status in an adoption decision.
 
 `GLADERUNTIME001` marks a body that the Apex parser accepts but the local VM
 cannot lower. That body is compile-ready for `glade check`, but it receives no
 runtime-support credit and local test execution reports `UnsupportedFeature`.
 
-<GladeSupportExplorer />
 
 ## Release evidence and scope
 
@@ -188,7 +197,7 @@ UnsupportedFeature: unsupported call "Search.unavailable local search/SOSL surfa
 | Apex front end | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Parser, project loader, symbols, semantic checks, LSP, and diagnostics form the starting point. The checked compiler contract contains 400 language-rule rows. |
 | Runtime and tests | <span class="docs-status-chip docs-status-supported">Runs locally</span> | VM execution, local tests, SObjects, SOQL, DML, triggers, async drain, and local storage are the core contract. |
 | Local Salesforce API | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Useful for local REST, SObject CRUD/query, record count, Tooling `executeAnonymous`, and local source/schema metadata flows. It is not a hosted-org replacement. |
-| Standard library | <span class="docs-status-chip docs-status-limited">Runs locally with limits</span> | The checked standard-library report has 267 supported rows, 19 unsupported rows, and 0 partial rows. |
+| Standard library | <span class="docs-status-chip docs-status-limited">Runs locally with limits</span> | The checked standard-library report has {{ editorSupportCatalog.summary.supported }} supported rows, {{ editorSupportCatalog.summary.unsupported }} unsupported rows, and {{ editorSupportCatalog.summary.partial }} partial rows. |
 | Platform service APIs | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Deterministic DTO and harness rows are modeled when the capability report says supported. Hosted service execution stays explicitly unsupported. |
 
 ## Standard library families

@@ -1,0 +1,69 @@
+/* Reading density and VitePress component bridges. Home composition is separate. */
+.glade-docs { background: var(--glade-canvas); }
+.glade-docs .VPNavBar, .glade-docs .VPNavBar .content-body { background: var(--glade-canvas); }
+.glade-docs .VPSidebar { background: var(--glade-rail) !important; box-shadow: none; border-right: 1px solid var(--glade-border); }
+.glade-docs .VPNavBarTitle .logo { width: 32px; height: 32px; }
+.glade-docs .VPNavBarTitle .title { font-size: 21px !important; font-weight: 600; letter-spacing: -.8px; }
+.glade-docs .VPNavBarMenu { gap: 2px; }
+.glade-docs .VPNavBarMenuLink { font-size: 13px; font-weight: 500; padding-inline: 10px; }
+.glade-docs .VPNavBarMenuLink[href='/guide/installation'] { background: var(--glade-action); border-color: var(--glade-action); color: var(--glade-action-text); }
+.glade-docs .VPNavBarMenuLink[href='/guide/installation']:hover { background: var(--glade-action-hover); }
+.glade-docs .VPDoc.has-aside .content-container { max-width: 760px; }
+.glade-docs .VPDoc .aside { width: 192px; }
+.glade-docs .vp-doc h1 { font-size: 38px; line-height: 1.2; font-weight: 550; letter-spacing: -1.1px; }
+.glade-docs .vp-doc h2 { font-size: 26px; line-height: 1.3; font-weight: 550; letter-spacing: -.4px; border-top: 0; }
+.glade-docs .vp-doc h3 { font-size: 20px; line-height: 1.4; font-weight: 550; }
+.glade-docs .vp-doc p, .glade-docs .vp-doc li { font-size: 16px; line-height: 1.75; }
+.glade-docs .vp-doc code { color: var(--glade-link); background-color: var(--glade-active); }
+.glade-docs .vp-doc pre code { background: transparent; line-height: 1.75; font-size: 13px; }
+.glade-docs .vp-doc div[class*='language-'] { box-shadow: none; }
+.glade-docs .vp-doc table { display: block; width: 100%; overflow: auto; font-size: 14px; }
+.glade-docs .vp-doc th { background: var(--glade-rail); font-weight: 550; }
+.glade-docs .vp-doc tr { background: var(--glade-canvas); }
+.glade-docs .vp-doc tr:nth-child(2n) { background: var(--glade-surface); }
+.glade-docs .VPSidebarItem.is-active > .item > .link { background: var(--glade-active); border-color: var(--glade-link); font-weight: 550; }
+.glade-docs .VPSidebarItem.is-active > .item > .link .text { font-weight: 550; }
+.glade-docs :is(.docs-card, .docs-command-card, .docs-proof-card, .docs-workflow-card) { background: var(--glade-surface); box-shadow: none; border-radius: 10px; }
+.glade-docs :is(input, select) { border-color: var(--glade-control); }
+.glade-article-context { margin-bottom: 12px; }
+.glade-article-context nav { color: var(--glade-muted); font-size: 12px; line-height: 1.6; margin-bottom: 24px; overflow-wrap: anywhere; }
+.glade-article-context nav a { color: var(--glade-muted); }
+.glade-page-type { color: var(--glade-accent); font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; }
+.glade-docs .VPDocFooter { margin-top: 48px; }
+.glade-docs .VPFooter { display: block !important; background: var(--glade-rail); }
+@media (min-width: 960px) { .glade-docs .VPFooter.has-sidebar { padding-left: calc(var(--vp-sidebar-width) + 32px); } }
+@media (max-width: 1279px) { .glade-docs .VPDoc .aside { display: none; } }
+@media (max-width: 767px) {
+  .glade-docs .vp-doc h1 { font-size: 32px; letter-spacing: -.7px; }
+  .glade-docs .vp-doc h2 { font-size: 24px; }
+  .glade-article-context nav { margin-bottom: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+/* Keep the independent outline inside the viewport; default VitePress fixes its inner width. */
+.glade-docs .VPDoc .aside { flex-shrink: 0; padding-left: 24px; width: 192px; }
+.glade-docs .VPDoc .aside-container { width: 168px; }
+.glade-docs .VPDoc .aside .content { width: 168px; }
+.glade-docs .VPDoc > .container > .content { padding-inline: 24px; }
+.glade-docs .docs-intro { border: 0; border-bottom: 1px solid var(--glade-border); padding: 0 0 24px; border-radius: 0; background: transparent; box-shadow: none; }
+.glade-docs .docs-intro-eyebrow { display: none; }
+.glade-docs .vp-doc h2 { margin-top: 40px; }
+/* GitHub light syntax roles need stronger colors on the tinted code canvas. */
+html:not(.dark) .vp-doc .shiki span[style*="--shiki-light:#D73A49"] { --shiki-light: var(--glade-keyword) !important; }
+html:not(.dark) .vp-doc .shiki span[style*="--shiki-light:#E36209"] { --shiki-light: var(--glade-number) !important; }
+html:not(.dark) .vp-doc .shiki span[style*="--shiki-light:#22863A"] { --shiki-light: var(--glade-string) !important; }
+
+/* Outline links are discrete controls, so give each a full pointer target. */
+.glade-docs .VPDocAsideOutline .outline-link { min-height: 28px; padding-block: 4px; white-space: normal; overflow-wrap: anywhere; }
+
+/* Keep command lookup close to the task and long match sets keyboard-scrollable. */
+.glade-docs .docs-command-lookup { display: grid; gap: 8px; margin: 24px 0; }
+.glade-docs .docs-command-lookup label { font-size: 14px; font-weight: 600; }
+.glade-docs .docs-command-lookup input { width: 100%; min-width: 0; min-height: 44px; padding: 8px 12px; border: 1px solid var(--glade-control); border-radius: 8px; background: var(--glade-surface); color: var(--glade-text); font: inherit; }
+.glade-docs .docs-command-lookup :is(input, ul):focus-visible { outline: 2px solid var(--glade-link); outline-offset: 3px; }
+.glade-docs [data-command-lookup-status] { margin: 0; color: var(--glade-muted); font-size: 13px; line-height: 1.5; }
+.glade-docs .docs-command-lookup-results { max-height: 28rem; overflow-y: auto; overscroll-behavior: contain; margin: 4px 0 0; padding: 0 12px; border: 1px solid var(--glade-border); border-radius: 8px; list-style: none; }
+.glade-docs .docs-command-lookup-results[hidden] { display: none; }
+.glade-docs .docs-command-lookup-results li { padding: 12px 0; margin: 0; border-bottom: 1px solid var(--glade-border); }
+.glade-docs .docs-command-lookup-results li:last-child { border-bottom: 0; }
+.glade-docs .docs-command-lookup-results a { display: inline-block; padding-block: 3px; font-weight: 550; }
+.glade-docs .docs-command-lookup-results p { margin: 4px 0 0; color: var(--glade-muted); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }

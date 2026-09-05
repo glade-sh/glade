@@ -32,7 +32,7 @@ const descriptions: Record<string, string> = {
   'guide/support-map.md': 'Check which Glade Apex, data, API, LWC, and Visualforce paths run locally or still require Salesforce.',
   'guide/security-trust.md': 'Verify Glade releases and understand local plugin execution, security boundaries, and trust evidence.',
   'reference/cli.md': 'Look up Glade command behavior, flags, output formats, configuration, and local Salesforce compatibility.',
-  'help/index.md': 'Pick a Glade task guide for a local check, Apex test, VS Code debugging, local data, or CI setup.',
+  'help/index.md': 'Diagnose a Glade project, test, editor, data or CI problem and follow a safe recovery path.',
   'help/troubleshooting.md': 'Recover from common Glade project, doctor, test, VS Code, local target, and plugin setup problems.'
 }
 
@@ -69,6 +69,8 @@ export default defineConfig({
   outDir: '.vitepress/dist',
   cleanUrls: true,
   appearance: true,
+  // Keep reference catalogs and demo code off unrelated reading routes.
+  router: { prefetchLinks: false },
   sitemap: {
     hostname: 'https://glade.sh',
     transformItems: (items) => items.filter((item) => !noindexRoutes.has(new URL(item.url, 'https://glade.sh').pathname))
@@ -114,8 +116,8 @@ export default defineConfig({
     }
   },
   head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo-mark.svg' }],
-    ['meta', { name: 'theme-color', content: '#060a0d' }],
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo-mark-topo.svg' }],
+    ['meta', { name: 'theme-color', content: '#0b1119' }],
     ['meta', { property: 'og:site_name', content: 'Glade' }],
     ['meta', { property: 'og:image', content: 'https://glade.sh/social-card.png' }],
     ['meta', { property: 'og:image:secure_url', content: 'https://glade.sh/social-card.png' }],
@@ -129,14 +131,15 @@ export default defineConfig({
     ['meta', { name: 'glade:commit', content: buildCommit }]
   ],
   themeConfig: {
-    siteTitle: 'Glade',
-    logo: '/logo-mark.svg',
+    siteTitle: 'glade.sh',
+    logo: { light: '/logo-mark-topo-light.svg', dark: '/logo-mark-topo.svg' },
     search: { provider: 'local' },
     nav: [
-      { text: 'Docs', link: '/guide/' },
-      { text: 'Workflows', link: '/guide/workflows' },
-      { text: 'Reference', link: '/reference/cli' },
-      { text: 'Support', link: '/help/' },
+      { text: 'Docs', link: '/guide/', activeMatch: '^/guide/(?!workflows(?:/|$)|support-map$|workbench$|installation$)' },
+      { text: 'Guides', link: '/guide/workflows', activeMatch: '^/guide/workflows(?:/|$)' },
+      { text: 'Reference', link: '/reference/cli', activeMatch: '^/reference/' },
+      { text: 'Compatibility', link: '/guide/support-map', activeMatch: '^/guide/(?:support-map|workbench)$' },
+      { text: 'Help', link: '/help/', activeMatch: '^/help/' },
       { text: 'Install', link: '/guide/installation' }
     ],
     sidebar: {
@@ -153,12 +156,12 @@ export default defineConfig({
         ]
       },
       {
-        text: 'Workflows',
+        text: 'Guides',
         collapsed: true,
         items: [
           { text: 'Run Apex tests', link: '/guide/workflows/apex-tests' },
           { text: 'Debug Apex', link: '/guide/workflows/debug-apex' },
-          { text: 'Run anonymous Apex and SOQL', link: '/help/anonymous-apex-scratch' },
+          { text: 'Execute anonymous Apex and SOQL', link: '/guide/playground' },
           { text: 'Work with local data', link: '/guide/workflows/local-data' },
           { text: 'Preview LWC', link: '/guide/workflows/lwc-preview' },
           { text: 'Preview Visualforce', link: '/guide/workflows/visualforce-preview' },
@@ -171,7 +174,7 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: 'Architecture and capabilities', link: '/guide/modules' },
-          { text: 'Local Playground', link: '/guide/playground' }
+          { text: 'Capability explorer', link: '/guide/workbench' }
         ]
       },
       {
@@ -224,9 +227,16 @@ export default defineConfig({
       ],
       '/help/': [
       {
-        text: 'Task guides',
+        text: 'Help',
         items: [
-          { text: 'Task guide overview', link: '/help/' },
+          { text: 'Help home', link: '/help/' },
+          { text: 'Fix a problem', link: '/help/troubleshooting' }
+        ]
+      },
+      {
+        text: 'Illustrated walkthroughs',
+        collapsed: true,
+        items: [
           { text: 'First local check', link: '/help/first-local-check' },
           { text: 'Run one Apex test', link: '/help/run-one-apex-test' },
           { text: 'Debug with breakpoints', link: '/help/debug-apex-vscode' },
@@ -237,19 +247,13 @@ export default defineConfig({
           { text: 'Profile a debug log', link: '/help/profile-apex-debug-log' },
           { text: 'CI setup', link: '/help/ci-setup' }
         ]
-      },
-      {
-        text: 'Troubleshooting',
-        items: [
-          { text: 'Fix a problem', link: '/help/troubleshooting' }
-        ]
       }
       ],
       '/maintainer/': [
       {
-        text: 'Maintainer',
+        text: 'Contributors',
         items: [
-          { text: 'Maintainer home', link: '/maintainer/' },
+          { text: 'Contributors home', link: '/maintainer/' },
           { text: 'Extend runtime support', link: '/maintainer/extend-runtime' },
           { text: 'Release runbook', link: '/maintainer/release' },
           { text: 'Develop the VS Code extension', link: '/maintainer/editor-extension' },
@@ -263,7 +267,7 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/glade-sh/glade' }
     ],
     footer: {
-      message: 'Glade is an independent project and is not affiliated with, sponsored by, or endorsed by Salesforce. Salesforce and Apex are trademarks of Salesforce, Inc. · <a href="/maintainer/">Maintainer</a> · <a href="/guide/security-trust">Security</a> · <a href="https://github.com/glade-sh/glade/releases">Releases</a> · <a href="https://github.com/glade-sh/glade/blob/main/LICENSE">Apache-2.0</a>',
+      message: 'Glade is an independent project and is not affiliated with, sponsored by, or endorsed by Salesforce. Salesforce and Apex are trademarks of Salesforce, Inc. · <a href="/maintainer/">Contributors</a> · <a href="/guide/security-trust">Security</a> · <a href="https://github.com/glade-sh/glade/releases">Releases</a> · <a href="https://github.com/glade-sh/glade/blob/main/LICENSE">Apache-2.0</a>',
       copyright: 'Copyright 2026 Matt Simonis.'
     }
   }

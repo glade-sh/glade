@@ -1,14 +1,22 @@
+---
+pageType: guide
+canonicalTask: /guide/quickstart
+---
+
 # Run the first local check
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Task guide</p>
-  <p>Initialize a Salesforce DX project, prove the local environment, and run the first local check from a terminal.</p>
+  <p>Initialize Glade configuration in a Salesforce DX project, prove the local environment, and run the first local check from a terminal.</p>
   <ul>
-    <li>Initialize a Salesforce DX project.</li>
+    <li>Initialize Glade configuration in a Salesforce DX project.</li>
     <li>Run `glade doctor --project .`.</li>
     <li>Read the first `glade check` result.</li>
   </ul>
 </div>
+
+For the main task path, use [the guide](/guide/quickstart). This walkthrough keeps the
+illustrated steps and recovery details for this interface.
 
 ## Before you start
 

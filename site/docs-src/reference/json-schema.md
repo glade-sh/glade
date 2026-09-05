@@ -1,4 +1,9 @@
-# JSON Envelope Reference
+---
+pageType: reference
+canonicalTask: /guide/automation
+---
+
+# JSON envelope reference
 
 Priority commands write a versioned JSON envelope.
 

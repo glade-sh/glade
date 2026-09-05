@@ -1,4 +1,9 @@
-# Use the Local Playground
+---
+pageType: guide
+canonicalTask: /guide/playground
+---
+
+# Use the local Playground
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Playground</p>
@@ -11,6 +16,17 @@
 </div>
 
 `glade playground` starts a local browser workbench for Apex snippets, SOQL, DML, logs, limits, traces, and local org diffs. It runs from your machine and can use built-in examples, a scratch workspace, or a Salesforce DX project.
+
+This is the actual locally hosted runtime. The website's
+[capability explorer and replay](/guide/workbench) do not execute visitor Apex.
+Memory-only org state does not mean a process sandbox: local workspace files
+and explicitly chosen workflow integrations have their own boundaries.
+
+## Before you start
+
+Confirm `glade version` works. Built-in examples create a managed scratch
+workspace; no existing Salesforce DX project is needed. Choose `--project`
+only when you intend to use a project already on disk.
 
 ## Read the surface
 

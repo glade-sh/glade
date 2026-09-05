@@ -1,7 +1,22 @@
-# Enterprise Workflows
+---
+pageType: guide
+canonicalTask: /guide/enterprise-workflows
+---
+
+# Enterprise workflows
 
 Use these commands when a large Apex project needs a map before it needs edits.
 The reports use local evidence. They do not claim exact Salesforce behavior.
+
+The git examples assume `origin/main` is your intended base ref and is available
+locally. Substitute the correct existing ref for your repository before running
+changed-test or refactor commands.
+
+## Before you start
+
+Run from the Salesforce DX project you want to assess. Confirm project
+discovery with `glade doctor --project .`, and create the report directory
+shown by each command before writing its artifact.
 
 ## Assessment
 

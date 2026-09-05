@@ -1,4 +1,9 @@
-# Set Up a Glade Org and Import Data With sf
+---
+pageType: guide
+canonicalTask: /guide/glade-orgs
+---
+
+# Set up a Glade org and import data with sf
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Task guide</p>
@@ -9,6 +14,9 @@
     <li>Import tree data and query it back.</li>
   </ul>
 </div>
+
+For the main task path, use [the guide](/guide/glade-orgs). This walkthrough keeps the
+illustrated steps and recovery details for this interface.
 
 ## Before you start
 

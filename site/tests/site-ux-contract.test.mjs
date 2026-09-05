@@ -4,7 +4,8 @@ import { test } from 'node:test'
 
 const config = await readFile(new URL('../.vitepress/config.ts', import.meta.url), 'utf8')
 const routes = JSON.parse(await readFile(new URL('../routes.json', import.meta.url), 'utf8'))
-const home = await readFile(new URL('../docs-src/index.md', import.meta.url), 'utf8')
+const home = await readFile(new URL('../.vitepress/theme/home/GladeHome.vue', import.meta.url), 'utf8')
+const homepageSource = await readFile(new URL('../docs-src/index.md', import.meta.url), 'utf8')
 const guide = await readFile(new URL('../docs-src/guide/index.md', import.meta.url), 'utf8')
 const redirects = await readFile(new URL('../docs-src/public/_redirects', import.meta.url), 'utf8')
 const ciWorkflow = await readFile(new URL('../../.github/workflows/ci.yml', import.meta.url), 'utf8')
@@ -15,22 +16,21 @@ const performanceBaseline = JSON.parse(await readFile(new URL('./performance-bas
 
 test('public IA has a guide landing, five-destination navigation, and scoped sidebars', () => {
   assert.match(guide, /^# Glade documentation/m)
-  for (const label of ['Docs', 'Install', 'Workflows', 'Reference', 'Support']) assert.match(config, new RegExp(`text: '${label}'`))
-  assert.match(config, /\{ text: 'Support', link: '\/help\/' \}/)
+  for (const label of ['Docs', 'Install', 'Guides', 'Reference', 'Help']) assert.match(config, new RegExp(`text: '${label}'`))
+  assert.match(config, /\{ text: 'Help', link: '\/help\/', activeMatch: '[^']+' \}/)
   assert.match(config, /\{ text: 'Documentation home', link: '\/guide\/' \}/)
   for (const prefix of ['/guide/', '/reference/', '/help/', '/maintainer/']) assert.match(config, new RegExp(`'${prefix}': \\[`))
   assert.doesNotMatch(config, /text: 'Product areas'/)
   assert.match(redirects, /\/guide\/cli-reference \/reference\/cli 301/)
 })
 
-test('homepage has the four-band local-first message and release trust links', () => {
-  assert.match(home, /Apex feedback without the deploy wait\./)
-  assert.match(home, /Move from project to proof in three steps\./)
-  assert.match(home, /Run local Apex tests from VS Code\./)
-  assert.match(home, /Know the boundary before you rely on a result\./)
-  assert.match(home, /Checksums, SBOM, and attestations/)
-  assert.doesNotMatch(home, /home-data-section|home-plugin-section/)
-})
+test('homepage preserves approved composition and honest release trust links', () => {
+  for (const section of ['features', 'workflow', 'extend', 'get-started']) assert.ok(home.includes(`id="${section}"`));
+  assert.match(home, /Run Apex locally/);
+  assert.match(home, /Keep your[\s\S]*momentum/);
+  assert.match(home, /simulated output/);
+  assert.match(home, /Checksums, SBOM, and attestations/);
+});
 
 test('homepage trust links target a checked built fragment', () => {
   assert.match(home, /\/guide\/security-trust#release-proof/)
@@ -48,7 +48,7 @@ test('routes classify every published page and metadata is generated per route',
 })
 
 test('homepage metadata names the local Apex runtime without losing its social card', () => {
-  assert.match(home, /^title: Glade — Local Apex Runtime for Salesforce Developers$/m)
+  assert.match(homepageSource, /^title: Glade — Local Apex Runtime for Salesforce Developers$/m)
   assert.match(config, /route === '\/' \? 'Glade — Local Apex Runtime for Salesforce Developers'/)
   assert.match(config, /property: 'og:image'/)
   assert.match(config, /social-card\.png/)

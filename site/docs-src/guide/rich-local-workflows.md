@@ -1,7 +1,16 @@
+---
+pageType: reference
+canonicalTask: /guide/rich-local-workflows
+---
+
 # Reports and package artifacts
 
 These commands keep local work visible while it runs and easy to repeat after it
 finishes.
+
+The git examples assume `origin/main` is your intended base ref and is available
+locally. Substitute the correct existing ref for your repository before running
+changed-test or refactor commands.
 
 ## Progress
 
@@ -61,7 +70,9 @@ glade db import sf --target-org devhub --db .glade/org.sqlite --project . --obje
 glade db import sf --target-org devhub --list-objects --category custom --json
 ```
 
-Omit `--target-org` to use the Salesforce CLI default target org. Generated
+Always confirm the intended org before import. Omitting `--target-org` uses
+the Salesforce CLI default target org; use an explicit authorized alias for
+repeatable workflows. Generated
 object imports default to 25 rows. Use `--query` instead of `--object` when you
 need a hand-written SOQL cut.
 

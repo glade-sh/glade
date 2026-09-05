@@ -1,3 +1,8 @@
+---
+pageType: guide
+canonicalTask: /guide/installation
+---
+
 # Installation
 
 <script setup>
@@ -9,7 +14,12 @@ import releaseManifest from '../../release-manifest.json'
   <p>Install the stable Glade binary on macOS or Linux, verify its version, then continue inside a Salesforce DX project.</p>
 </div>
 
-Verified stable release: **{{ releaseManifest.version }}**
+Stable download release: **{{ releaseManifest.version }}**
+
+## Before you start
+
+Use a terminal on one of the supported OS and CPU pairs below. Installation
+does not require a Salesforce DX project or a Salesforce login.
 
 ## Supported release archives
 

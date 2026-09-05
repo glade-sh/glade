@@ -1,8 +1,19 @@
+---
+pageType: guide
+canonicalTask: /guide/glade-orgs
+---
+
 # Use Glade as an sf target
 
 `glade org` creates a local Salesforce-style target for tools that speak to
 `sf`. It is a local Glade server and SQLite database. It is not a real scratch
 org, and Salesforce remains the validation gate.
+
+## Before you start
+
+Use a Salesforce DX project for source and schema. Install the Salesforce CLI
+only for the sf integration steps. Choose a new local target alias; creating
+a Glade target does not provision a Salesforce org.
 
 ## Create a local org
 

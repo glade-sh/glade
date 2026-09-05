@@ -1,8 +1,20 @@
+---
+pageType: guide
+canonicalTask: /guide/ai-assisted-apex
+---
+
 # AI-assisted Apex with Glade
 
 Use this prompt for any Apex feature, bug fix, or refactor. It makes the AI
 agent work from the same local loop a developer would use: establish test
 evidence, make the smallest source change, and rerun the same command.
+
+## Before you start
+
+Use an initialized Salesforce DX project and confirm the
+[first local check](/guide/quickstart). Review your assistant provider's source
+sharing and execution settings separately; using Glade does not change them.
+The prompt keeps org-backed validation explicit and preserves existing changes.
 
 ## Where to put it
 

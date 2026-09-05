@@ -1,4 +1,9 @@
-# Debug Apex in VS Code With Breakpoints
+---
+pageType: guide
+canonicalTask: /guide/workflows/debug-apex
+---
+
+# Debug Apex in VS Code with breakpoints
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Task guide</p>
@@ -10,10 +15,18 @@
   </ul>
 </div>
 
+For the main task path, use [the guide](/guide/workflows/debug-apex). This walkthrough keeps the
+illustrated steps and recovery details for this interface.
+
 ## Before you start
 
-- The bundled Glade VS Code extension is installed. Keep your existing theme and profile.
+- The [bundled Glade extension](/guide/editor) is installed in VS Code. Keep your existing theme and profile.
 - A local data environment is selected.
+
+The screenshots use a clean VS Code profile with Glade, Catppuccin Mocha,
+and the Salesforce Apex extension, with unrelated extensions omitted for
+capture. That records the illustrated environment; your normal profile and
+theme can be used for this task.
 
 ## Steps
 

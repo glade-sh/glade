@@ -1,3 +1,8 @@
+---
+pageType: guide
+canonicalTask: /guide/examples
+---
+
 # Built-in examples
 
 Use `glade examples` to find local playground examples without opening the website.
@@ -19,7 +24,7 @@ Useful first examples:
 
 | ID | Use it for |
 | --- | --- |
-| `refinement-service` | Classes, SOQL, DML, and tests |
+| `refinement-service` | Classes, SOQL, and DML |
 | `deal-desk-discount-guard` | Trigger and limit behavior |
 | `limit-counter-drill` | Governor limit counters |
 | `org-diff-review-loop` | Local state diffs after DML |

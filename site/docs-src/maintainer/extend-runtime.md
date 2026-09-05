@@ -1,4 +1,9 @@
-# Extend Runtime Support
+---
+pageType: contributor
+canonicalTask: /maintainer/extend-runtime
+---
+
+# Extend runtime support
 
 Start with a small failing proof. Write the failing fixture or product test first.
 Then patch the runtime.

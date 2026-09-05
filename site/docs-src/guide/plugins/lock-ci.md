@@ -1,3 +1,8 @@
+---
+pageType: guide
+canonicalTask: /guide/plugins/lock-ci
+---
+
 # Plugin lock files and CI
 
 `glade plugins lock` records exact plugin state for repeatable CI runs.
@@ -16,6 +21,12 @@ glade plugins install @glade/orgpackage
 glade plugins lock
 glade plugins restore
 ```
+
+## Before you start
+
+Install the reviewed plugin set before writing a lock file. Commit that lock
+file for CI, and restore on a compatible OS and architecture. Linked local
+executables are not portable CI inputs.
 
 ## Lock file
 

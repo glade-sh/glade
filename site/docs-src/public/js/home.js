@@ -5,6 +5,7 @@
   var activeOutputView = "output"
   var runTimers = []
   var copyTimer = 0
+  var transientTimers = []
   var copyControlsInitialized = false
   var homeControlsInitialized = false
   var workbenchHashListenerInitialized = false
@@ -580,7 +581,18 @@
   }
 
   function initWorkbenchDemo() {
-    if (!document.querySelector("[data-scenario-workbench]")) return
+    if (!document.querySelector("[data-scenario-workbench]")) {
+      clearRunTimers()
+      transientTimers.forEach(function (timer) { window.clearTimeout(timer) })
+      transientTimers = []
+      if (copyTimer) window.clearTimeout(copyTimer)
+      copyTimer = 0
+      if (workbenchHashListenerInitialized) {
+        window.removeEventListener("hashchange", setScenarioFromHash)
+        workbenchHashListenerInitialized = false
+      }
+      return
+    }
     initHomeControls()
     setScenarioFromHash()
     if (!workbenchHashListenerInitialized) {
@@ -619,7 +631,7 @@
           e.preventDefault()
           workbench.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" })
           window.history.replaceState(null, "", "#local-apex-workbench")
-          window.setTimeout(focusWorkbenchRunButton, prefersReducedMotion() ? 0 : 180)
+          transientTimers.push(window.setTimeout(focusWorkbenchRunButton, prefersReducedMotion() ? 0 : 180))
         }
         return
       }
@@ -684,11 +696,12 @@
     var copyLabel = copyButton.getAttribute("data-copy-label") || copyButton.textContent
     copyButton.setAttribute("data-copy-label", copyLabel)
     copyText(text, function (success) {
+      if (!copyButton.isConnected) return
       copyButton.textContent = success ? "Copied" : "Copy failed"
       setCopyStatus(success ? copyLabel + " copied to clipboard" : "Copy failed")
-      window.setTimeout(function () {
+      transientTimers.push(window.setTimeout(function () {
         copyButton.textContent = copyLabel
-      }, 1400)
+      }, 1400))
     })
   }
 
@@ -796,9 +809,9 @@
     setText("[data-command-strip]", scenario.command)
     setText("[data-ci-command-strip]", scenario.ciCommand || scenario.command)
     setText("[data-support-status]", scenario.supportStatus)
-    setText("[data-run-scenario]", scenario.actionLabel)
+    setText("[data-run-scenario]", "Replay scenario")
     setText("[data-result-summary]", scenario.resultSummary)
-    setText("[data-proof-title]", scenario.proofTitle)
+    setText("[data-proof-title]", "Illustrative result")
 
     var runButton = document.querySelector("[data-run-scenario]")
     if (runButton) {
@@ -889,7 +902,7 @@
     updateOutputTabs()
     setStatus("running")
     setText("[data-result-summary]", scenario.runningSummary)
-    setText("[data-proof-title]", "Running locally")
+    setText("[data-proof-title]", "Replaying example")
     setCommandOutput(scenario.runningOutput, "output")
     renderMetrics(scenario.runningMetrics)
     renderChangedSummary(scenario.runningSummaryItems)
@@ -925,7 +938,7 @@
   function finishRun(scenario, runButton) {
     setStatus(scenario.resultStatus)
     setText("[data-result-summary]", scenario.resultSummary)
-    setText("[data-proof-title]", scenario.proofTitle)
+    setText("[data-proof-title]", "Illustrative result")
     renderMetrics(scenario.resultMetrics)
     renderChangedSummary(scenario.changedSummary)
     renderOutputView(scenario)

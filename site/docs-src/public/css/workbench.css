@@ -1,64 +1,4 @@
-.glade-cm-workbench,
-.home-workbench {
-  --surface: #10191e;
-  --surface-raised: #14232a;
-  --surface-active: #1b2f38;
-  --surface-inset: #081014;
-  --terminal: #05090b;
-  --line: #26363d;
-  --line-strong: #38505a;
-  --text: #f3f7f5;
-  --text-muted: #a9b8ad;
-  --text-subtle: #7f9187;
-  --text-inverse: #061009;
-  --success-text: #dfffd1;
-  --danger-text: #ffd8d5;
-  --warning-text: #ffe7a6;
-  --glade: #9be870;
-  --glade-strong: #b7ff8a;
-  --glade-muted: rgba(155, 232, 112, 0.14);
-  --glade-line: rgba(155, 232, 112, 0.42);
-  --success: #9be870;
-  --warning: #f5c95f;
-  --danger: #ff6b61;
-  --info: #7db7ff;
-  --vp-c-text-1: var(--text);
-  --vp-c-text-2: var(--text-muted);
-  --vp-c-text-3: var(--text-subtle);
-  --vp-c-brand-1: var(--glade);
-  --vp-c-brand-2: var(--glade-strong);
-  --glade-accent: var(--glade);
-  --glade-moss: var(--glade);
-  --glade-lichen: var(--glade-strong);
-  --glade-border: var(--line);
-  --glade-border-strong: var(--line-strong);
-  --glade-surface: rgba(16, 25, 30, 0.92);
-  --glade-surface-solid: var(--surface);
-  --glade-surface-soft: rgba(255, 255, 255, 0.04);
-  --glade-code-bg: var(--terminal);
-  --glade-code-header: var(--surface-inset);
-  --glade-code-border: var(--line);
-  --glade-code-text: var(--text);
-  --glade-code-muted: var(--text-muted);
-  --glade-code-line: #70858e;
-  --glade-command-bg: var(--terminal);
-  --glade-command-text: var(--text);
-  --glade-command-muted: var(--text-muted);
-  --glade-state-supported: var(--success);
-  --glade-state-partial: var(--warning);
-  --glade-state-failed: var(--danger);
-  --glade-state-info: var(--info);
-  --glade-action-bg: var(--glade);
-  --glade-action-text: var(--text-inverse);
-  --glade-home-surface: var(--surface);
-  --glade-home-surface-soft: #0b1215;
-  --glade-home-panel: var(--surface-raised);
-  --glade-home-border: var(--line);
-}
-
-.glade-cm-editor .cm-gutters {
-  color: #7f9187;
-}
+/* Workbench layout inherits the shared Glade light/dark semantic tokens. */
 /* --- command palette --- */
 
 
@@ -130,7 +70,7 @@
 }
 
 .vp-doc .glade-cm-support code {
-  border: 1px solid rgba(155,232,112,0.24);
+  border: 1px solid var(--glade-control);
   border-radius: 6px;
   background: color-mix(in srgb, var(--warning) 10%, var(--surface-inset));
   color: var(--warning-text);
@@ -260,4 +200,36 @@
   .glade-cm-editor .cm-scroller {
     min-height: 360px;
   }
+}
+
+/* Replay panels share the reading theme, including inactive controls. */
+.workbench-page .home-workflow-tab,
+.workbench-page .home-output-tabs,
+.workbench-page .home-output-tab,
+.workbench-page .home-command-panel,
+.workbench-page .home-result-panel,
+.workbench-page .home-source-panel,
+.workbench-page .home-changed-panel {
+  background: var(--glade-surface);
+}
+.workbench-page .home-workflow-tab:is(:hover, :focus-visible) {
+  background: var(--glade-elevated);
+}
+.workbench-page .home-workflow-tab:is(.active, [data-active="true"]) {
+  background: var(--glade-active);
+  box-shadow: none;
+}
+.workbench-page .home-workbench .home-panel-top {
+  background: var(--glade-rail);
+}
+.workbench-page .home-output-tab.active {
+  background: var(--glade-action);
+  color: var(--glade-action-text);
+}
+.workbench-page .home-command-strip code {
+  background: var(--glade-code);
+  color: var(--glade-text);
+}
+.workbench-page .home-workflow-tab .home-selected-indicator {
+  color: var(--glade-link);
 }

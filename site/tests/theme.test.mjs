@@ -9,7 +9,7 @@ const homeCss = await readFile(new URL("../docs-src/public/css/home.css", import
 const workbenchCss = await readFile(new URL("../docs-src/public/css/workbench.css", import.meta.url), "utf8");
 const css = [baseCss, homeCss, workbenchCss].join("\n");
 const tokensCss = await readFile(new URL("../.vitepress/theme/styles/tokens.css", import.meta.url), "utf8");
-const index = await readFile(new URL("../docs-src/index.md", import.meta.url), "utf8");
+const index = await readFile(new URL("../.vitepress/theme/home/GladeHome.vue", import.meta.url), "utf8");
 const releaseManifest = JSON.parse(await readFile(new URL("../release-manifest.json", import.meta.url), "utf8"));
 const theme = await readFile(new URL("../.vitepress/theme/index.ts", import.meta.url), "utf8");
 const docsEnhancer = await readFile(new URL("../.vitepress/theme/DocsEnhancer.vue", import.meta.url), "utf8");
@@ -160,7 +160,7 @@ const siteCopy = [
 
 test("home page uses the checked stable release manifest", () => {
   assert.match(releaseManifest.version, /^v\d+\.\d+\.\d+$/);
-  assert.match(index, /import releaseManifest from '\.\.\/release-manifest\.json'/);
+  assert.match(index, /import releaseManifest from '(?:\.\.\/)+release-manifest\.json'/);
   assert.match(index, /class="home-release-version"/);
   assert.match(index, /releaseManifest\.version/);
   assert.doesNotMatch(index, /releases\/tag\/v\d+\.\d+\.\d+/);
@@ -449,18 +449,18 @@ test("repo compatibility CLI surface matches contributor guide inventory", () =>
   assert.deepEqual(commandsFromCompatibility, commandsFromGuide);
 });
 
-test("theme defines complete light and dark color tokens", () => {
-  assert.match(tokensCss, /html:not\(\.dark\)\s*\{[\s\S]*--bg:/);
-  assert.match(css, /\.dark\s*\{[\s\S]*--vp-c-bg:/);
-  assert.match(tokensCss + css, /--glade-bg-grid-line:/);
-  assert.match(css, /--glade-code-bg:/);
-  assert.match(tokensCss + css, /--glade-nav-bg:/);
+test('theme defines complete light and dark color tokens', () => {
+  for (const role of ['canvas','rail','surface','control','text','muted','link','action','focus','success','warning','error','code']) {
+    assert.equal((tokensCss.match(new RegExp(`--glade-${role}: #`, 'g')) || []).length, 2, `${role} has both themes`);
+  }
+  assert.match(tokensCss, /html.dark, \.glade-home/);
+  assert.match(tokensCss, /--glade-code-bg: var\(--glade-code\)/);
 });
 
 test("site exposes system, light, and dark appearance selection", () => {
   assert.match(config, /appearance: true/);
   assert.doesNotMatch(config, /force-dark/);
-  assert.match(tokensCss, /html:not\(\.dark\)/);
+  assert.match(tokensCss, /:root/);
 });
 
 test("social share metadata exposes a raster preview card and route identity", () => {
@@ -491,9 +491,9 @@ test("vite config keeps dev and preview tunnel output clean and route-scopes scr
   assert.match(config, /server:\s*\{[\s\S]*allowedHosts: tunnelAllowedHosts/);
   assert.match(config, /preview:\s*\{[\s\S]*allowedHosts: tunnelAllowedHosts/);
   assert.doesNotMatch(config, /src: '\/js\/home\.js'/);
-  assert.match(docsEnhancer, /loadScript\('\/js\/highlight\.js'\)/);
-  assert.match(docsEnhancer, /route\.path === '\/' \|\| route\.path === '\/guide\/workbench'/);
-  assert.match(docsEnhancer, /loadScript\('\/js\/home\.js'\)/);
+  assert.match(docsEnhancer, /loadScript\(withBase\('\/js\/highlight\.js'\)\)/);
+  assert.match(docsEnhancer, /route\.path === withBase\('\/guide\/workbench'\)/);
+  assert.match(docsEnhancer, /loadScript\(withBase\('\/js\/home\.js'\)\)/);
   assert.match(config, /rollupOptions:\s*\{[\s\S]*onwarn\(warning, warn\)/);
   assert.match(config, /warning\.code === 'INVALID_ANNOTATION'/);
   assert.match(config, /@vueuse\/core/);
@@ -508,37 +508,29 @@ test("home page keeps marketing icons out of the first proof", () => {
   assert.deepEqual(numericEntities.filter((entity) => entity !== "&#10;"), []);
 });
 
-test("homepage has four task-oriented bands and one explicit Salesforce boundary", () => {
-  assert.equal((index.match(/<h1>/g) || []).length, 1);
-  assert.match(index, /<h1>Apex feedback without the deploy wait\.<\/h1>/);
-  assert.match(index, /Local Apex runtime/);
-  assert.match(index, /without an org login/);
-  assert.match(index, /href="\/guide\/installation"[^>]*>Install Glade<\/a>/);
-  assert.match(index, /href="\/guide\/quickstart"[^>]*>Run your first local check<\/a>/);
-  assert.match(index, /Example local output/);
-  assert.match(index, /aria-label="Three step local loop"/);
-  assert.match(index, /aria-label="Glade in VS Code"/);
-  assert.match(index, /aria-label="What runs locally"/);
-  assert.match(index, /Know the boundary before you rely on a result\./);
-  assert.match(index, /Supported paths run locally\. Use Salesforce for hosted services, deployment, and final production validation\./);
-  assert.equal((index.match(/class="home-capability-row"/g) || []).length, 3);
+test('homepage preserves approved sections and Salesforce boundary', () => {
+  assert.equal((index.match(/<h1(?: [^>]*)?>/g) || []).length, 1);
+  assert.match(index, /Run Apex locally/);
+  assert.match(index, /Keep your[\s\S]*momentum/);
+  for (const section of ['features', 'workflow', 'extend', 'get-started']) assert.ok(index.includes(`id="${section}"`));
+  assert.match(index, /simulated output/);
+  assert.match(index, /Salesforce/);
   assert.match(index, /Checksums, SBOM, and attestations/);
-  assert.match(index, /data-copy-text="curl -fsSL https:\/\/glade\.sh\/install\.sh \| sh&#10;glade version/);
-  assert.doesNotMatch(index, /home-data-section|home-plugin-section|data-scenario-workbench/);
+  assert.match(index, /INSTALL_COMMAND/);
 });
 
 test("navigation exposes five top-level tasks and route-scoped sidebars", () => {
   function assertConfigLink(text, link) {
     const escapedText = text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const escapedLink = link.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    assert.match(config, new RegExp(`\\{ text: '${escapedText}', link: '${escapedLink}' \\}`));
+    assert.match(config, new RegExp(`\\{ text: '${escapedText}', link: '${escapedLink}'(?:, activeMatch: '[^']*')? \\}`));
   }
 
   assertConfigLink("Docs", "/guide/");
   assertConfigLink("Install", "/guide/installation");
-  assertConfigLink("Workflows", "/guide/workflows");
+  assertConfigLink("Guides", "/guide/workflows");
   assertConfigLink("Reference", "/reference/cli");
-  assertConfigLink("Support", "/help/");
+  assertConfigLink("Help", "/help/");
   assertConfigLink("Run Apex tests", "/guide/workflows/apex-tests");
   assertConfigLink("Debug Apex", "/guide/workflows/debug-apex");
   assertConfigLink("Preview LWC", "/guide/workflows/lwc-preview");
@@ -546,7 +538,7 @@ test("navigation exposes five top-level tasks and route-scoped sidebars", () => 
   assertConfigLink("Work with local data", "/guide/workflows/local-data");
   assertConfigLink("Add Glade to CI", "/guide/workflows/ci");
   assertConfigLink("Architecture and capabilities", "/guide/modules");
-  assertConfigLink("Run anonymous Apex and SOQL", "/help/anonymous-apex-scratch");
+  assertConfigLink("Execute anonymous Apex and SOQL", "/guide/playground");
   assertConfigLink("CLI reference", "/reference/cli");
   assertConfigLink("Configuration", "/reference/config");
   assertConfigLink("Error codes", "/reference/errors");
@@ -636,15 +628,10 @@ test("Apex language compatibility docs publish the checked identifier contract",
 });
 
 test("public copy states the local Apex outcome and its Salesforce boundary", () => {
-  assert.match(index, /<h1>Apex feedback without the deploy wait\.<\/h1>/);
-  assert.match(index, /Check source, run supported tests, and debug Apex/);
-  assert.match(index, /Run your first local check/);
-  assert.match(index, /No Salesforce org login is required for supported local checks\./);
-  assert.match(index, /What runs locally/);
-  assert.match(index, /Move from project to proof in three steps\./);
-  assert.match(index, /Choose the next local workflow\./);
-  assert.match(index, /Project loop/);
-  assert.match(index, /Diagnostic/);
+  assert.match(index, /Run Apex locally/);
+  assert.match(index, /Keep your[\s\S]*momentum/);
+  assert.match(index, /Salesforce/);
+  assert.match(index, /supported tests/);
   for (const stale of [
     /AI edit check|Proof now/i,
     new RegExp("10" + "-minute", "i"),
@@ -656,12 +643,12 @@ test("public copy states the local Apex outcome and its Salesforce boundary", ()
   ]) {
     assert.doesNotMatch(siteCopy, stale);
   }
-  assert.match(index, /anonymous Apex/);
+  assert.match(workbench, /Apex and SOQL|Apex expressions/);
   assert.match(workbench, /Type Apex expressions and see whether the API runs locally, runs locally with limits, or requires Salesforce\./);
-  assert.match(workbench, /Use the editor as a live capability map: type a dot, read the label, and see the boundary before you depend on an API\./);
+  assert.match(workbench, /Use the editor as a browser capability lookup: type a dot, read the label, and see the boundary before you depend on an API\./);
   assert.match(workbench, /Capability cards/);
   assert.match(workbench, /Workflow gallery/);
-  assert.match(workbench, /Local result/);
+  assert.match(workbench, /Illustrative result/);
   assert.match(codeMirrorWorkbench, /Try capability-backed autocomplete\./);
   assert.match(codeMirrorWorkbench, /Type a dot after/);
   assert.match(config, /description: 'Run and test supported Salesforce Apex locally from a Salesforce DX project\.'/);
@@ -672,7 +659,7 @@ test("public copy states the local Apex outcome and its Salesforce boundary", ()
   assert.doesNotMatch(index, /Open the local coverage workbench/);
   assert.doesNotMatch(config, /text: 'Coverage'/);
   assert.doesNotMatch(config, /text: 'Capability map'/);
-  assert.doesNotMatch(siteCopy, /release gate|pre-gate|deploy gate|org gate|See what runs locally/);
+  assert.doesNotMatch(allPublicGuideText, /pre-gate|deploy gate|org gate/);
   assert.doesNotMatch(siteCopy, /Support showcase/i);
   assert.doesNotMatch(siteCopy, /support-aware/i);
   assert.doesNotMatch(siteCopy, /Salesforce-shaped/i);
@@ -701,7 +688,7 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(repoSecurityPolicy, /Local laptop behavior/);
   assert.match(repoSecurityPolicy, /Glade does not require a Salesforce org login for supported local checks\./);
 
-  assert.match(config, /\{ text: 'Support', link: '\/help\/' \}/);
+  assert.match(config, /\{ text: 'Help', link: '\/help\/', activeMatch: '[^']+' \}/);
   assert.match(config, /\{ text: 'Security & trust', link: '\/guide\/security-trust' \}/);
   assert.match(securityTrust, /^# Security & trust/m);
   assert.match(securityTrust, /OpenSSF Scorecard/);
@@ -769,9 +756,9 @@ test("guided help routes remain task-oriented and evidence-backed", () => {
   ];
 
   assert.match(config, /'\/help\/': \[/);
-  assert.match(config, /\{ text: 'Task guide overview', link: '\/help\/' \}/);
+  assert.match(config, /\{ text: 'Help home', link: '\/help\/' \}/);
   assert.match(config, /\{ text: 'Fix a problem', link: '\/help\/troubleshooting' \}/);
-  assert.match(helpIndex, /^# Task guides and troubleshooting/m);
+  assert.match(helpIndex, /^# Glade Help/m);
   assert.match(helpIndex, /class="docs-route-grid"/);
   assert.equal(articles.length, 9);
 
@@ -919,15 +906,15 @@ test("guided help screenshot capture uses terminal copy and clean VS Code profil
   assert.match(helpScreenshotReadme, /salesforce\.salesforcedx-vscode-apex/);
   assert.match(helpScreenshotReadme, /Salesforce Core and Services dependencies/);
   assert.match(helpScreenshotReadme, /Do not disable Salesforce Core or Services/);
-  assert.match(helpRunOneApexTest, /bundled Glade extension installed/);
+  assert.match(helpRunOneApexTest, /bundled Glade extension\]\(\/guide\/editor\) is installed/);
   assert.match(helpRunOneApexTest, /glade test --project \. --class <TestClass> --no-progress/);
   assert.match(helpRunOneApexTest, /Set a breakpoint on the line you want to inspect before starting the debug action/);
   assert.doesNotMatch(helpRunOneApexTest, /RefinementService|insert account|opensFile|macrodata-apex/);
   assert.doesNotMatch(helpRunOneApexTest, /RefinementServiceTest --json/);
   assert.match(captureHelpScreenshotTargetScript, /run-one-apex-test-01-cli\)[\s\S]*RefinementServiceTest --no-progress/);
   assert.doesNotMatch(captureHelpScreenshotTargetScript, /RefinementServiceTest --json/);
-  assert.match(helpAnonymousApexScratch, /bundled Glade extension installed/);
-  assert.match(helpLocalDataEnvironments, /bundled Glade extension installed/);
+  assert.match(helpAnonymousApexScratch, /bundled Glade extension\]\(\/guide\/editor\) is installed/);
+  assert.match(helpLocalDataEnvironments, /bundled Glade extension\]\(\/guide\/editor\) is installed/);
   assert.match(helpGladeOrgSfDataImport, /terminal/);
   assert.match(helpGladeOrgSfDataImport, /disposable Salesforce CLI home/);
   assert.match(helpGladeOrgSfDataImport, /SF_USE_GENERIC_UNIX_KEYCHAIN=true/);
@@ -1123,7 +1110,7 @@ test("workbench assets and controls are route-scoped and keyboard accessible", (
   assert.doesNotMatch(homeScript, /data-home-loop|homeLoopStates|homeLoopLabels|homeLoopActiveNodes/);
   assert.doesNotMatch(homeScript, /requestAnimationFrame|manualHomeLoopUntil/);
   assert.doesNotMatch(homeScript, /hideHomeSearch/);
-  assert.match(docsEnhancer, /route\.path === '\/' \|\| route\.path === '\/guide\/workbench'/);
+  assert.match(docsEnhancer, /route\.path === withBase\('\/guide\/workbench'\)/);
   assert.match(homeScript, /copyLabel \+ " copied to clipboard"/);
   assert.match(homeScript, /function initWorkbenchDemo\(\)/);
   assert.match(homeScript, /var scenarios = \{/);
@@ -1193,7 +1180,7 @@ test("homepage layout uses the shared responsive design system", () => {
   assert.match(css, /\.home-install-strip code\s*\{[\s\S]*overflow-wrap: anywhere;/);
   assert.doesNotMatch(css, /body:has\(\.VPHome\) \.VPNavBarSearch\s*\{[\s\S]*display: none;[\s\S]*pointer-events: none;/);
   assert.match(css, /\.VPNavBarSearch\s*\{[\s\S]*opacity: 0\.92;/);
-  assert.match(css, /--glade-action-bg: var\(--glade\);/);
+  assert.match(tokensCss, /--glade-action-bg: var\(--glade-action\);/);
   assert.match(css, /@media \(max-width: 1120px\)\s*\{[\s\S]*\.home-hero-shell\s*\{[\s\S]*grid-template-columns: 1fr;[\s\S]*gap: 24px;[\s\S]*padding-bottom: 12px;/);
   assert.match(css, /@media \(max-width: 1120px\)\s*\{[\s\S]*\.home-command-grid\s*\{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
   assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-hero-shell,[\s\S]*\.home-support-preview,[\s\S]*\.home-capability-section,[\s\S]*\.home-install-strip\s*\{[\s\S]*width: 100%;/);
@@ -1242,7 +1229,7 @@ test("apex highlighter calls out platform and qualified types", () => {
   assert.match(output, /token class-name platform-type">Schema<\/span>/);
   assert.match(output, /token class-name platform-type">DescribeSObjectResult<\/span>/);
   assert.match(highlight, /const PLATFORM_TYPES = new Set/);
-  assert.match(css, /--glade-syntax-type: var\(--warning-text\);/);
+  assert.match(tokensCss, /--glade-syntax-type: var\(--glade-accent\);/);
   assert.match(css, /\.token\.platform-type\s*\{/);
   assert.match(apexLanguageModule, /const PLATFORM_TYPES = new Set/);
   assert.match(apexLanguageModule, /state\.lastText === '\.' && nextChar === '\('/);
@@ -1264,9 +1251,9 @@ test("capability explorer exposes supported APIs and an accessible workflow demo
   assert.match(workbench, /class="[^"]*\bhome-workbench\b[^"]*"/);
   assert.match(workbench, /id="local-apex-workbench"/);
   assert.match(workbench, /data-scenario-workbench/);
-  assert.match(workbench, /aria-label="Local capability workflow demo"/);
+  assert.match(workbench, /aria-label="Illustrative capability workflow replay"/);
   assert.match(workbench, /<p class="home-eyebrow">Workflow gallery<\/p>/);
-  assert.match(workbench, /Replay a curated scenario to see the command, JSON, trace, local result, and copyable CLI form\./);
+  assert.match(workbench, /Replay prepared command output, JSON, trace, and results\./);
   assert.match(workbench, /data-scenario-id="check"/);
   assert.match(workbench, /data-scenario-id="test"/);
   assert.match(workbench, /data-scenario-id="exec"/);
@@ -1352,8 +1339,8 @@ test("workbench page mounts a real CodeMirror editor", () => {
   assert.match(codeMirrorWorkbench, /<code>BusinessHours\.<\/code>/);
   assert.match(codeMirrorWorkbench, /data-codemirror-workbench/);
   assert.match(codeMirrorWorkbench, /<span><strong>Boundary labels<\/strong> Runs locally, Runs locally with limits, Requires Salesforce<\/span>/);
-  assert.match(codeMirrorWorkbench, /borderLeftColor: '#9be870'/);
-  assert.match(codeMirrorWorkbench, /caretColor: '#f3f7f5'/);
+  assert.match(codeMirrorWorkbench, /borderLeftColor:.*glade-focus/);
+  assert.match(codeMirrorWorkbench, /caretColor:.*glade-text/);
   assert.match(css, /\.glade-cm-workbench\s*\{/);
   assert.match(css, /\.glade-cm-support\s*\{/);
   assert.match(css, /\.glade-cm-support code\s*\{/);
@@ -1378,145 +1365,18 @@ test("docs code blocks and tables fill their content lane cleanly", () => {
   assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.vp-doc table\s*\{[\s\S]*display: block;[\s\S]*overflow-x: auto;/);
 });
 
-test("theme uses bundled fonts, readable type, and task-oriented navigation", () => {
-  assert.match(packageJson.devDependencies["@fontsource-variable/host-grotesk"], /^\^5\./);
-  assert.match(packageJson.devDependencies["@fontsource/monaspace-argon"], /^\^5\./);
-  assert.equal(packageJson.devDependencies["@fontsource/apfel-grotezk"], undefined);
-  assert.equal(packageJson.devDependencies["@fontsource/commit-mono"], undefined);
-  assert.equal(packageJson.devDependencies["@fontsource-variable/fraunces"], undefined);
-  assert.equal(packageJson.devDependencies["@lucide/vue"], undefined);
-  assert.match(theme, /@fontsource-variable\/host-grotesk/);
-  assert.match(theme, /@fontsource\/monaspace-argon\/400\.css/);
-  assert.match(theme, /@fontsource\/monaspace-argon\/600\.css/);
-  assert.doesNotMatch(theme, /apfel-grotezk|commit-mono|fraunces/);
-  assert.doesNotMatch(config, /fonts\.googleapis|fonts\.gstatic|Newsreader|Mona\+Sans|JetBrains\+Mono|IBM\+Plex|Space\+Grotesk|Atkinson/);
-  assert.doesNotMatch(css, /Apfel Grotezk|Commit Mono|Fraunces Variable|Newsreader|Mona Sans|JetBrains Mono|Source Serif|Literata|Lora|IBM Plex|Atkinson/);
-  assert.match(css, /--vp-font-family-base: 'Host Grotesk Variable', 'Host Grotesk'/);
-  assert.match(css, /--vp-font-family-mono: 'Monaspace Argon'/);
-  assert.match(css, /--glade-font-accent: var\(--vp-font-family-base\);/);
-  assert.match(css, /--font-sans: var\(--vp-font-family-base\);/);
-  assert.match(css, /--font-mono: var\(--vp-font-family-mono\);/);
-  assert.match(css, /--heading-track: 0em;/);
-  assert.match(css, /--body-track: 0em;/);
-  assert.match(css, /--code-track: 0em;/);
-  assert.match(css, /--heading-weight: 700;/);
-  assert.match(css, /--fs-micro: 0\.75rem;/);
-  assert.match(css, /--fs-label: 0\.8125rem;/);
-  assert.match(css, /--fs-ui: 0\.875rem;/);
-  assert.match(css, /--fs-body: 1rem;/);
-  assert.match(css, /--fs-code: 0\.875rem;/);
-  assert.match(css, /--fs-table: 0\.875rem;/);
-  assert.match(css, /--fs-helper: 0\.875rem;/);
-  assert.match(css, /--lh-tight: 1\.1;/);
-  assert.match(css, /--lh-ui: 1\.35;/);
-  assert.match(css, /--lh-body: 1\.65;/);
-  assert.match(css, /--lh-code: 1\.6;/);
-  assert.match(css, /--vp-sidebar-width: 264px;/);
-  assert.match(css, /--vp-layout-max-width: 1360px;/);
-  assert.match(css, /--glade-page-max: 1280px;/);
-  assert.match(css, /--bg: #070b0d;/);
-  assert.match(css, /--surface: #10191e;/);
-  assert.match(css, /--text-muted: #a9b8ad;/);
-  assert.match(css, /--text-subtle: #7f9187;/);
-  assert.match(css, /--success-text: #dfffd1;/);
-  assert.match(css, /--danger-text: #ffd8d5;/);
-  assert.match(css, /--warning-text: #ffe7a6;/);
-  assert.match(css, /--glade: #9be870;/);
-  assert.match(css, /--glade-strong: #b7ff8a;/);
-  assert.match(css, /--danger: #ff6b61;/);
-  assert.match(css, /--focus: #b7ff8a;/);
-  assert.match(css, /--vp-nav-height: 60px;/);
-  assert.match(css, /--glade-page-gutter: 48px;/);
-  assert.match(css, /--glade-shell-width: min\(var\(--glade-page-max\), calc\(100vw - var\(--glade-page-gutter\)\)\);/);
-  assert.match(css, /\.VPNavBarMenu\s*\{[\s\S]*gap: 8px;/);
-  assert.match(css, /\.VPNavBarMenuLink\s*\{[\s\S]*padding-inline: 8px;/);
-  assert.match(css, /\.VPNavBar > \.wrapper > \.container\s*\{[\s\S]*width: var\(--glade-shell-width\);[\s\S]*margin-inline: auto;[\s\S]*padding-inline: 0;/);
-  assert.match(css, /\.VPNavBarTitle\s*\{[\s\S]*height: var\(--vp-nav-height\);[\s\S]*align-items: center;[\s\S]*margin-right: 24px;/);
-  assert.match(css, /body:has\(\.VPHome\) \.VPNavBarTitle\s*\{[\s\S]*margin-left: 0;[\s\S]*margin-right: clamp\(40px, 6vw, 84px\);/);
-  assert.doesNotMatch(css, /body:has\(\.VPHome\) \.VPNavBarSearch\s*\{[\s\S]*display: none;/);
-  assert.match(css, /\.VPNavBar > \.wrapper > \.container > \.title\s*\{[\s\S]*align-items: center;[\s\S]*padding-left: 0;/);
-  assert.match(css, /body:not\(:has\(\.VPHome\)\) \.VPNavBar > \.wrapper > \.container > \.title\s*\{[\s\S]*padding-left: 24px;/);
-  assert.match(css, /\.VPNavBar > \.wrapper > \.container > \.content\s*\{[\s\S]*padding-right: 0;/);
-  assert.match(css, /\.VPNavBarTitle \.title\s*\{[\s\S]*gap: 8px;[\s\S]*height: 38px !important;[\s\S]*border: 0;[\s\S]*background: transparent;/);
-  assert.match(css, /\.VPNavBarTitle \.title\s*\{[\s\S]*font-size: 0\.9375rem;/);
-  assert.match(css, /\.VPNavBarTitle \.logo\s*\{[\s\S]*width: 20px;[\s\S]*height: 20px;/);
-  assert.match(css, /\.VPNavBar\.has-sidebar \.content,\s*\n\.VPNavBar:not\(\.home\)\s*\{[\s\S]*background-color: var\(--glade-nav-bg\) !important;[\s\S]*backdrop-filter: none;/);
-  assert.match(css, /\.VPNavBar:not\(\.home\)\s*\{[\s\S]*border-bottom: 0;/);
-  assert.match(css, /\.VPLocalNav\.has-sidebar\s*\{[\s\S]*border-top: 0;[\s\S]*border-bottom: 1px solid var\(--glade-border\);/);
-  assert.doesNotMatch(theme, /DocsNavTitleSuffix/);
-  assert.doesNotMatch(css, /\.docs-title-suffix\s*\{/);
-  assert.match(css, /\.VPSidebar\s*\{[\s\S]*top: var\(--vp-nav-height\) !important;[\s\S]*height: calc\(100vh - var\(--vp-nav-height\)\) !important;[\s\S]*padding-top: 0 !important;[\s\S]*backdrop-filter: none;[\s\S]*box-shadow: none !important;/);
-  assert.match(css, /\.VPSidebar \.nav\s*\{[\s\S]*padding-top: 28px;/);
-  assert.match(css, /\.VPDoc \.aside-curtain\s*\{[\s\S]*display: none !important;/);
-  assert.match(css, /body:not\(:has\(\.VPHome\)\) \.VPNavBar\.has-sidebar \.content-body\s*\{[\s\S]*justify-content: flex-start;[\s\S]*gap: 18px;/);
-  assert.match(css, /body:not\(:has\(\.VPHome\)\) \.VPNavBar\.has-sidebar \.VPNavBarMenu\s*\{[\s\S]*margin-left: auto;/);
-  assert.match(css, /\.VPNavBarSearch\s*\{[\s\S]*width: clamp\(220px, 26vw, 420px\);/);
-  assert.doesNotMatch(css, /@media \(max-width: 980px\)\s*\{[\s\S]*\.VPNavBarSearch\s*\{[\s\S]*display: none !important;/);
-  assert.match(css, /\.VPHome \.VPHero\s*\{[\s\S]*display: none !important;/);
-  assert.match(css, /\.home-hero-shell\s*\{[\s\S]*grid-template-columns: minmax\(500px, 1fr\) minmax\(360px, 560px\);/);
-  assert.match(css, /\.home-hero-shell\s*\{[\s\S]*gap: var\(--space-14\);/);
-  assert.match(css, /\.home-hero-shell\s*\{[\s\S]*padding: 42px 0 20px;/);
-  assert.match(css, /\.home-hero-shell\s*\{[\s\S]*width: var\(--glade-shell-width\);/);
-  assert.match(css, /\.VPButton\.brand:hover\s*\{[\s\S]*color: var\(--text-inverse\) !important;/);
-  assert.match(css, /\.vp-doc \.home-cta,\s*\n\.vp-doc \.home-cta:hover,\s*\n\.vp-doc \.home-cta:focus-visible\s*\{[\s\S]*text-decoration-line: none !important;/);
-  assert.match(css, /\.home-hero-shell h1\s*\{[\s\S]*font-size: var\(--text-hero\);[\s\S]*letter-spacing: var\(--heading-track\);[\s\S]*line-height: 0\.96;/);
-  assert.match(css, /\.vp-doc \.home-h2\s*\{[\s\S]*margin: 0;[\s\S]*border-top: 0;[\s\S]*padding-top: 0;/);
-  assert.match(css, /\.home-loop-visual\s*\{[\s\S]*border: 1px solid var\(--glade-home-border\);/);
-  assert.match(css, /@media \(max-width: 1120px\)\s*\{[\s\S]*\.home-hero-shell\s*\{[\s\S]*grid-template-columns: 1fr;/);
-  assert.doesNotMatch(css, /\.VPHero \.name\s*\{[\s\S]*border-radius: 999px;/);
-  assert.doesNotMatch(css, /\.VPHero \.text\s*\{[\s\S]*font-weight: 740/);
-  assert.match(css, /\.vp-doc h1\s*\{[\s\S]*font-family: var\(--vp-font-family-base\);[\s\S]*font-style: normal;/);
-  assert.match(config, /title: 'Glade'/);
-  assert.match(config, /description: 'Run and test supported Salesforce Apex locally from a Salesforce DX project\.'/);
-  assert.match(config, /\['meta', \{ property: 'og:title', content: title \}\]/);
-  assert.match(config, /\['meta', \{ property: 'og:description', content: description \}\]/);
-  assert.match(config, /\['meta', \{ property: 'og:type', content: type \}\]/);
-  assert.match(index, /<h1>Apex feedback without the deploy wait\.<\/h1>/);
-  assert.match(config, /siteTitle: 'Glade'/);
-  assert.match(config, /supported local paths, and the boundary with Salesforce/);
+test('theme uses bundled fonts, readable type, and task-oriented navigation', () => {
+  assert.match(packageJson.devDependencies['@fontsource-variable/inter'], /^\^5\./);
+  assert.match(packageJson.devDependencies['@fontsource/ibm-plex-mono'], /^\^5\./);
+  assert.match(theme, /@fontsource-variable\/inter\/wght.css/);
+  assert.match(theme, /@fontsource\/ibm-plex-mono\/400.css/);
+  assert.doesNotMatch(config, /fonts\.googleapis|fonts\.gstatic/);
+  assert.match(tokensCss, /--vp-font-family-base: 'Inter Variable'/);
+  assert.match(tokensCss, /--vp-font-family-mono: 'IBM Plex Mono'/);
+  for (const destination of ['Docs','Guides','Reference','Compatibility','Help','Contributors']) assert.ok(config.includes(`text: '${destination}'`));
   assert.match(config, /lastUpdated: false/);
-  assert.match(config, /\['link', \{ rel: 'icon', type: 'image\/svg\+xml', href: '\/logo-mark\.svg' \}\]/);
-  assert.match(config, /\{ text: 'Workflows', link: '\/guide\/workflows' \}/);
-  assert.match(config, /\{ text: 'Support', link: '\/help\/' \}/);
-  assert.match(config, /\{ text: 'Reference', link: '\/reference\/cli' \}/);
-  assert.match(config, /\{ text: 'What is Glade\?', link: '\/guide\/overview' \}/);
-  assert.match(config, /text: 'What is Glade\?'/);
-  assert.match(config, /text: 'First local check'/);
-  assert.match(config, /text: 'Pilot Glade on a real project'/);
-  assert.match(config, /text: 'What runs locally'/);
-  assert.doesNotMatch(config, /text: 'Capability map'/);
-  assert.doesNotMatch(config, /text: 'Coverage workbench'/);
-  assert.match(config, /text: 'Workflows',\n\s+collapsed: true,/);
-  assert.match(config, /text: 'How Glade works',\n\s+collapsed: true,/);
-  assert.match(config, /text: 'Run Apex tests'/);
-  assert.match(config, /text: 'Debug Apex'/);
-  assert.match(config, /text: 'Affected tests'/);
-  assert.match(config, /text: 'Local API routes'/);
-  assert.match(config, /text: 'Preview LWC'/);
-  assert.match(config, /text: 'Preview Visualforce'/);
-  assert.match(config, /text: 'Use VS Code'/);
-  assert.match(config, /text: 'Run anonymous Apex and SOQL'/);
-  assert.match(config, /text: 'Run anonymous Apex and SOQL'/);
-  assert.match(config, /text: 'Automation and JSON'/);
-  assert.match(config, /text: 'Error codes'/);
-  assert.match(config, /text: 'Reports and package artifacts'/);
-  assert.match(config, /text: 'Plugins'/);
-  assert.match(config, /text: 'First-party plugins'/);
-  assert.match(config, /text: 'Plugin install and manage'/);
-  assert.match(config, /text: 'Plugin lock files and CI'/);
-  assert.match(config, /text: 'Maintainer'/);
-  assert.match(config, /link: '\/maintainer\/release'/);
-  assert.match(config, /link: '\/maintainer\/extend-runtime'/);
-  assert.match(config, /link: '\/maintainer\/glade-tools'/);
-  assert.doesNotMatch(config, /text: 'Build a plugin'/);
-  assert.doesNotMatch(config, /text: 'Manifest reference'/);
-  assert.doesNotMatch(config, /text: 'Marketplace'/);
-  assert.doesNotMatch(config, /text: 'Publish'/);
-  assert.doesNotMatch(config, /text: 'Compatibility \/ proof reports'/);
-  assert.doesNotMatch(config, /Automation And|Error Codes And|Marketplace And|Install And|Built-In|First-Party|Build A Plugin|Plugin Lock Files And CI/);
-  assert.ok(config.indexOf("text: 'What is Glade?'") < config.indexOf("text: 'Plugins'"));
-  assert.doesNotMatch(config, /text: 'Project Status'/);
-  assert.doesNotMatch(index, /A clearing for Salesforce work\./);
+  assert.match(config, /logo-mark-topo.svg/);
+  assert.match(theme, /frontmatter.value.gladeHomepage/);
 });
 
 test("Cloudflare Pages build publishes the install route itself", () => {
@@ -1527,12 +1387,12 @@ test("Cloudflare Pages build publishes the install route itself", () => {
   assert.doesNotMatch(pagesWorkflow, /deploy-pages|upload-pages-artifact|github-pages|configure-pages/);
   assert.match(siteReadme, /## Cloudflare Pages/);
   assert.match(siteReadme, /Root directory: site/);
-  assert.match(siteReadme, /Project name: glade-sh/);
+  assert.match(siteReadme, /Project name: glade-site/);
   assert.match(siteReadme, /Build command: npm run build/);
   assert.match(siteReadme, /Build output directory: \.vitepress\/dist/);
   assert.match(siteReadme, /Production branch: main/);
   assert.match(siteReadme, /npm ci/);
-  assert.match(siteReadme, /wrangler pages deploy \.vitepress\/dist --project-name glade-sh --branch main/);
+  assert.match(siteReadme, /wrangler pages deploy \.vitepress\/dist --project-name glade-site --branch main/);
   assert.match(siteReadme, /release_sha="\$\(git -C \.\. rev-parse HEAD\)"/);
   assert.match(siteReadme, /CF_PAGES_COMMIT_SHA="\$release_sha" npm run build/);
   assert.match(siteReadme, /--commit-hash "\$release_sha"/);
@@ -1566,7 +1426,7 @@ test("docs shell uses a dedicated docs header and stronger navigation states", (
   assert.match(docsEnhancer, /dispatchEvent\(new CustomEvent\('glade:content-updated'\)\)/);
   assert.match(docsEnhancer, /data-command-filter/);
   assert.match(docsEnhancer, /card\.hidden = query\.length > 0/);
-  assert.match(css, /\.VPSidebarItem\.is-active > \.item > \.link\s*\{[\s\S]*background: var\(--glade-muted\);/);
+  assert.match(css, /\.VPSidebarItem\.is-active > \.item > \.link\s*\{[\s\S]*background: var\(--glade-active\);/);
   assert.match(css, /\.VPSidebarItem\.is-active > \.item > \.link \.text\s*\{[\s\S]*color: var\(--glade-strong\) !important;/);
   assert.match(css, /\.home-run-button:hover\s*\{[\s\S]*color: var\(--glade-action-text\);/);
   assert.match(css, /\.VPDocAsideOutline\.has-outline:has\(\.VPDocOutlineItem\.root > li:only-child\)\s*\{[\s\S]*display: none;/);
@@ -1667,7 +1527,7 @@ test("guide landing, quickstart, and support map explain the current product", (
   assert.match(quickstart, /glade test --project \. --class RefinementServiceTest/);
   assert.match(cliReference, /id="cli-command-filter"/);
   assert.match(cliReference, /class="docs-command-card"/);
-  assert.match(cliReference, /--class RefinementServiceTest --method testRefinesFileRow/);
+  assert.match(cliReference, /--class RefinementServiceTest --method opensFile/);
   assert.doesNotMatch(cliReference, /--filter/);
   assert.match(playground, /Use built-in examples when you want a safe scratch workspace/);
   assert.match(playground, /\| Group \| Example \| Command \|/);
@@ -1753,7 +1613,7 @@ test("LWC local shell docs describe Workbench Console workflow", () => {
 });
 
 test("enterprise workflow docs expose current report commands", () => {
-  assert.match(enterpriseWorkflows, /^# Enterprise Workflows/m);
+  assert.match(enterpriseWorkflows, /^# Enterprise workflows/m);
   assert.match(enterpriseWorkflows, /glade inspect graph --project \. --json/);
   assert.match(enterpriseWorkflows, /glade report assess --project \. --format html/);
   assert.match(enterpriseWorkflows, /glade report cruft --project \. --format html/);
@@ -1838,7 +1698,7 @@ test("route and content checks enforce the public documentation contract", () =>
   assert.match(ciArtifacts, /fetch-depth: 0/);
   assert.match(installation, /^## Install and verify/m);
   assert.match(installation, /glade version/);
-  assert.match(installation, /Verified stable release/);
+  assert.match(installation, /Stable download release/);
   assert.match(installation, /glade update --dry-run/);
   assert.match(installation, /glade update/);
   assert.match(installation, /href="\/guide\/editor"/);
@@ -1899,7 +1759,7 @@ test("route and content checks enforce the public documentation contract", () =>
   assert.match(pluginLockCi, /default public registry serves the three first-party packages/);
   assert.doesNotMatch(pluginLockCi, /glade plugins install @glade\/compat/);
   assert.match(pluginLockCi, /glade plugins install @glade\/orgpackage/);
-  assert.match(maintainerIndex, /glade stays the product front door/);
+  assert.match(maintainerIndex, /Glade stays the product front door/);
   assert.match(extendRuntime, /Write the failing fixture or product test first/);
   assert.match(extendRuntime, /go test \.\/internal\/vm \.\/internal\/apextest/);
   assert.match(gladeToolsMaintainer, /go run \.\/cmd\/glade-plugin-compat manifest --json/);
@@ -1934,39 +1794,18 @@ test("route and content checks enforce the public documentation contract", () =>
   }
 });
 
-test("site palette uses glade green and operational states", () => {
-  assert.doesNotMatch(css, /#37d9ff|#a7f2ff|rgba\(55,\s*217,\s*255/);
-  assert.doesNotMatch(css, /#73b7bf|#93b17d|#2e7882|#5d754f/i);
-  assert.match(css, /--bg: #070b0d;/);
-  assert.match(css, /--surface: #10191e;/);
-  assert.match(css, /--surface-raised: #14232a;/);
-  assert.match(css, /--line: #26363d;/);
-  assert.match(css, /--glade: #9be870;/);
-  assert.match(css, /--glade-strong: #b7ff8a;/);
-  assert.match(css, /--warning: #f5c95f;/);
-  assert.match(css, /--danger: #ff6b61;/);
-  assert.match(css, /--info: #7db7ff;/);
-  assert.match(css, /--glade-state-supported: var\(--success\);/);
-  assert.match(css, /--glade-state-partial: var\(--warning\);/);
-  assert.match(css, /--glade-state-failed: var\(--danger\);/);
-  assert.match(css, /--glade-state-info: var\(--info\);/);
-  assert.match(css, /--glade-accent: var\(--glade\);/);
-  assert.match(css, /--glade-moss: var\(--glade\);/);
-  assert.match(logoMark, /stroke="#9BE870"/);
-  assert.match(logoMark, /stroke="#B7FF8A"/);
-  assert.match(logoMarkOpen, /stroke="#9BE870"/);
-  assert.match(css, /--glade-focus-ring: var\(--focus\);/);
-  assert.match(css, /--glade-status-warning: var\(--warning\);/);
-  assert.match(css, /:focus-visible\s*\{[\s\S]*outline: 2px solid var\(--glade-focus-ring\);/);
-  assert.match(css, /\.home-install-strip code\s*\{/);
-  assert.match(css, /\.home-loop-visual\s*\{/);
-  assert.doesNotMatch(css, /--glade-font-mona-sans|--glade-font-ibm-sans|--glade-font-ibm-mono|--glade-font-atkinson|--glade-font-monaspace/);
-  assert.match(css, /--glade-font-accent: var\(--vp-font-family-base\);/);
-  assert.doesNotMatch(css, /\.brand-lab|\.color-lab|--lab-line/);
+test('site palette separates violet actions from operational states', () => {
+  assert.match(tokensCss, /--glade-canvas: #0b1119/);
+  assert.match(tokensCss, /--glade-canvas: #fafbfe/);
+  assert.match(tokensCss, /--glade-action: #7361dd/);
+  assert.match(tokensCss, /--glade-link: #b5aafa/);
+  assert.match(tokensCss, /--glade-link: #5e43b8/);
+  assert.match(tokensCss, /--glade-status-supported: var\(--glade-success\)/);
+  assert.match(css, /:focus-visible\s*\{[\s\S]*outline: 2px solid var\(--glade-focus-ring\)/);
 });
 
-test("contour background is a single field instead of a visible tile", () => {
-  assert.match(css, /body::before\s*\{[\s\S]*background-repeat: no-repeat;/);
-  assert.match(css, /body::before\s*\{[\s\S]*background-size: max\(1450px, 120vw\) auto;/);
-  assert.doesNotMatch(css, /background-size: 900px 520px;/);
+test('reading background stays flat without decorative contours', () => {
+  assert.match(baseCss, /body\s*\{[\s\S]*background: var\(--vp-c-bg\)/);
+  assert.doesNotMatch(baseCss, /body::before/);
+  assert.match(tokensCss, /--glade-contour-opacity: 0/);
 });

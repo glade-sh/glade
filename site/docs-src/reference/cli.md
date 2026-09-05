@@ -1,3 +1,8 @@
+---
+pageType: reference
+canonicalTask: /reference/cli
+---
+
 <script setup>
 import releaseManifest from '../../release-manifest.json'
 </script>
@@ -7,21 +12,21 @@ import releaseManifest from '../../release-manifest.json'
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Reference</p>
   <p>Find the command you need, then copy a real example. Most project commands accept <code>--project &lt;root&gt;</code> and default to the current directory when a project is discoverable.</p>
-  <ul>
-    <li>Use setup commands when starting a workspace.</li>
-    <li>Use check and test commands in the daily Apex loop.</li>
-    <li>Use report, editor, and plugin commands for larger teams.</li>
-  </ul>
 </div>
 
-All commands are local unless you point Glade at an external path or start a server. Most project commands accept `--project PROJECT_ROOT` and default to the current directory when a project is discoverable.
+<div class="docs-command-lookup">
+  <label for="cli-reference-search">Find a command or flag</label>
+  <input id="cli-reference-search" data-command-lookup type="search" placeholder="Try glade test or --json" autocomplete="off" />
+</div>
+
+Supported source checks and local execution run on your machine. Installation, updates, toolchain downloads, plugin installs, and org-backed imports or captures can use the network. Plugins execute separately with your OS user permissions. Most project commands accept `--project PROJECT_ROOT` and default to the current directory when a project is discoverable.
 
 Human output is terminal text. Use `--json` or `--format` for scripts. See [CLI output modes](/guide/cli-output), [Automation and JSON](/guide/automation), and [Exit codes](/guide/exit-codes) for the stable contract.
 
-**Verified with Glade {{ releaseManifest.version }}.**
+**Download release: {{ releaseManifest.version }}.** This reference describes the checked source. A release label is not a verification result; use `glade help <command>` for the installed binary.
 
 <div class="docs-command-filter">
-  <label for="cli-command-filter">Filter commands</label>
+  <label for="cli-command-filter">Filter command groups</label>
   <input id="cli-command-filter" data-command-filter=".docs-command-card" type="search" placeholder="Try check, test, report, plugin, playground" autocomplete="off" />
 </div>
 
@@ -67,6 +72,10 @@ Human output is terminal text. Use `--json` or `--format` for scripts. See [CLI 
     <span>Seed, import, query, describe, inspect, reset, and export persistent local org state.</span>
   </a>
 </div>
+
+The git examples assume `origin/main` is your intended base ref and is available
+locally. Substitute the correct existing ref for your repository before running
+changed-test or refactor commands.
 
 ## `glade version`
 
@@ -308,7 +317,13 @@ glade exec --project . --limit-mode strict "System.debug(Limits.getDmlStatements
 
 ## `glade test`
 
-Discover and run local Apex tests. Useful flags include `changed --since <ref>`,
+Discover and run local Apex tests. The `RefinementServiceTest.opensFile`
+examples match the editor walkthrough; substitute a class and method that exist
+in your project. Use [the quickstart sample](/guide/quickstart#sample-project)
+for a self-contained `SampleTest.adds` run. Read JSON counts: an empty selection
+can exit `0`, and an unsupported test outcome exits `1` as a test error.
+
+Useful flags include `changed --since <ref>`,
 `--watch`, `--watch-once`, `--last-failed`, `--wizard`, `--daemon`,
 `--connect`, `--no-serve`, `--class`, `--method`, `--class-file`,
 `--shard-count`, `--shard-index`, `--duration-history`,
@@ -349,7 +364,7 @@ glade test daemon status --project .
 glade test --project .
 glade test --project . --class RefinementServiceTest --json
 mkdir -p reports
-glade test --project . --class RefinementServiceTest --method testRefinesFileRow --junit reports/glade-junit.xml
+glade test --project . --class RefinementServiceTest --method opensFile --junit reports/glade-junit.xml
 glade test --project . --connect --class RefinementServiceTest
 glade test changed --project . --since origin/main --json --no-progress
 glade test failed --project .

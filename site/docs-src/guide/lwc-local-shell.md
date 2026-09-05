@@ -1,4 +1,9 @@
-# Local LWC Shell
+---
+pageType: reference
+canonicalTask: /guide/workflows/lwc-preview
+---
+
+# Local LWC shell
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Local Lightning</p>
@@ -411,9 +416,11 @@ proves the app page, custom tab, and URL-addressable component targets on both
 sides. The app-page and custom-tab proof deploys the fixture app, assigns the
 fixture permission set, and opens the fixture Lightning app route. Record pages,
 quick actions, and Visualforce Lightning Out need their org setup completed
-before they are strict browser-oracle targets. The latest external capture lane
-recorded 3 browser pass rows and 0 fail rows for the two-sided target set, plus
-35 prepared targets across `lightning-shell` and `visualforce-lightning-out`. The
+before they are strict browser-oracle targets. The historical external two-sided capture recorded 3 browser pass rows and 0
+fail rows, plus 35 prepared targets across `lightning-shell` and
+`visualforce-lightning-out`. Those historical counts do not verify the current
+checkout or every prepared target; consult the maintained support artifact
+for its recorded scope and evidence. The
 expanded base-component target has local browser proof through
 `test/base-components-expanded.test.mjs`; Salesforce DOM comparison remains a
 hosted follow-up. Community routes have local Go and Playwright runtime

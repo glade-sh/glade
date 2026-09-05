@@ -1,3 +1,8 @@
+---
+pageType: hub
+canonicalTask: /guide/plugins
+---
+
 # Plugins
 
 Most Glade work does not require plugins. The base runtime covers local Apex
@@ -55,6 +60,10 @@ glade plugins search quality
 glade plugins info @acme/quality
 glade plugins install @acme/quality
 ```
+
+`@acme/quality` and its archive URL are illustrative examples. Substitute a
+real reviewed plugin and digest; those examples do not advertise an available
+package.
 
 Registry catalogs are configured. Third-party publishers can also use a custom
 registry or a direct archive URL. `available` and bare `search` list the

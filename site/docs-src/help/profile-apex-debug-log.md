@@ -1,4 +1,9 @@
-# Profile an Apex Debug Log
+---
+pageType: guide
+canonicalTask: /guide/workflows/debug-apex
+---
+
+# Profile an Apex debug log
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Task guide</p>
@@ -9,6 +14,9 @@
     <li>Save JSON for automation or follow-up review.</li>
   </ul>
 </div>
+
+For the main task path, use [the guide](/guide/workflows/debug-apex). This walkthrough keeps the
+illustrated steps and recovery details for this interface.
 
 ## Before you start
 

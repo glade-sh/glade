@@ -1,3 +1,8 @@
+---
+pageType: contributor
+canonicalTask: /maintainer/editor-extension
+---
+
 # Develop and package the VS Code extension
 
 <div class="docs-intro">
@@ -8,10 +13,15 @@
 Run from the product repository checkout:
 
 ```bash
-npm --prefix contrib/vscode-glade install
+npm ci --prefix contrib/vscode-glade
+npm test --prefix contrib/vscode-glade
 npm --prefix contrib/vscode-glade run package
-glade editor install vscode --force
 ```
+
+Use the VSIX path printed by the package command with
+`glade editor install vscode --vsix <packaged-vsix-path> --force`. This makes
+the candidate explicit instead of accidentally reinstalling another bundled
+release.
 
 The packaged release installs the VSIX at
 `share/glade/editor/vscode-glade.vsix`. Keep end-user setup and workflows in
