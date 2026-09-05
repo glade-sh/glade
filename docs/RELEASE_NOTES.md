@@ -20,6 +20,21 @@ adoption.
   the Salesforce correctness gate.
 - `golang.org/x/text`, `nanoid`, and `postcss` receive targeted security updates.
 
+Coverage includes the site release contract, release workflow and distribution
+tests, runtime and distribution smoke tests, and the dependency checks in the
+Security workflow.
+
+Release archives remain supported on macOS and Linux for AMD64 and ARM64. Each
+archive is published with `SHA256SUMS.txt`, CycloneDX SBOMs, and GitHub artifact
+attestations. Follow the checksum and attestation steps in
+[`INSTALL.md`](INSTALL.md#security-verification) before extracting an archive.
+
+Upgrade with `glade update`, then run `glade version` and
+`glade doctor --project .`. No migration is required for documented CLI flags,
+persistent database schemas, or server API behavior. Known-gap diagnostics are
+unchanged. Windows archives and historical-version parity remain unsupported;
+the checked Apex source window remains 65.0, 66.0, and 67.0.
+
 ## v0.2.14 - 2026-09-04
 
 v0.2.14 focuses on a reliable first local-Apex result, clearer product
