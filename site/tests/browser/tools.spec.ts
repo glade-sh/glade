@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 test('every capability row is reachable and pagination survives reload and history', async ({ page }) => {
@@ -119,4 +120,28 @@ test('capability controls are near the top and editor jump links reach their too
   await page.getByRole('link', { name: 'Replay a workflow', exact: true }).click()
   await expect(page).toHaveURL(/#local-apex-workbench$/)
   await expect(page.getByRole('heading', { name: 'Replay an illustrative workflow.' })).toBeInViewport()
+})
+
+test('workflow replay stays readable in light mode and selected labels fit their tabs', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.goto('/guide/workbench')
+  await expect(page.locator('html')).not.toHaveClass(/dark/)
+  await page.evaluate(() => document.fonts.ready)
+  const replay = page.locator('[data-scenario-workbench]')
+  // A flat reading surface also lets axe resolve the actual text contrast.
+  await expect(replay).toHaveCSS('background-image', 'none')
+  const result = await new AxeBuilder({ page }).include('[data-scenario-workbench]').withRules(['color-contrast']).analyze()
+  expect(result.violations).toEqual([])
+  const tabs = replay.getByRole('tablist', { name: 'Demo workflows' }).getByRole('tab')
+  for (const tab of await tabs.all()) {
+    await tab.click()
+    const clippedLabels = await tab.evaluate((element) => {
+      const bounds = element.getBoundingClientRect()
+      return [...element.querySelectorAll('.home-scenario-kicker > *')].filter((label) => {
+        const rect = label.getBoundingClientRect()
+        return rect.width > 0 && (rect.left < bounds.left || rect.right > bounds.right)
+      }).map((label) => label.textContent)
+    })
+    expect(clippedLabels).toEqual([])
+  }
 })
