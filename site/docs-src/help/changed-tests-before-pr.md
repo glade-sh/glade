@@ -43,7 +43,9 @@ Expected: `reports/` contains JSON and JUnit output for PR review or CI upload.
 
 ## Common wrong turn
 
-If changed-test selection finds no merge base, fetch full history first. In GitHub Actions, use `fetch-depth: 0`.
+The comparison ref must exist locally. Fetch it before running changed-test
+selection; in GitHub Actions, use `fetch-depth: 0`. Glade compares against the
+specified ref directly; it does not calculate a merge base.
 
 ## Next
 

@@ -8,11 +8,13 @@ Changed file -> Apex reference graph -> selected tests
 
 ## Changed files from git
 
-Use `glade test changed --since <ref>` to compare tracked project files against
-a git ref:
+Use `glade test changed --since <base-ref>` to compare watchable project files
+in the working tree against a git ref. This includes staged and unstaged
+tracked changes and untracked, non-ignored watchable files. Replace `<base-ref>`
+with the intended existing comparison ref and verify it resolves before running:
 
 ```bash
-glade test changed --project . --since origin/main --json --no-progress
+glade test changed --project . --since <base-ref> --json --no-progress
 ```
 
 A changed production class selects tests that reach it through direct or
@@ -27,11 +29,15 @@ Use watch mode during editing:
 glade test --project . --watch
 ```
 
-Use one-shot watch mode for tools that want a single affected run:
+Use one-shot watch mode to run the initial suite, or the explicit class and
+method selection, and exit:
 
 ```bash
 glade test --project . --watch-once
 ```
+
+`--watch-once` does not wait for an edit or compare against a git ref. Use
+`glade test changed --since <base-ref>` for a single run selected by git changes.
 
 Use the daemon when repeated parsing and graph rebuilds would cost too much
 inside one watch process:
@@ -52,7 +58,10 @@ The affected-test report distinguishes three useful outcomes:
 - `all` — the safe fallback when Glade cannot narrow the impact.
 - `none` — no tests selected for the observed change set.
 
-`none` means Glade did not find tests affected by the current change set.
+`none` means Glade did not find tests affected by the current change set. It
+can exit with code `0` while running zero tests. Read the test summary counts
+and run an explicit relevant test or suite when you need execution evidence;
+an empty selection does not validate the change.
 
 ```json
 {
@@ -78,7 +87,7 @@ Before opening a pull request:
 
 ```bash
 glade check --project . --json --no-progress
-glade test changed --project . --since origin/main --json --no-progress
+glade test changed --project . --since <base-ref> --json --no-progress
 mkdir -p reports
 glade test --project . --junit reports/glade-junit.xml
 ```

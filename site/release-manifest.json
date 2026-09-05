@@ -3,26 +3,26 @@
     {
       "arch": "amd64",
       "os": "darwin",
-      "sha256": "de84971d93a3307b9e36a90199385a6689446f00e6fdd57514ca03559a86d91b",
-      "url": "https://downloads.glade.sh/v0.2.14/glade_v0.2.14_darwin_amd64.tar.gz"
+      "sha256": "d4752770d7721ab37a8ff5763a6da9bb23dd845461107bae9e407261c2b3fb1f",
+      "url": "https://downloads.glade.sh/v0.2.15/glade_v0.2.15_darwin_amd64.tar.gz"
     },
     {
       "arch": "arm64",
       "os": "darwin",
-      "sha256": "2a5985d741f33329fde9bc4f8de4702e0c65a0ab112f3c2efd060d8f82632b05",
-      "url": "https://downloads.glade.sh/v0.2.14/glade_v0.2.14_darwin_arm64.tar.gz"
+      "sha256": "8505b3538af9002c514a256a1e68f2b3589ab2430d85afb86979a26bed7e25b3",
+      "url": "https://downloads.glade.sh/v0.2.15/glade_v0.2.15_darwin_arm64.tar.gz"
     },
     {
       "arch": "amd64",
       "os": "linux",
-      "sha256": "41241760a26e97b532ef43e995e9365d6bf74cfab4fd3e47df4e2b126e9da47f",
-      "url": "https://downloads.glade.sh/v0.2.14/glade_v0.2.14_linux_amd64.tar.gz"
+      "sha256": "5c1a8b7e5c2ddbf23c1e45b64a7c7b3cfa6575c4ddfb6e16c621e951fe431f1c",
+      "url": "https://downloads.glade.sh/v0.2.15/glade_v0.2.15_linux_amd64.tar.gz"
     },
     {
       "arch": "arm64",
       "os": "linux",
-      "sha256": "cb804fe838ff8ed64e1f1d06534133c37631e0086940fa7f1d75bfa2463eb58d",
-      "url": "https://downloads.glade.sh/v0.2.14/glade_v0.2.14_linux_arm64.tar.gz"
+      "sha256": "23e981f857b5c4bd1807a098d76f15c91c71d177e2495564b4a6a940fa2f5c7f",
+      "url": "https://downloads.glade.sh/v0.2.15/glade_v0.2.15_linux_arm64.tar.gz"
     }
   ],
   "authority": {
@@ -30,25 +30,25 @@
       "conclusion": "success",
       "event": "push",
       "repository": "glade-sh/glade",
-      "required_ci_job_id": 101190498977,
-      "required_ci_job_url": "https://github.com/glade-sh/glade/actions/runs/33924331669/job/101190498977",
-      "run_id": 33924331669,
-      "run_url": "https://github.com/glade-sh/glade/actions/runs/33924331669",
+      "required_ci_job_id": 101238001121,
+      "required_ci_job_url": "https://github.com/glade-sh/glade/actions/runs/33940552279/job/101238001121",
+      "run_id": 33940552279,
+      "run_url": "https://github.com/glade-sh/glade/actions/runs/33940552279",
       "schema_version": 1,
-      "sha": "b974901a3e0ad48d6c517cff894601fa5e242000"
+      "sha": "82b8495972715a27aec8f864bc4ab39e7fa03974"
     },
     "salesforce": {
       "checkName": "Salesforce Correctness",
-      "checkRunID": 101204962507,
-      "checkRunURL": "https://github.com/glade-sh/glade/runs/101204962507",
+      "checkRunID": 101245181572,
+      "checkRunURL": "https://github.com/glade-sh/glade/runs/101245181572",
       "githubAppID": 4101915,
-      "gladeSHA": "b974901a3e0ad48d6c517cff894601fa5e242000",
-      "receiptSHA256": "49b85bed75e0cc8b7bef5a50546c1c18972d1ca466f612156d20c5ce2a791479",
+      "gladeSHA": "82b8495972715a27aec8f864bc4ab39e7fa03974",
+      "receiptSHA256": "927a681c8a7087dc563f8be9b847d5687aec335db0d06b487d4730655e8e821c",
       "repository": "glade-sh/glade",
       "schemaVersion": 1,
-      "toolsSHA": "a31b27f9a32acb1ab19bc617aaff90a19beb5327",
-      "workflowRunAttempt": 1,
-      "workflowRunID": 33927166777
+      "toolsSHA": "6c65441295af6f89033e5394aa1b3035c27b8639",
+      "workflowRunAttempt": 2,
+      "workflowRunID": 33940571892
     }
   },
   "channel": "stable",
@@ -60,30 +60,30 @@
       "doctor": "passed",
       "parserSmoke": "passed",
       "sharedPayloadSHA256": "6c3df13fffcff5315d790d2f0afde4423141e4d9a60c1db1f4453303579af84a",
-      "versionOutput": "glade v0.2.14",
+      "versionOutput": "glade v0.2.15",
       "vscodeExtensionPackage": "present"
     },
     {
       "doctor": "passed",
       "parserSmoke": "passed",
       "sharedPayloadSHA256": "6c3df13fffcff5315d790d2f0afde4423141e4d9a60c1db1f4453303579af84a",
-      "versionOutput": "glade v0.2.14",
+      "versionOutput": "glade v0.2.15",
       "vscodeExtensionPackage": "present"
     },
     {
       "doctor": "passed",
       "parserSmoke": "passed",
       "sharedPayloadSHA256": "6c3df13fffcff5315d790d2f0afde4423141e4d9a60c1db1f4453303579af84a",
-      "versionOutput": "glade v0.2.14",
+      "versionOutput": "glade v0.2.15",
       "vscodeExtensionPackage": "present"
     },
     {
       "doctor": "passed",
       "parserSmoke": "passed",
       "sharedPayloadSHA256": "6c3df13fffcff5315d790d2f0afde4423141e4d9a60c1db1f4453303579af84a",
-      "versionOutput": "glade v0.2.14",
+      "versionOutput": "glade v0.2.15",
       "vscodeExtensionPackage": "present"
     }
   ],
-  "version": "v0.2.14"
+  "version": "v0.2.15"
 }

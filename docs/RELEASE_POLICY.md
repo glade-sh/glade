@@ -7,11 +7,13 @@ platform archives and `SHA256SUMS.txt` from the tagged source.
 
 A release can be promoted when:
 
-- The tagged commit has an exact-SHA successful `Required CI` authority.
+- The tagged commit has an exact-SHA successful `Required CI` authority from a
+  push to `main`; PR and manual CI runs do not qualify.
 - The tagged commit has exactly one successful `Salesforce Correctness` check
   from the trusted GitHub App and the check binds the exact `glade-tools` commit.
 - `scripts/release-check.sh` passes.
-- `glade doctor` reports `Ready.` for release archives.
+- Release archives pass `glade doctor --json` with `"parserOK": true` and an
+  extracted-binary parser smoke. The build requires a clean Git worktree.
 - Every platform archive has verified provenance and CycloneDX attestations.
 - Public support docs describe the current command surface and unsupported
   boundaries.
@@ -22,6 +24,11 @@ memory-safe release lanes. Raw lane events and each validated
 `package-summary.json` are written under `ci-artifacts/local-release/`. The
 default is serial; do not raise `LOCAL_GO_TEST_JOBS` without host-specific
 resource evidence.
+
+The local gate does not include the built-site, rendered-site browser, or preview
+smoke checks. Run those as described in [site/README.md](../site/README.md);
+they are also part of the CI site job. `Ready.` is a project-level doctor result,
+checked separately after installation and `glade init`.
 
 ## Release Gate Labels
 
@@ -98,13 +105,15 @@ Use [`docs/RELEASE_NOTES.md`](RELEASE_NOTES.md) as the ongoing release log.
 
 Use this workflow for an easy, repeatable distribution pass.
 
-1. Prepare release branch state.
-   - Run `scripts/release-check.sh`.
+1. Prepare release changes.
    - Confirm docs reflect the current command names and setup steps.
+   - Add the version's release notes before freezing the release commit.
+   - Commit the changes and run `scripts/release-check.sh` from a clean checkout.
    - Run the first project check from `INSTALL.md` on at least one SFDX project.
 
-2. Push the release commit and wait for its `Required CI` job to pass. Run the
-   Salesforce correctness workflow in `glade-tools` for that exact Glade commit.
+2. Merge the release commit to `main` and wait for its main-push `Required CI`
+   job to pass. Run the Salesforce correctness workflow in `glade-tools` for
+   that exact Glade commit.
    Then cut and push one annotated tag at that commit. The tag message must
    contain exactly one lowercase full-SHA trailer for the tested Tools commit.
    Reuse `bash scripts/release-preflight.sh "$GLADE_SHA" "$TOOLS_SHA"` before
@@ -121,7 +130,8 @@ git push <remote> vX.Y.Z
    - The tag gate verifies and records the exact cross-repository Salesforce
      authority before creating the GitHub Release.
    - Artifacts are built to `dist/` with CGO enabled on macOS and Linux runners.
-   - `glade doctor` must report `Ready.` before an archive is written.
+   - `glade doctor --json` must report `"parserOK": true` before an archive is
+     written and after extraction; an extracted-binary parse must also pass.
    - Provenance and CycloneDX attestations must verify before platform assets
      are uploaded.
    - `SHA256SUMS.txt`, `index.json`, and `latest/release-manifest.json` are
@@ -137,14 +147,14 @@ curl -L -o SHA256SUMS.txt "<checksums-url>"
 grep "  \./glade_vX.Y.Z_linux_amd64.tar.gz$" SHA256SUMS.txt | shasum -a 256 -c -
 tar -xzf glade_vX.Y.Z_linux_amd64.tar.gz
 ./glade version
-./glade doctor
+./glade doctor --json
 ```
 
 5. Update distribution channels.
    - Update the Homebrew tap formula (`glade.rb`) URL and SHA256.
    - Validate `brew install` and `glade version`.
 
-6. Publish release notes.
+6. Announce the release using the published notes.
    - Call out new supported behavior and remaining unsupported boundaries.
    - Announce distribution complete only after the static channel and site point
      to the version and default plus pinned installs report that version and a
@@ -152,10 +162,11 @@ tar -xzf glade_vX.Y.Z_linux_amd64.tar.gz
      publication, not the later static-host or site publication.
 
 `Required CI` and `Salesforce Correctness` are automated exact-SHA release
-authorities. Browser, Race, Security, and the local `scripts/release-check.sh`
-remain required operator or policy checks; the release tag does not attest that
-they ran. A manual Release workflow run requires `glade_tools_sha` and verifies
-the same Salesforce authority, but it does not publish tag-only assets.
+authorities. The separate LWC Browser, Race, Security, and local
+`scripts/release-check.sh` remain required operator or policy checks; the release
+tag does not attest that they ran. A manual Release workflow run on a branch
+requires `glade_tools_sha` and verifies the same Salesforce authority, but it
+does not publish tag-only assets.
 
 For a release command checklist, use
 [`docs/DISTRIBUTION_WORKFLOW.md`](DISTRIBUTION_WORKFLOW.md).

@@ -1,8 +1,8 @@
 # AI-assisted Apex with Glade
 
 Use this prompt for any Apex feature, bug fix, or refactor. It makes the AI
-agent work from the same local loop a developer would use: test first, run
-Glade, fix the smallest source slice, and prove the same command passes.
+agent work from the same local loop a developer would use: establish test
+evidence, make the smallest source change, and rerun the same command.
 
 ## Where to put it
 
@@ -26,33 +26,41 @@ controller, or Apex test change.
 
 Default workflow:
 
-1. Inspect the requested change and the existing Apex tests.
+1. Inspect the requested change, existing Apex tests, branch, and working tree.
+   Choose the intended existing comparison ref and verify that it resolves.
+   Replace <base-ref> below with that ref; do not assume a branch name.
 2. Run local setup checks:
    mkdir -p reports
    glade doctor --project .
    glade config validate --project .
-3. For a bug fix or new behavior, write the smallest failing Apex test first.
-   - Do not edit production Apex until a Glade test fails for the expected reason.
+3. Establish the test evidence before editing production Apex.
+   - For a behavior change, write the smallest failing Apex test first and
+     verify it fails for the expected reason. For a bug, reproduce that bug.
+   - For a behavior-preserving refactor, establish a passing baseline first.
    - Prefer one focused test method that names the behavior.
    - Use existing test factories and fixtures when they exist.
-   - For a behavior-preserving refactor, first record a passing baseline instead.
-4. Prove the red step (or refactor baseline) with the narrowest Glade command:
+4. Run the narrowest Glade command for that failure or passing baseline:
    glade test --project . --class <TestClass> --method <TestMethod> --json --no-progress
-5. Quote the exact command and the failing diagnostic for a bug or new behavior;
-   for a refactor, record the named passing baseline instead.
-6. Make the smallest production change that should pass that test.
+5. Quote the exact command and result, including the failing diagnostic for a red test.
+6. Make the smallest production change that satisfies the requested behavior.
 7. Rerun the same focused Glade test until it passes.
 8. Run source checks:
    glade check --project . --format json --output reports/glade-check.json --no-progress
 9. Run affected tests before claiming success:
-   glade test changed --project . --since origin/main --json --no-progress > reports/glade-test-changed.json
-10. Summarize the proof with commands, exit status, and the changed Apex files.
+   glade test changed --project . --since <base-ref> --json --no-progress > reports/glade-test-changed.json
+10. Read the saved check and test JSON. Report diagnostics and test summary
+    counts: total, passed, failed, errors, skipped, and unsupported. An exit of
+    0 with no selected tests is not test coverage; run an explicit relevant
+    test or suite when the affected selection is empty.
+11. Summarize the proof with commands, exit status, counts, and the changed Apex files.
 
 Rules:
 - Use Glade before a Salesforce deploy or org validation pass.
 - Do not connect to a Salesforce org for the first pass unless the user asks.
 - Check what Glade runs locally before treating unsupported platform services as bugs.
-- If Glade reports an unsupported feature, say so and keep Salesforce as the validation gate.
+- If Glade reports an unsupported feature, name the unvalidated behavior and
+  keep Salesforce as the validation gate. Unsupported test outcomes exit 1.
+  Use only an explicitly authorized org for live validation.
 - Do not rewrite valid Salesforce behavior to satisfy a Glade limitation. Report the mismatch and use authorized Salesforce validation for that path.
 - Salesforce remains the validation gate for live auth, hosted service engines, deploy/retrieve, exact Lightning Experience behavior, Streaming, Pub/Sub, GraphQL, and exact production governor accounting.
 - Do not invent one-off local escape hatches. Let the failing test and Glade diagnostic drive the change.
@@ -64,22 +72,26 @@ Use this shorter prompt when you want the agent to apply the global rule to one
 piece of work:
 
 ```text
-Implement this Apex change with TDD and Glade.
+Implement this Apex change with Glade.
 
-Start from the Salesforce DX project root. For a bug or new behavior, write the smallest
-failing Apex test first. For a behavior-preserving refactor, retain a passing baseline.
-Check that baseline with:
+Start from the Salesforce DX project root. For a behavior change, write the
+smallest failing Apex test first and verify the expected failure. For a
+behavior-preserving refactor, establish a passing baseline first. Use:
 
 glade test --project . --class <TestClass> --method <TestMethod> --json --no-progress
 
-Then make the smallest source change, rerun the same focused test, run:
+Choose the intended existing comparison ref, verify it resolves, and replace
+<base-ref> below. Then make the smallest source change, rerun the same focused
+test, and run:
 
 mkdir -p reports
 glade check --project . --format json --output reports/glade-check.json --no-progress
-glade test changed --project . --since origin/main --json --no-progress > reports/glade-test-changed.json
+glade test changed --project . --since <base-ref> --json --no-progress > reports/glade-test-changed.json
 
-Report the exact commands and diagnostics. Do not claim success until the Glade
-commands pass or you have named the unsupported Salesforce boundary.
+Read the saved JSON and report the exact commands, exit status, diagnostics,
+and total, passed, failed, errors, skipped, and unsupported test counts. If the
+affected selection is empty, run an explicit relevant test or suite. Name
+unsupported Salesforce boundaries as unvalidated behavior, not passing proof.
 Do not rewrite valid Salesforce behavior to satisfy a Glade limitation.
 ```
 
@@ -90,9 +102,9 @@ upload source to a Glade service, but custom code, plugins, imports, and an
 external AI provider may use the network. Review what you authorize and do not
 send proprietary source or credentials to a provider without permission.
 
-The agent should return the test it added or changed, the initial failing
-command for a bug or new behavior (or passing baseline for a refactor), the
-production change, and the commands that passed at the end.
+The agent should come back with the test it added, changed, or reused; the
+initial failure or passing refactor baseline; the source change; and the
+commands and test counts at the end.
 
 For a bug fix, the first failing test should reproduce the bug. For a new
 feature, the first failing test should describe the smallest useful behavior.
@@ -100,6 +112,8 @@ For a refactor, the first Glade pass should preserve behavior before source
 movement starts, then affected tests should run after the movement.
 
 Use the [affected tests](/guide/affected-tests), [local testing](/guide/local-testing),
+[automation and JSON](/guide/automation),
 [Apex language compatibility](/reference/apex-language-compatibility), and
 [support map](/guide/support-map) guides when the agent needs a narrower test
-selector, the reserved-identifier contract, or a clear local runtime boundary.
+selector, machine-readable evidence, the reserved-identifier contract, or a
+clear local runtime boundary.

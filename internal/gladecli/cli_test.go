@@ -1886,7 +1886,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help exit codes",
 			args: []string{"help", "exit-codes"},
-			want: []string{"Exit codes", "0  Command completed", "1  Command failed", "2  Command was not understood"},
+			want: []string{"Exit codes", "0  Command completed", "1  Command failed", "2  Unknown top-level command", "Reserved taxonomy, not consistent current mappings:"},
 		},
 	}
 	for _, tt := range tests {

@@ -6,7 +6,7 @@ This document is the shared contract for Glade command output.
 
 - Default output is concise human text. It leads with the user outcome.
 - `--verbose` and `--debug` may show internal detail and absolute paths.
-- `--json` writes stable JSON to stdout only.
+- Completed result-producing `--json` modes write JSON to stdout; see the legacy and watch exceptions below.
 - `--format` writes specialized artifacts such as SARIF, GitHub annotations, JUnit, Markdown, or HTML where a command supports them.
 - `--quiet` suppresses nonessential human progress.
 - `--plain` is reserved for future grep-friendly output.
@@ -15,18 +15,20 @@ This document is the shared contract for Glade command output.
 
 ## Exit Codes
 
+Current built-in commands use these results:
+
 ```text
 0    success
-1    diagnostics, test failures, or expected validation failure
-2    usage error or invalid flags
-3    project/config discovery failure
-4    unsupported local runtime boundary
-5    external dependency/toolchain failure
-70   internal Glade error
-130  interrupted by Ctrl-C
+1    command failure, including diagnostics, test failures, and most usage errors
+2    unknown top-level command
+3    config discovery failure where explicitly reported by config commands
 ```
 
-Commands that still return a smaller legacy set must document that behavior in help until migrated. During this migration, some usage and flag errors still return `1`; scripts should treat both `1` and `2` as command failure unless a command documents a narrower contract.
+The broader taxonomy in `glade help exit-codes` reserves `4` for
+unsupported runtime boundaries, `5` for external dependencies, `70` for internal
+errors, and `130` for interruption. These are not consistent current mappings.
+Scripts should treat any nonzero exit as failure and inspect the command's
+diagnostics. See the [exit-code reference](../site/docs-src/guide/exit-codes.md).
 
 ## Stdout And Stderr
 
@@ -34,7 +36,12 @@ Stdout carries primary command output, JSON, and machine-readable formats.
 
 Stderr carries progress, warnings, non-primary status messages, and debug/internal messages.
 
-For `--json`, stdout must contain JSON only. Progress must not mix into stdout.
+Result-producing JSON modes keep progress off stdout.
+An error before result construction may leave stdout empty and report the error
+only on stderr. Check the process exit code before parsing output. Watch modes
+emit NDJSON events rather than a single result envelope. Wizard output and
+legacy paths such as `glade test failed --json` with no saved failures still
+print human text.
 
 ## JSON Envelope
 
@@ -55,7 +62,10 @@ Priority command JSON uses this envelope at the CLI boundary:
 }
 ```
 
-Existing package-level JSON structs remain available inside the `data` field where needed during migration.
+Fields after `exitCode` are command-dependent and may be omitted. Existing
+package-level JSON structs remain available inside the `data` field where needed
+during migration; some commands still return their own JSON shape. Consumers
+must use the schema for the specific command and mode.
 
 ## Diagnostics
 

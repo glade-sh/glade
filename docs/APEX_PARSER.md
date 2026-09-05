@@ -67,13 +67,15 @@ of a parse result.
 Build and run with CGO enabled:
 
 ```sh
-go test ./...
-go build -o glade ./cmd/glade
+CGO_ENABLED=1 go test ./...
+CGO_ENABLED=1 go build -o glade ./cmd/glade
 ```
 
 The playground container (`Dockerfile`) builds with `CGO_ENABLED=1` and runs on a
 glibc base image. `scripts/release-build.sh` also builds with CGO enabled and
-checks `glade doctor` for `Ready.` before writing a release archive.
+checks `glade doctor --json` for `"parserOK": true` before writing a release
+archive. That assertion checks parser availability, not complete project
+readiness.
 
 ## Performance
 
@@ -86,10 +88,10 @@ BenchmarkBuildIndex-12    ~3.4 ms/op    ~455 KB/op    ~6,811 allocs/op
 
 ## Validation
 
-Run the full suite:
+Run the parent module suite (the nested parser module needs a separate run):
 
 ```sh
-go test ./...
+CGO_ENABLED=1 go test ./...
 ```
 
 Run parser and index benchmarks:
@@ -102,7 +104,8 @@ Run the vendored parser module's own tests:
 
 ```sh
 cd third_party/glade-apex-parser
-go test -count=1 ./...
+CGO_ENABLED=1 go test -count=1 ./...
+CGO_ENABLED=0 go test -count=1 ./...
 ```
 
 Run project-level smoke checks from `glade`:
@@ -115,7 +118,9 @@ glade compat replay testdata/replay/selector-service-domain
 scripts/smoke.sh
 ```
 
-After changing the vendored parser, run `go mod tidy` and `go test ./...`.
+After changing the vendored parser, run its module tests above and the affected
+parent packages, including `internal/apexast`. Run `go mod tidy` only when
+dependencies changed, in the module whose dependencies changed.
 
 ## Notes
 

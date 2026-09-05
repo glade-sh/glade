@@ -63,7 +63,7 @@ buffers, and plugin actions.
 | Check source after a pull | `glade check --project .` |
 | Run one test class | `glade test --project . --class RefinementServiceTest --json` |
 | Run one test method | `glade test --project . --class RefinementServiceTest --method testRefinesFileRow --json` |
-| Run tests affected by a branch | `glade test changed --project . --since origin/main --json --no-progress` |
+| Run tests affected by a branch | `glade test changed --project . --since <base-ref> --json --no-progress` |
 | Rerun last failures | `glade test failed --project .` |
 | Let Glade pick the next loop | `glade test --project . --wizard` |
 | Keep repeated CLI runs warm | `glade test serve --project .` |
@@ -72,6 +72,9 @@ buffers, and plugin actions.
 | Serve Visualforce preview pages locally | `glade dev vf --project . --addr 127.0.0.1:8080` |
 | Serve the LWC preview shell locally | `glade dev lwc --project . --open` |
 | Open the local playground | `glade playground --project . --open` |
+
+Replace `<base-ref>` with the intended existing comparison ref and verify it
+resolves in the checkout.
 
 Start with one focused class or method when bringing up a large project. Move
 to `glade test changed` after the first known-good run. Use the whole suite
@@ -97,16 +100,24 @@ Give an AI coding agent this contract from the Salesforce DX project root:
 ```text
 Use Glade for local Salesforce checks.
 Do not connect to a Salesforce org for the first pass.
+For a behavior change, write a focused test and verify its expected failure.
+For a behavior-preserving refactor, establish a passing baseline first.
+Choose the intended existing comparison ref, verify it resolves, and replace
+<base-ref> below.
 Run:
   mkdir -p reports
   glade doctor --project .
   glade config validate --project .
   glade check --project . --format json --output reports/glade-check.json --no-progress
-  glade test changed --project . --since origin/main --json --no-progress > reports/glade-test-changed.json
+  glade test changed --project . --since <base-ref> --json --no-progress > reports/glade-test-changed.json
 If a command fails, quote the exact diagnostic and classify the mismatch.
 Do not rewrite valid Salesforce behavior to satisfy a Glade limitation.
-For bugs or new behavior prove a failing test; preserve a passing baseline for refactors.
+Fix only the relevant source and rerun the same command before claiming success.
 Use authorized Salesforce validation when the path requires it.
+Read the saved JSON and report diagnostics plus total, passed, failed, errors,
+skipped, and unsupported test counts. An empty affected selection can exit 0;
+run an explicit relevant test or suite before claiming test execution evidence.
+Unsupported test outcomes exit 1 and remain unvalidated behavior.
 Check the Glade support map before treating unsupported platform services as bugs.
 ```
 
@@ -114,13 +125,14 @@ For a review or refactor prompt, ask the agent to produce a proof artifact:
 
 ```bash
 mkdir -p reports
-glade report refactor-proof --project . --since origin/main --format html --out reports/glade-refactor-proof.html
-glade report refactor-proof --project . --since origin/main --fail-on-api-break --format json > reports/glade-refactor-proof.json
+glade report refactor-proof --project . --since <base-ref> --format html --out reports/glade-refactor-proof.html
+glade report refactor-proof --project . --since <base-ref> --fail-on-api-break --format json > reports/glade-refactor-proof.json
 ```
 
 The proof report records the git diff, parse and semantic status, graph impact,
 affected-test selection, optional trace summary, and public or global API
-surface warnings.
+surface warnings. It does not execute tests. Run the focused and affected
+tests separately and retain their results with the report.
 
 ## CI Pattern
 
