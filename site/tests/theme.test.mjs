@@ -195,15 +195,19 @@ test("release notes record final v0.2.12 validation", () => {
   assert.match(candidateText, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.12\/docs\/KNOWN_GAPS\.md/);
 });
 
-test("release notes and launch docs identify v0.2.14 as the stable release", () => {
+test("release notes stage v0.2.15 while launch docs identify v0.2.14 as stable", () => {
   const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(unreleased, "release notes should contain an Unreleased section");
   const unreleasedText = unreleased[1].replace(/\s+/g, " ");
-  assert.match(unreleasedText, /First-run guidance initializes .* before `doctor`/);
-  assert.match(unreleasedText, /Runtime smoke initializes .* before `check` and `test`/);
-  assert.match(unreleasedText, /Release builds stage the shared payload outside the Git worktree/);
-  assert.match(unreleasedText, /golang\.org\/x\/text/);
-  assert.doesNotMatch(unreleasedText, /release candidate|latest published release remains/);
+  assert.match(unreleasedText, /No unreleased changes\./);
+
+  const candidate = releaseNotes.match(/^## v0\.2\.15 - 2026-09-04\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
+  assert.ok(candidate, "release notes should contain a v0.2.15 section");
+  const candidateText = candidate[1].replace(/\s+/g, " ");
+  assert.match(candidateText, /First-run guidance initializes .* before `doctor`/);
+  assert.match(candidateText, /Runtime smoke initializes .* before `check` and `test`/);
+  assert.match(candidateText, /Release builds stage the shared payload outside the Git worktree/);
+  assert.match(candidateText, /golang\.org\/x\/text/);
 
   const released = releaseNotes.match(/^## v0\.2\.14 - 2026-09-04\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(released, "release notes should contain a v0.2.14 section");

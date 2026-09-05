@@ -2,12 +2,19 @@
 
 ## Unreleased
 
+No unreleased changes.
+
+## v0.2.15 - 2026-09-04
+
+v0.2.15 hardens release provenance and the first-run path before wider public
+adoption.
+
 - First-run guidance initializes the bundled Playground sample before `doctor`.
   Runtime smoke initializes it before `check` and `test`, then requires a named,
   nonzero test result.
-- Release and security documentation now reflects the published v0.2.14
-  product, the v0.2.13 first-party plugins, platform-specific SBOM counts, and
-  the install footprint.
+- Release and security documentation records the v0.2.14 product baseline, the
+  v0.2.13 first-party plugins, platform-specific SBOM counts, and the install
+  footprint.
 - Release builds stage the shared payload outside the Git worktree and fail if
   the candidate is dirty, preserving the clean embedded revision required by
   the Salesforce correctness gate.
