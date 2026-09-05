@@ -9,6 +9,7 @@ const resultHeading = ref<HTMLElement | null>(null)
 const pageSize = 25
 const statuses = ['all', 'supported', 'partial', 'stub', 'unsupported', 'unknown']
 const entries = editorSupportCatalog.rows
+const hasFilters = computed(() => query.value.trim() !== '' || status.value !== 'all')
 const filtered = computed(() => {
   const needle = query.value.trim().toLowerCase()
   return entries.filter((entry) =>
@@ -74,14 +75,14 @@ function statusClass(value: string) {
   <section class="support-explorer" aria-labelledby="support-explorer-heading">
     <div class="support-explorer-heading">
       <div>
-        <p class="docs-card-kicker">Generated standard-library catalog</p>
-        <h2 id="support-explorer-heading">Search API capabilities</h2>
+        <p class="docs-card-kicker">Selected APIs</p>
+        <h2 id="support-explorer-heading">Explore capability notes</h2>
       </div>
 
     </div>
 
     <div class="support-explorer-controls">
-      <label>Search APIs<input v-model="query" type="search" placeholder="Try Database.insert or Answers" autocomplete="off"></label>
+      <label>Search capability notes<input v-model="query" type="search" placeholder="Try Database.insert or Answers" autocomplete="off"></label>
       <label>Status<select v-model="status">
         <option value="all">All raw statuses</option>
         <option value="supported">supported — Runs locally</option>
@@ -92,13 +93,16 @@ function statusClass(value: string) {
       </select></label>
       <button class="support-explorer-button" type="button" @click="clearFilters">Clear filters</button>
     </div>
+    <p class="support-explorer-scope">Behavior and limits for selected Apex APIs. Use the <a href="#drill-down">coverage guides</a> for the broader runtime, standard library and object model.</p>
     <p>Runs locally describes a local implementation, including deterministic models. Runs locally with limits covers partial or stub rows. Requires Salesforce identifies unsupported rows. None of these labels alone establishes Salesforce parity.</p>
     <p ref="resultHeading" class="support-explorer-result" role="status" aria-live="polite" tabindex="-1">
-      {{ filtered.length }} matching row{{ filtered.length === 1 ? '' : 's' }} of {{ entries.length }} checked ledger rows.
-      <template v-if="filtered.length">Showing {{ (page - 1) * pageSize + 1 }}–{{ Math.min(page * pageSize, filtered.length) }}. Page {{ page }} of {{ pageCount }}.</template>
-      <template v-else>Try a broader API name or clear the filters.</template>
+      <template v-if="filtered.length">
+        <template v-if="hasFilters">{{ filtered.length }} matching note{{ filtered.length === 1 ? '' : 's' }}.</template>
+        Page {{ page }} of {{ pageCount }}.
+      </template>
+      <template v-else>No matching notes. An API can be implemented without a note here. <a href="#drill-down">Browse the coverage guides</a> or clear the filters.</template>
     </p>
-    <ul class="support-explorer-list" tabindex="0" aria-label="Matching checked API rows">
+    <ul class="support-explorer-list" tabindex="0" aria-label="Capability notes">
       <li v-for="entry in shown" :key="entry.id">
         <div><code>{{ entry.api }}</code><span :class="['docs-status-chip', statusClass(entry.status)]">{{ editorSupportCatalog.statusLabels[entry.status] }}</span></div>
         <dl class="support-row-detail">
@@ -115,21 +119,15 @@ function statusClass(value: string) {
       <button class="support-explorer-button" type="button" :disabled="page >= pageCount" @click="changePage(page + 1)">Next</button>
       <button class="support-explorer-button" type="button" :disabled="page >= pageCount" @click="changePage(pageCount)">Last</button>
     </nav>
-      <dl class="support-explorer-summary">
-        <div><dt>Ledger: supported</dt><dd>{{ editorSupportCatalog.summary.supported }}</dd></div>
-        <div><dt>Ledger: partial / stub</dt><dd>{{ editorSupportCatalog.summary.partial }} / {{ editorSupportCatalog.summary.stub }}</dd></div>
-        <div><dt>Ledger: unsupported</dt><dd>{{ editorSupportCatalog.summary.unsupported }}</dd></div>
-        <div><dt>Ledger: unknown</dt><dd>{{ editorSupportCatalog.summary.unknown }}</dd></div>
-      </dl>
-    <p class="support-explorer-foot">Counts and rows come from <code>{{ editorSupportCatalog.generatedFrom }}</code>. Counts apply to this checked catalog, not the whole Salesforce platform. Follow the complete ledgers below for regression-test links and evidence scope.</p>
-    <noscript>Search and pagination need JavaScript. The complete checked ledgers linked below remain readable without it.</noscript>
+    <p class="support-explorer-foot">Notes come from <code>{{ editorSupportCatalog.generatedFrom }}</code>. Follow the source reports below for regression-test links and evidence scope.</p>
+    <noscript>Search and pagination need JavaScript. The source reports linked below remain readable without it.</noscript>
   </section>
 </template>
 
 <style scoped>
 .support-explorer-heading h2 { margin: 0; padding: 0; border: 0; }
 .support-explorer-heading .docs-card-kicker { margin: 0 0 12px; }
-.support-explorer-heading, .support-explorer-summary, .support-explorer-controls { flex-wrap: wrap; }
+.support-explorer-heading, .support-explorer-controls { flex-wrap: wrap; }
 .support-explorer-controls label { min-width: 0; }
 .support-explorer-controls select, .support-explorer-controls input { width: 100%; min-width: 0; }
 .support-explorer-list li > div { flex-wrap: wrap; }
@@ -144,7 +142,6 @@ function statusClass(value: string) {
 .support-row-detail dt { font-weight: 600; color: var(--vp-c-text-2); }
 .support-row-detail dd { margin: 2px 0 0; overflow-wrap: anywhere; }
 @media (max-width: 640px) {
-  .support-explorer-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; text-align: left; }
   .support-explorer-controls > .support-explorer-button { align-self: stretch; }
 }
 </style>

@@ -19,7 +19,7 @@ test('every capability row is reachable and pagination survives reload and histo
   } while (true)
   expect(total).toBeGreaterThan(50)
   expect(seen.sort()).toEqual(expected.sort())
-  await expect(results).toContainText(`${total} matching rows of ${total}`)
+  await expect(results).toHaveText(`Page ${Math.ceil(total / 25)} of ${Math.ceil(total / 25)}.`)
   const lastURL = page.url()
   await page.reload()
   await expect(next).toBeDisabled()
@@ -34,21 +34,21 @@ test('every capability row is reachable and pagination survives reload and histo
 test('capability raw statuses, query restoration, empty recovery, and model limits stay distinct', async ({ page }) => {
   await page.goto('/guide/support-map?q=Answers.findSimilar&status=supported&page=999')
   const results = page.locator('.support-explorer-result')
-  await expect(page.getByRole('searchbox', { name: 'Search APIs' })).toHaveValue('Answers.findSimilar')
-  await expect(results).toContainText('1 matching row')
+  await expect(page.getByRole('searchbox', { name: 'Search capability notes' })).toHaveValue('Answers.findSimilar')
+  await expect(results).toContainText('1 matching note')
   await expect(page.locator('.support-explorer-list')).toContainText(/deterministic empty.*List<Id>/)
   await expect(page.locator('.support-explorer-list')).toContainText('Execution classification')
   await expect(page.locator('.support-explorer-list')).toContainText('does not attach a live Salesforce parity receipt')
   const status = page.getByRole('combobox', { name: 'Status', exact: true })
   for (const value of ['partial', 'stub', 'unknown', 'unsupported']) {
     await status.selectOption(value)
-    await expect(results).toContainText('0 matching rows')
+    await expect(results).toContainText('No matching notes')
     await expect(page).toHaveURL(new RegExp(`status=${value}`))
   }
   await page.reload()
   await expect(status).toHaveValue('unsupported')
   await page.getByRole('button', { name: 'Clear filters' }).click()
-  await expect(page.getByRole('searchbox', { name: 'Search APIs' })).toHaveValue('')
+  await expect(page.getByRole('searchbox', { name: 'Search capability notes' })).toHaveValue('')
   await expect(status).toHaveValue('all')
   await expect(page.locator('.support-explorer-list > li')).toHaveCount(25)
 })
@@ -111,7 +111,7 @@ test('workbench replay is disclosed, keyboard-operable, and cleans up on navigat
 
 test('capability controls are near the top and editor jump links reach their tools', async ({ page }) => {
   await page.goto('/guide/support-map')
-  await expect(page.getByRole('searchbox', { name: 'Search APIs' })).toBeInViewport()
+  await expect(page.getByRole('searchbox', { name: 'Search capability notes' })).toBeInViewport()
   await page.goto('/guide/workbench')
   const editorLink = page.getByRole('link', { name: 'Try the capability editor', exact: true })
   await expect(editorLink).toBeInViewport()

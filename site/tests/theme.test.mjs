@@ -38,7 +38,6 @@ const repoApexLanguageCompatibility = await readFile(new URL("../../docs/APEX_LA
 const repoDocsIndex = await readFile(new URL("../../docs/README.md", import.meta.url), "utf8");
 const reservedIdentifierImplementation = await readFile(new URL("../../third_party/glade-apex-parser/reserved_identifier_words.go", import.meta.url), "utf8");
 const repoCompatibilityDashboard = await readFile(new URL("../../docs/COMPATIBILITY_DASHBOARD.md", import.meta.url), "utf8");
-const repoStdlibCoverage = await readFile(new URL("../../docs/STDLIB_COVERAGE.md", import.meta.url), "utf8");
 const repoPrivateCorpusAssurance = await readFile(new URL("../../docs/PRIVATE_CORPUS_ASSURANCE.md", import.meta.url), "utf8").catch(() => "");
 const repoLwcSupport = await readFile(new URL("../../docs/LWC_SUPPORT.md", import.meta.url), "utf8");
 const releaseNotes = await readFile(new URL("../../docs/RELEASE_NOTES.md", import.meta.url), "utf8");
@@ -1493,23 +1492,20 @@ test("guide landing, quickstart, and support map explain the current product", (
   assert.match(supportMap, /package shims/);
   assert.doesNotMatch(supportMap, /folded into this page/);
   assert.match(supportMap, /## Requires Salesforce/);
-  assert.match(supportMap, /Counts come from the checked standard library capability report/);
-  const stdlibRows = [...repoStdlibCoverage.matchAll(/^\| ([^|]+) \| `[^`]+` \| `(supported|partial|unsupported)` \|/gm)];
-  const scalarRows = stdlibRows.filter((match) => ["String", "Decimal", "Boolean", "Math"].includes(match[1].trim()));
-  const scalarSupported = scalarRows.filter((match) => match[2] === "supported").length;
-  const scalarUnsupported = scalarRows.filter((match) => match[2] === "unsupported").length;
-  assert.match(supportMap, new RegExp(`\\| String, Decimal, Boolean, Math \\| Supported local rows, Decimal division gap \\| ${scalarSupported} supported, ${scalarUnsupported} unsupported \\/ ${scalarRows.length} tracked \\|`));
-  assert.match(supportMap, /\| ApexPages and PageReference \| Supported controller rows, hosted rendering gaps \| 15 supported, 2 unsupported \/ 17 tracked \|/);
-  assert.match(supportMap, /\| UserInfo, URL, Label, and TrailblazerIdentity \| Broad local capability \| 24 supported \/ 24 tracked \|/);
-  assert.match(supportMap, /\| Type, FeatureManagement, and Exception \| Supported local rows, hosted package gap \| 8 supported, 1 unsupported \/ 9 tracked \|/);
-  assert.match(supportMap, /\| Local test harness and request context \| Supported local rows, hosted and malformed-input gaps \| 32 supported, 2 unsupported \/ 34 tracked \|/);
-  assert.match(supportMap, /\| Hosted-service and platform boundary rows \| Requires Salesforce, plus stable diagnostics \| 2 supported, 1 unsupported \/ 3 tracked \|/);
+  assert.match(supportMap, /source report for detailed behavior notes and regression-test links/);
+  for (const family of [
+    "String, Decimal, Boolean, Math | Supported local rows, Decimal division gap",
+    "ApexPages and PageReference | Supported controller rows, hosted rendering gaps",
+    "UserInfo, URL, Label, and TrailblazerIdentity | Broad local capability",
+    "Type, FeatureManagement, and Exception | Supported local rows, hosted package gap",
+    "Local test harness and request context | Supported local rows, hosted and malformed-input gaps",
+    "Hosted-service and platform boundary rows | Requires Salesforce, plus stable diagnostics"
+  ]) assert.ok(supportMap.includes(`| ${family} |`));
   assert.match(supportMap, /<GladeSupportExplorer \/>/);
   assert.match(supportMap, /## Capability claims/);
-  assert.match(supportMap, /\| Capability features marked `supported` \| 31 \|/);
-  assert.match(supportMap, /\| Capability features marked `partial` \| 0 \|/);
-  assert.ok(supportMap.includes("| Standard-library rows marked `supported` | " + stdlibRows.filter((match) => match[2] === "supported").length + " |"));
-  assert.ok(supportMap.includes("| Standard-library rows marked `unsupported` | " + stdlibRows.filter((match) => match[2] === "unsupported").length + " |"));
+  assert.match(supportMap, /an unlisted API can still run locally/);
+  assert.match(supportMap, /\| Family \| Status \|/);
+  assert.doesNotMatch(supportMap, /\| (?:Capability features|Standard-library rows) marked/);
   assert.match(supportMap, /Approval list\s+processing/);
   assert.match(configuration, /namespaceRemaps: \[\]/);
   assert.match(configuration, /Namespace remaps/);

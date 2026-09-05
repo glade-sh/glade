@@ -120,7 +120,7 @@ test('homepage labels its simulated product view and preserves task destinations
 test('support explorer is generated, searchable, status-filterable, and announced', () => {
   assert.match(themeIndex, /GladeSupportExplorer/)
   assert.match(supportExplorer, /editorSupportCatalog/)
-  assert.match(supportExplorer, /editorSupportCatalog\.summary/)
+  assert.match(supportExplorer, /editorSupportCatalog\.rows/)
   assert.match(supportExplorer, /type="search"/)
   assert.match(supportExplorer, /aria-live="polite"/)
   assert.match(supportExplorer, /Runs locally with limits/)
