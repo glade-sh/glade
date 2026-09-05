@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-- First-run guidance and runtime smoke initialize the bundled Playground sample
-  before `doctor`, then require a named, nonzero test result.
+- First-run guidance initializes the bundled Playground sample before `doctor`.
+  Runtime smoke initializes it before `check` and `test`, then requires a named,
+  nonzero test result.
 - Release and security documentation now reflects the published v0.2.14
   product, the v0.2.13 first-party plugins, platform-specific SBOM counts, and
   the install footprint.
