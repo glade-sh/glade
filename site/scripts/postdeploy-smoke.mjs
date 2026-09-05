@@ -115,7 +115,7 @@ await page.addInitScript(() => {
 for (const route of ['/', '/guide/', '/guide/quickstart', '/reference/cli', '/guide/workbench']) {
   await page.goto(new URL(route, baseURL).toString())
 }
-await page.goto(baseURL.toString())
+await page.goto(new URL('/guide/', baseURL).toString())
 await page.getByRole('button', { name: /search/i }).first().click()
 await page.getByRole('searchbox').waitFor()
 await browser.close()

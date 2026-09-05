@@ -15,9 +15,9 @@ head:
 
 The website capability explorer maps checked APIs to their local boundary. Type Apex expressions and see whether the API runs locally, runs locally with limits, or requires Salesforce.
 
-Use the editor as a browser capability lookup: type a dot, read the label, and see the boundary before you depend on an API. Edits stay in your browser; this page does not execute Apex or send visitor source anywhere.
-
 [Try the capability editor](#apex-editor-heading) · [Replay a workflow](#local-apex-workbench)
+
+Use the editor as a browser capability lookup: type a dot, read the label, and see the boundary before you depend on an API. Edits stay in your browser; this page does not execute Apex or send visitor source anywhere.
 
 <span id="capability-explorer"></span>
 

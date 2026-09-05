@@ -15,7 +15,7 @@ before changing source or resetting data.
 | What happened | First safe check | Continue with |
 | --- | --- | --- |
 | Command not found | `glade version` and the install directory on `PATH` | [Installation](/guide/installation) |
-| Project or doctor failure | `test -f sfdx-project.json`, then read the first failed doctor row | [Project recovery](/help/troubleshooting#glade-cannot-find-my-project) |
+| Project or doctor failure | `test -f sfdx-project.json`, then read the first failed doctor row | [Project recovery](/help/troubleshooting) |
 | No test result or zero tests | Check the JSON total and actual class/method names | [Test discovery](/help/troubleshooting#a-test-is-not-discovered) |
 | A breakpoint never stops | Run the selected test without the debugger | [Breakpoint recovery](/help/troubleshooting#a-breakpoint-is-not-hit) |
 | A local target is missing | Check the same project, alias, and isolated sf configuration | [Local target setup](/help/glade-org-sf-data-import) |

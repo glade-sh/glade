@@ -1087,7 +1087,7 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
 
 @media (min-width: 780px) {
   .home-workbench-head {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 15rem);
   }
 }
 
@@ -1797,6 +1797,10 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
+  }
+
+  .home-demo-notice {
+    grid-column: 1 / -1;
   }
 
   .home-workflow-count {
