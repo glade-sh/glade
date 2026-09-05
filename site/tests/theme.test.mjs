@@ -195,13 +195,15 @@ test("release notes record final v0.2.12 validation", () => {
   assert.match(candidateText, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.12\/docs\/KNOWN_GAPS\.md/);
 });
 
-test("release notes move v0.2.14 candidate fixes into the versioned section", () => {
+test("release notes and launch docs identify v0.2.14 as the stable release", () => {
   const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(unreleased, "release notes should contain an Unreleased section");
   const unreleasedText = unreleased[1].replace(/\s+/g, " ");
-  assert.match(unreleasedText, /v0\.2\.14 section below is the frozen release candidate/);
-  assert.match(unreleasedText, /latest published release remains v0\.2\.13/);
-  assert.doesNotMatch(unreleased[1], /source errors before cache reuse|RefinementServiceTest/);
+  assert.match(unreleasedText, /First-run guidance initializes .* before `doctor`/);
+  assert.match(unreleasedText, /Runtime smoke initializes .* before `check` and `test`/);
+  assert.match(unreleasedText, /Release builds stage the shared payload outside the Git worktree/);
+  assert.match(unreleasedText, /golang\.org\/x\/text/);
+  assert.doesNotMatch(unreleasedText, /release candidate|latest published release remains/);
 
   const released = releaseNotes.match(/^## v0\.2\.14 - 2026-09-04\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(released, "release notes should contain a v0.2.14 section");
@@ -214,11 +216,27 @@ test("release notes move v0.2.14 candidate fixes into the versioned section", ()
 
   for (const page of [repoReadme, quickstart, examples]) {
     const pageText = page.replace(/\s+/g, " ");
-    assert.match(pageText, /v0\.2\.14 release candidate/);
-    assert.match(pageText, /published v0\.2\.13/);
+    assert.match(pageText, /v0\.2\.14 stable release/);
+    assert.doesNotMatch(pageText, /v0\.2\.14 release candidate|published v0\.2\.13/);
   }
   assert.doesNotMatch(plugins, /licensing decision pending/i);
   assert.match(plugins, /Apache License 2\.0/);
+  assert.match(plugins, /published v0\.2\.13 plugin archives/);
+  assert.doesNotMatch(plugins, /v0\.2\.13 release-candidate/);
+
+  for (const securityPage of [securityTrust, repoSecurityTrust, repoSecurityPolicy]) {
+    assert.match(securityPage, /v0\.2\.14/);
+    assert.match(securityPage, /LWC\/Babel.*VSIX|VSIX.*LWC\/Babel/s);
+    assert.doesNotMatch(securityPage, /unreleased archive builder|local candidate validation until the new release workflow/);
+  }
+
+  for (const ciPage of [ciArtifacts, helpCiSetup]) {
+    assert.match(ciPage, /GLADE_VERSION=v0\.2\.14/);
+    assert.doesNotMatch(ciPage, /GLADE_VERSION=v0\.2\.13/);
+  }
+
+  assert.match(supportMap, /v0\.2\.14 — `b974901a3e0ad48d6c517cff894601fa5e242000`/);
+  assert.match(supportMap, /releases\/tag\/v0\.2\.14/);
 });
 
 test("release docs publish the sealed private-corpus assurance snapshot", () => {
@@ -679,6 +697,12 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(securityTrust, /CodeQL/);
   assert.match(securityTrust, /gosec/);
   assert.match(securityTrust, /CycloneDX SBOM/);
+  for (const trustDoc of [repoSecurityPolicy, repoSecurityTrust, securityTrust]) {
+    assert.match(trustDoc, /128–129/);
+    assert.match(trustDoc, /32–33 Go\s+modules/);
+    assert.match(trustDoc, /96 .*npm/);
+  }
+  assert.match(supportMap, /128–129-component SBOMs/);
   assert.match(securityTrust, /Artifact attestations/);
   assert.match(securityTrust, /gh attestation verify/);
   assert.match(securityTrust, /SHA256SUMS\.txt/);
@@ -1561,7 +1585,7 @@ test("guide landing, quickstart, and support map explain the current product", (
   assert.match(quickstart, /class="docs-intro"/);
   assert.match(quickstart, /Run a real local Apex test/);
   assert.match(quickstart, /export PATH="\$HOME\/\.local\/bin:\$PATH"/);
-  assert.match(quickstart, /executed test\s+total must be at least one/);
+  assert.match(quickstart, /executed test\s+total\s+must be at least one/i);
   assert.match(quickstart, /glade check --project \./);
   assert.match(quickstart, /glade test --project \. --class RefinementServiceTest/);
   assert.doesNotMatch(quickstart, /--filter/);
@@ -1620,7 +1644,7 @@ test("guide landing, quickstart, and support map explain the current product", (
   assert.doesNotMatch(supportMap, /Approval\.process is not supported/);
   assert.match(installation, /## Install and verify/);
   assert.match(installation, /class="docs-route-grid docs-install-grid"/);
-  assert.match(installation, /installs the current stable release to `~\/\.local\/bin`/);
+  assert.match(installation, /installs the `glade` binary,[\s\S]*to\s+`~\/\.local\/bin`/);
   assert.doesNotMatch(installation, /private repository release|GLADE_GITHUB_TOKEN/);
   assert.match(installation, /href="\/guide\/security-trust#release-proof"/);
   assert.match(css, /\.docs-install-card\s*\{[\s\S]*padding: 16px;[\s\S]*border-radius: 12px;[\s\S]*min-height: 112px;/);

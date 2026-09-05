@@ -2,9 +2,16 @@
 
 ## Unreleased
 
-The v0.2.14 section below is the frozen release candidate. The latest published
-release remains v0.2.13 until the exact-SHA release gates and immutable assets
-complete. Historical receipts do not validate the candidate.
+- First-run guidance initializes the bundled Playground sample before `doctor`.
+  Runtime smoke initializes it before `check` and `test`, then requires a named,
+  nonzero test result.
+- Release and security documentation now reflects the published v0.2.14
+  product, the v0.2.13 first-party plugins, platform-specific SBOM counts, and
+  the install footprint.
+- Release builds stage the shared payload outside the Git worktree and fail if
+  the candidate is dirty, preserving the clean embedded revision required by
+  the Salesforce correctness gate.
+- `golang.org/x/text`, `nanoid`, and `postcss` receive targeted security updates.
 
 ## v0.2.14 - 2026-09-04
 

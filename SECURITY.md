@@ -103,7 +103,7 @@ tar -xzf "$GLADE_ARCHIVE"
 Compare the matching `*.sbom.json` release asset with your internal dependency
 allowlist when policy requires an inventory review.
 
-The v0.2.13 SBOM inventories the Go executable, not the entire archive's bundled
-JavaScript/VSIX dependencies. Its attestation authenticates that inventory; it
-does not make the inventory complete. Review packaged JavaScript separately
-until a release explicitly supplies complete-archive inventory evidence.
+The v0.2.14 per-archive SBOMs inventory 128–129 components: 32–33 Go modules
+plus 96 bundled LWC/Babel and VSIX npm packages. The macOS archives contain 33
+Go modules; the Linux archives contain 32. The earlier v0.2.13 inventory
+remains Go-only. Compare the SBOM for the exact archive you install.

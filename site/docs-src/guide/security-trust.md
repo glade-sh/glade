@@ -43,20 +43,17 @@ reachability, and the exact candidate before accepting or dismissing a finding.
 
 ## Release proof
 
-**Inventory scope:** the published v0.2.13 SBOM covers the Go executable. It
-does not inventory all bundled LWC/Babel JavaScript and VSIX dependencies.
-Attestation proves the inventory's origin, not its completeness. Keep this
-limitation in any supply-chain review of that release.
+**Inventory scope:** the published v0.2.14 per-archive SBOMs inventory 128–129
+packaged components: 32–33 Go modules and 96 LWC/Babel or VSIX npm
+dependencies. The macOS archives contain 33 Go modules; the Linux archives
+contain 32. The extension includes dependency notices and an inventory bound
+to its bundle hash. Attestation proves the inventory's origin, not its
+completeness.
 
-The unreleased archive builder also inventories packaged LWC/Babel modules
-and dependencies present in the bundled VSIX. The extension includes dependency
-notices and an inventory bound to its bundle hash. Exact archive and inventory
-attestations still require the approved release workflow; local validation does
-not amend the published v0.2.13 inventory.
-
-The builder also packages notice evidence for the Go distribution, linked Go
+The archive also packages notice evidence for the Go distribution, linked Go
 modules named by the exact binary, and the vendored Apex parser. This supports
-review but does not decide the sufficiency of notices for system or CGO libraries.
+review but does not decide the sufficiency of notices for system or CGO
+libraries. The earlier v0.2.13 inventory remains Go-only.
 
 Tagged releases publish:
 

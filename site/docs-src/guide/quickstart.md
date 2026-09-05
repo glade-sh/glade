@@ -24,11 +24,9 @@ your shell configuration to keep it in new terminals.
 
 See [Installation](/guide/installation) for version pinning and archive verification.
 
-::: warning Sample version boundary
-The corrected bundled test below is part of the v0.2.14 release candidate.
-The published v0.2.13 `refinement-service` sample has a reserved-identifier
-error and no test class. On v0.2.13, use the existing-project route below;
-do not treat a playground Pass with source errors as successful validation.
+::: info Stable sample
+The corrected bundled test below ships in the v0.2.14 stable release. Do not
+treat a playground Pass with source errors as successful validation.
 :::
 
 ## Try the sample
@@ -48,14 +46,16 @@ Account, SOQL reads it back, and `FileRow` formats its label.
 Stop this server with Ctrl-C. From the same evaluation folder:
 
 ```bash
+glade init --project .glade/playground/workspaces/default --yes
 glade doctor --project .glade/playground/workspaces/default
 glade check --project .glade/playground/workspaces/default --json
 glade test --project .glade/playground/workspaces/default --class RefinementServiceTest --json
 ```
 
-Expected: doctor identifies the sample and parser, check has no diagnostics,
-and `RefinementServiceTest.createsAndLabelsFileRow` passes. The executed test
-total must be at least one. A successful process with **zero tests** is not a
+Expected: initialization creates `glade.yml`; doctor identifies the sample and
+parser and ends with `Ready.`; check has no diagnostics; and
+`RefinementServiceTest.createsAndLabelsFileRow` passes. The executed test total
+must be at least one. A successful process with **zero tests** is not a
 successful first-test result.
 
 To see the feedback loop, change the test's expected label to an incorrect

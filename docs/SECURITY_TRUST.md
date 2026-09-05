@@ -23,20 +23,18 @@ not public issues. If GitHub reporting is unavailable, use
 
 ## Release proof
 
-The v0.2.13 SBOM inventories the Go executable, not all JavaScript/VSIX
-dependencies bundled in its archive. An attestation authenticates the
-inventory but does not establish completeness. A green gosec upload likewise
-does not establish zero findings: the scanner uses `-no-fail` during triage.
+The v0.2.14 per-archive SBOMs inventory 128–129 packaged components: 32–33 Go
+modules and 96 LWC/Babel or VSIX npm dependencies. The macOS archives contain
+33 Go modules; the Linux archives contain 32. The VSIX carries dependency
+notices and an inventory bound to its extension bundle hash. An attestation
+authenticates the inventory but does not establish completeness. A green gosec
+upload likewise does not establish zero findings: the scanner uses `-no-fail`
+during triage.
 
-The unreleased archive builder also inventories packaged LWC/Babel modules
-and dependencies present in the bundled VSIX. The VSIX carries dependency
-notices and an inventory bound to its extension bundle hash. This is local
-candidate validation until the new release workflow publishes and verifies
-the exact archive and inventory attestations; it does not amend v0.2.13.
-The builder also packages notice evidence for the Go distribution, the linked
+The archive also packages notice evidence for the Go distribution, the linked
 Go modules named by the exact binary, and the vendored Apex parser. Those files
 support review; they are not a legal-sufficiency opinion about system or CGO
-libraries.
+libraries. The earlier v0.2.13 inventory remains Go-only.
 
 Each release archive is built from tagged source by GitHub Actions. The release
 workflow publishes:

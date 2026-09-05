@@ -70,14 +70,15 @@ runtime-support credit and local test execution reports `UnsupportedFeature`.
 
 | Release / source | Evidence | Denominator and boundary | Receipt |
 | --- | --- | --- | --- |
+| v0.2.14 — `b974901a3e0ad48d6c517cff894601fa5e242000` | Current stable distribution; exact Required CI and Salesforce correctness authority for the product/Tools pair | Per-archive checksums, 128–129-component SBOMs, and attestations; not blanket parity or a new corpus result | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.14) |
 | v0.2.13 — `04c55539045d782ce56e2e5d92d4fb637ba03741` | Published distribution | Per-archive checksums and attestations; not a new corpus/parity result | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.13) |
 | v0.2.12 — `3a454dee3cb35c604cb1bf25e6a8972b63dd7c81` | Tagged local/corpus and Salesforce checks | 12,315 and 782 private tests; 86 public projects; 475 Salesforce checks, with their distinct accounting | [Tagged validation](https://github.com/glade-sh/glade/blob/v0.2.12/docs/PRIVATE_CORPUS_ASSURANCE.md#tagged-v0212-product-validation) |
 | v0.2.11 | Frozen surface snapshot | 184 required surfaces; overlapping compile/test/runtime/non-parity sets described below | [Bound source pair and receipts](https://github.com/glade-sh/glade/blob/v0.2.11/docs/PRIVATE_CORPUS_ASSURANCE.md) |
 
-No new candidate runtime/parity certification is implied by this table. The
-linked receipts carry exact product/Tools inputs where applicable; never combine
-results from different candidates. For the v0.2.12 release-note link that omitted
-`docs/`, use the tagged-validation link above. Historical receipts remain unchanged.
+No blanket runtime/parity certification is implied by this table. The linked
+receipts carry exact product/Tools inputs where applicable; never combine results
+from different candidates. For the v0.2.12 release-note link that omitted `docs/`,
+use the tagged-validation link above. Historical receipts remain unchanged.
 
 ## Published v0.2.11 surface snapshot
 
