@@ -31,8 +31,8 @@ glade version
 The script installs the `glade` binary, including parser support, to
 `~/.local/bin`. It installs the LWC runtime/toolchain and bundled editor assets
 under `~/.local/share/glade` by default. Set `GLADE_INSTALL_DIR` and
-`GLADE_HOME` to change those destinations. A clean v0.2.14 macOS arm64 install
-used about 220 MB; size varies by release and platform.
+`GLADE_HOME` to change those destinations. A clean v0.2.15 macOS arm64 install
+used about 229 MB on disk; size varies by release and platform.
 Expected: `glade version` prints **{{ releaseManifest.version }}**. If the shell
 cannot find `glade`, repair the current shell with:
 

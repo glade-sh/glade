@@ -43,7 +43,7 @@ Continue with the [canonical quickstart](https://glade.sh/guide/quickstart):
 - **Try the sample:** load the built-in Refinement Service, then run its named test.
 - **Use my project:** initialize an existing Salesforce DX project and run one known test class before the full suite.
 
-The corrected sample and named test ship in the **v0.2.14 stable release**. A
+The corrected sample and named test ship in the **v0.2.15 stable release**. A
 playground Pass alongside source errors is not valid proof; the quickstart shows
 the named, nonzero test result to expect.
 

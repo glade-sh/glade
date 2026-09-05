@@ -195,7 +195,7 @@ test("release notes record final v0.2.12 validation", () => {
   assert.match(candidateText, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.12\/docs\/KNOWN_GAPS\.md/);
 });
 
-test("release notes stage v0.2.15 while launch docs identify v0.2.14 as stable", () => {
+test("launch docs identify the published v0.2.15 release and retain historical notes", () => {
   const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(unreleased, "release notes should contain an Unreleased section");
   const unreleasedText = unreleased[1].replace(/\s+/g, " ");
@@ -227,7 +227,7 @@ test("release notes stage v0.2.15 while launch docs identify v0.2.14 as stable",
 
   for (const page of [repoReadme, quickstart, examples]) {
     const pageText = page.replace(/\s+/g, " ");
-    assert.match(pageText, /v0\.2\.14 stable release/);
+    assert.match(pageText, /v0\.2\.15 stable release/);
     assert.doesNotMatch(pageText, /v0\.2\.14 release candidate|published v0\.2\.13/);
   }
   assert.doesNotMatch(plugins, /licensing decision pending/i);
@@ -236,18 +236,19 @@ test("release notes stage v0.2.15 while launch docs identify v0.2.14 as stable",
   assert.doesNotMatch(plugins, /v0\.2\.13 release-candidate/);
 
   for (const securityPage of [securityTrust, repoSecurityTrust, repoSecurityPolicy]) {
-    assert.match(securityPage, /v0\.2\.14/);
+    assert.match(securityPage, /v0\.2\.15/);
+    assert.match(securityPage, /vcs\.modified=false/);
     assert.match(securityPage, /LWC\/Babel.*VSIX|VSIX.*LWC\/Babel/s);
     assert.doesNotMatch(securityPage, /unreleased archive builder|local candidate validation until the new release workflow/);
   }
 
-  for (const ciPage of [ciArtifacts, helpCiSetup]) {
-    assert.match(ciPage, /GLADE_VERSION=v0\.2\.14/);
+  for (const ciPage of [ciArtifacts, helpCiSetup, helpProjectSetupScript]) {
+    assert.match(ciPage, /GLADE_VERSION=v0\.2\.15/);
     assert.doesNotMatch(ciPage, /GLADE_VERSION=v0\.2\.13/);
   }
 
-  assert.match(supportMap, /v0\.2\.14 — `b974901a3e0ad48d6c517cff894601fa5e242000`/);
-  assert.match(supportMap, /releases\/tag\/v0\.2\.14/);
+  assert.match(supportMap, /v0\.2\.15 — `82b8495972715a27aec8f864bc4ab39e7fa03974`/);
+  assert.match(supportMap, /releases\/tag\/v0\.2\.15/);
 });
 
 test("release docs publish the sealed private-corpus assurance snapshot", () => {

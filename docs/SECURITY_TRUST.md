@@ -23,7 +23,10 @@ not public issues. If GitHub reporting is unavailable, use
 
 ## Release proof
 
-The v0.2.14 per-archive SBOMs inventory 128–129 packaged components: 32–33 Go
+The v0.2.15 binaries embed commit `82b8495972715a27aec8f864bc4ab39e7fa03974`
+with `vcs.modified=false`.
+
+The v0.2.15 per-archive SBOMs inventory 128–129 packaged components: 32–33 Go
 modules and 96 LWC/Babel or VSIX npm dependencies. The macOS archives contain
 33 Go modules; the Linux archives contain 32. The VSIX carries dependency
 notices and an inventory bound to its extension bundle hash. An attestation

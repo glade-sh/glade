@@ -5,7 +5,7 @@ Glade writes machine-readable check results and saved test reports for CI.
 ## Advisory pilot
 
 Use this workflow while evaluating supported local paths. The example pins the
-v0.2.14 stable release; change the pin deliberately after reviewing a newer
+v0.2.15 stable release; change the pin deliberately after reviewing a newer
 release. The product does not install plugins here; pin a plugin lock file too
 if your workflow adds them.
 
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=v0.2.14 sh
+      - run: curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=v0.2.15 sh
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: glade version
       - run: glade doctor --project .

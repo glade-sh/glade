@@ -56,7 +56,7 @@ test("installation docs disclose both destinations and the observed footprint", 
     assert.match(installationDoc, /GLADE_HOME/);
     assert.match(installationDoc, /binary, including parser support/);
     assert.match(installationDoc, /LWC runtime\/toolchain and bundled editor assets/);
-    assert.match(installationDoc, /about 220 MB/i);
+    assert.match(installationDoc, /about 229 MB on disk/i);
   }
 });
 
