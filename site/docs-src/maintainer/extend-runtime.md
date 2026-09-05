@@ -16,9 +16,9 @@ Then patch the runtime.
 ## Common proof commands
 
 ```bash
-go test ./internal/vm ./internal/apextest
-go test ./internal/semantics ./internal/parser
-go test ./internal/gladecli
+CGO_ENABLED=1 go test ./internal/vm ./internal/apextest
+CGO_ENABLED=1 go test ./internal/sema ./internal/apexast
+CGO_ENABLED=1 go test ./internal/gladecli
 npm test --prefix site
 ```
 

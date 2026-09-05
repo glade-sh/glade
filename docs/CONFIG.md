@@ -38,7 +38,8 @@ Use `--force` to replace an existing `glade.yml`.
 
 ## File Format
 
-The parser accepts a small YAML subset. Lists use inline brackets.
+The parser accepts a small YAML subset. Most lists use inline brackets;
+`managedPackageDependencies` also accepts a block list of mappings.
 
 ```yaml
 project:
@@ -61,6 +62,8 @@ Supported keys:
 | `project.defaultNamespace` | Default namespace for package-local code. |
 | `project.namespaceRemaps` | Namespace aliases for local source dependencies. |
 | `project.managedPackageDependencies` | Managed package source or artifact references. |
+| `project.schemaSnapshot` | Schema snapshot path, relative to `glade.yml`; requires `schemaSnapshotSHA256`. |
+| `project.schemaSnapshotSHA256` | Paired 64-character hexadecimal SHA-256 digest for `schemaSnapshot`. |
 | `project.packageShims` | Local source roots that provide test/runtime bodies for captured package artifacts. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
 

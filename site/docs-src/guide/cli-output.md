@@ -31,7 +31,11 @@ glade exec --json "System.debug('local');"
 glade debug profile --log apex.log --json
 ```
 
-JSON goes to stdout. Progress and warnings go to stderr. `--json` never mixes human text into stdout.
+Completed result-producing JSON modes write JSON to stdout and progress to
+stderr. Check the process status first: setup failures may report only stderr
+and leave stdout empty. Watch modes emit NDJSON events. Wizard output and
+legacy paths such as `glade test failed --json` with no saved failures still
+print human text; do not parse those as a result envelope.
 
 ## Progress
 

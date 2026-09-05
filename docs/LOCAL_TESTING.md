@@ -20,6 +20,7 @@ apex-project/
 Then run from the project root:
 
 ```bash
+test -f glade.yml || glade init --project . --yes
 glade doctor --project .
 glade check --project .
 glade test --project .
@@ -415,12 +416,18 @@ the full suite runs automatically.
 ### Watch mode for editor-style feedback
 
 Watch mode re-runs on save and streams newline-delimited JSON (NDJSON) events.
-The first run covers the full set; each later run selects only affected tests.
+The first run covers the full set, or the explicit class/method selection; later
+runs select affected tests.
 
 ```bash
 glade test --project . --watch          # run continuously
-glade test --project . --watch-once     # run one cycle, then exit (good for CI hooks)
+glade test --project . --watch-once     # run the initial selection, then exit
 ```
+
+`--watch-once` does not wait for an edit or select from a Git diff. Use
+`glade test changed --since <git-ref>` for a one-shot affected-test run. An empty
+selection is not runtime evidence for the change; inspect the selected and
+executed test counts.
 
 A typical event stream after editing one helper class (`InvoiceCalculator.cls`)
 that two test classes reach:

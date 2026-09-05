@@ -1,8 +1,8 @@
 # Install glade
 
-`glade` is distributed as a single binary. Release artifacts are parser-capable
-CGO builds for macOS and Linux on amd64 and arm64. Each release build also
-publishes `SHA256SUMS.txt`.
+`glade` is distributed as a CLI binary with bundled runtime and editor assets.
+Release artifacts are parser-capable CGO builds for macOS and Linux on amd64
+and arm64. Each release build also publishes `SHA256SUMS.txt`.
 
 Project home: <https://glade.sh>
 
@@ -146,7 +146,7 @@ Prerequisites:
 ```bash
 git clone https://github.com/glade-sh/glade.git
 cd glade
-go build -o glade ./cmd/glade
+CGO_ENABLED=1 go build -o glade ./cmd/glade
 ./glade version
 ```
 
@@ -169,7 +169,9 @@ go run ./cmd/glade check --project path/to/sfdx-project
 If you want `glade` on your `PATH`:
 
 ```bash
+mkdir -p "$HOME/.local/bin"
 install -m 0755 glade ~/.local/bin/glade
+export PATH="$HOME/.local/bin:$PATH"
 glade version
 ```
 
@@ -235,14 +237,20 @@ see [TESTER_FIELD_GUIDE.md](TESTER_FIELD_GUIDE.md).
 
 ## Manual Install
 
-Download the archive for your platform from the release artifacts, verify the
-checksum, and place the binary on your `PATH`.
+Download the archive and `SHA256SUMS.txt` for your platform. For a fresh manual
+installation, verify the checksum and install both the binary and its bundled
+assets. Use the [security verification](#security-verification) steps when
+attestation verification is required. For an existing installation, use
+[Update](#update) so managed asset directories are replaced together.
 
 ```bash
 GLADE_ARCHIVE=glade_vX.Y.Z_linux_amd64.tar.gz
 grep -F "  ./$GLADE_ARCHIVE" SHA256SUMS.txt | shasum -a 256 -c -
 tar -xzf "$GLADE_ARCHIVE"
+mkdir -p "$HOME/.local/bin" "$HOME/.local/share/glade"
+cp -R share/glade/. "$HOME/.local/share/glade/"
 install -m 0755 glade ~/.local/bin/glade
+export PATH="$HOME/.local/bin:$PATH"
 glade version
 ```
 
@@ -251,22 +259,39 @@ are not published by the CGO-enabled release workflow.
 
 ## CI Usage
 
-CI jobs can either build from source or download a release artifact.
+These Linux CI examples assume the Salesforce DX project is already checked
+out at the workspace root. Jobs can either build from source or download a
+release artifact.
 
-Build from source:
+Build Glade in a separate checkout, using its own `go.mod` and bundled parser
+module. This recipe runs local Apex checks and tests; LWC previews require the
+additional toolchain described in [LWC_LOCAL_SHELL.md](LWC_LOCAL_SHELL.md).
 
 ```yaml
+- uses: actions/checkout@v4
+  with:
+    repository: glade-sh/glade
+    path: .glade-source
 - uses: actions/setup-go@v5
   with:
-    go-version-file: go.mod
+    go-version-file: .glade-source/go.mod
 - run: sudo apt-get update && sudo apt-get install -y build-essential
-- run: CGO_ENABLED=1 go install github.com/glade-sh/glade/cmd/glade@latest
-- run: glade doctor --project . --json
-- run: glade check --project .
-- run: glade test --project . --json
+- name: Build Glade
+  working-directory: .glade-source
+  run: CGO_ENABLED=1 go build -o "$RUNNER_TEMP/glade" ./cmd/glade
+- name: Check and test the Salesforce project
+  run: |
+    if [ ! -f glade.yml ]; then
+      "$RUNNER_TEMP/glade" init --project . --yes
+    fi
+    "$RUNNER_TEMP/glade" check --project .
+    "$RUNNER_TEMP/glade" test --project . --json
 ```
 
-Use a release artifact:
+Build from the checkout rather than `go install ...@latest`: Glade's `go.mod`
+replaces the parser dependency with its checked-in local module.
+
+Use a release artifact on a fresh hosted runner:
 
 ```yaml
 - run: |
@@ -284,9 +309,16 @@ Use a release artifact:
     gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
       --predicate-type https://cyclonedx.org/bom
     tar -xzf "$GLADE_ARCHIVE"
+    mkdir -p "$HOME/.local/bin" "$HOME/.local/share/glade"
+    cp -R share/glade/. "$HOME/.local/share/glade/"
     install -m 0755 glade ~/.local/bin/glade
-    glade version
-    glade doctor --project .
+    "$HOME/.local/bin/glade" version
+    if [ ! -f glade.yml ]; then
+      "$HOME/.local/bin/glade" init --project . --yes
+    fi
+    "$HOME/.local/bin/glade" doctor --project .
+    "$HOME/.local/bin/glade" check --project .
+    "$HOME/.local/bin/glade" test --project . --json
 ```
 
 ## Persistent Local Server

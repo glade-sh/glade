@@ -146,7 +146,9 @@ glade report refactor-proof --project . --since origin/main --fail-on-api-break 
 
 The report records the git diff, parse and semantic status, graph impact,
 affected-test selection, optional trace summary, and public or global API
-warnings.
+warnings. It does not execute the selected tests. Run the relevant tests
+separately and inspect their executed counts; a successful report command is
+not proof that tests ran.
 
 Upload the files after a gate, even when the test or check step fails:
 

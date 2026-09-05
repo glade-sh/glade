@@ -18,11 +18,11 @@ glade editor install vscode --force
 
 That command installs the bundled VSIX at
 `share/glade/editor/vscode-glade.vsix`. During extension development, package
-and install the local VSIX from this checkout:
+and install the local VSIX from the Glade repository root:
 
 ```bash
-npm install
-npm run package
+npm ci --prefix contrib/vscode-glade
+npm run package --prefix contrib/vscode-glade
 glade editor install vscode --force
 ```
 
@@ -222,10 +222,12 @@ Useful settings:
 
 ## Develop
 
+Run from the Glade repository root:
+
 ```bash
-npm install
-npm test
-npm run package
+npm ci --prefix contrib/vscode-glade
+npm test --prefix contrib/vscode-glade
+npm run package --prefix contrib/vscode-glade
 ```
 
 Open this repo in VS Code and run **Launch Glade VS Code Extension**. In the

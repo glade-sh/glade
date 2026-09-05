@@ -30,13 +30,37 @@ npm test
 npm run test:release
 ```
 
-`npm run release:check` is the exact site release proof. It runs `verify`,
+`npm run release:check` records the source and build proof. It runs `verify`,
 `test:unit`, and `build:site` once each, rejects source changes during the run,
 and writes `.vitepress/release-check.json`:
 
 ```bash
 npm run release:check
 ```
+
+It does not run the built-output, rendered browser, or preview smoke checks.
+After the release check builds the current source, run:
+
+```bash
+npm run check:built
+npx playwright install chromium
+CI=1 GLADE_SITE_PREBUILT=1 npm run test:browser
+```
+
+Keep port 4173 free for Playwright's preview. `CI=1` prevents reuse of an existing
+server; otherwise local tests can silently inspect another checkout's preview.
+Only set `GLADE_SITE_PREBUILT=1` after building the current source.
+
+For the preview smoke, start `npm run preview -- --host 127.0.0.1 --port 4173`
+from this checkout in a separate terminal, wait for its ready URL, then run:
+
+```bash
+npm run smoke:preview -- http://127.0.0.1:4173
+```
+
+Stop that preview when finished. These checks also run in the CI site job.
+For the site, `scripts/release-check.sh` at the repo root runs only the source
+and build proof.
 
 ## Cloudflare Pages
 
@@ -74,19 +98,27 @@ curl -fsSL https://glade.sh/install.sh | sh
 
 ## Launch Smoke Check
 
-Git integration should deploy `main`. If it does not, build a clean local
-`main` and publish that exact commit to the existing production project:
+Git integration should deploy `main`. If a manual production deployment is
+needed, use a clean checkout of the intended `origin/main` commit and publish
+that exact commit to the existing production project. From `site/`:
 
 ```bash
+(
+set -e
 npm ci
+git -C .. fetch origin main
 release_sha="$(git -C .. rev-parse HEAD)"
+test "$release_sha" = "$(git -C .. rev-parse origin/main)"
+test -z "$(git -C .. status --porcelain --untracked-files=all)"
 CF_PAGES_COMMIT_SHA="$release_sha" npm run build
 npx --yes wrangler pages deploy .vitepress/dist --project-name glade-sh --branch main \
   --commit-hash "$release_sha" --commit-dirty=false
+)
 ```
 
 After the production deployment, reconcile the deployed commit and stable
-release with the same smoke check used by the release workflow:
+release using the standalone postdeploy smoke. It is not run by the Release
+workflow. Run from the checkout of the deployed commit:
 
 ```bash
 expected_sha="$(git -C .. rev-parse HEAD)"

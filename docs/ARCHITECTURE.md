@@ -85,8 +85,9 @@ and composed by the CLI.
 - `internal/server`: Salesforce-shaped HTTP handler for supported SObject CRUD,
   query/queryAll, describe/recent, limits and record counts, identity/userinfo
   stubs, Tooling `executeAnonymous`, local Tooling source/schema metadata reads,
-  composite sObject insert, fixture/scoped reset endpoints, stable unsupported
-  Apex REST dispatch errors, and optional SQLite-backed persistence.
+  composite sObject insert, fixture/scoped reset endpoints, project-backed Apex
+  REST dispatch, explicit errors for unsupported routes or signatures, and
+  optional SQLite-backed persistence.
 - `internal/dbmanager`: browser-facing local record-manager API contracts used
   by the DB UI.
 - `internal/playground`, `internal/tui`, `internal/visualforce`,

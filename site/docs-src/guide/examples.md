@@ -28,5 +28,6 @@ Useful first examples:
 
 The [sample quickstart](/guide/quickstart#try-the-sample) explains how to load
 the workspace, run its named test, and inspect a failure. The corrected
-`RefinementServiceTest` ships in the v0.2.15 stable release. Never accept Pass
+`RefinementServiceTest` first shipped in v0.2.14 and is included in the
+v0.2.15 stable release. Never accept Pass
 alongside source errors.

@@ -1056,20 +1056,23 @@ func WriteExitCodesHelp(w io.Writer) error {
 	body := strings.TrimSpace(`
 Exit codes
 
+Current built-in command results:
   0  Command completed without errors.
-  1  Command failed, found diagnostics, or tests failed.
-  2  Command was not understood, used invalid flags, or hit a usage error.
-  3  Project or config discovery failed.
+  1  Command failed, including diagnostics, test failures, and most usage errors.
+  2  Unknown top-level command.
+  3  Config discovery failed where explicitly reported by config commands.
+
+Reserved taxonomy, not consistent current mappings:
   4  Unsupported local runtime boundary.
   5  External dependency or toolchain failed.
   70 Internal Glade error.
   130 Interrupted by Ctrl-C.
 
 Notes:
-  parse, inspect, and check return 1 when diagnostics include errors.
-  test returns 1 when any test fails or errors.
-  some legacy usage and flag errors still return 1 during migration.
-  unknown commands return 2 before command execution starts.
+  Treat any nonzero status as failure and inspect command diagnostics.
+  test returns 1 for unsupported test outcomes as well as other failures.
+  A zero-test run can return 0; inspect selected and executed test counts.
+  Plugins may return their own process status.
 `)
 	_, err := fmt.Fprintln(w, body)
 	return err

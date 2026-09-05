@@ -227,6 +227,7 @@ test("launch docs identify the published v0.2.15 release and retain historical n
 
   for (const page of [repoReadme, quickstart, examples]) {
     const pageText = page.replace(/\s+/g, " ");
+    assert.match(pageText, /first shipped in (?:\*\*)?v0\.2\.14/);
     assert.match(pageText, /v0\.2\.15 stable release/);
     assert.doesNotMatch(pageText, /v0\.2\.14 release candidate|published v0\.2\.13/);
   }
@@ -1695,20 +1696,19 @@ test("guide landing, quickstart, and support map explain the current product", (
   assert.doesNotMatch(repoCompatibilityDashboard, /Composite Graph execution, and broader hosted REST namespaces/);
 });
 
-test("AI-assisted Apex guide gives agents a Glade TDD contract", () => {
+test("AI-assisted Apex guide gives agents a Glade validation contract", () => {
   assert.match(aiAssistedApex, /^# AI-assisted Apex with Glade/m);
   assert.match(aiAssistedApex, /Paste the long prompt into a global skill,\s+repository instruction file, or\s+agent memory/);
   assert.match(aiAssistedApex, /Use this prompt for any Apex feature, bug fix, or refactor/);
-  assert.match(aiAssistedApex, /For a bug fix or new behavior, write the smallest failing Apex test first/);
-  assert.match(aiAssistedApex, /For a behavior-preserving refactor, first record a passing baseline instead/);
-  assert.match(aiAssistedApex, /Do not edit production Apex until a Glade test fails for the expected reason/);
+  assert.match(aiAssistedApex, /For a behavior change, write the smallest failing Apex test first/);
+  assert.match(aiAssistedApex, /For a behavior-preserving refactor, establish a passing baseline first/);
   assert.match(aiAssistedApex, /mkdir -p reports/);
   assert.match(aiAssistedApex, /glade doctor/);
   assert.match(aiAssistedApex, /glade config validate --project \./);
   assert.match(aiAssistedApex, /glade check --project \. --format json --output reports\/glade-check\.json --no-progress/);
   assert.match(aiAssistedApex, /glade test --project \. --class <TestClass> --method <TestMethod> --json --no-progress/);
-  assert.match(aiAssistedApex, /glade test changed --project \. --since origin\/main --json --no-progress/);
-  assert.match(aiAssistedApex, /Quote the exact command and the failing diagnostic/);
+  assert.match(aiAssistedApex, /glade test changed --project \. --since <base-ref> --json --no-progress/);
+  assert.match(aiAssistedApex, /Quote the exact command and result/);
   assert.match(aiAssistedApex, /Salesforce remains the validation gate/);
   assert.match(aiAssistedApex, /Use Glade from the Salesforce DX project root/);
   assert.doesNotMatch(aiAssistedApex, /deploy-first|scratch org first|project-specific exception/i);
