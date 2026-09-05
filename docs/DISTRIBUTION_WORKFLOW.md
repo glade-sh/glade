@@ -4,7 +4,8 @@ Use this runbook to cut and publish a Glade release with predictable output.
 
 ## 1. Preflight
 
-From the repo root:
+Prepare the matching version section in [RELEASE_NOTES.md](RELEASE_NOTES.md)
+before freezing the release commit. Run from a clean checkout of the candidate:
 
 ```bash
 npm ci --prefix site
@@ -12,18 +13,27 @@ npm ci --prefix third_party/lwc
 scripts/release-check.sh
 ```
 
+The distribution build rejects tracked or untracked changes so that embedded Go
+VCS metadata identifies a clean candidate. Commit intended release changes
+before this gate; use a separate checkout when other work is in progress.
+
 Install both lockfile-pinned dependency sets before the long gate. The site
 proof needs the VitePress toolchain. LWC integration tests need the checked
 compiler/runtime toolchain; the release summary rejects their intentional
 dependency-missing skips instead of treating them as proof.
 
 The command runs `git diff --check`, the exact-once site release proof, the
-checked local Go release lanes, and product smoke tests. The site proof writes
-`site/.vitepress/release-check.json`. Go lanes default to serial execution for
-bounded memory use and write raw events plus a validated
+checked local Go release lanes, and a distribution build with product smoke
+tests. The site proof writes `site/.vitepress/release-check.json`. Go lanes
+default to serial execution for bounded memory use and write raw events plus a validated
 `package-summary.json` under `ci-artifacts/local-release/`. Package discovery
 or lane ownership drift fails closed. If a command fails, stop and fix before
 tagging.
+
+The local gate does not run `check:built`, rendered-site browser tests, or preview
+smoke. Follow [site/README.md](../site/README.md#checks-and-release-proof) for
+those checks; the CI site job also requires them.
+
 Run the first project check from [INSTALL.md](INSTALL.md) on one real Salesforce DX
 project before tagging.
 When a release also ships first-party plugin archives, run the matching tools
@@ -56,10 +66,11 @@ approval needs the existing exact candidate's workflow, not a new commit.
 Before any upload, retry only the failed jobs after the missing approval passes.
 
 The `Release` GitHub Actions workflow builds parser-capable macOS and Linux
-archives on matching CGO-enabled runners, verifies `glade doctor` reports
-`Ready.`, and publishes `SHA256SUMS.txt` plus release manifests for the
-installer. If the GitHub release is absent, the workflow creates it as a draft
-with the matching section from [RELEASE_NOTES.md](RELEASE_NOTES.md). It uploads
+archives on matching CGO-enabled runners. It checks `glade doctor --json` for
+`"parserOK": true`, runs an extracted-binary parser smoke, and publishes
+`SHA256SUMS.txt` plus release manifests for the installer. If the GitHub release
+is absent, the workflow creates it as a draft with the matching section from
+[RELEASE_NOTES.md](RELEASE_NOTES.md). It uploads
 and verifies the complete asset set, then publishes the draft as its last step.
 If it already exists, the workflow reuses its metadata, title, and body without
 editing them. An existing asset with identical bytes is skipped; differing bytes
@@ -90,7 +101,12 @@ Download one archive and checksums from the GitHub Release, then verify:
 grep "  \./glade_VERSION_linux_amd64.tar.gz$" SHA256SUMS.txt | shasum -a 256 -c -
 tar -xzf glade_VERSION_linux_amd64.tar.gz
 ./glade version
+./glade doctor --json
 ```
+
+Confirm `parserOK` is `true`. A full `Ready.` doctor result also depends on the
+project setup; the distribution completion check below initializes an isolated
+project before checking it.
 
 Check the GitHub release body before publishing wider:
 
@@ -107,7 +123,7 @@ Verify the public install script after Pages deploys:
 tmp="$(mktemp -d)"
 curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR="$tmp/bin" GLADE_HOME="$tmp/home" sh
 "$tmp/bin/glade" version
-"$tmp/bin/glade" doctor
+"$tmp/bin/glade" doctor --json
 ```
 
 Check a pinned install too:
@@ -116,7 +132,7 @@ Check a pinned install too:
 tmp="$(mktemp -d)"
 curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=vX.Y.Z GLADE_INSTALL_DIR="$tmp/bin" GLADE_HOME="$tmp/home" sh
 "$tmp/bin/glade" version
-"$tmp/bin/glade" doctor
+"$tmp/bin/glade" doctor --json
 ```
 
 The release workflow uploads platform assets to the GitHub Release, downloads
@@ -191,7 +207,8 @@ Release workflow and retain it as create-only static companion evidence.
 After channel publication, sync `site/release-manifest.json` using
 `npm run release:sync --prefix site`, publish the site, and complete the default
 and pinned install checks above. Both must report the intended version and a
-ready doctor result before announcing distribution complete.
+working parser. The completion check below must also report ready projects
+before announcing distribution complete.
 
 Run the completion check after the site deploys. It checks the public channel,
 pinned manifest, site version, and both installer paths without modifying the
@@ -225,9 +242,11 @@ brew install <tap>/glade
 glade version
 ```
 
-## 5. Publish Notes
+## 5. Announce the Release
 
-Update [RELEASE_NOTES.md](RELEASE_NOTES.md):
+Use the notes already frozen in [RELEASE_NOTES.md](RELEASE_NOTES.md) and published
+by the Release workflow. Announce only after distribution verification passes.
+The notes should describe:
 
 - supported behavior changes
 - unsupported-boundary changes

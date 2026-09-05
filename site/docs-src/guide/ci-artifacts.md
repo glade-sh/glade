@@ -5,7 +5,7 @@ Glade writes machine-readable check results and saved test reports for CI.
 ## Advisory pilot
 
 Use this workflow while evaluating supported local paths. The example pins the
-v0.2.14 stable release; change the pin deliberately after reviewing a newer
+tested v0.2.14 release; change the pin deliberately after reviewing a newer
 release. The product does not install plugins here; pin a plugin lock file too
 if your workflow adds them.
 
@@ -146,7 +146,9 @@ glade report refactor-proof --project . --since origin/main --fail-on-api-break 
 
 The report records the git diff, parse and semantic status, graph impact,
 affected-test selection, optional trace summary, and public or global API
-warnings.
+warnings. It does not execute the selected tests. Run the relevant tests
+separately and inspect their executed counts; a successful report command is
+not proof that tests ran.
 
 Upload the files after a gate, even when the test or check step fails:
 

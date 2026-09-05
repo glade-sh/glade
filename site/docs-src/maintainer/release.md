@@ -1,6 +1,8 @@
 # Release Runbook
 
-Use one command for the product proof.
+Run the local product gate from a clean checkout of the candidate. The
+distribution build rejects tracked and untracked changes so the binary embeds
+clean Git revision metadata.
 
 ```bash
 npm ci --prefix site
@@ -28,8 +30,10 @@ The site command runs `verify`, `test:unit`, and `build:site` exactly once,
 rejects source changes during the run, and writes
 `site/.vitepress/release-check.json`. For a fast site-only loop, use
 `npm test`; when changing the release orchestrator, use
-`npm run test:release`; use `npm run release:check` for exact site release
-proof.
+`npm run test:release`; use `npm run release:check` for the source and build
+proof. Built-output checks, rendered-site browser tests, and preview smoke are
+separate checks in the CI site job. Run them locally using the
+[site README](https://github.com/glade-sh/glade/blob/main/site/README.md#checks-and-release-proof).
 
 The Go phase checks one authoritative package inventory and writes raw events
 plus a validated `package-summary.json` for every lane under
@@ -54,25 +58,39 @@ repository. `scripts/release-check.sh` remains the correctness authority.
 
 ## Product release
 
-1. Start from a clean branch.
-2. Run `scripts/release-check.sh`.
-3. Add the `vX.Y.Z` section to `docs/RELEASE_NOTES.md`.
-4. Check the notes body: `scripts/release-notes.sh vX.Y.Z`.
-5. Tag the release.
-6. Let GitHub Actions build archives for supported platforms.
-7. Check the GitHub release body for real blank lines, not literal `\n`.
-8. Publish each `vX.Y.Z/**` product object with a conditional create
+1. Add the `vX.Y.Z` section to `docs/RELEASE_NOTES.md` and check its body with
+   `scripts/release-notes.sh vX.Y.Z` before freezing the release commit.
+2. Commit the intended changes and run `scripts/release-check.sh` from a clean
+   checkout. Complete the relevant site, browser, Race, and Security checks.
+3. Merge to `main` and freeze the exact product and `glade-tools` commit pair.
+   Wait for the product's main-push `Required CI` and the trusted
+   `Salesforce Correctness` check for that pair. PR and manual CI runs do not
+   qualify.
+4. Run `bash scripts/release-preflight.sh "$GLADE_SHA" "$TOOLS_SHA"`. Create the
+   annotated `vX.Y.Z` tag at that product SHA with exactly one
+   `Glade-Tools-SHA: <full-lowercase-tools-sha>` trailer, then push it.
+5. Let the Release workflow build archives, verify their parser and
+   attestations, and publish the GitHub Release. Check the body for real blank
+   lines, not literal `\n`.
+6. Publish each `vX.Y.Z/**` product object with a conditional create
    (`If-None-Match: *` or an equivalent publisher-enforced no-clobber write).
    Read it back and verify its bytes and SHA-256 against the GitHub Release.
-9. Update mutable pointers last: `index.json` and `latest/release-manifest.json`
+7. Update mutable pointers last: `index.json` and `latest/release-manifest.json`
    move only after every versioned product object verifies.
-10. Check a fresh install with temporary `GLADE_INSTALL_DIR` and `GLADE_HOME`.
-11. Check a pinned install with `GLADE_VERSION=vX.Y.Z`.
-12. Check an update from the prior release.
+8. Sync and publish the site, then run
+   `bash scripts/release-distribution-check.sh vX.Y.Z`. It verifies the channel,
+   site release, and both default and pinned installs in isolated projects.
+9. Check an update from the prior release.
+
+Use the [distribution workflow](https://github.com/glade-sh/glade/blob/main/docs/DISTRIBUTION_WORKFLOW.md)
+for exact tagging, publication, and installation commands. Archive checks require
+`glade doctor --json` to report `"parserOK": true`; the completion check also
+requires a full `Ready.` result after initializing each isolated project.
 
 GitHub product and plugin release assets and notes are immutable on rerun.
 If an artifact or note is wrong after publication, cut a corrected new version;
 do not overwrite the release or an object under its versioned prefix.
+Do not move a pushed tag or create a trigger commit to repair missing authority.
 
 Use this shape when setting installer environment variables:
 
@@ -125,14 +143,21 @@ git diff -- release-manifest.json
 
 Cloudflare Pages project `glade-sh` publishes from product `main`. After the
 merge, require the Git integration deployment or deploy the clean, exact main
-build:
+build. Run this and the following smoke command from `site/` in the checkout of
+the commit being deployed:
 
 ```bash
-cd site
+(
+set -e
 npm ci
-npm run build
+git -C .. fetch origin main
+release_sha="$(git -C .. rev-parse HEAD)"
+test "$release_sha" = "$(git -C .. rev-parse origin/main)"
+test -z "$(git -C .. status --porcelain --untracked-files=all)"
+CF_PAGES_COMMIT_SHA="$release_sha" npm run build
 npx --yes wrangler pages deploy .vitepress/dist --project-name glade-sh --branch main \
-  --commit-hash "$(git -C .. rev-parse HEAD)" --commit-dirty=false
+  --commit-hash "$release_sha" --commit-dirty=false
+)
 ```
 
 The deployment is not accepted until the blocking post-deploy reconciliation

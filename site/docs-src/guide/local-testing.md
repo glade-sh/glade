@@ -143,11 +143,14 @@ Run tests on file changes:
 glade test --project . --watch
 ```
 
-Run one affected-test pass and exit:
+Run the initial suite, or the explicit class and method selection, and exit:
 
 ```bash
 glade test --project . --watch-once
 ```
+
+`--watch-once` does not wait for a change or select tests from a git diff. Use
+`glade test changed --since <base-ref>` for a single run selected by git changes.
 
 Run the daemon-backed watch loop:
 
@@ -221,11 +224,13 @@ running test server keeps its own memory until stopped or restarted.
 
 ## CI pattern
 
-A small CI gate can check the project, run affected tests, then write JUnit output for test reporting:
+A small CI gate can check the project, run affected tests, then write JUnit
+output for test reporting. Replace `<base-ref>` with the intended existing
+comparison ref and ensure it is available in the checkout:
 
 ```bash
 glade check --project . --json
-glade test changed --project . --since origin/main --json --no-progress
+glade test changed --project . --since <base-ref> --json --no-progress
 mkdir -p reports
 glade test --project . --junit reports/glade-junit.xml
 ```
@@ -237,7 +242,13 @@ Saved run artifacts and CI annotations are covered in [Add Glade to CI](/guide/c
 Local test runs separate assertion failures from load errors, compile errors,
 unsupported features, and internal errors. That split matters. A failing
 assertion means the test ran and failed. An unsupported feature means
-the runtime stopped at a known unsupported Salesforce API.
+the runtime stopped at a known unsupported Salesforce API. Unsupported test
+outcomes count as errors and exit with code `1`.
+
+Read the JSON `summary` counts: `total`, `passed`, `failed`, `errors`, `skipped`,
+and `unsupported`. A run with zero selected tests can exit with code `0`; it
+does not provide test execution evidence. Run an explicit relevant test or
+suite if an affected selection is empty.
 
 ```text
   ✓  RefinementServiceTest.testRefinesFileRow  42ms

@@ -2,18 +2,24 @@
 
 Glade uses exit status for automation. Scripts should trust the process status first, then read JSON fields when they need detail.
 
+Current built-in command results:
+
 | Code | Meaning |
 | ---: | --- |
 | 0 | Success |
-| 1 | Diagnostics, test failures, or expected validation failure |
-| 2 | Usage error or invalid flags |
-| 3 | Project or config discovery failure |
-| 4 | Unsupported local runtime boundary |
-| 5 | External dependency or toolchain failure |
-| 70 | Internal Glade error |
-| 130 | Interrupted by Ctrl-C |
+| 1 | Command failure, including diagnostics, test failures, and most usage errors |
+| 2 | Unknown top-level command |
+| 3 | Config discovery failure where explicitly reported by config commands |
 
-Some legacy command paths still return `1` for usage or flag errors while the full exit-code migration lands. Scripts should treat both `1` and `2` as command failure unless a command page documents a narrower contract.
+`glade test` returns `1` for unsupported test outcomes: those outcomes count
+as test errors. Inspect the JSON summary and per-test status. A zero-test run
+can return `0`, so success does not by itself establish test coverage.
+
+The broader exit-code taxonomy reserves `4` for unsupported runtime boundaries,
+`5` for external dependencies, `70` for internal errors, and `130` for
+interruption. These are not consistent current mappings. Do not rely on those
+specific codes to classify a failure; use the command diagnostics. Plugins may
+return their own process status.
 
 Examples:
 
@@ -25,7 +31,8 @@ glade test --project . --json --no-progress > glade-test.json
 echo $?
 ```
 
-JSON envelopes repeat the exit code:
+Commands using a result envelope repeat the exit code. Early failures may
+produce no JSON, so check the process status before parsing stdout:
 
 ```json
 {

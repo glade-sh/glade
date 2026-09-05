@@ -43,7 +43,7 @@ Continue with the [canonical quickstart](https://glade.sh/guide/quickstart):
 - **Try the sample:** load the built-in Refinement Service, then run its named test.
 - **Use my project:** initialize an existing Salesforce DX project and run one known test class before the full suite.
 
-The corrected sample and named test ship in the **v0.2.14 stable release**. A
+The corrected sample and named test first shipped in **v0.2.14**. A
 playground Pass alongside source errors is not valid proof; the quickstart shows
 the named, nonzero test result to expect.
 
@@ -59,7 +59,10 @@ glade test --project . --class RefinementServiceTest --json --no-progress
 A first test result must name at least one executed test. Zero tests is not a
 passing evaluation. The [installation guide](docs/INSTALL.md) covers macOS/Linux
 archives, pinning, and verification; source development has a
-[separate guide](https://glade.sh/guide/build-from-source).
+[separate guide](https://glade.sh/guide/build-from-source). Building Glade requires
+the Go version in `go.mod` and a C compiler with CGO enabled. See
+[AGENTS.md](AGENTS.md) and [AI contributor setup](docs/AI_SETUP.md) for the
+repository workflow and validation commands.
 
 ## Three useful loops
 

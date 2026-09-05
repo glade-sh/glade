@@ -25,7 +25,7 @@ your shell configuration to keep it in new terminals.
 See [Installation](/guide/installation) for version pinning and archive verification.
 
 ::: info Stable sample
-The corrected bundled test below ships in the v0.2.14 stable release. Do not
+The corrected bundled test below first shipped in v0.2.14. Do not
 treat a playground Pass with source errors as successful validation.
 :::
 

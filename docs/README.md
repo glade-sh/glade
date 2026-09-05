@@ -48,6 +48,7 @@ Base `glade` consumes or publishes them; it does not regenerate them.
 
 1. Runtime architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
 2. Product boundary for AI and human contributors: [../AGENTS.md](../AGENTS.md)
+   and [AI_SETUP.md](AI_SETUP.md) for Codex setup and validation by surface.
 3. Clean-room rules: [CLEAN_ROOM.md](CLEAN_ROOM.md)
 4. Storage model and DB behavior: [storage-schema.md](storage-schema.md)
 5. Apex declaration parser: [APEX_PARSER.md](APEX_PARSER.md)
