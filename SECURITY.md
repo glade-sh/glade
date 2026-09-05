@@ -97,13 +97,15 @@ gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
   --predicate-type https://cyclonedx.org/bom
 tar -xzf "$GLADE_ARCHIVE"
 ./glade version
-./glade doctor
 ```
 
 Compare the matching `*.sbom.json` release asset with your internal dependency
 allowlist when policy requires an inventory review.
 
-The v0.2.14 per-archive SBOMs inventory 128–129 components: 32–33 Go modules
+The v0.2.15 binaries embed commit `82b8495972715a27aec8f864bc4ab39e7fa03974`
+with `vcs.modified=false`.
+
+The v0.2.15 per-archive SBOMs inventory 128–129 components: 32–33 Go modules
 plus 96 bundled LWC/Babel and VSIX npm packages. The macOS archives contain 33
 Go modules; the Linux archives contain 32. The earlier v0.2.13 inventory
 remains Go-only. Compare the SBOM for the exact archive you install.

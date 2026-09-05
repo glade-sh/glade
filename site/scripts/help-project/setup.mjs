@@ -93,7 +93,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=v0.2.13 sh
+      - run: curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=v0.2.15 sh
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: glade doctor
       - run: mkdir -p reports

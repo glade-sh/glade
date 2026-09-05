@@ -43,7 +43,10 @@ reachability, and the exact candidate before accepting or dismissing a finding.
 
 ## Release proof
 
-**Inventory scope:** the published v0.2.14 per-archive SBOMs inventory 128–129
+The v0.2.15 binaries embed commit `82b8495972715a27aec8f864bc4ab39e7fa03974`
+with `vcs.modified=false`.
+
+**Inventory scope:** the published v0.2.15 per-archive SBOMs inventory 128–129
 packaged components: 32–33 Go modules and 96 LWC/Babel or VSIX npm
 dependencies. The macOS archives contain 33 Go modules; the Linux archives
 contain 32. The extension includes dependency notices and an inventory bound
