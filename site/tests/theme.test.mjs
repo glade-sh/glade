@@ -199,7 +199,8 @@ test("release notes and launch docs identify v0.2.14 as the stable release", () 
   const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(unreleased, "release notes should contain an Unreleased section");
   const unreleasedText = unreleased[1].replace(/\s+/g, " ");
-  assert.match(unreleasedText, /First-run guidance and runtime smoke/);
+  assert.match(unreleasedText, /First-run guidance initializes .* before `doctor`/);
+  assert.match(unreleasedText, /Runtime smoke initializes .* before `check` and `test`/);
   assert.match(unreleasedText, /Release builds stage the shared payload outside the Git worktree/);
   assert.match(unreleasedText, /golang\.org\/x\/text/);
   assert.doesNotMatch(unreleasedText, /release candidate|latest published release remains/);
