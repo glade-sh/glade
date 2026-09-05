@@ -7,7 +7,6 @@ canonicalTask: /guide/support-map
 
 <script setup>
 import GladeSupportExplorer from '../../.vitepress/theme/GladeSupportExplorer.vue'
-import { editorSupportCatalog } from '../../.vitepress/theme/generated/editorSupport'
 import releaseManifest from '../../release-manifest.json'
 </script>
 
@@ -24,9 +23,9 @@ local Salesforce API flow. Checked Apex/runtime reports carry the method-level
 detail. The LWC summary below links to the local shell guide and support table
 when you need route and module detail.
 
-**Stable download: Glade {{ releaseManifest.version }}.** The generated
-standard-library counts and searchable rows describe the checked source ledger
-in this repository state. The download version does not certify these rows or
+**Stable download: Glade {{ releaseManifest.version }}.** The searchable
+capability notes describe selected behaviors in the checked source ledger.
+The download version does not certify these notes or
 inherit the historical runtime/parity evidence below.
 
 ## Before you adopt Glade
@@ -64,7 +63,7 @@ merely to avoid a version error. See the [quickstart version box](/guide/quickst
 Execution, modeled behavior, and evidence answer different questions. A
 `supported` row can execute a deterministic local model without reproducing a
 hosted service. `partial` and `stub` remain separate raw statuses in the lookup;
-`unknown` means not measured. Counts apply only to the named catalog.
+`unknown` means not measured.
 
 For example, `Answers.findSimilar` returns a deterministic empty list locally.
 That is local execution, not hosted similarity search. Read the behavior note
@@ -197,31 +196,31 @@ UnsupportedFeature: unsupported call "Search.unavailable local search/SOSL surfa
 | Apex front end | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Parser, project loader, symbols, semantic checks, LSP, and diagnostics form the starting point. The checked compiler contract contains 400 language-rule rows. |
 | Runtime and tests | <span class="docs-status-chip docs-status-supported">Runs locally</span> | VM execution, local tests, SObjects, SOQL, DML, triggers, async drain, and local storage are the core contract. |
 | Local Salesforce API | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Useful for local REST, SObject CRUD/query, record count, Tooling `executeAnonymous`, and local source/schema metadata flows. It is not a hosted-org replacement. |
-| Standard library | <span class="docs-status-chip docs-status-limited">Runs locally with limits</span> | The checked standard-library report has {{ editorSupportCatalog.summary.supported }} supported rows, {{ editorSupportCatalog.summary.unsupported }} unsupported rows, and {{ editorSupportCatalog.summary.partial }} partial rows. |
+| Standard library | <span class="docs-status-chip docs-status-limited">Runs locally with limits</span> | Core Apex types, collections and selected platform APIs have local implementations. Read the behavior notes for modeled behavior and hosted-service limits. |
 | Platform service APIs | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Deterministic DTO and harness rows are modeled when the capability report says supported. Hosted service execution stays explicitly unsupported. |
 
 ## Standard library families
 
-Counts come from the checked standard library capability report in this repository
-state.
+These summaries highlight local implementations and named boundaries. Open the
+source report for detailed behavior notes and regression-test links.
 
-| Family | Status | Rows |
-| --- | --- | ---: |
-| `Database` | Runs locally | 37 supported / 37 tracked |
-| Date, Datetime, Time, TimeZone | Runs locally | 26 supported / 26 tracked |
-| String, Decimal, Boolean, Math | Supported local rows, Decimal division gap | 31 supported, 1 unsupported / 32 tracked |
-| System, Assert, Limits | Supported local rows, hosted gaps | 17 supported, 3 unsupported / 20 tracked |
-| Schema and SObject | Supported local rows, hosted gaps | 7 supported, 1 unsupported / 8 tracked |
-| Test helpers | Supported local rows, hosted gaps | 28 supported, 3 unsupported / 31 tracked |
-| JSON, Pattern, EncodingUtil, Crypto | Runs locally | 17 supported / 17 tracked |
-| ApexPages and PageReference | Supported controller rows, hosted rendering gaps | 15 supported, 2 unsupported / 17 tracked |
-| HTTP and WebServiceCallout | Supported mock rows, live transport gaps | 6 supported, 2 unsupported / 8 tracked |
-| Messaging | Supported local rows, hosted delivery gaps | 6 supported, 2 unsupported / 8 tracked |
-| Search and SOSL helpers | Supported local rows, hosted ranking gap | 11 supported, 1 unsupported / 12 tracked |
-| UserInfo, URL, Label, and TrailblazerIdentity | Broad local capability | 24 supported / 24 tracked |
-| Type, FeatureManagement, and Exception | Supported local rows, hosted package gap | 8 supported, 1 unsupported / 9 tracked |
-| Local test harness and request context | Supported local rows, hosted and malformed-input gaps | 32 supported, 2 unsupported / 34 tracked |
-| Hosted-service and platform boundary rows | Requires Salesforce, plus stable diagnostics | 2 supported, 1 unsupported / 3 tracked |
+| Family | Status |
+| --- | --- |
+| `Database` | Runs locally |
+| Date, Datetime, Time, TimeZone | Runs locally |
+| String, Decimal, Boolean, Math | Supported local rows, Decimal division gap |
+| System, Assert, Limits | Supported local rows, hosted gaps |
+| Schema and SObject | Supported local rows, hosted gaps |
+| Test helpers | Supported local rows, hosted gaps |
+| JSON, Pattern, EncodingUtil, Crypto | Runs locally |
+| ApexPages and PageReference | Supported controller rows, hosted rendering gaps |
+| HTTP and WebServiceCallout | Supported mock rows, live transport gaps |
+| Messaging | Supported local rows, hosted delivery gaps |
+| Search and SOSL helpers | Supported local rows, hosted ranking gap |
+| UserInfo, URL, Label, and TrailblazerIdentity | Broad local capability |
+| Type, FeatureManagement, and Exception | Supported local rows, hosted package gap |
+| Local test harness and request context | Supported local rows, hosted and malformed-input gaps |
+| Hosted-service and platform boundary rows | Requires Salesforce, plus stable diagnostics |
 
 The local test harness and request-context group includes Approval list
 processing, BusinessHours, QuickAction, Request, UIRequest, Sandbox,
@@ -231,17 +230,11 @@ stable UnsupportedFeature diagnostic row.
 
 ## Capability claims
 
-The checked capability status and standard-library report now show no partial rows.
-Every remaining hosted-only behavior is split into an explicit unsupported row.
-
-| Measure | Rows |
-| --- | ---: |
-| Capability features marked `supported` | 31 |
-| Capability features marked `partial` | 0 |
-| Capability features marked `unsupported` | 2 |
-| Standard-library rows marked `supported` | 269 |
-| Standard-library rows marked `partial` | 0 |
-| Standard-library rows marked `unsupported` | 19 |
+Use the listed behavior and limits to decide whether a local workflow fits
+your project. The notes highlight selected implementations and known
+boundaries; an unlisted API can still run locally. Follow the source reports
+below for implementation and regression-test evidence, then run your project's
+tests in Glade and retain a Salesforce validation gate for platform behavior.
 
 ## Drill down
 

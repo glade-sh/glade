@@ -5,16 +5,22 @@ test('support catalog filters complete ledger rows and paginates the display', a
   const status = page.getByRole('combobox', { name: 'Status' })
   const result = page.getByRole('status')
 
-  await expect(result).toContainText('288 matching rows of 288 checked ledger rows. Showing 1–25. Page 1 of 12.')
+  await expect(result).toHaveText('Page 1 of 12.')
+  await expect(page.getByRole('heading', { name: 'Explore capability notes' })).toBeVisible()
+  await expect(page.locator('.support-explorer-summary')).toHaveCount(0)
   for (const [value, count] of [['supported', '269'], ['partial', '0'], ['unsupported', '19'], ['unknown', '0']]) {
     await status.selectOption(value)
-    await expect(result).toContainText(`${count} matching row`)
+    await expect(result).toContainText(count === '0' ? 'No matching notes' : `${count} matching note`)
   }
 
   await status.selectOption('all')
-  await page.getByRole('searchbox', { name: 'Search APIs' }).fill('Visualforce full rendering lifecycle')
-  await expect(result).toContainText('1 matching row')
+  await page.getByRole('searchbox', { name: 'Search capability notes' }).fill('Visualforce full rendering lifecycle')
+  await expect(result).toContainText('1 matching note')
   await expect(page.locator('.support-explorer-list')).toContainText('Visualforce full rendering lifecycle')
+
+  await page.getByRole('searchbox', { name: 'Search capability notes' }).fill('List.clear')
+  await expect(result).toContainText('No matching notes. An API can be implemented without a note here.')
+  await expect(result.getByRole('link', { name: 'Browse the coverage guides' })).toHaveAttribute('href', '#drill-down')
 
   await page.goto('/guide/workbench#check')
   const editor = page.getByRole('textbox', { name: 'Try capability-backed autocomplete.' })
