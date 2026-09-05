@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"reflect"
 	"regexp"
@@ -1653,8 +1654,21 @@ func runtimePatchIndexFingerprint(index typesys.Index) (string, bool) {
 }
 
 func runtimePatchAmbientFingerprint(org storage.OrgState, pageNames []string) (string, bool) {
-	ambientOrg := org.Clone()
+	ambientOrg := org
+	ambientOrg.Objects = maps.Clone(org.Objects)
 	delete(ambientOrg.Objects, "ApexClass")
+	// JSON only reads field definitions. Avoid cloning their large maps, while
+	// retaining Clone's nil/empty normalization for the rest of the payload.
+	// The field slices that Clone normalizes all have omitempty JSON tags.
+	for name, object := range ambientOrg.Objects {
+		object.Definition.Fields = nil
+		ambientOrg.Objects[name] = object
+	}
+	ambientOrg = ambientOrg.Clone()
+	for name, object := range ambientOrg.Objects {
+		object.Definition.Fields = org.Objects[name].Definition.Fields
+		ambientOrg.Objects[name] = object
+	}
 	payload := struct {
 		Org       storage.OrgState `json:"org"`
 		PageNames []string         `json:"pageNames,omitempty"`
