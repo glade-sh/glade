@@ -1043,6 +1043,8 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
 
 .home-panel-top {
   display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
@@ -1061,9 +1063,9 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
   box-sizing: border-box;
   margin: 18px auto 38px;
   border-color: var(--line-strong);
-  border-radius: 20px;
+  border-radius: 12px;
   background: var(--glade-home-surface);
-  box-shadow: var(--glade-home-shadow);
+  box-shadow: none;
   padding: 18px 20px 20px;
 }
 
@@ -1152,13 +1154,13 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
   align-items: center;
   justify-content: center;
   border: 1px solid var(--glade-action-border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--glade-action-bg);
   color: var(--glade-action-text);
   cursor: pointer;
   font-family: var(--vp-font-family-base);
   font-size: var(--fs-ui);
-  font-weight: 800;
+  font-weight: 600;
   line-height: var(--lh-ui);
   padding: 0 18px;
   transition:
@@ -1194,7 +1196,7 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
   min-height: 76px;
   min-width: 0;
   border: 1px solid var(--glade-home-border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: #0b1418;
   color: var(--vp-c-text-2);
   cursor: pointer;
@@ -1384,7 +1386,13 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
   color: var(--vp-c-text-1);
   font-family: var(--vp-font-family-base);
   font-size: var(--fs-label);
-  font-weight: 800;
+  font-weight: 600;
+}
+
+.home-workbench .home-panel-top > * {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .dark .home-workbench .home-panel-top {
@@ -1417,16 +1425,18 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
 
 .home-output-tabs {
   display: inline-flex;
+  flex-wrap: wrap;
   min-width: 0;
   gap: 0.375rem;
   align-items: center;
   border-bottom: 1px solid var(--glade-border);
   background: #071014;
-  padding: 9px 10px 0;
+  padding: 8px 10px;
 }
 
 .home-output-tab {
-  min-height: 30px;
+  min-width: 0;
+  min-height: 44px;
   border: 1px solid transparent;
   border-radius: 7px;
   background: rgba(255,255,255,0.04);
@@ -1434,7 +1444,7 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
   cursor: pointer;
   font-family: var(--vp-font-family-base);
   font-size: var(--fs-label);
-  font-weight: 800;
+  font-weight: 600;
   line-height: var(--lh-ui);
   padding: 0 10px;
 }
@@ -1681,17 +1691,18 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
   align-items: center;
   justify-content: center;
   border: 1px solid var(--glade-border-strong);
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
   color: var(--vp-c-text-1);
   cursor: pointer;
   font-family: var(--vp-font-family-base);
   font-size: var(--fs-ui);
-  font-weight: 700;
+  font-weight: 600;
   padding: 0 12px;
   text-decoration: none;
   white-space: nowrap;
 }
+
 
 .home-command-strip button:hover,
 .home-command-strip a:hover {
@@ -1870,5 +1881,30 @@ html:not(.dark) .home-loop-visual .home-loop-command code {
   .home-command-strip button,
   .home-command-strip a {
     width: 100%;
+  }
+}
+
+/* Phone layouts need a readable workflow label, not two narrow word columns. */
+@media (max-width: 440px) {
+  .home-workflow-tabs,
+  .home-workbench-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-workflow-tab {
+    gap: 5px;
+    padding: 12px;
+  }
+
+  .home-workflow-count {
+    justify-self: start;
+  }
+
+  .home-run-button {
+    width: 100%;
+  }
+
+  .home-result-metrics {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -14,7 +14,7 @@
     "smoke:preview": "node scripts/preview-smoke.mjs",
     "smoke:postdeploy": "node scripts/postdeploy-smoke.mjs",
     "test:release": "node --test scripts/release-check.test.mjs",
-    "build:site": "vitepress build . && cp install.sh .vitepress/dist/install.sh && node scripts/write-site-build.mjs",
+    "build:site": "vitepress build . && cp install.sh .vitepress/dist/install.sh && node scripts/style-assurance.mjs && node scripts/write-site-build.mjs",
     "release:sync": "node scripts/sync-release-manifest.mjs",
     "release:sync:check": "node scripts/sync-release-manifest.mjs --check",
     "release:check": "node scripts/release-check.mjs",

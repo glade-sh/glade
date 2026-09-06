@@ -43,10 +43,25 @@
 .glade-docs .VPDoc .aside { flex-shrink: 0; padding-left: 24px; width: 192px; }
 .glade-docs .VPDoc .aside-container { width: 168px; }
 .glade-docs .VPDoc .aside .content { width: 168px; }
-.glade-docs .VPDoc > .container > .content { padding-inline: 24px; }
+@media (min-width: 960px) { .glade-docs .VPDoc > .container > .content { padding-inline: 24px; } }
+@media (max-width: 959px) {
+  .glade-docs .VPDoc > .container > .content { padding-inline: 0; }
+  .glade-docs .VPNavBar > .wrapper { padding-inline: 0; }
+  body .glade-docs .VPNavBar > .wrapper > .container > .title { padding-left: 0; }
+}
+/* Keep every primary destination reachable until the whole desktop header fits. */
+@media (max-width: 1279px) {
+  .glade-docs .VPNavBar :is(.menu, .translations, .appearance, .social-links, .extra) { display: none; }
+  .glade-docs .VPNavBar .VPNavBarHamburger { display: flex; flex-shrink: 0; }
+  .glade-docs .VPNavScreen { display: block; }
+  .glade-docs .VPNavBarSearch { flex: 0 1 auto; width: auto; padding-left: 0; }
+}
+.glade-docs .VPNavBarSearchButton { min-height: 44px; }
+.glade-docs .VPNavBarTitle .title { min-height: 44px; }
 .glade-docs .docs-intro { border: 0; border-bottom: 1px solid var(--glade-border); padding: 0 0 24px; border-radius: 0; background: transparent; box-shadow: none; }
 .glade-docs .docs-intro-eyebrow { display: none; }
 .glade-docs .vp-doc h2 { margin-top: 40px; }
+.glade-docs .vp-doc .support-explorer-heading h2 { margin-top: 0; }
 /* GitHub light syntax roles need stronger colors on the tinted code canvas. */
 html:not(.dark) .vp-doc .shiki span[style*="--shiki-light:#D73A49"] { --shiki-light: var(--glade-keyword) !important; }
 html:not(.dark) .vp-doc .shiki span[style*="--shiki-light:#E36209"] { --shiki-light: var(--glade-number) !important; }

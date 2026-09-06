@@ -9,7 +9,7 @@ canonicalTask: /guide/workflows/debug-apex
   <p class="docs-intro-eyebrow">Task guide</p>
   <p>Turn a Salesforce Apex debug log into a local profile report.</p>
   <ul>
-    <li>Run `glade debug profile` on a saved log.</li>
+    <li>Run <code>glade debug profile</code> on a saved log.</li>
     <li>Read limits, categories, and Hot events.</li>
     <li>Save JSON for automation or follow-up review.</li>
   </ul>

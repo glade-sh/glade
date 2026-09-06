@@ -10,8 +10,8 @@ canonicalTask: /guide/quickstart
   <p>Initialize Glade configuration in a Salesforce DX project, prove the local environment, and run the first local check from a terminal.</p>
   <ul>
     <li>Initialize Glade configuration in a Salesforce DX project.</li>
-    <li>Run `glade doctor --project .`.</li>
-    <li>Read the first `glade check` result.</li>
+    <li>Run <code>glade doctor --project .</code>.</li>
+    <li>Read the first <code>glade check</code> result.</li>
   </ul>
 </div>
 

@@ -10,7 +10,7 @@ canonicalTask: /guide/glade-orgs
   <p>Create a local Glade org target, register it with the Salesforce CLI, and import sample data.</p>
   <ul>
     <li>Create and start a Glade org.</li>
-    <li>Write the target into an isolated `sf` config.</li>
+    <li>Write the target into an isolated <code>sf</code> config.</li>
     <li>Import tree data and query it back.</li>
   </ul>
 </div>
