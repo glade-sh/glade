@@ -228,15 +228,15 @@ onUnmounted(() => {
        </div>
        <div class="workbench-content">
         <div class="workbench-file"><svg class="icon " aria-hidden="true"><use href="#i-file"/></svg> AccountService.cls</div>
-        <div class="debug-code">
-         <div class="code-line"><span class="line-no">1</span><span class="line-code"><span class="t-key">public class</span> <span class="t-type">AccountService</span> {</span></div>
-         <div class="code-line"><span class="line-no">2</span><span class="line-code">  <span class="t-key">public static</span> <span class="t-type">Account</span> <span class="t-fn">create</span>() {</span></div>
-         <div class="code-line"><span class="line-no">3</span><span class="line-code">    <span class="t-type">Account</span> acc = <span class="t-key">new</span> <span class="t-type">Account</span>(</span></div>
-         <div class="code-line"><span class="line-no">4</span><span class="line-code">      Name = <span class="t-string">'Acme'</span>);</span></div>
-         <div class="code-line breakpoint-row"><span class="line-no">5</span><span class="line-code"><span class="breakpoint-dot" aria-hidden="true"></span>    <span class="t-key">insert</span> acc;</span></div>
-         <div class="code-line"><span class="line-no">6</span><span class="line-code">    <span class="t-key">return</span> acc;</span></div>
-         <div class="code-line"><span class="line-no">7</span><span class="line-code">  }</span></div>
-         <div class="code-line"><span class="line-no">8</span><span class="line-code">}</span></div>
+        <div class="debug-code" role="region" aria-label="Illustrative debug source" tabindex="0">
+         <div class="code-line"><span class="line-no" aria-hidden="true">1</span><span class="line-code"><span class="t-key">public class</span> <span class="t-type">AccountService</span> {</span></div>
+         <div class="code-line"><span class="line-no" aria-hidden="true">2</span><span class="line-code">  <span class="t-key">public static</span> <span class="t-type">Account</span> <span class="t-fn">create</span>() {</span></div>
+         <div class="code-line"><span class="line-no" aria-hidden="true">3</span><span class="line-code">    <span class="t-type">Account</span> acc = <span class="t-key">new</span> <span class="t-type">Account</span>(</span></div>
+         <div class="code-line"><span class="line-no" aria-hidden="true">4</span><span class="line-code">      Name = <span class="t-string">'Acme'</span>);</span></div>
+         <div class="code-line breakpoint-row"><span class="line-no" aria-hidden="true"><span class="breakpoint-dot"></span>5</span><span class="line-code">    <span class="t-key">insert</span> acc;</span></div>
+         <div class="code-line"><span class="line-no" aria-hidden="true">6</span><span class="line-code">    <span class="t-key">return</span> acc;</span></div>
+         <div class="code-line"><span class="line-no" aria-hidden="true">7</span><span class="line-code">  }</span></div>
+         <div class="code-line"><span class="line-no" aria-hidden="true">8</span><span class="line-code">}</span></div>
         </div>
         <div class="inspector"><div class="inspector-head"><svg class="icon " aria-hidden="true"><use href="#i-pause"/></svg> Paused at breakpoint · line 5</div><div class="variable">acc.Name <span>"Acme"</span></div></div>
        </div>

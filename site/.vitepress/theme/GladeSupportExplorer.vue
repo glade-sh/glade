@@ -114,7 +114,7 @@ function statusClass(value: string) {
     </ul>
     <nav class="support-explorer-pagination" aria-label="Capability result pages">
       <button class="support-explorer-button" type="button" :disabled="page === 1" @click="changePage(1)">First</button>
-      <button class="support-explorer-button" type="button" :disabled="page === 1" @click="changePage(page - 1)">Previous</button>
+      <button class="support-explorer-button" type="button" aria-label="Previous" :disabled="page === 1" @click="changePage(page - 1)">Prev</button>
       <span>Page {{ page }} of {{ pageCount }}</span>
       <button class="support-explorer-button" type="button" :disabled="page >= pageCount" @click="changePage(page + 1)">Next</button>
       <button class="support-explorer-button" type="button" :disabled="page >= pageCount" @click="changePage(pageCount)">Last</button>
@@ -131,7 +131,8 @@ function statusClass(value: string) {
 .support-explorer-controls label { min-width: 0; }
 .support-explorer-controls select, .support-explorer-controls input { width: 100%; min-width: 0; }
 .support-explorer-list li > div { flex-wrap: wrap; }
-.support-explorer-button { align-self: end; border: 1px solid var(--vp-c-divider); border-radius: 6px; padding: 8px 12px; min-height: 44px; color: var(--vp-c-text-1); background: var(--vp-c-bg-soft); font: inherit; cursor: pointer; }
+.support-explorer-button { align-self: end; border: 1px solid var(--glade-control); border-radius: 8px; padding: 8px 12px; min-height: 44px; color: var(--glade-text); background: var(--glade-surface); font: inherit; font-size: 14px; font-weight: 550; cursor: pointer; }
+.support-explorer-button:hover:not(:disabled) { border-color: var(--glade-link); background: var(--glade-active); }
 .support-explorer-button:disabled { opacity: .5; cursor: default; }
 .support-explorer-button:focus-visible, .support-explorer-result:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 3px; }
 .support-explorer-pagination { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
@@ -143,5 +144,8 @@ function statusClass(value: string) {
 .support-row-detail dd { margin: 2px 0 0; overflow-wrap: anywhere; }
 @media (max-width: 640px) {
   .support-explorer-controls > .support-explorer-button { align-self: stretch; }
+  .support-explorer-pagination { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .support-explorer-pagination > span { grid-column: 1 / -1; grid-row: 1; text-align: center; color: var(--glade-muted); font-size: 13px; }
+  .support-explorer-pagination > button { padding-inline: 4px; font-size: 13px; }
 }
 </style>

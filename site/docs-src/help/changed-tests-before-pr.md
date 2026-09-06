@@ -9,7 +9,7 @@ canonicalTask: /guide/affected-tests
   <p class="docs-intro-eyebrow">Task guide</p>
   <p>Run the local tests Glade can connect to your branch diff, then save machine-readable output.</p>
   <ul>
-    <li>Run changed tests against `origin/main`.</li>
+    <li>Run changed tests against <code>origin/main</code>.</li>
     <li>Rerun failures.</li>
     <li>Write reports for review or CI.</li>
   </ul>

@@ -1,0 +1,53 @@
+.assurance-page { margin: 0; background: var(--glade-canvas); color: var(--glade-text); font: 400 15px/1.65 var(--glade-font-sans); overflow-wrap: anywhere; }
+.assurance-page *, .assurance-page *::before, .assurance-page *::after { box-sizing: border-box; }
+.assurance-page a { color: var(--glade-link); text-decoration: underline; text-underline-offset: 3px; }
+.assurance-page :focus-visible { outline: 2px solid var(--glade-focus); outline-offset: 3px; }
+.assurance-header, .assurance-page main, .assurance-footer { width: min(1240px, calc(100% - 48px)); margin-inline: auto; }
+.assurance-header { display: flex; justify-content: space-between; align-items: center; gap: 24px; min-height: 80px; border-bottom: 1px solid var(--glade-border); }
+.assurance-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 25px; font-weight: 600; letter-spacing: -1.1px; text-decoration: none !important; color: var(--glade-text) !important; white-space: nowrap; }
+.assurance-brand img { flex: 0 0 36px; }
+.assurance-domain { color: var(--glade-link); }
+.assurance-header nav { display: flex; align-items: center; gap: 20px; font-size: 13px; }
+.assurance-header nav a { display: inline-flex; align-items: center; min-height: 44px; }
+.assurance-page button { min-height: 44px; padding: 9px 14px; border: 1px solid var(--glade-control); border-radius: 7px; background: var(--glade-surface); color: var(--glade-text); font: inherit; font-size: 13px; cursor: pointer; }
+.assurance-page button:hover { background: var(--glade-active); }
+.assurance-page button:disabled { opacity: .55; cursor: default; }
+.assurance-page main { padding-block: 48px; }
+.assurance-intro { max-width: 720px; margin-bottom: 32px; }
+.assurance-eyebrow { margin: 0 0 12px; color: var(--glade-accent); font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+.assurance-page h1 { margin: 0 0 18px; font-size: clamp(32px, 5vw, 44px); font-weight: 550; line-height: 1.15; letter-spacing: -1.4px; }
+.assurance-intro > p:last-child { color: var(--glade-muted); }
+.assurance-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding: 24px; border: 1px solid var(--glade-border); border-radius: 12px; background: var(--glade-surface); }
+.assurance-filters label { display: grid; gap: 7px; color: var(--glade-muted); font-size: 13px; font-weight: 500; min-width: 0; }
+.assurance-filters input, .assurance-filters select { width: 100%; min-width: 0; min-height: 44px; border: 1px solid var(--glade-control); border-radius: 7px; padding: 9px 12px; background: var(--glade-canvas); color: var(--glade-text); font: inherit; font-size: 16px; }
+.assurance-filters input::placeholder { color: var(--glade-subtle); }
+.assurance-filters select { appearance: auto; }
+.assurance-filter-foot { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.assurance-filter-foot p { margin: 0; color: var(--glade-muted); font-size: 13px; }
+.assurance-filter-foot button { flex-shrink: 0; }
+.assurance-page section { margin-top: 40px; }
+.assurance-page h2 { margin: 0 0 14px; font-size: 24px; line-height: 1.35; letter-spacing: -.5px; font-weight: 550; }
+.assurance-scroll-hint { margin: 0 0 14px; color: var(--glade-muted); font-size: 13px; }
+.assurance-page .table-scroll { width: 100%; overflow-x: auto; border: 1px solid var(--glade-border); border-radius: 9px; scrollbar-width: thin; }
+.assurance-page table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 13px; }
+.assurance-page td, .assurance-page th { padding: 12px 16px; border-bottom: 1px solid var(--glade-border); text-align: left; vertical-align: top; max-width: 46ch; }
+.assurance-page th { background: var(--glade-rail); font-weight: 600; white-space: nowrap; }
+.assurance-page td { background: var(--glade-surface); }
+.assurance-page tbody tr:last-child td { border-bottom: 0; }
+.assurance-empty { color: var(--glade-muted); }
+.assurance-footer { padding-block: 24px; border-top: 1px solid var(--glade-border); display: flex; flex-wrap: wrap; gap: 16px 28px; font-size: 13px; }
+.assurance-footer a { display: inline-flex; align-items: center; min-height: 44px; }
+.assurance-skip { position: fixed; left: 16px; top: -100px; z-index: 100; padding: 12px 18px; border: 1px solid var(--glade-control); background: var(--glade-surface); }
+.assurance-skip:focus { top: 16px; }
+@media (max-width: 720px) {
+  .assurance-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .assurance-search { grid-column: 1 / -1; }
+  .assurance-header { flex-wrap: wrap; gap: 8px; padding-block: 16px; }
+  .assurance-header nav { flex-wrap: wrap; gap: 8px 20px; }
+}
+@media (max-width: 440px) {
+  .assurance-header, .assurance-page main, .assurance-footer { width: calc(100% - 32px); }
+  .assurance-page main { padding-block: 32px; }
+  .assurance-filters { grid-template-columns: minmax(0, 1fr); padding: 18px; gap: 16px; }
+  .assurance-filter-foot { align-items: flex-start; flex-direction: column; }
+}

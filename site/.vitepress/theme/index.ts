@@ -10,6 +10,7 @@ import './styles/tokens.css'
 import './styles/reading.css'
 import ArticleContext from './ArticleContext.vue'
 import DocsEnhancer from './DocsEnhancer.vue'
+import GladeNotFound from './GladeNotFound.vue'
 
 export default {
   extends: DefaultTheme,
@@ -23,6 +24,7 @@ export default {
     // The homepage's layout:false uses its native bare-Content branch.
     return h(DefaultTheme.Layout, { class: frontmatter.value.gladeHomepage ? undefined : 'glade-docs' }, {
       'doc-before': () => h(ArticleContext),
+      'not-found': () => h(GladeNotFound),
       'layout-bottom': () => h(DocsEnhancer)
     })
   }

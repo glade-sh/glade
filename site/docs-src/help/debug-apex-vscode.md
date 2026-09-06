@@ -10,7 +10,7 @@ canonicalTask: /guide/workflows/debug-apex
   <p>Set a normal Apex gutter breakpoint and debug a local test through Glade DAP.</p>
   <ul>
     <li>Set a breakpoint in a path the selected test executes.</li>
-    <li>Start `Debug Local Test`.</li>
+    <li>Start <code>Debug Local Test</code>.</li>
     <li>Open Run and Debug while the session is active.</li>
   </ul>
 </div>

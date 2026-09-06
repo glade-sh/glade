@@ -252,7 +252,9 @@ test("launch docs identify the published v0.2.15 release and retain historical n
 });
 
 test("release docs publish the sealed private-corpus assurance snapshot", () => {
-  const explorerSha256 = createHash("sha256").update(privateCorpusAssuranceExplorer).digest("hex");
+  const assuranceJSON = privateCorpusAssuranceExplorer.match(/<script id="assurance-data" type="application\/json">([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(assuranceJSON, "the styled explorer must retain the sealed evidence payload");
+  const assuranceSha256 = createHash("sha256").update(assuranceJSON).digest("hex");
   for (const page of [releaseNotes, repoPrivateCorpusAssurance, supportMap]) {
     assert.match(page, /184 required surfaces/);
     assert.match(page, /178 compile-ready/);
@@ -268,8 +270,9 @@ test("release docs publish the sealed private-corpus assurance snapshot", () => 
   assert.match(privateCorpusAssuranceExplorer, /private-corpus-002/);
   assert.match(privateCorpusAssuranceExplorer, /All namespaces/);
   assert.match(privateCorpusAssuranceExplorer, /All repositories/);
-  assert.equal(explorerSha256, "5bad30dfb04858f39d11c33a82e1290181d376ea58205a80ce47467eaff21625");
-  assert.match(repoPrivateCorpusAssurance, new RegExp(explorerSha256));
+  assert.equal(assuranceSha256, "921bbc27c8fdc62e3e340138c26e1ea34b8137f206d251c66244bb63642aae04");
+  assert.match(repoPrivateCorpusAssurance, new RegExp(assuranceSha256));
+  assert.match(repoPrivateCorpusAssurance, /Original explorer export SHA-256.*5bad30dfb04858f39d11c33a82e1290181d376ea58205a80ce47467eaff21625/);
   assert.doesNotMatch(privateCorpusAssuranceExplorer, /https?:\/\/|\/Users\/|@agentforce\.com|00D[A-Za-z0-9]{12,}/);
 });
 
@@ -1354,10 +1357,10 @@ test("workbench page mounts a real CodeMirror editor", () => {
 });
 
 test("docs code blocks and tables fill their content lane cleanly", () => {
-  assert.match(css, /\.vp-doc div\[class\*='language-'\] pre\s*\{[\s\S]*padding: 22px 24px;/);
+  assert.match(css, /\.vp-doc div\[class\*='language-'\] pre\s*\{[\s\S]*padding: 58px 24px 22px;/);
   assert.match(css, /\.vp-doc div\[class\*='language-'\] code\s*\{[\s\S]*font-size: max\(13\.5px, var\(--fs-code\)\);[\s\S]*line-height: 1\.55;/);
-  assert.match(css, /\.vp-doc div\[class\*='language-'\] > span\.lang\s*\{[\s\S]*top: 0;[\s\S]*right: 0;[\s\S]*display: inline-flex;[\s\S]*height: 28px;/);
-  assert.match(css, /\.vp-doc div\[class\*='language-'\] > button\.copy\s*\{[\s\S]*width: 34px;[\s\S]*height: 28px;/);
+  assert.match(css, /\.vp-doc div\[class\*='language-'\] > span\.lang\s*\{[\s\S]*top: 8px;[\s\S]*left: 18px;[\s\S]*right: auto;[\s\S]*height: 44px;/);
+  assert.match(css, /\.vp-doc div\[class\*='language-'\] > button\.copy\s*\{[\s\S]*width: 44px;[\s\S]*height: 44px;[\s\S]*opacity: 1;/);
   assert.match(css, /\.vp-doc table\s*\{[\s\S]*width: 100%;[\s\S]*margin: 20px 0 28px;[\s\S]*border-radius: 12px;/);
   assert.match(css, /\.vp-doc th,\s*\n\.vp-doc td\s*\{[\s\S]*padding: 14px 18px;/);
   assert.match(css, /\.vp-doc tbody tr:nth-child\(even\)\s*\{[\s\S]*background:/);
