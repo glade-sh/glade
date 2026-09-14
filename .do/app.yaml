@@ -14,8 +14,11 @@ services:
     instance_count: 1
     instance_size_slug: basic-xxs
     health_check:
-      http_path: /playground/
+      http_path: /readyz
     envs:
       - key: PORT
         value: "8080"
+        scope: RUN_TIME
+      - key: GLADE_SERVER_PUBLIC
+        value: "1"
         scope: RUN_TIME

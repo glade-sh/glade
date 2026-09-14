@@ -84,3 +84,28 @@ func TestRunPlaygroundPublicOptInWarns(t *testing.T) {
 		t.Fatalf("stdout missing public warning: %q", stdout.String())
 	}
 }
+
+func TestRunPlaygroundRejectsDisabledPublicSafeguards(t *testing.T) {
+	t.Setenv("GLADE_SERVER_PUBLIC", "1")
+	for _, test := range []struct {
+		name  string
+		flag  string
+		value string
+		want  string
+	}{
+		{name: "zero timeout", flag: "--run-timeout", value: "0s", want: "--run-timeout must be greater than zero"},
+		{name: "negative timeout", flag: "--run-timeout", value: "-1s", want: "--run-timeout requires a value"},
+		{name: "zero rate", flag: "--rate-per-minute", value: "0", want: "--rate-per-minute must be greater than zero"},
+		{name: "negative rate", flag: "--rate-per-minute", value: "-1", want: "--rate-per-minute requires a value"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			code := Run(context.Background(), []string{
+				"playground", "--public", "--once", "--no-open", "--data-root", t.TempDir(), test.flag, test.value,
+			}, &stdout, &stderr)
+			if code != 1 || !strings.Contains(stderr.String(), test.want) {
+				t.Fatalf("code=%d stdout=%q stderr=%q, want %q", code, stdout.String(), stderr.String(), test.want)
+			}
+		})
+	}
+}
