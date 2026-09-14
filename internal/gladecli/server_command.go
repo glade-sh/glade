@@ -426,6 +426,10 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 		if exampleID != "" {
 			fmt.Fprintf(w, "Example   %s loaded\n", exampleID)
 		}
+		if isPublicServerBind(addr) {
+			fmt.Fprintln(w)
+			fmt.Fprintln(w, "WARNING  Public bind requested; --once did not start a network-reachable server.")
+		}
 		renderer.Finish(cliui.Result{OK: true, Label: "playground prepared"})
 		return nil
 	}
