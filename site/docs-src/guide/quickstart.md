@@ -102,7 +102,8 @@ Expected: the check is clean. The test result names `SampleTest.adds`.
 To explore the larger bundled example in the browser workbench later:
 
 ```bash
-glade playground --example refinement-service --open
+GLADE_EXAMPLE_DIR="$(mktemp -d)"
+glade playground --data-root "$GLADE_EXAMPLE_DIR/playground" --db "$GLADE_EXAMPLE_DIR/org.sqlite" --example refinement-service --open
 ```
 
 Stop the browser workbench with Ctrl-C. The next Glade release adds a
@@ -182,6 +183,7 @@ before moving it to Trash or deleting it:
 
 ```bash
 printf '%s\n' "$GLADE_SAMPLE_DIR"
+printf '%s\n' "${GLADE_EXAMPLE_DIR:-}"
 ```
 
 For a kept project, clear only Glade's project-local test startup cache after a

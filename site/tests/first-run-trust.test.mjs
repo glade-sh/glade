@@ -5,6 +5,7 @@ import { test } from "node:test";
 const home = await readFile(new URL("../.vitepress/theme/home/GladeHome.vue", import.meta.url), "utf8");
 const homeScript = await readFile(new URL("../docs-src/public/js/home.js", import.meta.url), "utf8");
 const quickstart = await readFile(new URL("../docs-src/guide/quickstart.md", import.meta.url), "utf8");
+const examplesGuide = await readFile(new URL("../docs-src/guide/examples.md", import.meta.url), "utf8");
 const helpFirstLocalCheck = await readFile(new URL("../docs-src/help/first-local-check.md", import.meta.url), "utf8");
 const siteInstallation = await readFile(new URL("../docs-src/guide/installation.md", import.meta.url), "utf8");
 const supportMap = await readFile(new URL("../docs-src/guide/support-map.md", import.meta.url), "utf8");
@@ -41,7 +42,11 @@ test("first-run docs initialize a project before doctor and execute the bundled 
 	assert.match(quickstart, /Route A: Try the sample/);
 	assert.match(quickstart, /Route B: Use my Salesforce DX project/);
 	assert.match(quickstart, /--class SampleTest --method adds/);
-	assert.match(quickstart, /playground --example refinement-service --open/);
+	assert.match(quickstart, /--example refinement-service --open/);
+	for (const stableExampleDoc of [quickstart, examplesGuide]) {
+		assert.match(stableExampleDoc, /GLADE_EXAMPLE_DIR="\$\(mktemp -d\)"/);
+		assert.match(stableExampleDoc, /--data-root "\$GLADE_EXAMPLE_DIR\/playground"/);
+	}
 	assert.doesNotMatch(quickstart, /--example refinement-service --once/);
 	assert.match(quickstart, /`total` and `passed` are `1`/);
 	assert.match(quickstart, /--class <YourTestClass>/);
