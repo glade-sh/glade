@@ -13,7 +13,7 @@ The Apex parser (`github.com/glade-sh/apex-parser`) is vendored into this repo a
 ```bash
 # from the glade repo root
 docker build -t glade-playground .
-docker run --rm -p 8080:8080 -e PORT=8080 glade-playground
+docker run --rm -p 8080:8080 -e PORT=8080 -e GLADE_SERVER_PUBLIC=1 glade-playground
 ```
 
 Or use the helper:
@@ -27,7 +27,8 @@ Open <http://localhost:8080/playground/>.
 The image builds only the Go binary. The playground UI assets are embedded in
 `glade`, so no separate web build is needed. The build uses `CGO_ENABLED=1`
 because the Apex declaration parser is a tree-sitter (C) parser; the binary links
-against glibc and runs on a glibc base image.
+against glibc and runs on a glibc base image. The purpose-built image and App
+Platform spec set the required `GLADE_SERVER_PUBLIC=1` network-bind opt-in.
 
 ## Public-mode flags
 
@@ -67,7 +68,10 @@ If you prefer a prebuilt image instead of a source build, push one to a registry
 (`PUSH=1 REGISTRY=registry.digitalocean.com/<your-registry> scripts/build-playground-image.sh`)
 and point the service at it with an `image:` block in `.do/app.yaml`.
 
-The service listens on port `8080` and health-checks `GET /playground/`.
+The service listens on port `8080`. App Platform health-checks `GET /readyz`,
+which verifies that the runner initialized and the workspace is readable.
+`GET /healthz` is a process-liveness probe and deliberately remains healthy
+when readiness fails.
 
 ## Security model and scaling
 
@@ -77,3 +81,8 @@ growth. It is not a security sandbox for the Go process. Any future public
 deployment must run in a container with platform CPU and memory limits, expose
 only HTTPS, and prefer horizontal instances over large single instances. In-process
 rate limits are per instance; add edge rate limiting before shared public traffic.
+
+The built-in server currently has one workspace and runner per process. It does
+not isolate source or file mutations between visitors. Do not expose it to
+untrusted multi-user traffic until request or session isolation is added; public
+mode safeguards do not provide visitor isolation.

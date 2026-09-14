@@ -33,10 +33,13 @@ FROM debian:bookworm-slim
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
-    && groupadd -r glade && useradd -r -g glade glade
+    && groupadd -r glade && useradd -r -g glade glade \
+    && install -d -o glade -g glade /var/lib/glade
 COPY --from=build /out/glade /usr/local/bin/glade
+WORKDIR /var/lib/glade
 USER glade
-ENV PORT=8080
+ENV PORT=8080 \
+    GLADE_SERVER_PUBLIC=1
 EXPOSE 8080
 # Hardened public mode: per-run timeout, forced scratch + strict limits,
 # per-IP rate limiting, ephemeral org. See docs/PLAYGROUND_HOSTING.md.
