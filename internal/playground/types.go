@@ -32,15 +32,32 @@ type ProjectReference struct {
 }
 
 type WorkspaceMetadata struct {
-	ID            string          `json:"id"`
-	Root          string          `json:"root"`
-	ProjectRoot   string          `json:"projectRoot"`
-	ExampleID     string          `json:"exampleId,omitempty"`
-	Files         []WorkspaceFile `json:"files"`
-	AnonymousBody string          `json:"anonymousBody,omitempty"`
-	WorkspaceHash string          `json:"workspaceHash,omitempty"`
-	LimitMode     vm.LimitMode    `json:"limitMode,omitempty"`
-	DBPath        string          `json:"dbPath,omitempty"`
+	ID            string           `json:"id"`
+	Root          string           `json:"root"`
+	ProjectRoot   string           `json:"projectRoot"`
+	ExampleID     string           `json:"exampleId,omitempty"`
+	Files         []WorkspaceFile  `json:"files"`
+	AnonymousBody string           `json:"anonymousBody,omitempty"`
+	WorkspaceHash string           `json:"workspaceHash,omitempty"`
+	LimitMode     vm.LimitMode     `json:"limitMode,omitempty"`
+	DBPath        string           `json:"dbPath,omitempty"`
+	Policy        PlaygroundPolicy `json:"policy"`
+}
+
+type PlaygroundPolicy struct {
+	Public            bool         `json:"public"`
+	RunMode           string       `json:"runMode"`
+	LimitMode         vm.LimitMode `json:"limitMode"`
+	RunTimeoutMS      int64        `json:"runTimeoutMs,omitempty"`
+	RatePerMinute     int          `json:"ratePerMinute,omitempty"`
+	MaxWorkspaceFiles int          `json:"maxWorkspaceFiles,omitempty"`
+	MaxWorkspaceBytes int64        `json:"maxWorkspaceBytes,omitempty"`
+	LimitCaps         vm.LimitCaps `json:"limitCaps"`
+}
+
+type PlaygroundHealth struct {
+	Status  string `json:"status"`
+	Version string `json:"version,omitempty"`
 }
 
 type WorkspaceFile struct {

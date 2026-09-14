@@ -1,7 +1,16 @@
 import { renderToString } from "react-dom/server"
 import { expect, test, vi } from "vitest"
 
-import App, { closeSourceTab, selectSourceTab, sourceTabItems, type SourceTabFile } from "./App"
+import App, {
+  closeSourceTab,
+  formatTimeout,
+  limitUsagePreview,
+  resolveInitialExample,
+  resultDefaultTab,
+  selectSourceTab,
+  sourceTabItems,
+  type SourceTabFile,
+} from "./App"
 
 const files: SourceTabFile[] = [
   { path: "force-app/main/default/classes/AccountService.cls", kind: "class", readOnly: false },
@@ -145,4 +154,48 @@ test("links the playground docs action to the guide", () => {
   const html = renderToString(<App />)
 
 	expect(html).toContain('href="https://glade.sh/guide/"')
+})
+
+test("renders launch surfaces and state controls", () => {
+  stubLocalStorage()
+
+  const html = renderToString(<App />)
+
+  expect(html).toContain("Apex")
+  expect(html).toContain("Visualforce")
+  expect(html).toContain("LWC")
+  expect(html).toContain("Share")
+  expect(html).toContain("Reset data")
+  expect(html).toContain('data-testid="playground-policy"')
+})
+
+test("shows an enforced zero governor cap", () => {
+  expect(limitUsagePreview("callouts", 0, { callouts: 0 })).toBe("0 / 0")
+})
+
+test("formats configured timeouts without overstating them", () => {
+  expect(formatTimeout(500)).toBe("500ms")
+  expect(formatTimeout(1500)).toBe("1.5s")
+  expect(formatTimeout(5000)).toBe("5s")
+})
+
+test("opens failed runs on the actionable problems tab", () => {
+  expect(
+    resultDefaultTab({
+      runId: "run-1",
+      cacheHit: false,
+      status: "runtime_error",
+      compileMs: 0,
+      executeMs: 1,
+      logs: ["before failure"],
+    }),
+  ).toBe("problems")
+})
+
+test("keeps an invalid shared-example warning while loading the fallback", () => {
+  expect(resolveInitialExample("missing-example", ["first-example", "second-example"])).toEqual({
+    initial: "first-example",
+    problem: "Example “missing-example” was not found. Showing the first available example instead.",
+    clearProblemOnLoad: false,
+  })
 })
