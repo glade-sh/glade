@@ -7,6 +7,9 @@ const homeScript = await readFile(new URL("../docs-src/public/js/home.js", impor
 const quickstart = await readFile(new URL("../docs-src/guide/quickstart.md", import.meta.url), "utf8");
 const helpFirstLocalCheck = await readFile(new URL("../docs-src/help/first-local-check.md", import.meta.url), "utf8");
 const siteInstallation = await readFile(new URL("../docs-src/guide/installation.md", import.meta.url), "utf8");
+const supportMap = await readFile(new URL("../docs-src/guide/support-map.md", import.meta.url), "utf8");
+const lwcShell = await readFile(new URL("../docs-src/guide/lwc-local-shell.md", import.meta.url), "utf8");
+const localAPIRoutes = await readFile(new URL("../docs-src/reference/local-api-routes.md", import.meta.url), "utf8");
 const siteSecurityTrust = await readFile(new URL("../docs-src/guide/security-trust.md", import.meta.url), "utf8");
 const repoInstallation = await readFile(new URL("../../docs/INSTALL.md", import.meta.url), "utf8");
 const repoSecurityTrust = await readFile(new URL("../../docs/SECURITY_TRUST.md", import.meta.url), "utf8");
@@ -19,28 +22,31 @@ test('homepage install copy preserves executable command line breaks', () => {
   assert.match(homeScript, /return target\.getAttribute\("data-copy-text"\) \|\| target\.textContent\.trim\(\)/);
 });
 
-test("first-run docs establish sample or existing project context before doctor", () => {
-  const sampleRoute = quickstart.slice(quickstart.indexOf("## Try the sample"), quickstart.indexOf("## Use my Salesforce DX project"));
-  const existingProjectRoute = quickstart.slice(quickstart.indexOf("## Use my Salesforce DX project"));
-  for (const firstRunDoc of [existingProjectRoute, helpFirstLocalCheck, repoInstallation]) {
-    const commandBlocks = [...firstRunDoc.matchAll(/```bash\n([\s\S]*?)```/g)].map((match) => match[1]);
-    const initBlock = commandBlocks.findIndex((block) => block.includes("glade init --project . --yes"));
-    const doctorBlock = commandBlocks.findIndex((block) => block.includes("glade doctor"));
-    assert.ok(initBlock > -1, "first-run docs should initialize the project");
-    assert.ok(doctorBlock === -1 || doctorBlock >= initBlock, "first-run docs should run doctor only after initialization");
-    if (doctorBlock === initBlock) {
-      assert.ok(commandBlocks[initBlock].indexOf("glade init --project . --yes") < commandBlocks[initBlock].indexOf("glade doctor"));
-    }
-  }
-  assert.match(quickstart, /glade playground .*--example refinement-service --open/);
-  assert.match(sampleRoute, /glade init --project \.glade\/playground\/workspaces\/default --yes/);
-  assert.ok(sampleRoute.indexOf("glade init --project") < sampleRoute.indexOf("glade doctor --project"));
-  assert.match(quickstart, /glade doctor --project \.glade\/playground\/workspaces\/default/);
-  assert.match(quickstart, /--class RefinementServiceTest/);
-  assert.match(quickstart, /substitute your actual class name/);
-  assert.match(quickstart, /zero tests/);
-  assert.match(siteInstallation, /first local check/);
-  assert.doesNotMatch(siteInstallation, /```bash\nglade doctor\n/);
+test("first-run docs initialize a project before doctor and execute the bundled sample test", () => {
+	for (const firstRunDoc of [quickstart, helpFirstLocalCheck, repoInstallation]) {
+		const commandBlocks = [...firstRunDoc.matchAll(/```bash\n([\s\S]*?)```/g)].map((match) => match[1]);
+		const initBlocks = commandBlocks.map((block, index) => ({ block, index })).filter(({ block }) => block.includes("glade init --project"));
+		const doctorBlocks = commandBlocks.map((block, index) => ({ block, index })).filter(({ block }) => block.includes("glade doctor"));
+		assert.ok(initBlocks.length > 0, "first-run docs should initialize the project");
+		for (const doctor of doctorBlocks) {
+			const priorInit = initBlocks.find((init) => init.index < doctor.index);
+			const sameBlockInit = initBlocks.find((init) => init.index === doctor.index);
+			assert.ok(priorInit || sameBlockInit, "first-run docs should run doctor only after initialization");
+			if (sameBlockInit) assert.ok(sameBlockInit.block.indexOf("glade init --project") < sameBlockInit.block.indexOf("glade doctor"));
+		}
+	}
+	assert.match(quickstart, /Route A: Try the sample/);
+	assert.match(quickstart, /Route B: Use my Salesforce DX project/);
+	assert.match(quickstart, /--example refinement-service --once/);
+	assert.match(quickstart, /--class RefinementServiceTest --method createsAndLabelsFileRow/);
+	assert.match(quickstart, /`total` and `passed` are `1`/);
+	assert.match(quickstart, /--class <YourTestClass>/);
+	assert.match(quickstart, /API versions are separate contracts/);
+	assert.match(quickstart, /Salesforce was not contacted|did not log in to Salesforce/);
+	assert.match(quickstart, /Report a reproducible issue/);
+	assert.match(quickstart, /printf '%s\\n' "\$GLADE_DEMO_DIR"/);
+	assert.match(siteInstallation, /first local check/);
+	assert.doesNotMatch(siteInstallation, /```bash\nglade doctor\n/);
 });
 
 test("installation choices link to canonical task guides", () => {
@@ -57,6 +63,18 @@ test("installation docs disclose both destinations and the observed footprint", 
     assert.match(installationDoc, /LWC runtime\/toolchain and bundled editor assets/);
     assert.match(installationDoc, /about 229 MB on disk/i);
   }
+});
+
+test("first-run surfaces keep API axes and Salesforce proof separate", () => {
+	for (const doc of [quickstart, supportMap]) {
+		for (const version of ["60.0", "65.0", "66.0", "67.0"]) assert.match(doc, new RegExp(version.replace(".", "\\.")));
+		assert.match(doc, /historical versions are preserved|historical\s+source versions are preserved/i);
+		assert.match(doc, /Do not (?:raise|upgrade|change)[\s\S]*?metadata/i);
+	}
+	assert.match(lwcShell, /exact checked `<apiVersion>` of `65\.0`, `66\.0`,\s+or `67\.0`/);
+	assert.match(lwcShell, /does not contact Salesforce/);
+	assert.match(localAPIRoutes, /accepts `60\.0`, `65\.0`, `66\.0`, and `67\.0`/);
+	assert.match(localAPIRoutes, /not evidence that Salesforce was contacted/);
 });
 
 test("manual verification snippets resolve the manifest and archive name without ambient variables", () => {

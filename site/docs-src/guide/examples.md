@@ -14,25 +14,43 @@ glade examples show refinement-service
 glade examples run refinement-service
 ```
 
-Open one in the local Playground:
+Create the Refinement Service demo project and exit without starting a server:
 
 ```bash
-glade playground --example refinement-service --open
+glade playground --data-root .glade/playground --db .glade/playground/org.sqlite --example refinement-service --once
+```
+
+The project is written to `.glade/playground/workspaces/default`. The example
+flag refuses a non-empty managed workspace unless you explicitly pass the
+destructive `--reset-on-start` flag, so run it from a fresh evaluation
+directory. Then initialize and run its named test:
+
+```bash
+GLADE_PROJECT=.glade/playground/workspaces/default
+test -f "$GLADE_PROJECT/glade.yml" || glade init --project "$GLADE_PROJECT" --yes
+glade doctor --project "$GLADE_PROJECT"
+glade test --project "$GLADE_PROJECT" --class RefinementServiceTest --method createsAndLabelsFileRow --json --no-progress
+```
+
+Open the same project in the browser workbench when you want to explore it:
+
+```bash
+glade playground --project "$GLADE_PROJECT" --db .glade/playground/org.sqlite --open
 ```
 
 Useful first examples:
 
 | ID | Use it for |
 | --- | --- |
-| `refinement-service` | Classes, SOQL, and DML |
+| `refinement-service` | Classes, SOQL, DML, and one named test |
 | `deal-desk-discount-guard` | Trigger and limit behavior |
 | `limit-counter-drill` | Governor limit counters |
 | `org-diff-review-loop` | Local state diffs after DML |
 
-`glade examples run <id>` prints the command that opens the example. It does not modify your project.
+`glade examples run <id>` prints the browser command. It does not modify your
+Salesforce DX project. `glade playground --example <id>` writes only to its
+managed scratch workspace. Use the [five-minute Quickstart](/guide/quickstart#sample-project)
+for the checked first-run sequence and cleanup.
 
-The [sample quickstart](/guide/quickstart#try-the-sample) explains how to load
-the workspace, run its named test, and inspect a failure. The corrected
-`RefinementServiceTest` first shipped in v0.2.14 and is included in the
-v0.2.15 stable release. Never accept Pass
-alongside source errors.
+The bundled `RefinementServiceTest` first shipped in v0.2.14 and is included in
+the v0.2.15 stable release.

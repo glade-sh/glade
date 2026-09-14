@@ -177,7 +177,24 @@ glade version
 
 ## First Project Run
 
-Run parse/check/tests against a Salesforce DX project without connecting to an org:
+Use the bundled demo when you do not have a project ready. The playground
+command materializes the managed project and exits without starting a server:
+
+```bash
+GLADE_DEMO_DIR="$(mktemp -d)"
+cd "$GLADE_DEMO_DIR"
+glade playground --data-root .glade/playground --example refinement-service --once
+GLADE_PROJECT=.glade/playground/workspaces/default
+glade init --project "$GLADE_PROJECT" --yes
+glade doctor --project "$GLADE_PROJECT"
+glade test --project "$GLADE_PROJECT" --class RefinementServiceTest --method createsAndLabelsFileRow --json --no-progress
+```
+
+Expected: the named test executes once and passes. A zero-test result is not
+first-run evidence.
+
+For an existing Salesforce DX project, run parse/check/tests without connecting
+to an org:
 
 ```bash
 cd path/to/sfdx-project
@@ -188,6 +205,13 @@ glade doctor --project .
 glade check --project .
 glade test --project . --json
 ```
+
+The project source default, per-class metadata, LWC bundle version, and local
+HTTP route version are independent. Apex source `65.0`, `66.0`, and `67.0` is in
+the checked window; well-formed historical versions are preserved without an
+implied parity claim. Do not change Salesforce metadata only to make a local
+result green. Glade does not log in, deploy, check hosted permissions or
+services, or replace final Salesforce validation.
 
 Install advisory scanners when needed. They are plugins, not product runtime
 packages:

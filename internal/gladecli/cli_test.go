@@ -382,7 +382,7 @@ func TestRunDoctorReportsParser(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
 	out := stdout.String()
-	for _, want := range []string{"Glade doctor", "Project", "Toolchain", "Parser", "Next:", "glade check", "glade test changed --since origin/main"} {
+	for _, want := range []string{"Glade doctor", "Project", "LWC tools", "Parser", "Apex default", "checked window: 65.0, 66.0, 67.0", "Salesforce", "not contacted", "Next:", "glade check --project", "glade test --project"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("doctor output missing %q:\n%s", want, out)
 		}
@@ -399,13 +399,21 @@ func TestRunDoctorJSON(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
 	var got struct {
-		Version      string `json:"version"`
-		GoVersion    string `json:"goVersion"`
-		OSArch       string `json:"osArch"`
-		CWD          string `json:"cwd"`
-		ExitCode     int    `json:"exitCode"`
-		ParserStatus string `json:"parserStatus"`
-		ParserOK     bool   `json:"parserOK"`
+		SchemaVersion            string   `json:"schemaVersion"`
+		ReadinessScope           string   `json:"readinessScope"`
+		ApexReady                bool     `json:"apexReady"`
+		Version                  string   `json:"version"`
+		GoVersion                string   `json:"goVersion"`
+		OSArch                   string   `json:"osArch"`
+		CWD                      string   `json:"cwd"`
+		ExitCode                 int      `json:"exitCode"`
+		ProjectOK                bool     `json:"projectOK"`
+		SourceAPIVersion         string   `json:"sourceApiVersion"`
+		SourceAPIInCheckedWindow bool     `json:"sourceApiInCheckedWindow"`
+		ParserStatus             string   `json:"parserStatus"`
+		ParserOK                 bool     `json:"parserOK"`
+		SalesforceBoundary       string   `json:"salesforceBoundary"`
+		Suggestions              []string `json:"suggestions"`
 	}
 	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
 		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
@@ -413,11 +421,20 @@ func TestRunDoctorJSON(t *testing.T) {
 	if got.Version != Version {
 		t.Fatalf("version = %q, want %q", got.Version, Version)
 	}
+	if got.SchemaVersion != "1.1" || got.ReadinessScope != "apex" || !got.ApexReady {
+		t.Fatalf("doctor JSON missing versioned Apex readiness: %#v", got)
+	}
 	if got.GoVersion == "" || got.OSArch == "" || got.CWD == "" || got.ParserStatus == "" {
 		t.Fatalf("doctor JSON missing runtime fields: %#v", got)
 	}
 	if !got.ParserOK {
 		t.Fatalf("parserOK = false, want true: %#v", got)
+	}
+	if !got.ProjectOK || got.SourceAPIVersion != "65.0" || !got.SourceAPIInCheckedWindow {
+		t.Fatalf("project/API status = %#v", got)
+	}
+	if !strings.Contains(got.SalesforceBoundary, "not contacted") || len(got.Suggestions) == 0 {
+		t.Fatalf("doctor JSON missing boundary or next steps: %#v", got)
 	}
 	if got.ExitCode != code {
 		t.Fatalf("doctor JSON exitCode = %d, process code = %d", got.ExitCode, code)
@@ -433,15 +450,136 @@ func TestRunDoctorJSONExitCodeMatchesSetupStatus(t *testing.T) {
 		t.Fatalf("exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
 	var got struct {
-		Status        string `json:"status"`
-		ExitCode      int    `json:"exitCode"`
-		ConfigMissing bool   `json:"configMissing"`
+		Status        string   `json:"status"`
+		ExitCode      int      `json:"exitCode"`
+		ConfigMissing bool     `json:"configMissing"`
+		Recovery      []string `json:"recovery"`
 	}
 	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
 		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
 	}
 	if got.Status != "failed" || got.ExitCode != code || !got.ConfigMissing {
 		t.Fatalf("doctor JSON did not match setup failure: code=%d got=%#v", code, got)
+	}
+	if len(got.Recovery) < 2 || !strings.Contains(strings.Join(got.Recovery, "\n"), "glade init --project") || !strings.Contains(strings.Join(got.Recovery, "\n"), "glade doctor --project") {
+		t.Fatalf("doctor JSON missing recovery commands: %#v", got)
+	}
+}
+
+func TestRunDoctorQuotesRecoveryProjectPathWithoutTrimming(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "project with apostrophe's trailing space ")
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"doctor", "--project", root}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	wantArg := "'" + strings.ReplaceAll(filepath.ToSlash(root), "'", "'\"'\"'") + "'"
+	if !strings.HasSuffix(wantArg, " '") {
+		t.Fatalf("quoted project argument lost its trailing space: %q", wantArg)
+	}
+	for _, command := range []string{"glade init --project " + wantArg, "glade doctor --project " + wantArg} {
+		if !strings.Contains(stdout.String(), command) {
+			t.Fatalf("doctor output missing safe command %q:\n%s", command, stdout.String())
+		}
+	}
+}
+
+func TestRunDoctorResolvesNearestConfigProjectRoot(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  root: .\n  packageDirs: [force-app]\n")
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/RootProbe.cls"), "public class RootProbe {}")
+	nested := filepath.Join(root, "force-app", "main", "default")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"doctor", "--project", nested, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	var got struct {
+		ProjectRoot string   `json:"projectRoot"`
+		Suggestions []string `json:"suggestions"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if !sameCleanPath(got.ProjectRoot, root) {
+		t.Fatalf("projectRoot = %q, want %q", got.ProjectRoot, root)
+	}
+	if len(got.Suggestions) == 0 || !strings.Contains(got.Suggestions[0], doctorProjectCommandArg(root)) {
+		t.Fatalf("suggestions do not preserve resolved root: %#v", got.Suggestions)
+	}
+}
+
+func TestRunDoctorWarnsForHistoricalProjectSourceVersion(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"46.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  root: .\n  packageDirs: [force-app]\n")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"doctor", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	for _, want := range []string{"Apex default", "46.0", "preserved historical source", "Advisory:", "Ready."} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("doctor output missing %q:\n%s", want, stdout.String())
+		}
+	}
+	if strings.Contains(stdout.String(), "Apex default ✓") {
+		t.Fatalf("historical source rendered as a pass:\n%s", stdout.String())
+	}
+}
+
+func TestRunDoctorMissingToolchainIsApexAdvisory(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  root: .\n  packageDirs: [force-app]\n")
+	t.Setenv("GLADE_HOME", "")
+	t.Setenv("GLADE_ROOT", "")
+	t.Setenv("XDG_DATA_HOME", filepath.Join(t.TempDir(), "empty-data"))
+	t.Chdir(root)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"doctor", "--project", "."}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want Apex-ready 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	for _, want := range []string{"LWC tools", "Advisory:", "Apex check and test are available", "Ready."} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("doctor output missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestRunDoctorMalformedConfigReturnsStructuredJSON(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  unsupported: true\n")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"doctor", "--project", root, "--json"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	var got struct {
+		Status       string   `json:"status"`
+		ConfigOK     bool     `json:"configOK"`
+		ConfigStatus string   `json:"configStatus"`
+		Recovery     []string `json:"recovery"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
+	}
+	if got.Status != "failed" || got.ConfigOK || !strings.Contains(got.ConfigStatus, "unsupported config key") {
+		t.Fatalf("unexpected config failure JSON: %#v", got)
+	}
+	if !strings.Contains(strings.Join(got.Recovery, "\n"), "glade config validate --project") {
+		t.Fatalf("missing config recovery: %#v", got.Recovery)
 	}
 }
 
@@ -467,8 +605,32 @@ func TestRunDoctorProjectPathMustExist(t *testing.T) {
 	if code != 1 {
 		t.Fatalf("exit code = %d, want 1", code)
 	}
-	if !strings.Contains(stderr.String(), missing) || !strings.Contains(stderr.String(), "no such file or directory") {
-		t.Fatalf("stderr = %q", stderr.String())
+	if stderr.Len() != 0 || !strings.Contains(stdout.String(), missing) || !strings.Contains(stdout.String(), "no such file or directory") || !strings.Contains(stdout.String(), "pass an existing directory") {
+		t.Fatalf("stdout=%q stderr=%q", stdout.String(), stderr.String())
+	}
+}
+
+func TestRunDoctorMissingProjectPathReturnsStructuredJSON(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "missing")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"doctor", "--project", missing, "--json"}, &stdout, &stderr)
+	if code != 1 || stderr.Len() != 0 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	var got struct {
+		SchemaVersion  string   `json:"schemaVersion"`
+		Status         string   `json:"status"`
+		ExitCode       int      `json:"exitCode"`
+		ReadinessScope string   `json:"readinessScope"`
+		ApexReady      bool     `json:"apexReady"`
+		ProjectStatus  string   `json:"projectStatus"`
+		Recovery       []string `json:"recovery"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
+	}
+	if got.SchemaVersion != "1.1" || got.Status != "failed" || got.ExitCode != code || got.ReadinessScope != "apex" || got.ApexReady || !strings.Contains(got.ProjectStatus, missing) || len(got.Recovery) == 0 {
+		t.Fatalf("unexpected missing-project doctor JSON: %#v", got)
 	}
 }
 
@@ -516,11 +678,11 @@ func TestRunDoctorReportsProjectLocalDataSchemaRefresh(t *testing.T) {
 	stdout.Reset()
 	stderr.Reset()
 	code = Run(context.Background(), []string{"doctor", "--project", root}, &stdout, &stderr)
-	if code == 0 {
-		t.Fatalf("doctor unexpectedly succeeded stdout=%q", stdout.String())
+	if code != 0 {
+		t.Fatalf("doctor should keep Apex ready when only local data is stale: code=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
 	got := stdout.String()
-	for _, want := range []string{"Local data", "schema changed", "glade db inspect --project"} {
+	for _, want := range []string{"Local data", "schema changed", "Advisory:", "Apex check and test are available", "glade db inspect --project", "Ready."} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("doctor output missing %q:\n%s", want, got)
 		}
@@ -744,8 +906,10 @@ func TestRunInitAliasesConfigInit(t *testing.T) {
 	if !strings.Contains(got, "  packageDirs: [force-app]") || !strings.Contains(got, "  defaultNamespace: aliasns") {
 		t.Fatalf("glade.yml =\n%s", got)
 	}
-	if !strings.Contains(stdout.String(), "next: glade config validate --project") {
-		t.Fatalf("stdout = %q", stdout.String())
+	for _, want := range []string{"next:", "glade config validate --project", "glade doctor --project"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stdout missing %q: %q", want, stdout.String())
+		}
 	}
 }
 
@@ -1830,7 +1994,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "toolchain help",
 			args: []string{"help", "toolchain"},
-			want: []string{"Usage:", "glade toolchain status [--json]", "--json", "Notes:", "GLADE_HOME", "XDG_DATA_HOME", "glade toolchain install --from ."},
+			want: []string{"Usage:", "glade toolchain status [--json]", "--json", "Notes:", "GLADE_HOME", "XDG_DATA_HOME", "glade toolchain install --from path/to/glade"},
 		},
 		{
 			name: "init help",
@@ -4819,7 +4983,7 @@ func TestRunPlaygroundOnce(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), "URL") || !strings.Contains(stdout.String(), "/playground/") || strings.Contains(stdout.String(), "glade playground:") {
+	if !strings.Contains(stdout.String(), "Prepared managed workspace") || strings.Contains(stdout.String(), "URL") || strings.Contains(stdout.String(), "Started local browser workbench") || strings.Contains(stdout.String(), "glade playground:") {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
 }
@@ -4869,7 +5033,7 @@ func TestRunPlaygroundListExamples(t *testing.T) {
 	}
 }
 
-func TestRunPlaygroundExampleFlagPrintsDeepLocalURL(t *testing.T) {
+func TestRunPlaygroundExampleFlagMaterializesProjectOnce(t *testing.T) {
 	root := t.TempDir()
 	dbPath := filepath.Join(t.TempDir(), "playground.sqlite")
 
@@ -4885,8 +5049,72 @@ func TestRunPlaygroundExampleFlagPrintsDeepLocalURL(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), "http://127.0.0.1:1789/playground/?example=refinement-service") {
+	if !strings.Contains(stdout.String(), "Prepared demo project") || strings.Contains(stdout.String(), "URL") || strings.Contains(stdout.String(), "Started local browser workbench") {
 		t.Fatalf("stdout = %q", stdout.String())
+	}
+	projectRoot := filepath.Join(root, "workspaces", "default")
+	for _, rel := range []string{
+		"sfdx-project.json",
+		"force-app/main/default/classes/RefinementService.cls",
+		"force-app/main/default/classes/RefinementServiceTest.cls",
+	} {
+		if _, err := os.Stat(filepath.Join(projectRoot, filepath.FromSlash(rel))); err != nil {
+			t.Fatalf("example file %s was not materialized: %v", rel, err)
+		}
+	}
+	for _, want := range []string{"Project   " + filepath.ToSlash(projectRoot), "Example   refinement-service loaded"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stdout missing %q: %q", want, stdout.String())
+		}
+	}
+}
+
+func TestRunPlaygroundExampleRefusesToReplaceManagedWorkspaceWithoutReset(t *testing.T) {
+	root := t.TempDir()
+	projectRoot := filepath.Join(root, "workspaces", "default")
+	sentinel := filepath.Join(projectRoot, "keep.txt")
+	writeTestFile(t, sentinel, "keep")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"playground",
+		"--data-root", root,
+		"--example", "refinement-service",
+		"--once",
+	}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "is not empty") || !strings.Contains(stderr.String(), "--reset-on-start") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+	if got, err := os.ReadFile(sentinel); err != nil || string(got) != "keep" {
+		t.Fatalf("sentinel was changed: content=%q err=%v", got, err)
+	}
+}
+
+func TestRunPlaygroundExampleResetReplacesManagedWorkspace(t *testing.T) {
+	root := t.TempDir()
+	projectRoot := filepath.Join(root, "workspaces", "default")
+	sentinel := filepath.Join(projectRoot, "keep.txt")
+	writeTestFile(t, sentinel, "replace")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"playground",
+		"--data-root", root,
+		"--example", "refinement-service",
+		"--reset-on-start",
+		"--once",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if _, err := os.Stat(sentinel); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("sentinel still exists after explicit reset: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(projectRoot, "force-app/main/default/classes/RefinementServiceTest.cls")); err != nil {
+		t.Fatalf("example was not materialized after reset: %v", err)
 	}
 }
 

@@ -10,7 +10,7 @@ canonicalTask: /guide/workflows/apex-tests
 The `RefinementServiceTest.opensFile` selectors below match the maintained
 editor walkthrough. Your project must contain that class and method, or you
 must substitute its actual test names. For a self-contained first run, use
-[`SampleTest.adds` in the quickstart](/guide/quickstart#sample-project).
+[`RefinementServiceTest.createsAndLabelsFileRow` in the quickstart](/guide/quickstart#sample-project).
 The terminal output below is illustrative; timings are not a benchmark.
 
 ## Run all tests

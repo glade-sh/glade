@@ -338,8 +338,18 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 		return errors.New("--reset-on-start refuses --project because it would delete project source")
 	}
 	if projectRoot == "" {
-		if _, err := playgroundWorkspaceRoot(dataRoot, workspaceID); err != nil {
+		workspaceRoot, err := playgroundWorkspaceRoot(dataRoot, workspaceID)
+		if err != nil {
 			return err
+		}
+		if exampleID != "" && !resetOnStart {
+			entries, readErr := os.ReadDir(workspaceRoot)
+			if readErr != nil && !errors.Is(readErr, os.ErrNotExist) {
+				return fmt.Errorf("inspect managed playground workspace: %w", readErr)
+			}
+			if readErr == nil && len(entries) > 0 {
+				return fmt.Errorf("managed playground workspace %q is not empty; choose a fresh --data-root or pass --reset-on-start to replace it", filepath.ToSlash(workspaceRoot))
+			}
 		}
 	}
 	if noDB {
@@ -393,7 +403,37 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 		renderer.Finish(cliui.Result{OK: false, Label: "playground failed"})
 		return err
 	}
-	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "playground", Label: "Starting workbench", Current: 2, Total: 2})
+	if exampleID != "" {
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "playground", Label: "Loading example", Current: 2, Total: 3})
+		if _, err := ws.LoadExample(exampleID); err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "playground failed"})
+			return err
+		}
+	}
+	if once {
+		fmt.Fprintln(w, "Glade playground")
+		fmt.Fprintln(w)
+		if exampleID != "" {
+			fmt.Fprintln(w, "Prepared demo project")
+		} else {
+			fmt.Fprintln(w, "Prepared managed workspace")
+		}
+		fmt.Fprintln(w)
+		fmt.Fprintf(w, "Project   %s\n", filepath.ToSlash(ws.ProjectRoot))
+		if resetOnStart {
+			fmt.Fprintln(w, "Reset     completed")
+		}
+		if exampleID != "" {
+			fmt.Fprintf(w, "Example   %s loaded\n", exampleID)
+		}
+		renderer.Finish(cliui.Result{OK: true, Label: "playground prepared"})
+		return nil
+	}
+	current, total := 2, 2
+	if exampleID != "" {
+		current, total = 3, 3
+	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "playground", Label: "Starting workbench", Current: current, Total: total})
 	handler := playground.NewServer(ws, playground.ServerOptions{
 		Version:           Version,
 		DBPath:            dbPath,
@@ -410,6 +450,7 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 	fmt.Fprintln(w, "Started local browser workbench")
 	fmt.Fprintln(w)
 	fmt.Fprintf(w, "URL       %s\n", url)
+	fmt.Fprintf(w, "Project   %s\n", filepath.ToSlash(ws.ProjectRoot))
 	if showExamples {
 		fmt.Fprintln(w, "Examples  enabled")
 	} else {
@@ -423,15 +464,14 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 	if resetOnStart {
 		fmt.Fprintln(w, "Reset     completed")
 	}
+	if exampleID != "" {
+		fmt.Fprintf(w, "Example   %s loaded\n", exampleID)
+	}
 	if isPublicServerBind(addr) {
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, "WARNING  Playground is network-reachable. Local org data and mutation routes are unauthenticated.")
 	}
 	renderer.Finish(cliui.Result{OK: true, Label: "playground ready"})
-	if once {
-		_ = handler
-		return nil
-	}
 	if openBrowser {
 		_ = openURL(url)
 	}

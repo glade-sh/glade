@@ -12,11 +12,17 @@ community context metadata, starts a Glade-owned Lightning runtime, and opens
 local routes for component, record, app, home, tab, action, and Experience
 Cloud contexts.
 
-Verify the bundled toolchain before opening LWC routes:
+Release installs include the toolchain. Verify it before opening LWC routes:
 
 ```bash
 glade toolchain status
 ```
+
+Source-checkout developers can install it with
+`glade toolchain install --from path/to/glade`. Each bundle must declare exact
+API version `65.0`, `66.0`, or `67.0`; the bundle version is independent of the
+Apex project default and local HTTP route version. Keep the Salesforce-intended
+version instead of raising it only to make local preview compile.
 
 Then start the local workbench from the project root:
 
