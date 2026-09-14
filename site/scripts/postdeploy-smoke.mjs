@@ -51,7 +51,7 @@ assert.match(homeResponse.headers.get('permissions-policy') || '', /camera=\(\)/
 const home = await homeResponse.text()
 const commit = home.match(/<meta[^>]+name="glade:commit"[^>]+content="([^"]+)"/)?.[1]
 assert.equal(commit, expectedCommit, 'deployed commit marker does not match the requested commit')
-assert.match(home, /class="button button-primary[^"]*"[^>]+href="#get-started"/, 'homepage primary CTA should reach installation')
+assert.match(home, /class="button button-primary[^"]*"[^>]+href="\/guide\/quickstart"/, 'homepage primary CTA should reach the first local test')
 assert.match(home, /href="\/guide\/quickstart"/, 'installation should lead to the first local check')
 
 const assetPath = home.match(/(?:src|href)="(\/assets\/[^"]+\.(?:js|css))"/)?.[1]

@@ -157,15 +157,16 @@ onUnmounted(() => {
    <div class="hero-copy">
     <p class="eyebrow"><span class="eyebrow-dot"></span>A little more local. A lot less waiting.</p>
     <h1 id="hero-title"><span class="headline-first" style="color:var(--gh-text)">Run Apex locally.</span> <span>Keep your</span> <span>momentum.</span></h1>
-    <p class="hero-description">Check your project, run supported tests, and debug Apex on your machine—without waiting for a deploy.</p>
+    <p class="hero-description">Check source, run supported Apex tests, and debug in your Salesforce DX project—on your own machine, before a deploy.</p>
     <div class="hero-cta">
-     <a class="button button-primary" href="#get-started">Get started <svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a>
+     <a class="button button-primary" :href="withBase('/guide/quickstart')">Run your first local test <svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a>
      <a class="button button-secondary" href="https://github.com/glade-sh/glade"><svg class="icon " aria-hidden="true"><use href="#i-github"/></svg> View on GitHub</a>
     </div>
     <div class="hero-meta"><span><svg class="icon " aria-hidden="true"><use href="#i-monitor"/></svg> macOS &amp; Linux</span><a href="https://github.com/glade-sh/glade/blob/main/LICENSE"><svg class="icon " aria-hidden="true"><use href="#i-code"/></svg> Open source · Apache-2.0</a></div>
+    <p class="hero-boundary">Supported local workflows, not a replacement for Salesforce. <a :href="withBase('/guide/support-map')">Check the boundaries.</a></p>
    </div>
    <div class="demo-wrap">
-    <div class="demo-prelabel"><span>Your project. Your machine.</span><span class="interactive-tag"><svg class="icon " aria-hidden="true"><use href="#i-cursor"/></svg> Try the workflow</span></div>
+    <div class="demo-prelabel"><span>Explore an illustrated workflow</span><span class="interactive-tag"><svg class="icon " aria-hidden="true"><use href="#i-cursor"/></svg> Try the workflow</span></div>
     <div class="editor" id="hero-demo">
      <div class="editor-toolbar"><div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div><span class="editor-title">acme-salesforce / local workspace</span><svg class="icon " aria-hidden="true"><use href="#i-sliders"/></svg></div>
      <div class="demo-tabs" @keydown="tabKey($event)" role="tablist" aria-label="Local workflow preview">
@@ -184,15 +185,15 @@ onUnmounted(() => {
      </div>
      <div class="demo-footer"><span><svg class="icon " aria-hidden="true"><use href="#i-branch"/></svg> main</span><span><svg class="icon " aria-hidden="true"><use href="#i-monitor"/></svg> Local runtime</span><span>Salesforce DX</span></div>
     </div>
-    <div class="demo-caption"><span>Interactive preview · simulated output</span><button id="demo-change" class="demo-change" :disabled="!hydrated || busy" @click="edit">{{ editLabel }} ↗</button></div>
+    <div class="demo-caption"><span>Scripted website preview · simulated output. No Apex runs here. <a :href="withBase('/guide/quickstart')">Run a real example locally.</a></span><button id="demo-change" class="demo-change" :disabled="!hydrated || busy" @click="edit">{{ editLabel }} ↗</button></div>
    </div>
   </div>
  </section>
  <section class="container capabilities" id="features" tabindex="-1" aria-label="What you can do with Glade">
-  <div class="capability"><svg class="icon " aria-hidden="true"><use href="#i-bolt"/></svg><h2>Test without the wait</h2><p>Run a focused Apex test locally, then keep iterating.</p></div>
-  <div class="capability"><svg class="icon " aria-hidden="true"><use href="#i-breakpoint"/></svg><h2>See what’s happening</h2><p>Set a breakpoint. Inspect variables. Find the why.</p></div>
-  <div class="capability"><svg class="icon " aria-hidden="true"><use href="#i-editor"/></svg><h2>Keep your favorite tools</h2><p>Your Salesforce DX project, in your editor or terminal.</p></div>
-  <div class="capability"><svg class="icon " aria-hidden="true"><use href="#i-git-pull"/></svg><h2>Automate the loop</h2><p>Local checks for your agents and CI workflows.</p></div>
+  <div class="capability"><svg class="icon " aria-hidden="true"><use href="#i-bolt"/></svg><h2>Test one change</h2><p>Run a focused, supported Apex test before deploying your project.</p></div>
+  <div class="capability"><svg class="icon " aria-hidden="true"><use href="#i-breakpoint"/></svg><h2>Inspect the result</h2><p>Debug supported Apex locally and inspect the variables that explain a failure.</p></div>
+  <div class="capability"><svg class="icon " aria-hidden="true"><use href="#i-editor"/></svg><h2>Keep your workspace</h2><p>Work from your Salesforce DX project in your editor or terminal.</p></div>
+  <div class="capability"><svg class="icon " aria-hidden="true"><use href="#i-git-pull"/></svg><h2>Use the same local loop in automation</h2><p>Add scoped local checks to your workflow. Keep Salesforce validation as a separate gate.</p></div>
  </section>
  <section class="section container" id="workflow" tabindex="-1" aria-labelledby="workflow-title">
   <div class="workflow-layout">
@@ -288,7 +289,7 @@ onUnmounted(() => {
  </section>
  <section class="compatibility container" aria-labelledby="compat-title">
   <div class="compatibility-grid">
-   <div><p class="eyebrow">Built on clear boundaries</p><h2 class="section-title" id="compat-title">Local first.<br>Not a Salesforce replacement.</h2><p class="section-description">Get useful feedback earlier. Glade runs supported paths locally; Salesforce stays the final check for your production environment.</p><a class="text-link" :href="withBase('/guide/support-map')">See what runs locally<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
+   <div><p class="eyebrow">Built on clear boundaries</p><h2 class="section-title" id="compat-title">Local first.<br>Not a Salesforce replacement.</h2><p class="section-description">Glade gives you earlier feedback on supported paths. Some APIs use limited or deterministic local models. Validate hosted services and production behavior in Salesforce.</p><a class="text-link" :href="withBase('/guide/support-map')">See what runs locally<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
    <div class="compatibility-table" role="table" aria-label="Local workflow boundaries">
     <div class="compatibility-table-head" role="row"><span role="columnheader">Workflow</span><span role="columnheader">Where it runs</span></div>
     <div class="compat-row" role="row"><div role="cell"><strong>Apex checks &amp; supported tests</strong><small>Inside your Salesforce DX project</small></div><span class="status" role="cell"><svg class="icon " aria-hidden="true"><use href="#i-check-circle"/></svg>Local</span></div>
@@ -301,10 +302,10 @@ onUnmounted(() => {
   <div class="footer-topo" aria-hidden="true"><img :src="withBase('/home/contours.svg')" alt=""></div><div class="footer-topo right" aria-hidden="true"><img :src="withBase('/home/contours.svg')" alt=""></div>
   <div class="container">
    <p class="eyebrow">Go from waiting to making.</p>
-   <h2 id="start-title">Your next test.<br>One less deploy.</h2>
-   <p>Install Glade, open your project, and start your local loop.</p>
+   <h2 id="start-title">Start with one local test.</h2>
+   <p>Install Glade on macOS or Linux, then choose the small sample or your own Salesforce DX project.</p>
    <div class="install-box" id="install-cmd"><code><span class="install-prompt" aria-hidden="true">$</span><span id="install-command" ref="installCommand">{{ INSTALL_COMMAND }}</span></code><button class="copy-button" id="copy-install" :disabled="!hydrated" :aria-label="copied ? 'Install command copied' : 'Copy Glade install command'" @click="copyInstall"><svg class="icon " aria-hidden="true"><use href="#i-copy"/></svg><span class="copy-label">{{ copied ? 'Copied' : 'Copy' }}</span></button></div>
-   <div class="install-links"><a class="text-link" :href="withBase('/guide/quickstart')">Follow the quickstart<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a><span class="platform-note">macOS &amp; Linux</span><a class="text-link" :href="withBase('/guide/installation')">Installation options<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
+   <div class="install-links"><a class="text-link" href="https://github.com/glade-sh/glade/blob/main/site/install.sh">Read the installer<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a><a class="text-link" :href="withBase('/guide/security-trust#release-proof')">Verify a download<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a><a class="text-link" :href="withBase('/guide/installation')">Installation options<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a><a class="text-link" :href="withBase('/guide/quickstart')">Follow the quickstart<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
   </div>
  </section>
 </main>

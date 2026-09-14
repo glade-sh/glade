@@ -79,25 +79,108 @@ scores are different evidence. Review the underlying reports.
 
 ## Verify a release archive
 
-```bash
-GLADE_MANIFEST_URL=https://downloads.glade.sh/latest/release-manifest.json
-GLADE_VERSION="$(curl -fsSL "$GLADE_MANIFEST_URL" | sed -nE 's/^[[:space:]]*"version": "(v[^"]+)",?$/\1/p')"
-[ -n "$GLADE_VERSION" ] || { echo "could not resolve the stable Glade version" >&2; exit 1; }
-case "$(uname -s)" in Darwin) GLADE_OS=darwin ;; Linux) GLADE_OS=linux ;; *) echo "unsupported operating system" >&2; exit 1 ;; esac
-case "$(uname -m)" in arm64|aarch64) GLADE_ARCH=arm64 ;; x86_64|amd64) GLADE_ARCH=amd64 ;; *) echo "unsupported architecture" >&2; exit 1 ;; esac
-GLADE_ARCHIVE="glade_${GLADE_VERSION}_${GLADE_OS}_${GLADE_ARCH}.tar.gz"
-GLADE_BASE="https://downloads.glade.sh/${GLADE_VERSION}"
-curl -fLO "${GLADE_BASE}/${GLADE_ARCHIVE}"
-curl -fLO "${GLADE_BASE}/SHA256SUMS.txt"
-GLADE_CHECKSUM_LINE="$(grep "  \./${GLADE_ARCHIVE}$" SHA256SUMS.txt)"
-[ -n "$GLADE_CHECKSUM_LINE" ] || { echo "checksum entry not found" >&2; exit 1; }
-if command -v shasum >/dev/null 2>&1; then printf '%s\n' "$GLADE_CHECKSUM_LINE" | shasum -a 256 -c -; else printf '%s\n' "$GLADE_CHECKSUM_LINE" | sha256sum -c -; fi
-gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
-gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
-  --predicate-type https://cyclonedx.org/bom
-tar -xzf "$GLADE_ARCHIVE"
-./glade version
+This verification-only helper requires a POSIX shell, `curl`, `jq`, `gh`,
+`awk`, `mktemp`, `uname`, and either `shasum` or `sha256sum`. Configure GitHub
+CLI access as required by your environment. Save the block as
+`verify-release-download.sh`, review it, then run
+`sh verify-release-download.sh`.
+
+It selects the macOS or Linux archive for the stable version in the distribution
+manifest. Every failed gate stops the script. It leaves the downloaded files in
+a new temporary directory and does not extract, install, or execute Glade.
+
+<!-- release-verifier:start -->
+```sh
+#!/bin/sh
+# Verify one stable macOS/Linux release archive without extracting or running it.
+# Dependencies: curl, jq, gh (authenticated when required), awk, mktemp,
+# uname, and either shasum or sha256sum. Leaves downloads for inspection.
+set -eu
+
+fail() {
+	printf 'Glade verification stopped: %s\n' "$*" >&2
+	exit 1
+}
+
+for tool in curl jq gh awk mktemp uname; do
+	command -v "$tool" >/dev/null 2>&1 || fail "required tool not found: $tool"
+done
+
+if command -v shasum >/dev/null 2>&1; then
+	checksum_tool=shasum
+elif command -v sha256sum >/dev/null 2>&1; then
+	checksum_tool=sha256sum
+else
+	fail 'install shasum or sha256sum before continuing'
+fi
+
+case "$(uname -s)" in
+	Darwin) os=darwin ;;
+	Linux) os=linux ;;
+	*) fail 'this helper supports the published macOS and Linux archives only' ;;
+esac
+
+case "$(uname -m)" in
+	arm64 | aarch64) arch=arm64 ;;
+	x86_64 | amd64) arch=amd64 ;;
+	*) fail 'unsupported architecture' ;;
+esac
+
+workdir="$(mktemp -d "${TMPDIR:-/tmp}/glade-verify.XXXXXXXX")" || fail 'cannot create an isolated download directory'
+printf 'Downloads retained in: %s\n' "$workdir"
+cd "$workdir" || fail 'cannot enter download directory'
+
+fetch() {
+	curl --proto '=https' --proto-redir '=https' --tlsv1.2 \
+		--fail --show-error --silent --location --max-time 60 \
+		--output "$2" "$1" || fail "download failed: $1"
+}
+
+fetch 'https://downloads.glade.sh/latest/release-manifest.json' manifest.json
+version="$(jq -er '.version | select(type == "string") | select(test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))' manifest.json)" \
+	|| fail 'manifest must contain a stable vMAJOR.MINOR.PATCH version'
+archive="glade_${version}_${os}_${arch}.tar.gz"
+base="https://downloads.glade.sh/${version}"
+
+fetch "${base}/${archive}" "$archive"
+fetch "${base}/SHA256SUMS.txt" SHA256SUMS.txt
+awk -v wanted="./$archive" '
+	$2 == wanted {
+		n++
+		if (NF != 2 || length($1) != 64 || $1 ~ /[^0-9a-fA-F]/) bad=1
+		selected=$0
+	}
+	END { if (n != 1 || bad) exit 1; print selected }
+' SHA256SUMS.txt >selected-checksum.txt \
+	|| fail 'expected exactly one valid checksum entry for this archive'
+
+if [ "$checksum_tool" = shasum ]; then
+	shasum -a 256 -c selected-checksum.txt \
+		|| fail 'checksum mismatch; do not extract or run the archive'
+else
+	sha256sum -c selected-checksum.txt \
+		|| fail 'checksum mismatch; do not extract or run the archive'
+fi
+
+gh attestation verify "$archive" -R glade-sh/glade \
+	--signer-workflow glade-sh/glade/.github/workflows/release.yml \
+	--source-ref "refs/tags/${version}" \
+	|| fail 'provenance verification failed; do not extract or run the archive'
+gh attestation verify "$archive" -R glade-sh/glade \
+	--signer-workflow glade-sh/glade/.github/workflows/release.yml \
+	--source-ref "refs/tags/${version}" \
+	--predicate-type https://cyclonedx.org/bom \
+	|| fail 'CycloneDX attestation verification failed; do not extract or run the archive'
+
+printf '\nDownload verification completed for %s.\nArchive: %s/%s\nNot extracted, installed, or executed.\n' \
+	"$version" "$workdir" "$archive"
 ```
+<!-- release-verifier:end -->
+
+If verification stops, do not bypass the failed gate. Keep the exact command
+and sanitized diagnostic. Verification alone does not approve an archive for
+your organization's use; review its inventory and provenance under your own
+policy.
 
 Compare the matching `*.sbom.json` release asset with your internal dependency
 allowlist when policy requires an inventory review.

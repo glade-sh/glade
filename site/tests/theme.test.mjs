@@ -42,6 +42,7 @@ const repoPrivateCorpusAssurance = await readFile(new URL("../../docs/PRIVATE_CO
 const repoLwcSupport = await readFile(new URL("../../docs/LWC_SUPPORT.md", import.meta.url), "utf8");
 const releaseNotes = await readFile(new URL("../../docs/RELEASE_NOTES.md", import.meta.url), "utf8");
 const repoInstallDocs = await readFile(new URL("../../docs/INSTALL.md", import.meta.url), "utf8");
+const releaseVerifier = await readFile(new URL("../../scripts/verify-release-download.sh", import.meta.url), "utf8");
 const repoEditorDocs = await readFile(new URL("../../docs/EDITOR.md", import.meta.url), "utf8");
 const repoLocalTesting = await readFile(new URL("../../docs/LOCAL_TESTING.md", import.meta.url), "utf8");
 const repoTestStartupCache = await readFile(new URL("../../docs/TEST_STARTUP_CACHE.md", import.meta.url), "utf8");
@@ -425,12 +426,17 @@ test("repository release proof artifacts and measurement wrapper are documented"
   }
 });
 
-test("manual archive verification preserves the checksummed asset name", () => {
-  for (const installDocs of [repoInstallDocs, repoSecurityPolicy, repoSecurityTrust, securityTrust]) {
-    assert.match(installDocs, /GLADE_ARCHIVE/);
-    assert.match(installDocs, /GLADE_CHECKSUM_LINE/);
-    assert.match(installDocs, /grep "  \\.\/\$\{GLADE_ARCHIVE\}\$"/);
-    assert.doesNotMatch(installDocs, /glade\.tar\.gz/);
+test("manual archive verification selects one checksummed asset and fails closed", () => {
+  assert.match(releaseVerifier, /archive="glade_\$\{version\}_\$\{os\}_\$\{arch\}\.tar\.gz"/);
+  assert.match(releaseVerifier, /expected exactly one valid checksum entry/);
+  assert.match(releaseVerifier, /^set -eu$/m);
+  assert.doesNotMatch(releaseVerifier, /\btar\s+-|\.\/glade\s+version/);
+  for (const verificationDocs of [repoSecurityPolicy, securityTrust]) {
+    assert.match(verificationDocs, /release-verifier:start/);
+    assert.match(verificationDocs, /Not extracted, installed, or executed/);
+  }
+  for (const pointerDocs of [repoInstallDocs, repoSecurityTrust]) {
+    assert.match(pointerDocs, /sh scripts\/verify-release-download\.sh/);
   }
   assert.match(installation, /security and release trust guide[^\n]*canonical/);
 });
@@ -475,12 +481,12 @@ test("social share metadata exposes a raster preview card and route identity", (
   assert.match(config, /\['meta', \{ property: 'og:image:type', content: 'image\/png' \}\]/);
   assert.match(config, /\['meta', \{ property: 'og:image:width', content: '1200' \}\]/);
   assert.match(config, /\['meta', \{ property: 'og:image:height', content: '630' \}\]/);
-  assert.match(config, /\['meta', \{ property: 'og:image:alt', content: 'Glade local Apex runtime social preview' \}\]/);
+  assert.match(config, /\['meta', \{ property: 'og:image:alt', content: 'Glade: run and debug supported Apex locally, with Salesforce as the final validation gate' \}\]/);
   assert.match(config, /\['meta', \{ name: 'twitter:card', content: 'summary_large_image' \}\]/);
   assert.match(config, /\['meta', \{ name: 'twitter:title', content: title \}\]/);
   assert.match(config, /\['meta', \{ name: 'twitter:description', content: description \}\]/);
   assert.match(config, /\['meta', \{ name: 'twitter:image', content: 'https:\/\/glade\.sh\/social-card\.png' \}\]/);
-  assert.match(config, /\['meta', \{ name: 'twitter:image:alt', content: 'Glade local Apex runtime social preview' \}\]/);
+  assert.match(config, /\['meta', \{ name: 'twitter:image:alt', content: 'Glade: run and debug supported Apex locally, with Salesforce as the final validation gate' \}\]/);
   const imageTags = config.match(/\['meta', \{ (?:property|name): '(?:og|twitter):image[^']*', content: '[^']+' \}\]/g) || [];
   assert.ok(imageTags.every((tag) => !tag.includes("logo-mark.svg")));
 });
@@ -739,7 +745,9 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(releaseWorkflow, /attestations: write/);
 
   assert.match(repoInstallDocs, /Security verification/);
-  assert.match(repoInstallDocs, /gh attestation verify/);
+  assert.match(repoInstallDocs, /sh scripts\/verify-release-download\.sh/);
+  assert.match(releaseVerifier, /gh attestation verify/);
+  assert.match(releaseVerifier, /--signer-workflow glade-sh\/glade\/\.github\/workflows\/release\.yml/);
   assert.match(installation, /href="\/guide\/security-trust#release-proof"/);
   assert.match(installation, /canonical\s+manual verification path/);
 });

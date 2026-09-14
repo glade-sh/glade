@@ -1,0 +1,42 @@
+name: Documentation problem
+description: Report an unclear, incorrect, or missing instruction.
+title: '[Docs]: '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste credentials, proprietary source, private paths, customer records, or unredacted support bundles. Normal issues are public, even after closure.
+        Report vulnerabilities privately: https://github.com/glade-sh/glade/security/advisories/new
+  - type: input
+    id: page
+    attributes:
+      label: Exact page URL or repository path
+      description: Include an anchor or heading when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: task
+    attributes:
+      label: What were you trying to do?
+      description: Describe the instruction you followed and where you got stuck.
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: What should be clarified or corrected?
+      description: A suggested replacement is welcome but not required; describing the missing explanation is enough.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or environment
+      description: Optional unless the instruction changes across versions.
+  - type: checkboxes
+    id: public-disclosure
+    attributes:
+      label: Public disclosure check
+      options:
+        - label: I am authorized to share the information in this report publicly.
+          required: true

@@ -1,6 +1,7 @@
 ---
 pageType: interactive reference
 canonicalTask: /guide/workbench
+description: Explore local capability boundaries and replay prepared workflow output. This website does not execute Apex; run Glade locally for execution.
 aside: false
 head:
   - - link
