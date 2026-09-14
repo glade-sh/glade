@@ -336,7 +336,7 @@ glade exec --project . --limit-mode strict "System.debug(Limits.getDmlStatements
 Discover and run local Apex tests. The `RefinementServiceTest.opensFile`
 examples match the editor walkthrough; substitute a class and method that exist
 in your project. Use [the quickstart sample](/guide/quickstart#sample-project)
-for a self-contained `RefinementServiceTest.createsAndLabelsFileRow` run. Read
+for a self-contained `SampleTest.adds` run. Read
 JSON counts: an empty selection can exit `0`, and an unsupported test outcome
 exits `1` as a test error.
 

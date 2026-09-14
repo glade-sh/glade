@@ -8,6 +8,7 @@ const quickstart = await readFile(new URL("../docs-src/guide/quickstart.md", imp
 const helpFirstLocalCheck = await readFile(new URL("../docs-src/help/first-local-check.md", import.meta.url), "utf8");
 const siteInstallation = await readFile(new URL("../docs-src/guide/installation.md", import.meta.url), "utf8");
 const supportMap = await readFile(new URL("../docs-src/guide/support-map.md", import.meta.url), "utf8");
+const localTesting = await readFile(new URL("../docs-src/guide/local-testing.md", import.meta.url), "utf8");
 const lwcShell = await readFile(new URL("../docs-src/guide/lwc-local-shell.md", import.meta.url), "utf8");
 const localAPIRoutes = await readFile(new URL("../docs-src/reference/local-api-routes.md", import.meta.url), "utf8");
 const cliReference = await readFile(new URL("../docs-src/reference/cli.md", import.meta.url), "utf8");
@@ -86,6 +87,11 @@ test("public references separate Unreleased first-run contracts from the stable 
 	assert.match(cliReference, /Unreleased doctor `1\.1` schema/);
 	assert.match(jsonSchema, /v0\.2\.15 stable binary emits schema `1\.0`/);
 	assert.doesNotMatch(quickstart, /--example refinement-service --once/);
+	assert.match(localTesting, /\[`SampleTest\.adds` in the quickstart\]/);
+	assert.match(cliReference, /self-contained `SampleTest\.adds` run/);
+	for (const reference of [localTesting, cliReference]) {
+		assert.doesNotMatch(reference, /self-contained[\s\S]{0,100}RefinementServiceTest\.createsAndLabelsFileRow/);
+	}
 });
 
 test("manual verification snippets resolve the manifest and archive name without ambient variables", () => {
