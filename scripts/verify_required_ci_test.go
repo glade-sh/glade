@@ -151,6 +151,30 @@ func TestReleaseTagAttestationWorkflowContract(t *testing.T) {
 }
 
 func TestReleaseAttestationDocsAreFailClosed(t *testing.T) {
+	helperPath := filepath.Join("verify-release-download.sh")
+	helperData, err := os.ReadFile(helperPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	helper := string(helperData)
+	for _, required := range []string{
+		"set -eu",
+		"--signer-workflow glade-sh/glade/.github/workflows/release.yml",
+		"--source-ref \"refs/tags/${version}\"",
+		"--predicate-type https://cyclonedx.org/bom",
+		"provenance verification failed; do not extract or run the archive",
+		"CycloneDX attestation verification failed; do not extract or run the archive",
+	} {
+		if !strings.Contains(helper, required) {
+			t.Errorf("%s lacks %q", helperPath, required)
+		}
+	}
+	for _, unsafe := range []string{"tar -x", "./glade version"} {
+		if strings.Contains(helper, unsafe) {
+			t.Errorf("%s must remain verification-only; found %q", helperPath, unsafe)
+		}
+	}
+
 	paths := []string{
 		filepath.Join("..", "SECURITY.md"),
 		filepath.Join("..", "docs", "INSTALL.md"),
@@ -164,9 +188,6 @@ func TestReleaseAttestationDocsAreFailClosed(t *testing.T) {
 			t.Fatal(err)
 		}
 		text := strings.ToLower(string(data))
-		if !strings.Contains(text, "--predicate-type https://cyclonedx.org/bom") {
-			t.Errorf("%s lacks CycloneDX attestation verification", path)
-		}
 		for _, stale := range []string{"best-effort attest", "when the repository host supports", "if no attestation", "does not publish an attestation"} {
 			if strings.Contains(text, stale) {
 				t.Errorf("%s retains fail-open wording %q", path, stale)
@@ -174,11 +195,28 @@ func TestReleaseAttestationDocsAreFailClosed(t *testing.T) {
 		}
 	}
 
-	installData, err := os.ReadFile(filepath.Join("..", "docs", "INSTALL.md"))
-	if err != nil {
-		t.Fatal(err)
+	for _, path := range []string{
+		filepath.Join("..", "SECURITY.md"),
+		filepath.Join("..", "site", "docs-src", "guide", "security-trust.md"),
+	} {
+		data, readErr := os.ReadFile(path)
+		if readErr != nil {
+			t.Fatal(readErr)
+		}
+		if !strings.Contains(string(data), "release-verifier:start") || !strings.Contains(string(data), "Not extracted, installed, or executed") {
+			t.Errorf("%s does not embed the checked verification-only helper", path)
+		}
 	}
-	if got := strings.Count(string(installData), "--predicate-type https://cyclonedx.org/bom"); got != 2 {
-		t.Errorf("docs/INSTALL.md CycloneDX verification count = %d, want 2", got)
+	for _, path := range []string{
+		filepath.Join("..", "docs", "INSTALL.md"),
+		filepath.Join("..", "docs", "SECURITY_TRUST.md"),
+	} {
+		data, readErr := os.ReadFile(path)
+		if readErr != nil {
+			t.Fatal(readErr)
+		}
+		if !strings.Contains(string(data), "sh scripts/verify-release-download.sh") {
+			t.Errorf("%s does not point to the checked verification-only helper", path)
+		}
 	}
 }

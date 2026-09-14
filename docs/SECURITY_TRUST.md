@@ -52,27 +52,17 @@ Tag publication is fail-closed. The tagged commit must already have an exact-SHA
 successful `Required CI` authority. Each platform archive's provenance and
 CycloneDX attestation must then verify before any platform asset is uploaded.
 
-Verify a release archive:
+Use the copyable, verification-only block in the [public Security & trust
+guide](https://glade.sh/guide/security-trust#release-proof). From a reviewed
+repository checkout, run the same fail-closed helper with:
 
 ```bash
-GLADE_MANIFEST_URL=https://downloads.glade.sh/latest/release-manifest.json
-GLADE_VERSION="$(curl -fsSL "$GLADE_MANIFEST_URL" | sed -nE 's/^[[:space:]]*"version": "(v[^"]+)",?$/\1/p')"
-[ -n "$GLADE_VERSION" ] || { echo "could not resolve the stable Glade version" >&2; exit 1; }
-case "$(uname -s)" in Darwin) GLADE_OS=darwin ;; Linux) GLADE_OS=linux ;; *) echo "unsupported operating system" >&2; exit 1 ;; esac
-case "$(uname -m)" in arm64|aarch64) GLADE_ARCH=arm64 ;; x86_64|amd64) GLADE_ARCH=amd64 ;; *) echo "unsupported architecture" >&2; exit 1 ;; esac
-GLADE_ARCHIVE="glade_${GLADE_VERSION}_${GLADE_OS}_${GLADE_ARCH}.tar.gz"
-GLADE_BASE="https://downloads.glade.sh/${GLADE_VERSION}"
-curl -fLO "${GLADE_BASE}/${GLADE_ARCHIVE}"
-curl -fLO "${GLADE_BASE}/SHA256SUMS.txt"
-GLADE_CHECKSUM_LINE="$(grep "  \./${GLADE_ARCHIVE}$" SHA256SUMS.txt)"
-[ -n "$GLADE_CHECKSUM_LINE" ] || { echo "checksum entry not found" >&2; exit 1; }
-if command -v shasum >/dev/null 2>&1; then printf '%s\n' "$GLADE_CHECKSUM_LINE" | shasum -a 256 -c -; else printf '%s\n' "$GLADE_CHECKSUM_LINE" | sha256sum -c -; fi
-gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
-gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
-  --predicate-type https://cyclonedx.org/bom
-tar -xzf "$GLADE_ARCHIVE"
-./glade version
+sh scripts/verify-release-download.sh
 ```
+
+It requires `curl`, `jq`, `gh`, `awk`, `mktemp`, `uname`, and either `shasum`
+or `sha256sum`. Every failed gate stops the script. It retains the downloaded
+files for inspection and does not extract, install, or execute Glade.
 
 ## Laptop behavior
 

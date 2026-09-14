@@ -82,3 +82,6 @@ html:not(.dark) .vp-doc .shiki span[style*="--shiki-light:#22863A"] { --shiki-li
 .glade-docs .docs-command-lookup-results li:last-child { border-bottom: 0; }
 .glade-docs .docs-command-lookup-results a { display: inline-block; padding-block: 3px; font-weight: 550; }
 .glade-docs .docs-command-lookup-results p { margin: 4px 0 0; color: var(--glade-muted); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+@media (max-width: 1024px) {
+  .glade-docs .docs-command-lookup-results { max-height: 14rem; }
+}

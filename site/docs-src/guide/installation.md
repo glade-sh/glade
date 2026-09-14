@@ -98,12 +98,7 @@ glade doctor --project .
 </div>
 
 The [security and release trust guide](/guide/security-trust) is the canonical
-manual verification path. It resolves the version and archive from the same
-published manifest used by the installer and this page.
-
-Its fail-closed release check verifies the CycloneDX attestation:
-
-```bash
-gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
-  --predicate-type https://cyclonedx.org/bom
-```
+manual verification path. Its verification-only helper resolves the version
+and archive from the same published manifest used by the installer and this
+page, then checks the archive checksum, release-workflow provenance, and
+CycloneDX attestation without extracting or running Glade.

@@ -1,6 +1,7 @@
 ---
 pageType: hub
 canonicalTask: /maintainer/
+description: Improve a focused local workflow, documentation, or accessibility. Find the right repository and distinguish implementation from compatibility evidence.
 ---
 
 # Contributors {#maintainer}

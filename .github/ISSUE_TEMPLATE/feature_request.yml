@@ -1,0 +1,42 @@
+name: Feature request
+description: Describe the workflow you cannot complete.
+title: '[Feature]: '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste credentials, proprietary source, private paths, customer records, or unredacted support bundles. Normal issues are public, even after closure.
+        Report vulnerabilities privately: https://github.com/glade-sh/glade/security/advisories/new
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to do?
+      description: Describe a concrete user task rather than only a proposed implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: current-path
+    attributes:
+      label: What happens with the current workflow?
+      description: Include the version or documentation page and any workaround. A local approximation and hosted Salesforce behavior are different scopes.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What would a useful result look like?
+      description: Suggest observable acceptance criteria and why the current workaround is insufficient.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Public references or example
+      description: Optional public documentation or a minimized example. Do not copy proprietary implementation code.
+  - type: checkboxes
+    id: public-disclosure
+    attributes:
+      label: Public disclosure check
+      options:
+        - label: I am authorized to share the information in this report publicly.
+          required: true

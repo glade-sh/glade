@@ -7,7 +7,7 @@
 
 <h1 align="center">Glade</h1>
 
-<p align="center">Local Apex runtime and developer tools for Salesforce projects.</p>
+<p align="center">Run supported Apex locally. Keep your momentum.</p>
 <p align="center">
   <a href="https://glade.sh">Site</a> ·
   <a href="https://glade.sh/guide/quickstart">Quickstart</a> ·
@@ -33,7 +33,7 @@ Glade is an independent open-source project and is not affiliated with,
 sponsored by, or endorsed by Salesforce. Salesforce and Apex are trademarks of
 Salesforce, Inc.
 
-## Get your first result
+## Start with one useful result
 
 ```bash
 curl -fsSL https://glade.sh/install.sh | sh
@@ -41,10 +41,12 @@ export PATH="$HOME/.local/bin:$PATH"
 glade version
 ```
 
-Continue with the [canonical quickstart](https://glade.sh/guide/quickstart):
+Continue with the [canonical quickstart](https://glade.sh/guide/quickstart) and
+choose the path that matches your workspace:
 
-- **Try the sample:** load the built-in Refinement Service, then run its named test.
-- **Use my project:** initialize an existing Salesforce DX project and run one known test class before the full suite.
+- **Local browser example:** load the built-in Refinement Service, then run its named test locally.
+- **Small terminal sample:** create a temporary Salesforce DX project and run the documented test.
+- **Your own project:** initialize an existing Salesforce DX project and run one known test class before the full suite.
 
 The corrected sample and named test first shipped in **v0.2.14** and are
 included in the **v0.2.15 stable release**. A
