@@ -246,6 +246,18 @@ function currentPlaygroundURL() {
   return parsePlaygroundURL(window.location.href)
 }
 
+export function resolveInitialExample(linked: string, availableIds: string[]) {
+  const linkedExists = Boolean(linked && availableIds.includes(linked))
+  const initial = linkedExists ? linked : availableIds[0] || ""
+  const problem =
+    linked && !linkedExists
+      ? initial
+        ? `Example “${linked}” was not found. Showing the first available example instead.`
+        : `Example “${linked}” was not found, and no built-in examples are available.`
+      : ""
+  return { initial, problem, clearProblemOnLoad: !problem }
+}
+
 export function resultDefaultTab(result: RunResult | null, problemMessage = "") {
   if (
     problemMessage ||
@@ -833,7 +845,10 @@ export default function App() {
   }
 
   const loadExampleById = useCallback(
-    async (id: string, options: { confirmDirty?: boolean; updateUrl?: boolean; preferred?: string } = {}) => {
+    async (
+      id: string,
+      options: { confirmDirty?: boolean; updateUrl?: boolean; preferred?: string; clearLinkProblem?: boolean } = {},
+    ) => {
       if (!id || !canLoadExamplesRef.current) return false
       const shouldConfirm = options.confirmDirty ?? true
       if (shouldConfirm && dirtyRef.current.size > 0 && !window.confirm("Load example and replace this scratch workspace?")) return false
@@ -852,7 +867,7 @@ export default function App() {
         })
         await applyWorkspace(workspace, { preferred: options.preferred, loadLatest: false })
         setSelectedExample(id)
-        setLinkProblem("")
+        if (options.clearLinkProblem ?? true) setLinkProblem("")
         if (options.updateUrl ?? true) {
           replacePlaygroundURL({ surface: "apex", example: id })
         }
@@ -900,14 +915,20 @@ export default function App() {
         canLoadExamplesRef.current = nextCanLoad
         setCanLoadExamples(nextCanLoad)
         const linked = linkedState.example ?? ""
-        const linkedExists = linked && nextExamples.some((example) => example.id === linked)
-        if (linked && !linkedExists) {
-          setLinkProblem(`Example “${linked}” was not found. Showing the first available example instead.`)
-        }
-        const initial = linkedExists ? linked : nextExamples[0]?.id || ""
+        const resolved = resolveInitialExample(
+          linked,
+          nextExamples.map((example) => example.id),
+        )
+        setLinkProblem(resolved.problem)
+        const initial = resolved.initial
         setSelectedExample(initial)
         if (linkedState.surface === "apex" && nextCanLoad && initial) {
-          await loadExampleById(initial, { confirmDirty: false, updateUrl: false, preferred: linkedState.file })
+          await loadExampleById(initial, {
+            confirmDirty: false,
+            updateUrl: false,
+            preferred: linkedState.file,
+            clearLinkProblem: resolved.clearProblemOnLoad,
+          })
           return
         }
       } catch (error) {

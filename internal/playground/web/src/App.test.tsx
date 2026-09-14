@@ -5,6 +5,7 @@ import App, {
   closeSourceTab,
   formatTimeout,
   limitUsagePreview,
+  resolveInitialExample,
   resultDefaultTab,
   selectSourceTab,
   sourceTabItems,
@@ -189,4 +190,12 @@ test("opens failed runs on the actionable problems tab", () => {
       logs: ["before failure"],
     }),
   ).toBe("problems")
+})
+
+test("keeps an invalid shared-example warning while loading the fallback", () => {
+  expect(resolveInitialExample("missing-example", ["first-example", "second-example"])).toEqual({
+    initial: "first-example",
+    problem: "Example “missing-example” was not found. Showing the first available example instead.",
+    clearProblemOnLoad: false,
+  })
 })
