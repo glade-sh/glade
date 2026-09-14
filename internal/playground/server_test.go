@@ -3,6 +3,7 @@ package playground
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,7 +11,123 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/glade-sh/glade/internal/vm"
 )
+
+func TestServerHealthAndReadinessRoutes(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test-version"})
+	for _, path := range []string{"/healthz", "/readyz"} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusOK || rec.Header().Get("Cache-Control") != "no-store" {
+			t.Fatalf("GET %s = %d cache=%q body=%s", path, rec.Code, rec.Header().Get("Cache-Control"), rec.Body.String())
+		}
+		if !strings.Contains(rec.Body.String(), "test-version") {
+			t.Fatalf("GET %s omitted version: %s", path, rec.Body.String())
+		}
+	}
+
+	handler.runner.initErr = errors.New("database unavailable")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/readyz", nil))
+	if rec.Code != http.StatusServiceUnavailable || !strings.Contains(rec.Body.String(), `"status":"unavailable"`) {
+		t.Fatalf("unready response = %d %s", rec.Code, rec.Body.String())
+	}
+	if strings.Contains(rec.Body.String(), "database unavailable") {
+		t.Fatalf("readiness response exposed internal detail: %s", rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("liveness should remain available, got %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestServerReadinessDoesNotWaitForExecution(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test-version"})
+	handler.runner.mu.Lock()
+	defer handler.runner.mu.Unlock()
+
+	rec := httptest.NewRecorder()
+	done := make(chan struct{})
+	go func() {
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/readyz", nil))
+		close(done)
+	}()
+	select {
+	case <-done:
+		if rec.Code != http.StatusOK {
+			t.Fatalf("readiness status = %d body=%s", rec.Code, rec.Body.String())
+		}
+	case <-time.After(time.Second):
+		t.Fatal("readiness waited for the execution mutex")
+	}
+}
+
+func TestPublicWorkspaceDescribesEnforcedPolicy(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test", Public: true})
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/playground/api/workspace", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("workspace status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var meta WorkspaceMetadata
+	if err := json.Unmarshal(rec.Body.Bytes(), &meta); err != nil {
+		t.Fatal(err)
+	}
+	policy := meta.Policy
+	if !policy.Public || policy.RunMode != string(RunModeScratch) || policy.LimitMode != vm.LimitModeStrict {
+		t.Fatalf("public policy modes = %#v", policy)
+	}
+	if policy.RunTimeoutMS != defaultPublicRunTimeout.Milliseconds() || policy.RatePerMinute != defaultPublicRatePerMinute {
+		t.Fatalf("public policy request limits = %#v", policy)
+	}
+	if policy.MaxWorkspaceFiles != defaultPublicMaxWorkspaceFiles || policy.MaxWorkspaceBytes != defaultPublicMaxWorkspaceBytes {
+		t.Fatalf("public workspace policy = %#v", policy)
+	}
+	if policy.LimitCaps != defaultPublicLimitCaps() {
+		t.Fatalf("public governor caps = %#v", policy.LimitCaps)
+	}
+}
+
+func TestPublicRunTimeoutReturnsActionableResponse(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test", Public: true, RunTimeout: time.Nanosecond})
+	body, err := json.Marshal(RunRequest{AnonymousBody: "System.debug('timeout');"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/playground/api/run", bytes.NewReader(body)))
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("timeout status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var result RunResult
+	if err := json.Unmarshal(rec.Body.Bytes(), &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.Status != RunStatusRuntimeError || !strings.Contains(result.ErrorMessage, "execution timed out after 1ns") ||
+		!strings.Contains(result.ErrorMessage, "try a smaller example") {
+		t.Fatalf("timeout result = %#v", result)
+	}
+}
 
 func TestServerWorkspaceAndRunRoutes(t *testing.T) {
 	dataRoot := t.TempDir()
@@ -40,6 +157,38 @@ func TestServerWorkspaceAndRunRoutes(t *testing.T) {
 	}
 	if result.Status != RunStatusPass || len(result.Logs) != 1 || result.Logs[0] != "route" {
 		t.Fatalf("result = %#v", result)
+	}
+
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/playground/api/reset", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("reset status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/playground/api/runs/latest", nil))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"found":false`) {
+		t.Fatalf("latest after reset = %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestServerResetReportsResultCacheFailure(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test"})
+	latestPath := filepath.Join(ws.DataRoot, "cache", "runs", "latest.json")
+	if err := os.MkdirAll(latestPath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(latestPath, "keep"), []byte("sentinel"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/playground/api/reset", nil))
+	if rec.Code != http.StatusInternalServerError || !strings.Contains(rec.Body.String(), "could not clear the previous run result") {
+		t.Fatalf("reset cache failure = %d body=%s", rec.Code, rec.Body.String())
 	}
 }
 
@@ -806,6 +955,9 @@ func TestPublicServerRateLimitsMutatingEndpointsByForwardedIP(t *testing.T) {
 		if rec.Code != want {
 			t.Fatalf("reset %d status = %d body=%s, want %d", i, rec.Code, rec.Body.String(), want)
 		}
+		if want == http.StatusTooManyRequests && rec.Header().Get("Retry-After") != "60" {
+			t.Fatalf("rate limit Retry-After = %q, want 60", rec.Header().Get("Retry-After"))
+		}
 	}
 }
 
@@ -843,5 +995,15 @@ func TestPublicServerForcesScratchStrictRun(t *testing.T) {
 	org := handler.runner.Org()
 	if account := org.Objects["Account"]; len(account.Records) != 0 {
 		t.Fatalf("public persist wrote %d account records to shared org", len(account.Records))
+	}
+	if _, found, err := handler.runner.cache.Latest(); err != nil || found {
+		t.Fatalf("public run cached latest result: found=%v err=%v", found, err)
+	}
+	cacheEntries, err := os.ReadDir(filepath.Join(dataRoot, "cache", "cache"))
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		t.Fatal(err)
+	}
+	if len(cacheEntries) != 0 {
+		t.Fatalf("public run wrote %d per-key cache files", len(cacheEntries))
 	}
 }
