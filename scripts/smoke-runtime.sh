@@ -120,8 +120,56 @@ kill "${SERVER_PID}" 2>/dev/null || true
 wait "${SERVER_PID}" 2>/dev/null || true
 SERVER_PID=""
 
-"${GLADE}" playground --data-root "${TMP}/playground" --db "${TMP}/playground.sqlite" --once >"${TMP}/playground.out"
-grep -q 'http://127.0.0.1:1789/playground/' "${TMP}/playground.out"
+DEMO_ROOT="${TMP}/demo"
+mkdir -p "${DEMO_ROOT}"
+(
+  cd "${DEMO_ROOT}"
+  "${GLADE}" playground --data-root .glade/playground --db .glade/playground/org.sqlite --example refinement-service --once >"${TMP}/playground.out"
+)
+grep -q 'Prepared demo project' "${TMP}/playground.out"
+grep -q 'Example   refinement-service loaded' "${TMP}/playground.out"
+DEMO_PROJECT="${DEMO_ROOT}/.glade/playground/workspaces/default"
+"${GLADE}" init --project "${DEMO_PROJECT}" --yes >"${TMP}/demo-init.out"
+"${GLADE}" config validate --project "${DEMO_PROJECT}" >"${TMP}/demo-config.out"
+if [[ "${GLADE_SMOKE_REQUIRE_DOCTOR:-0}" == "1" ]]; then
+  "${GLADE}" doctor --project "${DEMO_PROJECT}" --json >"${TMP}/demo-doctor.json"
+  python3 - "${TMP}/demo-doctor.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as f:
+    doctor = json.load(f)
+
+if doctor.get("schemaVersion") != "1.1" or doctor.get("readinessScope") != "apex" or doctor.get("apexReady") is not True:
+    raise SystemExit("bundled demo doctor did not report versioned Apex readiness")
+if doctor.get("status") != "passed" or doctor.get("exitCode") != 0 or doctor.get("parserOK") is not True or doctor.get("toolchainOK") is not True:
+    raise SystemExit("bundled demo doctor did not satisfy distribution readiness")
+if "not contacted" not in doctor.get("salesforceBoundary", ""):
+    raise SystemExit("bundled demo doctor did not preserve the Salesforce boundary")
+PY
+fi
+"${GLADE}" check --project "${DEMO_PROJECT}" --json >"${TMP}/demo-check.json"
+"${GLADE}" test --project "${DEMO_PROJECT}" --class RefinementServiceTest --method createsAndLabelsFileRow --json --no-progress >"${TMP}/demo-test.json"
+python3 - "${TMP}/demo-check.json" "${TMP}/demo-test.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as f:
+    check = json.load(f)
+with open(sys.argv[2], encoding="utf-8") as f:
+    test = json.load(f)
+
+if check.get("status") != "passed" or check.get("exitCode") != 0:
+    raise SystemExit("bundled demo check did not pass")
+summary = test.get("summary", {})
+if summary.get("total") != 1 or summary.get("passed") != 1:
+    raise SystemExit("bundled demo did not execute exactly one passing test")
+if any(summary.get(key, 0) != 0 for key in ("failed", "errors", "unsupported")):
+    raise SystemExit("bundled demo reported a non-passing outcome")
+tests = test.get("tests", [])
+if not any(row.get("className") == "RefinementServiceTest" and row.get("methodName") == "createsAndLabelsFileRow" for row in tests):
+    raise SystemExit("bundled demo result did not name RefinementServiceTest.createsAndLabelsFileRow")
+PY
 
 LSP_PROJECT="${TMP}/lsp-project"
 mkdir -p "${LSP_PROJECT}/force-app/main/classes"

@@ -98,11 +98,27 @@ GLADE_UPDATE_ALLOW_SHELL=1 glade update
 
 ## `glade doctor`
 
-Check the local environment and project discovery basics.
+The scoped recovery and `apexReady` contract described here are part of the
+Unreleased doctor `1.1` schema. The v0.2.15 stable binary still emits doctor
+schema `1.0`; consumers must select fields according to the installed version.
+
+Check Apex readiness for one project. Doctor reports the resolved project root,
+configuration, parser, project Apex API default, local-data state, runtime, and
+the fact that Salesforce was not contacted. A missing LWC toolchain is an
+advisory for Apex check/test and blocks LWC compilation and Lightning runtime
+routes, including Visualforce Lightning Out; packaged releases are expected to
+include it.
 
 ```bash
 glade doctor --project .
+glade doctor --project . --json
 ```
+
+Failed rows are followed by project-scoped recovery commands. `Ready.` and JSON
+`apexReady: true` mean the local Apex prerequisites passed. LWC-toolchain and
+local-data issues remain named advisories for their own workflows. This does not
+mean a test was selected or that Salesforce deployment, permissions, hosted
+services, or parity were validated.
 
 ## `glade toolchain`
 
@@ -113,7 +129,7 @@ from the current tree.
 ```bash
 glade toolchain status
 glade toolchain status --json
-glade toolchain install --from .
+glade toolchain install --from path/to/glade
 ```
 
 ## `glade completion`
@@ -320,8 +336,9 @@ glade exec --project . --limit-mode strict "System.debug(Limits.getDmlStatements
 Discover and run local Apex tests. The `RefinementServiceTest.opensFile`
 examples match the editor walkthrough; substitute a class and method that exist
 in your project. Use [the quickstart sample](/guide/quickstart#sample-project)
-for a self-contained `SampleTest.adds` run. Read JSON counts: an empty selection
-can exit `0`, and an unsupported test outcome exits `1` as a test error.
+for a self-contained `SampleTest.adds` run. Read
+JSON counts: an empty selection can exit `0`, and an unsupported test outcome
+exits `1` as a test error.
 
 Useful flags include `changed --since <ref>`,
 `--watch`, `--watch-once`, `--last-failed`, `--wizard`, `--daemon`,
@@ -617,6 +634,10 @@ glade db export --db .glade/refinement-local.sqlite > refinement-export.json
 ## `glade playground`
 
 Start the local browser playground for editing classes, running anonymous Apex, and inspecting logs, limits, traces, and org diffs.
+
+The `--once` example materializer shown below is part of the Unreleased source
+tree. The v0.2.15 stable binary does not provide that behavior; use an `--open`
+example command until a release containing it is published.
 
 ```bash
 glade playground --db .glade/playground/org.sqlite --addr 127.0.0.1:1789 --open

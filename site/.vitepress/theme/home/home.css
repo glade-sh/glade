@@ -82,6 +82,9 @@ button svg, a svg { pointer-events: none; }
 .hero-meta span, .hero-meta a { display: flex; align-items: center; gap: 8px; }
 .hero-meta .icon { width: 15px; height: 15px; color: #bbc4d4; }
 .hero-meta a:hover { color: var(--gh-text); }
+.hero-boundary { max-width: 530px; margin-top: 16px; color: #a4afc1; font-size: 12px; line-height: 1.7; }
+.hero-boundary a, .demo-caption a { color: #bfb3ff; text-decoration: underline; text-decoration-color: #bfb3ff66; text-underline-offset: 3px; }
+.hero-boundary a:hover, .demo-caption a:hover { color: #ded7ff; text-decoration-color: currentColor; }
 /* The interactive hero is intentionally an illustrative product demo, not a runtime. */
 .demo-wrap { position: relative; min-width: 0; }
 .demo-prelabel { display: flex; align-items: center; justify-content: space-between; margin: 0 3px 12px; font-size: 10px; color: #9eacc1; letter-spacing: .2px; }
@@ -137,7 +140,7 @@ button svg, a svg { pointer-events: none; }
 .demo-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 33px; padding: 0 15px; border-top: 1px solid #273044; background: #131c29; color: #8f9bb0; font: 9px var(--gh-mono); }
 .demo-footer span { display: flex; gap: 6px; align-items: center; }
 .demo-footer .icon { width: 11px; height: 11px; }
-.demo-caption { margin: 11px 3px 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; color: #8997ac; font-size: 10px; }
+.demo-caption { margin: 11px 3px 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; color: #9aa8bb; font-size: 10px; }
 .demo-change { color: #bfb3ff; border: 0; background: transparent; padding: 6px 0 6px 8px; font-size: 10px; }
 .demo-change:hover { color: #ded7ff; }
 .demo-change:disabled { color: #8f87ae; }
@@ -265,7 +268,7 @@ button svg, a svg { pointer-events: none; }
 .copy-button { display: inline-flex; justify-content: center; align-items: center; gap: 7px; min-height: 38px; min-width: 82px; padding: 0 11px; background: #263048; border: 1px solid #414b66; border-radius: 5px; color: #ded8f4; font-size: 11px; white-space: nowrap; }
 .copy-button .icon { width: 13px; height: 13px; }
 .copy-button:hover { border-color: #8b7ada; background: #352f54; }
-.install-links { display: flex; align-items: center; justify-content: center; gap: 22px; }
+.install-links { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 22px; }
 .install-links .text-link { font-size: 11px; }
 .install-links .platform-note { color: #8494ae; font-size: 10px; }
 .site-footer { border-top: 1px solid #283347; padding: 42px 0 25px; background: #0b1119; }

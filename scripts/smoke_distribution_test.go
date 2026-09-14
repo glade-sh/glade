@@ -163,7 +163,12 @@ func TestDistributionSmokeStructure(t *testing.T) {
 		`entry.get("version") == version`,
 		`f"https://downloads.glade.sh/{version}/release-manifest.json"`,
 		`"${GLADE}" doctor --json`,
-		`release binary doctor parser verification failed`,
+		`doctor.get("schemaVersion") != "1.1"`,
+		`doctor.get("readinessScope") != "apex"`,
+		`doctor.get("apexReady") is not True`,
+		`doctor.get("toolchainOK") is not True`,
+		`release binary doctor verification failed`,
+		`GLADE_SMOKE_REQUIRE_DOCTOR=1`,
 		"binary.lstat()",
 		"resolved.relative_to(root)",
 	} {
@@ -229,9 +234,9 @@ printf '%s\n' "$1" >"$(dirname "${BASH_SOURCE[0]}")/../runtime.log"
 	if indexReference == "" {
 		indexReference = "https://downloads.glade.sh/" + version + "/release-manifest.json"
 	}
-	doctorOutput := `{"status":"passed","exitCode":0,"parserOK":true}`
+	doctorOutput := `{"schemaVersion":"1.1","status":"passed","exitCode":0,"readinessScope":"apex","apexReady":true,"parserOK":true,"toolchainOK":true}`
 	if options.doctorFails {
-		doctorOutput = `{"status":"failed","exitCode":1,"parserOK":false}`
+		doctorOutput = `{"schemaVersion":"1.1","status":"failed","exitCode":1,"readinessScope":"apex","apexReady":false,"parserOK":false,"toolchainOK":false}`
 	}
 	if options.doctorOutput != "" {
 		doctorOutput = options.doctorOutput

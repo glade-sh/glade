@@ -49,6 +49,8 @@ test('homepage keeps CTAs, exact copy, and the local boundary available', async 
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://glade.sh/')
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', 'Glade — Local Apex Runtime for Salesforce Developers')
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', 'https://glade.sh/social-card.png')
+  await expect(page.getByRole('link', { name: 'Run your first local test' })).toHaveAttribute('href', '/guide/quickstart')
+  await expect(page.getByText('Scripted website preview · simulated output. No Apex runs here.', { exact: false })).toBeVisible()
   await expect(page.getByRole('main')).toHaveCount(1)
   await expect(page.getByRole('link', { name: 'Installation options' })).toBeVisible()
   await expect(page.locator('.site-footer').getByRole('link', { name: 'Docs', exact: true })).toBeVisible()
@@ -61,6 +63,14 @@ test('homepage keeps CTAs, exact copy, and the local boundary available', async 
   await expect(page.locator('.compatibility-table').getByText('Salesforce', { exact: true })).toBeVisible()
   await expectNoHorizontalOverflow(page)
   expect(errors).toEqual([])
+})
+
+test('frontmatter descriptions stay aligned across normal and social metadata', async ({ page }) => {
+  await page.goto('/help/troubleshooting')
+  const expected = 'Diagnose project discovery, installation, test selection, and editor problems. Follow scoped recovery steps and report a sanitized reproduction.'
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', expected)
+  await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', expected)
+  await expect(page.locator('meta[name="twitter:description"]')).toHaveAttribute('content', expected)
 })
 
 test('header install action stays compact while mobile navigation keeps a full touch target', async ({ page }) => {
@@ -110,7 +120,7 @@ test('quickstart supports direct navigation and code copy', async ({ page }) => 
   await page.goto('/guide/')
   await page.getByRole('link', { name: 'Start the first local check' }).click()
   await expect(page).toHaveURL(/\/guide\/quickstart/)
-  await expect(page.getByRole('heading', { name: 'Run your first local Apex check' })).toBeVisible()
+	await expect(page.getByRole('heading', { name: 'Five-minute Quickstart' })).toBeVisible()
   const copyButton = page.locator('.vp-doc button.copy').first()
   await expect(copyButton).toBeVisible()
   await copyButton.click()

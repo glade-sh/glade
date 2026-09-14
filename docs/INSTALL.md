@@ -39,28 +39,19 @@ Salesforce DX project, as shown in [First Project Run](#first-project-run).
 
 Release archives publish checksums, CycloneDX SBOMs, and GitHub artifact
 attestations. The release workflow verifies both the archive provenance and its
-CycloneDX attestation before uploading the platform assets. Use this path when a
-laptop policy needs pinned proof:
+CycloneDX attestation before uploading the platform assets.
+
+Use the copyable, verification-only block in the [Security & trust
+guide](https://glade.sh/guide/security-trust#release-proof). From a reviewed
+repository checkout, the same fail-closed helper is available as:
 
 ```bash
-GLADE_MANIFEST_URL=https://downloads.glade.sh/latest/release-manifest.json
-GLADE_VERSION="$(curl -fsSL "$GLADE_MANIFEST_URL" | sed -nE 's/^[[:space:]]*"version": "(v[^"]+)",?$/\1/p')"
-[ -n "$GLADE_VERSION" ] || { echo "could not resolve the stable Glade version" >&2; exit 1; }
-case "$(uname -s)" in Darwin) GLADE_OS=darwin ;; Linux) GLADE_OS=linux ;; *) echo "unsupported operating system" >&2; exit 1 ;; esac
-case "$(uname -m)" in arm64|aarch64) GLADE_ARCH=arm64 ;; x86_64|amd64) GLADE_ARCH=amd64 ;; *) echo "unsupported architecture" >&2; exit 1 ;; esac
-GLADE_ARCHIVE="glade_${GLADE_VERSION}_${GLADE_OS}_${GLADE_ARCH}.tar.gz"
-GLADE_BASE="https://downloads.glade.sh/${GLADE_VERSION}"
-curl -fLO "${GLADE_BASE}/${GLADE_ARCHIVE}"
-curl -fLO "${GLADE_BASE}/SHA256SUMS.txt"
-GLADE_CHECKSUM_LINE="$(grep "  \./${GLADE_ARCHIVE}$" SHA256SUMS.txt)"
-[ -n "$GLADE_CHECKSUM_LINE" ] || { echo "checksum entry not found" >&2; exit 1; }
-if command -v shasum >/dev/null 2>&1; then printf '%s\n' "$GLADE_CHECKSUM_LINE" | shasum -a 256 -c -; else printf '%s\n' "$GLADE_CHECKSUM_LINE" | sha256sum -c -; fi
-gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
-gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
-  --predicate-type https://cyclonedx.org/bom
-tar -xzf "$GLADE_ARCHIVE"
-./glade version
+sh scripts/verify-release-download.sh
 ```
+
+The helper requires `curl`, `jq`, `gh`, `awk`, `mktemp`, `uname`, and either
+`shasum` or `sha256sum`. It stops at every failed gate, retains the downloaded
+files for inspection, and does not extract, install, or execute Glade.
 
 Download the matching `*.sbom.json` release asset when your review process
 requires a dependency inventory.
@@ -177,7 +168,13 @@ glade version
 
 ## First Project Run
 
-Run parse/check/tests against a Salesforce DX project without connecting to an org:
+If you do not have a project ready, use the
+[five-minute Quickstart](https://glade.sh/guide/quickstart). Its disposable
+terminal sample uses commands available in the current stable release and
+executes one named test before treating the setup as successful.
+
+For an existing Salesforce DX project, run parse/check/tests without connecting
+to an org:
 
 ```bash
 cd path/to/sfdx-project
@@ -188,6 +185,13 @@ glade doctor --project .
 glade check --project .
 glade test --project . --json
 ```
+
+The project source default, per-class metadata, LWC bundle version, and local
+HTTP route version are independent. Apex source `65.0`, `66.0`, and `67.0` is in
+the checked window; well-formed historical versions are preserved without an
+implied parity claim. Do not change Salesforce metadata only to make a local
+result green. Glade does not log in, deploy, check hosted permissions or
+services, or replace final Salesforce validation.
 
 Install advisory scanners when needed. They are plugins, not product runtime
 packages:
@@ -291,35 +295,11 @@ additional toolchain described in [LWC_LOCAL_SHELL.md](LWC_LOCAL_SHELL.md).
 Build from the checkout rather than `go install ...@latest`: Glade's `go.mod`
 replaces the parser dependency with its checked-in local module.
 
-Use a release artifact on a fresh hosted runner:
-
-```yaml
-- run: |
-    GLADE_MANIFEST_URL=https://downloads.glade.sh/latest/release-manifest.json
-    GLADE_VERSION="$(curl -fsSL "$GLADE_MANIFEST_URL" | sed -nE 's/^[[:space:]]*"version": "(v[^"]+)",?$/\1/p')"
-    [ -n "$GLADE_VERSION" ] || { echo "could not resolve the stable Glade version" >&2; exit 1; }
-    GLADE_ARCHIVE="glade_${GLADE_VERSION}_linux_amd64.tar.gz"
-    GLADE_BASE="https://downloads.glade.sh/${GLADE_VERSION}"
-    curl -fLO "${GLADE_BASE}/${GLADE_ARCHIVE}"
-    curl -fLO "${GLADE_BASE}/SHA256SUMS.txt"
-    GLADE_CHECKSUM_LINE="$(grep "  \./${GLADE_ARCHIVE}$" SHA256SUMS.txt)"
-    [ -n "$GLADE_CHECKSUM_LINE" ] || { echo "checksum entry not found" >&2; exit 1; }
-    printf '%s\n' "$GLADE_CHECKSUM_LINE" | sha256sum -c -
-    gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
-    gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
-      --predicate-type https://cyclonedx.org/bom
-    tar -xzf "$GLADE_ARCHIVE"
-    mkdir -p "$HOME/.local/bin" "$HOME/.local/share/glade"
-    cp -R share/glade/. "$HOME/.local/share/glade/"
-    install -m 0755 glade ~/.local/bin/glade
-    "$HOME/.local/bin/glade" version
-    if [ ! -f glade.yml ]; then
-      "$HOME/.local/bin/glade" init --project . --yes
-    fi
-    "$HOME/.local/bin/glade" doctor --project .
-    "$HOME/.local/bin/glade" check --project .
-    "$HOME/.local/bin/glade" test --project . --json
-```
+For hosted CI, prefer the pinned source checkout and build steps above. The
+release-verification helper is intentionally audit-only: it retains an archive
+for inspection but does not authorize or perform extraction, installation, or
+execution. Do not turn that block into an unattended install recipe without a
+separate policy review.
 
 ## Persistent Local Server
 

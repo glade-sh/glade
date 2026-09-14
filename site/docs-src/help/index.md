@@ -2,7 +2,7 @@
 pageType: hub
 canonicalTask: /help/
 title: Glade Help
-description: Complete a focused Glade task or recover from a recognizable project, test, editor, data, or CI problem.
+description: Diagnose a Glade project, test, editor, data, or CI problem and follow a safe recovery path.
 ---
 
 # Glade Help {#task-guides-and-troubleshooting}

@@ -37,10 +37,11 @@ glade debug profile --log apex.log --json
 ```
 
 Completed result-producing JSON modes write JSON to stdout and progress to
-stderr. Check the process status first: setup failures may report only stderr
-and leave stdout empty. Watch modes emit NDJSON events. Wizard output and
-legacy paths such as `glade test failed --json` with no saved failures still
-print human text; do not parse those as a result envelope.
+stderr. For `glade doctor --json`, recognized flags also keep missing-project
+and malformed-config setup failures in JSON. Flag syntax errors are CLI usage
+errors and remain human diagnostics on stderr. Watch modes emit NDJSON events.
+Wizard output and legacy paths such as `glade test failed --json` with no saved
+failures still print human text; do not parse those as a result envelope.
 
 ## Progress
 

@@ -2,7 +2,7 @@
 pageType: recovery
 canonicalTask: /help/troubleshooting
 title: Troubleshoot Glade
-description: Recover from common Glade project discovery, doctor, test, VS Code, local target, and plugin setup problems.
+description: Diagnose project discovery, installation, test selection, and editor problems. Follow scoped recovery steps and report a sanitized reproduction.
 ---
 
 # Troubleshoot Glade
@@ -14,36 +14,81 @@ description: Recover from common Glade project discovery, doctor, test, VS Code,
 
 ## Glade cannot find my project
 
-Confirm the shell is inside the Salesforce DX project, then initialize and
-recheck the project-aware environment:
+Run this from the directory that contains `sfdx-project.json`. The block stops
+before initialization when the project file is missing.
 
 ```bash
-test -f sfdx-project.json
-test -f glade.yml || glade init --project . --yes
-glade doctor --project .
+(
+  test -f sfdx-project.json || {
+    printf '%s\n' 'No sfdx-project.json here. Move to your Salesforce DX project root, then retry.' >&2
+    exit 1
+  }
+  if test ! -f glade.yml; then
+    glade init --project . --yes || exit 1
+  fi
+  glade doctor --project . || exit 1
+)
 ```
 
-If the first command fails, move to the directory that owns
-`sfdx-project.json`. Continue with the [first local check](/guide/quickstart).
+Initialization can create `glade.yml`. Inspect that file before committing it.
+A failure here does not establish that your Apex source is invalid. Continue
+with the [first local check](/guide/quickstart).
 
 ## `glade doctor` fails
 
-Read the first failed status row. A project failure means the working directory
-or `--project` path is wrong. A parser or toolchain failure is an installation
-problem. Re-run `glade version`, then follow [Installation](/guide/installation).
+Read the first failed status row and its `Fix:` section.
+
+- **Project:** pass the existing directory that owns `sfdx-project.json` or
+  `glade.yml`.
+- **Config:** run the printed `glade init` or `glade config validate` command,
+  then correct the named file.
+- **Parser:** reinstall a packaged release, or rebuild with `CGO_ENABLED=1` and
+  a C compiler.
+- **Local data:** Apex remains ready. Run the printed
+  `glade db inspect --project ...` advisory before DB-backed workflows to
+  recheck the project's schema binding.
+- **LWC tools:** this is an advisory for Apex check and test, but LWC
+  compilation and Lightning runtime routes need it. Release users should
+  reinstall the complete package. Source developers can run
+  `glade toolchain install --from path/to/glade` from a Glade checkout.
+
+Repeat the exact printed doctor command. `Ready.` means local Apex prerequisites
+passed; it does not prove that a test ran or that Salesforce was contacted.
 
 ## A test is not discovered
 
-Run the project suite without a selector, then select a class found in its
-results. This command executes tests; it is not an inventory-only operation:
+Find a known test class in the active package directories listed by your
+project's configuration. Read its class declaration and test methods; do not
+use an entire suite merely as an inventory command.
+
+From the project root, enter that class name when prompted:
 
 ```bash
-glade test --project .
-glade test --project . --class <YourTestClass>
+(
+  test -f sfdx-project.json || {
+    printf '%s\n' 'Move to the Salesforce DX project root first.' >&2
+    exit 1
+  }
+  printf 'Known test class name: '
+  IFS= read -r test_class || exit 1
+  case "$test_class" in
+    ''|*[!A-Za-z0-9_.]*)
+      printf '%s\n' 'Enter a nonempty class name, without spaces or angle brackets.' >&2
+      exit 1 ;;
+  esac
+  glade test --project . --class "$test_class"
+)
 ```
 
-Use a class that exists in the active package directories. See [Run one Apex
-test](/help/run-one-apex-test).
+This command **executes the selected class**. Check the executed-test count,
+not just the exit status. When you need to separate installation from your
+project's behavior, use the [small first-run
+sample](/guide/quickstart#sample-project).
+
+For a bug report, record the exact selected name, Glade version, expected test
+count, and actual count. Share only source and diagnostics you are authorized
+to publish. Security reports use the existing [private
+route](/guide/security-trust#report-a-vulnerability).
 
 ## Local and Salesforce results differ
 
