@@ -76,7 +76,7 @@ Expected: a new temporary project containing `Sample.add` and
 `SampleTest.adds`. It uses Apex source API `65.0` and does not set an LWC bundle
 or local HTTP endpoint version.
 
-### 3A. Initialize and diagnose {#_3-initialize-local-project-configuration}
+### 3A. Initialize local project configuration {#_3-initialize-local-project-configuration}
 
 ```bash
 test -f "$GLADE_PROJECT/glade.yml" || glade init --project "$GLADE_PROJECT" --yes
