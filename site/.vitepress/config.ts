@@ -24,16 +24,18 @@ const noindexRoutes = new Set(
 const buildCommit = process.env.CF_PAGES_COMMIT_SHA || process.env.GITHUB_SHA || 'local-preview'
 
 const descriptions: Record<string, string> = {
-  'index.md': 'Run and test supported Salesforce Apex locally from a Salesforce DX project.',
-  'guide/index.md': 'Choose a first local check, a day-to-day workflow, or exact Glade reference material for a Salesforce DX project.',
-  'guide/installation.md': 'Install Glade on macOS or Linux, then verify a release archive, checksum, SBOM, and attestation.',
-  'guide/quickstart.md': 'Initialize a Salesforce DX project and run the first local Glade check and Apex test.',
+  'index.md': 'Check source, run supported Apex tests, and debug in your Salesforce DX project on your own machine. Keep Salesforce as the final validation gate.',
+  'guide/index.md': 'Install Glade, run a small local Apex test, or choose a workflow for your Salesforce DX project. Find support boundaries and recovery steps.',
+  'guide/installation.md': 'Choose a Glade release for macOS or Linux, review the installer, verify downloads, and resolve PATH or platform setup problems.',
+  'guide/quickstart.md': 'Choose a small sample, a local browser example, or your own Salesforce DX project. Check the named test and executed count before moving on.',
   'guide/workflows.md': 'Choose a local Glade workflow for Apex tests, debugging, local data, UI previews, or CI.',
-  'guide/support-map.md': 'Check which Glade Apex, data, API, LWC, and Visualforce paths run locally or still require Salesforce.',
-  'guide/security-trust.md': 'Verify Glade releases and understand local plugin execution, security boundaries, and trust evidence.',
+  'guide/support-map.md': 'Read supported local Apex paths, deterministic models, named limitations, and behaviors that still need Salesforce validation.',
+  'guide/workbench.md': 'Explore local capability boundaries and replay prepared workflow output. This website does not execute Apex; run Glade locally for execution.',
+  'guide/security-trust.md': 'Review local execution boundaries, private vulnerability reporting, and fail-closed download verification before using a Glade release.',
   'reference/cli.md': 'Look up Glade command behavior, flags, output formats, configuration, and local Salesforce compatibility.',
   'help/index.md': 'Diagnose a Glade project, test, editor, data or CI problem and follow a safe recovery path.',
-  'help/troubleshooting.md': 'Recover from common Glade project, doctor, test, VS Code, local target, and plugin setup problems.'
+  'help/troubleshooting.md': 'Diagnose project discovery, installation, test selection and editor problems. Follow scoped recovery steps and report a sanitized reproduction.',
+  'maintainer/index.md': 'Improve a focused local workflow, documentation or accessibility. Find the right repository and distinguish implementation from compatibility evidence.'
 }
 
 function routeFor(relativePath: string) {
@@ -61,6 +63,13 @@ function descriptionFor(relativePath: string, title: string) {
   return `${sentence} Understand the Glade task, complete the local work, and identify when Salesforce is required.`
 }
 
+function resolvedDescription(pageData: { relativePath: string; title: string; frontmatter?: Record<string, unknown> }) {
+  const explicit = pageData.frontmatter?.description
+  return typeof explicit === 'string' && explicit.trim()
+    ? explicit.trim()
+    : descriptionFor(pageData.relativePath, pageData.title)
+}
+
 export default defineConfig({
   title: 'Glade',
   description: 'Run and test supported Salesforce Apex locally from a Salesforce DX project.',
@@ -76,13 +85,13 @@ export default defineConfig({
     transformItems: (items) => items.filter((item) => !noindexRoutes.has(new URL(item.url, 'https://glade.sh').pathname))
   },
   transformPageData(pageData) {
-    return { description: descriptionFor(pageData.relativePath, pageData.title) }
+    return { description: resolvedDescription(pageData) }
   },
   transformHead(ctx) {
     const route = routeFor(ctx.pageData.relativePath)
     const canonical = `https://glade.sh${route}`
     const title = route === '/' ? 'Glade — Local Apex Runtime for Salesforce Developers' : `${ctx.pageData.title} | Glade`
-    const description = descriptionFor(ctx.pageData.relativePath, ctx.pageData.title)
+    const description = resolvedDescription(ctx.pageData)
     const type = route === '/' ? 'website' : 'article'
     const head: [string, Record<string, string>][] = [
       ['link', { rel: 'canonical', href: canonical }],
@@ -124,10 +133,10 @@ export default defineConfig({
     ['meta', { property: 'og:image:type', content: 'image/png' }],
     ['meta', { property: 'og:image:width', content: '1200' }],
     ['meta', { property: 'og:image:height', content: '630' }],
-    ['meta', { property: 'og:image:alt', content: 'Glade local Apex runtime social preview' }],
+    ['meta', { property: 'og:image:alt', content: 'Glade: run and debug supported Apex locally, with Salesforce as the final validation gate' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:image', content: 'https://glade.sh/social-card.png' }],
-    ['meta', { name: 'twitter:image:alt', content: 'Glade local Apex runtime social preview' }],
+    ['meta', { name: 'twitter:image:alt', content: 'Glade: run and debug supported Apex locally, with Salesforce as the final validation gate' }],
     ['meta', { name: 'glade:commit', content: buildCommit }]
   ],
   themeConfig: {

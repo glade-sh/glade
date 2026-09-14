@@ -80,7 +80,7 @@ test('postdeploy smoke reconciles homepage, live manifest, latest release, check
 test('first-run copy establishes project context before project-aware doctor', () => {
   assert.match(home, /Run Apex locally/)
   assert.match(home, /INSTALL_COMMAND/)
-  assert.match(home, /Your Salesforce DX project/)
+  assert.match(home, /your Salesforce DX project/i)
   assert.match(quickstart, /glade doctor --project \./)
 	assert.match(quickstart, /## What the local result proves/)
 	assert.match(quickstart, /## Clean up or continue/)
@@ -109,7 +109,9 @@ test('navigation uses jobs, one canonical surface location, and separate recover
 })
 
 test('homepage labels its simulated product view and preserves task destinations', () => {
-  assert.match(home, /Interactive preview · simulated output/);
+  assert.match(home, /Scripted website preview · simulated output\. No Apex runs here\./);
+  assert.match(home, /Run your first local test/);
+  assert.match(home, /Supported local workflows, not a replacement for Salesforce/);
   for (const scenario of ['tests', 'debug', 'check']) assert.ok(home.includes(scenario));
   assert.match(home, /Salesforce/);
   assert.match(home, /onUnmounted/);

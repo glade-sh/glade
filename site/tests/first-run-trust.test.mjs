@@ -18,6 +18,7 @@ const siteSecurityTrust = await readFile(new URL("../docs-src/guide/security-tru
 const repoInstallation = await readFile(new URL("../../docs/INSTALL.md", import.meta.url), "utf8");
 const repoSecurityTrust = await readFile(new URL("../../docs/SECURITY_TRUST.md", import.meta.url), "utf8");
 const securityPolicy = await readFile(new URL("../../SECURITY.md", import.meta.url), "utf8");
+const releaseVerifier = await readFile(new URL("../../scripts/verify-release-download.sh", import.meta.url), "utf8");
 
 test('homepage install copy preserves executable command line breaks', () => {
   assert.match(home, /INSTALL_COMMAND/);
@@ -99,12 +100,17 @@ test("public references separate Unreleased first-run contracts from the stable 
 	}
 });
 
-test("manual verification snippets resolve the manifest and archive name without ambient variables", () => {
-  for (const verificationDoc of [siteSecurityTrust, repoInstallation, repoSecurityTrust, securityPolicy]) {
-    assert.match(verificationDoc, /GLADE_MANIFEST_URL=https:\/\/downloads\.glade\.sh\/latest\/release-manifest\.json/);
-    assert.match(verificationDoc, /GLADE_ARCHIVE="glade_\$\{GLADE_VERSION\}_\$\{GLADE_OS\}_\$\{GLADE_ARCH\}\.tar\.gz"/);
-    assert.doesNotMatch(verificationDoc, /GLADE_RELEASE_URL|GLADE_CHECKSUMS_URL/);
+test("manual verification uses one fail-closed, verification-only helper", () => {
+  for (const verificationDoc of [siteSecurityTrust, securityPolicy]) {
+    assert.match(verificationDoc, /release-verifier:start/);
+    assert.match(verificationDoc, /manifest must contain a stable vMAJOR\.MINOR\.PATCH version/);
+    assert.match(verificationDoc, /Not extracted, installed, or executed/);
   }
+  for (const pointerDoc of [repoInstallation, repoSecurityTrust]) {
+    assert.match(pointerDoc, /sh scripts\/verify-release-download\.sh/);
+  }
+  assert.match(releaseVerifier, /^set -eu$/m);
+  assert.doesNotMatch(releaseVerifier, /\btar\s+-|\.\/glade\s+version/);
   assert.match(siteInstallation, /security and release trust guide[^\n]*canonical/);
 });
 
