@@ -120,7 +120,7 @@ test('quickstart supports direct navigation and code copy', async ({ page }) => 
   await page.goto('/guide/')
   await page.getByRole('link', { name: 'Start the first local check' }).click()
   await expect(page).toHaveURL(/\/guide\/quickstart/)
-  await expect(page.getByRole('heading', { name: 'Run your first local Apex check' })).toBeVisible()
+	await expect(page.getByRole('heading', { name: 'Five-minute Quickstart' })).toBeVisible()
   const copyButton = page.locator('.vp-doc button.copy').first()
   await expect(copyButton).toBeVisible()
   await copyButton.click()

@@ -166,7 +166,10 @@ func runConfigInit(ctxRoot string, args []string, w io.Writer) error {
 		return err
 	}
 	fmt.Fprintf(w, "created: %s\n", path)
-	fmt.Fprintf(w, "next: glade config validate --project %s\n", absRoot)
+	projectArg := doctorProjectCommandArg(absRoot)
+	fmt.Fprintln(w, "next:")
+	fmt.Fprintf(w, "  glade config validate --project %s\n", projectArg)
+	fmt.Fprintf(w, "  glade doctor --project %s\n", projectArg)
 	return nil
 }
 

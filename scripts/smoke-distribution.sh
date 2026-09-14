@@ -226,7 +226,7 @@ if [[ "${ACTUAL_VERSION}" != "${VERSION_OUTPUT}" ]]; then
 fi
 ACTUAL_DOCTOR=""
 if ! ACTUAL_DOCTOR="$("${GLADE}" doctor --json 2>&1)"; then
-	echo "release binary doctor parser verification failed" >&2
+	echo "release binary doctor verification failed" >&2
 	printf '%s\n' "${ACTUAL_DOCTOR}" >&2
 	exit 1
 fi
@@ -239,15 +239,24 @@ try:
 except json.JSONDecodeError:
     raise SystemExit(1)
 
-if not isinstance(doctor, dict) or doctor.get("status") != "passed" or doctor.get("exitCode") != 0 or doctor.get("parserOK") is not True:
+if (
+    not isinstance(doctor, dict)
+    or doctor.get("schemaVersion") != "1.1"
+    or doctor.get("status") != "passed"
+    or doctor.get("exitCode") != 0
+    or doctor.get("readinessScope") != "apex"
+    or doctor.get("apexReady") is not True
+    or doctor.get("parserOK") is not True
+    or doctor.get("toolchainOK") is not True
+):
     raise SystemExit(1)
 PY
 then
-	echo "release binary doctor parser verification failed" >&2
+	echo "release binary doctor verification failed" >&2
 	printf '%s\n' "${ACTUAL_DOCTOR}" >&2
 	exit 1
 fi
-"${ROOT}/scripts/smoke-runtime.sh" "${GLADE}"
+GLADE_SMOKE_REQUIRE_DOCTOR=1 "${ROOT}/scripts/smoke-runtime.sh" "${GLADE}"
 HASH_AFTER="$(shasum -a 256 "${GLADE}" | awk '{print $1}')"
 if [[ "${HASH_BEFORE}" != "${HASH_AFTER}" ]]; then
 	echo "release binary changed during runtime smoke" >&2

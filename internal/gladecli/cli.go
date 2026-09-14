@@ -17,6 +17,7 @@ import (
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apexlog"
 	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/cliui"
 	"github.com/glade-sh/glade/internal/codeintel"
 	"github.com/glade-sh/glade/internal/config"
@@ -947,10 +948,11 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 	if parsed.String("project") != "" {
 		root = parsed.String("project")
 	}
-	if info, err := os.Stat(root); err != nil {
-		return 1, fmt.Errorf("project root %q: %w", root, err)
-	} else if !info.IsDir() {
-		return 1, fmt.Errorf("project root %q is not a directory", root)
+	var rootProblem error
+	if stat, statErr := os.Stat(root); statErr != nil {
+		rootProblem = fmt.Errorf("project root %q: %w", root, statErr)
+	} else if !stat.IsDir() {
+		rootProblem = fmt.Errorf("project root %q is not a directory", root)
 	}
 
 	cwd, err := os.Getwd()
@@ -958,45 +960,154 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 		return 1, err
 	}
 
-	cfg, cfgPath, err := config.LoadNearest(root)
-	if err != nil && !errors.Is(err, config.ErrNotFound) {
-		return 1, err
+	var cfg config.Config
+	var cfgPath string
+	var configErr error
+	if rootProblem == nil {
+		cfg, cfgPath, configErr = config.LoadNearest(root)
+	} else {
+		configErr = errors.New("not checked because the project root is unavailable")
+	}
+	configMissing := errors.Is(configErr, config.ErrNotFound)
+	configOK := configErr == nil
+	effectiveRoot := root
+	if configOK {
+		configDir := filepath.Dir(cfgPath)
+		effectiveRoot = configDir
+		if strings.TrimSpace(cfg.Project.Root) != "" {
+			effectiveRoot = cfg.Project.Root
+			if !filepath.IsAbs(effectiveRoot) {
+				effectiveRoot = filepath.Join(configDir, filepath.FromSlash(effectiveRoot))
+			}
+		}
+		effectiveRoot = filepath.Clean(effectiveRoot)
 	}
 
 	parserStatus := parserSelfCheck()
 	toolchainPath, toolchainOK, toolchainDetail := gladehome.ToolchainStatus()
+	loadedProject := project.Project{}
+	projectErr := rootProblem
+	if projectErr == nil {
+		loadedProject, projectErr = project.Load(effectiveRoot)
+	}
 	info := cliui.DoctorInfo{
-		SchemaVersion:   "1.0",
-		Command:         "doctor",
-		Version:         Version,
-		GoVersion:       runtime.Version(),
-		OSArch:          runtime.GOOS + "/" + runtime.GOARCH,
-		CWD:             cwd,
-		ParserStatus:    parserStatus,
-		ParserOK:        cliui.ParserStatusOK(parserStatus),
-		ToolchainPath:   toolchainPath,
-		ToolchainStatus: toolchainDetail,
-		ToolchainOK:     toolchainOK,
+		SchemaVersion:      "1.1",
+		Command:            "doctor",
+		ReadinessScope:     "apex",
+		Version:            Version,
+		GoVersion:          runtime.Version(),
+		OSArch:             runtime.GOOS + "/" + runtime.GOARCH,
+		CWD:                cwd,
+		ParserStatus:       parserStatus,
+		ParserOK:           cliui.ParserStatusOK(parserStatus),
+		ToolchainPath:      toolchainPath,
+		ToolchainStatus:    toolchainDetail,
+		ToolchainOK:        toolchainOK,
+		ProjectOK:          projectErr == nil,
+		ConfigMissing:      configMissing,
+		ConfigOK:           configOK,
+		ConfigPath:         cfgPath,
+		SalesforceBoundary: "not contacted; hosted services and final validation stay in Salesforce",
 	}
-	if errors.Is(err, config.ErrNotFound) {
-		info.ConfigMissing = true
+	if configErr != nil && !configMissing {
+		info.ConfigStatus = configErr.Error()
+	}
+	if projectErr != nil {
+		info.ProjectStatus = projectErr.Error()
 	} else {
-		info.ConfigPath = cfgPath
-		info.ProjectRoot = cfg.Project.Root
-		info.DefaultNamespace = cfg.Project.DefaultNamespace
-		localData := doctorLocalData(root)
-		info.LocalData = &localData
+		info.ProjectRoot = loadedProject.Root
+		info.DefaultNamespace = loadedProject.Namespace
+		info.SourceAPIVersion = loadedProject.SourceAPIVersion
+		if _, versionErr := apexversion.ResolveSource(loadedProject.SourceAPIVersion); versionErr == nil {
+			info.SourceAPIInCheckedWindow = true
+			info.SourceAPIStatus = loadedProject.SourceAPIVersion + " (in checked window: " + strings.Join(apexversion.SupportedSourceAPIVersions, ", ") + ")"
+		} else {
+			info.SourceAPIStatus = loadedProject.SourceAPIVersion + " (preserved historical source; checked window: " + strings.Join(apexversion.SupportedSourceAPIVersions, ", ") + ")"
+			info.Advisories = append(info.Advisories, "Historical Apex source is preserved, but it is outside Glade's checked source-version window.")
+		}
 	}
-	ok := info.ParserOK && info.ToolchainOK && !info.ConfigMissing && (info.LocalData == nil || info.LocalData.OK)
+	if configOK {
+		if info.DefaultNamespace == "" {
+			info.DefaultNamespace = cfg.Project.DefaultNamespace
+		}
+		if info.ProjectOK {
+			localData := doctorLocalData(effectiveRoot)
+			info.LocalData = &localData
+		}
+	}
+	ok := info.ProjectOK && info.ParserOK && info.ConfigOK
+	info.ApexReady = ok
 	info.Status = statusForOK(ok)
 	info.ExitCode = exitCodeForOK(ok)
-	info.Suggestions = []string{"glade check", "glade test changed --since origin/main", "glade playground --examples --open"}
+	if !info.ToolchainOK {
+		advisory := "LWC compilation and Lightning runtime routes need the bundled toolchain. Reinstall the Glade release, or install it from a Glade source checkout."
+		if ok {
+			advisory = "Apex check and test are available; " + advisory
+		}
+		info.Advisories = append(info.Advisories, advisory)
+	}
+	commandRoot := effectiveRoot
+	if info.ProjectOK {
+		commandRoot = loadedProject.Root
+	}
+	if sameCleanPath(cwd, commandRoot) {
+		commandRoot = "."
+	}
+	projectArg := doctorProjectCommandArg(commandRoot)
+	if info.LocalData != nil && !info.LocalData.OK {
+		advisory := "Refresh local data before DB-backed workflows with glade db inspect --project " + projectArg + "."
+		if ok {
+			advisory = "Apex check and test are available; refresh local data before DB-backed workflows with glade db inspect --project " + projectArg + "."
+		}
+		info.Advisories = append(info.Advisories, advisory)
+	}
+	if ok {
+		info.Suggestions = []string{
+			"glade check --project " + projectArg,
+			"glade test --project " + projectArg,
+			"glade playground --project " + projectArg + " --open",
+		}
+	} else {
+		if rootProblem != nil {
+			info.Recovery = append(info.Recovery, "Run from a Salesforce DX project root, or pass an existing directory with --project.")
+		} else if !info.ProjectOK {
+			info.Recovery = append(info.Recovery, "Fix sfdx-project.json or glade.yml in the project shown above.")
+		}
+		if info.ConfigMissing {
+			info.Recovery = append(info.Recovery, "glade init --project "+projectArg+" --yes")
+		} else if !info.ConfigOK && rootProblem == nil {
+			info.Recovery = append(info.Recovery, "glade config validate --project "+projectArg)
+			info.Recovery = append(info.Recovery, "Fix the invalid glade.yml shown above, then validate it again.")
+		}
+		if !info.ParserOK {
+			info.Recovery = append(info.Recovery, "Reinstall a Glade release, or rebuild with CGO_ENABLED=1 and a C compiler.")
+		}
+		if rootProblem == nil {
+			info.Recovery = append(info.Recovery, "glade doctor --project "+projectArg)
+		}
+	}
 	if parsed.Bool("json") {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		return info.ExitCode, enc.Encode(info)
 	}
 	return info.ExitCode, cliui.WriteDoctor(w, info)
+}
+
+func doctorProjectCommandArg(root string) string {
+	root = filepath.ToSlash(root)
+	if root == "" {
+		return "."
+	}
+	if strings.IndexFunc(root, func(r rune) bool {
+		return !(r >= 'a' && r <= 'z') && !(r >= 'A' && r <= 'Z') && !(r >= '0' && r <= '9') && !strings.ContainsRune("/._-~", r)
+	}) == -1 {
+		return root
+	}
+	if runtime.GOOS == "windows" {
+		return strconv.Quote(root)
+	}
+	return "'" + strings.ReplaceAll(root, "'", "'\"'\"'") + "'"
 }
 
 func doctorLocalData(root string) cliui.DoctorLocalData {

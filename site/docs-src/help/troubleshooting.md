@@ -36,9 +36,24 @@ with the [first local check](/guide/quickstart).
 
 ## `glade doctor` fails
 
-Read the first failed status row. A project failure means the working directory
-or `--project` path is wrong. A parser or toolchain failure is an installation
-problem. Re-run `glade version`, then follow [Installation](/guide/installation).
+Read the first failed status row and its `Fix:` section.
+
+- **Project:** pass the existing directory that owns `sfdx-project.json` or
+  `glade.yml`.
+- **Config:** run the printed `glade init` or `glade config validate` command,
+  then correct the named file.
+- **Parser:** reinstall a packaged release, or rebuild with `CGO_ENABLED=1` and
+  a C compiler.
+- **Local data:** Apex remains ready. Run the printed
+  `glade db inspect --project ...` advisory before DB-backed workflows to
+  recheck the project's schema binding.
+- **LWC tools:** this is an advisory for Apex check and test, but LWC
+  compilation and Lightning runtime routes need it. Release users should
+  reinstall the complete package. Source developers can run
+  `glade toolchain install --from path/to/glade` from a Glade checkout.
+
+Repeat the exact printed doctor command. `Ready.` means local Apex prerequisites
+passed; it does not prove that a test ran or that Salesforce was contacted.
 
 ## A test is not discovered
 

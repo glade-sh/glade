@@ -8,25 +8,37 @@ import (
 )
 
 type DoctorInfo struct {
-	SchemaVersion    string           `json:"schemaVersion,omitempty"`
-	Command          string           `json:"command,omitempty"`
-	Status           string           `json:"status,omitempty"`
-	ExitCode         int              `json:"exitCode"`
-	Version          string           `json:"version"`
-	GoVersion        string           `json:"goVersion"`
-	OSArch           string           `json:"osArch"`
-	CWD              string           `json:"cwd"`
-	ConfigPath       string           `json:"configPath,omitempty"`
-	ConfigMissing    bool             `json:"configMissing"`
-	ProjectRoot      string           `json:"projectRoot,omitempty"`
-	DefaultNamespace string           `json:"defaultNamespace,omitempty"`
-	ParserStatus     string           `json:"parserStatus"`
-	ParserOK         bool             `json:"parserOK"`
-	ToolchainPath    string           `json:"toolchainPath,omitempty"`
-	ToolchainStatus  string           `json:"toolchainStatus"`
-	ToolchainOK      bool             `json:"toolchainOK"`
-	LocalData        *DoctorLocalData `json:"localData,omitempty"`
-	Suggestions      []string         `json:"suggestions,omitempty"`
+	SchemaVersion            string           `json:"schemaVersion,omitempty"`
+	Command                  string           `json:"command,omitempty"`
+	Status                   string           `json:"status,omitempty"`
+	ExitCode                 int              `json:"exitCode"`
+	ReadinessScope           string           `json:"readinessScope,omitempty"`
+	ApexReady                bool             `json:"apexReady"`
+	Version                  string           `json:"version"`
+	GoVersion                string           `json:"goVersion"`
+	OSArch                   string           `json:"osArch"`
+	CWD                      string           `json:"cwd"`
+	ConfigPath               string           `json:"configPath,omitempty"`
+	ConfigMissing            bool             `json:"configMissing"`
+	ConfigOK                 bool             `json:"configOK"`
+	ConfigStatus             string           `json:"configStatus,omitempty"`
+	ProjectOK                bool             `json:"projectOK"`
+	ProjectStatus            string           `json:"projectStatus,omitempty"`
+	ProjectRoot              string           `json:"projectRoot,omitempty"`
+	DefaultNamespace         string           `json:"defaultNamespace,omitempty"`
+	SourceAPIVersion         string           `json:"sourceApiVersion,omitempty"`
+	SourceAPIStatus          string           `json:"sourceApiStatus,omitempty"`
+	SourceAPIInCheckedWindow bool             `json:"sourceApiInCheckedWindow"`
+	ParserStatus             string           `json:"parserStatus"`
+	ParserOK                 bool             `json:"parserOK"`
+	ToolchainPath            string           `json:"toolchainPath,omitempty"`
+	ToolchainStatus          string           `json:"toolchainStatus"`
+	ToolchainOK              bool             `json:"toolchainOK"`
+	LocalData                *DoctorLocalData `json:"localData,omitempty"`
+	SalesforceBoundary       string           `json:"salesforceBoundary,omitempty"`
+	Suggestions              []string         `json:"suggestions,omitempty"`
+	Recovery                 []string         `json:"recovery,omitempty"`
+	Advisories               []string         `json:"advisories,omitempty"`
 }
 
 type DoctorLocalData struct {
@@ -51,57 +63,95 @@ func WriteDoctor(w io.Writer, info DoctorInfo) error {
 	}
 
 	rows := []struct {
-		ok    bool
-		label string
-		value string
+		ok       bool
+		advisory bool
+		neutral  bool
+		label    string
+		value    string
 	}{
-		{true, "Project", doctorProjectValue(info)},
-		{info.ParserOK, "Parser", info.ParserStatus},
-		{info.ToolchainOK, "Toolchain", toolchainDoctorValue(info)},
+		{ok: info.ProjectOK, label: "Project", value: doctorProjectValue(info)},
+		{ok: info.ParserOK, label: "Parser", value: info.ParserStatus},
+		{ok: info.ToolchainOK, advisory: true, label: "LWC tools", value: toolchainDoctorValue(info)},
+	}
+	if info.SourceAPIVersion != "" || info.SourceAPIStatus != "" {
+		rows = append(rows, struct {
+			ok       bool
+			advisory bool
+			neutral  bool
+			label    string
+			value    string
+		}{ok: info.SourceAPIInCheckedWindow, advisory: true, label: "Apex default", value: doctorSourceAPIValue(info)})
 	}
 	if info.ConfigMissing {
 		rows = append(rows, struct {
-			ok    bool
-			label string
-			value string
-		}{false, "Config", "no glade.yml found"})
+			ok       bool
+			advisory bool
+			neutral  bool
+			label    string
+			value    string
+		}{label: "Config", value: "no glade.yml found"})
 	} else {
 		rows = append(rows, struct {
-			ok    bool
-			label string
-			value string
-		}{true, "Config", ProjectRelativePath(info.CWD, info.ConfigPath)})
-		if info.DefaultNamespace != "" {
+			ok       bool
+			advisory bool
+			neutral  bool
+			label    string
+			value    string
+		}{ok: info.ConfigOK, label: "Config", value: doctorConfigValue(info)})
+		if info.ConfigOK && info.DefaultNamespace != "" {
 			rows = append(rows, struct {
-				ok    bool
-				label string
-				value string
-			}{true, "Namespace", info.DefaultNamespace})
+				ok       bool
+				advisory bool
+				neutral  bool
+				label    string
+				value    string
+			}{ok: true, label: "Namespace", value: info.DefaultNamespace})
 		}
 	}
 	if info.LocalData != nil {
 		rows = append(rows, struct {
-			ok    bool
-			label string
-			value string
-		}{info.LocalData.OK, "Local data", doctorLocalDataValue(info)})
+			ok       bool
+			advisory bool
+			neutral  bool
+			label    string
+			value    string
+		}{ok: info.LocalData.OK, advisory: true, label: "Local data", value: doctorLocalDataValue(info)})
 	}
 	rows = append(rows, struct {
-		ok    bool
-		label string
-		value string
-	}{true, "Runtime", "glade " + info.Version + " · " + info.GoVersion + " · " + info.OSArch})
+		ok       bool
+		advisory bool
+		neutral  bool
+		label    string
+		value    string
+	}{ok: true, label: "Runtime", value: "glade " + info.Version + " · " + info.GoVersion + " · " + info.OSArch})
+	if info.SalesforceBoundary != "" {
+		rows = append(rows, struct {
+			ok       bool
+			advisory bool
+			neutral  bool
+			label    string
+			value    string
+		}{neutral: true, label: "Salesforce", value: info.SalesforceBoundary})
+	}
 
-	allOK := info.ParserOK && info.ToolchainOK && !info.ConfigMissing && (info.LocalData == nil || info.LocalData.OK)
+	allOK := info.ProjectOK && info.ParserOK && info.ConfigOK
 	for _, row := range rows {
 		icon := t.Green(t.GlyphPass)
-		if !row.ok {
+		if row.neutral {
+			icon = "-"
+		} else if !row.ok && row.advisory {
+			icon = t.Yellow(t.GlyphWarn)
+		} else if !row.ok {
 			icon = t.Red(t.GlyphFail)
 			allOK = false
 		}
 		if !t.Color {
-			if row.ok {
+			if row.neutral {
+				icon = "-"
+			} else if row.ok {
 				icon = t.GlyphPass
+			} else if row.advisory {
+				icon = t.GlyphWarn
 			} else {
 				icon = t.GlyphFail
 			}
@@ -118,13 +168,23 @@ func WriteDoctor(w io.Writer, info DoctorInfo) error {
 		if _, err := fmt.Fprintln(w, "Ready."); err != nil {
 			return err
 		}
+		if len(info.Advisories) > 0 {
+			if _, err := fmt.Fprintln(w, "\nAdvisory:"); err != nil {
+				return err
+			}
+			for _, advisory := range info.Advisories {
+				if _, err := fmt.Fprintln(w, "  "+advisory); err != nil {
+					return err
+				}
+			}
+		}
 		if _, err := fmt.Fprintln(w); err != nil {
 			return err
 		}
 		if _, err := fmt.Fprintln(w, "Next:"); err != nil {
 			return err
 		}
-		for _, step := range []string{"glade check", "glade test changed --since origin/main", "glade playground --examples --open"} {
+		for _, step := range info.Suggestions {
 			if _, err := fmt.Fprintln(w, "  "+step); err != nil {
 				return err
 			}
@@ -140,21 +200,23 @@ func WriteDoctor(w io.Writer, info DoctorInfo) error {
 	if _, err := fmt.Fprintln(w, "Fix:"); err != nil {
 		return err
 	}
-	if info.ConfigMissing {
-		if _, err := fmt.Fprintln(w, "  glade init --project . --yes"); err != nil {
+	for _, step := range info.Recovery {
+		if _, err := fmt.Fprintln(w, "  "+step); err != nil {
 			return err
 		}
 	}
-	if !info.ToolchainOK {
-		if _, err := fmt.Fprintln(w, "  glade toolchain install --from ."); err != nil {
-			return err
-		}
+	return nil
+}
+
+func doctorConfigValue(info DoctorInfo) string {
+	path := filepath.ToSlash(ProjectRelativePath(info.CWD, info.ConfigPath))
+	if info.ConfigOK || info.ConfigStatus == "" {
+		return path
 	}
-	if _, err := fmt.Fprintln(w); err != nil {
-		return err
+	if path == "" {
+		return info.ConfigStatus
 	}
-	_, err := fmt.Fprintln(w, "Then run:\n  glade doctor\n  glade check")
-	return err
+	return path + " (" + info.ConfigStatus + ")"
 }
 
 func ParserStatusOK(status string) bool {
@@ -172,10 +234,23 @@ func toolchainDoctorValue(info DoctorInfo) string {
 }
 
 func doctorProjectValue(info DoctorInfo) string {
-	if info.ProjectRoot != "" && info.ProjectRoot != "." {
-		return "SFDX project found at " + filepath.ToSlash(info.ProjectRoot)
+	if !info.ProjectOK {
+		if info.ProjectStatus != "" {
+			return info.ProjectStatus
+		}
+		return "project could not be loaded"
 	}
-	return "SFDX project found"
+	if info.ProjectRoot != "" {
+		return "root " + filepath.ToSlash(ProjectRelativePath(info.CWD, info.ProjectRoot))
+	}
+	return "project root found"
+}
+
+func doctorSourceAPIValue(info DoctorInfo) string {
+	if info.SourceAPIStatus != "" {
+		return info.SourceAPIStatus
+	}
+	return info.SourceAPIVersion
 }
 
 func doctorLocalDataValue(info DoctorInfo) string {

@@ -168,7 +168,13 @@ glade version
 
 ## First Project Run
 
-Run parse/check/tests against a Salesforce DX project without connecting to an org:
+If you do not have a project ready, use the
+[five-minute Quickstart](https://glade.sh/guide/quickstart). Its disposable
+terminal sample uses commands available in the current stable release and
+executes one named test before treating the setup as successful.
+
+For an existing Salesforce DX project, run parse/check/tests without connecting
+to an org:
 
 ```bash
 cd path/to/sfdx-project
@@ -179,6 +185,13 @@ glade doctor --project .
 glade check --project .
 glade test --project . --json
 ```
+
+The project source default, per-class metadata, LWC bundle version, and local
+HTTP route version are independent. Apex source `65.0`, `66.0`, and `67.0` is in
+the checked window; well-formed historical versions are preserved without an
+implied parity claim. Do not change Salesforce metadata only to make a local
+result green. Glade does not log in, deploy, check hosted permissions or
+services, or replace final Salesforce validation.
 
 Install advisory scanners when needed. They are plugins, not product runtime
 packages:

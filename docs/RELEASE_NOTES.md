@@ -2,7 +2,20 @@
 
 ## Unreleased
 
-No unreleased changes.
+- `glade playground --example refinement-service --once` now materializes a
+  testable managed demo project without starting a server. It refuses to replace
+  a non-empty managed workspace unless `--reset-on-start` is explicit.
+- `glade doctor` now reports project and config failures with scoped recovery,
+  the project Apex API default, LWC and local-data advisories, and the boundary
+  that Salesforce was not contacted. Its JSON schema advances to `1.1` with
+  explicit `readinessScope: "apex"` and `apexReady` fields.
+- The five-minute Quickstart verifies a clean check and exactly one named test,
+  and separates Apex source, LWC bundle, local HTTP route, and Salesforce
+  validation contracts.
+
+Consumers of `glade doctor --json` should recognize schema `1.1` before relying
+on `status` or `exitCode`: those fields now describe Apex check/test readiness,
+while LWC-toolchain and local-data health remain independently reported.
 
 ## v0.2.15 - 2026-09-04
 

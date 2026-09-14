@@ -252,5 +252,5 @@ func ToolchainStatus() (path string, ok bool, detail string) {
 	if root, ok, _ := findToolchainRoot(false); ok {
 		return root, true, "ok (discovered)"
 	}
-	return UserShareDir(), false, "missing; run `glade toolchain install`"
+	return UserShareDir(), false, "missing; reinstall the release or install from a Glade source checkout"
 }

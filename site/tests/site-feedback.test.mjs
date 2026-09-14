@@ -82,8 +82,8 @@ test('first-run copy establishes project context before project-aware doctor', (
   assert.match(home, /INSTALL_COMMAND/)
   assert.match(home, /your Salesforce DX project/i)
   assert.match(quickstart, /glade doctor --project \./)
-  assert.match(quickstart, /## You are done when/)
-  assert.match(quickstart, /## Reset or clean up/)
+	assert.match(quickstart, /## What the local result proves/)
+	assert.match(quickstart, /## Clean up or continue/)
   assert.match(home, /github\.com\/glade-sh\/glade\/blob\/main\/site\/install\.sh/)
 })
 
