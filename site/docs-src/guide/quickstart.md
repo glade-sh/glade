@@ -10,7 +10,7 @@ outline: [2, 3]
   <p class="docs-intro-eyebrow">Tutorial</p>
   <p>Install Glade, initialize one Salesforce DX project, and execute one named local Apex test.</p>
   <ul>
-    <li>Try the bundled sample when you do not have a project ready.</li>
+    <li>Try the disposable sample when you do not have a project ready.</li>
     <li>Use the project route when you already have Apex tests.</li>
     <li>Keep the local result separate from Salesforce validation.</li>
   </ul>
@@ -38,30 +38,43 @@ Choose one route below.
 
 ## Route A: Try the sample {#sample-project}
 
-Use this route for a disposable, known test. The `glade playground` command is
-the one-command demo-project creator; `--once` writes the project and exits
-without starting a server.
+Use this route for a disposable, known test. These commands create a minimal
+Salesforce DX project using commands available in the current stable release.
 
 The bundled `RefinementServiceTest` first shipped in v0.2.14 and is included in
-the v0.2.15 stable release. The one-command materialization path and doctor 1.1
-output must ship together.
+the v0.2.15 stable release. You can open that larger browser example after the
+terminal-only first run below.
 
-### 2A. Create the demo project
+### 2A. Create the sample project
 
 ```bash
-GLADE_DEMO_DIR="$(mktemp -d)"
-cd "$GLADE_DEMO_DIR"
-glade playground --data-root .glade/playground --db .glade/playground/org.sqlite --example refinement-service --once
-GLADE_PROJECT=.glade/playground/workspaces/default
+GLADE_SAMPLE_DIR="$(mktemp -d)"
+cd "$GLADE_SAMPLE_DIR"
+mkdir -p force-app/main/classes
+cat > sfdx-project.json <<'JSON'
+{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}
+JSON
+cat > force-app/main/classes/Sample.cls <<'APEX'
+public class Sample {
+  public static Integer add(Integer a, Integer b) {
+    return a + b;
+  }
+}
+APEX
+cat > force-app/main/classes/SampleTest.cls <<'APEX'
+@isTest
+private class SampleTest {
+  @isTest static void adds() {
+    System.assertEquals(3, Sample.add(1, 2));
+  }
+}
+APEX
+GLADE_PROJECT="$GLADE_SAMPLE_DIR"
 ```
 
-Expected: output includes `Prepared demo project`,
-`Example   refinement-service loaded`, and a `Project`
-path. The managed workspace contains `sfdx-project.json`, the service and
-formatter classes, `RefinementServiceTest`, an anonymous Apex scenario, and a
-seed file. Glade refuses to replace a non-empty managed workspace unless you
-explicitly pass the destructive `--reset-on-start` flag, so use a fresh
-evaluation directory as shown.
+Expected: a new temporary project containing `Sample.add` and
+`SampleTest.adds`. It uses Apex source API `65.0` and does not set an LWC bundle
+or local HTTP endpoint version.
 
 ### 3A. Initialize and diagnose {#_3-initialize-local-project-configuration}
 
@@ -72,26 +85,29 @@ glade doctor --project "$GLADE_PROJECT"
 ```
 
 Expected: initialization creates `glade.yml` without overwriting an existing
-file. Doctor ends with `Ready.`, reports project Apex API default `65.0`, and
-says Salesforce was not contacted. Fix the first failed row before continuing.
+file. Doctor identifies the project and parser and ends with `Ready.`. Fix the
+first failed row before continuing.
 
 ### 4A. Check and run one named test
 
 ```bash
 glade check --project "$GLADE_PROJECT"
-glade test --project "$GLADE_PROJECT" --class RefinementServiceTest --method createsAndLabelsFileRow --json --no-progress
+glade test --project "$GLADE_PROJECT" --class SampleTest --method adds --json --no-progress
 ```
 
-Expected: the check is clean. The test result names
-`RefinementServiceTest.createsAndLabelsFileRow`; `total` and `passed` are `1`,
-while `failed`, `errors`, and `unsupported` are `0`. Zero tests is not a
-successful first-run result.
+Expected: the check is clean. The test result names `SampleTest.adds`.
+`total` and `passed` are `1`, while `failed`, `errors`, and `unsupported` are
+`0`. Zero tests is not a successful first-run result.
 
-To open the same source in the browser workbench later:
+To explore the larger bundled example in the browser workbench later:
 
 ```bash
-glade playground --project "$GLADE_PROJECT" --db .glade/playground/org.sqlite --open
+glade playground --example refinement-service --open
 ```
+
+Stop the browser workbench with Ctrl-C. The next Glade release adds a
+no-server project materializer. Until that binary is published, keep using the
+stable `--open` route above.
 
 ## Route B: Use my Salesforce DX project
 
@@ -151,21 +167,21 @@ for the behavior you need.
 
 ## What the local result proves
 
-Glade read project files and ran supported behavior in its local runtime. It did
-not log in to Salesforce, deploy metadata, evaluate org permissions, contact a
-hosted service, or prove production parity. Use the [support map](/guide/support-map)
-for capability-specific limits, then retain Salesforce deployment and tests for
+Glade read project files and ran supported behavior in its local runtime. Glade
+did not log in to Salesforce, deploy metadata, evaluate org permissions,
+contact a hosted service, or prove production parity. Use the
+[support map](/guide/support-map) for capability-specific limits. Then retain Salesforce deployment and tests for
 final validation.
 
 ## Clean up or continue
 
-`glade init` creates only `glade.yml`. The sample route creates its managed
-workspace under the temporary evaluation directory; opening the workbench can
-also create its SQLite file there. Print and review the directory before moving
-it to Trash or deleting it:
+`glade init` creates only `glade.yml`. The sample route writes its files under
+the temporary evaluation directory; opening the workbench can also create a
+managed workspace and SQLite file there. Print and review the sample directory
+before moving it to Trash or deleting it:
 
 ```bash
-printf '%s\n' "$GLADE_DEMO_DIR"
+printf '%s\n' "$GLADE_SAMPLE_DIR"
 ```
 
 For a kept project, clear only Glade's project-local test startup cache after a

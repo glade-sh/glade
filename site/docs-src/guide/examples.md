@@ -14,28 +14,20 @@ glade examples show refinement-service
 glade examples run refinement-service
 ```
 
-Create the Refinement Service demo project and exit without starting a server:
+Open the Refinement Service example in the local browser workbench:
 
 ```bash
-glade playground --data-root .glade/playground --db .glade/playground/org.sqlite --example refinement-service --once
+glade playground --example refinement-service --open
 ```
 
-The project is written to `.glade/playground/workspaces/default`. The example
-flag refuses a non-empty managed workspace unless you explicitly pass the
-destructive `--reset-on-start` flag, so run it from a fresh evaluation
-directory. Then initialize and run its named test:
+Stop the workbench with Ctrl-C after its files load. From the same directory,
+initialize and run the named test against its managed workspace:
 
 ```bash
 GLADE_PROJECT=.glade/playground/workspaces/default
 test -f "$GLADE_PROJECT/glade.yml" || glade init --project "$GLADE_PROJECT" --yes
 glade doctor --project "$GLADE_PROJECT"
 glade test --project "$GLADE_PROJECT" --class RefinementServiceTest --method createsAndLabelsFileRow --json --no-progress
-```
-
-Open the same project in the browser workbench when you want to explore it:
-
-```bash
-glade playground --project "$GLADE_PROJECT" --db .glade/playground/org.sqlite --open
 ```
 
 Useful first examples:
@@ -48,9 +40,11 @@ Useful first examples:
 | `org-diff-review-loop` | Local state diffs after DML |
 
 `glade examples run <id>` prints the browser command. It does not modify your
-Salesforce DX project. `glade playground --example <id>` writes only to its
-managed scratch workspace. Use the [five-minute Quickstart](/guide/quickstart#sample-project)
-for the checked first-run sequence and cleanup.
+Salesforce DX project. The browser command writes the example to its managed
+scratch workspace and may create the configured SQLite org database beside it.
+`--reset-on-start` clears both managed workspace and org state. Use the
+[five-minute Quickstart](/guide/quickstart#sample-project) for a terminal-only
+first run and cleanup.
 
 The bundled `RefinementServiceTest` first shipped in v0.2.14 and is included in
 the v0.2.15 stable release.

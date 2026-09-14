@@ -204,6 +204,7 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 	openBrowserSet := false
 	once := false
 	wizard := false
+	managedWorkspaceRoot := ""
 	public := false
 	runTimeout := time.Duration(0)
 	ratePerMinute := 0
@@ -342,15 +343,7 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 		if err != nil {
 			return err
 		}
-		if exampleID != "" && !resetOnStart {
-			entries, readErr := os.ReadDir(workspaceRoot)
-			if readErr != nil && !errors.Is(readErr, os.ErrNotExist) {
-				return fmt.Errorf("inspect managed playground workspace: %w", readErr)
-			}
-			if readErr == nil && len(entries) > 0 {
-				return fmt.Errorf("managed playground workspace %q is not empty; choose a fresh --data-root or pass --reset-on-start to replace it", filepath.ToSlash(workspaceRoot))
-			}
-		}
+		managedWorkspaceRoot = workspaceRoot
 	}
 	if noDB {
 		dbPath = ""
@@ -382,6 +375,15 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 			runTimeout:     runTimeout,
 			ratePerMinute:  ratePerMinute,
 		})
+	}
+	if exampleID != "" && !resetOnStart {
+		entries, readErr := os.ReadDir(managedWorkspaceRoot)
+		if readErr != nil && !errors.Is(readErr, os.ErrNotExist) {
+			return fmt.Errorf("inspect managed playground workspace: %w", readErr)
+		}
+		if readErr == nil && len(entries) > 0 {
+			return fmt.Errorf("managed playground workspace %q is not empty; choose a fresh --data-root or pass --reset-on-start to replace it", filepath.ToSlash(managedWorkspaceRoot))
+		}
 	}
 	if err := validateServerBindAllowed(addr); err != nil {
 		return err

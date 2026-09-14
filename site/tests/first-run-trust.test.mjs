@@ -10,6 +10,8 @@ const siteInstallation = await readFile(new URL("../docs-src/guide/installation.
 const supportMap = await readFile(new URL("../docs-src/guide/support-map.md", import.meta.url), "utf8");
 const lwcShell = await readFile(new URL("../docs-src/guide/lwc-local-shell.md", import.meta.url), "utf8");
 const localAPIRoutes = await readFile(new URL("../docs-src/reference/local-api-routes.md", import.meta.url), "utf8");
+const cliReference = await readFile(new URL("../docs-src/reference/cli.md", import.meta.url), "utf8");
+const jsonSchema = await readFile(new URL("../docs-src/reference/json-schema.md", import.meta.url), "utf8");
 const siteSecurityTrust = await readFile(new URL("../docs-src/guide/security-trust.md", import.meta.url), "utf8");
 const repoInstallation = await readFile(new URL("../../docs/INSTALL.md", import.meta.url), "utf8");
 const repoSecurityTrust = await readFile(new URL("../../docs/SECURITY_TRUST.md", import.meta.url), "utf8");
@@ -37,14 +39,15 @@ test("first-run docs initialize a project before doctor and execute the bundled 
 	}
 	assert.match(quickstart, /Route A: Try the sample/);
 	assert.match(quickstart, /Route B: Use my Salesforce DX project/);
-	assert.match(quickstart, /--example refinement-service --once/);
-	assert.match(quickstart, /--class RefinementServiceTest --method createsAndLabelsFileRow/);
+	assert.match(quickstart, /--class SampleTest --method adds/);
+	assert.match(quickstart, /playground --example refinement-service --open/);
+	assert.doesNotMatch(quickstart, /--example refinement-service --once/);
 	assert.match(quickstart, /`total` and `passed` are `1`/);
 	assert.match(quickstart, /--class <YourTestClass>/);
 	assert.match(quickstart, /API versions are separate contracts/);
 	assert.match(quickstart, /Salesforce was not contacted|did not log in to Salesforce/);
 	assert.match(quickstart, /Report a reproducible issue/);
-	assert.match(quickstart, /printf '%s\\n' "\$GLADE_DEMO_DIR"/);
+	assert.match(quickstart, /printf '%s\\n' "\$GLADE_SAMPLE_DIR"/);
 	assert.match(siteInstallation, /first local check/);
 	assert.doesNotMatch(siteInstallation, /```bash\nglade doctor\n/);
 });
@@ -75,6 +78,14 @@ test("first-run surfaces keep API axes and Salesforce proof separate", () => {
 	assert.match(lwcShell, /does not contact Salesforce/);
 	assert.match(localAPIRoutes, /accepts `60\.0`, `65\.0`, `66\.0`, and `67\.0`/);
 	assert.match(localAPIRoutes, /not evidence that Salesforce was contacted/);
+});
+
+test("public references separate Unreleased first-run contracts from the stable binary", () => {
+	assert.match(cliReference, /`--once` example materializer[\s\S]*Unreleased source/);
+	assert.match(cliReference, /v0\.2\.15 stable binary does not provide that behavior/);
+	assert.match(cliReference, /Unreleased doctor `1\.1` schema/);
+	assert.match(jsonSchema, /v0\.2\.15 stable binary emits schema `1\.0`/);
+	assert.doesNotMatch(quickstart, /--example refinement-service --once/);
 });
 
 test("manual verification snippets resolve the manifest and archive name without ambient variables", () => {

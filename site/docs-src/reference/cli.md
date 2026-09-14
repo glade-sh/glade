@@ -98,6 +98,10 @@ GLADE_UPDATE_ALLOW_SHELL=1 glade update
 
 ## `glade doctor`
 
+The scoped recovery and `apexReady` contract described here are part of the
+Unreleased doctor `1.1` schema. The v0.2.15 stable binary still emits doctor
+schema `1.0`; consumers must select fields according to the installed version.
+
 Check Apex readiness for one project. Doctor reports the resolved project root,
 configuration, parser, project Apex API default, local-data state, runtime, and
 the fact that Salesforce was not contacted. A missing LWC toolchain is an
@@ -630,6 +634,10 @@ glade db export --db .glade/refinement-local.sqlite > refinement-export.json
 ## `glade playground`
 
 Start the local browser playground for editing classes, running anonymous Apex, and inspecting logs, limits, traces, and org diffs.
+
+The `--once` example materializer shown below is part of the Unreleased source
+tree. The v0.2.15 stable binary does not provide that behavior; use an `--open`
+example command until a release containing it is published.
 
 ```bash
 glade playground --db .glade/playground/org.sqlite --addr 127.0.0.1:1789 --open

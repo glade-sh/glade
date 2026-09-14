@@ -1035,13 +1035,17 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 			info.LocalData = &localData
 		}
 	}
-	if !info.ToolchainOK {
-		info.Advisories = append(info.Advisories, "Apex check and test are available; LWC preview needs the bundled toolchain. Reinstall the Glade release, or install it from a Glade source checkout.")
-	}
 	ok := info.ProjectOK && info.ParserOK && info.ConfigOK
 	info.ApexReady = ok
 	info.Status = statusForOK(ok)
 	info.ExitCode = exitCodeForOK(ok)
+	if !info.ToolchainOK {
+		advisory := "LWC compilation and Lightning runtime routes need the bundled toolchain. Reinstall the Glade release, or install it from a Glade source checkout."
+		if ok {
+			advisory = "Apex check and test are available; " + advisory
+		}
+		info.Advisories = append(info.Advisories, advisory)
+	}
 	commandRoot := effectiveRoot
 	if info.ProjectOK {
 		commandRoot = loadedProject.Root
@@ -1051,7 +1055,11 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 	}
 	projectArg := doctorProjectCommandArg(commandRoot)
 	if info.LocalData != nil && !info.LocalData.OK {
-		info.Advisories = append(info.Advisories, "Apex check and test are available; refresh local data before DB-backed workflows with glade db inspect --project "+projectArg+".")
+		advisory := "Refresh local data before DB-backed workflows with glade db inspect --project " + projectArg + "."
+		if ok {
+			advisory = "Apex check and test are available; refresh local data before DB-backed workflows with glade db inspect --project " + projectArg + "."
+		}
+		info.Advisories = append(info.Advisories, advisory)
 	}
 	if ok {
 		info.Suggestions = []string{

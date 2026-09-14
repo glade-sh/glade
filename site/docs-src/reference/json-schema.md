@@ -43,10 +43,12 @@ Priority commands write a versioned JSON envelope.
 
 ## Doctor object
 
-`glade doctor --json` uses a flattened `1.1` object because its fields predate
-the shared envelope. Version `1.1` makes the Apex readiness scope explicit and
-treats LWC-toolchain and local-data health as independent workflow advisories.
-Important fields are:
+`glade doctor --json` in the Unreleased source tree uses a flattened `1.1`
+object because its fields predate the shared envelope. Version `1.1` makes the
+Apex readiness scope explicit and treats LWC-toolchain and local-data health as
+independent workflow advisories. The v0.2.15 stable binary emits schema `1.0`;
+consumers must not require the fields below until a release containing doctor
+`1.1` is published. Important fields are:
 
 | Field | Type | Notes |
 | --- | --- | --- |

@@ -177,21 +177,10 @@ glade version
 
 ## First Project Run
 
-Use the bundled demo when you do not have a project ready. The playground
-command materializes the managed project and exits without starting a server:
-
-```bash
-GLADE_DEMO_DIR="$(mktemp -d)"
-cd "$GLADE_DEMO_DIR"
-glade playground --data-root .glade/playground --example refinement-service --once
-GLADE_PROJECT=.glade/playground/workspaces/default
-glade init --project "$GLADE_PROJECT" --yes
-glade doctor --project "$GLADE_PROJECT"
-glade test --project "$GLADE_PROJECT" --class RefinementServiceTest --method createsAndLabelsFileRow --json --no-progress
-```
-
-Expected: the named test executes once and passes. A zero-test result is not
-first-run evidence.
+If you do not have a project ready, use the
+[five-minute Quickstart](https://glade.sh/guide/quickstart). Its disposable
+terminal sample uses commands available in the current stable release and
+executes one named test before treating the setup as successful.
 
 For an existing Salesforce DX project, run parse/check/tests without connecting
 to an org:

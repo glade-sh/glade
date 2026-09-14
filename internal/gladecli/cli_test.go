@@ -443,6 +443,10 @@ func TestRunDoctorJSON(t *testing.T) {
 
 func TestRunDoctorJSONExitCodeMatchesSetupStatus(t *testing.T) {
 	root := t.TempDir()
+	t.Setenv("GLADE_HOME", "")
+	t.Setenv("GLADE_ROOT", "")
+	t.Setenv("XDG_DATA_HOME", filepath.Join(t.TempDir(), "empty-data"))
+	t.Chdir(root)
 
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"doctor", "--project", root, "--json"}, &stdout, &stderr)
@@ -452,17 +456,22 @@ func TestRunDoctorJSONExitCodeMatchesSetupStatus(t *testing.T) {
 	var got struct {
 		Status        string   `json:"status"`
 		ExitCode      int      `json:"exitCode"`
+		ApexReady     bool     `json:"apexReady"`
 		ConfigMissing bool     `json:"configMissing"`
 		Recovery      []string `json:"recovery"`
+		Advisories    []string `json:"advisories"`
 	}
 	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
 		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
 	}
-	if got.Status != "failed" || got.ExitCode != code || !got.ConfigMissing {
+	if got.Status != "failed" || got.ExitCode != code || got.ApexReady || !got.ConfigMissing {
 		t.Fatalf("doctor JSON did not match setup failure: code=%d got=%#v", code, got)
 	}
 	if len(got.Recovery) < 2 || !strings.Contains(strings.Join(got.Recovery, "\n"), "glade init --project") || !strings.Contains(strings.Join(got.Recovery, "\n"), "glade doctor --project") {
 		t.Fatalf("doctor JSON missing recovery commands: %#v", got)
+	}
+	if strings.Contains(strings.Join(got.Advisories, "\n"), "Apex check and test are available") {
+		t.Fatalf("failed doctor JSON claimed Apex was available: %#v", got)
 	}
 }
 
@@ -5136,6 +5145,31 @@ func TestRunPlaygroundExampleFlagImpliesExamples(t *testing.T) {
 		if !strings.Contains(out, want) {
 			t.Fatalf("wizard output missing %q:\n%s", want, out)
 		}
+	}
+}
+
+func TestRunPlaygroundWizardDoesNotInspectOrReplaceManagedWorkspace(t *testing.T) {
+	root := t.TempDir()
+	sentinel := filepath.Join(root, "workspaces", "default", "keep.txt")
+	writeTestFile(t, sentinel, "keep")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"playground",
+		"--wizard",
+		"--data-root", root,
+		"--example", "refinement-service",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	for _, want := range []string{"--example", "refinement-service"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("wizard output missing %q:\n%s", want, stdout.String())
+		}
+	}
+	if got, err := os.ReadFile(sentinel); err != nil || string(got) != "keep" {
+		t.Fatalf("wizard changed the managed workspace: content=%q err=%v", got, err)
 	}
 }
 

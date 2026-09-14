@@ -41,27 +41,15 @@ export PATH="$HOME/.local/bin:$PATH"
 glade version
 ```
 
-Try the bundled demo without starting a server:
-
-```bash
-GLADE_DEMO_DIR="$(mktemp -d)"
-cd "$GLADE_DEMO_DIR"
-glade playground --data-root .glade/playground --example refinement-service --once
-GLADE_PROJECT=.glade/playground/workspaces/default
-glade init --project "$GLADE_PROJECT" --yes
-glade doctor --project "$GLADE_PROJECT"
-glade test --project "$GLADE_PROJECT" --class RefinementServiceTest --method createsAndLabelsFileRow --json --no-progress
-```
-
-The named test must execute once and pass. A zero-test result is not first-run
-evidence. The [five-minute Quickstart](https://glade.sh/guide/quickstart) also
-covers existing projects, expected output, recovery, cleanup, API-version
-rules, and the Salesforce boundary.
+The [five-minute Quickstart](https://glade.sh/guide/quickstart) creates a
+disposable terminal sample using the current stable CLI, then runs one named
+test. It also covers existing projects, expected output, recovery, cleanup,
+API-version rules, and the Salesforce boundary.
 
 The bundled `RefinementServiceTest` first shipped in **v0.2.14** and is included
 in the **v0.2.15 stable release**.
 
-For a project with `RefinementServiceTest` (substitute your actual class):
+For an existing Salesforce DX project, substitute a test class that it owns:
 
 ```bash
 test -f glade.yml || glade init --project . --yes
