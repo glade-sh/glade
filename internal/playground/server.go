@@ -25,6 +25,7 @@ const (
 )
 
 type Server struct {
+	version           string
 	workspace         *Workspace
 	runner            *Runner
 	defaultLimitMode  vm.LimitMode
@@ -36,6 +37,7 @@ type Server struct {
 	publicLimitCaps   vm.LimitCaps
 	maxWorkspaceFiles int
 	maxWorkspaceBytes int64
+	ratePerMinute     int
 	rateLimiter       *fixedWindowRateLimiter
 }
 
@@ -65,6 +67,7 @@ func NewServer(workspace *Workspace, opts ServerOptions) *Server {
 		publicLimitCaps = defaultPublicLimitCaps()
 	}
 	return &Server{
+		version:           opts.Version,
 		workspace:         workspace,
 		runner:            NewRunner(workspace, RunnerOptions{Version: opts.Version, DBPath: opts.DBPath}),
 		defaultLimitMode:  mode,
@@ -76,16 +79,23 @@ func NewServer(workspace *Workspace, opts ServerOptions) *Server {
 		publicLimitCaps:   publicLimitCaps,
 		maxWorkspaceFiles: maxWorkspaceFiles,
 		maxWorkspaceBytes: maxWorkspaceBytes,
+		ratePerMinute:     ratePerMinute,
 		rateLimiter:       newFixedWindowRateLimiter(ratePerMinute),
 	}
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if s.public && isPublicLimitedEndpoint(r) && !s.rateLimiter.allow(clientIP(r), time.Now()) {
+		w.Header().Set("Retry-After", "60")
 		writeError(w, http.StatusTooManyRequests, "rate limit exceeded")
 		return
 	}
 	switch {
+	case r.Method == http.MethodGet && r.URL.Path == "/healthz":
+		w.Header().Set("Cache-Control", "no-store")
+		writeJSON(w, http.StatusOK, PlaygroundHealth{Status: "ok", Version: s.version})
+	case r.Method == http.MethodGet && r.URL.Path == "/readyz":
+		s.handleReadiness(w)
 	case r.Method == http.MethodGet && r.URL.Path == "/playground/api/workspace":
 		s.handleWorkspace(w)
 	case r.Method == http.MethodGet && r.URL.Path == "/playground/api/examples":
@@ -102,6 +112,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err := s.runner.Reset(); err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
 			return
+		}
+		if s.runner.cache != nil {
+			if err := s.runner.cache.ClearLatest(); err != nil {
+				writeError(w, http.StatusInternalServerError, "could not clear the previous run result")
+				return
+			}
 		}
 		writeJSON(w, http.StatusOK, map[string]bool{"reset": true})
 	case r.Method == http.MethodPost && r.URL.Path == "/playground/api/seed":
@@ -151,7 +167,10 @@ func (s *Server) handleLoadExample(w http.ResponseWriter, r *http.Request) {
 	}
 	s.runner.InvalidateSourceRuntime()
 	if s.runner.cache != nil {
-		_ = s.runner.cache.ClearLatest()
+		if err := s.runner.cache.ClearLatest(); err != nil {
+			writeError(w, http.StatusInternalServerError, "could not clear the previous run result")
+			return
+		}
 	}
 	s.decorateWorkspaceMetadata(&meta)
 	writeJSON(w, http.StatusOK, meta)
@@ -302,9 +321,39 @@ func (s *Server) handleWorkspace(w http.ResponseWriter) {
 
 func (s *Server) decorateWorkspaceMetadata(meta *WorkspaceMetadata) {
 	meta.LimitMode = s.effectiveLimitMode()
+	meta.Policy = PlaygroundPolicy{
+		Public:            s.public,
+		RunMode:           "selectable",
+		LimitMode:         s.effectiveLimitMode(),
+		RunTimeoutMS:      s.runTimeout.Milliseconds(),
+		RatePerMinute:     s.ratePerMinute,
+		MaxWorkspaceFiles: s.maxWorkspaceFiles,
+		MaxWorkspaceBytes: s.maxWorkspaceBytes,
+		LimitCaps:         s.publicLimitCaps,
+	}
+	if s.public {
+		meta.Policy.RunMode = string(RunModeScratch)
+	}
 	if !s.public {
 		meta.DBPath = s.dbPath
 	}
+}
+
+func (s *Server) handleReadiness(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", "no-store")
+	if s == nil || s.workspace == nil || s.runner == nil {
+		writeJSON(w, http.StatusServiceUnavailable, PlaygroundHealth{Status: "unavailable"})
+		return
+	}
+	if err := s.runner.readinessError(); err != nil {
+		writeJSON(w, http.StatusServiceUnavailable, PlaygroundHealth{Status: "unavailable"})
+		return
+	}
+	if _, err := s.workspace.Metadata(); err != nil {
+		writeJSON(w, http.StatusServiceUnavailable, PlaygroundHealth{Status: "unavailable"})
+		return
+	}
+	writeJSON(w, http.StatusOK, PlaygroundHealth{Status: "ready", Version: s.version})
 }
 
 func (s *Server) handleSaveFile(w http.ResponseWriter, r *http.Request) {
@@ -396,9 +445,13 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if errors.Is(ctx.Err(), context.DeadlineExceeded) || strings.Contains(result.ErrorMessage, context.DeadlineExceeded.Error()) {
+		message := "execution timed out"
+		if s.runTimeout > 0 {
+			message = fmt.Sprintf("execution timed out after %s; try a smaller example or reduce the work in the loop", s.runTimeout)
+		}
 		result.Status = RunStatusRuntimeError
-		result.ErrorMessage = "execution timed out"
-		result.Diagnostics = []Diagnostic{{Severity: "error", Message: "execution timed out"}}
+		result.ErrorMessage = message
+		result.Diagnostics = []Diagnostic{{Severity: "error", Message: message}}
 		writeJSON(w, http.StatusServiceUnavailable, result)
 		return
 	}

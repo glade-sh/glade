@@ -268,6 +268,9 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 			if err != nil {
 				return err
 			}
+			if d <= 0 {
+				return errors.New("--run-timeout must be greater than zero")
+			}
 			runTimeout = d
 		case "--rate-per-minute":
 			value, err := takeFlagValue(args, &i, "--rate-per-minute requires a value")
@@ -277,6 +280,9 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 			n, err := strconv.Atoi(value)
 			if err != nil {
 				return err
+			}
+			if n <= 0 {
+				return errors.New("--rate-per-minute must be greater than zero")
 			}
 			ratePerMinute = n
 		case "--data-root":
