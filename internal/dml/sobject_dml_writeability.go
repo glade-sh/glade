@@ -29,6 +29,8 @@ func isLocalWritableLeadField(field string) bool {
 
 func isStandardSObjectCreateIdentityRelationship(objectName, field string) bool {
 	switch strings.ToLower(strings.TrimSpace(objectName)) {
+	case "duplicaterecorditem":
+		return strings.EqualFold(field, "DuplicateRecordSetId") || strings.EqualFold(field, "RecordId")
 	case "pricebookentry":
 		return strings.EqualFold(field, "Pricebook2Id") || strings.EqualFold(field, "Product2Id")
 	case "opportunitylineitem":

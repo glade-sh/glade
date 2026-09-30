@@ -152,9 +152,12 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 		if args[1].Kind == ValueBool {
 			allOrNone = args[1].Bool
 		} else if isDatabaseDMLOptionsValue(args[1]) {
-			allOrNone = databaseDMLOptionsAllOrNone(args[1], allOrNone)
+			// The DMLOptions overload returns SaveResult rows unless the
+			// caller explicitly enables OptAllOrNone. This differs from the
+			// no-options Database DML overload, whose default is all-or-none.
+			allOrNone = databaseDMLOptionsAllOrNone(args[1], false)
 			var optionsErr error
-			dmlOptions, optionsErr = databaseDMLOptions(args[1])
+			dmlOptions, optionsErr = vm.databaseDMLOptionsForRecords(op, args[0], args[1])
 			if optionsErr != nil {
 				return Null, optionsErr
 			}
@@ -208,9 +211,6 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 			return Null, err
 		}
 	}
-	if err := vm.enforceDMLRecordAccess(op, args[0], externalIDField, dmlMode == "USER_MODE"); err != nil {
-		return Null, err
-	}
 	var traceRecords []storage.Record
 	if traceIsEnabled(result) {
 		var recordsErr error
@@ -223,7 +223,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 			return Null, recordsErr
 		}
 	}
-	results, err := vm.applyDML(op, args[0], allOrNone, externalIDField, dmlOptions, result)
+	results, err := vm.applyDMLWithRecordAccess(op, args[0], allOrNone, externalIDField, dmlOptions, result, dmlMode == "USER_MODE")
 	appendDurationTraceLazy(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), func() map[string]any {
 		return vm.traceDMLArgs(op, traceRecords, len(traceRecords))
 	})
@@ -239,7 +239,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 		resultType := databaseDMLResultType(op)
 		row := Object(resultType)
 		row.Fields["success"] = Bool(dmlResult.Success)
-		row.Fields["id"] = databaseResultIDValue(dmlResult.ID)
+		row.Fields["id"] = databaseDMLResultIDValue(op, dmlResult)
 		row.Fields["error"] = String(dmlResult.Error)
 		if op == "upsert" {
 			row.Fields["created"] = Bool(dmlResult.Created)
@@ -257,6 +257,9 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 }
 
 func (vm *VM) executeDatabaseAsyncDML(op string, args []Value, result *Result) (Value, error) {
+	if vm.rejectAsyncActions {
+		return Null, vm.rejectSynchronousAsyncAction(fmt.Sprintf("Database.%sAsync cannot cross the synchronous LWC action boundary", op))
+	}
 	if len(args) == 0 || len(args) > 3 {
 		return Null, fmt.Errorf("Database.%sAsync expects records, optional callback or AccessLevel", op)
 	}
@@ -476,6 +479,74 @@ func databaseDMLOptionsAllOrNone(value Value, fallback bool) bool {
 	return fallback
 }
 
+// Explicit Database.insert/update Task overloads support assignment email capture.
+func (vm *VM) databaseDMLOptionsForRecords(op string, records, value Value) (dml.Options, error) {
+	if !databaseDMLOptionConfigured(value, "EmailHeader", true) {
+		return databaseDMLOptions(value)
+	}
+	if op != "insert" && op != "update" {
+		return dml.Options{}, unsupportedCallError("Database.DMLOptions.EmailHeader local DML option behavior")
+	}
+	return vm.taskEmailDMLOptions(records, value, true)
+}
+
+// The same header validation serves explicit overloads and per-record options.
+// Per-record false is proved for Task insert/upsert; enabling notifications there
+// requires a separate contract and must not silently discard a request.
+func (vm *VM) taskEmailDMLOptions(records, value Value, allowEnabled bool) (dml.Options, error) {
+	unsupported := func() (dml.Options, error) {
+		return dml.Options{}, unsupportedCallError("Database.DMLOptions.EmailHeader local DML option behavior")
+	}
+	items := []Value{records}
+	if records.Kind == ValueList {
+		items = records.List
+	}
+	if len(items) == 0 {
+		return unsupported()
+	}
+	for _, item := range items {
+		if item.Kind != ValueObject || !strings.EqualFold(vm.canonicalSObjectValueType(item), "Task") {
+			return unsupported()
+		}
+	}
+	configured, enabled := false, false
+	for key, header := range value.Fields {
+		if !strings.EqualFold(key, "EmailHeader") || header.Kind == ValueNull {
+			continue
+		}
+		if header.Kind != ValueObject {
+			return unsupported()
+		}
+		for flag, setting := range header.Fields {
+			if setting.Kind == ValueNull {
+				continue
+			}
+			if !strings.EqualFold(flag, "TriggerUserEmail") || setting.Kind != ValueBool {
+				return unsupported()
+			}
+			if configured && enabled != setting.Bool {
+				return unsupported()
+			}
+			configured, enabled = true, setting.Bool
+		}
+	}
+	if enabled && !allowEnabled {
+		return unsupported()
+	}
+	clean := cloneDatabaseOptionsObject(value)
+	for key := range clean.Fields {
+		if strings.EqualFold(key, "EmailHeader") {
+			clean.Fields[key] = Null
+		}
+	}
+	options, err := databaseDMLOptions(clean)
+	if err != nil {
+		return options, err
+	}
+	options.CaptureTaskAssignmentEmail = configured && enabled
+	return options, nil
+}
+
 func databaseDMLOptions(value Value) (dml.Options, error) {
 	// DuplicateRuleHeader has no effect because local orgs have no duplicate rules.
 	for _, field := range []struct {
@@ -506,6 +577,9 @@ func databaseDMLOptionConfigured(value Value, fieldName string, inspectMap bool)
 		if !strings.EqualFold(field, fieldName) || option.Kind == ValueNull {
 			continue
 		}
+		if strings.EqualFold(fieldName, "LocalizeErrors") && option.Kind == ValueBool && !option.Bool {
+			continue
+		}
 		if !inspectMap || option.Kind != ValueObject {
 			return true
 		}
@@ -518,7 +592,7 @@ func databaseDMLOptionConfigured(value Value, fieldName string, inspectMap bool)
 	return false
 }
 
-func (vm *VM) applyPerRecordDMLTargetOptions(records []storage.Record, targets []*Value) error {
+func (vm *VM) applyPerRecordDMLTargetOptions(op string, records []storage.Record, targets []*Value) error {
 	if vm == nil || vm.Org == nil || len(records) == 0 || len(targets) == 0 {
 		return nil
 	}
@@ -530,7 +604,13 @@ func (vm *VM) applyPerRecordDMLTargetOptions(records []storage.Record, targets [
 		if !ok || !isDatabaseDMLOptionsValue(value) {
 			continue
 		}
-		options, err := databaseDMLOptions(value)
+		var options dml.Options
+		var err error
+		if (op == "insert" || op == "upsert") && databaseDMLOptionConfigured(value, "EmailHeader", true) {
+			options, err = vm.taskEmailDMLOptions(*targets[i], value, false)
+		} else {
+			options, err = databaseDMLOptions(value)
+		}
 		if err != nil {
 			return err
 		}
@@ -681,7 +761,8 @@ func (vm *VM) executeDatabaseRecordAction(op string, args []Value, result *Resul
 	if len(args) == 0 || len(args) > 2 {
 		return Null, fmt.Errorf("Database.%s expects records and optional allOrNone", op)
 	}
-	allOrNone := true
+	// emptyRecycleBin returns per-record failures when allOrNone is omitted.
+	allOrNone := op != "emptyRecycleBin"
 	if len(args) == 2 {
 		if args[1].Kind != ValueBool {
 			return Null, fmt.Errorf("Database.%s allOrNone expects Boolean", op)
@@ -993,7 +1074,18 @@ func (vm *VM) executeDatabaseConvertLead(args []Value, result *Result) (Value, e
 				*vm.Org = backup
 				return Null, err
 			}
-			values = append(values, databaseLeadConvertFailure("", err.Error()))
+			leadID := ""
+			if id, ok := databaseLeadConvertField(convert, "leadId"); ok && isApexIDLikeValue(id) {
+				leadID = scalarText(id)
+			}
+			failure := databaseLeadConvertFailure(leadID, err.Error())
+			var thrown *apexThrowError
+			if errors.As(err, &thrown) {
+				if details, ok := thrown.value.Fields["__dmlErrors"]; ok && details.Kind == ValueList {
+					failure.Fields["errors"] = details
+				}
+			}
+			values = append(values, failure)
 			continue
 		}
 		values = append(values, row)
@@ -1103,6 +1195,15 @@ func (vm *VM) databaseCursorFetch(receiver Value, method string, args []Value, d
 		}
 	}
 	if strings.EqualFold(receiver.Type, "Database.Cursor") {
+		if err := vm.incrementLimit("fetchCallsOnApexCursor", 1); err != nil {
+			return Null, receiver, false, true, err
+		}
+		if err := vm.incrementLimit("queries", 1); err != nil {
+			return Null, receiver, false, true, err
+		}
+		if err := vm.incrementLimit("queryRows", len(page.List)); err != nil {
+			return Null, receiver, false, true, err
+		}
 		return page, receiver, false, true, nil
 	}
 	out := Object("Database.CursorFetchResult")
@@ -1135,7 +1236,7 @@ func (vm *VM) isRecordLocked(id storage.ID) bool {
 	if !ok {
 		return false
 	}
-	record, ok := vm.Org.Objects[objectName].Records[id]
+	_, record, ok := storage.LookupRecordByID(vm.Org.Objects[objectName].Records, id)
 	return ok && record.System.Locked
 }
 
@@ -1146,6 +1247,13 @@ func (vm *VM) applyDatabaseRecordAction(op string, value Value, allOrNone bool, 
 	records, _, err := vm.recordsFromValue(value)
 	if err != nil {
 		return nil, err
+	}
+	if op == "emptyRecycleBin" {
+		for _, record := range records {
+			if record.ID == "" {
+				return nil, newExceptionError("InvalidParameterValueException", "SObject passed into Database.emptyRecycleBin() had a null id.")
+			}
+		}
 	}
 	if err := vm.incrementLimit("dmlStatements", 1); err != nil {
 		return nil, err
@@ -1170,6 +1278,7 @@ func (vm *VM) applyDatabaseRecordAction(op string, value Value, allOrNone bool, 
 	var results []dml.Result
 	switch op {
 	case "emptyRecycleBin":
+		engine.Options.RetainEmptiedRecycleBinRecords = vm.testContext != nil
 		results = engine.EmptyRecycleBin(records)
 	case "lock":
 		results = engine.Lock(records)
@@ -1247,6 +1356,30 @@ func databaseDMLException(op string, results []dml.Result, objectTypes []string)
 	value.Fields["message"] = String(message)
 	value.Fields["__dmlErrors"] = dmlExceptionErrorDetails(results, objectTypes)
 	return &apexThrowError{value: value}
+}
+
+func statementDMLException(op string, results []dml.Result, objectTypes []string) error {
+	err := databaseDMLException(op, results, objectTypes)
+	if op != "undelete" && op != "insert" {
+		return err
+	}
+	for index, result := range results {
+		if result.Success || result.Error == "" {
+			continue
+		}
+		identity := ""
+		if result.ID != "" {
+			identity = " with id " + apexIDTo18(string(result.ID))
+		}
+		fields := []string(nil)
+		if details := dmlResultErrors(result); len(details) > 0 {
+			fields = details[0].Fields
+		}
+		message := fmt.Sprintf("%s failed. First exception on row %d%s; first error: %s, %s: [%s]", strings.ToUpper(op[:1])+op[1:], index, identity, result.StatusCode, result.Error, strings.Join(fields, ", "))
+		err.(*apexThrowError).value.Fields["message"] = String(message)
+		break
+	}
+	return err
 }
 
 func exceptionMessage(value Value) string {
@@ -1394,6 +1527,7 @@ func (vm *VM) executeDatabaseMergeWithMode(args []Value, mode ir.DMLMode, result
 		return Null, err
 	}
 	markMergeDuplicateOldRecords(duplicateBefore, master[0].ID)
+	master = vm.hydrateUpdateTriggerRecords(master, masterBefore)
 	if beforeUpdateFailures, err := vm.runTriggers(triggerTimingBefore, "update", master, masterBefore, result); err != nil {
 		*vm.Org = backup
 		return Null, err
@@ -1570,7 +1704,13 @@ func (vm *VM) populateDMLResultFields(value *Value, results []dml.Result) {
 		if !ok {
 			return
 		}
-		putSystemFields(*value, record.System)
+		// DML returns the Id, but does not refresh caller timestamp fields.
+		// Keep stored timestamps intact for queries and preserve any values
+		// the caller already loaded before an update.
+		fields := record.System
+		fields.CreatedDate = ""
+		fields.LastModifiedDate = ""
+		putSystemFields(*value, fields)
 	}
 }
 
@@ -1661,6 +1801,11 @@ func (vm *VM) hydrateCloneRecordTypeID(source Value, clone *Value) {
 
 func markDMLAccessibleFields(value *Value) {
 	if value == nil || value.Kind != ValueObject {
+		return
+	}
+	// DML does not widen an existing SOQL caller's selected-field view.
+	// Caller-created records already marked by earlier DML keep their defaults.
+	if selected, queried := value.Fields[sobjectQueriedFieldsField]; queried && selected.Kind == ValueMap && !dmlAccessibleSObject(*value) {
 		return
 	}
 	value.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(value.Type, dmlVisibleSObjectFields(value))
@@ -1790,6 +1935,7 @@ func mergeDMLResults(failures, successes []dml.Result) []dml.Result {
 }
 
 type vmDMLRollbackPoint struct {
+	sideEffects      *sideEffectSnapshot
 	enabled          bool
 	journal          bool
 	temporaryJournal bool
@@ -1798,7 +1944,13 @@ type vmDMLRollbackPoint struct {
 	previousJournal  *storage.IsolationJournal
 }
 
-func (vm *VM) beginDMLRollbackPoint(enabled bool, forceSnapshot bool) vmDMLRollbackPoint {
+func (vm *VM) beginDMLRollbackPoint(enabled bool, forceSnapshot bool) (point vmDMLRollbackPoint) {
+	defer func() {
+		if point.enabled && vm != nil {
+			snapshot := vm.snapshotSideEffects()
+			point.sideEffects = &snapshot
+		}
+	}()
 	if !enabled {
 		return vmDMLRollbackPoint{}
 	}
@@ -1839,9 +1991,15 @@ func (vm *VM) restoreDMLRollbackPoint(point vmDMLRollbackPoint) error {
 	}
 	defer vm.finishDMLRollbackPoint(point)
 	if point.journal && vm.isolationJournal != nil {
-		return vm.isolationJournal.Rollback(point.mark)
+		if err := vm.isolationJournal.Rollback(point.mark); err != nil {
+			return err
+		}
+	} else {
+		*vm.Org = point.org
 	}
-	*vm.Org = point.org
+	if point.sideEffects != nil {
+		vm.restoreSideEffects(*point.sideEffects)
+	}
 	return nil
 }
 
@@ -1863,6 +2021,22 @@ func mergeDMLFailuresInPlace(target, source []dml.Result) {
 }
 
 func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField string, options dml.Options, result *Result) ([]dml.Result, error) {
+	return vm.applyDMLWithAccessPolicy(op, value, allOrNone, externalIDField, options, result, false)
+}
+
+func (vm *VM) applyDMLWithRecordAccess(op string, value Value, allOrNone bool, externalIDField string, options dml.Options, result *Result, userMode bool) ([]dml.Result, error) {
+	// Preserve the existing explicit USER_MODE exception boundary. The API 53
+	// with-sharing contract reports denied rows through Database save results.
+	if userMode {
+		if err := vm.enforceDMLRecordAccess(op, value, externalIDField, true); err != nil {
+			return nil, err
+		}
+	}
+	check := userMode || (!vm.currentTrigger && strings.EqualFold(vm.currentSharingMode(), "with sharing"))
+	return vm.applyDMLWithAccessPolicy(op, value, allOrNone, externalIDField, options, result, check)
+}
+
+func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, externalIDField string, options dml.Options, result *Result, checkRecordAccess bool) (out []dml.Result, outErr error) {
 	if vm.Org == nil {
 		return nil, fmt.Errorf("DML requires org state")
 	}
@@ -1893,6 +2067,42 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	}
 	if err := vm.checkMixedDML(records); err != nil {
 		return nil, err
+	}
+	if checkRecordAccess && (op == "update" || op == "delete" || op == "undelete" || op == "upsert") {
+		failures := make([]dml.Result, len(records))
+		for i, record := range records {
+			stored, found := vm.findOrgRecord(record.Object, record.ID)
+			if op == "upsert" {
+				kind, existing, err := vm.classifyUpsert(record, externalIDField)
+				if err != nil {
+					return nil, err
+				}
+				if kind == "update" {
+					stored, found = vm.findOrgRecord(record.Object, existing.ID)
+				}
+			}
+			if found && !vm.currentUserCanWriteRecord(record.Object, stored, vm.currentUserID(), op) {
+				code := "INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY"
+				if op == "delete" {
+					code = "INSUFFICIENT_ACCESS_OR_READONLY"
+				}
+				failures[i] = dml.Result{ID: record.ID, Error: "insufficient access rights on record", StatusCode: code}
+			}
+		}
+		if hasDMLFailures(failures) {
+			if allOrNone {
+				return failures, nil
+			}
+			records, _, targets = filterDMLInputs(records, nil, targets, failures)
+			if len(records) == 0 {
+				return failures, nil
+			}
+			defer func() {
+				if outErr == nil {
+					out = mergeDMLResults(failures, out)
+				}
+			}()
+		}
 	}
 	if op == "upsert" {
 		return vm.applyUpsertDML(records, targets, allOrNone, externalIDField, options, result)
@@ -2042,7 +2252,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		}
 	}
 	vm.stripTransientDMLDerivedFields(records)
-	if err := vm.applyPerRecordDMLTargetOptions(records, targets); err != nil {
+	if err := vm.applyPerRecordDMLTargetOptions(op, records, targets); err != nil {
 		return nil, err
 	}
 	engine := vm.newDeferredAutomationDMLEngine(result)
@@ -2073,6 +2283,14 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		results = engine.Undelete(records)
 	default:
 		return nil, fmt.Errorf("unsupported DML operation %s", op)
+	}
+	if op == "insert" {
+		for i, inserted := range records {
+			if i < len(results) && results[i].Success {
+				inserted.ID = results[i].ID
+				vm.ensureUserRoleGroup(inserted)
+			}
+		}
 	}
 	appendDMLResultTrace(result, op, records, results)
 	engineResults := results
@@ -2155,6 +2373,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if hasDMLSuccess(results) {
 		vm.rebuildDMLObjectIndexes(records, results)
 		vm.clearCustomDataCache()
+		if options.CaptureTaskAssignmentEmail {
+			vm.captureTaskAssignmentNotificationRequests(results, result)
+		}
 	}
 	return results, nil
 }
@@ -2287,10 +2508,21 @@ func (vm *VM) applySObjectFieldDefaults(records []storage.Record) {
 func defaultRecordTypeIDForRecord(objectName string, definition storage.ObjectDefinition, record storage.Record) storage.ID {
 	if policy := dmlPolicyForObject(objectName); policy != nil && policy.defaultRecordTypeID != nil {
 		if id := policy.defaultRecordTypeID(definition, record); id != "" {
+			if isDescribeOnlyMasterRecordTypeID(id) {
+				return ""
+			}
 			return id
 		}
 	}
-	return defaultRecordTypeID(definition)
+	id := defaultRecordTypeID(definition)
+	if isDescribeOnlyMasterRecordTypeID(id) {
+		return ""
+	}
+	return id
+}
+
+func isDescribeOnlyMasterRecordTypeID(id storage.ID) bool {
+	return storage.IDsEqual(id, storage.ID("012000000000000AAA"))
 }
 
 func (vm *VM) applyBeforeDMLDerivedFields(records []storage.Record) {
@@ -2301,6 +2533,9 @@ func (vm *VM) applyBeforeDMLDerivedFields(records []storage.Record) {
 		objectName, ok := vm.resolveObjectName(records[i].Object)
 		if !ok {
 			continue
+		}
+		if strings.EqualFold(objectName, "UserRole") {
+			vm.ensureUserRoleGroup(records[i])
 		}
 		policy := dmlPolicyForObject(objectName)
 		if policy == nil || policy.beforeDMLDerivedFields == nil {
@@ -2365,6 +2600,7 @@ func (vm *VM) applyStoredDMLDerivedFields(records []storage.Record, results []dm
 		policy.storedDMLDerivedFields(vm, &record)
 		object.Records[recordID] = record
 		vm.Org.Objects[objectName] = object
+		vm.ensureUserRoleGroup(record)
 	}
 }
 
@@ -2382,6 +2618,9 @@ func (vm *VM) applyTestSObjectNameDefaults(records []storage.Record, defaultMiss
 }
 
 func (vm *VM) defaultValueForRecordField(definition storage.ObjectDefinition, record storage.Record, field storage.Field) (storage.Value, bool) {
+	if value, ok := storage.CurrencyDefaultForField(vm.Org, storage.ID(vm.currentUserID()), field); ok {
+		return value, true
+	}
 	rawDefault := strings.TrimSpace(field.DefaultValue)
 	if vm != nil && vm.Org != nil && (strings.Contains(rawDefault, "$RecordType") || vmFormulaDefaultShouldEvaluate(field, rawDefault)) {
 		if value, _, ok := dml.EvaluateRecordFormulaValueInOrg(rawDefault, field, vm.Org, definition, record); ok {
@@ -2420,6 +2659,9 @@ func (vm *VM) applyTestSObjectNameDefault(definition storage.ObjectDefinition, r
 	if !strings.HasSuffix(apiName, "__c") && !strings.HasSuffix(apiName, "__e") {
 		return
 	}
+	if record.HasExplicitNull("Name") && strings.HasSuffix(apiName, "__c") && field.Type == storage.FieldString && !field.AutoNumber {
+		return
+	}
 	name := strings.TrimSpace(definition.Label)
 	if name == "" {
 		name = strings.TrimSuffix(definition.APIName, "__c")
@@ -2450,6 +2692,11 @@ func successfulDMLInputs(records, before []storage.Record, results []dml.Result)
 }
 
 func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNone bool, externalIDField string, options dml.Options, result *Result) ([]dml.Result, error) {
+	if externalIDField != "" {
+		if err := vm.validateDatabaseUpsertExternalIDField(records, externalIDField); err != nil {
+			return nil, err
+		}
+	}
 	appendTraceLazy(result, "apex.dml.upsert", "apex.dml", func() map[string]any {
 		return vm.traceDMLArgs("upsert", records, len(records))
 	})
@@ -2576,7 +2823,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		return nil, err
 	}
 	vm.stripTransientDMLDerivedFields(records)
-	if err := vm.applyPerRecordDMLTargetOptions(records, targets); err != nil {
+	if err := vm.applyPerRecordDMLTargetOptions("upsert", records, targets); err != nil {
 		return nil, err
 	}
 	engine := vm.newDeferredAutomationDMLEngine(result)
@@ -2669,6 +2916,33 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		vm.clearCustomDataCache()
 	}
 	return results, nil
+}
+
+func (vm *VM) validateDatabaseUpsertExternalIDField(records []storage.Record, fieldName string) error {
+	seenObjects := make(map[string]bool)
+	for _, record := range records {
+		objectName, definition, ok := vm.describeObjectDefinition(record.Object)
+		if !ok {
+			return newExceptionError("System.SObjectException", fmt.Sprintf("Invalid field for upsert, must be an External Id custom or standard indexed field: %s", fieldName))
+		}
+		if seenObjects[objectName] {
+			continue
+		}
+		seenObjects[objectName] = true
+		canonical, found := storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
+		if !found {
+			return newExceptionError("System.SObjectException", fmt.Sprintf("Invalid field for upsert, must be an External Id custom or standard indexed field: %s", fieldName))
+		}
+		field := definition.Fields[canonical]
+		valid := strings.EqualFold(canonical, "Id") || field.ExternalID || field.IDLookup
+		if strings.EqualFold(canonical, "Name") && storage.IsCustomSettingDefinition(definition) {
+			valid = true
+		}
+		if !valid {
+			return newExceptionError("System.SObjectException", fmt.Sprintf("Invalid field for upsert, must be an External Id custom or standard indexed field: %s", fieldName))
+		}
+	}
+	return nil
 }
 
 func (vm *VM) hasAutomationForDML(records []storage.Record) bool {
@@ -3006,6 +3280,15 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 				continue
 			}
 		}
+		// Function aliases are readable query projections, not stored fields.
+		// Authored fields still reach DML validation, even on queried records.
+		if definition.APIName != "" {
+			if _, known := definition.Fields[canonicalField]; !known &&
+				vm.queriedSObjectFieldsIncludes(*value, field) && !explicitField &&
+				!isUserSetSObjectFieldAlias(*value, field) && !isUserSetSObjectFieldAlias(*value, canonicalField) {
+				continue
+			}
+		}
 		converted, err := storageValueFromVM(fieldValue)
 		if definition.APIName != "" {
 			if fieldDef, ok := definition.Fields[canonicalField]; ok {
@@ -3070,6 +3353,7 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 			recordFieldSourceByAlias[aliasKey] = field
 		}
 	}
+	vm.captureLoadedReferenceInput(*value, &record)
 	return record, nil
 }
 
@@ -3933,6 +4217,18 @@ func putVMFieldPath(root Value, field string, fieldValue Value) {
 }
 
 func (vm *VM) putVMRecordFieldPath(root Value, objectName, field string, fieldValue Value) {
+	// Unaliased toLabel projects onto its source field in the Apex record view.
+	// Explicit aliases are already plain keys in the projected storage record.
+	if open := strings.IndexByte(field, '('); open > 0 && strings.EqualFold(strings.TrimSpace(field[:open]), "TOLABEL") {
+		if fields := selectedSOQLFunctionFields(field); len(fields) == 1 {
+			field = fields[0]
+		}
+	}
+	// A current-object qualifier is not a parent relationship. Use the same
+	// schema-aware identity check as the queried-field visibility markers.
+	if dot := strings.IndexByte(field, '.'); dot >= 0 && vm.soqlFieldQualifierMatchesObject(objectName, field[:dot]) {
+		field = strings.TrimSpace(field[dot+1:])
+	}
 	if !strings.Contains(field, ".") {
 		if fieldValue.Kind == ValueNull {
 			if parentType, ok := vm.parentRelationshipObjectType(objectName, field); ok {
@@ -3948,6 +4244,16 @@ func (vm *VM) putVMRecordFieldPath(root Value, objectName, field string, fieldVa
 	currentObject := objectName
 	for _, part := range parts[:len(parts)-1] {
 		next, ok := current.Fields[part]
+		if !ok {
+			// SELECT paths may spell the same relationship with different casing.
+			// Reuse its object so projected fields share one queried-field view.
+			for name, value := range current.Fields {
+				if strings.EqualFold(name, part) {
+					part, next, ok = name, value, true
+					break
+				}
+			}
+		}
 		if !ok || next.Kind != ValueObject {
 			nextType := part
 			if parentType, ok := vm.parentRelationshipObjectType(currentObject, part); ok {
@@ -4140,6 +4446,17 @@ func storageValueFromVMForField(value Value, field storage.Field) (storage.Value
 		if value.Kind == ValueString {
 			return storage.BlobValue(value.Text), nil
 		}
+	case storage.FieldTime:
+		// Time uses the existing clock string storage representation. Its field
+		// metadata restores the Apex scalar on assignment and subsequent reads.
+		if value.Kind == ValueString {
+			return storage.StringValue(value.Text), nil
+		}
+		if value.Kind == ValueObject && value.Type == "Time" {
+			if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
+				return storage.StringValue(raw.Text), nil
+			}
+		}
 	case storage.FieldDate:
 		if value.Kind == ValueString {
 			return storage.DateValue(value.Text), nil
@@ -4176,7 +4493,11 @@ func storageValueFromVMForField(value Value, field storage.Field) (storage.Value
 		}
 	case storage.FieldDecimal:
 		if value.Kind == ValueInt {
-			return storage.DecimalValue(strconv.FormatInt(value.Int, 10) + ".0"), nil
+			text := strconv.FormatInt(value.Int, 10)
+			if !strings.EqualFold(strings.TrimSpace(field.DisplayType), "CURRENCY") {
+				text += ".0"
+			}
+			return storage.DecimalValue(text), nil
 		}
 		if value.Kind == ValueDecimal {
 			return storageValueFromVM(value)
@@ -4244,12 +4565,19 @@ func coerceSObjectFieldRuntimeValue(value Value, field storage.Field) Value {
 	if err != nil {
 		return value
 	}
-	return vmValueFromStorage(stored)
+	converted := vmValueFromStorage(stored)
+	if field.Type == storage.FieldTime && converted.Kind == ValueString {
+		return platformScalar("Time", converted.Text)
+	}
+	return converted
 }
 
 func coerceStoredSObjectFieldRuntimeValue(value Value, field storage.Field) Value {
 	if value.Kind == ValueNull {
 		return storageFieldNullValue(field)
+	}
+	if field.Type == storage.FieldTime && value.Kind == ValueString {
+		return platformScalar("Time", value.Text)
 	}
 	if value.Kind != ValueString || !sObjectFieldReadsAsNumeric(field) {
 		return value
@@ -4266,11 +4594,44 @@ func coerceStoredSObjectFieldRuntimeValue(value Value, field storage.Field) Valu
 	return out
 }
 
-func coerceReadSObjectFieldRuntimeValue(value Value, field storage.Field) Value {
+func coerceReadSObjectFieldRuntimeValue(receiver, value Value, field storage.Field) Value {
 	if rawRecordTypeDefaultRuntimeValue(value, field) {
 		return storageFieldNullValue(field)
 	}
-	return coerceStoredSObjectFieldRuntimeValue(value, field)
+	// MetadataRelationship fields targeting EntityDefinition or FieldDefinition
+	// expose their qualified API name as Apex String values. Relationship
+	// hydration may temporarily carry that name with Id identity; normalize it
+	// before ordinary reference coercion can apply 15-character Id semantics.
+	if fieldReferencesNamedMetadata(field) {
+		if text, ok := platformScalarObjectText(value); ok {
+			return String(text)
+		}
+		if value.Kind == ValueString {
+			value.Type = ""
+			value.Static = ""
+			value.Runtime = ""
+			return value
+		}
+	}
+	value = coerceStoredSObjectFieldRuntimeValue(value, field)
+	// Caller-owned inputs keep their assigned precision. Trigger and query views
+	// have a minimum declared Currency scale without rounding overprecision.
+	_, queried := receiver.Fields[sobjectQueriedFieldsField]
+	materialized := isTriggerSObject(receiver) || (queried && !dmlAccessibleSObject(receiver))
+	if !materialized || field.Type != storage.FieldDecimal ||
+		!strings.EqualFold(strings.TrimSpace(field.DisplayType), "CURRENCY") ||
+		value.Kind != ValueDecimal || field.Scale <= decimalScale(value) {
+		return value
+	}
+	rational, ok := valueDecimalRat(value)
+	if !ok {
+		return value
+	}
+	padded, err := decimalFromText(rational.FloatString(field.Scale))
+	if err != nil {
+		return value
+	}
+	return padded
 }
 
 func coerceRawRecordTypeDefaultTokenRuntimeValue(fieldName string, value Value) Value {
@@ -4334,15 +4695,32 @@ func decimalStorageText(value Value) string {
 	return strconv.FormatFloat(value.Decimal, 'f', -1, 64)
 }
 
+func soqlQuotedStringLiteral(text string) string {
+	text = strings.ReplaceAll(text, `\`, `\u005C`)
+	text = strings.ReplaceAll(text, "'", "''")
+	return "'" + text + "'"
+}
+
 func soqlLiteral(value Value) string {
 	switch value.Kind {
 	case ValueNull:
 		return "null"
 	case ValueString:
-		if strings.EqualFold(value.Type, "Id") && len(value.Text) == 15 {
-			return "'" + strings.ReplaceAll(apexIDTo18(value.Text), "'", "''") + "'"
+		if strings.EqualFold(value.Type, "Id") {
+			// A typed Id bind is normally emitted bare so the SOQL parser keeps
+			// its ID semantics. An all-numeric Salesforce Id is ambiguous with a
+			// decimal/integer literal, though; quote that shape so a 15-character
+			// Id such as 001000000000001 is not parsed as an Integer.
+			if value.Text != "" && strings.Trim(value.Text, "0123456789") == "" {
+				return "'" + strings.ReplaceAll(value.Text, "'", "''") + "'"
+			}
+			// Keep typed Id binds as Id literals so the SOQL engine preserves
+			// the case-sensitive 15-character portion. Quoting this value
+			// turns it into ordinary text and can make distinct key prefixes
+			// compare equal.
+			return value.Text
 		}
-		return "'" + strings.ReplaceAll(value.Text, "'", "''") + "'"
+		return soqlQuotedStringLiteral(value.Text)
 	case ValueInt:
 		return fmt.Sprintf("%d", value.Int)
 	case ValueDecimal:
@@ -4370,9 +4748,14 @@ func soqlLiteral(value Value) string {
 				return raw.Text
 			}
 		}
-		if strings.EqualFold(value.Type, "Id") || strings.EqualFold(value.Type, "String") {
+		if strings.EqualFold(value.Type, "Id") {
 			if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
-				return "'" + strings.ReplaceAll(raw.Text, "'", "''") + "'"
+				return raw.Text
+			}
+		}
+		if strings.EqualFold(value.Type, "String") {
+			if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
+				return soqlQuotedStringLiteral(raw.Text)
 			}
 		}
 		if idValue, ok := value.Fields["Id"]; ok {
@@ -4913,6 +5296,11 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 	if err != nil {
 		return err
 	}
+	if op == "delete" {
+		if err := vm.validateDeleteStatementIDs(value); err != nil {
+			return err
+		}
+	}
 	var traceRecords []storage.Record
 	if traceIsEnabled(result) {
 		var recordsErr error
@@ -4931,11 +5319,8 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 			return err
 		}
 	}
-	if err := vm.enforceDMLRecordAccess(op, value, externalIDField, dmlMode == "USER_MODE"); err != nil {
-		return err
-	}
 	traceStart, traceStartedAt = traceSpanStart(result)
-	results, err := vm.applyDML(op, value, true, externalIDField, dml.Options{}, result)
+	results, err := vm.applyDMLWithRecordAccess(op, value, true, externalIDField, dml.Options{}, result, dmlMode == "USER_MODE")
 	if err != nil {
 		return err
 	}
@@ -4945,7 +5330,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 	for _, dmlResult := range results {
 		if !dmlResult.Success {
 			vm.addVisualforceDMLPageMessages(results)
-			return databaseDMLException(op, results, vm.dmlExceptionObjectTypes(value))
+			return statementDMLException(op, results, vm.dmlExceptionObjectTypes(value))
 		}
 	}
 	if expr.Kind == ir.ExprVariable {
@@ -4955,6 +5340,52 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 		}
 	}
 	return nil
+}
+
+// Salesforce rejects an explicitly typed delete target whose Id cannot belong
+// to the target SObject before it reaches DML. Preserve that ListException
+// boundary for dynamic SObject deletes; ordinary missing records still flow
+// through the DML engine and retain their status-code behavior.
+func (vm *VM) validateDeleteStatementIDs(value Value) error {
+	// DML normalizes missing object key prefixes when it creates its engine.
+	// Delete validation runs first, so normalize the shared org here as well
+	// and preserve Salesforce's pre-DML invalid-ID boundary for dynamic records.
+	if vm != nil && vm.Org != nil {
+		storage.EnsureUniqueKeyPrefixes(vm.Org)
+	}
+	index := 0
+	var validate func(Value) error
+	validate = func(candidate Value) error {
+		if candidate.Kind == ValueList {
+			for _, item := range candidate.List {
+				if err := validate(item); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+		if candidate.Kind != ValueObject {
+			return nil
+		}
+		id := sObjectIDFromFields(candidate.Fields)
+		if id == "" {
+			index++
+			return nil
+		}
+		if err := validateApexIDShape(string(id)); err != nil {
+			return newExceptionError("ListException", fmt.Sprintf("Invalid id at index %d: %s", index, id))
+		}
+		if vm != nil && vm.Org != nil {
+			if objectName, ok := vm.resolveObjectName(candidate.Type); ok {
+				if prefix := vm.Org.Objects[objectName].Definition.KeyPrefix; prefix != "" && !strings.HasPrefix(string(id), prefix) {
+					return newExceptionError("ListException", fmt.Sprintf("Invalid id at index %d: %s", index, id))
+				}
+			}
+		}
+		index++
+		return nil
+	}
+	return validate(value)
 }
 func copyOrgIDSequences(in map[string]uint64) map[string]uint64 {
 	if in == nil {

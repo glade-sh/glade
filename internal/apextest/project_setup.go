@@ -769,6 +769,7 @@ func projectProfileLicenseID(org *storage.OrgState, name string) (storage.ID, bo
 }
 
 func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project, permissionSetMetadataCache map[string]permissionSetMetadataCacheEntry) {
+	applyProjectCustomPermissionRecords(org, p)
 	if org == nil || len(p.PermissionSetFiles) == 0 {
 		return
 	}

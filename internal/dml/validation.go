@@ -80,7 +80,18 @@ func canonicalizeRecord(namespace string, definition storage.ObjectDefinition, o
 }
 
 func normalizeStoredFieldValue(field storage.Field, value storage.Value) storage.Value {
-	if value.Kind != storage.ValueString || !isSingleLineTextField(field) {
+	if value.Kind != storage.ValueString {
+		return value
+	}
+	if strings.EqualFold(field.DisplayType, "RICHTEXTAREA") {
+		value.String = sanitizeRichText(value.String)
+		return value
+	}
+	if field.Type == storage.FieldString {
+		// Normalize the stored copy without rewriting the caller's SObject.
+		value.String = strings.Trim(value.String, " ")
+	}
+	if !isSingleLineTextField(field) {
 		return value
 	}
 	if strings.ContainsAny(value.String, "\r\n") {
@@ -338,7 +349,11 @@ func (e Engine) applyStringLengthRules(definition storage.ObjectDefinition, reco
 			record.Fields[fieldName] = value
 			continue
 		}
-		return dmlErrorf("STRING_TOO_LONG", []string{canonical}, "dml: value too long for field %s.%s: max length %d", record.Object, canonical, field.Length)
+		label := strings.TrimSpace(field.Label)
+		if label == "" {
+			label = canonical
+		}
+		return dmlErrorf("STRING_TOO_LONG", []string{canonical}, "%s: data value too large: %s (max length=%d)", label, value.String, field.Length)
 	}
 	return nil
 }
@@ -390,6 +405,13 @@ func stripImplicitReadOnlyDefaultFields(definition storage.ObjectDefinition, nam
 }
 
 func storageFieldValueLooksImplicit(field storage.Field, value storage.Value) bool {
+	if field.Type == storage.FieldString &&
+		storage.FieldFlagValue(field.DefaultedOnCreate, false) &&
+		!storage.FieldFlagValue(field.Createable, true) &&
+		!storage.FieldFlagValue(field.Updateable, true) &&
+		(strings.HasSuffix(strings.ToLower(field.APIName), "number") || field.AutoNumber) {
+		return true
+	}
 	if storageValueIsDefaultZero(value) {
 		return true
 	}
@@ -441,35 +463,6 @@ func storageValueIsDefaultZero(value storage.Value) bool {
 	default:
 		return false
 	}
-}
-
-func stripMissingGeneratedRecordTypeID(org *storage.OrgState, record *storage.Record) {
-	if org == nil || record == nil || record.Fields == nil {
-		return
-	}
-	value, ok := record.Fields["RecordTypeId"]
-	if !ok {
-		return
-	}
-	recordTypeID := ""
-	switch value.Kind {
-	case storage.ValueID:
-		recordTypeID = string(value.ID)
-	case storage.ValueString:
-		recordTypeID = value.String
-	default:
-		return
-	}
-	if recordTypeID != "012000000000000AAA" {
-		return
-	}
-	recordTypes, ok := org.Objects["RecordType"]
-	if ok {
-		if _, exists := recordTypes.Records[storage.ID(recordTypeID)]; exists {
-			return
-		}
-	}
-	delete(record.Fields, "RecordTypeId")
 }
 
 func validateFieldWriteabilityName(definition storage.ObjectDefinition, namespace, objectName, field string, create bool) error {
@@ -608,12 +601,15 @@ func validateRequired(definition storage.ObjectDefinition, record storage.Record
 			continue
 		}
 		if value, ok := record.GetField(name); ok {
-			if requiredFieldValueIsBlank(field, value) {
+			if requiredFieldValueIsBlankForObject(definition, name, field, value) {
 				missing = append(missing, name)
 			}
 			continue
 		}
 		if record.HasExplicitNull(name) {
+			if explicitNullCustomTextNameUsesRecordID(definition, record) && strings.EqualFold(name, "Name") {
+				continue
+			}
 			missing = append(missing, name)
 			continue
 		}
@@ -627,6 +623,19 @@ func validateRequired(definition storage.ObjectDefinition, record storage.Record
 	return nil
 }
 
+// explicitNullCustomTextNameUsesRecordID reports the Salesforce custom-object
+// contract for an explicitly assigned null text Name: the insert succeeds and
+// the generated record Id is stored as the Name value. Missing Name values
+// remain required, and auto-number/custom-setting/event names keep their own
+// rules.
+func explicitNullCustomTextNameUsesRecordID(definition storage.ObjectDefinition, record storage.Record) bool {
+	if !record.HasExplicitNull("Name") || !hasSuffixFold(definition.APIName, "__c") {
+		return false
+	}
+	field, ok := fieldByName(definition, "Name")
+	return ok && field.Type == storage.FieldString && !field.AutoNumber
+}
+
 func validateRequiredUpdate(definition storage.ObjectDefinition, record storage.Record) error {
 	var missing []string
 	for name, field := range definition.Fields {
@@ -634,7 +643,7 @@ func validateRequiredUpdate(definition storage.ObjectDefinition, record storage.
 			continue
 		}
 		if value, ok := record.GetField(name); ok {
-			if requiredFieldValueIsBlank(field, value) {
+			if requiredFieldValueIsBlankForObject(definition, name, field, value) {
 				missing = append(missing, name)
 			}
 			continue
@@ -708,8 +717,25 @@ func requiredFieldValueIsBlank(field storage.Field, value storage.Value) bool {
 	}
 }
 
+func requiredFieldValueIsBlankForObject(definition storage.ObjectDefinition, fieldName string, field storage.Field, value storage.Value) bool {
+	// Salesforce accepts an explicitly supplied empty Blob for Attachment.Body.
+	// The field is required to be present, but zero-length content is a valid
+	// attachment body. Keep the stricter empty-Blob rule for other objects,
+	// including ContentVersion.VersionData.
+	if strings.EqualFold(definition.APIName, "Attachment") && strings.EqualFold(fieldName, "Body") && value.Kind == storage.ValueBlob {
+		return false
+	}
+	return requiredFieldValueIsBlank(field, value)
+}
+
 func requiredFieldsMessage(definition storage.ObjectDefinition, missing []string) string {
 	if len(missing) == 1 && strings.EqualFold(missing[0], "Name") {
+		// Apex Database.Error uses the API field name for the standard Account
+		// required-name failure. Keep the label-based wording for other object
+		// surfaces, which may expose a user-facing field label instead.
+		if strings.EqualFold(definition.APIName, "Account") {
+			return fmt.Sprintf("Required fields are missing: [%s]", strings.Join(missing, ", "))
+		}
 		if field, ok := fieldByName(definition, "Name"); ok {
 			label := strings.TrimSpace(field.Label)
 			if label != "" && !strings.EqualFold(label, "Name") {
@@ -903,6 +929,17 @@ func isGeneratedPlaceholderInsertID(id storage.ID) bool {
 }
 
 func (e *Engine) validateReferences(definition storage.ObjectDefinition, record storage.Record) error {
+	return e.validateReferencesWithLoadedView(definition, record, false)
+}
+
+func (e *Engine) validateUpdateReferences(definition storage.ObjectDefinition, record storage.Record) error {
+	return e.validateReferencesWithLoadedView(definition, record, true)
+}
+
+func (e *Engine) validateReferencesWithLoadedView(definition storage.ObjectDefinition, record storage.Record, update bool) error {
+	if err := e.validateFieldPermissionTarget(record); err != nil {
+		return err
+	}
 	if record.System.OwnerID != "" && !e.validSystemOwnerID(definition, record.System.OwnerID) {
 		return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{"OwnerId"}, "dml: invalid owner reference %s.OwnerId %s", record.Object, record.System.OwnerID)
 	}
@@ -919,6 +956,19 @@ func (e *Engine) validateReferences(definition storage.ObjectDefinition, record 
 			return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{name}, "dml: invalid reference %s.%s", record.Object, name)
 		}
 		found := false
+		deleted := false
+		loadedID := record.LoadedReferences[name]
+		loaded := loadedID != "" && storage.IDsEqual(loadedID, id)
+		setNull := false
+		if loaded {
+			for _, relation := range definition.Relations {
+				canonical, ok := storage.ResolveFieldName(definition, e.Org.Namespace, relation.Field)
+				if ok && canonical == name && relation.SetNullOnDelete {
+					setNull = true
+					break
+				}
+			}
+		}
 		for _, targetName := range field.ReferenceTo {
 			canonical, ok := storage.ResolveObjectName(*e.Org, targetName)
 			if !ok {
@@ -926,13 +976,26 @@ func (e *Engine) validateReferences(definition storage.ObjectDefinition, record 
 			}
 			target := e.Org.Objects[canonical]
 			_, parent, ok := storage.LookupRecordByID(target.Records, id)
-			if ok && !parent.System.IsDeleted {
-				found = true
-				break
+			if ok {
+				if !parent.System.IsDeleted || (update && record.ID != "" && loaded && setNull) {
+					found = true
+					break
+				}
+				deleted = true
 			}
+		}
+		if !found && deleted {
+			return dmlErrorf("ENTITY_IS_DELETED", nil, "entity is deleted")
+		}
+		// Loaded provenance never authorizes an absent or hard-deleted target.
+		if !found && loaded {
+			return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{name}, "dml: reference %s.%s points to missing record %s", record.Object, name, id)
 		}
 		if !found && isPolymorphicReference(definition, name) {
 			found = e.referenceExistsInAnyObject(id)
+		}
+		if !found && allowDescribeOnlyMasterRecordTypeReference(name, field, id) {
+			continue
 		}
 		if !found && allowMissingLocalReference(definition, name, id) {
 			continue
@@ -942,6 +1005,18 @@ func (e *Engine) validateReferences(definition storage.ObjectDefinition, record 
 		}
 	}
 	return nil
+}
+
+func allowDescribeOnlyMasterRecordTypeReference(fieldName string, field storage.Field, id storage.ID) bool {
+	if !strings.EqualFold(fieldName, "RecordTypeId") || !storage.IDsEqual(id, storage.ID("012000000000000AAA")) {
+		return false
+	}
+	for _, target := range field.ReferenceTo {
+		if strings.EqualFold(target, "RecordType") {
+			return true
+		}
+	}
+	return false
 }
 
 func (e *Engine) validSystemOwnerID(definition storage.ObjectDefinition, id storage.ID) bool {
@@ -1000,7 +1075,7 @@ func isPolymorphicReference(definition storage.ObjectDefinition, fieldName strin
 
 func (e *Engine) referenceExistsInAnyObject(id storage.ID) bool {
 	for _, object := range e.Org.Objects {
-		record, ok := object.Records[id]
+		_, record, ok := storage.LookupRecordByID(object.Records, id)
 		if ok && !record.System.IsDeleted {
 			return true
 		}

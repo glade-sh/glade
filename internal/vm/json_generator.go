@@ -14,7 +14,6 @@ func newJSONGenerator(pretty bool) Value {
 	gen := Object("JSONGenerator")
 	gen.Fields["pretty"] = Bool(pretty)
 	gen.Fields["closed"] = Bool(false)
-	gen.Fields["unfinishedClose"] = Bool(false)
 	gen.Fields["rootWritten"] = Bool(false)
 	gen.Fields["out"] = String("")
 	gen.Fields["stack"] = List()
@@ -254,8 +253,12 @@ func jsonGeneratorEndContainer(receiver Value, kind string) (Value, Value, bool,
 		return Null, receiver, false, true, jsonGeneratorException("JSONGenerator object field is missing a value")
 	}
 	updated := receiver
-	if jsonGeneratorIntField(frame, "count").Int > 0 && jsonGeneratorPretty(receiver) {
-		jsonGeneratorAppend(&updated, "\n"+strings.Repeat("  ", len(stack.List)-1))
+	if jsonGeneratorPretty(receiver) {
+		if kind == "object" && jsonGeneratorIntField(frame, "count").Int > 0 {
+			jsonGeneratorAppend(&updated, "\n"+strings.Repeat("  ", jsonGeneratorObjectDepth(stack)-1))
+		} else {
+			jsonGeneratorAppend(&updated, " ")
+		}
 	}
 	if kind == "object" {
 		jsonGeneratorAppend(&updated, "}")
@@ -265,6 +268,17 @@ func jsonGeneratorEndContainer(receiver Value, kind string) (Value, Value, bool,
 	stack.List = stack.List[:len(stack.List)-1]
 	updated.Fields["stack"] = stack
 	return Null, updated, true, true, nil
+}
+
+// Pretty arrays remain inline; only object frames increase indentation.
+func jsonGeneratorObjectDepth(stack Value) int {
+	depth := 0
+	for _, frame := range stack.List {
+		if jsonGeneratorStringField(frame, "kind").Text == "object" {
+			depth++
+		}
+	}
+	return depth
 }
 
 func jsonGeneratorContainerName(kind string) string {
@@ -315,7 +329,7 @@ func jsonGeneratorWriteFieldName(receiver Value, name string) (Value, error) {
 		jsonGeneratorAppend(&updated, ",")
 	}
 	if jsonGeneratorPretty(updated) {
-		jsonGeneratorAppend(&updated, "\n"+strings.Repeat("  ", len(stack.List)))
+		jsonGeneratorAppend(&updated, "\n"+strings.Repeat("  ", jsonGeneratorObjectDepth(stack)))
 	}
 	jsonGeneratorAppend(&updated, jsonGeneratorQuote(name))
 	if jsonGeneratorPretty(updated) {
@@ -432,7 +446,7 @@ func jsonGeneratorBeforeValue(receiver Value) (Value, error) {
 			jsonGeneratorAppend(&updated, ",")
 		}
 		if jsonGeneratorPretty(updated) {
-			jsonGeneratorAppend(&updated, "\n"+strings.Repeat("  ", len(stack.List)))
+			jsonGeneratorAppend(&updated, " ")
 		}
 		frame.Fields["count"] = Int(count + 1)
 		stack.List[len(stack.List)-1] = frame
@@ -458,30 +472,39 @@ func jsonGeneratorClose(receiver Value) (Value, error) {
 	if jsonGeneratorBoolField(updated, "closed").Bool {
 		return updated, nil
 	}
-	stack := jsonGeneratorStack(updated)
-	if len(stack.List) > 0 {
-		updated.Fields["unfinishedClose"] = Bool(true)
+	for {
+		stack := jsonGeneratorStack(updated)
+		if len(stack.List) == 0 {
+			break
+		}
+		frame := stack.List[len(stack.List)-1]
+		kind := jsonGeneratorStringField(frame, "kind").Text
+		if kind == "object" && !jsonGeneratorBoolField(frame, "expectingField").Bool {
+			// Closing retains a pending field name without inventing a value.
+			// Its separator is only observable once a value is written.
+			separator := ":"
+			if jsonGeneratorPretty(updated) {
+				separator = " : "
+			}
+			out := jsonGeneratorStringField(updated, "out").Text
+			updated.Fields["out"] = String(strings.TrimSuffix(out, separator))
+			frame.Fields["expectingField"] = Bool(true)
+			frame.Fields["pendingField"] = String("")
+			stack.List[len(stack.List)-1] = frame
+			updated.Fields["stack"] = stack
+		}
+		_, next, _, _, err := jsonGeneratorEndContainer(updated, kind)
+		updated = next
+		if err != nil {
+			return updated, err
+		}
 	}
-	updated.Fields["stack"] = stack
 	updated.Fields["closed"] = Bool(true)
 	return updated, nil
 }
 
 func jsonGeneratorFinish(receiver Value) (Value, error) {
-	updated := receiver
-	if jsonGeneratorBoolField(updated, "unfinishedClose").Bool {
-		return updated, jsonGeneratorException("JSONGenerator cannot close with open JSON containers")
-	}
-	if jsonGeneratorBoolField(updated, "closed").Bool {
-		return updated, nil
-	}
-	stack := jsonGeneratorStack(updated)
-	if len(stack.List) > 0 {
-		return updated, nil
-	}
-	updated.Fields["stack"] = stack
-	updated.Fields["closed"] = Bool(true)
-	return updated, nil
+	return jsonGeneratorClose(receiver)
 }
 
 func jsonGeneratorEnsureOpen(receiver Value) error {
@@ -566,7 +589,7 @@ func jsonPlatformScalarFromValue(value Value) (any, bool) {
 		typeName = rest
 	}
 	switch typeName {
-	case "Date", "Datetime", "URL":
+	case "Date", "Datetime", "URL", "UUID":
 		return text.Text, true
 	case "Time":
 		if clock, err := parseTimeText(text.Text); err == nil {
@@ -576,7 +599,7 @@ func jsonPlatformScalarFromValue(value Value) (any, bool) {
 	case "Blob":
 		return base64.StdEncoding.EncodeToString([]byte(text.Text)), true
 	case "Id":
-		return text.Text, true
+		return displayIDText(text.Text), true
 	default:
 		return nil, false
 	}

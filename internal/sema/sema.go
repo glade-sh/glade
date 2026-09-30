@@ -22,12 +22,12 @@ import (
 // SemanticABI identifies the behavior of semantic diagnostics, inference,
 // visibility, and exported types. Any change to those behaviors must bump this
 // value so persisted semantic results fail closed.
-const SemanticABI = "sema-v5"
+const SemanticABI = "sema-v7"
 
 // PlatformABI identifies the built-in Salesforce platform model consumed by
 // semantic analysis. Changes to built-in signatures, aliases, or visibility
 // must bump this value so persisted semantic results fail closed.
-const PlatformABI = "salesforce-platform-v3"
+const PlatformABI = "salesforce-platform-v4"
 
 type Result struct {
 	Project     typesys.ProjectInfo      `json:"project"`
@@ -266,6 +266,7 @@ func prepareAnalysisIndex(index typesys.Index) typesys.Index {
 func prepareAnalysisIndexWithSources(index typesys.Index, sources *semaSources) typesys.Index {
 	index = enrichIndexWithProjectReferencedSchemaFieldsWithSources(index, sources)
 	index = enrichIndexWithSchemaDerivedObjects(index)
+	index = enrichIndexWithOrgShapeFields(index)
 	return index
 }
 
@@ -437,7 +438,15 @@ func semaEnrichSchemaObject(object schema.Object) schema.Object {
 }
 
 func semaShareObjectForSchemaObject(object schema.Object) (schema.Object, bool) {
-	if !strings.HasSuffix(normalizeName(object.Name), "__c") || strings.TrimSpace(object.SharingModel) == "" {
+	if !strings.HasSuffix(normalizeName(object.Name), "__c") || object.CustomSettingsType != "" {
+		return schema.Object{}, false
+	}
+	// Salesforce creates the custom-object share shape even when the local
+	// object metadata omits sharingModel/enableSharing. Treat an empty model as
+	// unknown metadata, not as evidence that the generated share object is
+	// absent. Preserve the existing exclusion for an explicit non-shareable
+	// model such as PublicReadWrite.
+	if !object.EnableSharing && object.SharingModel != "" && !semaShareCapableSharingModel(object.SharingModel) {
 		return schema.Object{}, false
 	}
 	name := strings.TrimSuffix(object.Name, "__c") + "__Share"
@@ -452,6 +461,15 @@ func semaShareObjectForSchemaObject(object schema.Object) (schema.Object, bool) 
 			{Name: "RowCause", Type: "Picklist"},
 		},
 	}, true
+}
+
+func semaShareCapableSharingModel(sharingModel string) bool {
+	switch strings.ToLower(strings.TrimSpace(sharingModel)) {
+	case "private", "read", "publicreadonly", "readwrite":
+		return true
+	default:
+		return false
+	}
 }
 
 func semaAppendSchemaFieldIfMissing(fields []schema.Field, field schema.Field) []schema.Field {
@@ -601,7 +619,7 @@ func hasPlatformInheritedMethodSignature(typ typesys.TypeSymbol, member typesys.
 	switch superClass {
 	case "exception":
 		return len(member.Parameters) == 0 &&
-			name == "getmessage" &&
+			(name == "getmessage" || name == "getstacktracestring") &&
 			sameSemaSignatureType(member.Type, "String") &&
 			(hasModifier(member.Modifiers, "public") || hasModifier(member.Modifiers, "global"))
 	case "visualeditor.dynamicpicklist":
@@ -926,7 +944,7 @@ func (a *Analyzer) collectAdditionalSemaLocalDecls(typ typesys.TypeSymbol, membe
 	if end <= statementStart || end > len(body) {
 		return nil
 	}
-	scopeStart, scopeEnd := blockBoundsAt(body, match[0])
+	scopeStart, scopeEnd := blockBoundsAt(body, match[2])
 	var diagnostics []diagnostic.Diagnostic
 	segment := body[statementStart:end]
 	depth := 0
@@ -1027,7 +1045,7 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 	if isSemaKeyword(typeName) {
 		return nil
 	}
-	scopeStart, scopeEnd := blockBoundsAt(body, match[0])
+	scopeStart, scopeEnd := blockBoundsAt(body, match[2])
 	visibleStart := semaLocalVisibleStart(body, match[1]-1, match[5])
 	for _, ref := range extractTypeNames(typeName) {
 		if !a.hasKnownAtVersion(ref, typ.EffectiveAPIVersion) {
@@ -2033,6 +2051,9 @@ func semaResolvedCallReturnType(model *semaTypeMemberView, receiverType, method 
 	if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
 		return sig.returnType
 	}
+	if returnType := semaApprovalActionReturnType(receiverType, method, argTypes); returnType != "" {
+		return returnType
+	}
 	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), receiverMode)
 	platformBackedCandidates := semaResolvedMembersAllPlatformBacked(model, candidates)
 	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && !platformBackedCandidates {
@@ -2397,15 +2418,6 @@ func semaGeneratedPlatformMethodSignature(model *semaTypeMemberView, receiverTyp
 	params := make([][]string, 0, len(candidates))
 	seen := make(map[string]bool)
 	for _, candidate := range candidates {
-		memberReturn := strings.TrimSpace(candidate.member.Type)
-		if memberReturn == "" {
-			memberReturn = "void"
-		}
-		if returnType == "" {
-			returnType = memberReturn
-		} else if !strings.EqualFold(returnType, memberReturn) {
-			return semaCollectionSignature{}, false
-		}
 		memberParams := make([]string, 0, len(candidate.member.Parameters))
 		for _, param := range candidate.member.Parameters {
 			memberParams = append(memberParams, param.Type)
@@ -2414,7 +2426,22 @@ func semaGeneratedPlatformMethodSignature(model *semaTypeMemberView, receiverTyp
 		if seen[signature] {
 			continue
 		}
+		// Standard-platform overlays can describe one Salesforce overload with
+		// different generic return spellings. Deduplicate by parameters before
+		// comparing return types so that equivalent declarations do not reject
+		// the call.
 		seen[signature] = true
+		memberReturn := strings.TrimSpace(candidate.member.Type)
+		if memberReturn == "" {
+			memberReturn = "void"
+		}
+		if returnType == "" {
+			returnType = memberReturn
+		} else if !strings.EqualFold(returnType, memberReturn) {
+			// Overlays may also retain a richer return type on a distinct
+			// overload. The call checker only needs the parameter set here; the
+			// first return type remains the stable inference result.
+		}
 		params = append(params, memberParams)
 	}
 	if returnType == "" {
@@ -3274,7 +3301,8 @@ func semaIsCustomAPIName(name string) bool {
 		semaHasAPISuffixFold(name, "__e") ||
 		semaHasAPISuffixFold(name, "__mdt") ||
 		semaHasAPISuffixFold(name, "__b") ||
-		semaHasAPISuffixFold(name, "__s")
+		semaHasAPISuffixFold(name, "__s") ||
+		semaHasAPISuffixFold(name, "__share")
 }
 
 func semaHasNamespaceToken(name string) bool {
@@ -3338,7 +3366,7 @@ var (
 	lineLocalDeclPattern           = regexp.MustCompile(`(?m)^\s*(?:final\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
 	wrappedLocalDeclPattern        = regexp.MustCompile(`(?m)^\s*(?:final\s+)?([A-Za-z_][^\n;=(){}]+)[ \t]*\r?\n\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`)
 	noSpaceGenericLocalDeclPattern = regexp.MustCompile(`(?m)(?:^|[;\n])\s*(?:final\s+)?([A-Za-z_][A-Za-z0-9_.]*\s*<[^;=(){}]+>)([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
-	localDeclPattern               = regexp.MustCompile(`(?m)(?:^|[;\n])\s*(?:final\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
+	localDeclPattern               = regexp.MustCompile(`(?m)(?:^|[;{}\n])\s*(?:final\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
 	enhancedForLocalPattern        = regexp.MustCompile(`(?im)\bfor\s*\(\s*(?:final\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*:`)
 	forHeaderPattern               = regexp.MustCompile(`(?i)\bfor\s*\(`)
 	catchLocalPattern              = regexp.MustCompile(`(?im)\bcatch\s*\(\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*\|\s*[A-Za-z_][A-Za-z0-9_.]*)*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)`)

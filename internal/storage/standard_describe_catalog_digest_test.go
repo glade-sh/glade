@@ -216,7 +216,7 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 	wantDigests := map[string]string{
 		"RAW-BROAD-v1":       "f94933f548ac5c35519a493f1c2cd49be847d4c06fd3373d0c3bee2189931dd6",
 		"PROJECTED-BROAD-v1": "0bf585e9f5ce11f288f511d216c0b46d6088cafa8b74a7542e8e83a02f39485e",
-		"RICH-v1":            "1e68e1c0dcb057a1c41b97aa13d74493bcd3a767ce567cf321621b698d17ecde",
+		"RICH-v1":            "947f511ce75447bc19b99d30ffb42a0f68b9b9cb99e3b989cea6a6b31adfb0cb",
 		"REVERSE-v1":         "aa015ff86cdbf7a2ccb15e0c5e3bd1cbc3429ea1be2e08345f1e6332c42c049a",
 	}
 	for _, section := range []string{"RAW-BROAD-v1", "PROJECTED-BROAD-v1", "RICH-v1", "REVERSE-v1"} {

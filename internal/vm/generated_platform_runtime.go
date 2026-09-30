@@ -168,6 +168,12 @@ func (vm *VM) generatedUnsupportedFamilyExplicitMethodError(method Method, recei
 	}
 	key := generatedUnsupportedFamilyKey(className, apexMethodMemberName(method.Name))
 	switch key {
+	case "metadata.operations.enqueuedeployment":
+		if err := vm.metadataDeploymentTestRestriction(); err != nil {
+			return err, true
+		}
+		return nil, false
+
 	case "cartextension.checkoutcreateorder.createorder",
 		"lxscheduler.schedulerresources.getappointmentcandidates",
 		"lxscheduler.schedulerresources.getappointmentslots",
@@ -393,6 +399,15 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 		}
 		object := vm.newGeneratedPlatformObject(generated)
 		initializeGeneratedPlatformValue(&object)
+		if isExceptionType(object.Type) {
+			handled, err := applyExceptionConstructorArgs(&object, ctorArgs)
+			if err != nil {
+				return Null, true, err
+			}
+			if handled {
+				return object, true, nil
+			}
+		}
 		bindPassiveConstructorArgs(&object, ctor, ctorArgs)
 		if err := vm.bindGeneratedPlatformNamedFields(&object, namedArgs); err != nil {
 			return Null, true, err
@@ -590,11 +605,17 @@ func (vm *VM) generatedPlatformInstanceField(receiver Value, fieldName string) (
 		if relationship, isRelationship := vm.typedParentRelationshipFieldValue(receiver, field.Name, value); isRelationship {
 			return relationship, true
 		}
+		if value.Kind == ValueNull && value.Type == "" && field.Type != "" {
+			value.Type = field.Type
+		}
 		return value, true
 	}
 	if _, value, ok := objectFieldValue(receiver, fieldName); ok {
 		if relationship, isRelationship := vm.typedParentRelationshipFieldValue(receiver, fieldName, value); isRelationship {
 			return relationship, true
+		}
+		if value.Kind == ValueNull && value.Type == "" && field.Type != "" {
+			value.Type = field.Type
 		}
 		return value, true
 	}

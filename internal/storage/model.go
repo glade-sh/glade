@@ -91,16 +91,18 @@ func (o *OrgState) ClearRuntimeSchemaStamp() {
 }
 
 type MetadataRegistry struct {
-	Labels                 []LabelMetadata          `json:"labels,omitempty"`
-	ManagedLabelNamespaces []string                 `json:"managedLabelNamespaces,omitempty"`
-	Tabs                   []TabMetadata            `json:"tabs,omitempty"`
-	DataCategoryGroups     []DataCategoryGroup      `json:"dataCategoryGroups,omitempty"`
-	QuickActions           []QuickActionMetadata    `json:"quickActions,omitempty"`
-	FieldSets              []FieldSetMetadata       `json:"fieldSets,omitempty"`
-	StaticResources        []StaticResourceMetadata `json:"staticResources,omitempty"`
-	ContentAssets          []ContentAssetMetadata   `json:"contentAssets,omitempty"`
-	Endpoints              []EndpointMetadata       `json:"endpoints,omitempty"`
-	EmailTemplates         []EmailTemplateMetadata  `json:"emailTemplates,omitempty"`
+	Flows                  []FlowRule                  `json:"flows,omitempty"`
+	DataWeaveResources     []DataWeaveResourceMetadata `json:"dataWeaveResources,omitempty"`
+	Labels                 []LabelMetadata             `json:"labels,omitempty"`
+	ManagedLabelNamespaces []string                    `json:"managedLabelNamespaces,omitempty"`
+	Tabs                   []TabMetadata               `json:"tabs,omitempty"`
+	DataCategoryGroups     []DataCategoryGroup         `json:"dataCategoryGroups,omitempty"`
+	QuickActions           []QuickActionMetadata       `json:"quickActions,omitempty"`
+	FieldSets              []FieldSetMetadata          `json:"fieldSets,omitempty"`
+	StaticResources        []StaticResourceMetadata    `json:"staticResources,omitempty"`
+	ContentAssets          []ContentAssetMetadata      `json:"contentAssets,omitempty"`
+	Endpoints              []EndpointMetadata          `json:"endpoints,omitempty"`
+	EmailTemplates         []EmailTemplateMetadata     `json:"emailTemplates,omitempty"`
 }
 
 type LabelMetadata struct {
@@ -165,6 +167,17 @@ type FieldSetMetadata struct {
 type FieldSetMemberMetadata struct {
 	Field    string `json:"field"`
 	Required bool   `json:"required,omitempty"`
+}
+
+// DataWeaveResourceMetadata retains the original script source and effective
+// component API. ContentPath distinguishes a missing body from an empty script.
+type DataWeaveResourceMetadata struct {
+	Name         string `json:"name"`
+	Namespace    string `json:"namespace,omitempty"`
+	Content      string `json:"content"`
+	APIVersion   string `json:"apiVersion,omitempty"`
+	ContentPath  string `json:"contentPath,omitempty"`
+	MetadataPath string `json:"metadataPath,omitempty"`
 }
 
 type StaticResourceMetadata struct {
@@ -248,11 +261,14 @@ type Field struct {
 	Label                 string              `json:"label,omitempty"`
 	InlineHelpText        string              `json:"inlineHelpText,omitempty"`
 	Type                  FieldType           `json:"type"`
+	MasterDetail          bool                `json:"masterDetail,omitempty"`
 	DisplayType           string              `json:"displayType,omitempty"`
 	Length                int                 `json:"length,omitempty"`
 	Precision             int                 `json:"precision,omitempty"`
 	Scale                 int                 `json:"scale,omitempty"`
+	ScaleSpecified        bool                `json:"scaleSpecified,omitempty"`
 	Formula               string              `json:"formula,omitempty"`
+	FormulaTreatBlanksAs  string              `json:"formulaTreatBlanksAs,omitempty"`
 	DefaultValue          string              `json:"defaultValue,omitempty"`
 	CompoundFieldName     string              `json:"compoundFieldName,omitempty"`
 	AutoNumber            bool                `json:"autoNumber,omitempty"`
@@ -284,6 +300,7 @@ type Field struct {
 	ReferenceTo           []string            `json:"referenceTo,omitempty"`
 	RelationshipName      string              `json:"relationshipName,omitempty"`
 	RelationshipOrder     *int                `json:"relationshipOrder,omitempty"`
+	ReparentableMasterDetail bool              `json:"reparentableMasterDetail,omitempty"`
 	ChildRelationshipName string              `json:"childRelationshipName,omitempty"`
 	PicklistController    string              `json:"picklistController,omitempty"`
 	PicklistValueSettings []PicklistSetting   `json:"picklistValueSettings,omitempty"`
@@ -291,9 +308,20 @@ type Field struct {
 }
 
 type FilteredLookupInfo struct {
-	ControllingFields []string `json:"controllingFields,omitempty"`
-	Dependent         bool     `json:"dependent,omitempty"`
-	OptionalFilter    bool     `json:"optionalFilter,omitempty"`
+	ControllingFields []string           `json:"controllingFields,omitempty"`
+	Dependent         bool               `json:"dependent,omitempty"`
+	OptionalFilter    bool               `json:"optionalFilter,omitempty"`
+	Active            bool               `json:"active,omitempty"`
+	BooleanFilter     string             `json:"booleanFilter,omitempty"`
+	ErrorMessage      string             `json:"errorMessage,omitempty"`
+	FilterItems       []LookupFilterItem `json:"filterItems,omitempty"`
+}
+
+type LookupFilterItem struct {
+	Field      string `json:"field,omitempty"`
+	Operation  string `json:"operation,omitempty"`
+	Value      string `json:"value,omitempty"`
+	ValueField string `json:"valueField,omitempty"`
 }
 
 func BoolFlag(value bool) *bool {
@@ -429,6 +457,7 @@ type FlowRule struct {
 	TriggerOrder  int                    `json:"triggerOrder,omitempty"`
 	RunInMode     string                 `json:"runInMode,omitempty"`
 	Formula       string                 `json:"formula,omitempty"`
+	TextTemplates map[string]string      `json:"textTemplates,omitempty"`
 	Criteria      []WorkflowCriteriaItem `json:"criteria,omitempty"`
 	Branches      []FlowBranch           `json:"branches,omitempty"`
 	Steps         []FlowStep             `json:"steps,omitempty"`
@@ -439,6 +468,21 @@ type FlowRule struct {
 	RecordDeletes []FlowRecordDelete     `json:"recordDeletes,omitempty"`
 	CustomErrors  []FlowCustomError      `json:"customErrors,omitempty"`
 	ApexPlugins   []FlowApexPluginCall   `json:"apexPlugins,omitempty"`
+	Variables     []FlowVariable         `json:"variables,omitempty"`
+}
+
+// FlowVariable describes an autolaunched Flow interview variable. Keeping
+// this small metadata projection on the rule lets local Apex code query the
+// standard FlowDefinitionView/FlowVariableView surfaces without reparsing the
+// source file during execution.
+type FlowVariable struct {
+	Name         string `json:"name"`
+	Description  string `json:"description,omitempty"`
+	DataType     string `json:"dataType,omitempty"`
+	ObjectType   string `json:"objectType,omitempty"`
+	IsCollection bool   `json:"isCollection,omitempty"`
+	IsInput      bool   `json:"isInput,omitempty"`
+	IsOutput     bool   `json:"isOutput,omitempty"`
 }
 
 type FlowBranch struct {
@@ -478,6 +522,7 @@ type FlowAssignment struct {
 	Target       string `json:"target"`
 	Operator     string `json:"operator,omitempty"`
 	LiteralValue string `json:"literalValue,omitempty"`
+	Formula      string `json:"formula,omitempty"`
 	SourceField  string `json:"sourceField,omitempty"`
 }
 
@@ -582,6 +627,7 @@ const (
 	FieldDecimal       FieldType = "DECIMAL"
 	FieldDate          FieldType = "DATE"
 	FieldDateTime      FieldType = "DATETIME"
+	FieldTime          FieldType = "TIME"
 	FieldPicklist      FieldType = "PICKLIST"
 	FieldMultiPicklist FieldType = "MULTIPICKLIST"
 	FieldReference     FieldType = "REFERENCE"
@@ -599,6 +645,7 @@ type Relationship struct {
 	ChildRelationship   string   `json:"childRelationship,omitempty"`
 	CascadeDelete       bool     `json:"cascadeDelete,omitempty"`
 	RestrictedDelete    bool     `json:"restrictedDelete,omitempty"`
+	SetNullOnDelete     bool     `json:"setNullOnDelete,omitempty"`
 	DeprecatedAndHidden bool     `json:"deprecatedAndHidden,omitempty"`
 	JunctionIDListNames []string `json:"junctionIdListNames,omitempty"`
 	JunctionReferenceTo []string `json:"junctionReferenceTo,omitempty"`
@@ -607,6 +654,9 @@ type Relationship struct {
 }
 
 type Record struct {
+	// LoadedReferences is transient DML input provenance, never persisted.
+	// Each canonical field retains the reference ID from an unchanged SOQL view.
+	LoadedReferences    map[string]ID       `json:"-"`
 	ID                  ID                  `json:"id"`
 	Object              string              `json:"object"`
 	Fields              map[string]Value    `json:"fields,omitempty"`
@@ -647,15 +697,18 @@ func (r Record) HasExplicitNull(name string) bool {
 }
 
 type SystemFields struct {
-	CreatedByID      ID     `json:"createdById,omitempty"`
-	CreatedDate      string `json:"createdDate,omitempty"`
-	LastModifiedByID ID     `json:"lastModifiedById,omitempty"`
-	LastModifiedDate string `json:"lastModifiedDate,omitempty"`
-	SystemModstamp   string `json:"systemModstamp,omitempty"`
-	OwnerID          ID     `json:"ownerId,omitempty"`
-	IsDeleted        bool   `json:"isDeleted,omitempty"`
-	Locked           bool   `json:"locked,omitempty"`
-	HiddenFromSOQL   bool   `json:"-"`
+	CreatedByID            ID     `json:"createdById,omitempty"`
+	CreatedDate            string `json:"createdDate,omitempty"`
+	LastModifiedByID       ID     `json:"lastModifiedById,omitempty"`
+	LastModifiedDate       string `json:"lastModifiedDate,omitempty"`
+	SystemModstamp         string `json:"systemModstamp,omitempty"`
+	OwnerID                ID     `json:"ownerId,omitempty"`
+	IsDeleted              bool   `json:"isDeleted,omitempty"`
+	RecycleBinEmptied      bool   `json:"recycleBinEmptied,omitempty"`
+	CascadeDeletedByObject string `json:"cascadeDeletedByObject,omitempty"`
+	CascadeDeletedByID     ID     `json:"cascadeDeletedById,omitempty"`
+	Locked                 bool   `json:"locked,omitempty"`
+	HiddenFromSOQL         bool   `json:"-"`
 }
 
 type Value struct {
@@ -779,7 +832,7 @@ func DefaultValueForField(field Field) (Value, bool) {
 		}
 	case FieldReference:
 		return IDValue(ID(normalizeStringDefaultValue(raw))), true
-	case FieldString, FieldPicklist, FieldMultiPicklist, FieldDate, FieldDateTime, FieldID, FieldAny:
+	case FieldString, FieldPicklist, FieldMultiPicklist, FieldDate, FieldDateTime, FieldTime, FieldID, FieldAny:
 		return StringValue(normalizeStringDefaultValue(raw)), true
 	}
 	return Value{}, false
@@ -994,7 +1047,7 @@ func defaultValueFromRaw(field Field, raw string) (Value, bool) {
 		if _, err := strconv.ParseFloat(raw, 64); err == nil {
 			return DecimalValue(raw), true
 		}
-	case FieldString, FieldPicklist, FieldMultiPicklist, FieldDate, FieldDateTime, FieldID, FieldAny:
+	case FieldString, FieldPicklist, FieldMultiPicklist, FieldDate, FieldDateTime, FieldTime, FieldID, FieldAny:
 		return StringValue(normalizeStringDefaultValue(raw)), true
 	}
 	return Value{}, false
@@ -1284,6 +1337,84 @@ func resolveLocationComponentField(definition ObjectDefinition, namespace, name 
 	return "", false
 }
 
+// ResolveFieldDefinition returns the canonical field name and its metadata.
+// Location component fields are exposed by Salesforce as virtual decimal
+// fields even though source metadata declares only the compound Location field.
+func ResolveFieldDefinition(definition ObjectDefinition, namespace, name string) (string, Field, bool) {
+	canonical, ok := ResolveFieldName(definition, namespace, name)
+	if !ok {
+		return "", Field{}, false
+	}
+	if field, exists := definition.Fields[canonical]; exists {
+		if field.APIName == "" {
+			field.APIName = canonical
+		}
+		return canonical, field, true
+	}
+	component, ok := ResolveLocationComponentField(definition, namespace, name)
+	if !ok {
+		return "", Field{}, false
+	}
+	return component.APIName, component, true
+}
+
+// ResolveLocationComponentField returns the Salesforce descriptor for a
+// virtual latitude or longitude component of a compound Location field.
+func ResolveLocationComponentField(definition ObjectDefinition, namespace, name string) (Field, bool) {
+	canonical, ok := resolveLocationComponentField(definition, namespace, name)
+	if !ok {
+		return Field{}, false
+	}
+	suffix := "__Latitude__s"
+	labelSuffix := "Latitude"
+	if strings.HasSuffix(strings.ToLower(canonical), strings.ToLower("__Longitude__s")) {
+		suffix = "__Longitude__s"
+		labelSuffix = "Longitude"
+	}
+	baseName := strings.TrimSuffix(canonical, suffix) + "__c"
+	baseField, ok := definition.Fields[baseName]
+	if !ok {
+		for candidate, field := range definition.Fields {
+			if strings.EqualFold(candidate, baseName) && field.Type == FieldLocation {
+				baseName = candidate
+				baseField = field
+				ok = true
+				break
+			}
+		}
+	}
+	if !ok || baseField.Type != FieldLocation {
+		return Field{}, false
+	}
+	compoundName := baseField.APIName
+	if compoundName == "" {
+		compoundName = baseName
+	}
+	label := strings.TrimSpace(baseField.Label)
+	if label == "" {
+		label = strings.TrimSuffix(compoundName, "__c")
+	}
+	component := Field{
+		APIName:             canonical,
+		Label:               label + " " + labelSuffix,
+		Type:                FieldDecimal,
+		DisplayType:         "DOUBLE",
+		Precision:           18,
+		Scale:               15,
+		CompoundFieldName:   compoundName,
+		Nillable:            BoolFlag(true),
+		Createable:          BoolFlag(true),
+		Updateable:          BoolFlag(true),
+		Filterable:          BoolFlag(true),
+		Groupable:           BoolFlag(false),
+		Sortable:            BoolFlag(true),
+		Aggregatable:        BoolFlag(true),
+		Permissionable:      baseField.Permissionable,
+		DeprecatedAndHidden: baseField.DeprecatedAndHidden,
+	}
+	return component, true
+}
+
 func locationComponentLocalName(name, suffix string) string {
 	if !hasAPISuffix(name, suffix) {
 		return name
@@ -1353,7 +1484,7 @@ func hasNamespaceToken(name string) bool {
 }
 
 func isCustomAPIName(name string) bool {
-	return hasAPISuffix(name, "__c") || hasAPISuffix(name, "__r") || hasAPISuffix(name, "__e") || hasAPISuffix(name, "__mdt")
+	return hasAPISuffix(name, "__c") || hasAPISuffix(name, "__r") || hasAPISuffix(name, "__e") || hasAPISuffix(name, "__mdt") || hasAPISuffix(name, "__share")
 }
 
 func hasAPISuffix(name, suffix string) bool {
@@ -1390,6 +1521,12 @@ func IsCustomSettingObject(org OrgState, name string) bool {
 
 func (r Record) Clone() Record {
 	out := r
+	if r.LoadedReferences != nil {
+		out.LoadedReferences = make(map[string]ID, len(r.LoadedReferences))
+		for field, id := range r.LoadedReferences {
+			out.LoadedReferences[field] = id
+		}
+	}
 	if r.Fields != nil {
 		out.Fields = make(map[string]Value, len(r.Fields))
 		for name, value := range r.Fields {
@@ -1520,6 +1657,7 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 	}
 	out.FlowRules = append([]FlowRule(nil), d.FlowRules...)
 	for i := range out.FlowRules {
+		out.FlowRules[i].TextTemplates = cloneStringMap(d.FlowRules[i].TextTemplates)
 		out.FlowRules[i].Criteria = append([]WorkflowCriteriaItem(nil), d.FlowRules[i].Criteria...)
 		out.FlowRules[i].Steps = cloneFlowSteps(d.FlowRules[i].Steps)
 		out.FlowRules[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), d.FlowRules[i].FieldUpdates...)
@@ -1530,6 +1668,7 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		out.FlowRules[i].RecordDeletes = cloneFlowRecordDeletes(d.FlowRules[i].RecordDeletes)
 		out.FlowRules[i].CustomErrors = cloneFlowCustomErrors(d.FlowRules[i].CustomErrors)
 		out.FlowRules[i].ApexPlugins = cloneFlowApexPlugins(d.FlowRules[i].ApexPlugins)
+		out.FlowRules[i].Variables = append([]FlowVariable(nil), d.FlowRules[i].Variables...)
 	}
 	out.Indexes = append([]IndexDefinition(nil), d.Indexes...)
 	for i := range out.Indexes {
@@ -1563,6 +1702,36 @@ func cloneFlowSteps(steps []FlowStep) []FlowStep {
 		out[i].FaultBranch = cloneFlowSteps(steps[i].FaultBranch)
 		out[i].Loop.Steps = cloneFlowSteps(steps[i].Loop.Steps)
 		out[i].Branches = cloneFlowBranches(steps[i].Branches)
+	}
+	return out
+}
+
+func cloneFlowRules(rules []FlowRule) []FlowRule {
+	out := append([]FlowRule(nil), rules...)
+	for i := range out {
+		out[i].TextTemplates = cloneStringMap(rules[i].TextTemplates)
+		out[i].Criteria = append([]WorkflowCriteriaItem(nil), rules[i].Criteria...)
+		out[i].Steps = cloneFlowSteps(rules[i].Steps)
+		out[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), rules[i].FieldUpdates...)
+		out[i].Actions = cloneFlowActions(rules[i].Actions)
+		out[i].Branches = cloneFlowBranches(rules[i].Branches)
+		out[i].RecordLookups = cloneFlowRecordLookups(rules[i].RecordLookups)
+		out[i].RecordCreates = cloneFlowRecordCreates(rules[i].RecordCreates)
+		out[i].RecordDeletes = cloneFlowRecordDeletes(rules[i].RecordDeletes)
+		out[i].CustomErrors = cloneFlowCustomErrors(rules[i].CustomErrors)
+		out[i].ApexPlugins = cloneFlowApexPlugins(rules[i].ApexPlugins)
+		out[i].Variables = append([]FlowVariable(nil), rules[i].Variables...)
+	}
+	return out
+}
+
+func cloneStringMap(values map[string]string) map[string]string {
+	if values == nil {
+		return nil
+	}
+	out := make(map[string]string, len(values))
+	for key, value := range values {
+		out[key] = value
 	}
 	return out
 }
@@ -1651,6 +1820,7 @@ func (i IndexSet) Clone() IndexSet {
 
 func (o OrgState) Clone() OrgState {
 	out := o
+	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
 	out.objectNameCache = &sync.Map{}
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
@@ -1680,6 +1850,7 @@ func (o OrgState) Clone() OrgState {
 func (o OrgState) CloneRuntime() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
+	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
 	out.objectNameCache = &sync.Map{}
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
@@ -1711,6 +1882,7 @@ func (o OrgState) CloneRuntime() OrgState {
 func (o OrgState) CloneRuntimeFrozenDefinition() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
+	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
 	out.objectNameCache = &sync.Map{}
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))

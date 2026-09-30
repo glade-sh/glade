@@ -50,7 +50,10 @@ func ApplyCustomMetadataRecords(org *OrgState, records []schema.CustomMetadataRe
 		return ordered[i].File < ordered[j].File
 	})
 	ensureCustomMetadataPrefixes(org, ordered)
-	generator := NewIDGenerator(prefixesForOrg(*org))
+	// Source-backed custom metadata IDs must not overlap the low deterministic
+	// IDs used by Apex test helpers such as fflib_IDGenerator. Salesforce's
+	// installed metadata records are not allocated from that test sequence.
+	generator := NewRuntimeIDGenerator(prefixesForOrg(*org))
 	generator.Sequences = copySequences(org.IDSequences)
 	pending := make([]customMetadataPendingRecord, 0, len(ordered))
 	affectedObjects := make(map[string]bool)
@@ -125,7 +128,9 @@ func ensureCustomMetadataPrefixes(org *OrgState, records []schema.CustomMetadata
 	}
 	names := make([]string, 0, len(org.Objects)+len(records))
 	seen := make(map[string]bool, len(org.Objects)+len(records))
-	for name := range org.Objects {
+	explicit := make(map[string]string, len(org.Objects))
+	for name, state := range org.Objects {
+		explicit[name] = state.Definition.KeyPrefix
 		if !seen[name] {
 			names = append(names, name)
 			seen[name] = true
@@ -139,7 +144,7 @@ func ensureCustomMetadataPrefixes(org *OrgState, records []schema.CustomMetadata
 		names = append(names, objectName)
 		seen[objectName] = true
 	}
-	prefixes := AssignDeterministicPrefixes(names, nil)
+	prefixes := AssignDeterministicPrefixes(names, explicit)
 	for _, name := range names {
 		state := org.Objects[name]
 		if state.Definition.KeyPrefix == "" && prefixes[name] != "" {

@@ -342,10 +342,15 @@ func soslAssignmentDiagnostics(source string, literal semaQueryLiteral, ctx quer
 }
 
 type semaBindingResolver struct {
-	source    string
-	spans     semaCodeSpans
-	locations []semaMethodLocation
-	methods   map[int]semaBindingScope
+	source       string
+	declarations string
+	spans        semaCodeSpans
+	locations    []semaMethodLocation
+	methods      map[int]semaBindingScope
+	// typeFields caches field declarations per enclosing type start. Every
+	// method of a type sees the same field declarations, so scanning the type
+	// body once per type instead of once per method keeps large classes linear.
+	typeFields map[int][]semaScopedBinding
 }
 
 type semaMethodLocation struct {
@@ -371,7 +376,33 @@ type semaScopedBinding struct {
 }
 
 func newSemaBindingResolver(source string, spans semaCodeSpans) *semaBindingResolver {
-	return &semaBindingResolver{source: source, spans: spans, locations: semaMethodLocations(source, spans), methods: make(map[int]semaBindingScope)}
+	// Query fields can look like local declarations, such as a line beginning
+	// SELECT DeveloperName. Mask literal contents for declaration discovery,
+	// retaining offsets and the original source for method/brace resolution.
+	declarations := []byte(source)
+	queries := append(semaSOQLLiterals(source, spans), semaSOSLLiterals(source, spans)...)
+	for _, query := range queries {
+		for i := query.queryOffset; i < query.queryOffset+len(query.text); i++ {
+			if declarations[i] != '\n' && declarations[i] != '\r' {
+				declarations[i] = ' '
+			}
+		}
+	}
+	return &semaBindingResolver{source: source, declarations: string(declarations), spans: spans, locations: semaMethodLocations(source, spans), methods: make(map[int]semaBindingScope), typeFields: make(map[int][]semaScopedBinding)}
+}
+
+// fieldBindings returns the cached field declarations visible from a type
+// start, computing them on first use.
+func (r *semaBindingResolver) fieldBindings(typeStart int) []semaScopedBinding {
+	if typeStart < 0 {
+		return nil
+	}
+	if fields, ok := r.typeFields[typeStart]; ok {
+		return fields
+	}
+	fields := semaTypeFieldBindings(r.declarations, typeStart, r.spans)
+	r.typeFields[typeStart] = fields
+	return fields
 }
 
 // bindingsAt returns source-backed parameter, field, and local declarations
@@ -385,7 +416,7 @@ func (r *semaBindingResolver) bindingsAt(offset int) map[string]string {
 		if typeStart, _ := semaEnclosingTypeRange(r.source, braces, r.spans); typeStart >= 0 {
 			return bindings
 		}
-		for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(r.source, -1) {
+		for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(r.declarations, -1) {
 			if len(match) != 6 || match[0] >= offset || offset > semaEnclosingCodeBraceEnd(r.source, 0, match[0], r.spans) {
 				continue
 			}
@@ -395,7 +426,8 @@ func (r *semaBindingResolver) bindingsAt(offset int) map[string]string {
 	}
 	scope, ok := r.methods[location.methodStart]
 	if !ok {
-		scope = semaBuildBindingScope(r.source, location.methodStart, location.methodEnd, location.headerStart, location.typeStart, location.typeEnd, r.spans)
+		scope = semaMethodBindingScope(r.declarations, location.methodStart, location.methodEnd, location.headerStart, location.typeStart, r.spans)
+		scope.bindings = append(scope.bindings, r.fieldBindings(location.typeStart)...)
 		r.methods[location.methodStart] = scope
 	}
 	for _, field := range scope.bindings {
@@ -465,7 +497,37 @@ func semaEnclosingTypeRange(source string, braces []int, spans semaCodeSpans) (i
 	return -1, -1
 }
 
+// semaEnclosingTypeRanges returns containing type bodies from outermost to
+// innermost. Nested Apex types can read static fields declared by an enclosing
+// type, including from SOQL bind expressions.
+func semaEnclosingTypeRanges(source string, typeStart int, spans semaCodeSpans) [][2]int {
+	if typeStart < 0 {
+		return nil
+	}
+	braces := semaOpenBraces(source, 0, typeStart+1, spans)
+	out := make([][2]int, 0, len(braces))
+	for _, start := range braces {
+		headerStart := semaHeaderStart(source, start, spans)
+		if !semaTypeHeader.MatchString(source[headerStart:start]) {
+			continue
+		}
+		end := semaMatchingCodeBrace(source, start, spans)
+		if end > start {
+			out = append(out, [2]int{start, end})
+		}
+	}
+	return out
+}
+
 func semaBuildBindingScope(source string, methodStart, methodEnd, headerStart, typeStart, typeEnd int, spans semaCodeSpans) semaBindingScope {
+	scope := semaMethodBindingScope(source, methodStart, methodEnd, headerStart, typeStart, spans)
+	scope.bindings = append(scope.bindings, semaTypeFieldBindings(source, typeStart, spans)...)
+	return scope
+}
+
+// semaMethodBindingScope collects the parameter and local declarations of one
+// method body. Its cost is proportional to that method alone.
+func semaMethodBindingScope(source string, methodStart, methodEnd, headerStart, typeStart int, spans semaCodeSpans) semaBindingScope {
 	scope := semaBindingScope{methodStart: methodStart, typeStart: typeStart}
 	for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(source[headerStart:methodStart], -1) {
 		if len(match) != 6 {
@@ -480,15 +542,24 @@ func semaBuildBindingScope(source string, methodStart, methodEnd, headerStart, t
 		start := methodStart + 1 + match[0]
 		scope.bindings = append(scope.bindings, semaScopedBinding{name: source[methodStart+1+match[4] : methodStart+1+match[5]], typeName: strings.TrimSpace(source[methodStart+1+match[2] : methodStart+1+match[3]]), start: start, end: semaEnclosingCodeBraceEnd(source, methodStart+1, start, spans)})
 	}
-	if typeStart >= 0 && typeEnd > typeStart {
-		for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(source[typeStart+1:typeEnd], -1) {
-			if len(match) != 6 || !semaDeclarationAtTypeScope(source, typeStart+1, typeStart+1+match[0], spans) {
+	return scope
+}
+
+// semaTypeFieldBindings collects field declarations from every enclosing type
+// body of typeStart, outermost first. The result depends only on the type, not
+// on the method asking, so callers may cache it per type start.
+func semaTypeFieldBindings(source string, typeStart int, spans semaCodeSpans) []semaScopedBinding {
+	var fields []semaScopedBinding
+	for _, typeRange := range semaEnclosingTypeRanges(source, typeStart, spans) {
+		rangeStart, rangeEnd := typeRange[0], typeRange[1]
+		for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(source[rangeStart+1:rangeEnd], -1) {
+			if len(match) != 6 || !semaDeclarationAtTypeScope(source, rangeStart+1, rangeStart+1+match[0], spans) {
 				continue
 			}
-			scope.bindings = append(scope.bindings, semaScopedBinding{name: source[typeStart+1+match[4] : typeStart+1+match[5]], typeName: strings.TrimSpace(source[typeStart+1+match[2] : typeStart+1+match[3]]), field: true})
+			fields = append(fields, semaScopedBinding{name: source[rangeStart+1+match[4] : rangeStart+1+match[5]], typeName: strings.TrimSpace(source[rangeStart+1+match[2] : rangeStart+1+match[3]]), field: true})
 		}
 	}
-	return scope
+	return fields
 }
 
 func semaMethodHeader(header string) bool {
@@ -527,16 +598,22 @@ func semaIdentifierByte(value byte) bool {
 }
 
 func semaHeaderStart(source string, brace int, spans semaCodeSpans) int {
+	start := 0
 	for i := brace - 1; i >= 0; i-- {
 		if !spans.contains(i) {
 			continue
 		}
-		switch source[i] {
-		case '{', '}', ';':
-			return i + 1
+		if source[i] == '{' || source[i] == '}' || source[i] == ';' {
+			start = i + 1
+			break
 		}
 	}
-	return 0
+	// A leading comment belongs to neither a method signature nor a control
+	// keyword. Keep it from disguising an if/for block as a nested method.
+	for start < brace && (!spans.contains(start) || unicode.IsSpace(rune(source[start]))) {
+		start++
+	}
+	return start
 }
 
 func semaOpenBraces(_ string, start, offset int, spans semaCodeSpans) []int {
@@ -564,7 +641,12 @@ func semaDeclarationAtTypeScope(source string, start, declaration int, spans sem
 
 func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string, knownTypes map[string]bool) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
-	for _, match := range semaInlineBindPattern.FindAllStringSubmatchIndex(ctx.queryText, -1) {
+	// Comments are valid inside an inline SOQL/SOSL literal. Scan a
+	// comment-masked copy so documentation such as "// :example" is not
+	// mistaken for an executable bind while retaining the original offsets for
+	// diagnostics.
+	scanText := maskInlineQueryComments(ctx.queryText)
+	for _, match := range semaInlineBindPattern.FindAllStringSubmatchIndex(scanText, -1) {
 		if len(match) != 4 {
 			continue
 		}
@@ -594,6 +676,67 @@ func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string
 		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("query bind variable %q is not declared", name), ctx.queryText[match[0]:match[1]], offset))
 	}
 	return diagnostics
+}
+
+func maskInlineQueryComments(source string) string {
+	if source == "" {
+		return source
+	}
+	out := []byte(source)
+	const (
+		normal = iota
+		lineComment
+		blockComment
+		singleQuote
+		doubleQuote
+	)
+	mode := normal
+	escaped := false
+	for i := 0; i < len(source); i++ {
+		value := source[i]
+		switch mode {
+		case normal:
+			switch {
+			case value == '/' && i+1 < len(source) && source[i+1] == '/':
+				out[i], out[i+1] = ' ', ' '
+				mode = lineComment
+				i++
+			case value == '/' && i+1 < len(source) && source[i+1] == '*':
+				out[i], out[i+1] = ' ', ' '
+				mode = blockComment
+				i++
+			case value == '\'':
+				mode = singleQuote
+				escaped = false
+			case value == '"':
+				mode = doubleQuote
+				escaped = false
+			}
+		case lineComment:
+			if value == '\n' || value == '\r' {
+				mode = normal
+			} else {
+				out[i] = ' '
+			}
+		case blockComment:
+			if value == '*' && i+1 < len(source) && source[i+1] == '/' {
+				out[i], out[i+1] = ' ', ' '
+				mode = normal
+				i++
+			} else if value != '\n' && value != '\r' {
+				out[i] = ' '
+			}
+		case singleQuote, doubleQuote:
+			if escaped {
+				escaped = false
+			} else if value == '\\' {
+				escaped = true
+			} else if mode == singleQuote && value == '\'' || mode == doubleQuote && value == '"' {
+				mode = normal
+			}
+		}
+	}
+	return string(out)
 }
 
 func queryWindowBindDiagnostics(query soql.Query, ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {
@@ -768,7 +911,7 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 		diagnostics = append(diagnostics, c.checkSOQLFieldCapability(object.Name, field, "groupable", ctx, cursor)...)
 	}
 	for _, order := range query.Order {
-		if aggregateAliases[strings.ToLower(order.Field)] {
+		if aggregateAliases[strings.ToLower(order.Field)] || order.RewrittenAggregate {
 			continue
 		}
 		diagnostics = append(diagnostics, c.checkSOQLField(object.Name, order.Field, ctx, cursor)...)
@@ -1442,6 +1585,9 @@ func mergeQueryNameField(existing, incoming schema.NameField) schema.NameField {
 	if existing.DisplayFormat == "" {
 		existing.DisplayFormat = incoming.DisplayFormat
 	}
+	if existing.Length == 0 {
+		existing.Length = incoming.Length
+	}
 	return existing
 }
 
@@ -1661,6 +1807,7 @@ func schemaObjectFromStorageDefinition(definition storage.ObjectDefinition) sche
 			Length:                field.Length,
 			Precision:             field.Precision,
 			Scale:                 field.Scale,
+			ScaleSpecified:        field.ScaleSpecified,
 			ReferenceTo:           referenceTo,
 			RelationshipName:      relationshipName,
 			ChildRelationshipName: childRelationshipName,
@@ -1675,6 +1822,7 @@ func schemaObjectFromStorageDefinition(definition storage.ObjectDefinition) sche
 			Unique:                field.Unique,
 			Encrypted:             field.Encrypted,
 			Formula:               field.Formula,
+			FormulaTreatBlanksAs:  field.FormulaTreatBlanksAs,
 		})
 	}
 	fieldNames := make(map[string]bool, len(object.Fields)+len(definition.Relations))
@@ -1808,6 +1956,10 @@ func semaMatchingBracket(source string, start int) int {
 			if source[i] == quote {
 				quote = 0
 			}
+			continue
+		}
+		if end, ok := skipSemaComment(source, i); ok {
+			i = end
 			continue
 		}
 		switch source[i] {
@@ -2495,6 +2647,16 @@ func databaseBatchableStartReturnCompatible(itemType, returnType string, model *
 		semaAssignableToType(elementType, itemType, model)
 }
 
+// A final property with a setter can initialize its backing value in its own
+// getter. This does not make other final fields or properties assignable.
+func semaFinalPropertyOwnGetterWrite(typ typesys.TypeSymbol, member typesys.MemberSymbol, target resolvedMember) bool {
+	return target.member.Kind == apexast.DeclarationProperty &&
+		typeContractPropertyHasAccessor(target.member, "set") &&
+		strings.EqualFold(target.owner, typ.Name) &&
+		strings.EqualFold(member.Name, target.member.Name+".get") &&
+		hasModifier(member.Modifiers, "static")
+}
+
 func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	body := scan.body
@@ -2517,7 +2679,8 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 			continue
 		}
 		if field, found := semaResolveField(model, typ.Name, target, make(map[string]bool)); !scopes.localVisibleAt(target, match[2]) && found &&
-			hasModifier(field.member.Modifiers, "final") && hasModifier(field.member.Modifiers, "static") {
+			hasModifier(field.member.Modifiers, "final") && hasModifier(field.member.Modifiers, "static") &&
+			!semaFinalPropertyOwnGetterWrite(typ, member, field) {
 			fieldKey := normalizeName(target)
 			if !semaStaticInitializer(member) || !strings.EqualFold(field.owner, typ.Name) || assignedStaticFinalFields[fieldKey] {
 				diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, target, "final static fields can only be assigned in their declaration", bodyOffset+match[2], bodyOffset+match[3], source))
@@ -2548,7 +2711,8 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 			continue
 		}
 		if field, found := semaResolveField(model, typ.Name, target, make(map[string]bool)); found {
-			if hasModifier(field.member.Modifiers, "final") && hasModifier(field.member.Modifiers, "static") {
+			if hasModifier(field.member.Modifiers, "final") && hasModifier(field.member.Modifiers, "static") &&
+				!semaFinalPropertyOwnGetterWrite(typ, member, field) {
 				diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, target, "final static fields can only be assigned in their declaration", bodyOffset+match[2], bodyOffset+match[3], source))
 				continue
 			}
@@ -2572,10 +2736,26 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		if semaOffsetInIgnoredText(body, match[0]) {
 			continue
 		}
+		// Map literals use `=>`; the assignment-shaped prefix is not a
+		// write to the key expression (for example `f.DeveloperName => ...`).
+		next := match[1]
+		for next < len(body) && unicode.IsSpace(rune(body[next])) {
+			next++
+		}
+		if next < len(body) && body[next] == '>' {
+			continue
+		}
+		if match[1] < len(body) && body[match[1]] == '=' {
+			continue
+		}
 		receiver := body[match[2]:match[3]]
 		fieldName := body[match[4]:match[5]]
 		receiverType, visible := scopes.visibleAt(receiver, match[2])
 		if !visible {
+			continue
+		}
+		if semaStandardFieldAssignmentReadOnly(model, receiverType, fieldName) {
+			diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, receiver+"."+fieldName, "field is not writeable", bodyOffset+match[2], bodyOffset+match[5], source))
 			continue
 		}
 		field, found := semaResolveFieldPath(model, receiverType, fieldName)

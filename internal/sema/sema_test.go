@@ -1302,6 +1302,35 @@ public class UsesProductNamespaces {
 	}
 }
 
+func TestAnalyzeMetadataOperationsWithLegacyNestedMetadataType(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	metadataService := filepath.Join(root, "MetadataService.cls")
+	usesMetadata := filepath.Join(root, "UsesMetadata.cls")
+	writeSemaFile(t, metadataService, `
+public class MetadataService {
+  public virtual class Metadata {
+    public String fullName;
+  }
+}
+`)
+	writeSemaFile(t, usesMetadata, `
+public class UsesMetadata {
+  private static List<Metadata.Metadata> retrieveRecords() {
+    return Metadata.Operations.retrieve(
+      Metadata.MetadataType.CustomMetadata,
+      new List<String>{'Tag__mdt.HostedPaymentForm'}
+    );
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{metadataService, usesMetadata}}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("legacy nested Metadata type should not hide Metadata.Operations.retrieve: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeUserInfoStandardDeclarations(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -3172,6 +3201,105 @@ public class FlowDefinitionView {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeNamespacedSchemaDerivedShareAcceptsLocalAPIName(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	file := filepath.Join(root, "UsesNamespacedShare.cls")
+	writeSemaFile(t, file, `
+public class UsesNamespacedShare {
+  public Log__Share share(Log__c log, Id userId) {
+    return new Log__Share(
+      ParentId = log.Id,
+      UserOrGroupId = userId,
+      AccessLevel = 'Read',
+      RowCause = Schema.Log__Share.RowCause.Manual
+    );
+  }
+  public List<Log__Share> find(Id parentId) {
+    return [SELECT ParentId, UserOrGroupId, AccessLevel, RowCause FROM Log__Share WHERE ParentId = :parentId];
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:             root,
+		Namespace:        "Nebula",
+		SourceAPIVersion: "65.0",
+		ApexFiles:        []string{file},
+	}, schema.Schema{Objects: []schema.Object{{
+		Name:         "Nebula__Log__c",
+		SharingModel: "Private",
+	}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("namespaced local share alias should resolve: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeGeneratedShareFieldTokensUseEnableSharingMetadata(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	file := filepath.Join(root, "GladeTier0SalesforceE175Proof.cls")
+	writeSemaFile(t, file, `public class GladeTier0SalesforceE175Proof {
+  public Schema.SObjectField resolveAccessLevel() {
+    return Schema.GladeTier0__Share.AccessLevel;
+  }
+  public Schema.SObjectField resolveRowCause() {
+    return Schema.GladeTier0__Share.RowCause;
+  }
+}`)
+	writeSemaFile(t, file+"-meta.xml", `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
+	index := typesys.Build(project.Project{
+		Root:             root,
+		SourceAPIVersion: "67.0",
+		ApexFiles:        []string{file},
+	}, schema.Schema{Objects: []schema.Object{{
+		Name:          "GladeTier0__c",
+		EnableSharing: true,
+	}}})
+	prepared := prepareAnalysisIndex(index)
+	model := buildSemaTypeMemberState(prepared, nil).view()
+	share, ok := model.lookup(normalizeName("GladeTier0__Share"))
+	if !ok || !share.sobject {
+		t.Fatalf("EnableSharing metadata should add generated share object to semantic model: %#v", share)
+	}
+	for _, expression := range []string{
+		"Schema.GladeTier0__Share.AccessLevel",
+		"Schema.GladeTier0__Share.RowCause",
+	} {
+		if got := inferSemaArgTypeWithModel(expression, map[string]string{}, model); got != "Schema.SObjectField" {
+			t.Fatalf("%s semantic type = %q, want Schema.SObjectField", expression, got)
+		}
+	}
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("generated share field tokens should follow EnableSharing metadata: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeGeneratedShareFieldTokensWithUnknownSharingMetadata(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	file := filepath.Join(root, "GladeTier0SalesforceE175Proof.cls")
+	writeSemaFile(t, file, `public class GladeTier0SalesforceE175Proof {
+  public Schema.SObjectField resolveAccessLevel() {
+    return Schema.GladeTier0__Share.AccessLevel;
+  }
+  public Schema.SObjectField resolveRowCause() {
+    return Schema.GladeTier0__Share.RowCause;
+  }
+}`)
+	index := typesys.Build(project.Project{
+		Root:             root,
+		SourceAPIVersion: "67.0",
+		ApexFiles:        []string{file},
+	}, schema.Schema{Objects: []schema.Object{{Name: "GladeTier0__c"}}})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("generated share field tokens should be retained when sharing metadata is absent: %#v", result.Diagnostics)
 	}
 }
 
@@ -7437,6 +7565,9 @@ public class AffiliationTestData {
       Account.Name => TestContext.Instance.build(Account.SObjectType).insertRecord().Id
     };
   }
+  public Map<String, String> getFormulaFieldMap(FieldDefinition f) {
+    return new Map<String, String>{ f.DeveloperName => f.DataType };
+  }
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
@@ -7451,6 +7582,7 @@ public class AffiliationTestData {
 			t.Fatalf("unexpected map literal chained-call diagnostic: %#v", result.Diagnostics)
 		}
 	}
+	assertNoDiagnosticContaining(t, result, "GLADESEMA027", "f.DeveloperName")
 }
 
 func TestAnalyzeSObjectAddErrorAndTriggerStaticFlags(t *testing.T) {

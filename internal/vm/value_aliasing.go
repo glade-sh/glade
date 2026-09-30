@@ -726,7 +726,7 @@ func (vm *VM) propagateAliasSnapshotToScope(scope map[string]Value, previous ali
 		if perfOn {
 			replacementStarted = time.Now()
 		}
-		replaced, changed := replaceAliasSnapshot(value, previous, updated, seen)
+		replaced, changed := replaceValueAliasRefWithCache(vm, value, previous, updated, seen)
 		if perfOn {
 			probe.replacementDuration += time.Since(replacementStarted)
 		}
@@ -886,6 +886,9 @@ func (vm *VM) propagateAliasSnapshotMutationToScope(scope map[string]Value, prev
 		return false
 	}
 	if refreshNestedCollections && sameBackingAliasRefreshKind(updated.Kind) && vm.propagateTopLevelCollectionAliases(scope, updated) {
+		// A caller can retain this collection both directly and inside a map
+		// or another container. Updating the direct alias does not refresh nested aliases.
+		vm.propagateAliasSnapshotToScope(scope, previous, updated)
 		return true
 	}
 	if refreshNestedCollections && sameBackingAliasRefreshKind(updated.Kind) && vm.propagateCollectionValueAliasToScope(scope, original, updated) {
@@ -2622,6 +2625,9 @@ func replaceAliasSnapshot(value Value, previous aliasSnapshot, updated Value, se
 	return replaceValueAliasRef(value, previous, updated, seen)
 }
 func replaceValueAliasRef(value Value, previous aliasSnapshot, updated Value, seen map[uint64]bool) (Value, bool) {
+	return replaceValueAliasRefWithCache(nil, value, previous, updated, seen)
+}
+func replaceValueAliasRefWithCache(vm *VM, value Value, previous aliasSnapshot, updated Value, seen map[uint64]bool) (Value, bool) {
 	if value.Ref != 0 {
 		if value.Ref == previous.ref && value.Kind == previous.kind {
 			return updated, true
@@ -2630,6 +2636,16 @@ func replaceValueAliasRef(value Value, previous aliasSnapshot, updated Value, se
 			return value, false
 		}
 		seen[value.Ref] = true
+		// The preceding containment walk already proved these branches absent.
+		// Reuse only its existing epoch-valid negative entries; do not retain
+		// new misses or weaken invalidation while applying an alias update.
+		if vm != nil && cacheableAliasContainmentKind(value.Kind) {
+			key := aliasContainmentCacheKey{ValueRef: value.Ref, ValueKind: value.Kind,
+				ValueType: firstAliasContainmentType(value), PreviousRef: previous.ref, PreviousKind: previous.kind}
+			if seq, ok := vm.aliasContainmentCache[key]; ok && seq == vm.aliasContainmentMutationSeq {
+				return value, false
+			}
+		}
 	}
 	changed := false
 	switch value.Kind {
@@ -2638,7 +2654,7 @@ func replaceValueAliasRef(value Value, previous aliasSnapshot, updated Value, se
 			if valueCannotContainAliasRef(child, previous.ref, previous.kind) {
 				continue
 			}
-			replaced, childChanged := replaceValueAliasRef(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAliasRefWithCache(vm, child, previous, updated, seen)
 			if childChanged {
 				value.Fields[name] = replaced
 				changed = true
@@ -2649,7 +2665,7 @@ func replaceValueAliasRef(value Value, previous aliasSnapshot, updated Value, se
 			if valueCannotContainAliasRef(child, previous.ref, previous.kind) {
 				continue
 			}
-			replaced, childChanged := replaceValueAliasRef(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAliasRefWithCache(vm, child, previous, updated, seen)
 			if childChanged {
 				value.Map[key] = replaced
 				changed = true
@@ -2662,7 +2678,7 @@ func replaceValueAliasRef(value Value, previous aliasSnapshot, updated Value, se
 			if valueCannotContainAliasRef(child, previous.ref, previous.kind) {
 				continue
 			}
-			replaced, childChanged := replaceValueAliasRef(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAliasRefWithCache(vm, child, previous, updated, seen)
 			if childChanged {
 				value.MapKeys[key] = replaced
 				changed = true
@@ -2673,7 +2689,7 @@ func replaceValueAliasRef(value Value, previous aliasSnapshot, updated Value, se
 			return value, false
 		}
 		for i, child := range value.List {
-			replaced, childChanged := replaceValueAliasRef(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAliasRefWithCache(vm, child, previous, updated, seen)
 			if childChanged {
 				value.List[i] = replaced
 				changed = true
@@ -2684,7 +2700,7 @@ func replaceValueAliasRef(value Value, previous aliasSnapshot, updated Value, se
 			return value, false
 		}
 		for i, child := range value.Set {
-			replaced, childChanged := replaceValueAliasRef(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAliasRefWithCache(vm, child, previous, updated, seen)
 			if childChanged {
 				value.Set[i] = replaced
 				changed = true

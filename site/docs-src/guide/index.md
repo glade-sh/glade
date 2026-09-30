@@ -2,7 +2,7 @@
 pageType: hub
 canonicalTask: /guide/
 title: Glade documentation
-description: Install Glade, run a small local Apex test, or choose a workflow for your Salesforce DX project. Find support boundaries and recovery steps.
+description: Choose a first local check, a day-to-day workflow, or exact Glade reference material for a Salesforce DX project.
 ---
 
 # Glade documentation

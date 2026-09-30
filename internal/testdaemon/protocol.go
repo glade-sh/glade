@@ -53,26 +53,27 @@ type RequestV1 struct {
 }
 
 type RunRequestV1 struct {
-	Filter              string           `json:"filter"`
-	ChangedSince        string           `json:"changedSince"`
-	SelectedClasses     []string         `json:"selectedClasses"`
-	SelectedMethod      string           `json:"selectedMethod"`
-	LimitMode           string           `json:"limitMode"`
-	LimitCaps           LimitCapsV1      `json:"limitCaps"`
-	LimitCapsSet        bool             `json:"limitCapsSet"`
-	TraceBlocked        bool             `json:"traceBlocked"`
-	TraceAll            bool             `json:"traceAll"`
-	SlowTestThresholdMS int64            `json:"slowTestThresholdMs"`
-	TimeoutMS           int64            `json:"timeoutMs"`
-	Parallelism         int              `json:"parallelism"`
-	ParallelMethods     bool             `json:"parallelMethods"`
-	NoDiskCache         bool             `json:"noDiskCache"`
-	ClassDurationMS     map[string]int64 `json:"classDurationMs"`
-	MethodDurationMS    map[string]int64 `json:"methodDurationMs"`
-	PerfCounters        bool             `json:"perfCounters"`
-	ShardCount          int              `json:"shardCount"`
-	ShardIndex          int              `json:"shardIndex"`
-	ReturnClassShards   bool             `json:"returnClassShards"`
+	RuntimeRESTAPIVersion string           `json:"runtimeRestApiVersion,omitempty"`
+	Filter                string           `json:"filter"`
+	ChangedSince          string           `json:"changedSince"`
+	SelectedClasses       []string         `json:"selectedClasses"`
+	SelectedMethod        string           `json:"selectedMethod"`
+	LimitMode             string           `json:"limitMode"`
+	LimitCaps             LimitCapsV1      `json:"limitCaps"`
+	LimitCapsSet          bool             `json:"limitCapsSet"`
+	TraceBlocked          bool             `json:"traceBlocked"`
+	TraceAll              bool             `json:"traceAll"`
+	SlowTestThresholdMS   int64            `json:"slowTestThresholdMs"`
+	TimeoutMS             int64            `json:"timeoutMs"`
+	Parallelism           int              `json:"parallelism"`
+	ParallelMethods       bool             `json:"parallelMethods"`
+	NoDiskCache           bool             `json:"noDiskCache"`
+	ClassDurationMS       map[string]int64 `json:"classDurationMs"`
+	MethodDurationMS      map[string]int64 `json:"methodDurationMs"`
+	PerfCounters          bool             `json:"perfCounters"`
+	ShardCount            int              `json:"shardCount"`
+	ShardIndex            int              `json:"shardIndex"`
+	ReturnClassShards     bool             `json:"returnClassShards"`
 }
 
 type LimitCapsV1 struct {
@@ -125,11 +126,12 @@ type ClassShardV1 struct {
 // testreport.Run.MarshalJSON. Decoding through this explicit shape keeps the
 // response decoder strict without rejecting output produced by its encoder.
 type testReportRunV1Wire struct {
-	Name         string                   `json:"name,omitempty"`
-	DurationMS   int64                    `json:"durationMs,omitempty"`
-	Dependencies []typesys.DependencyInfo `json:"dependencies,omitempty"`
-	Summary      testreport.Summary       `json:"summary"`
-	Suites       []testreport.Suite       `json:"suites"`
+	RuntimeRESTAPIVersion string                   `json:"runtimeRestApiVersion,omitempty"`
+	Name                  string                   `json:"name,omitempty"`
+	DurationMS            int64                    `json:"durationMs,omitempty"`
+	Dependencies          []typesys.DependencyInfo `json:"dependencies,omitempty"`
+	Summary               testreport.Summary       `json:"summary"`
+	Suites                []testreport.Suite       `json:"suites"`
 }
 
 type responseV1Wire struct {
@@ -193,10 +195,11 @@ func DecodeResponseV1(r io.Reader) (ResponseV1, error) {
 	}
 	if wire.Run != nil {
 		response.Run = &testreport.Run{
-			Name:         wire.Run.Name,
-			DurationMS:   wire.Run.DurationMS,
-			Dependencies: wire.Run.Dependencies,
-			Suites:       wire.Run.Suites,
+			RuntimeRESTAPIVersion: wire.Run.RuntimeRESTAPIVersion,
+			Name:                  wire.Run.Name,
+			DurationMS:            wire.Run.DurationMS,
+			Dependencies:          wire.Run.Dependencies,
+			Suites:                wire.Run.Suites,
 		}
 		if reconstructed := response.Run.Summary(); wire.Run.Summary != reconstructed {
 			return ResponseV1{}, fmt.Errorf("decode test daemon protocol frame: run summary does not match suites")

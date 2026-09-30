@@ -10,6 +10,9 @@ import (
 )
 
 func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
+	if vm.rejectAsyncActions {
+		return Null, vm.rejectSynchronousAsyncAction("EventBus.publish cannot cross the synchronous LWC action boundary")
+	}
 	if len(args) < 1 || len(args) > 2 {
 		return Null, fmt.Errorf("EventBus.publish expects event record or list and optional callback")
 	}
@@ -20,8 +23,34 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 	if len(records) == 0 {
 		return List(), nil
 	}
-	if err := vm.incrementLimit("publishImmediateDml", 1); err != nil {
-		return Null, err
+	ordinaryDMLRows := 0
+	// Salesforce accounts an erased List<SObject> as ordinary DML, even
+	// when its records are immediate-publish platform events.
+	elementType, _ := collectionElementType(args[0].Type)
+	if args[0].Kind == ValueList && strings.EqualFold(elementType, "SObject") {
+		ordinaryDMLRows = len(records)
+	} else {
+		for _, record := range records {
+			if vm.Org == nil {
+				break
+			}
+			if objectName, ok := storage.ResolveObjectName(*vm.Org, record.Type); ok && strings.EqualFold(vm.Org.Objects[objectName].Definition.Metadata["publishBehavior"], "PublishAfterCommit") {
+				ordinaryDMLRows++
+			}
+		}
+	}
+	if ordinaryDMLRows > 0 {
+		if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+			return Null, err
+		}
+		if err := vm.incrementLimit("dmlRows", ordinaryDMLRows); err != nil {
+			return Null, err
+		}
+	}
+	if ordinaryDMLRows < len(records) {
+		if err := vm.incrementLimit("publishImmediateDml", 1); err != nil {
+			return Null, err
+		}
 	}
 	results := make([]Value, 0, len(records))
 	triggerRecords := make([]storage.Record, 0, len(records))
@@ -44,7 +73,7 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		if err != nil {
 			return Null, err
 		}
-		if !hasSuffixFold(stored.Object, "__e") {
+		if !isPlatformEventObjectName(stored.Object) {
 			return Null, fmt.Errorf("The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event.")
 		}
 		if field, ok := vm.missingRequiredPlatformEventField(stored); ok {
@@ -104,6 +133,10 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		return Null, nil
 	}
 	return results[0], nil
+}
+
+func isPlatformEventObjectName(objectName string) bool {
+	return hasSuffixFold(objectName, "__e") || strings.EqualFold(objectName, "BatchApexErrorEvent")
 }
 
 func (vm *VM) nextEventBusReplayID() string {
@@ -718,7 +751,6 @@ func (vm *VM) ensureAsyncObjects() {
 			"Id":              {APIName: "Id", Type: storage.FieldID},
 			"State":           {APIName: "State", Type: storage.FieldString},
 			"CronExpression":  {APIName: "CronExpression", Type: storage.FieldString},
-			"CronJobDetail":   {APIName: "CronJobDetail", Type: storage.FieldString},
 			"CronJobDetailId": {APIName: "CronJobDetailId", Type: storage.FieldReference, ReferenceTo: []string{"CronJobDetail"}, RelationshipName: "CronJobDetail"},
 			"NextFireTime":    {APIName: "NextFireTime", Type: storage.FieldDateTime},
 			"TimesTriggered":  {APIName: "TimesTriggered", Type: storage.FieldInteger},

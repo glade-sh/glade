@@ -42,6 +42,51 @@ func TestStandardDescribeCatalogObjectNamesStayInSync(t *testing.T) {
 	}
 }
 
+func TestUserRoleOpportunityAccessDefaultsToEdit(t *testing.T) {
+	definition, ok := StandardObjectDefinition("UserRole")
+	if !ok {
+		t.Fatal("UserRole standard definition not found")
+	}
+	field, ok := definition.Fields["OpportunityAccessForAccountOwner"]
+	if !ok {
+		t.Fatal("UserRole.OpportunityAccessForAccountOwner not found")
+	}
+	if !field.Required {
+		t.Fatal("UserRole.OpportunityAccessForAccountOwner must remain required")
+	}
+	if field.DefaultValue != "Edit" {
+		t.Fatalf("UserRole.OpportunityAccessForAccountOwner default = %q, want Edit", field.DefaultValue)
+	}
+	value, ok := DefaultValueForField(field)
+	if !ok || value.String != "Edit" {
+		t.Fatalf("default value = %#v, %v; want Edit, true", value, ok)
+	}
+}
+
+func TestKnownStandardObjectNamesIncludeV2DescribeIndex(t *testing.T) {
+	resetKnownStandardObjectCacheForTest()
+	defer resetKnownStandardObjectCacheForTest()
+
+	names := KnownStandardObjectNames()
+	for _, entry := range standardDescribeCatalogV2Index {
+		if !stringSliceContains(names, entry.Name) {
+			t.Fatalf("KnownStandardObjectNames missing V2 describe object %s", entry.Name)
+		}
+	}
+	for _, name := range []string{
+		"AIMetric",
+		"ActionPlanItemDependency",
+		"ActionPlnTmplItmDependency",
+		"DataAssetSemanticGraphEdge",
+		"FinanceBalanceSnapshot",
+		"FinanceTransaction",
+	} {
+		if !stringSliceContains(names, name) {
+			t.Fatalf("KnownStandardObjectNames missing Webhook2Flow target %s", name)
+		}
+	}
+}
+
 func resetKnownStandardObjectCacheForTest() {
 	knownStandardObjectCache = struct {
 		once          sync.Once
@@ -123,6 +168,66 @@ func TestStandardObjectDefinitionNoFeatureGatedFieldsFromEnrichment(t *testing.T
 	}
 	if _, ok := def.Fields["FirstName"]; ok {
 		t.Fatal("Account should not have FirstName without PersonAccounts feature")
+	}
+}
+
+func TestEnsureStandardObjectFieldsRefreshesStalePicklistMetadata(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "Account",
+		Fields: map[string]Field{
+			"Rating": {APIName: "Rating", Type: FieldPicklist},
+		},
+		Metadata: map[string]string{standardFieldsOverlayMarker: ""},
+	}
+
+	EnsureStandardObjectFields(&definition)
+
+	rating := definition.Fields["Rating"]
+	if len(rating.PicklistValues) != 3 {
+		t.Fatalf("Account.Rating picklist values = %#v, want Hot/Warm/Cold", rating.PicklistValues)
+	}
+	for i, want := range []string{"Hot", "Warm", "Cold"} {
+		if rating.PicklistValues[i].Value != want {
+			t.Fatalf("Account.Rating picklist value %d = %#v, want %q", i, rating.PicklistValues[i], want)
+		}
+	}
+}
+
+func TestEnsureStandardObjectFieldsRefreshesShallowMetadataWhenOverlayMarked(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "Account",
+		Fields: map[string]Field{
+			"Name":  {APIName: "Name", Type: FieldString, DisplayType: "ANY"},
+			"Phone": {APIName: "Phone", Type: FieldString, DisplayType: "ANY"},
+		},
+		Metadata: map[string]string{standardFieldsOverlayMarker: ""},
+	}
+
+	EnsureStandardObjectFields(&definition)
+
+	if got := definition.Fields["Name"].DisplayType; got != "STRING" {
+		t.Fatalf("Account.Name display type = %q, want STRING", got)
+	}
+	if got := definition.Fields["Phone"].DisplayType; got != "PHONE" {
+		t.Fatalf("Account.Phone display type = %q, want PHONE", got)
+	}
+}
+
+func TestEnsureStandardObjectFieldsCorrectsQuickTextChannelMultiPicklist(t *testing.T) {
+	definition := ObjectDefinition{APIName: "QuickText"}
+
+	EnsureStandardObjectFields(&definition)
+
+	channel, ok := definition.Fields["Channel"]
+	if !ok {
+		t.Fatal("QuickText.Channel missing")
+	}
+	if channel.Type != FieldMultiPicklist || channel.DisplayType != "MULTIPICKLIST" {
+		t.Fatalf("QuickText.Channel metadata = %#v, want MULTIPICKLIST", channel)
+	}
+	name, ok := definition.Fields["Name"]
+	if !ok || name.Type != FieldString || name.DisplayType != "STRING" {
+		t.Fatalf("QuickText.Name metadata = %#v, %v; unrelated field changed", name, ok)
 	}
 }
 

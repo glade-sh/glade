@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -32,6 +33,41 @@ func TestIDGeneratorUsesDeterministicObjectSequences(t *testing.T) {
 	}
 	if firstThing != "a00000000000001" {
 		t.Fatalf("first thing id = %s", firstThing)
+	}
+}
+
+func TestStandardCollaborationGroupKeyPrefixMatchesSalesforce(t *testing.T) {
+	if got := StandardKeyPrefix("CollaborationGroup"); got != "0F9" {
+		t.Fatalf("CollaborationGroup key prefix = %q, want 0F9", got)
+	}
+	if got := StandardKeyPrefix("FeedItem"); got != "0D5" {
+		t.Fatalf("FeedItem key prefix = %q, want 0D5", got)
+	}
+	if got := StandardKeyPrefix("FeedComment"); got != "0D7" {
+		t.Fatalf("FeedComment key prefix = %q, want 0D7", got)
+	}
+
+	g := NewStandardIDGenerator()
+	id, err := g.Next("CollaborationGroup")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(string(id), "0F9") {
+		t.Fatalf("CollaborationGroup id = %q, want 0F9 prefix", id)
+	}
+	feedID, err := g.Next("FeedItem")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(string(feedID), "0D5") {
+		t.Fatalf("FeedItem id = %q, want 0D5 prefix", feedID)
+	}
+	commentID, err := g.Next("FeedComment")
+	if err != nil {
+		t.Fatalf("FeedComment id: %v", err)
+	}
+	if !strings.HasPrefix(string(commentID), "0D7") {
+		t.Fatalf("FeedComment id = %q, want 0D7 prefix", commentID)
 	}
 }
 
@@ -92,6 +128,44 @@ func TestEnsureUniqueKeyPrefixesReassignsDuplicateCustomPrefixes(t *testing.T) {
 	}
 	if got := org.Objects["Account"].Definition.KeyPrefix; got != "001" {
 		t.Fatalf("Account prefix = %q", got)
+	}
+}
+
+func TestEnsureUniqueKeyPrefixesUsesDedicatedPoolForImplicitCustomSettings(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["Logger_Settings__c"] = ObjectState{Definition: ObjectDefinition{
+		APIName:  "Logger_Settings__c",
+		Metadata: map[string]string{"kind": "customSetting", "customSettingsType": "Hierarchy"},
+	}}
+	org.Objects["Widget__c"] = ObjectState{Definition: ObjectDefinition{APIName: "Widget__c"}}
+
+	EnsureUniqueKeyPrefixes(&org)
+	if got := org.Objects["Logger_Settings__c"].Definition.KeyPrefix; got != "s00" {
+		t.Fatalf("implicit custom-setting prefix = %q, want s00", got)
+	}
+	if got := org.Objects["Widget__c"].Definition.KeyPrefix; got != "a00" {
+		t.Fatalf("regular custom-object prefix = %q, want a00", got)
+	}
+}
+
+func TestPrefixesForOrgUsesDedicatedPoolForImplicitCustomSettingIDs(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["Logger_Settings__c"] = ObjectState{Definition: ObjectDefinition{
+		APIName:  "Logger_Settings__c",
+		Metadata: map[string]string{"kind": "customSetting", "customSettingsType": "Hierarchy"},
+	}}
+
+	prefixes := prefixesForOrg(org)
+	if got := prefixes["Logger_Settings__c"]; got != "s00" {
+		t.Fatalf("fixture custom-setting prefix = %q, want s00", got)
+	}
+	generator := NewIDGenerator(prefixes)
+	id, err := generator.Next("Logger_Settings__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(string(id), "s00") {
+		t.Fatalf("fixture custom-setting id = %q, want s00 prefix", id)
 	}
 }
 

@@ -41,6 +41,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	if len(args) != len(method.Params) {
 		return Null, fmt.Errorf("%s expects %d arguments", method.Name, len(method.Params))
 	}
+	if vm.rejectAsyncActions && methodHasModifier(method.Modifiers, "future") {
+		return Null, vm.rejectSynchronousAsyncAction(fmt.Sprintf("%s cannot cross the synchronous LWC action boundary", method.Name))
+	}
 	if value, handled := vm.callFrameworkIDGeneratorGenerate(method, args); handled {
 		return value, nil
 	}
@@ -97,6 +100,21 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	}
 	if methodHasModifier(method.Modifiers, "abstract") {
 		return Null, fmt.Errorf("cannot execute abstract method %s", method.Name)
+	}
+	// Generated platform exception constructors are passive methods, but their
+	// String/cause arguments still have observable Salesforce semantics. Apply
+	// those arguments before the passive return path so a constructed exception
+	// retains an explicit message or cause instead of falling back to the
+	// generic "Script-thrown exception" value.
+	if method.IsConstructor && receiver.Kind == ValueObject &&
+		methodHasModifier(method.Modifiers, "passive-generated") && isExceptionType(receiver.Type) {
+		handled, err := applyExceptionConstructorArgs(&receiver, args)
+		if err != nil {
+			return Null, err
+		}
+		if handled {
+			return receiver, nil
+		}
 	}
 	if method.ClassName != "" && !strings.Contains(method.Name, ".<static_") {
 		if err := vm.ensureClassInitialized(method.ClassName); err != nil {
@@ -228,7 +246,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			for _, param := range method.Params {
 				callArgs = append(callArgs, frame[param.Name])
 			}
-			if value, handled := vm.callInvocableActionMember(receiver, apexMethodMemberName(method.Name), callArgs); handled {
+			if value, handled := vm.callInvocableActionMember(receiver, apexMethodMemberName(method.Name), callArgs, result); handled {
 				return value, nil
 			}
 		}
@@ -320,6 +338,22 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	callerSharingMode := vm.currentSharingMode()
 	callerStatement := vm.currentStatement
 	callerHasStatement := vm.hasStatement
+	// Salesforce reports the caller's call-site location in stack traces. The
+	// frame is created when the caller method starts, so refresh its source
+	// location immediately before entering a callee while the caller's current
+	// statement still identifies the invocation. This also keeps helper code
+	// that parses getStackTraceString (for example logging libraries) aligned
+	// with the platform.
+	if callerHasStatement && callerStatement.Line > 0 && len(vm.callStack) > 0 {
+		callerFrame := &vm.callStack[len(vm.callStack)-1]
+		callerFrame.Line = callerStatement.Line
+		if callerStatement.Column > 0 {
+			callerFrame.Column = callerStatement.Column
+		}
+		if callerStatement.File != "" {
+			callerFrame.File = callerStatement.File
+		}
+	}
 	vm.scopeStack = append(vm.scopeStack, caller)
 	vm.Globals = frame
 	vm.VarTypes = frameTypes
@@ -725,7 +759,7 @@ func (vm *VM) lookupStaticFieldStrict(typeName, fieldName string) (Field, string
 					field.Name = fieldName
 				}
 				field.StorageName = fieldName
-				return field, class.Name, true
+				return field, runtimeClassName(class), true
 			}
 			for candidate, field := range class.StaticFields {
 				if !strings.EqualFold(candidate, fieldName) {
@@ -735,7 +769,7 @@ func (vm *VM) lookupStaticFieldStrict(typeName, fieldName string) (Field, string
 					field.Name = candidate
 				}
 				field.StorageName = candidate
-				return field, class.Name, true
+				return field, runtimeClassName(class), true
 			}
 			current = class.SuperClass
 		}
@@ -845,7 +879,7 @@ func (vm *VM) callClassLiteralReceiverMember(callee string, args []Value, result
 
 func (vm *VM) callValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
 	if dataWeaveStaticScriptReceiver(receiverName) && strings.EqualFold(method, "createScript") {
-		value, err := dataWeaveCreateScript(args)
+		value, err := vm.dataWeaveCreateScript(args)
 		return value, true, err
 	}
 	if strings.EqualFold(method, "addError") && strings.Contains(receiverName, ".") {
@@ -855,6 +889,12 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		}
 	}
 	if receiver.Kind == ValueNull {
+		if strings.EqualFold(receiver.Type, "Blob") && method == "toString" {
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("Blob.toString expects 0 arguments")
+			}
+			return Null, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+		}
 		if isImplicitCurrentPageNull(receiver) {
 			if vm.currentPage.Kind == "" {
 				vm.currentPage = newPageReference("")
@@ -910,6 +950,9 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			receiver.Static = declaredType
 		}
 	}
+	if value, handled, err := vm.callLocaleNumberFormatMember(receiver, method, args); handled || err != nil {
+		return value, true, err
+	}
 	if value, updated, mutated, ok, err := callStdlibMember(receiver, method, args); ok || err != nil {
 		if mutated {
 			if err := vm.storeReceiver(receiverName, updated); err != nil {
@@ -918,11 +961,18 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		}
 		return value, true, err
 	}
+	if receiver.Kind == ValueMap && strings.EqualFold(method, "equals") {
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("Map.equals expects 1 argument")
+		}
+		equal, err := vm.apexMapsEqual(receiver, args[0], result, false)
+		return Bool(equal), true, err
+	}
 	if receiver.Kind != ValueObject && !(strings.EqualFold(method, "clone") && (receiver.Kind == ValueList || receiver.Kind == ValueSet || receiver.Kind == ValueMap)) {
 		if receiver.Kind == ValueString && strings.EqualFold(method, "name") && len(args) == 0 && (receiverName == "" || vm.declaredReceiverIsEnum(receiverName)) {
 			return String(receiver.Text), true, nil
 		}
-		if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
+		if value, handled, err := vm.callObjectMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
 	}
@@ -930,6 +980,22 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		return vm.callObjectValueMember(receiverName, receiver, method, args, result)
 	}
 	return vm.callNonObjectValueMember(receiverName, receiver, method, args, result)
+}
+
+// callObjectMember applies the Salesforce display-name rule for source-defined
+// nested classes before delegating to the shared Object member implementation.
+// Object.toString() uses the nested class's local name (for example,
+// TestHandler), while the runtime type remains fully qualified for dispatch.
+func (vm *VM) callObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if receiver.Kind == ValueObject && canonicalObjectMemberMethod(method) == "toString" {
+		if class, ok := vm.lookupClass(runtimeObjectType(receiver)); ok &&
+			strings.Contains(class.Name, ".") && strings.TrimSpace(class.Namespace) == "" {
+			display := receiver
+			display.Type = shortTypeName(class.Name)
+			return callObjectMember(display, method, args)
+		}
+	}
+	return callObjectMember(receiver, method, args)
 }
 
 // callObjectValueMember dispatches a member call whose receiver is a class
@@ -1156,10 +1222,10 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 			}
 			return value, true, err
 		}
-		if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
+		if value, handled, err := vm.callObjectMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
-		if value, handled := vm.generatedPlatformInstanceDefault(receiverName, receiver, method, args); handled {
+		if value, handled := vm.generatedPlatformInstanceDefault(receiverName, receiver, method, args, result); handled {
 			return value, true, nil
 		}
 		if value, handled, err := vm.callManagedPassiveMissingMember(receiver, method, args); handled || err != nil {
@@ -1252,7 +1318,7 @@ func (vm *VM) callNonObjectValueMember(receiverName string, receiver Value, meth
 			return value, handled, err
 		}
 	}
-	if value, handled := vm.generatedPlatformInstanceDefault(receiverName, receiver, method, args); handled {
+	if value, handled := vm.generatedPlatformInstanceDefault(receiverName, receiver, method, args, result); handled {
 		return value, true, nil
 	}
 	if receiver.Kind == ValueObject && receiver.Fields != nil {
@@ -1533,33 +1599,47 @@ func (vm *VM) mapKey(value Value) string {
 }
 
 func (vm *VM) apexObjectHashMapKey(value Value) (string, bool) {
-	if isStubProxy(value) {
+	key, handled, err := vm.apexObjectHashMapKeyChecked(value)
+	if err != nil {
+		if value.Ref != 0 {
+			return string(ValueObject) + ":" + value.Type + ":ref:" + strconv.FormatUint(value.Ref, 10), true
+		}
 		return "", false
+	}
+	return key, handled
+}
+
+func (vm *VM) apexObjectHashMapKeyChecked(value Value) (string, bool, error) {
+	if isStubProxy(value) {
+		return "", false, nil
 	}
 	if value.Kind != ValueObject || value.Type == "" ||
 		(sObjectValueType(value.Type) && !vm.userClassShadowsSObjectType(value.Type)) ||
 		strings.HasPrefix(value.Type, "Schema.") || platformScalarObject(value.Type) ||
 		strings.EqualFold(value.Type, "Type") {
-		return "", false
+		return "", false, nil
 	}
 	if key, ok := vm.frameworkQualifiedMethodMapKey(value); ok {
-		return key, true
+		return key, true, nil
 	}
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(value.Type, "hashCode", nil)
 	if !ok || ambiguous || target.Name == "" || strings.EqualFold(target.ClassName, "Object") {
 		if value.Ref != 0 {
-			return string(ValueObject) + ":" + value.Type + ":ref:" + strconv.FormatUint(value.Ref, 10), true
+			return string(ValueObject) + ":" + value.Type + ":ref:" + strconv.FormatUint(value.Ref, 10), true, nil
 		}
-		return "", false
+		return "", false, nil
 	}
 	result, err := vm.callMethodWithReceiver(target, value, nil, &Result{})
-	if err != nil || result.Kind != ValueInt {
-		if value.Ref != 0 {
-			return string(ValueObject) + ":" + value.Type + ":ref:" + strconv.FormatUint(value.Ref, 10), true
-		}
-		return "", false
+	if err != nil {
+		return "", true, err
 	}
-	return string(ValueObject) + ":" + value.Type + ":hash:" + strconv.FormatInt(result.Int, 10), true
+	if result.Kind != ValueInt {
+		if value.Ref != 0 {
+			return string(ValueObject) + ":" + value.Type + ":ref:" + strconv.FormatUint(value.Ref, 10), true, nil
+		}
+		return "", false, nil
+	}
+	return string(ValueObject) + ":" + value.Type + ":hash:" + strconv.FormatInt(result.Int, 10), true, nil
 }
 
 func objectStringField(value Value, field string) string {
@@ -1578,6 +1658,49 @@ func objectStringField(value Value, field string) string {
 		}
 	}
 	return ""
+}
+
+// Qualified schema keys must name the namespace of a declared field. Generic
+// namespace alias fallback must not turn an invented prefix into an existing key.
+func (vm *VM) invalidSObjectFieldMapNamespaceKey(receiver, key Value) bool {
+	if !isSObjectFieldMapValue(receiver) || key.Kind != ValueString {
+		return false
+	}
+	name := key.Text
+	if dot := strings.LastIndex(name, "."); dot >= 0 {
+		name = name[dot+1:]
+	}
+	separator := strings.Index(name, "__")
+	if separator < 0 {
+		return false
+	}
+	prefix := name[:separator]
+	suffix := strings.ToLower(name[separator:])
+	if suffix == "__c" || suffix == "__r" || suffix == "__pc" || suffix == "__pr" || suffix == "__s" {
+		return false
+	}
+	// Preserve the runtime's current-namespace aliases for standard fields.
+	// A foreign or doubled prefix cannot use that compatibility path.
+	base := name[separator+2:]
+	// A package-qualified custom field has two separators (for example
+	// PKG__Provider__r). A second namespace in the field body, as in
+	// PKG__OTHER__Household__c, is a doubled prefix and must remain invalid.
+	activeNamespace := strings.EqualFold(prefix, vm.currentCallerNamespace()) ||
+		(vm.Org != nil && strings.EqualFold(prefix, vm.Org.Namespace))
+	if activeNamespace && storage.StripAnyNamespaceToken(base) == base {
+		return false
+	}
+	for _, alias := range []string{name, strings.ToLower(name)} {
+		token, ok := receiver.Map[mapKey(String(alias))]
+		if !ok {
+			continue
+		}
+		field, ok := sObjectFieldMapCanonicalFieldName(token)
+		if ok && strings.EqualFold(vm.describeFieldName(field), name) {
+			return false
+		}
+	}
+	return true
 }
 
 func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
@@ -1702,6 +1825,11 @@ func recordTypeInfoKeyMatches(value Value, key string) bool {
 			return true
 		}
 	}
+	if candidate, ok := value.Fields["recordTypeId"]; ok {
+		if candidateID, ok := idValueText(candidate); ok && storage.IDsEqual(storage.ID(candidateID), storage.ID(key)) {
+			return true
+		}
+	}
 	return false
 }
 
@@ -1725,6 +1853,8 @@ func authConfigurationPlatformObjectType(typeName string) bool {
 
 func localRuntimeHarnessPlatformObjectType(typeName string) bool {
 	switch {
+	case strings.HasPrefix(strings.ToLower(strings.TrimSpace(typeName)), "flow.interview."):
+		return true
 	case strings.EqualFold(typeName, "eventbus.testbroker"),
 		strings.EqualFold(typeName, "externalservicetest"),
 		strings.EqualFold(typeName, "flow.interview"),
@@ -1745,70 +1875,6 @@ func localRuntimeHarnessPlatformObjectType(typeName string) bool {
 	default:
 		return false
 	}
-}
-
-func (vm *VM) namespaceStringMapLookup(receiver Value, key Value) (Value, bool) {
-	if receiver.Kind != ValueMap || key.Kind != ValueString {
-		return Null, false
-	}
-	if _, valueType, ok := mapTypeArgs(receiver.Type); ok && strings.EqualFold(valueType, "String") {
-		return Null, false
-	}
-	if !isCustomObjectLikeName(key.Text) && !hasSuffixFold(key.Text, "__mdt") && !hasManagedStringNamespaceToken(key.Text) && strings.TrimSpace(vm.currentCallerNamespace()) == "" {
-		return Null, false
-	}
-	aliases := []string{key.Text, localSchemaName(key.Text)}
-	if base, ok := managedStringNamespaceBase(key.Text); ok {
-		aliases = append(aliases, base)
-		if namespace := strings.TrimSpace(vm.currentCallerNamespace()); namespace != "" {
-			aliases = append(aliases, namespace+"__"+base)
-		}
-	} else if namespace := strings.TrimSpace(vm.currentCallerNamespace()); namespace != "" && !strings.Contains(key.Text, "__") {
-		aliases = append(aliases, namespace+"__"+key.Text)
-	}
-	if vm.Org != nil && vm.Org.Namespace != "" {
-		aliases = append(aliases,
-			storage.NamespaceTokenName(vm.Org.Namespace, key.Text),
-			storage.StripNamespaceToken(vm.Org.Namespace, key.Text),
-		)
-	}
-	seen := make(map[string]struct{}, len(aliases))
-	for _, alias := range aliases {
-		alias = strings.TrimSpace(alias)
-		if alias == "" {
-			continue
-		}
-		normalized := strings.ToLower(alias)
-		if _, ok := seen[normalized]; ok {
-			continue
-		}
-		seen[normalized] = struct{}{}
-		if value, ok := receiver.Map[mapKey(String(alias))]; ok {
-			return value, true
-		}
-	}
-	return Null, false
-}
-
-func hasManagedStringNamespaceToken(value string) bool {
-	_, ok := managedStringNamespaceBase(value)
-	return ok
-}
-
-func managedStringNamespaceBase(value string) (string, bool) {
-	value = strings.TrimSpace(value)
-	if value == "" || strings.Count(value, "__") != 1 {
-		return "", false
-	}
-	namespace, base, ok := strings.Cut(value, "__")
-	if !ok || namespace == "" || base == "" {
-		return "", false
-	}
-	switch strings.ToLower(base) {
-	case "c", "e", "r", "mdt":
-		return "", false
-	}
-	return base, true
 }
 
 func (vm *VM) populatedFieldsKeySetContains(receiver, key Value) (bool, bool) {
@@ -1903,6 +1969,9 @@ func (vm *VM) objectKeyMapLookup(receiver Value, key Value) (Value, bool, error)
 		return Null, false, nil
 	}
 	for rawKey, storedKey := range receiver.MapKeys {
+		if strings.HasPrefix(rawKey, unhashedMapEntryPrefix) {
+			continue
+		}
 		equal, err := vm.mapKeysEqual(storedKey, key)
 		if err != nil {
 			return Null, false, err
@@ -1925,6 +1994,11 @@ func (vm *VM) declaredReceiverIsEnum(receiverName string) bool {
 }
 
 func (vm *VM) mapKeysEqual(storedKey, lookupKey Value) (bool, error) {
+	// Map lookup preserves the boxed numeric key kind; scalar == coercion does not apply.
+	if storedKey.Kind == ValueDecimal && lookupKey.Kind == ValueInt {
+		return false, nil
+	}
+
 	if equal, ok := vm.frameworkQualifiedMethodKeysEqual(storedKey, lookupKey); ok {
 		return equal, nil
 	}
@@ -2132,7 +2206,7 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 				return value, true, err
 			}
 		}
-		if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
+		if value, handled, err := vm.callObjectMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
 		return vm.callStubProxyDynamicMember(receiver, method, args, result)
@@ -2153,7 +2227,11 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 	}
 	metadataArgs := []Value{
 		receiver,
-		String(apexMethodMemberName(target.Name)),
+		// Apex member lookup is case-insensitive, but StubProvider receives the
+		// spelling used by the call expression.  Keep the call-site name here;
+		// a provider may intentionally distinguish it when adapting an existing
+		// API whose declaration and callers use different casing.
+		String(method),
 		platformScalar("Type", returnType),
 		{Kind: ValueList, Type: "List<Type>", List: paramTypes},
 		{Kind: ValueList, Type: "List<String>", List: paramNames},
@@ -2194,7 +2272,11 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 		if fallback, ok := frameworkMismatchedStubReturnFallback(target.ReturnType, value, provider); ok {
 			return fallback, true, nil
 		}
-		return Null, true, fmt.Errorf("stubbed %s.%s return: %w", receiver.Type, method, err)
+		var thrown *apexThrowError
+		if errors.As(err, &thrown) {
+			return Null, true, err
+		}
+		return Null, true, newExceptionError("TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", runtimeValueTypeName(value), typeExceptionTargetName(target.ReturnType)))
 	}
 	coerced = normalizeFrameworkStubReturnValue(target.ReturnType, coerced, provider)
 	return coerced, true, nil
@@ -2821,6 +2903,11 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 			copy(receiver.List[insertAt+1:], receiver.List[insertAt:])
 			receiver.List[insertAt] = item
 		} else {
+			// Appending a native backing String stores its ordinary value.
+			// The source element and existing backing slots retain their identity.
+			if item.Kind == ValueString {
+				item.nativeListElement = false
+			}
 			receiver.List = append(receiver.List, item)
 		}
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
@@ -2901,24 +2988,36 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 			return Null, true, listIndexException(i)
 		}
 		return receiver.List[i], true, nil
-	case "contains":
+	case "contains", "indexOf":
 		if len(args) != 1 {
-			return Null, true, fmt.Errorf("List.contains expects 1 argument")
+			return Null, true, fmt.Errorf("List.%s expects 1 argument", method)
 		}
-		contains, err := vm.collectionContainsValue(receiver.List, args[0], result)
+		index := -1
+		var err error
+		if receiver.nativeListMembership {
+			for i, item := range receiver.List {
+				if item.nativeListElement {
+					continue
+				}
+				equal, compareErr := vm.apexCollectionElementEquals(item, args[0], result)
+				if compareErr != nil {
+					return Null, true, compareErr
+				}
+				if equal {
+					index = i
+					break
+				}
+			}
+		} else {
+			index, err = vm.collectionIndexOfValue(receiver.List, args[0], result)
+		}
 		if err != nil {
 			return Null, true, err
 		}
-		return Bool(contains), true, nil
-	case "indexOf":
-		if len(args) != 1 {
-			return Null, true, fmt.Errorf("List.indexOf expects 1 argument")
+		if method == "contains" {
+			return Bool(index >= 0), true, nil
 		}
-		i, err := vm.collectionIndexOfValue(receiver.List, args[0], result)
-		if err != nil {
-			return Null, true, err
-		}
-		return Int(int64(i)), true, nil
+		return Int(int64(index)), true, nil
 	case "clone":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("List.clone expects 0 arguments")
@@ -3172,15 +3271,18 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Set.clear expects 0 arguments")
 		}
+		previous := snapshotAlias(receiver)
 		receiver.Set = nil
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
 			return Null, true, err
 		}
+		vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 		return Null, true, nil
 	case "removeAll":
 		if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
 			return Null, true, fmt.Errorf("Set.removeAll expects List or Set")
 		}
+		previous := snapshotAlias(receiver)
 		changed := false
 		out := receiver.Set[:0]
 		remove := collectionMembers(args[0])
@@ -3200,12 +3302,14 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
 			}
+			vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 		}
 		return Bool(changed), true, nil
 	case "retainAll":
 		if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
 			return Null, true, fmt.Errorf("Set.retainAll expects List or Set")
 		}
+		previous := snapshotAlias(receiver)
 		changed := false
 		keep := collectionMembers(args[0])
 		out := receiver.Set[:0]
@@ -3225,6 +3329,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
 			}
+			vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 		}
 		return Bool(changed), true, nil
 	case "clone":
@@ -3307,7 +3412,30 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		}
 		vm.markCollectionRefsEscaped(key, item)
 		previous := Null
-		encodedKey := vm.mapKey(key)
+		encodedKey, err := vm.mapEntryKey(receiver, key)
+		if err != nil {
+			var thrown *apexThrowError
+			if !errors.As(err, &thrown) {
+				return Null, true, err
+			}
+			// Apex retains the new entry before propagating a key callback error.
+			// Without a completed hash the entry is enumerable but not searchable.
+			if encodedKey == "" {
+				encodedKey = unhashedMapEntryPrefix
+			}
+			encodedKey = vacantMapEntryKey(receiver, encodedKey)
+			receiver.Map[encodedKey] = item
+			if receiver.MapKeys == nil {
+				receiver.MapKeys = make(map[string]Value)
+			}
+			receiver.MapKeys[encodedKey] = key
+			receiver.MapOrder = append(receiver.MapOrder, encodedKey)
+			if storeErr := vm.storeReceiver(receiverName, receiver); storeErr != nil {
+				return Null, true, storeErr
+			}
+			vm.propagateCollectionMutationFromSnapshot(previousReceiver, receiver)
+			return Null, true, err
+		}
 		if existing, ok := receiver.Map[encodedKey]; ok {
 			previous = existing
 		} else {
@@ -3347,7 +3475,10 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 				return Null, true, fmt.Errorf("Map.putAll: %w", err)
 			}
 			vm.markCollectionRefsEscaped(key, item)
-			encodedKey := vm.mapKey(key)
+			encodedKey, err := vm.mapEntryKey(receiver, key)
+			if err != nil {
+				return Null, true, err
+			}
 			if _, exists := receiver.Map[encodedKey]; !exists {
 				receiver.MapOrder = append(receiver.MapOrder, encodedKey)
 			}
@@ -3366,14 +3497,17 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("Map.get expects 1 argument")
 		}
-		key := vm.mapLookupKey(receiver, args[0])
+		if vm.invalidSObjectFieldMapNamespaceKey(receiver, args[0]) {
+			return missingMapValue(receiver), true, nil
+		}
+		key, err := vm.resolvedMapLookupKey(receiver, args[0])
+		if err != nil {
+			return Null, true, err
+		}
 		if objectName, ok := sObjectFieldMapObjectName(receiver); ok && args[0].Kind == ValueString && vm.sObjectFieldMapKeyIsChildRelationship(objectName, args[0].Text) && !vm.sObjectFieldMapDirectValueMatchesKey(receiver, key, args[0].Text) {
 			return missingMapValue(receiver), true, nil
 		}
 		value, ok := receiver.Map[key]
-		if !ok {
-			value, ok = vm.namespaceStringMapLookup(receiver, args[0])
-		}
 		if !ok {
 			value, ok = vm.populatedFieldsMapAliasLookup(receiver, args[0])
 		}
@@ -3401,13 +3535,27 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			}
 			return Null, true, fmt.Errorf("Map.containsKey expects 1 argument")
 		}
-		key := vm.mapLookupKey(receiver, args[0])
+		if vm.invalidSObjectFieldMapNamespaceKey(receiver, args[0]) {
+			return Bool(false), true, nil
+		}
+		// Salesforce's SObject field map accepts object-qualified aliases for
+		// direct lookup, but those aliases are not direct field keys. Keep
+		// containsKey consistent with that distinction so code that uses a
+		// dotted name to detect a relationship path takes its relationship
+		// branch (for example, Contact fields and Account.Name).
+		if isSObjectFieldMapValue(receiver) && args[0].Kind == ValueString && strings.Contains(args[0].Text, ".") {
+			return Bool(false), true, nil
+		}
+		key, err := vm.resolvedMapLookupKey(receiver, args[0])
+		if err != nil {
+			return Null, true, err
+		}
 		if objectName, ok := sObjectFieldMapObjectName(receiver); ok && args[0].Kind == ValueString && vm.sObjectFieldMapKeyIsChildRelationship(objectName, args[0].Text) && !vm.sObjectFieldMapDirectValueMatchesKey(receiver, key, args[0].Text) {
 			return Bool(false), true, nil
 		}
 		_, ok := receiver.Map[key]
 		if !ok {
-			_, ok = vm.namespaceStringMapLookup(receiver, args[0])
+			_, ok = vm.populatedFieldsMapAliasLookup(receiver, args[0])
 		}
 		if !ok {
 			ok = vm.specialMapContainsKey(receiver, args[0])
@@ -3435,7 +3583,10 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			return Null, true, fmt.Errorf("Map.remove expects 1 argument")
 		}
 		previousReceiver := snapshotAlias(receiver)
-		key := vm.mapLookupKey(receiver, args[0])
+		key, err := vm.resolvedMapLookupKey(receiver, args[0])
+		if err != nil {
+			return Null, true, err
+		}
 		removed := Null
 		if value, ok := receiver.Map[key]; ok {
 			removed = value

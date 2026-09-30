@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -102,6 +103,13 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 		})
 		return
 	}
+	// LWC Apex actions are mutating request boundaries. Execute against an
+	// isolated org and publish it only after the action succeeds and the
+	// backing store accepts the result. Using s.Org directly would leak DML
+	// from a later Apex exception and make persistence failures irreversible.
+	workingOrg := s.Org.Clone()
+	machine.SetOrg(&workingOrg)
+	machine.SetSynchronousActionBoundary(true)
 	machine.SetCurrentUser(s.currentUser(r, ""))
 	if pageURL := lightningLocalContextPageURL(r); pageURL != "" {
 		machine.SetCurrentPageURL(pageURL)
@@ -132,7 +140,36 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 		writeWireJSON(w, out)
 		return
 	}
+	if machine.HasRejectedAsyncAction() {
+		writeWireJSON(w, lwcbrowser.WireResponse{
+			Error: apexWireInvocationError("", "UnsupportedFeature", className, methodName, rawParams, "asynchronous Apex work cannot be committed by the local synchronous LWC action boundary", http.StatusNotImplemented),
+		})
+		return
+	}
+	if machine.HasPendingAsyncWork() {
+		writeWireJSON(w, lwcbrowser.WireResponse{
+			Error: apexWireInvocationError("", "UnsupportedFeature", className, methodName, rawParams, "asynchronous Apex work cannot be committed by the local synchronous LWC action boundary", http.StatusNotImplemented),
+		})
+		return
+	}
+	if !orgStateEqual(workingOrg, *s.Org) {
+		if err := s.commitOrg(workingOrg); err != nil {
+			writeWireJSON(w, lwcbrowser.WireResponse{
+				Error: apexWireInvocationError("", "StoreFailure", className, methodName, rawParams, err.Error(), http.StatusInternalServerError),
+			})
+			return
+		}
+	}
 	writeWireJSON(w, lwcbrowser.WireResponse{Data: result.ReturnValue})
+}
+
+func orgStateEqual(left, right storage.OrgState) bool {
+	leftBytes, leftErr := json.Marshal(left)
+	rightBytes, rightErr := json.Marshal(right)
+	if leftErr != nil || rightErr != nil {
+		return false
+	}
+	return bytes.Equal(leftBytes, rightBytes)
 }
 
 func lightningLocalContextPageURL(r *http.Request) string {

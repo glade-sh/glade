@@ -1,11 +1,13 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/dlclark/regexp2"
+	"github.com/dlclark/regexp2/syntax"
 )
 
 const regexp2MatchTimeout = 2 * time.Second
@@ -294,7 +296,16 @@ func rewriteJavaShorthandClassesForRegexp2(source string, unicodeCharacterClass 
 			out.WriteByte(next)
 			continue
 		}
-		out.WriteString(replacement)
+		// A shorthand denotes a set, not a range endpoint. Keep it as a
+		// nested union operand so a following hyphen cannot bind to the last
+		// character of its expansion (for example, \w-: becoming _-:).
+		if inClass && i+2 < len(source) && source[i+2] == '-' {
+			out.WriteByte('[')
+			out.WriteString(replacement)
+			out.WriteByte(']')
+		} else {
+			out.WriteString(replacement)
+		}
 		i++
 	}
 	return out.String()
@@ -744,4 +755,29 @@ func regexContainsNumericBackreference(source string) bool {
 		}
 	}
 	return false
+}
+
+// regexp2 errors identify the syntax failure but do not expose its offset.
+// On this error path only, parse original-source prefixes to find the offending
+// quantifier. This preserves offsets through quoting and length-changing rewrites.
+func danglingRegexQuantifierDescription(pattern string, err error) (string, bool) {
+	var parseErr *syntax.Error
+	if !errors.As(err, &parseErr) || parseErr.Code != syntax.ErrMissingRepeatArgument {
+		return "", false
+	}
+	for i := 0; i < len(pattern); i++ {
+		if !strings.ContainsRune("*+?", rune(pattern[i])) {
+			continue
+		}
+		source, sourceErr := compileRegexp2Source("Pattern.compile", pattern[:i+1])
+		if sourceErr != nil {
+			continue
+		}
+		_, prefixErr := regexp2.Compile(regexp2CompileSourceForSyntax(source), regexp2.None)
+		var prefixParseErr *syntax.Error
+		if errors.As(prefixErr, &prefixParseErr) && prefixParseErr.Code == syntax.ErrMissingRepeatArgument {
+			return fmt.Sprintf("Invalid regex: Dangling meta character '%c' near index %d", pattern[i], apexStringLength(pattern[:i])), true
+		}
+	}
+	return "", false
 }

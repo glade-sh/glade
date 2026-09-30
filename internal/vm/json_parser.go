@@ -151,7 +151,7 @@ func (vm *VM) callJSONParserMember(receiver Value, method string, args []Value) 
 		if err != nil {
 			return Null, receiver, false, true, jsonParserException("JSONParser.%s cannot parse Datetime %q: %v", method, text, err)
 		}
-		return platformScalar("Datetime", value.UTC().Format(time.RFC3339)), receiver, false, true, nil
+		return platformScalar("Datetime", value.UTC().Format(time.RFC3339Nano)), receiver, false, true, nil
 	case "getTimeValue":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("JSONParser.getTimeValue expects 0 arguments")

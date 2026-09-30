@@ -1,9 +1,11 @@
 package visualforce
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/vm"
@@ -21,6 +23,158 @@ type FormValueConversionDiagnostic struct {
 	RawValue  string
 	Reason    string
 	Message   string
+}
+
+type visualforceParamAssignment struct {
+	SubmittedName string
+	TargetName    string
+}
+
+func visualforceParamAssignments(root *MarkupNode, action string) ([]visualforceParamAssignment, error) {
+	if root == nil || strings.TrimSpace(action) == "" {
+		return nil, nil
+	}
+	var out []visualforceParamAssignment
+	var walk func(*MarkupNode) error
+	walk = func(node *MarkupNode) error {
+		if node == nil {
+			return nil
+		}
+		if node.Type == MarkupNodeElement && strings.EqualFold(node.Namespace, "apex") &&
+			strings.TrimSpace(node.Attribute("action")) != "" &&
+			strings.EqualFold(actionMethodName(node.Attribute("action")), actionMethodName(action)) {
+			for _, child := range node.Children {
+				if child == nil || child.Type != MarkupNodeElement || !strings.EqualFold(child.Namespace, "apex") || !strings.EqualFold(child.Name, "param") {
+					continue
+				}
+				submitted := strings.TrimSpace(child.Attribute("name"))
+				if submitted == "" || strings.TrimSpace(child.Attribute("assignTo")) == "" {
+					continue
+				}
+				target, err := visualforceAssignmentTarget(child.Attribute("assignTo"))
+				if err != nil {
+					return fmt.Errorf("apex:param %q assignTo: %w", submitted, err)
+				}
+				candidate := visualforceParamAssignment{SubmittedName: submitted, TargetName: target}
+				duplicate := false
+				for _, existing := range out {
+					if strings.EqualFold(existing.SubmittedName, submitted) {
+						if !strings.EqualFold(existing.TargetName, target) {
+							return fmt.Errorf("apex:param name %q maps to multiple assignTo properties for action %q", submitted, action)
+						}
+						duplicate = true
+						break
+					}
+				}
+				if !duplicate {
+					out = append(out, candidate)
+				}
+			}
+		}
+		for _, child := range node.Children {
+			if err := walk(child); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if err := walk(root); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func visualforceAssignmentTarget(raw string) (string, error) {
+	name := strings.TrimSpace(raw)
+	if strings.HasPrefix(name, "{!") || strings.HasSuffix(name, "}") {
+		if !strings.HasPrefix(name, "{!") || !strings.HasSuffix(name, "}") {
+			return "", fmt.Errorf("malformed assignment expression %q", raw)
+		}
+		name = strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(name, "{!"), "}"))
+	}
+	if name == "" || strings.Contains(name, ".") {
+		return "", fmt.Errorf("only a single controller property name is supported, got %q", raw)
+	}
+	for i, r := range name {
+		if i == 0 {
+			if !unicode.IsLetter(r) && r != '_' && r != '$' {
+				return "", fmt.Errorf("invalid controller property name %q", raw)
+			}
+			continue
+		}
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '_' && r != '$' {
+			return "", fmt.Errorf("invalid controller property name %q", raw)
+		}
+	}
+	return name, nil
+}
+
+func visualforceTypesEqual(left, right string) bool {
+	normalize := func(value string) string {
+		value = strings.ToLower(strings.Join(strings.Fields(strings.TrimSpace(value)), ""))
+		return strings.TrimPrefix(value, "system.")
+	}
+	return normalize(left) == normalize(right)
+}
+
+func visualforceAssignmentValue(raw, typeName, fieldName string) (vm.Value, error) {
+	var field *storage.Field
+	switch strings.TrimPrefix(strings.ToLower(strings.TrimSpace(typeName)), "system.") {
+	case "boolean":
+		field = &storage.Field{Type: storage.FieldBoolean}
+	case "integer", "long":
+		field = &storage.Field{Type: storage.FieldInteger}
+	case "decimal", "double":
+		field = &storage.Field{Type: storage.FieldDecimal}
+	}
+	value, diagnostic := visualforceTypedFormValueWithDiagnostic(raw, vm.Null, field, fieldName)
+	if diagnostic != nil {
+		return vm.Null, fmt.Errorf("%s: %s", fieldName, diagnostic.Message)
+	}
+	switch strings.TrimPrefix(strings.ToLower(strings.TrimSpace(typeName)), "system.") {
+	case "long":
+		value.Type = "Long"
+	case "double":
+		value.Static = "Double"
+	}
+	return value, nil
+}
+
+func visualforceFormValuesWithoutParamAssignments(values map[string]string, assignments []visualforceParamAssignment) map[string]string {
+	if len(values) == 0 || len(assignments) == 0 {
+		return values
+	}
+	excluded := make(map[string]bool, len(assignments)*2)
+	for _, assignment := range assignments {
+		if _, submitted, _ := visualforceParamSubmittedValue(values, assignment.SubmittedName); !submitted {
+			continue
+		}
+		excluded[strings.ToLower(formFieldBindingName(assignment.SubmittedName))] = true
+		excluded[strings.ToLower(formFieldBindingName(assignment.TargetName))] = true
+	}
+	out := make(map[string]string, len(values))
+	for key, value := range values {
+		if !excluded[strings.ToLower(formFieldBindingName(key))] {
+			out[key] = value
+		}
+	}
+	return out
+}
+
+func visualforceParamSubmittedValue(values map[string]string, name string) (string, bool, error) {
+	wanted := strings.ToLower(formFieldBindingName(name))
+	var value string
+	found := false
+	for key, candidate := range values {
+		if strings.ToLower(formFieldBindingName(key)) != wanted {
+			continue
+		}
+		if found {
+			return "", false, fmt.Errorf("multiple submitted form keys resolve to apex:param name %q", name)
+		}
+		value, found = candidate, true
+	}
+	return value, found, nil
 }
 
 func VisualforceFormBindings(values map[string]string) []FormBinding {

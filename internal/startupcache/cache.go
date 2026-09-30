@@ -20,12 +20,13 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-const Version = 4
+// Version 10 rejects snapshots with queryable synthetic Master record types.
+const Version = 10
 
 const manifestSchemaVersion = 1
 
-// DAPCacheVersion matches the historical DAP startup cache version.
-const DAPCacheVersion = 3
+// DAPCacheVersion rejects debugger snapshots with synthetic Master records.
+const DAPCacheVersion = 5
 
 // SubdirTest is the on-disk cache directory used by glade test.
 const SubdirTest = ".glade/test"

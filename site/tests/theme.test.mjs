@@ -42,7 +42,6 @@ const repoPrivateCorpusAssurance = await readFile(new URL("../../docs/PRIVATE_CO
 const repoLwcSupport = await readFile(new URL("../../docs/LWC_SUPPORT.md", import.meta.url), "utf8");
 const releaseNotes = await readFile(new URL("../../docs/RELEASE_NOTES.md", import.meta.url), "utf8");
 const repoInstallDocs = await readFile(new URL("../../docs/INSTALL.md", import.meta.url), "utf8");
-const releaseVerifier = await readFile(new URL("../../scripts/verify-release-download.sh", import.meta.url), "utf8");
 const repoEditorDocs = await readFile(new URL("../../docs/EDITOR.md", import.meta.url), "utf8");
 const repoLocalTesting = await readFile(new URL("../../docs/LOCAL_TESTING.md", import.meta.url), "utf8");
 const repoTestStartupCache = await readFile(new URL("../../docs/TEST_STARTUP_CACHE.md", import.meta.url), "utf8");
@@ -199,10 +198,7 @@ test("launch docs identify the published v0.2.15 release and retain historical n
   const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(unreleased, "release notes should contain an Unreleased section");
   const unreleasedText = unreleased[1].replace(/\s+/g, " ");
-  assert.match(unreleasedText, /playground --example refinement-service --once/);
-  assert.match(unreleasedText, /JSON schema advances to `1\.1`/);
-  assert.match(unreleasedText, /readinessScope: "apex"/);
-  assert.match(unreleasedText, /Salesforce was not contacted/);
+  assert.match(unreleasedText, /No unreleased changes\./);
 
   const candidate = releaseNotes.match(/^## v0\.2\.15 - 2026-09-04\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(candidate, "release notes should contain a v0.2.15 section");
@@ -256,6 +252,7 @@ test("launch docs identify the published v0.2.15 release and retain historical n
 });
 
 test("release docs publish the sealed private-corpus assurance snapshot", () => {
+  assert.equal(createHash("sha256").update(privateCorpusAssuranceExplorer).digest("hex"), "6cd7158489be6a56c37d737fc77a9f7edf936845049343fa467d52a858eae67b");
   const assuranceJSON = privateCorpusAssuranceExplorer.match(/<script id="assurance-data" type="application\/json">([\s\S]*?)<\/script>/)?.[1];
   assert.ok(assuranceJSON, "the styled explorer must retain the sealed evidence payload");
   const assuranceSha256 = createHash("sha256").update(assuranceJSON).digest("hex");
@@ -429,17 +426,12 @@ test("repository release proof artifacts and measurement wrapper are documented"
   }
 });
 
-test("manual archive verification selects one checksummed asset and fails closed", () => {
-  assert.match(releaseVerifier, /archive="glade_\$\{version\}_\$\{os\}_\$\{arch\}\.tar\.gz"/);
-  assert.match(releaseVerifier, /expected exactly one valid checksum entry/);
-  assert.match(releaseVerifier, /^set -eu$/m);
-  assert.doesNotMatch(releaseVerifier, /\btar\s+-|\.\/glade\s+version/);
-  for (const verificationDocs of [repoSecurityPolicy, securityTrust]) {
-    assert.match(verificationDocs, /release-verifier:start/);
-    assert.match(verificationDocs, /Not extracted, installed, or executed/);
-  }
-  for (const pointerDocs of [repoInstallDocs, repoSecurityTrust]) {
-    assert.match(pointerDocs, /sh scripts\/verify-release-download\.sh/);
+test("manual archive verification preserves the checksummed asset name", () => {
+  for (const installDocs of [repoInstallDocs, repoSecurityPolicy, repoSecurityTrust, securityTrust]) {
+    assert.match(installDocs, /GLADE_ARCHIVE/);
+    assert.match(installDocs, /GLADE_CHECKSUM_LINE/);
+    assert.match(installDocs, /grep "  \\.\/\$\{GLADE_ARCHIVE\}\$"/);
+    assert.doesNotMatch(installDocs, /glade\.tar\.gz/);
   }
   assert.match(installation, /security and release trust guide[^\n]*canonical/);
 });
@@ -484,12 +476,12 @@ test("social share metadata exposes a raster preview card and route identity", (
   assert.match(config, /\['meta', \{ property: 'og:image:type', content: 'image\/png' \}\]/);
   assert.match(config, /\['meta', \{ property: 'og:image:width', content: '1200' \}\]/);
   assert.match(config, /\['meta', \{ property: 'og:image:height', content: '630' \}\]/);
-  assert.match(config, /\['meta', \{ property: 'og:image:alt', content: 'Glade: run and debug supported Apex locally, with Salesforce as the final validation gate' \}\]/);
+  assert.match(config, /\['meta', \{ property: 'og:image:alt', content: 'Glade local Apex runtime social preview' \}\]/);
   assert.match(config, /\['meta', \{ name: 'twitter:card', content: 'summary_large_image' \}\]/);
   assert.match(config, /\['meta', \{ name: 'twitter:title', content: title \}\]/);
   assert.match(config, /\['meta', \{ name: 'twitter:description', content: description \}\]/);
   assert.match(config, /\['meta', \{ name: 'twitter:image', content: 'https:\/\/glade\.sh\/social-card\.png' \}\]/);
-  assert.match(config, /\['meta', \{ name: 'twitter:image:alt', content: 'Glade: run and debug supported Apex locally, with Salesforce as the final validation gate' \}\]/);
+  assert.match(config, /\['meta', \{ name: 'twitter:image:alt', content: 'Glade local Apex runtime social preview' \}\]/);
   const imageTags = config.match(/\['meta', \{ (?:property|name): '(?:og|twitter):image[^']*', content: '[^']+' \}\]/g) || [];
   assert.ok(imageTags.every((tag) => !tag.includes("logo-mark.svg")));
 });
@@ -748,9 +740,7 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(releaseWorkflow, /attestations: write/);
 
   assert.match(repoInstallDocs, /Security verification/);
-  assert.match(repoInstallDocs, /sh scripts\/verify-release-download\.sh/);
-  assert.match(releaseVerifier, /gh attestation verify/);
-  assert.match(releaseVerifier, /--signer-workflow glade-sh\/glade\/\.github\/workflows\/release\.yml/);
+  assert.match(repoInstallDocs, /gh attestation verify/);
   assert.match(installation, /href="\/guide\/security-trust#release-proof"/);
   assert.match(installation, /canonical\s+manual verification path/);
 });
@@ -1368,10 +1358,10 @@ test("workbench page mounts a real CodeMirror editor", () => {
 });
 
 test("docs code blocks and tables fill their content lane cleanly", () => {
-  assert.match(css, /\.vp-doc div\[class\*='language-'\] pre\s*\{[\s\S]*padding: 58px 24px 22px;/);
+  assert.match(css, /\.vp-doc div\[class\*='language-'\] pre\s*\{[\s\S]*padding: 22px 24px;/);
   assert.match(css, /\.vp-doc div\[class\*='language-'\] code\s*\{[\s\S]*font-size: max\(13\.5px, var\(--fs-code\)\);[\s\S]*line-height: 1\.55;/);
-  assert.match(css, /\.vp-doc div\[class\*='language-'\] > span\.lang\s*\{[\s\S]*top: 8px;[\s\S]*left: 18px;[\s\S]*right: auto;[\s\S]*height: 44px;/);
-  assert.match(css, /\.vp-doc div\[class\*='language-'\] > button\.copy\s*\{[\s\S]*width: 44px;[\s\S]*height: 44px;[\s\S]*opacity: 1;/);
+  assert.match(css, /\.vp-doc div\[class\*='language-'\] > span\.lang\s*\{[\s\S]*top: 0;[\s\S]*right: 0;[\s\S]*display: inline-flex;[\s\S]*height: 28px;/);
+  assert.match(css, /\.vp-doc div\[class\*='language-'\] > button\.copy\s*\{[\s\S]*width: 34px;[\s\S]*height: 28px;/);
   assert.match(css, /\.vp-doc table\s*\{[\s\S]*width: 100%;[\s\S]*margin: 20px 0 28px;[\s\S]*border-radius: 12px;/);
   assert.match(css, /\.vp-doc th,\s*\n\.vp-doc td\s*\{[\s\S]*padding: 14px 18px;/);
   assert.match(css, /\.vp-doc tbody tr:nth-child\(even\)\s*\{[\s\S]*background:/);
@@ -1467,17 +1457,17 @@ test("guide landing, quickstart, and support map explain the current product", (
   assert.match(overview, /## Capability claims/);
   assert.doesNotMatch(overview, /## Support claims/);
   assert.doesNotMatch(overview, /full Visualforce rendering or PDF generation/);
-	assert.match(quickstart, /^# Five-minute Quickstart/m);
-	assert.match(quickstart, /class="docs-intro"/);
-	assert.match(quickstart, /execute one named local Apex test/);
-	assert.match(quickstart, /If the shell cannot\s+find Glade/);
-	assert.match(quickstart, /A clean check exits `0`/);
-	assert.match(quickstart, /glade check --project \./);
-	assert.match(quickstart, /glade test --project \. --class <YourTestClass>/);
-	assert.doesNotMatch(quickstart, /--filter/);
-	assert.match(quickstart, /## What the local result proves/);
-	assert.match(quickstart, /## Clean up or continue/);
-	assert.match(quickstart, /retain Salesforce deployment and tests for\s+final validation/);
+  assert.match(quickstart, /^# Run your first local Apex check/m);
+  assert.match(quickstart, /class="docs-intro"/);
+  assert.match(quickstart, /Run a real local Apex test/);
+  assert.match(quickstart, /export PATH="\$HOME\/\.local\/bin:\$PATH"/);
+  assert.match(quickstart, /executed test\s+total\s+must be at least one/i);
+  assert.match(quickstart, /glade check --project \./);
+  assert.match(quickstart, /glade test --project \. --class RefinementServiceTest/);
+  assert.doesNotMatch(quickstart, /--filter/);
+  assert.match(quickstart, /## You are done when/);
+  assert.match(quickstart, /## Reset or clean up/);
+  assert.match(quickstart, /keep Salesforce for final validation/);
   assert.match(supportMap, /^# What Glade runs locally/m);
   assert.match(supportMap, /class="docs-support-legend"/);
   assert.match(supportMap, /class="docs-support-legend-card docs-support-legend-card-supported"/);
@@ -1534,7 +1524,7 @@ test("guide landing, quickstart, and support map explain the current product", (
   assert.match(css, /\.docs-support-legend\s*\{[\s\S]*position: static;[\s\S]*display: flex;[\s\S]*flex-wrap: wrap;[\s\S]*gap: 4px;[\s\S]*padding: 4px 6px;/);
   assert.doesNotMatch(css, /\.docs-support-legend\s*\{[\s\S]*position: sticky;/);
   assert.match(css, /\.docs-support-legend-card\s*\{[\s\S]*display: inline-flex;[\s\S]*align-items: center;[\s\S]*padding: 0;/);
-	assert.match(quickstart, /glade test --project \. --class <YourTestClass>/);
+  assert.match(quickstart, /glade test --project \. --class RefinementServiceTest/);
   assert.match(cliReference, /id="cli-command-filter"/);
   assert.match(cliReference, /class="docs-command-card"/);
   assert.match(cliReference, /--class RefinementServiceTest --method opensFile/);

@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/storage"
@@ -234,6 +235,11 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 	apiVersion, err := storage.ResolveRESTAPIVersion(apiVersion)
+	if err != nil {
+		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, err.Error(), nil))
+		return
+	}
+	apiVersion, err = apexversion.ResolveSource(apiVersion)
 	if err != nil {
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, err.Error(), nil))
 		return

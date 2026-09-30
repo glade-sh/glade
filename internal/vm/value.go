@@ -11,22 +11,28 @@ import (
 )
 
 type Value struct {
-	Kind          ValueKind        `json:"kind"`
-	Int           int64            `json:"int,omitempty"`
-	Decimal       float64          `json:"decimal,omitempty"`
-	Bool          bool             `json:"bool,omitempty"`
-	Text          string           `json:"text,omitempty"`
-	Type          string           `json:"type,omitempty"`
-	Static        string           `json:"-"`
-	Runtime       string           `json:"-"`
-	Ref           uint64           `json:"-"`
-	ExplicitScale bool             `json:"-"`
-	Fields        map[string]Value `json:"fields,omitempty"`
-	List          []Value          `json:"list,omitempty"`
-	Set           []Value          `json:"set,omitempty"`
-	Map           map[string]Value `json:"map,omitempty"`
-	MapKeys       map[string]Value `json:"-"`
-	MapOrder      []string         `json:"-"`
+	// Loaded SOQL reference authority cannot be authored by Apex JSON fields.
+	loadedReferenceSnapshot *sobjectLoadedReferenceSnapshot
+
+	Kind          ValueKind `json:"kind"`
+	Int           int64     `json:"int,omitempty"`
+	Decimal       float64   `json:"decimal,omitempty"`
+	Bool          bool      `json:"bool,omitempty"`
+	Text          string    `json:"text,omitempty"`
+	Type          string    `json:"type,omitempty"`
+	Static        string    `json:"-"`
+	Runtime       string    `json:"-"`
+	Ref           uint64    `json:"-"`
+	ExplicitScale bool      `json:"-"`
+	// Native list membership retains backing values until materialized in an ordinary list.
+	nativeListMembership bool
+	nativeListElement    bool
+	Fields               map[string]Value `json:"fields,omitempty"`
+	List                 []Value          `json:"list,omitempty"`
+	Set                  []Value          `json:"set,omitempty"`
+	Map                  map[string]Value `json:"map,omitempty"`
+	MapKeys              map[string]Value `json:"-"`
+	MapOrder             []string         `json:"-"`
 }
 
 type ValueKind string
@@ -164,6 +170,12 @@ func String(v string) Value {
 }
 
 func List(values ...Value) Value {
+	// Apex collection values are never null merely because they contain no
+	// elements. Keep the backing slice non-nil so an empty query result remains
+	// a usable empty List value (and continues to differ from Null).
+	if values == nil {
+		values = []Value{}
+	}
 	return Value{Kind: ValueList, List: values, Ref: newValueRef()}
 }
 
@@ -208,7 +220,7 @@ func (v Value) String() string {
 	case ValueSet:
 		return "Set" + valuesString(v.Set)
 	case ValueMap:
-		return mapString(v.Map)
+		return mapString(v)
 	case ValueObject:
 		if strings.EqualFold(v.Type, "AccessLevel") {
 			return accessLevelString(v)
@@ -490,7 +502,7 @@ func valueStringWithSeen(v Value, seen map[uint64]bool) string {
 		keys := sortedMapKeys(v.Map)
 		parts := make([]string, 0, len(keys))
 		for _, key := range keys {
-			parts = append(parts, valueFromMapKey(key).String()+"="+valueStringWithSeen(v.Map[key], seen))
+			parts = append(parts, valueStringWithSeen(mapStoredKey(v, key), seen)+"="+valueStringWithSeen(v.Map[key], seen))
 		}
 		return "Map{" + strings.Join(parts, ", ") + "}"
 	case ValueObject:
@@ -594,7 +606,7 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 	case ValueBool:
 		return v.Bool == other.Bool
 	case ValueString:
-		if shouldCompareTextAsID(v.Text, other.Text) {
+		if strings.EqualFold(v.Type, "Id") && strings.EqualFold(other.Type, "Id") {
 			return apexIDTextEqual(v.Text, other.Text)
 		}
 		// Apex String equality is case-sensitive. SOQL text comparison is intentionally
@@ -626,7 +638,7 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 		}
 		for key, value := range v.Map {
 			otherValue, ok := other.Map[key]
-			if !ok || !value.equal(otherValue, seen) {
+			if !ok || !mapStoredKey(v, key).equal(mapStoredKey(other, key), seen) || !value.equal(otherValue, seen) {
 				return false
 			}
 		}
@@ -645,7 +657,7 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 			leftType := typeValueText(v)
 			rightType := typeValueText(other)
 			if leftType != "" || rightType != "" {
-				return canonicalTypeValueText(leftType) == canonicalTypeValueText(rightType)
+				return canonicalTypeValueIdentity(leftType) == canonicalTypeValueIdentity(rightType)
 			}
 		}
 		if strings.EqualFold(v.Type, "Schema.SObjectType") && strings.EqualFold(other.Type, "Schema.SObjectType") {
@@ -688,6 +700,9 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 		}
 		if sObjectValueType(v.Type) && sObjectValueType(other.Type) {
 			return sObjectValuesEqual(v, other, seen)
+		}
+		if strings.HasPrefix(strings.ToLower(v.Type), "connectapi.") && strings.HasPrefix(strings.ToLower(other.Type), "connectapi.") {
+			return strings.EqualFold(v.Type, other.Type) && objectFieldsEqual(v.Fields, other.Fields, seen)
 		}
 		if v.Ref == 0 && other.Ref == 0 && strings.EqualFold(v.Type, other.Type) {
 			return objectFieldsEqual(v.Fields, other.Fields, seen)
@@ -769,8 +784,8 @@ func sObjectValueType(typeName string) bool {
 	key := strings.ToLower(typeName)
 	return strings.EqualFold(typeName, "sObject") || strings.EqualFold(typeName, "AggregateResult") ||
 		isCommonSObjectTypeName(typeName) || strings.HasSuffix(key, "__c") ||
-		strings.HasSuffix(key, "__e") || strings.HasSuffix(key, "__mdt") ||
-		strings.HasSuffix(key, "__r")
+		strings.HasSuffix(key, "__b") || strings.HasSuffix(key, "__e") || strings.HasSuffix(key, "__mdt") ||
+		strings.HasSuffix(key, "__r") || strings.HasSuffix(key, "__share")
 }
 
 func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
@@ -870,14 +885,20 @@ func isStringComparableEnum(typeName string) bool {
 }
 
 func apexIDTextEqual(left, right string) bool {
-	if len(left) >= 15 && len(right) >= 15 {
-		return left[:15] == right[:15]
+	if left == right {
+		return true
 	}
-	return left == right
+	if len(left) == 15 && len(right) == 18 {
+		return validateApexID(right) == nil && left == right[:15]
+	}
+	if len(left) == 18 && len(right) == 15 {
+		return validateApexID(left) == nil && left[:15] == right
+	}
+	return false
 }
 
 func canonicalIDMapKey(value string) string {
-	if len(value) >= 15 {
+	if len(value) == 15 || (len(value) == 18 && validateApexID(value) == nil) {
 		return value[:15]
 	}
 	return value
@@ -992,6 +1013,11 @@ func typeValueText(value Value) string {
 	return ""
 }
 
+// Type identity ignores spelling case; token display retains its original name.
+func canonicalTypeValueIdentity(text string) string {
+	return strings.ToLower(canonicalTypeValueText(text))
+}
+
 func canonicalTypeValueText(text string) string {
 	normalized := strings.TrimPrefix(text, "System.")
 	switch strings.ToLower(normalized) {
@@ -1064,8 +1090,10 @@ func mapKey(v Value) string {
 			}
 		}
 	}
-	if v.Kind == ValueObject && v.Type == "Type" && v.Text != "" {
-		return string(v.Kind) + ":" + v.Type + ":" + v.Text
+	if v.Kind == ValueObject && strings.EqualFold(v.Type, "Type") {
+		if name := typeValueText(v); name != "" {
+			return string(v.Kind) + ":Type:" + canonicalTypeValueIdentity(name)
+		}
 	}
 	if v.Kind == ValueObject && platformScalarObject(v.Type) {
 		if raw, ok := v.Fields["value"]; ok && raw.Kind == ValueString {
@@ -1298,13 +1326,14 @@ func apexCollectionString(value Value) string {
 		}
 		return "{" + strings.Join(parts, ", ") + "}"
 	case ValueMap:
-		return mapString(value.Map)
+		return mapString(value)
 	default:
 		return value.String()
 	}
 }
 
-func mapString(values map[string]Value) string {
+func mapString(value Value) string {
+	values := value.Map
 	if len(values) == 0 {
 		return "{}"
 	}
@@ -1314,7 +1343,7 @@ func mapString(values map[string]Value) string {
 		if i > 0 {
 			out += ", "
 		}
-		out += valueFromMapKey(key).String() + "=" + values[key].String()
+		out += mapStoredKey(value, key).String() + "=" + values[key].String()
 	}
 	return out + "}"
 }

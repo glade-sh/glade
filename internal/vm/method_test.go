@@ -621,6 +621,7 @@ func TestExecStringValueOfNestedClassUsesLocalName(t *testing.T) {
 	program, err := CompileAnonymous(`
 Outer.Inner nestedValue = new Outer.Inner();
 System.assertEquals('Inner:{}', String.valueOf(nestedValue));
+System.assertEquals('Inner:{}', nestedValue.toString());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -12887,6 +12888,46 @@ System.assertEquals('concrete', Util.pick(records));
 	}
 }
 
+func TestRuntimeTypedNullCollectionRejectsUnrelatedDerivedOverload(t *testing.T) {
+	mapProgram, err := CompileAnonymous("return 'map';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	listProgram, err := CompileAnonymous("return 'list';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Child child = new Child();
+Map<Id, SObject> records = null;
+System.assertEquals('map', child.pick(records));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Methods: map[string]Method{
+			"pick": {Name: "Base.pick", ClassName: "Base", ReturnType: "String", Params: []Param{{Name: "records", Type: "Map<Id,SObject>"}}, Program: mapProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Base",
+		Methods: map[string]Method{
+			"pick": {Name: "Child.pick", ClassName: "Child", ReturnType: "String", Params: []Param{{Name: "records", Type: "List<SObject>"}}, Program: listProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeNumericOverloadChoosesNarrowestWidening(t *testing.T) {
 	longProgram, err := CompileAnonymous("return 'long';")
 	if err != nil {
@@ -14923,6 +14964,19 @@ func TestExecAssignIDToStringUses18CharacterID(t *testing.T) {
 Id accountId = Id.valueOf('001000000000001');
 String text = accountId;
 System.assertEquals('001000000000001AAA', text);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecIDToStringUses18CharacterID(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id accountId = Id.valueOf('001000000000001');
+System.assertEquals('001000000000001AAA', accountId.toString());
 `)
 	if err != nil {
 		t.Fatal(err)

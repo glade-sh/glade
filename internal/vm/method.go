@@ -15,22 +15,28 @@ type Param struct {
 }
 
 type Method struct {
-	Name            string
-	ReturnType      string
-	Params          []Param
-	Program         ir.Program
-	ClassName       string
-	IsStatic        bool
-	IsConstructor   bool
-	Access          string
-	Modifiers       []string
-	File            string
-	APIVersion      string
-	Line            int
-	Column          int
-	Unsupported     string
-	RuntimeLowering bool
-	Dependency      bool
+	Name          string
+	ReturnType    string
+	Params        []Param
+	Program       ir.Program
+	ClassName     string
+	IsStatic      bool
+	IsConstructor bool
+	Access        string
+	Modifiers     []string
+	File          string
+	APIVersion    string
+	// SourceContextBound preserves the source occurrence context for runners
+	// that compile an entry method outside the shared project class registry.
+	// Namespace and SharingMode are meaningful only when this is true.
+	SourceContextBound bool
+	Namespace          string
+	SharingMode        string
+	Line               int
+	Column             int
+	Unsupported        string
+	RuntimeLowering    bool
+	Dependency         bool
 }
 
 func (vm *VM) RegisterMethod(method Method) error {
@@ -108,6 +114,7 @@ type Field struct {
 	Property     bool
 	Getter       *Method
 	Setter       *Method
+	HasGetter    bool
 	HasSetter    bool
 	File         string
 	Dependency   bool
@@ -217,6 +224,7 @@ func (vm *VM) RegisterClass(class Class) error {
 
 func stampFieldAccessorOwners(ownerName, className, fieldName string, field Field) Field {
 	if field.Getter != nil {
+		field.HasGetter = true
 		getter := *field.Getter
 		if getter.Name == "" {
 			getter.Name = className + "." + fieldName + ".get"

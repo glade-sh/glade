@@ -1,0 +1,177 @@
+package visualforce
+
+import (
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/glade-sh/glade/internal/project"
+)
+
+func TestStructureContractsRejectInvalidParentsAndCardinality(t *testing.T) {
+	cases := []struct {
+		name          string
+		page          string
+		component     string
+		wantLoadError bool
+	}{
+		{
+			name: "param under commandLink in form",
+			page: `<apex:page><apex:form><apex:commandLink value="Open"><apex:param name="id" value="42"/></apex:commandLink></apex:form></apex:page>`,
+		},
+		{
+			name: "param under existing outputFormat renderer",
+			page: `<apex:page><apex:outputFormat value="Hello {0}"><apex:param value="Ada"/></apex:outputFormat></apex:page>`,
+		},
+		{
+			name:          "param under unsupported outputPanel parent",
+			page:          `<apex:page><apex:outputPanel><apex:param name="id" value="42"/></apex:outputPanel></apex:page>`,
+			wantLoadError: true,
+		},
+		{
+			name:          "multiple page roots",
+			page:          `<apex:page/><apex:page/>`,
+			wantLoadError: true,
+		},
+		{
+			name:          "attribute declaration outside component",
+			page:          `<apex:page><apex:attribute name="value" type="String" required="true"/></apex:page>`,
+			wantLoadError: true,
+		},
+		{
+			name:          "componentBody outside component",
+			page:          `<apex:page><apex:componentBody/></apex:page>`,
+			wantLoadError: true,
+		},
+		{
+			name:      "required attribute and one componentBody inside component",
+			component: `<apex:component><apex:attribute name="value" type="String" required="true"/><apex:repeat value="{!items}" var="item"><section><apex:componentBody/></section></apex:repeat></apex:component>`,
+		},
+		{
+			name:          "multiple component roots",
+			component:     `<apex:component/><apex:component/>`,
+			wantLoadError: true,
+		},
+		{
+			name:          "duplicate componentBody declarations",
+			component:     `<apex:component><apex:componentBody/><apex:componentBody/></apex:component>`,
+			wantLoadError: true,
+		},
+		{
+			name:          "componentBody nested within componentBody",
+			component:     `<apex:component><apex:componentBody><apex:componentBody/></apex:componentBody></apex:component>`,
+			wantLoadError: true,
+		},
+		{
+			name:          "duplicate nested componentBody declarations",
+			component:     `<apex:component><apex:repeat value="{!items}" var="item"><section><apex:componentBody/></section></apex:repeat><div><apex:componentBody/></div></apex:component>`,
+			wantLoadError: true,
+		},
+		{
+			name: "pageBlockSectionItem accepts two children",
+			page: `<apex:page><apex:pageBlockSectionItem><apex:outputText value="label"/><apex:outputText value="value"/></apex:pageBlockSectionItem></apex:page>`,
+		},
+		{
+			name:          "pageBlockSectionItem rejects a third child",
+			page:          `<apex:page><apex:pageBlockSectionItem><apex:outputText value="label"/><apex:outputText value="value"/><apex:outputText value="extra"/></apex:pageBlockSectionItem></apex:page>`,
+			wantLoadError: true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, index, err := loadStructureContractFixture(t, tc.page, tc.component)
+			if tc.wantLoadError {
+				if err == nil {
+					t.Fatal("LoadProject accepted structurally invalid markup")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("LoadProject rejected normative positive case: %v", err)
+			}
+			if tc.page != "" {
+				if _, ok := index.Page("Structure"); !ok {
+					t.Fatal("LoadProject did not index the positive page")
+				}
+			}
+			if tc.component != "" {
+				component, ok := index.Component("Structure")
+				if !ok || len(component.Attributes) != 1 || component.Attributes[0].Required != "true" {
+					t.Fatalf("LoadProject did not preserve the required component attribute declaration: %#v", component)
+				}
+			}
+		})
+	}
+}
+
+func TestStructureContractsRenderPageBlockSectionItemChildrenInOrder(t *testing.T) {
+	page := `<apex:page><apex:pageBlock><apex:pageBlockSection><apex:pageBlockSectionItem><apex:outputText value="label-marker"/><apex:outputText value="value-marker"/></apex:pageBlockSectionItem></apex:pageBlockSection></apex:pageBlock></apex:page>`
+	project, index, err := loadStructureContractFixture(t, page, "")
+	if err != nil {
+		t.Fatalf("LoadProject rejected two-child pageBlockSectionItem: %v", err)
+	}
+	result, err := RenderPage(PageRenderRequest{Project: project, VFIndex: index, PageName: "Structure"})
+	if err != nil {
+		t.Fatalf("RenderPage: %v", err)
+	}
+	label := strings.Index(result.HTML, "label-marker")
+	value := strings.Index(result.HTML, "value-marker")
+	if label < 0 || value < 0 || label >= value {
+		t.Fatalf("pageBlockSectionItem child document order not preserved: %s", result.HTML)
+	}
+}
+
+func TestStructureValidationUsesHTMLRawScriptText(t *testing.T) {
+	markup := `<apex:page><script>const example = "<apex:param name='not-a-child'/>";</script><apex:form/></apex:page>`
+	if _, err := ParseMarkupTree(markup); err != nil {
+		t.Fatalf("raw script text was treated as Visualforce structure: %v", err)
+	}
+}
+
+func TestRenderPageRejectsStructureFromDirectIndex(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "DirectStructure.page")
+	writeFile(t, path, `<apex:page><apex:outputPanel><apex:param name="id" value="42"/></apex:outputPanel></apex:page>`)
+	index := Index{Pages: []Page{{Name: "DirectStructure", File: path}}}
+	index.sortAndBuildLookups()
+	if _, err := RenderPage(PageRenderRequest{VFIndex: index, PageName: "DirectStructure"}); err == nil {
+		t.Fatal("RenderPage bypassed shared markup structure validation")
+	}
+}
+
+func TestLoadProjectBestEffortSkipsStructureValidation(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Lenient.page"), `<apex:page><apex:outputPanel><apex:param name="id"/></apex:outputPanel></apex:page>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index := LoadProjectBestEffort(p)
+	if _, ok := index.Page("Lenient"); !ok {
+		t.Fatal("LoadProjectBestEffort dropped a page solely for a structural-rule violation")
+	}
+}
+
+func loadStructureContractFixture(t *testing.T, pageMarkup, componentMarkup string) (project.Project, Index, error) {
+	t.Helper()
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	if pageMarkup != "" {
+		path := filepath.Join(root, "force-app/main/default/pages/Structure.page")
+		writeFile(t, path, pageMarkup)
+		writeFile(t, path+"-meta.xml", `<ApexPage><apiVersion>67.0</apiVersion></ApexPage>`)
+	}
+	if componentMarkup != "" {
+		path := filepath.Join(root, "force-app/main/default/components/Structure.component")
+		writeFile(t, path, componentMarkup)
+		writeFile(t, path+"-meta.xml", `<ApexComponent><apiVersion>67.0</apiVersion></ApexComponent>`)
+	}
+	p, err := project.Load(root)
+	if err != nil {
+		return project.Project{}, Index{}, err
+	}
+	index, err := LoadProject(p)
+	return p, index, err
+}

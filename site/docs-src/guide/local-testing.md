@@ -127,6 +127,15 @@ glade test --project . \
 glade test --project . --test-timeout 2m
 ```
 
+A hand-written class file must contain at least one class. An empty or
+comment-only file is a selector failure; JSON mode returns `status=failed` with
+`problem.type=Selector` and never widens the run to the whole suite. Generated
+empty shards contain `# glade-empty-class-shard-v1`; running one is an
+intentional no-op reported as `status=empty` with exit code `0`.
+Both outcomes write requested `--junit` and `--trace` artifacts. Because no
+test runs, `--perf-json`, `--cpu-profile`, and `--mem-profile` are rejected for
+an empty class file instead of silently omitting their outputs.
+
 Unfiltered, unsharded runs maintain `.glade/test-durations.json`. Duration
 history balances later shards; the assignment is deterministic for the same
 selected classes, shard count, and history. `--write-class-shards` writes
@@ -259,7 +268,9 @@ outcomes count as errors and exit with code `1`.
 Read the JSON `summary` counts: `total`, `passed`, `failed`, `errors`, `skipped`,
 and `unsupported`. A run with zero selected tests can exit with code `0`; it
 does not provide test execution evidence. Run an explicit relevant test or
-suite if an affected selection is empty.
+suite if an affected selection is empty. JSON `status=partial` means at least
+one selected test was skipped without a failure; inspect the skipped cases
+before treating the run as CI evidence.
 
 ```text
   ✓  RefinementServiceTest.opensFile  42ms

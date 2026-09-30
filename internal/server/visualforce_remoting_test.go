@@ -13,7 +13,7 @@ import (
 )
 
 func TestHandleVisualforceRemotingDispatchesRemoteAction(t *testing.T) {
-	srv := newVisualforceFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
+	srv := newVisualforceRemotingFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
   @RemoteAction
   public static String echo(String name) {
     return 'echo:' + name;
@@ -47,7 +47,7 @@ func TestHandleVisualforceRemotingDispatchesRemoteAction(t *testing.T) {
 }
 
 func TestHandleVisualforceRemotingRejectsMissingViewState(t *testing.T) {
-	srv := newVisualforceFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
+	srv := newVisualforceRemotingFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
   @RemoteAction
   public static String echo(String name) {
     return 'echo:' + name;
@@ -65,7 +65,7 @@ func TestHandleVisualforceRemotingRejectsMissingViewState(t *testing.T) {
 }
 
 func TestHandleVisualforceRemotingAcceptsBrowserManagerEnvelope(t *testing.T) {
-	srv := newVisualforceFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"><apex:form /></apex:page>`, `public class AjaxController {
+	srv := newVisualforceRemotingFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"><apex:form /></apex:page>`, `public class AjaxController {
   @RemoteAction
   public static String echo(String name) {
     return 'echo:' + name;
@@ -92,7 +92,7 @@ func TestHandleVisualforceRemotingAcceptsBrowserManagerEnvelope(t *testing.T) {
 }
 
 func TestHandleVisualforceRemotingReturnsEnvelopeForMissingMethod(t *testing.T) {
-	srv := newVisualforceFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
+	srv := newVisualforceRemotingFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
   @RemoteAction
   public static String echo(String name) {
     return 'echo:' + name;
@@ -110,7 +110,7 @@ func TestHandleVisualforceRemotingReturnsEnvelopeForMissingMethod(t *testing.T) 
 }
 
 func TestHandleVisualforceRemotingReturnsEnvelopeForUnsupportedRemoteAction(t *testing.T) {
-	srv := newVisualforceFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
+	srv := newVisualforceRemotingFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
   @RemoteAction
   public String echo() {
     return 'echo';
@@ -128,7 +128,7 @@ func TestHandleVisualforceRemotingReturnsEnvelopeForUnsupportedRemoteAction(t *t
 }
 
 func TestHandleVisualforceRemotingAcceptsObjectAndArrayParameters(t *testing.T) {
-	srv := newVisualforceFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
+	srv := newVisualforceRemotingFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
   @RemoteAction
   public static String inspect(Map<String, Object> payload, List<Object> values) {
     return String.valueOf(payload.get('name')) + ':' + String.valueOf(values.size());
@@ -146,7 +146,7 @@ func TestHandleVisualforceRemotingAcceptsObjectAndArrayParameters(t *testing.T) 
 }
 
 func TestHandleVisualforceRemotingFailureEnvelopeKeepsStableShape(t *testing.T) {
-	srv := newVisualforceFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
+	srv := newVisualforceRemotingFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
   @RemoteAction
   public static String echo(String name) {
     return 'echo:' + name;
@@ -184,7 +184,7 @@ func TestHandleVisualforceRemotingFailureEnvelopeKeepsStableShape(t *testing.T) 
 }
 
 func TestHandleVisualforceRemoteObjectsDispatchesCRUD(t *testing.T) {
-	srv := newVisualforceFixtureServer(t, "RemoteObjects.page", `<apex:page>
+	srv := newVisualforceRemotingFixtureServer(t, "RemoteObjects.page", `<apex:page>
   <apex:remoteObjects>
     <apex:remoteObjectModel name="Account" fields="Id,Name"/>
   </apex:remoteObjects>
@@ -197,6 +197,7 @@ func TestHandleVisualforceRemoteObjectsDispatchesCRUD(t *testing.T) {
 	account.Records = map[storage.ID]storage.Record{}
 	org.Objects["Account"] = account
 	srv.Org = &org
+	configureVisualforceTestPrincipal(t, srv)
 
 	first := httptest.NewRecorder()
 	srv.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/apex/RemoteObjects", nil))
@@ -228,7 +229,7 @@ func TestHandleVisualforceRemoteObjectsDispatchesCRUD(t *testing.T) {
 }
 
 func TestHandleVisualforceRemoteObjectsRejectsMissingViewState(t *testing.T) {
-	srv := newVisualforceFixtureServer(t, "RemoteObjects.page", `<apex:page>
+	srv := newVisualforceRemotingFixtureServer(t, "RemoteObjects.page", `<apex:page>
   <apex:remoteObjects>
     <apex:remoteObjectModel name="Account" fields="Id,Name"/>
   </apex:remoteObjects>
@@ -241,6 +242,7 @@ func TestHandleVisualforceRemoteObjectsRejectsMissingViewState(t *testing.T) {
 	account.Records = map[storage.ID]storage.Record{}
 	org.Objects["Account"] = account
 	srv.Org = &org
+	configureVisualforceTestPrincipal(t, srv)
 
 	req := httptest.NewRequest(http.MethodPost, "/apex/RemoteObjects/remoteObjects", strings.NewReader(`{"operation":"create","objectName":"Account","fields":{"Name":"Acme"}}`))
 	req.Header.Set("Content-Type", "application/json")
@@ -263,7 +265,7 @@ func TestHandleVisualforceRemoteObjectsRejectsMissingViewState(t *testing.T) {
 }
 
 func TestHandleVisualforceRemotingRejectsOversizedBodyBeforeDecode(t *testing.T) {
-	srv := newVisualforceFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
+	srv := newVisualforceRemotingFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
   @RemoteAction
   public static String echo(String name) {
     return 'echo:' + name;
@@ -277,6 +279,13 @@ func TestHandleVisualforceRemotingRejectsOversizedBodyBeforeDecode(t *testing.T)
 	if rec.Code == http.StatusOK || !strings.Contains(rec.Body.String(), "request body too large") {
 		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
 	}
+}
+
+func newVisualforceRemotingFixtureServer(t *testing.T, pageName, pageMarkup, controllerSource string) *Server {
+	t.Helper()
+	srv := newVisualforceFixtureServer(t, pageName, pageMarkup, controllerSource)
+	configureVisualforceTestPrincipal(t, srv)
+	return srv
 }
 
 func postVisualforceRemoting(t *testing.T, srv *Server, body string) []visualforce.RemotingResponse {

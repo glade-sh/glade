@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexversion"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 // These are authoritative Salesforce API 67 negative contracts. Generated
@@ -136,6 +137,8 @@ func semaAPI67RejectedPlatformCallAtVersion(version, receiverType, method, recei
 	base, _ := semaGenericBaseAndArgs(receiverType)
 	base = normalizeName(base)
 	switch base {
+	case "dataweave.result":
+		return method == "getmimetype"
 	case "id":
 		return method == "to18"
 	case "integer":
@@ -281,4 +284,18 @@ func semaAPI67RejectedPlatformField(path string) bool {
 	}
 	_, rejected := semaAPI67PatternFlags[field]
 	return rejected
+}
+
+// These two Result members were rejected by exact API65 Salesforce controls.
+// Keep the supported getValue/getValueAsString carrier shape open to its
+// existing type and overload checks.
+func semaRejectedDataWeaveResultField(receiver, field string) bool {
+	return strings.EqualFold(semaCanonicalPlatformAlias(receiver), "DataWeave.Result") && strings.EqualFold(field, "valueAsString")
+}
+
+func semaStandardFieldAssignmentReadOnly(model *semaTypeMemberView, receiver, field string) bool {
+	if members, found := model.lookup(normalizeName(receiver)); found && !members.sobject && !members.platform {
+		return false
+	}
+	return storage.StandardFieldAssignmentReadOnly(receiver, field)
 }

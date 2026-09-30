@@ -493,8 +493,88 @@ export default configProviderService;
 func ConfirmModuleJS() string {
 	return `export default class LightningConfirm {
   static open(options = {}) {
-    window.dispatchEvent(new CustomEvent("gladeconfirm", { detail: options, bubbles: true, composed: true }));
-    return Promise.resolve(true);
+    return new Promise((resolve) => {
+      const label = String(options.label || "Confirm");
+      const message = String(options.message ?? "");
+      let previousFocus = document.activeElement;
+      while (previousFocus && previousFocus.shadowRoot && previousFocus.shadowRoot.activeElement) {
+        previousFocus = previousFocus.shadowRoot.activeElement;
+      }
+      window.dispatchEvent(new CustomEvent("gladeconfirm", { detail: options, bubbles: true, composed: true }));
+      const overlay = document.createElement("div");
+      overlay.style.position = "fixed";
+      overlay.style.inset = "0";
+      overlay.style.zIndex = "2147483647";
+      overlay.style.display = "flex";
+      overlay.style.alignItems = "center";
+      overlay.style.justifyContent = "center";
+      overlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+      const dialog = document.createElement("div");
+      dialog.setAttribute("role", "dialog");
+      dialog.setAttribute("aria-modal", "true");
+      dialog.setAttribute("aria-label", message ? label + ": " + message : label);
+      dialog.style.boxSizing = "border-box";
+      dialog.style.width = "min(28rem, calc(100vw - 2rem))";
+      dialog.style.padding = "1.5rem";
+      dialog.style.borderRadius = "0.25rem";
+      dialog.style.backgroundColor = "white";
+      dialog.style.color = "#181818";
+      dialog.style.boxShadow = "0 0.5rem 2rem rgba(0, 0, 0, 0.3)";
+      const heading = document.createElement("h2");
+      heading.textContent = label;
+      heading.setAttribute("tabindex", "-1");
+      const body = document.createElement("p");
+      body.textContent = message;
+      const actions = document.createElement("div");
+      actions.style.display = "flex";
+      actions.style.justifyContent = "flex-end";
+      actions.style.gap = "0.5rem";
+      const cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.textContent = "Cancel";
+      const ok = document.createElement("button");
+      ok.type = "button";
+      ok.textContent = "OK";
+      ok.style.backgroundColor = "#0176d3";
+      ok.style.color = "white";
+      for (const button of [cancel, ok]) {
+        button.style.padding = "0.5rem 1rem";
+        button.style.borderRadius = "0.25rem";
+        button.style.cursor = "pointer";
+      }
+      let dismissed = false;
+      const dismiss = (result) => {
+        if (dismissed) return;
+        dismissed = true;
+        cancel.removeEventListener("click", onCancel);
+        ok.removeEventListener("click", onOk);
+        overlay.remove();
+        resolve(result);
+        if (previousFocus && previousFocus.isConnected && typeof previousFocus.focus === "function") previousFocus.focus();
+      };
+      const onCancel = () => dismiss(false);
+      const onOk = () => dismiss(true);
+      cancel.addEventListener("click", onCancel);
+      ok.addEventListener("click", onOk);
+      dialog.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          dismiss(false);
+        } else if (event.key === "Tab") {
+          event.preventDefault();
+          event.stopPropagation();
+          const choices = [cancel, ok];
+          const index = choices.indexOf(document.activeElement);
+          choices[event.shiftKey ? (index <= 0 ? 1 : 0) : (index < 0 || index === 1 ? 0 : 1)].focus();
+        }
+      });
+      actions.append(cancel, ok);
+      dialog.append(heading, body, actions);
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+      heading.focus();
+    });
   }
 }
 `
@@ -776,8 +856,9 @@ export function decodeDefaultFieldValues(value = "") {
 }
 
 func CustomPermissionModuleJS(name string) string {
-	return fmt.Sprintf(`export const permissionName = %q;
-export default true;
+	return fmt.Sprintf(`import { readCustomPermission } from "/lightning/runtime/shims/user-permission.js";
+export const permissionName = %q;
+export default readCustomPermission(permissionName);
 `, strings.TrimSuffix(strings.TrimSpace(name), ".js"))
 }
 
@@ -873,6 +954,8 @@ export const FlowNavigationFinishEvent = flowNavigationEvent("flownavigationfini
 func RefreshModuleJS() string {
 	return `const handlers = new Map();
 const containers = new Map();
+// Local token models the documented enum identity; Salesforce raw representation remains unqualified.
+export const RefreshComplete = Symbol("RefreshComplete");
 export class RefreshEvent extends CustomEvent {
   constructor() {
     super("lightning__refresh", { bubbles: true, composed: true });
@@ -886,11 +969,26 @@ export function unregisterRefreshHandler(element) {
   handlers.delete(element && element.element || element);
 }
 export function registerRefreshContainer(element, callback) {
-  containers.set(element, callback);
+  const previous = containers.get(element);
+  if (previous) element.removeEventListener("lightning__refresh", previous.listener);
+  const listener = (event) => {
+    event.stopPropagation();
+    const statusPromise = Promise.resolve()
+      .then(() => __gladeDispatchRefresh(element))
+      .then(() => RefreshComplete);
+    callback(statusPromise);
+  };
+  containers.set(element, { callback, listener });
+  element.addEventListener("lightning__refresh", listener);
   return { element, callback };
 }
 export function unregisterRefreshContainer(element) {
-  containers.delete(element && element.element || element);
+  const contextElement = element && element.element || element;
+  const registration = containers.get(contextElement);
+  if (registration) {
+    contextElement.removeEventListener("lightning__refresh", registration.listener);
+    containers.delete(contextElement);
+  }
 }
 export async function __gladeDispatchRefresh(root) {
   const results = [];
@@ -1544,38 +1642,57 @@ export default ShowToastEvent;
 }
 
 func PlatformResourceLoaderModuleJS() string {
-	return `function appendOnce(tag, attr, url) {
+	return `const resourceLoads = new WeakMap();
+function findTrackedLoad(selector) {
+  // A matching element from another loader is not evidence of completion.
+  for (const el of document.querySelectorAll(selector)) {
+    const promise = resourceLoads.get(el);
+    if (promise) {
+      return promise;
+    }
+  }
+}
+function appendOnce(tag, attr, url) {
   if (!url) {
     return Promise.reject(new Error("resource URL is required"));
   }
   const selector = tag + "[" + attr + "=\"" + url + "\"]";
-  if (document.querySelector(selector)) {
-    return Promise.resolve();
+  const existing = findTrackedLoad(selector);
+  if (existing) {
+    return Promise.resolve(existing);
   }
-  return new Promise((resolve, reject) => {
-    const el = document.createElement(tag);
+  let el;
+  const promise = new Promise((resolve, reject) => {
+    el = document.createElement(tag);
     el[attr] = url;
     el.onload = () => resolve();
     el.onerror = () => reject(new Error("failed to load resource: " + url));
     document.head.appendChild(el);
   });
+  // Retain settled failures as well as successes while the element exists.
+  if (el) resourceLoads.set(el, promise);
+  return promise;
 }
 export function loadScript(_self, url) {
   return appendOnce("script", "src", url);
 }
 export function loadStyle(_self, url) {
   const selector = "link[href=\"" + url + "\"]";
-  if (document.querySelector(selector)) {
-    return Promise.resolve();
+  const existing = findTrackedLoad(selector);
+  if (existing) {
+    return Promise.resolve(existing);
   }
-  return new Promise((resolve, reject) => {
-    const el = document.createElement("link");
+  let el;
+  const promise = new Promise((resolve, reject) => {
+    el = document.createElement("link");
     el.rel = "stylesheet";
     el.href = url;
     el.onload = () => resolve();
     el.onerror = () => reject(new Error("failed to load resource: " + url));
     document.head.appendChild(el);
   });
+  if (el) resourceLoads.set(el, promise);
+  return promise;
 }
 `
 }

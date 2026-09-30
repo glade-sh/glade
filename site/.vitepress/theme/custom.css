@@ -419,7 +419,6 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
 }
 
 .vp-doc div[class*='language-'] {
-  margin-inline: 0;
   border: 1px solid var(--glade-code-border);
   border-radius: 8px;
   box-shadow: var(--glade-shadow-soft);
@@ -430,7 +429,7 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
 .vp-doc div[class*='language-'] pre {
   background: var(--glade-code-bg) !important;
   line-height: 1.55;
-  padding: 58px 24px 22px;
+  padding: 22px 24px;
   overflow-x: auto;
 }
 
@@ -456,36 +455,34 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
 }
 
 .vp-doc div[class*='language-'] > span.lang {
-  top: 8px;
-  left: 18px;
-  right: auto;
+  top: 0;
+  right: 0;
   display: inline-flex;
-  height: 44px;
+  height: 28px;
+  min-width: 52px;
   align-items: center;
   justify-content: center;
-  background: transparent;
+  border-bottom: 1px solid var(--glade-code-border);
+  border-left: 1px solid var(--glade-code-border);
+  border-bottom-left-radius: 8px;
+  background: var(--glade-code-header);
   color: var(--glade-code-muted);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1;
-  padding: 0;
+  padding: 0 10px;
 }
 
 .vp-doc div[class*='language-'] > button.copy {
   top: 8px;
   right: 8px;
-  width: 44px;
-  height: 44px;
-  opacity: 1;
+  width: 34px;
+  height: 28px;
   border: 1px solid var(--glade-code-border);
-  border-radius: 8px;
+  border-radius: 6px;
   background-color: var(--glade-code-header);
 }
-
-.vp-doc div[class*='language-']:hover > button.copy + span.lang,
-.vp-doc div[class*='language-'] > button.copy:focus + span.lang { opacity: 1; }
-.vp-doc div[class*='language-'] > button.copy.copied::before { height: 44px; }
 
 .custom-block {
   border: 1px solid var(--glade-border);
@@ -780,7 +777,7 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
   font-weight: 700;
 }
 
-.support-explorer-controls label:nth-of-type(2) {
+.support-explorer-controls label:last-child {
   flex: 0 1 15rem;
 }
 
@@ -792,7 +789,6 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
   background: var(--surface-inset);
   color: var(--vp-c-text-1);
   font: inherit;
-  font-size: 16px;
 }
 
 .support-explorer-list {
@@ -826,7 +822,7 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
     text-align: left;
   }
 
-  .support-explorer-controls label:nth-of-type(2) {
+  .support-explorer-controls label:last-child {
     flex-basis: auto;
   }
 }
@@ -870,7 +866,7 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
   }
 
   .vp-doc div[class*='language-'] pre {
-    padding: 58px 18px 18px;
+    padding: 18px;
   }
 
   .vp-doc div[class*='language-'] code {

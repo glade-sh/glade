@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/trace"
@@ -270,6 +271,142 @@ func canvasContextJSON(receiver Value) (string, error) {
 	return string(raw), nil
 }
 
+func (vm *VM) autolaunchedFlowRule(name string) (storage.FlowRule, bool) {
+	if vm == nil || vm.Org == nil || strings.TrimSpace(name) == "" {
+		return storage.FlowRule{}, false
+	}
+	for _, rule := range vm.Org.Metadata.Flows {
+		if strings.EqualFold(strings.TrimSpace(rule.Name), strings.TrimSpace(name)) {
+			return rule, true
+		}
+	}
+	return storage.FlowRule{}, false
+}
+
+func (vm *VM) flowInterviewInput(receiver Value) (dml.FlowInterviewInput, map[string]Value, error) {
+	input := dml.FlowInterviewInput{
+		Scalars:     make(map[string]storage.Value),
+		Records:     make(map[string]storage.Record),
+		Collections: make(map[string][]storage.Record),
+	}
+	// Apex-defined Flow variables are opaque to the storage-backed Flow frame.
+	// Keep their VM values alongside the materialized input so the interview
+	// can still expose an unchanged input through getVariableValue after the
+	// Flow runs. SObject variables continue through the record path below.
+	opaque := make(map[string]Value)
+	variables, ok := receiver.Fields["variables"]
+	if !ok {
+		variables, ok = receiver.Fields["__arg0"]
+	}
+	if !ok || variables.Kind != ValueMap {
+		return input, opaque, nil
+	}
+	flowName := ""
+	if value, ok := receiver.Fields["flowName"]; ok && value.Kind == ValueString {
+		flowName = value.Text
+	}
+	declared := make(map[string]storage.FlowVariable)
+	if rule, found := vm.autolaunchedFlowRule(flowName); found {
+		for _, variable := range rule.Variables {
+			declared[strings.ToLower(strings.TrimSpace(variable.Name))] = variable
+		}
+	}
+	for rawKey, value := range variables.Map {
+		name := rawKey
+		if key, ok := variables.MapKeys[rawKey]; ok && key.Kind == ValueString {
+			name = key.Text
+		}
+		variable, hasDeclaration := declared[strings.ToLower(strings.TrimSpace(name))]
+		recordShape := hasDeclaration && flowInterviewRecordVariable(variable)
+		if value.Kind == ValueList {
+			if hasDeclaration && strings.EqualFold(strings.TrimSpace(variable.DataType), "Apex") {
+				opaque[name] = cloneValuePreserveRefs(value)
+				continue
+			}
+			if !recordShape && !hasDeclaration {
+				recordShape = true
+				for _, item := range value.List {
+					if item.Kind != ValueObject || !vm.isSObjectLikeType(item.Type) {
+						recordShape = false
+						break
+					}
+				}
+			}
+			if !recordShape {
+				converted, err := storageValueFromVM(value)
+				if err != nil {
+					return input, opaque, fmt.Errorf("Flow.Interview input %s: %w", name, err)
+				}
+				input.Scalars[name] = converted
+				continue
+			}
+			records := make([]storage.Record, 0, len(value.List))
+			for index := range value.List {
+				record, err := vm.recordFromValue(&value.List[index])
+				if err != nil {
+					return input, opaque, fmt.Errorf("Flow.Interview input %s[%d]: %w", name, index, err)
+				}
+				records = append(records, record)
+			}
+			input.Collections[name] = records
+			continue
+		}
+		if hasDeclaration && strings.EqualFold(strings.TrimSpace(variable.DataType), "Apex") && value.Kind == ValueObject {
+			opaque[name] = cloneValuePreserveRefs(value)
+			continue
+		}
+		if value.Kind == ValueObject && (recordShape || vm.isSObjectLikeType(value.Type)) {
+			record, err := vm.recordFromValue(&value)
+			if err != nil {
+				return input, opaque, fmt.Errorf("Flow.Interview input %s: %w", name, err)
+			}
+			input.Records[name] = record
+			continue
+		}
+		converted, err := storageValueFromVM(value)
+		if err != nil {
+			return input, opaque, fmt.Errorf("Flow.Interview input %s: %w", name, err)
+		}
+		input.Scalars[name] = converted
+	}
+	return input, opaque, nil
+}
+
+func flowInterviewRecordVariable(variable storage.FlowVariable) bool {
+	return strings.EqualFold(strings.TrimSpace(variable.DataType), "SObject") ||
+		strings.EqualFold(strings.TrimSpace(variable.DataType), "Apex")
+}
+
+func (vm *VM) flowInterviewOutputValue(output dml.FlowInterviewOutput) Value {
+	values := Map()
+	set := func(name string, value Value) {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			return
+		}
+		key := mapKey(String(name))
+		if _, exists := values.Map[key]; !exists {
+			values.MapOrder = append(values.MapOrder, key)
+		}
+		values.Map[key] = value
+		values.MapKeys[key] = String(name)
+	}
+	for name, value := range output.Scalars {
+		set(name, vmValueFromStorage(value))
+	}
+	for name, record := range output.Records {
+		set(name, vm.vmValueFromRecord(record))
+	}
+	for name, records := range output.Collections {
+		items := make([]Value, 0, len(records))
+		for _, record := range records {
+			items = append(items, vm.vmValueFromRecord(record))
+		}
+		set(name, List(items...))
+	}
+	return values
+}
+
 func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Value, result *Result) (value Value, updated Value, mutated bool, handled bool, err error) {
 	defer func() {
 		if mutated {
@@ -304,7 +441,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return value, receiver, false, true, err
 	}
 	if strings.EqualFold(receiver.Type, "Invocable.Action") {
-		if value, handled := vm.callInvocableActionMember(receiver, method, args); handled {
+		if value, handled := vm.callInvocableActionMember(receiver, method, args, result); handled {
 			return value, receiver, true, true, nil
 		}
 	}
@@ -563,6 +700,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	}
 	if isExceptionType(receiver.Type) {
 		switch method {
+		case "clone":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.clone expects 0 arguments", receiver.Type)
+			}
+			cloned := cloneValue(receiver)
+			cloned.Ref = newValueRef()
+			return cloned, receiver, false, true, nil
 		case "getMessage":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getMessage expects 0 arguments", receiver.Type)
@@ -637,6 +781,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 				return List(), receiver, false, true, nil
 			case "getDmlFields":
+				if tokens, present := detail.Fields["fieldTokens"]; present {
+					return tokens, receiver, false, true, nil
+				}
 				value, ok := detail.Fields["fields"]
 				if !ok || value.Kind != ValueList {
 					return List(), receiver, false, true, nil
@@ -704,7 +851,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, newExceptionError("IllegalArgumentException", "Self-causation not permitted")
 			}
 			if initialized, ok := receiver.Fields["__causeInitialized"]; ok && initialized.Kind == ValueBool && initialized.Bool {
-				return Null, receiver, false, true, newExceptionError("IllegalStateException", "Can't overwrite cause")
+				if args[0].Kind == ValueNull {
+					return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
+				}
+				return Null, receiver, false, true, newExceptionError("System.TypeException", "Cause has already been set")
 			}
 			receiver.Fields["__causeInitialized"] = Bool(true)
 			receiver.Fields["__cause"] = args[0]
@@ -821,7 +971,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return value, updated, mutated, handled, err
 		}
 	}
-	switch receiver.Type {
+	platformType := receiver.Type
+	if strings.HasPrefix(strings.ToLower(platformType), "flow.interview.") {
+		platformType = "Flow.Interview"
+	}
+	switch platformType {
 	case "eventbus.TriggerContext", "EventBus.TriggerContext":
 		switch strings.ToLower(method) {
 		case "getresumecheckpoint":
@@ -883,14 +1037,21 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "HttpRequest") {
 				return Null, receiver, false, true, fmt.Errorf("ExternalServiceTest.sendCallback expects HttpRequest")
 			}
-			return newHttpResponse(), receiver, false, true, nil
+			if endpoint, ok := args[0].Fields["endpoint"]; ok && endpoint.Kind == ValueString && strings.TrimSpace(endpoint.Text) != "" {
+				return Null, receiver, false, true, newExceptionError("System.InvalidParameterValueException", fmt.Sprintf("Callback uri is invalid: %s. Specify a valid callback uri.", endpoint.Text))
+			}
+			response := newHttpResponse()
+			response.Fields["statusCode"] = Int(200)
+			return response, receiver, false, true, nil
 		}
 	case "TestAsyncHttp":
 		if method == "executeHttpRequest" {
 			if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "HttpRequest") {
 				return Null, receiver, false, true, fmt.Errorf("TestAsyncHttp.executeHttpRequest expects HttpRequest")
 			}
-			return newHttpResponse(), receiver, false, true, nil
+			response := newHttpResponse()
+			response.Fields["statusCode"] = Int(200)
+			return response, receiver, false, true, nil
 		}
 	case "functions.FunctionInvokeMock":
 		if method == "respond" {
@@ -1314,16 +1475,34 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.newSObject recordTypeId expects Id")
 				}
 				recordID := platformScalar("Id", idText)
-				if idObject, ok := vm.sObjectNameForIDPrefix(idPrefix(idText)); ok && strings.EqualFold(idObject, objectName) {
+				if len(args) == 1 {
+					idObject, matches := vm.sObjectNameForIDPrefix(idPrefix(idText))
+					if !matches || !strings.EqualFold(idObject, objectName) {
+						return Null, receiver, false, true, newExceptionError("SObjectException", "Invalid Id for "+objectName)
+					}
 					record.Fields["Id"] = recordID
 				} else {
+					if args[1].Bool {
+						available := false
+						if vm.Org != nil && !isDescribeOnlyMasterRecordTypeID(storage.ID(idText)) {
+							for _, recordType := range vm.Org.Objects[objectName].Definition.RecordTypes {
+								if storage.IDsEqual(recordType.ID, storage.ID(idText)) && (recordType.Available || recordType.Active) {
+									available = true
+									break
+								}
+							}
+						}
+						if !available {
+							return Null, receiver, false, true, newExceptionError("SObjectException", "Record Type is Unavailable")
+						}
+					}
 					record.Fields["RecordTypeId"] = recordID
 				}
 			}
 			if len(args) == 2 && args[1].Bool && vm.Org != nil {
 				if object, ok := vm.Org.Objects[objectName]; ok {
 					if _, _, exists := objectFieldValue(record, "RecordTypeId"); !exists {
-						if recordTypeID := defaultRecordTypeID(object.Definition); recordTypeID != "" {
+						if recordTypeID := defaultRecordTypeID(object.Definition); recordTypeID != "" && !isDescribeOnlyMasterRecordTypeID(recordTypeID) {
 							record.Fields["RecordTypeId"] = platformScalar("Id", string(recordTypeID))
 						}
 					}
@@ -1333,6 +1512,33 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 						}
 						if defaultValue, ok := vm.defaultValueForNewSObjectField(object.Definition, record, field); ok {
 							putVMFieldPath(record, name, vmValueFromStorage(defaultValue))
+						} else if strings.EqualFold(field.APIName, "OwnerId") && field.Type == storage.FieldReference && strings.EqualFold(field.RelationshipName, "Owner") {
+							// The standard owner relationship defaults to the execution principal.
+							// Do not infer defaults for arbitrary User lookup fields.
+							for _, target := range field.ReferenceTo {
+								if strings.EqualFold(target, "User") {
+									if userID := vm.currentUserID(); userID != "" {
+										putVMFieldPath(record, name, platformScalar("Id", userID))
+									}
+									break
+								}
+							}
+						}
+					}
+					// Evaluate calculated defaults after their input defaults are loaded.
+					// Keep this snapshot on the caller without changing ordinary construction.
+					if stored, err := vm.recordFromValue(&record); err == nil {
+						for name, field := range object.Definition.Fields {
+							if strings.TrimSpace(field.Formula) == "" {
+								continue
+							}
+							if value, isNull, ok := dml.EvaluateRecordFormulaValueInOrg(field.Formula, field, vm.Org, object.Definition, stored); ok {
+								if isNull {
+									putVMFieldPath(record, name, Null)
+								} else {
+									putVMFieldPath(record, name, vmValueFromStorage(value))
+								}
+							}
 						}
 					}
 				}
@@ -1371,6 +1577,15 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			describe = overlaySObjectDescribe(describe, nameOverride, optionOverride)
 			return describe, receiver, false, true, nil
+		case "getLocalName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getLocalName expects 0 arguments")
+			}
+			objectValue, ok := receiver.Fields["object"]
+			if !ok || objectValue.Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType token missing object")
+			}
+			return String(vm.localSchemaName(objectValue.Text)), receiver, false, true, nil
 		case "getRecordTypeInfosByName", "getRecordTypeInfosById",
 			"getName", "getLabel", "getLabelPlural", "getKeyPrefix",
 			"getRecordTypeInfos", "getRecordTypeInfosByDeveloperName", "getChildRelationships", "getSObjectType",
@@ -1545,7 +1760,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return describe, receiver, false, true, nil
 		}
 		switch method {
-		case "getName", "getLabel", "getType", "getSoapType", "getSObjectType", "getLength", "getByteLength", "getPrecision", "getScale", "getDigits", "getCalculatedFormula", "isHtmlFormatted", "isNillable", "isExternalId", "isUnique", "isEncrypted", "isCalculated", "isAutoNumber", "isCaseSensitive", "isNameField", "isCustom", "getReferenceTo", "getRelationshipName", "getPicklistValues", "getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable", "isSortable":
+		case "getSObjectField", "getName", "getLabel", "getType", "getSoapType", "getSObjectType", "getLength", "getByteLength", "getPrecision", "getScale", "getDigits", "getCalculatedFormula", "isHtmlFormatted", "isNillable", "isExternalId", "isUnique", "isEncrypted", "isCalculated", "isAutoNumber", "isCaseSensitive", "isNameField", "isCustom", "getReferenceTo", "getRelationshipName", "getPicklistValues", "getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable", "isSortable":
 			describe, _, _, handled, err := vm.callPlatformObjectMember(receiver, "getDescribe", nil, result)
 			if err != nil || !handled {
 				return describe, receiver, false, true, err
@@ -1787,8 +2002,15 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if !hasReferenceTarget {
 				return Null, receiver, false, true, nil
 			}
-			if relationshipName, ok := receiver.Fields["relationshipName"]; ok && relationshipName.Kind != ValueNull {
-				return relationshipName, receiver, false, true, nil
+			if relationshipName, ok := receiver.Fields["relationshipName"]; ok {
+				// A describe payload that explicitly contains null is authoritative.
+				// Do not derive a relationship from an Id suffix: Salesforce has
+				// standard reference fields (for example Opportunity.ContactId)
+				// whose relationship name is intentionally absent.
+				if relationshipName.Kind != ValueNull {
+					return relationshipName, receiver, false, true, nil
+				}
+				return Null, receiver, false, true, nil
 			}
 			if hasFieldName && fieldName.Kind == ValueString {
 				if derived := lookupFieldRelationshipName(fieldName.Text); derived != "" {
@@ -2087,7 +2309,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			if method == "format" {
 				if parsed, err := parseDateText(text); err == nil {
-					return String(fmt.Sprintf("%d/%d/%d", int(parsed.Month()), parsed.Day(), parsed.Year())), receiver, false, true, nil
+					locale := vm.currentUserInfoField("LocaleSidKey", "en_US")
+					return String(formatApexDateForLocale(parsed, locale)), receiver, false, true, nil
 				}
 			}
 			if method == "toString" {
@@ -2202,11 +2425,24 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
-			offset := int(date.Weekday())
+			firstWeekday := salesforceLocaleFirstWeekday(vm.currentUserInfoField("LocaleSidKey", "en_US"))
+			offset := (int(date.Weekday()) - int(firstWeekday) + 7) % 7
 			start := date.AddDate(0, 0, -offset)
 			return platformScalar("Date", start.Format("2006-01-02")), receiver, false, true, nil
 		}
 	case "Datetime":
+		for _, canonical := range []string{
+			"format", "formatGmt", "toString", "date", "dateGmt", "getTime", "time", "timeGmt",
+			"addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds",
+			"year", "month", "day", "hour", "minute", "second", "millisecond", "dayOfYear",
+			"yearGmt", "monthGmt", "dayGmt", "hourGmt", "minuteGmt", "secondGmt", "millisecondGmt", "dayOfYearGmt",
+			"formatLong", "isSameDay",
+		} {
+			if strings.EqualFold(method, canonical) {
+				method = canonical
+				break
+			}
+		}
 		switch method {
 		case "format", "formatGmt", "toString":
 			t, err := parsePlatformDatetime(receiver)
@@ -3227,7 +3463,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return Int(200), receiver, false, true, nil
 		}
-	case "Http":
+	case "Http", "System.Http":
 		if method == "send" {
 			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "HttpRequest" {
 				return Null, receiver, false, true, fmt.Errorf("Http.send expects HttpRequest")
@@ -3245,6 +3481,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				} else if name, ok := httpCalloutEndpointName(endpoint.Text); ok && (!hasMock || httpMockRequiresResolvedEndpoint(vm.testContext.HTTPMock)) {
 					return Null, receiver, false, true, newExceptionError("CalloutException", fmt.Sprintf("Named Credential %s was not found or is inactive", name))
 				}
+			}
+			if !hasMock && vm.testContext != nil {
+				return Null, receiver, false, true, newExceptionError("TypeException", "Methods defined as TestMethod do not support Web service callouts")
 			}
 			if err := vm.incrementLimit("callouts", 1); err != nil {
 				return Null, receiver, false, true, err
@@ -3266,13 +3505,6 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					return Null, receiver, false, true, err
 				}
 				return value, receiver, false, true, nil
-			}
-			if vm.testContext != nil {
-				response := newHttpResponse()
-				response.Fields["body"] = String("{}")
-				response.Fields["status"] = String("OK")
-				response.Fields["statusCode"] = Int(200)
-				return response, receiver, false, true, nil
 			}
 			return Null, receiver, false, true, unsupportedCallError("Http.send real network transport")
 		}
@@ -3474,25 +3706,60 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if f, ok := receiver.Fields["flowName"]; ok && f.Kind == ValueString {
 				flowName = f.Text
 			}
-			if flowName != "" && vm.Org != nil {
-				found := false
-				for _, obj := range vm.Org.Objects {
-					for _, rule := range obj.Definition.FlowRules {
-						if rule.Active && strings.EqualFold(rule.Name, flowName) {
-							found = true
-						}
-					}
-				}
-				if !found {
-					return Null, receiver, false, true, newExceptionError("FlowException", fmt.Sprintf("Flow.Interview.start: flow %q not found", flowName))
+			if flowName == "" {
+				const prefix = "Flow.Interview."
+				if strings.HasPrefix(strings.ToLower(receiver.Type), strings.ToLower(prefix)) {
+					flowName = receiver.Type[len(prefix):]
 				}
 			}
+			rule, found := vm.autolaunchedFlowRule(flowName)
+			if !found {
+				return Null, receiver, false, true, newExceptionError("FlowException", fmt.Sprintf("Flow.Interview.start: flow %q not found", flowName))
+			}
+			input, opaqueInputs, inputErr := vm.flowInterviewInput(receiver)
+			if inputErr != nil {
+				return Null, receiver, false, true, inputErr
+			}
+			engine := vm.newDMLEngine(result)
+			output, err := engine.RunAutolaunchedFlowWithOutput(rule, input)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			outputs := vm.flowInterviewOutputValue(output)
+			for name, value := range opaqueInputs {
+				// The storage-backed Flow frame cannot mutate Apex-defined values.
+				// Preserve the exact input object so Apex callers observe the same
+				// round-trip behavior as Salesforce for unchanged input variables.
+				key := mapKey(String(name))
+				if outputs.Map == nil {
+					outputs.Map = make(map[string]Value)
+				}
+				if outputs.MapKeys == nil {
+					outputs.MapKeys = make(map[string]Value)
+				}
+				if _, exists := outputs.Map[key]; !exists {
+					outputs.MapOrder = append(outputs.MapOrder, key)
+				}
+				outputs.Map[key] = value
+				outputs.MapKeys[key] = String(name)
+			}
+			receiver.Fields["outputs"] = outputs
 			receiver.Fields["started"] = Bool(true)
 			receiver.Fields["status"] = String("Completed")
 			return Null, receiver, true, true, nil
 		case strings.EqualFold(method, "getVariableValue"):
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("Flow.Interview.getVariableValue expects variable name String")
+			}
+			if outputs, ok := receiver.Fields["outputs"]; ok && outputs.Kind == ValueMap {
+				if value, ok := outputs.Map[mapKey(args[0])]; ok {
+					return value, receiver, false, true, nil
+				}
+				for key, stored := range outputs.MapKeys {
+					if stored.Kind == ValueString && strings.EqualFold(stored.Text, args[0].Text) {
+						return outputs.Map[key], receiver, false, true, nil
+					}
+				}
 			}
 			if variables, ok := receiver.Fields["variables"]; ok && variables.Kind == ValueMap {
 				if value, ok := variables.Map[mapKey(args[0])]; ok {
@@ -3848,6 +4115,90 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	return Null, receiver, false, false, nil
 }
 
+// Salesforce's published locale table uses ICU 71.1 / CLDR 41 week data.
+// The exact locale pairs are pinned from the supported-locale table below;
+// only exact LocaleSidKey values are matched. Its 176 Monday and 14 Saturday
+// entries are explicit. The remaining 87 published locales start on Sunday,
+// as do unknown/unlisted keys to preserve the legacy fallback.
+// Pair data: sorted `locale<TAB>EnglishDay<LF>`, UTF-8, final LF,
+// SHA-256 fd7dcf67d93c3bbf2e38f4978aa2746a83035dc0cdda071875587f40b9dc1545.
+// Sources:
+// https://help.salesforce.com/s/articleView?id=sf.admin_supported_date_time_format.htm&language=en_US&type=5
+// https://help.salesforce.com/s/articleView?id=sf.admin_locales_icu.htm&language=en_US&type=5
+var salesforceLocaleWeekStarts = map[string]time.Weekday{
+	"ar_LB": time.Monday, "ar_MA": time.Monday, "ar_TN": time.Monday,
+	"az_AZ": time.Monday, "be_BY": time.Monday, "bg_BG": time.Monday,
+	"bs_BA": time.Monday, "ca_ES": time.Monday, "cs_CZ": time.Monday,
+	"cy_GB": time.Monday, "da_DK": time.Monday, "de_AT": time.Monday,
+	"de_BE": time.Monday, "de_CH": time.Monday, "de_DE": time.Monday,
+	"de_LI": time.Monday, "de_LU": time.Monday, "el_CY": time.Monday,
+	"el_GR": time.Monday, "en_AD": time.Monday, "en_AL": time.Monday,
+	"en_AT": time.Monday, "en_AU": time.Monday, "en_BA": time.Monday,
+	"en_BB": time.Monday, "en_BE": time.Monday, "en_BG": time.Monday,
+	"en_BM": time.Monday, "en_CH": time.Monday, "en_CM": time.Monday,
+	"en_CY": time.Monday, "en_CZ": time.Monday, "en_DE": time.Monday,
+	"en_DK": time.Monday, "en_EE": time.Monday, "en_ER": time.Monday,
+	"en_ES": time.Monday, "en_FI": time.Monday, "en_FJ": time.Monday,
+	"en_FK": time.Monday, "en_FR": time.Monday, "en_GB": time.Monday,
+	"en_GD": time.Monday, "en_GH": time.Monday, "en_GI": time.Monday,
+	"en_GM": time.Monday, "en_GR": time.Monday, "en_GY": time.Monday,
+	"en_HR": time.Monday, "en_HU": time.Monday, "en_IE": time.Monday,
+	"en_IS": time.Monday, "en_IT": time.Monday, "en_KN": time.Monday,
+	"en_KY": time.Monday, "en_LC": time.Monday, "en_LI": time.Monday,
+	"en_LR": time.Monday, "en_LT": time.Monday, "en_LU": time.Monday,
+	"en_LV": time.Monday, "en_MC": time.Monday, "en_ME": time.Monday,
+	"en_MG": time.Monday, "en_MK": time.Monday, "en_MU": time.Monday,
+	"en_MW": time.Monday, "en_MY": time.Monday, "en_NA": time.Monday,
+	"en_NG": time.Monday, "en_NL": time.Monday, "en_NO": time.Monday,
+	"en_NZ": time.Monday, "en_PG": time.Monday, "en_PL": time.Monday,
+	"en_RO": time.Monday, "en_RS": time.Monday, "en_RW": time.Monday,
+	"en_SB": time.Monday, "en_SC": time.Monday, "en_SE": time.Monday,
+	"en_SH": time.Monday, "en_SI": time.Monday, "en_SK": time.Monday,
+	"en_SL": time.Monday, "en_SX": time.Monday, "en_SZ": time.Monday,
+	"en_TO": time.Monday, "en_TR": time.Monday, "en_TZ": time.Monday,
+	"en_UG": time.Monday, "en_VC": time.Monday, "en_VU": time.Monday,
+	"es_AD": time.Monday, "es_AR": time.Monday, "es_BO": time.Monday,
+	"es_CL": time.Monday, "es_CR": time.Monday, "es_EC": time.Monday,
+	"es_ES": time.Monday, "es_UY": time.Monday, "et_EE": time.Monday,
+	"eu_ES": time.Monday, "fi_FI": time.Monday, "fr_BE": time.Monday,
+	"fr_CH": time.Monday, "fr_FR": time.Monday, "fr_GN": time.Monday,
+	"fr_HT": time.Monday, "fr_KM": time.Monday, "fr_LU": time.Monday,
+	"fr_MA": time.Monday, "fr_MC": time.Monday, "fr_MR": time.Monday,
+	"fr_WF": time.Monday, "ga_IE": time.Monday, "hr_HR": time.Monday,
+	"ht_HT": time.Monday, "hu_HU": time.Monday, "hy_AM": time.Monday,
+	"is_IS": time.Monday, "it_CH": time.Monday, "it_IT": time.Monday,
+	"ka_GE": time.Monday, "kk_KZ": time.Monday, "kl_GL": time.Monday,
+	"ky_KG": time.Monday, "lb_LU": time.Monday, "lt_LT": time.Monday,
+	"lu_CD": time.Monday, "lv_LV": time.Monday, "mi_NZ": time.Monday,
+	"mk_MK": time.Monday, "ms_BN": time.Monday, "ms_MY": time.Monday,
+	"nl_AW": time.Monday, "nl_BE": time.Monday, "nl_NL": time.Monday,
+	"nl_SR": time.Monday, "no_NO": time.Monday, "pl_PL": time.Monday,
+	"pt_AO": time.Monday, "pt_CV": time.Monday, "pt_ST": time.Monday,
+	"rm_CH": time.Monday, "rn_BI": time.Monday, "ro_MD": time.Monday,
+	"ro_RO": time.Monday, "ru_AM": time.Monday, "ru_BY": time.Monday,
+	"ru_KG": time.Monday, "ru_KZ": time.Monday, "ru_LT": time.Monday,
+	"ru_MD": time.Monday, "ru_PL": time.Monday, "ru_RU": time.Monday,
+	"ru_UA": time.Monday, "sh_BA": time.Monday, "sh_CS": time.Monday,
+	"sh_ME": time.Monday, "sk_SK": time.Monday, "sl_SI": time.Monday,
+	"so_SO": time.Monday, "sq_AL": time.Monday, "sr_BA": time.Monday,
+	"sr_CS": time.Monday, "sr_RS": time.Monday, "sv_FI": time.Monday,
+	"sv_SE": time.Monday, "ta_LK": time.Monday, "tg_TJ": time.Monday,
+	"tr_TR": time.Monday, "uk_UA": time.Monday, "vi_VN": time.Monday,
+	"yo_BJ": time.Monday, "zh_MY": time.Monday,
+	"ar_AE": time.Saturday, "ar_BH": time.Saturday, "ar_DZ": time.Saturday,
+	"ar_EG": time.Saturday, "ar_IQ": time.Saturday, "ar_JO": time.Saturday,
+	"ar_KW": time.Saturday, "ar_LY": time.Saturday, "ar_OM": time.Saturday,
+	"ar_QA": time.Saturday, "ar_SD": time.Saturday, "en_AE": time.Saturday,
+	"ps_AF": time.Saturday, "so_DJ": time.Saturday,
+}
+
+func salesforceLocaleFirstWeekday(locale string) time.Weekday {
+	if weekday, ok := salesforceLocaleWeekStarts[locale]; ok {
+		return weekday
+	}
+	return time.Sunday
+}
+
 func callSendEmailOptionsMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	method = canonicalStdlibMemberName(method,
 		"setTriggerUserEmail", "getTriggerUserEmail",
@@ -3954,7 +4305,7 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 	if !vm.isPassivePlatformDTOObject(receiver) {
 		return Null, receiver, false, false, nil
 	}
-	if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
+	if value, handled, err := vm.callObjectMember(receiver, method, args); handled || err != nil {
 		return value, receiver, false, true, err
 	}
 	if value, updated, mutated, handled, err := callPrefCenterLoadFormDataMember(receiver, method, args); handled || err != nil {

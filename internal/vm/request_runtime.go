@@ -396,6 +396,12 @@ func (vm *VM) nextDeterministicCryptoLong() int64 {
 	return int64(z)
 }
 
+func (vm *VM) nextDeterministicRandom() float64 {
+	// Use the VM-local deterministic stream so repeated tests are reproducible
+	// while successive Math.random calls still produce distinct values.
+	return float64(uint64(vm.nextDeterministicCryptoLong())>>11) / float64(uint64(1)<<53)
+}
+
 func (vm *VM) nextDeterministicUUID() string {
 	hi := uint64(vm.nextDeterministicCryptoLong())
 	lo := uint64(vm.nextDeterministicCryptoLong())
@@ -439,7 +445,9 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 		strings.EqualFold(callee, "Auth.AuthToken.revokeAccess"),
 		strings.EqualFold(callee, "Auth.CommunitiesUtil.isGuestUser"),
 		strings.EqualFold(callee, "Auth.SessionManagement.getCurrentSession"),
-		strings.EqualFold(callee, "Auth.JWTUtil.parseJWTFromStringWithoutValidation"):
+		strings.EqualFold(callee, "Auth.SessionManagement.validateTotpTokenForKey"),
+		strings.EqualFold(callee, "Auth.JWTUtil.parseJWTFromStringWithoutValidation"),
+		strings.EqualFold(callee, "Auth.JWTUtil.validateJWTWithKey"):
 		return "", false
 	}
 	switch callee {

@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -168,10 +169,16 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if len(args) > 1 {
 			return Null, true, fmt.Errorf("String.toLowerCase expects 0 or 1 arguments")
 		}
+		if len(args) == 1 && args[0].Kind == ValueString && strings.EqualFold(args[0].Text, "tr") {
+			return String(strings.ToLowerSpecial(unicode.TurkishCase, receiver.Text)), true, nil
+		}
 		return String(strings.ToLower(receiver.Text)), true, nil
 	case "toUpperCase":
 		if len(args) > 1 {
 			return Null, true, fmt.Errorf("String.toUpperCase expects 0 or 1 arguments")
+		}
+		if len(args) == 1 && args[0].Kind == ValueString && strings.EqualFold(args[0].Text, "tr") {
+			return String(strings.ToUpperSpecial(unicode.TurkishCase, receiver.Text)), true, nil
 		}
 		return String(strings.ToUpper(receiver.Text)), true, nil
 	case "trim":
@@ -194,37 +201,67 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if err != nil {
 			return Null, true, err
 		}
-		return Int(int64(stringIndexOf(receiver.Text, needle, start))), true, nil
+		if len(args) == 2 {
+			return Int(int64(stringIndexOfUTF16(receiver.Text, needle, start))), true, nil
+		}
+		position := stringIndexOf(receiver.Text, needle, start)
+		if len(args) == 1 && position >= 0 {
+			position = apexStringLength(string([]rune(receiver.Text)[:position]))
+		}
+		return Int(int64(position)), true, nil
 	case "lastIndexOf":
 		needle, start, err := stringSearchArgs("String.lastIndexOf", args, utf8.RuneCountInString(receiver.Text))
 		if err != nil {
 			return Null, true, err
 		}
-		return Int(int64(stringLastIndexOf(receiver.Text, needle, start))), true, nil
+		if len(args) == 2 {
+			return Int(int64(stringLastIndexOfUTF16(receiver.Text, needle, start))), true, nil
+		}
+		position := stringLastIndexOf(receiver.Text, needle, start)
+		if len(args) == 1 && position >= 0 {
+			position = apexStringLength(string([]rune(receiver.Text)[:position]))
+		}
+		return Int(int64(position)), true, nil
 	case "indexOfChar":
 		char, start, err := stringCharSearchArgs("String.indexOfChar", args, 0)
 		if err != nil {
 			return Null, true, err
 		}
-		return Int(int64(stringIndexOf(receiver.Text, string(rune(char)), start))), true, nil
+		position := stringIndexOf(receiver.Text, string(rune(char)), start)
+		if len(args) == 1 && position >= 0 {
+			position = apexStringLength(string([]rune(receiver.Text)[:position]))
+		}
+		return Int(int64(position)), true, nil
 	case "lastIndexOfChar":
 		char, start, err := stringCharSearchArgs("String.lastIndexOfChar", args, utf8.RuneCountInString(receiver.Text))
 		if err != nil {
 			return Null, true, err
 		}
-		return Int(int64(stringLastIndexOf(receiver.Text, string(rune(char)), start))), true, nil
+		position := stringLastIndexOf(receiver.Text, string(rune(char)), start)
+		if len(args) == 1 && position >= 0 {
+			position = apexStringLength(string([]rune(receiver.Text)[:position]))
+		}
+		return Int(int64(position)), true, nil
 	case "indexOfIgnoreCase":
 		needle, start, err := stringSearchArgs("String.indexOfIgnoreCase", args, 0)
 		if err != nil {
 			return Null, true, err
 		}
-		return Int(int64(stringIndexOfFold(receiver.Text, needle, start))), true, nil
+		position := stringIndexOfFold(receiver.Text, needle, start)
+		if len(args) == 1 && position >= 0 {
+			position = apexStringLength(string([]rune(receiver.Text)[:position]))
+		}
+		return Int(int64(position)), true, nil
 	case "lastIndexOfIgnoreCase":
 		needle, start, err := stringSearchArgs("String.lastIndexOfIgnoreCase", args, utf8.RuneCountInString(receiver.Text))
 		if err != nil {
 			return Null, true, err
 		}
-		return Int(int64(stringLastIndexOfFold(receiver.Text, needle, start))), true, nil
+		position := stringLastIndexOfFold(receiver.Text, needle, start)
+		if len(args) == 1 && position >= 0 {
+			position = apexStringLength(string([]rune(receiver.Text)[:position]))
+		}
+		return Int(int64(position)), true, nil
 	case "indexOfDifference":
 		other, err := stringArg("String.indexOfDifference", args)
 		if err != nil {
@@ -349,11 +386,11 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if err != nil {
 			return Null, true, err
 		}
-		runes := []rune(receiver.Text)
-		if index < 0 || index >= len(runes) {
+		units := apexStringUTF16Units(receiver.Text)
+		if index < 0 || index >= len(units) {
 			return Null, true, fmt.Errorf("String.charAt index out of bounds: %d", index)
 		}
-		return Int(int64(runes[index])), true, nil
+		return Int(int64(units[index])), true, nil
 	case "codePointAt":
 		index, err := stringIntArg("String.codePointAt", args)
 		if err != nil {
@@ -409,50 +446,69 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if err != nil {
 			return Null, true, err
 		}
-		runes := []rune(receiver.Text)
 		if length < 0 {
 			return String(""), true, nil
 		}
-		if length > len(runes) {
-			length = len(runes)
+		units := apexStringLength(receiver.Text)
+		if length > units {
+			length = units
 		}
-		return String(string(runes[:length])), true, nil
+		return substring(receiver.Text, []Value{Int(0), Int(int64(length))})
 	case "right":
 		length, err := stringIntArg("String.right", args)
 		if err != nil {
 			return Null, true, err
 		}
-		runes := []rune(receiver.Text)
 		if length < 0 {
 			return String(""), true, nil
 		}
-		if length > len(runes) {
-			length = len(runes)
+		units := apexStringLength(receiver.Text)
+		if length > units {
+			length = units
 		}
-		return String(string(runes[len(runes)-length:])), true, nil
+		return substring(receiver.Text, []Value{Int(int64(units - length)), Int(int64(units))})
+	// The helpers count runes; adjust default and single-unit pad widths to UTF-16.
 	case "leftPad":
+		if (len(args) == 1 || len(args) == 2 && args[1].Kind == ValueString && apexStringLength(args[1].Text) == 1) && args[0].Kind == ValueInt && args[0].Int >= 0 {
+			width := int(args[0].Int) + utf8.RuneCountInString(receiver.Text) - apexStringLength(receiver.Text)
+			adjusted := append([]Value(nil), args...)
+			adjusted[0] = Int(int64(width))
+			return stringPad(receiver.Text, adjusted, true)
+		}
 		return stringPad(receiver.Text, args, true)
 	case "rightPad":
+		if (len(args) == 1 || len(args) == 2 && args[1].Kind == ValueString && apexStringLength(args[1].Text) == 1) && args[0].Kind == ValueInt && args[0].Int >= 0 {
+			width := int(args[0].Int) + utf8.RuneCountInString(receiver.Text) - apexStringLength(receiver.Text)
+			adjusted := append([]Value(nil), args...)
+			adjusted[0] = Int(int64(width))
+			return stringPad(receiver.Text, adjusted, false)
+		}
 		return stringPad(receiver.Text, args, false)
 	case "center":
+		if (len(args) == 1 || len(args) == 2 && args[1].Kind == ValueString && apexStringLength(args[1].Text) == 1) && args[0].Kind == ValueInt && args[0].Int >= 0 {
+			width := int(args[0].Int) + utf8.RuneCountInString(receiver.Text) - apexStringLength(receiver.Text)
+			adjusted := append([]Value(nil), args...)
+			adjusted[0] = Int(int64(width))
+			return stringCenter(receiver.Text, adjusted)
+		}
 		return stringCenter(receiver.Text, args)
 	case "mid":
 		start, length, err := stringTwoIntArgs("String.mid", args)
 		if err != nil {
 			return Null, true, err
 		}
-		runes := []rune(receiver.Text)
 		if start < 0 {
 			start = 0
 		}
-		if start > len(runes) || length <= 0 {
+		units := apexStringLength(receiver.Text)
+		if start > units || length <= 0 {
 			return String(""), true, nil
 		}
-		end := start + length
-		if end > len(runes) {
-			end = len(runes)
+		end := units
+		if length <= units-start {
+			end = start + length
 		}
-		return String(string(runes[start:end])), true, nil
+		return substring(receiver.Text, []Value{Int(int64(start)), Int(int64(end))})
 	case "reverse":
 		runes := []rune(receiver.Text)
 		for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
@@ -626,6 +682,49 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 	default:
 		return Null, false, nil
 	}
+}
+
+func stringIndexOfUTF16(text, needle string, start int) int {
+	if asciiPrefixLen(text, len(text)) == len(text) && asciiPrefixLen(needle, len(needle)) == len(needle) {
+		return stringIndexOf(text, needle, start)
+	}
+	textUnits := apexStringUTF16Units(text)
+	needleUnits := apexStringUTF16Units(needle)
+	if start < 0 {
+		start = 0
+	}
+	if start > len(textUnits) {
+		if len(needleUnits) == 0 {
+			return len(textUnits)
+		}
+		return -1
+	}
+	for i := start; i <= len(textUnits)-len(needleUnits); i++ {
+		if slices.Equal(textUnits[i:i+len(needleUnits)], needleUnits) {
+			return i
+		}
+	}
+	return -1
+}
+
+func stringLastIndexOfUTF16(text, needle string, start int) int {
+	if asciiPrefixLen(text, len(text)) == len(text) && asciiPrefixLen(needle, len(needle)) == len(needle) {
+		return stringLastIndexOf(text, needle, start)
+	}
+	textUnits := apexStringUTF16Units(text)
+	needleUnits := apexStringUTF16Units(needle)
+	if len(needleUnits) > len(textUnits) {
+		return -1
+	}
+	if start > len(textUnits)-len(needleUnits) {
+		start = len(textUnits) - len(needleUnits)
+	}
+	for i := start; i >= 0; i-- {
+		if slices.Equal(textUnits[i:i+len(needleUnits)], needleUnits) {
+			return i
+		}
+	}
+	return -1
 }
 
 func stringTemplate(text string, values Value) (string, error) {

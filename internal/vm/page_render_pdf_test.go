@@ -29,6 +29,73 @@ System.assert(body.toString().contains('Invoice Total'));
 	}
 }
 
+func TestPageReferenceGetContentSurfacesVisualforceRenderFailureAsExecutionException(t *testing.T) {
+	root := makePageReferenceContentProject(t, `<apex:page><h1>Invoice Total</h1></apex:page>`)
+	machine := compileContentProject(t, root)
+	visualforce.SetVMRenderEnvironment(machine, mustLoadProject(t, root))
+
+	program, err := vm.CompileAnonymous(`
+Boolean caught = false;
+try {
+    new PageReference('/apex/Missing').getContent();
+} catch (ExecutionException e) {
+    caught = true;
+}
+System.assertEquals(true, caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPageReferenceGetContentPreservesUnsupportedVisualforceGlobal(t *testing.T) {
+	root := makePageReferenceContentProject(t, `<apex:page><h1>Global Probe</h1></apex:page>`)
+	writePageRenderTestFile(t, filepath.Join(root, "force-app/main/default/pages/Global.page"), `<apex:page><apex:outputText value="{!$Action.Widget.save}"/></apex:page>`)
+	machine := compileContentProject(t, root)
+	visualforce.SetVMRenderEnvironment(machine, mustLoadProject(t, root))
+
+	program, err := vm.CompileAnonymous(`
+Boolean caught = false;
+try {
+    new PageReference('/apex/Global').getContent();
+} catch (ExecutionException e) {
+    caught = true;
+}
+System.assertEquals(false, caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "$Action") {
+		t.Fatalf("err = %v, want unsupported $Action diagnostic", err)
+	}
+}
+
+func TestPageReferenceGetContentPreservesUnsupportedVisualforceSurface(t *testing.T) {
+	root := makePageReferenceContentProject(t, `<apex:page><flow:interview name="demo"/></apex:page>`)
+	machine := compileContentProject(t, root)
+	visualforce.SetVMRenderEnvironment(machine, mustLoadProject(t, root))
+
+	program, err := vm.CompileAnonymous(`
+Boolean caught = false;
+try {
+    Page.Invoice.getContent();
+} catch (ExecutionException e) {
+    caught = true;
+}
+System.assertEquals(false, caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "flow:interview") {
+		t.Fatalf("err = %v, want unsupported flow:interview diagnostic", err)
+	}
+}
+
 func TestPageReferenceGetContentRestoresCurrentPageContext(t *testing.T) {
 	root := makePageReferenceContentProject(t, `<apex:page><h1>Invoice Total</h1></apex:page>`)
 	writePageRenderTestFile(t, filepath.Join(root, "force-app/main/default/pages/Inner.page"), `<apex:page><span>Inner Body</span></apex:page>`)

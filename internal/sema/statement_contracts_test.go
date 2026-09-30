@@ -123,6 +123,23 @@ public class Probe {
 	}
 }
 
+func TestSwitchContractsInferTernaryDescribeTypeSelector(t *testing.T) {
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run(Boolean grouped, Schema.SObjectField first, Schema.SObjectField second) {
+    switch on (grouped ? first : second).getDescribe().getType() {
+      when String { }
+      when else { }
+    }
+  }
+}`,
+	}, "67.0")
+	if result.HasErrors() {
+		t.Fatalf("ternary SObjectField describe type selector was rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestSwitchContractsAllowUnqualifiedJSONTokenCasesFromMethodResult(t *testing.T) {
 	result := analyzeDeclarationProject(t, map[string]string{
 		"Probe.cls": `
@@ -297,5 +314,42 @@ public class Probe {
 	})
 	if result.HasErrors() {
 		t.Fatalf("unexpected statement-contract diagnostic: %#v", result.Diagnostics)
+	}
+}
+
+func TestStatementContractsAllowGeneratedPlatformExceptionCatchTypes(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe {
+  public void run() {
+    try { Integer first = 1; } catch (System.FormulaValidationException error) { System.debug(error); }
+    try { Integer second = 2; } catch (FatalCursorException error) { System.debug(error); }
+    try { Integer third = 3; } catch (TransientCursorException error) { System.debug(error); }
+  }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("generated platform exception catch types were rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestSwitchContractsQualifiedPlatformEnumWithProjectShadow(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"TriggerOperation.cls": `public without sharing class TriggerOperation { }`,
+		"Probe.cls": `public class Probe {
+            public class Context { public System.TriggerOperation operationType { get; private set; } }
+            public String run(Context input) {
+                String result = 'other';
+                switch on input.operationType {
+                    when BEFORE_INSERT { result = 'before'; }
+                    when AFTER_INSERT { result = 'after'; }
+                    when else { result = 'default'; }
+                }
+                return result;
+            }
+        }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("qualified platform enum switch was rejected with project shadow: %#v", result.Diagnostics)
 	}
 }

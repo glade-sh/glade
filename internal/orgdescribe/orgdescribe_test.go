@@ -200,6 +200,17 @@ func TestDescribeFieldMappingPreservesRuntimeShape(t *testing.T) {
 	}
 }
 
+func TestDescribeFieldMappingPreservesComboboxDisplayType(t *testing.T) {
+	field := Field{Name: "Subject", Label: "Subject", Type: "combobox"}
+	describe := field.ToDescribeFieldResult()
+	if describe.Type != storage.FieldString || describe.DisplayType != "COMBOBOX" {
+		t.Fatalf("combobox mapping = %#v", describe)
+	}
+	if got := displayFieldType("combobox"); got != "COMBOBOX" {
+		t.Fatalf("displayFieldType(combobox) = %q", got)
+	}
+}
+
 func TestDescribeFieldMappingPreservesDescribeFlags(t *testing.T) {
 	relationshipOrder := 2
 	field := Field{

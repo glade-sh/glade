@@ -1,14 +1,17 @@
 package visualforce
 
 import (
-	"crypto/hmac"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/glade-sh/glade/internal/vm"
@@ -17,14 +20,75 @@ import (
 const viewStateFieldName = "com.salesforce.visualforce.ViewState"
 const viewStateActionField = "__vf_action"
 const CurrentViewStateVersion = 1
+const viewStateEnvelopeHeader = "GLVFS\x01"
+const viewStateKeyDomain = "glade.visualforce.viewstate.key.v1\x00"
 
 var (
-	ErrViewStateInvalid    = errors.New("invalid view state")
-	ErrViewStateTampered   = errors.New("view state signature mismatch")
-	ErrViewStateExpired    = errors.New("view state expired")
-	ErrViewStateCSRF       = errors.New("view state csrf mismatch")
-	defaultViewStateSecret = []byte("glade-local-vf-viewstate")
+	ErrViewStateInvalid  = errors.New("invalid view state")
+	ErrViewStateTampered = errors.New("view state signature mismatch")
+	ErrViewStateExpired  = errors.New("view state expired")
+	ErrViewStateCSRF     = errors.New("view state csrf mismatch")
+	ErrViewStateEntropy  = errors.New("view state secure randomness unavailable")
 )
+
+type viewStateKeyCache struct {
+	once sync.Once
+	key  []byte
+	err  error
+}
+
+func (c *viewStateKeyCache) get(reader io.Reader) ([]byte, error) {
+	c.once.Do(func() {
+		key, err := readViewStateRandom(reader, 32)
+		if err != nil {
+			c.err = fmt.Errorf("%w: generate process key: %v", ErrViewStateEntropy, err)
+			return
+		}
+		c.key = key
+	})
+	if c.err != nil {
+		return nil, c.err
+	}
+	return append([]byte(nil), c.key...), nil
+}
+
+var processViewStateKey viewStateKeyCache
+
+func readViewStateRandom(reader io.Reader, size int) ([]byte, error) {
+	value := make([]byte, size)
+	if _, err := io.ReadFull(reader, value); err != nil {
+		for i := range value {
+			value[i] = 0
+		}
+		return nil, fmt.Errorf("%w: read random bytes: %v", ErrViewStateEntropy, err)
+	}
+	return value, nil
+}
+
+func viewStateAEAD(secret []byte) (cipher.AEAD, error) {
+	if secret == nil {
+		var err error
+		secret, err = processViewStateKey.get(rand.Reader)
+		if err != nil {
+			return nil, err
+		}
+	} else if len(secret) == 0 {
+		return nil, fmt.Errorf("%w: explicit secret is empty", ErrViewStateInvalid)
+	}
+
+	keyHash := sha256.New()
+	_, _ = keyHash.Write([]byte(viewStateKeyDomain))
+	_, _ = keyHash.Write(secret)
+	block, err := aes.NewCipher(keyHash.Sum(nil))
+	if err != nil {
+		return nil, fmt.Errorf("%w: initialize view state cipher", ErrViewStateInvalid)
+	}
+	aead, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("%w: initialize view state authentication", ErrViewStateInvalid)
+	}
+	return aead, nil
+}
 
 type ViewStatePayload struct {
 	Version          int                   `json:"v,omitempty"`
@@ -51,8 +115,13 @@ func ViewStateActionFieldName() string {
 }
 
 func EncodeViewState(payload ViewStatePayload, secret []byte) (string, error) {
-	if secret == nil {
-		secret = defaultViewStateSecret
+	return encodeViewStateWithRandom(payload, secret, rand.Reader)
+}
+
+func encodeViewStateWithRandom(payload ViewStatePayload, secret []byte, reader io.Reader) (string, error) {
+	aead, err := viewStateAEAD(secret)
+	if err != nil {
+		return "", err
 	}
 	if strings.TrimSpace(payload.CSRF) == "" {
 		token, err := randomToken(16)
@@ -71,29 +140,40 @@ func EncodeViewState(payload ViewStatePayload, secret []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	mac := hmac.New(sha256.New, secret)
-	_, _ = mac.Write(raw)
-	sig := mac.Sum(nil)
-	combined := append(raw, sig...)
-	return base64.StdEncoding.EncodeToString(combined), nil
+	nonce, err := readViewStateRandom(reader, aead.NonceSize())
+	if err != nil {
+		return "", fmt.Errorf("%w: generate nonce: %v", ErrViewStateEntropy, err)
+	}
+	header := []byte(viewStateEnvelopeHeader)
+	ciphertext := aead.Seal(nil, nonce, raw, header)
+	envelope := make([]byte, 0, len(header)+len(nonce)+len(ciphertext))
+	envelope = append(envelope, header...)
+	envelope = append(envelope, nonce...)
+	envelope = append(envelope, ciphertext...)
+	return base64.StdEncoding.EncodeToString(envelope), nil
 }
 
 func DecodeViewState(encoded string, secret []byte) (ViewStatePayload, error) {
-	if secret == nil {
-		secret = defaultViewStateSecret
-	}
 	raw, err := base64.StdEncoding.DecodeString(strings.TrimSpace(encoded))
 	if err != nil {
 		return ViewStatePayload{}, fmt.Errorf("%w: decode failed", ErrViewStateInvalid)
 	}
-	if len(raw) < sha256.Size {
-		return ViewStatePayload{}, fmt.Errorf("%w: payload too short", ErrViewStateInvalid)
+	aead, err := viewStateAEAD(secret)
+	if err != nil {
+		return ViewStatePayload{}, err
 	}
-	payloadBytes := raw[:len(raw)-sha256.Size]
-	sig := raw[len(raw)-sha256.Size:]
-	mac := hmac.New(sha256.New, secret)
-	_, _ = mac.Write(payloadBytes)
-	if !hmac.Equal(sig, mac.Sum(nil)) {
+	header := []byte(viewStateEnvelopeHeader)
+	minimumSize := len(header) + aead.NonceSize() + aead.Overhead()
+	if len(raw) < minimumSize {
+		return ViewStatePayload{}, fmt.Errorf("%w: envelope too short", ErrViewStateInvalid)
+	}
+	if string(raw[:len(header)]) != viewStateEnvelopeHeader {
+		return ViewStatePayload{}, fmt.Errorf("%w: unsupported envelope version", ErrViewStateInvalid)
+	}
+	nonceStart := len(header)
+	nonceEnd := nonceStart + aead.NonceSize()
+	payloadBytes, err := aead.Open(nil, raw[nonceStart:nonceEnd], raw[nonceEnd:], raw[:len(header)])
+	if err != nil {
 		return ViewStatePayload{}, ErrViewStateTampered
 	}
 	var payload ViewStatePayload
@@ -145,7 +225,7 @@ func InjectCSRF(html string, csrf string) string {
 func randomToken(size int) (string, error) {
 	buf := make([]byte, size)
 	if _, err := rand.Read(buf); err != nil {
-		return "", err
+		return "", fmt.Errorf("%w: generate token: %v", ErrViewStateEntropy, err)
 	}
 	return base64.RawURLEncoding.EncodeToString(buf), nil
 }

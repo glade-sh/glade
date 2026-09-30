@@ -44,6 +44,14 @@ func (vm *VM) reflectionConstructableClass(class Class) bool {
 // is the name-resolution prologue of constructValueWithLiteral, separated so the
 // construction switch reads as pure dispatch.
 func (vm *VM) resolveConstructorTypeName(typeName string, args []Value, namedArgs map[string]Value) string {
+	// An explicit System qualification selects the platform runtime type even
+	// when the project defines an unqualified class with the same short name.
+	// Canonical runtime values are stored without the System prefix.
+	if len(typeName) > len("System.") && strings.EqualFold(typeName[:len("System.")], "System.") {
+		if platformType := typeName[len("System."):]; isCanonicalRuntimeTypeName(platformType) {
+			return canonicalRuntimeTypeName(platformType)
+		}
+	}
 	if !strings.Contains(typeName, ".") {
 		if resolved := vm.resolveTypeNameInCurrentExecutionContext(typeName); resolved != "" && vm.classConstructorCanAccept(resolved, args, namedArgs) {
 			typeName = resolved
@@ -159,7 +167,10 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 				if err != nil {
 					return Null, true, fmt.Errorf("Map constructor: %w", err)
 				}
-				encodedKey := vm.mapKey(key)
+				encodedKey, err := vm.mapEntryKey(value, key)
+				if err != nil {
+					return Null, true, err
+				}
 				if _, exists := value.Map[encodedKey]; !exists {
 					value.MapOrder = append(value.MapOrder, encodedKey)
 				}
@@ -180,7 +191,10 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 				if err != nil {
 					return Null, true, fmt.Errorf("Map constructor: %w", err)
 				}
-				encodedKey := vm.mapKey(key)
+				encodedKey, err := vm.mapEntryKey(value, key)
+				if err != nil {
+					return Null, true, err
+				}
 				if _, exists := value.Map[encodedKey]; !exists {
 					value.MapOrder = append(value.MapOrder, encodedKey)
 				}
@@ -223,7 +237,22 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 }
 
 func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs map[string]Value, result *Result, literalArgs bool) (Value, error) {
+	return vm.constructValueWithNamedArgOrder(typeName, args, namedArgs, nil, result, literalArgs)
+}
+
+func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, namedArgs map[string]Value, namedArgOrder []string, result *Result, literalArgs bool) (Value, error) {
+	explicitSystemRuntimeType := len(typeName) > len("System.") &&
+		strings.EqualFold(typeName[:len("System.")], "System.") &&
+		isCanonicalRuntimeTypeName(typeName[len("System."):])
 	typeName = vm.resolveConstructorTypeName(typeName, args, namedArgs)
+	if strings.HasPrefix(strings.ToLower(typeName), "flow.interview.") {
+		if len(args) != 1 || args[0].Kind != ValueMap || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("%s constructor expects input variable map", typeName)
+		}
+		interview := Object(typeName)
+		interview.Fields["variables"] = args[0]
+		return interview, nil
+	}
 	if scalarConstructorForbidden(typeName) {
 		return Null, fmt.Errorf("Type cannot be constructed: %s", strings.TrimPrefix(typeName, "System."))
 	}
@@ -285,6 +314,26 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		return jwt, nil
 	}
+	if strings.EqualFold(typeName, "compression.ZipWriter") || strings.EqualFold(typeName, "compression.ZipReader") {
+		class, registered := vm.lookupClass(typeName)
+		// A source-defined class retains constructor precedence. Require actual
+		// generated members as well as passive shape; an empty source class is
+		// also passive but must not become a native ZIP object.
+		if !registered || (len(class.Methods) > 0 && passiveRuntimeClass(class)) {
+			switch strings.ToLower(typeName) {
+			case "compression.zipwriter":
+				if len(args) != 0 || len(namedArgs) != 0 {
+					return Null, fmt.Errorf("compression.ZipWriter constructor expects 0 arguments")
+				}
+				return newCompressionZipWriter(), nil
+			case "compression.zipreader":
+				if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueObject || args[0].Type != "Blob" {
+					return Null, fmt.Errorf("compression.ZipReader constructor expects Blob archive")
+				}
+				return newCompressionZipReader(args[0])
+			}
+		}
+	}
 	if value, handled, err := constructProcessPluginDescribeResultParameter(typeName, args, namedArgs); handled || err != nil {
 		return value, err
 	}
@@ -293,7 +342,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return value, err
 		}
 	}
-	if class, ok := vm.lookupClass(typeName); ok && (!vm.isSObjectType(typeName) || vm.classConstructorCanAccept(typeName, args, namedArgs)) && !platformVersionTypeName(typeName) {
+	if class, ok := vm.lookupClass(typeName); ok && (!vm.isSObjectType(typeName) || vm.classConstructorCanAccept(typeName, args, namedArgs)) && !platformVersionTypeName(typeName) && !explicitSystemRuntimeType {
 		typeName = runtimeClassName(class)
 		if class.IsInterface {
 			return Null, fmt.Errorf("cannot instantiate interface %s", typeName)
@@ -353,7 +402,8 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		if !passiveDTO {
 			delete(object.Fields, sobjectExplicitFieldsField)
-			for field, value := range namedArgs {
+			for _, field := range sObjectConstructorNamedArgFields(typeName, isSObjectCtor, namedArgs, namedArgOrder) {
+				value := namedArgs[field]
 				if isSObjectCtor {
 					vm.setExplicitSObjectFieldValue(&object, field, value)
 				} else {
@@ -401,7 +451,8 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		if !passiveDTO {
 			delete(object.Fields, sobjectExplicitFieldsField)
-			for field, value := range namedArgs {
+			for _, field := range sObjectConstructorNamedArgFields(typeName, isSObjectCtor, namedArgs, namedArgOrder) {
+				value := namedArgs[field]
 				if isSObjectCtor {
 					vm.setExplicitSObjectFieldValue(&object, field, value)
 				} else {
@@ -431,6 +482,11 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("%s constructor expects 0 arguments", typeName)
 		}
 		return newApexPagesComponentValue(typeName), nil
+	case "Http":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Http constructor expects 0 arguments")
+		}
+		return Object("Http"), nil
 	case "HttpRequest":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("HttpRequest constructor expects 0 arguments")
@@ -449,7 +505,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			response.Fields[field] = value
 		}
 		return response, nil
-	case "Database.DMLOptions", "DMLOptions":
+	case "Database.DMLOptions", "Database.DmlOptions", "DMLOptions", "DmlOptions":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Database.DMLOptions constructor expects 0 arguments")
 		}
@@ -650,6 +706,16 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if len(namedArgs) != 0 {
 			return Null, fmt.Errorf("Cookie constructor does not support named arguments")
 		}
+		if len(args) >= 2 {
+			if _, isID := typedIDValueText(args[1]); isID {
+				value, err := vm.coerceAssignable("String", args[1])
+				if err != nil {
+					return Null, err
+				}
+				args = append([]Value(nil), args...)
+				args[1] = value
+			}
+		}
 		return newCookie(args)
 	case "Domain":
 		if len(args) != 0 || len(namedArgs) != 0 {
@@ -681,16 +747,6 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		return row, nil
 	case "VisualEditor.DynamicPickListRows":
 		return newVisualEditorDynamicPickListRows(args, namedArgs)
-	case "compression.ZipWriter":
-		if len(args) != 0 || len(namedArgs) != 0 {
-			return Null, fmt.Errorf("compression.ZipWriter constructor expects 0 arguments")
-		}
-		return newCompressionZipWriter(), nil
-	case "compression.ZipReader":
-		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueObject || args[0].Type != "Blob" {
-			return Null, fmt.Errorf("compression.ZipReader constructor expects Blob archive")
-		}
-		return newCompressionZipReader(args[0])
 	case "UserProvisioning.ProvisioningBatchable", "UserProvisioning.PluginBatchable":
 		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueList {
 			return Null, fmt.Errorf("%s constructor expects List<SObject>", typeName)
@@ -1145,7 +1201,8 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	if definition.APIName != "" {
 		vm.initializeSObjectSchemaDefaults(&object, objectType)
 	}
-	for field, value := range namedArgs {
+	for _, field := range sObjectConstructorNamedArgFields(objectType, definition.APIName != "", namedArgs, namedArgOrder) {
+		value := namedArgs[field]
 		explicitField := false
 		if definition.APIName != "" {
 			if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field); ok {
@@ -1183,6 +1240,31 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		return Null, fmt.Errorf("%s constructor does not accept arguments", typeName)
 	}
 	return object, nil
+}
+
+func sObjectConstructorNamedArgFields(typeName string, isSObjectCtor bool, namedArgs map[string]Value, namedArgOrder []string) []string {
+	if !isSObjectCtor || !hasSuffixFold(typeName, "__mdt") || len(namedArgOrder) == 0 {
+		fields := make([]string, 0, len(namedArgs))
+		for field := range namedArgs {
+			fields = append(fields, field)
+		}
+		return fields
+	}
+	fields := make([]string, 0, len(namedArgs))
+	seen := make(map[string]bool, len(namedArgs))
+	for _, field := range namedArgOrder {
+		if _, ok := namedArgs[field]; !ok || seen[field] {
+			continue
+		}
+		fields = append(fields, field)
+		seen[field] = true
+	}
+	for field := range namedArgs {
+		if !seen[field] {
+			fields = append(fields, field)
+		}
+	}
+	return fields
 }
 
 func scalarConstructorForbidden(typeName string) bool {
@@ -1295,6 +1377,15 @@ func newVisualEditorDynamicPickListRows(args []Value, namedArgs map[string]Value
 }
 
 func applyExceptionConstructorArgs(object *Value, args []Value) (bool, error) {
+	if isEventBusExceptionType(object.Type) {
+		switch len(args) {
+		case 0, 1, 2:
+			// Salesforce exposes these eventbus exception constructors, but the
+			// local runtime contract keeps their platform-default message and
+			// does not retain the supplied cause.
+			return true, nil
+		}
+	}
 	switch len(args) {
 	case 0:
 		return true, nil
@@ -1325,6 +1416,9 @@ func applyExceptionConstructorArgs(object *Value, args []Value) (bool, error) {
 }
 
 func exceptionConstructorArgsCanApply(typeName string, args []Value) bool {
+	if isEventBusExceptionType(typeName) {
+		return len(args) <= 2
+	}
 	switch len(args) {
 	case 0, 1:
 		return true
@@ -1337,6 +1431,11 @@ func exceptionConstructorArgsCanApply(typeName string, args []Value) bool {
 	default:
 		return false
 	}
+}
+
+func isEventBusExceptionType(typeName string) bool {
+	return strings.EqualFold(exceptionTypeName(typeName), "eventbus.InvalidReplayIdException") ||
+		strings.EqualFold(exceptionTypeName(typeName), "eventbus.RetryableException")
 }
 
 func setExceptionMessage(object *Value, value Value) {
@@ -1412,7 +1511,7 @@ func validateURLConstructorValue(raw string) error {
 		return fmt.Errorf("URL constructor invalid URL: %w", err)
 	}
 	if parsed.Scheme == "" {
-		return fmt.Errorf("URL constructor invalid URL: missing protocol")
+		return newExceptionError("StringException", "no protocol: "+raw)
 	}
 	if parsed.Host == "" {
 		return fmt.Errorf("URL constructor invalid URL: missing host")
@@ -1539,7 +1638,8 @@ func (vm *VM) initializeSObjectSchemaDefaults(object *Value, typeName string) {
 		return
 	}
 	for name, field := range state.Definition.Fields {
-		if field.Type != storage.FieldBoolean {
+		// IsDeleted defaults on persisted records, not on a fresh Apex receiver.
+		if field.Type != storage.FieldBoolean || strings.EqualFold(name, "IsDeleted") {
 			continue
 		}
 		defaultValue, ok := storage.DefaultValueForField(field)
@@ -3209,6 +3309,15 @@ func namespaceQualifiedTypeEquivalent(left, right string) bool {
 	if left == "" || right == "" {
 		return false
 	}
+	// Apex treats the System namespace as an alias for its built-in types.
+	// Keep this explicit so ordinary top-level package namespaces do not
+	// collapse into one another during value equality.
+	if strings.HasPrefix(strings.ToLower(left), "system.") {
+		left = left[len("System."):]
+	}
+	if strings.HasPrefix(strings.ToLower(right), "system.") {
+		right = right[len("System."):]
+	}
 	return strings.EqualFold(stripLeadingTypeNamespace(left), right) ||
 		strings.EqualFold(left, stripLeadingTypeNamespace(right))
 }
@@ -3266,7 +3375,8 @@ func stripSObjectNamespacePrefix(typeName string) string {
 	if hasSuffixFold(typeName, "__c") ||
 		hasSuffixFold(typeName, "__mdt") ||
 		hasSuffixFold(typeName, "__e") ||
-		hasSuffixFold(typeName, "__x") {
+		hasSuffixFold(typeName, "__x") ||
+		hasSuffixFold(typeName, "__share") {
 		parts := strings.SplitN(typeName, "__", 2)
 		if len(parts) == 2 && strings.Contains(parts[1], "__") {
 			return parts[1]
@@ -3436,7 +3546,7 @@ func (vm *VM) exceptionMatchesAny(catchTypes []string, thrown Value) bool {
 }
 
 func (vm *VM) exceptionMatches(catchType string, thrown Value) bool {
-	if catchType == "" || exceptionTypeName(catchType) == "Exception" || strings.EqualFold(catchType, "Object") {
+	if catchType == "" || strings.EqualFold(exceptionTypeName(catchType), "Exception") || strings.EqualFold(catchType, "Object") {
 		return true
 	}
 	if thrown.Kind == ValueObject {
@@ -3550,6 +3660,38 @@ func systemInterfaceAlias(typeName string) string {
 	}
 }
 
+// Id/String List compatibility validates String values without converting them.
+func (vm *VM) evalInstanceOfChecked(value Value, target string) (Value, error) {
+	if value.Kind == ValueList && collectionBase(target) == "List" {
+		to, _ := collectionElementType(target)
+		to = canonicalRuntimePlatformType(to)
+		if strings.EqualFold(to, "Id") || strings.EqualFold(to, "String") {
+			for _, candidate := range instanceOfCollectionTypeCandidates(value) {
+				if collectionBase(candidate) != "List" {
+					continue
+				}
+				from, _ := collectionElementType(candidate)
+				from = canonicalRuntimePlatformType(from)
+				if !strings.EqualFold(from, "Id") && !strings.EqualFold(from, "String") {
+					break
+				}
+				if strings.EqualFold(from, "String") && strings.EqualFold(to, "Id") {
+					for _, item := range value.List {
+						if item.Kind == ValueNull {
+							continue
+						}
+						if err := validateApexIDShape(item.Text); err != nil {
+							return Null, newExceptionError("System.StringException", "Invalid id: "+item.Text)
+						}
+					}
+				}
+				return Bool(true), nil
+			}
+		}
+	}
+	return vm.evalInstanceOf(value, target), nil
+}
+
 func (vm *VM) evalInstanceOf(value Value, target string) Value {
 	target = strings.TrimSpace(target)
 	if target == "" {
@@ -3577,6 +3719,7 @@ func (vm *VM) evalInstanceOf(value Value, target string) Value {
 		return Bool(vm.typeMatches(runtimeObjectType(value), target, make(map[string]bool)))
 	}
 	if collectionBase(target) != "" || isMapType(target) {
+		// Collection elements do not narrow an erased runtime generic type.
 		for _, valueType := range instanceOfCollectionTypeCandidates(value) {
 			if matched, handled := vm.collectionDeclaredInstanceOf(valueType, target); handled {
 				if matched {
@@ -3593,9 +3736,6 @@ func (vm *VM) evalInstanceOf(value Value, target string) Value {
 			if vm.typeAssignableTo(valueType, target) {
 				return Bool(true)
 			}
-		}
-		if collectionBase(target) != "" && vm.collectionElementsAssignable(target, value) {
-			return Bool(true)
 		}
 		if isMapType(target) && vm.mapEntriesAssignable(target, value) {
 			return Bool(true)
@@ -3647,6 +3787,16 @@ func (vm *VM) collectionDeclaredInstanceOf(valueType, target string) (bool, bool
 	toElement, toOK := collectionElementType(target)
 	if !fromOK || !toOK {
 		return false, false
+	}
+	if strings.EqualFold(fromBase, "Set") && strings.EqualFold(toBase, "Set") {
+		fromElement = canonicalRuntimePlatformType(fromElement)
+		toElement = canonicalRuntimePlatformType(toElement)
+		return strings.EqualFold(fromElement, toElement) || platformTokenTypeAlias(fromElement, toElement), true
+	}
+	if strings.EqualFold(fromBase, "List") && strings.EqualFold(toBase, "List") &&
+		strings.EqualFold(canonicalRuntimePlatformType(fromElement), "Decimal") &&
+		strings.EqualFold(canonicalRuntimePlatformType(toElement), "Double") {
+		return true, true
 	}
 	return vm.collectionElementInstanceOf(fromElement, toElement), true
 }
@@ -3865,7 +4015,7 @@ var apexPagesSeverityNames = []string{"FATAL", "ERROR", "WARNING", "INFO", "CONF
 
 var metadataDeployStatusNames = []string{"Pending", "InProgress", "Succeeded", "SucceededPartial", "Failed", "Canceling", "Canceled"}
 
-var metadataMetadataTypeNames = []string{"CustomMetadata"}
+var metadataMetadataTypeNames = []string{"CustomMetadata", "Layout"}
 
 func isLoggingLevelName(level string) bool {
 	_, ok := canonicalLoggingLevelName(level)

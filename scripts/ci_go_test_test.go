@@ -40,6 +40,7 @@ var nodeIntegrationTests = map[string][]string{
 		"TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare",
 	},
 	"github.com/glade-sh/glade/internal/lwc/compile": {
+		"TestBuildCompileConfigAPIVersionMatrix",
 		"TestCompileProjectLWCBundles",
 		"TestCompileRewritesTemplateStylesheetImports",
 		"TestCompileEmitsSiblingJSModules",
@@ -47,6 +48,10 @@ var nodeIntegrationTests = map[string][]string{
 		"TestCompileEmitsAdditionalHTMLTemplateModules",
 		"TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate",
 		"TestCompileEnablesLwcOnDirective",
+		"TestComplexTemplateExpressionsFollowBundleAPIVersion",
+		"TestHTMLDetailsNameFollowsBundleAPIVersion",
+		"TestLWCModuleAvailabilityFollowsBundleAPIVersion",
+		"TestCompilePreservesDeclaredAPI67",
 	},
 	"github.com/glade-sh/glade/internal/lwcbrowser": {
 		"TestSetupBundleIncludesLabelsSibling",
@@ -70,6 +75,9 @@ var nodeIntegrationTests = map[string][]string{
 }
 
 var nodeIntegrationRunNames = []string{
+	"TestBuildCompileConfigAPIVersionMatrix", "TestLWCModuleAvailabilityFollowsBundleAPIVersion",
+	"TestComplexTemplateExpressionsFollowBundleAPIVersion", "TestHTMLDetailsNameFollowsBundleAPIVersion",
+	"TestCompilePreservesDeclaredAPI67",
 	"TestCompileProjectLWCBundles", "TestCompileRewritesTemplateStylesheetImports", "TestCompileEmitsSiblingJSModules",
 	"TestCompileEmitsUtilityOnlyLWCModules", "TestCompileEmitsAdditionalHTMLTemplateModules",
 	"TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate", "TestCompileEnablesLwcOnDirective",
@@ -2073,7 +2081,9 @@ func TestCIBrowserWorkflowContract(t *testing.T) {
 		"checkout overwrites early evidence": func(s string) string {
 			return strings.Replace(s, "          path: source\n", "", 1)
 		},
-		"missing Chromium": func(s string) string { return strings.Replace(s, "playwright install chromium", "playwright install", 1) },
+		"missing Chromium": func(s string) string {
+			return strings.Replace(s, "playwright install chromium", "playwright install", 1)
+		},
 		"missing selector": func(s string) string {
 			return strings.Replace(s, "|TestGeneratedPhase3BaseComponentsRunInBrowser", "", 1)
 		},
@@ -2638,6 +2648,9 @@ exit "$FIXTURE_NATIVE_RC"
 }
 
 func TestCINodeIntegrationCommandExactSelectionAndEvidence(t *testing.T) {
+	if got := len(nodeIntegrationExpectedPairs()); got != 35 {
+		t.Fatalf("node integration expected pair count = %d, want 35", got)
+	}
 	out, err, artifacts, calls := runNodeIntegrationFixture(t, nodeIntegrationEvents("pass"), 0, nil)
 	if err != nil {
 		t.Fatalf("node integration fixture failed: %v\n%s", err, out)
@@ -2665,8 +2678,13 @@ func TestCINodeIntegrationCommandExactSelectionAndEvidence(t *testing.T) {
 		}
 	}
 	summary, err := os.ReadFile(filepath.Join(artifacts, "validation-summary.json"))
-	if err != nil || !strings.Contains(string(summary), `"tests": 30`) || !strings.Contains(string(summary), `"valid": true`) {
-		t.Errorf("validation summary invalid: err=%v data=%s", err, summary)
+	if err != nil {
+		t.Fatalf("read validation summary: %v", err)
+	}
+	for _, marker := range []string{`"tests": 35`, `"passed": 35`, `"skipped": 0`, `"failed": 0`, `"valid": true`} {
+		if !strings.Contains(string(summary), marker) {
+			t.Errorf("validation summary missing %s: %s", marker, summary)
+		}
 	}
 }
 
@@ -2697,6 +2715,97 @@ func TestCINodeIntegrationCommandRequiresFreshExecution(t *testing.T) {
 	}
 }
 
+// Exercise the actual validator without the shell wrapper. This keeps the
+// validator contract test usable where legacy Bash heredocs require /tmp.
+// It does not qualify the wrapper or the native Node integration lane.
+func TestCINodeIntegrationValidatorBodyControls(t *testing.T) {
+	script, err := os.ReadFile("ci-go-test.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	extract := func(function, delimiter string) string {
+		t.Helper()
+		_, body, ok := strings.Cut(string(script), function+"() {")
+		if !ok {
+			t.Fatalf("missing %s", function)
+		}
+		_, body, ok = strings.Cut(body, "<<'"+delimiter+"'\n")
+		if !ok {
+			t.Fatalf("missing %s body", function)
+		}
+		body, _, ok = strings.Cut(body, "\n"+delimiter+"\n}")
+		if !ok {
+			t.Fatalf("missing %s boundary", function)
+		}
+		return body + "\n"
+	}
+	expected := extract("write_node_integration_expected", "EOF")
+	validator := extract("validate_node_integration_events", "PY")
+	pairs := nodeIntegrationExpectedPairs()
+	if len(pairs) != 35 {
+		t.Fatalf("expected pairs = %d, want 35", len(pairs))
+	}
+	var want strings.Builder
+	for _, pair := range pairs {
+		fmt.Fprintf(&want, "%s\t%s\n", pair[0], pair[1])
+	}
+	if expected != want.String() {
+		t.Fatal("actual expected set does not match 35 sorted fixture pairs")
+	}
+	valid := nodeIntegrationEvents("pass")
+	first := pairs[0]
+	terminal := fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":0.01}\n", first[0], first[1])
+	for _, tc := range []struct {
+		name, events, rejection string
+		pass                    bool
+	}{
+		{"complete35", valid, "", true},
+		{"missing", strings.Replace(valid, terminal, "", 1), "terminal count is 34, want 35", false},
+		{"duplicate", valid + terminal, "terminal count is 36, want 35", false},
+		{"skipped", strings.Replace(valid, `"Action":"pass"`, `"Action":"skip"`, 1), "skip event for selected test", false},
+		{"failed", strings.Replace(valid, `"Action":"pass"`, `"Action":"fail"`, 1), "non-pass terminal results:", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			eventsPath := filepath.Join(dir, "events.json")
+			expectedPath := filepath.Join(dir, "expected.txt")
+			discoveryPath := filepath.Join(dir, "discovery.txt")
+			summaryPath := filepath.Join(dir, "summary.json")
+			for path, body := range map[string]string{eventsPath: tc.events, expectedPath: expected} {
+				if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			cmd := exec.Command("python3", "-c", validator, eventsPath, expectedPath, discoveryPath, summaryPath)
+			out, err := cmd.CombinedOutput()
+			if !tc.pass {
+				if err == nil || !strings.Contains(string(out), "node integration validation rejected:") || !strings.Contains(string(out), tc.rejection) {
+					t.Fatalf("invalid stream did not reach rejection gate: %v\n%s", err, out)
+				}
+				if _, err := os.Stat(summaryPath); !os.IsNotExist(err) {
+					t.Fatalf("invalid stream left summary: %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("complete35 rejected: %v\n%s", err, out)
+			}
+			body, err := os.ReadFile(summaryPath)
+			var summary struct {
+				Valid                          bool
+				Tests, Passed, Skipped, Failed int
+			}
+			if err != nil || json.Unmarshal(body, &summary) != nil || !summary.Valid || summary.Tests != 35 || summary.Passed != 35 || summary.Skipped != 0 || summary.Failed != 0 {
+				t.Fatalf("invalid complete35 summary: %v %s", err, body)
+			}
+			discovery, err := os.ReadFile(discoveryPath)
+			if err != nil || string(discovery) != expected {
+				t.Fatalf("complete35 discovery does not match exact expected set: %v %s", err, discovery)
+			}
+		})
+	}
+}
+
 func TestCINodeIntegrationValidatorRejectsInvalidEvidence(t *testing.T) {
 	valid := nodeIntegrationEvents("pass")
 	pairs := nodeIntegrationExpectedPairs()
@@ -2707,15 +2816,15 @@ func TestCINodeIntegrationValidatorRejectsInvalidEvidence(t *testing.T) {
 		nativeRC int
 		mutate   func(string) error
 	}{
-		"skip":          {events: strings.Replace(valid, `"Action":"pass"`, `"Action":"skip"`, 1)},
-		"fail":          {events: strings.Replace(valid, `"Action":"pass"`, `"Action":"fail"`, 1)},
-		"missing":       {events: strings.Replace(valid, terminal, "", 1)},
-		"extra":         {events: valid + `{"Action":"pass","Package":"github.com/glade-sh/glade/internal/server","Test":"TestUnexpected"}` + "\n"},
-		"duplicate":     {events: valid + terminal},
-		"malformed":     {events: valid + "{not-json}\n"},
-		"wrong package": {events: strings.Replace(valid, first[0], "example.invalid/wrong", 1)},
-		"nested skip":   {events: valid + fmt.Sprintf("{\"Action\":\"skip\",\"Package\":%q,\"Test\":%q}\n", first[0], first[1]+"/nested")},
-		"native":        {events: valid, nativeRC: 23},
+		"skipped terminal":   {events: strings.Replace(valid, `"Action":"pass"`, `"Action":"skip"`, 1)},
+		"failed terminal":    {events: strings.Replace(valid, `"Action":"pass"`, `"Action":"fail"`, 1)},
+		"missing terminal":   {events: strings.Replace(valid, terminal, "", 1)},
+		"extra":              {events: valid + `{"Action":"pass","Package":"github.com/glade-sh/glade/internal/server","Test":"TestUnexpected"}` + "\n"},
+		"duplicate terminal": {events: valid + terminal},
+		"malformed":          {events: valid + "{not-json}\n"},
+		"wrong package":      {events: strings.Replace(valid, first[0], "example.invalid/wrong", 1)},
+		"nested skip":        {events: valid + fmt.Sprintf("{\"Action\":\"skip\",\"Package\":%q,\"Test\":%q}\n", first[0], first[1]+"/nested")},
+		"native":             {events: valid, nativeRC: 23},
 		"tee": {events: valid, mutate: func(binDir string) error {
 			return os.WriteFile(filepath.Join(binDir, "tee"), []byte("#!/usr/bin/env bash\ncat >/dev/null\nexit 17\n"), 0o700)
 		}},

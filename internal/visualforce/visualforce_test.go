@@ -3,6 +3,7 @@ package visualforce
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -94,6 +95,60 @@ func TestLoadProjectIndexesPagesAndComponents(t *testing.T) {
 	}
 	if !hasMerge(component.MergeReferences, "Label", "$Label", "PickerHelp") {
 		t.Fatalf("missing component label ref: %#v", component.MergeReferences)
+	}
+}
+
+func TestLoadProjectUsesVisualforceSidecarVersionAndProjectFallback(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	pagePath := filepath.Join(root, "force-app/main/default/pages/Legacy52.page")
+	componentPath := filepath.Join(root, "force-app/main/default/components/LegacyComponent.component")
+	fallbackPath := filepath.Join(root, "force-app/main/default/pages/ProjectFallback.page")
+	writeFile(t, pagePath, `<apex:page/>`)
+	writeFile(t, pagePath+"-meta.xml", `<ApexPage><apiVersion> v61.0 </apiVersion></ApexPage>`)
+	writeFile(t, componentPath, `<apex:component/>`)
+	writeFile(t, componentPath+"-meta.xml", `<ApexComponent><apiVersion>62.0</apiVersion></ApexComponent>`)
+	writeFile(t, fallbackPath, `<apex:page/>`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	idx, err := LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	page, ok := idx.Page("Legacy52")
+	if !ok || page.APIVersion != "61.0" {
+		t.Fatalf("sidecar page = %#v, %v; want API 61.0", page, ok)
+	}
+	component, ok := idx.Component("LegacyComponent")
+	if !ok || component.APIVersion != "62.0" {
+		t.Fatalf("sidecar component = %#v, %v; want API 62.0", component, ok)
+	}
+	fallback, ok := idx.Page("ProjectFallback")
+	if !ok || fallback.APIVersion != "65.0" {
+		t.Fatalf("fallback page = %#v, %v; want project API 65.0", fallback, ok)
+	}
+}
+
+func TestLoadProjectRejectsInvalidVisualforceSidecarVersion(t *testing.T) {
+	for _, raw := range []string{"67.1", "68.0", "not-a-version"} {
+		t.Run(raw, func(t *testing.T) {
+			root := t.TempDir()
+			path := filepath.Join(root, "force-app/main/default/pages/Probe.page")
+			writeFile(t, path, `<apex:page/>`)
+			writeFile(t, path+"-meta.xml", `<ApexPage><apiVersion>`+raw+`</apiVersion></ApexPage>`)
+
+			_, err := LoadProject(project.Project{
+				Root:                 root,
+				SourceAPIVersion:     "65.0",
+				VisualforcePageFiles: []string{path},
+			})
+			if err == nil || !strings.Contains(err.Error(), "unsupported Visualforce source API version") {
+				t.Fatalf("LoadProject error = %v, want invalid sidecar version", err)
+			}
+		})
 	}
 }
 

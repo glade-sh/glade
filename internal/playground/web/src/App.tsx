@@ -7,9 +7,7 @@ import {
   CircleAlert,
   CircleDashed,
   Command,
-  Copy,
   Database,
-  ExternalLink,
   FileCode2,
   Folder,
   FolderOpen,
@@ -21,7 +19,6 @@ import {
   RotateCcw,
   Save,
   Search,
-  ShieldCheck,
   Sun,
   Trash2,
   Zap,
@@ -34,13 +31,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CodeEditor } from "@/components/CodeEditor"
-import { apiResponseError, friendlyErrorMessage } from "@/lib/api-error"
-import {
-  canonicalPlaygroundURL,
-  parsePlaygroundURL,
-  replacePlaygroundURL,
-  type PlaygroundSurface,
-} from "@/lib/playground-url"
 import { cn } from "@/lib/utils"
 import { applySavedContent, pathsToSaveBeforeRun, shouldApplyRunResult } from "@/lib/save-state"
 import {
@@ -70,18 +60,6 @@ type WorkspaceMetadata = {
   workspaceHash?: string
   limitMode?: string
   dbPath?: string
-  policy?: PlaygroundPolicy
-}
-
-type PlaygroundPolicy = {
-  public: boolean
-  runMode: "scratch" | "selectable"
-  limitMode: string
-  runTimeoutMs?: number
-  ratePerMinute?: number
-  maxWorkspaceFiles?: number
-  maxWorkspaceBytes?: number
-  limitCaps?: Record<string, number>
 }
 
 type ExampleProject = {
@@ -173,21 +151,10 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     body = { error: text }
   }
   if (!response.ok) {
-    throw apiResponseError(response, body)
+    const message = typeof body === "object" && body && "error" in body ? String(body.error) : response.statusText
+    throw new Error(message)
   }
   return body as T
-}
-
-async function requireReady() {
-  const response = await fetch("/readyz", { cache: "no-store" })
-  const text = await response.text()
-  let body: unknown = {}
-  try {
-    body = text ? JSON.parse(text) : {}
-  } catch {
-    body = {}
-  }
-  if (!response.ok) throw apiResponseError(response, body)
 }
 
 async function readWorkspaceFile(path: string) {
@@ -207,19 +174,6 @@ function shortHash(hash?: string) {
   return hash.length > 18 ? `${hash.slice(0, 16)}...` : hash
 }
 
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  const kilobytes = bytes / 1024
-  if (kilobytes < 1024) return `${Math.round(kilobytes)} KB`
-  return `${Math.round((kilobytes / 1024) * 10) / 10} MB`
-}
-
-export function formatTimeout(milliseconds: number) {
-  if (milliseconds < 1000) return `${milliseconds}ms`
-  if (milliseconds % 1000 === 0) return `${milliseconds / 1000}s`
-  return `${Number((milliseconds / 1000).toFixed(3))}s`
-}
-
 function valuePreview(value: unknown) {
   if (value == null) return ""
   if (typeof value === "string") return value
@@ -230,10 +184,6 @@ function valuePreview(value: unknown) {
   }
 }
 
-export function limitUsagePreview(key: string, value: number, caps: Record<string, number>) {
-  return Object.prototype.hasOwnProperty.call(caps, key) ? `${value} / ${caps[key]}` : value
-}
-
 function statusVariant(status: string): "success" | "warning" | "danger" | "outline" {
   if (status === "Pass" || status === "pass") return "success"
   if (status === "Running" || status === "Loading" || status === "Saving" || status === "Deleting") return "warning"
@@ -241,36 +191,29 @@ function statusVariant(status: string): "success" | "warning" | "danger" | "outl
   return "outline"
 }
 
-function currentPlaygroundURL() {
-  if (typeof window === "undefined") return { surface: "apex" as const }
-  return parsePlaygroundURL(window.location.href)
+function deepLinkedExampleId() {
+  if (typeof window === "undefined") return ""
+  const search = new URLSearchParams(window.location.search).get("example")
+  if (search) return search
+  const hash = window.location.hash.replace(/^#/, "")
+  if (!hash) return ""
+  return new URLSearchParams(hash).get("example") || (hash.startsWith("example=") ? hash.slice("example=".length) : "")
 }
 
-export function resolveInitialExample(linked: string, availableIds: string[]) {
-  const linkedExists = Boolean(linked && availableIds.includes(linked))
-  const initial = linkedExists ? linked : availableIds[0] || ""
-  const problem =
-    linked && !linkedExists
-      ? initial
-        ? `Example “${linked}” was not found. Showing the first available example instead.`
-        : `Example “${linked}” was not found, and no built-in examples are available.`
-      : ""
-  return { initial, problem, clearProblemOnLoad: !problem }
+function writeExampleLink(id: string) {
+  if (typeof window === "undefined") return
+  const url = new URL(window.location.href)
+  url.search = ""
+  url.searchParams.set("example", id)
+  window.history.replaceState({}, "", `${url.pathname}${url.search}`)
 }
 
-export function resultDefaultTab(result: RunResult | null, problemMessage = "") {
-  if (
-    problemMessage ||
-    (result?.status && result.status !== "pass") ||
-    (result?.diagnostics?.length ?? 0) > 0 ||
-    result?.errorMessage
-  ) {
-    return "problems"
-  }
+function resultDefaultTab(result: RunResult | null, problemMessage = "") {
   if ((result?.logs?.length ?? 0) > 0) return "logs"
   if ((result?.vars?.length ?? 0) > 0) return "vars"
   if (Object.keys(result?.limits ?? {}).length > 0) return "limits"
   if ((result?.orgDiff?.length ?? 0) > 0) return "orgDiff"
+  if (problemMessage || (result?.diagnostics?.length ?? 0) > 0 || result?.errorMessage) return "problems"
   return "logs"
 }
 
@@ -282,73 +225,6 @@ const databaseKindFilters: { value: DatabaseObjectKind; label: string }[] = [
   { value: "custom_metadata", label: "Custom metadata" },
   { value: "custom_setting", label: "Custom settings" },
 ]
-
-function EmptyState({
-  title,
-  description,
-  action,
-}: {
-  title: string
-  description: string
-  action?: { label: string; onClick: () => void }
-}) {
-  return (
-    <div className="empty-state">
-      <CircleDashed className="size-5 text-primary" />
-      <strong>{title}</strong>
-      <p>{description}</p>
-      {action ? (
-        <Button size="sm" variant="outline" onClick={action.onClick}>
-          {action.label}
-        </Button>
-      ) : null}
-    </div>
-  )
-}
-
-const surfaceGuides = {
-  visualforce: {
-    title: "Preview a Visualforce page locally",
-    description:
-      "Visualforce uses Glade’s project renderer and controller runtime. Run it locally, then open the printed URL; it is not an Apex run inside this browser workbench.",
-    command: "glade dev vf --project .",
-    href: "https://glade.sh/guide/workflows/visualforce-preview",
-  },
-  lwc: {
-    title: "Open the local LWC shell",
-    description:
-      "LWC uses Glade’s Lightning-style project shell and compiled bundle assets. It is a separate local preview, not an emulated component in this Apex workbench.",
-    command: "glade dev lwc --project . --open",
-    href: "https://glade.sh/guide/workflows/lwc-preview",
-  },
-} as const
-
-function SurfaceGuide({ surface }: { surface: Exclude<PlaygroundSurface, "apex"> }) {
-  const guide = surfaceGuides[surface]
-  const label = surface === "lwc" ? "LWC" : "Visualforce"
-  return (
-    <main className="surface-guide-wrap">
-      <section className="pane surface-guide" aria-labelledby={`${surface}-guide-title`}>
-        <div className="surface-guide-icon">
-          <FileCode2 />
-        </div>
-        <Badge variant="outline">Local preview</Badge>
-        <h2 id={`${surface}-guide-title`}>{guide.title}</h2>
-        <p>{guide.description}</p>
-        <div className="surface-command" aria-label={`${label} launch command`}>
-          <code>{guide.command}</code>
-        </div>
-        <Button asChild>
-          <a href={guide.href} target="_blank" rel="noreferrer">
-            Open {label} guide
-            <ExternalLink />
-          </a>
-        </Button>
-        <span className="surface-boundary">Requires a local Salesforce DX project. Hosted Salesforce behavior still needs final validation.</span>
-      </section>
-    </main>
-  )
-}
 
 export type SourceTabFile = {
   path: string
@@ -426,7 +302,6 @@ export default function App() {
     return saved === "light" ? "light" : "dark"
   })
   const [meta, setMeta] = useState<WorkspaceMetadata | null>(null)
-  const [surface, setSurface] = useState<PlaygroundSurface>(() => currentPlaygroundURL().surface)
   const [versions, setVersions] = useState<Record<string, number>>({})
   const [contentByPath, setContentByPath] = useState<Record<string, string>>({})
   const [sourcePath, setSourcePath] = useState<string>("")
@@ -448,13 +323,6 @@ export default function App() {
   const [examples, setExamples] = useState<ExampleProject[]>([])
   const [selectedExample, setSelectedExample] = useState("")
   const [canLoadExamples, setCanLoadExamples] = useState(true)
-  const [examplesProblem, setExamplesProblem] = useState("")
-  const [linkProblem, setLinkProblem] = useState("")
-  const [loadingExampleId, setLoadingExampleId] = useState("")
-  const [resetting, setResetting] = useState(false)
-  const [shareNotice, setShareNotice] = useState("")
-  const [runtimeState, setRuntimeState] = useState<"checking" | "ready" | "unavailable">("checking")
-  const [startupAttempt, setStartupAttempt] = useState(0)
   const [classSearch, setClassSearch] = useState("")
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set())
   const [database, setDatabase] = useState<DatabaseSnapshot>({ objects: [] })
@@ -537,9 +405,8 @@ export default function App() {
     if (!advanced) {
       setCommandOpen(false)
       setResultTab((current) => (current === "trace" || current === "database" ? "logs" : current))
-      const nextLimitMode = metaRef.current?.policy?.limitMode || "permissive"
-      limitModeRef.current = nextLimitMode
-      setLimitMode(nextLimitMode)
+      limitModeRef.current = "permissive"
+      setLimitMode("permissive")
     }
   }, [advanced])
 
@@ -653,7 +520,7 @@ export default function App() {
         void refreshDatabase().catch(() => undefined)
       } catch (error) {
         if (runSeq === runSeqRef.current) {
-          setProblemMessage(friendlyErrorMessage(error))
+          setProblemMessage(error instanceof Error ? error.message : String(error))
           setResultTab("problems")
           setStatus("Error")
         }
@@ -703,24 +570,19 @@ export default function App() {
         workspace.files.find(isSourceEditorFile)
       const nextContent: Record<string, string> = {}
       if (anonymousFile) nextContent[anonymousFile.path] = workspace.anonymousBody ?? ""
-      const nextLimitMode = workspace.policy?.limitMode || workspace.limitMode || "permissive"
       setMeta(workspace)
       setVersions(nextVersions)
-      setLimitMode(nextLimitMode)
-      if (workspace.policy?.public) {
-        modeRef.current = "scratch"
-        setMode("scratch")
-      }
+      setLimitMode(workspace.limitMode || "permissive")
       setOpenFolders(defaultOpenFolderPaths(workspace.files))
       setAnonymousPath(anonymousFile?.path ?? "anonymous.apex")
       setAnonymous(workspace.anonymousBody ?? "")
       setContentByPath(nextContent)
-      setSelectedExample(workspace.exampleId ?? "")
+      if (workspace.exampleId) setSelectedExample(workspace.exampleId)
       replaceDirty(new Set())
       metaRef.current = workspace
       contentRef.current = nextContent
       versionsRef.current = nextVersions
-      limitModeRef.current = nextLimitMode
+      limitModeRef.current = workspace.limitMode || "permissive"
       anonymousPathRef.current = anonymousFile?.path ?? "anonymous.apex"
       anonymousRef.current = workspace.anonymousBody ?? ""
       sourcePathRef.current = ""
@@ -752,6 +614,44 @@ export default function App() {
     },
     [applyWorkspace],
   )
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase()
+      if ((event.metaKey || event.ctrlKey) && key === "enter") {
+        event.preventDefault()
+        void run()
+      }
+      if ((event.metaKey || event.ctrlKey) && key === "s") {
+        event.preventDefault()
+        void saveDirty().catch((error) => {
+          setProblemMessage(error instanceof Error ? error.message : String(error))
+          setResultTab("problems")
+          setStatus("Error")
+        })
+      }
+      if ((event.metaKey || event.ctrlKey) && event.shiftKey && key === "r") {
+        event.preventDefault()
+        setStatus("Resetting")
+        void api("reset", { method: "POST" })
+          .then(() => {
+            setCacheState("stale")
+            setStatus("Ready")
+          })
+          .catch((error) => {
+            setProblemMessage(error instanceof Error ? error.message : String(error))
+            setStatus("Error")
+          })
+      }
+      if (advancedRef.current && (event.metaKey || event.ctrlKey) && key === "k") {
+        event.preventDefault()
+        setCommandOpen(true)
+      }
+      if (event.key === "Escape") setCommandOpen(false)
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [run, saveDirty])
 
   const groups = useMemo(() => {
     const files = meta?.files ?? []
@@ -808,13 +708,6 @@ export default function App() {
   const cacheLabel = cacheState === "hit" ? "cache hit" : cacheState === "fresh" ? "cache fresh" : "cache stale"
   const dbPath = meta?.dbPath?.trim() ?? ""
   const dbStateLabel = dbPath || "memory-only"
-  const policy = meta?.policy
-  const publicPolicy = policy?.public ?? false
-  const timeoutLabel = policy?.runTimeoutMs ? formatTimeout(policy.runTimeoutMs) : ""
-  const limitCaps = policy?.limitCaps ?? {}
-  const workspaceLimit = policy?.maxWorkspaceFiles
-    ? `${policy.maxWorkspaceFiles} files${policy.maxWorkspaceBytes ? ` / ${formatBytes(policy.maxWorkspaceBytes)}` : ""}`
-    : ""
   const onSourceChange = (value: string) => {
     if (!sourcePath || sourceReadOnly) return
     contentRef.current = { ...contentRef.current, [sourcePath]: value }
@@ -845,13 +738,10 @@ export default function App() {
   }
 
   const loadExampleById = useCallback(
-    async (
-      id: string,
-      options: { confirmDirty?: boolean; updateUrl?: boolean; preferred?: string; clearLinkProblem?: boolean } = {},
-    ) => {
-      if (!id || !canLoadExamplesRef.current) return false
+    async (id: string, options: { confirmDirty?: boolean; updateUrl?: boolean } = {}) => {
+      if (!id || !canLoadExamplesRef.current) return
       const shouldConfirm = options.confirmDirty ?? true
-      if (shouldConfirm && dirtyRef.current.size > 0 && !window.confirm("Load example and replace this scratch workspace?")) return false
+      if (shouldConfirm && dirtyRef.current.size > 0 && !window.confirm("Load example and replace this scratch workspace?")) return
       runSeqRef.current += 1
       setRunning(false)
       setStatus("Loading")
@@ -859,23 +749,14 @@ export default function App() {
       setResult(null)
       setResultTab("logs")
       setCacheState("stale")
-      setLoadingExampleId(id)
-      try {
-        const workspace = await api<WorkspaceMetadata>("examples/load", {
-          method: "POST",
-          body: JSON.stringify({ id }),
-        })
-        await applyWorkspace(workspace, { preferred: options.preferred, loadLatest: false })
-        setSelectedExample(id)
-        if (options.clearLinkProblem ?? true) setLinkProblem("")
-        if (options.updateUrl ?? true) {
-          replacePlaygroundURL({ surface: "apex", example: id })
-        }
-        void refreshDatabase().catch(() => undefined)
-        return true
-      } finally {
-        setLoadingExampleId("")
-      }
+      setSelectedExample(id)
+      if (options.updateUrl ?? true) writeExampleLink(id)
+      const workspace = await api<WorkspaceMetadata>("examples/load", {
+        method: "POST",
+        body: JSON.stringify({ id }),
+      })
+      await applyWorkspace(workspace, { loadLatest: false })
+      void refreshDatabase().catch(() => undefined)
     },
     [applyWorkspace, refreshDatabase],
   )
@@ -884,26 +765,10 @@ export default function App() {
     await loadExampleById(selectedExample)
   }, [loadExampleById, selectedExample])
 
-  const runExampleById = useCallback(
-    async (id: string) => {
-      if (await loadExampleById(id)) {
-        await run()
-      }
-    },
-    [loadExampleById, run],
-  )
-
   useEffect(() => {
     let cancelled = false
     void (async () => {
       setStatus("Loading")
-      setProblemMessage("")
-      setExamplesProblem("")
-      setRuntimeState("checking")
-      await requireReady()
-      if (cancelled) return
-      setRuntimeState("ready")
-      const linkedState = currentPlaygroundURL()
       let nextExamples: ExampleProject[] = []
       let nextCanLoad = false
       try {
@@ -914,42 +779,28 @@ export default function App() {
         setExamples(nextExamples)
         canLoadExamplesRef.current = nextCanLoad
         setCanLoadExamples(nextCanLoad)
-        const linked = linkedState.example ?? ""
-        const resolved = resolveInitialExample(
-          linked,
-          nextExamples.map((example) => example.id),
-        )
-        setLinkProblem(resolved.problem)
-        const initial = resolved.initial
+        const linked = deepLinkedExampleId()
+        const initial = linked && nextExamples.some((example) => example.id === linked) ? linked : nextExamples[0]?.id || ""
         setSelectedExample(initial)
-        if (linkedState.surface === "apex" && nextCanLoad && initial) {
-          await loadExampleById(initial, {
-            confirmDirty: false,
-            updateUrl: false,
-            preferred: linkedState.file,
-            clearLinkProblem: resolved.clearProblemOnLoad,
-          })
+        if (nextCanLoad && initial) {
+          await loadExampleById(initial, { confirmDirty: false, updateUrl: false })
           return
         }
-      } catch (error) {
-        if (!cancelled) {
-          setCanLoadExamples(false)
-          setExamplesProblem(friendlyErrorMessage(error))
-        }
+      } catch {
+        if (!cancelled) setCanLoadExamples(false)
       }
       if (cancelled) return
-      await loadWorkspace(linkedState.surface === "apex" ? linkedState.file : undefined)
+      await loadWorkspace()
     })().catch((error) => {
       if (cancelled) return
-      setRuntimeState("unavailable")
-      setProblemMessage(friendlyErrorMessage(error))
+      setProblemMessage(error instanceof Error ? error.message : String(error))
       setResultTab("problems")
       setStatus("Error")
     })
     return () => {
       cancelled = true
     }
-  }, [loadExampleById, loadWorkspace, startupAttempt])
+  }, [loadExampleById, loadWorkspace])
 
   const deleteWorkspaceFile = async (path: string) => {
     if (!window.confirm(`Delete ${fileName(path)} from this workspace?`)) return
@@ -965,37 +816,13 @@ export default function App() {
     await applyWorkspace(workspace, { preferred, loadLatest: false })
   }
 
-  const resetPlayground = useCallback(async () => {
-    if (resetting) return
-    if (
-      selectedExample &&
-      dirtyRef.current.size > 0 &&
-      !window.confirm("Restore this example and discard your edits?")
-    ) {
-      return
-    }
-    setResetting(true)
+  const resetOrg = async () => {
     setStatus("Resetting")
-    setProblemMessage("")
-    try {
-      if (selectedExample && canLoadExamplesRef.current) {
-        await loadExampleById(selectedExample, { confirmDirty: false, updateUrl: false })
-      } else {
-        await api("reset", { method: "POST" })
-        await refreshDatabase()
-        setResult(null)
-        setResultTab("logs")
-      }
-      setCacheState("stale")
-      setStatus(selectedExample ? "Restored" : "Ready")
-    } catch (error) {
-      setProblemMessage(friendlyErrorMessage(error))
-      setResultTab("problems")
-      setStatus("Error")
-    } finally {
-      setResetting(false)
-    }
-  }, [loadExampleById, refreshDatabase, resetting, selectedExample])
+    await api("reset", { method: "POST" })
+    await refreshDatabase()
+    setCacheState("stale")
+    setStatus("Ready")
+  }
 
   const seedOrg = async () => {
     setStatus("Seeding")
@@ -1005,65 +832,9 @@ export default function App() {
     setStatus("Seeded")
   }
 
-  const changeSurface = (value: string) => {
-    const next = value as PlaygroundSurface
-    setSurface(next)
-    setShareNotice("")
-    replacePlaygroundURL({
-      surface: next,
-      ...(next === "apex" && selectedExample ? { example: selectedExample } : {}),
-    })
-  }
-
-  const copyShareLink = async () => {
-    if (typeof window === "undefined") return
-    const shareState = {
-      surface,
-      ...(surface === "apex" && selectedExample ? { example: selectedExample } : {}),
-      ...(surface === "apex" && sourcePath ? { file: sourcePath } : {}),
-    }
-    const url = canonicalPlaygroundURL(window.location.href, shareState)
-    replacePlaygroundURL(shareState)
-    try {
-      await navigator.clipboard.writeText(url.toString())
-      setShareNotice("Link copied")
-    } catch {
-      setShareNotice("Copy unavailable — use the address bar")
-    }
-  }
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const key = event.key.toLowerCase()
-      if ((event.metaKey || event.ctrlKey) && key === "enter" && surface === "apex") {
-        event.preventDefault()
-        void run()
-      }
-      if ((event.metaKey || event.ctrlKey) && key === "s" && surface === "apex") {
-        event.preventDefault()
-        void saveDirty().catch((error) => {
-          setProblemMessage(friendlyErrorMessage(error))
-          setResultTab("problems")
-          setStatus("Error")
-        })
-      }
-      if ((event.metaKey || event.ctrlKey) && event.shiftKey && key === "r" && surface === "apex") {
-        event.preventDefault()
-        void resetPlayground()
-      }
-      if (advancedRef.current && (event.metaKey || event.ctrlKey) && key === "k") {
-        event.preventDefault()
-        setCommandOpen(true)
-      }
-      if (event.key === "Escape") setCommandOpen(false)
-    }
-    document.addEventListener("keydown", onKeyDown)
-    return () => document.removeEventListener("keydown", onKeyDown)
-  }, [resetPlayground, run, saveDirty, surface])
-
   const saveAndHandle = () => {
     void saveDirty().catch((error) => {
-      setProblemMessage(friendlyErrorMessage(error))
+      setProblemMessage(error instanceof Error ? error.message : String(error))
       setResultTab("problems")
       setStatus("Error")
     })
@@ -1071,7 +842,7 @@ export default function App() {
 
   const runAndHandle = () => {
     void run().catch((error) => {
-      setProblemMessage(friendlyErrorMessage(error))
+      setProblemMessage(error instanceof Error ? error.message : String(error))
       setResultTab("problems")
       setStatus("Error")
     })
@@ -1079,23 +850,7 @@ export default function App() {
 
   const loadExampleAndHandle = () => {
     void loadExample().catch((error) => {
-      setProblemMessage(friendlyErrorMessage(error))
-      setResultTab("problems")
-      setStatus("Error")
-    })
-  }
-
-  const createClassAndHandle = () => {
-    void createClass().catch((error) => {
-      setProblemMessage(friendlyErrorMessage(error))
-      setResultTab("problems")
-      setStatus("Error")
-    })
-  }
-
-  const seedOrgAndHandle = () => {
-    void seedOrg().catch((error) => {
-      setProblemMessage(friendlyErrorMessage(error))
+      setProblemMessage(error instanceof Error ? error.message : String(error))
       setResultTab("problems")
       setStatus("Error")
     })
@@ -1116,7 +871,7 @@ export default function App() {
     setSourceTabs(next.sourceTabs)
     if (next.sourcePath !== sourcePath) {
       void openFile(next.sourcePath).catch((error) => {
-        setProblemMessage(friendlyErrorMessage(error))
+        setProblemMessage(error instanceof Error ? error.message : String(error))
         setStatus("Error")
       })
     }
@@ -1141,7 +896,7 @@ export default function App() {
                     sourceTabsRef.current = next.sourceTabs
                     setSourceTabs(next.sourceTabs)
                     void openFile(tab.path).catch((error) => {
-                      setProblemMessage(friendlyErrorMessage(error))
+                      setProblemMessage(error instanceof Error ? error.message : String(error))
                       setStatus("Error")
                     })
                   }}
@@ -1168,7 +923,7 @@ export default function App() {
         ) : (
           <div className="source-tab-empty">
             <FileCode2 className="size-3.5" />
-            Choose a file from the workspace
+            No source open
           </div>
         )}
       </div>
@@ -1223,25 +978,7 @@ export default function App() {
                 </button>
               ))
             ) : (
-              <EmptyState
-                title={database.objects.length ? "No matching objects" : "No objects yet"}
-                description={
-                  database.objects.length
-                    ? "Clear the object filters to see the full local schema."
-                    : "Run DML or seed local data, then return here to inspect records."
-                }
-                action={
-                  database.objects.length
-                    ? {
-                        label: "Clear filters",
-                        onClick: () => {
-                          setDatabaseKind("all")
-                          setDatabaseSearch("")
-                        },
-                      }
-                    : undefined
-                }
-              />
+              <div className="px-2 py-3 text-xs text-muted-foreground">No objects</div>
             )}
           </div>
         </ScrollArea>
@@ -1278,14 +1015,7 @@ export default function App() {
               </tbody>
             </table>
           ) : (
-            <EmptyState
-              title={activeDatabaseObject ? "No rows yet" : "Choose an object"}
-              description={
-                activeDatabaseObject
-                  ? "Run code that inserts records, or seed local data when that control is available."
-                  : "Select an object on the left to inspect its local records."
-              }
-            />
+            <div className="p-3 text-sm text-muted-foreground">No rows</div>
           )}
         </ScrollArea>
       </div>
@@ -1328,7 +1058,7 @@ export default function App() {
             className="min-w-0 flex-1 border-0 bg-transparent p-0 text-left text-inherit"
             onClick={() => {
               void openFile(file.path).catch((error) => {
-                setProblemMessage(friendlyErrorMessage(error))
+                setProblemMessage(error instanceof Error ? error.message : String(error))
                 setStatus("Error")
               })
             }}
@@ -1347,7 +1077,7 @@ export default function App() {
               title={`Delete ${fileName(file.path)}`}
               onClick={() => {
                 void deleteWorkspaceFile(file.path).catch((error) => {
-                  setProblemMessage(friendlyErrorMessage(error))
+                  setProblemMessage(error instanceof Error ? error.message : String(error))
                   setStatus("Error")
                 })
               }}
@@ -1367,7 +1097,7 @@ export default function App() {
           <div className="min-w-0">
             <h1 className="truncate text-sm font-semibold">Glade Playground</h1>
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-              <span>Apex, Visualforce, and LWC</span>
+              <span>local Apex workbench</span>
               <span className="text-muted-foreground/50">/</span>
               <span>{meta?.id ?? "default"}</span>
               <span className="workspace-hash font-mono">{shortHash(meta?.workspaceHash)}</span>
@@ -1375,62 +1105,49 @@ export default function App() {
           </div>
           <div className="status-badges flex items-center gap-2">
             <Badge variant={statusVariant(status)}>{status}</Badge>
-            {surface === "apex" ? <Badge variant={cacheState === "stale" ? "warning" : "success"}>{cacheLabel}</Badge> : null}
-            <Badge variant={runtimeState === "ready" ? "success" : runtimeState === "unavailable" ? "danger" : "warning"}>
-              runtime {runtimeState}
-            </Badge>
+            <Badge variant={cacheState === "stale" ? "warning" : "success"}>{cacheLabel}</Badge>
           </div>
         </div>
         <div className="topbar-actions flex items-center gap-2">
-          {surface === "apex" ? (
-            <div className="run-mode-control" data-testid="run-mode-selector">
-              <span>mode</span>
-              {publicPolicy ? (
-                <Badge variant="outline">scratch only</Badge>
-              ) : (
-                <Select
-                  value={mode}
-                  onValueChange={(value) => {
-                    const next = value as "scratch" | "persist"
-                    modeRef.current = next
-                    setMode(next)
-                    setCacheState("stale")
-                  }}
-                >
-                  <SelectTrigger className="w-[118px]" aria-label="Run mode: scratch or persist">
-                    <SelectValue placeholder={mode} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="scratch">scratch</SelectItem>
-                    <SelectItem value="persist">persist</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-              <span className="sr-only">scratch persist</span>
-            </div>
-          ) : null}
-          {surface === "apex" && advanced ? (
+          <div className="run-mode-control" data-testid="run-mode-selector">
+            <span>mode</span>
+            <Select
+              value={mode}
+              onValueChange={(value) => {
+                const next = value as "scratch" | "persist"
+                modeRef.current = next
+                setMode(next)
+                setCacheState("stale")
+              }}
+            >
+              <SelectTrigger className="w-[118px]" aria-label="Run mode: scratch or persist">
+                <SelectValue placeholder={mode} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="scratch">scratch</SelectItem>
+                <SelectItem value="persist">persist</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="sr-only">scratch persist</span>
+          </div>
+          {advanced ? (
             <>
-              {publicPolicy ? (
-                <Badge variant="outline">strict limits</Badge>
-              ) : (
-                <Select
-                  value={limitMode}
-                  onValueChange={(value) => {
-                    limitModeRef.current = value
-                    setLimitMode(value)
-                    setCacheState("stale")
-                  }}
-                >
-                  <SelectTrigger className="w-[132px]" aria-label="Governor limit mode">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="permissive">permissive</SelectItem>
-                    <SelectItem value="strict">strict</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
+              <Select
+                value={limitMode}
+                onValueChange={(value) => {
+                  limitModeRef.current = value
+                  setLimitMode(value)
+                  setCacheState("stale")
+                }}
+              >
+                <SelectTrigger className="w-[132px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="permissive">permissive</SelectItem>
+                  <SelectItem value="strict">strict</SelectItem>
+                </SelectContent>
+              </Select>
               <Button variant="outline" size="icon" onClick={saveAndHandle} title="Save">
                 <Save />
               </Button>
@@ -1445,26 +1162,14 @@ export default function App() {
               </Button>
             </>
           ) : null}
-          {surface === "apex" ? (
-            <>
-              <Button className="run-button" onClick={runAndHandle} disabled={running || runtimeState !== "ready"} title="Run">
-                <Play />
-                Run
-              </Button>
-              <Button variant="outline" onClick={() => void resetPlayground()} disabled={resetting} title="Restore example and reset data">
-                <RotateCcw />
-                {resetting ? "Resetting" : selectedExample ? "Restore" : "Reset data"}
-              </Button>
-              <label className="advanced-toggle flex items-center gap-2 rounded-sm border border-border px-2 py-1 text-xs text-muted-foreground">
-                <Switch id="advanced-toggle" checked={advanced} onCheckedChange={setAdvanced} aria-label="Show advanced tools" />
-                Advanced
-              </label>
-            </>
-          ) : null}
-          <Button variant="outline" onClick={() => void copyShareLink()} title="Copy a link to this view">
-            <Copy />
-            Share
+          <Button className="run-button" onClick={runAndHandle} disabled={running} title="Run">
+            <Play />
+            Run
           </Button>
+          <label className="advanced-toggle flex items-center gap-2 rounded-sm border border-border px-2 py-1 text-xs text-muted-foreground">
+            <Switch id="advanced-toggle" checked={advanced} onCheckedChange={setAdvanced} aria-label="Show advanced tools" />
+            Advanced
+          </label>
           <Button variant="ghost" asChild>
             <a href="https://glade.sh/guide/" target="_blank" rel="noreferrer">
               Docs
@@ -1481,53 +1186,6 @@ export default function App() {
         </div>
       </header>
 
-      <div className="experience-bar">
-        <div className="surface-tabs" role="group" aria-label="Playground surfaces">
-          {(["apex", "visualforce", "lwc"] as const).map((item) => (
-            <button
-              key={item}
-              type="button"
-              aria-pressed={surface === item}
-              className={cn("surface-tab", surface === item && "active")}
-              onClick={() => changeSurface(item)}
-            >
-              {item === "lwc" ? "LWC" : item.charAt(0).toUpperCase() + item.slice(1)}
-            </button>
-          ))}
-        </div>
-        {surface === "apex" ? (
-          <div className="policy-summary" data-testid="playground-policy">
-            <ShieldCheck />
-            <span>{publicPolicy ? "Public preview" : "Local workspace"}</span>
-            <span>{publicPolicy ? "scratch runs only" : `${mode} state`}</span>
-            <span>{timeoutLabel ? `${timeoutLabel} timeout` : "no server timeout"}</span>
-            {policy?.ratePerMinute ? <span>{policy.ratePerMinute} actions/min</span> : null}
-            {workspaceLimit ? <span>{workspaceLimit} workspace</span> : null}
-            {limitCaps.queries ? <span>{limitCaps.queries} SOQL queries</span> : null}
-            {limitCaps.dmlStatements ? <span>{limitCaps.dmlStatements} DML statements</span> : null}
-          </div>
-        ) : (
-          <div className="policy-summary">
-            <ShieldCheck />
-            <span>Local project preview</span>
-            <span>not executed in this Apex workbench</span>
-          </div>
-        )}
-        <div className="share-notice" aria-live="polite">{shareNotice}</div>
-      </div>
-
-      {surface !== "apex" ? (
-        <SurfaceGuide surface={surface} />
-      ) : !meta && status === "Error" ? (
-        <main className="startup-state-wrap">
-          <section className="pane startup-state" role="alert">
-            <CircleAlert className="size-7 text-red-500" />
-            <h2>Playground didn’t load</h2>
-            <p>{problemMessage || "The runtime is unavailable."}</p>
-            <Button onClick={() => setStartupAttempt((attempt) => attempt + 1)}>Try again</Button>
-          </section>
-        </main>
-      ) : (
       <main className="playground-main grid min-h-0 flex-1 gap-3 overflow-hidden p-3">
         <aside className="pane flex min-h-0 min-w-0 flex-col overflow-hidden">
           <header className="pane-header">
@@ -1536,7 +1194,7 @@ export default function App() {
               <h2 className="text-sm font-semibold">{showExampleFirst ? "Examples" : "Workspace"}</h2>
             </div>
             {advanced ? (
-              <Button size="sm" variant="outline" onClick={createClassAndHandle} title="New class">
+              <Button size="sm" variant="outline" onClick={() => void createClass()} title="New class">
                 <Plus />
                 Class
               </Button>
@@ -1545,29 +1203,22 @@ export default function App() {
           {showExampleFirst ? (
             <ScrollArea className="examples-gallery min-h-0 flex-1">
               <div className="space-y-2 p-3">
-                <p className="text-xs leading-5 text-muted-foreground">Choose an example once to load and run it.</p>
-                {linkProblem ? <div className="inline-notice warning" role="alert">{linkProblem}</div> : null}
-                {examplesProblem ? <div className="inline-notice danger" role="alert">{examplesProblem}</div> : null}
+                <p className="text-xs leading-5 text-muted-foreground">Pick a showcase, read the Apex, and press Run.</p>
                 {examples.map((example) => {
                   const selected = example.id === selectedExample
-                  const loading = example.id === loadingExampleId
-                  const runningSelected = selected && running
                   return (
                     <button
                       key={example.id}
                       className={cn("example-card w-full", selected && "selected")}
-                      aria-pressed={selected}
-                      aria-busy={loading || runningSelected}
-                      disabled={Boolean(loadingExampleId) || running}
-                      onClick={() => void runExampleById(example.id).catch((error) => {
-                        setProblemMessage(friendlyErrorMessage(error))
+                      onClick={() => void loadExampleById(example.id).catch((error) => {
+                        setProblemMessage(error instanceof Error ? error.message : String(error))
                         setResultTab("problems")
                         setStatus("Error")
                       })}
                     >
                       <span className="flex items-start justify-between gap-2">
                         <span className="text-sm font-semibold text-foreground">{example.name}</span>
-                        {loading ? <Badge variant="warning">loading</Badge> : runningSelected ? <Badge variant="warning">running</Badge> : selected ? <Badge variant="success">loaded</Badge> : <span className="example-open-label">run</span>}
+                        {selected ? <Badge variant="success">loaded</Badge> : null}
                       </span>
                       <span className="mt-1 block text-left text-xs leading-5 text-muted-foreground">{example.description}</span>
                       <span className="mt-2 flex flex-wrap gap-1">
@@ -1585,10 +1236,6 @@ export default function App() {
           ) : examples.length > 0 ? (
             <div className="border-b border-border p-3 text-xs leading-5 text-muted-foreground">
               Built-in examples are listed, but this workspace cannot load them. Use Advanced to inspect files.
-            </div>
-          ) : examplesProblem ? (
-            <div className="p-3">
-              <div className="inline-notice danger" role="alert">Examples could not be loaded. {examplesProblem}</div>
             </div>
           ) : null}
           {showWorkspaceTree ? (
@@ -1657,12 +1304,10 @@ export default function App() {
                 <Database className="size-3.5" />
                 <span>{dbStateLabel}</span>
               </div>
-              {!publicPolicy ? (
-                <Button variant="ghost" size="icon" onClick={seedOrgAndHandle} title="Seed data">
-                  <Database />
-                </Button>
-              ) : null}
-              <Button variant="ghost" size="icon" onClick={() => void resetPlayground()} disabled={resetting} title="Restore example and reset data">
+              <Button variant="ghost" size="icon" onClick={() => void seedOrg()} title="Seed data">
+                <Database />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => void resetOrg()} title="Reset org">
                 <RotateCcw />
               </Button>
             </div>
@@ -1703,17 +1348,7 @@ export default function App() {
             </TabsList>
             <TabsContent value="logs" className="min-h-0 flex-1">
               <ScrollArea className="result-box">
-                {logs.length ? (
-                  <pre>{logs.join("\n")}</pre>
-                ) : result?.errorMessage ? (
-                  <div className="problem danger m-3">{result.errorMessage}</div>
-                ) : (
-                  <EmptyState
-                    title={result ? "Run completed without debug logs" : "Run an example to see its logs"}
-                    description={result ? "Add System.debug output if you want values to appear here." : "Choose an example to load and run it, or review the current code and press Run."}
-                    action={!result ? { label: "Run example", onClick: runAndHandle } : undefined}
-                  />
-                )}
+                <pre>{logs.length ? logs.join("\n") : result?.errorMessage || "No output"}</pre>
               </ScrollArea>
             </TabsContent>
             <TabsContent value="vars" className="min-h-0 flex-1">
@@ -1728,10 +1363,13 @@ export default function App() {
                           <td>{valuePreview(item.value)}</td>
                         </tr>
                       ))
-                    ) : null}
+                    ) : (
+                      <tr>
+                        <td>No variables</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
-                {!vars.length ? <EmptyState title="No captured variables" description="Run an example that leaves values in scope to inspect them here." /> : null}
               </ScrollArea>
             </TabsContent>
             <TabsContent value="problems" className="min-h-0 flex-1">
@@ -1746,7 +1384,9 @@ export default function App() {
                         {item.line ? <code>{item.line}:{item.column ?? 0}</code> : null}
                       </div>
                     ))
-                  ) : !problemMessage ? <EmptyState title="No problems" description="Compile, runtime, timeout, and service errors will appear here." /> : null}
+                  ) : !problemMessage ? (
+                    <div className="text-sm text-muted-foreground">No problems</div>
+                  ) : null}
                 </div>
               </ScrollArea>
             </TabsContent>
@@ -1754,22 +1394,20 @@ export default function App() {
               <ScrollArea className="result-box">
                 <table className="result-table">
                   <tbody>
-                    {result && Object.entries(limits).length ? (
+                    {Object.entries(limits).length ? (
                       Object.entries(limits).map(([key, value]) => (
                         <tr key={key}>
                           <th>{key}</th>
-                          <td>{limitUsagePreview(key, value, limitCaps)}</td>
+                          <td>{value}</td>
                         </tr>
                       ))
-                    ) : null}
+                    ) : (
+                      <tr>
+                        <td>No limits recorded</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
-                {!result ? (
-                  <EmptyState
-                    title="Governor usage appears after a run"
-                    description={timeoutLabel ? `Public runs stop after ${timeoutLabel}. Usage is shown as used / maximum.` : "Run code to see the governor counters used by the local runtime."}
-                  />
-                ) : null}
               </ScrollArea>
             </TabsContent>
             <TabsContent value="orgDiff" className="min-h-0 flex-1">
@@ -1784,10 +1422,13 @@ export default function App() {
                           <td>{item.insertedIds?.join(", ") || "-"}</td>
                         </tr>
                       ))
-                    ) : null}
+                    ) : (
+                      <tr>
+                        <td>No org changes</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
-                {!orgDiff.length ? <EmptyState title="No org changes" description="Inserts, updates, and deletes from the latest run will be summarized here." /> : null}
               </ScrollArea>
             </TabsContent>
             {advanced ? (
@@ -1805,9 +1446,8 @@ export default function App() {
           </Tabs>
         </aside>
       </main>
-      )}
 
-      {surface === "apex" && advanced && commandOpen ? (
+      {advanced && commandOpen ? (
         <div className="command-backdrop" onMouseDown={() => setCommandOpen(false)}>
           <div className="command-panel" onMouseDown={(event) => event.stopPropagation()}>
             <div className="flex items-center gap-2 border-b border-border px-3 py-2 text-sm text-muted-foreground">
@@ -1819,12 +1459,10 @@ export default function App() {
               {[
                 { label: "Run", icon: Play, action: runAndHandle },
                 { label: "Save", icon: Save, action: saveAndHandle },
-                ...(canLoadExamples && selectedExample
-                  ? [{ label: "Reload example", icon: BookOpen, action: loadExampleAndHandle }]
-                  : []),
-                { label: "New class", icon: Plus, action: createClassAndHandle },
-                ...(!publicPolicy ? [{ label: "Seed data", icon: Database, action: seedOrgAndHandle }] : []),
-                { label: selectedExample ? "Restore example" : "Reset org data", icon: RefreshCcw, action: () => void resetPlayground() },
+                { label: "Load example", icon: BookOpen, action: loadExampleAndHandle },
+                { label: "New class", icon: Plus, action: () => void createClass() },
+                { label: "Seed data", icon: Database, action: () => void seedOrg() },
+                { label: "Reset org", icon: RefreshCcw, action: () => void resetOrg() },
                 {
                   label: theme === "dark" ? "Light mode" : "Dark mode",
                   icon: Zap,

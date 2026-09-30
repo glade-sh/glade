@@ -1,11 +1,63 @@
 package vm
 
 import (
+	"crypto"
 	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
 )
+
+// validateJWTWithKey verifies the supplied RS256 key before returning the shared
+// parsed claim representation. Salesforce returns nbf/exp as Datetime claims;
+// this API does not enforce their current-time validity.
+func validateJWTWithKey(args []Value) (Value, error) {
+	const callee = "Auth.JWTUtil.validateJWTWithKey"
+	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+		return Null, unsupportedCallError(callee + " unproved argument contract")
+	}
+	parts := strings.Split(args[0].Text, ".")
+	if len(parts) != 3 {
+		return Null, unsupportedCallError(callee + " unproved token format")
+	}
+	headerBytes, err := decodeJWTPart(parts[0])
+	if err != nil {
+		return Null, unsupportedCallError(callee + " unproved token header")
+	}
+	header, err := decodeJSONUntypedValue(string(headerBytes))
+	if err != nil || header.Kind != ValueMap {
+		return Null, unsupportedCallError(callee + " unproved token header")
+	}
+	algorithm := header.Map[mapKey(String("alg"))]
+	if algorithm.Kind != ValueString || algorithm.Text != "RS256" {
+		return Null, unsupportedCallError(callee + " unproved signing algorithm")
+	}
+	key, err := base64.StdEncoding.DecodeString(args[1].Text)
+	if err != nil {
+		return Null, unsupportedCallError(callee + " unproved public key encoding")
+	}
+	signature, err := decodeJWTPart(parts[2])
+	if err != nil {
+		return Null, unsupportedCallError(callee + " unproved signature encoding")
+	}
+	valid, err := verifyRSA(crypto.SHA256, []byte(parts[0]+"."+parts[1]), signature, key)
+	if err != nil {
+		return Null, unsupportedCallError(callee + " unproved public key format")
+	}
+	if !valid {
+		return Null, newExceptionError("Auth.JWTValidationException", "The incomingJWT value isn’t valid. Check the value and try again.")
+	}
+	jwt, err := parseJWTFromStringWithoutValidation(args[0].Text)
+	if err != nil {
+		return Null, err
+	}
+	audience := jwt.Fields["aud"]
+	if audience.Kind != ValueString {
+		return Null, unsupportedCallError(callee + " unproved audience shape")
+	}
+	jwt.Fields["aud"] = String("[" + audience.Text + "]")
+	return jwt, nil
+}
 
 func newAuthJWT() Value {
 	jwt := Object("Auth.JWT")

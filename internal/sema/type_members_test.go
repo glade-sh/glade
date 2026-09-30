@@ -2,6 +2,7 @@ package sema
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -524,6 +525,162 @@ func TestTypeMemberCurrentOverlaySharesBase(t *testing.T) {
 	}
 	if _, ok := base.members[normalizeName(second.Name)].fields[normalizeName("secondField")]; ok {
 		t.Fatalf("current duplicate field leaked into base: %#v", base.members[normalizeName(second.Name)].fields)
+	}
+}
+
+func TestTypeMemberCurrentOverlayUsesSameFileNestedType(t *testing.T) {
+	first := typesys.TypeSymbol{
+		Kind: apexast.DeclarationClass,
+		Name: "Duplicate",
+		File: "first.cls",
+		Members: []typesys.MemberSymbol{{
+			Kind:       apexast.DeclarationMethod,
+			Name:       "run",
+			Type:       "void",
+			Parameters: []apexast.Parameter{{Name: "requests", Type: "List<Request>"}},
+		}},
+	}
+	firstRequest := typesys.TypeSymbol{
+		Kind:         apexast.DeclarationClass,
+		Name:         "Duplicate.Request",
+		OwnerName:    "Duplicate",
+		NestingDepth: 1,
+		File:         "first.cls",
+		Members:      []typesys.MemberSymbol{{Kind: apexast.DeclarationField, Name: "firstField", Type: "String"}},
+	}
+	second := typesys.TypeSymbol{
+		Kind: apexast.DeclarationClass,
+		Name: "Duplicate",
+		File: "second.cls",
+		Members: []typesys.MemberSymbol{{
+			Kind:       apexast.DeclarationMethod,
+			Name:       "run",
+			Type:       "void",
+			Parameters: []apexast.Parameter{{Name: "requests", Type: "List<Request>"}},
+		}},
+	}
+	secondRequest := typesys.TypeSymbol{
+		Kind:         apexast.DeclarationClass,
+		Name:         "Duplicate.Request",
+		OwnerName:    "Duplicate",
+		NestingDepth: 1,
+		File:         "second.cls",
+		Members:      []typesys.MemberSymbol{{Kind: apexast.DeclarationField, Name: "secondField", Type: "Integer"}},
+	}
+
+	model := buildTypeMembers(typesys.Index{Types: []typesys.TypeSymbol{first, firstRequest, second, secondRequest}})
+	view := semaModelWithCurrentType(newSemaTypeMemberState(model).view(), second)
+	request, _, ok := semaLookupTypeMembers(view, "Duplicate.Request")
+	if !ok {
+		t.Fatal("same-file nested type is missing from duplicate overlay")
+	}
+	if _, ok := request.fields[normalizeName("secondField")]; !ok {
+		t.Fatalf("same-file nested fields = %#v, want secondField", request.fields)
+	}
+	if _, leaked := request.fields[normalizeName("firstField")]; leaked {
+		t.Fatalf("nested type leaked fields from another source file: %#v", request.fields)
+	}
+	duplicate, _, ok := semaLookupTypeMembers(view, "Duplicate")
+	if !ok || len(duplicate.methods[normalizeName("run")]) != 1 {
+		t.Fatalf("duplicate overlay method = %#v, %v", duplicate.methods, ok)
+	}
+	parameter := duplicate.methods[normalizeName("run")][0].Parameters[0]
+	if parameter.Type != "List<Duplicate.Request>" {
+		t.Fatalf("duplicate method parameter type = %q, want List<Duplicate.Request>", parameter.Type)
+	}
+}
+
+func TestTypeMemberCurrentOverlayUsesLocalSiblingProject(t *testing.T) {
+	root := t.TempDir()
+	firstDir := filepath.Join(root, "first")
+	secondDir := filepath.Join(root, "second")
+	for _, dir := range []string{firstDir, secondDir} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"force-app","default":true}]}`), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	firstFile := filepath.Join(firstDir, "Duplicate.cls")
+	secondFile := filepath.Join(secondDir, "Duplicate.cls")
+	first := typesys.TypeSymbol{Kind: apexast.DeclarationClass, Name: "Duplicate", File: firstFile}
+	firstRequest := typesys.TypeSymbol{
+		Kind:         apexast.DeclarationClass,
+		Name:         "Duplicate.Request",
+		OwnerName:    "Duplicate",
+		NestingDepth: 1,
+		File:         firstFile,
+		Members:      []typesys.MemberSymbol{{Kind: apexast.DeclarationField, Name: "firstField", Type: "String"}},
+	}
+	second := typesys.TypeSymbol{Kind: apexast.DeclarationClass, Name: "Duplicate", File: secondFile}
+	secondRequest := typesys.TypeSymbol{
+		Kind:         apexast.DeclarationClass,
+		Name:         "Duplicate.Request",
+		OwnerName:    "Duplicate",
+		NestingDepth: 1,
+		File:         secondFile,
+		Members:      []typesys.MemberSymbol{{Kind: apexast.DeclarationField, Name: "secondField", Type: "Integer"}},
+	}
+	use := typesys.TypeSymbol{Kind: apexast.DeclarationClass, Name: "Use", File: filepath.Join(secondDir, "Use.cls")}
+	model := buildTypeMembers(typesys.Index{Project: typesys.ProjectInfo{Root: root}, Types: []typesys.TypeSymbol{first, firstRequest, second, secondRequest, use}})
+	view := semaModelWithCurrentType(newSemaTypeMemberState(model).view(), use)
+	request, _, ok := semaLookupTypeMembers(view, "Duplicate.Request")
+	if !ok {
+		t.Fatal("local sibling nested type is missing from overlay")
+	}
+	if _, ok := request.fields[normalizeName("secondField")]; !ok {
+		t.Fatalf("local sibling nested fields = %#v, want secondField", request.fields)
+	}
+	if _, leaked := request.fields[normalizeName("firstField")]; leaked {
+		t.Fatalf("local sibling nested type leaked fields from another project: %#v", request.fields)
+	}
+}
+
+func TestTypeMemberCurrentOverlaySeparatesSFDXTrees(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"force-app","default":true}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	forceDir := filepath.Join(root, "force-app", "main", "default", "classes")
+	mdapiDir := filepath.Join(root, "mdapi", "classes")
+	for _, dir := range []string{forceDir, mdapiDir} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	forceFile := filepath.Join(forceDir, "Duplicate.cls")
+	mdapiFile := filepath.Join(mdapiDir, "Duplicate.cls")
+	force := typesys.TypeSymbol{Kind: apexast.DeclarationClass, Name: "Duplicate", File: forceFile}
+	forceRequest := typesys.TypeSymbol{
+		Kind:         apexast.DeclarationClass,
+		Name:         "Duplicate.Request",
+		OwnerName:    "Duplicate",
+		NestingDepth: 1,
+		File:         forceFile,
+		Members:      []typesys.MemberSymbol{{Kind: apexast.DeclarationField, Name: "forceField", Type: "String"}},
+	}
+	mdapi := typesys.TypeSymbol{Kind: apexast.DeclarationClass, Name: "Duplicate", File: mdapiFile}
+	mdapiRequest := typesys.TypeSymbol{
+		Kind:         apexast.DeclarationClass,
+		Name:         "Duplicate.Request",
+		OwnerName:    "Duplicate",
+		NestingDepth: 1,
+		File:         mdapiFile,
+		Members:      []typesys.MemberSymbol{{Kind: apexast.DeclarationField, Name: "mdapiField", Type: "Integer"}},
+	}
+	use := typesys.TypeSymbol{Kind: apexast.DeclarationClass, Name: "Use", File: filepath.Join(forceDir, "Use.cls")}
+	model := buildTypeMembers(typesys.Index{Project: typesys.ProjectInfo{Root: root}, Types: []typesys.TypeSymbol{force, forceRequest, mdapi, mdapiRequest, use}})
+	view := semaModelWithCurrentType(newSemaTypeMemberState(model).view(), use)
+	request, _, ok := semaLookupTypeMembers(view, "Duplicate.Request")
+	if !ok {
+		t.Fatal("force-app nested type is missing from overlay")
+	}
+	if _, ok := request.fields[normalizeName("forceField")]; !ok {
+		t.Fatalf("force-app nested fields = %#v, want forceField", request.fields)
+	}
+	if _, leaked := request.fields[normalizeName("mdapiField")]; leaked {
+		t.Fatalf("mdapi nested type leaked into force-app overlay: %#v", request.fields)
 	}
 }
 

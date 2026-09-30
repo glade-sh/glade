@@ -52,6 +52,11 @@ type compileRoots struct {
 	DependencyRoot string
 }
 
+const (
+	minimumLWCSourceAPIVersion = 59
+	maximumLWCSourceAPIVersion = 67
+)
+
 func Compile(p project.Project, opts Options) (Manifest, error) {
 	if strings.TrimSpace(opts.OutDir) == "" {
 		return Manifest{}, fmt.Errorf("compile: OutDir is required")
@@ -130,11 +135,10 @@ func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string
 		if strings.TrimSpace(meta.APIVersion) == "" {
 			return compileConfig{}, fmt.Errorf("missing component API version: %s", filepath.ToSlash(metaPath))
 		}
-		resolved, err := apexversion.ResolveSource(meta.APIVersion)
+		major, err := resolveLWCSourceAPIVersion(meta.APIVersion)
 		if err != nil {
 			return compileConfig{}, fmt.Errorf("%s: %w", filepath.ToSlash(metaPath), err)
 		}
-		major, _ := apexversion.Major(resolved)
 		versions[key] = major
 		roots = append(roots, root)
 	}
@@ -160,6 +164,18 @@ func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string
 		LWCAPIVersions:        versions,
 		LWCModuleAvailability: generatedLWCModuleAvailability,
 	}, nil
+}
+
+func resolveLWCSourceAPIVersion(raw string) (int, error) {
+	resolved, err := apexversion.PreserveSource(raw)
+	if err != nil {
+		return 0, fmt.Errorf("unsupported LWC source API version %q; supported versions: %d.0 through %d.0", raw, minimumLWCSourceAPIVersion, maximumLWCSourceAPIVersion)
+	}
+	major, ok := apexversion.Major(resolved)
+	if !ok || major < minimumLWCSourceAPIVersion || major > maximumLWCSourceAPIVersion {
+		return 0, fmt.Errorf("unsupported LWC source API version %q; supported versions: %d.0 through %d.0", raw, minimumLWCSourceAPIVersion, maximumLWCSourceAPIVersion)
+	}
+	return major, nil
 }
 
 // FindRepoRoot returns the glade source checkout (for testdata and development files).

@@ -141,15 +141,6 @@ func (r *Runner) InvalidateSourceRuntime() {
 	apextest.InvalidateRuntimeCaches()
 }
 
-func (r *Runner) readinessError() error {
-	if r == nil {
-		return fmt.Errorf("playground runner is unavailable")
-	}
-	// initErr is fixed when the runner is constructed. Do not take the run mutex:
-	// readiness must stay responsive while an execution is in progress.
-	return r.initErr
-}
-
 func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -279,10 +270,8 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 		r.store.org = persisted
 		r.store.mu.Unlock()
 	}
-	if req.UseCache {
-		if err := r.cache.Store(cacheKey, result); err != nil {
-			return RunResult{}, err
-		}
+	if err := r.cache.Store(cacheKey, result); err != nil {
+		return RunResult{}, err
 	}
 	return result, nil
 }

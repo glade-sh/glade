@@ -22,11 +22,11 @@ func (vm *VM) testSetMock(args []Value) (Value, error) {
 	if !ok {
 		return Null, fmt.Errorf("Test.setMock expects mock type")
 	}
-	if mockType == "WebServiceMock" {
+	if strings.EqualFold(mockType, "WebServiceMock") || strings.EqualFold(mockType, "System.WebServiceMock") {
 		vm.testContext.WebServiceMock = args[1]
 		return Null, nil
 	}
-	if mockType != "HttpCalloutMock" {
+	if !strings.EqualFold(mockType, "HttpCalloutMock") && !strings.EqualFold(mockType, "System.HttpCalloutMock") {
 		return Null, unsupportedCallError("Test.setMock " + mockType + " mock surface")
 	}
 	vm.testContext.HTTPMock = args[1]

@@ -457,6 +457,7 @@ func TestRenderExpressionTemplateResolvesVisualforceSchemaAndContextGlobals(t *t
 	}}
 	machine := vm.New(nil)
 	machine.SetOrg(&org)
+	machine.SetCurrentUser(org.Objects["User"].Records["005000000000777AAA"])
 	ctx := &ExpressionContext{VM: machine}
 
 	got, err := RenderExpressionTemplate(
@@ -522,15 +523,7 @@ func TestRenderExpressionTemplateResolvesVisualforceUserAndOrganizationGlobals(t
 	}}
 	machine := vm.New(nil)
 	machine.SetOrg(&org)
-	machine.SetCurrentUser(storage.Record{
-		ID:     "005000000000777AAA",
-		Object: "User",
-		Fields: map[string]storage.Value{
-			"Username":  storage.StringValue("ada@example.test"),
-			"Email":     storage.StringValue("ada-email@example.test"),
-			"ProfileId": storage.IDValue("00e000000000777AAA"),
-		},
-	})
+	machine.SetCurrentUser(org.Objects["User"].Records["005000000000777AAA"])
 
 	ctx := &ExpressionContext{VM: machine}
 	got, err := RenderExpressionTemplate(

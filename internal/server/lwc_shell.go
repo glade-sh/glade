@@ -101,6 +101,10 @@ func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshe
 		}
 		ctx.Kind = lwcshell.RenderTargetComponent
 		ctx.ComponentName = parts[1] + ":" + parts[2]
+		if presetCtx, ok := s.directComponentContextPreset(r.URL.RequestURI(), ctx.ComponentName); ok {
+			ctx.UserPermissions = presetCtx.UserPermissions
+			ctx.CustomPermissions = presetCtx.CustomPermissions
+		}
 		shell, diagnostics, err := s.validateLWCShellPage(lwcshell.ShellPage{Context: ctx}, nil, nil)
 		return shell, "", diagnostics, err
 	case "cmp":
@@ -212,6 +216,74 @@ func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshe
 	default:
 		return lwcshell.ShellPage{}, "", nil, fmt.Errorf("unknown LWC preview target %q", parts[0])
 	}
+}
+
+func (s *Server) directComponentContextPreset(activeRoute, componentName string) (lwcshell.PageContext, bool) {
+	file, err := lwcshell.LoadContextPresets(s.Source.Project.Root)
+	if err != nil {
+		return lwcshell.PageContext{}, false
+	}
+
+	names := make([]string, 0, len(file.Contexts))
+	for name := range file.Contexts {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		ctx, err := file.Contexts[name].ToPageContext()
+		if err != nil || ctx.Kind != lwcshell.RenderTargetComponent ||
+			!lwcContextComponentNamesEqual(ctx.ComponentName, componentName) {
+			continue
+		}
+		if selected := localLWCSelectedRoute(ctx); selected != "" && sameLWCContextRoute(selected, activeRoute) {
+			return ctx, true
+		}
+	}
+
+	if strings.TrimSpace(file.DefaultContext) == "" {
+		return lwcshell.PageContext{}, false
+	}
+	preset, err := file.Preset(file.DefaultContext)
+	if err != nil {
+		return lwcshell.PageContext{}, false
+	}
+	ctx, err := preset.ToPageContext()
+	if err != nil || ctx.Kind != lwcshell.RenderTargetComponent ||
+		!lwcContextComponentNamesEqual(ctx.ComponentName, componentName) {
+		return lwcshell.PageContext{}, false
+	}
+	return ctx, true
+}
+
+func lwcContextComponentNamesEqual(left, right string) bool {
+	// Reuse the route generator's namespace and whitespace normalization.
+	leftRoute := localLWCSelectedRoute(lwcshell.PageContext{
+		Kind: lwcshell.RenderTargetComponent, ComponentName: left,
+	})
+	rightRoute := localLWCSelectedRoute(lwcshell.PageContext{
+		Kind: lwcshell.RenderTargetComponent, ComponentName: right,
+	})
+	return leftRoute != "" && strings.EqualFold(leftRoute, rightRoute)
+}
+
+func sameLWCContextRoute(left, right string) bool {
+	leftURL, err := url.Parse(normalizeLWCContextRoute(left))
+	if err != nil {
+		return false
+	}
+	rightURL, err := url.Parse(normalizeLWCContextRoute(right))
+	if err != nil || leftURL.Path != rightURL.Path {
+		return false
+	}
+	leftQuery, err := url.ParseQuery(leftURL.RawQuery)
+	if err != nil {
+		return false
+	}
+	rightQuery, err := url.ParseQuery(rightURL.RawQuery)
+	if err != nil {
+		return false
+	}
+	return leftQuery.Encode() == rightQuery.Encode()
 }
 
 func (s *Server) resolveLWCShellTabTarget(shell lwcshell.ShellPage, diagnostics []lwcshell.Diagnostic) (lwcshell.ShellPage, string, []lwcshell.Diagnostic, error) {

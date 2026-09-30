@@ -164,7 +164,7 @@ func methodContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymb
 		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
 			fmt.Sprintf("method %q cannot be both abstract and virtual", member.Name)))
 	}
-	if abstract && override {
+	if abstract && override && !isObjectOverrideSignature(member) {
 		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
 			fmt.Sprintf("method %q cannot be both abstract and override", member.Name)))
 	}

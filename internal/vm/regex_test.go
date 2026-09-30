@@ -59,6 +59,9 @@ System.assertEquals('1-A 22-B', captureReplace.replaceAll('$2-$1'));
 	System.assert(!Pattern.matches('(?i)\\Qhello.world\\E', 'HELLOXWORLD'));
 	Id accountId = '001000000000001AAA';
 	System.assert(Pattern.matches('001[0-9A-Za-z]+', accountId));
+	Matcher idMatcher = Pattern.compile('001[0-9A-Za-z]+').matcher(accountId);
+	System.assert(idMatcher.matches());
+	System.assertEquals('001000000000001AAA', idMatcher.group());
 	Matcher subquery = Pattern.compile('(?i)(?s)\\(\\s*SELECT\\s.*?\\)(?=\\s*,|\\s*FROM\\s|\\s*$)').matcher('SELECT Id, (SELECT Id FROM Lines__r WHERE (Status__c = \'Open\')) FROM Account');
 	System.assert(subquery.find());
 	System.assertEquals('(SELECT Id FROM Lines__r WHERE (Status__c = \'Open\'))', subquery.group());
@@ -286,7 +289,7 @@ try {
 	Pattern.compile('[');
 	System.assert(false);
 } catch (StringException e) {
-	System.assert(e.getMessage().contains('missing closing ]'));
+	System.assertEquals('Invalid regex: Unclosed character class near index 0\n[\n^', e.getMessage());
 	System.assertEquals('System.StringException', e.getTypeName());
 } catch (Exception e) {
 	System.assert(false);
@@ -307,7 +310,7 @@ try {
 	System.assert(false);
 } catch (StringException e) {
 	System.assertEquals('System.StringException', e.getTypeName());
-	System.assert(e.getMessage().contains('missing closing ]'));
+	System.assertEquals('Invalid regex: Unclosed character class near index 0\n[\n^', e.getMessage());
 }
 `)
 	if err != nil {
@@ -974,39 +977,39 @@ func TestMatcherRegionAnchoringAndTransparentBounds(t *testing.T) {
 Pattern head = Pattern.compile('^ABC');
 Matcher anchoredHead = head.matcher('xxABCyy');
 anchoredHead.region(2, 5);
-System.assert(anchoredHead.lookingAt());
-System.assert(anchoredHead.matches());
+System.assert(anchoredHead.lookingAt(), 'anchored head lookingAt');
+System.assert(anchoredHead.matches(), 'anchored head matches');
 anchoredHead.useAnchoringBounds(false);
-System.assert(!anchoredHead.lookingAt());
-System.assert(!anchoredHead.matches());
+System.assert(!anchoredHead.lookingAt(), 'unanchored head lookingAt');
+System.assert(!anchoredHead.matches(), 'unanchored head matches');
 
 Pattern tail = Pattern.compile('ABC$');
 Matcher anchoredTail = tail.matcher('xxABCyy');
 anchoredTail.region(2, 5);
-System.assert(anchoredTail.lookingAt());
+System.assert(anchoredTail.lookingAt(), 'anchored tail lookingAt');
 anchoredTail.useAnchoringBounds(false);
-System.assert(!anchoredTail.lookingAt());
+System.assert(!anchoredTail.lookingAt(), 'unanchored tail lookingAt');
 
-Pattern word = Pattern.compile('\bABC\b');
+Pattern word = Pattern.compile('\\bABC\\b');
 Matcher opaque = word.matcher('xABC y');
 opaque.region(1, 4);
-System.assert(opaque.matches());
+System.assert(opaque.matches(), 'opaque word matches');
 opaque.reset();
 opaque.region(1, 4);
-System.assert(opaque.find());
+System.assert(opaque.find(), 'opaque word find');
 
 Matcher transparent = word.matcher('xABC y');
 transparent.region(1, 4);
 transparent.useTransparentBounds(true);
-System.assert(!transparent.matches());
-System.assert(!transparent.find());
+System.assert(!transparent.matches(), 'transparent word matches');
+System.assert(!transparent.find(), 'transparent word find');
 
 Matcher transparentAtRealBoundary = word.matcher('x ABC y');
 transparentAtRealBoundary.region(2, 5);
 transparentAtRealBoundary.useTransparentBounds(true);
-System.assert(transparentAtRealBoundary.matches());
-System.assertEquals(2, transparentAtRealBoundary.start());
-System.assertEquals(5, transparentAtRealBoundary.end());
+System.assert(transparentAtRealBoundary.matches(), 'transparent real-boundary matches');
+System.assertEquals(2, transparentAtRealBoundary.start(), 'transparent real-boundary start');
+System.assertEquals(5, transparentAtRealBoundary.end(), 'transparent real-boundary end');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1188,5 +1191,72 @@ func TestJavaReplacementRejectsUnsupportedReferences(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestRegexShorthandFollowedByHyphenRetainsSetBoundary(t *testing.T) {
+	for _, tc := range []struct {
+		pattern, input string
+		want           bool
+	}{
+		{`[\w-:]+`, "a-Z_9:", true}, {`[\w-:]+`, "a|b", false},
+		{`[a-c\w-:]+`, "az-:", true}, {`[a-c]+`, "d", false},
+		{`[\d-a]+`, "09-a", true}, {`[\d-a]+`, "b", false},
+		{`[\w\-:]+`, "a-:", true}, {`[a-z]+`, "az", true},
+		{`[^\w-:]+`, "|!", true}, {`[^\w-:]+`, "-", false},
+	} {
+		t.Run(tc.pattern+"/"+tc.input, func(t *testing.T) {
+			value, err := patternMatches([]Value{String(tc.pattern), String(tc.input)})
+			if err != nil || value.Kind != ValueBool || value.Bool != tc.want {
+				t.Fatalf("match=%v err=%v want=%v", value, err, tc.want)
+			}
+		})
+	}
+}
+
+func TestStringRegexReplacementUsesSharedMatcherSemantics(t *testing.T) {
+	for _, tc := range []struct {
+		input, pattern, replacement, want string
+		all                               bool
+	}{
+		{"one/* first */two/* second */end", `/\*.+?(?=\*/)\*/`, "", "onetwoend", true},
+		{"one/* first */two/* second */end", `/\*.+?(?=\*/)\*/`, "", "onetwo/* second */end", false},
+		{"A1 B22", `([A-Z]+)([0-9]+)`, "$10", "A0 B0", true},
+		{"A1 B22", `([A-Z]+)([0-9]+)`, `\$1`, "$1 B22", false},
+		{"abc", `(?=.)`, "!", "!a!b!c", true},
+		{"😀a", `(?=.)`, "!", "!😀!a", true},
+		{"unchanged", `z(?=z)`, "x", "unchanged", true},
+	} {
+		got, err := stringRegexReplace("String.replaceAll", tc.input, []Value{String(tc.pattern), String(tc.replacement)}, tc.all)
+		if err != nil || got != tc.want {
+			t.Errorf("pattern=%q all=%v got=%q err=%v want=%q", tc.pattern, tc.all, got, err, tc.want)
+		}
+	}
+}
+
+func TestRegexDanglingQuantifierUsesOriginalSourcePosition(t *testing.T) {
+	for _, tc := range []struct{ pattern, message string }{
+		{"*", "Invalid regex: Dangling meta character '*' near index 0"},
+		{"abc|+", "Invalid regex: Dangling meta character '+' near index 4"},
+		{"(?i)*", "Invalid regex: Dangling meta character '*' near index 4"},
+		{`\Q+\E|?`, "Invalid regex: Dangling meta character '?' near index 6"},
+		{"😀|*", "Invalid regex: Dangling meta character '*' near index 3"},
+	} {
+		_, err := patternCompile([]Value{String(tc.pattern)})
+		if err == nil || !strings.Contains(err.Error(), tc.message) {
+			t.Errorf("pattern=%q err=%v want=%q", tc.pattern, err, tc.message)
+		}
+	}
+}
+
+func TestRegexUnclosedFormattingRequiresTypedCompilerError(t *testing.T) {
+	const detail = "unrelated unterminated [] set detail"
+	err := newRegexSyntaxError("PatternSyntaxException", "[", errors.New(detail))
+	var thrown *apexThrowError
+	if !errors.As(err, &thrown) {
+		t.Fatalf("error is not catchable: %v", err)
+	}
+	if thrown.value.Type != "PatternSyntaxException" || thrown.value.Fields["message"].Text != detail || thrown.value.Fields["description"].Text != detail || thrown.value.Fields["pattern"].Text != "[" || thrown.value.Fields["index"].Int != -1 {
+		t.Fatalf("unrelated error or original exception fields changed: %#v", thrown.value)
 	}
 }

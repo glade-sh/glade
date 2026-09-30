@@ -1,6 +1,8 @@
 package gladehome
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -10,6 +12,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"time"
 )
 
 // InstallFrom copies source-built toolchain assets from a glade checkout into UserShareDir().
@@ -21,6 +24,20 @@ func InstallFrom(src string) error {
 	dst := UserShareDir()
 	if samePath(src, dst) {
 		return fmt.Errorf("source and destination are the same (%s); unset GLADE_HOME or run install from a glade source checkout", dst)
+	}
+	// Reject unprepared current assets before changing the installed toolchain.
+	// This check does not patch dependencies or make another dependency copy.
+	if err := verifyLWCToolchainPreparation(src, func(script, toolchain string) error {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		cmd := exec.CommandContext(ctx, "node", script, "--check", toolchain)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("%w: %s", err, strings.TrimSpace(string(output)))
+		}
+		return nil
+	}); err != nil {
+		return err
 	}
 	pairs := []struct {
 		rel string
@@ -47,6 +64,38 @@ func InstallFrom(src string) error {
 	}
 	if err := installEditorVSIX(src, dst); err != nil {
 		return err
+	}
+	return nil
+}
+
+func verifyLWCToolchainPreparation(src string, check func(string, string) error) error {
+	toolchain := filepath.Join(src, "third_party", "lwc")
+	script := filepath.Join(toolchain, "scripts", "apply-lwc-shared-api67.mjs")
+	if _, err := os.Stat(script); err != nil {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("inspect LWC preparation: %w", err)
+		}
+		// Older toolchains remain installable; this grants no API67 support.
+		// Current packages declaring the preparation hook may not omit its file.
+		data, readErr := os.ReadFile(filepath.Join(toolchain, "package.json"))
+		if readErr != nil && !os.IsNotExist(readErr) {
+			return fmt.Errorf("read LWC package: %w", readErr)
+		}
+		if readErr == nil {
+			var pkg struct {
+				Scripts map[string]string `json:"scripts"`
+			}
+			if err := json.Unmarshal(data, &pkg); err != nil {
+				return fmt.Errorf("read LWC package: %w", err)
+			}
+			if strings.Contains(pkg.Scripts["postinstall"], "apply-lwc-shared-api67.mjs") {
+				return fmt.Errorf("LWC preparation script missing: %s", script)
+			}
+		}
+		return nil
+	}
+	if err := check(script, toolchain); err != nil {
+		return fmt.Errorf("LWC toolchain is not prepared; run its pinned npm preparation before install: %w", err)
 	}
 	return nil
 }

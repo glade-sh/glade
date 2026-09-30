@@ -1649,6 +1649,24 @@ System.assertEquals(Schema.SOAPType.ID, ownerField.getDescribe().getSOAPType());
 	}
 }
 
+func TestExecQualifiedSchemaSObjectTypeRemainsObjectToken(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.SObjectType logType = Schema.Log__c.SObjectType;
+Schema.SObjectField nameField = Schema.Log__c.Name;
+System.assertEquals('Log__c', logType.getDescribe().getName());
+System.assertEquals('Name', nameField.getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCareProgramDescribeUsesStandardCatalogRelationship(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeFieldResult parentProgram = CareProgram.SObjectType.getDescribe().fields.getMap().get('ParentProgramId').getDescribe();
@@ -4319,6 +4337,20 @@ System.assertEquals('CREATABLE', AccessType.CREATABLE.name());
 	}
 }
 
+func TestExecSystemQualifiedSecurityStripInaccessibleReturnsDecision(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SObject> records = new List<SObject>{ new Account(Name = 'Qualified security') };
+System.SObjectAccessDecision decision = System.Security.stripInaccessible(System.AccessType.READABLE, records);
+System.assertEquals(1, decision.getRecords().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSecurityStripInaccessiblePermissionSetScoped(t *testing.T) {
 	program, err := CompileAnonymous(`
 PermissionSet ps = new PermissionSet(Name = 'ScopedStrip', Label = 'Scoped Strip');
@@ -4477,6 +4509,55 @@ System.assert(caught);
 	machine := New(nil)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSecurityStripInaccessibleRejectsAggregateResult(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<AggregateResult> aggregateRows = [SELECT COUNT(Id) total FROM Account];
+List<SObject> sourceRows = new List<SObject>();
+for (AggregateResult row : aggregateRows) {
+	sourceRows.add(row);
+}
+Boolean caught = false;
+try {
+	Security.stripInaccessible(AccessType.READABLE, sourceRows);
+} catch (SObjectException e) {
+	caught = e.getMessage() == 'AggregateResult SObject types are not supported';
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAggregateResultJSONMockSObjectTypeMatchesSchemaToken(t *testing.T) {
+	program, err := CompileAnonymous(`
+AggregateResult row = (AggregateResult)JSON.deserialize(JSON.serialize(new Map<String, Object>()), AggregateResult.class);
+System.assertEquals('AggregateResult', row.getSObjectType().getDescribe().getName());
+System.assertEquals(Schema.AggregateResult.SObjectType, row.getSObjectType());
+Object missingId = row.Id;
+System.assertEquals(null, missingId);
+List<AggregateResult> aggregateRows = new List<AggregateResult>{row};
+System.assertEquals(Schema.AggregateResult.SObjectType, aggregateRows.getSObjectType());
+List<SObject> genericRows = new List<SObject>();
+genericRows.add(row);
+System.assertEquals(Schema.AggregateResult.SObjectType, genericRows.getSObjectType());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -5419,7 +5500,7 @@ update queried;
 	}
 }
 
-func TestDMLAccessibleMarkerOverridesExistingSOQLProjection(t *testing.T) {
+func TestDMLResultPreservesExistingSOQLProjection(t *testing.T) {
 	machine := New(nil)
 	org := testDataOrg()
 	storage.EnsureStandardObject(&org, "Contact")
@@ -5432,8 +5513,14 @@ func TestDMLAccessibleMarkerOverridesExistingSOQLProjection(t *testing.T) {
 	if !handled {
 		t.Fatal("SObject.get was not handled")
 	}
-	if err != nil {
-		t.Fatalf("DML-accessible projection read returned error: %v", err)
+	// Salesforce API53: an ID-only queried Contact still rejects an omitted
+	// Salutation read after successful DML (fresh and sparse callers differ).
+	var thrown *apexThrowError
+	if !errors.As(err, &thrown) || thrown.value.Type != "SObjectException" {
+		t.Fatalf("queried DML caller error = %#v, want SObjectException", err)
+	}
+	if message := thrown.value.Fields["message"].Text; message != "SObject row was retrieved via SOQL without querying the requested field: Contact.Salutation" {
+		t.Fatalf("queried DML caller message = %q", message)
 	}
 }
 
@@ -6071,6 +6158,38 @@ System.assertEquals(null, container.getCompoundFieldName());
 	}
 }
 
+func TestExecLocationComponentFieldsResolveFromCompoundMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Location');
+account.PrimaryLocation__Latitude__s = 1.25;
+account.PrimaryLocation__Longitude__s = -2.5;
+System.assertEquals(1.25, account.PrimaryLocation__Latitude__s);
+System.assertEquals(-2.5, account.PrimaryLocation__Longitude__s);
+insert account;
+Account stored = [SELECT PrimaryLocation__Latitude__s, PrimaryLocation__Longitude__s FROM Account WHERE Id = :account.Id];
+System.assertEquals(1.25, stored.PrimaryLocation__Latitude__s);
+System.assertEquals(-2.5, stored.PrimaryLocation__Longitude__s);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["PrimaryLocation__c"] = storage.Field{
+		APIName:     "PrimaryLocation__c",
+		Label:       "Primary Location",
+		Type:        storage.FieldLocation,
+		DisplayType: "LOCATION",
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeFieldNumericAndTextMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeFieldResult amount = Account.Amount__c.getDescribe();
@@ -6164,8 +6283,14 @@ func TestExecSObjectTypeNewSObject(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account emptyAccount = (Account)Account.SObjectType.newSObject();
 System.assertEquals('Account', emptyAccount.getSObjectType().getDescribe().getName());
-Account accountWithRecordTypeId = (Account)Account.SObjectType.newSObject('012000000000001AAA');
-System.assertEquals('012000000000001AAA', accountWithRecordTypeId.RecordTypeId);
+Boolean invalidAccountIdCaught = false;
+try {
+    Account.SObjectType.newSObject('012000000000001AAA');
+} catch (SObjectException e) {
+    invalidAccountIdCaught = true;
+    System.assertEquals('Invalid Id for Account', e.getMessage());
+}
+System.assert(invalidAccountIdCaught);
 Account accountWithId = (Account)Account.SObjectType.newSObject('001000000000001AAA');
 System.assertEquals('001000000000001AAA', accountWithId.Id);
 Account accountWithDefaults = (Account)Account.SObjectType.newSObject(null, true);
@@ -8239,6 +8364,49 @@ System.assertEquals('012000000000101', stored.RecordTypeId);
 	}
 }
 
+func TestExecMasterRecordTypeDMLDistinguishesExplicitAndImplicit(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id master = Opportunity.SObjectType.getDescribe().getRecordTypeInfosByName().get('Master').getRecordTypeId();
+
+Opportunity explicit = new Opportunity(Name = 'Explicit Master', StageName = 'Prospecting', CloseDate = Date.today(), RecordTypeId = master);
+insert explicit;
+Opportunity explicitFifteen = new Opportunity(Name = 'Explicit Fifteen Master', StageName = 'Prospecting', CloseDate = Date.today(), RecordTypeId = '012000000000000');
+insert explicitFifteen;
+Opportunity implicit = new Opportunity(Name = 'Implicit Master', StageName = 'Prospecting', CloseDate = Date.today());
+insert implicit;
+Opportunity explicitNull = new Opportunity(Name = 'Explicit Null Master', StageName = 'Prospecting', CloseDate = Date.today(), RecordTypeId = null);
+insert explicitNull;
+
+System.assertEquals(master, [SELECT RecordTypeId FROM Opportunity WHERE Id = :explicit.Id].RecordTypeId);
+System.assertEquals(master, [SELECT RecordTypeId FROM Opportunity WHERE Id = :explicitFifteen.Id].RecordTypeId);
+System.assertEquals(null, [SELECT RecordTypeId FROM Opportunity WHERE Id = :implicit.Id].RecordTypeId);
+System.assertEquals(null, [SELECT RecordTypeId FROM Opportunity WHERE Id = :explicitNull.Id].RecordTypeId);
+System.assertEquals(0, [SELECT COUNT() FROM RecordType WHERE SObjectType = 'Opportunity' AND DeveloperName = 'Master']);
+
+Opportunity promoted = new Opportunity(Id = implicit.Id, RecordTypeId = master);
+update promoted;
+Opportunity promotedFifteen = new Opportunity(Id = implicit.Id, RecordTypeId = '012000000000000');
+update promotedFifteen;
+Opportunity sparse = new Opportunity(Id = promoted.Id, Name = 'Implicit Master promoted');
+update sparse;
+System.assertEquals(master, [SELECT RecordTypeId FROM Opportunity WHERE Id = :promoted.Id].RecordTypeId);
+
+Opportunity invalid = new Opportunity(Name = 'Missing Record Type', StageName = 'Prospecting', CloseDate = Date.today(), RecordTypeId = '012000000000999AAA');
+Database.SaveResult invalidResult = Database.insert(invalid, false);
+System.assertEquals(false, invalidResult.isSuccess());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Opportunity")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecInsertAccountDefaultRecordTypeHonorsPersonSignals(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account business = new Account(Name = 'Business');
@@ -8756,8 +8924,8 @@ insert new Child__c(Name = 'C', Parent__c = parent.Id, RecordTypeId = recordType
 Parent__c queried = [SELECT Id, (SELECT Id, Parent__c, RecordTypeId FROM Children__r) FROM Parent__c WHERE Id = :parent.Id];
 Child__c child = queried.Children__r[0];
 Map<Id, Parent__c> parentsById = new Map<Id, Parent__c>(new List<Parent__c>{queried});
-System.assertNotEquals(null, parentsById.get(child.Parent__c));
-System.assertNotEquals(null, parentsById.get(String.valueOf(child.Parent__c) + 'AAA'));
+System.assertNotEquals(null, parentsById.get(child.Parent__c), 'parent-map-raw-id');
+System.assertNotEquals(null, parentsById.get(String.valueOf(child.Parent__c)), 'parent-map-18char-id');
 update queried;
 Schema.RecordTypeInfo matched;
 for (Schema.RecordTypeInfo info : Child__c.SObjectType.getDescribe().getRecordTypeInfosByName().values()) {
@@ -8765,7 +8933,7 @@ for (Schema.RecordTypeInfo info : Child__c.SObjectType.getDescribe().getRecordTy
 		matched = info;
 	}
 }
-System.assertNotEquals(null, matched);
+System.assertNotEquals(null, matched, 'record-type-info-match');
 System.assertEquals('Scheduled Batch', matched.getName());
 `)
 	if err != nil {
@@ -12002,12 +12170,46 @@ System.assertEquals('Prospecting', opportunity.StageName);
 System.assertEquals(Date.today(), opportunity.CloseDate);
 Lead converted = [SELECT Id, ConvertedOpportunityId FROM Lead WHERE Id = :lead.Id];
 System.assertEquals(opportunity.Id, converted.ConvertedOpportunityId);
+List<OpportunityContactRole> roles = [SELECT OpportunityId, ContactId, IsPrimary FROM OpportunityContactRole WHERE OpportunityId = :opportunity.Id];
+System.assertEquals(1, roles.size());
+System.assertEquals(result.getOpportunityId(), roles[0].OpportunityId);
+System.assertEquals(result.getContactId(), roles[0].ContactId);
+System.assertEquals(true, roles[0].IsPrimary);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := testLeadConvertOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseConvertLeadLazilyInitializesOpportunityContactRole(t *testing.T) {
+	program, err := CompileAnonymous(`
+Lead lead = new Lead(FirstName = 'Ada', LastName = 'Lovelace', Company = 'Analytical Engines', Status = 'Open');
+insert lead;
+Database.LeadConvert convert = new Database.LeadConvert();
+convert.setLeadId(lead.Id);
+convert.setConvertedStatus('Qualified');
+convert.setOpportunityName('Difference Engine');
+Database.LeadConvertResult result = Database.convertLead(convert);
+System.assert(result.isSuccess());
+System.assertNotEquals(null, result.getOpportunityId());
+List<OpportunityContactRole> roles = [SELECT OpportunityId, ContactId, IsPrimary FROM OpportunityContactRole WHERE OpportunityId = :result.getOpportunityId()];
+System.assertEquals(1, roles.size());
+System.assertEquals(result.getOpportunityId(), roles[0].OpportunityId);
+System.assertEquals(result.getContactId(), roles[0].ContactId);
+System.assertEquals(true, roles[0].IsPrimary);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testLeadConvertOrg()
+	delete(org.Objects, "OpportunityContactRole")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -12058,6 +12260,7 @@ func testLeadConvertOrg() storage.OrgState {
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
+	storage.EnsureStandardObject(&org, "OpportunityContactRole")
 	return org
 }
 
@@ -12348,7 +12551,7 @@ func TestExecDMLAccessibleSummaryFieldDoesNotReadLiveRollup(t *testing.T) {
 Account parent = new Account(Name = 'Acme');
 insert parent;
 insert new WidgetLine__c(Account__c = parent.Id, Amount__c = 7);
-System.assertEquals(0, parent.SubTotal__c, 'inserted parent should keep stale summary value');
+System.assertEquals(null, parent.SubTotal__c, 'caller parent does not materialize summary');
 Account fresh = [SELECT SubTotal__c FROM Account WHERE Id = :parent.Id LIMIT 1];
 System.assertEquals(7, fresh.SubTotal__c, 'queried parent should read current summary value');
 `)
@@ -12579,13 +12782,13 @@ func TestExecNullSummaryFieldReevaluatesToZero(t *testing.T) {
 	}
 }
 
-func TestExecMissingSummaryFieldOnNewSObjectReturnsEmptyAggregate(t *testing.T) {
+func TestExecMissingSummaryFieldOnNewSObjectRemainsNull(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'Acme');
-System.assertEquals(0, account.get('SubTotal__c'));
-System.assertEquals(0, account.SubTotal__c);
-System.assertEquals(0, account.get('LineCount__c'));
-System.assertEquals(0, account.LineCount__c);
+System.assertEquals(null, account.get('SubTotal__c'));
+System.assertEquals(null, account.SubTotal__c);
+System.assertEquals(null, account.get('LineCount__c'));
+System.assertEquals(null, account.LineCount__c);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -13198,11 +13401,13 @@ System.assertEquals(null, a.MasterRecordId);
 	}
 }
 
-func TestExecMissingCalculatedNumericFieldDefaultsToZero(t *testing.T) {
+// The admitted API53 Currency lifecycle keeps missing caller-owned formula
+// values null after DML; querying materializes the calculated field.
+func TestExecMissingCallerCurrencyFormulaIsNull(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme', Amount__c = 2, Paid__c = 3);
 insert a;
-System.assertEquals('0', String.valueOf(a.Balance__c));
+System.assertEquals(null, a.Balance__c);
 Account row = [SELECT Id, Balance__c FROM Account WHERE Id = :a.Id];
 System.assertEquals('-1', String.valueOf(row.Balance__c));
 `)
@@ -13222,13 +13427,15 @@ System.assertEquals('-1', String.valueOf(row.Balance__c));
 	}
 }
 
-func TestExecDMLAccessibleTextFormulaEvaluatesFromFields(t *testing.T) {
+func TestExecCallerTextFormulaRemainsNullUntilQueried(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
 a.Street__c = 'Line1';
 a.City__c = 'Austin';
 insert a;
-System.assertEquals('Line1<br />Austin', a.Address__c);
+System.assertEquals(null, a.Address__c);
+Account queried = [SELECT Address__c FROM Account WHERE Id=:a.Id];
+System.assertEquals('Line1<br />Austin', queried.Address__c);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -13379,8 +13586,10 @@ Approval.LockResult locked = Approval.lock(a, false);
 System.assert(locked.isSuccess());
 System.assertEquals(a.Id, locked.getId());
 System.assertEquals(0, locked.getErrors().size());
-System.assert(Approval.isLocked(a.Id));
-Map<Id, Boolean> lockStates = Approval.isLocked(new List<Id>{a.Id});
+	System.assert(Approval.isLocked(a.Id));
+	String stringId = a.Id;
+	System.assert(Approval.isLocked(stringId));
+	Map<Id, Boolean> lockStates = Approval.isLocked(new List<Id>{a.Id});
 System.assertEquals(true, lockStates.get(a.Id));
 Approval.UnlockResult unlocked = Approval.unlock(a.Id, false);
 System.assert(unlocked.isSuccess());
@@ -13479,7 +13688,7 @@ insert new Account(Name = 'Gamma', AnnualRevenue = 300, Rating = 'Hot');
 	Object row = rows.get(0);
 	System.assertEquals(3, row.get('expr0'));
 	System.assertEquals(3, [SELECT COUNT() FROM Account]);
-	System.assertEquals(3, [SELECT COUNT(Id) FROM Account]);
+	System.assertEquals(3, [SELECT COUNT(Id) FROM Account][0].get('expr0'));
 	integer lowerCaseCount = [SELECT COUNT() FROM Account WHERE Rating = 'Hot'];
 	System.assertEquals(2, lowerCaseCount);
 	System.assertEquals(0, [SELECT COUNT() FROM Widget__c]);
@@ -14025,17 +14234,16 @@ func TestExecSObjectSystemFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'System Fields');
 insert a;
-System.assert(a.CreatedDate != null);
-System.assert(a.LastModifiedDate != null);
+System.assertEquals(null, a.CreatedDate);
+System.assertEquals(null, a.LastModifiedDate);
 System.assert(a.SystemModstamp != null);
 System.assertEquals('005000000000001', a.CreatedById);
 System.assertEquals('005000000000001', a.LastModifiedById);
 System.assertEquals('005000000000001', a.OwnerId);
 System.assert(!a.IsDeleted);
-System.assertEquals('2026-05-02 12:00:00', a.CreatedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
 a.Name = 'System Fields Updated';
 update a;
-System.assert(a.LastModifiedDate != null);
+System.assertEquals(null, a.LastModifiedDate);
 Account row = [SELECT Id, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, OwnerId, IsDeleted FROM Account WHERE Id = :a.Id];
 System.assertEquals('2026-05-02 12:00:00', row.CreatedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals('005000000000001', row.CreatedById);
@@ -17760,6 +17968,16 @@ func TestTriggerContextListsCarryConcreteSObjectType(t *testing.T) {
 	}
 }
 
+func TestConversionScoreUsesRuntimeCollectionTypeForEmptyCovariantList(t *testing.T) {
+	machine := New(nil)
+	values := List()
+	values.Type = "List<SObject>"
+	values.Runtime = "List<Opportunity>"
+	if score := machine.conversionScore("List<Opportunity>", values); score < 0 {
+		t.Fatalf("empty list with concrete runtime type should be assignable, score=%d", score)
+	}
+}
+
 func TestNamespacedCustomMetadataListAssignsToLocalType(t *testing.T) {
 	machine := New(nil)
 	org := storage.NewOrgState()
@@ -19011,7 +19229,7 @@ cfg.get(createdDateField);
 
 func TestExecCustomSettingGetInstanceMissingReturnsTypedNull(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals(null, Local_Setting__c.getInstance(null));
+System.assertEquals('Default', Local_Setting__c.getInstance(null).Name);
 System.assertEquals(null, Local_Setting__c.getInstance('Missing'));
 `)
 	if err != nil {

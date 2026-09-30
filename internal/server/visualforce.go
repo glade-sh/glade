@@ -83,6 +83,9 @@ func (s *Server) handleVisualforceRemoteObjects(w http.ResponseWriter, r *http.R
 		return
 	}
 	if err := s.verifyVisualforceRequestViewState(pageParts, request.ViewState, request.CSRF); err != nil {
+		if writeVisualforceSecurityError(w, err) {
+			return
+		}
 		writeJSON(w, http.StatusOK, visualforce.RemoteObjectCRUDResult{
 			Success: false,
 			Errors:  []visualforce.RemoteObjectCRUDError{{Message: err.Error(), StatusCode: "UNSUPPORTED_FEATURE"}},
@@ -145,6 +148,9 @@ func (s *Server) handleVisualforceRemoting(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	if err := s.verifyVisualforceRemotingViewState(pageParts, requests); err != nil {
+		if writeVisualforceSecurityError(w, err) {
+			return
+		}
 		writeJSON(w, http.StatusOK, visualforceRemotingFailures(requests, err.Error()))
 		return
 	}
@@ -168,6 +174,11 @@ func (s *Server) handleVisualforceRemoting(w http.ResponseWriter, r *http.Reques
 		writeJSON(w, http.StatusOK, visualforceRemotingFailures(requests, err.Error()))
 		return
 	}
+	executionUser, err := s.visualforceHTMLExecutionUser()
+	if err != nil {
+		writeJSON(w, http.StatusOK, visualforceRemotingFailures(requests, err.Error()))
+		return
+	}
 	machine, err := s.visualforceRuntime()
 	if err != nil {
 		writeJSON(w, http.StatusOK, visualforceRemotingFailures(requests, err.Error()))
@@ -179,7 +190,7 @@ func (s *Server) handleVisualforceRemoting(w http.ResponseWriter, r *http.Reques
 	if s.LimitCaps != (vm.LimitCaps{}) {
 		machine.SetLimitCaps(s.LimitCaps)
 	}
-	machine.SetCurrentUser(s.currentUser(r, ""))
+	machine.SetCurrentUser(executionUser)
 	machine.SetServerBaseURL(requestBaseURL(r))
 	visualforce.SetVMRenderEnvironment(machine, s.Source.Project)
 	responses := visualforce.DispatchRemotingRequests(metadata, requests, func(invocation visualforce.RemotingInvocation) (any, error) {
@@ -357,7 +368,12 @@ func (s *Server) handleVisualforcePagePost(w http.ResponseWriter, r *http.Reques
 		writeSalesforceError(w, errUnsupportedFeature, "missing Visualforce view state")
 		return
 	}
-	decoded, err := visualforce.DecodeViewState(encoded, s.visualforceViewStateSecretBytes())
+	secret, err := s.visualforceViewStateSecretBytes()
+	if err != nil {
+		writeVisualforceSecurityError(w, err)
+		return
+	}
+	decoded, err := visualforce.DecodeViewState(encoded, secret)
 	if err != nil {
 		if errors.Is(err, visualforce.ErrViewStateTampered) || errors.Is(err, visualforce.ErrViewStateInvalid) || errors.Is(err, visualforce.ErrViewStateExpired) {
 			writeSalesforceError(w, errUnsupportedFeature, err.Error())
@@ -389,7 +405,11 @@ func (s *Server) verifyVisualforceRequestViewState(pageParts []string, encoded s
 	if strings.TrimSpace(encoded) == "" {
 		return errors.New("missing Visualforce view state")
 	}
-	decoded, err := visualforce.DecodeViewState(encoded, s.visualforceViewStateSecretBytes())
+	secret, err := s.visualforceViewStateSecretBytes()
+	if err != nil {
+		return err
+	}
+	decoded, err := visualforce.DecodeViewState(encoded, secret)
 	if err != nil {
 		return err
 	}
@@ -547,7 +567,12 @@ func (s *Server) renderVisualforceResponse(ctx context.Context, w http.ResponseW
 		return
 	}
 	applyVisualforcePageHeaders(w.Header(), headerOptions, "text/html; charset=utf-8")
-	htmlOut := injectVisualforceCSRF(result.HTML, result.ViewState, s.visualforceViewStateSecretBytes())
+	secret, err := s.visualforceViewStateSecretBytes()
+	if err != nil {
+		writeVisualforceSecurityError(w, err)
+		return
+	}
+	htmlOut := injectVisualforceCSRF(result.HTML, result.ViewState, secret)
 	if err := visualforce.CheckVisualforceResponseSize(len(htmlOut)); err != nil {
 		writeVisualforceRenderError(w, err, result)
 		return
@@ -615,6 +640,10 @@ func (s *Server) renderVisualforceResult(pageURL string, parts []string, viewSta
 	if !ok {
 		return visualforce.PageRenderResult{}, errVisualforceUnknownPage
 	}
+	executionUser, err := s.visualforceHTMLExecutionUser()
+	if err != nil {
+		return visualforce.PageRenderResult{}, err
+	}
 	if diag := visualforceExpressionDiagnostic(pageFile); diag != nil {
 		return visualforce.PageRenderResult{HTML: visualforceRenderErrorOverlay(diag), Error: diag}, nil
 	}
@@ -623,12 +652,17 @@ func (s *Server) renderVisualforceResult(pageURL string, parts []string, viewSta
 	if setupErr != nil {
 		return visualforce.PageRenderResult{}, setupErr
 	}
+	machine.SetCurrentUser(executionUser)
 	vfIndex, err := visualforce.LoadProject(s.Source.Project)
 	if err != nil {
 		return visualforce.PageRenderResult{}, err
 	}
 	visualforce.SetVMRenderEnvironment(machine, s.Source.Project)
 
+	secret, err := s.visualforceViewStateSecretBytes()
+	if err != nil {
+		return visualforce.PageRenderResult{}, err
+	}
 	req := visualforce.PageRenderRequest{
 		Project:         s.Source.Project,
 		VFIndex:         vfIndex,
@@ -640,7 +674,7 @@ func (s *Server) renderVisualforceResult(pageURL string, parts []string, viewSta
 		FormValues:      formValues,
 		Action:          action,
 		Debug:           true,
-		ViewStateSecret: s.visualforceViewStateSecretBytes(),
+		ViewStateSecret: secret,
 	}
 	if req.PageURL == "" {
 		req.PageURL = "/apex/" + pageName
@@ -674,6 +708,57 @@ func (s *Server) renderVisualforceResult(pageURL string, parts []string, viewSta
 	return result, nil
 }
 
+func (s *Server) visualforceHTMLExecutionUser() (storage.Record, error) {
+	if s == nil || s.Org == nil {
+		return storage.Record{}, errors.New("Visualforce HTML requires a configured execution user and org")
+	}
+	userID := storage.ID(strings.TrimSpace(string(s.VisualforceHTMLUserID)))
+	if userID == "" {
+		return storage.Record{}, errors.New("Visualforce HTML execution user is not configured")
+	}
+	users, ok := s.Org.Objects["User"]
+	if !ok {
+		return storage.Record{}, errors.New("Visualforce HTML execution user is unknown")
+	}
+	user, ok := users.Records[userID]
+	if !ok || user.ID != userID || (user.Object != "" && !strings.EqualFold(user.Object, "User")) {
+		return storage.Record{}, errors.New("Visualforce HTML execution user is unknown")
+	}
+	for fieldName := range user.Fields {
+		if fieldName == "Id" {
+			continue
+		}
+		if strings.EqualFold(strings.SplitN(fieldName, ".", 2)[0], "Id") {
+			return storage.Record{}, errors.New("Visualforce HTML execution user has conflicting identity")
+		}
+	}
+	for fieldName, isNull := range user.ExplicitNulls {
+		if isNull && strings.EqualFold(fieldName, "Id") {
+			return storage.Record{}, errors.New("Visualforce HTML execution user has conflicting identity")
+		}
+	}
+	for relationship := range user.Children {
+		if strings.EqualFold(relationship, "Id") {
+			return storage.Record{}, errors.New("Visualforce HTML execution user has conflicting identity")
+		}
+	}
+	if fieldID, ok := user.GetField("Id"); ok {
+		storedFieldID := storage.ID("")
+		switch fieldID.Kind {
+		case storage.ValueID:
+			storedFieldID = fieldID.ID
+		case storage.ValueString:
+			storedFieldID = storage.ID(fieldID.String)
+		default:
+			return storage.Record{}, errors.New("Visualforce HTML execution user has conflicting identity")
+		}
+		if storedFieldID != user.ID {
+			return storage.Record{}, errors.New("Visualforce HTML execution user has conflicting identity")
+		}
+	}
+	return user, nil
+}
+
 func injectLocalLightningUnavailableNotice(htmlText string) string {
 	if strings.Contains(htmlText, "Lightning Out is not available in local Visualforce preview") {
 		return htmlText
@@ -705,6 +790,9 @@ func localLightningUnavailableNotice() string {
 }
 
 func writeVisualforceRenderError(w http.ResponseWriter, err error, result visualforce.PageRenderResult) {
+	if writeVisualforceSecurityError(w, err) {
+		return
+	}
 	if errors.Is(err, errVisualforceUnknownPage) {
 		writeSalesforceError(w, errUnknownEndpoint, "unknown Visualforce page")
 		return
@@ -891,16 +979,38 @@ func injectVisualforceCSRF(htmlText, encodedViewState string, secret []byte) str
 	return htmlText + field
 }
 
-func (s *Server) visualforceViewStateSecretBytes() []byte {
-	if len(s.visualforceViewStateSecret) > 0 {
-		return s.visualforceViewStateSecret
+var errVisualforceViewStateKey = errors.New("Visualforce view-state key unavailable")
+
+func writeVisualforceSecurityError(w http.ResponseWriter, err error) bool {
+	if !errors.Is(err, errVisualforceViewStateKey) && !errors.Is(err, visualforce.ErrViewStateEntropy) {
+		return false
 	}
+	writeSalesforceError(w, errStoreFailure, "failed to initialize Visualforce view-state security")
+	return true
+}
+
+func newVisualforceViewStateSecret(reader io.Reader) ([]byte, error) {
 	secret := make([]byte, 32)
-	if _, err := rand.Read(secret); err != nil {
-		secret = []byte(fmt.Sprintf("glade-local-vf-server-%p-%d", s, time.Now().UnixNano()))
+	if _, err := io.ReadFull(reader, secret); err != nil {
+		return nil, fmt.Errorf("%w: %v", errVisualforceViewStateKey, err)
+	}
+	return secret, nil
+}
+
+func (s *Server) visualforceViewStateSecretBytes() ([]byte, error) {
+	// ServeHTTP already holds s.mu. Use a separate mutex to avoid reentrant
+	// locking and to keep direct test/renderer callers safe too.
+	s.visualforceViewStateMu.Lock()
+	defer s.visualforceViewStateMu.Unlock()
+	if len(s.visualforceViewStateSecret) > 0 {
+		return s.visualforceViewStateSecret, nil
+	}
+	secret, err := newVisualforceViewStateSecret(rand.Reader)
+	if err != nil {
+		return nil, err
 	}
 	s.visualforceViewStateSecret = secret
-	return s.visualforceViewStateSecret
+	return s.visualforceViewStateSecret, nil
 }
 
 func htmlAttrEscape(raw string) string {

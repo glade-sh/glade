@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
@@ -26,6 +27,7 @@ type Index struct {
 type Page struct {
 	Name                string           `json:"name"`
 	File                string           `json:"file,omitempty"`
+	APIVersion          string           `json:"apiVersion,omitempty"`
 	Controller          string           `json:"controller,omitempty"`
 	StandardController  string           `json:"standardController,omitempty"`
 	RecordSetVar        string           `json:"recordSetVar,omitempty"`
@@ -38,6 +40,7 @@ type Page struct {
 type Component struct {
 	Name            string           `json:"name"`
 	File            string           `json:"file,omitempty"`
+	APIVersion      string           `json:"apiVersion,omitempty"`
 	Controller      string           `json:"controller,omitempty"`
 	Extensions      []string         `json:"extensions,omitempty"`
 	Attributes      []Attribute      `json:"attributes,omitempty"`
@@ -71,8 +74,19 @@ func LoadProjectBestEffort(p project.Project) Index {
 
 func loadProject(p project.Project, bestEffort bool) (Index, error) {
 	idx := Index{}
+	fallbackAPIVersion, err := apexversion.PreserveSource(p.SourceAPIVersion)
+	if err != nil {
+		if bestEffort {
+			return idx, nil
+		}
+		return Index{}, fmt.Errorf("invalid project source API version: %w", err)
+	}
 	for _, path := range p.VisualforcePageFiles {
-		page, err := ParsePageFile(path)
+		parsePage := parsePageFile
+		if bestEffort {
+			parsePage = parsePageFileLenient
+		}
+		page, err := parsePage(path, fallbackAPIVersion)
 		if err != nil {
 			if bestEffort {
 				continue
@@ -82,7 +96,11 @@ func loadProject(p project.Project, bestEffort bool) (Index, error) {
 		idx.Pages = append(idx.Pages, page)
 	}
 	for _, path := range p.VisualforceComponentFiles {
-		component, err := ParseComponentFile(path)
+		parseComponent := parseComponentFile
+		if bestEffort {
+			parseComponent = parseComponentFileLenient
+		}
+		component, err := parseComponent(path, fallbackAPIVersion)
 		if err != nil {
 			if bestEffort {
 				continue
@@ -96,11 +114,33 @@ func loadProject(p project.Project, bestEffort bool) (Index, error) {
 }
 
 func ParsePageFile(path string) (Page, error) {
+	return parsePageFile(path, "")
+}
+
+func parsePageFile(path, fallbackAPIVersion string) (Page, error) {
+	return parsePageFileWithStructureValidation(path, fallbackAPIVersion, true)
+}
+
+func parsePageFileLenient(path, fallbackAPIVersion string) (Page, error) {
+	return parsePageFileWithStructureValidation(path, fallbackAPIVersion, false)
+}
+
+func parsePageFileWithStructureValidation(path, fallbackAPIVersion string, validateStructure bool) (Page, error) {
+	metadataOnly := strings.HasSuffix(strings.ToLower(path), ".page-meta.xml")
+	if validateStructure && !metadataOnly {
+		if err := validateVisualforceFileStructure(path, "page"); err != nil {
+			return Page{}, err
+		}
+	}
 	doc, err := parseMarkup(path)
 	if err != nil {
 		return Page{}, err
 	}
 	page := Page{Name: nameFromPath(path, ".page"), File: path}
+	page.APIVersion, err = resource.EffectiveVisualforceAPIVersion(path, fallbackAPIVersion)
+	if err != nil {
+		return Page{}, err
+	}
 	for _, token := range doc.Tokens {
 		if token.Start {
 			if strings.EqualFold(token.Local, "page") && page.Controller == "" && page.StandardController == "" {
@@ -125,11 +165,32 @@ func ParsePageFile(path string) (Page, error) {
 }
 
 func ParseComponentFile(path string) (Component, error) {
+	return parseComponentFile(path, "")
+}
+
+func parseComponentFile(path, fallbackAPIVersion string) (Component, error) {
+	return parseComponentFileWithStructureValidation(path, fallbackAPIVersion, true)
+}
+
+func parseComponentFileLenient(path, fallbackAPIVersion string) (Component, error) {
+	return parseComponentFileWithStructureValidation(path, fallbackAPIVersion, false)
+}
+
+func parseComponentFileWithStructureValidation(path, fallbackAPIVersion string, validateStructure bool) (Component, error) {
+	if validateStructure {
+		if err := validateVisualforceFileStructure(path, "component"); err != nil {
+			return Component{}, err
+		}
+	}
 	doc, err := parseMarkup(path)
 	if err != nil {
 		return Component{}, err
 	}
 	component := Component{Name: nameFromPath(path, ".component"), File: path}
+	component.APIVersion, err = resource.EffectiveVisualforceAPIVersion(path, fallbackAPIVersion)
+	if err != nil {
+		return Component{}, err
+	}
 	for _, token := range doc.Tokens {
 		if token.Start {
 			if strings.EqualFold(token.Local, "component") && component.Controller == "" {
@@ -423,8 +484,8 @@ func splitCSV(value string) []string {
 
 func nameFromPath(path, suffix string) string {
 	base := filepath.Base(path)
-	if suffix == ".page" && hasSuffixFold(base, ".page-meta.xml") {
-		return base[:len(base)-len(".page-meta.xml")]
+	if (suffix == ".page" || suffix == ".component") && hasSuffixFold(base, suffix+"-meta.xml") {
+		return base[:len(base)-len(suffix+"-meta.xml")]
 	}
 	if hasSuffixFold(base, suffix) {
 		return base[:len(base)-len(suffix)]

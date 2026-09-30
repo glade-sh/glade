@@ -55,13 +55,17 @@ func callXmlStreamWriterMember(receiver Value, method string, args []Value) (Val
 		receiver.Fields["defaultNamespace"] = args[0]
 		return Null, receiver, true, true, nil
 	case "writeStartDocument":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+		if len(args) != 2 || (args[0].Kind != ValueString && args[0].Kind != ValueNull) || args[1].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.writeStartDocument expects encoding String and version String")
 		}
-		receiver = xmlStreamWriterAppend(receiver, fmt.Sprintf(`<?xml version="%s" encoding="%s"?>`, xmlStreamWriterEscapeAttr(args[1].Text), xmlStreamWriterEscapeAttr(args[0].Text)))
+		declaration := fmt.Sprintf(`<?xml version="%s"`, xmlStreamWriterEscapeAttr(args[1].Text))
+		if args[0].Kind != ValueNull {
+			declaration += fmt.Sprintf(` encoding="%s"`, xmlStreamWriterEscapeAttr(args[0].Text))
+		}
+		receiver = xmlStreamWriterAppend(receiver, declaration+"?>")
 		return Null, receiver, true, true, nil
 	case "writeStartElement":
-		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString {
+		if len(args) != 3 || (args[0].Kind != ValueString && args[0].Kind != ValueNull) || args[1].Kind != ValueString || (args[2].Kind != ValueString && args[2].Kind != ValueNull) {
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.writeStartElement expects prefix, localName, and namespaceURI Strings")
 		}
 		name := xmlStreamWriterQualifiedName(args[0].Text, args[1].Text)

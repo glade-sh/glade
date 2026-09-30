@@ -141,7 +141,7 @@ func checkAnnotationContracts(index typesys.Index) []diagnostic.Diagnostic {
 			diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, typ.Range, "TestSetup cannot be combined with IsTest(SeeAllData=true)"))
 		}
 		for name, count := range auraMethods {
-			if count > 1 {
+			if count > 1 && !apexversion.Before(typ.EffectiveAPIVersion, 55) {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, typ.Range, fmt.Sprintf("AuraEnabled methods cannot be overloaded: %s", name)))
 			}
 		}
@@ -534,7 +534,8 @@ func genericTypeArguments(name string) ([]string, bool) {
 }
 
 func isListType(name string) bool {
-	return strings.HasPrefix(strings.ToLower(strings.ReplaceAll(name, " ", "")), "list<")
+	normalized := strings.ToLower(strings.ReplaceAll(name, " ", ""))
+	return strings.HasPrefix(normalized, "list<") || strings.HasSuffix(normalized, "[]")
 }
 
 func annotationPropertyTrue(annotations []apexast.Annotation, annotationName, propertyName string) bool {

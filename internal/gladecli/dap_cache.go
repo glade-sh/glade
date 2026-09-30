@@ -10,7 +10,8 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-const dapCacheVersion = 4
+// Reject snapshots built before deterministic TaskStatus metadata was seeded.
+const dapCacheVersion = 7
 
 func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
 	root, err := filepath.Abs(projectRoot)

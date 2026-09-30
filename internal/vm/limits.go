@@ -15,6 +15,9 @@ const (
 	LimitModeStrict     LimitMode = "strict"
 )
 
+const apexCursorFetchCallLimit = 100
+const apexCursorRowLimit = 50_000_000
+
 type Limits struct {
 	Queries                  int `json:"queries"`
 	QueryRows                int `json:"queryRows"`
@@ -31,6 +34,9 @@ type Limits struct {
 	EmailInvokes             int `json:"emailInvocations"`
 	SOSLQueries              int `json:"soslQueries"`
 	QueryLocatorRows         int `json:"queryLocatorRows"`
+	ApexCursorRows           int `json:"apexCursorRows"`
+	ApexCursors              int `json:"apexCursors"`
+	FetchCallsOnApexCursor   int `json:"fetchCallsOnApexCursor"`
 	ApexPaginationCursors    int `json:"apexPaginationCursors"`
 	ApexPaginationCursorRows int `json:"apexPaginationCursorRows"`
 	RunAs                    int `json:"runAs"`
@@ -174,6 +180,15 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 	case "apexPaginationCursorRows":
 		vm.limits.ApexPaginationCursorRows += delta
 		return vm.checkLimit(name, vm.limits.ApexPaginationCursorRows, 100000)
+	case "apexCursorRows":
+		vm.limits.ApexCursorRows += delta
+		return vm.checkLimit(name, vm.limits.ApexCursorRows, apexCursorRowLimit)
+	case "apexCursors":
+		vm.limits.ApexCursors += delta
+		return vm.checkLimit(name, vm.limits.ApexCursors, 50)
+	case "fetchCallsOnApexCursor":
+		vm.limits.FetchCallsOnApexCursor += delta
+		return vm.checkLimit(name, vm.limits.FetchCallsOnApexCursor, apexCursorFetchCallLimit)
 	case "runAs":
 		vm.limits.RunAs += delta
 		return vm.checkLimit(name, vm.limits.RunAs, vm.limitCaps.RunAs)
@@ -333,15 +348,21 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limits.ApexPaginationCursorRows)), true
 	case "getApexPaginationCursors":
 		return Int(int64(vm.limits.ApexPaginationCursors)), true
-	case "getAggregateQueries", "getApexCursorRows", "getApexCursors", "getDatabaseTime",
-		"getFetchCallsOnApexCursor", "getFieldSetsDescribes", "getFieldsDescribes",
+	case "getAggregateQueries", "getDatabaseTime",
+		"getFieldSetsDescribes", "getFieldsDescribes",
 		"getFindSimilarCalls", "getMobilePushApexCalls", "getPicklistDescribes",
 		"getRecordTypesDescribes", "getScriptStatements":
 		return Int(0), true
+	case "getApexCursorRows":
+		return Int(int64(vm.limits.ApexCursorRows)), true
+	case "getApexCursors":
+		return Int(int64(vm.limits.ApexCursors)), true
+	case "getFetchCallsOnApexCursor":
+		return Int(int64(vm.limits.FetchCallsOnApexCursor)), true
 	case "getLimitAggregateQueries":
 		return Int(300), true
 	case "getLimitApexCursorRows":
-		return Int(10000), true
+		return Int(apexCursorRowLimit), true
 	case "getLimitApexPaginationCursorRows":
 		return Int(100000), true
 	case "getLimitApexCursors", "getLimitApexPaginationCursors":
@@ -352,7 +373,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getLimitDatabaseTime":
 		return Int(0), true
 	case "getLimitFetchCallsOnApexCursor":
-		return Int(10), true
+		return Int(apexCursorFetchCallLimit), true
 	case "getLimitFindSimilarCalls":
 		return Int(10), true
 	case "getLimitMobilePushApexCalls":

@@ -95,3 +95,51 @@ test("MultiWidgetHost boots Lightning Out components in the rendered Visualforce
     await server.close();
   }
 });
+
+test("served record wire refreshes after LDS update and notification", async (t) => {
+  if (!requireLWCToolchain(t)) {
+    return;
+  }
+
+  const server = await startVisualforceDevServer(t, {
+    projectRel: fixture,
+    pagePath: "/apex/MultiWidgetHost",
+  });
+  if (!server) {
+    return;
+  }
+
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.goto(`${server.baseURL}/apex/MultiWidgetHost`, { waitUntil: "networkidle" });
+    const recordName = page.locator("c-record-wire-host .name");
+    assert.equal(await recordName.innerText({ timeout: 10000 }), "Acme");
+
+    await page.evaluate(async () => {
+      const { notifyRecordUpdateAvailable, updateRecord } = await import(
+        "/lightning/shims/lightning/uiRecordApi.js"
+      );
+      const recordId = "001XX0000000001";
+      await updateRecord({ fields: { Id: recordId, Name: "LDS Updated" } });
+      await notifyRecordUpdateAvailable([{ recordId }]);
+    });
+
+    const deadline = Date.now() + 10000;
+    let refreshed = false;
+    while (Date.now() < deadline) {
+      if ((await recordName.innerText({ timeout: 1000 })).trim() === "LDS Updated") {
+        refreshed = true;
+        break;
+      }
+      await page.waitForTimeout(50);
+    }
+    assert.equal(refreshed, true, `rendered name = ${await recordName.innerText()}`);
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+    await server.close();
+  }
+});

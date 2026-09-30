@@ -206,6 +206,55 @@ func TestHandleVisualforceAjaxResponseCarriesRedirect(t *testing.T) {
 	}
 }
 
+// The existing API67 native/browser comparators use a bare component target.
+// This is a local HTTP/controller seam check; the fixture helper retains API65.
+func TestHandleVisualforceAjaxBareTargetReturnsRenderedClientID(t *testing.T) {
+	for _, tc := range []struct {
+		name, trigger string
+	}{
+		{"actionSupport", `<apex:outputLink value="#">Go<apex:actionSupport event="onclick" action="{!increment}" reRender="count"/></apex:outputLink>`},
+		{"actionFunction", `<apex:actionFunction name="refreshCount" action="{!increment}" reRender="count"/>`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := newVisualforceFixtureServer(t, "Ajax.page", `<apex:page controller="AjaxController"><apex:form id="f">`+tc.trigger+`
+<apex:outputPanel id="count"><apex:outputText value="{!count}"/></apex:outputPanel>
+</apex:form></apex:page>`, `public class AjaxController {
+  public static String latest = 'Before';
+  public String getCount() { return latest; }
+  public PageReference increment() { latest = 'After'; return null; }
+}`)
+			first := httptest.NewRecorder()
+			srv.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/apex/Ajax", nil))
+			if first.Code != http.StatusOK || !strings.Contains(first.Body.String(), `id="j_id0:f:count"`) || !strings.Contains(first.Body.String(), ">Before<") {
+				t.Fatalf("initial served target status=%d body=%s", first.Code, first.Body.String())
+			}
+			form := url.Values{}
+			form.Set(visualforce.ViewStateFormFieldName(), extractHTMLInput(first.Body.String(), visualforce.ViewStateFormFieldName()))
+			form.Set("__vf_csrf", extractHTMLInput(first.Body.String(), "__vf_csrf"))
+			form.Set(visualforce.ViewStateActionFieldName(), "{!increment}")
+			form.Set("__vf_ajax", "1")
+			form.Set("__vf_rerender", "count")
+			req := httptest.NewRequest(http.MethodPost, "/apex/Ajax", strings.NewReader(form.Encode()))
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			second := httptest.NewRecorder()
+			srv.ServeHTTP(second, req)
+			if second.Code != http.StatusOK {
+				t.Fatalf("partial status=%d body=%s", second.Code, second.Body.String())
+			}
+			var payload visualforce.PartialResponse
+			if err := json.Unmarshal(second.Body.Bytes(), &payload); err != nil {
+				t.Fatal(err)
+			}
+			if len(payload.Targets) != 1 || !strings.Contains(payload.Targets["j_id0:f:count"], ">After<") || strings.Contains(payload.Targets["j_id0:f:count"], ">Before<") {
+				t.Fatalf("bare target did not resolve to updated rendered client ID: %#v", payload.Targets)
+			}
+			if strings.TrimSpace(payload.ViewState) == "" {
+				t.Fatal("partial response lost refreshed view state")
+			}
+		})
+	}
+}
+
 func TestHandleVisualforcePostRequiresViewState(t *testing.T) {
 	srv := newVisualforceFixtureServer(t, "Ajax.page", `<apex:page controller="AjaxController">
 <apex:form><apex:commandButton value="Inc" action="{!increment}"/></apex:form>
@@ -340,6 +389,9 @@ func newVisualforceFixtureServer(t *testing.T, pageName, pageMarkup, controllerS
 	}
 	org := storage.NewOrgState()
 	srv := NewWithSource(&org, source)
+	if srv.VisualforceHTMLUserID == "" {
+		configureVisualforceTestPrincipal(t, srv)
+	}
 	srv.SetProjectIndex(typesys.Build(p, schema))
 	if srv.runtimeErr != nil {
 		t.Fatalf("compile fixture runtime: %v", srv.runtimeErr)

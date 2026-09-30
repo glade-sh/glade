@@ -82,3 +82,35 @@ System.assertEquals('changed', value.getMessage());
 		t.Fatal(err)
 	}
 }
+
+func TestEventBusExceptionConstructorsKeepPlatformDefaultMessage(t *testing.T) {
+	program, err := CompileAnonymous(`
+TouchHandledException cause = new TouchHandledException('cause');
+eventbus.InvalidReplayIdException invalidDefault = new eventbus.InvalidReplayIdException();
+eventbus.InvalidReplayIdException invalidCause = new eventbus.InvalidReplayIdException(cause);
+eventbus.InvalidReplayIdException invalidMessage = new eventbus.InvalidReplayIdException('invalid');
+eventbus.InvalidReplayIdException invalidWrapped = new eventbus.InvalidReplayIdException('wrapped-invalid', cause);
+System.assertEquals('Script-thrown exception', invalidDefault.getMessage());
+System.assertEquals('Script-thrown exception', invalidCause.getMessage());
+System.assertEquals('Script-thrown exception', invalidMessage.getMessage());
+System.assertEquals('Script-thrown exception', invalidWrapped.getMessage());
+System.assertEquals(null, invalidCause.getCause());
+System.assertEquals(null, invalidWrapped.getCause());
+eventbus.RetryableException retryDefault = new eventbus.RetryableException();
+eventbus.RetryableException retryCause = new eventbus.RetryableException(cause);
+eventbus.RetryableException retryMessage = new eventbus.RetryableException('retry');
+eventbus.RetryableException retryWrapped = new eventbus.RetryableException('wrapped-retry', cause);
+System.assertEquals('Script-thrown exception', retryDefault.getMessage());
+System.assertEquals('Script-thrown exception', retryCause.getMessage());
+System.assertEquals('Script-thrown exception', retryMessage.getMessage());
+System.assertEquals('Script-thrown exception', retryWrapped.getMessage());
+System.assertEquals(null, retryCause.getCause());
+System.assertEquals(null, retryWrapped.getCause());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}

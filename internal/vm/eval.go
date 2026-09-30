@@ -96,6 +96,15 @@ func unescapeApexStringLiteral(text string) string {
 
 func evalUnary(op string, value Value) (Value, error) {
 	switch op {
+	case "~":
+		if value.Kind != ValueInt {
+			return Null, fmt.Errorf("operator ~ requires Integer or Long, got %s", value.Kind)
+		}
+		result := Int(^value.Int)
+		if isLongIntValue(value) {
+			result.Type = "Long"
+		}
+		return result, nil
 	case "!":
 		boolValue, ok := booleanOperand(value)
 		if !ok {
@@ -157,6 +166,9 @@ func evalBinary(op string, left, right Value) (Value, error) {
 		}
 		return intBinary(op, left, right, func(a, b int64) int64 { return a * b })
 	case "/":
+		if nullNumericArithmeticOperand(op, left, right) {
+			return Null, newNullDereferenceError("division operand")
+		}
 		if left.Kind == ValueDecimal || right.Kind == ValueDecimal {
 			return decimalBinary(op, left, right, func(a, b float64) float64 { return a / b })
 		}
@@ -458,7 +470,31 @@ func comparableIDText(value Value) (string, bool) {
 	return "", false
 }
 
+func nullNumericArithmeticOperand(op string, left, right Value) bool {
+	switch op {
+	case "+", "-", "*", "/":
+		return nullTypedNumericArithmeticOperand(left) || nullTypedNumericArithmeticOperand(right)
+	default:
+		return false
+	}
+}
+
+func nullTypedNumericArithmeticOperand(value Value) bool {
+	if value.Kind != ValueNull {
+		return false
+	}
+	switch canonicalApexScalarType(value.Type) {
+	case "Decimal", "Integer", "Long":
+		return true
+	default:
+		return false
+	}
+}
+
 func intBinary(op string, left, right Value, fn func(int64, int64) int64) (Value, error) {
+	if nullNumericArithmeticOperand(op, left, right) {
+		return Null, newNullDereferenceError("arithmetic operand")
+	}
 	if left.Kind == ValueNull && right.Kind == ValueInt {
 		left = Int(0)
 	}
@@ -479,6 +515,9 @@ func intBinary(op string, left, right Value, fn func(int64, int64) int64) (Value
 }
 
 func decimalBinary(op string, left, right Value, fn func(float64, float64) float64) (Value, error) {
+	if nullNumericArithmeticOperand(op, left, right) {
+		return Null, newNullDereferenceError("arithmetic operand")
+	}
 	if left.Kind == ValueNull && isNumeric(right) {
 		left = Decimal(0)
 	}

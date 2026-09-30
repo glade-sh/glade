@@ -88,7 +88,7 @@ func TestRenderInputFileUsesVisualforceIDForFileControl(t *testing.T) {
 		`enctype="multipart/form-data"`,
 		`<input type="file"`,
 		`name="upload"`,
-		`id="upload"`,
+		`id="j_id0:j_id1:upload"`,
 	} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("rendered missing %q: %s", want, rendered)

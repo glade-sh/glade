@@ -55,7 +55,17 @@ func RenderPartialTargetsWithDiagnostics(renderedHTML string, rerenderIDs []stri
 			targets[id] = addPartialDiagnostic(&messages, id, "element id not found")
 			continue
 		}
-		targets[id] = renderPartialNode(node)
+		responseID := id
+		// Browser lookup uses the rendered DOM ID for bare component names.
+		if !strings.Contains(id, ":") {
+			for _, attr := range node.Attr {
+				if attr.Key == "id" && strings.TrimSpace(attr.Val) != "" {
+					responseID = attr.Val
+					break
+				}
+			}
+		}
+		targets[responseID] = renderPartialNode(node)
 	}
 	return targets, messages
 }
@@ -80,7 +90,29 @@ func findPartialTargetNode(node *nethtml.Node, id string) *nethtml.Node {
 	if found := findPartialTargetNodeByAttr(node, candidates, "id"); found != nil {
 		return found
 	}
+	if found := findPartialTargetNodeByClientIDSuffix(node, candidates); found != nil {
+		return found
+	}
 	return findPartialTargetNodeByAttr(node, candidates, "data-rerender")
+}
+
+func findPartialTargetNodeByClientIDSuffix(node *nethtml.Node, candidates map[string]bool) *nethtml.Node {
+	var walk func(*nethtml.Node) *nethtml.Node
+	walk = func(current *nethtml.Node) *nethtml.Node {
+		if current == nil {
+			return nil
+		}
+		if current.Type == nethtml.ElementNode && partialNodeMatchesClientIDSuffix(current, candidates) {
+			return current
+		}
+		for child := current.FirstChild; child != nil; child = child.NextSibling {
+			if found := walk(child); found != nil {
+				return found
+			}
+		}
+		return nil
+	}
+	return walk(node)
 }
 
 func findPartialTargetNodeByAttr(node *nethtml.Node, candidates map[string]bool, attrName string) *nethtml.Node {
@@ -118,6 +150,20 @@ func partialNodeMatchesAttr(node *nethtml.Node, candidates map[string]bool, attr
 	for _, attr := range node.Attr {
 		if attr.Key == attrName && candidates[attr.Val] {
 			return true
+		}
+	}
+	return false
+}
+
+func partialNodeMatchesClientIDSuffix(node *nethtml.Node, candidates map[string]bool) bool {
+	for _, attr := range node.Attr {
+		if attr.Key != "id" {
+			continue
+		}
+		for candidate := range candidates {
+			if strings.HasSuffix(attr.Val, ":"+candidate) {
+				return true
+			}
 		}
 	}
 	return false

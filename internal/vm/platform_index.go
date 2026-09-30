@@ -15,6 +15,8 @@ import (
 var (
 	commonSObjectTypeNamesOnce       sync.Once
 	commonSObjectTypeNameSetOnce     sync.Once
+	commonSObjectTypeNameFoldOnce    sync.Once
+	commonSObjectTypeNameFoldSet     map[string]struct{}
 	generatedPlatformTypeIndexOnce   sync.Once
 	generatedPlatformMethodIndexOnce sync.Once
 )
@@ -24,6 +26,21 @@ func CommonSObjectTypeNames() []string {
 		commonSObjectTypeNames = buildCommonSObjectTypeNames()
 	})
 	return commonSObjectTypeNames
+}
+
+// IsCommonSObjectTypeName reports whether name matches an entry of
+// CommonSObjectTypeNames case-insensitively. It is the constant-time
+// equivalent of folding name against every entry of that slice.
+func IsCommonSObjectTypeName(name string) bool {
+	commonSObjectTypeNameFoldOnce.Do(func() {
+		names := CommonSObjectTypeNames()
+		commonSObjectTypeNameFoldSet = make(map[string]struct{}, len(names))
+		for _, objectName := range names {
+			commonSObjectTypeNameFoldSet[strings.ToLower(objectName)] = struct{}{}
+		}
+	})
+	_, ok := commonSObjectTypeNameFoldSet[strings.ToLower(name)]
+	return ok
 }
 
 func commonSObjectTypeNameLookup() map[string]bool {

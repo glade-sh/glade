@@ -66,7 +66,7 @@ func (vm *VM) permissionSetHasPermission(permissionSetID, permission string) boo
 			return true
 		}
 	}
-	return false
+	return vm.permissionSetGrantsCustomPermission(permissionSetID, permission)
 }
 func storagePermissionValueMatches(value storage.Value, permission string) bool {
 	if value.Kind == storage.ValueString && strings.EqualFold(strings.TrimSpace(value.String), strings.TrimSpace(permission)) {
@@ -101,7 +101,8 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 		user = vm.testContext.CurrentUser
 	}
 	profileID := stringField(user, "ProfileId")
-	if vm.currentProfileIsSystemAdministrator(profileID) {
+	profileName := vm.currentUserProfileName(user)
+	if profileName == "System Administrator" {
 		return true
 	}
 	profilePermissionSetID := vm.profileOwnedPermissionSetID(profileID)
@@ -125,7 +126,10 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	if vm.profileHasLicense(profileID, "Chatter External") && !isSetupObject(objectName) {
 		return false
 	}
-	switch vm.currentProfileName(profileID) {
+	if vm.currentProfileHasUserType(profileID, "Guest") {
+		return false
+	}
+	switch profileName {
 	case "Minimum Access - Salesforce":
 		return method == "isAccessible" && isBaselineReadableObject(objectName)
 	case "Standard Platform User":
@@ -159,7 +163,8 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 		user = vm.testContext.CurrentUser
 	}
 	profileID := stringField(user, "ProfileId")
-	if vm.currentProfileIsSystemAdministrator(profileID) {
+	profileName := vm.currentUserProfileName(user)
+	if profileName == "System Administrator" {
 		return true
 	}
 	if method == "isAccessible" && isBaselineSystemFieldReadableWithoutObjectAccess(fieldName) {
@@ -189,10 +194,13 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	if profileID != "" && vm.parentHasFieldPermissionsForObject(profileID, objectName) {
 		return false
 	}
+	if vm.currentProfileHasUserType(profileID, "Guest") {
+		return method == "isAccessible"
+	}
 	if method == "isAccessible" && vm.isBaselineReadableField(objectName, fieldName) {
 		return true
 	}
-	switch vm.currentProfileName(profileID) {
+	switch profileName {
 	case "Minimum Access - Salesforce":
 		return false
 	case "Standard Platform User":
@@ -312,7 +320,7 @@ func (vm *VM) enforceDMLRecordAccess(op string, value Value, externalIDField str
 		} else if record.ID != "" {
 			stored, found = vm.findOrgRecord(record.Object, record.ID)
 		}
-		if found && !vm.userModeRecordVisible(record.Object, stored, vm.currentUserID()) {
+		if found && !vm.currentUserCanWriteRecord(record.Object, stored, vm.currentUserID(), op) {
 			return newExceptionError("SecurityException", fmt.Sprintf("Access to record '%s' denied", stored.ID))
 		}
 	}
@@ -372,6 +380,9 @@ func userModeDMLPermissions(op string) (string, string) {
 func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceRootObjectCRUD bool, removedFields Value, scopedPermissionSetID string) (bool, error) {
 	if record == nil || record.Kind != ValueObject {
 		return false, nil
+	}
+	if strings.EqualFold(record.Type, "AggregateResult") {
+		return false, newExceptionError("SObjectException", "AggregateResult SObject types are not supported")
 	}
 	modified := false
 	objectName := record.Type
@@ -796,6 +807,21 @@ func (vm *VM) permissionSetGroupComponentIDs(groupID string) []string {
 func (vm *VM) currentProfileIsSystemAdministrator(profileID string) bool {
 	return vm.currentProfileName(profileID) == "System Administrator"
 }
+
+// currentUserProfileName resolves both persisted users with ProfileId and the
+// unsaved nested User.Profile form accepted by System.runAs in Apex tests.
+func (vm *VM) currentUserProfileName(user Value) string {
+	profileID := stringField(user, "ProfileId")
+	if name := vm.currentProfileName(profileID); name != "" {
+		return name
+	}
+	_, profile, ok := objectFieldValue(user, "Profile")
+	if !ok || profile.Kind != ValueObject {
+		return ""
+	}
+	return stringField(profile, "Name")
+}
+
 func (vm *VM) currentProfileName(profileID string) string {
 	if profileID == "" || vm.Org == nil {
 		return ""
@@ -812,6 +838,21 @@ func (vm *VM) currentProfileName(profileID string) string {
 		return value.String
 	}
 	return ""
+}
+
+func (vm *VM) currentProfileHasUserType(profileID, userType string) bool {
+	if profileID == "" || vm.Org == nil {
+		return false
+	}
+	profiles, ok := vm.Org.Objects["Profile"]
+	if !ok {
+		return false
+	}
+	profile, ok := profiles.Records[storage.ID(profileID)]
+	if !ok {
+		return false
+	}
+	return storageStringValueEquals(profile.Fields["UserType"], userType)
 }
 func (vm *VM) isBaselineReadableField(objectName, fieldName string) bool {
 	if strings.EqualFold(fieldName, "Id") {
@@ -884,4 +925,32 @@ func (vm *VM) profileHasLicense(profileID, licenseName string) bool {
 		return false
 	}
 	return storageStringValueEquals(license.Fields["Name"], licenseName)
+}
+
+// SetupEntityAccess links assigned permission sets to standalone metadata rows.
+func (vm *VM) permissionSetGrantsCustomPermission(permissionSetID, permission string) bool {
+	permissions := vm.Org.Objects["CustomPermission"]
+	for _, access := range vm.Org.Objects["SetupEntityAccess"].Records {
+		parent, ok := access.GetField("ParentId")
+		if !ok || !storageIDValueEquals(parent, permissionSetID) {
+			continue
+		}
+		entity, ok := access.GetField("SetupEntityId")
+		if !ok {
+			continue
+		}
+		for id, record := range permissions.Records {
+			if !storageIDValueEquals(entity, string(id)) {
+				continue
+			}
+			name, ok := record.GetField("DeveloperName")
+			if !ok {
+				continue
+			}
+			if storagePermissionValueMatches(name, permission) {
+				return true
+			}
+		}
+	}
+	return false
 }

@@ -275,7 +275,7 @@ func TestVisualforceIncludeLightningWithoutToolchainShowsLocalNotice(t *testing.
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	handler := NewWithSource(&org, source)
+	handler := newVisualforceHTMLTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/apex/WidgetHost", nil))
@@ -739,11 +739,11 @@ func TestLightningPackageCorpusShimsServeLocalContracts(t *testing.T) {
 		want []string
 	}{
 		{"/lightning/shims/client/formFactor.js", []string{"readFormFactor", "export default"}},
-		{"/lightning/shims/customPermission/LocalAuditLogs.js", []string{"LocalAuditLogs", "export default true"}},
+		{"/lightning/shims/customPermission/LocalAuditLogs.js", []string{"LocalAuditLogs", "readCustomPermission(permissionName)"}},
 		{"/lightning/shims/lightning/configProvider.js", []string{"getPathPrefix", "getToken", "getIconSvgTemplates", "getLocalizationService", "getOneConfig"}},
 		{"/lightning/shims/lightning/pageReferenceUtils.js", []string{"encodeDefaultFieldValues", "decodeDefaultFieldValues"}},
 		{"/lightning/shims/lightning/alert.js", []string{"LightningAlert", "static open", "gladealert"}},
-		{"/lightning/shims/lightning/confirm.js", []string{"LightningConfirm", "Promise.resolve(true)"}},
+		{"/lightning/shims/lightning/confirm.js", []string{"LightningConfirm", "static open", "new Promise"}},
 		{"/lightning/shims/lightning/prompt.js", []string{"LightningPrompt", "static open", "gladeprompt"}},
 		{"/lightning/shims/lightning/showToastEvent.js", []string{"SHOW_TOAST_EVENT_NAME", "ShowToastEvent", "lightning__showtoast"}},
 		{"/lightning/shims/lightning/toast.js", []string{"LightningToast", "static show", "lightning__showtoast"}},
@@ -989,6 +989,289 @@ func TestLightningApexRouteInvokesImperativeController(t *testing.T) {
 	row, ok := rows[0].(map[string]any)
 	if !ok || row["Id"] != "001XX0000000001" || row["Name"] != "Local Widget" {
 		t.Fatalf("row = %#v", rows[0])
+	}
+}
+
+func TestLightningApexRouteCommitsOnlySuccessfulMutation(t *testing.T) {
+	root := t.TempDir()
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/MutationCtrl.cls"), `public class MutationCtrl {
+    @AuraEnabled
+    public static String save(String name) {
+        insert new Account(Name = name);
+        return 'saved';
+    }
+
+    @AuraEnabled
+    public static String failAfterSave(String name) {
+        insert new Account(Name = name);
+        System.assert(false, 'forced failure');
+        return 'unreachable';
+    }
+
+    @AuraEnabled
+    public static String enqueue() {
+        System.enqueueJob(new QueueWorker());
+        return 'queued';
+    }
+
+    @AuraEnabled
+    public static String swallowConvert() {
+        insert new Account(Name = 'marker');
+        Lead lead = new Lead(FirstName = 'Boundary', LastName = 'Guard', Company = 'Boundary Co', Status = 'Open');
+        insert lead;
+        Database.LeadConvert convert = new Database.LeadConvert();
+        convert.setLeadId(lead.Id);
+        convert.setConvertedStatus('Qualified');
+        convert.setDoNotCreateOpportunity(true);
+        Database.LeadConvertResult ignored = Database.convertLead(convert, false);
+        return 'swallowed';
+    }
+
+    @AuraEnabled
+    public static String asyncDML(String name) {
+        insert new Account(Name = 'marker');
+        Database.insertAsync(new Account(Name = name));
+        return 'async';
+    }
+}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/MutationCtrl.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/QueueWorker.cls"), `public class QueueWorker implements Queueable {
+    public void execute(QueueableContext context) {}
+}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/QueueWorker.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/FutureWorker.cls"), `public class FutureWorker {
+    @future
+    public static void run() {}
+}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/FutureWorker.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/triggers/LeadGuard.trigger"), `trigger LeadGuard on Lead (after update) {
+    FutureWorker.run();
+}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/triggers/LeadGuard.trigger-meta.xml"), `<ApexTrigger xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><status>Active</status></ApexTrigger>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema, err := gladeschema.LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testOrg()
+	storage.EnsureStandardObject(&org, "Lead")
+	storage.EnsureStandardObject(&org, "Contact")
+	store := &memoryStore{}
+	handler := NewWithStoreAndSource(&org, store, source)
+	handler.SetProjectIndex(typesys.Build(p, schema))
+
+	invoke := func(method, name string) lwcbrowser.WireResponse {
+		t.Helper()
+		body := `{}`
+		if name != "" {
+			body = fmt.Sprintf(`{"name":%q}`, name)
+		}
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPost, "/lightning/apex/MutationCtrl/"+method, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		handler.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s status = %d body = %s", method, rec.Code, rec.Body.String())
+		}
+		var out lwcbrowser.WireResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatal(err)
+		}
+		return out
+	}
+
+	saved := invoke("save", "Committed by LWC")
+	if saved.Error != nil || saved.Data != "saved" {
+		t.Fatalf("saved response = %#v", saved)
+	}
+	if store.saves != 1 || len(store.last.Objects["Account"].Records) != 1 {
+		t.Fatalf("successful mutation saves = %d records = %#v", store.saves, store.last.Objects["Account"].Records)
+	}
+
+	failed := invoke("failAfterSave", "Must roll back")
+	if failed.Error == nil || strings.TrimSpace(failed.Error.Type) == "" {
+		t.Fatalf("failed response = %#v", failed)
+	}
+	if store.saves != 1 || len(org.Objects["Account"].Records) != 1 || len(store.last.Objects["Account"].Records) != 1 {
+		t.Fatalf("failed mutation committed: saves=%d org=%#v store=%#v", store.saves, org.Objects["Account"].Records, store.last.Objects["Account"].Records)
+	}
+
+	queued := invoke("enqueue", "")
+	if queued.Error == nil || queued.Error.Type != "UnsupportedFeature" || !strings.Contains(queued.Error.Message, "asynchronous Apex work") {
+		t.Fatalf("queued response = %#v error=%+v", queued, queued.Error)
+	}
+	if store.saves != 1 || len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("queued mutation committed: saves=%d org=%#v", store.saves, org.Objects["Account"].Records)
+	}
+
+	swallowed := invoke("swallowConvert", "")
+	if swallowed.Error == nil || swallowed.Error.Type != "UnsupportedFeature" || !strings.Contains(swallowed.Error.Message, "asynchronous Apex work") {
+		t.Fatalf("swallowed response = %#v error=%+v", swallowed, swallowed.Error)
+	}
+	if store.saves != 1 || len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("caught async mutation committed: saves=%d org=%#v", store.saves, org.Objects["Account"].Records)
+	}
+
+	asyncDML := invoke("asyncDML", "Must not run async DML")
+	if asyncDML.Error == nil || asyncDML.Error.Type != "UnsupportedFeature" || !strings.Contains(asyncDML.Error.Message, "Database.insertAsync") {
+		t.Fatalf("async DML response = %#v error=%+v", asyncDML, asyncDML.Error)
+	}
+	if store.saves != 1 || len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("async DML mutation committed: saves=%d org=%#v", store.saves, org.Objects["Account"].Records)
+	}
+}
+
+func TestLightningApexRouteDoesNotPublishStoreFailure(t *testing.T) {
+	root := t.TempDir()
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/MutationCtrl.cls"), `public class MutationCtrl {
+    @AuraEnabled
+    public static String save(String name) {
+        insert new Account(Name = name);
+        return 'saved';
+    }
+}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/MutationCtrl.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema, err := gladeschema.LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testOrg()
+	handler := NewWithStoreAndSource(&org, &failingStore{}, source)
+	handler.SetProjectIndex(typesys.Build(p, schema))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/lightning/apex/MutationCtrl/save", strings.NewReader(`{"name":"Must not publish"}`))
+	req.Header.Set("Content-Type", "application/json")
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error == nil || out.Error.Type != "StoreFailure" {
+		t.Fatalf("response = %#v", out)
+	}
+	if len(org.Objects["Account"].Records) != 0 {
+		t.Fatalf("store failure published records = %#v", org.Objects["Account"].Records)
+	}
+}
+
+func TestLightningApexRouteDoesNotPersistReadOnlyResult(t *testing.T) {
+	root := lightningFixtureRoot(t)
+	fixture := filepath.Join(root, "testdata", "local-tests", "lightning-out-vf")
+	p, err := project.Load(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema, err := gladeschema.LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	handler := NewWithStoreAndSource(&org, &failingStore{}, source)
+	handler.SetProjectIndex(typesys.Build(p, schema))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/lightning/apex/ItemCtrl/getItems", strings.NewReader(`{"recordId":"001XX0000000001"}`))
+	req.Header.Set("Content-Type", "application/json")
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error != nil {
+		t.Fatalf("read-only response = %#v", out.Error)
+	}
+	rows, ok := out.Data.([]any)
+	if !ok || len(rows) != 1 {
+		t.Fatalf("read-only data = %#v", out.Data)
+	}
+}
+
+func TestLightningApexRoutePersistsMutationAcrossSQLiteRestart(t *testing.T) {
+	root := t.TempDir()
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/MutationCtrl.cls"), `public class MutationCtrl {
+    @AuraEnabled
+    public static String save(String name) {
+        insert new Account(Name = name);
+        return 'saved';
+    }
+}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/MutationCtrl.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema, err := gladeschema.LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dbPath := filepath.Join(t.TempDir(), "glade.db")
+	store, err := storage.OpenSQLite(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testOrg()
+	handler := NewWithStoreAndSource(&org, store, source)
+	handler.SetProjectIndex(typesys.Build(p, schema))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/lightning/apex/MutationCtrl/save", strings.NewReader(`{"name":"SQLite LWC Account"}`))
+	req.Header.Set("Content-Type", "application/json")
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"data":"saved"`) {
+		_ = store.Close()
+		t.Fatalf("save status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	restartedStore, err := storage.OpenSQLite(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer restartedStore.Close()
+	restartedOrg, err := restartedStore.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	account := restartedOrg.Objects["Account"]
+	if len(account.Records) != 1 {
+		t.Fatalf("restarted Account records = %#v", account.Records)
+	}
+	for _, record := range account.Records {
+		if got := record.Fields["Name"].String; got != "SQLite LWC Account" {
+			t.Fatalf("restarted Account name = %q", got)
+		}
 	}
 }
 

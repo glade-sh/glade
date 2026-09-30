@@ -24,10 +24,10 @@ func TestRenderCoreVisualforceComponents(t *testing.T) {
 		`Hello Ada, balance 42`,
 		`class="message"`,
 		`data-for="name"`,
-		`<textarea name="notes" rows="4" cols="30">Line 1`,
+		`<textarea name="notes" id="j_id0:notes" rows="4" cols="30">Line 1`,
 		`&lt;Line 2&gt;</textarea>`,
-		`<input type="password" name="secret" value="sauce" />`,
-		`<input type="hidden" name="active" value="false" /><input type="checkbox" name="active" value="true" checked="checked" />`,
+		`<input type="password" name="secret" id="j_id0:secret" value="sauce" />`,
+		`<input type="hidden" name="active" value="false" /><input type="checkbox" name="active" id="j_id0:active" value="true" checked="checked" />`,
 		`<iframe src="/apex/Nested" width="320" height="200"></iframe>`,
 	} {
 		assertContains(t, rendered, want)
@@ -47,11 +47,11 @@ func TestRenderCoreSelectComponents(t *testing.T) {
 	</apex:page>`)
 
 	for _, want := range []string{
-		`<span class="selectCheckboxes"`,
+		`<span id="j_id0:colors" data-rerender="j_id0:colors" class="selectCheckboxes"`,
 		`<input type="checkbox" name="colors" value="red" checked="checked" />`,
 		`<label>Red</label>`,
 		`<input type="checkbox" name="colors" value="blue" />`,
-		`<span class="selectRadio"`,
+		`<span id="j_id0:size" data-rerender="j_id0:size" class="selectRadio"`,
 		`<input type="radio" name="size" value="large" checked="checked" />`,
 		`<label>Large</label>`,
 	} {
@@ -119,7 +119,7 @@ func TestRenderPanelGridUsesTableRowsAndFacets(t *testing.T) {
 	</apex:page>`)
 
 	for _, want := range []string{
-		`<table id="probeGrid">`,
+		`<table id="j_id0:probeGrid">`,
 		`<caption class="gridCaption">Probe grid</caption>`,
 		`<thead><tr><th class="gridHeader" colspan="2"><span>Left</span><span>Right</span></th></tr></thead>`,
 		`<tbody><tr><td>A</td><td>B</td></tr><tr><td>C</td></tr></tbody>`,

@@ -39,7 +39,7 @@ export function notifyRecordUpdateAvailable(items = []) {
       continue;
     }
     if (recordIds.size === 0 || adapterMatches(adapter, recordIds)) {
-      refreshes.push(adapter.refresh({ force: true }));
+      refreshes.push(adapter.refresh({ force: true, suppressUnchanged: true }));
     }
   }
   return Promise.all(refreshes).then(() => undefined);

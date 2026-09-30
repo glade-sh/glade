@@ -640,6 +640,28 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 	if len(inits) == 0 && inst.Init != nil {
 		inits = []ir.Instruction{*inst.Init}
 	}
+	// Only declarations introduce loop-local bindings. Assignment initializers
+	// must keep changes to their existing outer variables after the loop exits.
+	for _, initializer := range inits {
+		if initializer.Op != ir.OpDeclare {
+			continue
+		}
+		name := initializer.Name
+		previous, existed := vm.Globals[name]
+		previousType, hadType := vm.VarTypes[name]
+		defer func() {
+			if existed {
+				vm.Globals[name] = previous
+			} else {
+				delete(vm.Globals, name)
+			}
+			if hadType {
+				vm.VarTypes[name] = previousType
+			} else {
+				delete(vm.VarTypes, name)
+			}
+		}()
+	}
 	if len(inits) > 0 {
 		out, err := vm.executeProgram(ir.Program{Instructions: inits, Source: source}, result)
 		if err != nil || out.signal != signalNone {
@@ -708,8 +730,13 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 	if iterable.Kind != ValueList && iterable.Kind != ValueSet {
 		return execOutcome{}, fmt.Errorf("enhanced for requires List or Set, got %s", iterable.Kind)
 	}
-	if shouldChunkEnhancedForList(inst.Type, iterable) {
-		values = chunkValuesForEnhancedFor(inst.Type, values, 200)
+	if vm.shouldChunkEnhancedForList(inst.Type, iterable) {
+		if len(values) == 0 && inst.Expr.Kind == ir.ExprSOQL {
+			// SF191: a SOQL list-loop enters once with an empty batch.
+			values = []Value{typedList(inst.Type)}
+		} else {
+			values = chunkValuesForEnhancedFor(inst.Type, values, 200)
+		}
 	}
 	_, existed := vm.Globals[inst.Name]
 	previous := vm.Globals[inst.Name]
@@ -753,7 +780,7 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 	return execOutcome{}, nil
 }
 
-func shouldChunkEnhancedForList(loopType string, iterable Value) bool {
+func (vm *VM) shouldChunkEnhancedForList(loopType string, iterable Value) bool {
 	if collectionBase(loopType) != "List" || iterable.Kind != ValueList {
 		return false
 	}
@@ -765,7 +792,14 @@ func shouldChunkEnhancedForList(loopType string, iterable Value) bool {
 	if !ok || iterElement == "" {
 		return false
 	}
-	return strings.EqualFold(loopElement, iterElement)
+	if strings.EqualFold(loopElement, iterElement) {
+		return true
+	}
+	// Query rows carry canonical SObject names, while a loop declaration may
+	// use the local name in its class namespace. Compare resolved identities.
+	loopObject, loopOK := vm.resolveObjectName(loopElement)
+	iterObject, iterOK := vm.resolveObjectName(iterElement)
+	return loopOK && iterOK && strings.EqualFold(loopObject, iterObject)
 }
 
 func chunkValuesForEnhancedFor(loopType string, values []Value, size int) []Value {
@@ -1049,7 +1083,16 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 		return execOutcome{}, fmt.Errorf("System.runAs expects User or Package.Version, got %s", runtimeValueTypeName(user))
 	}
 	if changesUser {
-		vm.ensureRunAsUserRecord(&user)
+		if sObjectIDFromFields(user.Fields) == "" {
+			for name, value := range user.Fields {
+				if strings.EqualFold(name, "IsActive") && value.Kind == ValueBool && !value.Bool {
+					return execOutcome{}, newExceptionError("System.TypeException", "System.runAs can only be used with an active user")
+				}
+			}
+		}
+		if err := vm.ensureRunAsUserRecord(&user); err != nil {
+			return execOutcome{}, err
+		}
 	}
 	if err := vm.incrementLimit("runAs", 1); err != nil {
 		return execOutcome{}, err
@@ -1102,9 +1145,9 @@ func packageVersionString(text string) bool {
 	return true
 }
 
-func (vm *VM) ensureRunAsUserRecord(user *Value) {
+func (vm *VM) ensureRunAsUserRecord(user *Value) error {
 	if vm == nil || vm.Org == nil || user == nil || user.Kind != ValueObject || !strings.EqualFold(user.Type, "User") {
-		return
+		return nil
 	}
 	objectName, ok := vm.resolveObjectName("User")
 	if !ok {
@@ -1132,7 +1175,7 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) {
 		generator.Sequences = copyOrgIDSequences(vm.Org.IDSequences)
 		nextID, err := generator.Next(objectName)
 		if err != nil {
-			return
+			return err
 		}
 		if user.Fields == nil {
 			user.Fields = make(map[string]Value)
@@ -1144,23 +1187,27 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) {
 	}
 	record, err := vm.recordFromValue(user)
 	if err != nil {
-		return
+		return err
 	}
 	record.ID = id
 	record.Object = objectName
-	if storedID, stored, ok := storage.LookupRecordByID(object.Records, id); ok {
-		vm.recordIsolationJournalMutation(objectName, storedID, stored, true)
-		for field, value := range record.Fields {
-			if stored.Fields == nil {
-				stored.Fields = make(map[string]storage.Value)
-			}
-			stored.Fields[field] = value
+	if _, stored, ok := storage.LookupRecordByID(object.Records, id); ok {
+		if active := stored.Fields["IsActive"]; active.Kind == storage.ValueBoolean && !active.Boolean {
+			return newExceptionError("System.TypeException", "System.runAs can only be used with an active user")
 		}
-		object.Records[storedID] = stored
+		// Existing users are selected, not updated from unsaved caller fields.
+		record = stored
 	} else {
+		// runAs persists a new user without the ordinary insert pipeline.
+		// Store the default so SOQL predicates see the same value as getters.
+		if _, exists := record.Fields["IsActive"]; !exists {
+			record.Fields["IsActive"] = storage.BooleanValue(true)
+		}
 		vm.recordIsolationJournalMutation(objectName, id, storage.Record{}, false)
 		object.Records[id] = record
 	}
 	vm.Org.Objects[objectName] = object
 	vm.ensureUserProfilePermissionSetAssignment(record)
+	vm.ensureUserRoleGroup(record)
+	return nil
 }

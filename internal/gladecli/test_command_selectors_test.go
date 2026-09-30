@@ -200,6 +200,27 @@ func TestRunTestRejectsMissingExactClassSelectorJSON(t *testing.T) {
 	}
 }
 
+func TestRunTestRejectsMixedValidMissingClassFileJSON(t *testing.T) {
+	root := selectionFixtureRoot(t)
+	classFile := filepath.Join(t.TempDir(), "classes.txt")
+	if err := os.WriteFile(classFile, []byte("AccountServiceTest\nMissingTest\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--class-file", classFile, "--json", "--no-cache", "--no-progress"}, &stdout, &stderr)
+	envelope := decodeSelectorFailureEnvelope(t, stdout.Bytes())
+	if code != 1 || envelope.ExitCode != code || envelope.Status != "failed" ||
+		envelope.Summary.Total != 1 || envelope.Summary.Errors != 1 || envelope.Summary.Passed != 0 {
+		t.Fatalf("mixed class-file selection exit=%d envelope=%#v stdout=%q stderr=%q", code, envelope, stdout.String(), stderr.String())
+	}
+	if got := firstSelectorFailureMessage(envelope.Data); !strings.Contains(got, `no test class matched --class-file entry "MissingTest"`) {
+		t.Fatalf("selector message = %q stdout=%s", got, stdout.String())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("JSON selector failure leaked stderr: %q", stderr.String())
+	}
+}
+
 func TestRunTestRejectsMissingExactMethodSelectorJSON(t *testing.T) {
 	root := selectionFixtureRoot(t)
 	var stdout, stderr bytes.Buffer
@@ -234,6 +255,79 @@ func TestRunTestRejectsMissingExactMethodSelectorConsole(t *testing.T) {
 	}
 }
 
+func TestWriteTestJSONEnvelopeMarksEmptySelection(t *testing.T) {
+	var stdout bytes.Buffer
+	if err := writeTestJSONEnvelope(&stdout, testreport.Run{}, ""); err != nil {
+		t.Fatalf("write empty test envelope: %v", err)
+	}
+	var envelope struct {
+		Status   string             `json:"status"`
+		ExitCode int                `json:"exitCode"`
+		Summary  testreport.Summary `json:"summary"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
+		t.Fatalf("decode empty test envelope: %v\n%s", err, stdout.String())
+	}
+	if envelope.Status != "empty" || envelope.ExitCode != 0 || envelope.Summary.Total != 0 {
+		t.Fatalf("empty selection envelope = %#v; want status=empty, exitCode=0, total=0", envelope)
+	}
+}
+
+func TestWriteTestJSONEnvelopeMarksSkippedCasesPartial(t *testing.T) {
+	result := testreport.Run{Suites: []testreport.Suite{{
+		Name: "skipped suite",
+		Cases: []testreport.Case{{
+			ClassName:  "ExampleTest",
+			MethodName: "notRun",
+			Status:     testreport.StatusSkipped,
+		}},
+	}}}
+	var stdout bytes.Buffer
+	if err := writeTestJSONEnvelope(&stdout, result, ""); err != nil {
+		t.Fatalf("write skipped test envelope: %v", err)
+	}
+	var envelope struct {
+		Status   string             `json:"status"`
+		ExitCode int                `json:"exitCode"`
+		Summary  testreport.Summary `json:"summary"`
+		Tests    []struct {
+			Status testreport.Status `json:"status"`
+		} `json:"tests"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
+		t.Fatalf("decode skipped test envelope: %v\n%s", err, stdout.String())
+	}
+	if envelope.Status != "partial" || envelope.ExitCode != 0 || envelope.Summary.Total != 1 || envelope.Summary.Skipped != 1 || len(envelope.Tests) != 1 || envelope.Tests[0].Status != testreport.StatusSkipped {
+		t.Fatalf("skipped test envelope = %#v; want partial/0 with one explicit skipped result", envelope)
+	}
+}
+
+func TestRunTestValidKnownFailureJSON(t *testing.T) {
+	root := selectionFixtureRoot(t)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/KnownFailureTest.cls"), `
+@isTest private class KnownFailureTest {
+  @isTest static void failsAsExpected() {
+    System.assert(false, 'expected control failure');
+  }
+}`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--class", "KnownFailureTest", "--method", "failsAsExpected", "--json", "--no-cache", "--no-progress"}, &stdout, &stderr)
+	var envelope struct {
+		Status   string             `json:"status"`
+		ExitCode int                `json:"exitCode"`
+		Summary  testreport.Summary `json:"summary"`
+		Tests    []struct {
+			Status testreport.Status `json:"status"`
+		} `json:"tests"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
+		t.Fatalf("decode known-failure envelope: %v\nstdout=%s\nstderr=%s", err, stdout.String(), stderr.String())
+	}
+	if code != 1 || envelope.ExitCode != code || envelope.Status != "failed" || envelope.Summary.Total != 1 || envelope.Summary.Failed != 1 || len(envelope.Tests) != 1 || envelope.Tests[0].Status != testreport.StatusFail {
+		t.Fatalf("known-failure result exit=%d envelope=%#v\nstdout=%s\nstderr=%s", code, envelope, stdout.String(), stderr.String())
+	}
+}
+
 func TestRunTestSelectorFailureDoesNotPopulateLastFailed(t *testing.T) {
 	root := selectionFixtureRoot(t)
 	var stdout, stderr bytes.Buffer
@@ -252,10 +346,22 @@ func TestRunTestSelectorFailureDoesNotPopulateLastFailed(t *testing.T) {
 
 func TestRunTestAllowsBroadFilterToSelectZeroWithExactClass(t *testing.T) {
 	root := selectionFixtureRoot(t)
+	perfPath := filepath.Join(t.TempDir(), "empty-test-perf.json")
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"test", "--project", root, "--class", "AccountServiceTest", "--filter", "noSuch", "--json", "--no-cache", "--no-progress"}, &stdout, &stderr)
+	code := Run(context.Background(), []string{"test", "--project", root, "--class", "AccountServiceTest", "--filter", "noSuch", "--json", "--no-cache", "--no-progress", "--perf-json", perfPath}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+	}
+	var envelope struct {
+		Status   string             `json:"status"`
+		ExitCode int                `json:"exitCode"`
+		Summary  testreport.Summary `json:"summary"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
+		t.Fatalf("decode envelope: %v\n%s", err, stdout.String())
+	}
+	if envelope.Status != "empty" || envelope.ExitCode != code || envelope.Summary.Total != 0 {
+		t.Fatalf("empty selection envelope = %#v, process exit=%d", envelope, code)
 	}
 	run, err := decodeTestRunJSON(stdout.Bytes())
 	if err != nil {
@@ -263,6 +369,165 @@ func TestRunTestAllowsBroadFilterToSelectZeroWithExactClass(t *testing.T) {
 	}
 	if got := run.Summary(); got.Total != 0 || got.Errors != 0 {
 		t.Fatalf("summary = %#v stdout=%s", got, stdout.String())
+	}
+	perfBytes, err := os.ReadFile(perfPath)
+	if err != nil {
+		t.Fatalf("read perf output: %v", err)
+	}
+	var perf struct {
+		Status   string             `json:"status"`
+		ExitCode int                `json:"exitCode"`
+		Summary  testreport.Summary `json:"summary"`
+	}
+	if err := json.Unmarshal(perfBytes, &perf); err != nil {
+		t.Fatalf("decode perf output: %v\n%s", err, string(perfBytes))
+	}
+	if perf.Status != "empty" || perf.ExitCode != code || perf.Summary.Total != 0 {
+		t.Fatalf("empty selection perf output = %#v, process exit=%d", perf, code)
+	}
+}
+
+func TestRunTestRejectsEmptyClassFile(t *testing.T) {
+	root := selectionFixtureRoot(t)
+	classFile := filepath.Join(t.TempDir(), "empty-classes.txt")
+	if err := os.WriteFile(classFile, []byte("# no explicit classes\n  \n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--class-file", classFile, "--json", "--no-cache", "--no-progress"}, &stdout, &stderr)
+	var envelope struct {
+		Status   string             `json:"status"`
+		ExitCode int                `json:"exitCode"`
+		Summary  testreport.Summary `json:"summary"`
+		Tests    []struct {
+			Status  testreport.Status   `json:"status"`
+			Problem *testreport.Problem `json:"problem"`
+		} `json:"tests"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
+		t.Fatalf("decode empty class-file selector result: %v\nstdout=%s\nstderr=%s", err, stdout.String(), stderr.String())
+	}
+	if code != 1 || envelope.ExitCode != code || envelope.Status != "failed" || envelope.Summary.Total != 1 || envelope.Summary.Errors != 1 || len(envelope.Tests) != 1 || envelope.Tests[0].Status != testreport.StatusRuntimeError || envelope.Tests[0].Problem == nil || envelope.Tests[0].Problem.Type != "Selector" || !strings.Contains(envelope.Tests[0].Problem.Message, "must contain at least one test class") {
+		t.Fatalf("empty class file result exit=%d envelope=%#v stdout=%q stderr=%q", code, envelope, stdout.String(), stderr.String())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("JSON selector failure leaked non-JSON stderr: %q", stderr.String())
+	}
+}
+
+func TestEmptyClassFileSelectionsWriteRequestedArtifacts(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		contents   string
+		wantExit   int
+		wantStatus string
+	}{
+		{name: "hand-written empty", contents: "# no classes\n", wantExit: 1, wantStatus: "failed"},
+		{name: "generated empty shard", contents: generatedEmptyClassShardMarker + "\n", wantExit: 0, wantStatus: "empty"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := selectionFixtureRoot(t)
+			outputDir := t.TempDir()
+			classFile := filepath.Join(outputDir, "classes.txt")
+			junitPath := filepath.Join(outputDir, "junit.xml")
+			tracePath := filepath.Join(outputDir, "trace.json")
+			if err := os.WriteFile(classFile, []byte(tc.contents), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			var stdout, stderr bytes.Buffer
+			code := Run(context.Background(), []string{"test", "--project", root, "--class-file", classFile, "--json", "--no-cache", "--no-progress", "--junit", junitPath, "--trace", tracePath}, &stdout, &stderr)
+			var envelope struct {
+				Status    string `json:"status"`
+				ExitCode  int    `json:"exitCode"`
+				Artifacts []struct {
+					Kind string `json:"kind"`
+					Path string `json:"path"`
+				} `json:"artifacts"`
+			}
+			if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
+				t.Fatalf("decode envelope: %v\nstdout=%s\nstderr=%s", err, stdout.String(), stderr.String())
+			}
+			if code != tc.wantExit || envelope.ExitCode != code || envelope.Status != tc.wantStatus || stderr.Len() != 0 {
+				t.Fatalf("exit=%d envelope=%#v stderr=%s", code, envelope, stderr.String())
+			}
+			if len(envelope.Artifacts) != 1 || envelope.Artifacts[0].Kind != "junit" || envelope.Artifacts[0].Path != junitPath {
+				t.Fatalf("JUnit artifact missing from envelope: %#v", envelope.Artifacts)
+			}
+			for _, path := range []string{junitPath, tracePath} {
+				data, err := os.ReadFile(path)
+				if err != nil || len(data) == 0 {
+					t.Fatalf("read requested artifact %s: bytes=%d err=%v", path, len(data), err)
+				}
+			}
+		})
+	}
+}
+
+func TestEmptyClassFileSelectionRejectsProfilingArtifacts(t *testing.T) {
+	root := selectionFixtureRoot(t)
+	classFile := filepath.Join(t.TempDir(), "empty-shard.txt")
+	if err := os.WriteFile(classFile, []byte(generatedEmptyClassShardMarker+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, flag := range []string{"--perf-json", "--cpu-profile", "--mem-profile"} {
+		t.Run(flag, func(t *testing.T) {
+			output := filepath.Join(t.TempDir(), "profile.out")
+			var stdout, stderr bytes.Buffer
+			code := Run(context.Background(), []string{"test", "--project", root, "--class-file", classFile, flag, output, "--no-progress"}, &stdout, &stderr)
+			if code == 0 || !strings.Contains(stderr.String(), flag+" cannot be combined with an empty --class-file selection") {
+				t.Fatalf("exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+			}
+			if _, err := os.Stat(output); !os.IsNotExist(err) {
+				t.Fatalf("unexpected profiling artifact %s: err=%v", output, err)
+			}
+		})
+	}
+}
+
+func TestGeneratedEmptyClassShardIsSafeNoop(t *testing.T) {
+	root := selectionFixtureRoot(t)
+	shardDir := filepath.Join(t.TempDir(), "shards")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--write-class-shards", shardDir, "--shard-count", "5", "--no-cache", "--no-progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("write class shards exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+	}
+	entries, err := os.ReadDir(shardDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 5 {
+		t.Fatalf("generated shard files = %d, want 5", len(entries))
+	}
+	emptyShardCount := 0
+	for _, entry := range entries {
+		data, err := os.ReadFile(filepath.Join(shardDir, entry.Name()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(bytes.TrimSpace(data)) == 0 {
+			t.Fatalf("generated shard %s is a zero-byte selection", entry.Name())
+		}
+		if strings.TrimSpace(string(data)) != generatedEmptyClassShardMarker {
+			continue
+		}
+		emptyShardCount++
+		var emptyStdout, emptyStderr bytes.Buffer
+		emptyExit := Run(context.Background(), []string{"test", "--project", root, "--class-file", filepath.Join(shardDir, entry.Name()), "--json", "--no-cache", "--no-progress"}, &emptyStdout, &emptyStderr)
+		var envelope struct {
+			Status   string             `json:"status"`
+			ExitCode int                `json:"exitCode"`
+			Summary  testreport.Summary `json:"summary"`
+		}
+		if err := json.Unmarshal(emptyStdout.Bytes(), &envelope); err != nil {
+			t.Fatalf("decode generated empty shard %s: %v\nstdout=%s\nstderr=%s", entry.Name(), err, emptyStdout.String(), emptyStderr.String())
+		}
+		if emptyExit != 0 || envelope.ExitCode != 0 || envelope.Status != "empty" || envelope.Summary.Total != 0 || emptyStderr.Len() != 0 {
+			t.Fatalf("generated empty shard %s result exit=%d envelope=%#v stderr=%q", entry.Name(), emptyExit, envelope, emptyStderr.String())
+		}
+	}
+	if emptyShardCount == 0 {
+		t.Fatal("expected at least one generated empty shard")
 	}
 }
 

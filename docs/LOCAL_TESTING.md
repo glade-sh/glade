@@ -31,28 +31,16 @@ glade test --project .
 output and `--junit reports/glade-junit.xml` for CI reports. Create the
 `reports/` directory first on a fresh runner.
 
-`glade doctor` must report `Ready.` for Apex check and test. If the parser is
-unavailable, install a C compiler and rebuild or reinstall a parser-capable
-release artifact. A missing LWC toolchain is reported as an advisory because it
-does not block Apex check or test; packaged releases include it for LWC
-compilation and Lightning runtime routes, including Visualforce Lightning Out.
-
-Doctor reports the project Apex API default. Individual class metadata can set
-a different effective source version. The checked Apex window is `65.0`,
-`66.0`, and `67.0`; historical whole versions are preserved without being
-silently promoted into that window. A local pass does not prove deployment,
-org permissions, hosted services, or production parity.
+`glade doctor` must report `Ready.`. If the parser is unavailable, install a C
+compiler and rebuild or reinstall a parser-capable release artifact.
 
 ## Run LWCs Locally
 
-Release installs include the local LWC toolchain. Verify it first:
+Verify the toolchain bundled with the release:
 
 ```bash
 glade toolchain status
 ```
-
-Source-checkout developers can install it with
-`glade toolchain install --from path/to/glade`.
 
 Start the LWC dev shell from a Salesforce-shaped project:
 

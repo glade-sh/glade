@@ -155,6 +155,10 @@ func builtinStaticField(typeName, fieldName string) (Value, bool) {
 		case strings.EqualFold(fieldName, "PI"):
 			return Decimal(math.Pi), true
 		}
+	case strings.EqualFold(typeName, "Cache.Org") && strings.EqualFold(fieldName, "MAX_TTL_SECS"):
+		return Int(172800), true
+	case strings.EqualFold(typeName, "Cache.Session") && strings.EqualFold(fieldName, "MAX_TTL_SECS"):
+		return Int(28800), true
 	}
 	switch typeName {
 	case "Math":

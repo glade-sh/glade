@@ -80,14 +80,46 @@ func (vm *VM) hierarchyCustomSettingRecordForOwner(objectName, ownerID string) (
 			continue
 		}
 		value, ok := record.GetField("SetupOwnerId")
-		if ok && value.Kind == storage.ValueString && value.String == ownerID {
-			return record, true
+		if ok {
+			var storedOwnerID string
+			switch value.Kind {
+			case storage.ValueID:
+				storedOwnerID = string(value.ID)
+			case storage.ValueString:
+				storedOwnerID = value.String
+			}
+			if storage.IDsEqual(storage.ID(storedOwnerID), storage.ID(ownerID)) {
+				return record, true
+			}
 		}
 		if !ok {
 			name, hasName := record.GetField("Name")
 			if hasName && name.Kind == storage.ValueString && name.String == ownerID {
 				return record, true
 			}
+		}
+	}
+	return storage.Record{}, false
+}
+
+// hierarchyCustomSettingRecordForCurrentContext follows Salesforce hierarchy
+// custom-setting precedence for the no-argument getInstance accessor. A
+// current-user row wins over a profile row, which wins over the organization
+// row; an ownerless row is the final fallback for sparse local fixtures.
+func (vm *VM) hierarchyCustomSettingRecordForCurrentContext(objectName string) (storage.Record, bool) {
+	ownerIDs := make([]string, 0, 3)
+	if userID := vm.currentUserID(); userID != "" && userID != "__run_as_user_without_id__" {
+		ownerIDs = append(ownerIDs, userID)
+	}
+	if profileID := vm.currentUserInfoField("ProfileId", ""); profileID != "" {
+		ownerIDs = append(ownerIDs, profileID)
+	}
+	if organizationID := vm.orgID(); organizationID != "" {
+		ownerIDs = append(ownerIDs, organizationID)
+	}
+	for _, ownerID := range ownerIDs {
+		if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, ownerID); found {
+			return record, true
 		}
 	}
 	return storage.Record{}, false
@@ -176,7 +208,7 @@ func (vm *VM) customDataGetInstance(objectName string, definition storage.Object
 			return storage.Record{}, false, fmt.Errorf("%s.getInstance expects record name", objectName)
 		}
 		if strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
-			if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, vm.orgID()); found {
+			if record, found := vm.hierarchyCustomSettingRecordForCurrentContext(objectName); found {
 				return record, true, nil
 			}
 			for _, record := range sortedCustomDataRecords(object.Records, definition, kind, vm.Org.Namespace) {
@@ -195,6 +227,18 @@ func (vm *VM) customDataGetInstance(objectName string, definition storage.Object
 		return storage.Record{}, false, nil
 	}
 	if len(args) == 1 && args[0].Kind == ValueNull {
+		if kind == "custom setting" && strings.EqualFold(definition.Metadata["customSettingsType"], "List") {
+			// Generated IDs retain the per-object insertion sequence. Names and
+			// CreatedDate can change after insertion and cannot order this lookup.
+			var first storage.Record
+			found := false
+			for _, record := range object.Records {
+				if !record.System.IsDeleted && (!found || record.ID < first.ID) {
+					first, found = record, true
+				}
+			}
+			return first, found, nil
+		}
 		return storage.Record{}, false, nil
 	}
 	if len(args) != 1 || (args[0].Kind != ValueString && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {

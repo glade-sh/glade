@@ -105,6 +105,29 @@ func TestParseSupportsWhitespaceAfterBindColon(t *testing.T) {
 	}
 }
 
+func TestParseSupportsCompilerSpacedDottedBindInCountQuery(t *testing.T) {
+	// Apex source permits :account.Id. The Apex compiler's inline-SOQL
+	// serialization inserts spaces around tokens before scalar COUNT() detection.
+	for _, bind := range []string{": account . Id", ": account . Owner . Id"} {
+		query, err := Parse("SELECT COUNT() FROM Contact WHERE AccountId = " + bind)
+		if err != nil {
+			t.Fatalf("Parse(%q): %v", bind, err)
+		}
+		if !query.Count || query.Where == nil || query.Where.Value.Kind != storage.ValueID ||
+			string(query.Where.Value.ID) != ":"+strings.TrimSpace(bind[1:]) {
+			t.Fatalf("dotted bind %q parsed as %#v", bind, query)
+		}
+	}
+	query, err := Parse("SELECT Id FROM Contact WHERE AccountId = : account . Id ORDER BY Id LIMIT 5")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if query.Where == nil || query.Where.Value.Kind != storage.ValueID ||
+		string(query.Where.Value.ID) != ":account . Id" || query.OrderBy != "Id" || query.Limit != 5 {
+		t.Fatalf("dotted bind absorbed following clauses: %#v", query)
+	}
+}
+
 func TestParseSupportsExpressionLimitBind(t *testing.T) {
 	query, err := Parse("SELECT Id FROM Account LIMIT :Limits.getLimitQueries()")
 	if err != nil {
@@ -115,12 +138,32 @@ func TestParseSupportsExpressionLimitBind(t *testing.T) {
 	}
 }
 
+func TestParseSupportsArithmeticLimitBind(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Account LIMIT :Limits.getLimitDmlRows() - Limits.getDmlRows()")
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if !query.HasLimit || query.LimitBind != "Limits.getLimitDmlRows() - Limits.getDmlRows()" {
+		t.Fatalf("limit bind = %#v", query)
+	}
+}
+
 func TestParseSupportsCollectionConstructorBind(t *testing.T) {
 	query, err := Parse("SELECT Id FROM Account WHERE Id IN :new Set<Id>{firstId, secondId}")
 	if err != nil {
 		t.Fatalf("Parse() error = %v", err)
 	}
 	if query.Where == nil || len(query.Where.Values) != 1 || query.Where.Values[0].Kind != storage.ValueID || string(query.Where.Values[0].ID) != ":new Set<Id>{firstId, secondId}" {
+		t.Fatalf("where = %#v", query.Where)
+	}
+}
+
+func TestParseSupportsInlineGenericMapKeySetBind(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Opportunity WHERE Id IN :new Map<Id, Opportunity>(input).keySet()")
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if query.Where == nil || len(query.Where.Values) != 1 || query.Where.Values[0].Kind != storage.ValueID || string(query.Where.Values[0].ID) != ":new Map<Id, Opportunity>(input).keySet()" {
 		t.Fatalf("where = %#v", query.Where)
 	}
 }
@@ -144,7 +187,7 @@ func TestParseBackslashEscapedSOQLStringLiteral(t *testing.T) {
 		t.Fatalf("where = %#v", query.Where)
 	}
 
-	query, err = Parse("SELECT Id FROM Account WHERE Name = 'C:\\Trail'")
+	query, err = Parse("SELECT Id FROM Account WHERE Name = 'C:\\\\Trail'")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -246,6 +289,38 @@ func TestExecuteUsingScopeEverythingReturnsVisibleRows(t *testing.T) {
 	}
 	if result.Rows != 2 || result.Records[0].ID != "001000000000001" || result.Records[1].ID != "001000000000002" {
 		t.Fatalf("result = %#v", result)
+	}
+}
+
+func TestExecuteHierarchyCustomSettingSetupOwnerProjection(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Hierarchy_Setting__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:  "Hierarchy_Setting__c",
+			Metadata: map[string]string{"kind": "customSetting", "customSettingsType": "Hierarchy"},
+			Fields: map[string]storage.Field{
+				"Name":         {APIName: "Name", Type: storage.FieldString},
+				"SetupOwnerId": {APIName: "SetupOwnerId", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {
+				ID:     "a01000000000001",
+				Object: "Hierarchy_Setting__c",
+				Fields: map[string]storage.Value{
+					"Name":         storage.StringValue("OrgDefaults"),
+					"SetupOwnerId": storage.StringValue("00D000000000001"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT SetupOwnerId, SetupOwner.Name, SetupOwner.Type FROM Hierarchy_Setting__c")
+	if err != nil {
+		t.Fatalf("hierarchy custom setting SetupOwner projection: %v", err)
+	}
+	if result.Rows != 1 || len(result.Records) != 1 {
+		t.Fatalf("result = %#v, want one projected row", result)
 	}
 }
 
@@ -509,6 +584,39 @@ func TestExecuteResolvesLowercaseIdAsStandardField(t *testing.T) {
 	}
 }
 
+func TestExecuteIdComparisonKeepsCaseSensitivePrefix(t *testing.T) {
+	const objectName = "MembershipType__c"
+	const recordID = "a1e000000000001"
+	const otherObjectID = "a1E000000000001"
+	org := storage.NewOrgState()
+	org.Objects[objectName] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: objectName, KeyPrefix: "a1e"},
+		Records: map[storage.ID]storage.Record{
+			recordID: {ID: recordID, Object: objectName},
+		},
+	}
+
+	result, err := Execute(org, Query{
+		Object: objectName,
+		Fields: []string{"Id"},
+		Where:  &Condition{Field: "Id", Op: "=", Value: storage.IDValue(otherObjectID)},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 0 {
+		t.Fatalf("case-distinct Id rows = %d, want 0", result.Rows)
+	}
+
+	result, err = ParseAndExecute(org, "SELECT Id FROM MembershipType__c WHERE Id = 'a1E000000000001'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("case-insensitive Id literal rows = %d, want 1", result.Rows)
+	}
+}
+
 func TestExecuteProjectsOrganizationTimeZoneDefault(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Organization"] = storage.ObjectState{
@@ -644,6 +752,73 @@ func TestExecuteFieldReferencesAreCaseInsensitive(t *testing.T) {
 	value := result.Records[0].Fields["Name"]
 	if value.Kind != storage.ValueString || value.String != "Acme" {
 		t.Fatalf("Name field = %#v", value)
+	}
+}
+
+func TestExecuteAutomatedProcessUserProfileRelationshipIsNull(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "User")
+	storage.EnsureStandardObject(&org, "Profile")
+	org.Objects["User"].Records["005000000000002"] = storage.Record{
+		ID:     "005000000000002",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"Username":  storage.StringValue("autoproc@00d000000000001"),
+			"UserType":  storage.StringValue("AutomatedProcess"),
+			"ProfileId": storage.IDValue("00e000000000005"),
+		},
+	}
+	org.Objects["Profile"].Records["00e000000000005"] = storage.Record{
+		ID:     "00e000000000005",
+		Object: "Profile",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Standard User")},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, Profile.Name FROM User WHERE Username = 'autoproc@00d000000000001' AND Profile.Name = NULL")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d, result = %#v", result.Rows, result)
+	}
+	if got := result.Records[0].Fields["Profile"]; got.Kind != storage.ValueNull {
+		t.Fatalf("Profile relationship = %#v, want null", got)
+	}
+}
+
+func TestExecuteCustomObjectOwnerTypeUsesPolymorphicOwnerMetadata(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "User")
+	storage.EnsureStandardObject(&org, "Group")
+	definition := storage.ObjectDefinition{APIName: "Review_Workflow__c", SharingModel: "Private"}
+	storage.EnsureStandardObjectFields(&definition)
+	org.Objects["Review_Workflow__c"] = storage.ObjectState{
+		Definition: definition,
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {
+				ID:     "a01000000000001",
+				Object: "Review_Workflow__c",
+				Fields: map[string]storage.Value{
+					"OwnerId": storage.IDValue("005000000000001"),
+				},
+			},
+		},
+	}
+	org.Objects["User"].Records["005000000000001"] = storage.Record{
+		ID:     "005000000000001",
+		Object: "User",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("System User")},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Owner.Name, Owner.Type FROM Review_Workflow__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d, result = %#v", result.Rows, result)
+	}
+	if got := result.Records[0].Fields["Owner.Type"]; got.Kind != storage.ValueString || got.String != "User" {
+		t.Fatalf("Owner.Type = %#v, want User", got)
 	}
 }
 
@@ -1504,6 +1679,29 @@ func TestExecuteSelectFieldFunctions(t *testing.T) {
 	assertStorageDecimal(t, fields["convertedRevenue"], "100")
 }
 
+func TestExecuteFormatDateUsesLocaleDateText(t *testing.T) {
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Thing__c": {
+			Definition: storage.ObjectDefinition{APIName: "Thing__c", Fields: map[string]storage.Field{
+				"Id":      {APIName: "Id", Type: storage.FieldID},
+				"Date__c": {APIName: "Date__c", Type: storage.FieldDate},
+			}},
+			Records: map[storage.ID]storage.Record{
+				"a00000000000001": {ID: "a00000000000001", Object: "Thing__c", Fields: map[string]storage.Value{
+					"Date__c": storage.DateValue("2001-01-01"),
+				}},
+			},
+		},
+	}}
+	result, err := ParseAndExecute(org, "SELECT FORMAT(Date__c) formatted FROM Thing__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := result.Records[0].Fields["formatted"].String; got != "1/1/2001" {
+		t.Fatalf("formatted date = %q, want 1/1/2001", got)
+	}
+}
+
 func TestExecuteDistanceGeolocationFunction(t *testing.T) {
 	org := storage.OrgState{Objects: map[string]storage.ObjectState{}}
 	org.Objects["Warehouse__c"] = storage.ObjectState{
@@ -1613,7 +1811,7 @@ func TestFiscalDateFunctionsUseOrganizationFiscalStartMonth(t *testing.T) {
 	}}
 	org.Objects["Account"] = account
 
-	result, err := ParseAndExecute(org, "SELECT Name, FISCAL_MONTH(RenewalDate__c) fiscalMonth, FISCAL_QUARTER(RenewalDate__c) fiscalQuarter, FISCAL_YEAR(RenewalDate__c) fiscalYear FROM Account WHERE FISCAL_MONTH(RenewalDate__c) = 1 ORDER BY Name")
+	result, err := ParseAndExecute(org, "SELECT Name, FISCAL_MONTH(RenewalDate__c) fiscalMonth, FISCAL_QUARTER(RenewalDate__c) fiscalQuarter, FISCAL_YEAR(RenewalDate__c) fiscalYear FROM Account WHERE FISCAL_MONTH(RenewalDate__c) = 1 GROUP BY Name, FISCAL_MONTH(RenewalDate__c), FISCAL_QUARTER(RenewalDate__c), FISCAL_YEAR(RenewalDate__c) ORDER BY Name")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2027,7 +2225,7 @@ func TestDateLiteralReferenceCoverage(t *testing.T) {
 		{"NEXT_N_DAYS:5", "2026-05-03", "2026-05-08"},
 		{"N_DAYS_AGO:3", "2026-04-29", "2026-04-30"},
 		{"NEXT_N_WEEKS:2", "2026-05-03", "2026-05-17"},
-		{"LAST_N_WEEKS:2", "2026-04-19", "2026-05-03"},
+		{"LAST_N_WEEKS:2", "2026-04-12", "2026-04-26"},
 		{"N_WEEKS_AGO:2", "2026-04-12", "2026-04-19"},
 		{"NEXT_N_MONTHS:2", "2026-06-01", "2026-08-01"},
 		{"LAST_N_MONTHS:2", "2026-03-01", "2026-05-01"},
@@ -4769,5 +4967,35 @@ func assertStorageDecimal(t *testing.T, value storage.Value, want string) {
 	t.Helper()
 	if value.Kind != storage.ValueDecimal || value.Decimal != want {
 		t.Fatalf("decimal value = %#v, want %s", value, want)
+	}
+}
+
+func TestExecuteDateLiteralRelationalBounds(t *testing.T) {
+	org := aggregateTestOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate}
+	for id, date := range map[storage.ID]string{"001000000000001": "2026-05-01", "001000000000002": "2026-05-02", "001000000000003": "2026-05-03"} {
+		r := account.Records[id]
+		r.Fields["RenewalDate__c"] = storage.DateValue(date)
+		account.Records[id] = r
+	}
+	org.Objects["Account"] = account
+	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
+	for _, tc := range []struct {
+		query string
+		want  int
+	}{
+		{"SELECT Id FROM Account WHERE RenewalDate__c > YESTERDAY", 1},
+		{"SELECT Id FROM Account WHERE RenewalDate__c >= YESTERDAY", 3},
+		{"SELECT Id FROM Account WHERE RenewalDate__c < YESTERDAY", 0},
+		{"SELECT Id FROM Account WHERE RenewalDate__c <= YESTERDAY", 1},
+	} {
+		result, err := ParseAndExecuteAt(org, tc.query, now)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result.Rows != tc.want {
+			t.Fatalf("%s rows=%d, want %d", tc.query, result.Rows, tc.want)
+		}
 	}
 }

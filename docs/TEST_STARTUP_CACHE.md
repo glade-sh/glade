@@ -108,7 +108,7 @@ temporary file and activated atomically.
 ## Freshness: how the cache stays up to date
 
 Each cache entry carries a schema-versioned **manifest** of fingerprints
-recorded at write time. The current cache version is **4** and the current
+recorded at write time. The current cache version is **10** and the current
 manifest schema is **1**. On load, `Fresh()` requires:
 
 - Cache version, manifest schema, and platform ABI match the running Glade

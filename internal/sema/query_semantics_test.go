@@ -724,6 +724,25 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsIgnoresBindLikeTextInInlineQueryComments(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [
+      SELECT Id
+      FROM Account
+      WHERE Name != null
+      // :undeclaredCommentOnly is documentation, not a bind
+    ];
+  }
+}`)
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Code == "GLADESEMA_QUERY_BIND" {
+			t.Fatalf("bind-like comment text was diagnosed: %#v", diagnostics)
+		}
+	}
+}
+
 func TestQuerySemanticsAcceptsStaticFieldBindInsideRunAs(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {
@@ -999,8 +1018,11 @@ func TestQuerySemanticsDefersStandardProviderForCommonAndMissingCustomFields(t *
 	const customObject = "ProbeTestObject__c"
 	semaStandardSObjectFieldProviders.Delete(normalizeName(customObject))
 	customChecker := newQuerySemanticsChecker(typesys.Index{Objects: []schema.Object{{Name: customObject}}})
-	if field, ok := customChecker.field(customObject, "Name__c"); !ok || field.Type == "" {
-		t.Fatalf("standard custom-suffix object field = %#v, %v", field, ok)
+	if field, ok := customChecker.field(customObject, "Name"); !ok || field.Type == "" {
+		t.Fatalf("standard custom object Name field = %#v, %v", field, ok)
+	}
+	if _, ok := customChecker.field(customObject, "Name__c"); ok {
+		t.Fatal("custom object provider inferred an undeclared Name__c field")
 	}
 }
 
@@ -1725,4 +1747,72 @@ func stringContains(s, sub string) bool {
 		}
 	}
 	return false
+}
+
+// The API51 cases preserve the layouts deployed and asserted in the EDA
+// follow-up Salesforce packet: COUNT reassignment and commented bind scopes.
+func TestQuerySemanticsAPI51CountReassignment(t *testing.T) {
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+		"Probe.cls": `public class Probe {
+  public void run() {
+    Account selected;
+    selected = [SELECT Id FROM Account LIMIT 1];
+    Integer countRows = [SELECT COUNT() FROM Account];
+    countRows = [
+      SELECT COUNT()
+      FROM Account
+    ];
+  }
+}`,
+	}, "51.0")
+	if result.HasErrors() {
+		t.Fatalf("API51 scalar COUNT reassignment rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsCommentedConditionPreservesOuterBinds(t *testing.T) {
+	for _, comment := range []string{"//A.2 - Change all affiliations that are not primary any more.\n", "/* prevent recursion */\n"} {
+		t.Run(comment, func(t *testing.T) {
+			source := `public class Probe {
+  public void run(List<SObject> newlist) {
+    List<Id> contactIDs = new List<Id>();
+    List<Id> accountIDs = new List<Id>();
+    ` + comment + `
+    if (contactIDs.size() > 0 && accountIDs.size() > 0) {
+      List<Account> found = [SELECT Id FROM Account WHERE Id IN :contactIDs AND Id IN :accountIDs];
+    }
+    ` + comment + `
+    if (newlist != null) {
+      newList = [
+        SELECT Id, Name
+        FROM Account
+        WHERE Id IN :newlist
+      ];
+    }
+  }
+}`
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, "51.0")
+			if result.HasErrors() {
+				t.Fatalf("commented condition lost outer binds: %#v", result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestQuerySemanticsAPI52MultilineSelectPreservesParameter(t *testing.T) {
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+		"Probe.cls": `public class Probe {
+  private static List<Group> lookup(String developerName) {
+    List<Group> rows = [
+      SELECT DeveloperName, Id, Name, Type
+      FROM Group
+      WHERE DeveloperName = :developerName AND Type = 'Regular'
+    ];
+    return rows;
+  }
+}`,
+	}, "52.0")
+	if result.HasErrors() {
+		t.Fatalf("multiline SELECT shadowed String parameter: %#v", result.Diagnostics)
+	}
 }

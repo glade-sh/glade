@@ -1,13 +1,10 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="site/docs-src/public/logo-mark-topo.svg">
-    <img src="site/docs-src/public/logo-mark-topo-light.svg" alt="Glade logo" width="96" height="96">
-  </picture>
+  <img src="site/docs-src/public/logo-mark.svg" alt="Glade boxed contour mark" width="96" height="96">
 </p>
 
 <h1 align="center">Glade</h1>
 
-<p align="center">Run supported Apex locally. Keep your momentum.</p>
+<p align="center">Local Apex runtime and developer tools for Salesforce projects.</p>
 <p align="center">
   <a href="https://glade.sh">Site</a> ·
   <a href="https://glade.sh/guide/quickstart">Quickstart</a> ·
@@ -33,7 +30,7 @@ Glade is an independent open-source project and is not affiliated with,
 sponsored by, or endorsed by Salesforce. Salesforce and Apex are trademarks of
 Salesforce, Inc.
 
-## Start with one useful result
+## Get your first result
 
 ```bash
 curl -fsSL https://glade.sh/install.sh | sh
@@ -41,19 +38,17 @@ export PATH="$HOME/.local/bin:$PATH"
 glade version
 ```
 
-Continue with the [canonical quickstart](https://glade.sh/guide/quickstart) and
-choose the path that matches your workspace:
+Continue with the [canonical quickstart](https://glade.sh/guide/quickstart):
 
-- **Small terminal sample:** create a temporary Salesforce DX project and run the documented test.
-- **Your own project:** initialize an existing Salesforce DX project and run one known test class before the full suite.
-- **Optional browser example:** load Refinement Service in a fresh managed workspace, then run its named test locally.
+- **Try the sample:** load the built-in Refinement Service, then run its named test.
+- **Use my project:** initialize an existing Salesforce DX project and run one known test class before the full suite.
 
-The Quickstart uses commands available in the current stable CLI and also
-covers recovery, API-version rules, and the Salesforce boundary. The bundled
-`RefinementServiceTest` first shipped in **v0.2.14** and is included in the
-**v0.2.15 stable release**.
+The corrected sample and named test first shipped in **v0.2.14** and are
+included in the **v0.2.15 stable release**. A
+playground Pass alongside source errors is not valid proof; the quickstart shows
+the named, nonzero test result to expect.
 
-For an existing Salesforce DX project, substitute a test class that it owns:
+For a project with `RefinementServiceTest` (substitute your actual class):
 
 ```bash
 test -f glade.yml || glade init --project . --yes
@@ -62,8 +57,8 @@ glade check --project .
 glade test --project . --class RefinementServiceTest --json --no-progress
 ```
 
-A first project test result must name at least one executed test. The
-[installation guide](docs/INSTALL.md) covers macOS/Linux
+A first test result must name at least one executed test. Zero tests is not a
+passing evaluation. The [installation guide](docs/INSTALL.md) covers macOS/Linux
 archives, pinning, and verification; source development has a
 [separate guide](https://glade.sh/guide/build-from-source). Building Glade requires
 the Go version in `go.mod` and a C compiler with CGO enabled. See

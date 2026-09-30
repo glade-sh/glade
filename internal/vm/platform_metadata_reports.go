@@ -110,6 +110,12 @@ func schemaDisplayTypeStaticValue(name string) (Value, bool) {
 }
 
 func schemaDisplayTypeValue(name string) Value {
+	// Salesforce exposes Blob fields through Schema.DisplayType.BASE64. The
+	// storage catalog uses BLOB as its internal field type, so normalize that
+	// spelling at the platform boundary.
+	if strings.EqualFold(strings.TrimSpace(name), "BLOB") {
+		name = "BASE64"
+	}
 	value, ok := namedEnumStaticValue("Schema.DisplayType", schemaDisplayTypeNames, "Schema.DisplayType."+name)
 	if ok {
 		return value
@@ -415,7 +421,18 @@ func flowInterviewCreate(args []Value) (Value, error) {
 	return interview, nil
 }
 
+func (vm *VM) metadataDeploymentTestRestriction() error {
+	if vm.testContext != nil {
+		return newExceptionError("System.AsyncException", "Metadata cannot be deployed from within a test")
+	}
+	return nil
+}
+
 func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, error) {
+	if err := vm.metadataDeploymentTestRestriction(); err != nil {
+		return Null, err
+	}
+
 	if len(args) != 2 || args[0].Kind != ValueObject || args[0].Type != "Metadata.DeployContainer" {
 		return Null, fmt.Errorf("Metadata.Operations.enqueueDeployment expects DeployContainer and DeployCallback")
 	}
@@ -831,7 +848,8 @@ func (vm *VM) metadataRetrieve(args []Value) (Value, error) {
 	if args[0].Kind != ValueObject || args[0].Type != "Metadata.MetadataType" {
 		return Null, fmt.Errorf("Metadata.Operations.retrieve expects metadata type")
 	}
-	if !strings.EqualFold(args[0].Text, "CustomMetadata") {
+	metadataType := strings.TrimSpace(args[0].Text)
+	if !strings.EqualFold(metadataType, "CustomMetadata") && !strings.EqualFold(metadataType, "Layout") {
 		return Null, unsupportedCallError("Metadata.Operations.retrieve " + args[0].Text)
 	}
 	names, err := metadataStringList(args[1])
@@ -843,6 +861,12 @@ func (vm *VM) metadataRetrieve(args []Value) (Value, error) {
 	}
 	out := make([]Value, 0, len(names))
 	for _, fullName := range names {
+		if strings.EqualFold(metadataType, "Layout") {
+			if layout := vm.metadataLayoutObject(fullName); layout.Kind == ValueObject {
+				out = append(out, layout)
+			}
+			continue
+		}
 		objectName, developerName := metadataCustomMetadataNames(fullName)
 		objectName, ok := vm.resolveObjectName(objectName)
 		if !ok {
@@ -863,7 +887,50 @@ func (vm *VM) metadataRetrieve(args []Value) (Value, error) {
 			}
 		}
 	}
-	return List(out...), nil
+	result := List(out...)
+	result.Type = "List<Metadata.Metadata>"
+	return result, nil
+}
+
+// metadataLayoutObject provides the local shape returned by Metadata.retrieve
+// for a layout. The runner has schema fields but no deployable layout store, so
+// expose a deterministic single-section layout derived from the target object.
+func (vm *VM) metadataLayoutObject(fullName string) Value {
+	objectName, _, ok := strings.Cut(strings.TrimSpace(fullName), "-")
+	if !ok || strings.TrimSpace(objectName) == "" || vm == nil || vm.Org == nil {
+		return Null
+	}
+	resolved, ok := vm.resolveObjectName(strings.TrimSpace(objectName))
+	if !ok {
+		return Null
+	}
+	state, ok := vm.Org.Objects[resolved]
+	if !ok {
+		return Null
+	}
+	fieldNames := make([]string, 0, len(state.Definition.Fields))
+	for name, field := range state.Definition.Fields {
+		if strings.TrimSpace(field.APIName) != "" {
+			name = field.APIName
+		}
+		if strings.TrimSpace(name) != "" {
+			fieldNames = append(fieldNames, name)
+		}
+	}
+	sort.Strings(fieldNames)
+	items := make([]Value, 0, len(fieldNames))
+	for _, fieldName := range fieldNames {
+		item := Object("Metadata.LayoutItem")
+		item.Fields["field"] = String(fieldName)
+		items = append(items, item)
+	}
+	column := Object("Metadata.LayoutColumn")
+	column.Fields["layoutItems"] = List(items...)
+	section := Object("Metadata.LayoutSection")
+	section.Fields["layoutColumns"] = List(column)
+	layout := Object("Metadata.Layout")
+	layout.Fields["layoutSections"] = List(section)
+	return layout
 }
 
 func metadataCustomMetadataObject(definition storage.ObjectDefinition, record storage.Record) Value {

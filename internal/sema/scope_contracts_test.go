@@ -134,6 +134,55 @@ public class Probe {
 	}
 }
 
+func TestCatchVariableMayBeReusedAfterCatch(t *testing.T) {
+	t.Parallel()
+	result := analyzeScopeProject(t, `
+public class Probe {
+  void run() {
+    try {
+    } catch (Exception value) {
+    }
+    String value = 'after';
+  }
+}
+`)
+	if hasScopeRedeclareDiagnostic(result, "value") {
+		t.Fatalf("catch-local scope must end before following local declaration: %#v", result.Diagnostics)
+	}
+}
+
+func TestSiblingCatchVariablesMayReuseNames(t *testing.T) {
+	t.Parallel()
+	result := analyzeScopeProject(t, `
+public class Probe {
+  void run(Boolean first) {
+    try { if (first) throw new Exception(); }
+    catch (Exception e) { System.debug(e); }
+    try { if (!first) throw new Exception(); }
+    catch (Exception e) { System.debug(e); }
+  }
+}
+`)
+	if hasScopeRedeclareDiagnostic(result, "e") {
+		t.Fatalf("sibling catch blocks should allow reused names: %#v", result.Diagnostics)
+	}
+}
+
+func TestCommentedCatchDoesNotCreateScope(t *testing.T) {
+	t.Parallel()
+	result := analyzeScopeProject(t, `
+public class Probe {
+  void run() {
+    /* catch (Exception e) { System.debug(e); } */
+    try { } catch (Exception e) { System.debug(e); }
+  }
+}
+`)
+	if hasScopeRedeclareDiagnostic(result, "e") {
+		t.Fatalf("commented catch must not collide with active catch: %#v", result.Diagnostics)
+	}
+}
+
 func TestParameterLocalCollisionIsRejected(t *testing.T) {
 	t.Parallel()
 	result := analyzeScopeProject(t, `

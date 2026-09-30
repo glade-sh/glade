@@ -125,10 +125,14 @@ func applyDefaultRecordTypeID(objectName string, definition storage.ObjectDefini
 		return
 	}
 	recordType, ok := defaultRecordTypeForRecord(objectName, definition.RecordTypes, *record)
-	if !ok || recordType.ID == "" {
+	if !ok || recordType.ID == "" || isDescribeOnlyMasterRecordTypeID(recordType.ID) {
 		return
 	}
 	record.Fields["RecordTypeId"] = storage.IDValue(recordType.ID)
+}
+
+func isDescribeOnlyMasterRecordTypeID(id storage.ID) bool {
+	return storage.IDsEqual(id, storage.ID("012000000000000AAA"))
 }
 
 func defaultRecordType(recordTypes []storage.RecordTypeInfo) (storage.RecordTypeInfo, bool) {
@@ -210,6 +214,35 @@ func applyAutoNumberName(definition storage.ObjectDefinition, sequence uint64, r
 		return
 	}
 	record.Fields["Name"] = storage.StringValue(formatAutoNumber(nameField.DisplayFormat, sequence))
+}
+
+// ContractNumber is a platform-generated identifier, although its describe
+// metadata does not identify it as an AutoNumber field. Keep this explicit
+// platform default separate from custom Name auto-number formats.
+func (e *Engine) applyContractNumberDefault(objectName string, record *storage.Record) {
+	if objectName != "Contract" || record == nil {
+		return
+	}
+	if value, ok := record.Fields["ContractNumber"]; ok && value.Kind == storage.ValueString && strings.TrimSpace(value.String) != "" {
+		return
+	}
+	used := make(map[string]struct{})
+	for _, existing := range e.Org.Objects[objectName].Records {
+		if value, ok := existing.Fields["ContractNumber"]; ok && value.Kind == storage.ValueString {
+			used[value.String] = struct{}{}
+		}
+	}
+	for sequence := e.IDs.Sequences[objectName] + 1; ; sequence++ {
+		number := formatAutoNumber("{00000000}", sequence)
+		if _, exists := used[number]; exists {
+			continue
+		}
+		if record.Fields == nil {
+			record.Fields = make(map[string]storage.Value)
+		}
+		record.Fields["ContractNumber"] = storage.StringValue(number)
+		return
+	}
 }
 
 func formatAutoNumber(format string, sequence uint64) string {

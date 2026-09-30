@@ -177,7 +177,18 @@ func standardDescribeCatalogCanonicalName(objectName string) (string, bool) {
 		standardObjectCatalogLookupCache.describeNameByLC = byLC
 	})
 	canonical, ok := standardObjectCatalogLookupCache.describeNameByLC[standardObjectLookupKey(objectName)]
-	return canonical, ok
+	if ok {
+		return canonical, true
+	}
+	// The V2 pack is the authoritative describe catalog used by runtime
+	// metadata. Keep names-only resolution aligned with it so newly added
+	// standard objects do not fail sema reference checks before a field lookup
+	// has a chance to decode the V2 member.
+	entry, ok := lookupStandardDescribeCatalogV2Index(standardDescribeCatalogV2Index, objectName)
+	if !ok {
+		return "", false
+	}
+	return entry.Name, true
 }
 
 func loadEmbeddedStandardDescribeCatalog() map[string]standardObjectCatalogEntry {

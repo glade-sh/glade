@@ -92,9 +92,9 @@ func TestPackagePhase1ServiceModulesExportLocalContracts(t *testing.T) {
 	cases := map[string][]string{
 		"actions":            {ActionsModuleJS(), "CloseActionScreenEvent", "closeactionscreen"},
 		"alert":              {AlertModuleJS(), "LightningAlert", "static open", "gladealert"},
-		"confirm":            {ConfirmModuleJS(), "LightningConfirm", "Promise.resolve(true)"},
+		"confirm":            {ConfirmModuleJS(), "LightningConfirm", "static open", "new Promise"},
 		"configProvider":     {ConfigProviderModuleJS(), "getPathPrefix", "getToken", "getIconSvgTemplates", "getLocalizationService", "getOneConfig"},
-		"customPermission":   {CustomPermissionModuleJS("LocalPermission"), "permissionName", "LocalPermission", "export default true"},
+		"customPermission":   {CustomPermissionModuleJS("LocalPermission"), "permissionName", "LocalPermission", "readCustomPermission(permissionName)"},
 		"empApi":             {EmpAPIModuleJS(), "subscribe", "unsubscribe", "isEmpEnabled"},
 		"flowSupport":        {FlowSupportModuleJS(), "FlowAttributeChangeEvent", "flownavigationnext", "flownavigationfinish"},
 		"pageReferenceUtils": {PageReferenceUtilsModuleJS(), "encodeDefaultFieldValues", "decodeDefaultFieldValues"},

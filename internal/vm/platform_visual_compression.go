@@ -3,9 +3,11 @@ package vm
 import (
 	"archive/zip"
 	"bytes"
+	"compress/flate"
 	"fmt"
 	"io"
 	"strings"
+	"unicode"
 )
 
 func visualEditorPlatformObjectType(typeName string) bool {
@@ -186,7 +188,7 @@ func callVisualEditorDynamicPickListRowsMember(receiver Value, method string, ar
 func newCompressionZipWriter() Value {
 	writer := Object("compression.ZipWriter")
 	writer.Fields["entries"] = typedList("List<compression.ZipEntry>")
-	writer.Fields["level"] = compressionEnumValue("compression.Level", "DEFAULT_LEVEL")
+	writer.Fields["level"] = compressionEnumValue("compression.Level", "BEST_SPEED")
 	writer.Fields["method"] = compressionEnumValue("compression.Method", "DEFLATED")
 	return writer
 }
@@ -194,11 +196,12 @@ func newCompressionZipWriter() Value {
 func newCompressionZipReader(archive Value) (Value, error) {
 	reader := Object("compression.ZipReader")
 	reader.Fields["archive"] = archive
-	entries, err := readCompressionZipEntries(blobText(archive))
+	entries, names, err := readCompressionZipEntries(blobText(archive))
 	if err != nil {
 		return Null, err
 	}
 	reader.Fields["entries"] = entries
+	reader.Fields["entryNames"] = names
 	return reader, nil
 }
 
@@ -219,9 +222,14 @@ func callCompressionZipWriterMember(receiver Value, method string, args []Value)
 	entries := compressionZipEntries(receiver)
 	switch strings.ToLower(method) {
 	case "addentry":
-		entry, err := compressionZipEntryFromAddArgs(args)
+		entry, err := compressionZipEntryFromAddArgs(args, receiver.Fields["method"])
 		if err != nil {
 			return Null, receiver, false, true, err
+		}
+		for _, existing := range entries.List {
+			if compressionZipEntryName(existing) == compressionZipEntryName(entry) {
+				return Null, receiver, false, true, newExceptionError("compression.ZipException", fmt.Sprintf("Duplicate entry %q specified", compressionZipEntryName(entry)))
+			}
 		}
 		entries.List = append(entries.List, entry)
 		receiver.Fields["entries"] = entries
@@ -230,7 +238,7 @@ func callCompressionZipWriterMember(receiver Value, method string, args []Value)
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("compression.ZipWriter.getArchive expects 0 arguments")
 		}
-		archive, err := writeCompressionZipArchive(entries.List)
+		archive, err := writeCompressionZipArchive(entries.List, receiver.Fields["level"])
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -267,6 +275,9 @@ func callCompressionZipWriterMember(receiver Value, method string, args []Value)
 				filtered.List = append(filtered.List, entry)
 			}
 		}
+		if len(filtered.List) == len(entries.List) {
+			return Null, receiver, false, true, newExceptionError("compression.ZipException", fmt.Sprintf("Entry %q not found", args[0].Text))
+		}
 		receiver.Fields["entries"] = filtered
 		return Null, receiver, true, true, nil
 	case "getlevel":
@@ -276,7 +287,7 @@ func callCompressionZipWriterMember(receiver Value, method string, args []Value)
 		if value, ok := receiver.Fields["level"]; ok {
 			return value, receiver, false, true, nil
 		}
-		return compressionEnumValue("compression.Level", "DEFAULT_LEVEL"), receiver, false, true, nil
+		return compressionEnumValue("compression.Level", "BEST_SPEED"), receiver, false, true, nil
 	case "getmethod":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("compression.ZipWriter.getMethod expects 0 arguments")
@@ -286,12 +297,18 @@ func callCompressionZipWriterMember(receiver Value, method string, args []Value)
 		}
 		return compressionEnumValue("compression.Method", "DEFLATED"), receiver, false, true, nil
 	case "setlevel":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, receiver, false, true, compressionNullOptionError()
+		}
 		if len(args) != 1 || !strings.EqualFold(args[0].Type, "compression.Level") {
 			return Null, receiver, false, true, fmt.Errorf("compression.ZipWriter.setLevel expects compression.Level")
 		}
 		receiver.Fields["level"] = args[0]
 		return receiver, receiver, true, true, nil
 	case "setmethod":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, receiver, false, true, compressionNullOptionError()
+		}
 		if len(args) != 1 || !strings.EqualFold(args[0].Type, "compression.Method") {
 			return Null, receiver, false, true, fmt.Errorf("compression.ZipWriter.setMethod expects compression.Method")
 		}
@@ -317,9 +334,9 @@ func callCompressionZipReaderMember(receiver Value, method string, args []Value)
 		} else {
 			return Null, receiver, false, true, fmt.Errorf("compression.ZipReader.extract expects String name or ZipEntry")
 		}
-		entry := compressionZipFindEntry(entries, name)
+		entry := compressionZipFindEntryExact(entries, name)
 		if entry.Kind == ValueNull {
-			return Null, receiver, false, true, nil
+			return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
 		}
 		return compressionZipEntryContent(entry), receiver, false, true, nil
 	case "getentries":
@@ -343,16 +360,15 @@ func callCompressionZipReaderMember(receiver Value, method string, args []Value)
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("compression.ZipReader.getEntry expects String name")
 		}
-		return compressionZipFindEntry(entries, args[0].Text), receiver, false, true, nil
+		return compressionZipFindEntryExact(entries, args[0].Text), receiver, false, true, nil
 	case "getentrynames":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("compression.ZipReader.getEntryNames expects 0 arguments")
 		}
-		names := typedList("List<String>")
-		for _, entry := range entries.List {
-			names.List = append(names.List, String(compressionZipEntryName(entry)))
+		if _, names, ok := objectFieldValue(receiver, "entryNames"); ok && names.Kind == ValueList {
+			return cloneValue(names), receiver, false, true, nil
 		}
-		return names, receiver, false, true, nil
+		return typedList("List<String>"), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -370,9 +386,30 @@ func callCompressionZipEntryMember(receiver Value, method string, args []Value) 
 	case "getcontent":
 		return compressionZipEntryContent(receiver), receiver, false, true, nil
 	case "getcompressedsize", "getuncompressedsize":
+		field := "uncompressedSize"
+		if strings.EqualFold(method, "getCompressedSize") {
+			field = "compressedSize"
+		}
+		if value, ok := receiver.Fields[field]; ok {
+			return value, receiver, false, true, nil
+		}
 		return Int(int64(len(blobText(compressionZipEntryContent(receiver))))), receiver, false, true, nil
 	case "getcrc":
+		if value, ok := receiver.Fields["crc"]; ok {
+			return value, receiver, false, true, nil
+		}
 		return Int(0), receiver, false, true, nil
+	case "getlastmodifiedtime":
+		if value, ok := receiver.Fields["lastModifiedTime"]; ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
+	case "setlastmodifiedtime":
+		if len(args) != 1 || !strings.EqualFold(args[0].Type, "Datetime") {
+			return Null, receiver, false, true, fmt.Errorf("compression.ZipEntry.setLastModifiedTime expects Datetime")
+		}
+		receiver.Fields["lastModifiedTime"] = args[0]
+		return receiver, receiver, true, true, nil
 	case "getmethod":
 		if _, value, ok := objectFieldValue(receiver, "method"); ok {
 			return value, receiver, false, true, nil
@@ -408,19 +445,28 @@ func compressionZipEntries(receiver Value) Value {
 	return typedList("List<compression.ZipEntry>")
 }
 
-func compressionZipEntryFromAddArgs(args []Value) (Value, error) {
-	if len(args) == 1 && args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "compression.ZipEntry") {
-		return args[0], nil
+func compressionZipEntryFromAddArgs(args []Value, writerMethod Value) (Value, error) {
+	if (len(args) == 2 || len(args) == 5) && (args[0].Kind == ValueNull || (args[0].Kind == ValueString && args[0].Text == "")) {
+		return Null, newExceptionError("compression.ZipException", "Entry name empty")
 	}
-	if len(args) == 2 && args[0].Kind == ValueString && args[1].Kind == ValueObject && strings.EqualFold(args[1].Type, "Blob") {
-		return newCompressionZipEntry(args[0].Text, String(""), args[1], compressionEnumValue("compression.Method", "DEFLATED")), nil
+	if len(args) == 1 && args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "compression.ZipEntry") {
+		return cloneValue(args[0]), nil
+	}
+	if len(args) == 2 && args[0].Kind == ValueString && (args[1].Kind == ValueNull || (args[1].Kind == ValueObject && strings.EqualFold(args[1].Type, "Blob"))) {
+		content := args[1]
+		if content.Kind == ValueNull {
+			content = platformScalar("Blob", "")
+		}
+		return newCompressionZipEntry(args[0].Text, String(""), content, writerMethod), nil
 	}
 	if len(args) == 5 && args[0].Kind == ValueString && args[1].Kind == ValueString && args[4].Kind == ValueObject && strings.EqualFold(args[4].Type, "Blob") {
 		method := args[3]
 		if !strings.EqualFold(method.Type, "compression.Method") {
 			method = compressionEnumValue("compression.Method", "DEFLATED")
 		}
-		return newCompressionZipEntry(args[0].Text, args[1], args[4], method), nil
+		entry := newCompressionZipEntry(args[0].Text, args[1], args[4], method)
+		entry.Fields["lastModifiedTime"] = args[2]
+		return entry, nil
 	}
 	return Null, fmt.Errorf("compression.ZipWriter.addEntry expects entry or name/data arguments")
 }
@@ -432,6 +478,17 @@ func newCompressionZipEntry(name string, comment Value, content Value, method Va
 	entry.Fields["content"] = content
 	entry.Fields["method"] = method
 	return entry
+}
+
+// Reader lookup uses the surviving entry's exact spelling. Case folding is
+// only used to select the first central-directory entry for duplicate names.
+func compressionZipFindEntryExact(entries Value, name string) Value {
+	for _, entry := range entries.List {
+		if compressionZipEntryName(entry) == name {
+			return entry
+		}
+	}
+	return Null
 }
 
 func compressionZipFindEntry(entries Value, name string) Value {
@@ -457,15 +514,38 @@ func compressionZipEntryContent(entry Value) Value {
 	return platformScalar("Blob", "")
 }
 
-func writeCompressionZipArchive(entries []Value) (string, error) {
+func writeCompressionZipArchive(entries []Value, level Value) (string, error) {
 	var buf bytes.Buffer
 	writer := zip.NewWriter(&buf)
+	compressionLevel := flate.DefaultCompression
+	switch strings.ToUpper(level.Text) {
+	case "NO_COMPRESSION":
+		compressionLevel = flate.NoCompression
+	case "BEST_SPEED":
+		compressionLevel = flate.BestSpeed
+	case "BEST_COMPRESSION":
+		compressionLevel = flate.BestCompression
+	}
+	writer.RegisterCompressor(zip.Deflate, func(w io.Writer) (io.WriteCloser, error) {
+		return flate.NewWriter(w, compressionLevel)
+	})
 	for _, entry := range entries {
 		name := compressionZipEntryName(entry)
 		if name == "" {
 			continue
 		}
 		header := &zip.FileHeader{Name: name, Method: zip.Deflate}
+		if value, ok := entry.Fields["method"]; ok && strings.EqualFold(value.Text, "STORED") {
+			header.Method = zip.Store
+		}
+		if value, ok := entry.Fields["lastModifiedTime"]; ok {
+			modified, err := parsePlatformDatetime(value)
+			if err != nil {
+				_ = writer.Close()
+				return "", err
+			}
+			header.Modified = modified
+		}
 		if _, value, ok := objectFieldValue(entry, "comment"); ok && value.Kind == ValueString {
 			header.Comment = value.Text
 		}
@@ -485,27 +565,62 @@ func writeCompressionZipArchive(entries []Value) (string, error) {
 	return buf.String(), nil
 }
 
-func readCompressionZipEntries(data string) (Value, error) {
+// Canonicalize the same simple Unicode fold classes used by strings.EqualFold.
+// A set of these keys avoids scanning all prior entries for each ZIP record.
+func compressionZipFoldName(name string) string {
+	var key strings.Builder
+	key.Grow(len(name))
+	for _, char := range name {
+		canonical := char
+		for folded := unicode.SimpleFold(char); folded != char; folded = unicode.SimpleFold(folded) {
+			if folded < canonical {
+				canonical = folded
+			}
+		}
+		key.WriteRune(canonical)
+	}
+	return key.String()
+}
+
+func readCompressionZipEntries(data string) (Value, Value, error) {
 	dataBytes := []byte(data)
 	reader, err := zip.NewReader(bytes.NewReader(dataBytes), int64(len(dataBytes)))
 	if err != nil {
-		return Null, fmt.Errorf("compression.ZipReader invalid archive: %w", err)
+		return Null, Null, newExceptionError("compression.ZipException", "Could not load Zip \nError on ZipFile unknown archive")
 	}
 	entries := typedList("List<compression.ZipEntry>")
+	names := typedList("List<String>")
+	names.nativeListMembership = true
+	seenNames := make(map[string]struct{}, len(reader.File))
 	for _, file := range reader.File {
+		name := String(file.Name)
+		name.nativeListElement = true
+		names.List = append(names.List, name)
 		handle, err := file.Open()
 		if err != nil {
-			return Null, err
+			return Null, Null, err
 		}
 		content, err := io.ReadAll(handle)
 		_ = handle.Close()
 		if err != nil {
-			return Null, err
+			return Null, Null, err
 		}
-		entry := newCompressionZipEntry(file.Name, String(file.Comment), platformScalar("Blob", string(content)), compressionEnumValue("compression.Method", "DEFLATED"))
-		entries.List = append(entries.List, entry)
+		method := "DEFLATED"
+		if file.Method == zip.Store {
+			method = "STORED"
+		}
+		entry := newCompressionZipEntry(file.Name, String(file.Comment), platformScalar("Blob", string(content)), compressionEnumValue("compression.Method", method))
+		entry.Fields["compressedSize"] = Int(int64(file.CompressedSize64))
+		entry.Fields["uncompressedSize"] = Int(int64(file.UncompressedSize64))
+		entry.Fields["crc"] = Int(int64(file.CRC32))
+		entry.Fields["lastModifiedTime"] = platformScalar("Datetime", formatPlatformDatetime(file.Modified.UTC()))
+		key := compressionZipFoldName(file.Name)
+		if _, seen := seenNames[key]; !seen {
+			seenNames[key] = struct{}{}
+			entries.List = append(entries.List, entry)
+		}
 	}
-	return entries, nil
+	return entries, names, nil
 }
 
 func blobText(value Value) string {
@@ -520,4 +635,10 @@ func blobText(value Value) string {
 
 func compressionEnumValue(typeName, name string) Value {
 	return Value{Kind: ValueObject, Type: typeName, Text: name}
+}
+
+// Salesforce's null enum option contract reports this exact underlying type
+// error for both writer setters. Keep it separate from archive/entry errors.
+func compressionNullOptionError() error {
+	return newExceptionError("System.TypeException", `java.lang.NullPointerException: Cannot invoke "java.lang.Number.intValue()" because the return value of "sun.invoke.util.ValueConversions.primitiveConversion(sun.invoke.util.Wrapper, Object, boolean)" is null`)
 }

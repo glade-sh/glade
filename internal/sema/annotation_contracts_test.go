@@ -206,6 +206,19 @@ func TestInvocableMethodCapabilityTypeFormat(t *testing.T) {
 	}
 }
 
+func TestInvocableMethodAllowsArrayParameterSyntax(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe {
+  public class Input {}
+  @InvocableMethod(label='Run')
+  public static List<Input> run(Input[] values) { return new List<Input>(); }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("array syntax for an invocable List parameter was rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestIsTestClassAllowsCriticalAndTestForAtAPIVersion66(t *testing.T) {
 	for name, property := range map[string]string{
 		"critical": "critical=true",

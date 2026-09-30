@@ -12,7 +12,7 @@ const ldsCachePath = path.join(repoRoot, "lwcruntime/src/shims/lds-cache.mjs");
 const sldsLoaderPath = path.join(repoRoot, "lwcruntime/src/slds/slds-loader.mjs");
 const sldsRootPath = path.join(repoRoot, "lwcruntime/src/slds");
 const diagnosticsPath = path.join(repoRoot, "lwcruntime/src/shell/diagnostics.mjs");
-const lwcToolchainNodeModules = path.join(repoRoot, "third_party/lwc/node_modules");
+const lwcToolchainNodeModules = path.join(process.env.GLADE_LWC_TOOLCHAIN_DIR || path.join(repoRoot, "third_party/lwc"), "node_modules");
 export const defaultSLDSHref = "/lightning/runtime/slds/design-system-2/dist/css/bundled/slds2.cosmos.css";
 
 export const salesforceImportMap = {
@@ -475,8 +475,9 @@ export function startLightningServer({
   pages = {},
   wireHandlers = {},
   shimConfig = {},
+  port = 0,
 }) {
-  const vendorRoot = path.join(repoRoot, "third_party/lwc/node_modules");
+  const vendorRoot = lwcToolchainNodeModules;
   const htmlPages = { ...pages };
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, "http://localhost");
@@ -516,7 +517,7 @@ export function startLightningServer({
     res.end(fs.readFileSync(filePath));
   });
   return new Promise((resolve) => {
-    server.listen(0, "127.0.0.1", () => {
+    server.listen(port, "127.0.0.1", () => {
       const { port } = server.address();
       const handle = {
         port,

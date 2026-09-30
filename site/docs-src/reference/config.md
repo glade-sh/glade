@@ -90,6 +90,12 @@ org:
 | `project.schemaSnapshotSHA256` | Required SHA-256 of the exact snapshot file bytes. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
 
+When an SFDX project declares a package dependency and a sibling project in the
+same source workspace declares that package in its own manifest, Glade resolves
+that sibling by package name. Use `managedPackageDependencies` for a dependency
+outside the workspace or when the source package needs an explicit namespace
+remap.
+
 ## Pinned describe schema
 
 Import an already captured Salesforce describe response, then hash the exact

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -66,50 +65,8 @@ func (vm *VM) callDataWeaveScriptMember(receiver Value, method string, args []Va
 	default:
 		return Null, receiver, false, true, fmt.Errorf("DataWeave.Script.execute expects optional Map<String,Object>")
 	}
-	if !apexversion.AtLeast(vm.currentMethod.APIVersion, 66) && vm.dataWeaveInputHasChildQuery(inputs) {
-		return Null, receiver, false, true, newExceptionError("DataWeaveScriptException", "Nested SOQL query results require API version 66.0 or later")
-	}
-	scriptName := dataWeaveScriptName(receiver)
-	if scriptName == "" {
-		scriptName = "anonymous"
-	}
-	lower := strings.ToLower(scriptName)
-	if lower == "exceloutputerror" {
-		return Null, receiver, false, true, newExceptionError("DataWeaveScriptException", "Unknown content type `application/xlsx`")
-	}
-	if lower == "error" || strings.Contains(lower, "error") {
-		return Null, receiver, false, true, newExceptionError("DataWeaveScriptException", "Division by zero")
-	}
-	return newDataWeaveResult(scriptName, inputs), receiver, false, true, nil
-}
-
-func (vm *VM) dataWeaveInputHasChildQuery(inputs Value) bool {
-	for _, input := range inputs.Map {
-		if inlineSOQLQueryText(input) == "" {
-			continue
-		}
-		for _, record := range input.List {
-			if vm.sObjectHasChildQueryResult(record) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (vm *VM) sObjectHasChildQueryResult(record Value) bool {
-	if record.Kind != ValueObject || !vm.isSObjectLikeType(record.Type) {
-		return false
-	}
-	for _, field := range record.Fields {
-		if field.Kind == ValueList {
-			return true
-		}
-		if vm.sObjectHasChildQueryResult(field) {
-			return true
-		}
-	}
-	return false
+	value, err := vm.executeDataWeaveSource(receiver, inputs)
+	return value, receiver, false, true, err
 }
 
 func callDataWeaveResultMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -122,8 +79,20 @@ func callDataWeaveResultMember(receiver Value, method string, args []Value) (Val
 		if _, value, ok := objectFieldValue(receiver, "value"); ok {
 			return value, receiver, false, true, nil
 		}
+		if receiver.Fields["__gladeSourceDriven"].Bool {
+			return Null, receiver, false, true, unsupportedCallError("DataWeave.Result.getValue output format " + receiver.Fields["mimeType"].Text)
+		}
 		return Null, receiver, false, true, nil
 	case "getValueAsString":
+		if receiver.Fields["__gladeTypedResult"].Bool {
+			value := receiver.Fields["value"]
+			switch value.Kind {
+			case ValueString, ValueInt, ValueDecimal, ValueList:
+				return String(apexCollectionString(value)), receiver, false, true, nil
+			default:
+				return Null, receiver, false, true, unsupportedCallError("DataWeave application/apex getValueAsString " + valueShape(value))
+			}
+		}
 		if _, value, ok := objectFieldValue(receiver, "valueAsString"); ok {
 			return value, receiver, false, true, nil
 		}
@@ -848,6 +817,12 @@ func cachePartitionPlatformObjectType(typeName string) bool {
 
 func generatedPlatformObjectMemberReceiver(typeName string) bool {
 	return isExceptionType(typeName) ||
+		strings.EqualFold(typeName, "compression.ZipWriter") ||
+		strings.EqualFold(typeName, "compression.ZipReader") ||
+		strings.EqualFold(typeName, "compression.ZipEntry") ||
+		strings.EqualFold(typeName, "DataWeave.Result") ||
+		strings.EqualFold(typeName, "FormulaEval.FormulaBuilder") ||
+		strings.EqualFold(typeName, "FormulaEval.FormulaInstance") ||
 		cachePartitionPlatformObjectType(typeName) ||
 		strings.EqualFold(typeName, "UserProvisioning.FlowProvisionBase") ||
 		strings.EqualFold(typeName, "UserProvisioning.UserProvisioningPlugin") ||

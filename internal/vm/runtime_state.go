@@ -98,7 +98,11 @@ type VM struct {
 	localAsyncSeq           int
 	localAsyncDrain         bool
 	localAsyncChain         bool
+	rejectAsyncActions      bool
+	asyncActionViolation    bool
 	executionUser           Value
+	// Auth validation failures belong to this runtime, never a shared template.
+	authTotpFailures map[string]int
 	// --- Governor limits ---
 	limits          Limits
 	limitCaps       LimitCaps
@@ -138,12 +142,13 @@ type VM struct {
 	pageReferences   map[string]string
 	siteExperienceID string
 	// --- SOQL / search results and platform cache ---
-	fixedSearchResults []Value
-	sfsqlqueryRows     []Value
-	sfsqlqueryMetadata []Value
-	platformCache      map[string]map[string]cacheEntry
-	cacheScanLocators  map[string][]cacheScanItem
-	cacheScanSeq       int
+	fixedSearchResults    []Value
+	fixedSearchResultsSet bool
+	sfsqlqueryRows        []Value
+	sfsqlqueryMetadata    []Value
+	platformCache         map[string]map[string]cacheEntry
+	cacheScanLocators     map[string][]cacheScanItem
+	cacheScanSeq          int
 	// --- Captured side effects ---
 	capturedEmails []CapturedEmail
 	// --- REST / server request context ---
@@ -494,18 +499,21 @@ type eventPublishCallback struct {
 }
 
 type AsyncJob struct {
-	ID                          string
-	Kind                        string
-	Object                      Value
-	Method                      Method
-	Args                        []Value
-	BatchSize                   int
-	Name                        string
-	Cron                        string
-	ParentJobID                 string
-	LastProcessed               string
-	LastProcessedOffset         int
-	Deferred                    bool
+	ID                  string
+	Kind                string
+	Object              Value
+	Method              Method
+	Args                []Value
+	BatchSize           int
+	Name                string
+	Cron                string
+	ParentJobID         string
+	LastProcessed       string
+	LastProcessedOffset int
+	Deferred            bool
+	// Scheduled test payloads outlive cancellation but require an active replacement to run.
+	ScheduledAborted            bool
+	ScheduledReusedBy           string
 	SuppressWorkerRecords       bool
 	QueueableDepth              int
 	QueueableMaxDepth           int
@@ -706,6 +714,8 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	}
 	clone.traceEnabled = vm.traceEnabled
 	clone.toolingExecuteAnonymous = vm.toolingExecuteAnonymous
+	clone.rejectAsyncActions = vm.rejectAsyncActions
+	clone.asyncActionViolation = vm.asyncActionViolation
 	clone.staticInitState = nil
 	clone.pageReferences = copyStringMap(vm.pageReferences)
 	clone.platformCache = copyCacheMap(vm.platformCache)
@@ -1385,6 +1395,9 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	engine.FlowActionInvoker = func(action storage.FlowAction, record storage.Record) error {
 		return vm.invokeFlowAction(action, record, result)
 	}
+	engine.FlowActionInvokerWithContext = func(action storage.FlowAction, record storage.Record, context dml.FlowActionContext) error {
+		return vm.invokeFlowActionWithContext(action, record, context, result)
+	}
 	engine.WorkflowEmailer = func(alert storage.WorkflowEmailAlert, record storage.Record) error {
 		return vm.captureWorkflowEmail(alert, record, result)
 	}
@@ -1409,6 +1422,10 @@ func (vm *VM) applyBeforeSaveFlows(records []storage.Record, result *Result) err
 }
 
 func (vm *VM) invokeFlowAction(action storage.FlowAction, record storage.Record, result *Result) error {
+	return vm.invokeFlowActionWithContext(action, record, dml.FlowActionContext{}, result)
+}
+
+func (vm *VM) invokeFlowActionWithContext(action storage.FlowAction, record storage.Record, context dml.FlowActionContext, result *Result) error {
 	method, ok, err := vm.resolveFlowInvocableMethod(action)
 	if err != nil {
 		return err
@@ -1416,11 +1433,27 @@ func (vm *VM) invokeFlowAction(action storage.FlowAction, record storage.Record,
 	if !ok {
 		return fmt.Errorf("flow action %s: no static @InvocableMethod found on %s", action.Name, flowActionTargetName(action))
 	}
-	if len(method.Params) != 1 || collectionBase(method.Params[0].Type) != "List" {
-		return fmt.Errorf("flow action %s: %s must accept exactly one List parameter", action.Name, method.Name)
+	var args []Value
+	if len(method.Params) == 0 {
+		// Salesforce packages in the corpus include invocable actions that use
+		// the action call only as a transaction boundary and intentionally take
+		// no input (for example, a deferred-rollup commit action).
+		args = nil
+	} else {
+		if len(method.Params) != 1 || collectionBase(method.Params[0].Type) != "List" {
+			return fmt.Errorf("flow action %s: %s must accept exactly one List parameter", action.Name, method.Name)
+		}
+		elementType, _ := collectionElementType(method.Params[0].Type)
+		// Nested invocable input classes are commonly emitted as an unqualified
+		// type in the method signature (for example List<FlowInput> inside
+		// Rollup). Runtime values still need the owning class qualification so
+		// member lookup sees the nested class fields.
+		elementType = vm.qualifyFlowActionElementType(method, elementType)
+		item := vm.flowActionInputObject(action, record, context, elementType)
+		arg := List(item)
+		arg.Type = method.Params[0].Type
+		args = []Value{arg}
 	}
-	arg := List(vm.vmValueFromRecord(record))
-	arg.Type = method.Params[0].Type
 	appendTrace(result, "apex.flow.action", "apex.flow", map[string]any{
 		"action": action.Name,
 		"class":  method.ClassName,
@@ -1428,7 +1461,7 @@ func (vm *VM) invokeFlowAction(action storage.FlowAction, record storage.Record,
 		"record": string(record.ID),
 		"object": record.Object,
 	})
-	_, err = vm.callMethod(method, []Value{arg}, result)
+	_, err = vm.callMethod(method, args, result)
 	if err != nil {
 		var thrown *apexThrowError
 		if errors.As(err, &thrown) {
@@ -1439,6 +1472,233 @@ func (vm *VM) invokeFlowAction(action storage.FlowAction, record storage.Record,
 		}
 	}
 	return err
+}
+
+func (vm *VM) qualifyFlowActionElementType(method Method, elementType string) string {
+	elementType = strings.TrimSpace(elementType)
+	if elementType == "" {
+		return elementType
+	}
+	if _, ok := vm.lookupClass(elementType); ok {
+		return elementType
+	}
+	owner := strings.TrimSpace(method.ClassName)
+	if owner == "" || strings.Contains(elementType, ".") {
+		return elementType
+	}
+	candidate := owner + "." + elementType
+	if _, ok := vm.lookupClass(candidate); ok {
+		return candidate
+	}
+	return elementType
+}
+
+func (vm *VM) flowActionInputObject(action storage.FlowAction, record storage.Record, context dml.FlowActionContext, elementType string) Value {
+	if len(action.Inputs) == 0 {
+		return vm.vmValueFromRecord(record)
+	}
+	item := Object(elementType)
+	vm.initializeFields(&item, elementType)
+	for _, input := range action.Inputs {
+		name := strings.TrimSpace(input.Name)
+		if name == "" {
+			continue
+		}
+		value, ok := vm.flowActionInputValue(input, record, context)
+		if !ok {
+			value = Null
+		}
+		item.Fields[name] = value
+	}
+	return item
+}
+
+func (vm *VM) flowActionInputValue(input storage.WorkflowFieldUpdate, record storage.Record, context dml.FlowActionContext) (Value, bool) {
+	if source := strings.TrimSpace(input.SourceField); source != "" {
+		if value, ok := vm.flowActionContextReference(source, record, context); ok {
+			return value, true
+		}
+	}
+	if literal := strings.TrimSpace(input.LiteralValue); literal != "" {
+		switch strings.ToLower(literal) {
+		case "true":
+			return Bool(true), true
+		case "false":
+			return Bool(false), true
+		}
+		if decimal, err := decimalFromText(literal); err == nil && strings.ContainsAny(literal, ".eE") {
+			return decimal, true
+		}
+		if integer, err := strconv.ParseInt(literal, 10, 64); err == nil {
+			return Int(integer), true
+		}
+		return String(literal), true
+	}
+	return Null, true
+}
+
+func (vm *VM) flowActionContextReference(reference string, record storage.Record, context dml.FlowActionContext) (Value, bool) {
+	reference = strings.TrimSpace(reference)
+	if reference == "" {
+		return Value{}, false
+	}
+	key := strings.ToLower(reference)
+	if records, ok := context.Collections[key]; ok {
+		return vm.flowActionRecordCollection(records), true
+	}
+	if records, ok := context.LookupCollections[key]; ok {
+		return vm.flowActionRecordCollection(records), true
+	}
+	if value, ok := context.Scalars[key]; ok {
+		return vmValueFromStorage(value), true
+	}
+	if referenceRecord, ok := context.Records[key]; ok {
+		return vm.vmValueFromRecord(referenceRecord), true
+	}
+	if referenceRecord, ok := context.LookupOutputs[key]; ok {
+		return vm.vmValueFromRecord(referenceRecord), true
+	}
+	if value, ok := vm.flowActionRecordField(vm.flowActionRecordValue(record), reference); ok {
+		return value, true
+	}
+	for root, candidate := range context.Records {
+		prefix := root + "."
+		if strings.HasPrefix(key, prefix) {
+			if value, ok := vm.flowActionRecordField(vm.flowActionRecordValue(candidate), reference[len(prefix):]); ok {
+				return value, true
+			}
+		}
+	}
+	for root, candidate := range context.LookupOutputs {
+		prefix := root + "."
+		if strings.HasPrefix(key, prefix) {
+			if value, ok := vm.flowActionRecordField(vm.flowActionRecordValue(candidate), reference[len(prefix):]); ok {
+				return value, true
+			}
+		}
+	}
+	return Value{}, false
+}
+
+func (vm *VM) flowActionRecordCollection(records []storage.Record) Value {
+	values := make([]Value, 0, len(records))
+	for _, record := range records {
+		if record.Object == "" && record.ID == "" && len(record.Fields) == 0 && len(record.ExplicitNulls) == 0 {
+			values = append(values, Null)
+			continue
+		}
+		values = append(values, vm.flowActionRecordValue(record))
+	}
+	value := List(values...)
+	value.Type = "List<SObject>"
+	return value
+}
+
+// Flow Apex actions receive records from the Flow interview rather than from
+// a SOQL projection. Materialize lightweight parent relationship shells from
+// lookup ids so action code that evaluates a relationship path (for example
+// Account.Name in a where clause) can read the stored parent fields.
+func (vm *VM) flowActionRecordValue(record storage.Record) Value {
+	value := vmValueFromRecord(record)
+	vm.flowActionParentRelationships(&value, make(map[string]bool), 0)
+	return value
+}
+
+func (vm *VM) flowActionParentRelationships(value *Value, visited map[string]bool, depth int) {
+	if vm == nil || vm.Org == nil || value == nil || value.Kind != ValueObject || depth > 8 {
+		return
+	}
+	objectName, ok := vm.resolveObjectName(value.Type)
+	if !ok {
+		objectName = value.Type
+	}
+	id := sObjectIDFromFields(value.Fields)
+	key := strings.ToLower(objectName) + ":" + strings.ToLower(string(id))
+	if visited[key] {
+		return
+	}
+	visited[key] = true
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return
+	}
+	for _, relation := range object.Definition.Relations {
+		if strings.TrimSpace(relation.ParentRelationship) == "" {
+			continue
+		}
+		if _, existing, exists := objectFieldValue(*value, relation.ParentRelationship); exists && existing.Kind == ValueObject {
+			vm.markFlowActionParentProjection(&existing)
+			value.Fields[relation.ParentRelationship] = existing
+			continue
+		}
+		_, lookup, exists := objectFieldValue(*value, relation.Field)
+		if !exists || lookup.Kind == ValueNull {
+			continue
+		}
+		parent, exists := vm.flowActionParentRelationshipFromLookupID(relation, lookup)
+		if !exists || parent.Kind != ValueObject {
+			continue
+		}
+		vm.markFlowActionParentProjection(&parent)
+		value.Fields[relation.ParentRelationship] = parent
+	}
+}
+
+func (vm *VM) markFlowActionParentProjection(value *Value) {
+	if value == nil || value.Kind != ValueObject {
+		return
+	}
+	if value.Fields == nil {
+		value.Fields = make(map[string]Value)
+	}
+	value.Fields[sobjectParentProjectionField] = Bool(true)
+	vm.ensureQueriedSObjectFieldMarker(value, value.Type)
+	for field := range value.Fields {
+		if !isInternalSObjectField(field) {
+			markQueriedSObjectField(value, field)
+		}
+	}
+}
+
+func (vm *VM) flowActionParentRelationshipFromLookupID(relation storage.Relationship, lookupValue Value) (Value, bool) {
+	if vm == nil || vm.Org == nil {
+		return Null, false
+	}
+	lookupID, ok := sObjectIDFromValue(lookupValue)
+	if !ok || lookupID == "" {
+		return Null, false
+	}
+	for _, parentName := range relation.ParentObjects {
+		parentObject, ok := vm.resolveObjectName(parentName)
+		if !ok {
+			parentObject = parentName
+		}
+		if strings.TrimSpace(parentObject) == "" {
+			continue
+		}
+		if stored, found := vm.findOrgRecord(parentObject, lookupID); found {
+			stored.Object = parentObject
+			return vmValueFromRecord(stored), true
+		}
+	}
+	return vm.parentRelationshipShellFromLookupID(relation, lookupValue)
+}
+
+func (vm *VM) flowActionRecordField(record Value, reference string) (Value, bool) {
+	parts := strings.Split(reference, ".")
+	current := record
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		_, value, ok := objectFieldValue(current, part)
+		if !ok {
+			return Value{}, false
+		}
+		current = value
+	}
+	return current, true
 }
 
 func (vm *VM) resolveFlowInvocableMethod(action storage.FlowAction) (Method, bool, error) {
@@ -1557,6 +1817,17 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 		}
 	}
 	return nil
+}
+
+func cloneStorageRecords(records []storage.Record) []storage.Record {
+	if len(records) == 0 {
+		return nil
+	}
+	out := make([]storage.Record, 0, len(records))
+	for _, record := range records {
+		out = append(out, record.Clone())
+	}
+	return out
 }
 
 func (vm *VM) refireAutomationUpdateTriggers(objectName string, id storage.ID, oldRecord storage.Record, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
@@ -1901,6 +2172,50 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 
 func (vm *VM) AdvanceDeterministicTime(delta time.Duration) {
 	vm.fakeNow = vm.fakeNow.Add(delta)
+}
+
+// SetSynchronousActionBoundary makes framework actions fail closed when they
+// attempt to cross an asynchronous delivery boundary that the caller cannot
+// drain and commit as part of the same request.
+func (vm *VM) SetSynchronousActionBoundary(enabled bool) {
+	if vm != nil {
+		vm.rejectAsyncActions = enabled
+		if !enabled {
+			vm.asyncActionViolation = false
+		}
+	}
+}
+
+// rejectSynchronousAsyncAction records a boundary violation even when Apex
+// catches and converts the UnsupportedFeature into an ordinary return value.
+// The request owner must still reject the transaction before publishing any
+// earlier DML. This flag is intentionally outside org/savepoint state.
+func (vm *VM) rejectSynchronousAsyncAction(message string) error {
+	if vm != nil {
+		vm.asyncActionViolation = true
+	}
+	return UnsupportedFeature(message)
+}
+
+// HasRejectedAsyncAction reports an attempted asynchronous action that was
+// caught or otherwise converted into a successful-looking Apex result.
+func (vm *VM) HasRejectedAsyncAction() bool {
+	return vm != nil && vm.asyncActionViolation
+}
+
+// HasPendingAsyncWork reports asynchronous work that would outlive the
+// current VM invocation if the caller committed only the org state.
+func (vm *VM) HasPendingAsyncWork() bool {
+	if vm == nil {
+		return false
+	}
+	if len(vm.localAsyncJobs) > 0 {
+		return true
+	}
+	if vm.testContext == nil {
+		return false
+	}
+	return len(vm.testContext.AsyncJobs) > 0 || len(vm.testContext.PlatformEvents) > 0 || len(vm.testContext.EventPublishes) > 0
 }
 
 func (vm *VM) DrainAsync(result *Result) error {

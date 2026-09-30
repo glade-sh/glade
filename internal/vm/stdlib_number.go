@@ -258,6 +258,37 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 	}
 }
 
+func (vm *VM) callLocaleNumberFormatMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if !strings.EqualFold(method, "format") {
+		return Null, false, nil
+	}
+	var value Value
+	var handled bool
+	var err error
+	switch receiver.Kind {
+	case ValueInt:
+		value, _, _, handled, err = callIntegerMember(receiver, "format", args)
+	case ValueDecimal:
+		if isFloatBackedDecimal(receiver) {
+			return Null, false, nil
+		}
+		value, _, _, handled, err = callDecimalMember(receiver, "format", args)
+	default:
+		return Null, false, nil
+	}
+	if err != nil || !handled {
+		return value, handled, err
+	}
+	// These supported ICU locales use dot grouping and a decimal comma.
+	switch vm.currentUserInfoField("LocaleSidKey", "en_US") {
+	case "de_DE", "it_IT", "es_ES", "pt_BR":
+		value = String(strings.NewReplacer(",", ".", ".", ",").Replace(value.Text))
+	case "en_IN", "gu_IN", "hi_IN", "ml_IN", "pa_IN", "ta_IN", "ta_LK", "te_IN":
+		value = String(formatIndianGroupedNumberText(value.Text))
+	}
+	return value, true, nil
+}
+
 func isDoubleUnsupportedMember(method string) bool {
 	switch strings.ToLower(strings.TrimSpace(method)) {
 	case "abs", "divide", "doublevalue", "pow", "precision", "scale", "setscale", "striptrailingzeros", "toplainstring":
@@ -343,4 +374,36 @@ func formatDecimalTextWithGrouping(text string) string {
 		fraction = text[dot:]
 	}
 	return sign + addThousandsSeparators(whole) + fraction
+}
+
+func formatIndianGroupedNumberText(text string) string {
+	sign := ""
+	if strings.HasPrefix(text, "-") || strings.HasPrefix(text, "+") {
+		sign = text[:1]
+		text = text[1:]
+	}
+	whole := text
+	fraction := ""
+	if dot := strings.IndexByte(text, '.'); dot >= 0 {
+		whole = text[:dot]
+		fraction = text[dot:]
+	}
+	whole = strings.ReplaceAll(whole, ",", "")
+	if len(whole) <= 3 {
+		return sign + whole + fraction
+	}
+	firstGroupLength := (len(whole) - 3) % 2
+	if firstGroupLength == 0 {
+		firstGroupLength = 2
+	}
+	grouped := strings.Builder{}
+	grouped.Grow(len(whole) + len(whole)/2)
+	grouped.WriteString(whole[:firstGroupLength])
+	for i := firstGroupLength; i < len(whole)-3; i += 2 {
+		grouped.WriteByte(',')
+		grouped.WriteString(whole[i : i+2])
+	}
+	grouped.WriteByte(',')
+	grouped.WriteString(whole[len(whole)-3:])
+	return sign + grouped.String() + fraction
 }

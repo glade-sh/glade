@@ -14,8 +14,9 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 		value, err := patternMatches(args)
 		return value, receiver, false, true, err
 	case "matcher":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, receiver, false, true, fmt.Errorf("Pattern.matcher expects input String")
+		inputText, err := stringArg("Pattern.matcher", args)
+		if err != nil {
+			return Null, receiver, false, true, err
 		}
 		regexp2Source, err := patternRegexp2Source(receiver)
 		if err != nil {
@@ -35,11 +36,11 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 		if backreferences, ok := receiver.Fields["backreferencePairs"]; ok {
 			matcher.Fields["backreferencePairs"] = backreferences
 		}
-		matcher.Fields["input"] = args[0]
+		matcher.Fields["input"] = String(inputText)
 		matcherClearMatch(matcher)
 		matcher.Fields["index"] = Int(0)
 		matcher.Fields["regionStart"] = Int(0)
-		matcher.Fields["regionEnd"] = Int(int64(apexStringLength(args[0].Text)))
+		matcher.Fields["regionEnd"] = Int(int64(apexStringLength(inputText)))
 		return matcher, receiver, false, true, nil
 	case "pattern":
 		if len(args) != 0 {

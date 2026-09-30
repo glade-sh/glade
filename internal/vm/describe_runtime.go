@@ -314,8 +314,15 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 		vm.addSObjectFieldMapFieldEntry(&fieldsMap, name, definition, field, token)
 	}
 	defaultFieldNames := []string{"Id", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"}
-	if isCustomObjectLikeName(definition.APIName) {
-		defaultFieldNames = append(defaultFieldNames, "Name", "OwnerId")
+	if storage.IsCustomMetadataDefinition(definition) {
+		// Metadata identity fields are already supplied by the schema overlay.
+		// CMT describes have no ordinary record audit, Name or OwnerId fields.
+		defaultFieldNames = []string{"Id", "SystemModstamp"}
+	} else if isCustomObjectLikeName(definition.APIName) {
+		defaultFieldNames = append(defaultFieldNames, "Name")
+		if !storage.IsMasterDetailCustomObject(definition) {
+			defaultFieldNames = append(defaultFieldNames, "OwnerId")
+		}
 	}
 	for _, fieldName := range defaultFieldNames {
 		if _, ok := fieldsMap.Map[mapKey(String(fieldName))]; ok {
@@ -409,6 +416,19 @@ func (vm *VM) describePreparedDefinition(name string, definition storage.ObjectD
 	}
 	storage.EnsureStandardObjectFields(&definition)
 	storage.RemoveCustomSettingUnsupportedFields(&definition)
+	if storage.IsCustomMetadataDefinition(definition) {
+		// Custom metadata has metadata identity fields instead of the audit
+		// and ownership fields of ordinary records.
+		for fieldName := range definition.Fields {
+			switch strings.ToLower(fieldName) {
+			case "name", "ownerid", "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid":
+				delete(definition.Fields, fieldName)
+			}
+		}
+		if _, exists := storage.ResolveFieldName(definition, "", "Language"); !exists {
+			definition.Fields["Language"] = storage.Field{APIName: "Language", Label: "Language", Type: storage.FieldString}
+		}
+	}
 	if isCustomSchemaName(definition.APIName) {
 		ensureMasterRecordType(&definition)
 	}
@@ -423,12 +443,14 @@ func ensureMasterRecordType(definition *storage.ObjectDefinition) {
 	if definition == nil {
 		return
 	}
-	for _, recordType := range definition.RecordTypes {
+	for i, recordType := range definition.RecordTypes {
 		if strings.EqualFold(recordType.DeveloperName, "Master") {
+			definition.RecordTypes[i].ID = storage.ID("012000000000000AAA")
 			return
 		}
 	}
 	definition.RecordTypes = append(definition.RecordTypes, storage.RecordTypeInfo{
+		ID:            storage.ID("012000000000000AAA"),
 		DeveloperName: "Master",
 		Name:          "Master",
 		Active:        true,
@@ -480,6 +502,7 @@ func cloneDescribeObjectDefinition(definition storage.ObjectDefinition) storage.
 }
 
 func cloneFilteredLookupInfo(value storage.FilteredLookupInfo) storage.FilteredLookupInfo {
+	value.FilterItems = append([]storage.LookupFilterItem(nil), value.FilterItems...)
 	value.ControllingFields = append([]string(nil), value.ControllingFields...)
 	return value
 }
@@ -727,6 +750,11 @@ func defaultRecordTypeID(definition storage.ObjectDefinition) storage.ID {
 }
 
 func (vm *VM) defaultValueForNewSObjectField(definition storage.ObjectDefinition, record Value, field storage.Field) (storage.Value, bool) {
+	if vm != nil {
+		if value, ok := storage.CurrencyDefaultForField(vm.Org, storage.ID(vm.currentUserID()), field); ok {
+			return value, true
+		}
+	}
 	if vm == nil || vm.Org == nil {
 		return storage.DefaultValueForField(field)
 	}
@@ -757,7 +785,13 @@ func (vm *VM) defaultValueForNewSObjectField(definition storage.ObjectDefinition
 }
 
 func isNameFieldDescribe(field storage.Field) bool {
-	return strings.EqualFold(field.APIName, "Name")
+	if strings.EqualFold(field.APIName, "Name") {
+		return true
+	}
+	// Salesforce activities use Subject as their name field. Event.Subject and
+	// Task.Subject are the standard COMBOBOX fields; Case.Subject and other
+	// ordinary text fields with the same API name are not name fields.
+	return strings.EqualFold(field.APIName, "Subject") && strings.EqualFold(field.DisplayType, "COMBOBOX")
 }
 
 func isCustomSchemaName(name string) bool {
@@ -1023,7 +1057,7 @@ func (vm *VM) lookupFilterTargetAvailable(field storage.Field) bool {
 
 func isCustomObjectLikeName(name string) bool {
 	name = strings.ToLower(name)
-	return strings.HasSuffix(name, "__c") || strings.HasSuffix(name, "__e") || strings.HasSuffix(name, "__mdt")
+	return strings.HasSuffix(name, "__b") || strings.HasSuffix(name, "__c") || strings.HasSuffix(name, "__e") || strings.HasSuffix(name, "__mdt") || strings.HasSuffix(name, "__share")
 }
 
 func isCustomFieldOrRelationshipType(name string) bool {
@@ -1504,7 +1538,10 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	desc.Fields["htmlFormatted"] = Bool(describeFieldIsHTMLFormatted(field))
 	desc.Fields["dataTranslationEnabled"] = Null
 	desc.Fields["filteredLookupInfo"] = vm.filteredLookupInfoValue(definition, field, field.FilteredLookupInfo)
-	if defaultValue, ok := storage.DefaultValueForField(field); ok {
+	if defaultValue, ok := storage.CurrencyDefaultForField(vm.Org, storage.ID(vm.currentUserID()), field); ok {
+		desc.Fields["defaultValue"] = vmValueFromStorage(defaultValue)
+		desc.Fields["defaultedOnCreate"] = Bool(true)
+	} else if defaultValue, ok := storage.DefaultValueForField(field); ok {
 		desc.Fields["defaultValue"] = vmValueFromStorage(defaultValue)
 		desc.Fields["defaultedOnCreate"] = Bool(storage.FieldFlagValue(field.DefaultedOnCreate, describeFieldDefaultedOnCreate(field)))
 	} else {
@@ -1518,7 +1555,16 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	}
 	relationshipName := field.RelationshipName
 	if field.Type == storage.FieldReference {
-		relationshipName = vm.parentRelationshipNameForReferenceField(definition, field)
+		// Custom lookup fields expose the namespace-qualified __r name derived
+		// from the field API name. Standard references retain their metadata
+		// relationship name; deriving those would turn invalid paths into valid
+		// ones.
+		describeName := vm.describeFieldName(field.APIName)
+		if hasSuffixFold(describeName, "__c") {
+			relationshipName = strings.TrimSuffix(describeName, "__c") + "__r"
+		} else if relationshipName != "" && vm != nil && vm.Org != nil {
+			relationshipName = storage.NamespaceTokenName(vm.Org.Namespace, relationshipName)
+		}
 	}
 	if relationshipName == "" {
 		desc.Fields["relationshipName"] = Null
@@ -1848,6 +1894,8 @@ func syntheticSObjectSystemField(fieldName string) (storage.Field, bool) {
 		return storage.Field{APIName: "OwnerId", Label: "Owner ID", Type: storage.FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"User"}, RelationshipName: "Owner"}, true
 	case strings.EqualFold(fieldName, "RecordTypeId"):
 		return storage.Field{APIName: "RecordTypeId", Label: "Record Type ID", Type: storage.FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"}, true
+	case strings.EqualFold(fieldName, "EventUuid"):
+		return storage.Field{APIName: "EventUuid", Label: "Event UUID", Type: storage.FieldString, DisplayType: "STRING", Length: 36, Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false)}, true
 	case strings.EqualFold(fieldName, "IsDeleted"):
 		return storage.Field{APIName: "IsDeleted", Label: "Deleted", Type: storage.FieldBoolean, DisplayType: "BOOLEAN"}, true
 	default:

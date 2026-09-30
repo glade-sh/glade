@@ -287,7 +287,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 			want = 2
 		}
 		if objectName == "RecordType" {
-			want = 5
+			want = 0
 		}
 		if len(org.Objects[objectName].Records) != want {
 			t.Fatalf("%s records = %#v", objectName, InspectOrg("", org))
@@ -306,19 +306,14 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if len(org.Objects["Opportunity"].Definition.RecordTypes) == 0 {
 		t.Fatalf("Opportunity record types = %#v", org.Objects["Opportunity"].Definition.RecordTypes)
 	}
-	opportunityRecordTypeID := org.Objects["Opportunity"].Definition.RecordTypes[0].ID
-	if opportunityRecordTypeID == "" {
-		t.Fatalf("missing Opportunity record type ID")
-	}
-	if _, ok := org.Objects["RecordType"].Records[opportunityRecordTypeID]; !ok {
-		t.Fatalf("missing Opportunity RecordType record %s: %#v", opportunityRecordTypeID, org.Objects["RecordType"].Records)
-	}
-	recordTypeID := org.Objects["Account"].Definition.RecordTypes[0].ID
-	if recordTypeID == "" {
-		t.Fatalf("missing Account record type ID")
-	}
-	if _, ok := org.Objects["RecordType"].Records[recordTypeID]; !ok {
-		t.Fatalf("missing RecordType record %s: %#v", recordTypeID, org.Objects["RecordType"].Records)
+	for _, objectName := range []string{"Account", "Opportunity"} {
+		id := org.Objects[objectName].Definition.RecordTypes[0].ID
+		if id != "012000000000000AAA" {
+			t.Fatalf("%s Master mapping ID = %s", objectName, id)
+		}
+		if _, exists := org.Objects["RecordType"].Records[id]; exists {
+			t.Fatalf("describe-only Master was seeded as a record for %s", objectName)
+		}
 	}
 	if len(org.Objects["User"].Records) != 2 || len(org.Objects["UserLogin"].Records) != 2 || len(org.Objects["Profile"].Records) != 8 || len(org.Objects["UserLicense"].Records) != 2 {
 		t.Fatalf("platform records = %#v", InspectOrg("", org))
@@ -361,6 +356,10 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	}
 	if refs := org.Objects["Document"].Definition.Fields["FolderId"].ReferenceTo; !containsStringFold(refs, "User") {
 		t.Fatalf("Document.FolderId references = %#v, want User", refs)
+	}
+	EnsureStandardObject(&org, "FeedItem")
+	if refs := org.Objects["FeedItem"].Definition.Fields["ParentId"].ReferenceTo; !containsStringFold(refs, "User") || !containsStringFold(refs, "CollaborationGroup") {
+		t.Fatalf("FeedItem.ParentId references = %#v, want User and CollaborationGroup", refs)
 	}
 	if org.Objects["ContentVersion"].Definition.Fields["ContentDocumentId"].Required {
 		t.Fatalf("ContentVersion.ContentDocumentId should be optional for first-version inserts")
@@ -408,7 +407,7 @@ func TestEnsureDeterministicPlatformDataSkipsUsedRecordTypeIDs(t *testing.T) {
 		},
 	}
 	org.Objects["Account"] = ObjectState{
-		Definition: ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]Field{"Name": {APIName: "Name", Type: FieldString}}},
+		Definition: ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]Field{"Name": {APIName: "Name", Type: FieldString}}, RecordTypes: []RecordTypeInfo{{DeveloperName: "Business", Name: "Business", Active: true}}},
 		Records:    make(map[ID]Record),
 	}
 	EnsureDeterministicPlatformData(&org)

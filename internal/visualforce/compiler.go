@@ -75,6 +75,9 @@ func ParseMarkupTree(source string) (*MarkupNode, error) {
 	if len(root.Children) == 0 {
 		return nil, fmt.Errorf("no renderable Visualforce markup")
 	}
+	if err := validateMarkupStructure(root); err != nil {
+		return nil, err
+	}
 	return root, nil
 }
 

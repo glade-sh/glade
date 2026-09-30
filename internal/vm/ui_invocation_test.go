@@ -458,6 +458,27 @@ return controller.delete();
 	}
 }
 
+func TestExecStandardControllerActionsUseCanonicalInsertedID(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'VF Canonical ID');
+insert account;
+ApexPages.StandardController controller = new ApexPages.StandardController(account);
+String expected = '/' + String.valueOf(account.Id);
+System.assertEquals(expected, controller.view().getUrl());
+System.assertEquals(expected, controller.edit().getUrl());
+System.assertEquals(expected, controller.cancel().getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestInvokeVisualforceActionOnControllerDispatchesStandardControllerMember(t *testing.T) {
 	machine := New(nil)
 	record := Object("Account")

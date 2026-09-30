@@ -72,11 +72,7 @@ func TestRequestBaseURLIgnoresUnsafeForwardedProto(t *testing.T) {
 
 func testSourceMetadata(t *testing.T) SourceMetadata {
 	t.Helper()
-	root := filepath.Join(".testdata-generated", strings.NewReplacer("/", "_", " ", "_").Replace(t.Name()))
-	if err := os.RemoveAll(root); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.RemoveAll(root) })
+	root := t.TempDir()
 	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/LocalOne.cls"), "public class LocalOne {}")
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/LocalTwo.cls"), "public class LocalTwo {}")

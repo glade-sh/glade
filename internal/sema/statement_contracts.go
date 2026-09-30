@@ -214,6 +214,9 @@ func semaResolveSwitchSelectorType(typeName, owner string, model *semaTypeMember
 }
 
 func semaSupportedSwitchSelector(typeName string, model *semaTypeMemberView) bool {
+	if semaExplicitPlatformEnumType(typeName) {
+		return true
+	}
 	typeName = semaCanonicalPlatformAlias(typeName)
 	switch strings.ToLower(strings.TrimSpace(typeName)) {
 	case "integer", "int", "long", "string":
@@ -254,8 +257,17 @@ func semaSwitchValueCaseAllowed(selectorType string, expr ir.Expr, model *semaTy
 	if expr.Kind == ir.ExprLiteral {
 		return true
 	}
+	// Apex represents a negative integer case (for example, -1) as a unary
+	// expression over an integer literal. Salesforce treats that as a literal
+	// case value, too.
+	if expr.Kind == ir.ExprUnary && expr.Operator == "-" && expr.Left != nil && expr.Left.Kind == ir.ExprLiteral {
+		return strings.EqualFold(strings.TrimSpace(selectorType), "Integer") || strings.EqualFold(strings.TrimSpace(selectorType), "Long")
+	}
 	if expr.Kind != ir.ExprVariable || selectorType == "" {
 		return false
+	}
+	if semaExplicitPlatformEnumType(selectorType) {
+		return semaStandardPlatformEnumValue(semaCanonicalPlatformAlias(selectorType), expr.Name)
 	}
 	selectorType = semaCanonicalPlatformAlias(selectorType)
 	if enumType := semaEnumValuePathType(model, expr.Name); enumType != "" {
@@ -272,6 +284,13 @@ func semaSwitchValueCaseAllowed(selectorType string, expr ir.Expr, model *semaTy
 }
 
 func semaSwitchCaseValueKey(selectorType string, expr ir.Expr) string {
+	if expr.Kind == ir.ExprUnary {
+		operand := ""
+		if expr.Left != nil {
+			operand = semaSwitchCaseValueKey(selectorType, *expr.Left)
+		}
+		return normalizeName(strings.TrimSpace(string(expr.Kind) + ":" + expr.Operator + ":" + operand))
+	}
 	if expr.Kind == ir.ExprLiteral && strings.EqualFold(strings.TrimSpace(selectorType), "String") {
 		return string(expr.Kind) + ":" + strings.TrimSpace(expr.Value) + ":" + expr.Name
 	}
@@ -280,6 +299,12 @@ func semaSwitchCaseValueKey(selectorType string, expr ir.Expr) string {
 
 func semaSwitchSelectorEnumCaseType(selectorType string, expr ir.Expr, model *semaTypeMemberView) string {
 	if expr.Kind != ir.ExprVariable {
+		return ""
+	}
+	if semaExplicitPlatformEnumType(selectorType) {
+		if semaStandardPlatformEnumValue(semaCanonicalPlatformAlias(selectorType), expr.Name) {
+			return selectorType
+		}
 		return ""
 	}
 	selectorType = semaCanonicalPlatformAlias(selectorType)

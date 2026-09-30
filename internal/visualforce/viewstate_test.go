@@ -1,8 +1,16 @@
 package visualforce
 
 import (
+	"bytes"
+	"crypto/hmac"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/vm"
@@ -35,6 +43,160 @@ func TestEncodeDecodeViewStateRoundTrip(t *testing.T) {
 	}
 	if decoded.Version != CurrentViewStateVersion {
 		t.Fatalf("decoded version = %d, want %d", decoded.Version, CurrentViewStateVersion)
+	}
+}
+
+func TestEncodeViewStateDoesNotExposeControllerFieldPlaintext(t *testing.T) {
+	const sentinel = "VF-PRIVATE-CONTROLLER-FIELD-9f4a2d"
+	secret := []byte("task-11.6-explicit-test-key")
+	payload := ViewStatePayload{
+		PageName:         "PrivateEdit",
+		CSRF:             "fixed-csrf-token",
+		Timestamp:        time.Now().Unix(),
+		ControllerFields: map[string]string{"privateValue": sentinel},
+	}
+	encoded, err := EncodeViewState(payload, secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		t.Fatalf("encoded view state is not base64: %v", err)
+	}
+	if bytes.Contains(decoded, []byte(sentinel)) {
+		t.Fatal("base64-decoded view state exposes controller field plaintext")
+	}
+	state, err := DecodeViewState(encoded, secret)
+	if err != nil {
+		t.Fatalf("decode encrypted view state: %v", err)
+	}
+	if got := state.ControllerFields["privateValue"]; got != sentinel {
+		t.Fatalf("decoded privateValue = %q, want original value", got)
+	}
+}
+
+func TestDecodeViewStateRejectsWrongSecret(t *testing.T) {
+	payload := ViewStatePayload{PageName: "Edit", CSRF: "fixed-csrf-token", Timestamp: time.Now().Unix()}
+	encoded, err := EncodeViewState(payload, []byte("task-11.6-correct-key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := DecodeViewState(encoded, []byte("task-11.6-wrong-key")); !errors.Is(err, ErrViewStateTampered) {
+		t.Fatalf("wrong-key error = %v, want %v", err, ErrViewStateTampered)
+	}
+}
+
+func TestEncodeViewStateUsesFreshNonce(t *testing.T) {
+	secret := []byte("task-11.6-explicit-test-key")
+	payload := ViewStatePayload{
+		PageName:     "Edit",
+		CSRF:         "fixed-csrf-token",
+		Timestamp:    time.Now().Unix(),
+		PageMessages: []string{"same input"},
+	}
+	first, err := EncodeViewState(payload, secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := EncodeViewState(payload, secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first == second {
+		t.Fatal("encoding identical view-state input twice must use fresh nonce material")
+	}
+	for _, encoded := range []string{first, second} {
+		if _, err := DecodeViewState(encoded, secret); err != nil {
+			t.Fatalf("decode independently encoded state: %v", err)
+		}
+	}
+}
+
+type failedViewStateEntropy struct{}
+
+func (failedViewStateEntropy) Read([]byte) (int, error) {
+	return 0, errors.New("injected entropy failure")
+}
+
+func TestViewStateKeyCacheReturnsStableProcessKey(t *testing.T) {
+	var cache viewStateKeyCache
+	first, err := cache.get(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := cache.get(failedViewStateEntropy{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(first) != 32 || !bytes.Equal(first, second) {
+		t.Fatalf("cached process key length=%d stable=%t; want stable 32-byte key", len(first), bytes.Equal(first, second))
+	}
+}
+
+func TestViewStateKeyCacheFailsClosedOnEntropyFailure(t *testing.T) {
+	var cache viewStateKeyCache
+	key, err := cache.get(failedViewStateEntropy{})
+	if key != nil || !errors.Is(err, ErrViewStateEntropy) {
+		t.Fatalf("keyPresent=%t error=%v, want no key and secure-randomness error", key != nil, err)
+	}
+	key, err = cache.get(rand.Reader)
+	if key != nil || !errors.Is(err, ErrViewStateEntropy) {
+		t.Fatalf("retryKeyPresent=%t error=%v, want cached fail-closed error", key != nil, err)
+	}
+}
+
+func TestEncodeViewStateFailsClosedWhenNonceEntropyFails(t *testing.T) {
+	payload := ViewStatePayload{PageName: "Edit", CSRF: "fixed-csrf-token", Timestamp: time.Now().Unix()}
+	encoded, err := encodeViewStateWithRandom(payload, []byte("explicit-test-key"), failedViewStateEntropy{})
+	if encoded != "" || !errors.Is(err, ErrViewStateEntropy) {
+		t.Fatalf("encoded=%q error=%v, want no envelope and secure-randomness error", encoded, err)
+	}
+}
+
+func TestViewStateRejectsExplicitEmptySecret(t *testing.T) {
+	payload := ViewStatePayload{PageName: "Edit", CSRF: "fixed-csrf-token"}
+	if encoded, err := EncodeViewState(payload, []byte{}); encoded != "" || !errors.Is(err, ErrViewStateInvalid) {
+		t.Fatalf("encoded=%q error=%v, want empty-secret rejection", encoded, err)
+	}
+	encoded, err := EncodeViewState(payload, []byte("explicit-test-key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := DecodeViewState(encoded, []byte{}); !errors.Is(err, ErrViewStateInvalid) {
+		t.Fatalf("empty-secret decode error = %v, want %v", err, ErrViewStateInvalid)
+	}
+}
+
+func TestDecodeViewStateRejectsMalformedEnvelope(t *testing.T) {
+	unknownVersion := []byte(viewStateEnvelopeHeader)
+	unknownVersion[len(unknownVersion)-1] = 2
+	unknownVersion = append(unknownVersion, make([]byte, 64)...)
+	for name, encoded := range map[string]string{
+		"invalid base64":  "not-base64%",
+		"short envelope":  base64.StdEncoding.EncodeToString([]byte(viewStateEnvelopeHeader)),
+		"unknown version": base64.StdEncoding.EncodeToString(unknownVersion),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := DecodeViewState(encoded, []byte("explicit-test-key")); !errors.Is(err, ErrViewStateInvalid) {
+				t.Fatalf("decode error = %v, want %v", err, ErrViewStateInvalid)
+			}
+		})
+	}
+}
+
+func TestDecodeViewStateRejectsLegacyPlaintextEnvelope(t *testing.T) {
+	secret := []byte("legacy-test-key")
+	payload := ViewStatePayload{PageName: "Edit", CSRF: "fixed-csrf-token", Timestamp: time.Now().Unix()}
+	plaintext, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mac := hmac.New(sha256.New, secret)
+	_, _ = mac.Write(plaintext)
+	legacy := append(append([]byte(nil), plaintext...), mac.Sum(nil)...)
+	encoded := base64.StdEncoding.EncodeToString(legacy)
+	if _, err := DecodeViewState(encoded, secret); !errors.Is(err, ErrViewStateInvalid) {
+		t.Fatalf("legacy-envelope error = %v, want %v", err, ErrViewStateInvalid)
 	}
 }
 
@@ -98,9 +260,14 @@ func TestDecodeViewStateRejectsTamperedPayload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tampered := encoded[:len(encoded)-4] + "ZZZZ"
-	if _, err := DecodeViewState(tampered, nil); err == nil {
-		t.Fatal("expected tampered view state error")
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoded[len(decoded)-1] ^= 1
+	tampered := base64.StdEncoding.EncodeToString(decoded)
+	if _, err := DecodeViewState(tampered, nil); !errors.Is(err, ErrViewStateTampered) {
+		t.Fatalf("tampered view-state error = %v, want %v", err, ErrViewStateTampered)
 	}
 }
 

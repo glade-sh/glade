@@ -164,7 +164,7 @@ test body
 	}
 	cases := Discover(index, Options{})
 	testMethods, testErrs := compileTestMethods(cases)
-	if len(testErrs) != 0 || testMethods["BodyKindsTest.run"].APIVersion != "67.0" {
+	if len(testErrs) != 0 || testMethods[testCaseKey(cases[0])].APIVersion != "67.0" {
 		t.Fatalf("test methods = %#v errors = %#v", testMethods, testErrs)
 	}
 }
@@ -315,7 +315,7 @@ test method quote: ' and brace: }
 			}
 			cases := Discover(index, Options{})
 			testMethods, testErrs := compileTestMethods(cases)
-			if len(testErrs) != 0 || testMethods["BodyRangeProbeTest.run"].Name == "" {
+			if len(testErrs) != 0 || testMethods[testCaseKey(cases[0])].Name == "" {
 				t.Fatalf("test executable body = %#v errors = %#v", testMethods, testErrs)
 			}
 		})
@@ -546,9 +546,17 @@ func TestTestSemanticGateWritesCheckCompatibleCacheIdentity(t *testing.T) {
 	path := filepath.Join(root, "CheckCompatibleSemanticTest.cls")
 	writeFile(t, path, `@isTest private class CheckCompatibleSemanticTest { @isTest static void passes() { System.assertEquals(1, 1); } }`)
 	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
-	identity, err := semanticcache.IdentityForBuild(semanticAnalysisIndex(index), &artifacts, sema.AnalyzeOptions{Diagnostics: true, ExportTypes: true, SuppressPerformanceDiagnostics: true, BuildArtifacts: &artifacts})
+	options := sema.AnalyzeOptions{Diagnostics: true, ExportTypes: true, SuppressPerformanceDiagnostics: true, BuildArtifacts: &artifacts}
+	identity, err := semanticcache.IdentityForBuild(SemanticAnalysisIndex(index), &artifacts, options)
 	if err != nil {
 		t.Fatal(err)
+	}
+	rawIdentity, err := semanticcache.IdentityForBuild(index, &artifacts, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rawIdentity != identity {
+		t.Fatalf("defensive semantic analysis view changed cache identity:\nraw=%#v\nview=%#v", rawIdentity, identity)
 	}
 	run := RunCasesContext(context.Background(), index, Options{BuildArtifacts: &artifacts}, Discover(index, Options{}))
 	if summary := run.Summary(); summary.Passed != 1 {
@@ -571,7 +579,7 @@ func TestSemanticNoCacheReadsWritesOrRetainsNothing(t *testing.T) {
 	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
 	cases := Discover(index, Options{})
 	options := sema.AnalyzeOptions{Diagnostics: true, SuppressPerformanceDiagnostics: true, BuildArtifacts: &artifacts}
-	identity, err := semanticcache.IdentityForBuild(semanticAnalysisIndex(index), &artifacts, options)
+	identity, err := semanticcache.IdentityForBuild(SemanticAnalysisIndex(index), &artifacts, options)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1787,9 +1795,9 @@ func TestRuntimeKeyIncludesSemanticMetadata(t *testing.T) {
 	}
 }
 
-func TestRunWithSourceDigestsPersistsExactV6RuntimeKey(t *testing.T) {
-	if testRuntimeCacheABI != "apextest-runtime-v6" {
-		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v6", testRuntimeCacheABI)
+func TestRunWithSourceDigestsPersistsExactV7RuntimeKey(t *testing.T) {
+	if testRuntimeCacheABI != "apextest-runtime-v7" {
+		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v7", testRuntimeCacheABI)
 	}
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)
@@ -2655,13 +2663,18 @@ private class SecondTest {
 }
 
 func TestRunDataWeaveScriptResourceExecutesRuntimeStub(t *testing.T) {
+	home := os.Getenv("GLADE_DATAWEAVE_APEX_TEST_HOME")
+	if home == "" {
+		t.Fatal("legacy DataWeave runner requires explicit installed toolchain")
+	}
+	t.Setenv("GLADE_HOME", home)
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"65.0","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/dw/helloWorld.dwl"), `%dw 2.0
 output text/plain
 ---
 "Hello World"`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/dw/helloWorld.dwl-meta.xml"), `<DataWeaveResource/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/dw/helloWorld.dwl-meta.xml"), `<DataWeaveResource><apiVersion>65.0</apiVersion></DataWeaveResource>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/DataWeaveHarness.cls"), `
 public class DataWeaveHarness {
   public static String staticInvocation() {
@@ -2679,7 +2692,7 @@ public class DataWeaveHarness {
 @isTest
 private class DataWeaveHarnessTest {
   @isTest static void staticResourceExecuteReturnsScriptOutput() {
-    System.assertEquals('"Hello World"', DataWeaveHarness.staticInvocation());
+    System.assertEquals('Hello World', DataWeaveHarness.staticInvocation());
   }
 
   @isTest static void dynamicCreateScriptThrowsScriptException() {
@@ -2693,6 +2706,11 @@ private class DataWeaveHarnessTest {
   }
 }
 `)
+
+	writeFile(t, filepath.Join(root, "force-app/main/default/dw/error.dwl"), "%dw 2.0 \noutput application/json\n--- \n1/0")
+	writeFile(t, filepath.Join(root, "force-app/main/default/dw/error.dwl-meta.xml"), "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<DataWeaveResource\n    xmlns=\"http://soap.sforce.com/2006/04/metadata\"\n    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n>\n    <content xsi:nil=\"true\" />\n    <apiVersion>62.0</apiVersion>\n    <isGlobal>false</isGlobal>\n    <isProtected>false</isProtected>\n</DataWeaveResource>\n")
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/DataWeaveHarness.cls-meta.xml"), `<ApexClass><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/DataWeaveHarnessTest.cls-meta.xml"), `<ApexClass><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>`)
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
@@ -2803,17 +2821,22 @@ func TestEnsureProjectDataReferencedObjectFieldPreservesExistingLookupTarget(t *
 	}
 }
 
-func TestRunHttpSendWithoutMockReturnsStubInTestContext(t *testing.T) {
+func TestRunHttpSendWithoutMockThrowsInTestContext(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/HttpHarnessTest.cls"), `
 @isTest
 private class HttpHarnessTest {
-  @isTest static void sendsWithoutExternalNetwork() {
+  @isTest static void rejectsUnmockedTestCallout() {
     HttpRequest req = new HttpRequest();
     req.setEndpoint('https://example.invalid/probe');
     req.setMethod('GET');
-    new Http().send(req);
+    try {
+      new Http().send(req);
+      System.assert(false, 'expected an unmocked test callout error');
+    } catch (TypeException e) {
+      System.assertEquals('Methods defined as TestMethod do not support Web service callouts', e.getMessage());
+    }
   }
 }
 	`)
@@ -2838,14 +2861,24 @@ func TestRunnerDoesNotLeakHTTPMocksAcrossMethods(t *testing.T) {
     System.assertEquals(201, send().getStatusCode());
   }
   @isTest static void usesFreshContext() {
-    System.assertEquals(200, send().getStatusCode());
+    try {
+      send();
+      System.assert(false, 'mock leaked from another method');
+    } catch (TypeException e) {
+      System.assertEquals('Methods defined as TestMethod do not support Web service callouts', e.getMessage());
+    }
   }`,
 		},
 		{
 			name: "mock second",
 			methods: `
   @isTest static void usesFreshContext() {
-    System.assertEquals(200, send().getStatusCode());
+    try {
+      send();
+      System.assert(false, 'mock leaked from another method');
+    } catch (TypeException e) {
+      System.assertEquals('Methods defined as TestMethod do not support Web service callouts', e.getMessage());
+    }
   }
   @isTest static void installsMock() {
     Test.setMock(HttpCalloutMock.class, new ResponseMock());
@@ -5082,6 +5115,76 @@ private class FailingTest {
 	}
 }
 
+func TestRunExecutesDuplicateTestBodiesBySourceFile(t *testing.T) {
+	root := t.TempDir()
+	first := filepath.Join(root, "preczn", "DuplicateSourceTest.cls")
+	second := filepath.Join(root, "cardpointe", "DuplicateSourceTest.cls")
+	writeFile(t, first, `
+@isTest
+private without sharing class DuplicateSourceTest {
+  @isTest static void runsOwnBody() {
+    System.assert(true);
+  }
+}
+`)
+	writeFile(t, second, `
+@isTest
+private with sharing class DuplicateSourceTest {
+  @isTest static void runsOwnBody() {
+    System.assert(false);
+  }
+}
+`)
+	writeFile(t, first+"-meta.xml", `<ApexClass><apiVersion>66.0</apiVersion></ApexClass>`)
+	writeFile(t, second+"-meta.xml", `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
+
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{first, second}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	run := Run(index, Options{NoDiskCache: true})
+	if got := run.Summary(); got.Total != 2 || got.Passed != 1 || got.Failed != 1 {
+		t.Fatalf("summary = %#v cases = %#v", got, run.Suites)
+	}
+
+	bySource := make(map[string]testreport.Case)
+	for _, suite := range run.Suites {
+		for _, testCase := range suite.Cases {
+			bySource[testCase.SourceFile] = testCase
+		}
+	}
+	if got := bySource[first].Status; got != testreport.StatusPass {
+		t.Fatalf("first source status = %q, want pass; cases = %#v", got, run.Suites)
+	}
+	if got := bySource[second].Status; got != testreport.StatusFail {
+		t.Fatalf("second source status = %q, want fail; cases = %#v", got, run.Suites)
+	}
+	cases := Discover(index, Options{})
+	methods, errs := compileTestMethods(cases)
+	if len(errs) != 0 {
+		t.Fatalf("compile test methods errors = %#v", errs)
+	}
+	contexts := make(map[string]vm.Method)
+	for _, testCase := range cases {
+		contexts[testCase.File] = methods[testCaseKey(testCase)]
+	}
+	if got := contexts[first]; !got.SourceContextBound || got.SharingMode != "without sharing" || got.APIVersion != "66.0" {
+		t.Fatalf("first source context = %#v", got)
+	}
+	if got := contexts[second]; !got.SourceContextBound || got.SharingMode != "with sharing" || got.APIVersion != "67.0" {
+		t.Fatalf("second source context = %#v", got)
+	}
+	encoded, err := json.Marshal(run)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, source := range []string{first, second} {
+		if !strings.Contains(string(encoded), `"sourceFile":"`+source+`"`) {
+			t.Fatalf("report JSON omitted source file %q: %s", source, encoded)
+		}
+	}
+}
+
 func TestRunExecutesStaticHelperMethod(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -5238,6 +5341,36 @@ private class LocalTestHelper {
 `)
 
 	run := Run(loadTestIndex(t, root), Options{Filter: "callsHelper"})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunSelectedIsTestMethodCanCallVoidIsTestHelper(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LocalVoidTestHelper.cls"), `
+@isTest
+private class LocalVoidTestHelper {
+  private static Boolean called;
+
+  @isTest static void helper() {
+    called = true;
+  }
+
+  @isTest static void wrapper() {
+    helper();
+    System.assertEquals(true, called);
+  }
+}
+`)
+
+	index := loadTestIndex(t, root)
+	cases := Discover(index, Options{SelectedClasses: []string{"LocalVoidTestHelper"}, SelectedMethod: "wrapper"})
+	if len(cases) != 1 || cases[0].MethodName != "wrapper" {
+		t.Fatalf("selected cases = %#v", cases)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true}, cases)
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
 	}
@@ -6670,6 +6803,48 @@ private class PassiveGeneratedStubTest {
 	}
 }
 
+func TestRunInvocableActionDispatchesLocalApexMethod(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ActionTarget.cls"), `
+public class ActionTarget {
+  public class Request {
+    @InvocableVariable public String value;
+  }
+  public class Response {
+    @InvocableVariable public String output;
+  }
+  @InvocableMethod
+  public static List<Response> run(List<Request> requests) {
+    System.debug('handled ' + requests[0].value);
+    Response response = new Response();
+    response.output = requests[0].value + '-handled';
+    return new List<Response>{response};
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ActionTest.cls"), `
+@IsTest
+private class ActionTest {
+  @IsTest static void dispatches() {
+    Invocable.Action action = Invocable.Action.createCustomAction('apex', 'ActionTarget');
+    action.setInvocationParameter('value', 'input');
+    List<Invocable.Action.Result> results = action.invoke();
+    System.assertEquals(1, results.size());
+    System.assertEquals(true, results[0].isSuccess());
+    System.assertEquals('input-handled', (String)results[0].getOutputParameters().get('output'));
+  }
+}
+`)
+	run := Run(loadTestIndex(t, root), Options{})
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		if len(run.Suites) > 0 && len(run.Suites[0].Cases) > 0 {
+			t.Fatalf("summary = %#v problem=%#v", summary, run.Suites[0].Cases[0].Problem)
+		}
+		t.Fatalf("summary = %#v suites=%#v", summary, run.Suites)
+	}
+}
+
 func TestExtractMethodSourceUsesByteOffsets(t *testing.T) {
 	source := "// café comment before the method\npublic Integer runIt() {\n  return 7;\n}\n"
 	start := strings.Index(source, "public Integer")
@@ -8047,7 +8222,7 @@ private class MultiMethodJobTest {
 	}
 }
 
-func TestRunDoesNotDrainQueueableEnqueuedBeforeStartTest(t *testing.T) {
+func TestRunDrainsQueueableEnqueuedBeforeStartTest(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/PreStartJob.cls"), `
@@ -8060,11 +8235,11 @@ public class PreStartJob implements Queueable {
 	writeFile(t, filepath.Join(root, "force-app/main/classes/PreStartJobTest.cls"), `
 @isTest
 private class PreStartJobTest {
-  @isTest static void stopTestSkipsPreStartQueue() {
+  @isTest static void stopTestRunsPreStartQueue() {
     System.enqueueJob(new PreStartJob());
 	    Test.startTest();
 	    Test.stopTest();
-	    System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'pre-start async ran']);
+	    System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'pre-start async ran']);
 	    System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob]);
 	  }
 	}
@@ -8589,7 +8764,7 @@ private class IterableBatchTest {
 	}
 }
 
-func TestRunAppliesCustomObjectNameDefaultWhenTestSetsNull(t *testing.T) {
+func TestRunUsesGeneratedIDForExplicitNullCustomObjectName(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/objects/Widget__c/Widget__c.object-meta.xml"), `
@@ -8606,7 +8781,7 @@ private class WidgetNameDefaultTest {
     Widget__c widget = new Widget__c(Name = null);
     insert widget;
     Widget__c loaded = [SELECT Name FROM Widget__c WHERE Id = :widget.Id];
-    System.assertEquals('Widget', loaded.Name);
+    System.assertEquals(String.valueOf(widget.Id), loaded.Name);
   }
 }
 `)
@@ -8686,11 +8861,11 @@ private class AsyncContextIdsTest {
       AND Id = '707000000000002'
     ];
     System.assertEquals(1, pendingBatches.size());
-    List<CronTrigger> crons = [SELECT Id, State, CronExpression, CronJobDetail FROM CronTrigger];
+    List<CronTrigger> crons = [SELECT Id, State, CronExpression, CronJobDetail.Name FROM CronTrigger];
     System.assertEquals(1, crons.size());
     CronTrigger cron = crons.get(0);
     System.assertEquals('0 0 0 * * ?', cron.CronExpression);
-    System.assertEquals('nightly', cron.CronJobDetail);
+    System.assertEquals('nightly', cron.CronJobDetail.Name);
   }
 }
 `)
@@ -9366,6 +9541,26 @@ private class PageDependencyTest {
 `)
 
 	run := Run(loadTestIndex(t, consumerRoot), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunResolvesNamespacedProjectVisualforcePageReferences(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Order.page"), `<apex:page/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/PageProjectTest.cls"), `
+@isTest
+private class PageProjectTest {
+  @isTest static void namespacedProjectPageTokenResolves() {
+    PageReference page = Page.Order;
+    System.assertEquals('/apex/pkg__Order', page.getUrl());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
 	}
@@ -10353,7 +10548,8 @@ private class ListSettingDescribeTest {
     System.assertNotEquals(null, actual);
     System.assertEquals('Example', actual.Type__c);
     Card__c nullName = Card__c.getInstance(null);
-    System.assertEquals(null, nullName);
+    System.assertEquals(actual.Id, nullName.Id);
+    System.assertEquals('Example', nullName.Type__c);
   }
 }
 `)
@@ -10415,6 +10611,23 @@ func TestOrgFromIndexKeepsEndpointDefaultIndependentOfSourceVersion(t *testing.T
 
 	if org.APIVersion != storage.DefaultRESTAPIVersion {
 		t.Fatalf("org API version = %q, want %s", org.APIVersion, storage.DefaultRESTAPIVersion)
+	}
+}
+
+func TestOrgFromIndexIncludesGeneratedCustomShareShapeWhenSharingMetadataUnknown(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/UnknownSharingObject__c/UnknownSharingObject__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Unknown Sharing Object</label><sharingModel>ReadWrite</sharingModel></CustomObject>`)
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	state, ok := org.Objects["UnknownSharingObject__Share"]
+	if !ok {
+		t.Fatalf("generated share object was not exposed; objects=%v", org.Objects)
+	}
+	for _, fieldName := range []string{"AccessLevel", "RowCause"} {
+		if _, ok := state.Definition.Fields[fieldName]; !ok {
+			t.Fatalf("generated share field %s was not exposed; fields=%v", fieldName, state.Definition.Fields)
+		}
 	}
 }
 

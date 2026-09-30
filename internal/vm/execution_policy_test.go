@@ -320,6 +320,25 @@ if (rows.size() != 1) { throw new DmlException('handler sharing context was lost
 	}
 }
 
+func TestNestedProfileUserEnforcesFieldPermissions(t *testing.T) {
+	machine := New(io.Discard)
+	machine.currentMethod = Method{APIVersion: "67.0"}
+	org := orgForSecurePolicyTest()
+	machine.SetOrg(&org)
+	user := Object("User")
+	profile := Object("Profile")
+	profile.Fields["Name"] = String("Minimum Access - Salesforce")
+	user.Fields["Profile"] = profile
+	machine.executionUser = user
+
+	if machine.currentUserFieldPermission("Account", "Secret__c", "isAccessible") {
+		t.Fatal("nested Minimum Access profile unexpectedly allowed the protected field")
+	}
+	if _, err := machine.executeSOQL("SELECT Id, Secret__c FROM Account", &Result{}); err == nil {
+		t.Fatal("API 67 SOQL unexpectedly bypassed field permissions for nested Profile user")
+	}
+}
+
 func TestTriggerUserModePublicSOQLChecksFieldPermissions(t *testing.T) {
 	program, err := CompileAnonymousWithOptions("List<Account> rows = [SELECT Id, Secret__c FROM Account];", CompileOptions{APIVersion: "67.0", Trigger: true})
 	if err != nil {

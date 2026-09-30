@@ -17,7 +17,6 @@ func (vm *VM) convertLeadOne(convert Value, result *Result) (Value, error) {
 	}
 	if databaseLeadConvertBool(convert, "bypassAccountDedupeCheck") ||
 		databaseLeadConvertBool(convert, "bypassContactDedupeCheck") ||
-		databaseLeadConvertBool(convert, "overwriteLeadSource") ||
 		databaseLeadConvertBool(convert, "sendNotificationEmail") {
 		return Null, unsupportedCallError("Database.convertLead dedupe/notification local lead conversion surface")
 	}
@@ -41,6 +40,30 @@ func (vm *VM) convertLeadOne(convert Value, result *Result) (Value, error) {
 		return databaseLeadConvertFailure(string(leadID), "Lead not found"), nil
 	}
 	leadID = lead.ID
+	if databaseLeadConvertBool(convert, "doNotCreateOpportunity") {
+		name, hasName := databaseLeadConvertField(convert, "opportunityName")
+		id, hasID := databaseLeadConvertField(convert, "opportunityId")
+		if (hasName && name.Kind != ValueNull) || (hasID && id.Kind != ValueNull) {
+			message := "One or more leads couldn't be converted. If doNotCreateOpportunity is true, opportunityName and opportunityId must be null."
+			err := databaseDMLException("convertLead", []dml.Result{{
+				StatusCode: "INVALID_FIELD", Fields: []string{"Id"}, Error: message,
+			}}, nil)
+			err.(*apexThrowError).value.Fields["message"] = String("ConvertLead failed. First exception on row 0; first error: INVALID_FIELD, " + message + ": [Id]")
+			// LeadConvert option errors expose field names but no SObject tokens.
+			details := err.(*apexThrowError).value.Fields["__dmlErrors"]
+			details.List[0].Fields["fieldTokens"] = Null
+			return Null, err
+		}
+	}
+	// Conversion changes read-only Lead fields internally, but still exposes the
+	// update transition to Apex triggers. Preserve the old row before any writes.
+	var oldLead storage.Record
+	var triggerBackup *storage.OrgState
+	if len(vm.triggersForOperation("Lead", triggerTimingAfter, "update")) != 0 {
+		oldLead = lead.Clone()
+		backup := snapshotRuntimeOrgState(vm.Org)
+		triggerBackup = &backup
+	}
 	accountID, err := vm.convertLeadAccountID(convert, lead, result)
 	if err != nil {
 		return Null, err
@@ -49,7 +72,7 @@ func (vm *VM) convertLeadOne(convert Value, result *Result) (Value, error) {
 	if err != nil {
 		return Null, err
 	}
-	opportunityID, err := vm.convertLeadOpportunityID(convert, lead, accountID, result)
+	opportunityID, err := vm.convertLeadOpportunityID(convert, lead, accountID, contactID, result)
 	if err != nil {
 		return Null, err
 	}
@@ -80,6 +103,17 @@ func (vm *VM) convertLeadOne(convert Value, result *Result) (Value, error) {
 	}
 	updatedLeadState.Records[storedLeadID] = updatedLead
 	vm.Org.Objects["Lead"] = updatedLeadState
+	if triggerBackup != nil {
+		failures, triggerErr := vm.runTriggers(triggerTimingAfter, "update", []storage.Record{updatedLead}, []storage.Record{oldLead}, result)
+		if triggerErr != nil {
+			*vm.Org = *triggerBackup
+			return Null, dmlExceptionFromTriggerError("convertLead", triggerErr)
+		}
+		if hasDMLFailures(failures) {
+			*vm.Org = *triggerBackup
+			return Null, databaseDMLException("convertLead", failures, []string{"Lead"})
+		}
+	}
 	row := Object("Database.LeadConvertResult")
 	row.Fields["success"] = Bool(true)
 	row.Fields["leadId"] = platformScalar("Id", string(leadID))
@@ -97,7 +131,17 @@ func (vm *VM) convertLeadOne(convert Value, result *Result) (Value, error) {
 
 func (vm *VM) convertLeadAccountID(convert Value, lead storage.Record, result *Result) (storage.ID, error) {
 	if value, ok := databaseLeadConvertField(convert, "accountId"); ok && isApexIDLikeValue(value) {
-		return storage.ID(scalarText(value)), nil
+		id := storage.ID(scalarText(value))
+		if existing, found := vm.findOrgRecord("Account", id); found {
+			account := Object("Account")
+			vm.setExplicitSObjectFieldValue(&account, "Id", value)
+			if vm.copyLeadAddress(&account, existing, lead, "Billing") {
+				if err := vm.updateLeadConversionTarget(account, result); err != nil {
+					return "", err
+				}
+			}
+		}
+		return id, nil
 	}
 	account := Object("Account")
 	if value, ok := databaseLeadConvertField(convert, "accountRecord"); ok && value.Kind == ValueObject && !strings.EqualFold(value.Type, "SObject") {
@@ -111,6 +155,7 @@ func (vm *VM) convertLeadAccountID(convert Value, lead storage.Record, result *R
 		}
 		vm.setExplicitSObjectFieldValue(&account, "Name", String(name))
 	}
+	vm.copyLeadAddress(&account, storage.Record{}, lead, "Billing")
 	results, err := vm.applyDML("insert", account, true, "", dml.Options{}, result)
 	if err != nil {
 		return "", err
@@ -123,7 +168,25 @@ func (vm *VM) convertLeadAccountID(convert Value, lead storage.Record, result *R
 
 func (vm *VM) convertLeadContactID(convert Value, lead storage.Record, accountID storage.ID, result *Result) (storage.ID, error) {
 	if value, ok := databaseLeadConvertField(convert, "contactId"); ok && isApexIDLikeValue(value) {
-		return storage.ID(scalarText(value)), nil
+		id := storage.ID(scalarText(value))
+		contact := Object("Contact")
+		vm.setExplicitSObjectFieldValue(&contact, "Id", value)
+		changed := false
+		if existing, found := vm.findOrgRecord("Contact", id); found {
+			changed = vm.copyLeadAddress(&contact, existing, lead, "Mailing")
+		}
+		if databaseLeadConvertBool(convert, "overwriteLeadSource") {
+			if source, exists := lead.GetField("LeadSource"); exists {
+				vm.setExplicitSObjectFieldValue(&contact, "LeadSource", vmValueFromStorage(source))
+				changed = true
+			}
+		}
+		if changed {
+			if err := vm.updateLeadConversionTarget(contact, result); err != nil {
+				return "", err
+			}
+		}
+		return id, nil
 	}
 	contact := Object("Contact")
 	if value, ok := databaseLeadConvertField(convert, "contactRecord"); ok && value.Kind == ValueObject && !strings.EqualFold(value.Type, "SObject") {
@@ -141,6 +204,7 @@ func (vm *VM) convertLeadContactID(convert Value, lead storage.Record, accountID
 	if _, _, ok := objectFieldValue(contact, "AccountId"); !ok {
 		vm.setExplicitSObjectFieldValue(&contact, "AccountId", platformScalar("Id", string(accountID)))
 	}
+	vm.copyLeadAddress(&contact, storage.Record{}, lead, "Mailing")
 	results, err := vm.applyDML("insert", contact, true, "", dml.Options{}, result)
 	if err != nil {
 		return "", err
@@ -151,7 +215,43 @@ func (vm *VM) convertLeadContactID(convert Value, lead storage.Record, accountID
 	return results[0].ID, nil
 }
 
-func (vm *VM) convertLeadOpportunityID(convert Value, lead storage.Record, accountID storage.ID, result *Result) (storage.ID, error) {
+func (vm *VM) updateLeadConversionTarget(target Value, result *Result) error {
+	results, err := vm.applyDML("update", target, true, "", dml.Options{}, result)
+	if err != nil {
+		return err
+	}
+	if hasDMLFailures(results) {
+		return databaseDMLException("convertLead", results, vm.dmlExceptionObjectTypes(target))
+	}
+	return nil
+}
+
+func (vm *VM) copyLeadAddress(target *Value, existing, lead storage.Record, prefix string) bool {
+	fields := [...]string{"Street", "City", "State", "PostalCode", "Country"}
+	changed := false
+	for _, field := range fields {
+		name := prefix + field
+		_, current, present := objectFieldValue(*target, name)
+		if !present {
+			if stored, found := existing.GetField(name); found {
+				current = vmValueFromStorage(stored)
+			}
+		}
+		if current.Kind != ValueNull && !(current.Kind == ValueString && current.Text == "") {
+			continue
+		}
+		if value, ok := lead.GetField(field); ok && value.Kind != storage.ValueNull {
+			if value.Kind == storage.ValueString && value.String == "" {
+				continue
+			}
+			vm.setExplicitSObjectFieldValue(target, prefix+field, vmValueFromStorage(value))
+			changed = true
+		}
+	}
+	return changed
+}
+
+func (vm *VM) convertLeadOpportunityID(convert Value, lead storage.Record, accountID, contactID storage.ID, result *Result) (storage.ID, error) {
 	if databaseLeadConvertBool(convert, "doNotCreateOpportunity") {
 		return "", nil
 	}
@@ -189,7 +289,20 @@ func (vm *VM) convertLeadOpportunityID(convert Value, lead storage.Record, accou
 	if hasDMLFailures(results) {
 		return "", databaseDMLException("convertLead", results, vm.dmlExceptionObjectTypes(opportunity))
 	}
-	return results[0].ID, nil
+	opportunityID := results[0].ID
+	storage.EnsureStandardObject(vm.Org, "OpportunityContactRole")
+	role := Object("OpportunityContactRole")
+	vm.setExplicitSObjectFieldValue(&role, "OpportunityId", platformScalar("Id", string(opportunityID)))
+	vm.setExplicitSObjectFieldValue(&role, "ContactId", platformScalar("Id", string(contactID)))
+	vm.setExplicitSObjectFieldValue(&role, "IsPrimary", Bool(true))
+	roleResults, err := vm.applyDML("insert", role, true, "", dml.Options{}, result)
+	if err != nil {
+		return "", err
+	}
+	if hasDMLFailures(roleResults) {
+		return "", databaseDMLException("convertLead", roleResults, vm.dmlExceptionObjectTypes(role))
+	}
+	return opportunityID, nil
 }
 
 func databaseLeadConvertField(convert Value, name string) (Value, bool) {

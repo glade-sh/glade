@@ -42,8 +42,8 @@ func TestRuntimeSmokeUsesProvidedBinary(t *testing.T) {
 	}
 
 	invocation := regexp.MustCompile(`(?m)^"\$\{GLADE\}"(?:\s|$)`)
-	if got := len(invocation.FindAllStringIndex(runtimeSmoke, -1)); got != 19 {
-		t.Errorf("smoke-runtime.sh has %d Glade invocations through GLADE, want 19", got)
+	if got := len(invocation.FindAllStringIndex(runtimeSmoke, -1)); got != 16 {
+		t.Errorf("smoke-runtime.sh has %d Glade invocations through GLADE, want 16", got)
 	}
 	for _, line := range strings.Split(runtimeSmoke, "\n") {
 		trimmed := strings.TrimSpace(line)
@@ -77,11 +77,7 @@ func TestRuntimeSmokePreservesCoverage(t *testing.T) {
 		`"${GLADE}" db ui`,
 		`grep -q 'Glade Local Data'`,
 		`"${GLADE}" playground`,
-		`Prepared demo project`,
-		`"${GLADE}" config validate --project "${DEMO_PROJECT}"`,
-		`GLADE_SMOKE_REQUIRE_DOCTOR`,
-		`"${GLADE}" doctor --project "${DEMO_PROJECT}" --json`,
-		`doctor.get("readinessScope") != "apex"`,
+		`grep -q 'http://127.0.0.1:1789/playground/'`,
 		`/playground/api/examples/load`,
 		`"id":"refinement-service"`,
 		`"${GLADE}" init --project "${REFINEMENT_PROJECT}" --yes`,
@@ -215,7 +211,7 @@ func TestDistributionSmokeRejectsManifestDoctorClaimWithoutBinaryProof(t *testin
 	if err == nil {
 		t.Fatalf("distribution smoke accepted manifest doctor marker without binary proof:\n%s", out)
 	}
-	if !strings.Contains(string(out), "release binary doctor verification failed") {
+	if !strings.Contains(string(out), "release binary doctor parser verification failed") {
 		t.Fatalf("doctor proof rejection was not reported:\n%s", out)
 	}
 	if _, err := os.Stat(runtimeLog); !os.IsNotExist(err) {
@@ -232,7 +228,7 @@ func TestDistributionSmokeRejectsFailedDoctorProcessWithPassingJSON(t *testing.T
 	if err == nil {
 		t.Fatalf("distribution smoke accepted a failed doctor process with passing JSON:\n%s", out)
 	}
-	if !strings.Contains(string(out), "release binary doctor verification failed") {
+	if !strings.Contains(string(out), "release binary doctor parser verification failed") {
 		t.Fatalf("failed doctor process rejection was not reported:\n%s", out)
 	}
 	if _, err := os.Stat(runtimeLog); !os.IsNotExist(err) {
@@ -249,7 +245,7 @@ func TestDistributionSmokeRejectsMalformedDoctorWithParserMarkerBeforeRuntime(t 
 	if err == nil {
 		t.Fatalf("distribution smoke accepted malformed doctor output with a parser marker:\n%s", out)
 	}
-	if !strings.Contains(string(out), "release binary doctor verification failed") {
+	if !strings.Contains(string(out), "release binary doctor parser verification failed") {
 		t.Fatalf("malformed doctor rejection was not reported:\n%s", out)
 	}
 	if _, err := os.Stat(runtimeLog); !os.IsNotExist(err) {

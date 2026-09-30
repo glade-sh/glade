@@ -20,7 +20,11 @@ var parsedQueryCache sync.Map
 const virtualSchemaHydrationStampKey = "__glade_virtual_schema_hydration_stamp"
 
 func cachedParsedQuery(input string, now time.Time, fiscalYearStartMonth int) (Query, bool) {
-	value, ok := parsedQueryCache.Load(parsedQueryCacheKey(input, now, fiscalYearStartMonth))
+	return cachedParsedQueryWithTimeZone(input, now, fiscalYearStartMonth, "UTC")
+}
+
+func cachedParsedQueryWithTimeZone(input string, now time.Time, fiscalYearStartMonth int, timeZoneID string) (Query, bool) {
+	value, ok := parsedQueryCache.Load(parsedQueryCacheKey(input, now, fiscalYearStartMonth, timeZoneID))
 	if !ok {
 		return Query{}, false
 	}
@@ -32,11 +36,15 @@ func cachedParsedQuery(input string, now time.Time, fiscalYearStartMonth int) (Q
 }
 
 func storeParsedQuery(input string, now time.Time, fiscalYearStartMonth int, query Query) {
-	parsedQueryCache.Store(parsedQueryCacheKey(input, now, fiscalYearStartMonth), cloneQuery(query))
+	storeParsedQueryWithTimeZone(input, now, fiscalYearStartMonth, "UTC", query)
 }
 
-func parsedQueryCacheKey(input string, now time.Time, fiscalYearStartMonth int) string {
-	return now.UTC().Truncate(time.Minute).Format("2006-01-02T15:04") + "\x00" + strconv.Itoa(normalizeFiscalYearStartMonth(fiscalYearStartMonth)) + "\x00" + input
+func storeParsedQueryWithTimeZone(input string, now time.Time, fiscalYearStartMonth int, timeZoneID string, query Query) {
+	parsedQueryCache.Store(parsedQueryCacheKey(input, now, fiscalYearStartMonth, timeZoneID), cloneQuery(query))
+}
+
+func parsedQueryCacheKey(input string, now time.Time, fiscalYearStartMonth int, timeZoneID string) string {
+	return now.UTC().Truncate(time.Minute).Format("2006-01-02T15:04") + "\x00" + strconv.Itoa(normalizeFiscalYearStartMonth(fiscalYearStartMonth)) + "\x00" + timeZoneID + "\x00" + input
 }
 
 func cloneQuery(query Query) Query {
@@ -184,21 +192,31 @@ func ParseAt(input string, now time.Time) (Query, error) {
 }
 
 func ParseAtWithFiscalYearStartMonth(input string, now time.Time, fiscalYearStartMonth int) (Query, error) {
+	return ParseAtWithFiscalYearStartMonthAndTimeZone(input, now, fiscalYearStartMonth, "UTC")
+}
+
+// ParseAtWithFiscalYearStartMonthAndTimeZone parses a query using the
+// execution user's timezone for date-literal ranges. Date literals are
+// calendar ranges in that timezone when matched against Datetime fields.
+func ParseAtWithFiscalYearStartMonthAndTimeZone(input string, now time.Time, fiscalYearStartMonth int, timeZoneID string) (Query, error) {
 	now = now.UTC()
 	fiscalYearStartMonth = normalizeFiscalYearStartMonth(fiscalYearStartMonth)
-	if query, ok := cachedParsedQuery(input, now, fiscalYearStartMonth); ok {
+	if strings.TrimSpace(timeZoneID) == "" {
+		timeZoneID = "UTC"
+	}
+	if query, ok := cachedParsedQueryWithTimeZone(input, now, fiscalYearStartMonth, timeZoneID); ok {
 		return query, nil
 	}
 	tokens, err := lex(input)
 	if err != nil {
 		return Query{}, err
 	}
-	p := parser{tokens: tokens, now: now, fiscalYearStartMonth: fiscalYearStartMonth}
+	p := parser{tokens: tokens, now: dateLiteralNow(now, timeZoneID), fiscalYearStartMonth: fiscalYearStartMonth, dateLiteralTimeZoneID: timeZoneID}
 	query, err := p.parseQuery()
 	if err != nil {
 		return Query{}, err
 	}
-	storeParsedQuery(input, now, fiscalYearStartMonth, query)
+	storeParsedQueryWithTimeZone(input, now, fiscalYearStartMonth, timeZoneID, query)
 	return query, nil
 }
 
@@ -207,6 +225,12 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 }
 
 func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) (Result, error) {
+	if err := validateSemiAntiQuery(query); err != nil {
+		return Result{}, err
+	}
+	if err := validateAggregateQuery(query); err != nil {
+		return Result{}, err
+	}
 	if strings.EqualFold(query.Object, "PlatformCachePartition") {
 		if object, ok := org.Objects["PlatformCachePartition"]; !ok || len(object.Records) == 0 {
 			org = org.Clone()
@@ -227,6 +251,9 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 		return Result{}, fmt.Errorf("soql: unknown object %s", query.Object)
 	}
 	object := org.Objects[objectName]
+	if err := validateSemiAntiJoinReferences(org, objectName, query, object.Definition); err != nil {
+		return Result{}, err
+	}
 	if len(query.Fields) == 0 && len(query.ChildQueries) == 0 && len(query.Typeofs) == 0 {
 		return Result{}, fmt.Errorf("soql: SELECT requires at least one field")
 	}
@@ -235,6 +262,14 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 		return Result{}, err
 	}
 	query.Fields = fields
+	if err := validateAggregateQuery(query); err != nil {
+		return Result{}, err
+	}
+	if len(query.GroupBy) > 0 && len(query.Aggregates) == 0 && len(query.HavingAggregates) == 0 {
+		if err := validateGroupedSelectedFields(query, false); err != nil {
+			return Result{}, err
+		}
+	}
 	var childCache *childRelationshipQueryCache
 	if len(query.ChildQueries) > 0 {
 		childCache = newChildRelationshipQueryCache(cache)
@@ -319,6 +354,75 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 		records = append(records, projected)
 	}
 	return Result{Records: records, Rows: len(records)}, nil
+}
+
+func validateSemiAntiJoinReferences(org storage.OrgState, outerObjectName string, query Query, outer storage.ObjectDefinition) error {
+	joins, _, err := semiAntiConditions(query.Where)
+	if err != nil {
+		return err
+	}
+	for _, join := range joins {
+		outerTargets, ok := semiAntiReferenceTargets(org, outerObjectName, outer, join.Field)
+		if !ok {
+			return fmt.Errorf("soql: semi-join main operand %s must be an ID or reference field", join.Field)
+		}
+		subquery := join.Subquery
+		subqueryObject, ok := storage.ResolveObjectName(org, subquery.Object)
+		if !ok {
+			continue // The ordinary object validator reports the unknown subquery object.
+		}
+		if strings.EqualFold(outerObjectName, subqueryObject) {
+			return fmt.Errorf("soql: semi-join and anti-join subqueries cannot query the same object as the outer query")
+		}
+		subqueryDefinition := org.Objects[subqueryObject].Definition
+		subqueryTargets, ok := semiAntiReferenceTargets(org, subqueryObject, subqueryDefinition, subquery.Fields[0])
+		if !ok {
+			return fmt.Errorf("soql: semi-join subquery field %s must be an ID or reference field", subquery.Fields[0])
+		}
+		if !semiAntiTargetsOverlap(outerTargets, subqueryTargets) {
+			return fmt.Errorf("soql: semi-join subquery field %s must reference the outer object", subquery.Fields[0])
+		}
+	}
+	return nil
+}
+
+func semiAntiReferenceTargets(org storage.OrgState, objectName string, definition storage.ObjectDefinition, fieldName string) ([]string, bool) {
+	if strings.Contains(fieldName, ".") {
+		return nil, false
+	}
+	if strings.EqualFold(fieldName, "Id") {
+		return []string{semiAntiCanonicalObjectTarget(org, objectName)}, true
+	}
+	_, field, ok := storage.ResolveFieldDefinition(definition, org.Namespace, fieldName)
+	if !ok {
+		field, ok = fieldDefinitionsForReferenceField(definition, fieldName)
+	}
+	if !ok || field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
+		return nil, false
+	}
+	targets := make([]string, 0, len(field.ReferenceTo))
+	for _, target := range field.ReferenceTo {
+		targets = append(targets, semiAntiCanonicalObjectTarget(org, target))
+	}
+	return targets, true
+}
+
+func semiAntiCanonicalObjectTarget(org storage.OrgState, target string) string {
+	if resolved, ok := storage.ResolveObjectName(org, target); ok {
+		return strings.ToLower(resolved)
+	}
+	return strings.ToLower(strings.TrimSpace(target))
+}
+
+func semiAntiTargetsOverlap(left, right []string) bool {
+	for _, leftTarget := range left {
+		for _, rightTarget := range right {
+			if strings.EqualFold(leftTarget, rightTarget) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func recordHiddenFromSOQL(definition storage.ObjectDefinition, record storage.Record) bool {
@@ -1094,7 +1198,9 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 		return !matches(org, definition, record, &Condition{
 			And: condition.And, Or: condition.Or,
 			Field: condition.Field, Op: condition.Op,
-			Value: condition.Value, Value2: condition.Value2, Range: condition.Range, Values: condition.Values, Subquery: condition.Subquery,
+			Value: condition.Value, Value2: condition.Value2, Range: condition.Range,
+			DateLiteralTimeZoneID: condition.DateLiteralTimeZoneID,
+			Values:                condition.Values, Subquery: condition.Subquery,
 		})
 	}
 	if len(condition.And) > 0 {
@@ -1117,6 +1223,11 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 	if !ok {
 		left = storage.NullValue()
 	}
+	if condition.Range && condition.DateLiteralTimeZoneID != "" {
+		if matched, handled := matchesDateLiteralRange(left, condition); handled {
+			return matched
+		}
+	}
 	switch condition.Op {
 	case "=":
 		if condition.Range {
@@ -1129,10 +1240,14 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 		}
 		return !equalValuesInOrg(org, left, condition.Value)
 	case ">":
-		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
+		bound := condition.Value
+		if condition.Range {
+			bound = condition.Value2
+		}
+		if left.Kind == storage.ValueNull || bound.Kind == storage.ValueNull {
 			return false
 		}
-		return compareValues(left, condition.Value) > 0
+		return compareValues(left, bound) > 0
 	case ">=":
 		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
 			return false
@@ -1144,10 +1259,17 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 		}
 		return compareValues(left, condition.Value) < 0
 	case "<=":
-		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
+		bound := condition.Value
+		if condition.Range {
+			bound = condition.Value2
+		}
+		if left.Kind == storage.ValueNull || bound.Kind == storage.ValueNull {
 			return false
 		}
-		return compareValues(left, condition.Value) <= 0
+		if condition.Range {
+			return compareValues(left, bound) < 0
+		}
+		return compareValues(left, bound) <= 0
 	case "LIKE":
 		return likeMatch(left, condition.Value)
 	case "NOT LIKE":
@@ -1185,6 +1307,135 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 	default:
 		return false
 	}
+}
+
+// dateLiteralNow projects the execution instant's local calendar fields into
+// a UTC location. The parser stores date-literal bounds as calendar labels,
+// so this preserves the running user's date without changing arithmetic.
+func dateLiteralNow(now time.Time, timeZoneID string) time.Time {
+	local := now.UTC().In(dateLiteralLocation(timeZoneID))
+	return time.Date(local.Year(), local.Month(), local.Day(), local.Hour(), local.Minute(), local.Second(), local.Nanosecond(), time.UTC)
+}
+
+// matchesDateLiteralRange applies a date-literal range to the stored field
+// type. Date fields use the calendar labels in the literal. Datetime fields
+// compare against UTC instants for local midnight in the execution user's
+// timezone. The parser keeps the range values as Date values so existing Date
+// field behavior remains unchanged.
+func matchesDateLiteralRange(left storage.Value, condition *Condition) (bool, bool) {
+	if left.Kind == storage.ValueNull || condition.Value.Kind != storage.ValueDate || condition.Value2.Kind != storage.ValueDate {
+		return false, false
+	}
+	compareStart, compareEnd := 0, 0
+	if left.Kind == storage.ValueDate {
+		compareStart = strings.Compare(left.String, condition.Value.String)
+		compareEnd = strings.Compare(left.String, condition.Value2.String)
+	} else if left.Kind == storage.ValueDateTime {
+		start, end, ok := dateLiteralUTCBounds(condition.Value.String, condition.Value2.String, condition.DateLiteralTimeZoneID)
+		if !ok {
+			return false, false
+		}
+		value, ok := parseISODateTime(left.String)
+		if !ok {
+			return false, false
+		}
+		compareStart = compareTime(value, start)
+		compareEnd = compareTime(value, end)
+	} else {
+		return false, false
+	}
+
+	switch condition.Op {
+	case "=":
+		return compareStart >= 0 && compareEnd < 0, true
+	case "!=":
+		return compareStart < 0 || compareEnd >= 0, true
+	case ">":
+		return compareEnd > 0, true
+	case ">=":
+		return compareStart >= 0, true
+	case "<":
+		return compareStart < 0, true
+	case "<=":
+		return compareEnd < 0, true
+	default:
+		return false, false
+	}
+}
+
+func dateLiteralUTCBounds(startText, endText, timeZoneID string) (time.Time, time.Time, bool) {
+	location := dateLiteralLocation(timeZoneID)
+	start, err := time.ParseInLocation("2006-01-02", startText, location)
+	if err != nil {
+		return time.Time{}, time.Time{}, false
+	}
+	end, err := time.ParseInLocation("2006-01-02", endText, location)
+	if err != nil {
+		return time.Time{}, time.Time{}, false
+	}
+	return start.UTC(), end.UTC(), true
+}
+
+func dateLiteralLocation(timeZoneID string) *time.Location {
+	trimmed := strings.TrimSpace(timeZoneID)
+	if trimmed == "" || strings.EqualFold(trimmed, "UTC") || strings.EqualFold(trimmed, "GMT") {
+		return time.UTC
+	}
+	if location, err := time.LoadLocation(trimmed); err == nil {
+		return location
+	}
+	if offset, ok := parseDateLiteralFixedOffset(trimmed); ok {
+		return time.FixedZone(trimmed, offset)
+	}
+	return time.UTC
+}
+
+func parseDateLiteralFixedOffset(value string) (int, bool) {
+	upper := strings.ToUpper(strings.TrimSpace(value))
+	if strings.HasPrefix(upper, "UTC") || strings.HasPrefix(upper, "GMT") {
+		upper = upper[3:]
+	} else {
+		return 0, false
+	}
+	if upper == "" {
+		return 0, true
+	}
+	sign := 1
+	if upper[0] == '+' {
+		upper = upper[1:]
+	} else if upper[0] == '-' {
+		sign = -1
+		upper = upper[1:]
+	}
+	parts := strings.Split(upper, ":")
+	if len(parts) > 2 || len(parts) == 0 || parts[0] == "" {
+		return 0, false
+	}
+	hours, err := strconv.Atoi(parts[0])
+	if err != nil || hours > 23 {
+		return 0, false
+	}
+	minutes := 0
+	if len(parts) == 2 {
+		if len(parts[1]) != 2 {
+			return 0, false
+		}
+		minutes, err = strconv.Atoi(parts[1])
+		if err != nil || minutes > 59 {
+			return 0, false
+		}
+	}
+	return sign * (hours*int(time.Hour) + minutes*int(time.Minute)), true
+}
+
+func compareTime(left, right time.Time) int {
+	if left.Before(right) {
+		return -1
+	}
+	if left.After(right) {
+		return 1
+	}
+	return 0
 }
 
 func asyncApexJobTestPendingStatusMatches(definition storage.ObjectDefinition, record storage.Record, condition *Condition) bool {
@@ -1276,9 +1527,29 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 	for _, field := range fields {
 		if expr, ok := parseSelectFieldExpression(field); ok {
 			if value, ok := selectFieldExpressionValue(org, definition, record, expr); ok {
-				out.Fields[expr.outputName()] = value.Clone()
+				output := expr.outputName()
+				if expr.Func == "TOLABEL" && expr.Alias != "" && len(expr.Args) == 1 {
+					source := selectFunctionFieldArg(expr.Args[0])
+					if dot := strings.LastIndexByte(source, '.'); dot >= 0 {
+						qualifier, qualified := storage.ResolveObjectName(org, source[:dot])
+						if !qualified || qualifier != definition.APIName {
+							if relationship, missing := relationshipLookupMissing(org, record, source); missing {
+								out.Fields[relationship] = storage.NullValue()
+								continue
+							}
+							output = source[:dot+1] + expr.Alias
+							projectRelationshipIDs(org, record, source, out.Fields)
+						}
+					}
+				}
+				out.Fields[output] = value.Clone()
 			}
 			continue
+		}
+		if strings.Contains(field, ".") {
+			if base, qualified := stripQualifiedCurrentObjectField(org, definition, field); qualified {
+				field = base
+			}
 		}
 		canonicalField, ok := storage.ResolveFieldName(definition, org.Namespace, field)
 		if !ok {
@@ -1365,7 +1636,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		}
 	} else if !isSystemRelationshipField(relation.Field) {
 		index := childRelationshipIndex(org, childObjectName, childObject, relation.Field, childCache)
-		ids = append([]string(nil), index[parent.ID]...)
+		ids = append([]string(nil), index[storage.IDIndexKey(parent.ID)]...)
 	} else {
 		ids = make([]string, 0, len(childObject.Records))
 		for id := range childObject.Records {
@@ -1529,6 +1800,7 @@ func childRelationshipIndex(org storage.OrgState, childObjectName string, childO
 		if parentID == "" {
 			continue
 		}
+		parentID = storage.IDIndexKey(parentID)
 		index[parentID] = append(index[parentID], string(id))
 	}
 	for parentID := range index {
@@ -1965,6 +2237,9 @@ func validateQueryReferences(org storage.OrgState, definition storage.ObjectDefi
 }
 
 func validateQueryReferencesWithChildCache(org storage.OrgState, definition storage.ObjectDefinition, query Query, mode string, childCache *childRelationshipQueryCache) error {
+	if err := validateDateFunctionGrouping(query, org, &definition); err != nil {
+		return err
+	}
 	if err := validateAggregateAliases(query); err != nil {
 		return err
 	}
@@ -2104,6 +2379,9 @@ func fieldDefinitionsForReference(org storage.OrgState, definition storage.Objec
 			return []storage.Field{{APIName: parts[1], Type: storage.FieldID}}, true
 		}
 		for _, relation := range matchingParentRelations(org.Namespace, definition, parts[0]) {
+			if relation.Polymorphic && strings.EqualFold(parts[1], "Type") {
+				return []storage.Field{{APIName: "Type", Type: storage.FieldString}}, true
+			}
 			if len(relation.ParentObjects) == 0 {
 				return nil, false
 			}
@@ -2369,6 +2647,9 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 			return true
 		}
 		for _, relation := range matchingParentRelations(org.Namespace, definition, parts[0]) {
+			if relation.Polymorphic && strings.EqualFold(parts[1], "Type") {
+				return true
+			}
 			if len(relation.ParentObjects) == 0 {
 				return false
 			}
@@ -2560,6 +2841,9 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 	if canonical, resolved := storage.ResolveObjectName(org, objectName); resolved {
 		objectName = canonical
 	}
+	if automatedProcessProfileRelationshipIsNull(objectName, record, parts[0]) {
+		return storage.NullValue(), true
+	}
 	object, ok := org.Objects[objectName]
 	if !ok {
 		return storage.Value{}, false
@@ -2589,6 +2873,11 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 				continue
 			}
 			parent.Object = canonicalParent
+			// Type on a polymorphic relationship identifies the target object;
+			// it is not the target's ordinary field named Type.
+			if relation.Polymorphic && strings.EqualFold(parts[1], "Type") {
+				return storage.StringValue(canonicalParent), true
+			}
 			if strings.Contains(parts[1], ".") {
 				return relationshipValue(org, parent, parts[1])
 			}
@@ -2600,6 +2889,17 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 		}
 	}
 	return storage.Value{}, false
+}
+
+// Salesforce exposes the Automated Process user's ProfileId but its Profile
+// relationship is null. Keep that special relationship behavior while
+// retaining the profile id for direct field and permission checks.
+func automatedProcessProfileRelationshipIsNull(objectName string, record storage.Record, relationship string) bool {
+	if !strings.EqualFold(objectName, "User") || !strings.EqualFold(relationship, "Profile") {
+		return false
+	}
+	value, ok := record.GetField("UserType")
+	return ok && value.Kind == storage.ValueString && strings.EqualFold(strings.TrimSpace(value.String), "AutomatedProcess")
 }
 
 func lookupRecordByIDInOrg(org storage.OrgState, id storage.ID) (string, storage.ObjectState, storage.Record, bool) {
@@ -2902,6 +3202,14 @@ func derivedParentRelationshipName(fieldName string) string {
 }
 
 func systemParentRelationship(definition storage.ObjectDefinition, candidate string) (storage.Relationship, bool) {
+	if storage.IsCustomSettingDefinition(definition) && strings.EqualFold(candidate, "SetupOwner") {
+		return storage.Relationship{
+			Field:              "SetupOwnerId",
+			ParentObjects:      []string{"Organization", "Profile", "User"},
+			ParentRelationship: "SetupOwner",
+			Polymorphic:        true,
+		}, true
+	}
 	if strings.EqualFold(definition.APIName, "RelationshipDomain") {
 		switch strings.ToLower(strings.TrimSpace(candidate)) {
 		case "childsobject":
@@ -2952,15 +3260,15 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	if expr, ok := parseSelectFieldExpression(field); ok {
 		return selectFieldExpressionValue(org, definition, record, expr)
 	}
-	if canonical, ok := resolveSOQLFieldName(definition, org.Namespace, field); ok && canonical == "Id" {
-		return storage.IDValue(record.ID), true
-	}
 	if strings.Contains(field, ".") {
 		if base, ok := stripQualifiedCurrentObjectField(org, definition, field); ok {
 			field = base
 		} else {
 			return relationshipValue(org, record, field)
 		}
+	}
+	if canonical, ok := resolveSOQLFieldName(definition, org.Namespace, field); ok && canonical == "Id" {
+		return storage.IDValue(record.ID), true
 	}
 	if strings.Contains(field, ".") {
 		return relationshipValue(org, record, field)
@@ -3235,10 +3543,10 @@ func equalValues(left, right storage.Value) bool {
 		return leftNumber.Cmp(rightNumber) == 0
 	}
 	if left.Kind == storage.ValueID && right.Kind == storage.ValueString {
-		return idTextEqual(string(left.ID), right.String)
+		return idStringEqual(string(left.ID), right.String)
 	}
 	if left.Kind == storage.ValueString && right.Kind == storage.ValueID {
-		return idTextEqual(left.String, string(right.ID))
+		return idStringEqual(left.String, string(right.ID))
 	}
 	if left.Kind == storage.ValueID && right.Kind == storage.ValueInteger {
 		return idEqualsInteger(left.ID, right.Integer)
@@ -3293,7 +3601,25 @@ func equalValuesInOrg(org storage.OrgState, left, right storage.Value) bool {
 }
 
 func idTextEqual(left, right string) bool {
-	if strings.EqualFold(left, right) {
+	// The 15-character portion of a Salesforce Id is case-sensitive. The
+	// 18-character form is a case-safe representation of that same value, so
+	// compare the canonical 15-character portions exactly when widths differ.
+	// Do not use EqualFold here: custom-object key prefixes can differ only by
+	// case, and those are distinct Salesforce objects.
+	if left == right {
+		return true
+	}
+	if len(left) == 15 && len(right) == 18 {
+		return left == right[:15]
+	}
+	if len(left) == 18 && len(right) == 15 {
+		return left[:15] == right
+	}
+	return false
+}
+
+func idStringEqual(left, right string) bool {
+	if idTextEqual(left, right) {
 		return true
 	}
 	if len(left) == 15 && len(right) == 18 {
@@ -3302,7 +3628,7 @@ func idTextEqual(left, right string) bool {
 	if len(left) == 18 && len(right) == 15 {
 		return strings.EqualFold(left[:15], right)
 	}
-	return false
+	return strings.EqualFold(left, right)
 }
 
 func idEqualsInteger(id storage.ID, value int64) bool {
@@ -3437,11 +3763,11 @@ func aggregateOrderedBefore(leftRecord, rightRecord storage.Record, order []Orde
 }
 
 func orderCompare(left, right storage.Value, spec OrderSpec) int {
-	if spec.Nulls != "" && (left.Kind == storage.ValueNull || right.Kind == storage.ValueNull) {
+	if left.Kind == storage.ValueNull || right.Kind == storage.ValueNull {
 		if left.Kind == right.Kind {
 			return 0
 		}
-		if spec.Nulls == "FIRST" {
+		if spec.Nulls == "" || spec.Nulls == "FIRST" {
 			if left.Kind == storage.ValueNull {
 				return -1
 			}
@@ -3623,16 +3949,35 @@ func splitMultiPicklistValue(text string) []string {
 }
 
 func matchLikePattern(text, pattern string) bool {
-	// Dynamic programming approach for SQL LIKE matching.
-	// % matches any sequence, _ matches any single character.
-	m, n := len(text), len(pattern)
+	// Tokenize escaped LIKE wildcards before matching. SOQL string decoding
+	// keeps these markers so a literal backslash remains distinct from \_ / \%.
+	type patternToken struct {
+		kind  byte // '%', '_', or literal
+		value byte
+	}
+	tokens := make([]patternToken, 0, len(pattern))
+	for i := 0; i < len(pattern); i++ {
+		if pattern[i] == '\\' && i+1 < len(pattern) && (pattern[i+1] == '\\' || pattern[i+1] == '_' || pattern[i+1] == '%') {
+			i++
+			tokens = append(tokens, patternToken{value: pattern[i]})
+			continue
+		}
+		switch pattern[i] {
+		case '%', '_':
+			tokens = append(tokens, patternToken{kind: pattern[i]})
+		default:
+			tokens = append(tokens, patternToken{value: pattern[i]})
+		}
+	}
+	// Dynamic programming over text bytes and the tokenized LIKE pattern.
+	m, n := len(text), len(tokens)
 	// dp[i][j] = true if text[i:] matches pattern[j:]
 	// Use two rows to keep O(n) space.
 	prev := make([]bool, n+1)
 	curr := make([]bool, n+1)
 	prev[n] = true
 	for j := n - 1; j >= 0; j-- {
-		if pattern[j] == '%' {
+		if tokens[j].kind == '%' {
 			prev[j] = prev[j+1]
 		} else {
 			prev[j] = false
@@ -3641,13 +3986,13 @@ func matchLikePattern(text, pattern string) bool {
 	for i := m - 1; i >= 0; i-- {
 		curr[n] = false
 		for j := n - 1; j >= 0; j-- {
-			switch pattern[j] {
+			switch tokens[j].kind {
 			case '%':
 				curr[j] = curr[j+1] || prev[j]
 			case '_':
 				curr[j] = prev[j+1]
 			default:
-				curr[j] = (asciiLower(text[i]) == asciiLower(pattern[j])) && prev[j+1]
+				curr[j] = (asciiLower(text[i]) == asciiLower(tokens[j].value)) && prev[j+1]
 			}
 		}
 		prev, curr = curr, prev

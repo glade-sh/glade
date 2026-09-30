@@ -15,6 +15,51 @@ function wireValue(result) {
   return { data: result.data, error: undefined };
 }
 
+function isPlainWireJSON(value) {
+  if (!Array.isArray(value)) {
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) {
+      return false;
+    }
+  }
+  return Reflect.ownKeys(value).every((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    return descriptor && Object.prototype.hasOwnProperty.call(descriptor, "value");
+  });
+}
+
+function cloneWireJSON(value, seen = new WeakMap(), freeze = true) {
+  if (!value || typeof value !== "object" || !isPlainWireJSON(value)) {
+    return value;
+  }
+  const array = Array.isArray(value);
+  const prototype = Object.getPrototypeOf(value);
+  if (seen.has(value)) {
+    return seen.get(value);
+  }
+  const clone = array ? new Array(value.length) : Object.create(prototype);
+  seen.set(value, clone);
+  for (const key of Reflect.ownKeys(value)) {
+    if (array && key === "length") {
+      continue;
+    }
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    Object.defineProperty(clone, key, {
+      value: cloneWireJSON(descriptor.value, seen),
+      enumerable: descriptor.enumerable,
+      writable: true,
+      configurable: true,
+    });
+  }
+  return freeze ? Object.freeze(clone) : clone;
+}
+
+function immutableWireValue(value, adapter) {
+  const clone = cloneWireJSON(value, new WeakMap(), false);
+  attachRefresh(clone, adapter);
+  return Object.freeze(clone);
+}
+
 function hasUndefined(value) {
   if (value === undefined) {
     return true;
@@ -38,13 +83,43 @@ function assertObjectParams(params) {
   return params;
 }
 
+function sameWireData(left, right) {
+  if (left === right) {
+    return true;
+  }
+  if (!left || !right || typeof left !== "object" || typeof right !== "object"
+      || !isPlainWireJSON(left) || !isPlainWireJSON(right)
+      || Array.isArray(left) !== Array.isArray(right)) {
+    return false;
+  }
+  if (Array.isArray(left) && left.length !== right.length) {
+    return false;
+  }
+  const keys = Object.keys(left);
+  return keys.length === Object.keys(right).length && keys.every((key) =>
+    Object.prototype.hasOwnProperty.call(right, key) && sameWireData(left[key], right[key]));
+}
+
+function emitFetchWireValue(adapter, value, suppressUnchanged = false) {
+  const previous = adapter.__lastEmittedValue;
+  // Compare this wire's last delivery, not the cache another wire may have updated.
+  if (suppressUnchanged && previous && adapter.__lastEmittedCacheKey === adapter.cacheKey
+      && previous.error === undefined && value.error === undefined
+      && sameWireData(previous.data, value.data)) {
+    return;
+  }
+  adapter.__lastEmittedValue = value;
+  adapter.__lastEmittedCacheKey = adapter.cacheKey;
+  adapter.dataCallback(value);
+}
+
 function emitEmptyFetchWireValue(adapter) {
   if (adapter.__lastEmptyValue) {
     return adapter.__lastEmptyValue;
   }
-  const value = attachRefresh({ data: undefined, error: undefined }, adapter);
+  const value = immutableWireValue({ data: undefined, error: undefined }, adapter);
   adapter.__lastEmptyValue = value;
-  adapter.dataCallback(value);
+  emitFetchWireValue(adapter, value);
   return value;
 }
 
@@ -61,6 +136,9 @@ export function createFetchWireAdapter(endpoint, mapBody) {
     emitEmptyFetchWireValue(this);
   }
   FetchWireAdapter.prototype.connect = function connect() {
+    if (!this.unregisterLDS) {
+      this.unregisterLDS = registerLDSAdapter(this);
+    }
     if (this.config) {
       this.update(this.config);
     }
@@ -75,14 +153,18 @@ export function createFetchWireAdapter(endpoint, mapBody) {
   FetchWireAdapter.prototype.update = function update(config) {
     this.config = config;
     this.body = mapBody(config);
-    if (!this.body || hasUndefined(this.body)) {
-      this.cacheKey = "";
+    const cacheKey = this.body && !hasUndefined(this.body) ? ldsCacheKey(endpoint, this.body) : "";
+    // Retire the previous configuration even when no new fetch will start.
+    if (cacheKey !== this.cacheKey) {
+      this.pending += 1;
+    }
+    this.cacheKey = cacheKey;
+    if (!this.cacheKey) {
       this.recordIdSet = new Set();
       const value = emitEmptyFetchWireValue(this);
       return Promise.resolve(value);
     }
     this.__lastEmptyValue = null;
-    this.cacheKey = ldsCacheKey(endpoint, this.body);
     this.recordIdSet = recordIdsFromBody(this.body);
     return this.refresh();
   };
@@ -107,8 +189,9 @@ export function createFetchWireAdapter(endpoint, mapBody) {
             result: cached?.data,
           },
         });
-        this.dataCallback(cached);
-        return Promise.resolve(cached);
+        const value = immutableWireValue({ data: cached?.data, error: cached?.error }, this);
+        emitFetchWireValue(this, value);
+        return Promise.resolve(value);
       }
     }
     const ticket = ++this.pending;
@@ -138,7 +221,7 @@ export function createFetchWireAdapter(endpoint, mapBody) {
         if (ticket !== this.pending) {
           return;
         }
-        const value = attachRefresh(wireValue(result), this);
+        const value = immutableWireValue(wireValue(result), this);
         this.__lastEmptyValue = null;
         writeLDSCache(this.cacheKey, value);
         emitRuntimeEvent({
@@ -153,7 +236,7 @@ export function createFetchWireAdapter(endpoint, mapBody) {
             durationMs: elapsedMs(started),
           },
         });
-        this.dataCallback(value);
+        emitFetchWireValue(this, value, options.suppressUnchanged);
         return value;
       })
       .catch((err) => {
@@ -172,7 +255,7 @@ export function createFetchWireAdapter(endpoint, mapBody) {
         if (ticket !== this.pending) {
           return;
         }
-        const value = attachRefresh({ error: { message: String(err) } }, this);
+        const value = immutableWireValue({ error: { message: String(err) }, data: undefined }, this);
         this.__lastEmptyValue = null;
         emitRuntimeEvent({
           kind: "lds",
@@ -185,7 +268,7 @@ export function createFetchWireAdapter(endpoint, mapBody) {
             durationMs: elapsedMs(started),
           },
         });
-        this.dataCallback(value);
+        emitFetchWireValue(this, value);
         return value;
       });
   };
@@ -227,8 +310,9 @@ export function createApexWireAdapterWithOptions(className, methodName, options 
         emitApexEvent(className, methodName, config ?? {}, "cache-hit", {
           result: cached?.data,
         });
-        this.dataCallback(cached);
-        return Promise.resolve(cached);
+        const value = immutableWireValue({ data: cached?.data, error: cached?.error }, this);
+        this.dataCallback(value);
+        return Promise.resolve(value);
       }
     }
     const ticket = ++this.pending;
@@ -237,7 +321,7 @@ export function createApexWireAdapterWithOptions(className, methodName, options 
         if (ticket !== this.pending) {
           return;
         }
-        const value = attachRefresh({ data, error: undefined }, this);
+        const value = immutableWireValue({ data, error: undefined }, this);
         if (options.cacheable) {
           writeLDSCache(this.cacheKey, value);
         }
@@ -248,7 +332,7 @@ export function createApexWireAdapterWithOptions(className, methodName, options 
         if (ticket !== this.pending) {
           return;
         }
-        const value = attachRefresh({ error: apexWireErrorValue(err), data: undefined }, this);
+        const value = immutableWireValue({ error: apexWireErrorValue(err), data: undefined }, this);
         this.dataCallback(value);
         return value;
       });
@@ -257,17 +341,19 @@ export function createApexWireAdapterWithOptions(className, methodName, options 
     if (!this.config || hasUndefined(this.config)) {
       return Promise.resolve();
     }
-    return invokeApex(className, methodName, this.config ?? {})
+    const config = this.config;
+    const cacheKey = this.cacheKey;
+    return invokeApex(className, methodName, config ?? {})
       .then((data) => {
-        const value = attachRefresh({ data, error: undefined }, this);
-        if (this.cacheKey) {
-          writeLDSCache(this.cacheKey, value);
+        const value = immutableWireValue({ data, error: undefined }, this);
+        if (cacheKey) {
+          writeLDSCache(cacheKey, value);
         }
         this.dataCallback(value);
         return value;
       })
       .catch((err) => {
-        const value = attachRefresh({ error: apexWireErrorValue(err), data: undefined }, this);
+        const value = immutableWireValue({ error: apexWireErrorValue(err), data: undefined }, this);
         this.dataCallback(value);
         return value;
       });

@@ -17,19 +17,21 @@ type ContextPresetFile struct {
 }
 
 type ContextPreset struct {
-	Target        string            `json:"target,omitempty"`
-	Component     string            `json:"component,omitempty"`
-	ObjectAPIName string            `json:"objectApiName,omitempty"`
-	RecordID      string            `json:"recordId,omitempty"`
-	Page          string            `json:"page,omitempty"`
-	Tab           string            `json:"tab,omitempty"`
-	Action        string            `json:"action,omitempty"`
-	App           string            `json:"app,omitempty"`
-	FormFactor    string            `json:"formFactor,omitempty"`
-	State         map[string]string `json:"state,omitempty"`
-	Community     CommunityContext  `json:"community,omitempty"`
-	Flow          FlowContext       `json:"flow,omitempty"`
-	PageReference map[string]any    `json:"pageReference,omitempty"`
+	Target            string            `json:"target,omitempty"`
+	Component         string            `json:"component,omitempty"`
+	ObjectAPIName     string            `json:"objectApiName,omitempty"`
+	RecordID          string            `json:"recordId,omitempty"`
+	Page              string            `json:"page,omitempty"`
+	Tab               string            `json:"tab,omitempty"`
+	Action            string            `json:"action,omitempty"`
+	App               string            `json:"app,omitempty"`
+	FormFactor        string            `json:"formFactor,omitempty"`
+	State             map[string]string `json:"state,omitempty"`
+	UserPermissions   map[string]bool   `json:"userPermissions,omitempty"`
+	CustomPermissions map[string]bool   `json:"customPermissions,omitempty"`
+	Community         CommunityContext  `json:"community,omitempty"`
+	Flow              FlowContext       `json:"flow,omitempty"`
+	PageReference     map[string]any    `json:"pageReference,omitempty"`
 }
 
 type ContextPresetError struct {
@@ -116,18 +118,20 @@ func (f ContextPresetFile) Preset(name string) (ContextPreset, error) {
 
 func (p ContextPreset) ToPageContext() (PageContext, error) {
 	ctx := PageContext{
-		ComponentName: strings.TrimSpace(p.Component),
-		PageName:      strings.TrimSpace(p.Page),
-		RecordID:      strings.TrimSpace(p.RecordID),
-		ObjectAPIName: strings.TrimSpace(p.ObjectAPIName),
-		AppName:       strings.TrimSpace(p.App),
-		TabName:       strings.TrimSpace(p.Tab),
-		ActionName:    strings.TrimSpace(p.Action),
-		FormFactor:    strings.TrimSpace(p.FormFactor),
-		State:         copyContextState(p.State),
-		Community:     normalizeCommunityContext(p.Community),
-		Flow:          normalizeFlowContext(p.Flow),
-		PageReference: copyPageReference(p.PageReference),
+		ComponentName:     strings.TrimSpace(p.Component),
+		PageName:          strings.TrimSpace(p.Page),
+		RecordID:          strings.TrimSpace(p.RecordID),
+		ObjectAPIName:     strings.TrimSpace(p.ObjectAPIName),
+		AppName:           strings.TrimSpace(p.App),
+		TabName:           strings.TrimSpace(p.Tab),
+		ActionName:        strings.TrimSpace(p.Action),
+		FormFactor:        strings.TrimSpace(p.FormFactor),
+		State:             copyContextState(p.State),
+		UserPermissions:   copyPermissionContext(p.UserPermissions),
+		CustomPermissions: copyPermissionContext(p.CustomPermissions),
+		Community:         normalizeCommunityContext(p.Community),
+		Flow:              normalizeFlowContext(p.Flow),
+		PageReference:     copyPageReference(p.PageReference),
 	}
 	switch normalizePresetTarget(p.Target) {
 	case "recordpage":
@@ -208,6 +212,22 @@ func copyContextState(in map[string]string) map[string]string {
 			continue
 		}
 		out[key] = value
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func copyPermissionContext(in map[string]bool) map[string]bool {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string]bool, len(in))
+	for key, enabled := range in {
+		if name := strings.TrimSpace(key); name != "" {
+			out[name] = enabled
+		}
 	}
 	if len(out) == 0 {
 		return nil

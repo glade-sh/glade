@@ -27,6 +27,7 @@ type Index struct {
 	Types                 []TypeSymbol                      `json:"types"`
 	Triggers              []TriggerSymbol                   `json:"triggers"`
 	Objects               []schema.Object                   `json:"objects"`
+	OrgShapeFeatures      []string                          `json:"orgShapeFeatures,omitempty"`
 	CustomMetadataRecords []schema.CustomMetadataRecord     `json:"customMetadataRecords,omitempty"`
 	CodeIntelSymbols      []packageartifact.CodeIntelSymbol `json:"codeIntelSymbols,omitempty"`
 	CodeIntelUses         []packageartifact.CodeIntelUse    `json:"codeIntelUses,omitempty"`
@@ -164,6 +165,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 		sources = NewWorkspaceSources()
 	}
 	artifacts.Sources = sources
+	features := capturedOrgShapeFeatures(p.Root)
 	parser := apexast.NewParser()
 	idx = Index{
 		Project: ProjectInfo{
@@ -172,8 +174,9 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 			SourceAPIVersion: p.SourceAPIVersion,
 		},
 		Objects:               s.Objects,
+		OrgShapeFeatures:      features,
 		CustomMetadataRecords: s.CustomMetadataRecords,
-		projectIdentity:       incrementalProjectIdentity(p),
+		projectIdentity:       incrementalProjectIdentityWithFeatures(p, features),
 	}
 	defer func() {
 		if recovered := recover(); recovered != nil {
@@ -1073,6 +1076,7 @@ type incrementalPackageShimIdentity struct {
 }
 
 type incrementalProjectIdentityLedger struct {
+	OrgShapeFeatures      []string
 	Project               incrementalProjectConfigIdentity
 	ManagedDependencies   []incrementalManagedDependencyIdentity
 	PackageShims          []incrementalPackageShimIdentity
@@ -1089,8 +1093,22 @@ func incrementalProjectConfigForIdentity(p project.Project) incrementalProjectCo
 	}
 }
 
+func capturedOrgShapeFeatures(root string) []string {
+	if root == "" {
+		return nil
+	}
+	features := append([]string(nil), project.OrgShapeFeatures(root)...)
+	sort.Strings(features)
+	return features
+}
+
 func incrementalProjectIdentity(p project.Project) string {
+	return incrementalProjectIdentityWithFeatures(p, capturedOrgShapeFeatures(p.Root))
+}
+
+func incrementalProjectIdentityWithFeatures(p project.Project, features []string) string {
 	ledger := incrementalProjectIdentityLedger{
+		OrgShapeFeatures:      features,
 		Project:               incrementalProjectConfigForIdentity(p),
 		DependencyDiagnostics: p.DependencyDiagnostics,
 	}
@@ -1340,6 +1358,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 	idx = Index{
 		Project:               previous.Project,
 		Objects:               previous.Objects,
+		OrgShapeFeatures:      previous.OrgShapeFeatures,
 		CustomMetadataRecords: previous.CustomMetadataRecords,
 		CodeIntelSymbols:      previous.CodeIntelSymbols,
 		CodeIntelUses:         previous.CodeIntelUses,

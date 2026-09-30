@@ -31,7 +31,7 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			return Null, err
 		}
 		if expr.Operator == "instanceof" {
-			return vm.evalInstanceOf(left, expr.Right.Name), nil
+			return vm.evalInstanceOfChecked(left, expr.Right.Name)
 		}
 		if expr.Operator == "&&" && left.Kind == ValueBool && !left.Bool {
 			return Bool(false), nil
@@ -116,7 +116,8 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			if err != nil {
 				return Null, err
 			}
-			if left.Kind != ValueNull {
+			emptyInlineQuery := expr.Args[0].Kind == ir.ExprSOQL && left.Kind == ValueList && len(left.List) == 0
+			if left.Kind != ValueNull && !emptyInlineQuery {
 				return left, nil
 			}
 			return vm.eval(expr.Args[1], result)
@@ -260,12 +261,14 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			args = append(args, plainNull(value))
 		}
 		namedArgs := make(map[string]Value, len(expr.NamedArgs))
+		namedArgOrder := make([]string, 0, len(expr.NamedArgs))
 		for _, arg := range expr.NamedArgs {
 			value, err := vm.eval(arg.Expr, result)
 			if err != nil {
 				return Null, err
 			}
 			namedArgs[arg.Name] = plainNull(value)
+			namedArgOrder = append(namedArgOrder, arg.Name)
 		}
 		if hasReceiver {
 			receiverName := exprReceiverName(*expr.Left)
@@ -298,6 +301,9 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		}
 		if queryLocatorCallee != "" {
 			callee = queryLocatorCallee
+		}
+		if strings.HasPrefix(callee, "new:") || strings.HasPrefix(callee, "newlit:") {
+			return vm.callConstructorWithNamedArgOrder(callee, args, namedArgs, namedArgOrder, result)
 		}
 		return vm.call(callee, args, namedArgs, result)
 	case ir.ExprSOQL:
@@ -470,24 +476,9 @@ func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 		return true, nil
 	}
 	if left.Kind == ValueMap && right.Kind == ValueMap {
-		if len(left.Map) != len(right.Map) {
-			return false, nil
-		}
-		for key, leftValue := range left.Map {
-			rightValue, ok := right.Map[key]
-			if !ok {
-				return false, nil
-			}
-			if leftValue.equal(rightValue, make(map[[2]uint64]bool)) {
-				continue
-			}
-			equal, err := vm.apexEquals(leftValue, rightValue, result)
-			if err != nil || !equal {
-				return equal, err
-			}
-		}
-		return true, nil
+		return vm.apexMapsEqual(left, right, result, true)
 	}
+
 	if left.Kind != ValueObject || platformScalarObject(left.Type) || left.Type == "Type" {
 		return left.Equal(right), nil
 	}
@@ -644,4 +635,33 @@ func (vm *VM) evalIndexedIncrementExpression(expr ir.Expr, result *Result) (Valu
 		return current, nil
 	}
 	return next, nil
+}
+
+// Map storage slots disambiguate hash collisions; equality compares the actual
+// stored keys. The operator retains its existing value-equality fallback.
+func (vm *VM) apexMapsEqual(left, right Value, result *Result, operator bool) (bool, error) {
+	if right.Kind != ValueMap || len(left.Map) != len(right.Map) {
+		return false, nil
+	}
+	for raw, leftValue := range left.Map {
+		key, err := vm.resolvedMapLookupKey(right, mapStoredKey(left, raw))
+		if err != nil {
+			return false, err
+		}
+		rightValue, ok := right.Map[key]
+		if !ok {
+			return false, nil
+		}
+		if leftValue.equal(rightValue, make(map[[2]uint64]bool)) {
+			continue
+		}
+		if !operator {
+			return false, nil
+		}
+		equal, err := vm.apexEquals(leftValue, rightValue, result)
+		if err != nil || !equal {
+			return equal, err
+		}
+	}
+	return true, nil
 }

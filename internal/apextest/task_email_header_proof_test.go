@@ -1,0 +1,21 @@
+package apextest
+
+import (
+	"encoding/json"
+	"path/filepath"
+	"testing"
+)
+
+// Exact API53 Task DML and zero Apex email-invocation contracts.
+// Notification-request capture is separately tested as a local effect; delivery is not claimed.
+func TestRunTaskEmailHeaderContracts(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/GladeTaskEmailHeader53.cls"), "@IsTest private class GladeTaskEmailHeader53 {\n private static void verifyRows(List<Task> inputs,String expectedSubject){\n  System.assertEquals(2,inputs.size());\n  Set<Id> ids=new Set<Id>();for(Task row:inputs){System.assertNotEquals(null,row.Id);ids.add(row.Id);}\n  System.assertEquals(2,ids.size());\n  List<Task> stored=[SELECT Id,Subject,OwnerId,Status,Priority FROM Task WHERE Id IN :ids];\n  System.assertEquals(2,stored.size());\n  for(Task row:stored){System.assertEquals(expectedSubject,row.Subject);System.assertEquals(UserInfo.getUserId(),row.OwnerId);System.assertEquals('Not Started',row.Status);System.assertEquals('Normal',row.Priority);}\n }\n private static void exercise(Boolean isUpdate,Boolean userEmail){\n  List<Task> rows=new List<Task>{\n   new Task(Subject='Owned before',OwnerId=UserInfo.getUserId(),Status='Not Started',Priority='Normal'),\n   new Task(Subject='Owned before',OwnerId=UserInfo.getUserId(),Status='Not Started',Priority='Normal')};\n  if(isUpdate){insert rows;verifyRows(rows,'Owned before');}\n  for(Task row:rows)row.Subject='Owned after';\n  Database.DMLOptions options=new Database.DMLOptions();options.OptAllOrNone=true;\n  options.EmailHeader.triggerUserEmail=userEmail;\n  List<Object> observations=new List<Object>();\n  observations.add(new Map<String,Object>{'phase'=>'before-start','emailInvocations'=>Limits.getEmailInvocations()});\n  Test.startTest();\n  observations.add(new Map<String,Object>{'phase'=>'before-dml','emailInvocations'=>Limits.getEmailInvocations()});\n  List<Database.SaveResult> results;\n  if(isUpdate)results=Database.update(rows,options);else results=Database.insert(rows,options);\n  observations.add(new Map<String,Object>{'phase'=>'after-dml','emailInvocations'=>Limits.getEmailInvocations()});\n  System.assertEquals(2,results.size());\n  for(Integer i=0;i<results.size();i++){\n   System.assertEquals(true,results[i].isSuccess());System.assertEquals(rows[i].Id,results[i].getId());\n   System.assertEquals(0,results[i].getErrors().size());\n  }\n  verifyRows(rows,'Owned after');\n  Test.stopTest();\n  observations.add(new Map<String,Object>{'phase'=>'after-stop','emailInvocations'=>Limits.getEmailInvocations()});\n  verifyRows(rows,'Owned after');\n  System.assertEquals(4,observations.size(),'Complete invocation phases');\n  List<String> expectedPhases=new List<String>{'before-start','before-dml','after-dml','after-stop'};\n  for(Integer i=0;i<expectedPhases.size();i++){\n   Map<String,Object> actual=(Map<String,Object>)observations[i];\n   String label='update='+isUpdate+', userEmail='+userEmail+', '+expectedPhases[i];\n   System.assertEquals(new Set<String>{'phase','emailInvocations'},actual.keySet(),label+': complete keys');\n   System.assertEquals(expectedPhases[i],actual.get('phase'),label+': phase order');\n   System.assertEquals(0,actual.get('emailInvocations'),label+': measured invocation count');\n  }\n }\n @IsTest static void insertUserEmailTrue(){exercise(false,true);}\n @IsTest static void insertUserEmailFalse(){exercise(false,false);}\n @IsTest static void updateUserEmailTrue(){exercise(true,true);}\n @IsTest static void updateUserEmailFalse(){exercise(true,false);}\n}\n")
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/GladeTaskEmailHeader53.cls-meta.xml"), "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>53.0</apiVersion><status>Active</status></ApexClass>\n")
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), "{\"sourceApiVersion\": \"53.0\", \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}]}")
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 4 || got.Passed != 4 || got.Failed != 0 || got.Errors != 0 || got.Skipped != 0 {
+		data, _ := json.Marshal(run)
+		t.Fatalf("Task email-header contracts: %s", data)
+	}
+}

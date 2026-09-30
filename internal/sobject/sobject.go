@@ -152,13 +152,16 @@ type DescribeSObjectResult struct {
 type DescribeFieldResult struct {
 	Name                  string                      `json:"name"`
 	Type                  storage.FieldType           `json:"type"`
+	MasterDetail          bool                        `json:"masterDetail,omitempty"`
 	DisplayType           string                      `json:"displayType,omitempty"`
 	Label                 string                      `json:"label,omitempty"`
 	InlineHelpText        string                      `json:"inlineHelpText,omitempty"`
 	Length                int                         `json:"length,omitempty"`
 	Precision             int                         `json:"precision,omitempty"`
 	Scale                 int                         `json:"scale,omitempty"`
+	ScaleSpecified        bool                        `json:"scaleSpecified,omitempty"`
 	Formula               string                      `json:"formula,omitempty"`
+	FormulaTreatBlanksAs  string                      `json:"formulaTreatBlanksAs,omitempty"`
 	CompoundFieldName     string                      `json:"compoundFieldName,omitempty"`
 	AutoNumber            bool                        `json:"autoNumber,omitempty"`
 	DisplayFormat         string                      `json:"displayFormat,omitempty"`
@@ -181,6 +184,7 @@ type DescribeFieldResult struct {
 	ReferenceTo           []string                    `json:"referenceTo,omitempty"`
 	RelationshipName      string                      `json:"relationshipName,omitempty"`
 	RelationshipOrder     *int                        `json:"relationshipOrder,omitempty"`
+	ReparentableMasterDetail bool                     `json:"reparentableMasterDetail,omitempty"`
 	ChildRelationshipName string                      `json:"childRelationshipName,omitempty"`
 	DeleteConstraint      string                      `json:"deleteConstraint,omitempty"`
 	DefaultValue          string                      `json:"defaultValue,omitempty"`
@@ -210,8 +214,27 @@ type DescribeRecordTypeInfo struct {
 
 func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 	objects := mergeSchemaObjects(s.Objects)
+	baseObjectNames := objectNames(objects)
+	objects = appendGeneratedShareObjects(objects)
 	sort.Slice(objects, func(i, j int) bool { return objects[i].Name < objects[j].Name })
-	prefixes := storage.AssignDeterministicPrefixes(objectNames(objects), nil)
+	baseExplicitPrefixes := make(map[string]string)
+	customSettingIndex := 0
+	for _, object := range objects {
+		if object.CustomSettingsType == "" {
+			continue
+		}
+		baseExplicitPrefixes[object.Name] = storage.CustomSettingPrefix(customSettingIndex)
+		customSettingIndex++
+	}
+	// Allocate prefixes for source-backed objects before adding generated
+	// share tables. A generated auxiliary object must not renumber the source
+	// object's stable local ID prefix.
+	basePrefixes := storage.AssignDeterministicPrefixes(baseObjectNames, baseExplicitPrefixes)
+	explicitPrefixes := make(map[string]string, len(baseObjectNames))
+	for _, name := range baseObjectNames {
+		explicitPrefixes[name] = basePrefixes[name]
+	}
+	prefixes := storage.AssignDeterministicPrefixes(objectNames(objects), explicitPrefixes)
 
 	registry := DescribeRegistry{Objects: make(map[string]DescribeSObjectResult, len(objects))}
 	recordTypeIDs := storage.NewIDGenerator(map[string]string{"RecordType": storage.StandardKeyPrefix("RecordType")})
@@ -242,6 +265,12 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			}
 			describe.Metadata = map[string]string{"kind": "customSetting", "customSettingsType": object.CustomSettingsType}
 		}
+		if object.PublishBehavior != "" {
+			if describe.Metadata == nil {
+				describe.Metadata = make(map[string]string)
+			}
+			describe.Metadata["publishBehavior"] = object.PublishBehavior
+		}
 		if object.NameField.Type != "" {
 			describe.Fields["Name"] = DescribeFieldResult{
 				Name:          "Name",
@@ -251,6 +280,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				Required:      true,
 				AutoNumber:    strings.EqualFold(object.NameField.Type, "AutoNumber"),
 				DisplayFormat: object.NameField.DisplayFormat,
+				Length:        nameFieldLength(object.NameField),
 			}
 		}
 		for _, field := range object.Fields {
@@ -264,7 +294,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			autoNumber := strings.EqualFold(field.Type, "AutoNumber")
 			var updateable *bool
 			if strings.EqualFold(field.Type, "MasterDetail") {
-				updateable = storage.BoolFlag(false)
+				updateable = storage.BoolFlag(field.ReparentableMasterDetail)
 			}
 			childRelationshipName := field.ChildRelationshipName
 			references := referenceTargets(field.ReferenceTo)
@@ -280,6 +310,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			describe.Fields[field.Name] = DescribeFieldResult{
 				Name:                  field.Name,
 				Type:                  fieldType,
+				MasterDetail:          strings.EqualFold(field.Type, "MasterDetail"),
 				DisplayType:           displayFieldType(field.Type),
 				Label:                 labelOrName(field.Label, field.Name),
 				InlineHelpText:        field.InlineHelpText,
@@ -288,18 +319,22 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				Length:                field.Length,
 				Precision:             field.Precision,
 				Scale:                 field.Scale,
+				ScaleSpecified:        field.ScaleSpecified,
 				Formula:               field.Formula,
+				FormulaTreatBlanksAs:  field.FormulaTreatBlanksAs,
 				ReferenceTo:           referenceTargets(field.ReferenceTo),
 				SummarizedField:       field.SummarizedField,
 				SummaryForeignKey:     field.SummaryForeignKey,
 				SummaryOperation:      field.SummaryOperation,
 				SummaryFilterItems:    storageSummaryFilters(field.SummaryFilterItems),
 				FilteredLookupInfo:    storageFilteredLookupInfo(field.FilteredLookupInfo),
+				RelationshipOrder:     cloneIntPtr(field.RelationshipOrder),
+				ReparentableMasterDetail: field.ReparentableMasterDetail,
 				RelationshipName:      field.RelationshipName,
 				ChildRelationshipName: childRelationshipName,
 				DeleteConstraint:      field.DeleteConstraint,
 				DefaultValue:          field.DefaultValue,
-				Required:              field.Required,
+				Required:              field.Required || strings.EqualFold(field.Type, "MasterDetail"),
 				ExternalID:            field.ExternalID,
 				Unique:                field.Unique,
 				IDLookup:              field.IDLookup || field.ExternalID,
@@ -328,6 +363,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 					Polymorphic:        len(references) > 1,
 					CascadeDelete:      strings.EqualFold(field.DeleteConstraint, "Cascade") || strings.EqualFold(field.Type, "MasterDetail"),
 					RestrictedDelete:   strings.EqualFold(field.DeleteConstraint, "Restrict"),
+					SetNullOnDelete:    strings.EqualFold(field.DeleteConstraint, "SetNull"),
 				})
 			}
 		}
@@ -374,6 +410,96 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 	return registry
 }
 
+
+// appendGeneratedShareObjects adds the describe shape Salesforce exposes for
+// custom objects whose metadata enables record sharing. The share table is a
+// platform-generated object, so it is not present in source metadata, but
+// Apex can still resolve and query it through Schema.getGlobalDescribe().
+func appendGeneratedShareObjects(objects []schema.Object) []schema.Object {
+	seen := make(map[string]bool, len(objects))
+	for _, object := range objects {
+		seen[strings.ToLower(strings.TrimSpace(object.Name))] = true
+	}
+	out := append([]schema.Object(nil), objects...)
+	for _, object := range objects {
+		name := strings.TrimSpace(object.Name)
+		if !strings.HasSuffix(strings.ToLower(name), "__c") {
+			continue
+		}
+		if object.CustomSettingsType != "" {
+			continue
+		}
+		// Metadata exported from Salesforce includes enableSharing. The
+		// sharing-model fallback handles older/minimal metadata that records
+		// a share-capable OWD without the platform flag. An empty model is
+		// unknown metadata, not evidence that Salesforce omitted the generated
+		// share table.
+		if !object.EnableSharing && object.SharingModel != "" && !shareCapableSharingModel(object.SharingModel) {
+			continue
+		}
+		shareName := name[:len(name)-3] + "__Share"
+		key := strings.ToLower(shareName)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, schema.Object{
+			Name:         shareName,
+			Label:        labelOrName(object.Label, name) + " Share",
+			PluralLabel:  labelOrName(object.PluralLabel, name) + " Shares",
+			SharingModel: "ReadWrite",
+			Fields: []schema.Field{
+				{Name: "ParentId", Type: "Lookup", ReferenceTo: []string{name}, RelationshipName: "Parent"},
+				{Name: "UserOrGroupId", Type: "Lookup", ReferenceTo: []string{"User", "Group"}, RelationshipName: "UserOrGroup"},
+				{Name: "AccessLevel", Type: "Picklist", PicklistValues: []schema.PicklistValue{
+					{FullName: "Read", Label: "Read", Active: true},
+					{FullName: "Edit", Label: "Edit", Active: true},
+					{FullName: "All", Label: "All", Active: true},
+				}},
+				{Name: "RowCause", Type: "Picklist", DefaultValue: "Manual", PicklistValues: append([]schema.PicklistValue{
+					{FullName: "Manual", Label: "Manual", Default: true, Active: true},
+					{FullName: "Owner", Label: "Owner", Active: true},
+					{FullName: "Rule", Label: "Rule", Active: true},
+					{FullName: "ImplicitChild", Label: "Implicit Child", Active: true},
+					{FullName: "ImplicitParent", Label: "Implicit Parent", Active: true},
+				}, sharingReasonPicklistValues(object.SharingReasons)...),
+				},
+			},
+		})
+	}
+	return out
+}
+
+func sharingReasonPicklistValues(reasons []string) []schema.PicklistValue {
+	values := make([]schema.PicklistValue, 0, len(reasons))
+	for _, reason := range reasons {
+		name := strings.TrimSpace(reason)
+		if name == "" {
+			continue
+		}
+		values = append(values, schema.PicklistValue{FullName: name, Label: name, Active: true})
+	}
+	return values
+}
+
+func stringSliceContainsFold(values []string, want string) bool {
+	for _, value := range values {
+		if strings.EqualFold(value, want) {
+			return true
+		}
+	}
+	return false
+}
+
+func shareCapableSharingModel(model string) bool {
+	switch strings.ToLower(strings.TrimSpace(model)) {
+	case "private", "read", "publicreadonly", "readwrite":
+		return true
+	default:
+		return false
+	}
+}
+
 func mergeSchemaObjects(objects []schema.Object) []schema.Object {
 	if len(objects) < 2 {
 		out := make([]schema.Object, len(objects))
@@ -411,13 +537,21 @@ func mergeSchemaObject(base, overlay schema.Object) schema.Object {
 	if overlay.SharingModel != "" {
 		base.SharingModel = overlay.SharingModel
 	}
+	if overlay.EnableSharing {
+		base.EnableSharing = true
+	}
+	for _, reason := range overlay.SharingReasons {
+		if !stringSliceContainsFold(base.SharingReasons, reason) {
+			base.SharingReasons = append(base.SharingReasons, reason)
+		}
+	}
 	if overlay.CustomSettingsType != "" {
 		base.CustomSettingsType = overlay.CustomSettingsType
 	}
 	if overlay.EnableSearch {
 		base.EnableSearch = true
 	}
-	if overlay.NameField.Type != "" || overlay.NameField.Label != "" || overlay.NameField.DisplayFormat != "" {
+	if overlay.NameField.Type != "" || overlay.NameField.Label != "" || overlay.NameField.DisplayFormat != "" || overlay.NameField.Length != 0 {
 		base.NameField = overlay.NameField
 	}
 	base.Fields = mergeSchemaFields(base.Fields, overlay.Fields)
@@ -554,11 +688,14 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			Label:                 labelOrName(field.Label, field.Name),
 			InlineHelpText:        field.InlineHelpText,
 			Type:                  field.Type,
+			MasterDetail:          field.MasterDetail,
 			DisplayType:           field.DisplayType,
 			Length:                field.Length,
 			Precision:             field.Precision,
 			Scale:                 field.Scale,
+			ScaleSpecified:        field.ScaleSpecified,
 			Formula:               field.Formula,
+			FormulaTreatBlanksAs:  field.FormulaTreatBlanksAs,
 			CompoundFieldName:     field.CompoundFieldName,
 			DefaultValue:          field.DefaultValue,
 			AutoNumber:            field.AutoNumber,
@@ -590,6 +727,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			ReferenceTo:           append([]string(nil), field.ReferenceTo...),
 			RelationshipName:      field.RelationshipName,
 			RelationshipOrder:     cloneIntPtr(field.RelationshipOrder),
+			ReparentableMasterDetail: field.ReparentableMasterDetail,
 			ChildRelationshipName: field.ChildRelationshipName,
 			PicklistController:    field.PicklistController,
 			PicklistValueSettings: cloneStoragePicklistSettings(field.PicklistValueSettings),
@@ -635,13 +773,16 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 		describe.Fields[name] = DescribeFieldResult{
 			Name:                  field.APIName,
 			Type:                  field.Type,
+			MasterDetail:          field.MasterDetail,
 			DisplayType:           field.DisplayType,
 			Label:                 labelOrName(field.Label, field.APIName),
 			InlineHelpText:        field.InlineHelpText,
 			Length:                field.Length,
 			Precision:             field.Precision,
 			Scale:                 field.Scale,
+			ScaleSpecified:        field.ScaleSpecified,
 			Formula:               field.Formula,
+			FormulaTreatBlanksAs:  field.FormulaTreatBlanksAs,
 			CompoundFieldName:     field.CompoundFieldName,
 			AutoNumber:            field.AutoNumber,
 			DisplayFormat:         field.DisplayFormat,
@@ -664,6 +805,7 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 			ReferenceTo:           append([]string(nil), field.ReferenceTo...),
 			RelationshipName:      field.RelationshipName,
 			RelationshipOrder:     cloneIntPtr(field.RelationshipOrder),
+			ReparentableMasterDetail: field.ReparentableMasterDetail,
 			ChildRelationshipName: field.ChildRelationshipName,
 			DefaultValue:          field.DefaultValue,
 			Required:              field.Required,
@@ -711,6 +853,16 @@ func ensureDescribeField(fields map[string]DescribeFieldResult, name, typ, label
 	fields[name] = DescribeFieldResult{Name: name, Type: storageFieldType(typ), DisplayType: displayFieldType(typ), Label: label}
 }
 
+func nameFieldLength(field schema.NameField) int {
+	if field.Length > 0 {
+		return field.Length
+	}
+	if strings.EqualFold(field.Type, "Text") {
+		return 80
+	}
+	return 0
+}
+
 func displayFieldType(raw string) string {
 	switch strings.ToLower(strings.TrimSpace(raw)) {
 	case "number":
@@ -721,6 +873,8 @@ func displayFieldType(raw string) string {
 		return "PERCENT"
 	case "textarea", "longtextarea":
 		return "TEXTAREA"
+	case "html":
+		return "RICHTEXTAREA"
 	case "email":
 		return "EMAIL"
 	case "url":
@@ -769,7 +923,12 @@ func storageSummaryFilters(values []schema.SummaryFilter) []storage.SummaryFilte
 }
 
 func storageFilteredLookupInfo(value schema.FilteredLookupInfo) storage.FilteredLookupInfo {
+	var items []storage.LookupFilterItem
+	for _, item := range value.FilterItems {
+		items = append(items, storage.LookupFilterItem{Field: item.Field, Operation: item.Operation, Value: item.Value, ValueField: item.ValueField})
+	}
 	return storage.FilteredLookupInfo{
+		Active: value.Active, BooleanFilter: value.BooleanFilter, ErrorMessage: value.ErrorMessage, FilterItems: items,
 		ControllingFields: append([]string(nil), value.ControllingFields...),
 		Dependent:         value.Dependent,
 		OptionalFilter:    value.OptionalFilter,
@@ -777,6 +936,7 @@ func storageFilteredLookupInfo(value schema.FilteredLookupInfo) storage.Filtered
 }
 
 func cloneStorageFilteredLookupInfo(value storage.FilteredLookupInfo) storage.FilteredLookupInfo {
+	value.FilterItems = append([]storage.LookupFilterItem(nil), value.FilterItems...)
 	value.ControllingFields = append([]string(nil), value.ControllingFields...)
 	return value
 }
@@ -868,7 +1028,7 @@ func labelOrName(label, name string) string {
 
 func storageFieldType(raw string) storage.FieldType {
 	switch strings.ToLower(strings.TrimSpace(raw)) {
-	case "text", "textarea", "longtextarea", "email", "phone", "url", "encryptedtext", "autonumber":
+	case "text", "textarea", "longtextarea", "html", "email", "phone", "url", "encryptedtext", "autonumber":
 		return storage.FieldString
 	case "picklist":
 		return storage.FieldPicklist
@@ -882,6 +1042,8 @@ func storageFieldType(raw string) storage.FieldType {
 		return storage.FieldDate
 	case "datetime":
 		return storage.FieldDateTime
+	case "time":
+		return storage.FieldTime
 	case "location":
 		return storage.FieldLocation
 	case "lookup", "masterdetail", "metadatarelationship":

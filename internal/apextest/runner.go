@@ -41,19 +41,22 @@ import (
 )
 
 type Options struct {
-	Filter              string
-	SelectedClasses     []string
-	SelectedMethod      string
-	LimitMode           vm.LimitMode
-	LimitCaps           vm.LimitCaps
-	LimitCapsSet        bool
-	TraceBlocked        bool
-	TraceAll            bool
-	SlowTestThresholdMS int64
-	TimeoutMS           int64
-	Parallelism         int
-	ParallelMethods     bool
-	NoDiskCache         bool
+	// RuntimeRESTAPIVersion selects the test org REST context, independently of
+	// project and component source API versions. Empty retains the default.
+	RuntimeRESTAPIVersion string
+	Filter                string
+	SelectedClasses       []string
+	SelectedMethod        string
+	LimitMode             vm.LimitMode
+	LimitCaps             vm.LimitCaps
+	LimitCapsSet          bool
+	TraceBlocked          bool
+	TraceAll              bool
+	SlowTestThresholdMS   int64
+	TimeoutMS             int64
+	Parallelism           int
+	ParallelMethods       bool
+	NoDiskCache           bool
 	// RestoredRuntimeMultiWorker is an internal, default-off experiment that
 	// permits disk-restored runtimes with parallel method workers. Product
 	// configuration and CLI surfaces intentionally do not expose it.
@@ -139,14 +142,18 @@ type permissionSetObjectPermission struct {
 }
 
 type TestCase struct {
-	ClassName  string
-	MethodName string
-	File       string
-	Range      diagnostic.Range
-	BodyRange  *diagnostic.Range
-	Body       string
-	SeeAllData bool
-	CostHint   int64 // generic, history-free cost signal used by the priority dispatcher
+	ClassName          string
+	MethodName         string
+	File               string
+	Namespace          string
+	APIVersion         string
+	SharingMode        string
+	SourceContextBound bool
+	Range              diagnostic.Range
+	BodyRange          *diagnostic.Range
+	Body               string
+	SeeAllData         bool
+	CostHint           int64 // generic, history-free cost signal used by the priority dispatcher
 	// ReturnType and Modifiers preserve the indexed method declaration shape
 	// so compilation does not force a void/static signature onto a
 	// Salesforce-accepted value-returning or differently-modified test method.
@@ -195,15 +202,19 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 				continue
 			}
 			out = append(out, TestCase{
-				ClassName:  typ.Name,
-				MethodName: member.Name,
-				File:       typ.File,
-				Range:      member.Range,
-				BodyRange:  member.BodyRange,
-				SeeAllData: isSeeAllDataTest(member.Modifiers),
-				CostHint:   testCaseCostHint(typ.File),
-				ReturnType: member.Type,
-				Modifiers:  member.Modifiers,
+				ClassName:          typ.Name,
+				MethodName:         member.Name,
+				File:               typ.File,
+				Namespace:          typ.Namespace,
+				APIVersion:         typ.EffectiveAPIVersion,
+				SharingMode:        testClassSharingMode(typ.Modifiers),
+				SourceContextBound: true,
+				Range:              member.Range,
+				BodyRange:          member.BodyRange,
+				SeeAllData:         isSeeAllDataTest(member.Modifiers),
+				CostHint:           testCaseCostHint(typ.File),
+				ReturnType:         member.Type,
+				Modifiers:          member.Modifiers,
 			})
 		}
 	}
@@ -271,7 +282,7 @@ type semanticGateHooks struct {
 	afterAnalysis func()
 }
 
-func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Index, opts Options, cases []TestCase, hooks semanticGateHooks) testreport.Run {
+func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Index, opts Options, cases []TestCase, hooks semanticGateHooks) (report testreport.Run) {
 	runState := runExecution{
 		diskCacheEnabled: useDiskRuntimeCache(opts),
 		counters:         newRunPerfCounters(opts.PerfCounters),
@@ -305,6 +316,11 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 	if cases == nil {
 		cases = Discover(index, opts)
 	}
+	runtimeRESTAPIVersion, versionErr := storage.ResolveRESTAPIVersion(opts.RuntimeRESTAPIVersion)
+	if versionErr != nil {
+		return compileErrorRun(cases, versionErr, started, opts)
+	}
+	defer func() { report.RuntimeRESTAPIVersion = runtimeRESTAPIVersion }()
 	sources := newSourceCache()
 	if err := sources.seedBuildArtifacts(index, opts.BuildArtifacts); err != nil {
 		return compileErrorRun(cases, err, started, opts)
@@ -361,6 +377,10 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 	recordStorageCloneRuntime(runState.counters)
 	recordCloneReason("", "run-base", "org-template", runState.counters)
 	org := runtime.restored.CloneOrg()
+	// The cache owns compiled definitions and an unexecuted org template.
+	// Request context belongs to this private clone, before static initializers,
+	// @TestSetup, or methods execute. Never mutate the cached org or source key.
+	org.APIVersion = runtimeRESTAPIVersion
 	initializeTestOrg(&org)
 	if runState.counters.enabled {
 		runState.counters.phases.orgBuildNS.Add(time.Since(orgSetupStarted).Nanoseconds())
@@ -386,14 +406,13 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 		if runState.counters.enabled {
 			testCompileStarted = time.Now()
 		}
-		baseRuntimeErr = registerTestRuntime(baseMachine, append(flattenSetupMethods(setups), methodMapValues(testMethods)...))
+		baseRuntimeErr = registerTestRuntime(baseMachine, flattenSetupMethods(setups))
 		if runState.counters.enabled {
 			runState.counters.phases.testCompileNS.Add(time.Since(testCompileStarted).Nanoseconds())
 		}
 	}
-	// Freeze the alias/class lookup into a shared immutable index now that all
-	// classes and test methods are registered. Per-test clones then share it by
-	// pointer instead of rebuilding it on every CloneRuntime.
+	// Freeze the alias/class lookup into a shared immutable index before each
+	// per-test clone receives its occurrence-specific test method.
 	var freezeStarted time.Time
 	if runState.counters.enabled {
 		freezeStarted = time.Now()
@@ -408,6 +427,7 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 	suiteIndexes := make(map[string][]int)
 	planned := make([]testCasePlan, len(cases))
 	results := make([]testreport.Case, len(cases))
+	testRuntimeMethods := indexTestRuntimeMethods(testMethods)
 	for i, testCase := range cases {
 		if !classSeen[testCase.ClassName] {
 			classSeen[testCase.ClassName] = true
@@ -419,11 +439,15 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 			results[i] = canceledCase(testCase, err)
 			continue
 		}
+		key := testCaseKey(testCase)
+		testMethodErr := testMethodErrors[key]
 		planned[i] = testCasePlan{
-			TestCase:      testCase,
-			TestMethodErr: testMethodErrors[testCaseKey(testCase)],
-			InvokeProgram: testInvokePrograms[testCaseKey(testCase)],
-			InvokeProgErr: testInvokeErrors[testCaseKey(testCase)],
+			TestCase:           testCase,
+			TestMethod:         testMethods[key],
+			TestRuntimeMethods: testRuntimeMethods[testMethodSourceKey(testCase.ClassName, testCase.File)],
+			TestMethodErr:      testMethodErr,
+			InvokeProgram:      testInvokePrograms[key],
+			InvokeProgErr:      testInvokeErrors[key],
 		}
 	}
 	if emitProgress {
@@ -459,6 +483,13 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 assemble:
 	for className, indexes := range suiteIndexes {
 		for _, index := range indexes {
+			results[index].SelectedSourceFile = cases[index].File
+			// Report the compiled entry registered for execution, not the requested
+			// source: duplicate class/method names can bind to the same body.
+			// Other statuses do not establish that the test entry ran.
+			if results[index].Status == testreport.StatusPass || results[index].Status == testreport.StatusFail {
+				results[index].SourceFile = testMethods[testCaseKey(cases[index])].File
+			}
 			suites[className] = append(suites[className], results[index])
 		}
 	}
@@ -500,10 +531,11 @@ func compileErrorRun(cases []TestCase, compileErr error, started time.Time, opts
 			run.Suites = append(run.Suites, testreport.Suite{Name: testCase.ClassName})
 		}
 		result := testreport.Case{
-			ClassName:  testCase.ClassName,
-			MethodName: testCase.MethodName,
-			Status:     testreport.StatusCompileError,
-			Problem:    problem("CompileError", compileErr.Error(), testCase),
+			ClassName:          testCase.ClassName,
+			MethodName:         testCase.MethodName,
+			SelectedSourceFile: testCase.File,
+			Status:             testreport.StatusCompileError,
+			Problem:            problem("CompileError", compileErr.Error(), testCase),
 		}
 		run.Suites[index].Cases = append(run.Suites[index].Cases, result)
 	}
@@ -629,7 +661,7 @@ func semanticCompileErrorWithHooks(ctx context.Context, index typesys.Index, art
 	if artifacts == nil {
 		analyzeOptions.CapturedSource = generation.source.capturedSource
 	}
-	analysisIndex := semanticAnalysisIndex(index)
+	analysisIndex := SemanticAnalysisIndex(index)
 	var diagnostics []diagnostic.Diagnostic
 	if artifacts == nil {
 		semaDiagnosticsCacheMu.RLock()
@@ -930,7 +962,7 @@ func incompleteSourceSnapshotError(reason string) error {
 	return &SourceSnapshotMismatchError{File: "build artifacts", Cause: errors.New("source snapshot is incomplete: " + reason)}
 }
 
-// semanticAnalysisIndex returns a copy of index whose Objects/Fields slices
+// SemanticAnalysisIndex returns a copy of index whose Objects/Fields slices
 // do not alias the caller's backing arrays. typesys.Index documents that
 // nested payloads may be structurally shared between snapshots and must not
 // be mutated after publication, but sema's schema-inference passes upsert
@@ -939,7 +971,7 @@ func incompleteSourceSnapshotError(reason string) error {
 // without this copy sema's inferred-field synthesis (e.g. a Name field
 // missing the Required flag a full schema load would set) would leak into
 // the org the test actually runs against.
-func semanticAnalysisIndex(index typesys.Index) typesys.Index {
+func SemanticAnalysisIndex(index typesys.Index) typesys.Index {
 	if len(index.Objects) == 0 {
 		return index
 	}
@@ -959,14 +991,16 @@ func useDiskRuntimeCache(opts Options) bool {
 }
 
 type testCasePlan struct {
-	TestCase      TestCase
-	TestMethodErr error
-	InvokeProgram ir.Program
-	InvokeProgErr error
-	SetupErr      error
-	SetupOrg      storage.OrgState
-	SetupRandom   uint64
-	SetupShared   bool
+	TestCase           TestCase
+	TestMethod         vm.Method
+	TestRuntimeMethods []vm.Method
+	TestMethodErr      error
+	InvokeProgram      ir.Program
+	InvokeProgErr      error
+	SetupErr           error
+	SetupOrg           storage.OrgState
+	SetupRandom        uint64
+	SetupShared        bool
 }
 
 type testSetupResult struct {
@@ -1880,9 +1914,7 @@ func caseSetKey(cases []TestCase) string {
 	}
 	h := fnv.New128a()
 	for _, tc := range cases {
-		_, _ = h.Write([]byte(tc.ClassName))
-		_, _ = h.Write([]byte{0})
-		_, _ = h.Write([]byte(tc.MethodName))
+		_, _ = h.Write([]byte(testCaseKey(tc)))
 		_, _ = h.Write([]byte{0})
 	}
 	return hex.EncodeToString(h.Sum(nil))
@@ -1953,7 +1985,11 @@ func compileTestSetupsCached(index typesys.Index, digests *typesys.SourceDigestS
 }
 
 func compileTestsCached(index typesys.Index, digests *typesys.SourceDigestSet, baseKey runtimeCacheKey, cases []TestCase, sources *sourceCache) (map[string]vm.Method, map[string]error, map[string]ir.Program, map[string]error, error) {
-	key := string(baseKey) + "|tests|" + caseSetKey(cases)
+	// Compile all test methods in each selected class so filtered execution
+	// retains private @isTest helper methods that the selected entry may call.
+	// The invocation program remains limited to the caller-supplied cases.
+	compileCases := expandTestCasesForClasses(index, cases)
+	key := string(baseKey) + "|tests|" + caseSetKey(compileCases)
 	testCacheMu.RLock()
 	if cached, ok := testCache[key]; ok {
 		testCacheMu.RUnlock()
@@ -1969,7 +2005,7 @@ func compileTestsCached(index typesys.Index, digests *typesys.SourceDigestSet, b
 		return cached.Methods, cached.MethodErrs, cached.Programs, cached.ProgramErrs, nil
 	}
 	testCacheMu.RUnlock()
-	methods, methodErrs := compileTestMethods(cases, sources)
+	methods, methodErrs := compileTestMethods(compileCases, sources)
 	programs, programErrs := compileTestInvokePrograms(cases)
 	if err := sources.sourceSnapshotError(); err != nil {
 		return methods, methodErrs, programs, programErrs, err
@@ -1987,6 +2023,85 @@ func compileTestsCached(index typesys.Index, digests *typesys.SourceDigestSet, b
 	testCache[key] = testCompileCacheEntry{Methods: methods, MethodErrs: methodErrs, Programs: programs, ProgramErrs: programErrs}
 	testCacheMu.Unlock()
 	return methods, methodErrs, programs, programErrs, nil
+}
+
+// expandTestCasesForClasses returns the requested cases followed by every
+// discoverable test method in their classes. The extra methods are compiled
+// only to make intra-class helper calls available; callers still invoke and
+// report exactly the original case set.
+func expandTestCasesForClasses(index typesys.Index, cases []TestCase) []TestCase {
+	if len(cases) == 0 {
+		return nil
+	}
+	classes := make(map[string]bool)
+	for _, testCase := range cases {
+		name := strings.ToLower(strings.TrimSpace(testCase.ClassName))
+		if name != "" {
+			classes[name] = true
+		}
+	}
+	if len(classes) == 0 {
+		return append([]TestCase(nil), cases...)
+	}
+	selectedClasses := make([]string, 0, len(classes))
+	for className := range classes {
+		selectedClasses = append(selectedClasses, className)
+	}
+	sort.Strings(selectedClasses)
+	discovered := Discover(index, Options{SelectedClasses: selectedClasses})
+	seen := make(map[string]bool, len(cases)+len(discovered))
+	expanded := append([]TestCase(nil), cases...)
+	for _, testCase := range cases {
+		seen[testCaseKey(testCase)] = true
+	}
+	for _, testCase := range discovered {
+		if !classes[strings.ToLower(strings.TrimSpace(testCase.ClassName))] {
+			continue
+		}
+		key := testCaseKey(testCase)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		expanded = append(expanded, testCase)
+	}
+	return expanded
+}
+
+func testMethodSourceKey(className, file string) string {
+	return strings.ToLower(strings.TrimSpace(className)) + "\x00" + filepath.Clean(file)
+}
+
+func indexTestRuntimeMethods(methods map[string]vm.Method) map[string][]vm.Method {
+	out := make(map[string][]vm.Method)
+	for _, method := range methods {
+		key := testMethodSourceKey(method.ClassName, method.File)
+		out[key] = append(out[key], method)
+	}
+	return out
+}
+
+func containsRegisteredTestMethod(methods []vm.Method, target vm.Method) bool {
+	for _, method := range methods {
+		if !strings.EqualFold(method.Name, target.Name) ||
+			!strings.EqualFold(method.ClassName, target.ClassName) ||
+			filepath.Clean(method.File) != filepath.Clean(target.File) ||
+			method.IsStatic != target.IsStatic ||
+			len(method.Params) != len(target.Params) {
+			continue
+		}
+		match := true
+		for i := range method.Params {
+			if !strings.EqualFold(method.Params[i].Type, target.Params[i].Type) {
+				match = false
+				break
+			}
+		}
+		if match {
+			return true
+		}
+	}
+	return false
 }
 
 func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) map[string]testSetupResult {
@@ -2086,7 +2201,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 			if methodWindowStarted.IsZero() {
 				methodWindowStarted = startMethodWindow(counters)
 			}
-			results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, nil, counters)
+			results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethod, plan.TestRuntimeMethods, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, nil, counters)
 			if caseCancel != nil {
 				caseCancel()
 			}
@@ -2126,7 +2241,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 					}
 					caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
 					cloneOrg := len(planned) > 1 || plan.SetupShared
-					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, nil, counters)
+					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethod, plan.TestRuntimeMethods, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, nil, counters)
 					if caseCancel != nil {
 						caseCancel()
 					}
@@ -2238,7 +2353,7 @@ func runJournaledNoSetupPlan(ctx context.Context, i int, planned []testCasePlan,
 	}
 	caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
 	mark := journal.Mark()
-	results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, *journal.Org(), setupRandom, opts, false, journal, counters)
+	results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethod, plan.TestRuntimeMethods, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, *journal.Org(), setupRandom, opts, false, journal, counters)
 	if rollbackErr := rollbackJournal(journal, mark, counters); rollbackErr != nil && results[i].Problem == nil {
 		results[i].Status = testreport.StatusFail
 		results[i].Problem = problem("InternalError", rollbackErr.Error(), plan.TestCase)
@@ -2385,7 +2500,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					if cloneOrg {
 						recordCloneFallback(counters)
 					}
-					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, caseJournal, counters)
+					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethod, plan.TestRuntimeMethods, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, caseJournal, counters)
 					if caseJournal != nil {
 						if rollbackErr := rollbackJournal(caseJournal, mark, counters); rollbackErr != nil && results[i].Problem == nil {
 							results[i].Status = testreport.StatusFail
@@ -2619,7 +2734,7 @@ func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCas
 					mark = caseJournal.Mark()
 					cloneOrg = false
 				}
-				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, caseJournal, counters)
+				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethod, plan.TestRuntimeMethods, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, caseJournal, counters)
 				if caseJournal != nil {
 					if rollbackErr := rollbackJournal(caseJournal, mark, counters); rollbackErr != nil && results[i].Problem == nil {
 						results[i].Status = testreport.StatusFail
@@ -2668,7 +2783,7 @@ func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, result
 					reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 				}
 				caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
-				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, len(planned) > 1, nil, counters)
+				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethod, plan.TestRuntimeMethods, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, len(planned) > 1, nil, counters)
 				if caseCancel != nil {
 					caseCancel()
 				}
@@ -2766,7 +2881,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 	return setupOrg, machine.DeterministicRandomState(), nil, false
 }
 
-func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invokeProgram ir.Program, invokeErr error, baseMachine *vm.VM, baseRuntimeErr error, setupErr error, triggerErrors []error, org storage.OrgState, setupRandom uint64, opts Options, cloneOrg bool, journal *storage.IsolationJournal, counters *runPerfCounters) testreport.Case {
+func runCase(ctx context.Context, testCase TestCase, testMethod vm.Method, testRuntimeMethods []vm.Method, testMethodErr error, invokeProgram ir.Program, invokeErr error, baseMachine *vm.VM, baseRuntimeErr error, setupErr error, triggerErrors []error, org storage.OrgState, setupRandom uint64, opts Options, cloneOrg bool, journal *storage.IsolationJournal, counters *runPerfCounters) testreport.Case {
 	if err := ctx.Err(); err != nil {
 		return canceledCase(testCase, err)
 	}
@@ -2781,37 +2896,22 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 		recordRunDuration(elapsed, counters)
 		out.DurationMS = elapsed.Milliseconds()
 	}()
-	if setupErr != nil {
-		if errors.Is(setupErr, context.Canceled) || errors.Is(setupErr, context.DeadlineExceeded) {
-			out.Status = testreport.StatusUnsupported
-			out.Problem = problem("Canceled", setupErr.Error(), testCase)
-			return out
+	for _, err := range []error{setupErr, baseRuntimeErr, firstTriggerError(triggerErrors), testMethodErr, invokeErr} {
+		if err != nil {
+			return preInvocationErrorCase(testCase, err)
 		}
-		out.Status = testreport.StatusUnsupported
-		out.Problem = problem("UnsupportedFeature", setupErr.Error(), testCase)
-		return out
-	}
-	if baseRuntimeErr != nil {
-		out.Status = testreport.StatusUnsupported
-		out.Problem = problem("UnsupportedFeature", baseRuntimeErr.Error(), testCase)
-		return out
-	}
-	if len(triggerErrors) > 0 {
-		out.Status = testreport.StatusUnsupported
-		out.Problem = problem("UnsupportedFeature", triggerErrors[0].Error(), testCase)
-		return out
-	}
-	if testMethodErr != nil {
-		out.Status = testreport.StatusUnsupported
-		out.Problem = problem("UnsupportedFeature", testMethodErr.Error(), testCase)
-		return out
-	}
-	if invokeErr != nil {
-		out.Status = testreport.StatusUnsupported
-		out.Problem = problem("UnsupportedFeature", invokeErr.Error(), testCase)
-		return out
 	}
 	machine := cloneRuntimeMachineFor(baseMachine, testCase.ClassName, "test", counters)
+	runtimeMethods := append([]vm.Method(nil), testRuntimeMethods...)
+	if !containsRegisteredTestMethod(runtimeMethods, testMethod) {
+		runtimeMethods = append(runtimeMethods, testMethod)
+	}
+	if err := registerTestRuntime(machine, runtimeMethods); err != nil {
+		out.Status = testreport.StatusUnsupported
+		out.Reason = terminalReason(err)
+		out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
+		return out
+	}
 	machine.SetDeterministicRandomState(setupRandom)
 	machine.SetTraceEnabled(opts.TraceAll || opts.TraceBlocked || opts.SlowTestThresholdMS > 0)
 	if opts.LimitMode != "" {
@@ -2846,6 +2946,7 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 				out.Status = testreport.StatusFail
 			}
 		}
+		out.Reason = terminalReason(err)
 		out.Problem = problemFromError(err, testCase)
 	}
 	out.DurationMS = time.Since(started).Milliseconds()
@@ -2876,12 +2977,60 @@ func attachTraceProfile(out *testreport.Case, result vm.Result, opts Options) {
 	out.Profile = &report
 }
 
+// terminalReason uses error identity, never prose, to distinguish budget exhaustion
+// and cancellation from an unsupported Apex operation.
+func terminalReason(err error) testreport.Reason {
+	if errors.Is(err, context.DeadlineExceeded) {
+		return testreport.ReasonTimeout
+	}
+	if errors.Is(err, context.Canceled) {
+		return testreport.ReasonCancelled
+	}
+	var runtimeErr *vm.RuntimeError
+	if errors.As(err, &runtimeErr) {
+		switch runtimeErr.Type {
+		case "UnsupportedFeature":
+			return testreport.ReasonUnsupportedFeature
+		case "System.AssertException", "AssertException", "AssertionException":
+			return testreport.ReasonAssertion
+		}
+	}
+	return testreport.ReasonRuntimeError
+}
+
+func firstTriggerError(errs []error) error {
+	if len(errs) > 0 {
+		return errs[0]
+	}
+	return nil
+}
+
+// A setup or preparation failure has not invoked the selected test entry.
+// Preserve the actual error type rather than labelling every error unsupported.
+func preInvocationErrorCase(testCase TestCase, err error) testreport.Case {
+	reason := terminalReason(err)
+	status := testreport.StatusRuntimeError
+	switch reason {
+	case testreport.ReasonUnsupportedFeature, testreport.ReasonTimeout, testreport.ReasonCancelled:
+		status = testreport.StatusUnsupported
+	default:
+		reason = testreport.ReasonRuntimeError
+	}
+	return testreport.Case{
+		ClassName: testCase.ClassName, MethodName: testCase.MethodName,
+		SelectedSourceFile: testCase.File, Status: status, Reason: reason,
+		Problem: problemFromError(err, testCase),
+	}
+}
+
 func canceledCase(testCase TestCase, err error) testreport.Case {
 	return testreport.Case{
-		ClassName:  testCase.ClassName,
-		MethodName: testCase.MethodName,
-		Status:     testreport.StatusUnsupported,
-		Problem:    problem("Canceled", err.Error(), testCase),
+		ClassName:          testCase.ClassName,
+		MethodName:         testCase.MethodName,
+		SelectedSourceFile: testCase.File,
+		Status:             testreport.StatusUnsupported,
+		Reason:             terminalReason(err),
+		Problem:            problem("Canceled", err.Error(), testCase),
 	}
 }
 
@@ -2974,14 +3123,6 @@ func testCaseClassSet(cases []TestCase) map[string]bool {
 	out := make(map[string]bool, len(cases))
 	for _, testCase := range cases {
 		out[testCase.ClassName] = true
-	}
-	return out
-}
-
-func methodMapValues(methods map[string]vm.Method) []vm.Method {
-	out := make([]vm.Method, 0, len(methods))
-	for _, method := range methods {
-		out = append(out, method)
 	}
 	return out
 }
@@ -3122,7 +3263,7 @@ func appendVisualforcePageNames(names *[]string, seen map[string]bool, p project
 	}
 	for _, page := range vf.Pages {
 		appendVisualforcePageName(names, seen, page.Name)
-		if dependency && p.Namespace != "" {
+		if p.Namespace != "" {
 			appendVisualforcePageName(names, seen, visualforceNamespacedPageName(p.Namespace, page.Name))
 		}
 	}
@@ -3857,11 +3998,12 @@ func passiveFluentGeneratedMethod(member typesys.MemberSymbol) bool {
 		!strings.HasPrefix(name, "is")
 }
 
-func passiveEnumConstantField(typ typesys.TypeSymbol, member typesys.MemberSymbol) bool {
-	if typ.Kind == apexast.DeclarationEnum {
-		return true
-	}
-	return member.Type == "Object" && member.Name == strings.ToUpper(member.Name)
+func passiveEnumConstantField(typ typesys.TypeSymbol, _ typesys.MemberSymbol) bool {
+	// The declaration kind is authoritative. Generated platform DTOs and test
+	// helpers also expose ordinary uppercase Object fields (for example
+	// Canvas.Test.KEY_*), so field spelling and the fallback Object type cannot
+	// identify enum constants without misclassifying constructible classes.
+	return typ.Kind == apexast.DeclarationEnum
 }
 
 func typeSymbolRuntimeName(typ typesys.TypeSymbol) string {
@@ -3962,6 +4104,9 @@ func qualifyNestedTypeName(owner, name string, known map[string]bool) string {
 
 func attachPropertyAccessors(field *vm.Field, className, file string, member typesys.MemberSymbol, source, apiVersion string) {
 	for _, accessor := range member.Accessors {
+		if accessor.Kind == "get" {
+			field.HasGetter = true
+		}
 		if accessor.Kind == "set" {
 			field.HasSetter = true
 		}
@@ -4106,6 +4251,12 @@ func compileTestMethods(cases []TestCase, caches ...*sourceCache) (map[string]vm
 			errs[key] = err
 			continue
 		}
+		if testCase.APIVersion != "" {
+			method.APIVersion = testCase.APIVersion
+		}
+		method.SourceContextBound = testCase.SourceContextBound
+		method.Namespace = testCase.Namespace
+		method.SharingMode = testCase.SharingMode
 		methods[key] = method
 	}
 	return methods, errs
@@ -4127,7 +4278,22 @@ func compileTestInvokePrograms(cases []TestCase) (map[string]ir.Program, map[str
 }
 
 func testCaseKey(testCase TestCase) string {
-	return testCase.ClassName + "." + testCase.MethodName
+	return strings.Join([]string{
+		testCase.ClassName,
+		testCase.MethodName,
+		filepath.Clean(testCase.File),
+		strconv.Itoa(testCase.Range.Start.Offset),
+		strconv.Itoa(testCase.Range.End.Offset),
+	}, "\x00")
+}
+
+func testClassSharingMode(modifiers []string) string {
+	for _, mode := range []string{"with sharing", "without sharing", "inherited sharing"} {
+		if hasModifier(modifiers, mode) {
+			return mode
+		}
+	}
+	return ""
 }
 
 var standardApexTestOrgCache struct {

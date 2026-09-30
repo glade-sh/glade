@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -399,6 +400,7 @@ func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
 		{path: "/lightning/runtime/shims/community.js", want: "readCommunityValue"},
 		{path: "/lightning/runtime/shims/site.js", want: "readSiteId"},
 		{path: "/lightning/runtime/shims/user-permission.js", want: "readUserPermission"},
+		{path: "/lightning/runtime/shims/user-permission.js", want: "readCustomPermission"},
 		{path: "/lightning/runtime/shell/glade-shell.css", want: ".glade-shell"},
 		{path: "/lightning/runtime/slds/slds-loader.js", want: "loadSLDS"},
 		{path: "/lightning/runtime/slds/glade-slds.css", want: "slds2.cosmos.css"},
@@ -1330,6 +1332,12 @@ func TestRenderLWCShellHTMLMountsDirectComponentWithContext(t *testing.T) {
 			RecordID:      "001000000000001AAA",
 			ObjectAPIName: "Account",
 			FormFactor:    "Large",
+			UserPermissions: map[string]bool{
+				"ViewSetup": true,
+			},
+			CustomPermissions: map[string]bool{
+				"Glade_Lwc_Oracle": true,
+			},
 		},
 	})
 
@@ -1339,6 +1347,8 @@ func TestRenderLWCShellHTMLMountsDirectComponentWithContext(t *testing.T) {
 		"c:contextProbe",
 		`"recordId":"001000000000001AAA"`,
 		`"objectApiName":"Account"`,
+		`"userPermissions":{"ViewSetup":true}`,
+		`"customPermissions":{"Glade_Lwc_Oracle":true}`,
 		`"standard__component"`,
 		`data-glade-region="main"`,
 	} {
@@ -2098,6 +2108,224 @@ func TestLWCShellComponentRouteServesHTML(t *testing.T) {
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("missing %q in:\n%s", want, body)
+		}
+	}
+}
+
+func TestLightningLocalContextJSONAppliesDefaultComponentPermissionPreset(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js", `import { LightningElement } from 'lwc';
+export default class ContextProbe extends LightningElement {}`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.html", `<template><p>context</p></template>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>61.0</apiVersion>
+  <isExposed>true</isExposed>
+  <targets><target>lightning__AppPage</target></targets>
+</LightningComponentBundle>`)
+	writeLWCShellServerTestFile(t, root, "glade.lwc.json", `{
+  "defaultContext": "permissionOracle",
+  "contexts": {
+    "permissionOracle": {
+      "target": "component",
+      "component": "c:contextProbe",
+      "app": "PresetApp",
+      "formFactor": "Large",
+      "recordId": "001000000000002AAA",
+      "objectApiName": "Contact",
+      "state": {"c__mode": "preset"},
+      "userPermissions": {"ViewSetup": true, "ModifyAllData": false},
+      "customPermissions": {"Glade_Lwc_Oracle": true, "Glade_Lwc_Denied": false}
+    }
+  }
+}`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	activeRoute := "/lwc/preview/component/c/contextProbe?app=RouteApp&formFactor=Small&recordId=001000000000001AAA&objectApiName=Account&state.c__mode=route"
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/lightning/local/context.json?url="+url.QueryEscape(activeRoute), nil)
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var got struct {
+		Context lwcshell.PageContext `json:"context"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("invalid JSON: %v\n%s", err, rec.Body.String())
+	}
+	if got.Context.Kind != lwcshell.RenderTargetComponent || got.Context.ComponentName != "c:contextProbe" {
+		t.Fatalf("context target = %#v", got.Context)
+	}
+	if got.Context.AppName != "RouteApp" || got.Context.FormFactor != "Small" ||
+		got.Context.RecordID != "001000000000001AAA" || got.Context.ObjectAPIName != "Account" ||
+		got.Context.State["c__mode"] != "route" {
+		t.Fatalf("route query context was overridden: %#v", got.Context)
+	}
+	if enabled, ok := got.Context.UserPermissions["ViewSetup"]; !ok || !enabled {
+		t.Fatalf("user permission grant missing: %#v", got.Context.UserPermissions)
+	}
+	if enabled, ok := got.Context.UserPermissions["ModifyAllData"]; !ok || enabled {
+		t.Fatalf("explicit user permission denial was not preserved: %#v", got.Context.UserPermissions)
+	}
+	if _, ok := got.Context.UserPermissions["UnspecifiedPermission"]; ok {
+		t.Fatalf("unspecified user permission was synthesized: %#v", got.Context.UserPermissions)
+	}
+	if enabled, ok := got.Context.CustomPermissions["Glade_Lwc_Oracle"]; !ok || !enabled {
+		t.Fatalf("custom permission grant missing: %#v", got.Context.CustomPermissions)
+	}
+	if enabled, ok := got.Context.CustomPermissions["Glade_Lwc_Denied"]; !ok || enabled {
+		t.Fatalf("explicit custom permission denial was not preserved: %#v", got.Context.CustomPermissions)
+	}
+	if _, ok := got.Context.CustomPermissions["UnspecifiedPermission"]; ok {
+		t.Fatalf("unspecified custom permission was synthesized: %#v", got.Context.CustomPermissions)
+	}
+
+	selectedRoute := "/lwc/preview/component/c/contextProbe?app=PresetApp&formFactor=Large&objectApiName=Contact&recordId=001000000000002AAA&state.c__mode=preset"
+	shell, diagnostics, err := handler.resolveLWCShellRoute(selectedRoute)
+	if err != nil {
+		t.Fatalf("resolve selected route: %v diagnostics=%#v", err, diagnostics)
+	}
+	body := renderLWCShellHTML(lwcbrowser.PageConfig{}, shell)
+	for _, want := range []string{
+		`id="glade-lwc-context"`,
+		`"userPermissions":{"ModifyAllData":false,"ViewSetup":true}`,
+		`"customPermissions":{"Glade_Lwc_Denied":false,"Glade_Lwc_Oracle":true}`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("selected route context missing %q in:\n%s", want, body)
+		}
+	}
+}
+
+func TestDirectComponentContextPresetSelectsUnqualifiedSelectedContext(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "glade.lwc.json", `{
+  "defaultContext": "default",
+  "contexts": {
+    "default": {
+      "target": "component",
+      "component": "c:contextProbe",
+      "app": "DefaultApp",
+      "formFactor": "Large",
+      "recordId": "001000000000001AAA",
+      "objectApiName": "Account",
+      "state": {"c__mode": "default"},
+      "userPermissions": {"FromDefault": true}
+    },
+    "selected": {
+      "target": "component",
+      "component": "contextProbe",
+      "app": "SelectedApp",
+      "formFactor": "Small",
+      "recordId": "001000000000002AAA",
+      "objectApiName": "Contact",
+      "state": {"c__mode": "selected"},
+      "userPermissions": {"FromSelected": true}
+    }
+  }
+}`)
+	handler := &Server{Source: SourceMetadata{Project: project.Project{Root: root}}}
+	activeRoute := "/lwc/preview/component/c/contextProbe?app=SelectedApp&formFactor=Small&objectApiName=Contact&recordId=001000000000002AAA&state.c__mode=selected"
+
+	got, ok := handler.directComponentContextPreset(activeRoute, "c:contextProbe")
+	if !ok || !got.UserPermissions["FromSelected"] || got.UserPermissions["FromDefault"] {
+		t.Fatalf("selected context permissions = %#v, matched = %v", got.UserPermissions, ok)
+	}
+}
+
+func TestDirectComponentContextPresetMatchesReorderedSelectedQuery(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "glade.lwc.json", `{
+  "defaultContext": "default",
+  "contexts": {
+    "default": {
+      "target": "component",
+      "component": "c:contextProbe",
+      "app": "DefaultApp",
+      "formFactor": "Large",
+      "recordId": "001000000000001AAA",
+      "objectApiName": "Account",
+      "state": {"c__mode": "default"},
+      "userPermissions": {"FromDefault": true}
+    },
+    "selected": {
+      "target": "component",
+      "component": "c:contextProbe",
+      "app": "SelectedApp",
+      "formFactor": "Large",
+      "recordId": "001000000000002AAA",
+      "objectApiName": "Contact",
+      "state": {"c__mode": "selected"},
+      "userPermissions": {"FromSelected": true}
+    }
+  }
+}`)
+	handler := &Server{Source: SourceMetadata{Project: project.Project{Root: root}}}
+	activeRoute := "/lwc/preview/component/c/contextProbe?state.c__mode=selected&recordId=001000000000002AAA&objectApiName=Contact&formFactor=Large&app=SelectedApp"
+
+	got, ok := handler.directComponentContextPreset(activeRoute, "c:contextProbe")
+	if !ok || !got.UserPermissions["FromSelected"] || got.UserPermissions["FromDefault"] {
+		t.Fatalf("selected context permissions = %#v, matched = %v", got.UserPermissions, ok)
+	}
+}
+
+func TestDirectComponentContextPresetNormalizesDefaultAndIsolatesComponent(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "glade.lwc.json", `{
+  "defaultContext": "default",
+  "contexts": {
+    "default": {
+      "target": "component",
+      "component": "contextProbe",
+      "app": "DefaultApp",
+      "formFactor": "Large",
+      "recordId": "001000000000001AAA",
+      "objectApiName": "Account",
+      "userPermissions": {"FromDefault": true}
+    }
+  }
+}`)
+	handler := &Server{Source: SourceMetadata{Project: project.Project{Root: root}}}
+
+	got, ok := handler.directComponentContextPreset("/lwc/preview/component/c/contextProbe?app=RouteApp", "c:contextProbe")
+	if !ok || !got.UserPermissions["FromDefault"] {
+		t.Fatalf("unqualified default context permissions = %#v, matched = %v", got.UserPermissions, ok)
+	}
+	if other, ok := handler.directComponentContextPreset("/lwc/preview/component/c/otherProbe?app=RouteApp", "c:otherProbe"); ok {
+		t.Fatalf("default context leaked to other component: %#v", other.UserPermissions)
+	}
+}
+
+func TestDirectComponentContextPresetMatchesSelectedURLComponentNames(t *testing.T) {
+	for _, name := range []string{"contextProbe", "c:contextProbe", ":contextProbe", "c: contextProbe", " c : contextProbe "} {
+		for _, fallback := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s/fallback=%v", name, fallback), func(t *testing.T) {
+				root := t.TempDir()
+				defaultName := ""
+				if fallback {
+					defaultName = "preset"
+				}
+				writeLWCShellServerTestFile(t, root, "glade.lwc.json", fmt.Sprintf(`{
+  "defaultContext": %q,
+  "contexts": {"preset": {"target": "component", "component": %q,
+    "app": "PresetApp", "customPermissions": {"Granted": true}}}
+}`, defaultName, name))
+				handler := &Server{Source: SourceMetadata{Project: project.Project{Root: root}}}
+				route := localLWCSelectedRoute(lwcshell.PageContext{
+					Kind: lwcshell.RenderTargetComponent, ComponentName: name, AppName: "PresetApp",
+				})
+				if fallback {
+					route = "/lwc/preview/component/c/contextProbe?app=DifferentApp"
+				}
+				got, ok := handler.directComponentContextPreset(route, "c:contextProbe")
+				if !ok || !got.CustomPermissions["Granted"] {
+					t.Fatalf("permissions = %#v, matched = %v, route = %q", got.CustomPermissions, ok, route)
+				}
+			})
 		}
 	}
 }

@@ -477,6 +477,25 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 			if strings.EqualFold(paramType, value.Type) {
 				return 1000
 			}
+			// A typed null retains the compile-time type of its variable. A
+			// collection or map null can be passed to Object (or to a compatible
+			// generic surface), but it cannot make an unrelated overload
+			// applicable merely because the runtime value is null. Without this
+			// guard, a derived class's List<T> overload shadows an inherited
+			// Map<K,V> overload when the map argument is null.
+			valueCollection := collectionBase(value.Type) != ""
+			valueMap := isMapType(value.Type)
+			paramCollection := collectionBase(paramType) != ""
+			paramMap := isMapType(paramType)
+			if (valueCollection && !paramCollection && !paramMap) || (valueMap && !paramMap) {
+				if vm.typeAssignableTo(value.Type, paramType) {
+					return 900
+				}
+				return -1
+			}
+			if valueCollection && paramMap {
+				return -1
+			}
 			if collectionBase(value.Type) != "" && collectionBase(paramType) != "" {
 				if vm.typeAssignableTo(value.Type, paramType) {
 					return 900
@@ -532,6 +551,19 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 		}
 		if vm.collectionElementsAssignable(paramType, value) {
 			return 850
+		}
+		// A collection can retain a concrete static type while its runtime
+		// element type is the wider type that was used to construct or pass it.
+		// Prefer the runtime generic when the static type is stale or narrower;
+		// this is especially important for empty covariant lists, where there
+		// are no elements from which to infer assignability.
+		if runtimeType := strings.TrimSpace(value.Runtime); runtimeType != "" && collectionBase(runtimeType) != "" {
+			if vm.typeAssignableTo(runtimeType, paramType) {
+				return 900
+			}
+			if vm.sObjectCollectionDowncastAssignable(runtimeType, paramType) {
+				return 850
+			}
 		}
 		return -1
 	}
@@ -935,6 +967,10 @@ func exceptionTypeName(typeName string) string {
 }
 func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 	typeName = vm.resolveAssignableTargetType(typeName)
+	// Apex type names are case-insensitive. Normalize scalar aliases before
+	// the case-sensitive conversion branches below (for example, source often
+	// spells the Id cast as `ID`).
+	typeName = canonicalApexScalarType(typeName)
 	canonicalTypeName := typeName
 	if rest, ok := stripLeadingSystemNamespace(canonicalTypeName); ok {
 		canonicalTypeName = rest
@@ -1362,6 +1398,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		if !canonicalRepresentation {
 			entries = make([]coercedEntry, 0, len(value.Map))
 		}
+		var objectKeys Value
 		for index, rawKey := range rawKeys {
 			item := value.Map[rawKey]
 			keyValue := mapStoredKey(value, rawKey)
@@ -1375,7 +1412,23 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 				rollback.restore()
 				return Null, fmt.Errorf("value: %w", err)
 			}
-			entry := coercedEntry{key: vm.mapKey(coercedKey), keyValue: coercedKey, value: coercedValue}
+			encodedKey := vm.mapKey(coercedKey)
+			if customObjectHashKey(coercedKey, encodedKey) {
+				if objectKeys.Kind != ValueMap {
+					objectKeys = Map()
+				}
+				encodedKey, err = vm.mapEntryKeyWithHash(objectKeys, coercedKey, encodedKey)
+				if err != nil {
+					rollback.restore()
+					return Null, err
+				}
+				if _, exists := objectKeys.Map[encodedKey]; !exists {
+					objectKeys.MapOrder = append(objectKeys.MapOrder, encodedKey)
+				}
+				objectKeys.Map[encodedKey] = Null
+				objectKeys.MapKeys[encodedKey] = coercedKey
+			}
+			entry := coercedEntry{key: encodedKey, keyValue: coercedKey, value: coercedValue}
 			if entries == nil &&
 				(entry.key != rawKey ||
 					!sameCoercionRepresentation(entry.keyValue, keyValue) ||

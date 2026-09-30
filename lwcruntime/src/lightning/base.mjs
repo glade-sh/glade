@@ -190,6 +190,7 @@ export function createBaseComponent(selector, render, options = {}) {
     handleChange(event) {
       event?.stopPropagation?.();
       const target = event?.target || {};
+      const targetValue = target.value;
       this.value = target.value;
       this.checked = Boolean(target.checked);
       this.dispatchEvent(new CustomEvent("change", {
@@ -197,6 +198,30 @@ export function createBaseComponent(selector, render, options = {}) {
         composed: true,
         detail: { value: target.value, checked: Boolean(target.checked) },
       }));
+      if (selector === "lightning-input" && event?.type === "change") {
+        this.handleTextInputCommit(event, targetValue);
+      }
+    }
+
+    handleTextInputCommit(event, value = event?.target?.value) {
+      const target = event?.target || {};
+      if (selector !== "lightning-input" || (target.type || this.type || "text") !== "text") {
+        return;
+      }
+      const nextValue = String(value ?? "");
+      const previousValue = this.__committedTextInputValue ?? String(this.__initialValue ?? "");
+      if (nextValue === previousValue) {
+        return;
+      }
+      this.__committedTextInputValue = nextValue;
+      this.dispatchEvent(new CustomEvent("commit"));
+    }
+
+    handleComboboxOpen() {
+      if (selector !== "lightning-combobox") {
+        return;
+      }
+      this.dispatchEvent(new CustomEvent("open"));
     }
 
     handleOptionGroupChange(event) {
@@ -486,15 +511,62 @@ export function createBaseComponent(selector, render, options = {}) {
       }));
     }
 
+    handleButtonMenuToggle() {
+      if (selector !== "lightning-button-menu") {
+        return;
+      }
+      const eventName = this.__buttonMenuOpen ? "close" : "open";
+      this.__buttonMenuOpen = !this.__buttonMenuOpen;
+      this.dispatchEvent(new CustomEvent(eventName));
+    }
+
+    handleButtonMenuActive(event) {
+      if (selector !== "lightning-button-menu") {
+        return;
+      }
+      const source = event?.composedPath?.()[0] ?? event?.target;
+      const value = String(source?.value ?? "");
+      this.dispatchEvent(new CustomEvent("select", {
+        detail: { value },
+        cancelable: true,
+      }));
+    }
+
+    handleVerticalNavigationActive(event) {
+      if (selector !== "lightning-vertical-navigation") {
+        return;
+      }
+      const source = event?.composedPath?.()[0] ?? event?.target;
+      const name = String(source?.name ?? "");
+      this.dispatchEvent(new CustomEvent("beforeselect", {
+        detail: { name },
+        cancelable: true,
+      }));
+      this.dispatchEvent(new CustomEvent("select", { detail: { name } }));
+    }
+
     connectedCallback() {
       if (this.__initialValue === undefined) {
         this.__initialValue = this.value;
+      }
+      if (selector === "lightning-input" && (this.type || "text") === "text" && this.__committedTextInputValue === undefined) {
+        this.__committedTextInputValue = String(this.value ?? "");
       }
       this.reportUnsupportedAttributes();
       if (options.unsupported) {
         const message = `GLADELWC060 base component unsupported: ${selector}`;
         reportDiagnostic({ code: "GLADELWC060", severity: "warning", message, tagName: selector });
         throw new Error(message);
+      }
+      const activeBridge = selector === "lightning-button-menu"
+        ? this.handleButtonMenuActive
+        : selector === "lightning-vertical-navigation"
+          ? this.handleVerticalNavigationActive
+          : null;
+      if (activeBridge) {
+        this.__baseActiveBridge ??= activeBridge.bind(this);
+        this.removeEventListener("active", this.__baseActiveBridge);
+        this.addEventListener("active", this.__baseActiveBridge);
       }
       if (selector === "lightning-input-field") {
         registerBaseFormFieldWithNearestForm(this, "__gladeInputFields");
@@ -504,6 +576,12 @@ export function createBaseComponent(selector, render, options = {}) {
       }
       if (isRecordFormSelector(selector)) {
         this.loadRecordFormRecord();
+      }
+    }
+
+    disconnectedCallback() {
+      if (this.__baseActiveBridge) {
+        this.removeEventListener("active", this.__baseActiveBridge);
       }
     }
 
@@ -994,7 +1072,7 @@ export function renderInput($api, $cmp) {
       attrs: { type: $cmp.type || "text" },
       props: { value: $cmp.value || "", disabled: Boolean($cmp.disabled), required: Boolean($cmp.required) },
       key: 2,
-      on: { change: b($cmp.handleChange), input: b($cmp.handleChange) },
+      on: { change: b($cmp.handleChange), input: b($cmp.handleChange), blur: b($cmp.handleTextInputCommit) },
     }),
   ])];
 }
@@ -1021,7 +1099,7 @@ export function renderCombobox($api, $cmp) {
       classMap: { "slds-select": true },
       props: { value, required: Boolean($cmp.required) },
       key: 2,
-      on: { change: b($cmp.handleChange) },
+      on: { click: b($cmp.handleComboboxOpen), change: b($cmp.handleChange) },
     }, ($cmp.options || []).map((option, index) => {
       const optionValue = String(option.value ?? option.label ?? "");
       return h("option", {
@@ -1259,7 +1337,7 @@ export function renderSelect($api, $cmp) {
     h("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [t($cmp.label || "")]),
     h("select", {
       classMap: { "slds-select": true },
-      props: { value, disabled: Boolean($cmp.disabled) },
+      props: { value, disabled: Boolean($cmp.disabled), required: Boolean($cmp.required) },
       key: 2,
       on: { change: b($cmp.handleChange) },
     }, ($cmp.options || []).map((option, index) => {
@@ -1563,8 +1641,16 @@ export function renderHelptext($api, $cmp) {
 
 export function renderButtonMenu($api, $cmp, $slotset) {
   const { h, t, s } = $api;
-  return [h("div", { classMap: { "slds-dropdown-trigger": true, "slds-dropdown-trigger_click": true }, key: 0 }, [
-    h("button", { classMap: { "slds-button": true, "slds-button_neutral": true }, attrs: { type: "button" }, key: 1 }, [t($cmp.label || "Actions")]),
+  return [h("div", {
+    classMap: { "slds-dropdown-trigger": true, "slds-dropdown-trigger_click": true },
+    key: 0,
+  }, [
+    h("button", {
+      classMap: { "slds-button": true, "slds-button_neutral": true },
+      attrs: { type: "button" },
+      key: 1,
+      on: { click: $api.b($cmp.handleButtonMenuToggle) },
+    }, [t($cmp.label || "Actions")]),
     h("div", { classMap: { "slds-dropdown": true }, key: 2 }, [s("", { key: 3 }, [], $slotset)]),
   ])];
 }
@@ -1589,7 +1675,10 @@ export function renderOptionGroup(inputType) {
         return h("label", { classMap: { [`slds-${inputType}`]: true }, key: 20 + index }, [
           h("input", {
             attrs: { type: inputType, value: optionValue, name: $cmp.name || $cmp.label || inputType },
-            props: { checked: values.map(String).includes(optionValue) },
+            props: {
+              checked: values.map(String).includes(optionValue),
+              required: inputType === "radio" && Boolean($cmp.required),
+            },
             key: 200 + index,
             on: { change: b($cmp.handleOptionGroupChange) },
           }),

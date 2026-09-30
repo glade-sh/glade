@@ -25,6 +25,26 @@ Use short sentences. Let the facts carry the weight.
 - Match process to the change. Use a short plan for substantial work; ordinary
   edits do not need a separate design document or an approval checkpoint.
 
+## Current Offline Salesforce MVP Delivery Rule
+
+For the active Glade campaign, use the canonical `.backlog` in the primary
+checkout; do not create a board copy in this product worktree. Keep
+the full Apex/LWC/Visualforce target and final behavior-denominator gate, but
+do not make global inventory or a working Salesforce venue a prerequisite for
+an independently admitted TASK-8 AC8 local product batch. Pin its source,
+API/profile and current-candidate failing regression, implement the behavior,
+and verify the focused integrated change. Matching Salesforce evidence and the
+contract-to-change trace are required before Done, not before coding.
+
+Time spent on ticket movement, source scaffolds, repeated guards, and audits is
+not product progress. If a bounded source pass yields no terminal semantic
+decision or implementation-enabling result, stop that lane and take an eligible
+independent product batch. Reuse unchanged test receipts, group related cases,
+and never retry a failed org operation blindly. At the periodic review, compare
+elapsed time with integrated behavior changes, accepted unique-count changes,
+and observed Salesforce cases; if all are zero, change execution path. Preserve
+the TASK-44 disk/no-copy guard and report local support separately from parity.
+
 ## Project Boundary
 
 This repository is the deliverable `glade` framework and tool.

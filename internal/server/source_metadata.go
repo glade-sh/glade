@@ -12,6 +12,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/codeintel"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -283,8 +284,9 @@ func (m *SourceMetadata) loadToolingObjects() error {
 
 func (m *SourceMetadata) addSourceComponents(objectName, prefix string, paths []string, suffix string) error {
 	filtered := make([]string, 0, len(paths))
+	visualforce := objectName == "ApexPage" || objectName == "ApexComponent"
 	for _, path := range paths {
-		if strings.EqualFold(filepath.Ext(path), suffix) || strings.HasSuffix(strings.ToLower(path), strings.ToLower(suffix)) {
+		if strings.EqualFold(filepath.Ext(path), suffix) || strings.HasSuffix(strings.ToLower(path), strings.ToLower(suffix)) || (visualforce && strings.HasSuffix(strings.ToLower(path), strings.ToLower(suffix)+"-meta.xml")) {
 			filtered = append(filtered, path)
 		}
 	}
@@ -296,12 +298,23 @@ func (m *SourceMetadata) addSourceComponents(objectName, prefix string, paths []
 		}
 		body := string(bodyBytes)
 		name := trimKnownSuffix(filepath.Base(path), suffix)
+		if visualforce && strings.HasSuffix(strings.ToLower(path), strings.ToLower(suffix)+"-meta.xml") {
+			body = ""
+			name = trimKnownSuffix(filepath.Base(path), suffix+"-meta.xml")
+		}
 		id := sequenceID(prefix, i+1)
+		apiVersion := sourceAPIVersion(m.Project.SourceAPIVersion)
+		if visualforce {
+			apiVersion, err = resource.EffectiveVisualforceAPIVersion(path, m.Project.SourceAPIVersion)
+			if err != nil {
+				return fmt.Errorf("load %s API version for %s: %w", objectName, path, err)
+			}
+		}
 		fields := map[string]storage.Value{
 			"Name":                  storage.StringValue(name),
 			"Body":                  storage.StringValue(body),
 			"BodyCrc":               storage.IntegerValue(int64(crc32.ChecksumIEEE(bodyBytes))),
-			"ApiVersion":            storage.DecimalValue(sourceAPIVersion(m.Project.SourceAPIVersion)),
+			"ApiVersion":            storage.DecimalValue(apiVersion),
 			"Status":                storage.StringValue("Active"),
 			"IsValid":               storage.BooleanValue(true),
 			"LengthWithoutComments": storage.IntegerValue(int64(len(body))),
@@ -314,7 +327,7 @@ func (m *SourceMetadata) addSourceComponents(objectName, prefix string, paths []
 			fields = map[string]storage.Value{
 				"Name":        storage.StringValue(name),
 				"Markup":      storage.StringValue(body),
-				"ApiVersion":  storage.DecimalValue(sourceAPIVersion(m.Project.SourceAPIVersion)),
+				"ApiVersion":  storage.DecimalValue(apiVersion),
 				"MasterLabel": storage.StringValue(name),
 			}
 		}

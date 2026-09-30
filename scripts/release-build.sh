@@ -118,6 +118,8 @@ prepare_shared_payload() {
 		if [[ ! -d node_modules ]]; then
 			npm ci
 		fi
+		# Reused dependencies must satisfy the same pinned preparation as npm ci.
+		node scripts/apply-lwc-shared-api67.mjs
 	)
 
 	local vscode_extension_package="not present"

@@ -108,9 +108,10 @@ test("fetch wire suppresses null mapped bodies", async () => {
   }
 });
 
-test("LDS notify refreshes batch getRecords wires by recordIds", async () => {
+test("LDS notify refetches batch getRecords wires without unchanged re-emission", async () => {
   const originalFetch = globalThis.fetch;
   const calls = [];
+  let adapter;
   globalThis.fetch = async (_url, options) => {
     calls.push(JSON.parse(options.body));
     return {
@@ -123,17 +124,17 @@ test("LDS notify refreshes batch getRecords wires by recordIds", async () => {
   try {
     const values = [];
     const Adapter = createFetchWireAdapter("/lightning/wire/getRecords", (config) => config);
-    const adapter = new Adapter((value) => values.push(value));
+    adapter = new Adapter((value) => values.push(value));
 
     await adapter.update({
       records: [{ recordIds: ["001000000000001AAA"], fields: ["Account.Name"] }],
     });
     await notifyRecordUpdateAvailable([{ recordId: "001000000000001AAA" }]);
 
-    assert.equal(values.filter((value) => value.data).length, 2);
+    assert.equal(values.filter((value) => value.data).length, 1);
     assert.equal(calls.length, 2);
-    adapter.disconnect();
   } finally {
+    adapter?.disconnect();
     globalThis.fetch = originalFetch;
   }
 });
@@ -141,6 +142,7 @@ test("LDS notify refreshes batch getRecords wires by recordIds", async () => {
 test("LDS notify refreshes related list wires by parentRecordId", async () => {
   const originalFetch = globalThis.fetch;
   const calls = [];
+  let adapter;
   globalThis.fetch = async (_url, options) => {
     calls.push(JSON.parse(options.body));
     return {
@@ -153,7 +155,7 @@ test("LDS notify refreshes related list wires by parentRecordId", async () => {
   try {
     const values = [];
     const Adapter = createFetchWireAdapter("/lightning/wire/getRelatedListRecords", (config) => config);
-    const adapter = new Adapter((value) => values.push(value));
+    adapter = new Adapter((value) => values.push(value));
 
     await adapter.update({
       parentRecordId: "001000000000001AAA",
@@ -164,8 +166,8 @@ test("LDS notify refreshes related list wires by parentRecordId", async () => {
 
     assert.equal(values.filter((value) => value.data).length, 2);
     assert.equal(calls.length, 2);
-    adapter.disconnect();
   } finally {
+    adapter?.disconnect();
     globalThis.fetch = originalFetch;
   }
 });

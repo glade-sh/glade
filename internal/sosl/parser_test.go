@@ -38,6 +38,41 @@ func TestParseRuntimeSubsetCarriesSearchAndReturningClauses(t *testing.T) {
 	}
 }
 
+func TestParseSOSLFieldScopes(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		scope string
+		want  sosl.SearchScope
+	}{
+		{name: "all", scope: "ALL", want: sosl.SearchScopeAll},
+		{name: "name", scope: "NAME", want: sosl.SearchScopeName},
+		{name: "email", scope: "EMAIL", want: sosl.SearchScopeEmail},
+		{name: "phone", scope: "PHONE", want: sosl.SearchScopePhone},
+		{name: "sidebar", scope: "SIDEBAR", want: sosl.SearchScopeSidebar},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			query, err := sosl.Parse("FIND 'GladeTier0Probe' IN " + tc.scope + " FIELDS RETURNING Account(Id, Name)")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if query.Scope != tc.want {
+				t.Fatalf("scope = %q, want %q", query.Scope, tc.want)
+			}
+		})
+	}
+}
+
+func TestParseSOSLReturningUnaliasedToLabel(t *testing.T) {
+	query, err := sosl.Parse("FIND {Acme} RETURNING Account(Id, toLabel(Type))")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []sosl.SelectExpr{{Field: "Id"}, {Field: "Type", Func: "TOLABEL", Alias: "Type"}}
+	if !reflect.DeepEqual(query.Returning[0].Fields, want) {
+		t.Fatalf("fields = %#v, want %#v", query.Returning[0].Fields, want)
+	}
+}
+
 func TestParseSOSLReturningWhereIn(t *testing.T) {
 	query, err := sosl.Parse("FIND {Acme} RETURNING Account(Id WHERE Id IN ('001A', '001B'))")
 	if err != nil {
@@ -113,9 +148,7 @@ func TestParseSOSLTracksExplicitEmptyDivision(t *testing.T) {
 
 func TestParseRejectsUnimplementedSearchOperators(t *testing.T) {
 	for _, input := range []string{
-		"FIND {Acme AND West} RETURNING Account(Id)",
 		"FIND {Acme NOT West} RETURNING Account(Id)",
-		"FIND {Acme?} RETURNING Account(Id)",
 	} {
 		t.Run(input, func(t *testing.T) {
 			_, err := sosl.Parse(input)

@@ -135,6 +135,10 @@ func ApplyToOrg(org *storage.OrgState, idx Index) {
 		org.Objects[objectName] = object
 	}
 	for _, flow := range idx.Flows {
+		if strings.TrimSpace(flow.ObjectName) == "" {
+			org.Metadata.Flows = append(org.Metadata.Flows, flow.Rules...)
+			continue
+		}
 		objectName, ok := storage.ResolveObjectName(*org, flow.ObjectName)
 		if !ok {
 			continue

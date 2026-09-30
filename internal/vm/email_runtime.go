@@ -14,6 +14,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -29,6 +30,15 @@ func newSendEmailError(message string) Value {
 	err.Fields["message"] = String(message)
 	err.Fields["statusCode"] = Value{Kind: ValueObject, Type: "StatusCode", Text: "REQUIRED_FIELD_MISSING"}
 	err.Fields["targetObjectId"] = Null
+	return err
+}
+
+func newSendEmailValidationError(message, statusCode, targetObjectID string) Value {
+	err := newSendEmailError(message)
+	err.Fields["statusCode"] = Value{Kind: ValueObject, Type: "StatusCode", Text: statusCode}
+	if targetObjectID != "" {
+		err.Fields["targetObjectId"] = platformScalar("Id", targetObjectID)
+	}
 	return err
 }
 func newEmailFileAttachment() Value {
@@ -77,6 +87,7 @@ func newSingleEmailMessage() Value {
 	} {
 		message.Fields[field] = Bool(false)
 	}
+	message.Fields["treatTargetObjectAsRecipient"] = Bool(true)
 	return message
 }
 func newMassEmailMessage() Value {
@@ -125,7 +136,7 @@ func newInboundEnvelope() Value {
 }
 func newInboundEmailResult() Value {
 	result := Object("Messaging.InboundEmailResult")
-	result.Fields["success"] = Bool(false)
+	result.Fields["success"] = Bool(true)
 	result.Fields["message"] = Null
 	return result
 }
@@ -133,6 +144,14 @@ func isLocalEmailMessage(value Value) bool {
 	return value.Kind == ValueObject && (value.Type == "Messaging.SingleEmailMessage" || value.Type == "Messaging.MassEmailMessage")
 }
 func (vm *VM) sendEmail(args []Value, result *Result) (Value, error) {
+	return vm.sendEmailWithRecipientValidation(args, result, true)
+}
+
+func (vm *VM) sendEmailForFramework(args []Value, result *Result) (Value, error) {
+	return vm.sendEmailWithRecipientValidation(args, result, false)
+}
+
+func (vm *VM) sendEmailWithRecipientValidation(args []Value, result *Result, requireRecipient bool) (Value, error) {
 	if len(args) == 0 {
 		return Null, fmt.Errorf("Messaging.sendEmail expects messages")
 	}
@@ -157,11 +176,11 @@ func (vm *VM) sendEmail(args []Value, result *Result) (Value, error) {
 			return Null, fmt.Errorf("Messaging.sendEmail expects SingleEmailMessage or MassEmailMessage list items")
 		}
 	}
-	validationErrors := make([]string, len(args[0].List))
+	validationErrors := make([]Value, len(args[0].List))
 	for i, message := range args[0].List {
-		validationErrors[i] = localEmailValidationError(message)
-		if validationErrors[i] != "" && allOrNothing {
-			return Null, newExceptionError("EmailException", validationErrors[i])
+		validationErrors[i] = vm.localSendEmailValidationError(message, requireRecipient)
+		if validationErrors[i].Kind != ValueNull && allOrNothing {
+			return Null, newExceptionError("EmailException", validationErrors[i].Fields["message"].Text)
 		}
 	}
 	if err := vm.incrementLimit("emailInvocations", 1); err != nil {
@@ -170,8 +189,11 @@ func (vm *VM) sendEmail(args []Value, result *Result) (Value, error) {
 	appendTrace(result, "apex.email.send", "apex.email", map[string]any{"messages": len(args[0].List)})
 	results := make([]Value, 0, len(args[0].List))
 	for i, message := range args[0].List {
-		if validationErrors[i] != "" {
-			results = append(results, newFailedSendEmailResult(validationErrors[i]))
+		if validationErrors[i].Kind != ValueNull {
+			failed := newSendEmailResult()
+			failed.Fields["success"] = Bool(false)
+			failed.Fields["errors"] = List(validationErrors[i])
+			results = append(results, failed)
 			continue
 		}
 		captured := vm.captureEmail(message, sendOptions)
@@ -180,6 +202,9 @@ func (vm *VM) sendEmail(args []Value, result *Result) (Value, error) {
 			message.Fields["plainTextBody"] = String(captured.PlainTextBody)
 			message.Fields["htmlBody"] = String(captured.HTMLBody)
 			args[0].List[i] = message
+		}
+		if err := vm.persistSentEmailMessage(captured, result); err != nil {
+			return Null, err
 		}
 		vm.capturedEmails = append(vm.capturedEmails, captured)
 		results = append(results, newSendEmailResult())
@@ -521,9 +546,155 @@ func parseInboundEmailAddressList(raw string) Value {
 	}
 	return List(values...)
 }
-func localEmailValidationError(message Value) string {
+
+// Validate against the stored recipient, not a possibly stale caller record.
+func (vm *VM) localSendEmailValidationError(message Value, requireRecipient bool) Value {
+	if reason := localEmailValidationError(message, requireRecipient); reason != "" {
+		return newSendEmailError(reason)
+	}
+	if message.Type == "Messaging.SingleEmailMessage" && vm.Org != nil {
+		templateID := emailFieldString(message, "templateId")
+		// The default local test org has the EmailTemplate schema but no
+		// template records. An empty local catalog is not evidence that a
+		// fabricated ID is invalid; only validate IDs when template data was
+		// actually bound into the org.
+		if templateID != "" && vm.emailTemplateCatalogPopulated() {
+			if _, ok := vm.emailTemplateByID(templateID); !ok {
+				return newSendEmailValidationError("invalid cross reference id", "INVALID_CROSS_REFERENCE_KEY", "")
+			}
+		}
+		targetID := emailFieldString(message, "targetObjectId")
+		whatID := emailFieldString(message, "whatId")
+		if targetID != "" && whatID != "" && len(targetID) >= 3 && len(whatID) >= 3 {
+			targetObject, targetKnown := vm.sObjectNameForID(targetID)
+			whatObject, whatKnown := vm.sObjectNameForID(whatID)
+			if targetKnown && whatKnown && strings.EqualFold(targetObject, "User") && strings.EqualFold(whatObject, "EmailTemplate") {
+				return newSendEmailValidationError("WhatId is not available for sending emails to UserIds.", "INVALID_ID_FIELD", targetID)
+			}
+		}
+	}
+	if message.Type != "Messaging.SingleEmailMessage" || !emailFieldBool(message, "treatTargetObjectAsRecipient") {
+		return Null
+	}
+	targetID := emailFieldString(message, "targetObjectId")
+	if targetID == "" {
+		return Null
+	}
+	if vm.Org == nil || len(targetID) < 3 {
+		return Null
+	}
+	objectName, ok := vm.sObjectNameForIDPrefix(targetID[:3])
+	if !ok {
+		return Null
+	}
+	object := vm.Org.Objects[objectName]
+	_, target, ok := storage.LookupRecordByID(object.Records, storage.ID(targetID))
+	if !ok {
+		return Null
+	}
+	email, present := target.GetField("Email")
+	if present && email.Kind != storage.ValueNull {
+		return Null
+	}
+	if !present {
+		if _, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, "Email"); !ok {
+			return Null
+		}
+	}
+	validation := newSendEmailError(`The target object's email address "null" is not valid`)
+	validation.Fields["statusCode"] = Value{Kind: ValueObject, Type: "StatusCode", Text: "INVALID_EMAIL_ADDRESS"}
+	validation.Fields["targetObjectId"] = platformScalar("Id", targetID)
+	return validation
+}
+
+func (vm *VM) persistSentEmailMessage(captured CapturedEmail, result *Result) error {
+	if vm == nil || vm.Org == nil {
+		return nil
+	}
+	storage.EnsureStandardObject(vm.Org, "EmailMessage")
+	var deferredTemplateID, deferredWhatID string
+	fields := map[string]storage.Value{
+		"Status":            storage.StringValue("3"),
+		"MessageIdentifier": storage.StringValue(fmt.Sprintf("<%s@glade.local>", vm.nextDeterministicUUID())),
+		"Subject":           storage.StringValue(captured.Subject),
+		"TextBody":          storage.StringValue(captured.PlainTextBody),
+		"HtmlBody":          storage.StringValue(captured.HTMLBody),
+	}
+	if len(captured.ToAddresses) > 0 {
+		fields["ToAddress"] = storage.StringValue(strings.Join(captured.ToAddresses, ","))
+	}
+	if len(captured.CcAddresses) > 0 {
+		fields["CcAddress"] = storage.StringValue(strings.Join(captured.CcAddresses, ","))
+	}
+	if len(captured.BccAddresses) > 0 {
+		fields["BccAddress"] = storage.StringValue(strings.Join(captured.BccAddresses, ","))
+	}
+	if captured.TemplateID != "" {
+		if _, ok := vm.emailTemplateByID(captured.TemplateID); ok {
+			fields["EmailTemplateId"] = storage.IDValue(storage.ID(captured.TemplateID))
+		} else {
+			// Local email capture accepts opaque template IDs when no template
+			// records are available. Keep that captured value without asking
+			// ordinary EmailMessage DML to bless a missing foreign key.
+			deferredTemplateID = captured.TemplateID
+		}
+	}
+	if captured.WhatID != "" {
+		if vm.emailReferenceExists(captured.WhatID) {
+			fields["RelatedToId"] = storage.IDValue(storage.ID(captured.WhatID))
+		} else {
+			deferredWhatID = captured.WhatID
+		}
+	}
+	engine := vm.newDMLEngine(result)
+	inserted := engine.Insert([]storage.Record{{Object: "EmailMessage", Fields: fields}})
+	if len(inserted) != 1 || !inserted[0].Success {
+		if len(inserted) == 1 && inserted[0].Error != "" {
+			return fmt.Errorf("Messaging.sendEmail could not persist EmailMessage: %s", inserted[0].Error)
+		}
+		return fmt.Errorf("Messaging.sendEmail could not persist EmailMessage")
+	}
+	if deferredTemplateID != "" || deferredWhatID != "" {
+		object := vm.Org.Objects["EmailMessage"]
+		if storedID, record, ok := storage.LookupRecordByID(object.Records, inserted[0].ID); ok {
+			if record.Fields == nil {
+				record.Fields = make(map[string]storage.Value)
+			}
+			if deferredTemplateID != "" {
+				record.Fields["EmailTemplateId"] = storage.IDValue(storage.ID(deferredTemplateID))
+			}
+			if deferredWhatID != "" {
+				record.Fields["RelatedToId"] = storage.IDValue(storage.ID(deferredWhatID))
+			}
+			object.Records[storedID] = record
+			vm.Org.Objects["EmailMessage"] = object
+		}
+	}
+	return nil
+}
+
+func (vm *VM) emailReferenceExists(id string) bool {
+	if vm == nil || vm.Org == nil || id == "" {
+		return false
+	}
+	for _, object := range vm.Org.Objects {
+		if _, _, ok := storage.LookupRecordByID(object.Records, storage.ID(id)); ok {
+			return true
+		}
+	}
+	return false
+}
+
+func localEmailValidationError(message Value, requireRecipient bool) string {
 	if message.Type != "Messaging.SingleEmailMessage" {
 		return ""
+	}
+	if requireRecipient && len(emailFieldStrings(message, "toAddresses")) == 0 &&
+		len(emailFieldStrings(message, "ccAddresses")) == 0 &&
+		len(emailFieldStrings(message, "bccAddresses")) == 0 &&
+		emailFieldString(message, "targetObjectId") == "" &&
+		len(emailFieldStrings(message, "targetObjectIds")) == 0 {
+		return "A recipient is required."
 	}
 	if emailFieldString(message, "plainTextBody") != "" || emailFieldString(message, "htmlBody") != "" || emailFieldString(message, "templateId") != "" {
 		return ""
@@ -1119,6 +1290,9 @@ func (vm *VM) emailTemplateByID(templateID string) (storage.Record, bool) {
 		objectName = "EmailTemplate"
 	}
 	object := vm.Org.Objects[objectName]
+	if _, record, ok := storage.LookupRecordByID(object.Records, storage.ID(templateID)); ok {
+		return record, true
+	}
 	if record, ok := object.Records[storage.ID(templateID)]; ok {
 		return record, true
 	}
@@ -1132,6 +1306,22 @@ func (vm *VM) emailTemplateByID(templateID string) (storage.Record, bool) {
 	}
 	return storage.Record{}, false
 }
+
+func (vm *VM) emailTemplateCatalogPopulated() bool {
+	if vm == nil || vm.Org == nil {
+		return false
+	}
+	if len(vm.Org.Metadata.EmailTemplates) > 0 {
+		return true
+	}
+	objectName, ok := vm.resolveObjectName("EmailTemplate")
+	if !ok {
+		return false
+	}
+	object, ok := vm.Org.Objects[objectName]
+	return ok && len(object.Records) > 0
+}
+
 func (vm *VM) emailTemplateByName(name string) (storage.Record, bool) {
 	if vm.Org == nil {
 		return storage.Record{}, false
@@ -1711,4 +1901,28 @@ func callMessagingBuilderMember(receiver Value, method string, args []Value) (Va
 	field = strings.ToLower(field[:1]) + field[1:]
 	receiver.Fields[field] = args[0]
 	return receiver, receiver, true, true, nil
+}
+
+// Captures the requested local effect only. Recipient eligibility, Salesforce
+// message templates and delivery are not inferred from a successful Task save.
+func (vm *VM) captureTaskAssignmentNotificationRequests(results []dml.Result, result *Result) {
+	for _, outcome := range results {
+		if !outcome.Success || outcome.ID == "" {
+			continue
+		}
+		record, ok := vm.findOrgRecord("Task", outcome.ID)
+		if !ok || record.System.IsDeleted {
+			continue
+		}
+		captured := CapturedEmail{
+			Kind:             "TaskAssignmentNotificationRequest",
+			WhatID:           string(record.ID),
+			TargetObjectID:   string(record.System.OwnerID),
+			TriggerUserEmail: true,
+		}
+		vm.capturedEmails = append(vm.capturedEmails, captured)
+		appendTrace(result, "apex.email.taskAssignment.request", "apex.email", map[string]any{
+			"task": captured.WhatID, "owner": captured.TargetObjectID,
+		})
+	}
 }

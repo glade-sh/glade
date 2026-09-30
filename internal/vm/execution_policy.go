@@ -69,6 +69,23 @@ func (vm *VM) currentSharingMode() string {
 	if vm.currentTrigger {
 		return "without sharing"
 	}
+	if vm.currentMethod.SourceContextBound {
+		switch strings.ToLower(strings.TrimSpace(vm.currentMethod.SharingMode)) {
+		case "with sharing", "without sharing":
+			return strings.ToLower(strings.TrimSpace(vm.currentMethod.SharingMode))
+		case "inherited sharing":
+			if mode, ok := vm.nearestCallStackSharingMode(); ok {
+				return mode
+			}
+			if mode := strings.TrimSpace(vm.entrySharingMode); mode != "" {
+				return mode
+			}
+		}
+		if apexversion.Enabled(vm.currentMethod.APIVersion, apexversion.SecureDefaults) {
+			return "with sharing"
+		}
+		return "without sharing"
+	}
 	if vm.currentClass == "" && len(vm.callStack) == 0 && vm.entrySharingMode == "" {
 		if vm.currentMethod.APIVersion == "" || !apexversion.Enabled(vm.currentMethod.APIVersion, apexversion.SecureDefaults) {
 			return "without sharing"

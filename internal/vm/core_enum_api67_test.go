@@ -99,6 +99,22 @@ System.assert(!quiddities.get(0).equals(quiddities.get(1)));
 	}
 }
 
+func TestExecAPI67CoreEnumQualifiedAndUnqualifiedValuesCompareEqual(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.LoggingLevel qualified = System.LoggingLevel.FINE;
+LoggingLevel unqualified = LoggingLevel.FINE;
+System.assertEquals(qualified, unqualified);
+System.assert(qualified.equals(unqualified));
+System.assert(unqualified.equals(qualified));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecAPI67SystemStatusCodeCurrentOrdinal(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<System.StatusCode> values = System.StatusCode.values();

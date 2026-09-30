@@ -21,7 +21,7 @@ func (vm *VM) currentUserCanSeeSharedRecord(objectName string, record storage.Re
 }
 
 func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, userID string) bool {
-	if vm == nil || vm.soqlObjectHasPublicReadSharing(objectName) || vm.currentUserBypassesRecordSharing() || userID == "" {
+	if vm == nil || vm.soqlObjectHasPublicReadSharing(objectName) || vm.currentUserBypassesRecordSharing() || vm.currentUserObjectRecordGrant(objectName, "PermissionsViewAllRecords", "PermissionsModifyAllRecords") || userID == "" {
 		return true
 	}
 	return record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.currentUserCanSeeSharedRecord(objectName, record, userID)
@@ -220,4 +220,59 @@ func standardObjectDefaultsToPublicRead(objectName string) bool {
 	default:
 		return false
 	}
+}
+
+// Object record grants are additive and distinct from object CRUD permissions.
+func (vm *VM) currentUserObjectRecordGrant(objectName string, fields ...string) bool {
+	if vm == nil || vm.Org == nil {
+		return false
+	}
+	user := vm.executionUser
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	parents := vm.assignedPermissionSetIDs(stringField(user, "Id"))
+	profileID := stringField(user, "ProfileId")
+	parents = append(parents, profileID, vm.profileOwnedPermissionSetID(profileID))
+	if canonical, ok := vm.resolveObjectName(objectName); ok {
+		objectName = canonical
+	}
+	for _, row := range vm.Org.Objects["ObjectPermissions"].Records {
+		parent, _ := row.GetField("ParentId")
+		object, _ := row.GetField("SObjectType")
+		if !storageStringValueEquals(object, objectName) {
+			continue
+		}
+		for _, id := range parents {
+			if id == "" || !storageIDValueEquals(parent, id) {
+				continue
+			}
+			for _, field := range fields {
+				if value, ok := row.GetField(field); ok && value.Kind == storage.ValueBoolean && value.Boolean {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func (vm *VM) currentUserCanWriteRecord(objectName string, record storage.Record, userID, operation string) bool {
+	if vm == nil || userID == "" {
+		return true
+	}
+	if vm.currentUserBypassesRecordSharingForWrite() || vm.currentUserObjectRecordGrant(objectName, "PermissionsModifyAllRecords") {
+		return true
+	}
+	// Public read/write grants edits, but does not grant deletion or undeletion.
+	if operation == "update" || operation == "upsert" {
+		if canonical, ok := vm.resolveObjectName(objectName); ok && vm.Org != nil {
+			model := strings.TrimSpace(vm.Org.Objects[canonical].Definition.SharingModel)
+			if strings.EqualFold(model, "ReadWrite") || strings.EqualFold(model, "PublicReadWrite") {
+				return true
+			}
+		}
+	}
+	// Read-only sharing and read shares do not grant write authority.
+	return record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID))
 }

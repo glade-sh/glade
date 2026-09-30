@@ -26,6 +26,7 @@ func TestExecDecimalPreservesExactIntegerConversionAndUnaryText(t *testing.T) {
 	program, err := CompileAnonymous(`
 Decimal value = Decimal.valueOf('9007199254740993');
 System.assertEquals(9007199254740993, value.longValue());
+System.assertEquals(9223372036854775807L, (Math.pow(2, 63) - 1).longValue());
 System.assertEquals('-9007199254740993', (-value).toPlainString());
 Long whole = 9007199254740993L;
 System.assertEquals('9007199254740993', whole.decimalValue().toPlainString());

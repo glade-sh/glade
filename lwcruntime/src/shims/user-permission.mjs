@@ -1,6 +1,13 @@
 export function readUserPermission(name) {
-  const permissions = readPermissionContext();
-  return Boolean(permissions[permissionKey(name)]);
+  return readGrantedPermission(readPermissionContext(), name);
+}
+
+export function readCustomPermission(name) {
+  return readGrantedPermission(readCustomPermissionContext(), name);
+}
+
+function readGrantedPermission(permissions, name) {
+  return permissions[permissionKey(name)] === true ? true : undefined;
 }
 
 function readPermissionContext() {
@@ -9,6 +16,15 @@ function readPermissionContext() {
     context.userPermissions ||
       context.permissions?.userPermissions ||
       context.permissions ||
+      {}
+  );
+}
+
+function readCustomPermissionContext() {
+  const context = readShellContext();
+  return normalizePermissionMap(
+    context.customPermissions ||
+      context.permissions?.customPermissions ||
       {}
   );
 }

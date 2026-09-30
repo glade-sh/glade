@@ -300,6 +300,9 @@ func (vm *VM) hydrateUpdateTriggerRecords(records, before []storage.Record) []st
 			definition = object.Definition
 		}
 		merged := before[i].Clone()
+		if record.System.OwnerID != "" {
+			merged.System.OwnerID = record.System.OwnerID
+		}
 		if merged.Object == "" {
 			merged.Object = record.Object
 		}
@@ -324,6 +327,13 @@ func (vm *VM) hydrateUpdateTriggerRecords(records, before []storage.Record) []st
 				deleteVMStorageNullAlias(definition, vm.Org.Namespace, merged.ExplicitNulls, field)
 				delete(merged.Fields, field)
 				merged.ExplicitNulls[field] = true
+			}
+		}
+		merged.LoadedReferences = nil
+		if len(record.LoadedReferences) > 0 {
+			merged.LoadedReferences = make(map[string]storage.ID, len(record.LoadedReferences))
+			for field, id := range record.LoadedReferences {
+				merged.LoadedReferences[field] = id
 			}
 		}
 		vm.populateCalculatedTriggerFields(&merged)
@@ -567,6 +577,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 				preserveMissingSystemFields(&record, records[i].System)
 				preserveMissingRecordFields(&record, records[i])
 				preserveMissingExplicitNulls(&record, records[i])
+				preserveLoadedReferenceInput(&record, records[i], item)
 				if records[i].ID != "" && record.ID == "" {
 					record.ID = records[i].ID
 				}

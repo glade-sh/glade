@@ -286,7 +286,7 @@ run_package_lane() {
 	run_json_with_heartbeat "go test ${lane}" "$(testlog_artifact "${kind}" "${lane}")" "${args[@]}" "${packages[@]}"
 }
 
-node_integration_run_regex='^(?:TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$'
+node_integration_run_regex='^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$'
 
 write_node_integration_expected() {
 	local output="$1"
@@ -299,13 +299,18 @@ github.com/glade-sh/glade/internal/gladehome	TestEnsureRootHonorsExplicitGladeHo
 github.com/glade-sh/glade/internal/gladehome	TestInstallFromCWDSkipsGlobalShareAsSource
 github.com/glade-sh/glade/internal/gladehome	TestInstallFromCopiesToolchain
 github.com/glade-sh/glade/internal/gladehome	TestValidateRootFindsRepoCheckout
+github.com/glade-sh/glade/internal/lwc/compile	TestBuildCompileConfigAPIVersionMatrix
 github.com/glade-sh/glade/internal/lwc/compile	TestCompileEmitsAdditionalHTMLTemplateModules
 github.com/glade-sh/glade/internal/lwc/compile	TestCompileEmitsSiblingJSModules
 github.com/glade-sh/glade/internal/lwc/compile	TestCompileEmitsUtilityOnlyLWCModules
 github.com/glade-sh/glade/internal/lwc/compile	TestCompileEnablesLwcOnDirective
+github.com/glade-sh/glade/internal/lwc/compile	TestCompilePreservesDeclaredAPI67
 github.com/glade-sh/glade/internal/lwc/compile	TestCompileProjectLWCBundles
 github.com/glade-sh/glade/internal/lwc/compile	TestCompileRewritesTemplateStylesheetImports
 github.com/glade-sh/glade/internal/lwc/compile	TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate
+github.com/glade-sh/glade/internal/lwc/compile	TestComplexTemplateExpressionsFollowBundleAPIVersion
+github.com/glade-sh/glade/internal/lwc/compile	TestHTMLDetailsNameFollowsBundleAPIVersion
+github.com/glade-sh/glade/internal/lwc/compile	TestLWCModuleAvailabilityFollowsBundleAPIVersion
 github.com/glade-sh/glade/internal/lwcbrowser	TestSetupBundleIncludesLabelsSibling
 github.com/glade-sh/glade/internal/lwcbrowser	TestSetupImportMapIncludesLocalComponents
 github.com/glade-sh/glade/internal/server	TestLWCShellAppRouteFallsBackToApplicationDefaultTab
@@ -336,14 +341,15 @@ import sys
 
 events_path, expected_path, discovery_path, summary_path = sys.argv[1:]
 expected = []
+expected_count = 35
 with open(expected_path, encoding="utf-8") as source:
     for line_number, raw in enumerate(source, 1):
         fields = raw.rstrip("\n").split("\t")
         if len(fields) != 2 or not all(fields):
             raise SystemExit(f"[ci] malformed node integration expected row {line_number}")
         expected.append(tuple(fields))
-if len(expected) != 30 or len(set(expected)) != 30 or expected != sorted(expected):
-    raise SystemExit("[ci] node integration expected set must be 30 unique sorted package/name pairs")
+if len(expected) != expected_count or len(set(expected)) != expected_count or expected != sorted(expected):
+    raise SystemExit(f"[ci] node integration expected set must be {expected_count} unique sorted package/name pairs")
 
 expected_set = set(expected)
 discovered = []
@@ -371,12 +377,12 @@ try:
                 discovered.append(pair)
             elif action in {"pass", "skip", "fail"}:
                 terminals.append((pair, action))
-    if len(discovered) != 30 or len(set(discovered)) != 30 or set(discovered) != expected_set:
+    if len(discovered) != expected_count or len(set(discovered)) != expected_count or set(discovered) != expected_set:
         raise ValueError("discovery does not contain each expected test exactly once")
-    if len(terminals) != 30:
-        raise ValueError(f"terminal count is {len(terminals)}, want 30")
+    if len(terminals) != expected_count:
+        raise ValueError(f"terminal count is {len(terminals)}, want {expected_count}")
     terminal_pairs = [pair for pair, _ in terminals]
-    if len(set(terminal_pairs)) != 30 or set(terminal_pairs) != expected_set:
+    if len(set(terminal_pairs)) != expected_count or set(terminal_pairs) != expected_set:
         raise ValueError("terminal results do not contain each expected test exactly once")
     not_passed = [(pair, action) for pair, action in terminals if action != "pass"]
     if not_passed:
@@ -394,7 +400,7 @@ with open(discovery_path, "w", encoding="utf-8") as target:
     for package, test in sorted(discovered):
         target.write(f"{package}\t{test}\n")
 with open(summary_path, "w", encoding="utf-8") as target:
-    json.dump({"valid": True, "tests": 30, "passed": 30, "skipped": 0, "failed": 0}, target, sort_keys=True, indent=2)
+    json.dump({"valid": True, "tests": expected_count, "passed": expected_count, "skipped": 0, "failed": 0}, target, sort_keys=True, indent=2)
     target.write("\n")
 PY
 }
@@ -508,7 +514,7 @@ run_ci_package_lane() {
 			run_package_lane "${lane}" test 30m 0 '^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents)$'
 			;;
 		remaining-go)
-			run_package_lane "${lane}" test 20m 2 '^(?:TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$'
+			run_package_lane "${lane}" test 20m 2 '^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$'
 			;;
 		sema|repoguard)
 			run_named_package_lane "${lane}"

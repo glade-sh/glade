@@ -80,7 +80,8 @@ func listRelationshipSObjectValue(value Value) bool {
 		isCommonSObjectTypeName(value.Type) ||
 		strings.HasSuffix(value.Type, "__c") ||
 		strings.HasSuffix(value.Type, "__e") ||
-		strings.HasSuffix(value.Type, "__mdt")
+		strings.HasSuffix(value.Type, "__mdt") ||
+		strings.HasSuffix(strings.ToLower(value.Type), "__share")
 }
 func sObjectAddErrorMessage(args []Value, name string) (string, error) {
 	message, _, err := sObjectAddErrorArgs(args, name)
@@ -394,6 +395,12 @@ func (vm *VM) isSObjectLikeType(typeName string) bool {
 	if isCommonSObjectTypeName(typeName) || isCustomObjectLikeName(typeName) {
 		return true
 	}
+	// Change-event sObjects are standard Salesforce types, but they are not
+	// present in the ordinary object describe catalog. They still expose the
+	// SObject member surface (including get('ChangeEventHeader')).
+	if strings.HasSuffix(strings.ToLower(strings.TrimSpace(typeName)), "changeevent") {
+		return true
+	}
 	return vm.isSObjectType(typeName)
 }
 func sObjectMemberCallShapeSupported(method string, args []Value) bool {
@@ -526,6 +533,13 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.get expects field name String or Schema.SObjectField")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
+		if _, _, present := objectFieldValue(receiver, field); !present && !vm.queriedSObjectFieldsIncludes(receiver, field) {
+			if _, relationship := vm.parentRelationshipObjectType(receiver.Type, field); !relationship {
+				if err := vm.unknownSObjectFieldError(receiver, field); err != nil {
+					return Null, true, err
+				}
+			}
+		}
 		if err := vm.unqueriedSObjectFieldError(receiver, field, true); err != nil {
 			return Null, true, err
 		}
@@ -546,7 +560,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		}
 		value = coerceRawRecordTypeDefaultTokenRuntimeValue(actualField, value)
 		if _, fieldDef, exists := vm.sObjectFieldDefinition(receiver.Type, actualField); exists {
-			value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
+			value = coerceReadSObjectFieldRuntimeValue(receiver, value, fieldDef)
 		}
 		if value.Kind == ValueNull {
 			if addressValue, hasAddress := vm.sObjectCompoundAddressValue(receiver, field); hasAddress {
@@ -613,7 +627,11 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 				definition := vm.Org.Objects[objectName].Definition
 				if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, actualField); ok {
 					actualField = canonical
-					value = coerceSObjectFieldRuntimeValue(value, definition.Fields[canonical])
+					fieldDef := definition.Fields[canonical]
+					if strings.TrimSpace(fieldDef.Formula) != "" || fieldDef.Type == storage.FieldSummary || systemFieldDynamicPutReadOnly(canonical) {
+						return Null, true, newExceptionError("System.SObjectException", "Field "+canonical+" is not editable")
+					}
+					value = coerceSObjectFieldRuntimeValue(value, fieldDef)
 				}
 			}
 		}
@@ -698,8 +716,19 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		out.Type = "Map<String,Object>"
 		out.Runtime = "sobject-populated-fields:" + receiver.Type
 		added := make(map[string]struct{}, len(receiver.Fields))
+		omitNullCurrency := func(field string, value Value) bool {
+			if value.Kind != ValueNull {
+				return false
+			}
+			_, queried := receiver.Fields[sobjectQueriedFieldsField]
+			if !queried && !isTriggerSObject(receiver) {
+				return false
+			}
+			_, definition, ok := vm.sObjectFieldDefinition(receiver.Type, field)
+			return ok && strings.EqualFold(definition.DisplayType, "CURRENCY")
+		}
 		addField := func(field string, value Value, includeSystem bool) {
-			if isInternalSObjectField(field) || (!includeSystem && isSObjectSystemField(field)) {
+			if isInternalSObjectField(field) || (!includeSystem && isSObjectSystemField(field)) || omitNullCurrency(field, value) {
 				return
 			}
 			encoded := mapKey(String(field))
@@ -756,6 +785,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 				if actual, existing, ok := objectFieldValue(receiver, field); ok {
 					field = actual
 					value = existing
+				}
+				if omitNullCurrency(field, value) {
+					continue
 				}
 				encoded := mapKey(String(field))
 				if _, exists := out.Map[encoded]; !exists {
@@ -818,7 +850,22 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.getOptions expects 0 arguments")
 		}
 		if options, ok := receiver.Fields[sobjectDMLOptionsField]; ok {
-			return cloneValue(options), true, nil
+			options = cloneValue(options)
+			// Task setOptions retains the applied options internally, but the
+			// proved false TriggerUserEmail setting reads back as null.
+			if strings.EqualFold(vm.canonicalSObjectValueType(receiver), "Task") {
+				for key, header := range options.Fields {
+					if !strings.EqualFold(key, "EmailHeader") || header.Kind != ValueObject {
+						continue
+					}
+					for flag, setting := range header.Fields {
+						if strings.EqualFold(flag, "TriggerUserEmail") && setting.Kind == ValueBool && !setting.Bool {
+							header.Fields[flag] = Null
+						}
+					}
+				}
+			}
+			return options, true, nil
 		}
 		return Null, true, nil
 	case "isClone":
@@ -972,5 +1019,16 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		return value, true, nil
 	default:
 		return Null, false, nil
+	}
+}
+
+// systemFieldDynamicPutReadOnly covers platform-maintained fields whose dynamic
+// setter rejects writes independently of the current user's field permissions.
+func systemFieldDynamicPutReadOnly(field string) bool {
+	switch strings.ToLower(field) {
+	case "isdeleted", "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid", "systemmodstamp":
+		return true
+	default:
+		return false
 	}
 }

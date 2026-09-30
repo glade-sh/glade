@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value, bool) {
@@ -1095,7 +1096,7 @@ func (vm *VM) generatedOptionalWrapperType(typeName string) bool {
 	return true
 }
 
-func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Value, methodName string, args []Value) (Value, bool) {
+func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Value, methodName string, args []Value, result *Result) (Value, bool) {
 	for _, receiverType := range vm.generatedPlatformReceiverTypes(receiverName, receiver) {
 		if waveEnumLikeRuntimeType(receiverType) && strings.EqualFold(methodName, "ordinal") {
 			if len(args) != 0 {
@@ -1124,7 +1125,7 @@ func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Val
 			continue
 		}
 		if strings.EqualFold(receiverType, "Invocable.Action") {
-			if value, handled := vm.callInvocableActionMember(receiver, methodName, args); handled {
+			if value, handled := vm.callInvocableActionMember(receiver, methodName, args, result); handled {
 				return value, true
 			}
 		}
@@ -1143,7 +1144,7 @@ func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Val
 	return Null, false
 }
 
-func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args []Value) (Value, bool) {
+func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args []Value, executionResult *Result) (Value, bool) {
 	switch {
 	case strings.EqualFold(methodName, "addInvocation"):
 		if len(args) != 0 {
@@ -1235,14 +1236,98 @@ func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args 
 			result.Fields["action"] = receiver
 			result.Fields["errors"] = typedList("List<Invocable.Action.Error>")
 			result.Fields["invocationParameters"] = invocation
-			result.Fields["outputParameters"] = typedMap("Map<String,Object>")
-			result.Fields["success"] = Bool(true)
+			outputs := typedMap("Map<String,Object>")
+			success := true
+			var err error
+			if standard, ok := receiver.Fields["standard"]; !ok || standard.Kind != ValueBool || !standard.Bool {
+				outputs, success, err = vm.invokeCustomApexAction(receiver, invocation, executionResult)
+			}
+			result.Fields["outputParameters"] = outputs
+			result.Fields["success"] = Bool(success)
+			if err != nil {
+				result.Fields["errors"] = invocableActionErrors(err)
+			}
 			results.List = append(results.List, result)
 		}
 		return results, true
 	default:
 		return Null, false
 	}
+}
+
+// invokeCustomApexAction adapts Invocable.Action's named parameter map to the
+// request DTO expected by a local @InvocableMethod, then exposes the returned
+// DTO fields as the action output parameter map. Salesforce invokes Apex
+// actions through this same request/response shape.
+func (vm *VM) invokeCustomApexAction(action Value, invocation Value, result *Result) (Value, bool, error) {
+	name := invocableActionDisplayName(action)
+	namespace := invocableActionStringField(action, "namespace")
+	className := name
+	if namespace != "" {
+		className = namespace + "." + name
+	}
+	method, ok, err := vm.resolveFlowInvocableMethod(storage.FlowAction{
+		Name:       name,
+		ActionType: invocableActionType(action),
+		ActionName: name,
+		ClassName:  className,
+	})
+	if err != nil {
+		return typedMap("Map<String,Object>"), false, err
+	}
+	if !ok || len(method.Params) != 1 {
+		return typedMap("Map<String,Object>"), false, fmt.Errorf("custom Apex action %s has no single-list @InvocableMethod", name)
+	}
+	elementType, ok := collectionElementType(method.Params[0].Type)
+	if !ok {
+		return typedMap("Map<String,Object>"), false, fmt.Errorf("custom Apex action %s parameter is not a list", name)
+	}
+	request := Object(elementType)
+	if invocation.Kind == ValueMap {
+		for _, encoded := range invocation.MapOrder {
+			keyValue, found := invocation.MapKeys[encoded]
+			if !found || keyValue.Kind != ValueString {
+				continue
+			}
+			request.Fields[keyValue.Text] = invocation.Map[encoded]
+		}
+	}
+	input := typedList(method.Params[0].Type)
+	input.List = append(input.List, request)
+	if result == nil {
+		result = &Result{}
+	}
+	output, err := vm.callMethod(method, []Value{input}, result)
+	if err != nil {
+		return typedMap("Map<String,Object>"), false, err
+	}
+	outputs := typedMap("Map<String,Object>")
+	if output.Kind != ValueList {
+		return outputs, true, nil
+	}
+	for _, item := range output.List {
+		if item.Kind != ValueObject {
+			continue
+		}
+		for field, value := range item.Fields {
+			if strings.HasPrefix(field, "__") {
+				continue
+			}
+			encoded := mapKey(String(field))
+			outputs.Map[encoded] = value
+			outputs.MapKeys[encoded] = String(field)
+			outputs.MapOrder = append(outputs.MapOrder, encoded)
+		}
+	}
+	return outputs, true, nil
+}
+
+func invocableActionErrors(err error) Value {
+	errors := typedList("List<Invocable.Action.Error>")
+	errorValue := Object("Invocable.Action.Error")
+	errorValue.Fields["message"] = String(err.Error())
+	errors.List = append(errors.List, errorValue)
+	return errors
 }
 
 func newInvocableAction(methodName string, args []Value) (Value, bool) {

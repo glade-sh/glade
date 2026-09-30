@@ -514,7 +514,26 @@ func splitAnnotationArguments(text string) []annotationArgumentText {
 	start, depth := 0, 0
 	for i := 0; i < len(text); i++ {
 		if text[i] == '\'' {
-			i = skipApexString(text, i) - 1
+			end := skipApexString(text, i)
+			// Salesforce accepts adjacent named annotation arguments even when
+			// the source omits whitespace between a closing string quote and the
+			// next property name, for example label='Body'description='...'.
+			// Split that boundary before the normal whitespace/equals handling.
+			if end < len(text) {
+				next := end
+				for next < len(text) && (text[next] == '_' || text[next] >= 'A' && text[next] <= 'Z' || text[next] >= 'a' && text[next] <= 'z') {
+					next++
+				}
+				equals := next
+				for equals < len(text) && (text[equals] == ' ' || text[equals] == '\t' || text[equals] == '\r' || text[equals] == '\n') {
+					equals++
+				}
+				if next > end && equals < len(text) && text[equals] == '=' {
+					out = append(out, annotationArgumentText{text: text[start:end], start: start})
+					start = end
+				}
+			}
+			i = end - 1
 			continue
 		}
 		switch text[i] {

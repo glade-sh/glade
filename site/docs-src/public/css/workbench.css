@@ -14,9 +14,9 @@
   width: 100%;
   margin: 28px 0 34px;
   border: 1px solid var(--glade-home-border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--terminal);
-  box-shadow: none;
+  box-shadow: var(--glade-home-shadow);
   overflow: hidden;
 }
 
@@ -30,24 +30,15 @@
   padding: 18px;
 }
 
-.glade-cm-head > * {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
 .glade-cm-head .home-eyebrow {
   margin-bottom: 8px;
 }
 
-.glade-cm-head .home-eyebrow::before {
-  flex-shrink: 0;
-}
-
 .glade-cm-head a {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   color: var(--glade);
   font-size: var(--fs-ui);
-  font-weight: 600;
+  font-weight: 760;
   text-decoration: none;
 }
 
@@ -108,14 +99,12 @@
 }
 
 .glade-cm-editor .cm-tooltip-autocomplete {
-  min-width: min(300px, calc(100vw - 32px));
-  max-width: calc(100vw - 32px);
+  min-width: 300px;
   border-radius: 8px;
   overflow: hidden;
 }
 
 .glade-cm-editor .cm-tooltip-autocomplete ul {
-  max-width: 100%;
   font-family: var(--vp-font-family-mono);
   font-size: 12px;
 }
@@ -123,8 +112,7 @@
 .glade-completion-info {
   display: grid;
   gap: 7px;
-  max-width: min(340px, calc(100vw - 32px));
-  overflow-wrap: anywhere;
+  max-width: 340px;
   padding: 10px;
 }
 
@@ -145,27 +133,12 @@
 
 .glade-completion-status {
   width: max-content;
-  max-width: 100%;
   border: 1px solid currentColor;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 760;
   line-height: 1;
   padding: 3px 7px;
-}
-
-@media (any-pointer: coarse) {
-  .glade-cm-head a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-  }
-
-  .glade-cm-editor .cm-tooltip-autocomplete ul > li {
-    display: flex;
-    align-items: center;
-    min-height: 44px;
-  }
 }
 
 .glade-completion-status-supported {

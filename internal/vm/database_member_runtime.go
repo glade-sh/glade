@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -21,7 +22,15 @@ func callDatabaseResultObjectMember(receiver Value, method string, args []Value)
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("%s.getId expects 0 arguments", receiver.Type)
 		}
-		return databaseResultObjectField(receiver, "id", Null), true, nil
+		id := databaseResultObjectField(receiver, "id", Null)
+		if id.Kind == ValueObject && strings.EqualFold(id.Type, "Id") {
+			if text, err := platformScalarText(id, "Id"); err == nil {
+				if validationErr := validateApexID(text); validationErr != nil {
+					return Null, true, newExceptionError("System.StringException", "Invalid id: "+text)
+				}
+			}
+		}
+		return id, true, nil
 	case "geterrors":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("%s.getErrors expects 0 arguments", receiver.Type)
@@ -232,6 +241,16 @@ func databaseResultIDValue(id storage.ID) Value {
 	value := String(string(id))
 	value.Type = "Id"
 	return value
+}
+
+func databaseDMLResultIDValue(op string, result dml.Result) Value {
+	if !result.Success && !strings.EqualFold(op, "delete") {
+		if strings.EqualFold(op, "update") {
+			return databaseResultIDValue(result.ID)
+		}
+		return Null
+	}
+	return databaseResultIDValue(result.ID)
 }
 func (vm *VM) needsEarlyDMLRollbackSnapshot(op string, records []storage.Record, allOrNone bool) bool {
 	if !allOrNone || len(records) == 0 {

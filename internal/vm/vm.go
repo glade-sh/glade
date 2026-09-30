@@ -271,6 +271,9 @@ func (vm *VM) shouldEnqueueFuture(method Method) bool {
 }
 
 func (vm *VM) enqueueFuture(method Method, args []Value, result *Result) (Value, error) {
+	if vm.rejectAsyncActions {
+		return Null, vm.rejectSynchronousAsyncAction(fmt.Sprintf("%s cannot cross the synchronous LWC action boundary", method.Name))
+	}
 	if vm.testContext == nil {
 		return Null, nil
 	}
@@ -478,64 +481,51 @@ func (vm *VM) webServiceCalloutInvoke(args []Value, result *Result) (Value, erro
 	if len(args) != 4 {
 		return Null, fmt.Errorf("WebServiceCallout.invoke expects stub, request, response map, and options")
 	}
+	if args[2].Kind != ValueMap {
+		return Null, fmt.Errorf("WebServiceCallout.invoke expects response map")
+	}
+	if args[3].Kind == ValueNull {
+		return Null, newExceptionError("NullPointerException", "Argument 4 cannot be null")
+	}
+	if args[3].Kind != ValueList {
+		return Null, fmt.Errorf("WebServiceCallout.invoke expects 7 option strings")
+	}
+	if len(args[3].List) != 7 {
+		return Null, newExceptionError("TypeException", fmt.Sprintf("Invalid info with length %d", len(args[3].List)))
+	}
+	for _, option := range args[3].List {
+		if option.Kind != ValueString && option.Kind != ValueNull {
+			return Null, fmt.Errorf("WebServiceCallout.invoke expects 7 option strings")
+		}
+	}
+	if vm.testContext == nil {
+		return Null, unsupportedCallError("WebServiceCallout.invoke real network transport")
+	}
+	if vm.testContext.WebServiceMock.Kind != ValueObject {
+		return Null, newExceptionError("TypeException", "Methods defined as TestMethod do not support Web service callouts")
+	}
 	if err := vm.incrementLimit("callouts", 1); err != nil {
 		return Null, err
 	}
 	appendTrace(result, "apex.callout.webservice", "apex.callout", map[string]any{"operation": "WebServiceCallout.invoke"})
-	if args[2].Kind != ValueMap {
-		return Null, fmt.Errorf("WebServiceCallout.invoke expects response map")
-	}
-	if args[3].Kind != ValueList || len(args[3].List) != 7 {
-		return Null, fmt.Errorf("WebServiceCallout.invoke expects 7 option strings")
-	}
-	for _, option := range args[3].List {
-		if option.Kind != ValueString {
-			return Null, fmt.Errorf("WebServiceCallout.invoke expects 7 option strings")
-		}
-	}
+	// The mock receives the caller's response map unchanged. Generated WSDL
+	// methods seed response_x with null and require the mock to supply a result.
 	if args[2].Map == nil {
 		args[2].Map = make(map[string]Value)
 	}
 	if args[2].MapKeys == nil {
 		args[2].MapKeys = make(map[string]Value)
 	}
-	responseType := scalarText(args[3].List[6])
-	responseKey := mapKey(String("response_x"))
-	response, ok := args[2].Map[responseKey]
-	if !ok || response.Kind != ValueObject {
-		response = Object(responseType)
-		if responseType != "" {
-			vm.initializeFields(&response, responseType)
-		}
-		args[2].Map[responseKey] = response
-		args[2].MapKeys[responseKey] = String("response_x")
-	}
-	if response.Fields == nil {
-		response.Fields = make(map[string]Value)
-	}
-	if vm.testContext == nil || vm.testContext.WebServiceMock.Kind != ValueObject {
-		operation := scalarText(args[3].List[3])
-		if strings.EqualFold(operation, "renameMetadata") {
-			saveResult := Object("MetadataService.SaveResult")
-			saveResult.Fields["success"] = Bool(true)
-			response.Fields["result"] = saveResult
-		} else {
-			response.Fields["result"] = List()
-		}
-		args[2].Map[responseKey] = response
-		args[2].MapKeys[responseKey] = String("response_x")
-		return Null, nil
-	}
 	mockArgs := []Value{
 		args[0],
 		args[1],
 		args[2],
-		String(scalarText(args[3].List[0])),
-		String(scalarText(args[3].List[1])),
-		String(scalarText(args[3].List[3])),
-		String(scalarText(args[3].List[4])),
-		String(scalarText(args[3].List[5])),
-		String(scalarText(args[3].List[6])),
+		args[3].List[0],
+		args[3].List[1],
+		args[3].List[3],
+		args[3].List[4],
+		args[3].List[5],
+		args[3].List[6],
 	}
 	mock := vm.testContext.WebServiceMock
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(mock.Type, "doInvoke", mockArgs)
@@ -995,6 +985,8 @@ func parseDatetimeText(text string) (time.Time, error) {
 	text = normalizeDatetimeShortTimezoneOffset(strings.TrimSpace(text))
 	for _, layout := range []string{
 		time.RFC3339Nano,
+		"2006-01-02T15:04:05.999999999Z0700",
+		"2006-01-02T15:04:05Z0700",
 		"2006-01-02 15:04:05.999999999Z07:00",
 		"2006-01-02 15:04:05.999999999Z0700",
 		"2006-01-02 15:04:05Z07:00",
@@ -1013,6 +1005,26 @@ func parseDatetimeText(text string) (time.Time, error) {
 		}
 	}
 	return time.Time{}, fmt.Errorf("unsupported Datetime value %q", text)
+}
+
+var datetimeValueOfLocalPartsPattern = regexp.MustCompile(`^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2})$`)
+
+// parseDatetimeValueOfText accepts the unpadded local date and clock
+// components admitted for Datetime.valueOf. It deliberately leaves the
+// shared datetime parser and timezone-bearing forms unchanged.
+func parseDatetimeValueOfText(text string) (time.Time, error) {
+	trimmed := strings.TrimSpace(text)
+	matches := datetimeValueOfLocalPartsPattern.FindStringSubmatch(trimmed)
+	if matches == nil {
+		return parseDatetimeText(text)
+	}
+	year, _ := strconv.Atoi(matches[1])
+	month, _ := strconv.Atoi(matches[2])
+	day, _ := strconv.Atoi(matches[3])
+	hour, _ := strconv.Atoi(matches[4])
+	minute, _ := strconv.Atoi(matches[5])
+	second, _ := strconv.Atoi(matches[6])
+	return parseDatetimeText(fmt.Sprintf("%04d-%02d-%02d %02d:%02d:%02d", year, month, day, hour, minute, second))
 }
 
 var datetimeShortTimezoneOffsetPattern = regexp.MustCompile(`^(.+[T ][0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]+)?)([+-])([0-9]{1,2})$`)
@@ -1129,6 +1141,8 @@ func parsePlatformDatetimeText(text string) (time.Time, error) {
 	normalized := normalizeDatetimeShortTimezoneOffset(strings.TrimSpace(text))
 	for _, layout := range []string{
 		time.RFC3339Nano,
+		"2006-01-02T15:04:05.999999999Z0700",
+		"2006-01-02T15:04:05Z0700",
 		"2006-01-02 15:04:05.999999999Z07:00",
 		"2006-01-02 15:04:05.999999999Z0700",
 		"2006-01-02 15:04:05Z07:00",
@@ -1305,6 +1319,10 @@ func formatApexDatetimeToken(value time.Time, token, zoneID, zoneLabel string, o
 	case 'w':
 		_, week := value.ISOWeek()
 		return formatPaddedDateNumber(week, count), nil
+	case 'F':
+		// Java/Apex's F token is the ordinal occurrence of the weekday in
+		// the month (1 through 5), rather than a week-of-year number.
+		return strconv.Itoa((value.Day()-1)/7 + 1), nil
 	case 'G', 'L', 'c', 'e':
 		return "", unsupportedCallError(fmt.Sprintf("Datetime.format locale-dependent pattern token %q", token))
 	case 'Z':
@@ -1477,6 +1495,9 @@ func fixedTimeZone(id string) (Value, error) {
 		locationName = location.id
 	} else if canonical == "UTC" {
 		locationName = "UTC"
+		if strings.EqualFold(id, "GMT") {
+			canonical = "GMT"
+		}
 	}
 	out := Object("TimeZone")
 	out.Fields["id"] = String(canonical)
@@ -1503,8 +1524,10 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 	"America/Denver":      {id: "America/Denver", standardOffset: -7 * time.Hour, daylightOffset: -6 * time.Hour, standardLabel: "MST", daylightLabel: "MDT", standardDisplayName: "Mountain Standard Time", daylightDisplayName: "Mountain Daylight Time", daylightRule: "us"},
 	"America/Panama":      {id: "America/Panama", standardOffset: -5 * time.Hour, standardLabel: "EST", standardDisplayName: "Eastern Standard Time"},
 	"Europe/London":       {id: "Europe/London", standardOffset: 0, daylightOffset: time.Hour, standardLabel: "GMT", daylightLabel: "BST", standardDisplayName: "Greenwich Mean Time", daylightDisplayName: "British Summer Time", daylightRule: "europe"},
+	"Europe/Dublin":       {id: "Europe/Dublin", standardOffset: 0, daylightOffset: time.Hour, standardLabel: "GMT", daylightLabel: "IST", standardDisplayName: "Greenwich Mean Time", daylightDisplayName: "Irish Standard Time", daylightRule: "europe"},
 	"Europe/Berlin":       {id: "Europe/Berlin", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
 	"Asia/Ho_Chi_Minh":    {id: "Asia/Ho_Chi_Minh", standardOffset: 7 * time.Hour, standardLabel: "ICT", standardDisplayName: "Indochina Time"},
+	"Asia/Kolkata":        {id: "Asia/Kolkata", standardOffset: 5*time.Hour + 30*time.Minute, standardLabel: "IST", standardDisplayName: "India Standard Time"},
 	"Asia/Tokyo":          {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST", standardDisplayName: "Japan Standard Time"},
 	"Pacific/Honolulu":    {id: "Pacific/Honolulu", standardOffset: -10 * time.Hour, standardLabel: "HST", standardDisplayName: "Hawaii-Aleutian Standard Time"},
 	"Pacific/Pago_Pago":   {id: "Pacific/Pago_Pago", standardOffset: -11 * time.Hour, standardLabel: "SST", standardDisplayName: "Samoa Standard Time"},
@@ -3329,8 +3352,8 @@ func newHttpRequest() Value {
 
 func newHttpResponse() Value {
 	response := Object("HttpResponse")
-	response.Fields["statusCode"] = Int(200)
-	response.Fields["status"] = String("OK")
+	response.Fields["statusCode"] = Int(0)
+	response.Fields["status"] = Null
 	response.Fields["headers"] = typedMap("Map<String,String>")
 	response.Fields["body"] = String("")
 	return response
@@ -3566,8 +3589,8 @@ func typedSet(typeName string) Value {
 }
 
 var canonicalRuntimeTypeNames = []string{
-	"HttpRequest", "HttpResponse", "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock",
-	"RestRequest", "RestResponse", "Continuation", "PageReference", "VisualEditor.DataRow",
+	"Http", "HttpRequest", "HttpResponse", "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock",
+	"RestRequest", "RestResponse", "Continuation", "PageReference", "Cookie", "XmlStreamWriter", "VisualEditor.DataRow",
 	"VisualEditor.DynamicPickListRows", "Dom.Document", "Dom.XmlNode", "Auth.UserData", "Auth.VerificationResult",
 	"Auth.AuthConfiguration", "Auth.JWT", "Metadata.DeployContainer", "Metadata.CustomMetadata",
 	"Metadata.CustomMetadataValue", "Metadata.CustomObject", "Metadata.CustomField", "Metadata.Metadata",
@@ -4027,6 +4050,10 @@ func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
 		return coerced, nil
 	}
 	targetType := typeExceptionTargetName(typeName)
+	// Cast diagnostics name the lexical nested target, not its short spelling.
+	if resolved := vm.resolveNestedTypeNameInCurrentExecutionContext(typeName); resolved != "" {
+		targetType = resolved
+	}
 	if value.Kind == ValueDecimal && strings.EqualFold(typeName, "Integer") {
 		converted, conversionErr := int32FromDecimalValue("Integer cast", value)
 		if conversionErr != nil {
@@ -4471,6 +4498,12 @@ func describeFieldBooleanFlagName(method string) string {
 func standardControllerPage(record Value) Value {
 	if _, id, ok := objectFieldValue(record, "Id"); ok {
 		if idText, ok := idValueText(id); ok && idText != "" {
+			// DML-created records retain the storage ID in a plain field while
+			// Apex displays those IDs in their canonical 18-character form. Keep
+			// caller-provided short IDs unchanged.
+			if dmlAccessibleSObject(record) {
+				idText = displayIDText(idText)
+			}
 			return newPageReference("/" + idText)
 		}
 	}
@@ -4542,6 +4575,9 @@ func (vm *VM) callCustomNotificationMember(receiver Value, method string, args [
 	case "send":
 		if len(args) != 1 || args[0].Kind != ValueSet {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.CustomNotification.send expects Set<String>")
+		}
+		if receiver.Fields["targetId"].Kind == ValueNull && receiver.Fields["targetPageRef"].Kind == ValueNull {
+			return Null, receiver, false, true, fmt.Errorf("notification target is required")
 		}
 		appendTrace(result, "apex.notification.custom.send", "apex.notification", map[string]any{"recipients": len(args[0].Set)})
 		return Null, receiver, false, true, nil

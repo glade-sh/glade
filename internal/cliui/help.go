@@ -63,22 +63,19 @@ var commandReferences = []CommandHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
 			{Name: "--json", Description: "Write doctor status as JSON."},
 		},
-		Notes: []string{
-			"Ready means Apex check and test prerequisites passed; Salesforce is not contacted.",
-			"A missing LWC toolchain is an advisory for Apex and blocks LWC compilation and Lightning runtime routes.",
-		},
 		Examples: []string{"glade doctor", "glade doctor --project . --json"},
 	},
 	{
 		Name:        "toolchain",
-		Description: "Install or inspect the global LWC toolchain for Lightning Out.",
-		Usage:       []string{"glade toolchain install [--from <glade-checkout>]", "glade toolchain status [--json]"},
+		Description: "Install or inspect local runtime toolchains.",
+		Usage:       []string{"glade toolchain install [--from <glade-checkout>]", "glade toolchain status [--json]", "glade toolchain install dataweave --java-home <Java17-JDK> [--json]", "glade toolchain status dataweave [--json]"},
 		Subcommands: []SubcommandHelp{
-			{Name: "install", Description: "Install the LWC runtime toolchain."},
-			{Name: "status", Description: "Print the current LWC toolchain status."},
+			{Name: "install", Description: "Install LWC assets or the DataWeave engine."},
+			{Name: "status", Description: "Print LWC or DataWeave toolchain status."},
 		},
 		Flags: []FlagHelp{
 			{Name: "--from", Value: "<glade-checkout>", Description: "Install from another glade checkout. Defaults to the current checkout."},
+			{Name: "--java-home", Value: "<path>", Description: "Explicit Java17 JDK for DataWeave installation."},
 			{Name: "--json", Description: "Write toolchain status as JSON."},
 		},
 		Notes: []string{
@@ -86,7 +83,7 @@ var commandReferences = []CommandHelp{
 			"GLADE_HOME overrides the Glade installation root.",
 			"XDG_DATA_HOME overrides the base directory for the global toolchain.",
 		},
-		Examples: []string{"glade toolchain status", "glade toolchain install --from path/to/glade"},
+		Examples: []string{"glade toolchain status", "glade toolchain install --from ."},
 	},
 	{
 		Name:        "config",
@@ -446,7 +443,6 @@ var commandReferences = []CommandHelp{
 		Description: "List and inspect bundled playground examples.",
 		Usage:       []string{"glade examples [--tag <tag>]", "glade examples show <id>", "glade examples run <id>"},
 		Flags:       []FlagHelp{{Name: "--tag", Value: "<tag>", Description: "Filter examples by tag."}},
-		Notes:       []string{"Materialize a testable demo with: glade playground --example refinement-service --once"},
 		Examples:    []string{"glade examples", "glade examples show refinement-service", "glade examples run refinement-service"},
 	},
 	{
@@ -614,7 +610,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--project-ref", Value: "<name=path>", Description: "Add a named project reference."},
 			{Name: "--examples", Description: "Show bundled examples."},
 			{Name: "--list-examples", Description: "Print example ids, names, file counts, and tags without serving."},
-			{Name: "--example", Value: "<id>", Description: "Load a bundled example into a fresh managed scratch workspace."},
+			{Name: "--example", Value: "<id>", Description: "Start on a bundled example in the managed scratch workspace."},
 			{Name: "--reset-on-start", Description: "Clear scratch workspace and org state before serving; refuses --project."},
 			{Name: "--public", Description: "Bind to PORT on all interfaces; serving requires GLADE_SERVER_PUBLIC=1."},
 			{Name: "--run-timeout", Value: "<dur>", Description: "Anonymous Apex run timeout."},

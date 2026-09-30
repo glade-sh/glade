@@ -145,6 +145,31 @@ System.assertEquals(0, BusinessHours.diff('01m000000000001AAA', mondayNine, Date
 	}
 }
 
+func TestExecBusinessHoursZeroToZeroDefaultIs24x7(t *testing.T) {
+	program, err := CompileAnonymous(`
+Datetime instant = Datetime.newInstanceGmt(2026, 6, 15, 16, 0, 0);
+System.assertEquals(true, BusinessHours.isWithin('01m000000000001AAA', instant));
+System.assertEquals(instant, BusinessHours.nextStartDate('01m000000000001AAA', instant));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testBusinessHoursOrg(t)
+	state := org.Objects["BusinessHours"]
+	record := state.Records[testBusinessHoursID]
+	for _, day := range businessHoursDayFields {
+		record.Fields[day.name+"StartTime"] = storage.StringValue("00:00:00.000Z")
+		record.Fields[day.name+"EndTime"] = storage.StringValue("00:00:00.000Z")
+	}
+	state.Records[testBusinessHoursID] = record
+	org.Objects["BusinessHours"] = state
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecBusinessHoursFullLocalHolidayCalendar(t *testing.T) {
 	tests := []struct {
 		name        string

@@ -2,6 +2,7 @@ package visualforce
 
 import (
 	"html"
+	"net/url"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -31,6 +32,7 @@ type FieldBinding struct {
 	Kind       FieldRenderKind
 	Record     storage.Record
 	HasRecord  bool
+	Authorized bool
 }
 
 func renderFieldOutput(ctx *RenderContext, raw string) (string, bool) {
@@ -38,10 +40,32 @@ func renderFieldOutput(ctx *RenderContext, raw string) (string, bool) {
 	if !ok {
 		return "", false
 	}
-	return html.EscapeString(fieldOutputText(binding)), true
+	value, ownerTargetID := fieldOutputText(ctx, binding)
+	text := html.EscapeString(value)
+	href := fieldOutputHref(binding)
+	if ownerTargetID != "" {
+		href = "/record/User/" + url.PathEscape(string(ownerTargetID))
+	}
+	if href != "" {
+		return `<a href="` + html.EscapeString(href) + `">` + text + `</a>`, true
+	}
+	return text, true
 }
 
-func renderFieldInput(ctx *RenderContext, raw string, id string) (string, bool) {
+func fieldOutputHref(binding FieldBinding) string {
+	value := storageValueText(binding.Value)
+	if binding.Kind != FieldURL || strings.ContainsAny(value, "\\\r\n\t") {
+		return ""
+	}
+	target, err := url.Parse(value)
+	if err != nil || target.Hostname() == "" ||
+		(!strings.EqualFold(target.Scheme, "http") && !strings.EqualFold(target.Scheme, "https")) {
+		return ""
+	}
+	return value
+}
+
+func renderFieldInput(ctx *RenderContext, raw string, id string, required bool) (string, bool) {
 	binding, ok := resolveFieldBinding(ctx, raw)
 	if !ok {
 		return "", false
@@ -55,8 +79,11 @@ func renderFieldInput(ctx *RenderContext, raw string, id string) (string, bool) 
 			checked = ` checked="checked"`
 		}
 		escapedName := html.EscapeString(name)
+		// The component attribute is distinct from schema-required metadata here:
+		// putting required on a checkbox would make native HTML require it checked.
+		requiredAttr := fieldInputRequiredAttr(required)
 		return `<input type="hidden" name="` + escapedName + `" value="false" />` +
-			`<input type="checkbox" class="inputField" name="` + escapedName + `"` + idAttr + ` value="true"` + checked + ` />`, true
+			`<input type="checkbox" class="inputField" name="` + escapedName + `"` + idAttr + ` value="true"` + requiredAttr + checked + ` />`, true
 	case FieldSelect:
 		builder := strings.Builder{}
 		builder.WriteString(`<select class="inputField" name="`)
@@ -67,6 +94,7 @@ func renderFieldInput(ctx *RenderContext, raw string, id string) (string, bool) 
 		if multiSelect {
 			builder.WriteString(` multiple="multiple"`)
 		}
+		builder.WriteString(fieldInputRequiredAttr(required))
 		builder.WriteString(`>`)
 		valueText := storageValueText(binding.Value)
 		selectedValues := fieldSelectedValues(binding.Value)
@@ -101,7 +129,7 @@ func renderFieldInput(ctx *RenderContext, raw string, id string) (string, bool) 
 		builder.WriteString(`</select>`)
 		return builder.String(), true
 	case FieldTextarea:
-		return `<textarea class="inputField" name="` + html.EscapeString(name) + `"` + idAttr + fieldInputStateAttrs(binding.Field, true) + `>` + html.EscapeString(storageValueText(binding.Value)) + `</textarea>`, true
+		return `<textarea class="inputField" name="` + html.EscapeString(name) + `"` + idAttr + fieldInputStateAttrs(binding.Field, true, required) + `>` + html.EscapeString(storageValueText(binding.Value)) + `</textarea>`, true
 	default:
 		inputType := "text"
 		if binding.Kind == FieldDate {
@@ -122,7 +150,7 @@ func renderFieldInput(ctx *RenderContext, raw string, id string) (string, bool) 
 		if binding.Kind == FieldNumber {
 			inputType = "number"
 		}
-		return `<input type="` + inputType + `" class="inputField" name="` + html.EscapeString(name) + `"` + idAttr + ` value="` + html.EscapeString(storageValueText(binding.Value)) + `"` + fieldNumberAttrs(binding.Field) + fieldInputStateAttrs(binding.Field, binding.Kind != FieldCheckbox) + ` />`, true
+		return `<input type="` + inputType + `" class="inputField" name="` + html.EscapeString(name) + `"` + idAttr + ` value="` + html.EscapeString(storageValueText(binding.Value)) + `"` + fieldNumberAttrs(binding.Field) + fieldInputStateAttrs(binding.Field, binding.Kind != FieldCheckbox, required) + ` />`, true
 	}
 }
 
@@ -144,15 +172,22 @@ func fieldInputName(binding FieldBinding, submitted string) string {
 	return submitted
 }
 
-func fieldInputStateAttrs(field storage.Field, allowRequired bool) string {
+func fieldInputStateAttrs(field storage.Field, allowRequired bool, required bool) string {
 	attrs := strings.Builder{}
-	if allowRequired && fieldIsRequired(field) {
-		attrs.WriteString(` required="required"`)
+	if allowRequired {
+		attrs.WriteString(fieldInputRequiredAttr(required || fieldIsRequired(field)))
 	}
 	if fieldIsReadonly(field) {
 		attrs.WriteString(` readonly="readonly"`)
 	}
 	return attrs.String()
+}
+
+func fieldInputRequiredAttr(required bool) string {
+	if !required {
+		return ""
+	}
+	return ` required="required"`
 }
 
 func fieldIsRequired(field storage.Field) bool {
@@ -252,29 +287,116 @@ func resolveFieldBinding(ctx *RenderContext, raw string) (FieldBinding, bool) {
 		return FieldBinding{}, false
 	}
 	object := ctx.VM.Org.Objects[objectKey]
-	resolvedField, ok := storage.ResolveFieldName(object.Definition, ctx.Project.Namespace, fieldName)
-	if !ok {
-		return FieldBinding{}, false
-	}
-	field := object.Definition.Fields[resolvedField]
-	record, hasRecord := recordForFieldBinding(ctx, object)
-	value := storage.Value{}
-	if hasRecord {
-		if stored, ok := record.GetField(resolvedField); ok {
-			value = stored
-		} else if defaultValue, ok := storage.DefaultValueForRecordField(object.Definition, record, field); ok {
-			value = defaultValue
+	resolvedField := "Id"
+	field := storage.Field{APIName: "Id", Type: storage.FieldID}
+	if !strings.EqualFold(fieldName, "Id") {
+		var ok bool
+		resolvedField, ok = storage.ResolveFieldName(object.Definition, ctx.Project.Namespace, fieldName)
+		if !ok {
+			return FieldBinding{ObjectName: objectKey, FieldName: fieldName}, true
 		}
+		field = object.Definition.Fields[resolvedField]
 	}
-	return FieldBinding{ObjectName: objectKey, FieldName: resolvedField, Field: field, Value: value, Kind: fieldRenderKind(field), Record: record, HasRecord: hasRecord}, true
+	binding := FieldBinding{ObjectName: objectKey, FieldName: resolvedField, Field: field, Kind: fieldRenderKind(field)}
+	if len(parts) != 2 {
+		return binding, true
+	}
+	if !strings.EqualFold(resolvedField, "Name") && !strings.EqualFold(resolvedField, "Id") {
+		if ctx.Expression == nil || strings.TrimSpace(ctx.PageMeta.RecordSetVar) != "" {
+			return binding, true
+		}
+		controllerObject, matchesController := storage.ResolveObjectName(*ctx.VM.Org, ctx.PageMeta.StandardController)
+		if !matchesController || !strings.EqualFold(controllerObject, objectKey) {
+			return binding, true
+		}
+		_, authorized := ctx.Expression.AuthorizedStandardFields[strings.ToLower(resolvedField)]
+		if !authorized {
+			return binding, true
+		}
+		binding.Authorized = true
+		recordID, ok := currentPageRecordID(ctx)
+		if !ok {
+			return binding, true
+		}
+		record := ctx.Expression.StandardController.Fields["record"]
+		storedID := record.Fields["Id"].Fields["value"]
+		if record.Kind != vm.ValueObject || !strings.EqualFold(record.Type, objectKey) ||
+			storedID.Kind != vm.ValueString || storedID.Text != recordID {
+			return binding, true
+		}
+		current, present := record.Fields[resolvedField]
+		if !present {
+			return binding, true
+		}
+		value, convertible := visualforceFieldStorageValue(current)
+		if !convertible {
+			return binding, true
+		}
+		binding.Value = value
+		binding.Record = storage.Record{ID: storage.ID(recordID), Object: objectKey, Fields: map[string]storage.Value{resolvedField: value}}
+		binding.HasRecord = true
+		return binding, true
+	}
+	record, hasRecord, err := recordForFieldBinding(ctx, objectKey)
+	if err != nil || !hasRecord {
+		return binding, true
+	}
+	binding.Record = record
+	binding.HasRecord = true
+	if strings.EqualFold(resolvedField, "Id") {
+		binding.Value = storage.IDValue(record.ID)
+	} else if value, ok := record.GetField(resolvedField); ok {
+		binding.Value = value
+	}
+	return binding, true
 }
 
-func recordForFieldBinding(ctx *RenderContext, object storage.ObjectState) (storage.Record, bool) {
-	if recordID, ok := currentPageRecordID(ctx); ok {
-		record, found := object.Records[storage.ID(recordID)]
-		return record, found
+func visualforceFieldStorageValue(value vm.Value) (storage.Value, bool) {
+	switch value.Kind {
+	case vm.ValueNull:
+		return storage.NullValue(), true
+	case vm.ValueString:
+		return storage.StringValue(value.Text), true
+	case vm.ValueInt:
+		return storage.IntegerValue(value.Int), true
+	case vm.ValueDecimal:
+		return storage.DecimalValue(value.String()), true
+	case vm.ValueBool:
+		return storage.BooleanValue(value.Bool), true
+	case vm.ValueObject:
+		raw := value.Fields["value"]
+		if raw.Kind != vm.ValueString {
+			return storage.Value{}, false
+		}
+		switch strings.ToLower(value.Type) {
+		case "id":
+			return storage.IDValue(storage.ID(raw.Text)), true
+		case "date":
+			return storage.DateValue(raw.Text), true
+		case "datetime":
+			return storage.DateTimeValue(raw.Text), true
+		case "blob":
+			return storage.BlobValue(raw.Text), true
+		}
+	case vm.ValueList:
+		items := make([]storage.Value, 0, len(value.List))
+		for _, item := range value.List {
+			converted, ok := visualforceFieldStorageValue(item)
+			if !ok {
+				return storage.Value{}, false
+			}
+			items = append(items, converted)
+		}
+		return storage.ListValue(items...), true
 	}
-	return storage.Record{}, false
+	return storage.Value{}, false
+}
+
+func recordForFieldBinding(ctx *RenderContext, objectName string) (storage.Record, bool, error) {
+	if recordID, ok := currentPageRecordID(ctx); ok {
+		return ctx.VM.ReadVisualforceRecord(objectName, storage.ID(recordID))
+	}
+	return storage.Record{}, false, nil
 }
 
 func currentPageRecordID(ctx *RenderContext) (string, bool) {
@@ -356,107 +478,54 @@ func fieldRenderKind(field storage.Field) FieldRenderKind {
 	}
 }
 
-func fieldOutputText(binding FieldBinding) string {
-	if value, ok := referenceDisplayText(binding); ok {
-		return value
+func fieldOutputText(ctx *RenderContext, binding FieldBinding) (string, storage.ID) {
+	if value, targetID := ownerDisplayText(ctx, binding); targetID != "" {
+		return value, targetID
 	}
-	return storageValueText(binding.Value)
+	// A denied or missing target never supplies a label. The authorized source
+	// field's ID remains plain escaped text, without a guessed record route.
+	return storageValueText(binding.Value), ""
 }
 
-func referenceDisplayText(binding FieldBinding) (string, bool) {
-	if !binding.HasRecord || !fieldIsReference(binding.Field) {
-		return "", false
+func ownerDisplayText(ctx *RenderContext, binding FieldBinding) (string, storage.ID) {
+	if ctx == nil || ctx.VM == nil || ctx.VM.Org == nil || ctx.Expression == nil ||
+		!strings.EqualFold(binding.FieldName, "OwnerId") || !binding.Authorized || !binding.HasRecord ||
+		!fieldIsReference(binding.Field) || binding.Value.Kind != storage.ValueID {
+		return "", ""
 	}
-	for _, relationship := range referenceRelationshipNames(binding.FieldName, binding.Field) {
-		if value, ok := parentRelationshipDisplayText(binding.Record, relationship); ok {
-			return value, true
-		}
-		if value, ok := flattenedRelationshipDisplayText(binding.Record, relationship); ok {
-			return value, true
+	projected, ok := ctx.Expression.AuthorizedStandardFields[strings.ToLower(binding.FieldName)]
+	if !ok || projected.Kind != storage.ValueID || !storage.IDsEqual(projected.ID, binding.Value.ID) {
+		return "", ""
+	}
+	var userObject string
+	for _, candidate := range binding.Field.ReferenceTo {
+		resolved, ok := storage.ResolveObjectName(*ctx.VM.Org, candidate)
+		if ok && strings.EqualFold(resolved, "User") {
+			userObject = resolved
+			break
 		}
 	}
-	return "", false
+	if userObject == "" {
+		return "", ""
+	}
+	user := ctx.VM.Org.Objects[userObject]
+	prefix := strings.TrimSpace(user.Definition.KeyPrefix)
+	if prefix == "" || !strings.HasPrefix(string(binding.Value.ID), prefix) {
+		return "", ""
+	}
+	target, found, err := ctx.VM.ReadVisualforceRecordFields(userObject, binding.Value.ID, []string{"Name"})
+	if err != nil || !found {
+		return "", ""
+	}
+	name, ok := target.GetField("Name")
+	if !ok || name.Kind != storage.ValueString || strings.TrimSpace(name.String) == "" {
+		return "", ""
+	}
+	return name.String, target.ID
 }
 
 func fieldIsReference(field storage.Field) bool {
 	return field.Type == storage.FieldReference || strings.EqualFold(strings.TrimSpace(field.DisplayType), "REFERENCE")
-}
-
-func referenceRelationshipNames(fieldName string, field storage.Field) []string {
-	names := make([]string, 0, 3)
-	if relationship := strings.TrimSpace(field.RelationshipName); relationship != "" {
-		names = append(names, relationship)
-	}
-	fieldName = strings.TrimSpace(fieldName)
-	if strings.HasSuffix(fieldName, "__c") {
-		names = append(names, strings.TrimSuffix(fieldName, "__c")+"__r")
-	} else if strings.HasSuffix(fieldName, "Id") && len(fieldName) > len("Id") {
-		names = append(names, strings.TrimSuffix(fieldName, "Id"))
-	}
-	return uniqueStringsFold(names)
-}
-
-func uniqueStringsFold(values []string) []string {
-	out := make([]string, 0, len(values))
-	for _, value := range values {
-		value = strings.TrimSpace(value)
-		if value == "" {
-			continue
-		}
-		seen := false
-		for _, existing := range out {
-			if strings.EqualFold(existing, value) {
-				seen = true
-				break
-			}
-		}
-		if !seen {
-			out = append(out, value)
-		}
-	}
-	return out
-}
-
-func parentRelationshipDisplayText(record storage.Record, relationship string) (string, bool) {
-	if record.ParentRelationships == nil {
-		return "", false
-	}
-	for name, parent := range record.ParentRelationships {
-		if !strings.EqualFold(name, relationship) {
-			continue
-		}
-		return recordDisplayText(parent)
-	}
-	return "", false
-}
-
-func flattenedRelationshipDisplayText(record storage.Record, relationship string) (string, bool) {
-	for _, field := range []string{relationship + ".Name", relationship + ".Id"} {
-		if value, ok := record.GetField(field); ok {
-			text := strings.TrimSpace(storageValueText(value))
-			if text != "" {
-				return text, true
-			}
-		}
-	}
-	return "", false
-}
-
-func recordDisplayText(record storage.Record) (string, bool) {
-	for _, field := range []string{"Name", "DeveloperName", "Id"} {
-		value, ok := record.GetField(field)
-		if !ok && field == "Id" && record.ID != "" {
-			value, ok = storage.IDValue(record.ID), true
-		}
-		if !ok {
-			continue
-		}
-		text := strings.TrimSpace(storageValueText(value))
-		if text != "" {
-			return text, true
-		}
-	}
-	return "", false
 }
 
 func storageValueText(value storage.Value) string {

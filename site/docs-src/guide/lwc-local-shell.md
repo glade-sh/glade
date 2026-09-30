@@ -26,20 +26,11 @@ fixtures from the project on disk.
 
 ## Setup
 
-Release installs include the LWC toolchain. Verify it before starting a preview:
+Verify the toolchain bundled with the release:
 
 ```bash
 glade toolchain status
 ```
-
-When developing Glade from a source checkout, install that checkout's toolchain
-with `glade toolchain install --from path/to/glade`. Do not run `--from .` in a
-Salesforce project; it is not a Glade source tree.
-
-Each LWC bundle must declare an exact checked `<apiVersion>` of `65.0`, `66.0`,
-or `67.0`. The bundle version is independent of the Apex project default and
-local HTTP endpoint version. Keep the version intended for Salesforce. Do not
-raise it merely to make local preview compile.
 
 Start the Workbench Console:
 
@@ -94,11 +85,6 @@ complete route list. Startup prints the route count and at most eight routes,
 then reports the omitted count. Use `--ready-file` or
 `/lightning/local/context.json` for the complete list. The VS Code extension
 does not manage this server yet.
-
-The shell renders supported local models. It does not contact Salesforce or
-prove hosted Lightning Experience, org permission, UI API, base-component, or
-production behavior. Keep an authorized Salesforce browser or deployment check
-for those boundaries.
 
 ## Context presets
 

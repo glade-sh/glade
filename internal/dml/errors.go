@@ -158,7 +158,7 @@ func formulaDefaultShouldEvaluate(field storage.Field, rawDefault string) bool {
 		return false
 	}
 	switch field.Type {
-	case storage.FieldString, storage.FieldPicklist, storage.FieldMultiPicklist, storage.FieldDate, storage.FieldDateTime, storage.FieldAny:
+	case storage.FieldString, storage.FieldPicklist, storage.FieldMultiPicklist, storage.FieldDate, storage.FieldDateTime, storage.FieldTime, storage.FieldAny:
 		return defaultLooksLikeFormulaCall(rawDefault)
 	default:
 		return false

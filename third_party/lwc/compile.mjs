@@ -8,6 +8,7 @@ const defaultToolchainDir = path.dirname(fileURLToPath(import.meta.url));
 const toolchainDir = process.env.GLADE_LWC_TOOLCHAIN_DIR || defaultToolchainDir;
 const requireFromToolchain = createRequire(path.join(toolchainDir, "compile.mjs"));
 const { transformSync } = requireFromToolchain("@lwc/compiler");
+const { getAPIVersionFromNumber } = requireFromToolchain("@lwc/shared");
 const { parse } = requireFromToolchain("@babel/parser");
 
 function readStdin() {
@@ -37,6 +38,15 @@ function writeCompiled(outFile, code) {
   fs.writeFileSync(outFile, code, "utf8");
 }
 
+function assertCompilerPreservesAPIVersion(apiVersion) {
+  const normalized = getAPIVersionFromNumber(apiVersion);
+  if (normalized !== apiVersion) {
+    throw new Error(
+      `LWC compiler cannot preserve declared API version ${apiVersion}.0; it resolves to ${normalized}.0`
+    );
+  }
+}
+
 function transformOptions(namespace, name, apiVersion) {
   return {
     namespace,
@@ -52,8 +62,16 @@ function transformTemplate(source, filename, namespace, name, apiVersion) {
   const unsupportedDetailsName = result.warnings?.find(
     (warning) => warning.code === 1057 && warning.message.includes("name is not valid attribute for details")
   );
-  if (apiVersion < 67 && unsupportedDetailsName) {
-    throw new Error(unsupportedDetailsName.message);
+  if (apiVersion < 67) {
+    if (unsupportedDetailsName) {
+      throw new Error(unsupportedDetailsName.message);
+    }
+    // @lwc/compiler 9.x stopped emitting the warning while still accepting
+    // the markup. Keep Glade's version gate explicit until the compiler
+    // exposes a version-aware diagnostic again.
+    if (/<details\b[^>]*\bname\s*=/i.test(source)) {
+      throw new Error("name is not valid attribute for details before API version 67.0");
+    }
   }
   return result;
 }
@@ -81,6 +99,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
   if (!fs.existsSync(jsPath)) {
     return null;
   }
+  assertCompilerPreservesAPIVersion(apiVersion);
   preflightBundleImports(bundleDir, apiVersion, moduleAvailability);
   if (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath)) {
     return compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion);

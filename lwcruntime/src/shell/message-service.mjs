@@ -69,10 +69,8 @@ export function publish(context, channel, message) {
   if (!bucket) {
     return;
   }
+  // This window-local registry supports in-page delivery; navigation scopes are not modeled.
   for (const subscription of [...bucket]) {
-    if (!receivesMessage(subscription, context)) {
-      continue;
-    }
     if (typeof subscription.listener === "function") {
       subscription.listener(message);
     }
@@ -99,11 +97,4 @@ function channelKey(channel) {
     return String(channel.name || channel.messageChannelName || channel.channelName || channel.default?.name || "default");
   }
   return "default";
-}
-
-function receivesMessage(subscription, publishContext) {
-  if (subscription.options?.scope === APPLICATION_SCOPE) {
-    return true;
-  }
-  return subscription.context === publishContext;
 }

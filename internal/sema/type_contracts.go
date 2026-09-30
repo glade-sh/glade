@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -145,6 +146,26 @@ func typeContractDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol,
 	}
 }
 
+// Salesforce reports an own static getter write introduced after API 41 as a
+// visibility failure, even though the underlying contract is a read-only
+// property. Keep the structured local contract code while preserving that
+// source-compatible diagnostic wording for the exact boundary.
+func typeContractPropertyAssignmentDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, target resolvedMember, unqualified bool, start, end int, source string) diagnostic.Diagnostic {
+	if unqualified && !apexversion.Before(typ.EffectiveAPIVersion, 42) &&
+		strings.EqualFold(target.owner, typ.Name) &&
+		strings.EqualFold(member.Name, target.member.Name+".get") &&
+		hasModifier(member.Modifiers, "static") && hasModifier(target.member.Modifiers, "static") {
+		return diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "GLADESEMA019",
+			Message:  fmt.Sprintf("Variable is not visible: %s.%s", target.owner, target.member.Name),
+			File:     typ.File,
+			Range:    semaRange(source, start, end),
+		}
+	}
+	return typeContractDiagnostic(typ, member, "property has no setter", start, end, source)
+}
+
 func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	var walk func(ir.Expr)
@@ -185,6 +206,10 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 			}
 			operand := a.inferIRExprType(*current.Left, scope, model, typ.Name)
 			switch current.Operator {
+			case "~":
+				if operand != "" && !strings.EqualFold(operand, "Integer") && !strings.EqualFold(operand, "Long") {
+					appendDiagnostic("operator ~ requires an Integer or Long operand")
+				}
 			case "!":
 				if operand != "" && !strings.EqualFold(operand, "Boolean") {
 					appendDiagnostic("operator ! requires a Boolean operand")
@@ -238,7 +263,7 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 				}
 				receiverType := a.inferIRExprType(*current.Left, scope, model, typ.Name)
 				field := strings.TrimPrefix(current.Callee, "__assignField:")
-				if target, ok := semaResolveFieldPath(model, receiverType, field); ok && target.member.Kind == apexast.DeclarationProperty && !typeContractPropertyHasAccessor(target.member, "set") {
+				if target, ok := semaResolveFieldPath(model, receiverType, field); ok && target.member.Kind == apexast.DeclarationProperty && !typeContractPropertyAssignmentAllowed(typ, member, target, false, semaIRExprLooksLikeTypeReceiver(*current.Left, scope, model), model) {
 					appendDiagnostic("property has no setter")
 				}
 			}
@@ -259,7 +284,7 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 			if strings.EqualFold(current.Callee, "__coalesce") && len(current.Args) == 2 {
 				left := a.inferIRExprType(current.Args[0], scope, model, typ.Name)
 				right := a.inferIRExprType(current.Args[1], scope, model, typ.Name)
-				if !compatible(left, right) {
+				if !compatible(left, right) && !semaCoalesceSOQLSingletonAssignable(current.Args[0], left, right, model) {
 					appendDiagnostic("coalesce operands do not share a compatible type")
 				}
 			}
@@ -364,6 +389,28 @@ func semaNestedIterableInstanceofAlwaysTrue(left, target, owner string, model *s
 		return false
 	}
 	return semaAssignableToType(targetArgument, leftArgs[0], model)
+}
+
+func typeContractPropertyAssignmentAllowed(typ typesys.TypeSymbol, member typesys.MemberSymbol, target resolvedMember, unqualified, typeReceiver bool, model *semaTypeMemberView) bool {
+	if typeContractPropertyHasAccessor(target.member, "set") {
+		return true
+	}
+	// Legacy callers can replace another component's static getter value only
+	// when both component versions predate API 42. Resolve the declaring version
+	// from the same member model that supplied the property, including inheritance.
+	if typeReceiver && !strings.EqualFold(target.owner, typ.Name) &&
+		hasModifier(target.member.Modifiers, "static") && apexversion.Before(typ.EffectiveAPIVersion, 42) {
+		if owner, ok := model.lookup(normalizeName(target.owner)); ok && apexversion.Before(owner.effectiveAPIVersion, 42) {
+			return true
+		}
+	}
+	// Before API 42, a static getter can initialize its own backing value through
+	// an unqualified assignment. The existing accessor body context retains the
+	// property name as "property.get" and its declaring component API version.
+	return unqualified && apexversion.Before(typ.EffectiveAPIVersion, 42) &&
+		strings.EqualFold(target.owner, typ.Name) &&
+		strings.EqualFold(member.Name, target.member.Name+".get") &&
+		hasModifier(member.Modifiers, "static") && hasModifier(target.member.Modifiers, "static")
 }
 
 func typeContractPropertyHasAccessor(member typesys.MemberSymbol, kind string) bool {

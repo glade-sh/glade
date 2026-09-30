@@ -423,7 +423,7 @@ func semaResolvedMembersAllPlatformBacked(model *semaTypeMemberView, candidates 
 		return false
 	}
 	for _, candidate := range candidates {
-		owner, ok := model.lookup(normalizeName(candidate.owner))
+		owner, _, ok := semaLookupTypeMembers(model, candidate.owner)
 		if !ok || (!owner.dependency && !owner.sobject) {
 			return false
 		}
@@ -2032,7 +2032,7 @@ func semaPlatformAssignableToType(paramType, argType string, model *semaTypeMemb
 func semaStandardExceptionType(typeName string) bool {
 	typeName = strings.TrimPrefix(strings.TrimSpace(typeName), "System.")
 	switch normalizeName(typeName) {
-	case "assertionexception", "assertexception", "aurahandledexception", "asyncexception", "bigobjectexception", "calloutexception", "canvasexception", "dmlexception", "emailexception", "externalobjectexception", "illegalargumentexception", "illegalstateexception", "invalidheaderexception", "invalidparametervalueexception", "invalidreadonlyuserdmlexception", "jsonexception", "limitexception", "listexception", "mathexception", "noaccessexception", "nodatafoundexception", "nosuchelementexception", "nullpointerexception", "patternsyntaxexception", "queryexception", "requiredfeaturemissingexception", "searchexception", "securityexception", "sobjectexception", "stringexception", "typeexception", "xmlexception":
+	case "assertionexception", "assertexception", "aurahandledexception", "asyncexception", "bigobjectexception", "calloutexception", "canvasexception", "dmlexception", "emailexception", "externalobjectexception", "fatalcursorexception", "formulavalidationexception", "illegalargumentexception", "illegalstateexception", "invalidheaderexception", "invalidparametervalueexception", "invalidreadonlyuserdmlexception", "jsonexception", "limitexception", "listexception", "mathexception", "noaccessexception", "nodatafoundexception", "nosuchelementexception", "nullpointerexception", "patternsyntaxexception", "queryexception", "requiredfeaturemissingexception", "searchexception", "securityexception", "sobjectexception", "stringexception", "transientcursorexception", "typeexception", "xmlexception":
 		return true
 	default:
 		base := shortNestedTypeName(typeName)
@@ -2200,28 +2200,25 @@ func isSemaSObjectLike(typeName string, model *semaTypeMemberView) bool {
 	if schemaName, ok := semaSchemaQualifiedTypeName(typeName); ok {
 		return isSemaSObjectLike(schemaName, model)
 	}
-	if strings.EqualFold(typeName, "SObject") {
+	// Type names are ASCII identifiers, so one lowercase normalization is the
+	// same test as folding the raw name at every comparison below.
+	normalized := normalizeName(typeName)
+	switch normalized {
+	case "sobject", "aggregateresult":
 		return true
-	}
-	if strings.EqualFold(typeName, "AggregateResult") {
-		return true
-	}
-	switch normalizeName(typeName) {
 	case "object", "string", "id", "boolean", "integer", "long", "double", "decimal", "date", "datetime", "time", "blob", "type", "exception":
 		return false
 	}
-	if strings.HasSuffix(normalizeName(typeName), "__c") || strings.HasSuffix(normalizeName(typeName), "__e") || strings.HasSuffix(normalizeName(typeName), "__mdt") {
+	if strings.HasSuffix(normalized, "__c") || strings.HasSuffix(normalized, "__e") || strings.HasSuffix(normalized, "__mdt") {
 		return true
 	}
-	if isCommonSemaSObjectName(typeName) {
+	if isCommonSemaSObjectName(normalized) {
 		return true
 	}
-	for _, known := range vm.CommonSObjectTypeNames() {
-		if strings.EqualFold(typeName, known) {
-			return true
-		}
+	if vm.IsCommonSObjectTypeName(normalized) {
+		return true
 	}
-	if members, ok := model.lookup(normalizeName(typeName)); ok {
+	if members, ok := model.lookup(normalized); ok {
 		return members.sobject
 	}
 	return false
@@ -2407,11 +2404,22 @@ func semaLookupTypeMembers(model *semaTypeMemberView, typeName string) (typeMemb
 	}
 	if semaExplicitPlatformQualifiedName(typeName) {
 		canonical := semaCanonicalPlatformAlias(typeName)
+		// Location is also a standard SObject. Its explicit System alias must
+		// bypass the SObject-first lazy lookup and retain the platform class.
 		if strings.EqualFold(canonical, "Location") && model != nil && model.state != nil && model.state.platform != nil {
 			if model.state.platform.platform != nil {
 				if symbol, ok := model.state.platform.platform.symbolsByKey[normalizeName(canonical)]; ok {
 					return semaTypeMembersFromPlatformSymbol(*symbol), normalizeName(canonical), true
 				}
+			}
+		}
+		if members, ok := model.lookup(normalizeName(typeName)); ok {
+			return semaEnsureStandardSObjectTypeMembers(model, normalizeName(typeName), members), normalizeName(typeName), true
+		}
+		if model != nil && model.state != nil && model.state.platform != nil {
+			if members, ok := model.state.platform.lookup(normalizeName(canonical)); ok {
+				members.name = typeName
+				return members, normalizeName(typeName), true
 			}
 		}
 	}

@@ -37,6 +37,10 @@ type OrderSpec struct {
 	Field string
 	Desc  bool
 	Nulls string
+
+	// RewrittenAggregate distinguishes a selected aggregate expression from
+	// an author-written exprN selector.
+	RewrittenAggregate bool
 }
 type ChildQuery struct {
 	Relationship string
@@ -53,16 +57,21 @@ type Aggregate struct {
 	Alias string
 }
 type Condition struct {
-	Not      bool
-	And      []Condition
-	Or       []Condition
-	Field    string
-	Op       string
-	Value    storage.Value
-	Value2   storage.Value
-	Range    bool
-	Values   []storage.Value
-	Subquery *Query
+	Not    bool
+	And    []Condition
+	Or     []Condition
+	Field  string
+	Op     string
+	Value  storage.Value
+	Value2 storage.Value
+	Range  bool
+	// DateLiteralTimeZoneID records the execution user's timezone for a
+	// date-literal range. Date values are retained in Value/Value2 for
+	// Date-field comparisons; DateTime fields use this context to convert the
+	// local midnight bounds to UTC.
+	DateLiteralTimeZoneID string
+	Values                []storage.Value
+	Subquery              *Query
 }
 type Result struct {
 	Records []storage.Record `json:"records"`

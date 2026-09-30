@@ -26,6 +26,25 @@ func TestExecAssertEquals(t *testing.T) {
 	}
 }
 
+func TestIsCommonSObjectTypeNameMatchesFoldedSliceScan(t *testing.T) {
+	names := CommonSObjectTypeNames()
+	if len(names) == 0 {
+		t.Fatal("CommonSObjectTypeNames returned no names")
+	}
+	for _, name := range names {
+		for _, variant := range []string{name, strings.ToLower(name), strings.ToUpper(name)} {
+			if !IsCommonSObjectTypeName(variant) {
+				t.Fatalf("IsCommonSObjectTypeName(%q) = false; the folded slice scan accepts it", variant)
+			}
+		}
+	}
+	for _, name := range []string{"", "NotAnSObject__x__", "Account ", "Map<String,Account>"} {
+		if IsCommonSObjectTypeName(name) {
+			t.Fatalf("IsCommonSObjectTypeName(%q) = true; the folded slice scan rejects it", name)
+		}
+	}
+}
+
 func TestCommonSObjectTypeNamesIncludesGeneratedStandardObjects(t *testing.T) {
 	foundApexClass := false
 	foundAccount := false
@@ -129,6 +148,20 @@ func TestCoerceEmptyNonSObjectListToSObjectListFails(t *testing.T) {
 func TestCoerceEmptySObjectListToSObjectListPasses(t *testing.T) {
 	machine := New(nil)
 	value := typedList("List<Account>")
+
+	coerced, err := machine.coerceAssignable("List<SObject>", value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if coerced.Type != "List<SObject>" {
+		t.Fatalf("coerced.Type = %q, want List<SObject>", coerced.Type)
+	}
+}
+
+func TestCoerceBigObjectListToSObjectListPasses(t *testing.T) {
+	machine := New(nil)
+	value := List(Object("rflib_Logs_Archive__b"))
+	value.Type = "List<rflib_Logs_Archive__b>"
 
 	coerced, err := machine.coerceAssignable("List<SObject>", value)
 	if err != nil {
@@ -3225,11 +3258,19 @@ System.assertEquals(UserInfo.getUserId(), account.OwnerId);
 	}
 }
 
-func TestExecDecimalAdditionTreatsNullOperandAsZero(t *testing.T) {
+// Compound assignment exercises the shared local arithmetic path; the
+// Salesforce packet separately proves the direct binary operators.
+func TestExecDecimalAdditionThrowsForNullOperand(t *testing.T) {
 	program, err := CompileAnonymous(`
 Decimal total = 0;
 Decimal amount;
-total += amount;
+Boolean caught = false;
+try {
+  total += amount;
+} catch (NullPointerException e) {
+  caught = true;
+}
+System.assert(caught);
 System.assertEquals(0, total);
 `)
 	if err != nil {
@@ -3709,6 +3750,7 @@ func TestExecStandardSObjectDescribeUsesGeneratedOverlayWithoutOrgObject(t *test
 	program, err := CompileAnonymous(`
 System.assertEquals(Account.SObjectType, Schema.SObjectType.account);
 System.assertEquals('Account', Schema.SObjectType.account.getDescribe().getName());
+System.assertEquals('Account', Schema.SObjectType.account.getLocalName());
 System.assertEquals('AccountNumber', Account.accountnumber.getDescribe().getName());
 System.assertEquals('AccountNumber', String.valueOf(Account.SObjectType.fields.accountnumber));
 `)
@@ -4098,7 +4140,7 @@ func TestExecDMLSObjectGetTreatsAuditFieldsAsUnqueried(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account record = new Account(Name = 'Acme');
 insert record;
-System.assert(record.CreatedDate != null);
+System.assert(record.CreatedDate == null, 'DML does not refresh caller audit timestamps');
 Map<String, Schema.SObjectField> fields = Account.SObjectType.getDescribe().fields.getMap();
 System.assertEquals('Acme', record.get(fields.get('Name')));
 Boolean caught = false;
@@ -4107,7 +4149,7 @@ try {
 } catch (Exception e) {
   caught = true;
 }
-System.assert(caught);
+System.assert(caught, 'SObject.get on an unqueried DML audit field should throw');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4432,7 +4474,7 @@ System.assert(aggregateObject instanceof List<SObject>, 'List<AggregateResult> s
 	Set<String> stringSet = new Set<String>{'foo'};
 	Object stringSetObject = stringSet;
 	System.assert(!(stringSetObject instanceof Set<Id>), 'Set<String> should not be Set<Id>');
-	System.assert(stringSetObject instanceof Set<Object>, 'Set<String> should be Set<Object>');
+	System.assert(!(stringSetObject instanceof Set<Object>), 'Set<String> retains its declared element type (SF176 API63)');
 
 	Map<String, Account> byName = new Map<String, Account>{'Test' => new Account(Name = 'Test')};
 	Object mapObject = byName;
@@ -4857,6 +4899,40 @@ func TestExpandSOQLBindsKeepsBooleanAndNullLiterals(t *testing.T) {
 	}
 }
 
+func TestExpandSOQLBindsEvaluatesArithmeticLimitExpression(t *testing.T) {
+	machine := New(nil)
+	got, err := machine.expandSOQLBinds("SELECT Id FROM Account LIMIT :Limits.getLimitDmlRows() - Limits.getDmlRows()")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "SELECT Id FROM Account LIMIT 10000" {
+		t.Fatalf("query = %q, want arithmetic bind expanded", got)
+	}
+}
+
+func TestExpandSOQLBindsRewritesCollectionNotEqualsToNotIn(t *testing.T) {
+	machine := New(nil)
+	got, err := machine.expandSOQLBindsWith(
+		"SELECT Id FROM Opportunity WHERE AccountToId != :excludedIds",
+		func(name string) (Value, error) {
+			if name == "excludedIds" {
+				return Value{Kind: ValueSet, Set: []Value{
+					platformScalar("Id", "001000000000001AAA"),
+				}}, nil
+			}
+			return Null, errors.New("unexpected lookup")
+		},
+		nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "SELECT Id FROM Opportunity WHERE AccountToId NOT IN (001000000000001AAA)"
+	if got != want {
+		t.Fatalf("query = %q, want %q", got, want)
+	}
+}
+
 func TestExpandSOQLBindsEvaluatesIndexedMemberExpression(t *testing.T) {
 	machine := New(nil)
 	first := Object("Account")
@@ -4868,7 +4944,7 @@ func TestExpandSOQLBindsEvaluatesIndexedMemberExpression(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "SELECT Id FROM Account WHERE Id = '001000000000002AAA'"
+	want := "SELECT Id FROM Account WHERE Id = 001000000000002AAA"
 	if got != want {
 		t.Fatalf("query = %q, want %q", got, want)
 	}
@@ -4908,7 +4984,7 @@ func TestExpandSOQLBindsEvaluatesInstanceMethodCall(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "SELECT Id FROM PaymentLine__c WHERE Id = 'a00000000000001AAA'"
+	want := "SELECT Id FROM PaymentLine__c WHERE Id = a00000000000001AAA"
 	if got != want {
 		t.Fatalf("query = %q, want %q", got, want)
 	}

@@ -27,11 +27,11 @@ func EvaluateExpression(raw string, ctx *ExpressionContext) (string, error) {
 		return "", err
 	}
 	if global := unsupportedVisualforceGlobal(expr); global != "" {
-		return "", fmt.Errorf("%s: unsupported Visualforce global", global)
+		return "", vm.NewUnsupportedFeatureError(fmt.Sprintf("%s: unsupported Visualforce global", global))
 	}
-	value := expr.Eval(ctx)
-	if value == nil {
-		return "", nil
+	value, err := evaluateExpressionNode(expr, ctx)
+	if err != nil {
+		return "", err
 	}
 	switch value.Kind {
 	case vm.ValueNull:
@@ -104,15 +104,45 @@ func findExpressionTemplateEnd(raw string, offset int) int {
 }
 
 type ExpressionContext struct {
-	Controller         vm.Value
-	Extensions         []vm.Value
-	StandardController vm.Value
-	CurrentPage        vm.Value
-	VM                 *vm.VM
-	Variables          map[string]vm.Value
-	Records            map[string][]vm.Value
-	Scope              *ScopeStack
-	ProjectNamespace   string
+	Controller               vm.Value
+	Extensions               []vm.Value
+	StandardController       vm.Value
+	AuthorizedStandardFields map[string]storage.Value
+	CurrentPage              vm.Value
+	VM                       *vm.VM
+	Variables                map[string]vm.Value
+	Records                  map[string][]vm.Value
+	Scope                    *ScopeStack
+	ProjectNamespace         string
+	ComponentReferenceScope  *componentReferenceScope
+	evaluationError          error
+}
+
+func (ctx *ExpressionContext) beginEvaluation() {
+	if ctx != nil {
+		ctx.evaluationError = nil
+	}
+}
+
+func (ctx *ExpressionContext) takeEvaluationError() error {
+	if ctx == nil {
+		return nil
+	}
+	err := ctx.evaluationError
+	ctx.evaluationError = nil
+	return err
+}
+
+func evaluateExpressionNode(expr Expression, ctx *ExpressionContext) (vm.Value, error) {
+	if ctx == nil {
+		ctx = &ExpressionContext{}
+	}
+	ctx.beginEvaluation()
+	value := evalExpressionValue(expr, ctx)
+	if err := ctx.takeEvaluationError(); err != nil {
+		return vm.Null, err
+	}
+	return value, nil
 }
 
 type Expression interface {
@@ -169,26 +199,30 @@ func (expr functionExpr) Eval(ctx *ExpressionContext) *vm.Value {
 		if len(expr.args) < 2 {
 			return &vm.Null
 		}
-		truthy := isTruthy(expr.args[0].Eval(ctx))
+		condition := evalExpressionValue(expr.args[0], ctx)
+		if expressionEvaluationFailed(ctx) {
+			return &vm.Null
+		}
+		truthy := isTruthy(&condition)
 		if truthy {
 			if len(expr.args) >= 2 {
-				return expr.args[1].Eval(ctx)
+				return evalExpressionPointer(expr.args[1], ctx)
 			}
 			return &vm.Null
 		}
 		if len(expr.args) >= 3 {
-			return expr.args[2].Eval(ctx)
+			return evalExpressionPointer(expr.args[2], ctx)
 		}
 		return &vm.Null
 	case "CASESAFEID", "TEXT":
 		if len(expr.args) == 0 {
 			return &vm.Null
 		}
-		value := expr.args[0].Eval(ctx)
-		if value == nil {
+		value := evalExpressionValue(expr.args[0], ctx)
+		if expressionEvaluationFailed(ctx) {
 			return &vm.Null
 		}
-		return value
+		return &value
 	case "UPPER":
 		return evalVisualforceStringFunction(ctx, expr.args, strings.ToUpper)
 	case "LOWER":
@@ -206,18 +240,29 @@ func (expr functionExpr) Eval(ctx *ExpressionContext) *vm.Value {
 			out := vm.Bool(true)
 			return &out
 		}
-		value := expr.args[0].Eval(ctx)
-		out := vm.Bool(value == nil || isValueNullOrBlank(*value))
+		value := evalExpressionValue(expr.args[0], ctx)
+		if expressionEvaluationFailed(ctx) {
+			return &vm.Null
+		}
+		out := vm.Bool(isValueNullOrBlank(value))
 		return &out
 	case "NOT":
 		if len(expr.args) == 0 {
 			return &vm.Null
 		}
-		out := vm.Bool(!isTruthy(expr.args[0].Eval(ctx)))
+		value := evalExpressionValue(expr.args[0], ctx)
+		if expressionEvaluationFailed(ctx) {
+			return &vm.Null
+		}
+		out := vm.Bool(!isTruthy(&value))
 		return &out
 	case "AND":
 		for _, arg := range expr.args {
-			if !isTruthy(arg.Eval(ctx)) {
+			value := evalExpressionValue(arg, ctx)
+			if expressionEvaluationFailed(ctx) {
+				return &vm.Null
+			}
+			if !isTruthy(&value) {
 				out := vm.Bool(false)
 				return &out
 			}
@@ -226,7 +271,11 @@ func (expr functionExpr) Eval(ctx *ExpressionContext) *vm.Value {
 		return &out
 	case "OR":
 		for _, arg := range expr.args {
-			if isTruthy(arg.Eval(ctx)) {
+			value := evalExpressionValue(arg, ctx)
+			if expressionEvaluationFailed(ctx) {
+				return &vm.Null
+			}
+			if isTruthy(&value) {
 				out := vm.Bool(true)
 				return &out
 			}
@@ -237,7 +286,7 @@ func (expr functionExpr) Eval(ctx *ExpressionContext) *vm.Value {
 		if len(expr.args) == 0 {
 			return &vm.Null
 		}
-		return expr.args[0].Eval(ctx)
+		return evalExpressionPointer(expr.args[0], ctx)
 	}
 }
 
@@ -245,8 +294,8 @@ func evalVisualforceStringFunction(ctx *ExpressionContext, args []Expression, tr
 	if len(args) == 0 {
 		return &vm.Null
 	}
-	value := args[0].Eval(ctx)
-	if value == nil || value.Kind == vm.ValueNull {
+	value := evalExpressionValue(args[0], ctx)
+	if expressionEvaluationFailed(ctx) || value.Kind == vm.ValueNull {
 		return &vm.Null
 	}
 	out := vm.String(transform(value.String()))
@@ -257,13 +306,13 @@ func evalVisualforceURLDecodeFunction(ctx *ExpressionContext, args []Expression)
 	if len(args) == 0 {
 		return &vm.Null
 	}
-	value := args[0].Eval(ctx)
-	if value == nil || value.Kind == vm.ValueNull {
+	value := evalExpressionValue(args[0], ctx)
+	if expressionEvaluationFailed(ctx) || value.Kind == vm.ValueNull {
 		return &vm.Null
 	}
 	decoded, err := url.QueryUnescape(value.String())
 	if err != nil {
-		return value
+		return &value
 	}
 	out := vm.String(decoded)
 	return &out
@@ -753,7 +802,12 @@ func resolveRootValue(ctx *ExpressionContext, name string) (vm.Value, bool) {
 	}
 	if ctx.Controller.Kind == vm.ValueObject {
 		if ctx.VM != nil {
-			if value, ok, err := ctx.VM.ReadInstanceProperty(ctx.Controller, name); ok && err == nil {
+			value, ok, err := ctx.VM.ReadInstanceProperty(ctx.Controller, name)
+			if err != nil {
+				ctx.evaluationError = err
+				return vm.Null, true
+			}
+			if ok {
 				return normalizeNamespaceMergeValue(name, value, ctx), true
 			}
 		}
@@ -764,7 +818,12 @@ func resolveRootValue(ctx *ExpressionContext, name string) (vm.Value, bool) {
 	for _, ext := range ctx.Extensions {
 		if ext.Kind == vm.ValueObject {
 			if ctx.VM != nil {
-				if value, ok, err := ctx.VM.ReadInstanceProperty(ext, name); ok && err == nil {
+				value, ok, err := ctx.VM.ReadInstanceProperty(ext, name)
+				if err != nil {
+					ctx.evaluationError = err
+					return vm.Null, true
+				}
+				if ok {
 					return value, true
 				}
 			}
@@ -787,6 +846,18 @@ func resolveRootValue(ctx *ExpressionContext, name string) (vm.Value, bool) {
 		for varName, value := range ctx.Variables {
 			if strings.EqualFold(varName, name) {
 				return value, true
+			}
+		}
+	}
+	if record, ok := objectFieldIgnoreCase(ctx.StandardController, "record"); ok && record.Kind == vm.ValueObject {
+		if strings.EqualFold(name, record.Type) {
+			return record, true
+		}
+		if ctx.VM != nil && ctx.VM.Org != nil {
+			requestedObject, requestedOK := storage.ResolveObjectName(*ctx.VM.Org, name)
+			recordObject, recordOK := storage.ResolveObjectName(*ctx.VM.Org, record.Type)
+			if requestedOK && recordOK && strings.EqualFold(requestedObject, recordObject) {
+				return record, true
 			}
 		}
 	}
@@ -835,35 +906,15 @@ func resolveVisualforceGlobal(ctx *ExpressionContext, name string) (vm.Value, bo
 }
 
 func visualforceCurrentUserRecord(ctx *ExpressionContext) (storage.Record, bool) {
-	users, ok := visualforceObjectState(ctx, "User")
-	if !ok || len(users.Records) == 0 {
+	if ctx == nil || ctx.VM == nil {
 		return storage.Record{}, false
 	}
-	for _, preferredID := range []storage.ID{storage.ID("005-local-user"), storage.ID("005000000000001")} {
-		if record, ok := users.Records[preferredID]; ok && !storageRecordFieldEqual(record, "UserType", "AutomatedProcess") {
-			return record, true
-		}
-	}
-	var first storage.ID
-	var fallback storage.ID
-	for id, record := range users.Records {
-		if storageRecordFieldEqual(record, "UserType", "AutomatedProcess") {
-			if fallback == "" || id < fallback {
-				fallback = id
-			}
-			continue
-		}
-		if first == "" || id < first {
-			first = id
-		}
-	}
-	if first == "" {
-		first = fallback
-	}
-	if first == "" {
+	record, err := ctx.VM.VisualforceExecutionUserRecord()
+	if err != nil {
+		ctx.evaluationError = err
 		return storage.Record{}, false
 	}
-	return users.Records[first], true
+	return record, true
 }
 
 func visualforceOrganizationRecord(ctx *ExpressionContext) (storage.Record, bool) {

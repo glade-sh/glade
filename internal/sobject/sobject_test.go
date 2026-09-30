@@ -7,6 +7,23 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+func TestCustomTextNameFieldLengthDefaultsAndPreservesExplicitMetadata(t *testing.T) {
+	registry := BuildDescribeRegistry(schema.Schema{Objects: []schema.Object{
+		{Name: "ImplicitName__c", NameField: schema.NameField{Type: "Text", Label: "Implicit Name"}},
+		{Name: "ExplicitName__c", NameField: schema.NameField{Type: "Text", Label: "Explicit Name", Length: 40}},
+		{Name: "NumberedName__c", NameField: schema.NameField{Type: "AutoNumber", Label: "Numbered Name", DisplayFormat: "N-{000}"}},
+	}})
+	for objectName, want := range map[string]int{"ImplicitName__c": 80, "ExplicitName__c": 40, "NumberedName__c": 0} {
+		describe, err := registry.Describe(objectName)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := describe.Fields["Name"].Length; got != want {
+			t.Fatalf("%s Name.Length = %d, want %d", objectName, got, want)
+		}
+	}
+}
+
 func TestValueTracksFieldsAndExplicitNulls(t *testing.T) {
 	account := New("Account")
 	account.ID = "001000000000001"
@@ -59,6 +76,7 @@ func TestBuildDescribeRegistry(t *testing.T) {
 			{Name: "External_Id__c", Type: "Text", ExternalID: true, Unique: true, IDLookup: true},
 			{Name: "PrimaryLocation__c", Type: "Location"},
 			{Name: "Notes__c", Type: "LongTextArea"},
+			{Name: "Description__c", Type: "Html"},
 		},
 		RecordTypes: []schema.RecordType{{DeveloperName: "Business", Label: "Business Widget", Active: true, Default: true}},
 	}}})
@@ -149,8 +167,86 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	if got := definition.Fields["Notes__c"]; got.Type != storage.FieldString || got.DisplayType != "TEXTAREA" {
 		t.Fatalf("textarea definition = %#v", got)
 	}
+	if got := definition.Fields["Description__c"]; got.Type != storage.FieldString || got.DisplayType != "RICHTEXTAREA" {
+		t.Fatalf("rich-text definition = %#v", got)
+	}
 	if got := definition.RecordTypes; len(got) != 1 || got[0].ID != "012000000000001" || got[0].DeveloperName != "Business" {
 		t.Fatalf("definition record types = %#v", got)
+	}
+}
+
+
+func TestBuildDescribeRegistryGeneratesCustomShareObject(t *testing.T) {
+	registry := BuildDescribeRegistry(schema.Schema{Objects: []schema.Object{{
+		Name:          "Sharing_Test_Object__c",
+		Label:         "Sharing Test Object",
+		SharingModel:  "Private",
+		EnableSharing: true,
+		NameField:     schema.NameField{Type: "Text", Label: "Name"},
+	}}})
+
+	describe, err := registry.Describe("Sharing_Test_Object__Share")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := describe.Fields["ParentId"]; got.Type != storage.FieldReference || len(got.ReferenceTo) != 1 || got.ReferenceTo[0] != "Sharing_Test_Object__c" {
+		t.Fatalf("ParentId describe = %#v", got)
+	}
+	if got := describe.Fields["UserOrGroupId"]; got.Type != storage.FieldReference || len(got.ReferenceTo) != 2 || got.ReferenceTo[0] != "User" || got.ReferenceTo[1] != "Group" {
+		t.Fatalf("UserOrGroupId describe = %#v", got)
+	}
+	if got := describe.Fields["AccessLevel"].PicklistValues; len(got) != 3 || got[0].Value != "Read" || got[1].Value != "Edit" || got[2].Value != "All" {
+		t.Fatalf("AccessLevel picklist = %#v", got)
+	}
+	if got := describe.Fields["RowCause"].DefaultValue; got != "Manual" {
+		t.Fatalf("RowCause default = %q", got)
+	}
+}
+
+func TestBuildDescribeRegistryGeneratesCustomShareObjectWhenSharingMetadataUnknown(t *testing.T) {
+	registry := BuildDescribeRegistry(schema.Schema{Objects: []schema.Object{{
+		Name: "UnknownSharingObject__c",
+	}, {
+		Name:               "Hierarchy_Settings__c",
+		CustomSettingsType: "Hierarchy",
+	}}})
+
+	describe, err := registry.Describe("UnknownSharingObject__Share")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := describe.Fields["AccessLevel"]; got.Name != "AccessLevel" || len(got.PicklistValues) != 3 {
+		t.Fatalf("AccessLevel describe = %#v", got)
+	}
+	if got := describe.Fields["RowCause"]; got.Name != "RowCause" || got.DefaultValue != "Manual" {
+		t.Fatalf("RowCause describe = %#v", got)
+	}
+
+	settings, err := registry.Describe("Hierarchy_Settings__Share")
+	if err == nil || settings.Name != "" {
+		t.Fatalf("custom settings should not receive a generated share object: %#v, err=%v", settings, err)
+	}
+}
+
+func TestBuildDescribeRegistryUsesDedicatedCustomSettingPrefix(t *testing.T) {
+	registry := BuildDescribeRegistry(schema.Schema{Objects: []schema.Object{
+		{Name: "Logger_Settings__c", CustomSettingsType: "Hierarchy"},
+		{Name: "Widget__c"},
+	}})
+
+	settings, err := registry.Describe("Logger_Settings__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if settings.KeyPrefix != "s00" {
+		t.Fatalf("custom-setting prefix = %q, want s00", settings.KeyPrefix)
+	}
+	widget, err := registry.Describe("Widget__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if widget.KeyPrefix != "a00" {
+		t.Fatalf("custom-object prefix = %q, want a00", widget.KeyPrefix)
 	}
 }
 

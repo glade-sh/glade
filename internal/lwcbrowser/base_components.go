@@ -172,8 +172,75 @@ func LightningBaseComponentModuleJS(name string) string {
 	switch normalizeLightningBaseComponentName(def.Name) {
 	case "alert":
 		classExtraJS = `  static open(options = {}) {
-    window.dispatchEvent(new CustomEvent("gladealert", { detail: options, bubbles: true, composed: true }));
-    return Promise.resolve(options.result);
+    return new Promise((resolve) => {
+      const label = String(options.label || "Alert");
+      const message = String(options.message ?? "");
+      let previousFocus = document.activeElement;
+      while (previousFocus && previousFocus.shadowRoot && previousFocus.shadowRoot.activeElement) {
+        previousFocus = previousFocus.shadowRoot.activeElement;
+      }
+      window.dispatchEvent(new CustomEvent("gladealert", { detail: options, bubbles: true, composed: true }));
+      const overlay = document.createElement("div");
+      overlay.style.position = "fixed";
+      overlay.style.inset = "0";
+      overlay.style.zIndex = "2147483647";
+      overlay.style.display = "flex";
+      overlay.style.alignItems = "center";
+      overlay.style.justifyContent = "center";
+      overlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+      const dialog = document.createElement("div");
+      dialog.setAttribute("role", "alertdialog");
+      dialog.setAttribute("aria-modal", "true");
+      dialog.setAttribute("aria-label", message ? label + ": " + message : label);
+      dialog.style.boxSizing = "border-box";
+      dialog.style.width = "min(28rem, calc(100vw - 2rem))";
+      dialog.style.padding = "1.5rem";
+      dialog.style.borderRadius = "0.25rem";
+      dialog.style.backgroundColor = "white";
+      dialog.style.color = "#181818";
+      dialog.style.boxShadow = "0 0.5rem 2rem rgba(0, 0, 0, 0.3)";
+      const heading = document.createElement("h2");
+      heading.textContent = label;
+      heading.setAttribute("tabindex", "-1");
+      const body = document.createElement("p");
+      body.textContent = message;
+      const ok = document.createElement("button");
+      ok.type = "button";
+      ok.textContent = "OK";
+      ok.style.padding = "0.5rem 1rem";
+      ok.style.border = "0";
+      ok.style.borderRadius = "0.25rem";
+      ok.style.backgroundColor = "#0176d3";
+      ok.style.color = "white";
+      ok.style.cursor = "pointer";
+      let dismissed = false;
+      const dismiss = () => {
+        if (dismissed) return;
+        dismissed = true;
+        ok.removeEventListener("click", dismiss);
+        overlay.remove();
+        resolve(options.result);
+        if (previousFocus && previousFocus.isConnected && typeof previousFocus.focus === "function") previousFocus.focus();
+      };
+      ok.addEventListener("click", dismiss);
+      dialog.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          dismiss();
+          return;
+        }
+        if (event.key === "Tab") {
+          event.preventDefault();
+          event.stopPropagation();
+          ok.focus();
+        }
+      });
+      dialog.append(heading, body, ok);
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+      heading.focus();
+    });
   }
 `
 	case "modal":
@@ -185,8 +252,98 @@ func LightningBaseComponentModuleJS(name string) string {
 `
 	case "prompt":
 		classExtraJS = `  static open(options = {}) {
-    window.dispatchEvent(new CustomEvent("gladeprompt", { detail: options, bubbles: true, composed: true }));
-    return Promise.resolve(options.value ?? options.defaultValue ?? "");
+    return new Promise((resolve) => {
+      const label = String(options.label || "Prompt");
+      const message = String(options.message ?? "");
+      let previousFocus = document.activeElement;
+      while (previousFocus && previousFocus.shadowRoot && previousFocus.shadowRoot.activeElement) {
+        previousFocus = previousFocus.shadowRoot.activeElement;
+      }
+      window.dispatchEvent(new CustomEvent("gladeprompt", { detail: options, bubbles: true, composed: true }));
+      const overlay = document.createElement("div");
+      overlay.style.position = "fixed";
+      overlay.style.inset = "0";
+      overlay.style.zIndex = "2147483647";
+      overlay.style.display = "flex";
+      overlay.style.alignItems = "center";
+      overlay.style.justifyContent = "center";
+      overlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+      const dialog = document.createElement("div");
+      dialog.setAttribute("role", "dialog");
+      dialog.setAttribute("aria-modal", "true");
+      dialog.setAttribute("aria-label", message ? label + ": " + message : label);
+      dialog.style.boxSizing = "border-box";
+      dialog.style.width = "min(28rem, calc(100vw - 2rem))";
+      dialog.style.padding = "1.5rem";
+      dialog.style.borderRadius = "0.25rem";
+      dialog.style.backgroundColor = "white";
+      dialog.style.color = "#181818";
+      dialog.style.boxShadow = "0 0.5rem 2rem rgba(0, 0, 0, 0.3)";
+      const heading = document.createElement("h2");
+      heading.textContent = label;
+      heading.setAttribute("tabindex", "-1");
+      const body = document.createElement("p");
+      body.textContent = message;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = String(options.defaultValue ?? "");
+      input.setAttribute("aria-label", label);
+      input.style.boxSizing = "border-box";
+      input.style.width = "100%";
+      input.style.padding = "0.5rem";
+      const actions = document.createElement("div");
+      actions.style.display = "flex";
+      actions.style.justifyContent = "flex-end";
+      actions.style.gap = "0.5rem";
+      const cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.textContent = "Cancel";
+      const ok = document.createElement("button");
+      ok.type = "button";
+      ok.textContent = "OK";
+      ok.style.backgroundColor = "#0176d3";
+      ok.style.color = "white";
+      for (const button of [cancel, ok]) {
+        button.style.padding = "0.5rem 1rem";
+        button.style.borderRadius = "0.25rem";
+        button.style.cursor = "pointer";
+      }
+      let dismissed = false;
+      const dismiss = (result) => {
+        if (dismissed) return;
+        dismissed = true;
+        cancel.removeEventListener("click", onCancel);
+        ok.removeEventListener("click", onOk);
+        overlay.remove();
+        resolve(result);
+        if (previousFocus && previousFocus.isConnected && typeof previousFocus.focus === "function") previousFocus.focus();
+      };
+      const onCancel = () => dismiss(null);
+      const onOk = () => dismiss(input.value);
+      cancel.addEventListener("click", onCancel);
+      ok.addEventListener("click", onOk);
+      dialog.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          dismiss(null);
+        } else if (event.key === "Tab") {
+          event.preventDefault();
+          event.stopPropagation();
+          const choices = [input, cancel, ok];
+          const index = choices.indexOf(document.activeElement);
+          const next = event.shiftKey
+            ? (index <= 0 ? choices.length - 1 : index - 1)
+            : (index < 0 || index === choices.length - 1 ? 0 : index + 1);
+          choices[next].focus();
+        }
+      });
+      actions.append(cancel, ok);
+      dialog.append(heading, body, input, actions);
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+      heading.focus();
+    });
   }
 `
 	case "toast":

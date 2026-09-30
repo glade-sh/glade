@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"html"
 	"math"
@@ -12,6 +13,8 @@ import (
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
+
+	"github.com/dlclark/regexp2/syntax"
 )
 
 func callStdlibMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -473,7 +476,13 @@ func stringStatic(callee string, args []Value) (Value, error) {
 		}
 		return String(args[0].String()), nil
 	case "String.format":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueList {
+		if len(args) != 2 {
+			return Null, fmt.Errorf("String.format expects format String and List arguments")
+		}
+		if args[0].Kind == ValueNull || args[1].Kind == ValueNull {
+			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+		}
+		if args[0].Kind != ValueString || args[1].Kind != ValueList {
 			return Null, fmt.Errorf("String.format expects format String and List arguments")
 		}
 		formatted, err := formatString(args[0].Text, args[1].List, func(value Value) (string, error) {
@@ -548,10 +557,15 @@ func (vm *VM) stringJoin(args []Value, result *Result) (Value, error) {
 	if err != nil {
 		return Null, err
 	}
+	elementType, _ := collectionElementType(args[0].Type)
 	parts := make([]string, 0, len(values))
 	for _, item := range values {
 		if item.Kind == ValueNull {
 			parts = append(parts, "")
+			continue
+		}
+		if strings.EqualFold(elementType, "Id") && item.Kind == ValueString {
+			parts = append(parts, displayIDText(item.Text))
 			continue
 		}
 		parts = append(parts, item.String())
@@ -687,6 +701,13 @@ func int64FromFloat(name string, value float64) (int64, error) {
 		return 0, fmt.Errorf("%s value must be finite", name)
 	}
 	if value < int64MinFloat || value >= int64MaxExclusiveFloat {
+		// Apex follows the platform's floating-point to Long conversion at the
+		// positive boundary: a Double value rounded to 2^63 converts to
+		// Long.MAX_VALUE. Keep exact Decimal overflow strict; this path is only
+		// used for float-backed values such as Math.pow(2, 63).
+		if value == int64MaxExclusiveFloat {
+			return math.MaxInt64, nil
+		}
 		return 0, fmt.Errorf("%s value out of 64-bit integer range", name)
 	}
 	return int64(value), nil
@@ -787,8 +808,30 @@ func newPatternSyntaxExceptionError(pattern string, err error) error {
 
 func newRegexSyntaxError(exceptionType, pattern string, err error) error {
 	description := err.Error()
-	if strings.Contains(description, "unterminated [] set") {
-		description = "missing closing ]"
+	if formatted, ok := danglingRegexQuantifierDescription(pattern, err); ok {
+		description = formatted
+	}
+	var parseErr *syntax.Error
+	if errors.As(err, &parseErr) && parseErr.Code == syntax.ErrUnterminatedBracket {
+		// The unclosed-class diagnostic identifies the last original code point,
+		// including supplementary Unicode as one position (unlike Apex String.length).
+		index := utf8.RuneCountInString(pattern) - 1
+		if index >= 0 {
+			var indent strings.Builder
+			position := 0
+			for _, char := range pattern {
+				if position == index {
+					break
+				}
+				if char == '\t' {
+					indent.WriteByte('\t')
+				} else {
+					indent.WriteByte(' ')
+				}
+				position++
+			}
+			description = fmt.Sprintf("Invalid regex: Unclosed character class near index %d\n%s\n%s^", index, pattern, indent.String())
+		}
 	}
 	if exceptionType != "PatternSyntaxException" {
 		return newExceptionError("System."+exceptionType, description)
@@ -1590,13 +1633,13 @@ func nextRegexSearchIndex(input string, index int) int {
 }
 
 func listSObjectTypeName(receiver Value) string {
-	if elementType, ok := collectionElementType(receiver.Static); ok && (isCommonSObjectTypeName(elementType) || strings.HasSuffix(elementType, "__c") || strings.HasSuffix(elementType, "__e") || strings.HasSuffix(elementType, "__mdt")) {
+	if elementType, ok := collectionElementType(receiver.Static); ok && isListSObjectElementType(elementType) {
 		return elementType
 	}
-	if elementType, ok := collectionElementType(receiver.Runtime); ok && (isCommonSObjectTypeName(elementType) || strings.HasSuffix(elementType, "__c") || strings.HasSuffix(elementType, "__e") || strings.HasSuffix(elementType, "__mdt")) {
+	if elementType, ok := collectionElementType(receiver.Runtime); ok && isListSObjectElementType(elementType) {
 		return elementType
 	}
-	if elementType, ok := collectionElementType(receiver.Type); ok && (isCommonSObjectTypeName(elementType) || strings.HasSuffix(elementType, "__c") || strings.HasSuffix(elementType, "__e") || strings.HasSuffix(elementType, "__mdt") || strings.EqualFold(elementType, "sObject")) {
+	if elementType, ok := collectionElementType(receiver.Type); ok && (isListSObjectElementType(elementType) || strings.EqualFold(elementType, "sObject")) {
 		if !strings.EqualFold(elementType, "sObject") {
 			return elementType
 		}
@@ -1612,7 +1655,7 @@ func listSObjectTypeName(receiver Value) string {
 			if typeName == "" || strings.EqualFold(typeName, "SObject") || strings.EqualFold(typeName, "Object") {
 				continue
 			}
-			if isCommonSObjectTypeName(typeName) || strings.HasSuffix(typeName, "__c") || strings.HasSuffix(typeName, "__e") || strings.HasSuffix(typeName, "__mdt") {
+			if isListSObjectElementType(typeName) {
 				return typeName
 			}
 		}
@@ -1621,6 +1664,10 @@ func listSObjectTypeName(receiver Value) string {
 		}
 	}
 	return ""
+}
+
+func isListSObjectElementType(typeName string) bool {
+	return isCommonSObjectTypeName(typeName) || isCustomObjectLikeName(typeName) || strings.EqualFold(typeName, "AggregateResult")
 }
 
 func mapSObjectTypeName(receiver Value) string {
@@ -1635,7 +1682,7 @@ func mapConcreteSObjectValueType(typeName string) string {
 	if !ok || strings.EqualFold(valueType, "sObject") {
 		return ""
 	}
-	if isCommonSObjectTypeName(valueType) || strings.HasSuffix(valueType, "__c") || strings.HasSuffix(valueType, "__e") || strings.HasSuffix(valueType, "__mdt") {
+	if isCommonSObjectTypeName(valueType) || isCustomObjectLikeName(valueType) {
 		return valueType
 	}
 	return ""
@@ -2230,42 +2277,18 @@ func stringRegexReplace(name, text string, args []Value, all bool) (string, erro
 	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 		return "", fmt.Errorf("%s expects regex and replacement Strings", name)
 	}
-	pattern := args[0].Text
-	if replaced, ok, err := stringRegexReplaceNegativeLookbehindLiteral(name, text, pattern, args[1].Text, all); ok || err != nil {
-		return replaced, err
+	matcher := Object("Matcher")
+	matcher.Fields["patternSource"] = args[0]
+	replaced, err := matcherReplaceRegexp2(name, matcher, text, matcherRegionBounds{
+		endIndex: apexStringLength(text), endRune: utf8.RuneCountInString(text), endByte: len(text),
+	}, args[1:], all)
+	// The shared matcher compiler reports PatternSyntaxException. String's
+	// replacement APIs expose the same syntax message as StringException.
+	var syntaxErr *apexThrowError
+	if errors.As(err, &syntaxErr) && syntaxErr.value.Type == "PatternSyntaxException" {
+		return "", newExceptionError("System.StringException", syntaxErr.value.Fields["message"].Text)
 	}
-	if replaced, ok, err := stringRegexReplaceQuotedPositiveLookaround(name, text, pattern, args[1].Text, all); ok || err != nil {
-		return replaced, err
-	}
-	if stripped, lookahead, ok := stripTerminalPositiveLookahead(pattern); ok {
-		return stringRegexReplaceTerminalPositiveLookahead(name, text, stripped, lookahead, args[1].Text, all)
-	}
-	converted, err := javaRegexQuoteEscapesToGo(pattern)
-	if err != nil {
-		return "", unsupportedCallError(name + " " + err.Error())
-	}
-	pattern = converted
-	if feature := unsupportedJavaRegexFeature(pattern); feature != "" {
-		return "", unsupportedCallError(name + " " + feature)
-	}
-	re, err := regexp.Compile(pattern)
-	if err != nil {
-		return "", fmt.Errorf("%s invalid regex: %w", name, err)
-	}
-	replacement, err := javaReplacementToGoTemplate(name, args[1].Text, re.NumSubexp())
-	if err != nil {
-		return "", fmt.Errorf("%s %w", name, err)
-	}
-	if all {
-		return re.ReplaceAllString(text, replacement), nil
-	}
-	indices := re.FindStringSubmatchIndex(text)
-	if indices == nil {
-		return text, nil
-	}
-	var expanded []byte
-	expanded = re.ExpandString(expanded, replacement, text, indices)
-	return text[:indices[0]] + string(expanded) + text[indices[1]:], nil
+	return replaced, err
 }
 
 func stringRegexReplaceQuotedPositiveLookaround(callee, text, pattern, replacement string, all bool) (string, bool, error) {
@@ -2768,7 +2791,7 @@ func isEscapedRegexByte(source string, index int) bool {
 
 func javaRegexQuoteEscapesToGo(source string) (string, error) {
 	if !strings.Contains(source, `\Q`) && !strings.Contains(source, `\E`) {
-		return source, nil
+		return normalizeJavaRegexEscapesForGo(source), nil
 	}
 	var out strings.Builder
 	for i := 0; i < len(source); {
@@ -2777,7 +2800,7 @@ func javaRegexQuoteEscapesToGo(source string) (string, error) {
 			end := strings.Index(source[i:], `\E`)
 			if end < 0 {
 				out.WriteString(regexp.QuoteMeta(source[i:]))
-				return out.String(), nil
+				return normalizeJavaRegexEscapesForGo(out.String()), nil
 			}
 			out.WriteString(regexp.QuoteMeta(source[i : i+end]))
 			i += end + len(`\E`)
@@ -2789,7 +2812,23 @@ func javaRegexQuoteEscapesToGo(source string) (string, error) {
 		out.WriteByte(source[i])
 		i++
 	}
-	return out.String(), nil
+	return normalizeJavaRegexEscapesForGo(out.String()), nil
+}
+
+// Salesforce's Java regex accepts an escaped underscore as a literal
+// underscore. Go's regexp engines reject \_ as an unknown escape, so remove
+// only an unescaped slash before underscore while preserving escaped slashes.
+func normalizeJavaRegexEscapesForGo(source string) string {
+	var out strings.Builder
+	for i := 0; i < len(source); i++ {
+		if source[i] == '\\' && i+1 < len(source) && source[i+1] == '_' && !isEscapedRegexByte(source, i) {
+			out.WriteByte('_')
+			i++
+			continue
+		}
+		out.WriteByte(source[i])
+	}
+	return out.String()
 }
 
 func javaOnlyUnicodeClass(className string) bool {
@@ -3375,44 +3414,45 @@ func formatStringTypedToken(formatType string, value Value) (string, error) {
 
 func stringAbbreviate(text string, args []Value) (string, error) {
 	if len(args) == 1 && args[0].Kind == ValueInt {
-		return abbreviateRunes([]rune(text), 0, int(args[0].Int))
+		return abbreviateApexString(text, 0, int(args[0].Int))
 	}
 	if len(args) == 2 && args[0].Kind == ValueInt && args[1].Kind == ValueInt {
-		return abbreviateRunes([]rune(text), int(args[1].Int), int(args[0].Int))
+		return abbreviateApexString(text, int(args[1].Int), int(args[0].Int))
 	}
 	return "", fmt.Errorf("String.abbreviate expects maxWidth or offset and maxWidth")
 }
 
-func abbreviateRunes(runes []rune, offset, maxWidth int) (string, error) {
+func abbreviateApexString(text string, offset, maxWidth int) (string, error) {
 	if maxWidth < 4 {
 		return "", fmt.Errorf("String.abbreviate maxWidth must be at least 4")
 	}
-	if len(runes) <= maxWidth {
-		return string(runes), nil
+	length := apexStringLength(text)
+	if length <= maxWidth {
+		return text, nil
 	}
 	if offset < 0 {
 		offset = 0
 	}
-	if offset > len(runes) {
-		offset = len(runes)
+	if offset > length {
+		offset = length
 	}
-	if len(runes)-offset < maxWidth-3 {
-		offset = len(runes) - (maxWidth - 3)
+	if length-offset < maxWidth-3 {
+		offset = length - (maxWidth - 3)
 	}
 	if offset <= 4 {
-		return string(runes[:maxWidth-3]) + "...", nil
+		return text[:apexSubstringBoundary(text, maxWidth-3)] + "...", nil
 	}
 	if maxWidth < 7 {
 		return "", fmt.Errorf("String.abbreviate maxWidth with offset must be at least 7")
 	}
-	if offset+maxWidth-3 < len(runes) {
-		abbreviated, err := abbreviateRunes(runes[offset:], 0, maxWidth-3)
+	if offset+maxWidth-3 < length {
+		abbreviated, err := abbreviateApexString(text[apexSubstringBoundary(text, offset):], 0, maxWidth-3)
 		if err != nil {
 			return "", err
 		}
 		return "..." + abbreviated, nil
 	}
-	return "..." + string(runes[len(runes)-(maxWidth-3):]), nil
+	return "..." + text[apexSubstringBoundary(text, length-(maxWidth-3)):], nil
 }
 
 func stringDifference(left, right string) string {
@@ -3825,7 +3865,11 @@ func valueHashCode(value Value) int32 {
 		sort.Strings(keys)
 		var hash int32
 		for _, key := range keys {
-			hash += javaStringHashCode(key) ^ valueHashCode(value.Map[key])
+			logicalKey := key
+			if base, _, collision := strings.Cut(key, "\x00collision:"); collision && customObjectHashKey(mapStoredKey(value, key), base) {
+				logicalKey = base
+			}
+			hash += javaStringHashCode(logicalKey) ^ valueHashCode(value.Map[key])
 		}
 		return hash
 	case ValueObject:
@@ -3845,7 +3889,9 @@ func valueHashCode(value Value) int32 {
 		}
 		if value.Type == "Type" {
 			if typeName := typeValueText(value); typeName != "" {
-				return javaStringHashCode(typeName)
+				// Type equality is case-insensitive, so equal tokens must share the
+				// same hash even when their source spellings differ.
+				return javaStringHashCode(canonicalTypeValueIdentity(typeName))
 			}
 		}
 		if platformScalarObject(value.Type) {
@@ -3892,12 +3938,15 @@ func (vm *VM) callIdMember(receiver Value, method string, args []Value) (Value, 
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Id.toString expects 0 arguments")
 		}
-		return String(idText), true, nil
+		return String(displayIDText(idText)), true, nil
 	case "to15":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Id.to15 expects 0 arguments")
 		}
-		if err := validateApexID(idText); err != nil {
+		// Apex accepts shape-valid opaque IDs supplied by mocks and API
+		// responses. to15 only removes the optional checksum suffix; it does
+		// not validate that suffix.
+		if err := validateApexIDShape(idText); err != nil {
 			return Null, true, err
 		}
 		if len(idText) == 15 {
@@ -3908,7 +3957,7 @@ func (vm *VM) callIdMember(receiver Value, method string, args []Value) (Value, 
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Id.getSObjectType expects 0 arguments")
 		}
-		if err := validateApexID(idText); err != nil {
+		if err := validateApexIDShape(idText); err != nil {
 			return Null, true, err
 		}
 		objectName, ok := vm.sObjectNameForID(idText)

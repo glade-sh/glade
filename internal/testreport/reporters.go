@@ -329,6 +329,7 @@ type junitTestCase struct {
 }
 
 type junitProblem struct {
+	Reason  Reason `xml:"reason,attr,omitempty"`
 	Type    string `xml:"type,attr,omitempty"`
 	Message string `xml:"message,attr,omitempty"`
 	Text    string `xml:",chardata"`
@@ -354,7 +355,7 @@ func makeJUnitCase(suiteName string, testCase Case) junitTestCase {
 func makeJUnitProblem(testCase Case, fallbackType string) *junitProblem {
 	problem := testCase.Problem
 	if problem == nil {
-		return &junitProblem{Type: fallbackType, Message: fallbackType}
+		return &junitProblem{Type: fallbackType, Message: fallbackType, Reason: testCase.Reason}
 	}
 	problemType := problem.Type
 	if problemType == "" {
@@ -369,6 +370,7 @@ func makeJUnitProblem(testCase Case, fallbackType string) *junitProblem {
 	}
 	return &junitProblem{
 		Type:    problemType,
+		Reason:  testCase.Reason,
 		Message: problem.Message,
 		Text:    text,
 	}

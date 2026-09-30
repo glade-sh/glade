@@ -91,9 +91,10 @@ const (
 )
 
 type token struct {
-	kind tokenKind
-	text string
-	pos  int
+	kind                       tokenKind
+	text                       string
+	escapedBackslashOffsets    []int
+	pos                        int
 }
 
 func lex(source string) ([]token, error) {
@@ -204,7 +205,7 @@ func lex(source string) ([]token, error) {
 				}
 			}
 			switch source[i] {
-			case '(', ')', '{', '}', '[', ']', ';', ',', '.', ':', '?', '+', '-', '*', '/', '%', '=', '<', '>', '!', '&', '|', '^':
+			case '(', ')', '{', '}', '[', ']', ';', ',', '.', ':', '?', '+', '-', '*', '/', '%', '=', '<', '>', '!', '&', '|', '^', '~':
 				tokens = append(tokens, token{kind: tokenSymbol, text: source[i : i+1], pos: start})
 				i++
 			default:
@@ -252,6 +253,7 @@ func lexMultilineString(source string, start int) (token, int, error) {
 func lexSingleString(source string, start int) (token, int, error) {
 	i := start + 1
 	var text strings.Builder
+	var escapedBackslashOffsets []int
 	for i < len(source) {
 		if source[i] == '\'' {
 			if i+1 < len(source) && source[i+1] == '\'' {
@@ -259,10 +261,28 @@ func lexSingleString(source string, start int) (token, int, error) {
 				i += 2
 				continue
 			}
-			return token{kind: tokenString, text: text.String(), pos: start}, i + 1, nil
+			return token{kind: tokenString, text: text.String(), escapedBackslashOffsets: escapedBackslashOffsets, pos: start}, i + 1, nil
 		}
 		if source[i] == '\\' && i+1 < len(source) {
 			switch source[i+1] {
+			case 'u':
+				end := apexUnicodeEscapeEnd(source, i)
+				if end > i {
+					decoded, err := unescapeJavaLike("Apex string literal", source[i:end])
+					if err == nil {
+						decodedOffset := text.Len()
+						for offset := 0; offset < len(decoded); offset++ {
+							if decoded[offset] == '\\' {
+								escapedBackslashOffsets = append(escapedBackslashOffsets, decodedOffset+offset)
+							}
+						}
+						text.WriteString(decoded)
+						i = end
+						continue
+					}
+				}
+				text.WriteByte('\\')
+				text.WriteByte('u')
 			case '\'':
 				if i+2 < len(source) && source[i+2] == '\'' && i+3 < len(source) && isIdentPart(source[i+3]) {
 					text.WriteByte('\\')
@@ -272,6 +292,7 @@ func lexSingleString(source string, start int) (token, int, error) {
 				}
 				text.WriteByte('\'')
 			case '\\':
+				escapedBackslashOffsets = append(escapedBackslashOffsets, text.Len())
 				text.WriteByte('\\')
 			case '"':
 				text.WriteByte('"')
@@ -281,6 +302,10 @@ func lexSingleString(source string, start int) (token, int, error) {
 				text.WriteByte('\r')
 			case 't':
 				text.WriteByte('\t')
+			case 'b':
+				text.WriteByte('\b')
+			case 'f':
+				text.WriteByte('\f')
 			default:
 				text.WriteByte('\\')
 				text.WriteByte(source[i+1])
@@ -292,6 +317,17 @@ func lexSingleString(source string, start int) (token, int, error) {
 		i++
 	}
 	return token{}, start, fmt.Errorf("unterminated string literal at byte %d", start)
+}
+
+func apexUnicodeEscapeEnd(source string, start int) int {
+	end := start
+	for end+6 <= len(source) && source[end] == '\\' && source[end+1] == 'u' {
+		if _, err := strconv.ParseUint(source[end+2:end+6], 16, 16); err != nil {
+			return start
+		}
+		end += 6
+	}
+	return end
 }
 
 type parser struct {
@@ -1269,6 +1305,11 @@ func (p *parser) parseComparison() (ir.Expr, error) {
 		if op == "" {
 			return left, nil
 		}
+		// Apex accepts a separated greater-than/equal comparison (SF196).
+		// Join it here so generic type delimiters and assignment stay unchanged.
+		if op == ">" && p.match(tokenSymbol, "=") {
+			op = ">="
+		}
 		right, err := p.parseShift()
 		if err != nil {
 			return ir.Expr{}, err
@@ -1367,6 +1408,12 @@ func (p *parser) parseUnary() (ir.Expr, error) {
 			return ir.Expr{}, err
 		}
 		return ir.Expr{Kind: ir.ExprCall, Callee: "__prefix:" + op, Left: &expr}, nil
+	case p.match(tokenSymbol, "~"):
+		expr, err := p.parseUnary()
+		if err != nil {
+			return ir.Expr{}, err
+		}
+		return ir.Expr{Kind: ir.ExprUnary, Operator: "~", Left: &expr}, nil
 	case p.match(tokenSymbol, "!"):
 		expr, err := p.parseUnary()
 		if err != nil {
@@ -1766,7 +1813,7 @@ func (p *parser) parseSOQLLiteral(pos int) (ir.Expr, error) {
 			}
 		}
 		if tok.kind == tokenString {
-			parts = append(parts, soqlStringLiteralFromTokenText(tok.text))
+			parts = append(parts, soqlStringLiteralFromTokenText(tok.text, tok.escapedBackslashOffsets))
 		} else {
 			parts = append(parts, tok.text)
 		}
@@ -1822,11 +1869,17 @@ func isAllDigits(part string) bool {
 	return part != ""
 }
 
-func soqlStringLiteralFromTokenText(text string) string {
+func soqlStringLiteralFromTokenText(text string, escapedBackslashOffsets []int) string {
 	var out strings.Builder
 	out.Grow(len(text) + 2)
 	out.WriteByte('\'')
+	backslashOffsetIndex := 0
 	for i := 0; i < len(text); i++ {
+		if backslashOffsetIndex < len(escapedBackslashOffsets) && escapedBackslashOffsets[backslashOffsetIndex] == i {
+			out.WriteString(`\\`)
+			backslashOffsetIndex++
+			continue
+		}
 		if text[i] == '\'' {
 			out.WriteString("''")
 			continue

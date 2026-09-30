@@ -24,6 +24,7 @@ import (
 	"github.com/glade-sh/glade/internal/flagparse"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/trace"
@@ -109,6 +110,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	methodName := ""
 	classFile := ""
 	var selectedClasses []string
+	emptyClassShard := false
+	classFileProblem := ""
 	shardCount := 0
 	shardIndex := 0
 	shardIndexSet := false
@@ -167,6 +170,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		Bool("no-parallel-methods", "").
 		String("parallelism", "").
 		String("test-timeout", "").
+		String("runtime-rest-api-version", "").
 		Bool("gc-aggressive", "").
 		String("cpu-profile", "").
 		String("mem-profile", "").
@@ -217,6 +221,14 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if parsed.String("project") != "" {
 		root = parsed.String("project")
 	}
+	runtimeRESTAPIVersion, err := storage.ResolveRESTAPIVersion(parsed.String("runtime-rest-api-version"))
+	if err != nil {
+		return testreport.Run{}, fmt.Errorf("--runtime-rest-api-version: %w", err)
+	}
+	if strings.TrimSpace(parsed.String("runtime-rest-api-version")) == "" {
+		// Preserve the optional wire field for clients that retain the default.
+		runtimeRESTAPIVersion = ""
+	}
 	filter = parsed.String("filter")
 	className = strings.TrimSpace(parsed.String("class"))
 	methodName = strings.TrimSpace(parsed.String("method"))
@@ -230,10 +242,14 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		return testreport.Run{}, errors.New("--method requires --class")
 	}
 	if classFile != "" {
-		selectedClasses, err = readTestClassFile(classFile)
+		selection, readErr := readTestClassFile(classFile)
+		err = readErr
 		if err != nil {
 			return testreport.Run{}, err
 		}
+		selectedClasses = selection.Classes
+		emptyClassShard = selection.EmptyShard
+		classFileProblem = selection.Problem
 	}
 	if className != "" {
 		selectedClasses = []string{className}
@@ -445,6 +461,43 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			return testreport.Run{}, errors.New("--connect cannot be combined with --no-serve")
 		}
 	}
+	if classFile != "" && len(selectedClasses) == 0 {
+		for _, output := range []cliArtifactDestination{
+			{Name: "--perf-json", Path: perfJSONPath},
+			{Name: "--cpu-profile", Path: cpuProfilePath},
+			{Name: "--mem-profile", Path: memProfilePath},
+		} {
+			if strings.TrimSpace(output.Path) != "" {
+				return testreport.Run{}, fmt.Errorf("%s cannot be combined with an empty --class-file selection", output.Name)
+			}
+		}
+		var result testreport.Run
+		if emptyClassShard {
+			result = testreport.Run{}
+		} else {
+			message := classFileProblem
+			if message == "" {
+				message = fmt.Sprintf("--class-file %q must contain at least one test class", classFile)
+			}
+			result = selectorFailureRun(
+				"empty test class file",
+				message,
+				"An empty explicit class file is not an unrestricted test selection.",
+			)
+		}
+		if err := writeTestTraceFile(tracePath, result); err != nil {
+			return result, err
+		}
+		if junitPath != "" {
+			if err := writeJUnitFile(junitPath, result); err != nil {
+				return result, err
+			}
+		}
+		if format == "json" {
+			return result, writeTestJSONEnvelope(w, result, junitPath)
+		}
+		return result, testreport.WriteConsole(w, result)
+	}
 	stopProfile, err := startCLIProfiler(cpuProfilePath, memProfilePath)
 	if err != nil {
 		return testreport.Run{}, err
@@ -464,19 +517,20 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		defer progressReporter.finish()
 	}
 	testOpts := apextest.Options{
-		Filter:              filter,
-		SelectedClasses:     selectedClasses,
-		SelectedMethod:      methodName,
-		LimitMode:           limitMode,
-		LimitCaps:           limitCaps,
-		LimitCapsSet:        limitCapsSet,
-		TraceBlocked:        traceBlocked,
-		TraceAll:            tracePath != "",
-		SlowTestThresholdMS: slowTestThresholdMS,
-		ParallelMethods:     parallelMethods,
-		TimeoutMS:           testTimeout.Milliseconds(),
-		NoDiskCache:         noCache,
-		PerfCounters:        perfEnabled,
+		RuntimeRESTAPIVersion: runtimeRESTAPIVersion,
+		Filter:                filter,
+		SelectedClasses:       selectedClasses,
+		SelectedMethod:        methodName,
+		LimitMode:             limitMode,
+		LimitCaps:             limitCaps,
+		LimitCapsSet:          limitCapsSet,
+		TraceBlocked:          traceBlocked,
+		TraceAll:              tracePath != "",
+		SlowTestThresholdMS:   slowTestThresholdMS,
+		ParallelMethods:       parallelMethods,
+		TimeoutMS:             testTimeout.Milliseconds(),
+		NoDiskCache:           noCache,
+		PerfCounters:          perfEnabled,
 	}
 	durationHistory, err := loadCLIDurationHistory(durationHistoryPath)
 	if err != nil {
@@ -691,7 +745,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		if strings.TrimSpace(testOpts.Filter) != "" {
 			selectorCases = apextest.Discover(index, selectorOpts)
 		}
-		if selectorRun, ok := exactTestSelectorFailureRun(selectorCases, className, methodName, func() []apextest.TestCase {
+		if selectorRun, ok := exactTestSelectorFailureRun(selectorCases, className, methodName, selectedClasses, func() []apextest.TestCase {
 			classOpts := selectorOpts
 			classOpts.SelectedMethod = ""
 			return apextest.Discover(index, classOpts)
@@ -736,7 +790,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		if strings.TrimSpace(testOpts.Filter) != "" {
 			selectorCases = apextest.Discover(index, selectorOpts)
 		}
-		if selectorRun, ok := exactTestSelectorFailureRun(selectorCases, className, methodName, func() []apextest.TestCase {
+		if selectorRun, ok := exactTestSelectorFailureRun(selectorCases, className, methodName, selectedClasses, func() []apextest.TestCase {
 			classOpts := selectorOpts
 			classOpts.SelectedMethod = ""
 			return apextest.Discover(index, classOpts)
@@ -905,7 +959,7 @@ func writeTestJSONEnvelope(w io.Writer, result testreport.Run, junitPath string)
 	}
 	return writeCLIJSONEnvelope(w, cliJSONEnvelope{
 		Command:     "test",
-		Status:      statusForOK(ok),
+		Status:      testStatusForSummary(summary),
 		ExitCode:    exitCodeForOK(ok),
 		Summary:     summary,
 		Tests:       flattenTestCases(result),
@@ -915,11 +969,24 @@ func writeTestJSONEnvelope(w io.Writer, result testreport.Run, junitPath string)
 	})
 }
 
-func exactTestSelectorFailureRun(cases []apextest.TestCase, className, methodName string, discoverClassCases func() []apextest.TestCase) (testreport.Run, bool) {
+func testStatusForSummary(summary testreport.Summary) string {
+	if summary.Total == 0 {
+		return "empty"
+	}
+	if summary.Failed > 0 || summary.Errors > 0 {
+		return "failed"
+	}
+	if summary.Skipped > 0 {
+		return "partial"
+	}
+	return "passed"
+}
+
+func exactTestSelectorFailureRun(cases []apextest.TestCase, className, methodName string, selectedClasses []string, discoverClassCases func() []apextest.TestCase) (testreport.Run, bool) {
 	className = strings.TrimSpace(className)
 	methodName = strings.TrimSpace(methodName)
 	if className == "" {
-		return testreport.Run{}, false
+		return missingClassFileEntryRun(cases, selectedClasses)
 	}
 	if len(cases) > 0 {
 		return testreport.Run{}, false
@@ -936,6 +1003,37 @@ func exactTestSelectorFailureRun(cases []apextest.TestCase, className, methodNam
 		fmt.Sprintf("no test class matched --class %q", className),
 		fmt.Sprintf("Glade did not discover an exact test class named %q.", className),
 	), true
+}
+
+func missingClassFileEntryRun(cases []apextest.TestCase, selectedClasses []string) (testreport.Run, bool) {
+	if len(selectedClasses) == 0 {
+		return testreport.Run{}, false
+	}
+	discoveredClasses := make(map[string]struct{}, len(cases))
+	for _, testCase := range cases {
+		if name := strings.ToLower(strings.TrimSpace(testCase.ClassName)); name != "" {
+			discoveredClasses[name] = struct{}{}
+		}
+	}
+	for _, requestedClass := range selectedClasses {
+		requestedClass = strings.TrimSpace(requestedClass)
+		if requestedClass == "" {
+			continue
+		}
+		if _, ok := discoveredClasses[strings.ToLower(requestedClass)]; ok {
+			continue
+		}
+		selector := fmt.Sprintf("--class %q", requestedClass)
+		if len(selectedClasses) > 1 {
+			selector = fmt.Sprintf("--class-file entry %q", requestedClass)
+		}
+		return selectorFailureRun(
+			"missing test class",
+			fmt.Sprintf("no test class matched %s", selector),
+			fmt.Sprintf("Glade did not discover a test class for explicitly requested name %q.", requestedClass),
+		), true
+	}
+	return testreport.Run{}, false
 }
 
 func selectorFailureRun(name, message, detail string) testreport.Run {
@@ -980,6 +1078,15 @@ func flattenTestCases(result testreport.Run) []map[string]any {
 				"status":     testCase.Status,
 				"durationMs": testCase.DurationMS,
 			}
+			if testCase.SelectedSourceFile != "" {
+				row["selectedSourceFile"] = testCase.SelectedSourceFile
+			}
+			if testCase.SourceFile != "" {
+				row["sourceFile"] = testCase.SourceFile
+			}
+			if testCase.Reason != "" {
+				row["reason"] = testCase.Reason
+			}
 			if testCase.Problem != nil {
 				row["problem"] = testCase.Problem
 			}
@@ -1010,20 +1117,45 @@ func writeTestTraceFile(path string, result testreport.Run) error {
 	return trace.WriteJSON(file, trace.NewDocument(events))
 }
 
-func readTestClassFile(path string) ([]string, error) {
+const generatedEmptyClassShardMarker = "# glade-empty-class-shard-v1"
+
+type testClassFileSelection struct {
+	Classes    []string
+	EmptyShard bool
+	Problem    string
+}
+
+func readTestClassFile(path string) (testClassFileSelection, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read --class-file: %w", err)
+		return testClassFileSelection{}, fmt.Errorf("read --class-file: %w", err)
 	}
 	var out []string
+	emptyShard := false
 	for _, line := range strings.Split(string(data), "\n") {
 		line = strings.TrimSpace(strings.TrimSuffix(line, "\r"))
+		if line == generatedEmptyClassShardMarker {
+			if emptyShard {
+				return testClassFileSelection{Problem: "generated empty-shard marker must appear at most once"}, nil
+			}
+			emptyShard = true
+			continue
+		}
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 		out = append(out, line)
 	}
-	return out, nil
+	if emptyShard && len(out) > 0 {
+		return testClassFileSelection{Problem: "generated empty-shard marker cannot be combined with test class names"}, nil
+	}
+	if emptyShard {
+		return testClassFileSelection{EmptyShard: true}, nil
+	}
+	if len(out) == 0 {
+		return testClassFileSelection{Problem: fmt.Sprintf("--class-file %q must contain at least one test class", path)}, nil
+	}
+	return testClassFileSelection{Classes: out}, nil
 }
 
 type cliClassShard struct {
@@ -1081,7 +1213,9 @@ func writeCLIClassShardPlan(dir string, plan testdaemon.ClassShardPlanV1, expect
 		classes := append([]string(nil), shard.Classes...)
 		sort.Strings(classes)
 		data := strings.Join(classes, "\n")
-		if data != "" {
+		if len(classes) == 0 {
+			data = generatedEmptyClassShardMarker
+		} else {
 			data += "\n"
 		}
 		path := filepath.Join(dir, fmt.Sprintf("shard-%0*d.txt", width, shard.Index))
@@ -1327,6 +1461,8 @@ Common flags:
   --no-parallel-methods     Force serial method execution within a class.
   --parallelism <n>         Worker count (default: GOMAXPROCS).
   --test-timeout <dur>      Per-test timeout (default 5m, e.g. 30s, 2m).
+  --runtime-rest-api-version <version>
+                           Test org REST context (default 65.0); does not change source API versions.
   --gc-aggressive           Reduce heap growth on memory-constrained hosts.
   --limit-mode <mode>       Use strict or permissive governor limits.
 
@@ -1344,23 +1480,24 @@ Examples:
 }
 
 type cliTestProgressReporter struct {
-	renderer  cliui.Renderer
-	started   time.Time
-	total     int
-	done      int
-	inflight  int
-	passed    int
-	failed    int
-	errors    int
-	active    string
-	phase     string
-	immediate cliui.Event
-	mu        sync.Mutex
-	renderMu  sync.Mutex
-	finished  bool
-	events    chan apextest.TestProgress
-	closeOnce sync.Once
-	wg        sync.WaitGroup
+	renderer    cliui.Renderer
+	started     time.Time
+	total       int
+	done        int
+	inflight    int
+	passed      int
+	failed      int
+	errors      int
+	setupErrors int
+	active      string
+	phase       string
+	immediate   cliui.Event
+	mu          sync.Mutex
+	renderMu    sync.Mutex
+	finished    bool
+	events      chan apextest.TestProgress
+	closeOnce   sync.Once
+	wg          sync.WaitGroup
 }
 
 const progressEventBuffer = 8192
@@ -1560,7 +1697,7 @@ func (r *cliTestProgressReporter) apply(progress apextest.TestProgress) bool {
 		}
 	case "setup_done":
 		if progress.Status != "pass" {
-			r.errors++
+			r.setupErrors++
 			r.immediate = cliui.Event{
 				Kind:    cliui.EventFail,
 				Phase:   "test",
@@ -1657,7 +1794,7 @@ func (r *cliTestProgressReporter) finish() {
 		return
 	}
 	r.finished = true
-	ok := r.failed == 0 && r.errors == 0
+	ok := r.failed == 0 && r.errors == 0 && r.setupErrors == 0
 	current := r.done
 	if r.total > 0 && current < r.total {
 		current = r.total
@@ -1670,9 +1807,17 @@ func (r *cliTestProgressReporter) finish() {
 		Current: current,
 		Total:   r.total,
 	})
+	label := fmt.Sprintf("%d passed, %d failed, %d errors", r.passed, r.failed, r.errors)
+	if r.setupErrors > 0 {
+		noun := "setup failures"
+		if r.setupErrors == 1 {
+			noun = "setup failure"
+		}
+		label += fmt.Sprintf(" · %d %s", r.setupErrors, noun)
+	}
 	r.renderFinish(cliui.Result{
 		OK:       ok,
-		Label:    fmt.Sprintf("%d passed, %d failed, %d errors · %s", r.passed, r.failed, r.errors, elapsed),
+		Label:    label + " · " + elapsed,
 		ExitCode: exitCodeForOK(ok),
 	})
 }
@@ -1780,7 +1925,7 @@ func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpu
 		Command:         "test",
 		GeneratedAt:     time.Now().UTC().Format(time.RFC3339),
 		Project:         absRoot,
-		Status:          statusForOK(ok),
+		Status:          testStatusForSummary(summary),
 		ExitCode:        exitCodeForOK(ok),
 		DurationMS:      summary.DurationMS,
 		DiscoverMS:      discoverMS,

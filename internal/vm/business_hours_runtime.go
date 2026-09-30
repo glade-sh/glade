@@ -198,7 +198,11 @@ func (vm *VM) businessHoursCalendar(id string) (businessHoursCalendar, error) {
 		if err != nil {
 			return businessHoursCalendar{}, err
 		}
-		if end > start {
+		if end == start && start == 0 {
+			// A fresh Salesforce scratch org represents its 24x7 default
+			// calendar as a zero-to-zero window for every weekday.
+			calendar.windows[day.weekday] = businessHoursWindow{start: 0, end: 24 * time.Hour}
+		} else if end > start {
 			calendar.windows[day.weekday] = businessHoursWindow{start: start, end: end}
 		}
 	}

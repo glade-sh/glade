@@ -207,6 +207,24 @@ System.assertEquals('New', loaded.Name);
 	}
 }
 
+func TestExecJSONDeserializeDatabaseResultsPreservesOpaqueIDs(t *testing.T) {
+	program, err := CompileAnonymous(`
+String payload = '{"id":"001000000000000001","success":true}';
+System.assertEquals('001000000000000001', ((Database.SaveResult)JSON.deserialize(payload, Database.SaveResult.class)).getId());
+System.assertEquals('001000000000000001', ((Database.DeleteResult)JSON.deserialize(payload, Database.DeleteResult.class)).getId());
+System.assertEquals('001000000000000001', ((Database.EmptyRecycleBinResult)JSON.deserialize(payload, Database.EmptyRecycleBinResult.class)).getId());
+System.assertEquals('001000000000000001', ((Database.MergeResult)JSON.deserialize(payload, Database.MergeResult.class)).getId());
+System.assertEquals('001000000000000001', ((Database.UndeleteResult)JSON.deserialize(payload, Database.UndeleteResult.class)).getId());
+System.assertEquals('001000000000000001', ((Database.UpsertResult)JSON.deserialize('{"id":"001000000000000001","success":true,"created":true}', Database.UpsertResult.class)).getId());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeDuplicateIDCasePrefersCanonicalID(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account canonical = new Account(Name = 'Canonical');
@@ -382,9 +400,7 @@ gen.writeNumber(2);
 gen.writeEndArray();
 gen.writeEndObject();
 String text = gen.getAsString();
-System.assert(text.contains('  "name" : "Acme"'));
-System.assert(text.contains('  "items" : ['));
-System.assert(text.contains('    "x"'));
+System.assertEquals('{\n  "name" : "Acme",\n  "items" : [ "x", 2 ]\n}', text);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -571,7 +587,7 @@ gen.writeFieldName('bad');
 	}
 }
 
-func TestExecJSONGeneratorCloseWithOpenOutputDoesNotForceFinish(t *testing.T) {
+func TestExecJSONGeneratorCloseFinishesOpenOutput(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator emptyGen = JSON.createGenerator(false);
 emptyGen.close();
@@ -591,23 +607,21 @@ try {
 	System.assert(e.getMessage().contains('JSONGenerator is closed'));
 }
 System.assert(caught);
-caught = false;
-try {
-	objectGen.getAsString();
-} catch (JSONException e) {
-	caught = true;
-	System.assertEquals('System.JSONException', e.getTypeName());
-	System.assert(e.getMessage().contains('JSONGenerator cannot close with open JSON containers'));
-}
-System.assert(caught);
+System.assertEquals('{}', objectGen.getAsString());
+System.assert(objectGen.isClosed());
 
 JSONGenerator pendingGen = JSON.createGenerator(false);
-	pendingGen.writeStartObject();
-	pendingGen.writeFieldName('x');
-	System.assertEquals('{"x":', pendingGen.getAsString());
-	pendingGen.writeString('ok');
-pendingGen.writeEndObject();
-System.assertEquals('{"x":"ok"}', pendingGen.getAsString());
+pendingGen.writeStartObject();
+pendingGen.writeFieldName('x');
+System.assertEquals('{"x"}', pendingGen.getAsString());
+System.assert(pendingGen.isClosed());
+
+JSONGenerator completeGen = JSON.createGenerator(false);
+completeGen.writeStartObject();
+completeGen.writeFieldName('x');
+completeGen.writeString('ok');
+completeGen.writeEndObject();
+System.assertEquals('{"x":"ok"}', completeGen.getAsString());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1047,6 +1061,10 @@ Id idValue = JSON.deserialize('"001B000001DVM9t"', Id.class);
 System.assertEquals('001B000001DVM9t', idValue.toString());
 UUID uuidValue = JSON.deserialize('"00112233-4455-6677-8899-aabbccddeeff"', UUID.class);
 System.assertEquals('00112233-4455-6677-8899-aabbccddeeff', uuidValue.toString());
+System.assertEquals('"00112233-4455-6677-8899-aabbccddeeff"', JSON.serialize(uuidValue));
+Map<String, Object> uuidFieldPayload = new Map<String, Object>{ 'Name' => uuidValue };
+Account uuidFieldRoundTrip = (Account) JSON.deserialize(JSON.serialize(uuidFieldPayload), Account.class);
+System.assertEquals(uuidValue.toString(), uuidFieldRoundTrip.Name);
 Blob blobValue = JSON.deserialize('"YWJj"', Blob.class);
 System.assertEquals('abc', blobValue.toString());
 Type listType = Type.forName('List<Integer>');
@@ -1244,7 +1262,7 @@ System.assertEquals(0, nested.get('empty').size());
 	}
 }
 
-func TestExecJSONSerializeApexClassUsesFieldDeclarationOrder(t *testing.T) {
+func TestExecJSONSerializeApexClassUsesSalesforceFieldOrder(t *testing.T) {
 	program, err := CompileAnonymous(`
 OrderedPayload payload = new OrderedPayload();
 payload.parameters = new List<String>{'one'};
@@ -1257,7 +1275,7 @@ payload.started = 'start';
 payload.source = 'Caqh';
 payload.providerId = 'provider';
 payload.id = 'id';
-System.assertEquals('{"parameters":["one"],"failureReason":"bad","failureCode":"Unauthorized","trigger":"Manual","status":"Failed","completed":"done","started":"start","source":"Caqh","providerId":"provider","id":"id"}', JSON.serialize(payload));
+System.assertEquals('{"trigger":"Manual","status":"Failed","started":"start","source":"Caqh","providerId":"provider","parameters":["one"],"id":"id","failureReason":"bad","failureCode":"Unauthorized","completed":"done"}', JSON.serialize(payload));
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -1599,6 +1617,56 @@ Database.DeleteResult deleted = JSON.deserialize('{"success":true,"id":"001B0000
 System.assert(deleted.isSuccess());
 System.assertEquals('001B000001DVM9t', deleted.getId());
 System.assertEquals(0, deleted.getErrors().size());
+
+Database.LeadConvertResult converted = JSON.deserialize('{"success":true,"leadid":"00Q000000000001","accountid":"001000000000001","contactid":"003000000000001","opportunityid":null,"relatedpersonaccountid":"001000000000002","errors":[]}', Database.LeadConvertResult.class);
+System.assert(converted.isSuccess());
+System.assertEquals('00Q000000000001', converted.getLeadId());
+System.assertEquals('001000000000001', converted.getAccountId());
+System.assertEquals('003000000000001', converted.getContactId());
+System.assertEquals(null, converted.getOpportunityId());
+System.assertEquals('001000000000002', converted.getRelatedPersonAccountId());
+System.assertEquals(0, converted.getErrors().size());
+
+Database.LeadConvertResult failedConversion = JSON.deserialize('{"success":false,"leadid":"00Q000000000001","errors":[{"message":"convertedStatus is required","statusCode":"REQUIRED_FIELD_MISSING"}]}', Database.LeadConvertResult.class);
+System.assert(!failedConversion.isSuccess());
+System.assertEquals(1, failedConversion.getErrors().size());
+System.assertEquals('convertedStatus is required', failedConversion.getErrors()[0].getMessage());
+System.assertEquals('REQUIRED_FIELD_MISSING', String.valueOf(failedConversion.getErrors()[0].getStatusCode()));
+
+Database.LeadConvertResult opaqueIds = JSON.deserialize('{"success":true,"leadid":"00Q000000000000001","accountid":"001000000000000001"}', Database.LeadConvertResult.class);
+System.assertEquals('00Q000000000000001', opaqueIds.getLeadId());
+System.assertEquals('001000000000000001', opaqueIds.getAccountId());
+
+Approval.LockResult approvalLocked = JSON.deserialize('{"success":true,"id":"001000000000000001"}', Approval.LockResult.class);
+System.assert(approvalLocked.isSuccess());
+System.assertEquals('001000000000000001', approvalLocked.getId());
+Approval.UnlockResult approvalUnlocked = JSON.deserialize('{"success":true,"id":"001000000000000001"}', Approval.UnlockResult.class);
+System.assertEquals('001000000000000001', approvalUnlocked.getId());
+
+Approval.ProcessResult approvalProcessed = JSON.deserialize('{"success":true,"entityId":"001000000000000001","instanceStatus":"Pending","actorIds":["005000000000001AAA"],"newWorkitemIds":["04i000000000001AAA"],"errors":[]}', Approval.ProcessResult.class);
+System.assert(approvalProcessed.isSuccess());
+System.assertEquals('001000000000000001', approvalProcessed.getEntityId());
+System.assertEquals('Pending', approvalProcessed.getInstanceStatus());
+System.assertEquals(1, approvalProcessed.getActorIds().size());
+System.assertEquals(1, approvalProcessed.getNewWorkitemIds().size());
+System.assertEquals(0, approvalProcessed.getErrors().size());
+
+List<Approval.ProcessResult> failedApproval = JSON.deserialize('[{"success":false,"entityId":"001000000000000001","errors":[{"message":"No applicable approval process was found.","statusCode":"NO_APPLICABLE_PROCESS"}]}]', List<Approval.ProcessResult>.class);
+System.assertEquals(1, failedApproval.size());
+System.assert(!failedApproval[0].isSuccess());
+System.assertEquals('No applicable approval process was found.', failedApproval[0].getErrors()[0].getMessage());
+System.assertEquals('NO_APPLICABLE_PROCESS', String.valueOf(failedApproval[0].getErrors()[0].getStatusCode()));
+
+Database.SaveResult quotedNull = JSON.deserialize('{"success":true,"id":"null"}', Database.SaveResult.class);
+System.assert(quotedNull.isSuccess());
+Boolean quotedNullIdRejected = false;
+try {
+  quotedNull.getId();
+} catch (System.StringException ex) {
+  quotedNullIdRejected = true;
+  System.assertEquals('Invalid id: null', ex.getMessage());
+}
+System.assert(quotedNullIdRejected);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2393,7 +2461,7 @@ try {
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assert(caught.contains('JSONException:JSON.deserializeUntyped invalid JSON input'));
+System.assertEquals('System.JSONException:Unexpected end-of-input within/between OBJECT entries at [line:1, column:21]', caught);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2547,6 +2615,13 @@ try {
 System.assert(caught.contains('JSONException:malformed JSON:'), caught);
 caught = '';
 try {
+	List<Account> decoded = (List<Account>)JSON.deserialize('{"bad: JSON"}', List<Account>.class);
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:Malformed JSON:'), caught);
+caught = '';
+try {
 	Account decoded = JSON.deserializeStrict('{"Name":"First","Name":"Second"}', Account.class);
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
@@ -2560,6 +2635,24 @@ System.assertEquals('', caught);
 	org := testDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONMalformedTypedNestedObjectUsesSalesforceEOFMessage(t *testing.T) {
+	program, err := CompileAnonymous(`
+String caught = '';
+try {
+    List<Account> decoded = (List<Account>)JSON.deserialize('[{"Name":"Acme"', List<Account>.class);
+} catch (JSONException e) {
+    caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:Unexpected end-of-input'), caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
 	}
 }

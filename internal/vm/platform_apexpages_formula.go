@@ -1,12 +1,12 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
-	"regexp"
-	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -29,6 +29,19 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 	case "getRecord":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.getRecord expects 0 arguments")
+		}
+		if pending, ok := receiver.Fields["__glade_add_fields_pending"]; ok && pending.Kind == ValueBool && pending.Bool {
+			projection, err := vm.standardControllerFieldProjection(record, receiver.Fields["fields"])
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			original := cloneValue(receiver.Fields["originalRecord"])
+			vm.mergeStandardControllerProjection(&original, projection, receiver.Fields["fields"], false)
+			vm.mergeStandardControllerProjection(&record, projection, receiver.Fields["fields"], true)
+			receiver.Fields["record"] = record
+			receiver.Fields["originalRecord"] = original
+			receiver.Fields["__glade_add_fields_pending"] = Bool(false)
+			return record, receiver, true, true, nil
 		}
 		return record, receiver, false, true, nil
 	case "save", "quickSave":
@@ -92,6 +105,7 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 			record = cloneValue(original)
 			receiver.Fields["record"] = record
 		}
+		receiver.Fields["__glade_add_fields_pending"] = Bool(false)
 		appendStandardControllerActionTrace(result, "start", method, record, nil)
 		appendStandardControllerActionTrace(result, "complete", method, record, map[string]any{
 			"pageReference": tracePageReference(page),
@@ -108,11 +122,367 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
+		if existing, ok := receiver.Fields["fields"]; ok && existing.Kind == ValueList {
+			for _, field := range fields.List {
+				found := false
+				for _, prior := range existing.List {
+					if strings.EqualFold(strings.TrimSpace(prior.Text), strings.TrimSpace(field.Text)) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					existing.List = append(existing.List, field)
+				}
+			}
+			fields = existing
+		}
 		receiver.Fields["fields"] = fields
+		receiver.Fields["__glade_add_fields_pending"] = Bool(true)
 		return Null, receiver, true, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func (vm *VM) standardControllerFieldProjection(record Value, fields Value) (Value, error) {
+	if vm == nil || vm.Org == nil || record.Kind != ValueObject || fields.Kind != ValueList {
+		return Null, nil
+	}
+	id := sObjectIDFromFields(record.Fields)
+	if id == "" || len(fields.List) == 0 {
+		return Null, nil
+	}
+	objectName, ok := vm.resolveObjectName(record.Type)
+	if !ok {
+		objectName = record.Type
+	}
+	selected := []string{"Id"}
+	for _, field := range fields.List {
+		name := strings.TrimSpace(field.Text)
+		if name != "" {
+			selected = append(selected, name)
+			parts := splitSOQLRelationshipFieldPath(name)
+			for index := 1; index < len(parts); index++ {
+				selected = append(selected, strings.Join(parts[:index], ".")+".Id")
+			}
+		}
+	}
+	if len(selected) == 1 {
+		return Null, nil
+	}
+	query := soql.Query{
+		Object: objectName, Fields: selected,
+		Where: &soql.Condition{Field: "Id", Op: "=", Value: storage.IDValue(id)},
+		Limit: 1, HasLimit: true, SecurityMode: "USER_MODE",
+	}
+	if err := vm.enforceSOQLSecurity(query, ""); err != nil {
+		return Null, err
+	}
+	if err := vm.enforceOrgShapeObjectAvailability(query); err != nil {
+		return Null, err
+	}
+	executionQuery := query
+	executionQuery.SecurityMode = ""
+	rows, err := soql.Execute(*vm.Org, executionQuery)
+	if err != nil {
+		var unsupported *soql.UnsupportedFeatureError
+		if errors.As(err, &unsupported) {
+			return Null, &RuntimeError{Type: "UnsupportedFeature", Message: unsupported.Message}
+		}
+		return Null, newExceptionError("QueryException", err.Error())
+	}
+	rows = vm.applySOQLSharing(query, rows)
+	if len(rows.Records) == 0 {
+		return Null, newExceptionError("QueryException", "List has no rows for assignment to SObject")
+	}
+	projection := vm.vmValueFromRecord(rows.Records[0])
+	for _, field := range fields.List {
+		name := strings.TrimSpace(field.Text)
+		if name == "" {
+			continue
+		}
+		if _, present := standardControllerFieldPathValue(projection, name); present {
+			continue
+		}
+		if _, _, nullParent := standardControllerNullParentPathValue(projection, name); nullParent {
+			continue
+		}
+		parts := splitSOQLRelationshipFieldPath(name)
+		if len(parts) == 0 {
+			continue
+		}
+		if len(parts) > 1 {
+			parent, present := standardControllerFieldPathValue(projection, strings.Join(parts[:len(parts)-1], "."))
+			if !present || parent.Kind != ValueObject {
+				continue
+			}
+		}
+		vm.putVMRecordFieldPath(projection, objectName, name, Null)
+	}
+	return projection, nil
+}
+
+// ReadVisualforceRecord returns the MVP Name/Id projection exposed to the
+// Visualforce HTML standard-controller bridge. It requires an explicit VM
+// execution user present in Org.User and reuses the StandardController USER_MODE
+// read path; the fresh storage record cannot expose query-side system or
+// relationship data.
+func (vm *VM) ReadVisualforceRecord(objectName string, id storage.ID) (storage.Record, bool, error) {
+	if vm == nil || vm.Org == nil {
+		return storage.Record{}, false, fmt.Errorf("Visualforce record read requires an org")
+	}
+	user, err := vm.visualforceExecutionUserRecord()
+	if err != nil {
+		return storage.Record{}, false, err
+	}
+	vm.SetCurrentUser(user)
+	objectName = strings.TrimSpace(objectName)
+	if objectName == "" || id == "" {
+		return storage.Record{}, false, nil
+	}
+	if canonical, ok := vm.resolveObjectName(objectName); ok {
+		objectName = canonical
+	}
+	partial := Object(objectName)
+	partial.Fields["Id"] = platformScalar("Id", string(id))
+	projection, err := vm.standardControllerFieldProjection(partial, List(String("Name")))
+	if err != nil {
+		var thrown *apexThrowError
+		if errors.As(err, &thrown) && strings.EqualFold(thrown.value.Type, "QueryException") &&
+			stringField(thrown.value, "message") == "List has no rows for assignment to SObject" {
+			return storage.Record{}, false, nil
+		}
+		return storage.Record{}, false, err
+	}
+	selected := storage.Record{
+		ID:     id,
+		Object: objectName,
+		Fields: map[string]storage.Value{"Name": storage.NullValue()},
+	}
+	if name, ok := standardControllerFieldPathValue(projection, "Name"); ok {
+		value, err := storageValueFromVM(name)
+		if err != nil {
+			return storage.Record{}, false, err
+		}
+		selected.Fields["Name"] = value
+	}
+	return selected, true, nil
+}
+
+func (vm *VM) visualforceExecutionUserRecord() (storage.Record, error) {
+	user := vm.executionUser
+	if user.Kind != ValueObject || !strings.EqualFold(user.Type, "User") {
+		return storage.Record{}, fmt.Errorf("Visualforce record read requires an explicit execution user")
+	}
+	userID := storage.ID(stringField(user, "Id"))
+	if userID == "" {
+		return storage.Record{}, fmt.Errorf("Visualforce record read requires an execution user ID")
+	}
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+		return storage.Record{}, fmt.Errorf("Visualforce record read does not accept an active test user context")
+	}
+	users, ok := vm.Org.Objects["User"]
+	if !ok {
+		return storage.Record{}, fmt.Errorf("Visualforce execution user is absent from Org.User")
+	}
+	stored, ok := users.Records[userID]
+	if !ok || stored.ID != userID {
+		return storage.Record{}, fmt.Errorf("Visualforce execution user does not exactly match Org.User")
+	}
+	return stored, nil
+}
+
+// VisualforceExecutionUserRecord returns the stored user explicitly bound to
+// this VM. Visualforce globals must not choose a different user from Org.User.
+func (vm *VM) VisualforceExecutionUserRecord() (storage.Record, error) {
+	if vm == nil || vm.Org == nil {
+		return storage.Record{}, fmt.Errorf("Visualforce execution user requires an org")
+	}
+	return vm.visualforceExecutionUserRecord()
+}
+
+func (vm *VM) mergeStandardControllerProjection(record *Value, projection Value, fields Value, preserveEdits bool) {
+	if record == nil || record.Kind != ValueObject || projection.Kind != ValueObject {
+		return
+	}
+	visiblePaths := make([]string, 0, len(fields.List))
+	for _, field := range fields.List {
+		name := strings.TrimSpace(field.Text)
+		if name == "" {
+			continue
+		}
+		if preserveEdits {
+			if parentPath, conflict := standardControllerConflictingAncestor(*record, projection, name); conflict {
+				visiblePaths = append(visiblePaths, parentPath)
+				continue
+			}
+			if parentPath, parentValue, found := standardControllerNullParentPathValue(*record, name); found && vm.standardControllerFieldIsLoadedOrEdited(*record, parentPath, parentValue) {
+				visiblePaths = append(visiblePaths, parentPath)
+				continue
+			}
+		}
+		value, present := standardControllerFieldPathValue(projection, name)
+		if !present {
+			var parentPath string
+			parentPath, value, present = standardControllerNullParentPathValue(projection, name)
+			if !present {
+				continue
+			}
+			name = parentPath
+		}
+		if previous, exists := standardControllerFieldPathValue(*record, name); exists && preserveEdits {
+			if vm.standardControllerFieldIsLoadedOrEdited(*record, name, previous) {
+				visiblePaths = append(visiblePaths, name)
+				continue
+			}
+		}
+		vm.mergeStandardControllerAncestorIDs(record, projection, name)
+		vm.putVMRecordFieldPath(*record, record.Type, name, cloneValue(value))
+		visiblePaths = append(visiblePaths, name)
+	}
+	for _, path := range visiblePaths {
+		vm.markStandardControllerFieldVisible(record, path)
+	}
+}
+
+func standardControllerConflictingAncestor(record Value, projection Value, path string) (string, bool) {
+	parts := splitSOQLRelationshipFieldPath(path)
+	if len(parts) < 2 {
+		return "", false
+	}
+	current, projected := record, projection
+	for index, relationship := range parts[:len(parts)-1] {
+		_, existing, present := objectFieldValue(current, relationship)
+		_, source, selected := objectFieldValue(projected, relationship)
+		if !present || !selected {
+			break
+		}
+		parentPath := strings.Join(parts[:index+1], ".")
+		if isExplicitSObjectField(current, relationship) || isUserSetSObjectFieldAlias(current, relationship) {
+			return parentPath, true
+		}
+		if existing.Kind != ValueObject || source.Kind != ValueObject {
+			break
+		}
+		liveID, storedID := sObjectIDFromFields(existing.Fields), sObjectIDFromFields(source.Fields)
+		if liveID != "" && storedID != "" && !storage.IDsEqual(liveID, storedID) {
+			return parentPath, true
+		}
+		current, projected = existing, source
+	}
+	return "", false
+}
+
+func (vm *VM) mergeStandardControllerAncestorIDs(record *Value, projection Value, path string) {
+	parts := splitSOQLRelationshipFieldPath(path)
+	for index := 1; index < len(parts); index++ {
+		parentPath := strings.Join(parts[:index], ".")
+		projectedID, projected := standardControllerFieldPathValue(projection, parentPath+".Id")
+		if !projected || projectedID.Kind == ValueNull {
+			continue
+		}
+		if currentID, present := standardControllerFieldPathValue(*record, parentPath+".Id"); present && currentID.Kind != ValueNull {
+			continue
+		}
+		vm.putVMRecordFieldPath(*record, record.Type, parentPath+".Id", cloneValue(projectedID))
+	}
+}
+
+func (vm *VM) standardControllerFieldIsLoadedOrEdited(record Value, path string, previous Value) bool {
+	if previous.Kind != ValueNull {
+		return true
+	}
+	parts := splitSOQLRelationshipFieldPath(path)
+	if len(parts) == 0 {
+		return false
+	}
+	parent := record
+	for _, relationship := range parts[:len(parts)-1] {
+		_, nested, ok := objectFieldValue(parent, relationship)
+		if !ok || nested.Kind != ValueObject {
+			return false
+		}
+		parent = nested
+	}
+	leaf := parts[len(parts)-1]
+	return vm.queriedSObjectFieldsIncludes(parent, leaf) || isExplicitSObjectField(parent, leaf) || isUserSetSObjectFieldAlias(parent, leaf)
+}
+
+func (vm *VM) markStandardControllerFieldVisible(record *Value, path string) {
+	if record == nil || record.Kind != ValueObject {
+		return
+	}
+	vm.seedStandardControllerQueriedMarkers(record, splitSOQLRelationshipFieldPath(path))
+	parts := splitSOQLRelationshipFieldPath(path)
+	if len(parts) == 0 {
+		return
+	}
+	markQueriedSObjectField(record, parts[0])
+	if len(parts) > 1 {
+		vm.markQueriedParentRelationshipPath(record, record.Type, parts)
+	}
+}
+
+func (vm *VM) seedStandardControllerQueriedMarkers(record *Value, parts []string) {
+	if record == nil || record.Kind != ValueObject {
+		return
+	}
+	if _, ok := record.Fields[sobjectQueriedFieldsField]; !ok {
+		present := make(map[string]bool)
+		for field, value := range record.Fields {
+			if !isInternalSObjectField(field) && (value.Kind != ValueNull || isExplicitSObjectField(*record, field)) {
+				present[strings.ToLower(field)] = true
+			}
+		}
+		record.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(record.Type, present)
+	}
+	if len(parts) < 2 {
+		return
+	}
+	actual, parent, present := objectFieldValue(*record, parts[0])
+	if present && parent.Kind == ValueObject {
+		vm.seedStandardControllerQueriedMarkers(&parent, parts[1:])
+		record.Fields[actual] = parent
+	}
+}
+
+func standardControllerFieldPathValue(record Value, path string) (Value, bool) {
+	current := record
+	for _, segment := range strings.Split(path, ".") {
+		segment = strings.TrimSpace(segment)
+		if segment == "" {
+			return Null, false
+		}
+		_, next, exists := objectFieldValue(current, segment)
+		if !exists {
+			return Null, false
+		}
+		current = next
+	}
+	return current, true
+}
+
+func standardControllerNullParentPathValue(record Value, path string) (string, Value, bool) {
+	current := record
+	parts := splitSOQLRelationshipFieldPath(path)
+	if len(parts) < 2 {
+		return "", Null, false
+	}
+	for index, segment := range parts[:len(parts)-1] {
+		_, next, exists := objectFieldValue(current, segment)
+		if !exists {
+			return "", Null, false
+		}
+		if next.Kind == ValueNull {
+			return strings.Join(parts[:index+1], "."), next, true
+		}
+		if next.Kind != ValueObject {
+			return "", Null, false
+		}
+		current = next
+	}
+	return "", Null, false
 }
 
 func ensureStandardControllerOriginalRecord(receiver Value, record Value) Value {
@@ -255,8 +625,46 @@ func (vm *VM) callFormulaBuilderMember(receiver Value, method string, args []Val
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("formulaeval.FormulaBuilder.build expects 0 arguments")
 		}
-		if value, ok := receiver.Fields["templateMode"]; ok && value.Kind == ValueBool && value.Bool {
-			return Null, receiver, false, true, unsupportedCallError("formulaeval.FormulaBuilder.parseAsTemplate template evaluation")
+		formula, _ := formulaInstanceText(receiver)
+		templateMode := false
+		if value, ok := receiver.Fields["templateMode"]; ok && value.Kind == ValueBool {
+			templateMode = value.Bool
+		}
+		valid := formula != ""
+		if valid {
+			if templateMode {
+				valid = dml.ValidateFormulaTemplate(formula)
+			} else {
+				valid = dml.ValidateFormula(formula)
+			}
+		}
+		if valid {
+			if contextType, ok := receiver.Fields["contextType"]; ok {
+				typeName := typeValueName(contextType)
+				if isSObjectTypeToken(contextType) {
+					if objectName, ok := sObjectTypeTokenObjectName(contextType); ok {
+						typeName = objectName
+					}
+				}
+				if objectName, ok := vm.resolveObjectName(typeName); ok {
+					if object, exists := vm.Org.Objects[objectName]; exists {
+						if templateMode {
+							valid = dml.ValidateFormulaTemplateForDefinition(formula, object.Definition)
+						} else {
+							valid = dml.ValidateFormulaForDefinition(formula, object.Definition)
+						}
+					}
+				}
+			}
+		}
+		if !valid {
+			return Null, receiver, false, true, newExceptionError("FormulaValidationException", "formula syntax is invalid")
+		}
+		if contextType, ok := receiver.Fields["contextType"]; ok {
+			typeName := typeValueName(contextType)
+			if class, found := vm.lookupClass(typeName); found && !strings.EqualFold(class.Access, "global") && vm.typeMatches(typeName, "TriggerRecord", make(map[string]bool)) {
+				return Null, receiver, false, true, newExceptionError("FormulaValidationException", typeName+" must be global to be used as a formula context")
+			}
 		}
 		instance := Object("formulaeval.FormulaInstance")
 		for field, value := range receiver.Fields {
@@ -291,7 +699,7 @@ func (vm *VM) callFormulaInstanceMember(receiver Value, method string, args []Va
 		formula, _ := formulaInstanceText(receiver)
 		out := Set()
 		out.Type = "Set<String>"
-		for _, field := range formulaReferencedFields(formula) {
+		for _, field := range dml.FormulaReferencedFields(formula, receiver.Fields["templateMode"].Bool) {
 			out.Set = append(out.Set, String(field))
 		}
 		return out, receiver, false, true, nil
@@ -416,7 +824,8 @@ func formulaRecalcFieldError(fieldName, message string) Value {
 }
 
 func (vm *VM) evaluateFormulaInstanceValue(instance Value, context Value, formula string) (Value, bool) {
-	if context.Kind != ValueObject || !vm.isSObjectLikeType(context.Type) || vm.Org == nil {
+	context, formula, ok := vm.formulaSObjectContext(context, formula)
+	if !ok || vm.Org == nil {
 		return Null, false
 	}
 	objectName, ok := vm.resolveObjectName(context.Type)
@@ -429,7 +838,14 @@ func (vm *VM) evaluateFormulaInstanceValue(instance Value, context Value, formul
 		return Null, false
 	}
 	field := storage.Field{APIName: "__formula", Type: formulaReturnFieldType(instance), Formula: formula}
-	value, explicitNull, ok := dml.EvaluateRecordFormulaValueInOrg(formula, field, vm.Org, definition, record)
+	options := dml.FormulaEvaluationOptions{}
+	if value, ok := instance.Fields["treatNumericNullAsZero"]; ok && value.Kind == ValueBool {
+		options.PreserveNumericNull = !value.Bool
+	}
+	if value, ok := instance.Fields["templateMode"]; ok && value.Kind == ValueBool {
+		options.Template = value.Bool
+	}
+	value, explicitNull, ok := dml.EvaluateRecordFormulaValueInOrgWithOptions(formula, field, vm.Org, definition, record, options)
 	if !ok {
 		return Null, false
 	}
@@ -437,6 +853,37 @@ func (vm *VM) evaluateFormulaInstanceValue(instance Value, context Value, formul
 		return Null, true
 	}
 	return vmValueFromStorage(value), true
+}
+
+func (vm *VM) formulaSObjectContext(context Value, formula string) (Value, string, bool) {
+	if context.Kind == ValueObject && vm.isSObjectLikeType(context.Type) {
+		return context, formula, true
+	}
+	if context.Kind != ValueObject {
+		return Null, formula, false
+	}
+	for _, prefix := range []string{"record.", "recordPrior."} {
+		if !strings.Contains(formula, prefix) {
+			continue
+		}
+		fieldName := strings.TrimSuffix(prefix, ".")
+		field, owner, found := vm.lookupReceiverField(context.Type, fieldName)
+		if !found {
+			continue
+		}
+		var value Value
+		var err error
+		if field.Getter != nil {
+			value, err = vm.callGetter(owner, field, context)
+		} else if _, candidate, ok := objectFieldValue(context, fieldName); ok {
+			value = candidate
+		}
+		if err != nil || value.Kind != ValueObject || !vm.isSObjectLikeType(value.Type) {
+			continue
+		}
+		return value, strings.ReplaceAll(formula, prefix, ""), true
+	}
+	return Null, formula, false
 }
 
 func formulaInstanceText(instance Value) (string, bool) {
@@ -474,23 +921,7 @@ func formulaReturnFieldType(instance Value) storage.FieldType {
 }
 
 func formulaReferencedFields(formula string) []string {
-	matches := regexp.MustCompile(`\b[A-Za-z_][A-Za-z0-9_]*(?:__c|__r)?(?:\.[A-Za-z_][A-Za-z0-9_]*(?:__c|__r)?)*\b`).FindAllString(formula, -1)
-	seen := map[string]bool{}
-	out := make([]string, 0, len(matches))
-	for _, match := range matches {
-		upper := strings.ToUpper(match)
-		switch upper {
-		case "AND", "OR", "NOT", "IF", "CASE", "ISBLANK", "ISNULL", "NULL", "TRUE", "FALSE", "TODAY", "NOW", "DATE", "DATETIMEVALUE", "TEXT", "VALUE", "LOWER", "UPPER", "FLOOR", "MOD", "REGEX", "CONTAINS":
-			continue
-		}
-		if seen[strings.ToLower(match)] {
-			continue
-		}
-		seen[strings.ToLower(match)] = true
-		out = append(out, match)
-	}
-	sort.Strings(out)
-	return out
+	return dml.FormulaReferencedFields(formula, false)
 }
 
 func callContinuationMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {

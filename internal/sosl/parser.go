@@ -16,10 +16,11 @@ type Window struct {
 type SearchScope string
 
 const (
-	SearchScopeAll   SearchScope = "ALL FIELDS"
-	SearchScopeName  SearchScope = "NAME FIELDS"
-	SearchScopeEmail SearchScope = "EMAIL FIELDS"
-	SearchScopePhone SearchScope = "PHONE FIELDS"
+	SearchScopeAll     SearchScope = "ALL FIELDS"
+	SearchScopeName    SearchScope = "NAME FIELDS"
+	SearchScopeEmail   SearchScope = "EMAIL FIELDS"
+	SearchScopePhone   SearchScope = "PHONE FIELDS"
+	SearchScopeSidebar SearchScope = "SIDEBAR FIELDS"
 )
 
 type SearchTerm struct {
@@ -40,6 +41,8 @@ type Condition struct {
 	Values      []string
 	ValueIsNull bool
 	Bind        string
+	And         []Condition
+	Or          []Condition
 }
 
 type OrderSpec struct {
@@ -58,6 +61,7 @@ type ReturningObject struct {
 
 type Query struct {
 	Terms             []SearchTerm
+	Expression        *SearchExpression
 	Scope             SearchScope
 	Returning         []ReturningObject
 	Limit             Window
@@ -95,8 +99,14 @@ const (
 	tokenColon
 	tokenEqual
 	tokenNotEqual
+	tokenLess
+	tokenLessEqual
+	tokenGreater
+	tokenGreaterEqual
 	tokenInvalid
 )
+
+const escapedSearchWildcardMarker = "\uE000"
 
 type token struct {
 	kind tokenKind
@@ -118,11 +128,12 @@ func (p *parser) parse() (Query, error) {
 	if err := p.expectKeyword("FIND"); err != nil {
 		return Query{}, err
 	}
-	terms, err := p.parseTerms()
+	terms, expression, err := p.parseTerms()
 	if err != nil {
 		return Query{}, err
 	}
 	query.Terms = terms
+	query.Expression = expression
 	query.Scope = SearchScopeAll
 	if p.acceptKeyword("IN") {
 		var scope SearchScope
@@ -135,6 +146,8 @@ func (p *parser) parse() (Query, error) {
 			scope = SearchScopeEmail
 		case p.acceptKeyword("PHONE"):
 			scope = SearchScopePhone
+		case p.acceptKeyword("SIDEBAR"):
+			scope = SearchScopeSidebar
 		default:
 			return Query{}, p.errorf("expected SOSL search scope")
 		}
@@ -185,57 +198,40 @@ func (p *parser) parse() (Query, error) {
 	return query, nil
 }
 
-func (p *parser) parseTerms() ([]SearchTerm, error) {
+func (p *parser) parseTerms() ([]SearchTerm, *SearchExpression, error) {
 	var raw []string
 	switch p.peek().kind {
 	case tokenLBrace:
 		p.next()
 		for p.peek().kind != tokenRBrace && p.peek().kind != tokenEOF {
 			tok := p.next()
-			if tok.kind != tokenWord && tok.kind != tokenString {
-				return nil, p.errorf("expected SOSL search term")
+			switch tok.kind {
+			case tokenWord, tokenLParen, tokenRParen:
+				raw = append(raw, tok.text)
+			case tokenString:
+				return nil, nil, &UnsupportedFeatureError{Message: "SOSL quoted search phrase"}
+			default:
+				return nil, nil, p.errorf("expected SOSL search term")
 			}
-			raw = append(raw, strings.Fields(tok.text)...)
 		}
 		if !p.accept(tokenRBrace) {
-			return nil, p.errorf("unterminated SOSL search term")
+			return nil, nil, p.errorf("unterminated SOSL search term")
 		}
 	case tokenString:
-		raw = strings.Fields(p.next().text)
+		raw = []string{p.next().text}
 	case tokenColon:
 		p.next()
 		bind := p.next()
 		if bind.kind != tokenWord {
-			return nil, p.errorf("expected FIND bind")
+			return nil, nil, p.errorf("expected FIND bind")
 		}
 		raw = []string{":" + bind.text}
 	case tokenWord:
 		raw = []string{p.next().text}
 	default:
-		return nil, p.errorf("expected FIND search term")
+		return nil, nil, p.errorf("expected FIND search term")
 	}
-	terms := make([]SearchTerm, 0, len(raw))
-	for _, item := range raw {
-		item = strings.TrimSpace(item)
-		if item == "" {
-			continue
-		}
-		if strings.EqualFold(item, "AND") || strings.EqualFold(item, "OR") || strings.EqualFold(item, "NOT") {
-			return nil, &UnsupportedFeatureError{Message: fmt.Sprintf("SOSL boolean search operator %s", strings.ToUpper(item))}
-		}
-		if strings.Contains(item, "?") {
-			return nil, &UnsupportedFeatureError{Message: "SOSL fuzzy search operator ?"}
-		}
-		prefix := strings.HasSuffix(item, "*")
-		item = strings.TrimSuffix(item, "*")
-		if item != "" {
-			terms = append(terms, SearchTerm{Text: item, Prefix: prefix})
-		}
-	}
-	if len(terms) == 0 {
-		return nil, p.errorf("empty FIND search term")
-	}
-	return terms, nil
+	return parseSearchExpression(strings.Join(raw, " "))
 }
 
 func (p *parser) parseReturning(query *Query) error {
@@ -324,14 +320,81 @@ func (p *parser) parseSelectExpr() (SelectExpr, error) {
 	if !p.accept(tokenRParen) {
 		return SelectExpr{}, p.errorf("expected end of %s expression", field.text)
 	}
-	alias := p.next()
-	if alias.kind != tokenWord {
+	alias := argument.text
+	if p.peek().kind == tokenWord && !isReturningClauseKeyword(p.peek().text) {
+		alias = p.next().text
+	} else if !strings.EqualFold(field.text, "toLabel") {
 		return SelectExpr{}, p.errorf("expected alias for %s", field.text)
 	}
-	return SelectExpr{Field: argument.text, Func: strings.ToUpper(field.text), Alias: alias.text}, nil
+	return SelectExpr{Field: argument.text, Func: strings.ToUpper(field.text), Alias: alias}, nil
+}
+
+func isReturningClauseKeyword(text string) bool {
+	switch strings.ToUpper(strings.TrimSpace(text)) {
+	case "WHERE", "ORDER", "LIMIT", "OFFSET", "WITH":
+		return true
+	default:
+		return false
+	}
 }
 
 func (p *parser) parseCondition() (Condition, error) {
+	return p.parseConditionOr()
+}
+
+func (p *parser) parseConditionOr() (Condition, error) {
+	first, err := p.parseConditionAnd()
+	if err != nil {
+		return Condition{}, err
+	}
+	conditions := []Condition{first}
+	for p.acceptKeyword("OR") {
+		condition, err := p.parseConditionAnd()
+		if err != nil {
+			return Condition{}, err
+		}
+		conditions = append(conditions, condition)
+	}
+	if len(conditions) == 1 {
+		return first, nil
+	}
+	return Condition{Or: conditions}, nil
+}
+
+func (p *parser) parseConditionAnd() (Condition, error) {
+	first, err := p.parseConditionPrimary()
+	if err != nil {
+		return Condition{}, err
+	}
+	conditions := []Condition{first}
+	for p.acceptKeyword("AND") {
+		condition, err := p.parseConditionPrimary()
+		if err != nil {
+			return Condition{}, err
+		}
+		conditions = append(conditions, condition)
+	}
+	if len(conditions) == 1 {
+		return first, nil
+	}
+	return Condition{And: conditions}, nil
+}
+
+func (p *parser) parseConditionPrimary() (Condition, error) {
+	if p.accept(tokenLParen) {
+		condition, err := p.parseConditionOr()
+		if err != nil {
+			return Condition{}, err
+		}
+		if !p.accept(tokenRParen) {
+			return Condition{}, p.errorf("expected end of SOSL WHERE group")
+		}
+		return condition, nil
+	}
+	return p.parseConditionLeaf()
+}
+
+func (p *parser) parseConditionLeaf() (Condition, error) {
 	field := p.next()
 	if field.kind != tokenWord {
 		return Condition{}, p.errorf("expected SOSL WHERE field")
@@ -343,6 +406,14 @@ func (p *parser) parseCondition() (Condition, error) {
 		operation = "="
 	case operator.kind == tokenNotEqual:
 		operation = "!="
+	case operator.kind == tokenLess:
+		operation = "<"
+	case operator.kind == tokenLessEqual:
+		operation = "<="
+	case operator.kind == tokenGreater:
+		operation = ">"
+	case operator.kind == tokenGreaterEqual:
+		operation = ">="
 	case operator.kind == tokenWord && strings.EqualFold(operator.text, "LIKE"):
 		operation = "LIKE"
 	case operator.kind == tokenWord && strings.EqualFold(operator.text, "IN"):
@@ -579,6 +650,22 @@ func lex(input string) []token {
 				tokens = append(tokens, token{kind: tokenInvalid, text: "!"})
 				i++
 			}
+		case '<':
+			if i+1 < len(input) && input[i+1] == '=' {
+				tokens = append(tokens, token{kind: tokenLessEqual, text: "<="})
+				i += 2
+			} else {
+				tokens = append(tokens, token{kind: tokenLess, text: "<"})
+				i++
+			}
+		case '>':
+			if i+1 < len(input) && input[i+1] == '=' {
+				tokens = append(tokens, token{kind: tokenGreaterEqual, text: ">="})
+				i += 2
+			} else {
+				tokens = append(tokens, token{kind: tokenGreater, text: ">"})
+				i++
+			}
 		case '\'', '"':
 			quote := input[i]
 			start := i + 1
@@ -586,6 +673,22 @@ func lex(input string) []token {
 			i++
 			var value strings.Builder
 			for i < len(input) {
+				if input[i] == '\\' && i+1 < len(input) {
+					if input[i+1] == '\\' {
+						value.WriteString(input[start:i])
+						value.WriteByte('\\')
+						i += 2
+						start = i
+						continue
+					}
+					if input[i+1] == quote {
+						value.WriteString(input[start:i])
+						value.WriteByte(quote)
+						i += 2
+						start = i
+						continue
+					}
+				}
 				if input[i] == quote {
 					if i+1 < len(input) && input[i+1] == quote {
 						value.WriteString(input[start:i])
@@ -609,21 +712,38 @@ func lex(input string) []token {
 			tokens = append(tokens, token{kind: tokenWord, text: "?"})
 			i++
 		default:
-			if isDigit(input[i]) {
+			if isDigit(input[i]) || ((input[i] == '-' || input[i] == '+') && i+1 < len(input) && isDigit(input[i+1])) {
 				start := i
+				if input[i] == '-' || input[i] == '+' {
+					i++
+				}
 				for i < len(input) && isDigit(input[i]) {
 					i++
+				}
+				if i+1 < len(input) && input[i] == '.' && isDigit(input[i+1]) {
+					i++
+					for i < len(input) && isDigit(input[i]) {
+						i++
+					}
 				}
 				tokens = append(tokens, token{kind: tokenNumber, text: input[start:i]})
 				continue
 			}
-			if isWordPart(input[i]) {
-				start := i
-				i++
-				for i < len(input) && isWordPart(input[i]) {
+			if isWordPart(input[i]) || (input[i] == '\\' && i+1 < len(input) && input[i+1] == '*') {
+				var word strings.Builder
+				for i < len(input) {
+					if input[i] == '\\' && i+1 < len(input) && input[i+1] == '*' {
+						word.WriteString(`\*`)
+						i += 2
+						continue
+					}
+					if !isWordPart(input[i]) {
+						break
+					}
+					word.WriteByte(input[i])
 					i++
 				}
-				tokens = append(tokens, token{kind: tokenWord, text: input[start:i]})
+				tokens = append(tokens, token{kind: tokenWord, text: word.String()})
 				continue
 			}
 			tokens = append(tokens, token{kind: tokenInvalid, text: string(input[i])})
