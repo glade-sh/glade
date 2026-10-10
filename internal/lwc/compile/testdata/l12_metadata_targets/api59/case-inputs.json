@@ -1,0 +1,41 @@
+[
+  {
+    "id": "c_control_metadata_target_owned_missing",
+    "group": "envelope and errors",
+    "kind": "compile",
+    "scenario": "boundary",
+    "expect": "?",
+    "basis": "org",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyUiGraphql extends LightningElement {}",
+    "template": "<template><span>target control</span></template>",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__OwnedMissing</target></targets>",
+    "minimal_bundle": true,
+    "isolated_deploy": true
+  },
+  {
+    "id": "c_control_metadata_target_bogus",
+    "group": "envelope and errors",
+    "kind": "compile",
+    "scenario": "boundary",
+    "expect": "?",
+    "basis": "org",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyUiGraphql extends LightningElement {}",
+    "template": "<template><span>target control</span></template>",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__Bogus</target></targets>",
+    "minimal_bundle": true,
+    "isolated_deploy": true
+  },
+  {
+    "id": "c_control_metadata_target_tab",
+    "group": "envelope and errors",
+    "kind": "compile",
+    "scenario": "boundary",
+    "expect": "?",
+    "basis": "org",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyUiGraphql extends LightningElement {}",
+    "template": "<template><span>target control</span></template>",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__Tab</target></targets>",
+    "minimal_bundle": true,
+    "isolated_deploy": true
+  }
+]

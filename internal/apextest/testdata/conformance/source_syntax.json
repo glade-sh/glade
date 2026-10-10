@@ -1,0 +1,1797 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "oracle": {
+    "rows": 225,
+    "namedControls": {
+      "cases": {
+        "N001": "COMPILE_ERROR\tline 6: Duplicate variable: x",
+        "N002": "compiled",
+        "N003": "compiled"
+      }
+    },
+    "reviewControls": {
+      "rows": 17
+    }
+  },
+  "cases": [
+    {
+      "id": "R001",
+      "code": "Integer a=7; r=a;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/a"
+    },
+    {
+      "id": "R002",
+      "code": "Integer A=7; r=A;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/A"
+    },
+    {
+      "id": "R003",
+      "code": "Integer a1=7; r=a1;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/a1"
+    },
+    {
+      "id": "R004",
+      "code": "Integer a_1=7; r=a_1;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/a_1"
+    },
+    {
+      "id": "R005",
+      "code": "Integer snake_case=7; r=snake_case;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/snake_case"
+    },
+    {
+      "id": "R006",
+      "code": "Integer camelCase=7; r=camelCase;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/camelCase"
+    },
+    {
+      "id": "R007",
+      "code": "Integer ALL_CAPS=7; r=ALL_CAPS;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/ALL_CAPS"
+    },
+    {
+      "id": "R008",
+      "code": "Integer _leading=7; r=_leading;",
+      "expected": "COMPILE_ERROR\tline 13: Invalid character in identifier: _leading",
+      "compile": false,
+      "group": "identifiers/normal/_leading"
+    },
+    {
+      "id": "R009",
+      "code": "Integer __double=7; r=__double;",
+      "expected": "COMPILE_ERROR\tline 13: Invalid character in identifier: __double",
+      "compile": false,
+      "group": "identifiers/normal/__double"
+    },
+    {
+      "id": "R010",
+      "code": "Integer trailing_=7; r=trailing_;",
+      "expected": "COMPILE_ERROR\tline 13: Invalid character in identifier: trailing_",
+      "compile": false,
+      "group": "identifiers/normal/trailing_"
+    },
+    {
+      "id": "R011",
+      "code": "Integer xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=7; r=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+      "id": "R012",
+      "code": "Integer record=7; r=record;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/record"
+    },
+    {
+      "id": "R013",
+      "code": "Integer var=7; r=var;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/var"
+    },
+    {
+      "id": "R014",
+      "code": "Integer yield=7; r=yield;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/yield"
+    },
+    {
+      "id": "R015",
+      "code": "Integer async=7; r=async;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/async"
+    },
+    {
+      "id": "R016",
+      "code": "Integer await=7; r=await;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/await"
+    },
+    {
+      "id": "R017",
+      "code": "Integer value=7; r=value;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/value"
+    },
+    {
+      "id": "R018",
+      "code": "Integer result=7; r=result;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/result"
+    },
+    {
+      "id": "R019",
+      "code": "Integer get=7; r=get;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/get"
+    },
+    {
+      "id": "R020",
+      "code": "Integer set=7; r=set;",
+      "expected": "COMPILE_ERROR\tline 22: Identifier name is reserved: set",
+      "compile": false,
+      "group": "identifiers/normal/set"
+    },
+    {
+      "id": "R021",
+      "code": "Integer from=7; r=from;",
+      "expected": "COMPILE_ERROR\tline 26: Unexpected token 'from'.",
+      "compile": false,
+      "group": "identifiers/normal/from"
+    },
+    {
+      "id": "R022",
+      "code": "Integer where=7; r=where;",
+      "expected": "COMPILE_ERROR\tline 26: Unexpected token 'where'.",
+      "compile": false,
+      "group": "identifiers/normal/where"
+    },
+    {
+      "id": "R023",
+      "code": "Integer select=7; r=select;",
+      "expected": "COMPILE_ERROR\tline 26: Unexpected token 'select'.",
+      "compile": false,
+      "group": "identifiers/normal/select"
+    },
+    {
+      "id": "R024",
+      "code": "Integer order=7; r=order;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/normal/order"
+    },
+    {
+      "id": "R025",
+      "code": "Integer limit=7; r=limit;",
+      "expected": "COMPILE_ERROR\tline 27: Expecting ';' but was: 'limit'",
+      "compile": false,
+      "group": "identifiers/normal/limit"
+    },
+    {
+      "id": "R026",
+      "code": "Integer MixedCase=7; r=mixedcase;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/case-and-scope"
+    },
+    {
+      "id": "R027",
+      "code": "Integer x=7; {Integer y=8; r=x+y;}",
+      "expected": "15",
+      "compile": false,
+      "group": "identifiers/case-and-scope"
+    },
+    {
+      "id": "R028",
+      "code": "Integer x=7; {r=x;} {Integer y=8; r=y;}",
+      "expected": "8",
+      "compile": false,
+      "group": "identifiers/case-and-scope"
+    },
+    {
+      "id": "R029",
+      "code": "Integer x=7; /* identifier in comment: class */ r=x;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/case-and-scope"
+    },
+    {
+      "id": "R030",
+      "code": "iNtEgEr x=7; r=x;",
+      "expected": "7",
+      "compile": false,
+      "group": "identifiers/case-and-scope"
+    },
+    {
+      "id": "R031",
+      "code": "Boolean x=TrUe; r=x;",
+      "expected": "true",
+      "compile": false,
+      "group": "identifiers/case-and-scope"
+    },
+    {
+      "id": "R032",
+      "code": "Boolean x=FaLsE; r=x;",
+      "expected": "false",
+      "compile": false,
+      "group": "identifiers/case-and-scope"
+    },
+    {
+      "id": "R033",
+      "code": "Object x=NuLl; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "identifiers/case-and-scope"
+    },
+    {
+      "id": "R034",
+      "code": "Object x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/Object"
+    },
+    {
+      "id": "R035",
+      "code": "Boolean x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/Boolean"
+    },
+    {
+      "id": "R036",
+      "code": "String x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/String"
+    },
+    {
+      "id": "R037",
+      "code": "Integer x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/Integer"
+    },
+    {
+      "id": "R038",
+      "code": "Long x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/Long"
+    },
+    {
+      "id": "R039",
+      "code": "Double x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/Double"
+    },
+    {
+      "id": "R040",
+      "code": "Decimal x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/Decimal"
+    },
+    {
+      "id": "R041",
+      "code": "Id x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/Id"
+    },
+    {
+      "id": "R042",
+      "code": "Date x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/Date"
+    },
+    {
+      "id": "R043",
+      "code": "Datetime x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/Datetime"
+    },
+    {
+      "id": "R044",
+      "code": "Time x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/Time"
+    },
+    {
+      "id": "R045",
+      "code": "Blob x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/Blob"
+    },
+    {
+      "id": "R046",
+      "code": "Account x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/Account"
+    },
+    {
+      "id": "R047",
+      "code": "List<String> x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/List<String>"
+    },
+    {
+      "id": "R048",
+      "code": "Set<String> x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/Set<String>"
+    },
+    {
+      "id": "R049",
+      "code": "Map<String,String> x=null; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/typed-null/Map<String,String>"
+    },
+    {
+      "id": "R050",
+      "code": "r=true;",
+      "expected": "true",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R051",
+      "code": "r=false;",
+      "expected": "false",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R052",
+      "code": "r=null;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R053",
+      "code": "Boolean x=true; Object y=x; r=y instanceof Boolean;",
+      "expected": "true",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R054",
+      "code": "Object x=false; r=(Boolean)x;",
+      "expected": "false",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R055",
+      "code": "Object x=null; r=(Boolean)x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R056",
+      "code": "Object x=null; r=(Account)x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R057",
+      "code": "Object x=null; r=(List<String>)x;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R058",
+      "code": "r=new List<String>{}.size();",
+      "expected": "0",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R059",
+      "code": "r=new List<String>{'a',null,'b'}.size();",
+      "expected": "3",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R060",
+      "code": "r=new List<Boolean>{true,false,null}.size();",
+      "expected": "3",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R061",
+      "code": "r=new Set<String>{}.size();",
+      "expected": "0",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R062",
+      "code": "r=new Set<String>{'a',null,'a'}.size();",
+      "expected": "2",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R063",
+      "code": "r=new Map<String,String>{}.size();",
+      "expected": "0",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R064",
+      "code": "r=new Map<String,String>{'a'=>'b','c'=>null}.size();",
+      "expected": "2",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R065",
+      "code": "r=new Map<String,String>{null=>'b'}.containsKey(null);",
+      "expected": "true",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R066",
+      "code": "r=new List<List<String>>{new List<String>{'a'}}[0][0];",
+      "expected": "a",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R067",
+      "code": "r=new Boolean[]{true,false,null}.size();",
+      "expected": "3",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R068",
+      "code": "r=new String[]{}.size();",
+      "expected": "0",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R069",
+      "code": "r=Boolean.class.getName();",
+      "expected": "Boolean",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R070",
+      "code": "r=Account.class.getName();",
+      "expected": "Account",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R071",
+      "code": "r=List<String>.class.getName();",
+      "expected": "COMPILE_ERROR\tline 26: Unexpected token 'List'.",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R072",
+      "code": "r=Map<String,Account>.class.getName();",
+      "expected": "COMPILE_ERROR\tline 26: Unexpected token 'Map'.",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R073",
+      "code": "Account x=new Account(Name='Syntax'); r=x.Name;",
+      "expected": "Syntax",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R074",
+      "code": "Account x=new Account(Name=null); r=x.Name;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R075",
+      "code": "Account x=new Account(); r=x.Id;",
+      "expected": "null",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R076",
+      "code": "List<String> x=null; r=x[0];",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R077",
+      "code": "Object x=true; r=(Account)x;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Boolean to Account",
+      "compile": false,
+      "group": "literals/forms-null-conversion-exception"
+    },
+    {
+      "id": "R078",
+      "code": "; r=true;",
+      "expected": "COMPILE_ERROR\tline 31: Expecting '}' but was: ';'",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept",
+      "namedExpected": "COMPILE_ERROR\tline 6: Unexpected token 'class'."
+    },
+    {
+      "id": "R079",
+      "code": ";; r=true;",
+      "expected": "COMPILE_ERROR\tline 31: Expecting '}' but was: ';'",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept",
+      "namedExpected": "COMPILE_ERROR\tline 6: Unexpected token 'class'."
+    },
+    {
+      "id": "R080",
+      "code": "{} r=true;",
+      "expected": "true",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R081",
+      "code": "{;} r=true;",
+      "expected": "COMPILE_ERROR\tline 32: Extra '}', at ';'.",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept",
+      "namedExpected": "COMPILE_ERROR\tline 6: Unexpected token 'class'."
+    },
+    {
+      "id": "R082",
+      "code": "{ { r=true; } }",
+      "expected": "true",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R083",
+      "code": "Integer x; r=x;",
+      "expected": "null",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R084",
+      "code": "Integer x=1,y=2; r=x+y;",
+      "expected": "3",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R085",
+      "code": "Integer x=1,y,z=3; r=String.valueOf(y)+z;",
+      "expected": "null3",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R086",
+      "code": "final Integer x=1; r=x;",
+      "expected": "1",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R087",
+      "code": "final Integer x; x=1; r=x;",
+      "expected": "1",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R088",
+      "code": "Integer[] x=new Integer[]{1,2}; r=x.size();",
+      "expected": "2",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R089",
+      "code": "List < String > x=new List < String >(); r=x.size();",
+      "expected": "0",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R090",
+      "code": "Map<String,List<String>> x=new Map<String,List<String>>(); r=x.size();",
+      "expected": "0",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R091",
+      "code": "if(true) r=1; else r=2;",
+      "expected": "1",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R092",
+      "code": "if(true) if(false) r=1; else r=2;",
+      "expected": "2",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R093",
+      "code": "if(false) {r=1;} else if(true) {r=2;} else {r=3;}",
+      "expected": "2",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R094",
+      "code": "Integer x=0; while(x<1) x++; r=x;",
+      "expected": "1",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R095",
+      "code": "Integer x=0; do x++; while(x<1); r=x;",
+      "expected": "COMPILE_ERROR\tline 45: Missing '{' at 'x'",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept",
+      "namedExpected": "COMPILE_ERROR\tline 6: Unexpected token 'class'."
+    },
+    {
+      "id": "R096",
+      "code": "Integer x=0; for(Integer i=0;i<1;i++) x++; r=x;",
+      "expected": "1",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R097",
+      "code": "Integer x=0; for(;x<1;) x++; r=x;",
+      "expected": "1",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R098",
+      "code": "Integer x=0; for(;;){x++;break;} r=x;",
+      "expected": "1",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R099",
+      "code": "String x=''; for(String y:new List<String>{'a'}) x+=y; r=x;",
+      "expected": "a",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R100",
+      "code": "Integer x=0; while(true){x++;break;} r=x;",
+      "expected": "1",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R101",
+      "code": "Integer x=0; for(Integer i=0;i<2;i++){if(i==0)continue;x++;} r=x;",
+      "expected": "1",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R102",
+      "code": "try {r=true;} catch(Exception e){r=false;}",
+      "expected": "true",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R103",
+      "code": "try {r=true;} finally {r=false;}",
+      "expected": "false",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R104",
+      "code": "try {r=true;} catch(Exception e){r=false;} finally {r=null;}",
+      "expected": "null",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R105",
+      "code": "try {throw new IllegalArgumentException('syntax');} catch(IllegalArgumentException e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "expected": "System.IllegalArgumentException|syntax",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R106",
+      "code": "try {String x=null; x.length();} catch(NullPointerException e){r=e.getTypeName();} catch(Exception e){r=e.getTypeName();}",
+      "expected": "System.NullPointerException",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R107",
+      "code": "switch on 1 {when 1 {r=true;} when else {r=false;}}",
+      "expected": "true",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R108",
+      "code": "switch on 'x' {when 'x' {r=true;} when else {r=false;}}",
+      "expected": "true",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R109",
+      "code": "Integer x=null; switch on x {when null {r=true;} when else {r=false;}}",
+      "expected": "true",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R110",
+      "code": "r = /*before*/ true /*after*/;",
+      "expected": "true",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R111",
+      "code": "Integer/*type*/x/*name*/=/*value*/1; r=x;",
+      "expected": "1",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R112",
+      "code": "/* class X { } */ r=true;",
+      "expected": "true",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R113",
+      "code": "r=(true);",
+      "expected": "true",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R114",
+      "code": "r=((Boolean)null);",
+      "expected": "null",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R115",
+      "code": "r=new List<String> /*between*/ {null}.size();",
+      "expected": "1",
+      "compile": false,
+      "group": "grammar/statements-and-declarations/accept"
+    },
+    {
+      "id": "R116",
+      "code": "Integer x=null; r=x ?? 7;",
+      "expected": "7",
+      "compile": false,
+      "group": "api-gates/source-constructs"
+    },
+    {
+      "id": "R117",
+      "code": "String x=null; r=x?.length();",
+      "expected": "null",
+      "compile": false,
+      "group": "api-gates/source-constructs"
+    },
+    {
+      "id": "R118",
+      "code": "List<String> x=null; r=x?.size();",
+      "expected": "null",
+      "compile": false,
+      "group": "api-gates/source-constructs"
+    },
+    {
+      "id": "R119",
+      "code": "Integer x=null,y=null; r=x ?? y ?? 7;",
+      "expected": "7",
+      "compile": false,
+      "group": "api-gates/source-constructs"
+    },
+    {
+      "id": "R120",
+      "code": "Account x=null; r=x?.Name ?? 'fallback';",
+      "expected": "fallback",
+      "compile": false,
+      "group": "api-gates/source-constructs"
+    },
+    {
+      "id": "R121",
+      "code": "r=(new List<String>{null})[0] ?? 'fallback';",
+      "expected": "fallback",
+      "compile": false,
+      "group": "api-gates/source-constructs"
+    },
+    {
+      "id": "R122",
+      "code": "Iterable<String> x=new List<String>(); Integer n=0; for(String y:x){n++;} r=n;",
+      "expected": "0",
+      "compile": false,
+      "group": "api-gates/source-constructs"
+    },
+    {
+      "id": "R123",
+      "code": "Iterator<String> x=new List<String>().iterator(); r=x.hasNext();",
+      "expected": "false",
+      "compile": false,
+      "group": "api-gates/source-constructs"
+    },
+    {
+      "id": "C001",
+      "code": "Integer class=7;\npq.out('C001','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'class'.",
+      "compile": true,
+      "group": "identifiers/reserved/class"
+    },
+    {
+      "id": "C002",
+      "code": "Integer interface=7;\npq.out('C002','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'interface'.",
+      "compile": true,
+      "group": "identifiers/reserved/interface"
+    },
+    {
+      "id": "C003",
+      "code": "Integer enum=7;\npq.out('C003','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'enum'.",
+      "compile": true,
+      "group": "identifiers/reserved/enum"
+    },
+    {
+      "id": "C004",
+      "code": "Integer extends=7;\npq.out('C004','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'extends'.",
+      "compile": true,
+      "group": "identifiers/reserved/extends"
+    },
+    {
+      "id": "C005",
+      "code": "Integer implements=7;\npq.out('C005','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'implements'.",
+      "compile": true,
+      "group": "identifiers/reserved/implements"
+    },
+    {
+      "id": "C006",
+      "code": "Integer public=7;\npq.out('C006','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'public'.",
+      "compile": true,
+      "group": "identifiers/reserved/public"
+    },
+    {
+      "id": "C007",
+      "code": "Integer private=7;\npq.out('C007','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'private'.",
+      "compile": true,
+      "group": "identifiers/reserved/private"
+    },
+    {
+      "id": "C008",
+      "code": "Integer static=7;\npq.out('C008','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'static'.",
+      "compile": true,
+      "group": "identifiers/reserved/static"
+    },
+    {
+      "id": "C009",
+      "code": "Integer final=7;\npq.out('C009','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'final'.",
+      "compile": true,
+      "group": "identifiers/reserved/final"
+    },
+    {
+      "id": "C010",
+      "code": "Integer new=7;\npq.out('C010','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'new'.",
+      "compile": true,
+      "group": "identifiers/reserved/new"
+    },
+    {
+      "id": "C011",
+      "code": "Integer this=7;\npq.out('C011','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'this'.",
+      "compile": true,
+      "group": "identifiers/reserved/this"
+    },
+    {
+      "id": "C012",
+      "code": "Integer super=7;\npq.out('C012','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'super'.",
+      "compile": true,
+      "group": "identifiers/reserved/super"
+    },
+    {
+      "id": "C013",
+      "code": "Integer return=7;\npq.out('C013','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'return'.",
+      "compile": true,
+      "group": "identifiers/reserved/return"
+    },
+    {
+      "id": "C014",
+      "code": "Integer if=7;\npq.out('C014','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'if'.",
+      "compile": true,
+      "group": "identifiers/reserved/if"
+    },
+    {
+      "id": "C015",
+      "code": "Integer else=7;\npq.out('C015','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'else'.",
+      "compile": true,
+      "group": "identifiers/reserved/else"
+    },
+    {
+      "id": "C016",
+      "code": "Integer for=7;\npq.out('C016','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'for'.",
+      "compile": true,
+      "group": "identifiers/reserved/for"
+    },
+    {
+      "id": "C017",
+      "code": "Integer while=7;\npq.out('C017','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'while'.",
+      "compile": true,
+      "group": "identifiers/reserved/while"
+    },
+    {
+      "id": "C018",
+      "code": "Integer try=7;\npq.out('C018','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'try'.",
+      "compile": true,
+      "group": "identifiers/reserved/try"
+    },
+    {
+      "id": "C019",
+      "code": "Integer catch=7;\npq.out('C019','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'catch'.",
+      "compile": true,
+      "group": "identifiers/reserved/catch"
+    },
+    {
+      "id": "C020",
+      "code": "Integer throw=7;\npq.out('C020','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'throw'.",
+      "compile": true,
+      "group": "identifiers/reserved/throw"
+    },
+    {
+      "id": "C021",
+      "code": "Integer null=7;\npq.out('C021','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'null'.",
+      "compile": true,
+      "group": "identifiers/reserved/null"
+    },
+    {
+      "id": "C022",
+      "code": "Integer true=7;\npq.out('C022','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'true'.",
+      "compile": true,
+      "group": "identifiers/reserved/true"
+    },
+    {
+      "id": "C023",
+      "code": "Integer switch=7;\npq.out('C023','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Identifier name is reserved: switch",
+      "compile": true,
+      "group": "identifiers/reserved/switch"
+    },
+    {
+      "id": "C024",
+      "code": "Integer when=7;\npq.out('C024','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Identifier name is reserved: when",
+      "compile": true,
+      "group": "identifiers/reserved/when"
+    },
+    {
+      "id": "C025",
+      "code": "Integer 1name=7;\npq.out('C025','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token '1'.",
+      "compile": true,
+      "group": "identifiers/boundary"
+    },
+    {
+      "id": "C026",
+      "code": "Integer dollar$name=7;\npq.out('C026','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Invalid character in identifier: dollar$name",
+      "compile": true,
+      "group": "identifiers/boundary"
+    },
+    {
+      "id": "C027",
+      "code": "Integer café=7;\npq.out('C027','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Invalid character in identifier: café",
+      "compile": true,
+      "group": "identifiers/boundary"
+    },
+    {
+      "id": "C028",
+      "code": "Integer x=1; Integer X=2;\npq.out('C028','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Duplicate field: X",
+      "compile": true,
+      "group": "identifiers/boundary"
+    },
+    {
+      "id": "C029",
+      "code": "Integer x=1; {Integer x=2;}\npq.out('C029','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "identifiers/boundary",
+      "namedExpected": "COMPILE_ERROR\tline 6: Duplicate variable: x",
+      "namedControl": "N001"
+    },
+    {
+      "id": "C030",
+      "code": "{Integer x=1;} Integer y=x;\npq.out('C030','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: x",
+      "compile": true,
+      "group": "identifiers/boundary"
+    },
+    {
+      "id": "C031",
+      "code": "Database.Cursor x=null;\npq.out('C031','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "api-gates/type-and-statement-artifacts"
+    },
+    {
+      "id": "C032",
+      "code": "Database.PaginationCursor x=null;\npq.out('C032','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "api-gates/type-and-statement-artifacts"
+    },
+    {
+      "id": "C033",
+      "code": "System.SoqlStubProvider x=null;\npq.out('C033','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "api-gates/type-and-statement-artifacts"
+    },
+    {
+      "id": "C034",
+      "code": "Comparator<String> x=null;\npq.out('C034','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "api-gates/type-and-statement-artifacts"
+    },
+    {
+      "id": "C035",
+      "code": "System.Comparator<String> x=null;\npq.out('C035','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "api-gates/type-and-statement-artifacts"
+    },
+    {
+      "id": "C036",
+      "code": "Iterable<String> x=new List<String>();\npq.out('C036','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "api-gates/type-and-statement-artifacts"
+    },
+    {
+      "id": "C037",
+      "code": "AccessLevel x=AccessLevel.USER_MODE;\npq.out('C037','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "api-gates/type-and-statement-artifacts"
+    },
+    {
+      "id": "C038",
+      "code": "AccessLevel x=AccessLevel.SYSTEM_MODE;\npq.out('C038','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "api-gates/type-and-statement-artifacts"
+    },
+    {
+      "id": "C039",
+      "code": "List<Account> x=[SELECT Id FROM Account WHERE Id=null WITH USER_MODE];\npq.out('C039','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "api-gates/type-and-statement-artifacts"
+    },
+    {
+      "id": "C040",
+      "code": "List<Account> x=[SELECT Id FROM Account WHERE Id=null WITH SYSTEM_MODE];\npq.out('C040','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "compile": true,
+      "group": "api-gates/type-and-statement-artifacts",
+      "namedExpected": "compiled",
+      "namedControl": "N002"
+    },
+    {
+      "id": "C041",
+      "code": "Database.Cursor x=Database.getCursor('SELECT Id FROM Account WHERE Id=null');\npq.out('C041','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "api-gates/type-and-statement-artifacts"
+    },
+    {
+      "id": "C042",
+      "code": "List<Account> x=new List<Account>(); insert as user x;\npq.out('C042','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "api-gates/type-and-statement-artifacts"
+    },
+    {
+      "id": "C044",
+      "code": "class SyntaxClass {} SyntaxClass x=new SyntaxClass();\npq.out('C044','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C045",
+      "code": "class SyntaxClass {public Integer value=1;} SyntaxClass x=new SyntaxClass();\npq.out('C045','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C046",
+      "code": "class SyntaxClass {public Integer read(){return 1;}} SyntaxClass x=new SyntaxClass();\npq.out('C046','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C047",
+      "code": "class SyntaxClass {public Integer value {get;set;}} SyntaxClass x=new SyntaxClass();\npq.out('C047','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C048",
+      "code": "class SyntaxClass {public SyntaxClass(){}} SyntaxClass x=new SyntaxClass();\npq.out('C048','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C049",
+      "code": "enum SyntaxEnum {A,B} SyntaxEnum x=SyntaxEnum.A;\npq.out('C049','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C050",
+      "code": "interface SyntaxInterface {Integer read();}\npq.out('C050','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C051",
+      "code": "virtual class SyntaxBase {} class SyntaxChild extends SyntaxBase {}\npq.out('C051','compiled');",
+      "expected": "COMPILE_ERROR\tline 1: classes are by default virtual",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C052",
+      "code": "abstract class SyntaxBase {public abstract Integer read();}\npq.out('C052','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C053",
+      "code": "class SyntaxOuter {public class SyntaxInner {}}\npq.out('C053','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Inner types are not allowed to have inner types",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C054",
+      "code": "class SyntaxClass {static final Integer VALUE=1;}\npq.out('C054','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: static can only be used on fields of a top level type",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C055",
+      "code": "class SyntaxClass {public static Integer read(){return 1;}}\npq.out('C055','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: static can only be used on methods of a top level type",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C056",
+      "code": "class SyntaxClass {public void run(){return;}}\npq.out('C056','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C057",
+      "code": "class SyntaxClass {public Integer read(){return null;}}\npq.out('C057','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C058",
+      "code": "// line comment\nInteger x=1;\npq.out('C058','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/top-level-declarations/acceptance"
+    },
+    {
+      "id": "C059",
+      "code": "Integer x=1\npq.out('C059','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'x'.",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C060",
+      "code": "Integer x=;\npq.out('C060','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'x'.",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C061",
+      "code": "Integer =1;\npq.out('C061','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: Integer",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C062",
+      "code": "Integer x=1,,y=2;\npq.out('C062','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'x'.",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C063",
+      "code": "List<String x=new List<String>();\npq.out('C063','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token '<'.",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C064",
+      "code": "r=true;\npq.out('C064','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: r",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C065",
+      "code": "Integer x=missingName;\npq.out('C065','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: missingName",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C066",
+      "code": "MissingSyntaxType x;\npq.out('C066','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: MissingSyntaxType",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C067",
+      "code": "Integer x=true;\npq.out('C067','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Boolean to Integer",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C068",
+      "code": "Boolean x='true';\npq.out('C068','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to Boolean",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C069",
+      "code": "Integer x=new Account();\npq.out('C069','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Account to Integer",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C070",
+      "code": "List<String> x=new List<Integer>();\npq.out('C070','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from List<Integer> to List<String>",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C073",
+      "code": "if() {}\npq.out('C073','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token ')'.",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C074",
+      "code": "if(true)\npq.out('C074','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C075",
+      "code": "else {}\npq.out('C075','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Missing '<EOF>' at 'else'",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C076",
+      "code": "while() {}\npq.out('C076','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token ')'.",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C077",
+      "code": "do {}\npq.out('C077','compiled');",
+      "expected": "COMPILE_ERROR\tline 7: Expecting 'WHILE' but was: 'pq.out'",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C078",
+      "code": "for(Integer i=0;i<1) {}\npq.out('C078','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Missing ';' at ')'",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C079",
+      "code": "for(String x new List<String>()) {}\npq.out('C079','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Missing ';' at 'new'",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C080",
+      "code": "break;\npq.out('C080','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Break statement must be in loop",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C081",
+      "code": "continue;\npq.out('C081','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Continue statement must be in loop",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C082",
+      "code": "try {}\npq.out('C082','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Try block must have at least one catch block or a finally block",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C083",
+      "code": "catch(Exception e) {}\npq.out('C083','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Missing '<EOF>' at 'catch'",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C084",
+      "code": "finally {}\npq.out('C084','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Missing '<EOF>' at 'finally'",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C085",
+      "code": "try {} catch(String e) {}\npq.out('C085','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Catch block variable must be of type exception: String",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C086",
+      "code": "throw 1;\npq.out('C086','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Throw expression must be of type exception: Integer",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C087",
+      "code": "switch 1 {when 1 {}}\npq.out('C087','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token '1'.",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C088",
+      "code": "switch on 1 {case 1: break;}\npq.out('C088','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Missing '}' at 'case'",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C089",
+      "code": "switch on 1 {when 1 {} when 1 {}}\npq.out('C089','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: 1 occurs as more than one when branch for this switch statement",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C090",
+      "code": "List<String> x=new List<String>{,};\npq.out('C090','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token '<'.",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C091",
+      "code": "Map<String,String> x=new Map<String,String>{'a':'b'};\npq.out('C091','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token '<'.",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C092",
+      "code": "Boolean x=Truee;\npq.out('C092','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: Truee",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C093",
+      "code": "Object x=NULLL;\npq.out('C093','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: NULLL",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C095",
+      "code": "class SyntaxClass {public Integer read(){}}\npq.out('C095','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Missing return statement required return type: Integer",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C096",
+      "code": "class SyntaxClass {public void run(){return 1;}}\npq.out('C096','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Void method must not return a value",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C097",
+      "code": "class SyntaxClass {public Integer read(){return true;}}\npq.out('C097','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal conversion from Boolean to Integer",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C098",
+      "code": "class SyntaxClass {public Integer read(,){return 1;}}\npq.out('C098','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'class'.",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C099",
+      "code": "enum SyntaxEnum {}\npq.out('C099','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C100",
+      "code": "class SyntaxClass {public Integer x; public Integer X;}\npq.out('C100','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Duplicate field: X",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C101",
+      "code": "class SyntaxClass {public Integer x {get set;}}\npq.out('C101','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'class'.",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    },
+    {
+      "id": "C102",
+      "code": "Integer x=1; /* unterminated\npq.out('C102','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Missing closing mark */ on multi-line comment.",
+      "compile": true,
+      "group": "diagnostics/grammar-name-type-and-modifier"
+    }
+  ],
+  "controls": [
+    {
+      "id": "V001",
+      "code": "class SourceJSONLabels {\n public void run(JSONParser parser) {\n  switch on parser.getCurrentToken() {\n   when START_ARRAY, START_OBJECT {}\n   when else {}\n  }\n }\n}\npq.out('V001','compiled');",
+      "expected": "compiled",
+      "compile": true
+    },
+    {
+      "id": "V002",
+      "code": "class SourceTriggerLabels {\n public void run() {\n  switch on Trigger.operationType {\n   when BEFORE_INSERT, AFTER_UPDATE {}\n   when else {}\n  }\n }\n}\npq.out('V002','compiled');",
+      "expected": "compiled",
+      "compile": true
+    },
+    {
+      "id": "V003",
+      "code": "class SourceAccessLabels {\n public void run(System.AccessType accessType) {\n  switch on accessType {\n   when CREATABLE, UPDATABLE {}\n   when else {}\n  }\n }\n}\npq.out('V003','compiled');",
+      "expected": "compiled",
+      "compile": true
+    },
+    {
+      "id": "V004",
+      "code": "System.AccessType accessType=System.AccessType.UPDATABLE;\nswitch on accessType {\n when CREATABLE, UPDATABLE {}\n when else {}\n}\npq.out('V004','compiled');",
+      "expected": "compiled",
+      "compile": true
+    },
+    {
+      "id": "V005",
+      "code": "System.AccessType accessType=System.AccessType.UPDATABLE;\nswitch on accessType {\n when CREATABLE, NO_SUCH_SOURCE_LABEL {}\n when else {}\n}\npq.out('V005','compiled');",
+      "expected": "COMPILE_ERROR\tline 8: Variable does not exist: NO_SUCH_SOURCE_LABEL",
+      "compile": true
+    },
+    {
+      "id": "V006",
+      "code": "class SourceMissingAssignment {\n public void run() {\n  OverlayOnly=1;\n  missingHelper();\n }\n}\npq.out('V006','compiled');",
+      "expected": "COMPILE_ERROR\tline 8: Variable does not exist: OverlayOnly",
+      "compile": true
+    },
+    {
+      "id": "V007",
+      "code": "Schema.FieldSetMap value=null;\npq.out('V007','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: Schema.FieldSetMap",
+      "compile": true
+    },
+    {
+      "id": "V008",
+      "code": "Schema.SObjectTypeFieldSets value=null;\npq.out('V008','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Type is not visible: Schema.SObjectTypeFieldSets",
+      "compile": true
+    },
+    {
+      "id": "V009",
+      "code": "class SourceFieldSetMap {\n public Schema.FieldSetMap fieldValue;\n public Schema.FieldSetMap run(Schema.FieldSetMap input) {\n  Schema.FieldSetMap localValue=input;\n  return localValue;\n }\n}\npq.out('V009','compiled');",
+      "expected": "COMPILE_ERROR\tline 8: Invalid type: Schema.FieldSetMap",
+      "compile": true
+    },
+    {
+      "id": "V010",
+      "code": "class SourceFieldSets {\n public Schema.SObjectTypeFieldSets fieldValue;\n public Schema.SObjectTypeFieldSets run(Schema.SObjectTypeFieldSets input) {\n  Schema.SObjectTypeFieldSets localValue=input;\n  return localValue;\n }\n}\npq.out('V010','compiled');",
+      "expected": "COMPILE_ERROR\tline 7: Type is not visible: Schema.SObjectTypeFieldSets",
+      "compile": true
+    },
+    {
+      "id": "V011",
+      "code": "abstract class SourceParent {public Integer inheritedValue;}\nclass SourceChild extends SourceParent {\n public void run() {inheritedValue=1;}\n}\nSourceChild value=new SourceChild(); value.run();\nSystem.assert('1'.equals(String.valueOf(value.inheritedValue)));\npq.out('V011','compiled');",
+      "expected": "compiled",
+      "compile": true
+    },
+    {
+      "id": "V012",
+      "code": "FieldSetMap value=null;\npq.out('V012','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: FieldSetMap",
+      "compile": true
+    },
+    {
+      "id": "V013",
+      "code": "SObjectTypeFieldSets value=null;\npq.out('V013','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Type is not visible: Schema.SObjectTypeFieldSets",
+      "compile": true
+    },
+    {
+      "id": "V014",
+      "code": "class SourceImplicitFieldSetMap {\n public FieldSetMap fieldValue;\n public FieldSetMap run(FieldSetMap input) {\n  FieldSetMap localValue=input;\n  return localValue;\n }\n}\npq.out('V014','compiled');",
+      "expected": "COMPILE_ERROR\tline 8: Invalid type: FieldSetMap",
+      "compile": true
+    },
+    {
+      "id": "V015",
+      "code": "class SourceImplicitFieldSets {\n public SObjectTypeFieldSets fieldValue;\n public SObjectTypeFieldSets run(SObjectTypeFieldSets input) {\n  SObjectTypeFieldSets localValue=input;\n  return localValue;\n }\n}\npq.out('V015','compiled');",
+      "expected": "COMPILE_ERROR\tline 7: Type is not visible: Schema.SObjectTypeFieldSets",
+      "compile": true
+    },
+    {
+      "id": "V016",
+      "code": "FieldSet value=null;\npq.out('V016','compiled');",
+      "expected": "compiled",
+      "compile": true
+    },
+    {
+      "id": "V017",
+      "code": "SObjectType value=null;\npq.out('V017','compiled');",
+      "expected": "compiled",
+      "compile": true
+    },
+    {
+      "id": "G001",
+      "code": "class SourceGrammarG001 { public void run() { Object r; ; r=true; } }\npq.out('G001','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'class'.",
+      "compile": true,
+      "group": "grammar/named-method-controls"
+    },
+    {
+      "id": "G002",
+      "code": "class SourceGrammarG002 { public void run() { Object r; ;; r=true; } }\npq.out('G002','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'class'.",
+      "compile": true,
+      "group": "grammar/named-method-controls"
+    },
+    {
+      "id": "G003",
+      "code": "class SourceGrammarG003 { public void run() { Object r; {;} r=true; } }\npq.out('G003','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'class'.",
+      "compile": true,
+      "group": "grammar/named-method-controls"
+    },
+    {
+      "id": "G004",
+      "code": "class SourceGrammarG004 { public void run() { Object r; Integer x=0; do x++; while(x<1); r=x; } }\npq.out('G004','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'class'.",
+      "compile": true,
+      "group": "grammar/named-method-controls"
+    },
+    {
+      "id": "G005",
+      "code": "class SourceGrammarG005 { public void run() { Object r; Integer x=0; do {x++;} while(x<1); r=x; } }\npq.out('G005','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/named-method-controls"
+    },
+    {
+      "id": "G006",
+      "code": "class SourceGrammarG006 { public void run() { Object r; Integer x=0; for(Integer i=0;i<1;i++) x++; r=x; } }\npq.out('G006','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/named-method-controls"
+    },
+    {
+      "id": "G007",
+      "code": "class SourceGrammarG007 { public void run() { Object r; for(;;){break;} r=true; } }\npq.out('G007','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/named-method-controls"
+    },
+    {
+      "id": "G008",
+      "code": "class SourceGrammarG008 { public void run() { Object r; String text=';; {;} do x++;'; /* ;; do x++; */ r=text; } }\npq.out('G008','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/named-method-controls"
+    },
+    {
+      "id": "G009",
+      "code": "class SourceGrammarG009 { public void run() { Object r; if(true); r=true; } }\npq.out('G009','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'class'.",
+      "compile": true,
+      "group": "grammar/named-method-controls"
+    },
+    {
+      "id": "G010",
+      "code": "class SourceGrammarG010 { public void run() { Object r; for(Integer i=0;i<1;i++); r=true; } }\npq.out('G010','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/named-method-controls"
+    },
+    {
+      "id": "G011",
+      "code": "class SourceGrammarG011 { public void run() { Object r; while(false); r=true; } }\npq.out('G011','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/named-method-controls"
+    },
+    {
+      "id": "G012",
+      "code": "class SourceGrammarG012 { public void run() { Object r; List<Integer> x=new List<Integer>{1}; r=x.size(); } }\npq.out('G012','compiled');",
+      "expected": "compiled",
+      "compile": true,
+      "group": "grammar/named-method-controls"
+    },
+    {
+      "id": "G013",
+      "code": "class SourceGrammarG013 { public void run() { Object r; {}; r=true; } }\npq.out('G013','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'class'.",
+      "compile": true,
+      "group": "grammar/named-method-controls"
+    }
+  ],
+  "remaining": [
+    {
+      "id": "C043",
+      "code": "try { List<Account> x=new List<Account>(); insert as system x;\npq.out('C043','compiled'); } catch(Exception e) {pq.err('C043',e);}",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "reason": "DML transactions DML: anonymous SYSTEM_MODE insert needs the native SecurityException; the runtime execution policy is outside source syntax ownership."
+    },
+    {
+      "id": "C071",
+      "code": "Integer x=1; x.noSuchSyntaxMethod();\npq.out('C071','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void noSuchSyntaxMethod() from the type Integer",
+      "reason": "type system type system and dispatch: the primitive method fallback accepts a missing method."
+    },
+    {
+      "id": "C072",
+      "code": "Integer x=1; x.noSuchSyntaxField=2;\npq.out('C072','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: noSuchSyntaxField",
+      "reason": "type system type system and dispatch: primitive field assignment is not rejected during compilation."
+    },
+    {
+      "id": "C094",
+      "code": "try { final Integer x=1; x=2;\npq.out('C094','compiled'); } catch(Exception e) {pq.err('C094',e);}",
+      "expected": "UNCAUGHT|System.FinalException: Final variable has already been initialized",
+      "reason": "integer values expressions and control: final-local reassignment does not raise the native uncatchable FinalException."
+    }
+  ]
+}

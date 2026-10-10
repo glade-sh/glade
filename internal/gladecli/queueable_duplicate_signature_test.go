@@ -8,24 +8,25 @@ import (
 )
 
 func TestRunExecQueueableDuplicateSignatureWithProjectRuntime(t *testing.T) {
+	// A38 T002-T007/T038/T039: factory and explicit System Builder native controls.
 	tests := map[string]string{
 		"qualified builder": `QueueableDuplicateSignature sig = QueueableDuplicateSignature.builder().addString('job').addInteger(42).addId('001000000000001AAA').build();
-System.assert(sig.toString().contains('String:job'));
-System.assert(sig.toString().contains('Integer:42'));
-System.assert(sig.toString().contains('Id:001000000000001AAA'));`,
-		"builder size": `QueueableDuplicateSignature.Builder builder = QueueableDuplicateSignature.builder();
+System.assert(sig != null);
+System.assert('\'job\'_42_001000000000001'.equals(sig.toString()));
+System.assert('\'job\'_42_001000000000001'.equals(String.valueOf(sig)));`,
+		"builder size": `System.QueueableDuplicateSignature.Builder builder = QueueableDuplicateSignature.builder();
 System.assertEquals(0, builder.getSize());
-System.assertEquals(10, builder.getMaxSize());
-System.assertEquals(10, builder.getRemainingSize());
+System.assertEquals(32, builder.getMaxSize());
+System.assertEquals(32, builder.getRemainingSize());
 builder.addString('nightly');
 builder.addInteger(7);
 builder.addId('001000000000001AAA');
-System.assertEquals(3, builder.getSize());
-System.assertEquals(7, builder.getRemainingSize());
+System.assertEquals(26, builder.getSize());
+System.assertEquals(6, builder.getRemainingSize());
 QueueableDuplicateSignature signature = builder.build();
-System.assert(signature.toString().contains('String:nightly'));
-System.assert(signature.toString().contains('Integer:7'));
-System.assert(signature.toString().contains('Id:001000000000001AAA'));`,
+System.assert(signature != null);
+System.assert('\'nightly\'_7_001000000000001'.equals(signature.toString()));
+System.assert('\'nightly\'_7_001000000000001'.equals(String.valueOf(signature)));`,
 	}
 
 	for name, source := range tests {

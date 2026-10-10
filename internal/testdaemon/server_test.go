@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -214,6 +215,7 @@ func TestServerWatchLoopSameScopeFallbackKeepsWatcherAndQueuesNextBatch(t *testi
 }
 
 func TestServerPingAndRun(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	writeTestProject(t, root)
 	socket := filepath.Join(root, "serve.sock")
@@ -397,6 +399,7 @@ func TestServerWatchLoopScopesSiblingDependencyAndSwapsConfigScope(t *testing.T)
 }
 
 func TestServerWatchLoopInitialStateMatchesWatcherBaseline(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	manifestPath := filepath.Join(root, "sfdx-project.json")
 	classPath := filepath.Join(root, "force-app/main/default/classes/Stable.cls")
@@ -440,6 +443,7 @@ func TestServerWatchLoopInitialStateMatchesWatcherBaseline(t *testing.T) {
 }
 
 func TestServerWatchLoopRetriesOrdinaryInitialDrift(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	manifestPath := filepath.Join(root, "sfdx-project.json")
 	writeFile(t, manifestPath, `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -454,7 +458,13 @@ func TestServerWatchLoopRetriesOrdinaryInitialDrift(t *testing.T) {
 		snapshot, captureErr := watch.CaptureScope(scope)
 		captures++
 		if captures == 1 {
-			if err := os.WriteFile(manifestPath, []byte(`{"packageDirectories":[{"path":"other-app","default":true}]}`), 0o644); err != nil {
+			// Snapshots compare size and mtime. Change the size and preserve the
+			// timestamp so drift does not depend on filesystem clock resolution.
+			if err := os.WriteFile(manifestPath, []byte(`{"packageDirectories":[{"path":"other-force-app","default":true}]}`), 0o644); err != nil {
+				return watch.Snapshot{}, err
+			}
+			mtime := time.Unix(0, snapshot.Files[manifestPath].Metadata.ModTimeUnixNano)
+			if err := os.Chtimes(manifestPath, mtime, mtime); err != nil {
 				return watch.Snapshot{}, err
 			}
 		}
@@ -467,6 +477,7 @@ func TestServerWatchLoopRetriesOrdinaryInitialDrift(t *testing.T) {
 		return stub, watch.BackendPoll, nil
 	}
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	loopDone := make(chan struct{})
 	go func() {
 		server.watchLoop(ctx, root)
@@ -475,6 +486,11 @@ func TestServerWatchLoopRetriesOrdinaryInitialDrift(t *testing.T) {
 	failed := waitForServerWatchCreation(t, created)
 	waitForServerWatchClose(t, failed.watcher)
 	stable := waitForServerWatchCreation(t, created)
+	before := failed.initial.Files[manifestPath].Metadata
+	after := stable.initial.Files[manifestPath].Metadata
+	if before.ModTimeUnixNano != after.ModTimeUnixNano || before.Size == after.Size {
+		t.Fatalf("drift must change size with unchanged mtime: before=%#v after=%#v", before, after)
+	}
 	d.updateMu.Lock()
 	d.updateMu.Unlock()
 	if captures != 4 {
@@ -490,6 +506,7 @@ func TestServerWatchLoopRetriesOrdinaryInitialDrift(t *testing.T) {
 }
 
 func TestServerWatchLoopInitialRegistrationDoesNotRunChangeWarmHook(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	server, err := NewServer(ServerConfig{

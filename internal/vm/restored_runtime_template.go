@@ -2,6 +2,7 @@ package vm
 
 import (
 	"io"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -16,6 +17,16 @@ type RestoredRuntimeTemplate struct {
 	org     storage.RuntimeTemplate
 	machine *VM
 	valid   bool
+	clones  *restoredTemplateCloneBarrier
+}
+
+// restoredTemplateCloneBarrier runs registered work before the first CloneOrg
+// returns. Until then no clone of the template org exists, so nothing outside
+// the template can write into the definitions it shares with its clones.
+type restoredTemplateCloneBarrier struct {
+	mu          sync.Mutex
+	cloned      bool
+	beforeFirst []func()
 }
 
 // NewRestoredRuntimeTemplate creates an immutable clone boundary around a
@@ -30,6 +41,7 @@ func NewRestoredRuntimeTemplate(org storage.OrgState, machine *VM) RestoredRunti
 		org:     template,
 		machine: machine,
 		valid:   true,
+		clones:  &restoredTemplateCloneBarrier{},
 	}
 }
 
@@ -39,11 +51,38 @@ func (t RestoredRuntimeTemplate) Valid() bool {
 	return t.valid && t.machine != nil
 }
 
+// BeforeFirstCloneOrg registers fn to run once, before the first CloneOrg
+// call returns. Concurrent CloneOrg calls wait for it. It reports false, and
+// does not register fn, when the template is invalid or was already cloned.
+func (t RestoredRuntimeTemplate) BeforeFirstCloneOrg(fn func()) bool {
+	if !t.Valid() || t.clones == nil {
+		return false
+	}
+	t.clones.mu.Lock()
+	defer t.clones.mu.Unlock()
+	if t.clones.cloned {
+		return false
+	}
+	t.clones.beforeFirst = append(t.clones.beforeFirst, fn)
+	return true
+}
+
 // CloneOrg returns a fresh isolated runtime org. Invalid templates return the
 // zero OrgState.
 func (t RestoredRuntimeTemplate) CloneOrg() storage.OrgState {
 	if !t.Valid() {
 		return storage.OrgState{}
+	}
+	if t.clones != nil {
+		t.clones.mu.Lock()
+		if !t.clones.cloned {
+			t.clones.cloned = true
+			for _, fn := range t.clones.beforeFirst {
+				fn()
+			}
+			t.clones.beforeFirst = nil
+		}
+		t.clones.mu.Unlock()
 	}
 	return t.org.CloneRuntimeOrg()
 }

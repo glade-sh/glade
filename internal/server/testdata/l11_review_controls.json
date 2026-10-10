@@ -1,0 +1,3354 @@
+[
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.AAAMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nSELECT Id, Name, (SELECT AAAMissing__c, CreatedDate, Id,\n                         ^\nERROR at Row:1:Column:26\nNo such column 'AAAMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_AAAMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.CreatedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nId, Name, (SELECT CreatedDate, CreatedMissing__c, Id, LastModifiedById\n                               ^\nERROR at Row:1:Column:39\nNo such column 'CreatedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_CreatedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.IdMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, (SELECT CreatedDate, Id, IdMissing__c, LastModifiedById,\n                               ^\nERROR at Row:1:Column:43\nNo such column 'IdMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_IdMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.NameMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, NameMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'NameMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_NameMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_OwnedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.SortMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedDate, Name, Sort__c, SortMissing__c, SystemModstamp FROM\n                                 ^\nERROR at Row:1:Column:94\nNo such column 'SortMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_SortMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.ZZZMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, Sort__c, SystemModstamp, ZZZMissing__c FROM Children__r ORDER\n                               ^\nERROR at Row:1:Column:110\nNo such column 'ZZZMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_ZZZMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.AAAMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nSELECT Id, Name, (SELECT AAAMissing__c, CreatedDate, Id,\n                         ^\nERROR at Row:1:Column:26\nNo such column 'AAAMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_AAAMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.CreatedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nId, Name, (SELECT CreatedDate, CreatedMissing__c, Id, LastModifiedById\n                               ^\nERROR at Row:1:Column:39\nNo such column 'CreatedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_CreatedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.IdMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, (SELECT CreatedDate, Id, IdMissing__c, LastModifiedById,\n                               ^\nERROR at Row:1:Column:43\nNo such column 'IdMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_IdMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.NameMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, NameMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'NameMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_NameMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_OwnedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.SortMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedDate, Name, Sort__c, SortMissing__c, SystemModstamp FROM\n                                 ^\nERROR at Row:1:Column:94\nNo such column 'SortMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_SortMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.ZZZMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, Sort__c, SystemModstamp, ZZZMissing__c FROM Children__r ORDER\n                               ^\nERROR at Row:1:Column:110\nNo such column 'ZZZMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_ZZZMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.AAAMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nSELECT Id, Name, (SELECT AAAMissing__c, CreatedDate, Id,\n                         ^\nERROR at Row:1:Column:26\nNo such column 'AAAMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_sort_AAAMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.CreatedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nId, Name, (SELECT CreatedDate, CreatedMissing__c, Id, LastModifiedById\n                               ^\nERROR at Row:1:Column:39\nNo such column 'CreatedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_sort_CreatedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.IdMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, (SELECT CreatedDate, Id, IdMissing__c, LastModifiedById,\n                               ^\nERROR at Row:1:Column:43\nNo such column 'IdMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_sort_IdMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.NameMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, NameMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'NameMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_sort_NameMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_sort_OwnedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.SortMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedDate, Name, Sort__c, SortMissing__c, SystemModstamp FROM\n                                 ^\nERROR at Row:1:Column:94\nNo such column 'SortMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_sort_SortMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.ZZZMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, Sort__c, SystemModstamp, ZZZMissing__c FROM Children__r ORDER\n                               ^\nERROR at Row:1:Column:110\nNo such column 'ZZZMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_sort_ZZZMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.AAAMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nSELECT Id, Name, (SELECT AAAMissing__c, CreatedDate, Id,\n                         ^\nERROR at Row:1:Column:26\nNo such column 'AAAMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_list_records_AAAMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.CreatedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nId, Name, (SELECT CreatedDate, CreatedMissing__c, Id, LastModifiedById\n                               ^\nERROR at Row:1:Column:39\nNo such column 'CreatedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_list_records_CreatedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.IdMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, (SELECT CreatedDate, Id, IdMissing__c, LastModifiedById,\n                               ^\nERROR at Row:1:Column:43\nNo such column 'IdMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_list_records_IdMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.NameMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, NameMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'NameMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_list_records_NameMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_list_records_OwnedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.SortMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedDate, Name, Sort__c, SortMissing__c, SystemModstamp FROM\n                                 ^\nERROR at Row:1:Column:94\nNo such column 'SortMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_list_records_SortMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.ZZZMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, Sort__c, SystemModstamp, ZZZMissing__c FROM Children__r ORDER\n                               ^\nERROR at Row:1:Column:110\nNo such column 'ZZZMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_list_records_ZZZMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.AAAMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nSELECT Id, Name, (SELECT AAAMissing__c, CreatedDate, Id,\n                         ^\nERROR at Row:1:Column:26\nNo such column 'AAAMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_record_AAAMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.CreatedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nId, Name, (SELECT CreatedDate, CreatedMissing__c, Id, LastModifiedById\n                               ^\nERROR at Row:1:Column:39\nNo such column 'CreatedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_record_CreatedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.IdMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, (SELECT CreatedDate, Id, IdMissing__c, LastModifiedById,\n                               ^\nERROR at Row:1:Column:43\nNo such column 'IdMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_record_IdMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.NameMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, NameMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'NameMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_record_NameMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_record_OwnedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.SortMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedDate, Name, Sort__c, SortMissing__c, SystemModstamp FROM\n                                 ^\nERROR at Row:1:Column:94\nNo such column 'SortMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_record_SortMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.ZZZMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, Sort__c, SystemModstamp, ZZZMissing__c FROM Children__r ORDER\n                               ^\nERROR at Row:1:Column:110\nNo such column 'ZZZMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_record_ZZZMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.AAAMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nSELECT Id, Name, (SELECT AAAMissing__c, CreatedDate, Id,\n                         ^\nERROR at Row:1:Column:26\nNo such column 'AAAMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_legacy_AAAMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.CreatedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nId, Name, (SELECT CreatedDate, CreatedMissing__c, Id, LastModifiedById\n                               ^\nERROR at Row:1:Column:39\nNo such column 'CreatedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_legacy_CreatedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.IdMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, (SELECT CreatedDate, Id, IdMissing__c, LastModifiedById,\n                               ^\nERROR at Row:1:Column:43\nNo such column 'IdMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_legacy_IdMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.NameMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, NameMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'NameMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_legacy_NameMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_legacy_OwnedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.SortMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedDate, Name, Sort__c, SortMissing__c, SystemModstamp FROM\n                                 ^\nERROR at Row:1:Column:94\nNo such column 'SortMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_legacy_SortMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.ZZZMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, Sort__c, SystemModstamp, ZZZMissing__c FROM Children__r ORDER\n                               ^\nERROR at Row:1:Column:110\nNo such column 'ZZZMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_legacy_ZZZMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c",
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_bad_first",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "59.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c",
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_bad_last",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.AAAMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nSELECT Id, Name, (SELECT AAAMissing__c, CreatedDate, Id,\n                         ^\nERROR at Row:1:Column:26\nNo such column 'AAAMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_AAAMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.CreatedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nId, Name, (SELECT CreatedDate, CreatedMissing__c, Id, LastModifiedById\n                               ^\nERROR at Row:1:Column:39\nNo such column 'CreatedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_CreatedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.IdMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, (SELECT CreatedDate, Id, IdMissing__c, LastModifiedById,\n                               ^\nERROR at Row:1:Column:43\nNo such column 'IdMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_IdMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.NameMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, NameMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'NameMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_NameMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_OwnedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.SortMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedDate, Name, Sort__c, SortMissing__c, SystemModstamp FROM\n                                 ^\nERROR at Row:1:Column:94\nNo such column 'SortMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_SortMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.ZZZMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, Sort__c, SystemModstamp, ZZZMissing__c FROM Children__r ORDER\n                               ^\nERROR at Row:1:Column:110\nNo such column 'ZZZMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_ZZZMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.AAAMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nSELECT Id, Name, (SELECT AAAMissing__c, CreatedDate, Id,\n                         ^\nERROR at Row:1:Column:26\nNo such column 'AAAMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_AAAMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.CreatedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nId, Name, (SELECT CreatedDate, CreatedMissing__c, Id, LastModifiedById\n                               ^\nERROR at Row:1:Column:39\nNo such column 'CreatedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_CreatedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.IdMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, (SELECT CreatedDate, Id, IdMissing__c, LastModifiedById,\n                               ^\nERROR at Row:1:Column:43\nNo such column 'IdMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_IdMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.NameMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, NameMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'NameMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_NameMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_OwnedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.SortMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedDate, Name, Sort__c, SortMissing__c, SystemModstamp FROM\n                                 ^\nERROR at Row:1:Column:94\nNo such column 'SortMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_SortMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.ZZZMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, Sort__c, SystemModstamp, ZZZMissing__c FROM Children__r ORDER\n                               ^\nERROR at Row:1:Column:110\nNo such column 'ZZZMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_ZZZMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.AAAMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nSELECT Id, Name, (SELECT AAAMissing__c, CreatedDate, Id,\n                         ^\nERROR at Row:1:Column:26\nNo such column 'AAAMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_sort_AAAMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.CreatedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nId, Name, (SELECT CreatedDate, CreatedMissing__c, Id, LastModifiedById\n                               ^\nERROR at Row:1:Column:39\nNo such column 'CreatedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_sort_CreatedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.IdMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, (SELECT CreatedDate, Id, IdMissing__c, LastModifiedById,\n                               ^\nERROR at Row:1:Column:43\nNo such column 'IdMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_sort_IdMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.NameMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, NameMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'NameMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_sort_NameMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_sort_OwnedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.SortMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedDate, Name, Sort__c, SortMissing__c, SystemModstamp FROM\n                                 ^\nERROR at Row:1:Column:94\nNo such column 'SortMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_sort_SortMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.ZZZMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, Sort__c, SystemModstamp, ZZZMissing__c FROM Children__r ORDER\n                               ^\nERROR at Row:1:Column:110\nNo such column 'ZZZMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_related_name_sort_ZZZMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.AAAMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nSELECT Id, Name, (SELECT AAAMissing__c, CreatedDate, Id,\n                         ^\nERROR at Row:1:Column:26\nNo such column 'AAAMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_list_records_AAAMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.CreatedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nId, Name, (SELECT CreatedDate, CreatedMissing__c, Id, LastModifiedById\n                               ^\nERROR at Row:1:Column:39\nNo such column 'CreatedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_list_records_CreatedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.IdMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, (SELECT CreatedDate, Id, IdMissing__c, LastModifiedById,\n                               ^\nERROR at Row:1:Column:43\nNo such column 'IdMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_list_records_IdMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.NameMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, NameMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'NameMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_list_records_NameMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_list_records_OwnedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.SortMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedDate, Name, Sort__c, SortMissing__c, SystemModstamp FROM\n                                 ^\nERROR at Row:1:Column:94\nNo such column 'SortMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_list_records_SortMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.ZZZMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, Sort__c, SystemModstamp, ZZZMissing__c FROM Children__r ORDER\n                               ^\nERROR at Row:1:Column:110\nNo such column 'ZZZMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_list_records_ZZZMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.AAAMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nSELECT Id, Name, (SELECT AAAMissing__c, CreatedDate, Id,\n                         ^\nERROR at Row:1:Column:26\nNo such column 'AAAMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_record_AAAMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.CreatedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nId, Name, (SELECT CreatedDate, CreatedMissing__c, Id, LastModifiedById\n                               ^\nERROR at Row:1:Column:39\nNo such column 'CreatedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_record_CreatedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.IdMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, (SELECT CreatedDate, Id, IdMissing__c, LastModifiedById,\n                               ^\nERROR at Row:1:Column:43\nNo such column 'IdMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_record_IdMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.NameMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, NameMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'NameMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_record_NameMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_record_OwnedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.SortMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedDate, Name, Sort__c, SortMissing__c, SystemModstamp FROM\n                                 ^\nERROR at Row:1:Column:94\nNo such column 'SortMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_record_SortMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.ZZZMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, Sort__c, SystemModstamp, ZZZMissing__c FROM Children__r ORDER\n                               ^\nERROR at Row:1:Column:110\nNo such column 'ZZZMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_record_ZZZMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.AAAMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nSELECT Id, Name, (SELECT AAAMissing__c, CreatedDate, Id,\n                         ^\nERROR at Row:1:Column:26\nNo such column 'AAAMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_legacy_AAAMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.CreatedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nId, Name, (SELECT CreatedDate, CreatedMissing__c, Id, LastModifiedById\n                               ^\nERROR at Row:1:Column:39\nNo such column 'CreatedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_legacy_CreatedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.IdMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, (SELECT CreatedDate, Id, IdMissing__c, LastModifiedById,\n                               ^\nERROR at Row:1:Column:43\nNo such column 'IdMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_legacy_IdMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.NameMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, NameMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'NameMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_legacy_NameMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_legacy_OwnedMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.SortMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedDate, Name, Sort__c, SortMissing__c, SystemModstamp FROM\n                                 ^\nERROR at Row:1:Column:94\nNo such column 'SortMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_legacy_SortMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.ZZZMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nName, Sort__c, SystemModstamp, ZZZMissing__c FROM Children__r ORDER\n                               ^\nERROR at Row:1:Column:110\nNo such column 'ZZZMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_legacy_ZZZMissing",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.OwnedMissing__c",
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_bad_first",
+    "oracle": "Salesforce API native observation"
+  },
+  {
+    "api": "67.0",
+    "config": {
+      "fields": [
+        "FamilyL11Child__c.Name",
+        "FamilyL11Child__c.Sort__c",
+        "FamilyL11Child__c.OwnedMissing__c"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "error": {
+      "body": {
+        "errorCode": "INVALID_FIELD",
+        "id": "382714451",
+        "message": "INVALID_FIELD: \nLastModifiedById, LastModifiedDate, Name, OwnedMissing__c, Sort__c, SystemModstamp\n                                          ^\nERROR at Row:1:Column:85\nNo such column 'OwnedMissing__c' on entity 'FamilyL11Child__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+        "statusCode": 400
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 400,
+      "statusText": "Bad Request"
+    },
+    "good_config": {
+      "fields": [
+        "FamilyL11Child__c.Name"
+      ],
+      "parentRecordId": "[FIXTURE_PARENT]",
+      "relatedListId": "Children__r",
+      "sortBy": [
+        "FamilyL11Child__c.Sort__c"
+      ]
+    },
+    "id": "ctrl_query_fresh_bad_last",
+    "oracle": "Salesforce API native observation"
+  }
+]

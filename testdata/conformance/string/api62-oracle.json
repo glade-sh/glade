@@ -1,0 +1,13 @@
+{
+  "family": "String",
+  "apiVersion": "62.0",
+  "route": "anonymous",
+  "rowCount": 300,
+  "missingResults": 0,
+  "transport": "exception",
+  "notes": [
+    "Native API62 anonymous rows are replayed through anonymous and @IsTest offline adapters. Named execution does not represent an independent native @IsTest capture.",
+    "R291 remains excluded by its existing nativeBlocker; its native error ID differs between captures.",
+    "API63-66 retain the existing API67 expectation projection."
+  ]
+}

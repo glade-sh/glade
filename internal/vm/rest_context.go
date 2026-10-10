@@ -79,7 +79,7 @@ func (vm *VM) RestRequest() Value {
 }
 
 func (vm *VM) RestResponse() Value {
-	if vm.restResponse.Kind == "" || vm.restResponse.Kind == ValueNull {
+	if vm.restResponse.Kind == "" {
 		vm.restResponse = newRestContextResponse()
 	}
 	return vm.restResponse
@@ -87,6 +87,9 @@ func (vm *VM) RestResponse() Value {
 
 // CallStatic invokes a registered static Apex method by fully qualified name.
 func (vm *VM) CallStatic(name string, args []Value) (Value, error) {
+	for _, value := range args {
+		vm.registerSObjectAliasRecord(value)
+	}
 	dot := strings.LastIndex(name, ".")
 	if dot <= 0 || dot == len(name)-1 {
 		return Null, fmt.Errorf("static method name must be Class.method")

@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -148,8 +149,25 @@ func generatedPlatformParametersEqual(member typesys.MemberSymbol, parameters []
 }
 
 func generatedPlatformSurfaceUnavailable(id, owner, member, version string) bool {
+	// A29 R040-R042 supersede the generated introduction date for these
+	// counter getters, independently of the cursor construction surface.
+	if owner == "system.limits" && (member == "getapexcursors" || member == "getlimitapexcursors") {
+		return !semaVersionAllows(version, apexversion.Range{Since: 62})
+	}
 	if member == "" {
+		// C032/N003: the native source type is already accepted at the API floor.
+		if owner == "database.paginationcursor" {
+			return false
+		}
+		// Messaging C019, bisected at 64/65/66: first visible at API 65.
+		if owner == "richmessaging.processformhandler" {
+			return !apexversion.AtLeast(version, 65)
+		}
 		return !semaVersionAllows(version, generatedPlatformTypeAvailability[owner])
+	}
+	// The same captured C019 calls this exact callback with null at API 65.
+	if id == "apex:richmessaging.processformhandler.processformrequest(richmessaging.processformresponse)" {
+		return !apexversion.AtLeast(version, 65)
 	}
 	want := !semaVersionAllows(version, generatedPlatformExactAvailability[id])
 	if broad, ok := generatedPlatformMemberAvailability[owner+"."+member]; ok {
@@ -166,7 +184,7 @@ func TestPlatformAvailabilityFollowsSourceAPIVersion(t *testing.T) {
 	for _, test := range []struct {
 		version         string
 		wantUnavailable bool
-	}{{"65.0", true}, {"66.0", false}, {"67.0", false}} {
+	}{{"62.0", false}, {"66.0", false}, {"67.0", false}} {
 		t.Run(test.version, func(t *testing.T) {
 			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, test.version)
 			joined := ""

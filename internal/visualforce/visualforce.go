@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
@@ -26,6 +27,7 @@ type Index struct {
 type Page struct {
 	Name                string           `json:"name"`
 	File                string           `json:"file,omitempty"`
+	APIVersion          string           `json:"apiVersion,omitempty"`
 	Controller          string           `json:"controller,omitempty"`
 	StandardController  string           `json:"standardController,omitempty"`
 	RecordSetVar        string           `json:"recordSetVar,omitempty"`
@@ -38,6 +40,7 @@ type Page struct {
 type Component struct {
 	Name            string           `json:"name"`
 	File            string           `json:"file,omitempty"`
+	APIVersion      string           `json:"apiVersion,omitempty"`
 	Controller      string           `json:"controller,omitempty"`
 	Extensions      []string         `json:"extensions,omitempty"`
 	Attributes      []Attribute      `json:"attributes,omitempty"`
@@ -49,6 +52,7 @@ type Attribute struct {
 	Type            string           `json:"type,omitempty"`
 	AssignTo        string           `json:"assignTo,omitempty"`
 	Required        string           `json:"required,omitempty"`
+	Default         string           `json:"default,omitempty"`
 	Description     string           `json:"description,omitempty"`
 	MergeReferences []MergeReference `json:"mergeReferences,omitempty"`
 }
@@ -60,19 +64,87 @@ type MergeReference struct {
 	Name       string `json:"name,omitempty"`
 }
 
+// PageNames returns the sorted names that a successful LoadProject registers.
+// Check structural rejection first to avoid expression validation and Apex
+// reparsing for projects that cannot load. Other cases use the strict loader.
+func PageNames(p project.Project) []string {
+	return pageNames(p, LoadProject)
+}
+
+func pageNames(p project.Project, load func(project.Project) (Index, error)) []string {
+	if len(p.VisualforcePageFiles) == 0 {
+		return nil
+	}
+	fallbackAPIVersion, err := apexversion.PreserveSource(p.SourceAPIVersion)
+	if err != nil {
+		return nil
+	}
+	// These are unconditional checks in LoadProject. Any rejection suppresses
+	// every page in this project, including otherwise valid siblings.
+	for _, path := range p.VisualforcePageFiles {
+		if _, err := parsePageFile(path, fallbackAPIVersion); err != nil {
+			return nil
+		}
+	}
+	for _, path := range p.VisualforceComponentFiles {
+		if _, err := parseComponentFile(path, fallbackAPIVersion); err != nil {
+			return nil
+		}
+	}
+	idx, err := load(p)
+	if err != nil {
+		return nil
+	}
+	names := make([]string, 0, len(idx.Pages))
+	for _, page := range idx.Pages {
+		names = append(names, page.Name)
+	}
+	return names
+}
+
 func LoadProject(p project.Project) (Index, error) {
-	return loadProject(p, false)
+	return loadProject(p, false, true)
+}
+
+// LoadProjectForRender validates page and component metadata and markup while
+// leaving expressions and deployment reference checks to their respective paths.
+// Preview requests must locate the page and authorize the principal before
+// displaying expression diagnostics; hosted components retain their runtime
+// unsupported boundary even when their deployment dependencies are unavailable.
+func LoadProjectForRender(p project.Project) (Index, error) {
+	return loadProject(p, false, false)
 }
 
 func LoadProjectBestEffort(p project.Project) Index {
-	idx, _ := loadProject(p, true)
+	idx, _ := loadProject(p, true, false)
 	return idx
 }
 
-func loadProject(p project.Project, bestEffort bool) (Index, error) {
+func loadProject(p project.Project, bestEffort, validateExpressions bool) (Index, error) {
 	idx := Index{}
+	fallbackAPIVersion, err := apexversion.PreserveSource(p.SourceAPIVersion)
+	if err != nil {
+		if bestEffort {
+			return idx, nil
+		}
+		return Index{}, fmt.Errorf("invalid project source API version: %w", err)
+	}
+	if !bestEffort && validateExpressions && len(p.VisualforceComponentFiles) != 0 {
+		if err := validateCustomComponentProject(p); err != nil {
+			return Index{}, err
+		}
+	}
+	if !bestEffort && validateExpressions {
+		if err := validateAlternativeRenderingProject(p); err != nil {
+			return Index{}, err
+		}
+	}
 	for _, path := range p.VisualforcePageFiles {
-		page, err := ParsePageFile(path)
+		parsePage := parsePageFile
+		if bestEffort {
+			parsePage = parsePageFileLenient
+		}
+		page, err := parsePage(path, fallbackAPIVersion)
 		if err != nil {
 			if bestEffort {
 				continue
@@ -82,7 +154,11 @@ func loadProject(p project.Project, bestEffort bool) (Index, error) {
 		idx.Pages = append(idx.Pages, page)
 	}
 	for _, path := range p.VisualforceComponentFiles {
-		component, err := ParseComponentFile(path)
+		parseComponent := parseComponentFile
+		if bestEffort {
+			parseComponent = parseComponentFileLenient
+		}
+		component, err := parseComponent(path, fallbackAPIVersion)
 		if err != nil {
 			if bestEffort {
 				continue
@@ -92,15 +168,99 @@ func loadProject(p project.Project, bestEffort bool) (Index, error) {
 		idx.Components = append(idx.Components, component)
 	}
 	idx.sortAndBuildLookups()
+	if !bestEffort {
+		var expressions *expressionValidationContext
+		var rejectedControllers map[string]bool
+		for _, path := range append(append([]string(nil), p.VisualforcePageFiles...), p.VisualforceComponentFiles...) {
+			if strings.HasSuffix(strings.ToLower(path), ".page-meta.xml") {
+				continue
+			}
+			source, err := os.ReadFile(path)
+			if err != nil {
+				return Index{}, err
+			}
+			tree, err := parseMarkupTree(string(source), nameFromPath(path, filepath.Ext(path)))
+			if err != nil {
+				return Index{}, err
+			}
+			if err := validateMarkupComponents(tree, &idx, p.Namespace); err != nil {
+				return Index{}, err
+			}
+			if err := validateRemoteObjectDeclarations(tree, p); err != nil {
+				return Index{}, err
+			}
+			if err := validatePresentationControllerTypes(tree, p); err != nil {
+				return Index{}, err
+			}
+			if root := visualforceControllerRoot(tree); validateExpressions && len(p.ApexFiles) != 0 && root != nil && (root.Attribute("controller") != "" || root.Attribute("extensions") != "") {
+				if expressions == nil {
+					expressions, err = newExpressionValidationContext(p, &idx)
+					if err != nil {
+						return Index{}, err
+					}
+				}
+				if rejectedControllers == nil {
+					rejectedControllers, err = rejectedVisualforceControllers(p)
+					if err != nil {
+						return Index{}, err
+					}
+				}
+				if err := validateCompiledControllerDeclarations(root, rejectedControllers); err != nil {
+					return Index{}, err
+				}
+				if err := validateControllerDeclarations(root, expressions.classes); err != nil {
+					return Index{}, err
+				}
+			}
+			if validateExpressions && strings.Contains(string(source), "{!") {
+				if expressions == nil {
+					expressions, err = newExpressionValidationContext(p, &idx)
+					if err != nil {
+						return Index{}, err
+					}
+				}
+				if err := expressions.validate(tree, nameFromPath(path, filepath.Ext(path))); err != nil {
+					return Index{}, err
+				}
+			}
+		}
+	}
 	return idx, nil
 }
 
 func ParsePageFile(path string) (Page, error) {
+	return parsePageFile(path, "")
+}
+
+func parsePageFile(path, fallbackAPIVersion string) (Page, error) {
+	return parsePageFileWithStructureValidation(path, fallbackAPIVersion, true)
+}
+
+func parsePageFileLenient(path, fallbackAPIVersion string) (Page, error) {
+	return parsePageFileWithStructureValidation(path, fallbackAPIVersion, false)
+}
+
+func parsePageFileWithStructureValidation(path, fallbackAPIVersion string, validateStructure bool) (Page, error) {
+	metadataOnly := strings.HasSuffix(strings.ToLower(path), ".page-meta.xml")
+	if validateStructure && !metadataOnly {
+		if err := validateVisualforceFileStructure(path, "page"); err != nil {
+			return Page{}, err
+		}
+	}
+	if validateStructure {
+		if err := validateVisualforceMetadata(path, "ApexPage"); err != nil {
+			return Page{}, err
+		}
+	}
 	doc, err := parseMarkup(path)
 	if err != nil {
 		return Page{}, err
 	}
 	page := Page{Name: nameFromPath(path, ".page"), File: path}
+	page.APIVersion, err = resource.EffectiveVisualforceAPIVersion(path, fallbackAPIVersion)
+	if err != nil {
+		return Page{}, err
+	}
 	for _, token := range doc.Tokens {
 		if token.Start {
 			if strings.EqualFold(token.Local, "page") && page.Controller == "" && page.StandardController == "" {
@@ -125,11 +285,35 @@ func ParsePageFile(path string) (Page, error) {
 }
 
 func ParseComponentFile(path string) (Component, error) {
+	return parseComponentFile(path, "")
+}
+
+func parseComponentFile(path, fallbackAPIVersion string) (Component, error) {
+	return parseComponentFileWithStructureValidation(path, fallbackAPIVersion, true)
+}
+
+func parseComponentFileLenient(path, fallbackAPIVersion string) (Component, error) {
+	return parseComponentFileWithStructureValidation(path, fallbackAPIVersion, false)
+}
+
+func parseComponentFileWithStructureValidation(path, fallbackAPIVersion string, validateStructure bool) (Component, error) {
+	if validateStructure {
+		if err := validateVisualforceFileStructure(path, "component"); err != nil {
+			return Component{}, err
+		}
+		if err := validateVisualforceMetadata(path, "ApexComponent"); err != nil {
+			return Component{}, err
+		}
+	}
 	doc, err := parseMarkup(path)
 	if err != nil {
 		return Component{}, err
 	}
 	component := Component{Name: nameFromPath(path, ".component"), File: path}
+	component.APIVersion, err = resource.EffectiveVisualforceAPIVersion(path, fallbackAPIVersion)
+	if err != nil {
+		return Component{}, err
+	}
 	for _, token := range doc.Tokens {
 		if token.Start {
 			if strings.EqualFold(token.Local, "component") && component.Controller == "" {
@@ -314,6 +498,7 @@ func attributeFromToken(token markupToken) Attribute {
 		Type:        attr(token.Attrs, "type"),
 		AssignTo:    attr(token.Attrs, "assignTo"),
 		Required:    attr(token.Attrs, "required"),
+		Default:     attr(token.Attrs, "default"),
 		Description: attr(token.Attrs, "description"),
 	}
 	attribute.MergeReferences = dedupeMergeReferences(ExtractMergeReferences(attribute.AssignTo))
@@ -423,8 +608,8 @@ func splitCSV(value string) []string {
 
 func nameFromPath(path, suffix string) string {
 	base := filepath.Base(path)
-	if suffix == ".page" && hasSuffixFold(base, ".page-meta.xml") {
-		return base[:len(base)-len(".page-meta.xml")]
+	if (suffix == ".page" || suffix == ".component") && hasSuffixFold(base, suffix+"-meta.xml") {
+		return base[:len(base)-len(suffix+"-meta.xml")]
 	}
 	if hasSuffixFold(base, suffix) {
 		return base[:len(base)-len(suffix)]

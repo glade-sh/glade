@@ -44,6 +44,17 @@ func (vm *VM) reflectionConstructableClass(class Class) bool {
 // is the name-resolution prologue of constructValueWithLiteral, separated so the
 // construction switch reads as pure dispatch.
 func (vm *VM) resolveConstructorTypeName(typeName string, args []Value, namedArgs map[string]Value) string {
+	if record, ok := vm.explicitSchemaRecordType(typeName); ok {
+		return "Schema." + record
+	}
+	// An explicit System qualification selects the platform runtime type even
+	// when the project defines an unqualified class with the same short name.
+	// Canonical runtime values are stored without the System prefix.
+	if len(typeName) > len("System.") && strings.EqualFold(typeName[:len("System.")], "System.") {
+		if platformType := typeName[len("System."):]; isCanonicalRuntimeTypeName(platformType) {
+			return canonicalRuntimeTypeName(platformType)
+		}
+	}
 	if !strings.Contains(typeName, ".") {
 		if resolved := vm.resolveTypeNameInCurrentExecutionContext(typeName); resolved != "" && vm.classConstructorCanAccept(resolved, args, namedArgs) {
 			typeName = resolved
@@ -121,6 +132,10 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 		}
 		if !literalArgs && len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueSet) {
 			value := List(append([]Value(nil), collectionMembers(args[0])...)...)
+			// Copying native Id slots preserves their membership.
+			if element, ok := collectionElementType(typeName); ok && strings.EqualFold(canonicalRuntimePlatformType(element), "Id") && args[0].Kind == ValueList {
+				value.nativeListMembership = args[0].nativeListMembership
+			}
 			v, err := vm.coerceAssignable(typeName, value)
 			vm.markCollectionRefsEscaped(v)
 			vm.rememberLocalOnlyCollection(v)
@@ -135,13 +150,12 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 			return Null, true, fmt.Errorf("Set constructor does not accept named fields")
 		}
 		if !literalArgs && len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueSet) {
-			value := Set(collectionMembers(args[0])...)
-			v, err := vm.coerceAssignable(typeName, value)
+			v, err := vm.constructTrackedSet(typeName, collectionMembers(args[0]), &Result{})
 			vm.markCollectionRefsEscaped(v)
 			vm.rememberLocalOnlyCollection(v)
 			return v, true, err
 		}
-		v, err := vm.coerceAssignable(typeName, Set(args...))
+		v, err := vm.constructTrackedSet(typeName, args, &Result{})
 		vm.markCollectionRefsEscaped(v)
 		vm.rememberLocalOnlyCollection(v)
 		return v, true, err
@@ -159,7 +173,10 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 				if err != nil {
 					return Null, true, fmt.Errorf("Map constructor: %w", err)
 				}
-				encodedKey := vm.mapKey(key)
+				encodedKey, err := vm.mapEntryKey(value, key)
+				if err != nil {
+					return Null, true, err
+				}
 				if _, exists := value.Map[encodedKey]; !exists {
 					value.MapOrder = append(value.MapOrder, encodedKey)
 				}
@@ -180,7 +197,10 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 				if err != nil {
 					return Null, true, fmt.Errorf("Map constructor: %w", err)
 				}
-				encodedKey := vm.mapKey(key)
+				encodedKey, err := vm.mapEntryKey(value, key)
+				if err != nil {
+					return Null, true, err
+				}
 				if _, exists := value.Map[encodedKey]; !exists {
 					value.MapOrder = append(value.MapOrder, encodedKey)
 				}
@@ -223,7 +243,22 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 }
 
 func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs map[string]Value, result *Result, literalArgs bool) (Value, error) {
+	return vm.constructValueWithNamedArgOrder(typeName, args, namedArgs, nil, result, literalArgs)
+}
+
+func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, namedArgs map[string]Value, namedArgOrder []string, result *Result, literalArgs bool) (Value, error) {
+	explicitSystemRuntimeType := len(typeName) > len("System.") &&
+		strings.EqualFold(typeName[:len("System.")], "System.") &&
+		isCanonicalRuntimeTypeName(typeName[len("System."):])
 	typeName = vm.resolveConstructorTypeName(typeName, args, namedArgs)
+	if strings.HasPrefix(strings.ToLower(typeName), "flow.interview.") {
+		if len(args) != 1 || args[0].Kind != ValueMap || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("%s constructor expects input variable map", typeName)
+		}
+		interview := Object(typeName)
+		interview.Fields["variables"] = args[0]
+		return interview, nil
+	}
 	if scalarConstructorForbidden(typeName) {
 		return Null, fmt.Errorf("Type cannot be constructed: %s", strings.TrimPrefix(typeName, "System."))
 	}
@@ -231,6 +266,10 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		return value, err
 	}
 	if strings.EqualFold(typeName, "XmlStreamReader") {
+		// XML oracle R162: null is a valid overload argument with a native NPE.
+		if len(args) == 1 && len(namedArgs) == 0 && args[0].Kind == ValueNull {
+			return Null, xmlNullArgument(1)
+		}
 		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("XmlStreamReader constructor expects XML String")
 		}
@@ -275,6 +314,14 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	if strings.EqualFold(typeName, "Auth.VerificationResult") {
 		return constructAuthVerificationResult(args, namedArgs)
 	}
+	if strings.EqualFold(typeName, "Auth.TokenValidationResult") {
+		if len(namedArgs) != 0 || len(args) != 1 || (args[0].Kind != ValueBool && args[0].Kind != ValueNull) {
+			return Null, fmt.Errorf("Auth.TokenValidationResult constructor expects Boolean")
+		}
+		value := Object("Auth.TokenValidationResult")
+		value.Fields["isValid"] = args[0]
+		return value, nil
+	}
 	if strings.EqualFold(typeName, "Auth.JWT") {
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Auth.JWT constructor expects 0 arguments")
@@ -285,6 +332,26 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		return jwt, nil
 	}
+	if strings.EqualFold(typeName, "compression.ZipWriter") || strings.EqualFold(typeName, "compression.ZipReader") {
+		class, registered := vm.lookupClass(typeName)
+		// A source-defined class retains constructor precedence. Require actual
+		// generated members as well as passive shape; an empty source class is
+		// also passive but must not become a native ZIP object.
+		if !registered || (len(class.Methods) > 0 && passiveRuntimeClass(class)) {
+			switch strings.ToLower(typeName) {
+			case "compression.zipwriter":
+				if len(args) != 0 || len(namedArgs) != 0 {
+					return Null, fmt.Errorf("compression.ZipWriter constructor expects 0 arguments")
+				}
+				return newCompressionZipWriter(), nil
+			case "compression.zipreader":
+				if len(args) != 1 || len(namedArgs) != 0 || (args[0].Kind != ValueNull && (args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "Blob"))) {
+					return Null, fmt.Errorf("compression.ZipReader constructor expects Blob archive")
+				}
+				return newCompressionZipReader(args[0])
+			}
+		}
+	}
 	if value, handled, err := constructProcessPluginDescribeResultParameter(typeName, args, namedArgs); handled || err != nil {
 		return value, err
 	}
@@ -293,7 +360,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return value, err
 		}
 	}
-	if class, ok := vm.lookupClass(typeName); ok && (!vm.isSObjectType(typeName) || vm.classConstructorCanAccept(typeName, args, namedArgs)) && !platformVersionTypeName(typeName) {
+	if class, ok := vm.lookupClass(typeName); ok && (!vm.isSObjectType(typeName) || vm.classConstructorCanAccept(typeName, args, namedArgs)) && !platformVersionTypeName(typeName) && !explicitSystemRuntimeType {
 		typeName = runtimeClassName(class)
 		if class.IsInterface {
 			return Null, fmt.Errorf("cannot instantiate interface %s", typeName)
@@ -328,6 +395,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		isSObjectCtor := vm.isSObjectType(typeName)
 		object := Object(typeName)
 		vm.rememberLocalOnlyObject(object)
+		// R202/X010: source-defined exceptions carry their construction
+		// location, just like exceptions constructed by the platform path.
+		object = annotateConstructedException(object, vm.rawStackFrames())
 		if !passiveDTO {
 			for field, value := range namedArgs {
 				object.Fields[field] = value
@@ -353,7 +423,8 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		if !passiveDTO {
 			delete(object.Fields, sobjectExplicitFieldsField)
-			for field, value := range namedArgs {
+			for _, field := range sObjectConstructorNamedArgFields(typeName, isSObjectCtor, namedArgs, namedArgOrder) {
+				value := namedArgs[field]
 				if isSObjectCtor {
 					vm.setExplicitSObjectFieldValue(&object, field, value)
 				} else {
@@ -401,7 +472,8 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		if !passiveDTO {
 			delete(object.Fields, sobjectExplicitFieldsField)
-			for field, value := range namedArgs {
+			for _, field := range sObjectConstructorNamedArgFields(typeName, isSObjectCtor, namedArgs, namedArgOrder) {
+				value := namedArgs[field]
 				if isSObjectCtor {
 					vm.setExplicitSObjectFieldValue(&object, field, value)
 				} else {
@@ -412,6 +484,11 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		return object, nil
 	}
 	switch typeName {
+	case "Location":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Location constructor expects 0 arguments")
+		}
+		return newLocation(Null, Null), nil
 	case "Apex.Stack":
 		if len(args) != 0 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("Apex.Stack constructor expects 0 arguments")
@@ -431,6 +508,11 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("%s constructor expects 0 arguments", typeName)
 		}
 		return newApexPagesComponentValue(typeName), nil
+	case "Http":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Http constructor expects 0 arguments")
+		}
+		return Object("Http"), nil
 	case "HttpRequest":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("HttpRequest constructor expects 0 arguments")
@@ -449,7 +531,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			response.Fields[field] = value
 		}
 		return response, nil
-	case "Database.DMLOptions", "DMLOptions":
+	case "Database.DMLOptions", "Database.DmlOptions", "DMLOptions", "DmlOptions":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Database.DMLOptions constructor expects 0 arguments")
 		}
@@ -650,12 +732,24 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if len(namedArgs) != 0 {
 			return Null, fmt.Errorf("Cookie constructor does not support named arguments")
 		}
+		if len(args) >= 2 {
+			if _, isID := typedIDValueText(args[1]); isID {
+				value, err := vm.coerceAssignable("String", args[1])
+				if err != nil {
+					return Null, err
+				}
+				args = append([]Value(nil), args...)
+				args[1] = value
+			}
+		}
 		return newCookie(args)
 	case "Domain":
 		if len(args) != 0 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("Domain constructor expects 0 arguments")
 		}
-		return newDomainFromHostname(localDomainHostname("ORG_MY_DOMAIN", "")), nil
+		// Z003 observes compilation only; H024-H028 reject the getters.
+		// An unparsed Domain has no observed org identity to populate.
+		return Object("Domain"), nil
 	case "DomainCreator":
 		if len(args) != 0 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("DomainCreator constructor expects 0 arguments")
@@ -681,16 +775,6 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		return row, nil
 	case "VisualEditor.DynamicPickListRows":
 		return newVisualEditorDynamicPickListRows(args, namedArgs)
-	case "compression.ZipWriter":
-		if len(args) != 0 || len(namedArgs) != 0 {
-			return Null, fmt.Errorf("compression.ZipWriter constructor expects 0 arguments")
-		}
-		return newCompressionZipWriter(), nil
-	case "compression.ZipReader":
-		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueObject || args[0].Type != "Blob" {
-			return Null, fmt.Errorf("compression.ZipReader constructor expects Blob archive")
-		}
-		return newCompressionZipReader(args[0])
 	case "UserProvisioning.ProvisioningBatchable", "UserProvisioning.PluginBatchable":
 		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueList {
 			return Null, fmt.Errorf("%s constructor expects List<SObject>", typeName)
@@ -757,13 +841,20 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		version := Object("Version")
 		fields := []string{"major", "minor", "patch"}
 		for i, arg := range args {
+			if arg.Kind == ValueNull && i < 2 {
+				return Null, newExceptionError("System.NullPointerException", fmt.Sprintf("Argument %d cannot be null", i+1))
+			}
+			if arg.Kind == ValueNull || (arg.Kind == ValueInt && arg.Int < 0) {
+				component := []string{"Major version", "Minor version", "Patch"}[i]
+				return Null, newExceptionError("System.InvalidParameterValueException", component+" number is null or out of range (>= 0)")
+			}
 			if arg.Kind != ValueInt {
 				return Null, fmt.Errorf("Version constructor expects Integer components")
 			}
 			version.Fields[fields[i]] = arg
 		}
 		if len(args) == 2 {
-			version.Fields["patch"] = Int(0)
+			version.Fields["patch"] = Null
 		}
 		version.Fields["__gladePatchSpecified"] = Bool(len(args) == 3)
 		return version, nil
@@ -785,7 +876,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		metadata.Fields["description"] = Null
 		metadata.Fields["fullName"] = Null
 		metadata.Fields["label"] = Null
-		metadata.Fields["protected_x"] = Bool(false)
+		metadata.Fields["protected_x"] = Null // Unset scalar DTO fields are null.
 		metadata.Fields["values"] = typedList("List<Metadata.CustomMetadataValue>")
 		for field, value := range namedArgs {
 			metadata.Fields[field] = value
@@ -848,19 +939,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Metadata.DeployResult constructor expects 0 arguments")
 		}
-		result := Object("Metadata.DeployResult")
-		result.Fields["id"] = Null
-		result.Fields["status"] = metadataDeployStatusValue("SUCCEEDED")
-		result.Fields["success"] = Bool(true)
-		result.Fields["done"] = Bool(true)
-		result.Fields["numberComponentErrors"] = Int(0)
-		result.Fields["numberComponentsDeployed"] = Int(0)
-		result.Fields["numberComponentsTotal"] = Int(0)
-		result.Fields["numberTestErrors"] = Int(0)
-		result.Fields["numberTestsCompleted"] = Int(0)
-		result.Fields["checkOnly"] = Bool(false)
-		result.Fields["messages"] = List()
-		result.Fields["details"] = metadataDeployDetailsObject()
+		result := metadataDeployResultConstructorObject()
 		for field, value := range namedArgs {
 			result.Fields[field] = value
 		}
@@ -878,20 +957,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Metadata.DeployMessage constructor expects 0 arguments")
 		}
-		message := Object("Metadata.DeployMessage")
-		message.Fields["changed"] = Bool(false)
-		message.Fields["columnNumber"] = Int(0)
-		message.Fields["componentType"] = Null
-		message.Fields["created"] = Bool(false)
-		message.Fields["createdDate"] = Null
-		message.Fields["deleted"] = Bool(false)
-		message.Fields["fileName"] = Null
-		message.Fields["fullName"] = Null
-		message.Fields["id"] = Null
-		message.Fields["lineNumber"] = Int(0)
-		message.Fields["problem"] = Null
-		message.Fields["problemType"] = Null
-		message.Fields["success"] = Bool(false)
+		message := metadataDeployMessageObject()
 		for field, value := range namedArgs {
 			message.Fields[field] = value
 		}
@@ -918,6 +984,11 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if len(args) < 2 || len(args) > 3 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("SelectOption constructor expects value, label[, disabled]")
 		}
+		for i, arg := range args {
+			if arg.Kind == ValueNull {
+				return Null, newExceptionError("System.NullPointerException", fmt.Sprintf("Argument %d cannot be null", i+1))
+			}
+		}
 		value, err := vm.coerceAssignable("String", args[0])
 		if err != nil {
 			return Null, fmt.Errorf("SelectOption constructor value expects String: %w", err)
@@ -936,6 +1007,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		return newSelectOption(value, label, disabled, escapeItem), nil
 	case "ApexPages.StandardController":
+		if len(args) == 1 && len(namedArgs) == 0 && args[0].Kind == ValueNull {
+			return Null, newExceptionError("NullPointerException", "Argument cannot be null")
+		}
 		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueObject {
 			return Null, fmt.Errorf("ApexPages.StandardController constructor expects SObject")
 		}
@@ -951,41 +1025,15 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		controller.Fields["record"] = args[0]
 		return controller, nil
 	case "ApexPages.StandardSetController":
+		if len(args) == 1 && len(namedArgs) == 0 && args[0].Kind == ValueNull {
+			return Null, newExceptionError("NullPointerException", "Argument 1 cannot be null")
+		}
 		if len(args) != 1 || len(namedArgs) != 0 || (args[0].Kind != ValueList && !(args[0].Kind == ValueObject && args[0].Type == "Database.QueryLocator")) {
 			return Null, fmt.Errorf("ApexPages.StandardSetController constructor expects List or QueryLocator")
 		}
-		records := args[0]
-		if args[0].Kind == ValueObject && args[0].Type == "Database.QueryLocator" {
-			if value, ok := args[0].Fields["Records"]; ok {
-				records = value
-			} else {
-				records = List()
-			}
-		}
-		controller := Object("ApexPages.StandardSetController")
-		controller.Fields["records"] = records
-		controller.Fields["selected"] = List()
-		controller.Fields["pageSize"] = Int(20)
-		controller.Fields["pageNumber"] = Int(1)
-		if args[0].Kind == ValueList {
-			controller.Fields["__glade_caller_provided"] = Bool(true)
-		}
-		return controller, nil
+		return newStandardSetController(args[0])
 	case "ApexPages.Message":
-		if len(args) < 2 || len(args) > 4 {
-			return Null, fmt.Errorf("ApexPages.Message constructor expects severity, summary[, detail[, componentLabel]]")
-		}
-		message := Object("ApexPages.Message")
-		message.Fields["severity"] = args[0]
-		message.Fields["summary"] = args[1]
-		if len(args) == 3 {
-			message.Fields["detail"] = args[2]
-		}
-		if len(args) == 4 {
-			message.Fields["detail"] = args[2]
-			message.Fields["componentLabel"] = args[3]
-		}
-		return message, nil
+		return newApexPagesMessage(args)
 	case "Messaging.SendEmailResult":
 		if len(args) != 0 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("Messaging.SendEmailResult constructor expects 0 arguments")
@@ -1016,7 +1064,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("Messaging.CustomNotification constructor expects 0 or 6 arguments")
 		}
 		for _, arg := range args {
-			if arg.Kind != ValueString && !(arg.Kind == ValueObject && strings.EqualFold(arg.Type, "Id")) {
+			if arg.Kind != ValueNull && arg.Kind != ValueString && !(arg.Kind == ValueObject && strings.EqualFold(arg.Type, "Id")) {
 				return Null, fmt.Errorf("Messaging.CustomNotification constructor expects String arguments")
 			}
 		}
@@ -1071,6 +1119,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		var raw string
 		switch len(args) {
 		case 1:
+			if args[0].Kind == ValueNull {
+				return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+			}
 			if args[0].Kind != ValueString {
 				return Null, fmt.Errorf("URL constructor expects String")
 			}
@@ -1083,13 +1134,18 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			if err != nil {
 				return Null, err
 			}
-			base, err := url.Parse(baseRaw)
+			base, err := parseURLValue(baseRaw)
 			if err != nil {
 				return Null, err
 			}
-			ref, err := url.Parse(args[1].Text)
+			ref, err := parseURLValue(args[1].Text)
 			if err != nil {
 				return Null, err
+			}
+			// A query-only spec replaces the final path segment (D103/D106).
+			if ref.Path == "" && (ref.RawQuery != "" || ref.ForceQuery) {
+				base.Path = base.Path[:strings.LastIndexByte(base.Path, '/')+1]
+				base.RawPath = ""
 			}
 			raw = base.ResolveReference(ref).String()
 		case 3, 4:
@@ -1103,7 +1159,10 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 				}
 				host = fmt.Sprintf("%s:%d", host, args[2].Int)
 			}
-			raw = protocol + "://" + host + file
+			raw = protocol + ":" + file
+			if host != "" {
+				raw = protocol + "://" + host + file
+			}
 		default:
 			return Null, fmt.Errorf("URL constructor expects spec, context and spec, or protocol, host, [port,] file")
 		}
@@ -1125,6 +1184,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		return newComponentApexValue(typeName, namedArgs), nil
 	}
 	objectType := typeName
+	if record, ok := vm.explicitSchemaRecordType(typeName); ok {
+		objectType = record
+	}
 	var definition storage.ObjectDefinition
 	if vm.Org != nil {
 		if canonical, ok := vm.resolveObjectName(typeName); ok {
@@ -1145,7 +1207,13 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	if definition.APIName != "" {
 		vm.initializeSObjectSchemaDefaults(&object, objectType)
 	}
-	for field, value := range namedArgs {
+	for _, field := range sObjectConstructorNamedArgFields(objectType, definition.APIName != "", namedArgs, namedArgOrder) {
+		value := namedArgs[field]
+		if strings.EqualFold(field, "Id") && definition.KeyPrefix != "" {
+			if id, ok := sObjectIDFromValue(value); ok && validateApexIDShape(string(id)) == nil && !strings.HasPrefix(string(id), definition.KeyPrefix) {
+				return Null, newExceptionError("TypeException", "Invalid id value for this SObject type: "+value.String())
+			}
+		}
 		explicitField := false
 		if definition.APIName != "" {
 			if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field); ok {
@@ -1160,6 +1228,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			object.Fields[field] = value
 		}
 	}
+	vm.registerSObjectAliasRecord(object)
 	if !vm.isSObjectLikeType(objectType) {
 		vm.initializeFields(&object, objectType)
 	}
@@ -1185,6 +1254,37 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	return object, nil
 }
 
+// SObject named fields retain source order, including ordinary records (R222/R223).
+func sObjectConstructorNamedArgFields(_ string, isSObjectCtor bool, namedArgs map[string]Value, namedArgOrder []string) []string {
+	if !isSObjectCtor || len(namedArgOrder) == 0 {
+		fields := make([]string, 0, len(namedArgs))
+		for field := range namedArgs {
+			fields = append(fields, field)
+		}
+		if isSObjectCtor {
+			sort.Strings(fields)
+		}
+		return fields
+	}
+	fields := make([]string, 0, len(namedArgs))
+	seen := make(map[string]bool, len(namedArgs))
+	for _, field := range namedArgOrder {
+		if _, ok := namedArgs[field]; !ok || seen[field] {
+			continue
+		}
+		fields = append(fields, field)
+		seen[field] = true
+	}
+	remaining := make([]string, 0, len(namedArgs)-len(fields))
+	for field := range namedArgs {
+		if !seen[field] {
+			remaining = append(remaining, field)
+		}
+	}
+	sort.Strings(remaining)
+	return append(fields, remaining...)
+}
+
 func scalarConstructorForbidden(typeName string) bool {
 	typeName = strings.TrimPrefix(strings.TrimSpace(typeName), "System.")
 	switch strings.ToLower(typeName) {
@@ -1202,6 +1302,11 @@ func (vm *VM) classConstructorCanAccept(typeName string, args []Value, namedArgs
 	class, ok := vm.lookupClass(typeName)
 	if !ok {
 		return false
+	}
+	// A loaded class with no declared constructors has an implicit zero-arg
+	// constructor, including when its name shadows a schema record type.
+	if len(class.Constructors) == 0 && len(args) == 0 {
+		return true
 	}
 	if len(namedArgs) != 0 {
 		_, _, ok, ambiguous := vm.matchConstructorWithNamedArgs(class, args, namedArgs)
@@ -1299,7 +1404,9 @@ func applyExceptionConstructorArgs(object *Value, args []Value) (bool, error) {
 	case 0:
 		return true, nil
 	case 1:
-		if args[0].Kind == ValueObject && isExceptionType(args[0].Type) {
+		// An explicitly typed null Exception selects the
+		// cause overload and retains the default message.
+		if (args[0].Kind == ValueObject || isEventBusExceptionType(object.Type) && args[0].Kind == ValueNull) && isExceptionType(args[0].Type) {
 			object.Fields["__causeInitialized"] = Bool(true)
 			object.Fields["__cause"] = args[0]
 			return true, nil
@@ -1339,7 +1446,17 @@ func exceptionConstructorArgsCanApply(typeName string, args []Value) bool {
 	}
 }
 
+func isEventBusExceptionType(typeName string) bool {
+	return strings.EqualFold(exceptionTypeName(typeName), "eventbus.InvalidReplayIdException") ||
+		strings.EqualFold(exceptionTypeName(typeName), "eventbus.RetryableException")
+}
+
 func setExceptionMessage(object *Value, value Value) {
+	// A typed String null stays raw null.
+	if isEventBusExceptionType(object.Type) && value.Kind == ValueNull {
+		object.Fields["message"] = Null
+		return
+	}
 	if value.Kind == ValueString {
 		if strings.EqualFold(exceptionTypeName(object.Type), "TouchHandledException") {
 			object.Fields["message"] = String("Script-thrown exception")
@@ -1407,34 +1524,90 @@ func allMapEntryValues(values []Value) bool {
 }
 
 func validateURLConstructorValue(raw string) error {
-	parsed, err := url.Parse(raw)
+	parsed, err := parseURLValue(raw)
 	if err != nil {
 		return fmt.Errorf("URL constructor invalid URL: %w", err)
 	}
 	if parsed.Scheme == "" {
-		return fmt.Errorf("URL constructor invalid URL: missing protocol")
+		return newExceptionError("StringException", "no protocol: "+raw)
 	}
-	if parsed.Host == "" {
-		return fmt.Errorf("URL constructor invalid URL: missing host")
-	}
-	if port := parsed.Port(); port != "" {
-		value, err := strconv.ParseInt(port, 10, 64)
-		if err != nil || value < 0 || value > 65535 {
-			return fmt.Errorf("URL constructor invalid URL: invalid port")
-		}
+	if parsed.Host == "" && strings.HasSuffix(raw, "://") {
+		return newExceptionError("System.StringException", fmt.Sprintf("Expected authority at index %d: %s", len(raw), raw))
 	}
 	return nil
 }
 
-func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result) error {
-	if superName := vm.resolvedSuperClassName(class); superName != "" {
-		if superClass, ok := vm.lookupClass(superName); ok {
-			if err := vm.runInstanceInitializers(superClass, object, result); err != nil {
-				return err
+// URL exposes URI components at the supported API floors. A registry-style
+// authority may contain a nonnumeric port: its authority survives, while the
+// server host is empty and its port is -1 (D183, C030-C037).
+func parseURLValue(raw string) (*url.URL, error) {
+	parsed, err := url.Parse(raw)
+	if err != nil && strings.Contains(err.Error(), "invalid port") {
+		if start := strings.Index(raw, "://"); start >= 0 {
+			start += 3
+			end := len(raw)
+			if offset := strings.IndexAny(raw[start:], "/?#"); offset >= 0 {
+				end = start + offset
+			}
+			authority := raw[start:end]
+			if colon := strings.LastIndexByte(authority, ':'); colon > strings.LastIndexByte(authority, ']') && colon > strings.LastIndexByte(authority, '@') {
+				parsed, err = url.Parse(raw[:start] + authority[:colon] + raw[end:])
+				if err == nil {
+					parsed.Host = authority[strings.LastIndexByte(authority, '@')+1:]
+				}
 			}
 		}
 	}
-	for _, initializer := range class.InstanceInitializers {
+	if err != nil {
+		return nil, err
+	}
+	// net/url normalizes the scheme; Apex preserves its source spelling (D064).
+	if parsed.Scheme != "" {
+		parsed.Scheme = raw[:strings.IndexByte(raw, ':')]
+	}
+	return parsed, nil
+}
+
+func urlHostValue(parsed *url.URL) string {
+	host := parsed.Host
+	if colon := strings.LastIndexByte(host, ':'); colon > strings.LastIndexByte(host, ']') {
+		if port := host[colon+1:]; port != "" {
+			if _, err := strconv.ParseInt(port, 10, 64); err != nil {
+				return ""
+			}
+		}
+		return host[:colon]
+	}
+	return host
+}
+
+func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result) error {
+	// Derived fields run
+	// before base fields; inherited fields still have their null defaults.
+	type literalInitializer struct {
+		name  string
+		field Field
+	}
+	var literals map[int][]literalInitializer
+	for _, name := range orderedFieldNames(class.Fields, class.FieldOrder) {
+		field := class.Fields[name]
+		if field.InitializerLine == 0 {
+			continue
+		}
+		if literals == nil {
+			literals = make(map[int][]literalInitializer)
+		}
+		index := instanceLiteralInitializerIndex(class, field)
+		literals[index] = append(literals[index], literalInitializer{name: name, field: field})
+	}
+	for i := 0; i <= len(class.InstanceInitializers); i++ {
+		for _, literal := range literals[i] {
+			object.Fields[literal.name] = defaultValue(literal.field.Type, literal.field.InitialValue)
+		}
+		if i == len(class.InstanceInitializers) {
+			break
+		}
+		initializer := class.InstanceInitializers[i]
 		if initializer.Name == "" {
 			initializer.Name = class.Name + ".<init_block>"
 		}
@@ -1448,7 +1621,39 @@ func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result)
 		}
 		vm.endFrameworkMethodCountRecorderRollback(recorderRollback, false)
 	}
+	if superName := vm.resolvedSuperClassName(class); superName != "" {
+		if superClass, ok := vm.lookupClass(superName); ok {
+			return vm.runInstanceInitializers(superClass, object, result)
+		}
+	}
 	return nil
+}
+
+// Folded literals do not add executable bodies. Match their source provenance
+// and position against the existing bodies, whose order and API stamps stay
+// unchanged. This also preserves dependency-before-project ordering on merges.
+func instanceLiteralInitializerIndex(class Class, field Field) int {
+	index := len(class.InstanceInitializers)
+	sameSource := false
+	for i, initializer := range class.InstanceInitializers {
+		if initializer.Dependency != field.Dependency || !sameMethodFile(initializer.File, field.File) {
+			continue
+		}
+		sameSource = true
+		if field.InitializerLine < initializer.Line ||
+			(field.InitializerLine == initializer.Line && field.InitializerColumn <= initializer.Column) {
+			return i
+		}
+		index = i + 1
+	}
+	if !sameSource && field.Dependency {
+		for i, initializer := range class.InstanceInitializers {
+			if !initializer.Dependency {
+				return i
+			}
+		}
+	}
+	return index
 }
 
 func isExceptionType(typeName string) bool {
@@ -1509,12 +1714,20 @@ func (vm *VM) initializeFields(object *Value, typeName string) {
 	if !ok {
 		return
 	}
+	object.classInstance = true
+	if !class.Dependency {
+		object.projectClass = true // Resolved source ownership, not a type-name or field-shape guess.
+	}
 	if superName := vm.resolvedSuperClassName(class); superName != "" {
 		vm.initializeFields(object, superName)
 	}
 	for _, name := range orderedFieldNames(class.Fields, class.FieldOrder) {
 		field := class.Fields[name]
-		value := defaultValue(field.Type, field.InitialValue)
+		initialValue := field.InitialValue
+		if field.InitializerLine != 0 {
+			initialValue = Value{}
+		}
+		value := defaultValue(field.Type, initialValue)
 		if value.Kind == ValueObject && !strings.EqualFold(value.Type, field.Type) &&
 			(vm.typeAssignableTo(value.Type, field.Type) || vm.typeMatches(value.Type, field.Type, make(map[string]bool))) {
 			if value.Runtime == "" {
@@ -1539,7 +1752,8 @@ func (vm *VM) initializeSObjectSchemaDefaults(object *Value, typeName string) {
 		return
 	}
 	for name, field := range state.Definition.Fields {
-		if field.Type != storage.FieldBoolean {
+		// IsDeleted defaults on persisted records, not on a fresh Apex receiver.
+		if field.Type != storage.FieldBoolean || strings.EqualFold(name, "IsDeleted") {
 			continue
 		}
 		defaultValue, ok := storage.DefaultValueForField(field)
@@ -1555,8 +1769,13 @@ func (vm *VM) initializeSObjectSchemaDefaults(object *Value, typeName string) {
 }
 
 func (vm *VM) initializePassiveCollectionFields(object *Value, typeName string) {
+	// Reports collection getters synthesize empties over nullable DTO fields.
+	// R153-R182 and K007/K011-K014 preserve the raw JSON field values.
 	class, ok := vm.lookupClass(typeName)
 	if !ok {
+		return
+	}
+	if reportsPassiveRuntimeClass(class) {
 		return
 	}
 	if superName := vm.resolvedSuperClassName(class); superName != "" {
@@ -1566,6 +1785,12 @@ func (vm *VM) initializePassiveCollectionFields(object *Value, typeName string) 
 		field := class.Fields[name]
 		value := object.Fields[name]
 		if value.Kind != ValueNull {
+			continue
+		}
+		// Approval R002/R023: fresh requests retain a null approver list;
+		// explicit lists supplied by setters are preserved (R017/R036).
+		if strings.EqualFold(name, "nextApproverIds") &&
+			(strings.EqualFold(object.Type, "Approval.ProcessSubmitRequest") || strings.EqualFold(object.Type, "Approval.ProcessWorkitemRequest")) {
 			continue
 		}
 		switch {
@@ -1905,10 +2130,10 @@ func (vm *VM) callChainedConstructor(callee string, args []Value, result *Result
 		return Null, fmt.Errorf("%s constructor expects 0 arguments", targetClass.Name)
 	}
 	if callee == "this" && sameConstructorSignature(vm.currentMethod, target) {
-		return Null, fmt.Errorf("recursive constructor invocation %s", target.Name)
+		return Null, &RuntimeError{Type: "System.LimitException", Message: "Maximum stack depth reached: 1001"}
 	}
 	if vm.activeConstructors[constructorCallKey(target)] > 0 {
-		return Null, fmt.Errorf("recursive constructor invocation %s", target.Name)
+		return Null, &RuntimeError{Type: "System.LimitException", Message: "Maximum stack depth reached: 1001"}
 	}
 	if callee == "super" && vm.isSObjectUnitOfWorkBaseType(targetClass.Name) {
 		constructed, err := vm.constructFrameworkSObjectUnitOfWork(args, nil)
@@ -2042,7 +2267,7 @@ func (vm *VM) resolveInstanceMethodSeen(typeName, method string, seen map[string
 			return Method{}, false
 		}
 		seen[typeName] = true
-		if target, ok := vm.Methods[typeName+"."+method]; ok {
+		if target, ok := vm.registeredMethod(typeName + "." + method); ok {
 			return target, true
 		}
 		class, ok := vm.lookupClass(typeName)
@@ -2065,6 +2290,19 @@ func (vm *VM) resolveInstanceMethodForArgs(typeName, method string, args []Value
 	cacheKey := vm.methodResolveCacheKey("i", typeName, method, args)
 	if cached, ok := vm.methodResolveCache[cacheKey]; ok {
 		return cached.Method, cached.OK, false
+	}
+	if class, ok := vm.lookupClass(typeName); ok && class.IsInterface {
+		// overload_dispatch R005-R007: inherited interface declarations
+		// participate, while the receiver's parent view stays restricted.
+		candidates := vm.interfaceMethodCandidates(typeName, method, make(map[string]bool))
+		target, ok, ambiguous := vm.matchMethodByArgs(candidates, args)
+		if !ambiguous {
+			if vm.methodResolveCache == nil {
+				vm.methodResolveCache = make(map[string]methodResolution)
+			}
+			vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: ok}
+		}
+		return target, ok, ambiguous
 	}
 	// A project caller invoking an unqualified instance method on a local class
 	// resolves against the local (non-dependency) class chain first, so a managed
@@ -2139,6 +2377,20 @@ func (vm *VM) matchLocalInstanceMethodAtType(typeName, method string, args []Val
 	if len(local) == 0 {
 		return Method{}, false, false
 	}
+	// Linking a project shadow can retain generated Builder methods
+	// with the same dependency flag. The project's bodies must win; a builder
+	// with only generated methods keeps the existing platform fallback.
+	if len(local) > 1 && strings.EqualFold(typeName, "QueueableDuplicateSignature.Builder") {
+		sourceMethods := make([]Method, 0, len(local))
+		for _, candidate := range local {
+			if !passiveGeneratedMethod(candidate) {
+				sourceMethods = append(sourceMethods, candidate)
+			}
+		}
+		if len(sourceMethods) > 0 {
+			local = sourceMethods
+		}
+	}
 	return vm.matchMethodByArgs(local, args)
 }
 
@@ -2175,7 +2427,7 @@ func (vm *VM) resolveInstanceMethodByAritySeen(typeName, method string, arity in
 func (vm *VM) matchRegisteredMethodByArity(name string, arity int) (Method, bool, bool) {
 	candidates := vm.registeredMethodCandidates(name)
 	if len(candidates) == 0 {
-		if method, ok := vm.Methods[name]; ok && len(method.Params) == arity {
+		if method, ok := vm.registeredMethod(name); ok && len(method.Params) == arity {
 			return method, true, false
 		}
 		return Method{}, false, false
@@ -2210,7 +2462,7 @@ func (vm *VM) matchRegisteredMethodByArity(name string, arity int) (Method, bool
 func (vm *VM) matchRegisteredInstanceMethodByArity(name string, arity int) (Method, bool, bool) {
 	candidates := vm.registeredMethodCandidates(name)
 	if len(candidates) == 0 {
-		if method, ok := vm.Methods[name]; ok && !method.IsStatic && len(method.Params) == arity {
+		if method, ok := vm.registeredMethod(name); ok && !method.IsStatic && len(method.Params) == arity {
 			return method, true, false
 		}
 		return Method{}, false, false
@@ -2278,7 +2530,7 @@ func (vm *VM) firstMethodByArity(name string, arity int) (Method, bool) {
 			return candidate, true
 		}
 	}
-	if method, ok := vm.Methods[name]; ok && len(method.Params) == arity {
+	if method, ok := vm.registeredMethod(name); ok && len(method.Params) == arity {
 		return method, true
 	}
 	return Method{}, false
@@ -2291,7 +2543,7 @@ func (vm *VM) firstInstanceMethodByArity(name string, arity int) (Method, bool) 
 			return candidate, true
 		}
 	}
-	if method, ok := vm.Methods[name]; ok && !method.IsStatic && len(method.Params) == arity {
+	if method, ok := vm.registeredMethod(name); ok && !method.IsStatic && len(method.Params) == arity {
 		return method, true
 	}
 	return Method{}, false
@@ -2305,7 +2557,7 @@ func (vm *VM) firstApplicableInstanceMethodByArity(name string, args []Value) (M
 		}
 		return candidate, true
 	}
-	if method, ok := vm.Methods[name]; ok && !method.IsStatic && len(method.Params) == len(args) && vm.methodApplicable(method, args) {
+	if method, ok := vm.registeredMethod(name); ok && !method.IsStatic && len(method.Params) == len(args) && vm.methodApplicable(method, args) {
 		return method, true
 	}
 	return Method{}, false
@@ -2324,6 +2576,106 @@ func (vm *VM) dispatchAccessMethod(staticType string, target Method, method stri
 		return surface
 	}
 	return target
+}
+
+func (vm *VM) interfaceMethodCandidates(typeName, method string, seen map[string]bool) []Method {
+	key := strings.ToLower(typeName)
+	if typeName == "" || seen[key] {
+		return nil
+	}
+	seen[key] = true
+	var candidates []Method
+	for _, candidate := range vm.registeredMethodCandidates(typeName + "." + method) {
+		if !candidate.IsStatic {
+			candidates = append(candidates, candidate)
+		}
+	}
+	if class, ok := vm.lookupClass(typeName); ok {
+		for _, parent := range vm.resolvedInterfaceNames(class) {
+			candidates = append(candidates, vm.interfaceMethodCandidates(parent, method, seen)...)
+		}
+	}
+	return candidates
+}
+
+func (vm *VM) resolveValueInstanceMethodForArgs(receiverName string, receiver Value, method string, args []Value) (Method, bool, bool) {
+	runtimeType := runtimeObjectType(receiver)
+	staticType := vm.declaredReceiverType(receiverName)
+	if staticType == "" {
+		staticType = receiver.Static
+	}
+	staticType = vm.resolveTypeNameInClass(vm.currentClass, staticType)
+	class, known := vm.lookupClass(staticType)
+	if !known {
+		return vm.resolveInstanceMethodForArgs(runtimeType, method, args)
+	}
+	// R001/R007/R008 select a signature from the declared receiver surface,
+	// then dispatch that signature's implementation. A narrower overload on
+	// the concrete class cannot replace the selected interface/base signature.
+	surface, ok, ambiguous := vm.resolveInstanceMethodForArgs(staticType, method, args)
+	if ambiguous {
+		return surface, ok, ambiguous
+	}
+	if !ok {
+		// R030/C030 establish only the canonical one-argument equals(Object)
+		// surface for an interface. Do not synthesize other Object signatures;
+		// their existing runtime/default-member path remains responsible.
+		if !class.IsInterface || canonicalObjectMemberMethod(method) != "equals" {
+			if canonicalObjectMemberMethod(method) != "" {
+				return vm.resolveInstanceMethodForArgs(runtimeType, method, args)
+			}
+			return Method{}, false, false
+		}
+		if len(args) != 1 {
+			return Method{}, false, false
+		}
+		surface = Method{ClassName: "System.Object", Params: []Param{{Type: "Object"}}}
+	}
+	// R010/R013 retain override and inherited-body dispatch for the selected
+	// signature. Do not re-run overload applicability on the runtime surface.
+	seen := make(map[string]bool)
+	for runtimeType != "" && !seen[strings.ToLower(runtimeType)] {
+		seen[strings.ToLower(runtimeType)] = true
+		// At the selected declaration's owner, retain the resolved body. A raw
+		// registry scan can replace it with a generated alias of the same
+		// signature. Only subclasses need an implementation lookup.
+		if strings.EqualFold(runtimeType, surface.ClassName) && !methodHasModifier(surface.Modifiers, "abstract") {
+			return surface, ok, false
+		}
+		var target Method
+		found := false
+		for _, candidate := range vm.registeredMethodCandidates(runtimeType + "." + method) {
+			if candidate.IsStatic || methodHasModifier(candidate.Modifiers, "abstract") || !vm.sameResolvedMethodParams(candidate, surface) {
+				continue
+			}
+			if !found || vm.preferMethodCandidate(candidate, target) {
+				target, found = candidate, true
+			}
+		}
+		if found {
+			return target, true, false
+		}
+		class, ok := vm.lookupClass(runtimeType)
+		if !ok {
+			break
+		}
+		runtimeType = vm.resolvedSuperClassName(class)
+	}
+	return surface, ok, false
+}
+
+func (vm *VM) sameResolvedMethodParams(left, right Method) bool {
+	if len(left.Params) != len(right.Params) {
+		return false
+	}
+	for i := range left.Params {
+		leftType := vm.resolveTypeNameInClass(vm.methodTypeResolutionClass(left), left.Params[i].Type)
+		rightType := vm.resolveTypeNameInClass(vm.methodTypeResolutionClass(right), right.Params[i].Type)
+		if !strings.EqualFold(canonicalRuntimePlatformType(leftType), canonicalRuntimePlatformType(rightType)) {
+			return false
+		}
+	}
+	return true
 }
 
 func (vm *VM) staticConcreteOverrideForAbstract(baseType, className, method string, args []Value) (Method, bool) {
@@ -2425,7 +2777,7 @@ func (vm *VM) resolveInterfaceMethodSeen(typeName, method string, seen map[strin
 		return Method{}, false
 	}
 	seen[typeName] = true
-	if target, ok := vm.Methods[typeName+"."+method]; ok && !target.IsStatic {
+	if target, ok := vm.registeredMethod(typeName + "." + method); ok && !target.IsStatic {
 		return target, true
 	}
 	class, ok := vm.Classes[typeName]
@@ -2595,7 +2947,7 @@ func (vm *VM) matchRegisteredStaticMethod(name string, args []Value) (Method, bo
 	if candidates := filterStatic(vm.registeredMethodCandidates(name)); len(candidates) > 0 {
 		return vm.matchMethodByArgs(candidates, args)
 	}
-	method, ok := vm.Methods[name]
+	method, ok := vm.registeredMethod(name)
 	if !ok || !method.IsStatic || len(method.Params) != len(args) {
 		return Method{}, false, false
 	}
@@ -2623,7 +2975,7 @@ func (vm *VM) matchRegisteredMethod(name string, args []Value) (Method, bool, bo
 	if candidates := vm.registeredMethodCandidates(name); len(candidates) > 0 {
 		return vm.matchMethodByArgs(candidates, args)
 	}
-	method, ok := vm.Methods[name]
+	method, ok := vm.registeredMethod(name)
 	if !ok {
 		return Method{}, false, false
 	}
@@ -2650,7 +3002,7 @@ func (vm *VM) matchRegisteredMethodInNamespace(namespace, name string, args []Va
 	if candidates := vm.registeredMethodCandidates(qualified); len(candidates) > 0 {
 		return vm.matchMethodByArgs(candidates, args)
 	}
-	method, ok := vm.Methods[qualified]
+	method, ok := vm.registeredMethod(qualified)
 	if !ok {
 		return Method{}, false, false
 	}
@@ -2685,7 +3037,7 @@ func (vm *VM) matchRegisteredInstanceMethod(name string, args []Value) (Method, 
 		}
 		return vm.matchMethodByArgs(instance, args)
 	}
-	method, ok := vm.Methods[name]
+	method, ok := vm.registeredMethod(name)
 	if !ok || method.IsStatic {
 		return Method{}, false, false
 	}
@@ -2710,8 +3062,8 @@ func (vm *VM) registeredMethodCandidates(name string) []Method {
 	} else {
 		vm.methodCandidates = make(map[string][]Method)
 	}
-	exact := vm.MethodOverloads[name]
-	folded := vm.MethodFolded[strings.ToLower(name)]
+	exact := vm.registeredOverloads(name)
+	folded := vm.registeredFolded(strings.ToLower(name))
 	if len(exact) == 0 {
 		vm.methodCandidates[name] = folded
 		return folded
@@ -2823,7 +3175,19 @@ func (vm *VM) methodApplicable(candidate Method, args []Value) bool {
 	for i, param := range candidate.Params {
 		resolutionClass := vm.methodTypeResolutionClass(candidate)
 		paramType := vm.resolveTypeNameInClass(resolutionClass, param.Type)
-		if vm.conversionScore(paramType, vm.valueWithTypesResolvedInClass(resolutionClass, args[i])) < 0 {
+		value := vm.valueWithTypesResolvedInClass(resolutionClass, args[i])
+		// Method applicability follows the declared class/interface type.
+		// A runtime subtype cannot authorize a downcast-only candidate.
+		declaredType := value.Static
+		if declaredType == "" && value.Kind == ValueNull {
+			declaredType = value.Type
+		}
+		if !candidate.IsConstructor && declaredType != "" && !strings.EqualFold(canonicalRuntimePlatformType(declaredType), "Object") {
+			if _, known := vm.lookupClass(declaredType); known && !vm.typeAssignableTo(declaredType, paramType) {
+				return false
+			}
+		}
+		if vm.conversionScore(paramType, value) < 0 {
 			return false
 		}
 	}
@@ -2925,6 +3289,9 @@ func (vm *VM) bestMethodBySpecificity(applicable []Method, args []Value) (Method
 	if len(applicable) == 0 {
 		return Method{}, false, false
 	}
+	if vm.ambiguousUntypedNullMethods(applicable, args) {
+		return Method{}, false, true
+	}
 	bestIndex := -1
 	for i, candidate := range applicable {
 		moreSpecificThanAll := true
@@ -2959,12 +3326,61 @@ func (vm *VM) bestMethodBySpecificity(applicable []Method, args []Value) (Method
 	return applicable[bestIndex], true, false
 }
 
+func (vm *VM) ambiguousUntypedNullMethods(applicable []Method, args []Value) bool {
+	if len(applicable) < 2 || len(args) == 0 {
+		return false
+	}
+	for _, arg := range args {
+		if arg.Kind != ValueNull || arg.Type != "" || arg.Static != "" {
+			return false
+		}
+	}
+	// Type-system R167-R171/C010 reject distinct user overloads for all-untyped-null
+	// calls. Platform methods and constructors have separate contracts.
+	for _, method := range applicable {
+		if method.IsConstructor || methodHasModifier(method.Modifiers, "passive-generated") || len(method.Params) != len(args) {
+			return false
+		}
+	}
+	first := applicable[0]
+	for i, param := range first.Params {
+		firstType := nullOverloadParameterIdentity(vm.resolveTypeNameInClass(vm.methodTypeResolutionClass(first), param.Type))
+		for _, method := range applicable[1:] {
+			otherType := nullOverloadParameterIdentity(vm.resolveTypeNameInClass(vm.methodTypeResolutionClass(method), method.Params[i].Type))
+			if firstType != otherType {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func nullOverloadParameterIdentity(typeName string) string {
+	typeName = canonicalRuntimePlatformType(typeName)
+	if key, value, ok := mapTypeArgs(typeName); ok {
+		return "map<" + nullOverloadParameterIdentity(key) + "," + nullOverloadParameterIdentity(value) + ">"
+	}
+	if base := collectionBase(typeName); base != "" {
+		if element, ok := collectionElementType(typeName); ok {
+			return strings.ToLower(base) + "<" + nullOverloadParameterIdentity(element) + ">"
+		}
+	}
+	if short, ok := stripLeadingSystemNamespace(typeName); ok {
+		if canonical, known := canonicalSystemNamespaceType(short); known {
+			typeName = canonical
+		}
+	}
+	return strings.ToLower(typeName)
+}
+
 func (vm *VM) compareMethodSpecificityForArgs(left, right Method, args []Value) int {
 	if len(args) != len(left.Params) || len(args) != len(right.Params) {
 		return vm.compareMethodSpecificity(left, right)
 	}
 	leftBetter := false
 	rightBetter := false
+	bareNullLeftBetter := false
+	bareNullRightBetter := false
 	for i, arg := range args {
 		leftResolutionClass := vm.methodTypeResolutionClass(left)
 		rightResolutionClass := vm.methodTypeResolutionClass(right)
@@ -2972,6 +3388,11 @@ func (vm *VM) compareMethodSpecificityForArgs(left, right Method, args []Value) 
 		rightType := vm.resolveTypeNameInClass(rightResolutionClass, right.Params[i].Type)
 		leftScore := vm.conversionScore(leftType, vm.valueWithTypesResolvedInClass(leftResolutionClass, arg))
 		rightScore := vm.conversionScore(rightType, vm.valueWithTypesResolvedInClass(rightResolutionClass, arg))
+		if arg.Kind == ValueNull && arg.Type == "" && arg.Static == "" {
+			bareNullLeftBetter = bareNullLeftBetter || leftScore > rightScore
+			bareNullRightBetter = bareNullRightBetter || rightScore > leftScore
+			continue
+		}
 		switch {
 		case leftScore > rightScore:
 			leftBetter = true
@@ -2981,6 +3402,14 @@ func (vm *VM) compareMethodSpecificityForArgs(left, right Method, args []Value) 
 		if leftBetter && rightBetter {
 			return 2
 		}
+	}
+	// An untyped null must not overturn a preference established by typed
+	// arguments. Keep existing tie behavior when typed arguments do not decide.
+	if !leftBetter && !rightBetter {
+		leftBetter, rightBetter = bareNullLeftBetter, bareNullRightBetter
+	}
+	if leftBetter && rightBetter {
+		return 2
 	}
 	switch {
 	case leftBetter:
@@ -3209,6 +3638,15 @@ func namespaceQualifiedTypeEquivalent(left, right string) bool {
 	if left == "" || right == "" {
 		return false
 	}
+	// Apex treats the System namespace as an alias for its built-in types.
+	// Keep this explicit so ordinary top-level package namespaces do not
+	// collapse into one another during value equality.
+	if strings.HasPrefix(strings.ToLower(left), "system.") {
+		left = left[len("System."):]
+	}
+	if strings.HasPrefix(strings.ToLower(right), "system.") {
+		right = right[len("System."):]
+	}
 	return strings.EqualFold(stripLeadingTypeNamespace(left), right) ||
 		strings.EqualFold(left, stripLeadingTypeNamespace(right))
 }
@@ -3266,7 +3704,8 @@ func stripSObjectNamespacePrefix(typeName string) string {
 	if hasSuffixFold(typeName, "__c") ||
 		hasSuffixFold(typeName, "__mdt") ||
 		hasSuffixFold(typeName, "__e") ||
-		hasSuffixFold(typeName, "__x") {
+		hasSuffixFold(typeName, "__x") ||
+		hasSuffixFold(typeName, "__share") {
 		parts := strings.SplitN(typeName, "__", 2)
 		if len(parts) == 2 && strings.Contains(parts[1], "__") {
 			return parts[1]
@@ -3436,7 +3875,7 @@ func (vm *VM) exceptionMatchesAny(catchTypes []string, thrown Value) bool {
 }
 
 func (vm *VM) exceptionMatches(catchType string, thrown Value) bool {
-	if catchType == "" || exceptionTypeName(catchType) == "Exception" || strings.EqualFold(catchType, "Object") {
+	if catchType == "" || strings.EqualFold(exceptionTypeName(catchType), "Exception") || strings.EqualFold(catchType, "Object") {
 		return true
 	}
 	if thrown.Kind == ValueObject {
@@ -3550,6 +3989,48 @@ func systemInterfaceAlias(typeName string) string {
 	}
 }
 
+// Id/String List compatibility validates String values without converting them.
+func (vm *VM) evalInstanceOfChecked(value Value, target string) (Value, error) {
+	if value.Kind == ValueList && collectionBase(target) == "List" {
+		to, _ := collectionElementType(target)
+		to = canonicalRuntimePlatformType(to)
+		// R129: a populated SObject list can be tested against its concrete
+		// record type, without narrowing ordinary List<Object> generics.
+		if vm.isSObjectLikeType(to) && !strings.EqualFold(to, "SObject") {
+			for _, candidate := range instanceOfCollectionTypeCandidates(value) {
+				from, _ := collectionElementType(candidate)
+				if collectionBase(candidate) == "List" && strings.EqualFold(from, "SObject") && vm.collectionElementsAssignable(target, value) {
+					return Bool(true), nil
+				}
+			}
+		}
+		if strings.EqualFold(to, "Id") || strings.EqualFold(to, "String") {
+			for _, candidate := range instanceOfCollectionTypeCandidates(value) {
+				if collectionBase(candidate) != "List" {
+					continue
+				}
+				from, _ := collectionElementType(candidate)
+				from = canonicalRuntimePlatformType(from)
+				if !strings.EqualFold(from, "Id") && !strings.EqualFold(from, "String") {
+					break
+				}
+				if strings.EqualFold(from, "String") && strings.EqualFold(to, "Id") {
+					for _, item := range value.List {
+						if item.Kind == ValueNull {
+							continue
+						}
+						if err := validateApexIDShape(item.Text); err != nil {
+							return Null, newExceptionError("System.StringException", "Invalid id: "+item.Text)
+						}
+					}
+				}
+				return Bool(true), nil
+			}
+		}
+	}
+	return vm.evalInstanceOf(value, target), nil
+}
+
 func (vm *VM) evalInstanceOf(value Value, target string) Value {
 	target = strings.TrimSpace(target)
 	if target == "" {
@@ -3574,9 +4055,18 @@ func (vm *VM) evalInstanceOf(value Value, target string) Value {
 		return Bool(true)
 	}
 	if value.Kind == ValueObject {
+		if matched, handled := vm.schemaRecordValueMatches(value, target); handled {
+			return Bool(matched)
+		}
+		if !value.classInstance && vm.isSObjectLikeType(runtimeObjectType(value)) {
+			if class, ok := vm.lookupClass(target); ok && !class.Dependency && sObjectTypeNamespaceEquivalent(runtimeObjectType(value), class.Name) {
+				return Bool(false)
+			}
+		}
 		return Bool(vm.typeMatches(runtimeObjectType(value), target, make(map[string]bool)))
 	}
 	if collectionBase(target) != "" || isMapType(target) {
+		// Collection elements do not narrow an erased runtime generic type.
 		for _, valueType := range instanceOfCollectionTypeCandidates(value) {
 			if matched, handled := vm.collectionDeclaredInstanceOf(valueType, target); handled {
 				if matched {
@@ -3593,9 +4083,6 @@ func (vm *VM) evalInstanceOf(value Value, target string) Value {
 			if vm.typeAssignableTo(valueType, target) {
 				return Bool(true)
 			}
-		}
-		if collectionBase(target) != "" && vm.collectionElementsAssignable(target, value) {
-			return Bool(true)
 		}
 		if isMapType(target) && vm.mapEntriesAssignable(target, value) {
 			return Bool(true)
@@ -3648,6 +4135,16 @@ func (vm *VM) collectionDeclaredInstanceOf(valueType, target string) (bool, bool
 	if !fromOK || !toOK {
 		return false, false
 	}
+	if strings.EqualFold(fromBase, "Set") && strings.EqualFold(toBase, "Set") {
+		fromElement = canonicalRuntimePlatformType(fromElement)
+		toElement = canonicalRuntimePlatformType(toElement)
+		return strings.EqualFold(fromElement, toElement) || platformTokenTypeAlias(fromElement, toElement), true
+	}
+	if strings.EqualFold(fromBase, "List") && strings.EqualFold(toBase, "List") &&
+		strings.EqualFold(canonicalRuntimePlatformType(fromElement), "Decimal") &&
+		strings.EqualFold(canonicalRuntimePlatformType(toElement), "Double") {
+		return true, true
+	}
 	return vm.collectionElementInstanceOf(fromElement, toElement), true
 }
 
@@ -3664,6 +4161,9 @@ func (vm *VM) mapDeclaredInstanceOf(valueType, target string) (bool, bool) {
 }
 
 func (vm *VM) collectionElementInstanceOf(from, to string) bool {
+	if matched, handled := vm.schemaRecordTypesMatch(from, to); handled {
+		return matched
+	}
 	from = canonicalRuntimePlatformType(from)
 	to = canonicalRuntimePlatformType(to)
 	if strings.EqualFold(to, "Object") || strings.EqualFold(from, to) {
@@ -3790,6 +4290,26 @@ func exceptionToString(value Value) string {
 	if typeName == "" {
 		typeName = "Exception"
 	}
+	// R204/X001-X006/X014-X015: custom exceptions expose declared fields
+	// and the effective message, without a synthetic System namespace.
+	if !isBuiltinExceptionType(typeName) && !generatedPlatformTypeName(typeName) {
+		message := "Script-thrown exception"
+		if raw, ok := value.Fields["message"]; ok {
+			message = raw.String()
+		}
+		fields := make([]string, 0, len(value.Fields))
+		for name := range value.Fields {
+			if name != "message" && !strings.HasPrefix(name, "__") {
+				fields = append(fields, name)
+			}
+		}
+		sort.Strings(fields)
+		parts := make([]string, 0, len(fields))
+		for _, name := range fields {
+			parts = append(parts, name+"="+valueStringWithSeen(value.Fields[name], map[uint64]bool{value.Ref: true}))
+		}
+		return typeName + ":[" + strings.Join(parts, ", ") + "]: " + message
+	}
 	message := ""
 	if raw, ok := value.Fields["message"]; ok && raw.Kind == ValueString {
 		message = raw.Text
@@ -3865,7 +4385,8 @@ var apexPagesSeverityNames = []string{"FATAL", "ERROR", "WARNING", "INFO", "CONF
 
 var metadataDeployStatusNames = []string{"Pending", "InProgress", "Succeeded", "SucceededPartial", "Failed", "Canceling", "Canceled"}
 
-var metadataMetadataTypeNames = []string{"CustomMetadata"}
+// Declaration order determines both values() and ordinal().
+var metadataMetadataTypeNames = []string{"OmniInteractionAccessConfig", "CustomMetadata", "Layout"}
 
 func isLoggingLevelName(level string) bool {
 	_, ok := canonicalLoggingLevelName(level)

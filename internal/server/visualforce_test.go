@@ -17,6 +17,11 @@ import (
 	"github.com/glade-sh/glade/internal/visualforce"
 )
 
+const (
+	visualforceTestPrincipalID storage.ID = "005000000000091"
+	visualforceTestProfileID   storage.ID = "00e000000000091"
+)
+
 func TestHandleVisualforcePageGetRendersLabel(t *testing.T) {
 	org := testOrg()
 	org.Metadata.Labels = append(org.Metadata.Labels, storage.LabelMetadata{Name: "EditPageTitle", Value: "Rendered View"})
@@ -30,7 +35,7 @@ func TestHandleVisualforcePageGetRendersLabel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&org, source)
+	handler := newVisualforceHTMLTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/apex/Edit", nil)
@@ -46,6 +51,32 @@ func TestHandleVisualforcePageGetRendersLabel(t *testing.T) {
 	}
 }
 
+func TestVisualforceRequestsClearVMRenderEnvironment(t *testing.T) {
+	org := testOrg()
+	source := testSourceMetadata(t)
+	writeServerTestFile(t, filepath.Join(source.Project.Root, "force-app/main/default/pages/LeakCheck.page"), `<apex:page>ok</apex:page>`)
+	reloaded, err := project.Load(source.Project.Root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err = NewSourceMetadataFromProject(reloaded)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := newVisualforceHTMLTestServer(t, &org, source)
+
+	for i := 0; i < 10; i++ {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/apex/LeakCheck", nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("request %d status = %d body=%q", i+1, rec.Code, rec.Body.String())
+		}
+		if got := visualforce.VMRenderEnvironmentCountForTest(); got != 0 {
+			t.Fatalf("after request %d, retained VM render environments = %d, want 0", i+1, got)
+		}
+	}
+}
+
 func TestHandleVisualforcePageGetAppliesPageHeaders(t *testing.T) {
 	org := testOrg()
 	source := testSourceMetadata(t)
@@ -58,7 +89,7 @@ func TestHandleVisualforcePageGetAppliesPageHeaders(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&org, source)
+	handler := newVisualforceHTMLTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/apex/Export", nil)
@@ -106,7 +137,8 @@ func TestHandleVisualforcePageGetPreservesQueryStringForStandardController(t *te
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&org, source)
+	handler := newVisualforceHTMLTestServer(t, &org, source)
+	grantVisualforceTestAccountNameRead(t, handler)
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/apex/Edit?id=001000000000001", nil)
@@ -124,11 +156,15 @@ func TestHandleVisualforcePageGetPreservesQueryStringForStandardController(t *te
 
 func TestHandleVisualforcePagePostBindsMultipartUploadFields(t *testing.T) {
 	handler := newVisualforceUploadFixtureServer(t)
+	secret, err := handler.visualforceViewStateSecretBytes()
+	if err != nil {
+		t.Fatal(err)
+	}
 	viewState, err := visualforce.EncodeViewState(visualforce.ViewStatePayload{
 		PageName:       "Upload",
 		ControllerType: "UploadController",
 		CSRF:           "upload-csrf",
-	}, handler.visualforceViewStateSecretBytes())
+	}, secret)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +218,7 @@ func TestHandleVisualforcePageGetRendersPDFPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&org, source)
+	handler := newVisualforceHTMLTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/apex/Invoice", nil)
@@ -190,7 +226,8 @@ func TestHandleVisualforcePageGetRendersPDFPage(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d body=%q", rec.Code, rec.Body.String())
 	}
-	if got := rec.Header().Get("Content-Type"); got != "application/pdf" {
+	// Captured render_pdf_browser at API 59/67 includes the page charset.
+	if got := rec.Header().Get("Content-Type"); got != "application/pdf;charset=utf-8" {
 		t.Fatalf("content type = %q", got)
 	}
 	if !strings.HasPrefix(rec.Body.String(), "%PDF-1.4") {
@@ -236,12 +273,67 @@ func newVisualforceUploadFixtureServer(t *testing.T) *Server {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	srv := NewWithSource(&org, source)
+	srv := newVisualforceHTMLTestServer(t, &org, source)
 	srv.SetProjectIndex(typesys.Build(p, schema))
 	if srv.runtimeErr != nil {
 		t.Fatalf("compile fixture runtime: %v", srv.runtimeErr)
 	}
 	return srv
+}
+
+func newVisualforceHTMLTestServer(t *testing.T, org *storage.OrgState, source SourceMetadata) *Server {
+	t.Helper()
+	srv := newLightningTestServer(t, org, source)
+	configureVisualforceTestPrincipal(t, srv)
+	return srv
+}
+
+func configureVisualforceTestPrincipal(t *testing.T, srv *Server) {
+	t.Helper()
+	if srv == nil || srv.Org == nil {
+		t.Fatal("Visualforce fixture server has no org")
+	}
+	addUser(srv.Org, visualforceTestPrincipalID, "vf-test@example.test", "vf-test@example.test", "Visualforce Test User")
+	users := srv.Org.Objects["User"]
+	user := users.Records[visualforceTestPrincipalID]
+	user.Fields["ProfileId"] = storage.IDValue(visualforceTestProfileID)
+	users.Records[visualforceTestPrincipalID] = user
+	srv.Org.Objects["User"] = users
+
+	profiles := srv.Org.Objects["Profile"]
+	profiles.Records[visualforceTestProfileID] = storage.Record{
+		ID: visualforceTestProfileID, Object: "Profile",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Visualforce Test User")},
+	}
+	srv.Org.Objects["Profile"] = profiles
+
+	srv.VisualforceHTMLUserID = visualforceTestPrincipalID
+}
+
+func grantVisualforceTestAccountNameRead(t *testing.T, srv *Server) {
+	t.Helper()
+	if srv == nil || srv.Org == nil {
+		t.Fatal("Visualforce fixture server has no org")
+	}
+	objectPermissions := srv.Org.Objects["ObjectPermissions"]
+	objectPermissions.Records["110000000000091"] = storage.Record{
+		ID: "110000000000091", Object: "ObjectPermissions",
+		Fields: map[string]storage.Value{
+			"ParentId": storage.IDValue(visualforceTestProfileID), "SObjectType": storage.StringValue("Account"),
+			"PermissionsRead": storage.BooleanValue(true),
+		},
+	}
+	srv.Org.Objects["ObjectPermissions"] = objectPermissions
+
+	fieldPermissions := srv.Org.Objects["FieldPermissions"]
+	fieldPermissions.Records["120000000000091"] = storage.Record{
+		ID: "120000000000091", Object: "FieldPermissions",
+		Fields: map[string]storage.Value{
+			"ParentId": storage.IDValue(visualforceTestProfileID), "SObjectType": storage.StringValue("Account"),
+			"Field": storage.StringValue("Account.Name"), "PermissionsRead": storage.BooleanValue(true),
+		},
+	}
+	srv.Org.Objects["FieldPermissions"] = fieldPermissions
 }
 
 func TestHandleVisualforcePageGetRendersPDFQuery(t *testing.T) {
@@ -256,7 +348,7 @@ func TestHandleVisualforcePageGetRendersPDFQuery(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&org, source)
+	handler := newVisualforceHTMLTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/apex/Invoice?renderAs=pdf", nil)
@@ -284,7 +376,7 @@ func TestHandleVisualforcePagePostRendersPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&org, source)
+	handler := newVisualforceHTMLTestServer(t, &org, source)
 
 	first := httptest.NewRecorder()
 	handler.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/apex/Edit", nil))
@@ -324,7 +416,7 @@ func TestHandleVisualforcePagePostRejectsViewStateForDifferentPage(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&org, source)
+	handler := newVisualforceHTMLTestServer(t, &org, source)
 
 	first := httptest.NewRecorder()
 	handler.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/apex/Edit", nil))
@@ -346,11 +438,15 @@ func TestHandleVisualforcePagePostRejectsViewStateForDifferentPage(t *testing.T)
 
 func TestHandleVisualforcePagePostRejectsOversizedMultipartBody(t *testing.T) {
 	handler := newVisualforceUploadFixtureServer(t)
+	secret, err := handler.visualforceViewStateSecretBytes()
+	if err != nil {
+		t.Fatal(err)
+	}
 	viewState, err := visualforce.EncodeViewState(visualforce.ViewStatePayload{
 		PageName:       "Upload",
 		ControllerType: "UploadController",
 		CSRF:           "upload-csrf",
-	}, handler.visualforceViewStateSecretBytes())
+	}, secret)
 	if err != nil {
 		t.Fatal(err)
 	}

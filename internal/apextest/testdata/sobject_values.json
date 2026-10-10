@@ -1,0 +1,2275 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "cases": [
+    {
+      "id": "R001",
+      "code": "Account p=new Account(Name='Parent'); Contact c=new Contact(LastName='Child'); c.Account=p; r=c.Account===p;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R002",
+      "code": "Account p=new Account(Name='Parent'); Contact c=new Contact(LastName='Child'); c.Account=p; p.Name='Changed'; r=c.Account.Name;",
+      "expected": "Changed",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R003",
+      "code": "Account p=new Account(Name='Parent'); Contact c=new Contact(LastName='Child'); c.Account=p; c.Account.Name='Changed'; r=p.Name;",
+      "expected": "Changed",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R004",
+      "code": "Account p=new Account(Name='Parent'); Contact c=new Contact(LastName='Child'); c.Account=p; r=c.getSObject('Account')===p;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R005",
+      "code": "Account p=new Account(Name='Parent'); Contact c=new Contact(LastName='Child'); c.Account=p; r=c.clone(false,true).Account===p;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R006",
+      "code": "Account a=new Account(); Account b=new Account(Name=null); r=a == b;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R007",
+      "code": "Account a=new Account(); Account b=new Account(Name=null); r=a === b;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R008",
+      "code": "Account a=new Account(); Account b=new Account(Name=null); r=a != b;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R009",
+      "code": "Account a=new Account(Name='A'); Account b=new Account(Name='a'); r=a == b;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R010",
+      "code": "Account a=new Account(Name='A'); Account b=new Account(Name='a'); r=a === b;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R011",
+      "code": "Account a=new Account(Name='A'); Account b=new Account(Name='a'); r=a != b;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R012",
+      "code": "Account a=new Account(Name='A'); Account b=new Account(Name='A'); r=a == b;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R013",
+      "code": "Account a=new Account(Name='A'); Account b=new Account(Name='A'); r=a === b;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R014",
+      "code": "Account a=new Account(Name='A'); Account b=new Account(Name='A'); r=a != b;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R015",
+      "code": "Account a=new Account(Name='FamilyProbe'); insert a; Account x=[SELECT Id FROM Account WHERE Id=:a.Id]; r=x.Name;",
+      "expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Name",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R016",
+      "code": "Account a=new Account(Name='FamilyProbe'); insert a; Account x=[SELECT Name FROM Account WHERE Id=:a.Id]; r=x.Name;",
+      "expected": "FamilyProbe",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R017",
+      "code": "Account a=new Account(Name='FamilyProbe'); insert a; Account x=[SELECT Name FROM Account WHERE Id=:a.Id]; r=x.AnnualRevenue;",
+      "expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.AnnualRevenue",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R018",
+      "code": "Account a=new Account(Name='FamilyProbe'); insert a; Account x=[SELECT Id,Name FROM Account WHERE Id=:a.Id]; r=x.get('Name');",
+      "expected": "FamilyProbe",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R019",
+      "code": "Account a=new Account(Name='FamilyProbe'); insert a; Account x=[SELECT Id FROM Account WHERE Id=:a.Id]; r=x.get('Name');",
+      "expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Name",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R020",
+      "code": "Account a=new Account(Name='FamilyProbe'); insert a; Account x=[SELECT Id FROM Account WHERE Id=:a.Id]; r=x.getPopulatedFieldsAsMap().containsKey('Name');",
+      "expected": "false",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R021",
+      "code": "Account a=new Account(Name='FamilyProbe'); insert a; Account x=[SELECT Id,Name FROM Account WHERE Id=:a.Id]; r=x.getPopulatedFieldsAsMap().containsKey('Name');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R022",
+      "code": "Account a=new Account(Name='ParentProbe'); insert a; Contact c=new Contact(LastName='ChildProbe',AccountId=a.Id); insert c; Contact x=[SELECT Id FROM Contact WHERE Id=:c.Id]; r=x.Account.Name;",
+      "expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.Account",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R023",
+      "code": "Account a=new Account(Name='ParentProbe'); insert a; Contact c=new Contact(LastName='ChildProbe',AccountId=a.Id); insert c; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:c.Id]; r=x.Account.Name;",
+      "expected": "ParentProbe",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R024",
+      "code": "Account a=new Account(Name='ParentProbe'); insert a; Contact c=new Contact(LastName='ChildProbe',AccountId=a.Id); insert c; Contact x=[SELECT Id,AccountId FROM Contact WHERE Id=:c.Id]; r=x.Account.Name;",
+      "expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.Account",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R025",
+      "code": "Account a=new Account(Name='ParentProbe'); insert a; Contact c=new Contact(LastName='ChildProbe',AccountId=a.Id); insert c; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:c.Id]; r=x.Account===x.Account;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R026",
+      "code": "Account a=new Account(Name='ParentProbe'); insert a; Contact c=new Contact(LastName='ChildProbe',AccountId=a.Id); insert c; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:c.Id]; r=x.AccountId==a.Id;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "preserved-values"
+    },
+    {
+      "id": "R027",
+      "code": "Account x=new Account(Name='A'); r=x.Name;",
+      "expected": "A",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R028",
+      "code": "Account x=new Account(Name='A'); r=x.get('Name');",
+      "expected": "A",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R029",
+      "code": "Account x=new Account(Name='A'); r=x.get(Account.Name);",
+      "expected": "A",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R030",
+      "code": "Account x=new Account(Name='A'); r=x.isSet('Name');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R031",
+      "code": "Account x=new Account(Name='A'); r=x.isSet(Account.Name);",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R032",
+      "code": "Account x=new Account(Name='A'); r=x.getPopulatedFieldsAsMap().containsKey('Name');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R033",
+      "code": "Account x=new Account(); x.put('Name','A'); r=x.Name;",
+      "expected": "A",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R034",
+      "code": "Account x=new Account(); x.put('Name','A'); r=x.isSet('Name');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R035",
+      "code": "Account x=new Account(); x.put('Name','A'); r=x.getPopulatedFieldsAsMap().containsKey('Name');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R036",
+      "code": "Account x=new Account(); x.put('Name',null); r=x.Name;",
+      "expected": "null",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R037",
+      "code": "Account x=new Account(); x.put('Name',null); r=x.isSet('Name');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R038",
+      "code": "Account x=new Account(); x.put('Name',null); r=x.getPopulatedFieldsAsMap().containsKey('Name');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R039",
+      "code": "Account x=new Account(); r=x.Name;",
+      "expected": "null",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R040",
+      "code": "Account x=new Account(); r=x.isSet('Name');",
+      "expected": "false",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R041",
+      "code": "Account x=new Account(); r=x.getPopulatedFieldsAsMap().containsKey('Name');",
+      "expected": "false",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R042",
+      "code": "Account x=new Account(AnnualRevenue=12.5); r=x.AnnualRevenue;",
+      "expected": "12.5",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R043",
+      "code": "Account x=new Account(AnnualRevenue=12.5); r=x.get('AnnualRevenue');",
+      "expected": "12.5",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R044",
+      "code": "Account x=new Account(AnnualRevenue=12.5); r=x.get(Account.AnnualRevenue);",
+      "expected": "12.5",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R045",
+      "code": "Account x=new Account(AnnualRevenue=12.5); r=x.isSet('AnnualRevenue');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R046",
+      "code": "Account x=new Account(AnnualRevenue=12.5); r=x.isSet(Account.AnnualRevenue);",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R047",
+      "code": "Account x=new Account(AnnualRevenue=12.5); r=x.getPopulatedFieldsAsMap().containsKey('AnnualRevenue');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R048",
+      "code": "Account x=new Account(); x.put('AnnualRevenue',12.5); r=x.AnnualRevenue;",
+      "expected": "12.5",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R049",
+      "code": "Account x=new Account(); x.put('AnnualRevenue',12.5); r=x.isSet('AnnualRevenue');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R050",
+      "code": "Account x=new Account(); x.put('AnnualRevenue',12.5); r=x.getPopulatedFieldsAsMap().containsKey('AnnualRevenue');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R051",
+      "code": "Account x=new Account(); x.put('AnnualRevenue',null); r=x.AnnualRevenue;",
+      "expected": "null",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R052",
+      "code": "Account x=new Account(); x.put('AnnualRevenue',null); r=x.isSet('AnnualRevenue');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R053",
+      "code": "Account x=new Account(); x.put('AnnualRevenue',null); r=x.getPopulatedFieldsAsMap().containsKey('AnnualRevenue');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R054",
+      "code": "Account x=new Account(); r=x.AnnualRevenue;",
+      "expected": "null",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R055",
+      "code": "Account x=new Account(); r=x.isSet('AnnualRevenue');",
+      "expected": "false",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R056",
+      "code": "Account x=new Account(); r=x.getPopulatedFieldsAsMap().containsKey('AnnualRevenue');",
+      "expected": "false",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R057",
+      "code": "Account x=new Account(NumberOfEmployees=2); r=x.NumberOfEmployees;",
+      "expected": "2",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R058",
+      "code": "Account x=new Account(NumberOfEmployees=2); r=x.get('NumberOfEmployees');",
+      "expected": "2",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R059",
+      "code": "Account x=new Account(NumberOfEmployees=2); r=x.get(Account.NumberOfEmployees);",
+      "expected": "2",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R060",
+      "code": "Account x=new Account(NumberOfEmployees=2); r=x.isSet('NumberOfEmployees');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R061",
+      "code": "Account x=new Account(NumberOfEmployees=2); r=x.isSet(Account.NumberOfEmployees);",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R062",
+      "code": "Account x=new Account(NumberOfEmployees=2); r=x.getPopulatedFieldsAsMap().containsKey('NumberOfEmployees');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R063",
+      "code": "Account x=new Account(); x.put('NumberOfEmployees',2); r=x.NumberOfEmployees;",
+      "expected": "2",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R064",
+      "code": "Account x=new Account(); x.put('NumberOfEmployees',2); r=x.isSet('NumberOfEmployees');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R065",
+      "code": "Account x=new Account(); x.put('NumberOfEmployees',2); r=x.getPopulatedFieldsAsMap().containsKey('NumberOfEmployees');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R066",
+      "code": "Account x=new Account(); x.put('NumberOfEmployees',null); r=x.NumberOfEmployees;",
+      "expected": "null",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R067",
+      "code": "Account x=new Account(); x.put('NumberOfEmployees',null); r=x.isSet('NumberOfEmployees');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R068",
+      "code": "Account x=new Account(); x.put('NumberOfEmployees',null); r=x.getPopulatedFieldsAsMap().containsKey('NumberOfEmployees');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R069",
+      "code": "Account x=new Account(); r=x.NumberOfEmployees;",
+      "expected": "null",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R070",
+      "code": "Account x=new Account(); r=x.isSet('NumberOfEmployees');",
+      "expected": "false",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R071",
+      "code": "Account x=new Account(); r=x.getPopulatedFieldsAsMap().containsKey('NumberOfEmployees');",
+      "expected": "false",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R072",
+      "code": "Contact x=new Contact(LastName='Child'); r=x.LastName;",
+      "expected": "Child",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R073",
+      "code": "Contact x=new Contact(LastName='Child'); r=x.get('LastName');",
+      "expected": "Child",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R074",
+      "code": "Contact x=new Contact(LastName='Child'); r=x.get(Contact.LastName);",
+      "expected": "Child",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R075",
+      "code": "Contact x=new Contact(LastName='Child'); r=x.isSet('LastName');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R076",
+      "code": "Contact x=new Contact(LastName='Child'); r=x.isSet(Contact.LastName);",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R077",
+      "code": "Contact x=new Contact(LastName='Child'); r=x.getPopulatedFieldsAsMap().containsKey('LastName');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R078",
+      "code": "Contact x=new Contact(); x.put('LastName','Child'); r=x.LastName;",
+      "expected": "Child",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R079",
+      "code": "Contact x=new Contact(); x.put('LastName','Child'); r=x.isSet('LastName');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R080",
+      "code": "Contact x=new Contact(); x.put('LastName','Child'); r=x.getPopulatedFieldsAsMap().containsKey('LastName');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R081",
+      "code": "Contact x=new Contact(); x.put('LastName',null); r=x.LastName;",
+      "expected": "null",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R082",
+      "code": "Contact x=new Contact(); x.put('LastName',null); r=x.isSet('LastName');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R083",
+      "code": "Contact x=new Contact(); x.put('LastName',null); r=x.getPopulatedFieldsAsMap().containsKey('LastName');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R084",
+      "code": "Contact x=new Contact(); r=x.LastName;",
+      "expected": "null",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R085",
+      "code": "Contact x=new Contact(); r=x.isSet('LastName');",
+      "expected": "false",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R086",
+      "code": "Contact x=new Contact(); r=x.getPopulatedFieldsAsMap().containsKey('LastName');",
+      "expected": "false",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R087",
+      "code": "Contact x=new Contact(Birthdate=Date.newInstance(2024,2,29)); r=x.Birthdate;",
+      "expected": "2024-02-29 00:00:00",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R088",
+      "code": "Contact x=new Contact(Birthdate=Date.newInstance(2024,2,29)); r=x.get('Birthdate');",
+      "expected": "2024-02-29 00:00:00",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R089",
+      "code": "Contact x=new Contact(Birthdate=Date.newInstance(2024,2,29)); r=x.get(Contact.Birthdate);",
+      "expected": "2024-02-29 00:00:00",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R090",
+      "code": "Contact x=new Contact(Birthdate=Date.newInstance(2024,2,29)); r=x.isSet('Birthdate');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R091",
+      "code": "Contact x=new Contact(Birthdate=Date.newInstance(2024,2,29)); r=x.isSet(Contact.Birthdate);",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R092",
+      "code": "Contact x=new Contact(Birthdate=Date.newInstance(2024,2,29)); r=x.getPopulatedFieldsAsMap().containsKey('Birthdate');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R093",
+      "code": "Contact x=new Contact(); x.put('Birthdate',Date.newInstance(2024,2,29)); r=x.Birthdate;",
+      "expected": "2024-02-29 00:00:00",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R094",
+      "code": "Contact x=new Contact(); x.put('Birthdate',Date.newInstance(2024,2,29)); r=x.isSet('Birthdate');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R095",
+      "code": "Contact x=new Contact(); x.put('Birthdate',Date.newInstance(2024,2,29)); r=x.getPopulatedFieldsAsMap().containsKey('Birthdate');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R096",
+      "code": "Contact x=new Contact(); x.put('Birthdate',null); r=x.Birthdate;",
+      "expected": "null",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R097",
+      "code": "Contact x=new Contact(); x.put('Birthdate',null); r=x.isSet('Birthdate');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R098",
+      "code": "Contact x=new Contact(); x.put('Birthdate',null); r=x.getPopulatedFieldsAsMap().containsKey('Birthdate');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R099",
+      "code": "Contact x=new Contact(); r=x.Birthdate;",
+      "expected": "null",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R100",
+      "code": "Contact x=new Contact(); r=x.isSet('Birthdate');",
+      "expected": "false",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R101",
+      "code": "Contact x=new Contact(); r=x.getPopulatedFieldsAsMap().containsKey('Birthdate');",
+      "expected": "false",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R102",
+      "code": "Contact x=new Contact(AccountId='001000000000001AAA'); r=x.AccountId;",
+      "expected": "001000000000001AAA",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R103",
+      "code": "Contact x=new Contact(AccountId='001000000000001AAA'); r=x.get('AccountId');",
+      "expected": "001000000000001AAA",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R104",
+      "code": "Contact x=new Contact(AccountId='001000000000001AAA'); r=x.get(Contact.AccountId);",
+      "expected": "001000000000001AAA",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R105",
+      "code": "Contact x=new Contact(AccountId='001000000000001AAA'); r=x.isSet('AccountId');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R106",
+      "code": "Contact x=new Contact(AccountId='001000000000001AAA'); r=x.isSet(Contact.AccountId);",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R107",
+      "code": "Contact x=new Contact(AccountId='001000000000001AAA'); r=x.getPopulatedFieldsAsMap().containsKey('AccountId');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction"
+    },
+    {
+      "id": "R108",
+      "code": "Contact x=new Contact(); x.put('AccountId','001000000000001AAA'); r=x.AccountId;",
+      "expected": "001000000000001AAA",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R109",
+      "code": "Contact x=new Contact(); x.put('AccountId','001000000000001AAA'); r=x.isSet('AccountId');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R110",
+      "code": "Contact x=new Contact(); x.put('AccountId','001000000000001AAA'); r=x.getPopulatedFieldsAsMap().containsKey('AccountId');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R111",
+      "code": "Contact x=new Contact(); x.put('AccountId',null); r=x.AccountId;",
+      "expected": "null",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R112",
+      "code": "Contact x=new Contact(); x.put('AccountId',null); r=x.isSet('AccountId');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R113",
+      "code": "Contact x=new Contact(); x.put('AccountId',null); r=x.getPopulatedFieldsAsMap().containsKey('AccountId');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-put"
+    },
+    {
+      "id": "R114",
+      "code": "Contact x=new Contact(); r=x.AccountId;",
+      "expected": "null",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R115",
+      "code": "Contact x=new Contact(); r=x.isSet('AccountId');",
+      "expected": "false",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R116",
+      "code": "Contact x=new Contact(); r=x.getPopulatedFieldsAsMap().containsKey('AccountId');",
+      "expected": "false",
+      "compileCase": false,
+      "group": "unset"
+    },
+    {
+      "id": "R117",
+      "code": "Account x=new Account(Name='A'); r=x.get('Name');",
+      "expected": "A",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R118",
+      "code": "Account x=new Account(Name='A'); r=x.isSet('Name');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R119",
+      "code": "Account x=new Account(Name='A'); r=x.getSObject('Name');",
+      "expected": "EXC|System.SObjectException|Invalid relationship Name for Account",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R120",
+      "code": "Account x=new Account(Name='A'); r=x.getSObjects('Name');",
+      "expected": "EXC|System.SObjectException|Invalid aggregate relationship Name for Account",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R121",
+      "code": "Account x=new Account(Name='A'); r=x.get('name');",
+      "expected": "A",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R122",
+      "code": "Account x=new Account(Name='A'); r=x.isSet('name');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R123",
+      "code": "Account x=new Account(Name='A'); r=x.getSObject('name');",
+      "expected": "EXC|System.SObjectException|Invalid relationship name for Account",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R124",
+      "code": "Account x=new Account(Name='A'); r=x.getSObjects('name');",
+      "expected": "EXC|System.SObjectException|Invalid aggregate relationship name for Account",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R125",
+      "code": "Account x=new Account(Name='A'); r=x.get('NAME');",
+      "expected": "A",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R126",
+      "code": "Account x=new Account(Name='A'); r=x.isSet('NAME');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R127",
+      "code": "Account x=new Account(Name='A'); r=x.getSObject('NAME');",
+      "expected": "EXC|System.SObjectException|Invalid relationship NAME for Account",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R128",
+      "code": "Account x=new Account(Name='A'); r=x.getSObjects('NAME');",
+      "expected": "EXC|System.SObjectException|Invalid aggregate relationship NAME for Account",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R129",
+      "code": "Account x=new Account(Name='A'); r=x.get('NoSuchField__c');",
+      "expected": "EXC|System.SObjectException|Invalid field NoSuchField__c for Account",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R130",
+      "code": "Account x=new Account(Name='A'); r=x.isSet('NoSuchField__c');",
+      "expected": "EXC|System.SObjectException|Invalid field: NoSuchField__c",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R131",
+      "code": "Account x=new Account(Name='A'); r=x.getSObject('NoSuchField__c');",
+      "expected": "EXC|System.SObjectException|Invalid relationship NoSuchField__c for Account",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R132",
+      "code": "Account x=new Account(Name='A'); r=x.getSObjects('NoSuchField__c');",
+      "expected": "EXC|System.SObjectException|Invalid aggregate relationship NoSuchField__c for Account",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R133",
+      "code": "Account x=new Account(Name='A'); r=x.get('');",
+      "expected": "EXC|System.SObjectException|Invalid field  for Account",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R134",
+      "code": "Account x=new Account(Name='A'); r=x.isSet('');",
+      "expected": "EXC|System.SObjectException|Invalid field: ",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R135",
+      "code": "Account x=new Account(Name='A'); r=x.getSObject('');",
+      "expected": "EXC|System.SObjectException|Invalid relationship  for Account",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R136",
+      "code": "Account x=new Account(Name='A'); r=x.getSObjects('');",
+      "expected": "EXC|System.SObjectException|Invalid aggregate relationship  for Account",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R137",
+      "code": "Account x=new Account(Name='A'); r=x.get(null);",
+      "expected": "COMPILE_ERROR\tline 42: Ambiguous method signature: void get(NULL)",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R138",
+      "code": "Account x=new Account(Name='A'); r=x.isSet(null);",
+      "expected": "COMPILE_ERROR\tline 42: Ambiguous method signature: void isSet(NULL)",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R139",
+      "code": "Account x=new Account(Name='A'); r=x.getSObject(null);",
+      "expected": "COMPILE_ERROR\tline 42: Ambiguous method signature: void getSObject(NULL)",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R140",
+      "code": "Account x=new Account(Name='A'); r=x.getSObjects(null);",
+      "expected": "COMPILE_ERROR\tline 42: Ambiguous method signature: void getSObjects(NULL)",
+      "compileCase": false,
+      "group": "dynamic-boundary"
+    },
+    {
+      "id": "R141",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,false);  r=y.Account===p;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R142",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,false);  r=y.Account.Name;",
+      "expected": "P",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R143",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,false);  r=p.Name;",
+      "expected": "P",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R144",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,false); p.Name='Changed'; r=y.Account===p;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R145",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,false); p.Name='Changed'; r=y.Account.Name;",
+      "expected": "Changed",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R146",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,false); p.Name='Changed'; r=p.Name;",
+      "expected": "Changed",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R147",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,false); y.Account.Name='Changed'; r=y.Account===p;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R148",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,false); y.Account.Name='Changed'; r=y.Account.Name;",
+      "expected": "Changed",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R149",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,false); y.Account.Name='Changed'; r=p.Name;",
+      "expected": "Changed",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R150",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,true);  r=y.Account===p;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R151",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,true);  r=y.Account.Name;",
+      "expected": "P",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R152",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,true);  r=p.Name;",
+      "expected": "P",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R153",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,true); p.Name='Changed'; r=y.Account===p;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R154",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,true); p.Name='Changed'; r=y.Account.Name;",
+      "expected": "P",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R155",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,true); p.Name='Changed'; r=p.Name;",
+      "expected": "Changed",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R156",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,true); y.Account.Name='Changed'; r=y.Account===p;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R157",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,true); y.Account.Name='Changed'; r=y.Account.Name;",
+      "expected": "Changed",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R158",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); Contact y=x.clone(false,true); y.Account.Name='Changed'; r=p.Name;",
+      "expected": "P",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R159",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); r=x.getSObject('Account')===p;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "relationship"
+    },
+    {
+      "id": "R160",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); r=x.isSet('Account');",
+      "expected": "EXC|System.SObjectException|Invalid field: Account",
+      "compileCase": false,
+      "group": "relationship"
+    },
+    {
+      "id": "R161",
+      "code": "Account p=new Account(Name='P'); Contact x=new Contact(); x.putSObject('Account',p); r=x.getPopulatedFieldsAsMap().containsKey('Account');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "relationship"
+    },
+    {
+      "id": "R162",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,false);  r=y.Parent===p;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R163",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,false);  r=y.Parent.Name;",
+      "expected": "P",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R164",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,false);  r=p.Name;",
+      "expected": "P",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R165",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,false); p.Name='Changed'; r=y.Parent===p;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R166",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,false); p.Name='Changed'; r=y.Parent.Name;",
+      "expected": "Changed",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R167",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,false); p.Name='Changed'; r=p.Name;",
+      "expected": "Changed",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R168",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,false); y.Parent.Name='Changed'; r=y.Parent===p;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R169",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,false); y.Parent.Name='Changed'; r=y.Parent.Name;",
+      "expected": "Changed",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R170",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,false); y.Parent.Name='Changed'; r=p.Name;",
+      "expected": "Changed",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R171",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,true);  r=y.Parent===p;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R172",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,true);  r=y.Parent.Name;",
+      "expected": "P",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R173",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,true);  r=p.Name;",
+      "expected": "P",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R174",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,true); p.Name='Changed'; r=y.Parent===p;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R175",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,true); p.Name='Changed'; r=y.Parent.Name;",
+      "expected": "P",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R176",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,true); p.Name='Changed'; r=p.Name;",
+      "expected": "Changed",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R177",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,true); y.Parent.Name='Changed'; r=y.Parent===p;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R178",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,true); y.Parent.Name='Changed'; r=y.Parent.Name;",
+      "expected": "Changed",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R179",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); Account y=x.clone(false,true); y.Parent.Name='Changed'; r=p.Name;",
+      "expected": "P",
+      "compileCase": false,
+      "group": "relationship-clone"
+    },
+    {
+      "id": "R180",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); r=x.getSObject('Parent')===p;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "relationship"
+    },
+    {
+      "id": "R181",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); r=x.isSet('Parent');",
+      "expected": "EXC|System.SObjectException|Invalid field: Parent",
+      "compileCase": false,
+      "group": "relationship"
+    },
+    {
+      "id": "R182",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(); x.putSObject('Parent',p); r=x.getPopulatedFieldsAsMap().containsKey('Parent');",
+      "expected": "true",
+      "compileCase": false,
+      "group": "relationship"
+    },
+    {
+      "id": "R183",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,false,false,false); r=y.Id==x.Id;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R184",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,false,false,false); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R185",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,false,false,true); r=y.Id==x.Id;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R186",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,false,false,true); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R187",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,false,true,false); r=y.Id==x.Id;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R188",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,false,true,false); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R189",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,false,true,true); r=y.Id==x.Id;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R190",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,false,true,true); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R191",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,true,false,false); r=y.Id==x.Id;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R192",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,true,false,false); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R193",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,true,false,true); r=y.Id==x.Id;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R194",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,true,false,true); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R195",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,true,true,false); r=y.Id==x.Id;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R196",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,true,true,false); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R197",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,true,true,true); r=y.Id==x.Id;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R198",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(false,true,true,true); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R199",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,false,false,false); r=y.Id==x.Id;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R200",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,false,false,false); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R201",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,false,false,true); r=y.Id==x.Id;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R202",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,false,false,true); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R203",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,false,true,false); r=y.Id==x.Id;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R204",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,false,true,false); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R205",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,false,true,true); r=y.Id==x.Id;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R206",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,false,true,true); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R207",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,true,false,false); r=y.Id==x.Id;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R208",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,true,false,false); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R209",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,true,false,true); r=y.Id==x.Id;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R210",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,true,false,true); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R211",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,true,true,false); r=y.Id==x.Id;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R212",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,true,true,false); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R213",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,true,true,true); r=y.Id==x.Id;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R214",
+      "code": "Account x=new Account(Id='001000000000001AAA',Name='A'); Account y=x.clone(true,true,true,true); r=y===x;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "clone-flags"
+    },
+    {
+      "id": "R215",
+      "code": "Account x=new Account(); Account y=new Account(Name=null); r=x==y;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R216",
+      "code": "Account x=new Account(); Account y=new Account(Name=null); r=x!=y;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R217",
+      "code": "Account x=new Account(); Account y=new Account(Name=null); r=x===y;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R218",
+      "code": "Account x=new Account(); Account y=new Account(Name=null); r=x.equals(y);",
+      "expected": "false",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R219",
+      "code": "Account x=new Account(); Account y=new Account(Name=null); r=x.hashCode()==y.hashCode();",
+      "expected": "false",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R220",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='a'); r=x==y;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R221",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='a'); r=x!=y;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R222",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='a'); r=x===y;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R223",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='a'); r=x.equals(y);",
+      "expected": "false",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R224",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='a'); r=x.hashCode()==y.hashCode();",
+      "expected": "false",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R225",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='A'); r=x==y;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R226",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='A'); r=x!=y;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R227",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='A'); r=x===y;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R228",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='A'); r=x.equals(y);",
+      "expected": "true",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R229",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='A'); r=x.hashCode()==y.hashCode();",
+      "expected": "true",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R230",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='B'); r=x==y;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R231",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='B'); r=x!=y;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R232",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='B'); r=x===y;",
+      "expected": "false",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R233",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='B'); r=x.equals(y);",
+      "expected": "false",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R234",
+      "code": "Account x=new Account(Name='A'); Account y=new Account(Name='B'); r=x.hashCode()==y.hashCode();",
+      "expected": "false",
+      "compileCase": false,
+      "group": "equality-hash"
+    },
+    {
+      "id": "R235",
+      "code": "Account x=new Account(); x.addError('blocked'); r=x.hasErrors();",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R236",
+      "code": "Account x=new Account(); x.addError('blocked'); r=x.getErrors().size();",
+      "expected": "1",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R237",
+      "code": "Account x=new Account(); x.addError('blocked'); r=x.getErrors()[0].getMessage();",
+      "expected": "blocked",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R238",
+      "code": "Account x=new Account(); x.addError('blocked'); r=x.getErrors()[0].getFields().size();",
+      "expected": "0",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R239",
+      "code": "Account x=new Account(); x.addError('blocked'); r=x.getErrors()[0].getStatusCode()==StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R240",
+      "code": "Account x=new Account(); x.addError('blocked',false); r=x.hasErrors();",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R241",
+      "code": "Account x=new Account(); x.addError('blocked',false); r=x.getErrors().size();",
+      "expected": "1",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R242",
+      "code": "Account x=new Account(); x.addError('blocked',false); r=x.getErrors()[0].getMessage();",
+      "expected": "blocked",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R243",
+      "code": "Account x=new Account(); x.addError('blocked',false); r=x.getErrors()[0].getFields().size();",
+      "expected": "0",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R244",
+      "code": "Account x=new Account(); x.addError('blocked',false); r=x.getErrors()[0].getStatusCode()==StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R245",
+      "code": "Account x=new Account(); x.addError('blocked',true); r=x.hasErrors();",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R246",
+      "code": "Account x=new Account(); x.addError('blocked',true); r=x.getErrors().size();",
+      "expected": "1",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R247",
+      "code": "Account x=new Account(); x.addError('blocked',true); r=x.getErrors()[0].getMessage();",
+      "expected": "blocked",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R248",
+      "code": "Account x=new Account(); x.addError('blocked',true); r=x.getErrors()[0].getFields().size();",
+      "expected": "0",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R249",
+      "code": "Account x=new Account(); x.addError('blocked',true); r=x.getErrors()[0].getStatusCode()==StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R250",
+      "code": "Account x=new Account(); x.addError(new IllegalArgumentException('blocked')); r=x.hasErrors();",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R251",
+      "code": "Account x=new Account(); x.addError(new IllegalArgumentException('blocked')); r=x.getErrors().size();",
+      "expected": "1",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R252",
+      "code": "Account x=new Account(); x.addError(new IllegalArgumentException('blocked')); r=x.getErrors()[0].getMessage();",
+      "expected": "blocked",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R253",
+      "code": "Account x=new Account(); x.addError(new IllegalArgumentException('blocked')); r=x.getErrors()[0].getFields().size();",
+      "expected": "0",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R254",
+      "code": "Account x=new Account(); x.addError(new IllegalArgumentException('blocked')); r=x.getErrors()[0].getStatusCode()==StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R255",
+      "code": "Account x=new Account(); x.addError(new IllegalArgumentException('blocked'),false); r=x.hasErrors();",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R256",
+      "code": "Account x=new Account(); x.addError(new IllegalArgumentException('blocked'),false); r=x.getErrors().size();",
+      "expected": "1",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R257",
+      "code": "Account x=new Account(); x.addError(new IllegalArgumentException('blocked'),false); r=x.getErrors()[0].getMessage();",
+      "expected": "blocked",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R258",
+      "code": "Account x=new Account(); x.addError(new IllegalArgumentException('blocked'),false); r=x.getErrors()[0].getFields().size();",
+      "expected": "0",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R259",
+      "code": "Account x=new Account(); x.addError(new IllegalArgumentException('blocked'),false); r=x.getErrors()[0].getStatusCode()==StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R260",
+      "code": "Account x=new Account(); x.addError('Name','blocked'); r=x.hasErrors();",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R261",
+      "code": "Account x=new Account(); x.addError('Name','blocked'); r=x.getErrors().size();",
+      "expected": "1",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R262",
+      "code": "Account x=new Account(); x.addError('Name','blocked'); r=x.getErrors()[0].getMessage();",
+      "expected": "blocked",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R263",
+      "code": "Account x=new Account(); x.addError('Name','blocked'); r=x.getErrors()[0].getFields().size();",
+      "expected": "1",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R264",
+      "code": "Account x=new Account(); x.addError('Name','blocked'); r=x.getErrors()[0].getStatusCode()==StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R265",
+      "code": "Account x=new Account(); x.addError('Name','blocked',false); r=x.hasErrors();",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R266",
+      "code": "Account x=new Account(); x.addError('Name','blocked',false); r=x.getErrors().size();",
+      "expected": "1",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R267",
+      "code": "Account x=new Account(); x.addError('Name','blocked',false); r=x.getErrors()[0].getMessage();",
+      "expected": "blocked",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R268",
+      "code": "Account x=new Account(); x.addError('Name','blocked',false); r=x.getErrors()[0].getFields().size();",
+      "expected": "1",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R269",
+      "code": "Account x=new Account(); x.addError('Name','blocked',false); r=x.getErrors()[0].getStatusCode()==StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R270",
+      "code": "Account x=new Account(); x.addError('Name','blocked',true); r=x.hasErrors();",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R271",
+      "code": "Account x=new Account(); x.addError('Name','blocked',true); r=x.getErrors().size();",
+      "expected": "1",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R272",
+      "code": "Account x=new Account(); x.addError('Name','blocked',true); r=x.getErrors()[0].getMessage();",
+      "expected": "blocked",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R273",
+      "code": "Account x=new Account(); x.addError('Name','blocked',true); r=x.getErrors()[0].getFields().size();",
+      "expected": "1",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R274",
+      "code": "Account x=new Account(); x.addError('Name','blocked',true); r=x.getErrors()[0].getStatusCode()==StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R275",
+      "code": "Account x=new Account(); x.addError(null); r=x.hasErrors();",
+      "expected": "COMPILE_ERROR\tline 30: Ambiguous method signature: void addError(NULL)",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R276",
+      "code": "Account x=new Account(); x.addError(null); r=x.getErrors().size();",
+      "expected": "COMPILE_ERROR\tline 30: Ambiguous method signature: void addError(NULL)",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R277",
+      "code": "Account x=new Account(); x.addError(null); r=x.getErrors()[0].getMessage();",
+      "expected": "COMPILE_ERROR\tline 30: Ambiguous method signature: void addError(NULL)",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R278",
+      "code": "Account x=new Account(); x.addError(null); r=x.getErrors()[0].getFields().size();",
+      "expected": "COMPILE_ERROR\tline 30: Ambiguous method signature: void addError(NULL)",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R279",
+      "code": "Account x=new Account(); x.addError(null); r=x.getErrors()[0].getStatusCode()==StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION;",
+      "expected": "COMPILE_ERROR\tline 30: Ambiguous method signature: void addError(NULL)",
+      "compileCase": false,
+      "group": "addError"
+    },
+    {
+      "id": "R280",
+      "code": "SObject x=Account.SObjectType.newSObject(); r=x.getSObjectType()==Account.SObjectType;",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction-boundary"
+    },
+    {
+      "id": "R281",
+      "code": "SObject x=Account.SObjectType.newSObject('001000000000001AAA'); r=x.Id=='001000000000001AAA';",
+      "expected": "true",
+      "compileCase": false,
+      "group": "construction-boundary"
+    },
+    {
+      "id": "R282",
+      "code": "SObject x=Account.SObjectType.newSObject(null,false); r=x.Id;",
+      "expected": "null",
+      "compileCase": false,
+      "group": "construction-boundary"
+    },
+    {
+      "id": "R283",
+      "code": "Account x=new Account(Name='A'); x.clear(); r=x.Name;",
+      "expected": "null",
+      "compileCase": false,
+      "group": "construction-boundary"
+    },
+    {
+      "id": "R284",
+      "code": "Account x=new Account(Name='A'); x.clear(); r=x.isSet('Name');",
+      "expected": "false",
+      "compileCase": false,
+      "group": "construction-boundary"
+    },
+    {
+      "id": "R285",
+      "code": "Account x=new Account(Name='A'); x.clear(); r=x.getPopulatedFieldsAsMap().size();",
+      "expected": "0",
+      "compileCase": false,
+      "group": "construction-boundary"
+    },
+    {
+      "id": "R286",
+      "code": "Contact x=new Contact(); x.putSObject('Account',null); r=x.getSObject('Account');",
+      "expected": "null",
+      "compileCase": false,
+      "group": "construction-boundary"
+    },
+    {
+      "id": "R287",
+      "code": "Contact x=new Contact(); x.putSObject('NoSuchRelationship__r',new Account()); r=x;",
+      "expected": "EXC|System.SObjectException|Invalid relationship NoSuchRelationship__r for Contact",
+      "compileCase": false,
+      "group": "construction-boundary"
+    },
+    {
+      "id": "R288",
+      "code": "Account x=new Account(); r=x.getSObjects('Contacts');",
+      "expected": "null",
+      "compileCase": false,
+      "group": "construction-boundary"
+    },
+    {
+      "id": "R289",
+      "code": "Account x=new Account(); x.addError((Schema.SObjectField)null,'blocked'); r=x.hasErrors()+'|'+x.getErrors().size()+'|'+x.getErrors()[0].getFields().size()+'|'+x.getErrors()[0].getMessage();",
+      "expected": "true|1|0|blocked",
+      "compileCase": false,
+      "group": "nullable-addError"
+    },
+    {
+      "id": "R290",
+      "code": "Account x=new Account(); x.addError((Schema.SObjectField)null,'blocked',false); r=x.hasErrors()+'|'+x.getErrors().size()+'|'+x.getErrors()[0].getFields().size()+'|'+x.getErrors()[0].getMessage();",
+      "expected": "true|1|0|blocked",
+      "compileCase": false,
+      "group": "nullable-addError"
+    },
+    {
+      "id": "R291",
+      "code": "Account x=new Account(); x.addError((Schema.SObjectField)null,'blocked',true); r=x.hasErrors()+'|'+x.getErrors().size()+'|'+x.getErrors()[0].getFields().size()+'|'+x.getErrors()[0].getMessage();",
+      "expected": "true|1|0|blocked",
+      "compileCase": false,
+      "group": "nullable-addError"
+    },
+    {
+      "id": "R292",
+      "code": "Account x=new Account(); x.addError((String)null,'blocked'); r=x.hasErrors()+'|'+x.getErrors().size()+'|'+x.getErrors()[0].getFields().size()+'|'+x.getErrors()[0].getMessage();",
+      "expected": "true|1|0|blocked",
+      "compileCase": false,
+      "group": "nullable-addError"
+    },
+    {
+      "id": "R293",
+      "code": "Account x=new Account(); x.addError((String)null,'blocked',false); r=x.hasErrors()+'|'+x.getErrors().size()+'|'+x.getErrors()[0].getFields().size()+'|'+x.getErrors()[0].getMessage();",
+      "expected": "true|1|0|blocked",
+      "compileCase": false,
+      "group": "nullable-addError"
+    },
+    {
+      "id": "R294",
+      "code": "Account x=new Account(); x.addError((String)null,'blocked',true); r=x.hasErrors()+'|'+x.getErrors().size()+'|'+x.getErrors()[0].getFields().size()+'|'+x.getErrors()[0].getMessage();",
+      "expected": "true|1|0|blocked",
+      "compileCase": false,
+      "group": "nullable-addError"
+    },
+    {
+      "id": "R295",
+      "code": "Account x=new Account(); x.addError(Account.Name,'blocked'); r=x.hasErrors()+'|'+x.getErrors().size()+'|'+x.getErrors()[0].getFields().size()+'|'+x.getErrors()[0].getMessage();",
+      "expected": "true|1|1|blocked",
+      "compileCase": false,
+      "group": "nullable-addError"
+    },
+    {
+      "id": "R296",
+      "code": "Account x=new Account(); x.addError(Account.Name,'blocked',false); r=x.hasErrors()+'|'+x.getErrors().size()+'|'+x.getErrors()[0].getFields().size()+'|'+x.getErrors()[0].getMessage();",
+      "expected": "true|1|1|blocked",
+      "compileCase": false,
+      "group": "nullable-addError"
+    },
+    {
+      "id": "R297",
+      "code": "Account x=new Account(); x.addError(Account.Name,'blocked',true); r=x.hasErrors()+'|'+x.getErrors().size()+'|'+x.getErrors()[0].getFields().size()+'|'+x.getErrors()[0].getMessage();",
+      "expected": "true|1|1|blocked",
+      "compileCase": false,
+      "group": "nullable-addError"
+    },
+    {
+      "id": "C002",
+      "code": "Account a=new Account(); a.Name=1; pq.out('C002',a);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to String",
+      "compileCase": true,
+      "group": "compile"
+    },
+    {
+      "id": "C003",
+      "code": "Account a=new Account(); Contact c=new Contact(); c.Account=a; pq.out('C003',c.Account===a);",
+      "expected": "true",
+      "compileCase": true,
+      "group": "compile"
+    }
+  ],
+  "controls": [
+    {
+      "id": "H001",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(Name='A'); x.Parent=p; Account y=x.clone(); r=y.Parent===p;",
+      "expected": "true",
+      "compileCase": false
+    },
+    {
+      "id": "H002",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(Name='A'); x.Parent=p; Account y=x.clone(false); r=y.Parent===p;",
+      "expected": "true",
+      "compileCase": false
+    },
+    {
+      "id": "H003",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(Id='001000000000001AAA',Name='A'); x.Parent=p; Account y=x.clone(true); r=(y.Parent===p)+'|'+(y.Id==x.Id);",
+      "expected": "true|true",
+      "compileCase": false
+    },
+    {
+      "id": "H004",
+      "code": "Account p=new Account(Name='P'); Account x=new Account(Name='A'); x.Parent=p; Account y=x.clone(); p.Name='Changed'; r=y.Parent.Name;",
+      "expected": "Changed",
+      "compileCase": false
+    },
+    {
+      "id": "H005",
+      "code": "Account x=new Account(Name='A'); Account y=x.clone(); y.Name='B'; r=x.Name;",
+      "expected": "A",
+      "compileCase": false
+    },
+    {
+      "id": "H006",
+      "code": "Account x=new Account(Id='001000000000001AAA'); Account y=new Account(Id='001000000000001'); r=(x==y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "true|true",
+      "compileCase": false
+    },
+    {
+      "id": "H007",
+      "code": "Contact x=new Contact(AccountId='001000000000001AAA'); Contact y=new Contact(); y.put('AccountId','001000000000001AAA'); r=(x==y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "true|true",
+      "compileCase": false
+    },
+    {
+      "id": "H008",
+      "code": "Account x=new Account(); Account y=new Account(Name=null); r=(x==y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "false|false",
+      "compileCase": false
+    },
+    {
+      "id": "H009",
+      "code": "Account x=new Account(Name='A'); x.Parent=new Account(Name='P'); Account y=new Account(Name='A'); y.Parent=new Account(Name='P'); r=(x==y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "true|true",
+      "compileCase": false
+    },
+    {
+      "id": "H011",
+      "code": "Account g=new Account(Name='Grand'); insert g; Account a=new Account(Name='Parent',ParentId=g.Id); insert a; Contact c=new Contact(LastName='Child',AccountId=a.Id); insert c; Contact x=[SELECT AccountId FROM Contact WHERE Id=:c.Id]; r=x.Account.Parent.Name;",
+      "expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.Account",
+      "compileCase": false,
+      "group": "relationship-controls"
+    },
+    {
+      "id": "H012",
+      "code": "Account g=new Account(Name='Grand'); insert g; Account a=new Account(Name='Parent',ParentId=g.Id); insert a; Contact c=new Contact(LastName='Child',AccountId=a.Id); insert c; Contact x=[SELECT AccountId,Account.Parent.Name FROM Contact WHERE Id=:c.Id]; r=x.Account.Parent.Name;",
+      "expected": "Grand",
+      "compileCase": false,
+      "group": "relationship-controls"
+    },
+    {
+      "id": "H013",
+      "code": "Account a=new Account(Name='Acme'); insert a; Task t=new Task(Subject='Call',WhatId=a.Id); insert t; Task x=[SELECT Id,TYPEOF What WHEN Account THEN Name END FROM Task WHERE Id=:t.Id]; r=x.What.Name;",
+      "expected": "Acme",
+      "compileCase": false,
+      "group": "relationship-controls"
+    },
+    {
+      "id": "H014",
+      "code": "Account a=new Account(Name='Parent'); insert a; insert new Contact(LastName='Smith',AccountId=a.Id); Account x=[SELECT Id,(SELECT LastName FROM Contacts) FROM Account WHERE Id=:a.Id]; Account y=x.clone(false,false); r=(y.Id==null)+'|'+y.getSObjects('Contacts').size()+'|'+((Contact)y.getSObjects('Contacts')[0]).LastName;",
+      "expected": "true|1|Smith",
+      "compileCase": false,
+      "group": "relationship-controls"
+    },
+    {
+      "id": "H015",
+      "code": "Account seed=new Account(Name='NullHash',Description=null); insert seed; Account x=[SELECT Id,Name,Description FROM Account WHERE Id=:seed.Id]; Account y=x.clone(true,false); y.Description=null; r=(x==y)+'|'+x.equals(y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "false|false|false",
+      "compileCase": false,
+      "group": "null-hash-controls"
+    },
+    {
+      "id": "H016",
+      "code": "Account seed=new Account(Name='NullHash',Description=null); insert seed; Account x=[SELECT Id,Name,Description FROM Account WHERE Id=:seed.Id]; Account y=new Account(Id=x.Id,Name=x.Name,Description=null); r=(x==y)+'|'+x.equals(y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "false|false|false",
+      "compileCase": false,
+      "group": "null-hash-controls"
+    },
+    {
+      "id": "H017",
+      "code": "Account x=new Account(Name='NullHash'); Account y=new Account(Name='NullHash',Description=null); r=(x==y)+'|'+x.equals(y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "false|false|false",
+      "compileCase": false,
+      "group": "null-hash-controls"
+    },
+    {
+      "id": "H018",
+      "code": "Account seed=new Account(Name='NullHash',Description=null); insert seed; Account x=[SELECT Id,Name,Description FROM Account WHERE Id=:seed.Id]; Account y=[SELECT Id,Name FROM Account WHERE Id=:seed.Id]; r=(x==y)+'|'+x.equals(y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "true|true|true",
+      "compileCase": false,
+      "group": "null-hash-controls"
+    },
+    {
+      "id": "H019",
+      "code": "Account seed=new Account(Name='NullHash'); insert seed; Account x=[SELECT Id,Name,Description FROM Account WHERE Id=:seed.Id]; Account y=x.clone(true,false); y.Description=null; r=(x==y)+'|'+x.equals(y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "false|false|false",
+      "compileCase": false,
+      "group": "null-hash-controls"
+    },
+    {
+      "id": "H020",
+      "code": "Account seed=new Account(Name='DefaultHash',NumberOfEmployees=0); insert seed; Account x=[SELECT Id,Name,NumberOfEmployees FROM Account WHERE Id=:seed.Id]; Account y=x.clone(true,false); y.NumberOfEmployees=0; r=(x==y)+'|'+x.equals(y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "true|true|true",
+      "compileCase": false,
+      "group": "non-null-default-hash-controls"
+    },
+    {
+      "id": "H021",
+      "code": "Account seed=new Account(Name='DefaultHash',AnnualRevenue=0); insert seed; Account x=[SELECT Id,Name,AnnualRevenue FROM Account WHERE Id=:seed.Id]; Account y=x.clone(true,false); y.AnnualRevenue=0; r=(x==y)+'|'+x.equals(y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "true|true|true",
+      "compileCase": false,
+      "group": "non-null-default-hash-controls"
+    },
+    {
+      "id": "H023",
+      "code": "Account seed=new Account(Name='NoParent'); insert seed; Account queried=[SELECT Parent.Name,Parent.Description FROM Account WHERE Id=:seed.Id]; Account typedNull=null; Account x=new Account(); x.Parent=typedNull; Account y=new Account(); y.Parent=queried.Parent; r=(x==y)+'|'+x.equals(y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "true|true|true",
+      "compileCase": false,
+      "group": "missing-parent-controls"
+    },
+    {
+      "id": "H024",
+      "code": "Account typedNull=null; Account x=new Account(); x.Parent=typedNull; Account y=new Account(); y.Parent=new Account(Name=null,Description=null); r=(x==y)+'|'+x.equals(y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "false|false|false",
+      "compileCase": false,
+      "group": "missing-parent-controls"
+    },
+    {
+      "id": "H025",
+      "code": "Account seed=new Account(Name='NoParent'); insert seed; Account x=[SELECT Id FROM Account WHERE Id=:seed.Id]; Account y=[SELECT Id,Parent.Name,Parent.Description FROM Account WHERE Id=:seed.Id]; r=(x==y)+'|'+x.equals(y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "true|true|true",
+      "compileCase": false,
+      "group": "missing-parent-controls"
+    }
+  ],
+  "excludedControls": [
+    {
+      "id": "H010",
+      "code": "Account x=new Account(Name='Child'); x.put('Contacts',new List<Contact>{new Contact(LastName='Smith')}); r=x.getSObjects('Contacts').size();",
+      "expected": "EXC|System.SObjectException|Invalid field Contacts for Account",
+      "compileCase": false,
+      "owner": "SObject values",
+      "disposition": "Matched via SC040: dynamic SObject.put rejects Contacts with the native Invalid field Contacts for Account exception. Retained as native evidence for the legacy clone fixture; still excluded from the matching conformance export because matching credit goes through SC040.",
+      "mainCaseCredit": false
+    },
+    {
+      "id": "H022",
+      "code": "Contact seed=new Contact(LastName='DefaultHash',DoNotCall=false); insert seed; Contact x=[SELECT Id,LastName,DoNotCall FROM Contact WHERE Id=:seed.Id]; Contact y=x.clone(true,false); y.DoNotCall=false; r=(x==y)+'|'+x.equals(y)+'|'+(x.hashCode()==y.hashCode());",
+      "expected": "COMPILE_ERROR\tline 8: Field does not exist: DoNotCall on Contact",
+      "compileCase": false,
+      "owner": "schema profiles",
+      "disposition": "Native org B rejects Contact.DoNotCall at both APIs, so this row cannot observe boolean equality/hash behavior. Retained as native schema-profile evidence; excluded from matching conformance export.",
+      "mainCaseCredit": false
+    }
+  ]
+}

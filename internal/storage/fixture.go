@@ -20,6 +20,7 @@ type FixtureOrg struct {
 	OrgID      string `json:"orgId,omitempty"`
 	APIVersion string `json:"apiVersion,omitempty"`
 	Namespace  string `json:"namespace,omitempty"`
+	DomainURL  string `json:"domainUrl,omitempty"`
 }
 
 type FixtureObject struct {
@@ -87,6 +88,7 @@ func FixtureFromOrg(org OrgState) Fixture {
 			OrgID:      org.OrgID,
 			APIVersion: org.APIVersion,
 			Namespace:  org.Namespace,
+			DomainURL:  org.DomainURL,
 		},
 		IDSequences: copySequences(org.IDSequences),
 	}
@@ -118,6 +120,15 @@ func FixtureFromOrg(org OrgState) Fixture {
 }
 
 func ApplyFixture(org *OrgState, fixture Fixture) error {
+	domainURL, err := NormalizeOrgDomainURL(fixture.Org.DomainURL)
+	if err != nil {
+		return fmt.Errorf("storage: fixture org domainUrl: %w", err)
+	}
+	// An explicit fixture origin overrides the current/seed value. An unset
+	// fixture origin leaves the current value intact.
+	if domainURL != "" {
+		org.DomainURL = domainURL
+	}
 	if org.Objects == nil {
 		org.Objects = make(map[string]ObjectState)
 	}
@@ -286,7 +297,10 @@ func ApplyOrgShape(org *OrgState, features []string) {
 			applyPersonAccounts(org)
 		case "MultiCurrency":
 			applyMultiCurrency(org)
-		case "Sites", "Communities":
+		case "Sites":
+			applySitesAndCommunities(org)
+			ensureSitesGuestProfiles(org)
+		case "Communities":
 			applySitesAndCommunities(org)
 		case "StateAndCountryPicklist":
 			applyStateAndCountryPicklist(org)
@@ -423,13 +437,17 @@ func applyMultiCurrency(org *OrgState) {
 		if obj.Definition.Fields == nil {
 			obj.Definition.Fields = make(map[string]Field)
 		}
-		if _, hasCurrency := obj.Definition.Fields["CurrencyIsoCode"]; !hasCurrency {
-			obj.Definition.Fields["CurrencyIsoCode"] = Field{
-				APIName: "CurrencyIsoCode",
-				Label:   "Currency ISO Code",
-				Type:    FieldString,
-			}
+		field := obj.Definition.Fields["CurrencyIsoCode"]
+		field.APIName = "CurrencyIsoCode"
+		if field.Label == "" {
+			field.Label = "Currency ISO Code"
 		}
+		field.Type = FieldPicklist
+		field.DisplayType = "PICKLIST"
+		field.DefaultedOnCreate = BoolFlag(true)
+		// Currency defaults depend on the execution user and DML phase. Do not
+		// store a literal default that would change ordinary SObject field reads.
+		obj.Definition.Fields["CurrencyIsoCode"] = field
 		org.Objects[name] = obj
 	}
 }
@@ -513,6 +531,13 @@ func applyPlatformCache(org *OrgState) {
 		"NamespacePrefix":    {APIName: "NamespacePrefix", Type: FieldString},
 		"IsDefaultPartition": {APIName: "IsDefaultPartition", Type: FieldBoolean},
 	})
+	// Source metadata can supply the local default partition. Reapplying the
+	// feature must not add a competing implicit default.
+	for _, record := range org.Objects["PlatformCachePartition"].Records {
+		if record.Fields["NamespacePrefix"].String == "" && record.Fields["IsDefaultPartition"].Boolean {
+			return
+		}
+	}
 	putSeedRecord(org, "PlatformCachePartition", Record{
 		ID:     "0Px000000000001",
 		Object: "PlatformCachePartition",
@@ -675,7 +700,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"Company":           {APIName: "Company", Type: FieldString},
 		"Email":             {APIName: "Email", Type: FieldString},
 		"NumberOfEmployees": {APIName: "NumberOfEmployees", Label: "Employees", Type: FieldInteger},
-		"Status":            {APIName: "Status", Type: FieldString},
+		"Status":            {APIName: "Status", Type: FieldPicklist, Required: true},
 	})
 	ensureObject(org, "PermissionSet", "0PS", map[string]Field{
 		"Name":                              {APIName: "Name", Type: FieldString, Required: true},
@@ -823,6 +848,11 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		},
 	})
 	ensureOpportunityStageData(org)
+	ensureLeadStatusData(org)
+	ensureTaskStatusData(org)
+	ensureTaskPriorityData(org)
+	ensureDefaultBusinessHours(org)
+	ensureDefaultContactDuplicateRules(org)
 	putSeedRecord(org, "Organization", Record{
 		ID:     orgID,
 		Object: "Organization",
@@ -936,7 +966,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		ID:     automatedProcessUserID,
 		Object: "User",
 		Fields: map[string]Value{
-			"Username":          StringValue("automated-process@example.invalid"),
+			"Username":          StringValue("autoproc@" + displayOrgID(string(orgID))),
 			"FirstName":         StringValue("Automated"),
 			"LastName":          StringValue("Process"),
 			"Name":              StringValue("Automated Process"),
@@ -1099,11 +1129,167 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"ObjectPermissions":       6,
 		"SetupEntityAccess":       1,
 		"OpportunityStage":        10,
+		"LeadStatus":              4,
 		"RecordType":              maxRecordTypeSequence(*org),
 	} {
 		if org.IDSequences[object] < sequence {
 			org.IDSequences[object] = sequence
 		}
+	}
+}
+
+func displayOrgID(id string) string {
+	if len(id) != 15 {
+		return id
+	}
+	const checksumChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ012345"
+	var suffix strings.Builder
+	suffix.Grow(3)
+	for chunk := 0; chunk < 3; chunk++ {
+		mask := 0
+		for bit := 0; bit < 5; bit++ {
+			ch := id[chunk*5+bit]
+			if ch >= 'A' && ch <= 'Z' {
+				mask |= 1 << bit
+			}
+		}
+		suffix.WriteByte(checksumChars[mask])
+	}
+	return id + suffix.String()
+}
+
+// ensureTaskPriorityData materializes Task.Priority setup metadata. An existing
+// table remains authoritative, including configured high-priority flags and IDs.
+func ensureTaskPriorityData(org *OrgState) {
+	if len(org.Objects["TaskPriority"].Records) != 0 {
+		return
+	}
+	EnsureStandardObject(org, "Task")
+	priorityField := org.Objects["Task"].Definition.Fields["Priority"]
+	ensureObject(org, "TaskPriority", "01J", map[string]Field{
+		"MasterLabel":    {APIName: "MasterLabel", Type: FieldString},
+		"ApiName":        {APIName: "ApiName", Type: FieldString},
+		"IsHighPriority": {APIName: "IsHighPriority", Type: FieldBoolean},
+		"IsDefault":      {APIName: "IsDefault", Type: FieldBoolean},
+		"SortOrder":      {APIName: "SortOrder", Type: FieldInteger},
+	})
+	if org.IDSequences == nil {
+		org.IDSequences = make(map[string]uint64)
+	}
+	next := org.IDSequences["TaskPriority"]
+	hasDefault := false
+	for _, entry := range priorityField.PicklistValues {
+		hasDefault = hasDefault || entry.Default
+	}
+	for i, entry := range priorityField.PicklistValues {
+		var id ID
+		for {
+			next++
+			id = ID("01J" + leftPadBase36(next, 12))
+			used := false
+			// Several setup objects share this prefix, including LeadStatus.
+			for _, object := range org.Objects {
+				if _, _, found := LookupRecordByID(object.Records, id); found {
+					used = true
+					break
+				}
+			}
+			if !used {
+				break
+			}
+		}
+		label := entry.Label
+		if label == "" {
+			label = entry.Value
+		}
+		isDefault := entry.Default || (!hasDefault && entry.Value == priorityField.DefaultValue)
+		putSeedRecord(org, "TaskPriority", Record{ID: id, Object: "TaskPriority", Fields: map[string]Value{
+			"MasterLabel": StringValue(label), "ApiName": StringValue(entry.Value),
+			"IsDefault": BooleanValue(isDefault), "IsHighPriority": BooleanValue(entry.Value == "High"),
+			"SortOrder": IntegerValue(int64(i + 1)),
+		}})
+	}
+	org.IDSequences["TaskPriority"] = next
+}
+
+// ensureTaskStatusData supplies the default status metadata for an empty local org.
+// A populated table is authoritative, including its labels and closed flags.
+func ensureTaskStatusData(org *OrgState) {
+	if len(org.Objects["TaskStatus"].Records) != 0 {
+		return
+	}
+	ensureObject(org, "TaskStatus", "01J", map[string]Field{
+		"MasterLabel": {APIName: "MasterLabel", Type: FieldString},
+		"ApiName":     {APIName: "ApiName", Type: FieldString},
+		"IsClosed":    {APIName: "IsClosed", Type: FieldBoolean},
+		"IsDefault":   {APIName: "IsDefault", Type: FieldBoolean},
+		"SortOrder":   {APIName: "SortOrder", Type: FieldInteger},
+	})
+	statuses := []struct {
+		label     string
+		apiName   string
+		closed    bool
+		isDefault bool
+		sortOrder int64
+	}{
+		{"Not Started", "Not Started", false, true, 1},
+		{"In Progress", "In Progress", false, false, 2},
+		{"Completed", "Completed", true, false, 3},
+		{"Waiting on someone else", "Waiting on someone else", false, false, 4},
+		{"Deferred", "Deferred", false, false, 5},
+	}
+	if org.IDSequences == nil {
+		org.IDSequences = make(map[string]uint64)
+	}
+	next := org.IDSequences["TaskStatus"]
+	for _, status := range statuses {
+		var id ID
+		for {
+			next++
+			id = ID("01J" + leftPadBase36(next, 12))
+			used := false
+			// LeadStatus uses the same prefix. Check existing record identity,
+			// including equivalent 18-character IDs, before choosing a seed ID.
+			for _, object := range org.Objects {
+				if _, _, found := LookupRecordByID(object.Records, id); found {
+					used = true
+					break
+				}
+			}
+			if !used {
+				break
+			}
+		}
+		putSeedRecord(org, "TaskStatus", Record{
+			ID: id, Object: "TaskStatus",
+			Fields: map[string]Value{
+				"MasterLabel": StringValue(status.label), "ApiName": StringValue(status.apiName),
+				"IsClosed": BooleanValue(status.closed), "IsDefault": BooleanValue(status.isDefault),
+				"SortOrder": IntegerValue(status.sortOrder),
+			},
+		})
+	}
+	org.IDSequences["TaskStatus"] = next
+}
+
+// ensureLeadStatusData provides the standard conversion metadata queried by Apex.
+func ensureLeadStatusData(org *OrgState) {
+	ensureObject(org, "LeadStatus", "01J", map[string]Field{
+		"MasterLabel": {APIName: "MasterLabel", Type: FieldString},
+		"ApiName":     {APIName: "ApiName", Type: FieldString},
+		"IsConverted": {APIName: "IsConverted", Type: FieldBoolean},
+		"IsDefault":   {APIName: "IsDefault", Type: FieldBoolean},
+		"SortOrder":   {APIName: "SortOrder", Type: FieldInteger},
+	})
+	for i, label := range []string{"Open - Not Contacted", "Working - Contacted", "Closed - Converted", "Closed - Not Converted"} {
+		putSeedRecord(org, "LeadStatus", Record{
+			ID: ID("01J" + leftPadBase36(uint64(i+1), 12)), Object: "LeadStatus",
+			Fields: map[string]Value{
+				"MasterLabel": StringValue(label), "ApiName": StringValue(label),
+				"IsConverted": BooleanValue(i == 2), "IsDefault": BooleanValue(i == 0),
+				"SortOrder": IntegerValue(int64(i + 1)),
+			},
+		})
 	}
 }
 
@@ -1176,9 +1362,60 @@ func profileSeedFieldsWithUserType(name string, licenseID ID, userType string) m
 		"Name":                           StringValue(name),
 		"UserLicenseId":                  IDValue(licenseID),
 		"UserType":                       StringValue(userType),
+		"PermissionsModifyAllData":       BooleanValue(name == "System Administrator"),
 		"PermissionsEditPublicTemplates": BooleanValue(false),
 		"PermissionsManageSolutions":     BooleanValue(false),
 		"PermissionsActivateContract":    BooleanValue(false),
+	}
+}
+
+// SF193 establishes the default BusinessHours record used by a fresh org.
+// Salesforce's default scratch-org calendar is 24x7 in America/Los_Angeles;
+// the zero-to-zero day bounds represent a full-day window.
+func ensureDefaultBusinessHours(org *OrgState) {
+	EnsureStandardObject(org, "BusinessHours")
+	for _, record := range org.Objects["BusinessHours"].Records {
+		if value := record.Fields["IsDefault"]; value.Kind == ValueBoolean && value.Boolean {
+			return
+		}
+	}
+	putSeedRecord(org, "BusinessHours", Record{
+		ID: ID("01m000000000001"), Object: "BusinessHours",
+		Fields: map[string]Value{
+			"Name":            StringValue("Default"),
+			"IsDefault":       BooleanValue(true),
+			"IsActive":        BooleanValue(true),
+			"TimeZoneSidKey":  StringValue("America/Los_Angeles"),
+			"MondayStartTime": StringValue("00:00:00.000Z"), "MondayEndTime": StringValue("00:00:00.000Z"),
+			"TuesdayStartTime": StringValue("00:00:00.000Z"), "TuesdayEndTime": StringValue("00:00:00.000Z"),
+			"WednesdayStartTime": StringValue("00:00:00.000Z"), "WednesdayEndTime": StringValue("00:00:00.000Z"),
+			"ThursdayStartTime": StringValue("00:00:00.000Z"), "ThursdayEndTime": StringValue("00:00:00.000Z"),
+			"FridayStartTime": StringValue("00:00:00.000Z"), "FridayEndTime": StringValue("00:00:00.000Z"),
+			"SaturdayStartTime": StringValue("00:00:00.000Z"), "SaturdayEndTime": StringValue("00:00:00.000Z"),
+			"SundayStartTime": StringValue("00:00:00.000Z"), "SundayEndTime": StringValue("00:00:00.000Z"),
+		},
+	})
+}
+
+// Sites exposes standard guest profiles backed by guest licenses. SF194
+// confirms that an uninserted User with one of these profiles runs as Guest.
+func ensureSitesGuestProfiles(org *OrgState) {
+	EnsureStandardObject(org, "UserLicense")
+	EnsureStandardObject(org, "Profile")
+	for _, seed := range []struct {
+		profileID   ID
+		profileName string
+		licenseID   ID
+		licenseName string
+		licenseKey  string
+	}{
+		{ID("00e000000000009"), "Standard Guest", ID("100000000000003"), "Guest", "GUEST"},
+		{ID("00e000000000010"), "Guest License User", ID("100000000000004"), "Guest User License", "PID_Guest_User"},
+	} {
+		putSeedRecord(org, "UserLicense", Record{ID: seed.licenseID, Object: "UserLicense", Fields: map[string]Value{
+			"Name": StringValue(seed.licenseName), "LicenseDefinitionKey": StringValue(seed.licenseKey),
+		}})
+		putSeedRecord(org, "Profile", Record{ID: seed.profileID, Object: "Profile", Fields: profileSeedFieldsWithUserType(seed.profileName, seed.licenseID, "Guest")})
 	}
 }
 
@@ -1345,6 +1582,12 @@ func ensureRecordTypeRecordsForObjectWithContext(org *OrgState, objectName strin
 	}
 	EnsureRecordTypeIDField(&object.Definition)
 	for i, info := range object.Definition.RecordTypes {
+		// Master is a describe-only mapping, not a queryable RecordType row.
+		if strings.EqualFold(info.DeveloperName, "Master") {
+			info.ID = ID("012000000000000AAA")
+			object.Definition.RecordTypes[i] = info
+			continue
+		}
 		if objectName == "Account" && !defaultedPersonAccount && recordTypeIsPersonType(objectName, info) && (info.Active || info.Available) {
 			info.Default = true
 			defaultedPersonAccount = true
@@ -1482,7 +1725,7 @@ func ResetPlatformData(org *OrgState) {
 
 func IsPlatformObject(name string) bool {
 	switch name {
-	case "Organization", "Profile", "UserRole", "User", "UserLogin", "PermissionSet", "PermissionSetAssignment", "FieldPermissions", "ObjectPermissions", "SetupEntityAccess", "RecordType", "Site", "Network", "NetworkMember", "PlatformCachePartition", "OpportunityStage":
+	case "Organization", "Profile", "UserRole", "User", "UserLogin", "PermissionSet", "PermissionSetAssignment", "FieldPermissions", "ObjectPermissions", "SetupEntityAccess", "RecordType", "Site", "Network", "NetworkMember", "PlatformCachePartition", "OpportunityStage", "LeadStatus", "TaskStatus", "TaskPriority":
 		return true
 	default:
 		return false
@@ -1500,7 +1743,23 @@ func prefixesForOrg(org OrgState) map[string]string {
 			prefixes[name] = prefix
 		}
 	}
-	for name, prefix := range AssignDeterministicPrefixes(objectNamesFromOrg(org), prefixes) {
+	assigned := AssignDeterministicPrefixes(objectNamesFromOrg(org), prefixes)
+	names := objectNamesFromOrg(org)
+	sort.Strings(names)
+	nextCustomSetting := 0
+	for _, name := range names {
+		object := org.Objects[name]
+		if object.Definition.KeyPrefix == "" && IsCustomSettingDefinition(object.Definition) {
+			prefix := CustomSettingPrefix(nextCustomSetting)
+			nextCustomSetting++
+			for prefixInUse(assigned, prefix) {
+				prefix = CustomSettingPrefix(nextCustomSetting)
+				nextCustomSetting++
+			}
+			assigned[name] = prefix
+		}
+	}
+	for name, prefix := range assigned {
 		prefixes[name] = prefix
 	}
 	return prefixes
@@ -1525,7 +1784,14 @@ func ensureObject(org *OrgState, name, prefix string, fields map[string]Field) {
 	if object.Definition.Fields == nil {
 		object.Definition.Fields = make(map[string]Field)
 	}
-	for fieldName, field := range fields {
+	// Relations is ordered, so add fields by name rather than map order.
+	fieldNames := make([]string, 0, len(fields))
+	for fieldName := range fields {
+		fieldNames = append(fieldNames, fieldName)
+	}
+	sort.Strings(fieldNames)
+	for _, fieldName := range fieldNames {
+		field := fields[fieldName]
 		existingKey := ""
 		if _, ok := object.Definition.Fields[fieldName]; ok {
 			existingKey = fieldName
@@ -1575,6 +1841,9 @@ func hasParentRelationship(relations []Relationship, name string) bool {
 
 func putSeedRecord(org *OrgState, objectName string, record Record) {
 	object := org.Objects[objectName]
+	if object.Records == nil {
+		object.Records = make(map[ID]Record)
+	}
 	if existing, exists := object.Records[record.ID]; exists {
 		if existing.Fields == nil {
 			existing.Fields = make(map[string]Value)
@@ -1650,4 +1919,19 @@ func copySequences(in map[string]uint64) map[string]uint64 {
 		out[key] = value
 	}
 	return out
+}
+
+// The default local platform context exposes the standard Contact rules to tests.
+// Supplied rule rows and nondefault org identities remain authoritative. These
+// rows support manual duplicate sets; they do not enable automatic matching.
+func ensureDefaultContactDuplicateRules(org *OrgState) {
+	if len(org.Objects["DuplicateRule"].Records) != 0 || (org.OrgID != "" && !IDsEqual(ID(org.OrgID), "00D000000000001")) {
+		return
+	}
+	EnsureStandardObject(org, "DuplicateRule")
+	state := org.Objects["DuplicateRule"]
+	for i, name := range []string{"Standard_Contact_Duplicate_Rule", "Standard_Rule_for_Contacts_with_Duplicate_Leads"} {
+		id := ID(fmt.Sprintf("%s%012d", state.Definition.KeyPrefix, i+1))
+		putSeedRecord(org, "DuplicateRule", Record{ID: id, Object: "DuplicateRule", Fields: map[string]Value{"DeveloperName": StringValue(name), "SobjectType": StringValue("Contact")}})
+	}
 }

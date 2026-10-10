@@ -1,0 +1,251 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "oracle": {
+    "route": "anonymous",
+    "rows": 39,
+    "apiEndpointsIdentical": true,
+    "versionDifference": "no version difference"
+  },
+  "files": {
+    "SCWrap.cls": "public class SCWrap { public Integer n = 1; }\n"
+  },
+  "cases": [
+    {
+      "id": "SC001",
+      "oracleId": "SC001",
+      "code": "Account a=new Account(); a.put('Name', new Map<String,String>()); r=a.Name;",
+      "expected": "EXC|System.SObjectException|Illegal assignment from Map<String,String> to String"
+    },
+    {
+      "id": "SC002",
+      "oracleId": "SC002",
+      "code": "Account a=new Account(); a.put('Name', new Set<String>{'x'}); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Illegal assignment from Set<String> to String"
+    },
+    {
+      "id": "SC003",
+      "oracleId": "SC003",
+      "code": "Account a=new Account(); a.put('Name', new List<String>{'x'}); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Illegal assignment from List<String> to String"
+    },
+    {
+      "id": "SC004",
+      "oracleId": "SC004",
+      "code": "Account a=new Account(); a.put('Name', new Account(Name='p')); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Illegal assignment from Account to String"
+    },
+    {
+      "id": "SC005",
+      "oracleId": "SC005",
+      "code": "Account a=new Account(); a.put('Name', new SCWrap()); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Illegal assignment from SCWrap to String"
+    },
+    {
+      "id": "SC006",
+      "oracleId": "SC006",
+      "code": "Account a=new Account(); a.put('Parent', new Map<String,String>()); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Invalid field Parent for Account"
+    },
+    {
+      "id": "SC007",
+      "oracleId": "SC007",
+      "code": "Account a=new Account(); a.put('Parent', new List<Account>{new Account(Name='p')}); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Invalid field Parent for Account"
+    },
+    {
+      "id": "SC008",
+      "oracleId": "SC008",
+      "code": "Account a=new Account(); Object o=new Map<String,Object>(); a.put('Name', o); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Illegal assignment from Map<String,ANY> to String"
+    },
+    {
+      "id": "SC009",
+      "oracleId": "SC009",
+      "code": "SObject s=new Account(); s.put('Name', new Map<String,Object>()); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Illegal assignment from Map<String,ANY> to String"
+    },
+    {
+      "id": "SC010",
+      "oracleId": "SC010",
+      "code": "Account a=new Account(); a.put(Account.Name, new Map<String,String>()); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Illegal assignment from Map<String,String> to String"
+    },
+    {
+      "id": "SC011",
+      "oracleId": "SC011",
+      "code": "Account a=new Account(); a.put('NumberOfEmployees', new Set<Integer>{1}); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Illegal assignment from Set<Integer> to Integer"
+    },
+    {
+      "id": "SC012",
+      "oracleId": "SC012",
+      "code": "Account a=new Account(); a.putSObject('Parent', new Account(Name='p')); r=a.Parent.Name;",
+      "expected": "p"
+    },
+    {
+      "id": "SC013",
+      "oracleId": "SC013",
+      "code": "Account a=new Account(); a.put('Name','x'); r=a.Name;",
+      "expected": "x"
+    },
+    {
+      "id": "SC014",
+      "oracleId": "SC014",
+      "code": "Account a=(Account)JSON.deserialize('{\"Name\":{\"k\":1}}', Account.class); r=a.Name;",
+      "expected": "EXC|System.JSONException|Cannot deserialize instance of string from START_OBJECT value { or request may be missing a required field at [line:1, column:2]"
+    },
+    {
+      "id": "SC015",
+      "oracleId": "SC015",
+      "code": "Account a=(Account)JSON.deserialize('{\"Name\":[\"x\"]}', Account.class); r=a.Name;",
+      "expected": "EXC|System.JSONException|Cannot deserialize instance of string from START_ARRAY value [line:1, column:2]"
+    },
+    {
+      "id": "SC016",
+      "oracleId": "SC016",
+      "code": "Account a=(Account)JSON.deserializeStrict('{\"Name\":{\"k\":1}}', Account.class); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.JSONException|Cannot deserialize instance of string from START_OBJECT value { or request may be missing a required field at [line:1, column:2]"
+    },
+    {
+      "id": "SC017",
+      "oracleId": "SC017",
+      "code": "Account a=(Account)JSON.deserialize('{\"Parent\":{\"Name\":\"p\"}}', Account.class); r=a.Parent.Name;",
+      "expected": "p"
+    },
+    {
+      "id": "SC018",
+      "oracleId": "SC018",
+      "code": "Account a=(Account)JSON.deserialize('{\"Name\":\"x\"}', Account.class); r=a.Name;",
+      "expected": "x"
+    },
+    {
+      "id": "SC019",
+      "oracleId": "SC019",
+      "code": "Account a=new Account(); a.put('Name', null); r=a.Name;",
+      "expected": "null"
+    },
+    {
+      "id": "SC020",
+      "oracleId": "SC020",
+      "code": "Account a=new Account(); Map<String,Object> m=a.getPopulatedFieldsAsMap(); a.Name='x'; r=m.containsKey('Name');",
+      "expected": "false"
+    },
+    {
+      "id": "SC022",
+      "oracleId": "SC022",
+      "code": "Account a=new Account(); Object o='x'; a.put('Name', o); r=a.Name;",
+      "expected": "x"
+    },
+    {
+      "id": "SC023",
+      "oracleId": "SC023",
+      "code": "SObject s=new Account(); s.put('Name', 'x'); r=s.get('Name');",
+      "expected": "x"
+    },
+    {
+      "id": "SC024",
+      "oracleId": "SC024",
+      "code": "Account a=new Account(); a.put(Account.Name, 'x'); r=a.Name;",
+      "expected": "x"
+    },
+    {
+      "id": "SC025",
+      "oracleId": "SC025",
+      "code": "Account a=new Account(); a.put('NumberOfEmployees', 1); r=a.NumberOfEmployees;",
+      "expected": "1"
+    },
+    {
+      "id": "SC026",
+      "oracleId": "SC026",
+      "code": "Account a=(Account)JSON.deserializeStrict('{\"Name\":\"x\"}', Account.class); r=a.Name;",
+      "expected": "x"
+    },
+    {
+      "id": "SC027",
+      "oracleId": "SC027",
+      "code": "Account a=new Account(Name='x'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); r=m.get('Name');",
+      "expected": "x"
+    },
+    {
+      "id": "SC028",
+      "oracleId": "SC028",
+      "code": "Account a=new Account(); r=a.isSet('Name');",
+      "expected": "false"
+    },
+    {
+      "id": "SC030",
+      "oracleId": "SC030",
+      "code": "Account a=new Account(); r=a.get('__glade_explicit_fields');",
+      "expected": "EXC|System.SObjectException|Invalid field __glade_explicit_fields for Account"
+    },
+    {
+      "id": "SC031",
+      "oracleId": "SC031",
+      "code": "Account a=new Account(); a.put('__glade_set_fields', 'x'); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Invalid field __glade_set_fields for Account"
+    },
+    {
+      "id": "SC032",
+      "oracleId": "SC032",
+      "code": "Account a=new Account(); r=a.get('NoSuchField__c');",
+      "expected": "EXC|System.SObjectException|Invalid field NoSuchField__c for Account"
+    },
+    {
+      "id": "SC033",
+      "oracleId": "SC033",
+      "code": "Account a=new Account(); r=a.get('Name');",
+      "expected": "null"
+    },
+    {
+      "id": "SC034",
+      "oracleId": "SC034",
+      "code": "Account a=new Account(); r=a.isSet('__glade_set_fields');",
+      "expected": "EXC|System.SObjectException|Invalid field: __glade_set_fields"
+    },
+    {
+      "id": "SC040",
+      "oracleId": "SC040",
+      "code": "Account a=new Account(); a.put('Contacts', new List<Contact>{new Contact(LastName='c')}); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Invalid field Contacts for Account"
+    },
+    {
+      "id": "SC041",
+      "oracleId": "SC041",
+      "code": "Account a=new Account(); a.put('Contacts', null); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Invalid field Contacts for Account"
+    },
+    {
+      "id": "SC042",
+      "oracleId": "SC042",
+      "code": "Account a=new Account(); a.put('Contacts', new Map<String,String>()); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Invalid field Contacts for Account"
+    },
+    {
+      "id": "SC043",
+      "oracleId": "SC043",
+      "code": "Account a=new Account(); a.putSObject('Contacts', new Contact(LastName='c')); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Invalid relationship Contacts for Account"
+    },
+    {
+      "id": "SC044",
+      "oracleId": "SC044",
+      "code": "Contact c=new Contact(); c.put('Account', new Account(Name='p')); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Invalid field Account for Contact"
+    },
+    {
+      "id": "SC045",
+      "oracleId": "SC045",
+      "code": "Contact c=new Contact(); c.put('AccountId', new Account(Name='p')); r='WRITE_ACCEPTED';",
+      "expected": "EXC|System.SObjectException|Illegal assignment from Account to Id"
+    },
+    {
+      "id": "SC046",
+      "oracleId": "SC046",
+      "code": "Contact c=new Contact(); c.putSObject('Account', new Account(Name='p')); r=c.Account.Name;",
+      "expected": "p"
+    }
+  ]
+}

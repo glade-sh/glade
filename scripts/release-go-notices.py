@@ -39,7 +39,13 @@ def go_distribution_license():
 
 def sha256_file(path):
     with path.open("rb") as source:
-        return hashlib.file_digest(source, "sha256").hexdigest()
+        digest = hashlib.sha256()
+        while True:
+            chunk = source.read(64 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+        return digest.hexdigest()
 
 
 def linked_modules(binary):

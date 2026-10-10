@@ -1,0 +1,1587 @@
+{
+  "apiVersion": "67.0",
+  "oracle": "Owned Salesforce collection observations at API 67.0.",
+  "cases": [
+    {
+      "id": "R001",
+      "code": "List<Integer> x = new List<Integer>{1,2}; r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R002",
+      "code": "List<Integer> x = new List<Integer>{1,2}; r=x.isEmpty();",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R003",
+      "code": "List<Integer> x = new List<Integer>{1,2}; r=x.get(0);",
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "R004",
+      "code": "List<Integer> x = new List<Integer>{1,2}; r=x[1];",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R005",
+      "code": "List<Integer> x = new List<Integer>{1,2}; x.add(3); r=x.size();",
+      "expected": "3",
+      "floorExpected": "3"
+    },
+    {
+      "id": "R006",
+      "code": "List<Integer> x = new List<Integer>{1,2}; x.add(0,3); r=x.get(0);",
+      "expected": "3",
+      "floorExpected": "3"
+    },
+    {
+      "id": "R007",
+      "code": "List<Integer> x = new List<Integer>{1,2}; x.set(1,3); r=x.get(1);",
+      "expected": "3",
+      "floorExpected": "3"
+    },
+    {
+      "id": "R008",
+      "code": "List<Integer> x = new List<Integer>{1,2}; r=x.remove(0);",
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "R009",
+      "code": "List<Integer> x = new List<Integer>{1,2}; x.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R010",
+      "code": "List<Integer> x = new List<Integer>{1,2}; r=x.contains(1);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R011",
+      "code": "List<Integer> x = new List<Integer>{1,2}; r=x.indexOf(1);",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R012",
+      "code": "List<Integer> x = new List<Integer>{1,2}; r=x.indexOf(3);",
+      "expected": "-1",
+      "floorExpected": "-1"
+    },
+    {
+      "id": "R013",
+      "code": "List<Integer> x = new List<Integer>{1,2}; x.add(null); r=x.contains(null);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R014",
+      "code": "List<Integer> x = new List<Integer>{1,2}; x.add(null); r=x.indexOf(null);",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R015",
+      "code": "List<Integer> x = new List<Integer>{1,2}; r=x.clone()==x;",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R016",
+      "code": "List<Integer> x = new List<Integer>{1,2}; List<Integer> y=x.clone(); y.clear(); r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R017",
+      "code": "List<Integer> x = new List<Integer>{1,2}; List<Integer> y=x; y.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R018",
+      "code": "List<Integer> x = new List<Integer>{1,2}; x.addAll(new List<Integer>{1,3}); r=x.size();",
+      "expected": "4",
+      "floorExpected": "4"
+    },
+    {
+      "id": "R019",
+      "code": "List<Integer> x = new List<Integer>{1,2}; x.addAll(new Set<Integer>{1,3}); r=x.size();",
+      "expected": "4",
+      "floorExpected": "4"
+    },
+    {
+      "id": "R020",
+      "code": "List<Integer> x = new List<Integer>{1,2}; r=x.equals(new List<Integer>{1,2});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R021",
+      "code": "List<Integer> x = new List<Integer>{1,2}; r=x.equals(new List<Integer>{2,1});",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R022",
+      "code": "List<Integer> x = new List<Integer>{1,2}; Integer n=0; for(Integer v:x){n++;} r=n;",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R023",
+      "code": "List<Integer> x = new List<Integer>{1,2}; Iterator<Integer> it=x.iterator(); r=it.hasNext();",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R024",
+      "code": "List<Integer> x = new List<Integer>{1,2}; Iterator<Integer> it=x.iterator(); r=it.next();",
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "R025",
+      "code": "List<Integer> x = new List<Integer>{1,2}; r=x.get(-1);",
+      "expected": "EXC|System.ListException|List index out of bounds: -1",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: -1"
+    },
+    {
+      "id": "R026",
+      "code": "List<Integer> x = new List<Integer>{1,2}; r=x.get(2);",
+      "expected": "EXC|System.ListException|List index out of bounds: 2",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: 2"
+    },
+    {
+      "id": "R027",
+      "code": "List<Integer> x = new List<Integer>{1,2}; r=x.remove(2);",
+      "expected": "EXC|System.ListException|List index out of bounds: 2",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: 2"
+    },
+    {
+      "id": "R028",
+      "code": "List<Integer> x = new List<Integer>{1,2}; x.set(-1,1); r=x.size();",
+      "expected": "EXC|System.ListException|List index out of bounds: -1",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: -1"
+    },
+    {
+      "id": "R029",
+      "code": "List<Integer> x = new List<Integer>{1,2}; x.add(3,1); r=x.size();",
+      "expected": "EXC|System.ListException|List index out of bounds: 3",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: 3"
+    },
+    {
+      "id": "R030",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R031",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.isEmpty();",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R032",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.contains(1);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R033",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.add(1);",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R034",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.add(3);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R035",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.remove(1);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R036",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.remove(3);",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R037",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; x.clear(); r=x.isEmpty();",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R038",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.add(null);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R039",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; x.add(null); r=x.contains(null);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R040",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.addAll(new List<Integer>{1,3});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R041",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.addAll(new Set<Integer>{1,2});",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R042",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.removeAll(new List<Integer>{1,3});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R043",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.retainAll(new Set<Integer>{1});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R044",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.containsAll(new List<Integer>{1,2});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R045",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.containsAll(new Set<Integer>{1,3});",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R046",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; r=x.equals(new Set<Integer>{2,1});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R047",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; Set<Integer> y=x.clone(); y.clear(); r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R048",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; Set<Integer> y=x; y.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R049",
+      "code": "Set<Integer> x = new Set<Integer>{1,2}; Integer n=0; for(Integer v:x){n++;} r=n;",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R050",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R051",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; r=x.isEmpty();",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R052",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; r=x.get('a');",
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "R053",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; r=x.get('z');",
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "R054",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; r=x.containsKey('a');",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R055",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; r=x.containsKey('A');",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R056",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; r=x.containsValue(1);",
+      "expected": "COMPILE_ERROR\tline 21: Method does not exist or incorrect signature: void containsValue(Integer) from the type Map<String,Integer>",
+      "floorExpected": "COMPILE_ERROR\tline 11: Method does not exist or incorrect signature: void containsValue(Integer) from the type Map<String,Integer>"
+    },
+    {
+      "id": "R057",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; r=x.put('a',3);",
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "R058",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; r=x.put('z',3);",
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "R059",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; r=x.remove('a');",
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "R060",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; r=x.remove('z');",
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "R061",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; x.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R062",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; x.put(null,1); r=x.containsKey(null);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R063",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; x.put('n',null); r=x.containsValue(null);",
+      "expected": "COMPILE_ERROR\tline 27: Method does not exist or incorrect signature: void containsValue(NULL) from the type Map<String,Integer>",
+      "floorExpected": "COMPILE_ERROR\tline 17: Method does not exist or incorrect signature: void containsValue(NULL) from the type Map<String,Integer>"
+    },
+    {
+      "id": "R064",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; r=x.keySet().size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R065",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; r=x.values().size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R066",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; x.putAll(new Map<String,Integer>{'b'=>1,'c'=>3}); r=x.size();",
+      "expected": "3",
+      "floorExpected": "3"
+    },
+    {
+      "id": "R067",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; Map<String,Integer> y=x.clone(); y.clear(); r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R068",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; Map<String,Integer> y=x; y.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R069",
+      "code": "Map<String,Integer> x = new Map<String,Integer>{'a'=>1,'b'=>2}; r=x.equals(new Map<String,Integer>{'b'=>2,'a'=>1});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R070",
+      "code": "List<String> x = new List<String>{'a','b'}; r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R071",
+      "code": "List<String> x = new List<String>{'a','b'}; r=x.isEmpty();",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R072",
+      "code": "List<String> x = new List<String>{'a','b'}; r=x.get(0);",
+      "expected": "a",
+      "floorExpected": "a"
+    },
+    {
+      "id": "R073",
+      "code": "List<String> x = new List<String>{'a','b'}; r=x[1];",
+      "expected": "b",
+      "floorExpected": "b"
+    },
+    {
+      "id": "R074",
+      "code": "List<String> x = new List<String>{'a','b'}; x.add('c'); r=x.size();",
+      "expected": "3",
+      "floorExpected": "3"
+    },
+    {
+      "id": "R075",
+      "code": "List<String> x = new List<String>{'a','b'}; x.add(0,'c'); r=x.get(0);",
+      "expected": "c",
+      "floorExpected": "c"
+    },
+    {
+      "id": "R076",
+      "code": "List<String> x = new List<String>{'a','b'}; x.set(1,'c'); r=x.get(1);",
+      "expected": "c",
+      "floorExpected": "c"
+    },
+    {
+      "id": "R077",
+      "code": "List<String> x = new List<String>{'a','b'}; r=x.remove(0);",
+      "expected": "a",
+      "floorExpected": "a"
+    },
+    {
+      "id": "R078",
+      "code": "List<String> x = new List<String>{'a','b'}; x.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R079",
+      "code": "List<String> x = new List<String>{'a','b'}; r=x.contains('a');",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R080",
+      "code": "List<String> x = new List<String>{'a','b'}; r=x.indexOf('a');",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R081",
+      "code": "List<String> x = new List<String>{'a','b'}; r=x.indexOf('c');",
+      "expected": "-1",
+      "floorExpected": "-1"
+    },
+    {
+      "id": "R082",
+      "code": "List<String> x = new List<String>{'a','b'}; x.add(null); r=x.contains(null);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R083",
+      "code": "List<String> x = new List<String>{'a','b'}; x.add(null); r=x.indexOf(null);",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R084",
+      "code": "List<String> x = new List<String>{'a','b'}; r=x.clone()==x;",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R085",
+      "code": "List<String> x = new List<String>{'a','b'}; List<String> y=x.clone(); y.clear(); r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R086",
+      "code": "List<String> x = new List<String>{'a','b'}; List<String> y=x; y.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R087",
+      "code": "List<String> x = new List<String>{'a','b'}; x.addAll(new List<String>{'a','c'}); r=x.size();",
+      "expected": "4",
+      "floorExpected": "4"
+    },
+    {
+      "id": "R088",
+      "code": "List<String> x = new List<String>{'a','b'}; x.addAll(new Set<String>{'a','c'}); r=x.size();",
+      "expected": "4",
+      "floorExpected": "4"
+    },
+    {
+      "id": "R089",
+      "code": "List<String> x = new List<String>{'a','b'}; r=x.equals(new List<String>{'a','b'});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R090",
+      "code": "List<String> x = new List<String>{'a','b'}; r=x.equals(new List<String>{'b','a'});",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R091",
+      "code": "List<String> x = new List<String>{'a','b'}; Integer n=0; for(String v:x){n++;} r=n;",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R092",
+      "code": "List<String> x = new List<String>{'a','b'}; Iterator<String> it=x.iterator(); r=it.hasNext();",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R093",
+      "code": "List<String> x = new List<String>{'a','b'}; Iterator<String> it=x.iterator(); r=it.next();",
+      "expected": "a",
+      "floorExpected": "a"
+    },
+    {
+      "id": "R094",
+      "code": "List<String> x = new List<String>{'a','b'}; r=x.get(-1);",
+      "expected": "EXC|System.ListException|List index out of bounds: -1",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: -1"
+    },
+    {
+      "id": "R095",
+      "code": "List<String> x = new List<String>{'a','b'}; r=x.get(2);",
+      "expected": "EXC|System.ListException|List index out of bounds: 2",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: 2"
+    },
+    {
+      "id": "R096",
+      "code": "List<String> x = new List<String>{'a','b'}; r=x.remove(2);",
+      "expected": "EXC|System.ListException|List index out of bounds: 2",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: 2"
+    },
+    {
+      "id": "R097",
+      "code": "List<String> x = new List<String>{'a','b'}; x.set(-1,'a'); r=x.size();",
+      "expected": "EXC|System.ListException|List index out of bounds: -1",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: -1"
+    },
+    {
+      "id": "R098",
+      "code": "List<String> x = new List<String>{'a','b'}; x.add(3,'a'); r=x.size();",
+      "expected": "EXC|System.ListException|List index out of bounds: 3",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: 3"
+    },
+    {
+      "id": "R099",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R100",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.isEmpty();",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R101",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.contains('a');",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R102",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.add('a');",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R103",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.add('c');",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R104",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.remove('a');",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R105",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.remove('c');",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R106",
+      "code": "Set<String> x = new Set<String>{'a','b'}; x.clear(); r=x.isEmpty();",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R107",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.add(null);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R108",
+      "code": "Set<String> x = new Set<String>{'a','b'}; x.add(null); r=x.contains(null);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R109",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.addAll(new List<String>{'a','c'});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R110",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.addAll(new Set<String>{'a','b'});",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R111",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.removeAll(new List<String>{'a','c'});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R112",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.retainAll(new Set<String>{'a'});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R113",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.containsAll(new List<String>{'a','b'});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R114",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.containsAll(new Set<String>{'a','c'});",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R115",
+      "code": "Set<String> x = new Set<String>{'a','b'}; r=x.equals(new Set<String>{'b','a'});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R116",
+      "code": "Set<String> x = new Set<String>{'a','b'}; Set<String> y=x.clone(); y.clear(); r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R117",
+      "code": "Set<String> x = new Set<String>{'a','b'}; Set<String> y=x; y.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R118",
+      "code": "Set<String> x = new Set<String>{'a','b'}; Integer n=0; for(String v:x){n++;} r=n;",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R119",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R120",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; r=x.isEmpty();",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R121",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; r=x.get('a');",
+      "expected": "a",
+      "floorExpected": "a"
+    },
+    {
+      "id": "R122",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; r=x.get('z');",
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "R123",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; r=x.containsKey('a');",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R124",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; r=x.containsKey('A');",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R125",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; r=x.containsValue('a');",
+      "expected": "COMPILE_ERROR\tline 10: Method does not exist or incorrect signature: void containsValue(String) from the type Map<String,String>",
+      "floorExpected": "COMPILE_ERROR\tline 30: Method does not exist or incorrect signature: void containsValue(String) from the type Map<String,String>"
+    },
+    {
+      "id": "R126",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; r=x.put('a','c');",
+      "expected": "a",
+      "floorExpected": "a"
+    },
+    {
+      "id": "R127",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; r=x.put('z','c');",
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "R128",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; r=x.remove('a');",
+      "expected": "a",
+      "floorExpected": "a"
+    },
+    {
+      "id": "R129",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; r=x.remove('z');",
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "R130",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; x.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R131",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; x.put(null,'a'); r=x.containsKey(null);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R132",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; x.put('n',null); r=x.containsValue(null);",
+      "expected": "COMPILE_ERROR\tline 16: Method does not exist or incorrect signature: void containsValue(NULL) from the type Map<String,String>",
+      "floorExpected": "COMPILE_ERROR\tline 36: Method does not exist or incorrect signature: void containsValue(NULL) from the type Map<String,String>"
+    },
+    {
+      "id": "R133",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; r=x.keySet().size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R134",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; r=x.values().size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R135",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; x.putAll(new Map<String,String>{'b'=>'a','c'=>'c'}); r=x.size();",
+      "expected": "3",
+      "floorExpected": "3"
+    },
+    {
+      "id": "R136",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; Map<String,String> y=x.clone(); y.clear(); r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R137",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; Map<String,String> y=x; y.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R138",
+      "code": "Map<String,String> x = new Map<String,String>{'a'=>'a','b'=>'b'}; r=x.equals(new Map<String,String>{'b'=>'b','a'=>'a'});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R139",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R140",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; r=x.isEmpty();",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R141",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; r=x.get(0);",
+      "expected": "1.0",
+      "floorExpected": "1.0"
+    },
+    {
+      "id": "R142",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; r=x[1];",
+      "expected": "2.0",
+      "floorExpected": "2.0"
+    },
+    {
+      "id": "R143",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; x.add(3.0); r=x.size();",
+      "expected": "3",
+      "floorExpected": "3"
+    },
+    {
+      "id": "R144",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; x.add(0,3.0); r=x.get(0);",
+      "expected": "3.0",
+      "floorExpected": "3.0"
+    },
+    {
+      "id": "R145",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; x.set(1,3.0); r=x.get(1);",
+      "expected": "3.0",
+      "floorExpected": "3.0"
+    },
+    {
+      "id": "R146",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; r=x.remove(0);",
+      "expected": "1.0",
+      "floorExpected": "1.0"
+    },
+    {
+      "id": "R147",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; x.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R148",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; r=x.contains(1.0);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R149",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; r=x.indexOf(1.0);",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R150",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; r=x.indexOf(3.0);",
+      "expected": "-1",
+      "floorExpected": "-1"
+    },
+    {
+      "id": "R151",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; x.add(null); r=x.contains(null);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R152",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; x.add(null); r=x.indexOf(null);",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R153",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; r=x.clone()==x;",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R154",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; List<Decimal> y=x.clone(); y.clear(); r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R155",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; List<Decimal> y=x; y.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R156",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; x.addAll(new List<Decimal>{1.0,3.0}); r=x.size();",
+      "expected": "4",
+      "floorExpected": "4"
+    },
+    {
+      "id": "R157",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; x.addAll(new Set<Decimal>{1.0,3.0}); r=x.size();",
+      "expected": "4",
+      "floorExpected": "4"
+    },
+    {
+      "id": "R158",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; r=x.equals(new List<Decimal>{1.0,2.0});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R159",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; r=x.equals(new List<Decimal>{2.0,1.0});",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R160",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; Integer n=0; for(Decimal v:x){n++;} r=n;",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R161",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; Iterator<Decimal> it=x.iterator(); r=it.hasNext();",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R162",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; Iterator<Decimal> it=x.iterator(); r=it.next();",
+      "expected": "1.0",
+      "floorExpected": "1.0"
+    },
+    {
+      "id": "R163",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; r=x.get(-1);",
+      "expected": "EXC|System.ListException|List index out of bounds: -1",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: -1"
+    },
+    {
+      "id": "R164",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; r=x.get(2);",
+      "expected": "EXC|System.ListException|List index out of bounds: 2",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: 2"
+    },
+    {
+      "id": "R165",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; r=x.remove(2);",
+      "expected": "EXC|System.ListException|List index out of bounds: 2",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: 2"
+    },
+    {
+      "id": "R166",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; x.set(-1,1.0); r=x.size();",
+      "expected": "EXC|System.ListException|List index out of bounds: -1",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: -1"
+    },
+    {
+      "id": "R167",
+      "code": "List<Decimal> x = new List<Decimal>{1.0,2.0}; x.add(3,1.0); r=x.size();",
+      "expected": "EXC|System.ListException|List index out of bounds: 3",
+      "floorExpected": "EXC|System.ListException|List index out of bounds: 3"
+    },
+    {
+      "id": "R168",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R169",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.isEmpty();",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R170",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.contains(1.0);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R171",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.add(1.0);",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R172",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.add(3.0);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R173",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.remove(1.0);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R174",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.remove(3.0);",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R175",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; x.clear(); r=x.isEmpty();",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R176",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.add(null);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R177",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; x.add(null); r=x.contains(null);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R178",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.addAll(new List<Decimal>{1.0,3.0});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R179",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.addAll(new Set<Decimal>{1.0,2.0});",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R180",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.removeAll(new List<Decimal>{1.0,3.0});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R181",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.retainAll(new Set<Decimal>{1.0});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R182",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.containsAll(new List<Decimal>{1.0,2.0});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R183",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.containsAll(new Set<Decimal>{1.0,3.0});",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R184",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; r=x.equals(new Set<Decimal>{2.0,1.0});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R185",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; Set<Decimal> y=x.clone(); y.clear(); r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R186",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; Set<Decimal> y=x; y.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R187",
+      "code": "Set<Decimal> x = new Set<Decimal>{1.0,2.0}; Integer n=0; for(Decimal v:x){n++;} r=n;",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R188",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R189",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; r=x.isEmpty();",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R190",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; r=x.get('a');",
+      "expected": "1.0",
+      "floorExpected": "1.0"
+    },
+    {
+      "id": "R191",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; r=x.get('z');",
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "R192",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; r=x.containsKey('a');",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R193",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; r=x.containsKey('A');",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R194",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; r=x.containsValue(1.0);",
+      "expected": "COMPILE_ERROR\tline 39: Method does not exist or incorrect signature: void containsValue(Decimal) from the type Map<String,Decimal>",
+      "floorExpected": "COMPILE_ERROR\tline 49: Method does not exist or incorrect signature: void containsValue(Decimal) from the type Map<String,Decimal>"
+    },
+    {
+      "id": "R195",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; r=x.put('a',3.0);",
+      "expected": "1.0",
+      "floorExpected": "1.0"
+    },
+    {
+      "id": "R196",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; r=x.put('z',3.0);",
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "R197",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; r=x.remove('a');",
+      "expected": "1.0",
+      "floorExpected": "1.0"
+    },
+    {
+      "id": "R198",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; r=x.remove('z');",
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "R199",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; x.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R200",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; x.put(null,1.0); r=x.containsKey(null);",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R201",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; x.put('n',null); r=x.containsValue(null);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void containsValue(NULL) from the type Map<String,Decimal>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void containsValue(NULL) from the type Map<String,Decimal>"
+    },
+    {
+      "id": "R202",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; r=x.keySet().size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R203",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; r=x.values().size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R204",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; x.putAll(new Map<String,Decimal>{'b'=>1.0,'c'=>3.0}); r=x.size();",
+      "expected": "3",
+      "floorExpected": "3"
+    },
+    {
+      "id": "R205",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; Map<String,Decimal> y=x.clone(); y.clear(); r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R206",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; Map<String,Decimal> y=x; y.clear(); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "R207",
+      "code": "Map<String,Decimal> x = new Map<String,Decimal>{'a'=>1.0,'b'=>2.0}; r=x.equals(new Map<String,Decimal>{'b'=>2.0,'a'=>1.0});",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R208",
+      "code": "r=new List<Integer>(new Set<Integer>{1,2,2}).size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R209",
+      "code": "r=new Set<Integer>(new List<Integer>{1,2,2}).size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R210",
+      "code": "r=new List<Integer>(new List<Integer>{1,2}).size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R211",
+      "code": "r=new Map<String,Integer>(new Map<String,Integer>{'x'=>1}).get('x');",
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "R212",
+      "code": "r=new List<String>{'a'}==new List<String>{'A'};",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R213",
+      "code": "r=new List<String>{'a'}.contains('A');",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R214",
+      "code": "r=new Set<String>{'a','A'}.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R215",
+      "code": "r=new Map<String,Integer>{'a'=>1,'A'=>2}.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R216",
+      "code": "r=new Set<Decimal>{1.0,1.00}.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R217",
+      "code": "r=new Map<Decimal,Integer>{1.0=>1,1.00=>2}.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R218",
+      "code": "r=new Set<Object>{1,1L,1.0}.size();",
+      "expected": "3",
+      "floorExpected": "3"
+    },
+    {
+      "id": "R219",
+      "code": "r=new Map<Object,Integer>{1=>1,1L=>2,1.0=>3}.size();",
+      "expected": "3",
+      "floorExpected": "3"
+    },
+    {
+      "id": "R220",
+      "code": "r=new List<Integer>{null}==new List<Integer>{null};",
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "R221",
+      "code": "r=new Set<Integer>{null,null}.size();",
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "R222",
+      "code": "r=new Map<Integer,String>{null=>'a',null=>'b'}.get(null);",
+      "expected": "b",
+      "floorExpected": "b"
+    },
+    {
+      "id": "R223",
+      "code": "List<Integer> x; r=x.size();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R224",
+      "code": "Set<Integer> x; r=x.size();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R225",
+      "code": "Map<String,Integer> x; r=x.size();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R226",
+      "code": "List<Integer> x=new List<Integer>(); r=x.get(null);",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R227",
+      "code": "List<Integer> x=new List<Integer>(); x.addAll((List<Integer>)null); r=x.size();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R228",
+      "code": "Set<Integer> x=new Set<Integer>(); r=x.addAll((Set<Integer>)null);",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "floorExpected": "EXC|System.NullPointerException|Argument 1 cannot be null"
+    },
+    {
+      "id": "R229",
+      "code": "Map<String,Integer> x=new Map<String,Integer>(); x.putAll((Map<String,Integer>)null); r=x.size();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "floorExpected": "EXC|System.NullPointerException|Argument 1 cannot be null"
+    },
+    {
+      "id": "R230",
+      "code": "Iterator<Integer> it=new List<Integer>().iterator(); r=it.next();",
+      "expected": "EXC|System.NoSuchElementException|Iterator has no more elements",
+      "floorExpected": "EXC|System.NoSuchElementException|Iterator has no more elements"
+    },
+    {
+      "id": "R231",
+      "code": "List<Integer> x=new List<Integer>{1,2}; Iterator<Integer> it=x.iterator(); x.add(3); r=it.next();",
+      "expected": "UNCAUGHT|System.FinalException: Cannot modify a collection while it is being iterated.",
+      "floorExpected": "UNCAUGHT|System.FinalException: Cannot modify a collection while it is being iterated."
+    },
+    {
+      "id": "R232",
+      "code": "List<Integer> x=new List<Integer>{3,1,2}; x.sort(); r=x[0];",
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "R233",
+      "code": "List<String> x=new List<String>{'b',null,'a'}; x.sort(); r=x[0];",
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "R234",
+      "code": "List<Integer> x=new List<Integer>{3,1,null}; x.sort(); r=x[0];",
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "R235",
+      "code": "List<List<Integer>> x=new List<List<Integer>>{new List<Integer>{1}}; List<List<Integer>> y=x.clone(); y[0].add(2); r=x[0].size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R236",
+      "code": "r=new Set<List<Integer>>{new List<Integer>{1},new List<Integer>{1}}.size();",
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "R237",
+      "code": "Map<List<Integer>,String> x=new Map<List<Integer>,String>{new List<Integer>{1}=>'a'}; r=x.get(new List<Integer>{1});",
+      "expected": "a",
+      "floorExpected": "a"
+    },
+    {
+      "id": "R238",
+      "code": "Set<String> x=new Set<String>{'a'}; r=x.equals(null);",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R239",
+      "code": "List<Integer> x=new List<Integer>{1}; r=x.equals(null);",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R240",
+      "code": "Map<String,Integer> x=new Map<String,Integer>{'a'=>1}; r=x.equals(null);",
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "R241",
+      "code": "List<Integer> x=new List<Integer>{1}; Iterator<Integer> it=x.iterator(); it.next(); x.add(2); r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R242",
+      "code": "List<Integer> x=new List<Integer>{1}; Iterator<Integer> it=x.iterator(); while(it.hasNext()){it.next();} x.add(2); r=x.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R243",
+      "code": "List<Integer> x=new List<Integer>(); Iterator<Integer> it=x.iterator(); x.add(2); r=x.size();",
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "R244",
+      "code": "List<Integer> x=new List<Integer>(); Iterator<Integer> it=x.iterator(); Boolean more=it.hasNext(); x.add(2); r=x.size();",
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "R245",
+      "code": "r=new Map<Object,String>{1=>'a'}.get(1L);",
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "R246",
+      "code": "r=new Set<Object>{1,1L}.size();",
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "C001",
+      "code": "List<Integer> x=new List<Integer>{'a'};",
+      "expected": "COMPILE_ERROR\tline 6: Initial expression is of incorrect type, expected: Integer but was: String",
+      "floorExpected": "COMPILE_ERROR\tline 6: Initial expression is of incorrect type, expected: Integer but was: String"
+    },
+    {
+      "id": "C002",
+      "code": "List<Integer> x=new List<Integer>(); x.add(true);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void add(Boolean) from the type List<Integer>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void add(Boolean) from the type List<Integer>"
+    },
+    {
+      "id": "C003",
+      "code": "List<Integer> x=new List<Integer>(); x.get();",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void get() from the type List<Integer>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void get() from the type List<Integer>"
+    },
+    {
+      "id": "C004",
+      "code": "List<Integer> x=new List<Integer>(); x.set(0);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void set(Integer) from the type List<Integer>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void set(Integer) from the type List<Integer>"
+    },
+    {
+      "id": "C005",
+      "code": "Set<Integer> x=new Set<Integer>(); x.get(0);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void get(Integer) from the type Set<Integer>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void get(Integer) from the type Set<Integer>"
+    },
+    {
+      "id": "C006",
+      "code": "Set<Integer> x=new Set<Integer>(); x.add(0,1);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void add(Integer, Integer) from the type Set<Integer>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void add(Integer, Integer) from the type Set<Integer>"
+    },
+    {
+      "id": "C007",
+      "code": "Map<String,Integer> x=new Map<String,Integer>(); x.put(1,1);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void put(Integer, Integer) from the type Map<String,Integer>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void put(Integer, Integer) from the type Map<String,Integer>"
+    },
+    {
+      "id": "C008",
+      "code": "Map<String,Integer> x=new Map<String,Integer>(); x.put('a','b');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void put(String, String) from the type Map<String,Integer>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void put(String, String) from the type Map<String,Integer>"
+    },
+    {
+      "id": "C009",
+      "code": "List<String> x=new List<Integer>();",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from List<Integer> to List<String>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from List<Integer> to List<String>"
+    },
+    {
+      "id": "C010",
+      "code": "Set<String> x=new Set<Integer>();",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Set<Integer> to Set<String>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Set<Integer> to Set<String>"
+    },
+    {
+      "id": "C011",
+      "code": "Map<String,String> x=new Map<String,Integer>();",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Map<String,Integer> to Map<String,String>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Map<String,Integer> to Map<String,String>"
+    },
+    {
+      "id": "C012",
+      "code": "List<Integer> x=new List<Integer>(); Integer y=x.add(1);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Object to Integer",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Object to Integer"
+    },
+    {
+      "id": "C013",
+      "code": "Set<Integer> x=new Set<Integer>(); String y=x.add(1);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Boolean to String",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Boolean to String"
+    },
+    {
+      "id": "C014",
+      "code": "List<Integer> x=new List<Integer>(); x.remove(0,1);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void remove(Integer, Integer) from the type List<Integer>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void remove(Integer, Integer) from the type List<Integer>"
+    },
+    {
+      "id": "C015",
+      "code": "Map<String,Integer> x=new Map<String,Integer>(); x.containsAll(new List<String>());",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void containsAll(List<String>) from the type Map<String,Integer>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void containsAll(List<String>) from the type Map<String,Integer>"
+    },
+    {
+      "id": "C016",
+      "code": "Map<Integer,String> x=new Map<Integer,String>(); r=x.get(1L);",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void get(Long) from the type Map<Integer,String>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void get(Long) from the type Map<Integer,String>"
+    }
+  ],
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "floorOracle": {
+    "apiVersion": "62.0",
+    "route": "anonymous",
+    "rows": 262
+  }
+}

@@ -1,0 +1,238 @@
+{
+  "59.0": {
+    "compile_generate_normal": [],
+    "compile_generate_null": [],
+    "compile_generate_undefined": [],
+    "compile_generate_no_args": [],
+    "compile_generate_string": [],
+    "compile_generate_number": [],
+    "compile_generate_symbol": [],
+    "compile_generate_then": [],
+    "compile_navigate_normal": [],
+    "compile_navigate_replace": [],
+    "compile_navigate_null": [],
+    "compile_navigate_no_args": [],
+    "compile_navigate_string_replace": [],
+    "compile_navigate_direct": [],
+    "compile_generate_direct": [],
+    "compile_computed_unknown": [],
+    "compile_state_frozen": [],
+    "compile_state_conversion": [],
+    "compile_state_undefined": [],
+    "compile_state_null": [],
+    "compile_state_object": [],
+    "compile_state_delete": [],
+    "compile_state_copy": [],
+    "compile_bad_reference_syntax": [
+      "[Line: 1, Col: 317] LWC1503: Parsing error: Unexpected token, expected \",\" (1:317)"
+    ],
+    "compile_bad_call_syntax": [
+      "[Line: 1, Col: 322] LWC1503: Parsing error: Unexpected token (1:322)"
+    ],
+    "compile_bad_state_syntax": [
+      "[Line: 1, Col: 305] LWC1503: Parsing error: Unexpected token (1:305)"
+    ],
+    "compile_current_property": [],
+    "compile_current_method": [],
+    "compile_current_config_empty": [],
+    "compile_current_config_extra": [],
+    "compile_current_reactive": [],
+    "compile_current_api_wire": [
+      "[Line: 8, Col: 2] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - SyntaxError: /home/sfdc/tools/sfdc-lwc-compiler/14.192.8388608/familyL14031.js: LWC1095: @wire method or property cannot be used with @api\n   6 |   value;\n   7 |   @api\n>  8 |   @wire(CurrentPageReference)\n     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n   9 |   current;\n  10 |   handle() {}\n  11 | }"
+    ],
+    "compile_current_duplicate_wire": [
+      "[Line: 7, Col: 2] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - SyntaxError: /home/sfdc/tools/sfdc-lwc-compiler/14.192.8388608/familyL14032.js: LWC1105: Method or property can only have 1 @wire decorator\n   5 |   label;\n   6 |   value;\n>  7 |   @wire(CurrentPageReference)\n     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n   8 |   @wire(CurrentPageReference)\n   9 |   current;\n  10 |   handle() {}"
+    ],
+    "compile_current_missing_adapter": [
+      "[Line: 1, Col: 227] LWC1503: \"@wire\" decorators expect the identifier of an adapter to be passed as first argument."
+    ],
+    "compile_current_null_adapter": [
+      "[Line: 1, Col: 233] LWC1503: \"@wire\" decorators expect the identifier of an adapter to be passed as first argument."
+    ],
+    "compile_current_string_adapter": [
+      "[Line: 1, Col: 233] LWC1503: \"@wire\" decorators expect the identifier of an adapter to be passed as first argument."
+    ],
+    "compile_current_called_adapter": [
+      "[Line: 1, Col: 233] LWC1503: \"CurrentPageReference\" is a wire adapter and can only be used via the @wire decorator.",
+      "[Line: 1, Col: 233] LWC1503: \"@wire\" decorators expect the identifier of an adapter to be passed as first argument."
+    ],
+    "compile_current_static_wire": [
+      "[Line: 1, Col: 227] LWC1503: \"@wire\" decorators can't be applied to static properties."
+    ],
+    "compile_mixin_alias": [],
+    "compile_mixin_default": [],
+    "compile_missing_export": [],
+    "compile_mixin_without_call": [],
+    "compile_mixin_null": [],
+    "compile_mixin_nested": [],
+    "meta_lightning__Tab_true": [],
+    "meta_lightning__Tab_false": [],
+    "meta_lightning__AppPage_true": [],
+    "meta_lightning__AppPage_false": [],
+    "meta_lightning__RecordPage_true": [],
+    "meta_lightning__RecordPage_false": [],
+    "meta_lightning__HomePage_true": [],
+    "meta_lightning__HomePage_false": [],
+    "meta_lightning__UtilityBar_true": [],
+    "meta_lightning__UtilityBar_false": [],
+    "meta_lightning__UrlAddressable_true": [],
+    "meta_lightning__UrlAddressable_false": [],
+    "meta_lightning__isUrlAddressable_true": [
+      "lightning__isUrlAddressable is not a valid TARGETS"
+    ],
+    "meta_lightning__isUrlAddressable_false": [
+      "lightning__isUrlAddressable is not a valid TARGETS"
+    ],
+    "meta_lightning__OwnedMissing_true": [
+      "lightning__OwnedMissing is not a valid TARGETS"
+    ],
+    "meta_lightning__OwnedMissing_false": [
+      "lightning__OwnedMissing is not a valid TARGETS"
+    ],
+    "meta_tab_app": [],
+    "meta_addressable_app": [],
+    "meta_is_addressable_app": [
+      "lightning__isUrlAddressable is not a valid TARGETS"
+    ],
+    "meta_duplicate_tab": [
+      "Lightning Component Bundle familyL14063 contains duplicate target lightning__Tab"
+    ],
+    "meta_empty_targets": [],
+    "meta_empty_target": [
+      "Lightning Component Bundle familyL14065 contains empty target",
+      "is not a valid TARGETS"
+    ],
+    "meta_wrong_case": [
+      "lightning__tab is not a valid TARGETS"
+    ],
+    "meta_tab_property": [
+      "The 'property' tag isn't supported for lightning__Tab"
+    ],
+    "meta_app_property": [],
+    "meta_missing_property": [
+      "The 'absent' property doesn't exist on the component."
+    ],
+    "meta_tab_formfactor": [
+      "The 'supportedFormFactors' tag isn't supported for lightning__Tab"
+    ],
+    "meta_app_formfactors": []
+  },
+  "67.0": {
+    "compile_generate_normal": [],
+    "compile_generate_null": [],
+    "compile_generate_undefined": [],
+    "compile_generate_no_args": [],
+    "compile_generate_string": [],
+    "compile_generate_number": [],
+    "compile_generate_symbol": [],
+    "compile_generate_then": [],
+    "compile_navigate_normal": [],
+    "compile_navigate_replace": [],
+    "compile_navigate_null": [],
+    "compile_navigate_no_args": [],
+    "compile_navigate_string_replace": [],
+    "compile_navigate_direct": [],
+    "compile_generate_direct": [],
+    "compile_computed_unknown": [],
+    "compile_state_frozen": [],
+    "compile_state_conversion": [],
+    "compile_state_undefined": [],
+    "compile_state_null": [],
+    "compile_state_object": [],
+    "compile_state_delete": [],
+    "compile_state_copy": [],
+    "compile_bad_reference_syntax": [
+      "[Line: 1, Col: 317] LWC1503: Parsing error: Unexpected token, expected \",\" (1:317)"
+    ],
+    "compile_bad_call_syntax": [
+      "[Line: 1, Col: 322] LWC1503: Parsing error: Unexpected token (1:322)"
+    ],
+    "compile_bad_state_syntax": [
+      "[Line: 1, Col: 305] LWC1503: Parsing error: Unexpected token (1:305)"
+    ],
+    "compile_current_property": [],
+    "compile_current_method": [],
+    "compile_current_config_empty": [],
+    "compile_current_config_extra": [],
+    "compile_current_reactive": [],
+    "compile_current_api_wire": [
+      "[Line: 8, Col: 2] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - SyntaxError: /home/sfdc/tools/sfdc-lwc-compiler/14.192.8388608/familyL14031.js: LWC1095: @wire method or property cannot be used with @api\n   6 |   value;\n   7 |   @api\n>  8 |   @wire(CurrentPageReference)\n     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n   9 |   current;\n  10 |   handle() {}\n  11 | }"
+    ],
+    "compile_current_duplicate_wire": [
+      "[Line: 7, Col: 2] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - SyntaxError: /home/sfdc/tools/sfdc-lwc-compiler/14.192.8388608/familyL14032.js: LWC1105: Method or property can only have 1 @wire decorator\n   5 |   label;\n   6 |   value;\n>  7 |   @wire(CurrentPageReference)\n     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n   8 |   @wire(CurrentPageReference)\n   9 |   current;\n  10 |   handle() {}"
+    ],
+    "compile_current_missing_adapter": [
+      "[Line: 1, Col: 227] LWC1503: \"@wire\" decorators expect the identifier of an adapter to be passed as first argument."
+    ],
+    "compile_current_null_adapter": [
+      "[Line: 1, Col: 233] LWC1503: \"@wire\" decorators expect the identifier of an adapter to be passed as first argument."
+    ],
+    "compile_current_string_adapter": [
+      "[Line: 1, Col: 233] LWC1503: \"@wire\" decorators expect the identifier of an adapter to be passed as first argument."
+    ],
+    "compile_current_called_adapter": [
+      "[Line: 1, Col: 233] LWC1503: \"CurrentPageReference\" is a wire adapter and can only be used via the @wire decorator.",
+      "[Line: 1, Col: 233] LWC1503: \"@wire\" decorators expect the identifier of an adapter to be passed as first argument."
+    ],
+    "compile_current_static_wire": [
+      "[Line: 1, Col: 227] LWC1503: \"@wire\" decorators can't be applied to static properties."
+    ],
+    "compile_mixin_alias": [],
+    "compile_mixin_default": [],
+    "compile_missing_export": [],
+    "compile_mixin_without_call": [],
+    "compile_mixin_null": [],
+    "compile_mixin_nested": [],
+    "meta_lightning__Tab_true": [],
+    "meta_lightning__Tab_false": [],
+    "meta_lightning__AppPage_true": [],
+    "meta_lightning__AppPage_false": [],
+    "meta_lightning__RecordPage_true": [],
+    "meta_lightning__RecordPage_false": [],
+    "meta_lightning__HomePage_true": [],
+    "meta_lightning__HomePage_false": [],
+    "meta_lightning__UtilityBar_true": [],
+    "meta_lightning__UtilityBar_false": [],
+    "meta_lightning__UrlAddressable_true": [],
+    "meta_lightning__UrlAddressable_false": [],
+    "meta_lightning__isUrlAddressable_true": [
+      "lightning__isUrlAddressable is not a valid TARGETS"
+    ],
+    "meta_lightning__isUrlAddressable_false": [
+      "lightning__isUrlAddressable is not a valid TARGETS"
+    ],
+    "meta_lightning__OwnedMissing_true": [
+      "lightning__OwnedMissing is not a valid TARGETS"
+    ],
+    "meta_lightning__OwnedMissing_false": [
+      "lightning__OwnedMissing is not a valid TARGETS"
+    ],
+    "meta_tab_app": [],
+    "meta_addressable_app": [],
+    "meta_is_addressable_app": [
+      "lightning__isUrlAddressable is not a valid TARGETS"
+    ],
+    "meta_duplicate_tab": [
+      "Lightning Component Bundle familyL14063 contains duplicate target lightning__Tab"
+    ],
+    "meta_empty_targets": [],
+    "meta_empty_target": [
+      "Lightning Component Bundle familyL14065 contains empty target",
+      "is not a valid TARGETS"
+    ],
+    "meta_wrong_case": [
+      "lightning__tab is not a valid TARGETS"
+    ],
+    "meta_tab_property": [
+      "The 'property' tag isn't supported for lightning__Tab"
+    ],
+    "meta_app_property": [],
+    "meta_missing_property": [
+      "The 'absent' property doesn't exist on the component."
+    ],
+    "meta_tab_formfactor": [
+      "The 'supportedFormFactors' tag isn't supported for lightning__Tab"
+    ],
+    "meta_app_formfactors": []
+  }
+}

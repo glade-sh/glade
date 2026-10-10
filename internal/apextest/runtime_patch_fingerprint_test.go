@@ -169,6 +169,11 @@ func TestRuntimePatchFingerprintBindsBehaviorAffectingPayload(t *testing.T) {
 			field.InitialValue = vm.Int(99)
 			entry.Classes[0].StaticFields["State"] = field
 		}},
+		{"field getter capability", func(entry *runtimeCacheEntry) {
+			field := entry.Classes[0].StaticFields["State"]
+			field.HasGetter = !field.HasGetter
+			entry.Classes[0].StaticFields["State"] = field
+		}},
 		{"page", func(entry *runtimeCacheEntry) { entry.PageNames[0] = "ChangedPage" }},
 		{"trigger error type", func(entry *runtimeCacheEntry) {
 			entry.TriggerErrors[0] = runtimeFingerprintErrorB("trigger failure")
@@ -291,8 +296,8 @@ func TestRuntimePatchFingerprintStreamingABIAndCounters(t *testing.T) {
 	if runtimePatchABI != "apextest-runtime-patch-v3" {
 		t.Fatalf("runtime patch ABI = %q, want apextest-runtime-patch-v3", runtimePatchABI)
 	}
-	if testRuntimeCacheABI != "apextest-runtime-v6" {
-		t.Fatalf("runtime cache ABI = %q, want apextest-runtime-v6", testRuntimeCacheABI)
+	if testRuntimeCacheABI != "apextest-runtime-v7" {
+		t.Fatalf("runtime cache ABI = %q, want apextest-runtime-v7", testRuntimeCacheABI)
 	}
 	counters := newRunPerfCounters(true)
 	if _, ok := runtimePatchCompiledPayloadFingerprintWithPerf(runtimeFingerprintFixture(2), counters); !ok {

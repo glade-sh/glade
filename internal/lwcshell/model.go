@@ -85,21 +85,23 @@ type FlowContext struct {
 }
 
 type PageContext struct {
-	Kind          RenderTargetKind  `json:"kind"`
-	ComponentName string            `json:"componentName,omitempty"`
-	PageName      string            `json:"pageName,omitempty"`
-	RecordID      string            `json:"recordId,omitempty"`
-	ObjectAPIName string            `json:"objectApiName,omitempty"`
-	AppName       string            `json:"appName,omitempty"`
-	TabName       string            `json:"tabName,omitempty"`
-	ActionName    string            `json:"actionName,omitempty"`
-	ActionType    string            `json:"actionType,omitempty"`
-	FormFactor    string            `json:"formFactor,omitempty"`
-	State         map[string]string `json:"state,omitempty"`
-	Community     CommunityContext  `json:"community,omitempty"`
-	Workspace     WorkspaceContext  `json:"workspace,omitempty"`
-	Flow          FlowContext       `json:"flow,omitempty"`
-	PageReference map[string]any    `json:"pageReference,omitempty"`
+	Kind              RenderTargetKind  `json:"kind"`
+	ComponentName     string            `json:"componentName,omitempty"`
+	PageName          string            `json:"pageName,omitempty"`
+	RecordID          string            `json:"recordId,omitempty"`
+	ObjectAPIName     string            `json:"objectApiName,omitempty"`
+	AppName           string            `json:"appName,omitempty"`
+	TabName           string            `json:"tabName,omitempty"`
+	ActionName        string            `json:"actionName,omitempty"`
+	ActionType        string            `json:"actionType,omitempty"`
+	FormFactor        string            `json:"formFactor,omitempty"`
+	State             map[string]string `json:"state,omitempty"`
+	UserPermissions   map[string]bool   `json:"userPermissions,omitempty"`
+	CustomPermissions map[string]bool   `json:"customPermissions,omitempty"`
+	Community         CommunityContext  `json:"community,omitempty"`
+	Workspace         WorkspaceContext  `json:"workspace,omitempty"`
+	Flow              FlowContext       `json:"flow,omitempty"`
+	PageReference     map[string]any    `json:"pageReference,omitempty"`
 }
 
 type ShellPage struct {
@@ -139,6 +141,7 @@ const (
 type CustomTab struct {
 	Name   string  `json:"name"`
 	Label  string  `json:"label,omitempty"`
+	Motif  string  `json:"motif,omitempty"`
 	Type   TabType `json:"type,omitempty"`
 	Target string  `json:"target,omitempty"`
 	File   string  `json:"file,omitempty"`

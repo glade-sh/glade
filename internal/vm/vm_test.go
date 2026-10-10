@@ -26,6 +26,25 @@ func TestExecAssertEquals(t *testing.T) {
 	}
 }
 
+func TestIsCommonSObjectTypeNameMatchesFoldedSliceScan(t *testing.T) {
+	names := CommonSObjectTypeNames()
+	if len(names) == 0 {
+		t.Fatal("CommonSObjectTypeNames returned no names")
+	}
+	for _, name := range names {
+		for _, variant := range []string{name, strings.ToLower(name), strings.ToUpper(name)} {
+			if !IsCommonSObjectTypeName(variant) {
+				t.Fatalf("IsCommonSObjectTypeName(%q) = false; the folded slice scan accepts it", variant)
+			}
+		}
+	}
+	for _, name := range []string{"", "NotAnSObject__x__", "Account ", "Map<String,Account>"} {
+		if IsCommonSObjectTypeName(name) {
+			t.Fatalf("IsCommonSObjectTypeName(%q) = true; the folded slice scan rejects it", name)
+		}
+	}
+}
+
 func TestCommonSObjectTypeNamesIncludesGeneratedStandardObjects(t *testing.T) {
 	foundApexClass := false
 	foundAccount := false
@@ -70,7 +89,8 @@ try {
 } catch (Exception e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assertEquals('System.SObjectException:Schema.describeSObjects unknown object AIApplication', caught);
+// Schema describe R047: unavailable object names have this catchable contract.
+System.assertEquals('System.InvalidParameterValueException:Invalid sobject provided. The Schema.describeSObject() methods does not support the AIApplication sobject as a parameter. The sobject provided does not exist.', caught);
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -129,6 +149,20 @@ func TestCoerceEmptyNonSObjectListToSObjectListFails(t *testing.T) {
 func TestCoerceEmptySObjectListToSObjectListPasses(t *testing.T) {
 	machine := New(nil)
 	value := typedList("List<Account>")
+
+	coerced, err := machine.coerceAssignable("List<SObject>", value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if coerced.Type != "List<SObject>" {
+		t.Fatalf("coerced.Type = %q, want List<SObject>", coerced.Type)
+	}
+}
+
+func TestCoerceBigObjectListToSObjectListPasses(t *testing.T) {
+	machine := New(nil)
+	value := List(Object("rflib_Logs_Archive__b"))
+	value.Type = "List<rflib_Logs_Archive__b>"
 
 	coerced, err := machine.coerceAssignable("List<SObject>", value)
 	if err != nil {
@@ -371,11 +405,110 @@ func TestHasSummarySideEffectsUsesCachedDependencyIndex(t *testing.T) {
 	if !machine.hasSummarySideEffectsForDML([]storage.Record{{Object: "Line__c"}}) {
 		t.Fatalf("Line__c DML should be summary-sensitive")
 	}
-	if machine.summarySideEffectObjects == nil || !machine.summarySideEffectObjects["line__c"] {
-		t.Fatalf("summary side-effect index = %#v, want line__c", machine.summarySideEffectObjects)
+	if machine.summarySideEffectIndex == nil || !machine.summarySideEffectIndex.objects["line__c"] {
+		t.Fatalf("summary side-effect index = %#v, want line__c", machine.summarySideEffectIndex)
 	}
 	if machine.hasSummarySideEffectsForDML([]storage.Record{{Object: "Invoice__c"}}) {
 		t.Fatalf("Invoice__c DML should not be treated as child summary DML")
+	}
+}
+
+// referenceDefaultOrgUserInfoField is the former currentUserInfoField
+// default-user branch: convert the whole record, then read the field.
+func referenceDefaultOrgUserInfoField(machine *VM, field, fallback string) string {
+	if user := machine.defaultOrgUser(); user.Kind != "" {
+		if value, ok := userInfoFieldValue(user, field); ok {
+			return value
+		}
+		if value, ok := machine.currentUserStoredField(user, field); ok {
+			return value
+		}
+	}
+	return fallback
+}
+
+func TestDefaultOrgUserIDMatchesWholeRecordConversion(t *testing.T) {
+	user := func(id storage.ID, fields map[string]storage.Value) storage.Record {
+		if fields == nil {
+			fields = map[string]storage.Value{}
+		}
+		if _, ok := fields["Username"]; !ok {
+			fields["Username"] = storage.StringValue("user@example.com")
+		}
+		return storage.Record{ID: id, Object: "User", Fields: fields}
+	}
+	cases := map[string][]storage.Record{
+		"preferred local user":   {user("005-local-user", nil), user("005000000000009", nil)},
+		"preferred fixture user": {user("005000000000001", map[string]storage.Value{"Id": storage.IDValue("005000000000001")})},
+		"lowest non-automated":   {user("005000000000007", nil), user("005000000000003", nil)},
+		"automated preferred is skipped": {
+			user("005-local-user", map[string]storage.Value{"UserType": storage.StringValue("AutomatedProcess")}),
+			user("005000000000004", nil),
+		},
+		"only automated users": {user("005000000000006", map[string]storage.Value{"UserType": storage.StringValue("AutomatedProcess")})},
+		"stored Id differs":    {user("005000000000001", map[string]storage.Value{"Id": storage.IDValue("005000000000002")})},
+		"stored lowercase id":  {user("005000000000001", map[string]storage.Value{"id": storage.StringValue("lower")})},
+		"stored dotted Id":     {user("005000000000001", map[string]storage.Value{"Id.value": storage.StringValue("nested")})},
+		"empty record Id":      {user("", map[string]storage.Value{"Id": storage.IDValue("005000000000005")})},
+		"empty record no Id":   {user("", nil)},
+		"explicit marker":      {user("005000000000001", map[string]storage.Value{sobjectExplicitFieldsField: storage.StringValue("x")})},
+		"explicit null Id": {{
+			ID: "005000000000001", Object: "User", Fields: map[string]storage.Value{},
+			ExplicitNulls: map[string]bool{"Id": true},
+		}},
+		"child relationship Id": {{
+			ID: "005000000000001", Object: "User", Fields: map[string]storage.Value{},
+			Children: map[string][]storage.Record{"Id": {{ID: "001000000000001", Object: "Account"}}},
+		}},
+	}
+	for name, records := range cases {
+		t.Run(name, func(t *testing.T) {
+			org := storage.NewOrgState()
+			state := storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "User"}, Records: map[storage.ID]storage.Record{}}
+			for _, record := range records {
+				state.Records[record.ID] = record
+			}
+			org.Objects["User"] = state
+			machine := New(nil)
+			machine.SetOrg(&org)
+			want := referenceDefaultOrgUserInfoField(machine, "Id", "fallback")
+			if got := machine.currentUserInfoField("Id", "fallback"); got != want {
+				t.Fatalf("currentUserInfoField(Id) = %q, want %q", got, want)
+			}
+			if got, want := machine.currentUserID(), referenceDefaultOrgUserInfoField(machine, "Id", ""); got != want {
+				t.Fatalf("currentUserID = %q, want %q", got, want)
+			}
+		})
+	}
+	t.Run("no users", func(t *testing.T) {
+		org := storage.NewOrgState()
+		machine := New(nil)
+		machine.SetOrg(&org)
+		if got, want := machine.currentUserInfoField("Id", "fallback"), referenceDefaultOrgUserInfoField(machine, "Id", "fallback"); got != want {
+			t.Fatalf("currentUserInfoField(Id) = %q, want %q", got, want)
+		}
+	})
+}
+
+// DML reads the default user's Id once per defaulted field. Reading it must
+// not convert the whole User record.
+func TestCurrentUserIDDoesNotConvertDefaultUserRecord(t *testing.T) {
+	org := storage.NewOrgState()
+	fields := map[string]storage.Value{"Username": storage.StringValue("user@example.com")}
+	for i := 0; i < 40; i++ {
+		fields["Field"+string(rune('a'+i%26))+string(rune('a'+i/26))+"__c"] = storage.StringValue("value")
+	}
+	org.Objects["User"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "User"},
+		Records:    map[storage.ID]storage.Record{"005000000000001": {ID: "005000000000001", Object: "User", Fields: fields}},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if got := machine.currentUserID(); got != "005000000000001" {
+		t.Fatalf("currentUserID = %q", got)
+	}
+	if allocs := testing.AllocsPerRun(100, func() { _ = machine.currentUserID() }); allocs != 0 {
+		t.Fatalf("currentUserID allocs = %.0f, want 0", allocs)
 	}
 }
 
@@ -1066,37 +1199,37 @@ func TestExecSystemAssertClassFailures(t *testing.T) {
 		{
 			name:   "areEqual",
 			source: "System.Assert.areEqual('left', 'right', 'mismatch');",
-			want:   "expected <left>, actual <right>: mismatch",
+			want:   "Assertion Failed: mismatch: Expected: left, Actual: right", // A30 K012
 		},
 		{
 			name:   "areNotEqual",
 			source: "System.Assert.areNotEqual('same', 'same', 'duplicate');",
-			want:   "values should not be equal: <same>: duplicate",
+			want:   "Assertion Failed: duplicate: Same value: same", // A30 K013
 		},
 		{
 			name:   "isFalse",
 			source: "System.Assert.isFalse(true, 'truthy');",
-			want:   "assertion failed: truthy",
+			want:   "Assertion Failed: truthy", // A30 K014
 		},
 		{
 			name:   "isNull",
 			source: "System.Assert.isNull('value', 'not null');",
-			want:   "expected null, actual <value>: not null",
+			want:   "Assertion Failed: Nullable object asserted with non null value: not null", // A30 K015
 		},
 		{
 			name:   "isNotNull",
 			source: "System.Assert.isNotNull(null, 'missing');",
-			want:   "value should not be null: missing",
+			want:   "Assertion Failed: Instance expected to be a non null value: missing", // A30 K016
 		},
 		{
 			name:   "isNotInstanceOfType",
 			source: "System.Assert.isNotInstanceOfType(new Account(), Account.class, 'type');",
-			want:   "expected not instance of <Account>, actual <Account>: type",
+			want:   "Assertion Failed: The provided object is an instance of class Account: type", // A30 K017
 		},
 		{
 			name:   "fail",
 			source: "System.Assert.fail('forced');",
-			want:   "assertion failed: forced",
+			want:   "Assertion Failed: Assertion failed: forced", // A30 K018
 		},
 	}
 	for _, tt := range tests {
@@ -1186,10 +1319,10 @@ System.assertEquals(integerValue, decimalValue);
 	}
 }
 
-func TestExecDecimalStringConcatenationStripsInsignificantTrailingZeros(t *testing.T) {
+func TestExecDecimalStringConcatenationPreservesScale(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals('12', '' + 12.0);
-System.assertEquals('12.34', '' + 12.3400);
+System.assertEquals('12.0', '' + 12.0);
+System.assertEquals('12.3400', '' + 12.3400);
 System.assertEquals('12.3400', String.valueOf(12.3400));
 `)
 	if err != nil {
@@ -1205,9 +1338,7 @@ func TestExecNumericLiteralSuffixes(t *testing.T) {
 System.assertEquals(1.1, 1.1d);
 System.assertEquals(2.2, 2.2D);
 System.assertEquals(3.3, 3.3f);
-System.assertEquals(100.0, 1e2);
-System.assertEquals(100.0, 1E2d);
-System.assertEquals(10000000000, 10000000000L);
+System.assertEquals(10000000000L, 10000000000L);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1786,12 +1917,24 @@ System.assertEquals(3, total);
 }
 
 func TestExecForUpdateWithMultipleExpressions(t *testing.T) {
-	program, err := CompileAnonymous(`
+	// API 62/67 org.tsv: R227 and E002/E003 reject comma updates;
+	// E001/E004 accept comma initializers with a single update expression.
+	_, err := CompileAnonymous(`
 Integer total = 0;
 for (Integer i = 0, j = 3; i < j; i++, j--) {
 	total += i + j;
 }
 System.assertEquals(6, total);
+`)
+	if err == nil || !strings.Contains(err.Error(), "for update requires one expression") {
+		t.Fatalf("compile error = %v, want rejection of multiple for-update expressions", err)
+	}
+	program, err := CompileAnonymous(`
+Integer total = 0;
+for (Integer i = 0, j = 3; i < j; i++) {
+	total += i + j;
+}
+System.assertEquals(12, total);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2707,7 +2850,7 @@ value <<= 2;
 System.assertEquals(12, value);
 value >>= 1;
 System.assertEquals(6, value);
-value %= 4;
+value = Math.mod(value, 4);
 System.assertEquals(2, value);
 value ^= 5;
 System.assertEquals(7, value);
@@ -3225,11 +3368,19 @@ System.assertEquals(UserInfo.getUserId(), account.OwnerId);
 	}
 }
 
-func TestExecDecimalAdditionTreatsNullOperandAsZero(t *testing.T) {
+// Compound assignment exercises the shared local arithmetic path; the
+// Salesforce packet separately proves the direct binary operators.
+func TestExecDecimalAdditionThrowsForNullOperand(t *testing.T) {
 	program, err := CompileAnonymous(`
 Decimal total = 0;
 Decimal amount;
-total += amount;
+Boolean caught = false;
+try {
+  total += amount;
+} catch (NullPointerException e) {
+  caught = true;
+}
+System.assert(caught);
 System.assertEquals(0, total);
 `)
 	if err != nil {
@@ -3709,6 +3860,7 @@ func TestExecStandardSObjectDescribeUsesGeneratedOverlayWithoutOrgObject(t *test
 	program, err := CompileAnonymous(`
 System.assertEquals(Account.SObjectType, Schema.SObjectType.account);
 System.assertEquals('Account', Schema.SObjectType.account.getDescribe().getName());
+System.assertEquals('Account', Schema.SObjectType.account.getLocalName());
 System.assertEquals('AccountNumber', Account.accountnumber.getDescribe().getName());
 System.assertEquals('AccountNumber', String.valueOf(Account.SObjectType.fields.accountnumber));
 `)
@@ -3743,7 +3895,7 @@ System.assertEquals('Name', String.valueOf(ApexClass.SObjectType.fields.name));
 func TestStaticSObjectFieldDefaultsToFieldToken(t *testing.T) {
 	machine := New(nil)
 	if err := machine.RegisterClass(Class{
-		Name: "PaymentLine__c",
+		Name: "ReceiptLine__c",
 		StaticFields: map[string]Field{
 			"CreatedDate": {Name: "CreatedDate", Type: "Schema.SObjectField", Static: true},
 		},
@@ -3751,17 +3903,17 @@ func TestStaticSObjectFieldDefaultsToFieldToken(t *testing.T) {
 		t.Fatal(err)
 	}
 	program, err := CompileAnonymous(`
-System.assertEquals('CreatedDate', PaymentLine__c.SObjectType.getDescribe().fields.getMap().get('CreatedDate').getDescribe().getName());
-System.assertEquals('CreatedDate', PaymentLine__c.CreatedDate.getDescribe().getName());
-System.assertEquals(Schema.DisplayType.Datetime, PaymentLine__c.CreatedDate.getDescribe().getType());
+System.assertEquals('CreatedDate', ReceiptLine__c.SObjectType.getDescribe().fields.getMap().get('CreatedDate').getDescribe().getName());
+System.assertEquals('CreatedDate', ReceiptLine__c.CreatedDate.getDescribe().getName());
+System.assertEquals(Schema.DisplayType.Datetime, ReceiptLine__c.CreatedDate.getDescribe().getType());
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	org.Objects["PaymentLine__c"] = storage.ObjectState{
+	org.Objects["ReceiptLine__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "PaymentLine__c",
+			APIName: "ReceiptLine__c",
 			Fields: map[string]storage.Field{
 				"CreatedDate": {Type: storage.FieldDateTime},
 			},
@@ -4098,7 +4250,7 @@ func TestExecDMLSObjectGetTreatsAuditFieldsAsUnqueried(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account record = new Account(Name = 'Acme');
 insert record;
-System.assert(record.CreatedDate != null);
+System.assert(record.CreatedDate == null, 'DML does not refresh caller audit timestamps');
 Map<String, Schema.SObjectField> fields = Account.SObjectType.getDescribe().fields.getMap();
 System.assertEquals('Acme', record.get(fields.get('Name')));
 Boolean caught = false;
@@ -4107,7 +4259,7 @@ try {
 } catch (Exception e) {
   caught = true;
 }
-System.assert(caught);
+System.assert(caught, 'SObject.get on an unqueried DML audit field should throw');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4432,7 +4584,7 @@ System.assert(aggregateObject instanceof List<SObject>, 'List<AggregateResult> s
 	Set<String> stringSet = new Set<String>{'foo'};
 	Object stringSetObject = stringSet;
 	System.assert(!(stringSetObject instanceof Set<Id>), 'Set<String> should not be Set<Id>');
-	System.assert(stringSetObject instanceof Set<Object>, 'Set<String> should be Set<Object>');
+	System.assert(!(stringSetObject instanceof Set<Object>), 'Set<String> retains its declared element type (SF176 API63)');
 
 	Map<String, Account> byName = new Map<String, Account>{'Test' => new Account(Name = 'Test')};
 	Object mapObject = byName;
@@ -4604,18 +4756,32 @@ System.assertEquals(0.5, half);
 }
 
 func TestExecNullableBooleanLogicalOperands(t *testing.T) {
-	program, err := CompileAnonymous(`
-Boolean flag;
-System.assertEquals(false, flag && true);
-System.assertEquals(true, !flag);
-Boolean other = true;
-System.assertEquals(true, flag || other);
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := New(nil).Execute(program); err != nil {
-		t.Fatal(err)
+	// API 62/67 org.tsv: R065 (&&), R092 (!) and R066 (||) throw
+	// NullPointerException when the evaluated Boolean operand is null.
+	for _, tc := range []struct {
+		name, source string
+	}{
+		{"and", `Boolean flag; Boolean value = flag && true;`},
+		{"not", `Boolean flag; Boolean value = !flag;`},
+		{"or", `Boolean flag; Boolean other = true; Boolean value = flag || other;`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = New(nil).Execute(program)
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) {
+				t.Fatalf("err = %#v, want RuntimeError", err)
+			}
+			if runtimeErr.Type != "NullPointerException" {
+				t.Fatalf("runtime error type = %q, want NullPointerException", runtimeErr.Type)
+			}
+			if !strings.Contains(runtimeErr.Message, "Attempt to de-reference a null object") {
+				t.Fatalf("runtime error message = %q, want null dereference", runtimeErr.Message)
+			}
+		})
 	}
 }
 
@@ -4857,6 +5023,40 @@ func TestExpandSOQLBindsKeepsBooleanAndNullLiterals(t *testing.T) {
 	}
 }
 
+func TestExpandSOQLBindsEvaluatesArithmeticLimitExpression(t *testing.T) {
+	machine := New(nil)
+	got, err := machine.expandSOQLBinds("SELECT Id FROM Account LIMIT :Limits.getLimitDmlRows() - Limits.getDmlRows()")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "SELECT Id FROM Account LIMIT 10000" {
+		t.Fatalf("query = %q, want arithmetic bind expanded", got)
+	}
+}
+
+func TestExpandSOQLBindsRewritesCollectionNotEqualsToNotIn(t *testing.T) {
+	machine := New(nil)
+	got, err := machine.expandSOQLBindsWith(
+		"SELECT Id FROM Opportunity WHERE AccountToId != :excludedIds",
+		func(name string) (Value, error) {
+			if name == "excludedIds" {
+				return Value{Kind: ValueSet, Set: []Value{
+					platformScalar("Id", "001000000000001AAA"),
+				}}, nil
+			}
+			return Null, errors.New("unexpected lookup")
+		},
+		nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "SELECT Id FROM Opportunity WHERE AccountToId NOT IN (001000000000001AAA)"
+	if got != want {
+		t.Fatalf("query = %q, want %q", got, want)
+	}
+}
+
 func TestExpandSOQLBindsEvaluatesIndexedMemberExpression(t *testing.T) {
 	machine := New(nil)
 	first := Object("Account")
@@ -4868,7 +5068,7 @@ func TestExpandSOQLBindsEvaluatesIndexedMemberExpression(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "SELECT Id FROM Account WHERE Id = '001000000000002AAA'"
+	want := "SELECT Id FROM Account WHERE Id = 001000000000002AAA"
 	if got != want {
 		t.Fatalf("query = %q, want %q", got, want)
 	}
@@ -4904,11 +5104,11 @@ func TestExpandSOQLBindsEvaluatesInstanceMethodCall(t *testing.T) {
 	line := Object("Line")
 	line.Fields["IdValue"] = platformScalar("Id", "a00000000000001AAA")
 	machine.Globals["line"] = line
-	got, err := machine.expandSOQLBinds("SELECT Id FROM PaymentLine__c WHERE Id = :line.getId()")
+	got, err := machine.expandSOQLBinds("SELECT Id FROM ReceiptLine__c WHERE Id = :line.getId()")
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "SELECT Id FROM PaymentLine__c WHERE Id = 'a00000000000001AAA'"
+	want := "SELECT Id FROM ReceiptLine__c WHERE Id = a00000000000001AAA"
 	if got != want {
 		t.Fatalf("query = %q, want %q", got, want)
 	}
@@ -5954,8 +6154,11 @@ System.assertEquals(5, existingCount);
 }
 
 func TestExecAssertEqualsMatchesFifteenAndEighteenCharacterIDs(t *testing.T) {
+	// A30 native K002 accepts typed Ids; conformance K001 rejects String differences.
 	program, err := CompileAnonymous(`
-System.assertEquals('001000000000001', '001000000000001AAA');
+Id shortId = '001000000000001';
+Id longId = '001000000000001AAA';
+System.assertEquals(shortId, longId);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -6109,6 +6312,10 @@ name.toUpperCase();
 	}
 	if runtimeErr.Type != "NullPointerException" {
 		t.Fatalf("runtime error type = %q", runtimeErr.Type)
+	}
+	// V13 r_error_null_deref captures the raw callback message at API59/67.
+	if runtimeErr.ExceptionMessage() != "Attempt to de-reference a null object" {
+		t.Fatalf("runtime exception message = %q", runtimeErr.ExceptionMessage())
 	}
 	for _, want := range []string{"Attempt to de-reference a null object", "name.toUpperCase", "null receiver name"} {
 		if !strings.Contains(runtimeErr.Message, want) {
@@ -7306,7 +7513,7 @@ try {
 	try {
 		throw new MyException('boom');
 	} catch (Exception e) {
-		throw;
+		throw e; // A06 C020/R171: rethrow the caught value explicitly.
 	}
 } catch (OtherException | MyException e) {
 	message = e.getMessage();
@@ -7462,7 +7669,7 @@ try {
 	try {
 		Util.thrower();
 	} catch (Exception e) {
-		throw;
+		throw e; // A06 C020/R183: retain the original exception stack.
 	}
 } catch (DmlException e) {
 	stack = e.getStackTraceString();

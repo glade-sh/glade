@@ -59,6 +59,9 @@ System.assertEquals('1-A 22-B', captureReplace.replaceAll('$2-$1'));
 	System.assert(!Pattern.matches('(?i)\\Qhello.world\\E', 'HELLOXWORLD'));
 	Id accountId = '001000000000001AAA';
 	System.assert(Pattern.matches('001[0-9A-Za-z]+', accountId));
+	Matcher idMatcher = Pattern.compile('001[0-9A-Za-z]+').matcher(accountId);
+	System.assert(idMatcher.matches());
+	System.assertEquals('001000000000001AAA', idMatcher.group());
 	Matcher subquery = Pattern.compile('(?i)(?s)\\(\\s*SELECT\\s.*?\\)(?=\\s*,|\\s*FROM\\s|\\s*$)').matcher('SELECT Id, (SELECT Id FROM Lines__r WHERE (Status__c = \'Open\')) FROM Account');
 	System.assert(subquery.find());
 	System.assertEquals('(SELECT Id FROM Lines__r WHERE (Status__c = \'Open\'))', subquery.group());
@@ -92,6 +95,9 @@ System.assertEquals(13, regionMatcher.end());
 	System.assertEquals('aa x bb x cc', regionReplace.replaceAll('x'));
 	System.assertEquals(0, regionReplace.regionStart());
 	System.assertEquals(16, regionReplace.regionEnd());
+	// Salesforce K003: replaceAll exhausts the search cursor.
+	System.assert(!regionReplace.find());
+	regionReplace.reset();
 	System.assert(regionReplace.find());
 	System.assertEquals('ABC', regionReplace.group());
 	System.assertEquals(3, regionReplace.start());
@@ -286,7 +292,10 @@ try {
 	Pattern.compile('[');
 	System.assert(false);
 } catch (StringException e) {
-	System.assert(e.getMessage().contains('missing closing ]'));
+	// Salesforce R078's saved native log retains the source and caret lines.
+	String expectedText='Invalid regex: Unclosed character class near index 0\n[\n^';
+	String observedText=e.getMessage();
+	System.assert(expectedText.equals(observedText), 'R078 expected <' + expectedText + '> actual <' + observedText + '>');
 	System.assertEquals('System.StringException', e.getTypeName());
 } catch (Exception e) {
 	System.assert(false);
@@ -307,7 +316,10 @@ try {
 	System.assert(false);
 } catch (StringException e) {
 	System.assertEquals('System.StringException', e.getTypeName());
-	System.assert(e.getMessage().contains('missing closing ]'));
+	// Salesforce K001 JSON recapture covers the full Pattern.matches text.
+	String expectedText='Invalid regex: Unclosed character class near index 0\n[\n^';
+	String observedText=e.getMessage();
+	System.assert(expectedText.equals(observedText), 'K001 expected <' + expectedText + '> actual <' + observedText + '>');
 }
 `)
 	if err != nil {
@@ -359,13 +371,13 @@ try {
 	Pattern.matches(null, 'x');
 	System.assert(false, 'expected null regex to throw');
 } catch (System.NullPointerException e) {
-	System.assert(e.getMessage().contains('Pattern.matches expects String argument'));
+	System.assertEquals('Null regex', e.getMessage());
 }
 try {
 	Pattern.matches('[0-9]+', null);
 	System.assert(false, 'expected null input to throw');
 } catch (System.NullPointerException e) {
-	System.assert(e.getMessage().contains('Pattern.matches expects String argument'));
+	System.assertEquals('Script-thrown exception', e.getMessage());
 }
 `)
 	if err != nil {
@@ -865,7 +877,8 @@ m.group();
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "before a successful match") {
+	// Salesforce R163: group access without a match is a StringException.
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "No match found") {
 		t.Fatalf("expected no-match group error, got %v", err)
 	}
 }
@@ -925,7 +938,7 @@ Pattern p = Pattern.compile('[A-Z]+');
 Matcher m = p.matcher('ABC');
 m.region(-1, 2);
 `,
-			want: "bounds must be non-negative",
+			want: "Start/end index out of bounds: start", // R129
 		},
 		{
 			name: "reversed",
@@ -934,7 +947,7 @@ Pattern p = Pattern.compile('[A-Z]+');
 Matcher m = p.matcher('ABC');
 m.region(2, 1);
 `,
-			want: "start must be less than or equal to end",
+			want: "Start/end index out of bounds: start > end", // R131
 		},
 		{
 			name: "tooLong",
@@ -943,17 +956,17 @@ Pattern p = Pattern.compile('[A-Z]+');
 Matcher m = p.matcher('ABC');
 m.region(0, 4);
 `,
-			want: "end out of range",
+			want: "Start/end index out of bounds: end", // R130
 		},
 		{
-			name: "findStartOutsideRegion",
+			name: "findStartOutsideInput",
 			source: `
 Pattern p = Pattern.compile('[A-Z]+');
 Matcher m = p.matcher('ABC DEF');
 m.region(4, 7);
-m.find(0);
+m.find(8);
 `,
-			want: "start out of region",
+			want: "Starting index out of bounds (parameter 1): Illegal start index", // R106; K002 resets a valid start's region.
 		},
 	}
 	for _, tc := range tests {
@@ -974,39 +987,39 @@ func TestMatcherRegionAnchoringAndTransparentBounds(t *testing.T) {
 Pattern head = Pattern.compile('^ABC');
 Matcher anchoredHead = head.matcher('xxABCyy');
 anchoredHead.region(2, 5);
-System.assert(anchoredHead.lookingAt());
-System.assert(anchoredHead.matches());
+System.assert(anchoredHead.lookingAt(), 'anchored head lookingAt');
+System.assert(anchoredHead.matches(), 'anchored head matches');
 anchoredHead.useAnchoringBounds(false);
-System.assert(!anchoredHead.lookingAt());
-System.assert(!anchoredHead.matches());
+System.assert(!anchoredHead.lookingAt(), 'unanchored head lookingAt');
+System.assert(!anchoredHead.matches(), 'unanchored head matches');
 
 Pattern tail = Pattern.compile('ABC$');
 Matcher anchoredTail = tail.matcher('xxABCyy');
 anchoredTail.region(2, 5);
-System.assert(anchoredTail.lookingAt());
+System.assert(anchoredTail.lookingAt(), 'anchored tail lookingAt');
 anchoredTail.useAnchoringBounds(false);
-System.assert(!anchoredTail.lookingAt());
+System.assert(!anchoredTail.lookingAt(), 'unanchored tail lookingAt');
 
-Pattern word = Pattern.compile('\bABC\b');
+Pattern word = Pattern.compile('\\bABC\\b');
 Matcher opaque = word.matcher('xABC y');
 opaque.region(1, 4);
-System.assert(opaque.matches());
+System.assert(opaque.matches(), 'opaque word matches');
 opaque.reset();
 opaque.region(1, 4);
-System.assert(opaque.find());
+System.assert(opaque.find(), 'opaque word find');
 
 Matcher transparent = word.matcher('xABC y');
 transparent.region(1, 4);
 transparent.useTransparentBounds(true);
-System.assert(!transparent.matches());
-System.assert(!transparent.find());
+System.assert(!transparent.matches(), 'transparent word matches');
+System.assert(!transparent.find(), 'transparent word find');
 
 Matcher transparentAtRealBoundary = word.matcher('x ABC y');
 transparentAtRealBoundary.region(2, 5);
 transparentAtRealBoundary.useTransparentBounds(true);
-System.assert(transparentAtRealBoundary.matches());
-System.assertEquals(2, transparentAtRealBoundary.start());
-System.assertEquals(5, transparentAtRealBoundary.end());
+System.assert(transparentAtRealBoundary.matches(), 'transparent real-boundary matches');
+System.assertEquals(2, transparentAtRealBoundary.start(), 'transparent real-boundary start');
+System.assertEquals(5, transparentAtRealBoundary.end(), 'transparent real-boundary end');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1028,7 +1041,8 @@ m.group();
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "before a successful match") {
+	// Salesforce R169: a failed find clears the match.
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "No match found") {
 		t.Fatalf("expected find(start) to clear stale match, got %v", err)
 	}
 }
@@ -1045,7 +1059,8 @@ m.group();
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "before a successful match") {
+	// Salesforce R172: a failed full match clears the match.
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "No match found") {
 		t.Fatalf("expected matches() failure to clear stale match, got %v", err)
 	}
 }
@@ -1063,7 +1078,8 @@ m.start();
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "before a successful match") {
+	// Salesforce R107/R165: reset or failed search leaves no match bounds.
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "No match found") {
 		t.Fatalf("expected lookingAt() failure to clear stale match, got %v", err)
 	}
 }
@@ -1081,7 +1097,8 @@ m.group(3);
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "Matcher groupIndex out of range") {
+	// Salesforce R159/R176: out-of-range numbered captures report No group.
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "Group index out of bounds (parameter 1): No group 3") {
 		t.Fatalf("expected invalid group index error, got %v", err)
 	}
 }
@@ -1188,5 +1205,72 @@ func TestJavaReplacementRejectsUnsupportedReferences(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestRegexShorthandFollowedByHyphenRetainsSetBoundary(t *testing.T) {
+	for _, tc := range []struct {
+		pattern, input string
+		want           bool
+	}{
+		{`[\w-:]+`, "a-Z_9:", true}, {`[\w-:]+`, "a|b", false},
+		{`[a-c\w-:]+`, "az-:", true}, {`[a-c]+`, "d", false},
+		{`[\d-a]+`, "09-a", true}, {`[\d-a]+`, "b", false},
+		{`[\w\-:]+`, "a-:", true}, {`[a-z]+`, "az", true},
+		{`[^\w-:]+`, "|!", true}, {`[^\w-:]+`, "-", false},
+	} {
+		t.Run(tc.pattern+"/"+tc.input, func(t *testing.T) {
+			value, err := patternMatches([]Value{String(tc.pattern), String(tc.input)})
+			if err != nil || value.Kind != ValueBool || value.Bool != tc.want {
+				t.Fatalf("match=%v err=%v want=%v", value, err, tc.want)
+			}
+		})
+	}
+}
+
+func TestStringRegexReplacementUsesSharedMatcherSemantics(t *testing.T) {
+	for _, tc := range []struct {
+		input, pattern, replacement, want string
+		all                               bool
+	}{
+		{"one/* first */two/* second */end", `/\*.+?(?=\*/)\*/`, "", "onetwoend", true},
+		{"one/* first */two/* second */end", `/\*.+?(?=\*/)\*/`, "", "onetwo/* second */end", false},
+		{"A1 B22", `([A-Z]+)([0-9]+)`, "$10", "A0 B0", true},
+		{"A1 B22", `([A-Z]+)([0-9]+)`, `\$1`, "$1 B22", false},
+		{"abc", `(?=.)`, "!", "!a!b!c", true},
+		{"😀a", `(?=.)`, "!", "!😀!a", true},
+		{"unchanged", `z(?=z)`, "x", "unchanged", true},
+	} {
+		got, err := stringRegexReplace("String.replaceAll", tc.input, []Value{String(tc.pattern), String(tc.replacement)}, tc.all)
+		if err != nil || got != tc.want {
+			t.Errorf("pattern=%q all=%v got=%q err=%v want=%q", tc.pattern, tc.all, got, err, tc.want)
+		}
+	}
+}
+
+func TestRegexDanglingQuantifierUsesOriginalSourcePosition(t *testing.T) {
+	for _, tc := range []struct{ pattern, message string }{
+		{"*", "Invalid regex: Dangling meta character '*' near index 0"},
+		{"abc|+", "Invalid regex: Dangling meta character '+' near index 4"},
+		{"(?i)*", "Invalid regex: Dangling meta character '*' near index 4"},
+		{`\Q+\E|?`, "Invalid regex: Dangling meta character '?' near index 6"},
+		{"😀|*", "Invalid regex: Dangling meta character '*' near index 3"},
+	} {
+		_, err := patternCompile([]Value{String(tc.pattern)})
+		if err == nil || !strings.Contains(err.Error(), tc.message) {
+			t.Errorf("pattern=%q err=%v want=%q", tc.pattern, err, tc.message)
+		}
+	}
+}
+
+func TestRegexUnclosedFormattingRequiresTypedCompilerError(t *testing.T) {
+	const detail = "unrelated unterminated [] set detail"
+	err := newRegexSyntaxError("PatternSyntaxException", "[", errors.New(detail))
+	var thrown *apexThrowError
+	if !errors.As(err, &thrown) {
+		t.Fatalf("error is not catchable: %v", err)
+	}
+	if thrown.value.Type != "PatternSyntaxException" || thrown.value.Fields["message"].Text != detail || thrown.value.Fields["description"].Text != detail || thrown.value.Fields["pattern"].Text != "[" || thrown.value.Fields["index"].Int != -1 {
+		t.Fatalf("unrelated error or original exception fields changed: %#v", thrown.value)
 	}
 }

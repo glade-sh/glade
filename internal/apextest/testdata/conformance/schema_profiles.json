@@ -1,0 +1,1795 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "declarations": {
+    "SP": "public class SP {\n    public Schema.SObjectType typ(String name) { return Schema.getGlobalDescribe().get(name); }\n    public String field(String obj, String name) {\n        Schema.SObjectField f=typ(obj).getDescribe().fields.getMap().get(name);\n        if(f==null) return 'absent';\n        Schema.DescribeFieldResult d=f.getDescribe();\n        return d.getName()+'|'+d.getType()+'|length='+d.getLength()\n          +'|precision='+d.getPrecision()+'|scale='+d.getScale()\n          +'|null='+d.isNillable()+'|defaulted='+d.isDefaultedOnCreate();\n    }\n    public String compound(String obj, String name) {\n        Schema.SObjectField f=typ(obj).getDescribe().fields.getMap().get(name);\n        if(f==null) return 'absent';\n        Schema.DescribeFieldResult d=f.getDescribe();\n        return d.getName()+'|'+d.getType()+'|parent='+d.getCompoundFieldName()\n          +'|create='+d.isCreateable()+'|update='+d.isUpdateable();\n    }\n}"
+  },
+  "metadata": {
+    "force-app/main/default/customMetadata/A24Profile.A24Baseline.md-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomMetadata xmlns=\"http://soap.sforce.com/2006/04/metadata\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n<label>A24 Baseline</label><protected>false</protected>\n<values><field>Enabled__c</field><value xsi:type=\"xsd:boolean\">true</value></values>\n<values><field>Text__c</field><value xsi:type=\"xsd:string\">A24</value></values>\n<values><field>Amount__c</field><value xsi:type=\"xsd:double\">12.5</value></values>\n</CustomMetadata>\n",
+    "force-app/main/default/objects/A24HierarchySetting__c/A24HierarchySetting__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>A24 Hierarchy Setting</label><customSettingsType>Hierarchy</customSettingsType><visibility>Public</visibility></CustomObject>\n",
+    "force-app/main/default/objects/A24HierarchySetting__c/fields/Amount__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Amount__c</fullName><label>Amount</label><precision>12</precision><scale>2</scale><type>Number</type></CustomField>\n",
+    "force-app/main/default/objects/A24HierarchySetting__c/fields/Enabled__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Enabled__c</fullName><defaultValue>false</defaultValue><label>Enabled</label><type>Checkbox</type></CustomField>\n",
+    "force-app/main/default/objects/A24HierarchySetting__c/fields/Text__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Text__c</fullName><label>Text</label><length>80</length><type>Text</type></CustomField>\n",
+    "force-app/main/default/objects/A24ListSetting__c/A24ListSetting__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>A24 List Setting</label><customSettingsType>List</customSettingsType><visibility>Public</visibility></CustomObject>\n",
+    "force-app/main/default/objects/A24ListSetting__c/fields/Amount__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Amount__c</fullName><label>Amount</label><precision>12</precision><scale>2</scale><type>Number</type></CustomField>\n",
+    "force-app/main/default/objects/A24ListSetting__c/fields/Enabled__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Enabled__c</fullName><defaultValue>false</defaultValue><label>Enabled</label><type>Checkbox</type></CustomField>\n",
+    "force-app/main/default/objects/A24ListSetting__c/fields/Text__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Text__c</fullName><label>Text</label><length>80</length><type>Text</type></CustomField>\n",
+    "force-app/main/default/objects/A24Profile__mdt/A24Profile__mdt.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>A24 Profile</label><pluralLabel>A24 Profiles</pluralLabel><visibility>Public</visibility></CustomObject>\n",
+    "force-app/main/default/objects/A24Profile__mdt/fields/Amount__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Amount__c</fullName><label>Amount</label><precision>12</precision><scale>2</scale><type>Number</type></CustomField>\n",
+    "force-app/main/default/objects/A24Profile__mdt/fields/Enabled__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Enabled__c</fullName><defaultValue>false</defaultValue><label>Enabled</label><type>Checkbox</type></CustomField>\n",
+    "force-app/main/default/objects/A24Profile__mdt/fields/Text__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Text__c</fullName><label>Text</label><length>80</length><type>Text</type></CustomField>\n",
+    "force-app/main/default/objects/Account/Account.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Account</label><pluralLabel>Accounts</pluralLabel></CustomObject>\n",
+    "force-app/main/default/objects/Asset/Asset.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"/>\n",
+    "force-app/main/default/objects/Campaign/Campaign.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"/>\n",
+    "force-app/main/default/objects/Case/Case.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"/>\n",
+    "force-app/main/default/objects/Contact/Contact.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Contact</label><pluralLabel>Contacts</pluralLabel></CustomObject>\n",
+    "force-app/main/default/objects/Contract/Contract.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"/>\n",
+    "force-app/main/default/objects/Event/Event.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"/>\n",
+    "force-app/main/default/objects/Lead/Lead.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"/>\n",
+    "force-app/main/default/objects/Opportunity/Opportunity.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"/>\n",
+    "force-app/main/default/objects/Order/Order.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"/>\n",
+    "force-app/main/default/objects/PricebookEntry/PricebookEntry.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"/>\n",
+    "force-app/main/default/objects/Product2/Product2.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"/>\n",
+    "force-app/main/default/objects/Task/Task.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"/>\n",
+    "force-app/main/default/objects/User/User.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>User</label><pluralLabel>Users</pluralLabel></CustomObject>\n",
+    "sfdx-project.json": "{\"sourceApiVersion\": \"67.0\", \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}]}\n"
+  },
+  "prelude": "SP sp=new SP();",
+  "cases": [
+    {
+      "id": "R001",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('Account').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "Account|custom=false|setting=false|query=true",
+      "group": "standard/object/Account"
+    },
+    {
+      "id": "R002",
+      "code": "r=sp.field('Account','Name');",
+      "expected": "Name|STRING|length=255|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/Account/Name"
+    },
+    {
+      "id": "R003",
+      "code": "r=sp.field('Account','AnnualRevenue');",
+      "expected": "AnnualRevenue|CURRENCY|length=0|precision=18|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Account/AnnualRevenue"
+    },
+    {
+      "id": "R004",
+      "code": "r=sp.field('Account','NumberOfEmployees');",
+      "expected": "NumberOfEmployees|INTEGER|length=0|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Account/NumberOfEmployees"
+    },
+    {
+      "id": "R005",
+      "code": "r=sp.field('Account','OwnerId');",
+      "expected": "OwnerId|REFERENCE|length=18|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/Account/OwnerId"
+    },
+    {
+      "id": "R006",
+      "code": "r=sp.field('Account','Type');",
+      "expected": "Type|PICKLIST|length=255|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Account/Type"
+    },
+    {
+      "id": "R007",
+      "code": "SObject x=sp.typ('Account').newSObject(); r=x.get('Id')==null;",
+      "expected": "true",
+      "group": "defaults/new/Account"
+    },
+    {
+      "id": "R008",
+      "code": "SObject x=sp.typ('Account').newSObject(null,false); r=x.get('CreatedDate')==null;",
+      "expected": "true",
+      "group": "defaults/no-load/Account"
+    },
+    {
+      "id": "R009",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('Contact').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "Contact|custom=false|setting=false|query=true",
+      "group": "standard/object/Contact"
+    },
+    {
+      "id": "R010",
+      "code": "r=sp.field('Contact','LastName');",
+      "expected": "LastName|STRING|length=80|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/Contact/LastName"
+    },
+    {
+      "id": "R011",
+      "code": "r=sp.field('Contact','Birthdate');",
+      "expected": "Birthdate|DATE|length=0|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Contact/Birthdate"
+    },
+    {
+      "id": "R012",
+      "code": "r=sp.field('Contact','Email');",
+      "expected": "Email|EMAIL|length=80|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Contact/Email"
+    },
+    {
+      "id": "R013",
+      "code": "r=sp.field('Contact','AccountId');",
+      "expected": "AccountId|REFERENCE|length=18|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Contact/AccountId"
+    },
+    {
+      "id": "R014",
+      "code": "r=sp.field('Contact','HasOptedOutOfEmail');",
+      "expected": "HasOptedOutOfEmail|BOOLEAN|length=0|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/Contact/HasOptedOutOfEmail"
+    },
+    {
+      "id": "R015",
+      "code": "SObject x=sp.typ('Contact').newSObject(); r=x.get('Id')==null;",
+      "expected": "true",
+      "group": "defaults/new/Contact"
+    },
+    {
+      "id": "R016",
+      "code": "SObject x=sp.typ('Contact').newSObject(null,false); r=x.get('CreatedDate')==null;",
+      "expected": "true",
+      "group": "defaults/no-load/Contact"
+    },
+    {
+      "id": "R017",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('Lead').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "Lead|custom=false|setting=false|query=true",
+      "group": "standard/object/Lead"
+    },
+    {
+      "id": "R018",
+      "code": "r=sp.field('Lead','LastName');",
+      "expected": "LastName|STRING|length=80|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/Lead/LastName"
+    },
+    {
+      "id": "R019",
+      "code": "r=sp.field('Lead','Company');",
+      "expected": "Company|STRING|length=255|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/Lead/Company"
+    },
+    {
+      "id": "R020",
+      "code": "r=sp.field('Lead','Status');",
+      "expected": "Status|PICKLIST|length=255|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/Lead/Status"
+    },
+    {
+      "id": "R021",
+      "code": "r=sp.field('Lead','IsConverted');",
+      "expected": "IsConverted|BOOLEAN|length=0|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/Lead/IsConverted"
+    },
+    {
+      "id": "R022",
+      "code": "r=sp.field('Lead','ConvertedAccountId');",
+      "expected": "ConvertedAccountId|REFERENCE|length=18|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Lead/ConvertedAccountId"
+    },
+    {
+      "id": "R023",
+      "code": "SObject x=sp.typ('Lead').newSObject(); r=x.get('Id')==null;",
+      "expected": "true",
+      "group": "defaults/new/Lead"
+    },
+    {
+      "id": "R024",
+      "code": "SObject x=sp.typ('Lead').newSObject(null,false); r=x.get('CreatedDate')==null;",
+      "expected": "true",
+      "group": "defaults/no-load/Lead"
+    },
+    {
+      "id": "R025",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('Opportunity').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "Opportunity|custom=false|setting=false|query=true",
+      "group": "standard/object/Opportunity"
+    },
+    {
+      "id": "R026",
+      "code": "r=sp.field('Opportunity','Name');",
+      "expected": "Name|STRING|length=120|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/Opportunity/Name"
+    },
+    {
+      "id": "R027",
+      "code": "r=sp.field('Opportunity','Amount');",
+      "expected": "Amount|CURRENCY|length=0|precision=18|scale=2|null=true|defaulted=false",
+      "group": "standard/field/Opportunity/Amount"
+    },
+    {
+      "id": "R028",
+      "code": "r=sp.field('Opportunity','CloseDate');",
+      "expected": "CloseDate|DATE|length=0|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/Opportunity/CloseDate"
+    },
+    {
+      "id": "R029",
+      "code": "r=sp.field('Opportunity','StageName');",
+      "expected": "StageName|PICKLIST|length=255|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/Opportunity/StageName"
+    },
+    {
+      "id": "R030",
+      "code": "r=sp.field('Opportunity','Probability');",
+      "expected": "Probability|PERCENT|length=0|precision=3|scale=0|null=true|defaulted=true",
+      "group": "standard/field/Opportunity/Probability"
+    },
+    {
+      "id": "R031",
+      "code": "SObject x=sp.typ('Opportunity').newSObject(); r=x.get('Id')==null;",
+      "expected": "true",
+      "group": "defaults/new/Opportunity"
+    },
+    {
+      "id": "R032",
+      "code": "SObject x=sp.typ('Opportunity').newSObject(null,false); r=x.get('CreatedDate')==null;",
+      "expected": "true",
+      "group": "defaults/no-load/Opportunity"
+    },
+    {
+      "id": "R033",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('Case').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "Case|custom=false|setting=false|query=true",
+      "group": "standard/object/Case"
+    },
+    {
+      "id": "R034",
+      "code": "r=sp.field('Case','CaseNumber');",
+      "expected": "CaseNumber|STRING|length=30|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/Case/CaseNumber"
+    },
+    {
+      "id": "R035",
+      "code": "r=sp.field('Case','Subject');",
+      "expected": "Subject|STRING|length=255|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Case/Subject"
+    },
+    {
+      "id": "R036",
+      "code": "r=sp.field('Case','Status');",
+      "expected": "Status|PICKLIST|length=255|precision=0|scale=0|null=true|defaulted=true",
+      "group": "standard/field/Case/Status"
+    },
+    {
+      "id": "R037",
+      "code": "r=sp.field('Case','IsClosed');",
+      "expected": "IsClosed|BOOLEAN|length=0|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/Case/IsClosed"
+    },
+    {
+      "id": "R038",
+      "code": "r=sp.field('Case','ContactId');",
+      "expected": "ContactId|REFERENCE|length=18|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Case/ContactId"
+    },
+    {
+      "id": "R039",
+      "code": "SObject x=sp.typ('Case').newSObject(); r=x.get('Id')==null;",
+      "expected": "true",
+      "group": "defaults/new/Case"
+    },
+    {
+      "id": "R040",
+      "code": "SObject x=sp.typ('Case').newSObject(null,false); r=x.get('CreatedDate')==null;",
+      "expected": "true",
+      "group": "defaults/no-load/Case"
+    },
+    {
+      "id": "R041",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('Task').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "Task|custom=false|setting=false|query=true",
+      "group": "standard/object/Task"
+    },
+    {
+      "id": "R042",
+      "code": "r=sp.field('Task','Subject');",
+      "expected": "Subject|COMBOBOX|length=255|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Task/Subject"
+    },
+    {
+      "id": "R043",
+      "code": "r=sp.field('Task','ActivityDate');",
+      "expected": "ActivityDate|DATE|length=0|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Task/ActivityDate"
+    },
+    {
+      "id": "R044",
+      "code": "r=sp.field('Task','Status');",
+      "expected": "Status|PICKLIST|length=255|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/Task/Status"
+    },
+    {
+      "id": "R045",
+      "code": "r=sp.field('Task','IsClosed');",
+      "expected": "IsClosed|BOOLEAN|length=0|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/Task/IsClosed"
+    },
+    {
+      "id": "R046",
+      "code": "r=sp.field('Task','WhatId');",
+      "expected": "WhatId|REFERENCE|length=18|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Task/WhatId"
+    },
+    {
+      "id": "R047",
+      "code": "SObject x=sp.typ('Task').newSObject(); r=x.get('Id')==null;",
+      "expected": "true",
+      "group": "defaults/new/Task"
+    },
+    {
+      "id": "R048",
+      "code": "SObject x=sp.typ('Task').newSObject(null,false); r=x.get('CreatedDate')==null;",
+      "expected": "true",
+      "group": "defaults/no-load/Task"
+    },
+    {
+      "id": "R049",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('Event').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "Event|custom=false|setting=false|query=true",
+      "group": "standard/object/Event"
+    },
+    {
+      "id": "R050",
+      "code": "r=sp.field('Event','Subject');",
+      "expected": "Subject|COMBOBOX|length=255|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Event/Subject"
+    },
+    {
+      "id": "R051",
+      "code": "r=sp.field('Event','StartDateTime');",
+      "expected": "StartDateTime|DATETIME|length=0|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Event/StartDateTime"
+    },
+    {
+      "id": "R052",
+      "code": "r=sp.field('Event','EndDateTime');",
+      "expected": "EndDateTime|DATETIME|length=0|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Event/EndDateTime"
+    },
+    {
+      "id": "R053",
+      "code": "r=sp.field('Event','IsAllDayEvent');",
+      "expected": "IsAllDayEvent|BOOLEAN|length=0|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/Event/IsAllDayEvent"
+    },
+    {
+      "id": "R054",
+      "code": "r=sp.field('Event','WhoId');",
+      "expected": "WhoId|REFERENCE|length=18|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Event/WhoId"
+    },
+    {
+      "id": "R055",
+      "code": "SObject x=sp.typ('Event').newSObject(); r=x.get('Id')==null;",
+      "expected": "true",
+      "group": "defaults/new/Event"
+    },
+    {
+      "id": "R056",
+      "code": "SObject x=sp.typ('Event').newSObject(null,false); r=x.get('CreatedDate')==null;",
+      "expected": "true",
+      "group": "defaults/no-load/Event"
+    },
+    {
+      "id": "R057",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('User').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "User|custom=false|setting=false|query=true",
+      "group": "standard/object/User"
+    },
+    {
+      "id": "R058",
+      "code": "r=sp.field('User','Username');",
+      "expected": "Username|STRING|length=80|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/User/Username"
+    },
+    {
+      "id": "R059",
+      "code": "r=sp.field('User','IsActive');",
+      "expected": "IsActive|BOOLEAN|length=0|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/User/IsActive"
+    },
+    {
+      "id": "R060",
+      "code": "r=sp.field('User','ProfileId');",
+      "expected": "ProfileId|REFERENCE|length=18|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/User/ProfileId"
+    },
+    {
+      "id": "R061",
+      "code": "r=sp.field('User','LocaleSidKey');",
+      "expected": "LocaleSidKey|PICKLIST|length=40|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/User/LocaleSidKey"
+    },
+    {
+      "id": "R062",
+      "code": "r=sp.field('User','TimeZoneSidKey');",
+      "expected": "TimeZoneSidKey|PICKLIST|length=40|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/User/TimeZoneSidKey"
+    },
+    {
+      "id": "R063",
+      "code": "SObject x=sp.typ('User').newSObject(); r=x.get('Id')==null;",
+      "expected": "true",
+      "group": "defaults/new/User"
+    },
+    {
+      "id": "R064",
+      "code": "SObject x=sp.typ('User').newSObject(null,false); r=x.get('CreatedDate')==null;",
+      "expected": "true",
+      "group": "defaults/no-load/User"
+    },
+    {
+      "id": "R065",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('Asset').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "Asset|custom=false|setting=false|query=true",
+      "group": "standard/object/Asset"
+    },
+    {
+      "id": "R066",
+      "code": "r=sp.field('Asset','Name');",
+      "expected": "Name|STRING|length=255|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/Asset/Name"
+    },
+    {
+      "id": "R067",
+      "code": "r=sp.field('Asset','Quantity');",
+      "expected": "Quantity|DOUBLE|length=0|precision=12|scale=2|null=true|defaulted=false",
+      "group": "standard/field/Asset/Quantity"
+    },
+    {
+      "id": "R068",
+      "code": "r=sp.field('Asset','Price');",
+      "expected": "Price|CURRENCY|length=0|precision=18|scale=2|null=true|defaulted=false",
+      "group": "standard/field/Asset/Price"
+    },
+    {
+      "id": "R069",
+      "code": "r=sp.field('Asset','PurchaseDate');",
+      "expected": "PurchaseDate|DATE|length=0|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Asset/PurchaseDate"
+    },
+    {
+      "id": "R070",
+      "code": "r=sp.field('Asset','AccountId');",
+      "expected": "AccountId|REFERENCE|length=18|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Asset/AccountId"
+    },
+    {
+      "id": "R071",
+      "code": "SObject x=sp.typ('Asset').newSObject(); r=x.get('Id')==null;",
+      "expected": "true",
+      "group": "defaults/new/Asset"
+    },
+    {
+      "id": "R072",
+      "code": "SObject x=sp.typ('Asset').newSObject(null,false); r=x.get('CreatedDate')==null;",
+      "expected": "true",
+      "group": "defaults/no-load/Asset"
+    },
+    {
+      "id": "R073",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('Product2').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "Product2|custom=false|setting=false|query=true",
+      "group": "standard/object/Product2"
+    },
+    {
+      "id": "R074",
+      "code": "r=sp.field('Product2','Name');",
+      "expected": "Name|STRING|length=255|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/Product2/Name"
+    },
+    {
+      "id": "R075",
+      "code": "r=sp.field('Product2','ProductCode');",
+      "expected": "ProductCode|STRING|length=255|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Product2/ProductCode"
+    },
+    {
+      "id": "R076",
+      "code": "r=sp.field('Product2','IsActive');",
+      "expected": "IsActive|BOOLEAN|length=0|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/Product2/IsActive"
+    },
+    {
+      "id": "R077",
+      "code": "r=sp.field('Product2','Family');",
+      "expected": "Family|PICKLIST|length=255|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Product2/Family"
+    },
+    {
+      "id": "R078",
+      "code": "r=sp.field('Product2','Description');",
+      "expected": "Description|TEXTAREA|length=4000|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Product2/Description"
+    },
+    {
+      "id": "R079",
+      "code": "SObject x=sp.typ('Product2').newSObject(); r=x.get('Id')==null;",
+      "expected": "true",
+      "group": "defaults/new/Product2"
+    },
+    {
+      "id": "R080",
+      "code": "SObject x=sp.typ('Product2').newSObject(null,false); r=x.get('CreatedDate')==null;",
+      "expected": "true",
+      "group": "defaults/no-load/Product2"
+    },
+    {
+      "id": "R081",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('PricebookEntry').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "PricebookEntry|custom=false|setting=false|query=true",
+      "group": "standard/object/PricebookEntry"
+    },
+    {
+      "id": "R082",
+      "code": "r=sp.field('PricebookEntry','UnitPrice');",
+      "expected": "UnitPrice|CURRENCY|length=0|precision=18|scale=2|null=false|defaulted=false",
+      "group": "standard/field/PricebookEntry/UnitPrice"
+    },
+    {
+      "id": "R083",
+      "code": "r=sp.field('PricebookEntry','IsActive');",
+      "expected": "IsActive|BOOLEAN|length=0|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/PricebookEntry/IsActive"
+    },
+    {
+      "id": "R084",
+      "code": "r=sp.field('PricebookEntry','UseStandardPrice');",
+      "expected": "UseStandardPrice|BOOLEAN|length=0|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/PricebookEntry/UseStandardPrice"
+    },
+    {
+      "id": "R085",
+      "code": "r=sp.field('PricebookEntry','Product2Id');",
+      "expected": "Product2Id|REFERENCE|length=18|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/PricebookEntry/Product2Id"
+    },
+    {
+      "id": "R086",
+      "code": "r=sp.field('PricebookEntry','Pricebook2Id');",
+      "expected": "Pricebook2Id|REFERENCE|length=18|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/PricebookEntry/Pricebook2Id"
+    },
+    {
+      "id": "R087",
+      "code": "SObject x=sp.typ('PricebookEntry').newSObject(); r=x.get('Id')==null;",
+      "expected": "true",
+      "group": "defaults/new/PricebookEntry"
+    },
+    {
+      "id": "R088",
+      "code": "SObject x=sp.typ('PricebookEntry').newSObject(null,false); r=x.get('CreatedDate')==null;",
+      "expected": "true",
+      "group": "defaults/no-load/PricebookEntry"
+    },
+    {
+      "id": "R089",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('Campaign').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "Campaign|custom=false|setting=false|query=true",
+      "group": "standard/object/Campaign"
+    },
+    {
+      "id": "R090",
+      "code": "r=sp.field('Campaign','Name');",
+      "expected": "Name|STRING|length=80|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/Campaign/Name"
+    },
+    {
+      "id": "R091",
+      "code": "r=sp.field('Campaign','IsActive');",
+      "expected": "IsActive|BOOLEAN|length=0|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/Campaign/IsActive"
+    },
+    {
+      "id": "R092",
+      "code": "r=sp.field('Campaign','Status');",
+      "expected": "Status|PICKLIST|length=255|precision=0|scale=0|null=true|defaulted=true",
+      "group": "standard/field/Campaign/Status"
+    },
+    {
+      "id": "R093",
+      "code": "r=sp.field('Campaign','StartDate');",
+      "expected": "StartDate|DATE|length=0|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Campaign/StartDate"
+    },
+    {
+      "id": "R094",
+      "code": "r=sp.field('Campaign','BudgetedCost');",
+      "expected": "BudgetedCost|CURRENCY|length=0|precision=18|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Campaign/BudgetedCost"
+    },
+    {
+      "id": "R095",
+      "code": "SObject x=sp.typ('Campaign').newSObject(); r=x.get('Id')==null;",
+      "expected": "true",
+      "group": "defaults/new/Campaign"
+    },
+    {
+      "id": "R096",
+      "code": "SObject x=sp.typ('Campaign').newSObject(null,false); r=x.get('CreatedDate')==null;",
+      "expected": "true",
+      "group": "defaults/no-load/Campaign"
+    },
+    {
+      "id": "R097",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('Order').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "Order|custom=false|setting=false|query=true",
+      "group": "standard/object/Order"
+    },
+    {
+      "id": "R098",
+      "code": "r=sp.field('Order','OrderNumber');",
+      "expected": "OrderNumber|STRING|length=30|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/Order/OrderNumber"
+    },
+    {
+      "id": "R099",
+      "code": "r=sp.field('Order','EffectiveDate');",
+      "expected": "EffectiveDate|DATE|length=0|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/Order/EffectiveDate"
+    },
+    {
+      "id": "R100",
+      "code": "r=sp.field('Order','Status');",
+      "expected": "Status|PICKLIST|length=100|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/Order/Status"
+    },
+    {
+      "id": "R101",
+      "code": "r=sp.field('Order','AccountId');",
+      "expected": "AccountId|REFERENCE|length=18|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Order/AccountId"
+    },
+    {
+      "id": "R102",
+      "code": "r=sp.field('Order','TotalAmount');",
+      "expected": "TotalAmount|CURRENCY|length=0|precision=18|scale=2|null=false|defaulted=false",
+      "group": "standard/field/Order/TotalAmount"
+    },
+    {
+      "id": "R103",
+      "code": "SObject x=sp.typ('Order').newSObject(); r=x.get('Id')==null;",
+      "expected": "true",
+      "group": "defaults/new/Order"
+    },
+    {
+      "id": "R104",
+      "code": "SObject x=sp.typ('Order').newSObject(null,false); r=x.get('CreatedDate')==null;",
+      "expected": "true",
+      "group": "defaults/no-load/Order"
+    },
+    {
+      "id": "R105",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('Contract').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "Contract|custom=false|setting=false|query=true",
+      "group": "standard/object/Contract"
+    },
+    {
+      "id": "R106",
+      "code": "r=sp.field('Contract','ContractNumber');",
+      "expected": "ContractNumber|STRING|length=30|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/Contract/ContractNumber"
+    },
+    {
+      "id": "R107",
+      "code": "r=sp.field('Contract','StartDate');",
+      "expected": "StartDate|DATE|length=0|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Contract/StartDate"
+    },
+    {
+      "id": "R108",
+      "code": "r=sp.field('Contract','Status');",
+      "expected": "Status|PICKLIST|length=100|precision=0|scale=0|null=false|defaulted=true",
+      "group": "standard/field/Contract/Status"
+    },
+    {
+      "id": "R109",
+      "code": "r=sp.field('Contract','ContractTerm');",
+      "expected": "ContractTerm|INTEGER|length=0|precision=0|scale=0|null=true|defaulted=false",
+      "group": "standard/field/Contract/ContractTerm"
+    },
+    {
+      "id": "R110",
+      "code": "r=sp.field('Contract','AccountId');",
+      "expected": "AccountId|REFERENCE|length=18|precision=0|scale=0|null=false|defaulted=false",
+      "group": "standard/field/Contract/AccountId"
+    },
+    {
+      "id": "R111",
+      "code": "SObject x=sp.typ('Contract').newSObject(); r=x.get('Id')==null;",
+      "expected": "true",
+      "group": "defaults/new/Contract"
+    },
+    {
+      "id": "R112",
+      "code": "SObject x=sp.typ('Contract').newSObject(null,false); r=x.get('CreatedDate')==null;",
+      "expected": "true",
+      "group": "defaults/no-load/Contract"
+    },
+    {
+      "id": "R113",
+      "code": "Schema.DescribeFieldResult d=sp.typ('Account').getDescribe().fields.getMap().get('Id').getDescribe(); r=String.valueOf(d.getType())+'|create='+d.isCreateable()+'|update='+d.isUpdateable()+'|auto='+d.isAutoNumber()+'|calculated='+d.isCalculated()+'|defaulted='+d.isDefaultedOnCreate();",
+      "expected": "ID|create=false|update=false|auto=false|calculated=false|defaulted=true",
+      "group": "system/Account/Id"
+    },
+    {
+      "id": "R114",
+      "code": "Schema.DescribeFieldResult d=sp.typ('Account').getDescribe().fields.getMap().get('CreatedDate').getDescribe(); r=String.valueOf(d.getType())+'|create='+d.isCreateable()+'|update='+d.isUpdateable()+'|auto='+d.isAutoNumber()+'|calculated='+d.isCalculated()+'|defaulted='+d.isDefaultedOnCreate();",
+      "expected": "DATETIME|create=false|update=false|auto=false|calculated=false|defaulted=true",
+      "group": "system/Account/CreatedDate"
+    },
+    {
+      "id": "R115",
+      "code": "Schema.DescribeFieldResult d=sp.typ('Account').getDescribe().fields.getMap().get('CreatedById').getDescribe(); r=String.valueOf(d.getType())+'|create='+d.isCreateable()+'|update='+d.isUpdateable()+'|auto='+d.isAutoNumber()+'|calculated='+d.isCalculated()+'|defaulted='+d.isDefaultedOnCreate();",
+      "expected": "REFERENCE|create=false|update=false|auto=false|calculated=false|defaulted=true",
+      "group": "system/Account/CreatedById"
+    },
+    {
+      "id": "R116",
+      "code": "Schema.DescribeFieldResult d=sp.typ('Account').getDescribe().fields.getMap().get('LastModifiedDate').getDescribe(); r=String.valueOf(d.getType())+'|create='+d.isCreateable()+'|update='+d.isUpdateable()+'|auto='+d.isAutoNumber()+'|calculated='+d.isCalculated()+'|defaulted='+d.isDefaultedOnCreate();",
+      "expected": "DATETIME|create=false|update=false|auto=false|calculated=false|defaulted=true",
+      "group": "system/Account/LastModifiedDate"
+    },
+    {
+      "id": "R117",
+      "code": "Schema.DescribeFieldResult d=sp.typ('Account').getDescribe().fields.getMap().get('LastModifiedById').getDescribe(); r=String.valueOf(d.getType())+'|create='+d.isCreateable()+'|update='+d.isUpdateable()+'|auto='+d.isAutoNumber()+'|calculated='+d.isCalculated()+'|defaulted='+d.isDefaultedOnCreate();",
+      "expected": "REFERENCE|create=false|update=false|auto=false|calculated=false|defaulted=true",
+      "group": "system/Account/LastModifiedById"
+    },
+    {
+      "id": "R118",
+      "code": "Schema.DescribeFieldResult d=sp.typ('Account').getDescribe().fields.getMap().get('SystemModstamp').getDescribe(); r=String.valueOf(d.getType())+'|create='+d.isCreateable()+'|update='+d.isUpdateable()+'|auto='+d.isAutoNumber()+'|calculated='+d.isCalculated()+'|defaulted='+d.isDefaultedOnCreate();",
+      "expected": "DATETIME|create=false|update=false|auto=false|calculated=false|defaulted=true",
+      "group": "system/Account/SystemModstamp"
+    },
+    {
+      "id": "R119",
+      "code": "Schema.DescribeFieldResult d=sp.typ('Account').getDescribe().fields.getMap().get('IsDeleted').getDescribe(); r=String.valueOf(d.getType())+'|create='+d.isCreateable()+'|update='+d.isUpdateable()+'|auto='+d.isAutoNumber()+'|calculated='+d.isCalculated()+'|defaulted='+d.isDefaultedOnCreate();",
+      "expected": "BOOLEAN|create=false|update=false|auto=false|calculated=false|defaulted=true",
+      "group": "system/Account/IsDeleted"
+    },
+    {
+      "id": "R120",
+      "code": "Schema.DescribeFieldResult d=sp.typ('Case').getDescribe().fields.getMap().get('CaseNumber').getDescribe(); r=String.valueOf(d.getType())+'|create='+d.isCreateable()+'|update='+d.isUpdateable()+'|auto='+d.isAutoNumber()+'|calculated='+d.isCalculated()+'|defaulted='+d.isDefaultedOnCreate();",
+      "expected": "STRING|create=false|update=false|auto=true|calculated=false|defaulted=true",
+      "group": "system/Case/CaseNumber"
+    },
+    {
+      "id": "R121",
+      "code": "Schema.DescribeFieldResult d=sp.typ('Contract').getDescribe().fields.getMap().get('ContractNumber').getDescribe(); r=String.valueOf(d.getType())+'|create='+d.isCreateable()+'|update='+d.isUpdateable()+'|auto='+d.isAutoNumber()+'|calculated='+d.isCalculated()+'|defaulted='+d.isDefaultedOnCreate();",
+      "expected": "STRING|create=false|update=false|auto=true|calculated=false|defaulted=true",
+      "group": "system/Contract/ContractNumber"
+    },
+    {
+      "id": "R122",
+      "code": "Schema.DescribeFieldResult d=sp.typ('Order').getDescribe().fields.getMap().get('OrderNumber').getDescribe(); r=String.valueOf(d.getType())+'|create='+d.isCreateable()+'|update='+d.isUpdateable()+'|auto='+d.isAutoNumber()+'|calculated='+d.isCalculated()+'|defaulted='+d.isDefaultedOnCreate();",
+      "expected": "STRING|create=false|update=false|auto=true|calculated=false|defaulted=true",
+      "group": "system/Order/OrderNumber"
+    },
+    {
+      "id": "R123",
+      "code": "Schema.DescribeFieldResult d=sp.typ('Lead').getDescribe().fields.getMap().get('IsConverted').getDescribe(); r=String.valueOf(d.getType())+'|create='+d.isCreateable()+'|update='+d.isUpdateable()+'|auto='+d.isAutoNumber()+'|calculated='+d.isCalculated()+'|defaulted='+d.isDefaultedOnCreate();",
+      "expected": "BOOLEAN|create=true|update=false|auto=false|calculated=false|defaulted=true",
+      "group": "system/Lead/IsConverted"
+    },
+    {
+      "id": "R124",
+      "code": "Schema.DescribeFieldResult d=sp.typ('Opportunity').getDescribe().fields.getMap().get('IsClosed').getDescribe(); r=String.valueOf(d.getType())+'|create='+d.isCreateable()+'|update='+d.isUpdateable()+'|auto='+d.isAutoNumber()+'|calculated='+d.isCalculated()+'|defaulted='+d.isDefaultedOnCreate();",
+      "expected": "BOOLEAN|create=false|update=false|auto=false|calculated=false|defaulted=true",
+      "group": "system/Opportunity/IsClosed"
+    },
+    {
+      "id": "R125",
+      "code": "SObject x=sp.typ('Account').newSObject(null,false); r=x.get('IsDeleted');",
+      "expected": "null",
+      "group": "defaults/load/Account/IsDeleted/False",
+      "nativeNull": true
+    },
+    {
+      "id": "R126",
+      "code": "SObject x=sp.typ('Account').newSObject(null,true); r=x.get('IsDeleted');",
+      "expected": "false",
+      "group": "defaults/load/Account/IsDeleted/True"
+    },
+    {
+      "id": "R127",
+      "code": "SObject x=sp.typ('Contact').newSObject(null,false); r=x.get('IsDeleted');",
+      "expected": "null",
+      "group": "defaults/load/Contact/IsDeleted/False",
+      "nativeNull": true
+    },
+    {
+      "id": "R128",
+      "code": "SObject x=sp.typ('Contact').newSObject(null,true); r=x.get('IsDeleted');",
+      "expected": "false",
+      "group": "defaults/load/Contact/IsDeleted/True"
+    },
+    {
+      "id": "R129",
+      "code": "SObject x=sp.typ('Lead').newSObject(null,false); r=x.get('IsConverted');",
+      "expected": "null",
+      "group": "defaults/load/Lead/IsConverted/False",
+      "nativeNull": true
+    },
+    {
+      "id": "R130",
+      "code": "SObject x=sp.typ('Lead').newSObject(null,true); r=x.get('IsConverted');",
+      "expected": "false",
+      "group": "defaults/load/Lead/IsConverted/True"
+    },
+    {
+      "id": "R131",
+      "code": "SObject x=sp.typ('Opportunity').newSObject(null,false); r=x.get('IsPrivate');",
+      "expected": "null",
+      "group": "defaults/load/Opportunity/IsPrivate/False",
+      "nativeNull": true
+    },
+    {
+      "id": "R132",
+      "code": "SObject x=sp.typ('Opportunity').newSObject(null,true); r=x.get('IsPrivate');",
+      "expected": "false",
+      "group": "defaults/load/Opportunity/IsPrivate/True"
+    },
+    {
+      "id": "R133",
+      "code": "SObject x=sp.typ('Case').newSObject(null,false); r=x.get('IsEscalated');",
+      "expected": "null",
+      "group": "defaults/load/Case/IsEscalated/False",
+      "nativeNull": true
+    },
+    {
+      "id": "R134",
+      "code": "SObject x=sp.typ('Case').newSObject(null,true); r=x.get('IsEscalated');",
+      "expected": "false",
+      "group": "defaults/load/Case/IsEscalated/True"
+    },
+    {
+      "id": "R135",
+      "code": "SObject x=sp.typ('Task').newSObject(null,false); r=x.get('IsReminderSet');",
+      "expected": "null",
+      "group": "defaults/load/Task/IsReminderSet/False",
+      "nativeNull": true
+    },
+    {
+      "id": "R136",
+      "code": "SObject x=sp.typ('Task').newSObject(null,true); r=x.get('IsReminderSet');",
+      "expected": "false",
+      "group": "defaults/load/Task/IsReminderSet/True"
+    },
+    {
+      "id": "R137",
+      "code": "SObject x=sp.typ('Event').newSObject(null,false); r=x.get('IsAllDayEvent');",
+      "expected": "null",
+      "group": "defaults/load/Event/IsAllDayEvent/False",
+      "nativeNull": true
+    },
+    {
+      "id": "R138",
+      "code": "SObject x=sp.typ('Event').newSObject(null,true); r=x.get('IsAllDayEvent');",
+      "expected": "false",
+      "group": "defaults/load/Event/IsAllDayEvent/True"
+    },
+    {
+      "id": "R139",
+      "code": "SObject x=sp.typ('Product2').newSObject(null,false); r=x.get('IsActive');",
+      "expected": "null",
+      "group": "defaults/load/Product2/IsActive/False",
+      "nativeNull": true
+    },
+    {
+      "id": "R140",
+      "code": "SObject x=sp.typ('Product2').newSObject(null,true); r=x.get('IsActive');",
+      "expected": "false",
+      "group": "defaults/load/Product2/IsActive/True"
+    },
+    {
+      "id": "R141",
+      "code": "SObject x=sp.typ('Campaign').newSObject(null,false); r=x.get('IsActive');",
+      "expected": "null",
+      "group": "defaults/load/Campaign/IsActive/False",
+      "nativeNull": true
+    },
+    {
+      "id": "R142",
+      "code": "SObject x=sp.typ('Campaign').newSObject(null,true); r=x.get('IsActive');",
+      "expected": "false",
+      "group": "defaults/load/Campaign/IsActive/True"
+    },
+    {
+      "id": "R143",
+      "code": "SObject x=sp.typ('PricebookEntry').newSObject(null,false); r=x.get('UseStandardPrice');",
+      "expected": "null",
+      "group": "defaults/load/PricebookEntry/UseStandardPrice/False",
+      "nativeNull": true
+    },
+    {
+      "id": "R144",
+      "code": "SObject x=sp.typ('PricebookEntry').newSObject(null,true); r=x.get('UseStandardPrice');",
+      "expected": "false",
+      "group": "defaults/load/PricebookEntry/UseStandardPrice/True"
+    },
+    {
+      "id": "R145",
+      "code": "r=sp.compound('Account','BillingAddress');",
+      "expected": "BillingAddress|ADDRESS|parent=null|create=false|update=false",
+      "group": "compound/Account/BillingAddress"
+    },
+    {
+      "id": "R146",
+      "code": "r=sp.compound('Account','BillingStreet');",
+      "expected": "BillingStreet|TEXTAREA|parent=BillingAddress|create=true|update=true",
+      "group": "compound/Account/BillingStreet"
+    },
+    {
+      "id": "R147",
+      "code": "r=sp.compound('Account','BillingCity');",
+      "expected": "BillingCity|STRING|parent=BillingAddress|create=true|update=true",
+      "group": "compound/Account/BillingCity"
+    },
+    {
+      "id": "R148",
+      "code": "r=sp.compound('Account','BillingLatitude');",
+      "expected": "BillingLatitude|DOUBLE|parent=BillingAddress|create=true|update=true",
+      "group": "compound/Account/BillingLatitude"
+    },
+    {
+      "id": "R149",
+      "code": "r=sp.compound('Account','BillingLongitude');",
+      "expected": "BillingLongitude|DOUBLE|parent=BillingAddress|create=true|update=true",
+      "group": "compound/Account/BillingLongitude"
+    },
+    {
+      "id": "R150",
+      "code": "r=sp.compound('Account','ShippingAddress');",
+      "expected": "ShippingAddress|ADDRESS|parent=null|create=false|update=false",
+      "group": "compound/Account/ShippingAddress"
+    },
+    {
+      "id": "R151",
+      "code": "r=sp.compound('Contact','Name');",
+      "expected": "Name|STRING|parent=null|create=false|update=false",
+      "group": "compound/Contact/Name"
+    },
+    {
+      "id": "R152",
+      "code": "r=sp.compound('Contact','FirstName');",
+      "expected": "FirstName|STRING|parent=Name|create=true|update=true",
+      "group": "compound/Contact/FirstName"
+    },
+    {
+      "id": "R153",
+      "code": "r=sp.compound('Contact','LastName');",
+      "expected": "LastName|STRING|parent=Name|create=true|update=true",
+      "group": "compound/Contact/LastName"
+    },
+    {
+      "id": "R154",
+      "code": "r=sp.compound('Contact','Salutation');",
+      "expected": "Salutation|PICKLIST|parent=Name|create=true|update=true",
+      "group": "compound/Contact/Salutation"
+    },
+    {
+      "id": "R155",
+      "code": "r=sp.compound('Contact','MailingAddress');",
+      "expected": "MailingAddress|ADDRESS|parent=null|create=false|update=false",
+      "group": "compound/Contact/MailingAddress"
+    },
+    {
+      "id": "R156",
+      "code": "r=sp.compound('Contact','MailingStreet');",
+      "expected": "MailingStreet|TEXTAREA|parent=MailingAddress|create=true|update=true",
+      "group": "compound/Contact/MailingStreet"
+    },
+    {
+      "id": "R157",
+      "code": "r=sp.compound('Contact','MailingLatitude');",
+      "expected": "MailingLatitude|DOUBLE|parent=MailingAddress|create=true|update=true",
+      "group": "compound/Contact/MailingLatitude"
+    },
+    {
+      "id": "R158",
+      "code": "r=sp.compound('Contact','MailingLongitude');",
+      "expected": "MailingLongitude|DOUBLE|parent=MailingAddress|create=true|update=true",
+      "group": "compound/Contact/MailingLongitude"
+    },
+    {
+      "id": "R159",
+      "code": "r=sp.compound('Lead','Name');",
+      "expected": "Name|STRING|parent=null|create=false|update=false",
+      "group": "compound/Lead/Name"
+    },
+    {
+      "id": "R160",
+      "code": "r=sp.compound('Lead','FirstName');",
+      "expected": "FirstName|STRING|parent=Name|create=true|update=true",
+      "group": "compound/Lead/FirstName"
+    },
+    {
+      "id": "R161",
+      "code": "r=sp.compound('Lead','LastName');",
+      "expected": "LastName|STRING|parent=Name|create=true|update=true",
+      "group": "compound/Lead/LastName"
+    },
+    {
+      "id": "R162",
+      "code": "r=sp.compound('Lead','Address');",
+      "expected": "Address|ADDRESS|parent=null|create=false|update=false",
+      "group": "compound/Lead/Address"
+    },
+    {
+      "id": "R163",
+      "code": "r=sp.compound('Lead','Street');",
+      "expected": "Street|TEXTAREA|parent=Address|create=true|update=true",
+      "group": "compound/Lead/Street"
+    },
+    {
+      "id": "R164",
+      "code": "r=sp.compound('Lead','Latitude');",
+      "expected": "Latitude|DOUBLE|parent=Address|create=true|update=true",
+      "group": "compound/Lead/Latitude"
+    },
+    {
+      "id": "R165",
+      "code": "r=sp.compound('Lead','Longitude');",
+      "expected": "Longitude|DOUBLE|parent=Address|create=true|update=true",
+      "group": "compound/Lead/Longitude"
+    },
+    {
+      "id": "R166",
+      "code": "r=sp.field('Account','IsPersonAccount');",
+      "expected": "absent",
+      "group": "feature/account/IsPersonAccount"
+    },
+    {
+      "id": "R167",
+      "code": "r=sp.field('Account','PersonEmail');",
+      "expected": "absent",
+      "group": "feature/account/PersonEmail"
+    },
+    {
+      "id": "R168",
+      "code": "r=sp.field('Account','PersonContactId');",
+      "expected": "absent",
+      "group": "feature/account/PersonContactId"
+    },
+    {
+      "id": "R169",
+      "code": "r=sp.field('Account','PersonBirthdate');",
+      "expected": "absent",
+      "group": "feature/account/PersonBirthdate"
+    },
+    {
+      "id": "R170",
+      "code": "r=sp.field('Account','PersonMailingAddress');",
+      "expected": "absent",
+      "group": "feature/account/PersonMailingAddress"
+    },
+    {
+      "id": "R171",
+      "code": "r=sp.field('Account','PersonMailingStreet');",
+      "expected": "absent",
+      "group": "feature/account/PersonMailingStreet"
+    },
+    {
+      "id": "R172",
+      "code": "r=sp.field('Account','PersonMailingLatitude');",
+      "expected": "absent",
+      "group": "feature/account/PersonMailingLatitude"
+    },
+    {
+      "id": "R173",
+      "code": "r=sp.field('Account','PersonMailingLongitude');",
+      "expected": "absent",
+      "group": "feature/account/PersonMailingLongitude"
+    },
+    {
+      "id": "R174",
+      "code": "r=sp.field('Account','PersonIndividualId');",
+      "expected": "absent",
+      "group": "feature/account/PersonIndividualId"
+    },
+    {
+      "id": "R175",
+      "code": "r=sp.field('Account','CurrencyIsoCode');",
+      "expected": "absent",
+      "group": "feature/account/CurrencyIsoCode"
+    },
+    {
+      "id": "R176",
+      "code": "r=sp.field('Account','AccountSource');",
+      "expected": "AccountSource|PICKLIST|length=255|precision=0|scale=0|null=true|defaulted=false",
+      "group": "feature/account/AccountSource"
+    },
+    {
+      "id": "R177",
+      "code": "r=sp.field('Account','DunsNumber');",
+      "expected": "DunsNumber|STRING|length=9|precision=0|scale=0|null=true|defaulted=false",
+      "group": "feature/account/DunsNumber"
+    },
+    {
+      "id": "R178",
+      "code": "r=sp.field('Account','Jigsaw');",
+      "expected": "Jigsaw|STRING|length=20|precision=0|scale=0|null=true|defaulted=false",
+      "group": "feature/account/Jigsaw"
+    },
+    {
+      "id": "R180",
+      "code": "r=sp.field('Account','IsPartner');",
+      "expected": "absent",
+      "group": "feature/account/IsPartner"
+    },
+    {
+      "id": "R181",
+      "code": "Savepoint s=Database.setSavepoint(); Account x=new Account(Name='A24Audit'); insert x; Account y=[SELECT Id,CreatedDate,CreatedById,LastModifiedDate,LastModifiedById,SystemModstamp FROM Account WHERE Id=:x.Id]; r=(y.Id!=null)+'|'+(y.CreatedDate!=null)+'|'+(y.CreatedById==UserInfo.getUserId())+'|'+(y.LastModifiedDate!=null)+'|'+(y.LastModifiedById==UserInfo.getUserId())+'|'+(y.SystemModstamp!=null); Database.rollback(s); Database.releaseSavepoint(s);",
+      "expected": "true|true|true|true|true|true",
+      "group": "system/generated/account-audit"
+    },
+    {
+      "id": "R182",
+      "code": "Savepoint s=Database.setSavepoint(); Account x=new Account(Name='A24Default'); insert x; Account y=[SELECT OwnerId,IsDeleted FROM Account WHERE Id=:x.Id]; r=(y.OwnerId==UserInfo.getUserId())+'|'+y.IsDeleted; Database.rollback(s); Database.releaseSavepoint(s);",
+      "expected": "true|false",
+      "group": "system/generated/account-default"
+    },
+    {
+      "id": "R183",
+      "code": "Savepoint s=Database.setSavepoint(); Case x=new Case(Subject='A24Number'); insert x; Case y=[SELECT CaseNumber,IsClosed,IsDeleted FROM Case WHERE Id=:x.Id]; r=(y.CaseNumber!=null)+'|'+y.IsClosed+'|'+y.IsDeleted; Database.rollback(s); Database.releaseSavepoint(s);",
+      "expected": "true|false|false",
+      "group": "system/generated/case-number"
+    },
+    {
+      "id": "R184",
+      "code": "Contact x=new Contact(FirstName='Ada',LastName='Lovelace'); r=x.Name;",
+      "expected": "null",
+      "group": "compound/value/contact-name",
+      "nativeNull": true
+    },
+    {
+      "id": "R185",
+      "code": "Contact x=new Contact(MailingStreet='One',MailingCity='Two'); r=x.MailingStreet+'|'+x.MailingCity;",
+      "expected": "One|Two",
+      "group": "compound/value/contact-street"
+    },
+    {
+      "id": "R186",
+      "code": "Contact x=new Contact(); r=x.MailingAddress==null;",
+      "expected": "true",
+      "group": "compound/null/contact"
+    },
+    {
+      "id": "R187",
+      "code": "Account x=new Account(BillingLatitude=12.5,BillingLongitude=-45.25); r=x.BillingLatitude+'|'+x.BillingLongitude;",
+      "expected": "12.5|-45.25",
+      "group": "compound/value/account-geocode"
+    },
+    {
+      "id": "R188",
+      "code": "Account x=new Account(); x.put('NumberOfEmployees',12); r=x.NumberOfEmployees;",
+      "expected": "12",
+      "group": "conversion/employee-integer"
+    },
+    {
+      "id": "R189",
+      "code": "Account x=new Account(); x.put('AnnualRevenue',12.50); r=x.AnnualRevenue;",
+      "expected": "12.50",
+      "group": "conversion/revenue-decimal"
+    },
+    {
+      "id": "R190",
+      "code": "Account x=new Account(); x.put('NumberOfEmployees','12'); r=x.NumberOfEmployees;",
+      "expected": "EXC|System.SObjectException|Illegal assignment from String to Integer",
+      "group": "conversion/employee-string"
+    },
+    {
+      "id": "R191",
+      "code": "Contact x=new Contact(); x.put('Birthdate','2024-02-29'); r=x.Birthdate;",
+      "expected": "EXC|System.SObjectException|Illegal assignment from String to Date",
+      "group": "conversion/date-string"
+    },
+    {
+      "id": "R192",
+      "code": "Account x=new Account(); x.put('IsDeleted','true'); r=x.IsDeleted;",
+      "expected": "EXC|System.SObjectException|Field IsDeleted is not editable",
+      "group": "conversion/checkbox-string"
+    },
+    {
+      "id": "R193",
+      "code": "Account x=new Account(); x.put('NumberOfEmployees',null); r=x.NumberOfEmployees;",
+      "expected": "null",
+      "group": "null/employee",
+      "nativeNull": true
+    },
+    {
+      "id": "R194",
+      "code": "SObject x; r=x.get('Id');",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "group": "exception/null-object"
+    },
+    {
+      "id": "R195",
+      "code": "Schema.SObjectField f; r=f.getDescribe();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "group": "exception/null-field"
+    },
+    {
+      "id": "R196",
+      "code": "Account x=new Account(); r=x.get('A24AbsentField__c');",
+      "expected": "EXC|System.SObjectException|Invalid field A24AbsentField__c for Account",
+      "group": "exception/unknown-field"
+    },
+    {
+      "id": "R197",
+      "code": "Account x=new Account(); r=x.get((String)null);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "group": "exception/null-field-name"
+    },
+    {
+      "id": "R198",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('A24ListSetting__c').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "A24ListSetting__c|custom=true|setting=true|query=true",
+      "group": "fixture/schema/A24ListSetting__c"
+    },
+    {
+      "id": "R199",
+      "code": "r=sp.field('A24ListSetting__c','Enabled__c');",
+      "expected": "Enabled__c|BOOLEAN|length=0|precision=0|scale=0|null=false|defaulted=true",
+      "group": "fixture/field/A24ListSetting__c/Enabled__c"
+    },
+    {
+      "id": "R200",
+      "code": "r=sp.field('A24ListSetting__c','Text__c');",
+      "expected": "Text__c|STRING|length=80|precision=0|scale=0|null=true|defaulted=false",
+      "group": "fixture/field/A24ListSetting__c/Text__c"
+    },
+    {
+      "id": "R201",
+      "code": "r=sp.field('A24ListSetting__c','Amount__c');",
+      "expected": "Amount__c|DOUBLE|length=0|precision=12|scale=2|null=true|defaulted=false",
+      "group": "fixture/field/A24ListSetting__c/Amount__c"
+    },
+    {
+      "id": "R202",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('A24HierarchySetting__c').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "A24HierarchySetting__c|custom=true|setting=true|query=true",
+      "group": "fixture/schema/A24HierarchySetting__c"
+    },
+    {
+      "id": "R203",
+      "code": "r=sp.field('A24HierarchySetting__c','Enabled__c');",
+      "expected": "Enabled__c|BOOLEAN|length=0|precision=0|scale=0|null=false|defaulted=true",
+      "group": "fixture/field/A24HierarchySetting__c/Enabled__c"
+    },
+    {
+      "id": "R204",
+      "code": "r=sp.field('A24HierarchySetting__c','Text__c');",
+      "expected": "Text__c|STRING|length=80|precision=0|scale=0|null=true|defaulted=false",
+      "group": "fixture/field/A24HierarchySetting__c/Text__c"
+    },
+    {
+      "id": "R205",
+      "code": "r=sp.field('A24HierarchySetting__c','Amount__c');",
+      "expected": "Amount__c|DOUBLE|length=0|precision=12|scale=2|null=true|defaulted=false",
+      "group": "fixture/field/A24HierarchySetting__c/Amount__c"
+    },
+    {
+      "id": "R206",
+      "code": "Schema.DescribeSObjectResult d=sp.typ('A24Profile__mdt').getDescribe(); r=d.getName()+'|custom='+d.isCustom()+'|setting='+d.isCustomSetting()+'|query='+d.isQueryable();",
+      "expected": "A24Profile__mdt|custom=true|setting=false|query=true",
+      "group": "fixture/schema/A24Profile__mdt"
+    },
+    {
+      "id": "R207",
+      "code": "r=sp.field('A24Profile__mdt','Enabled__c');",
+      "expected": "Enabled__c|BOOLEAN|length=0|precision=0|scale=0|null=false|defaulted=true",
+      "group": "fixture/field/A24Profile__mdt/Enabled__c"
+    },
+    {
+      "id": "R208",
+      "code": "r=sp.field('A24Profile__mdt','Text__c');",
+      "expected": "Text__c|STRING|length=80|precision=0|scale=0|null=true|defaulted=false",
+      "group": "fixture/field/A24Profile__mdt/Text__c"
+    },
+    {
+      "id": "R209",
+      "code": "r=sp.field('A24Profile__mdt','Amount__c');",
+      "expected": "Amount__c|DOUBLE|length=0|precision=12|scale=2|null=true|defaulted=false",
+      "group": "fixture/field/A24Profile__mdt/Amount__c"
+    },
+    {
+      "id": "R210",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; r=A24ListSetting__c.getAll().isEmpty(); } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true",
+      "group": "settings/list/empty/getAll"
+    },
+    {
+      "id": "R211",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; r=A24ListSetting__c.getInstance('A24Missing')==null; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true",
+      "group": "settings/list/empty/getInstance"
+    },
+    {
+      "id": "R212",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; r=A24ListSetting__c.getValues('A24Missing')==null; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true",
+      "group": "settings/list/empty/getValues"
+    },
+    {
+      "id": "R213",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; r=A24ListSetting__c.getInstance((String)null)==null; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true",
+      "group": "settings/list/null/getInstance"
+    },
+    {
+      "id": "R214",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; r=A24ListSetting__c.getValues((String)null)==null; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true",
+      "group": "settings/list/null/getValues"
+    },
+    {
+      "id": "R215",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; r=A24ListSetting__c.getInstance('')==null; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true",
+      "group": "settings/list/boundary/empty-name"
+    },
+    {
+      "id": "R216",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; insert new List<A24ListSetting__c>{new A24ListSetting__c(Name='A24Alpha',Enabled__c=true,Text__c='Alpha',Amount__c=12.50),new A24ListSetting__c(Name='A24Beta',Enabled__c=false,Text__c='Beta',Amount__c=0)}; A24ListSetting__c x=A24ListSetting__c.getInstance('A24Alpha'); r=x.Name+'|'+x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "A24Alpha|true|Alpha|12.5",
+      "group": "settings/list/getInstance/values"
+    },
+    {
+      "id": "R217",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; insert new List<A24ListSetting__c>{new A24ListSetting__c(Name='A24Alpha',Enabled__c=true,Text__c='Alpha',Amount__c=12.50),new A24ListSetting__c(Name='A24Beta',Enabled__c=false,Text__c='Beta',Amount__c=0)}; A24ListSetting__c x=A24ListSetting__c.getValues('A24Alpha'); r=x.Name+'|'+x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "A24Alpha|true|Alpha|12.5",
+      "group": "settings/list/getValues/values"
+    },
+    {
+      "id": "R218",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; insert new List<A24ListSetting__c>{new A24ListSetting__c(Name='A24Alpha',Enabled__c=true,Text__c='Alpha',Amount__c=12.50),new A24ListSetting__c(Name='A24Beta',Enabled__c=false,Text__c='Beta',Amount__c=0)}; r=A24ListSetting__c.getInstance('a24alpha')==null; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true",
+      "group": "settings/list/getInstance/name-case"
+    },
+    {
+      "id": "R219",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; insert new List<A24ListSetting__c>{new A24ListSetting__c(Name='A24Alpha',Enabled__c=true,Text__c='Alpha',Amount__c=12.50),new A24ListSetting__c(Name='A24Beta',Enabled__c=false,Text__c='Beta',Amount__c=0)}; r=A24ListSetting__c.getValues('a24alpha')==null; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true",
+      "group": "settings/list/getValues/name-case"
+    },
+    {
+      "id": "R220",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; insert new List<A24ListSetting__c>{new A24ListSetting__c(Name='A24Alpha',Enabled__c=true,Text__c='Alpha',Amount__c=12.50),new A24ListSetting__c(Name='A24Beta',Enabled__c=false,Text__c='Beta',Amount__c=0)}; List<String> keys=new List<String>(A24ListSetting__c.getAll().keySet()); keys.sort(); r=String.join(keys,','); } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "A24Alpha,A24Beta",
+      "group": "settings/list/getAll/keys"
+    },
+    {
+      "id": "R221",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; insert new List<A24ListSetting__c>{new A24ListSetting__c(Name='A24Alpha',Enabled__c=true,Text__c='Alpha',Amount__c=12.50),new A24ListSetting__c(Name='A24Beta',Enabled__c=false,Text__c='Beta',Amount__c=0)}; A24ListSetting__c x=A24ListSetting__c.getAll().get('A24Beta'); r=x==null ? 'null' : x.Name+'|'+x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "A24Beta|false|Beta|0.0",
+      "group": "settings/list/getAll/value"
+    },
+    {
+      "id": "R222",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; insert new List<A24ListSetting__c>{new A24ListSetting__c(Name='A24Alpha',Enabled__c=true,Text__c='Alpha',Amount__c=12.50),new A24ListSetting__c(Name='A24Beta',Enabled__c=false,Text__c='Beta',Amount__c=0)}; r=A24ListSetting__c.getAll().containsKey('a24alpha'); } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "false",
+      "group": "settings/list/getAll/lowercase-key"
+    },
+    {
+      "id": "R223",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; insert new List<A24ListSetting__c>{new A24ListSetting__c(Name='A24Alpha',Enabled__c=true,Text__c='Alpha',Amount__c=12.50),new A24ListSetting__c(Name='A24Beta',Enabled__c=false,Text__c='Beta',Amount__c=0)}; Integer q=Limits.getQueries(); A24ListSetting__c x=A24ListSetting__c.getInstance('A24Alpha'); Map<String,A24ListSetting__c> all=A24ListSetting__c.getAll(); r=Limits.getQueries()-q; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "0",
+      "group": "settings/list/cache/query-count"
+    },
+    {
+      "id": "R224",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; insert new List<A24ListSetting__c>{new A24ListSetting__c(Name='A24Alpha',Enabled__c=true,Text__c='Alpha',Amount__c=12.50),new A24ListSetting__c(Name='A24Beta',Enabled__c=false,Text__c='Beta',Amount__c=0)}; A24ListSetting__c x=[SELECT Name,Enabled__c,Text__c,Amount__c FROM A24ListSetting__c WHERE Name='A24Alpha']; r=x.Name+'|'+x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "A24Alpha|true|Alpha|12.50",
+      "group": "settings/list/SOQL/own-record"
+    },
+    {
+      "id": "R225",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; insert new A24ListSetting__c(Name='A24Defaults'); A24ListSetting__c x=A24ListSetting__c.getInstance('A24Defaults'); r=x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "false|null|null",
+      "group": "settings/list/defaults/persisted"
+    },
+    {
+      "id": "R226",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; A24HierarchySetting__c x=A24HierarchySetting__c.getOrgDefaults(); r=x==null ? 'null' : (x.Id==null)+'|'+(x.SetupOwnerId==UserInfo.getOrganizationId())+'|'+x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true|false|false|null|null",
+      "group": "settings/hierarchy/empty/getOrgDefaults"
+    },
+    {
+      "id": "R227",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; A24HierarchySetting__c x=A24HierarchySetting__c.getInstance(); r=x==null ? 'null' : (x.Id==null)+'|'+(x.SetupOwnerId==UserInfo.getUserId())+'|'+x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true|true|false|null|null",
+      "group": "settings/hierarchy/empty/getInstance"
+    },
+    {
+      "id": "R228",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; r=A24HierarchySetting__c.getValues(UserInfo.getUserId())==null; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true",
+      "group": "settings/hierarchy/empty/getValues-user"
+    },
+    {
+      "id": "R229",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; r=A24HierarchySetting__c.getValues(UserInfo.getProfileId())==null; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true",
+      "group": "settings/hierarchy/empty/getValues-profile"
+    },
+    {
+      "id": "R230",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getOrganizationId(),Enabled__c=true,Text__c='Org',Amount__c=12.50); A24HierarchySetting__c x=A24HierarchySetting__c.getOrgDefaults(); r=(x.SetupOwnerId==UserInfo.getOrganizationId())+'|'+x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true|true|Org|12.5",
+      "group": "settings/hierarchy/getOrgDefaults/values"
+    },
+    {
+      "id": "R231",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getOrganizationId(),Enabled__c=true,Text__c='Org',Amount__c=12.50); A24HierarchySetting__c x=A24HierarchySetting__c.getInstance(UserInfo.getUserId()); r=(x.Id==null)+'|'+(x.SetupOwnerId==UserInfo.getUserId())+'|'+x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true|true|true|Org|12.5",
+      "group": "settings/hierarchy/inherit/org-to-user"
+    },
+    {
+      "id": "R232",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getOrganizationId(),Enabled__c=true,Text__c='Org',Amount__c=12.50); A24HierarchySetting__c x=A24HierarchySetting__c.getInstance(UserInfo.getProfileId()); r=x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true|Org|12.5",
+      "group": "settings/hierarchy/inherit/org-to-profile"
+    },
+    {
+      "id": "R233",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getOrganizationId(),Enabled__c=true,Text__c='Org',Amount__c=12.50); insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getProfileId(),Enabled__c=false,Text__c='Profile'); A24HierarchySetting__c x=A24HierarchySetting__c.getInstance(); r=x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "false|Profile|12.5",
+      "group": "settings/hierarchy/inherit/profile-to-user"
+    },
+    {
+      "id": "R234",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getOrganizationId(),Enabled__c=true,Text__c='Org',Amount__c=12.50); insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getProfileId(),Enabled__c=false,Text__c='Profile'); A24HierarchySetting__c x=A24HierarchySetting__c.getValues(UserInfo.getProfileId()); r=x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "false|Profile|null",
+      "group": "settings/hierarchy/getValues/profile-raw"
+    },
+    {
+      "id": "R235",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getOrganizationId(),Enabled__c=true,Text__c='Org',Amount__c=12.50); insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getProfileId(),Enabled__c=false,Text__c='Profile'); r=A24HierarchySetting__c.getValues(UserInfo.getUserId())==null; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true",
+      "group": "settings/hierarchy/getValues/user-missing"
+    },
+    {
+      "id": "R236",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getOrganizationId(),Enabled__c=true,Text__c='Org',Amount__c=12.50); insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getProfileId(),Enabled__c=false,Text__c='Profile'); insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getUserId(),Enabled__c=false,Amount__c=0); A24HierarchySetting__c x=A24HierarchySetting__c.getInstance(UserInfo.getUserId()); r=(x.SetupOwnerId==UserInfo.getUserId())+'|'+x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true|false|Profile|0.0",
+      "group": "settings/hierarchy/inherit/user-precedence"
+    },
+    {
+      "id": "R237",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getOrganizationId(),Enabled__c=true,Text__c='Org',Amount__c=12.50); insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getProfileId(),Enabled__c=false,Text__c='Profile'); insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getUserId(),Enabled__c=false,Amount__c=0); A24HierarchySetting__c x=A24HierarchySetting__c.getValues(UserInfo.getUserId()); r=x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "false|null|0.0",
+      "group": "settings/hierarchy/getValues/user-raw"
+    },
+    {
+      "id": "R238",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getOrganizationId(),Enabled__c=true,Text__c='Org',Amount__c=12.50); insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getProfileId(),Enabled__c=false,Text__c='Profile'); insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getUserId(),Enabled__c=false,Amount__c=0); A24HierarchySetting__c x=A24HierarchySetting__c.getInstance(UserInfo.getOrganizationId()); r=x==null ? 'null' : x.Text__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "Org",
+      "group": "settings/hierarchy/getInstance/org-id"
+    },
+    {
+      "id": "R239",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getOrganizationId(),Enabled__c=true,Text__c='Org',Amount__c=12.50); insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getProfileId(),Enabled__c=false,Text__c='Profile'); insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getUserId(),Enabled__c=false,Amount__c=0); A24HierarchySetting__c x=A24HierarchySetting__c.getValues(UserInfo.getOrganizationId()); r=x==null ? 'null' : x.Text__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "Org",
+      "group": "settings/hierarchy/getValues/org-id"
+    },
+    {
+      "id": "R240",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; r=A24HierarchySetting__c.getInstance((Id)null)==null; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "false",
+      "group": "settings/hierarchy/null/getInstance"
+    },
+    {
+      "id": "R241",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; r=A24HierarchySetting__c.getValues((Id)null)==null; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid SetupOwner for Custom Settings: ",
+      "group": "settings/hierarchy/null/getValues"
+    },
+    {
+      "id": "R242",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; r=A24HierarchySetting__c.getInstance('not-an-id'); } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid SetupOwner for Custom Settings: not-an-id",
+      "group": "settings/hierarchy/exception/invalid-owner"
+    },
+    {
+      "id": "R243",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getOrganizationId(),Enabled__c=true,Text__c='Org',Amount__c=12.50); insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getProfileId(),Enabled__c=false,Text__c='Profile'); insert new A24HierarchySetting__c(SetupOwnerId=UserInfo.getUserId(),Enabled__c=false,Amount__c=0); Integer q=Limits.getQueries(); A24HierarchySetting__c x=A24HierarchySetting__c.getInstance(); A24HierarchySetting__c y=A24HierarchySetting__c.getOrgDefaults(); r=Limits.getQueries()-q; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "0",
+      "group": "settings/hierarchy/cache/query-count"
+    },
+    {
+      "id": "R244",
+      "code": "r=A24Profile__mdt.getAll().containsKey('A24Baseline');",
+      "expected": "true",
+      "group": "metadata/getAll/fixture-key"
+    },
+    {
+      "id": "R245",
+      "code": "A24Profile__mdt x=A24Profile__mdt.getAll().get('A24Baseline'); r=x.DeveloperName+'|'+x.MasterLabel+'|'+x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c;",
+      "expected": "A24Baseline|A24 Baseline|true|A24|12.5",
+      "group": "metadata/getAll/fixture-values"
+    },
+    {
+      "id": "R246",
+      "code": "A24Profile__mdt x=A24Profile__mdt.getInstance('A24Baseline'); r=x.DeveloperName+'|'+x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c;",
+      "expected": "A24Baseline|true|A24|12.5",
+      "group": "metadata/getInstance/developer-name"
+    },
+    {
+      "id": "R247",
+      "code": "r=A24Profile__mdt.getInstance('a24baseline')==null;",
+      "expected": "true",
+      "group": "metadata/getInstance/name-case"
+    },
+    {
+      "id": "R248",
+      "code": "r=A24Profile__mdt.getInstance('A24Missing')==null;",
+      "expected": "true",
+      "group": "metadata/getInstance/missing"
+    },
+    {
+      "id": "R249",
+      "code": "r=A24Profile__mdt.getInstance('')==null;",
+      "expected": "true",
+      "group": "metadata/getInstance/empty-name"
+    },
+    {
+      "id": "R250",
+      "code": "r=A24Profile__mdt.getInstance((String)null)==null;",
+      "expected": "true",
+      "group": "metadata/getInstance/null-string"
+    },
+    {
+      "id": "R251",
+      "code": "r=A24Profile__mdt.getInstance((Id)null)==null;",
+      "expected": "true",
+      "group": "metadata/getInstance/null-id"
+    },
+    {
+      "id": "R252",
+      "code": "A24Profile__mdt y=[SELECT Id FROM A24Profile__mdt WHERE DeveloperName='A24Baseline']; A24Profile__mdt x=A24Profile__mdt.getInstance(y.Id); r=x.DeveloperName+'|'+(x.Id==y.Id);",
+      "expected": "A24Baseline|true",
+      "group": "metadata/getInstance/record-id"
+    },
+    {
+      "id": "R253",
+      "code": "A24Profile__mdt y=[SELECT Id FROM A24Profile__mdt WHERE DeveloperName='A24Baseline']; r=A24Profile__mdt.getInstance(String.valueOf(y.Id)).DeveloperName;",
+      "expected": "A24Baseline",
+      "group": "metadata/getInstance/id-string"
+    },
+    {
+      "id": "R254",
+      "code": "A24Profile__mdt x=[SELECT DeveloperName,MasterLabel,NamespacePrefix,Enabled__c,Text__c,Amount__c FROM A24Profile__mdt WHERE DeveloperName='A24Baseline']; r=x.DeveloperName+'|'+x.MasterLabel+'|'+x.NamespacePrefix+'|'+x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c;",
+      "expected": "A24Baseline|A24 Baseline|null|true|A24|12.50",
+      "group": "metadata/SOQL/fixture"
+    },
+    {
+      "id": "R255",
+      "code": "List<A24Profile__mdt> xs=[SELECT Id FROM A24Profile__mdt WHERE DeveloperName='A24Missing']; r=xs.isEmpty();",
+      "expected": "true",
+      "group": "metadata/SOQL/missing-list"
+    },
+    {
+      "id": "R256",
+      "code": "A24Profile__mdt x=[SELECT Id FROM A24Profile__mdt WHERE DeveloperName='A24Missing']; r=x;",
+      "expected": "EXC|System.QueryException|List has no rows for assignment to SObject",
+      "group": "metadata/SOQL/missing-single"
+    },
+    {
+      "id": "R257",
+      "code": "Integer q=Limits.getQueries(); A24Profile__mdt x=A24Profile__mdt.getInstance('A24Baseline'); Map<String,A24Profile__mdt> all=A24Profile__mdt.getAll(); r=Limits.getQueries()-q;",
+      "expected": "0",
+      "group": "metadata/cache/query-count"
+    },
+    {
+      "id": "R258",
+      "code": "A24Profile__mdt x=new A24Profile__mdt(); x.put('Amount__c',12); r=x.Amount__c;",
+      "expected": "12",
+      "group": "metadata/conversion/decimal"
+    },
+    {
+      "id": "R259",
+      "code": "A24Profile__mdt x=new A24Profile__mdt(); x.put('Amount__c','12'); r=x.Amount__c;",
+      "expected": "12",
+      "group": "metadata/conversion/string-to-number"
+    },
+    {
+      "id": "R260",
+      "code": "A24Profile__mdt x=new A24Profile__mdt(); r=x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c;",
+      "expected": "false|null|null",
+      "group": "metadata/null/new-record"
+    },
+    {
+      "id": "R261",
+      "code": "A24Profile__mdt x=A24Profile__mdt.getInstance('A24Baseline'); x.put('Text__c','Changed'); r=x.Text__c+'|'+A24Profile__mdt.getInstance('A24Baseline').Text__c;",
+      "expected": "UNCAUGHT|System.FinalException: Record is read-only",
+      "group": "metadata/boundary/read-only-dynamic"
+    },
+    {
+      "id": "R262",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; insert new A24ListSetting__c(Name='A24Only',Enabled__c=true,Text__c='Only'); String key; A24ListSetting__c x=A24ListSetting__c.getValues(key); r=x==null ? 'null' : (x.Id!=null)+'|'+x.Name+'|'+x.Enabled__c+'|'+x.Text__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "null",
+      "group": "settings/list/populated-null-getValues"
+    },
+    {
+      "id": "R263",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24ListSetting__c]; insert new A24ListSetting__c(Name='A24Only',Enabled__c=true,Text__c='Only'); String key; A24ListSetting__c x=A24ListSetting__c.getInstance(key); r=x==null ? 'null' : (x.Id!=null)+'|'+x.Name+'|'+x.Enabled__c+'|'+x.Text__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "null",
+      "group": "settings/list/populated-null-getInstance"
+    },
+    {
+      "id": "R264",
+      "code": "Savepoint s=Database.setSavepoint(); try { delete [SELECT Id FROM A24HierarchySetting__c]; A24HierarchySetting__c inserted=new A24HierarchySetting__c(SetupOwnerId=UserInfo.getUserId(),Enabled__c=true); insert inserted; A24HierarchySetting__c x=A24HierarchySetting__c.getInstance(); r=(x.Id==inserted.Id)+'|'+(x.SetupOwnerId==UserInfo.getUserId())+'|'+x.Enabled__c+'|'+x.Text__c+'|'+x.Amount__c; } finally { Database.rollback(s); Database.releaseSavepoint(s); }",
+      "expected": "true|true|true|null|null",
+      "group": "settings/hierarchy/current-user-only"
+    },
+    {
+      "id": "R265",
+      "code": "r=TimeSlot.StartTime.getDescribe().getType()+'|'+TimeSlot.StartTime.getDescribe().getSOAPType()+'|'+TimeSlot.EndTime.getDescribe().getType()+'|'+TimeSlot.EndTime.getDescribe().getSOAPType();",
+      "expected": "TIME|TIME|TIME|TIME",
+      "group": "standard/TimeSlot/type-and-soap"
+    },
+    {
+      "id": "C013",
+      "code": "A24ListSetting__c x=A24ListSetting__c.getOrgDefaults(); pq.out('C013','COMPILE_OK');",
+      "expected": "COMPILE_OK",
+      "group": "settings/list/getOrgDefaults-method",
+      "compile": true
+    }
+  ],
+  "remaining": [
+    {
+      "id": "R179",
+      "owner": "schema profiles",
+      "reason": "Account.IsCustomerPortal is exposed by the broad standard catalog; the captured org disables this optional portal profile, and no enabled-profile oracle is admitted.",
+      "code": "r=sp.field('Account','IsCustomerPortal');",
+      "expected": "absent",
+      "group": "feature/account/IsCustomerPortal"
+    },
+    {
+      "id": "C001",
+      "owner": "source syntax",
+      "reason": "Native static field/type/readonly rejection diagnostic text differs from Glade; the source-diagnostic row is carried.",
+      "code": "Account x=new Account(); x.Id=42; pq.out('C001','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to Id",
+      "group": "system/readonly-id-type"
+    },
+    {
+      "id": "C002",
+      "owner": "source syntax",
+      "reason": "Named SObject constructor readonly checks are missing; source semantics and native diagnostic text are carried.",
+      "code": "Account x=new Account(CreatedDate=Datetime.newInstanceGMT(2024,1,1,0,0,0)); pq.out('C002','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Field is not writeable: Account.CreatedDate",
+      "group": "system/readonly-created-date"
+    },
+    {
+      "id": "C003",
+      "owner": "source syntax",
+      "reason": "Named SObject constructor readonly checks are missing; source semantics and native diagnostic text are carried.",
+      "code": "Account x=new Account(SystemModstamp=Datetime.newInstanceGMT(2024,1,1,0,0,0)); pq.out('C003','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Field is not writeable: Account.SystemModstamp",
+      "group": "system/readonly-modstamp"
+    },
+    {
+      "id": "C004",
+      "owner": "source syntax",
+      "reason": "Named SObject constructor readonly checks are missing; source semantics and native diagnostic text are carried.",
+      "code": "Account x=new Account(IsDeleted=true); pq.out('C004','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Field is not writeable: Account.IsDeleted",
+      "group": "system/readonly-deleted"
+    },
+    {
+      "id": "C005",
+      "owner": "source syntax",
+      "reason": "Named SObject constructor readonly checks are missing; source semantics and native diagnostic text are carried.",
+      "code": "Case x=new Case(CaseNumber='A24'); pq.out('C005','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Field is not writeable: Case.CaseNumber",
+      "group": "system/readonly-number"
+    },
+    {
+      "id": "C006",
+      "owner": "source syntax",
+      "reason": "Named SObject constructor readonly checks are missing; source semantics and native diagnostic text are carried.",
+      "code": "Contact x=new Contact(Name='Ada'); pq.out('C006','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Field is not writeable: Contact.Name",
+      "group": "compound/readonly-contact-name"
+    },
+    {
+      "id": "C007",
+      "owner": "source syntax",
+      "reason": "Native static field/type/readonly rejection diagnostic text differs from Glade; the source-diagnostic row is carried.",
+      "code": "Account x=new Account(); x.BillingAddress=null; pq.out('C007','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Field is not writeable: Account.BillingAddress",
+      "group": "compound/readonly-address"
+    },
+    {
+      "id": "C008",
+      "owner": "source syntax",
+      "reason": "Named SObject constructor assignment-type checks are missing or differ; source semantics and native diagnostic text are carried.",
+      "code": "Account x=new Account(NumberOfEmployees=true); pq.out('C008','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Boolean to Integer",
+      "group": "conversion/employee-boolean"
+    },
+    {
+      "id": "C009",
+      "owner": "source syntax",
+      "reason": "Named SObject constructor assignment-type checks are missing or differ; source semantics and native diagnostic text are carried.",
+      "code": "Contact x=new Contact(Birthdate=42); pq.out('C009','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to Date",
+      "group": "conversion/date-integer"
+    },
+    {
+      "id": "C010",
+      "owner": "source syntax",
+      "reason": "Named SObject constructor readonly checks are missing; source semantics and native diagnostic text are carried.",
+      "code": "Account x=new Account(IsDeleted=42); pq.out('C010','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Field is not writeable: Account.IsDeleted",
+      "group": "conversion/checkbox-integer"
+    },
+    {
+      "id": "C011",
+      "owner": "source syntax",
+      "reason": "Native compilation rejects static Contact.HasOptedOutOfEmail access although the runtime schema exposes it; source-semantic schema validation belongs to source syntax.",
+      "code": "Contact x=new Contact(); Boolean y=x.HasOptedOutOfEmail; pq.out('C011','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: HasOptedOutOfEmail",
+      "group": "feature/contact-checkbox-static-read"
+    },
+    {
+      "id": "C012",
+      "owner": "source syntax",
+      "reason": "Unknown static SObject field assignment is accepted; collections:C001 is carried here to the source-semantic owner.",
+      "code": "Account a=new Account(); a.NoSuchField__c='x'; pq.out('C012','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: NoSuchField__c",
+      "group": "standard/unknown-field-static-write"
+    },
+    {
+      "id": "C014",
+      "owner": "source syntax",
+      "reason": "Hierarchy getAll needs the native list-only compile restriction in forbidden internal/sema/sema.go; source-semantic validation belongs to source syntax.",
+      "code": "Map<String,A24HierarchySetting__c> xs=A24HierarchySetting__c.getAll(); pq.out('C014','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Method only supports list type Custom Settings: A24HierarchySetting__c",
+      "group": "settings/hierarchy/getAll-method"
+    },
+    {
+      "id": "C015",
+      "owner": "source syntax",
+      "reason": "Named SObject constructor assignment-type checks are missing or differ; source semantics and native diagnostic text are carried.",
+      "code": "A24ListSetting__c x=new A24ListSetting__c(Enabled__c='true'); pq.out('C015','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to Boolean",
+      "group": "settings/conversion/checkbox-string"
+    },
+    {
+      "id": "C016",
+      "owner": "source syntax",
+      "reason": "Custom Metadata getValues needs the native nonexistent-signature rejection in forbidden internal/sema/sema.go; source-semantic validation belongs to source syntax.",
+      "code": "A24Profile__mdt x=A24Profile__mdt.getValues('A24Baseline'); pq.out('C016','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: getValues from the type A24Profile__mdt",
+      "group": "metadata/getValues-method"
+    },
+    {
+      "id": "C017",
+      "owner": "DML transactions",
+      "reason": "Custom Metadata DML rejection and native compiler diagnostic text are carried to the DML family.",
+      "code": "insert new A24Profile__mdt(DeveloperName='A24Temporary',MasterLabel='A24 Temporary'); pq.out('C017','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: DML operation Insert not allowed on A24Profile__mdt",
+      "group": "metadata/boundary/DML-insert"
+    },
+    {
+      "id": "C018",
+      "owner": "source syntax",
+      "reason": "Named SObject constructor assignment-type checks are missing or differ; source semantics and native diagnostic text are carried.",
+      "code": "A24Profile__mdt x=new A24Profile__mdt(Amount__c=true); pq.out('C018','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Boolean to Decimal",
+      "group": "metadata/conversion/number-boolean"
+    }
+  ],
+  "ticketRows": {},
+  "carriedRows": {
+    "sobject_values_cases.py:C001": "C012"
+  }
+}

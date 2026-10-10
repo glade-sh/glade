@@ -133,11 +133,14 @@ const UNSUPPORTED_ATTRIBUTE_NAMES = new Set([
   "wrap-text-max-lines",
 ]);
 
-function publicProps() {
+function publicProps(selector) {
   const props = {};
   for (const name of PUBLIC_PROPS) {
     props[name] = { config: 0 };
   }
+  if (selector === "lightning-layout") props.horizontalAlign = { config: 3 };
+  if (selector === "lightning-layout-item") props.size = { config: 3 };
+  if (selector === "lightning-vertical-navigation") props.selectedItem = { config: 3 };
   return props;
 }
 
@@ -190,6 +193,7 @@ export function createBaseComponent(selector, render, options = {}) {
     handleChange(event) {
       event?.stopPropagation?.();
       const target = event?.target || {};
+      const targetValue = target.value;
       this.value = target.value;
       this.checked = Boolean(target.checked);
       this.dispatchEvent(new CustomEvent("change", {
@@ -197,6 +201,30 @@ export function createBaseComponent(selector, render, options = {}) {
         composed: true,
         detail: { value: target.value, checked: Boolean(target.checked) },
       }));
+      if (selector === "lightning-input" && event?.type === "change") {
+        this.handleTextInputCommit(event, targetValue);
+      }
+    }
+
+    handleTextInputCommit(event, value = event?.target?.value) {
+      const target = event?.target || {};
+      if (selector !== "lightning-input" || (target.type || this.type || "text") !== "text") {
+        return;
+      }
+      const nextValue = String(value ?? "");
+      const previousValue = this.__committedTextInputValue ?? String(this.__initialValue ?? "");
+      if (nextValue === previousValue) {
+        return;
+      }
+      this.__committedTextInputValue = nextValue;
+      this.dispatchEvent(new CustomEvent("commit"));
+    }
+
+    handleComboboxOpen() {
+      if (selector !== "lightning-combobox") {
+        return;
+      }
+      this.dispatchEvent(new CustomEvent("open"));
     }
 
     handleOptionGroupChange(event) {
@@ -486,15 +514,77 @@ export function createBaseComponent(selector, render, options = {}) {
       }));
     }
 
+    handleButtonMenuToggle() {
+      if (selector !== "lightning-button-menu") {
+        return;
+      }
+      const eventName = this.__buttonMenuOpen ? "close" : "open";
+      this.__buttonMenuOpen = !this.__buttonMenuOpen;
+      this.dispatchEvent(new CustomEvent(eventName));
+    }
+
+    handleButtonMenuActive(event) {
+      if (selector !== "lightning-button-menu") {
+        return;
+      }
+      const source = event?.composedPath?.()[0] ?? event?.target;
+      const value = String(source?.value ?? "");
+      this.dispatchEvent(new CustomEvent("select", {
+        detail: { value },
+        cancelable: true,
+      }));
+    }
+
+    handleVerticalNavigationActive(event) {
+      if (selector !== "lightning-vertical-navigation") {
+        return;
+      }
+      const source = event?.composedPath?.()[0] ?? event?.target;
+      const name = String(source?.name ?? "");
+      this.dispatchEvent(new CustomEvent("beforeselect", {
+        detail: { name },
+        cancelable: true,
+      }));
+      this.dispatchEvent(new CustomEvent("select", { detail: { name } }));
+    }
+
     connectedCallback() {
+      if (selector === "lightning-button") {
+        const key = Symbol.for("glade.component.privateShadowHosts");
+        (globalThis[key] ||= new WeakSet()).add(this.template.host);
+      }
+      if (selector === "lightning-vertical-navigation") {
+        connectVerticalNavigation(this);
+      }
+      if (selector === "lightning-spinner") {
+        this.classList.add("slds-spinner_container");
+      }
+      if (selector === "lightning-layout") {
+        applyLayoutClasses(this, layoutClassMap(this));
+      } else if (selector === "lightning-layout-item") {
+        applyLayoutClasses(this, layoutItemClassMap(this));
+      }
       if (this.__initialValue === undefined) {
         this.__initialValue = this.value;
+      }
+      if (selector === "lightning-input" && (this.type || "text") === "text" && this.__committedTextInputValue === undefined) {
+        this.__committedTextInputValue = String(this.value ?? "");
       }
       this.reportUnsupportedAttributes();
       if (options.unsupported) {
         const message = `GLADELWC060 base component unsupported: ${selector}`;
         reportDiagnostic({ code: "GLADELWC060", severity: "warning", message, tagName: selector });
         throw new Error(message);
+      }
+      const activeBridge = selector === "lightning-button-menu"
+        ? this.handleButtonMenuActive
+        : selector === "lightning-vertical-navigation"
+          ? this.handleVerticalNavigationActive
+          : null;
+      if (activeBridge) {
+        this.__baseActiveBridge ??= activeBridge.bind(this);
+        this.removeEventListener("active", this.__baseActiveBridge);
+        this.addEventListener("active", this.__baseActiveBridge);
       }
       if (selector === "lightning-input-field") {
         registerBaseFormFieldWithNearestForm(this, "__gladeInputFields");
@@ -504,6 +594,21 @@ export function createBaseComponent(selector, render, options = {}) {
       }
       if (isRecordFormSelector(selector)) {
         this.loadRecordFormRecord();
+      }
+    }
+
+    renderedCallback() {
+      if (selector === "lightning-layout" || selector === "lightning-layout-item") {
+        applyLayoutClasses(this, this.__layoutRenderClasses);
+      }
+    }
+
+    disconnectedCallback() {
+      if (selector === "lightning-vertical-navigation") {
+        disconnectVerticalNavigation(this);
+      }
+      if (this.__baseActiveBridge) {
+        this.removeEventListener("active", this.__baseActiveBridge);
       }
     }
 
@@ -539,9 +644,47 @@ export function createBaseComponent(selector, render, options = {}) {
     }
   }
 
-  registerDecorators(GladeBaseComponent, { publicProps: publicProps(), publicMethods: publicMethods() });
+  if (selector === "lightning-vertical-navigation") {
+    Object.defineProperty(GladeBaseComponent.prototype, "selectedItem", {
+      get() {
+        return this.__navigationSelectedItem;
+      },
+      set(value) {
+        setVerticalNavigationSelection(this, value);
+      },
+      configurable: true,
+    });
+  } else if (selector === "lightning-layout") {
+    Object.defineProperty(GladeBaseComponent.prototype, "horizontalAlign", {
+      get() {
+        return this.__layoutHorizontalAlign;
+      },
+      set(t) {
+        t = t || " ";
+        const value = t.toLowerCase();
+        this.__layoutHorizontalAlign = ["center", "space", "spread", "end"].includes(value) ? value : " ";
+        applyLayoutClasses(this, layoutClassMap(this));
+      },
+      configurable: true,
+    });
+  } else if (selector === "lightning-layout-item") {
+    Object.defineProperty(GladeBaseComponent.prototype, "size", {
+      get() {
+        return this.__layoutSize;
+      },
+      set(value) {
+        this.__layoutSize = value == null ? value : Number(value);
+        if (this.__layoutSize != null && (!Number.isInteger(this.__layoutSize) || this.__layoutSize < 1 || this.__layoutSize > 12)) {
+          throw new Error("Invalid `size` attribute for <lightning-layout-item> component. The `size` attribute should be an integer between 1 and 12");
+        }
+        applyLayoutClasses(this, layoutItemClassMap(this));
+      },
+      configurable: true,
+    });
+  }
+  registerDecorators(GladeBaseComponent, { publicProps: publicProps(selector), publicMethods: publicMethods() });
   render.stylesheets = [];
-  render.slots = [""];
+  render.slots = selector === "lightning-card" ? ["", "actions", "footer", "title"] : [""];
   const template = registerTemplate(render);
   freezeTemplate(render);
   return registerComponent(GladeBaseComponent, { tmpl: template, sel: selector, apiVersion: 63 });
@@ -831,7 +974,7 @@ function normalizedLayoutSize(value) {
 }
 
 function layoutItemClassMap(component) {
-  const classes = { "slds-col": true };
+  const classes = {};
   const padding = String(component?.padding || "").toLowerCase();
   const paddingClasses = {
     "horizontal-small": ["slds-p-right_small", "slds-p-left_small"],
@@ -863,6 +1006,56 @@ function layoutItemClassMap(component) {
   const bump = normalizeChoice(component?.alignmentBump, ["left", "top", "right", "bottom"], "");
   if (bump) classes[`slds-col_bump-${bump}`] = true;
   return classes;
+}
+
+function applyLayoutClasses(component, classes) {
+  component.__layoutRenderClasses = classes;
+  for (const name of component.__layoutClasses || []) component.classList.remove(name);
+  const names = Object.keys(classes).filter((name) => classes[name]);
+  for (const name of names) component.classList.add(name);
+  component.__layoutClasses = names;
+}
+
+function connectVerticalNavigation(component) {
+  component.__navigationItems = new Map();
+  component.__navigationRegister = (event) => {
+    event.stopPropagation();
+    const detail = event.detail;
+    component.__navigationItems.set(detail.name, detail.callbacks);
+    reflectVerticalNavigationSelection(component);
+  };
+  component.__navigationSelect = (event) => {
+    event.stopPropagation();
+    // control_legacy_menu_navigation: canceled beforeselect stops selection.
+    const name = event.detail.name;
+    if (!component.dispatchEvent(new CustomEvent("beforeselect", {
+      cancelable: true,
+      detail: { name },
+    }))) return;
+    component.selectedItem = name;
+  };
+  component.addEventListener("privateitemregister", component.__navigationRegister);
+  component.addEventListener("privateitemselect", component.__navigationSelect);
+}
+
+function disconnectVerticalNavigation(component) {
+  component.removeEventListener("privateitemregister", component.__navigationRegister);
+  component.removeEventListener("privateitemselect", component.__navigationSelect);
+  component.__navigationItems.clear();
+}
+
+function reflectVerticalNavigationSelection(component) {
+  for (const [name, callbacks] of component.__navigationItems || []) {
+    if (name === component.__navigationSelectedItem) callbacks.select();
+    else callbacks.deselect();
+  }
+}
+
+function setVerticalNavigationSelection(component, value) {
+  const name = typeof value === "string" ? value : "";
+  component.__navigationSelectedItem = name;
+  reflectVerticalNavigationSelection(component);
+  component.dispatchEvent(new CustomEvent("select", { detail: { name } }));
 }
 
 function numericOption(value) {
@@ -909,8 +1102,9 @@ function formatNumberValue(component) {
 export function renderButton($api, $cmp) {
   const { h, t } = $api;
   const iconText = iconLabel($cmp.iconName);
+  const classes = buttonClassMap($cmp.variant);
   return [h("button", {
-    classMap: buttonClassMap($cmp.variant),
+    className: Object.keys(classes).filter(name => classes[name]).join(" "),
     attrs: {
       type: normalizedButtonType($cmp.type),
       name: $cmp.name || undefined,
@@ -961,7 +1155,7 @@ export function renderButtonIcon($api, $cmp) {
 
 export function renderCard($api, $cmp, $slotset) {
   const { h, t, s } = $api;
-  const titleChildren = $cmp.title ? [t($cmp.title)] : [s("title", { key: 8 }, [], $slotset)];
+  const titleChildren = $cmp.title ? [t($cmp.title)] : [s("title", { attrs: { name: "title" }, key: 8 }, [], $slotset)];
   const mediaChildren = [];
   if ($cmp.iconName) {
     mediaChildren.push(h("span", {
@@ -970,18 +1164,19 @@ export function renderCard($api, $cmp, $slotset) {
       key: 4,
     }, [t(iconLabel($cmp.iconName))]));
   }
-  mediaChildren.push(h("div", { classMap: { "slds-media__body": true, "slds-truncate": true }, key: 5 }, [
+  mediaChildren.push(h("div", { classMap: { "slds-media__body": true }, key: 5 }, [
     h("h2", { classMap: { "slds-card__header-title": true }, key: 6 }, [
-      h("span", { classMap: { "slds-text-heading_small": true }, key: 7 }, titleChildren),
+      h("span", { classMap: { "slds-truncate": true }, key: 7 }, titleChildren),
     ]),
   ]));
-  return [h("article", { classMap: cardClassMap($cmp.variant), key: 0 }, [
-    h("header", { classMap: { "slds-card__header": true, "slds-grid": true }, key: 1 }, [
-      h("div", { classMap: { "slds-media": true, "slds-media_center": true, "slds-has-flexi-truncate": true }, key: 2 }, mediaChildren),
-      h("div", { classMap: { "slds-no-flex": true }, key: 9 }, [s("actions", { key: 10 }, [], $slotset)]),
+  mediaChildren.push(h("div", { classMap: { "slds-no-flex": true }, key: 9 }, [s("actions", { attrs: { name: "actions" }, key: 10 }, [], $slotset)]));
+  const cardClasses = cardClassMap($cmp.variant);
+  return [h("article", { className: Object.keys(cardClasses).filter((name) => cardClasses[name]).join(" "), key: 0 }, [
+    h("div", { classMap: { "slds-card__header": true, "slds-grid": true }, key: 1 }, [
+      h("header", { classMap: { "slds-media": true, "slds-media_center": true, "slds-has-flexi-truncate": true }, key: 2 }, mediaChildren),
     ]),
     h("div", { classMap: { "slds-card__body": true }, key: 11 }, [s("", { key: 12 }, [], $slotset)]),
-    h("div", { classMap: { "slds-card__footer": true }, key: 13 }, [s("footer", { key: 14 }, [], $slotset)]),
+    h("div", { classMap: { "slds-card__footer": true }, key: 13 }, [s("footer", { attrs: { name: "footer" }, key: 14 }, [], $slotset)]),
   ])];
 }
 
@@ -994,7 +1189,7 @@ export function renderInput($api, $cmp) {
       attrs: { type: $cmp.type || "text" },
       props: { value: $cmp.value || "", disabled: Boolean($cmp.disabled), required: Boolean($cmp.required) },
       key: 2,
-      on: { change: b($cmp.handleChange), input: b($cmp.handleChange) },
+      on: { change: b($cmp.handleChange), input: b($cmp.handleChange), blur: b($cmp.handleTextInputCommit) },
     }),
   ])];
 }
@@ -1021,7 +1216,7 @@ export function renderCombobox($api, $cmp) {
       classMap: { "slds-select": true },
       props: { value, required: Boolean($cmp.required) },
       key: 2,
-      on: { change: b($cmp.handleChange) },
+      on: { click: b($cmp.handleComboboxOpen), change: b($cmp.handleChange) },
     }, ($cmp.options || []).map((option, index) => {
       const optionValue = String(option.value ?? option.label ?? "");
       return h("option", {
@@ -1034,15 +1229,13 @@ export function renderCombobox($api, $cmp) {
 }
 
 export function renderLayout($api, $cmp, $slotset) {
-  return [$api.h("div", { classMap: layoutClassMap($cmp), key: 0 }, [
-    $api.s("", { key: 1 }, [], $slotset),
-  ])];
+  $cmp.__layoutRenderClasses = layoutClassMap($cmp);
+  return [$api.s("", { classMap: { "slds-slot": true }, key: 0 }, [], $slotset)];
 }
 
 export function renderLayoutItem($api, $cmp, $slotset) {
-  return [$api.h("div", { classMap: layoutItemClassMap($cmp), key: 0 }, [
-    $api.s("", { key: 1 }, [], $slotset),
-  ])];
+  $cmp.__layoutRenderClasses = layoutItemClassMap($cmp);
+  return [$api.s("", { key: 0 }, [], $slotset)];
 }
 
 export function renderTabset($api, _cmp, $slotset) {
@@ -1067,9 +1260,16 @@ export function renderTab($api, $cmp, $slotset) {
 }
 
 export function renderSpinner($api, $cmp) {
-  return [$api.h("div", { classMap: { "slds-spinner": true }, attrs: { role: "status" }, key: 0 }, [
-    $api.t($cmp.alternativeText || "Loading"),
-  ])];
+  const { h, t } = $api;
+  const size = normalizeChoice($cmp.size, ["small", "medium", "large"], "medium");
+  return [
+    h("div", { key: 0 }, []),
+    h("div", { className: "slds-spinner slds-spinner_" + size, attrs: { role: "status" }, key: 1 }, [
+      h("span", { classMap: { "slds-assistive-text": true }, key: 2 }, [t($cmp.alternativeText || "Loading")]),
+      h("div", { classMap: { "slds-spinner__dot-a": true }, key: 3 }, []),
+      h("div", { classMap: { "slds-spinner__dot-b": true }, key: 4 }, []),
+    ]),
+  ];
 }
 
 export function renderIcon($api, $cmp) {
@@ -1194,11 +1394,7 @@ export function renderTextContainer(tagName, className) {
 
 export function renderFormattedNumber($api, $cmp) {
   const text = formatNumberValue($cmp);
-  return [$api.h("span", {
-    classMap: { "slds-truncate": true },
-    attrs: { title: text },
-    key: 0,
-  }, [$api.t(text)])];
+  return text === "" ? [] : [$api.t(text)];
 }
 
 export function renderFormattedEmail($api, $cmp) {
@@ -1259,7 +1455,7 @@ export function renderSelect($api, $cmp) {
     h("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [t($cmp.label || "")]),
     h("select", {
       classMap: { "slds-select": true },
-      props: { value, disabled: Boolean($cmp.disabled) },
+      props: { value, disabled: Boolean($cmp.disabled), required: Boolean($cmp.required) },
       key: 2,
       on: { change: b($cmp.handleChange) },
     }, ($cmp.options || []).map((option, index) => {
@@ -1563,8 +1759,16 @@ export function renderHelptext($api, $cmp) {
 
 export function renderButtonMenu($api, $cmp, $slotset) {
   const { h, t, s } = $api;
-  return [h("div", { classMap: { "slds-dropdown-trigger": true, "slds-dropdown-trigger_click": true }, key: 0 }, [
-    h("button", { classMap: { "slds-button": true, "slds-button_neutral": true }, attrs: { type: "button" }, key: 1 }, [t($cmp.label || "Actions")]),
+  return [h("div", {
+    classMap: { "slds-dropdown-trigger": true, "slds-dropdown-trigger_click": true },
+    key: 0,
+  }, [
+    h("button", {
+      classMap: { "slds-button": true, "slds-button_neutral": true },
+      attrs: { type: "button" },
+      key: 1,
+      on: { click: $api.b($cmp.handleButtonMenuToggle) },
+    }, [t($cmp.label || "Actions")]),
     h("div", { classMap: { "slds-dropdown": true }, key: 2 }, [s("", { key: 3 }, [], $slotset)]),
   ])];
 }
@@ -1589,7 +1793,10 @@ export function renderOptionGroup(inputType) {
         return h("label", { classMap: { [`slds-${inputType}`]: true }, key: 20 + index }, [
           h("input", {
             attrs: { type: inputType, value: optionValue, name: $cmp.name || $cmp.label || inputType },
-            props: { checked: values.map(String).includes(optionValue) },
+            props: {
+              checked: values.map(String).includes(optionValue),
+              required: inputType === "radio" && Boolean($cmp.required),
+            },
             key: 200 + index,
             on: { change: b($cmp.handleOptionGroupChange) },
           }),
@@ -1730,6 +1937,22 @@ export function renderCarouselImage($api, $cmp) {
       h("h3", { key: 3 }, [t($cmp.header || $cmp.label || "")]),
       h("p", { key: 4 }, [t($cmp.description || "")]),
     ]),
+  ])];
+}
+
+export function renderVerticalNavigation($api, $cmp, $slotset) {
+  return [$api.h("nav", {
+    classMap: { "slds-nav-vertical": true },
+    attrs: { "aria-label": $cmp.ariaLabel || "Sub page" },
+    key: 0,
+  }, [$api.s("", { key: 1 }, [], $slotset)])];
+}
+
+export function renderVerticalNavigationSection($api, $cmp, $slotset) {
+  const { h, t, s } = $api;
+  return [h("div", { classMap: { "slds-nav-vertical__section": true }, key: 0 }, [
+    h("h2", { classMap: { "slds-nav-vertical__title": true }, key: 1 }, [t($cmp.label || $cmp.title || "")]),
+    h("div", { attrs: { role: "list" }, key: 2 }, [s("", { key: 3 }, [], $slotset)]),
   ])];
 }
 

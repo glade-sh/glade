@@ -15,6 +15,8 @@ import (
 var (
 	commonSObjectTypeNamesOnce       sync.Once
 	commonSObjectTypeNameSetOnce     sync.Once
+	commonSObjectTypeNameFoldOnce    sync.Once
+	commonSObjectTypeNameFoldSet     map[string]struct{}
 	generatedPlatformTypeIndexOnce   sync.Once
 	generatedPlatformMethodIndexOnce sync.Once
 )
@@ -24,6 +26,21 @@ func CommonSObjectTypeNames() []string {
 		commonSObjectTypeNames = buildCommonSObjectTypeNames()
 	})
 	return commonSObjectTypeNames
+}
+
+// IsCommonSObjectTypeName reports whether name matches an entry of
+// CommonSObjectTypeNames case-insensitively. It is the constant-time
+// equivalent of folding name against every entry of that slice.
+func IsCommonSObjectTypeName(name string) bool {
+	commonSObjectTypeNameFoldOnce.Do(func() {
+		names := CommonSObjectTypeNames()
+		commonSObjectTypeNameFoldSet = make(map[string]struct{}, len(names))
+		for _, objectName := range names {
+			commonSObjectTypeNameFoldSet[strings.ToLower(objectName)] = struct{}{}
+		}
+	})
+	_, ok := commonSObjectTypeNameFoldSet[strings.ToLower(name)]
+	return ok
 }
 
 func commonSObjectTypeNameLookup() map[string]bool {
@@ -56,6 +73,26 @@ func warmGeneratedPlatformRuntimeIndexes() {
 	_ = CommonSObjectTypeNames()
 	_ = generatedPlatformTypes()
 	_ = generatedPlatformMethods()
+}
+
+// PrewarmPlatformIndexes builds the shared platform indexes. The type and method
+// indexes are independent once the symbol view exists, so they are built
+// concurrently. Each index is still built exactly once behind its sync.Once.
+// It allocates on every call, so newVM keeps using the serial warm.
+func PrewarmPlatformIndexes() {
+	_ = typesys.StandardPlatformSymbolView()
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		_ = generatedPlatformMethods()
+	}()
+	go func() {
+		defer wg.Done()
+		_ = CommonSObjectTypeNames()
+	}()
+	_ = generatedPlatformTypes()
+	wg.Wait()
 }
 
 func buildGeneratedPlatformTypeIndex() map[string]generatedPlatformType {

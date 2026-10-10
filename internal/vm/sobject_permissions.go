@@ -95,6 +95,44 @@ func (vm *VM) ensureUserProfilePermissionSetAssignment(record storage.Record) {
 	vm.Org.Objects["PermissionSetAssignment"] = state
 }
 
+// Salesforce creates the implicit role group when a UserRole is inserted.
+func (vm *VM) ensureUserRoleGroup(record storage.Record) {
+	if vm == nil || vm.Org == nil || record.ID == "" || !strings.EqualFold(record.Object, "UserRole") {
+		return
+	}
+	storage.EnsureStandardObject(vm.Org, "Group")
+	state := vm.Org.Objects["Group"]
+	for _, existing := range state.Records {
+		if strings.EqualFold(storageValueIDText(existing.Fields["RelatedId"]), string(record.ID)) && strings.EqualFold(existing.Fields["Type"].String, "Role") {
+			return
+		}
+	}
+	prefix := state.Definition.KeyPrefix
+	if prefix == "" {
+		prefix = storage.StandardKeyPrefix("Group")
+	}
+	generator := storage.NewRuntimeIDGenerator(map[string]string{"Group": prefix})
+	generator.Sequences = copyOrgIDSequences(vm.Org.IDSequences)
+	vm.recordIsolationJournalSequence("Group")
+	id, err := generator.Next("Group")
+	if err != nil {
+		return
+	}
+	if _, cloned := storage.EnsureMutableObjectRecords(vm.Org, "Group"); cloned {
+		state = vm.Org.Objects["Group"]
+	}
+	if state.Records == nil {
+		state.Records = make(map[storage.ID]storage.Record)
+	}
+	name := record.Fields["Name"].String
+	vm.recordIsolationJournalMutation("Group", id, storage.Record{}, false)
+	state.Records[id] = storage.Record{ID: id, Object: "Group", Fields: map[string]storage.Value{
+		"Name": storage.StringValue(name), "Type": storage.StringValue("Role"), "RelatedId": storage.IDValue(record.ID),
+	}}
+	vm.Org.IDSequences = copyOrgIDSequences(generator.Sequences)
+	vm.Org.Objects["Group"] = state
+}
+
 func (vm *VM) profileOwnedPermissionSetID(profileID string) string {
 	if vm == nil || vm.Org == nil || strings.TrimSpace(profileID) == "" {
 		return ""

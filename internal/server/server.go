@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 
@@ -22,9 +23,13 @@ type Server struct {
 	LimitProfile string
 	LimitMode    vm.LimitMode
 	LimitCaps    vm.LimitCaps
-	Index        *typesys.Index
-	runtime      *vm.VM
-	runtimeErr   error
+	// VisualforceHTMLUserID is the process-configured principal for Visualforce HTML
+	// rendering and remoting. It is resolved against Org.User; empty or unknown
+	// values fail closed, and Visualforce request headers cannot select the user.
+	VisualforceHTMLUserID storage.ID
+	Index                 *typesys.Index
+	runtime               *vm.VM
+	runtimeErr            error
 
 	queryLocators          map[string]queryLocatorState
 	queryOrder             []string
@@ -40,6 +45,7 @@ type Server struct {
 	nextMetadataDeployID   int
 	nextMetadataRetrieveID int
 
+	visualforceViewStateMu     sync.Mutex
 	visualforceViewStateSecret []byte
 }
 
@@ -57,6 +63,12 @@ const (
 )
 
 const maxLocalRequestBodyBytes = 4 * 1000 * 1000
+
+const visualforceHTMLUserIDEnv = "GLADE_VISUALFORCE_HTML_USER_ID"
+
+func configuredVisualforceHTMLUserID() storage.ID {
+	return storage.ID(strings.TrimSpace(os.Getenv(visualforceHTMLUserIDEnv)))
+}
 
 type apiVersionEntry struct {
 	Version string `json:"version"`
@@ -138,22 +150,22 @@ type gladeDiscoveryPayload struct {
 
 func New(org *storage.OrgState) *Server {
 	removeAutomatedProcessUsers(org)
-	return &Server{Org: org}
+	return &Server{Org: org, VisualforceHTMLUserID: configuredVisualforceHTMLUserID()}
 }
 
 func NewWithStore(org *storage.OrgState, store interface{ Save(storage.OrgState) error }) *Server {
 	removeAutomatedProcessUsers(org)
-	return &Server{Org: org, Store: store}
+	return &Server{Org: org, Store: store, VisualforceHTMLUserID: configuredVisualforceHTMLUserID()}
 }
 
 func NewWithSource(org *storage.OrgState, source SourceMetadata) *Server {
 	removeAutomatedProcessUsers(org)
-	return &Server{Org: org, Source: source}
+	return &Server{Org: org, Source: source, VisualforceHTMLUserID: configuredVisualforceHTMLUserID()}
 }
 
 func NewWithStoreAndSource(org *storage.OrgState, store interface{ Save(storage.OrgState) error }, source SourceMetadata) *Server {
 	removeAutomatedProcessUsers(org)
-	return &Server{Org: org, Store: store, Source: source}
+	return &Server{Org: org, Store: store, Source: source, VisualforceHTMLUserID: configuredVisualforceHTMLUserID()}
 }
 
 func (s *Server) SetProjectIndex(index typesys.Index) {
@@ -242,6 +254,9 @@ func canServeWithReadLock(r *http.Request, parts []string) bool {
 }
 
 func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request, parts []string) {
+	if s.handleVisualforcePresentationAsset(w, r) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	if len(parts) == 0 && s.hasLWCWorkbenchProject() {
 		s.handleLWCShell(w, r, nil)
@@ -249,6 +264,10 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request, parts [
 	}
 	if len(parts) >= 2 && parts[0] == "apex" {
 		s.handleVisualforcePage(w, r, parts[1:])
+		return
+	}
+	if len(parts) >= 1 && parts[0] == "record" {
+		s.handleVisualforceLookupRecord(w, r, parts[1:])
 		return
 	}
 	if len(parts) >= 1 && parts[0] == "lightning" {

@@ -61,7 +61,8 @@ test("platformUtilityBarApi simulates utility bar state and callbacks", async ()
   assert.equal(info.panelVisible, true);
 
   assert.equal(await module.minimize("support"), true);
-  assert.equal((await module.getUtilityInfo({ utilityId: "support" })).panelVisible, false);
+  // Native r_utility_getUtilityInfo_owned_boundary observes no such export.
+  assert.equal((await module.getInfo("support")).panelVisible, false);
   assert.equal(await module.closeUtility({ utilityId: "support" }), true);
   assert.equal((await module.getAllUtilityInfo()).length, 1);
 });

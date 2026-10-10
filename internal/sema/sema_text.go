@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"maps"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -89,7 +90,44 @@ func statementOrBlockBoundsAfter(body string, pos int) (int, int) {
 	}
 	return pos, len(body)
 }
-func (s semaScopeModel) flat() map[string]string {
+
+// Keep at most two maps per body: all locals and the last visibility interval.
+// Copies passed between body checks share this memo, but never mutate its maps.
+type semaScopeFlatMemo struct {
+	all        map[string]string
+	at         map[string]string
+	start, end int
+	version    uint64
+}
+
+func (s *semaScopeModel) invalidateFlat() {
+	if s.flatVersion == nil {
+		s.flatVersion = new(uint64)
+	}
+	*s.flatVersion++
+	s.flatMemo = &semaScopeFlatMemo{}
+}
+
+func (s *semaScopeModel) scopeFlatMemo() *semaScopeFlatMemo {
+	if s.flatMemo == nil {
+		s.flatMemo = &semaScopeFlatMemo{}
+	}
+	if s.flatVersion == nil {
+		s.flatVersion = new(uint64)
+	}
+	if s.flatMemo.version != *s.flatVersion {
+		s.flatMemo.all = nil
+		s.flatMemo.at = nil
+		s.flatMemo.version = *s.flatVersion
+	}
+	return s.flatMemo
+}
+
+func (s *semaScopeModel) flat() map[string]string {
+	memo := s.scopeFlatMemo()
+	if memo.all != nil {
+		return memo.all
+	}
 	out := make(map[string]string, len(s.base)+len(s.locals))
 	for name, typeName := range s.base {
 		out[name] = typeName
@@ -102,22 +140,50 @@ func (s semaScopeModel) flat() map[string]string {
 			starts[key] = local.start
 		}
 	}
+	memo.all = out
 	return out
 }
-func (s semaScopeModel) flatAt(pos int) map[string]string {
+
+func (s *semaScopeModel) flatCopy() map[string]string {
+	return maps.Clone(s.flat())
+}
+
+func (s *semaScopeModel) flatAt(pos int) map[string]string {
+	memo := s.scopeFlatMemo()
+	if memo.at != nil && pos >= memo.start && pos <= memo.end {
+		return memo.at
+	}
 	out := make(map[string]string, len(s.base)+len(s.locals))
 	for name, typeName := range s.base {
 		out[name] = typeName
 	}
 	starts := make(map[string]int, len(s.locals))
+	end := int(^uint(0) >> 1)
+	start := -end - 1
 	for _, local := range s.locals {
+		// Visibility changes only at a declaration or just after a scope end.
+		if pos >= local.start {
+			start = max(start, local.start)
+		} else {
+			end = min(end, local.start-1)
+		}
+		if pos <= local.scopeEnd {
+			end = min(end, local.scopeEnd)
+		} else {
+			start = max(start, local.scopeEnd+1)
+		}
 		key := s.localKey(local)
 		if pos >= local.start && pos <= local.scopeEnd && local.start >= starts[key] {
 			out[key] = local.typeName
 			starts[key] = local.start
 		}
 	}
+	memo.at, memo.start, memo.end = out, start, end
 	return out
+}
+
+func (s *semaScopeModel) flatAtCopy(pos int) map[string]string {
+	return maps.Clone(s.flatAt(pos))
 }
 func leadingWhitespaceLen(text string) int {
 	return len(text) - len(strings.TrimLeftFunc(text, func(r rune) bool {

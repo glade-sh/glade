@@ -1,0 +1,76 @@
+{
+  "apiVersion": "67.0",
+  "oracle": "Owned Salesforce SObject JSON observations at API 67.0; 209 captured rows, 0 missing.",
+  "cases": [
+    {
+      "id": "R001",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\"}',Account.class); r=x.Name;",
+      "expected": "Family"
+    },
+    {
+      "id": "R002",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Name\":\"Family\"}',Account.class); r=x.Name;",
+      "expected": "Family"
+    },
+    {
+      "id": "R004",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Name\":\"Family\",\"NoSuchField__c\":\"x\"}',Account.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Account"
+    },
+    {
+      "id": "R006",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Name\":\"Family\",\"NoSuchField__c\":null}',Account.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Account"
+    },
+    {
+      "id": "R008",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Name\":\"Family\",\"NoSuchField__c\":{\"x\":[1]}}',Account.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Account"
+    },
+    {
+      "id": "R031",
+      "code": "JSONParser p=JSON.createParser('{\"Name\":\"Family\",\"NoSuchField__c\":\"x\"}'); p.nextToken(); Account x=(Account)p.readValueAs(Account.class); r=x.Name;",
+      "expected": "Family"
+    },
+    {
+      "id": "R032",
+      "code": "JSONParser p=JSON.createParser('{\"Name\":\"Family\",\"NoSuchField__c\":\"x\"}'); p.nextToken(); Account x=(Account)p.readValueAsStrict(Account.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Account"
+    },
+    {
+      "id": "R033",
+      "code": "JSONParser p=JSON.createParser('{\"Name\":\"Family\"}'); p.nextToken(); Account x=(Account)p.readValueAs(Account.class); r=x.Name;",
+      "expected": "Family"
+    },
+    {
+      "id": "R034",
+      "code": "JSONParser p=JSON.createParser('{\"Name\":\"Family\"}'); p.nextToken(); Account x=(Account)p.readValueAsStrict(Account.class); r=x.Name;",
+      "expected": "Family"
+    },
+    {
+      "id": "R048",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":\"\"}',Account.class); r=x.AnnualRevenue;",
+      "expected": "0.0"
+    },
+    {
+      "id": "R049",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":\" \"}',Account.class); r=x.AnnualRevenue;",
+      "expected": "0.0"
+    },
+    {
+      "id": "R050",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":null}',Account.class); r=x.AnnualRevenue;",
+      "expected": "null"
+    },
+    {
+      "id": "R053",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":\"12.5\"}',Account.class); r=x.AnnualRevenue;",
+      "expected": "12.5"
+    },
+    {
+      "id": "R056",
+      "code": "Account x=(Account)JSON.deserialize('{}',Account.class); r=x.AnnualRevenue;",
+      "expected": "null"
+    }
+  ]
+}

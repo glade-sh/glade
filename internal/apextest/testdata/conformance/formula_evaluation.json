@@ -1,0 +1,2171 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "declarations": {
+    "A25FormulaContext": "global class A25FormulaContext {\n global Decimal amount;\n global String label;\n global Boolean flag;\n global Date day;\n global Account account;\n}\n"
+  },
+  "metadata": {
+    "force-app/main/default/objects/A25FormulaProbe__c/fields/Amount__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Amount__c</fullName><label>Amount</label><precision>16</precision><scale>2</scale><type>Number</type></CustomField>\n",
+    "force-app/main/default/objects/A25FormulaProbe__c/fields/Text__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Text__c</fullName><label>Text</label><length>80</length><type>Text</type></CustomField>\n",
+    "force-app/main/default/objects/A25FormulaProbe__c/fields/Day__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Day__c</fullName><label>Day</label><type>Date</type></CustomField>\n",
+    "force-app/main/default/objects/A25FormulaProbe__c/fields/Flag__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Flag__c</fullName><label>Flag</label><defaultValue>false</defaultValue><type>Checkbox</type></CustomField>\n",
+    "force-app/main/default/objects/A25FormulaProbe__c/fields/Double__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Double__c</fullName><label>Double</label><formula>Amount__c * 2</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><precision>18</precision><scale>2</scale><type>Number</type></CustomField>\n",
+    "force-app/main/default/objects/A25FormulaProbe__c/fields/Display__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Display__c</fullName><label>Display</label><formula>BLANKVALUE(Text__c, \"blank\")</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><type>Text</type></CustomField>\n",
+    "force-app/main/default/objects/A25FormulaProbe__c/fields/Positive__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Positive__c</fullName><label>Positive</label><formula>Amount__c &gt; 0</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><type>Checkbox</type></CustomField>\n",
+    "force-app/main/default/objects/A25FormulaProbe__c/fields/NextDay__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>NextDay__c</fullName><label>NextDay</label><formula>Day__c + 1</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><type>Date</type></CustomField>\n",
+    "force-app/main/default/objects/A25FormulaProbe__c/fields/Midnight__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Midnight__c</fullName><label>Midnight</label><formula>DATETIMEVALUE(Day__c)</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><type>DateTime</type></CustomField>\n",
+    "force-app/main/default/objects/A25FormulaProbe__c/fields/Divide__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Divide__c</fullName><label>Divide</label><formula>1 / Amount__c</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><precision>18</precision><scale>6</scale><type>Number</type></CustomField>\n",
+    "force-app/main/default/objects/A25FormulaProbe__c/A25FormulaProbe__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>A25 Formula Probe</label><pluralLabel>A25 Formula Probes</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+    "force-app/main/default/classes/A25FormulaContext.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+  },
+  "cases": [
+    {
+      "id": "R001",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('2+3').build().evaluate(new Account());",
+      "expected": "5",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R002",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('7-10').build().evaluate(new Account());",
+      "expected": "-3",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R003",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('3*2.5').build().evaluate(new Account());",
+      "expected": "7.5",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R004",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('7/2').build().evaluate(new Account());",
+      "expected": "3.5",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R005",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('-3').build().evaluate(new Account());",
+      "expected": "-3",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R006",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('+3').build().evaluate(new Account());",
+      "expected": "3",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R007",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('2^3').build().evaluate(new Account());",
+      "expected": "8",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R008",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('2+3*4').build().evaluate(new Account());",
+      "expected": "14",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R009",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('(2+3)*4').build().evaluate(new Account());",
+      "expected": "20",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R010",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('2^3^2').build().evaluate(new Account());",
+      "expected": "64",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R011",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('0/1').build().evaluate(new Account());",
+      "expected": "0",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R012",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('1/0').build().evaluate(new Account());",
+      "expected": "EXC|System.FormulaEvaluationException|Division by zero",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R013",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('0/0').build().evaluate(new Account());",
+      "expected": "EXC|System.FormulaEvaluationException|Division undefined",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R014",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('MOD(7,3)').build().evaluate(new Account());",
+      "expected": "1",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R015",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('MOD(-7,3)').build().evaluate(new Account());",
+      "expected": "-1",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R016",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('MOD(1,0)').build().evaluate(new Account());",
+      "expected": "EXC|System.FormulaEvaluationException|Division by zero",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R017",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('ABS(-2.5)').build().evaluate(new Account());",
+      "expected": "2.5",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R018",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('CEILING(2.1)').build().evaluate(new Account());",
+      "expected": "3",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R019",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('CEILING(-2.1)').build().evaluate(new Account());",
+      "expected": "-3",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R020",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('FLOOR(2.9)').build().evaluate(new Account());",
+      "expected": "2",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R021",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('FLOOR(-2.9)').build().evaluate(new Account());",
+      "expected": "-2",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R022",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('ROUND(1.235,2)').build().evaluate(new Account());",
+      "expected": "1.24",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R023",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('ROUND(-1.235,2)').build().evaluate(new Account());",
+      "expected": "-1.24",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R024",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('ROUND(123.4,-1)').build().evaluate(new Account());",
+      "expected": "120",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R025",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('MIN(3,-2,7)').build().evaluate(new Account());",
+      "expected": "-2",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R026",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('MAX(3,-2,7)').build().evaluate(new Account());",
+      "expected": "7",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R027",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('SQRT(9)').build().evaluate(new Account());",
+      "expected": "3.0",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R028",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('SQRT(-1)').build()!=null;",
+      "expected": "true",
+      "compile": false,
+      "group": "builder-errors/domain-build-only"
+    },
+    {
+      "id": "R029",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('EXP(0)').build().evaluate(new Account());",
+      "expected": "1.0",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R030",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('LN(1)').build().evaluate(new Account());",
+      "expected": "0.0",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R031",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('LN(0)').build()!=null;",
+      "expected": "true",
+      "compile": false,
+      "group": "builder-errors/domain-build-only"
+    },
+    {
+      "id": "R032",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('LOG(100)').build().evaluate(new Account());",
+      "expected": "2.0",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R033",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('POWER(2,3)').build().evaluate(new Account());",
+      "expected": "8.0",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R034",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('SIGN(-4)').build().evaluate(new Account());",
+      "expected": "EXC|System.FormulaValidationException|Incorrect number of parameters for function 'SIGN()'. Expected 3, received 1",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R035",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('SIGN(0)').build().evaluate(new Account());",
+      "expected": "EXC|System.FormulaValidationException|Incorrect number of parameters for function 'SIGN()'. Expected 3, received 1",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R036",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('SIGN(4)').build().evaluate(new Account());",
+      "expected": "EXC|System.FormulaValidationException|Incorrect number of parameters for function 'SIGN()'. Expected 3, received 1",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R037",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('IF(TRUE,7,1/0)').build().evaluate(new Account());",
+      "expected": "7",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R038",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('IF(FALSE,1/0,9)').build().evaluate(new Account());",
+      "expected": "9",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R039",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('CASE(2,1,10,2,20,99)').build().evaluate(new Account());",
+      "expected": "20",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R040",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('CASE(4,1,10,2,20,99)').build().evaluate(new Account());",
+      "expected": "99",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R041",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('LEN(\"hello\")').build().evaluate(new Account());",
+      "expected": "5",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R042",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('VALUE(\"12.50\")').build().evaluate(new Account());",
+      "expected": "12.50",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R043",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('VALUE(\"-7\")').build().evaluate(new Account());",
+      "expected": "-7",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R044",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('VALUE(\"abc\")').build()!=null;",
+      "expected": "true",
+      "compile": false,
+      "group": "builder-errors/domain-build-only"
+    },
+    {
+      "id": "R045",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('VALUE(\"\")').build().evaluate(new Account());",
+      "expected": "null",
+      "compile": false,
+      "group": "operators-functions/decimal"
+    },
+    {
+      "id": "R046",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('TRUE').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R047",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('FALSE').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "false",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R048",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('NOT(TRUE)').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "false",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R049",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('AND(TRUE,FALSE)').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "false",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R050",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('OR(FALSE,TRUE)').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R051",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('TRUE && FALSE').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "false",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R052",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('TRUE || FALSE').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R053",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('1=1').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R054",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('1<>2').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R055",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('1!=2').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R056",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('2>1').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R057",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('2>=2').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R058",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('1<2').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R059",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('1<=1').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R060",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('\"a\"=\"A\"').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "false",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R061",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('\"a\"<>\"b\"').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R062",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('CONTAINS(\"alphabet\",\"pha\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R063",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('BEGINS(\"alphabet\",\"alpha\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R064",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISNUMBER(\"12.5\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R065",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISNUMBER(\"oops\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "false",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R066",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(\"\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R067",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(\" \")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "false",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R068",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISNULL(\"\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "false",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R069",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('REGEX(\"abc12\",\"[a-z]+[0-9]+\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R070",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('IF(TRUE,FALSE,TRUE)').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "false",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R071",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISPICKVAL(Industry,\"Technology\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "true",
+      "compile": false,
+      "group": "operators-functions/boolean"
+    },
+    {
+      "id": "R072",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('\"hello\"').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "hello",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R073",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('\"left\" & \"right\"').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "leftright",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R074",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('\"left\" + \"right\"').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "leftright",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R075",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('LOWER(\"AbC\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "abc",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R076",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('UPPER(\"AbC\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "ABC",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R077",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('TRIM(\"  x  \")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "x",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R078",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('LEFT(\"abcdef\",3)').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "abc",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R079",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('LEFT(\"abcdef\",0)').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "null",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R080",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('RIGHT(\"abcdef\",2)').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "ef",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R081",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('MID(\"abcdef\",2,3)').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "bcd",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R082",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('MID(\"abc\",8,2)').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "null",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R083",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('SUBSTITUTE(\"aba\",\"a\",\"X\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "XbX",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R084",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('REPLACE(\"abcdef\",2,3,\"X\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "EXC|System.FormulaValidationException|Unknown function REPLACE. Check spelling.",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R085",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('LPAD(\"x\",3,\"0\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "00x",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R086",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('RPAD(\"x\",3,\"0\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "x00",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R087",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('TEXT(12.5)').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "12.5",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R088",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('TEXT(TRUE)').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "EXC|System.FormulaValidationException|Incorrect parameter type for function 'TEXT()'. Expected Number, Date, Date/Time, Picklist, received Boolean",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R089",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('TEXT(DATE(2024,2,29))').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "2024-02-29",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R090",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('TEXT(Industry)').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "Technology",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R091",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('IF(TRUE,\"yes\",\"no\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "yes",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R092",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('CASE(\"b\",\"a\",\"first\",\"b\",\"second\",\"other\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "second",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R093",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('BLANKVALUE(\"\",\"fallback\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "null",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R094",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('NULLVALUE(\"\",\"fallback\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "null",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R095",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('CASESAFEID(\"001000000000001\")').build().evaluate(new Account(Industry='Technology'));",
+      "expected": "001000000000001AAA",
+      "compile": false,
+      "group": "operators-functions/string"
+    },
+    {
+      "id": "R096",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATE).withFormula('DATE(2024,2,29)').build().evaluate(new Account());",
+      "expected": "2024-02-29 00:00:00",
+      "compile": false,
+      "group": "operators-functions/date"
+    },
+    {
+      "id": "R097",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATE).withFormula('DATE(2023,2,29)').build()!=null;",
+      "expected": "true",
+      "compile": false,
+      "group": "builder-errors/domain-build-only"
+    },
+    {
+      "id": "R098",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATE).withFormula('DATE(1900,1,1)').build().evaluate(new Account());",
+      "expected": "1900-01-01 00:00:00",
+      "compile": false,
+      "group": "operators-functions/date"
+    },
+    {
+      "id": "R099",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATE).withFormula('DATE(2024,12,31)+1').build().evaluate(new Account());",
+      "expected": "2025-01-01 00:00:00",
+      "compile": false,
+      "group": "operators-functions/date"
+    },
+    {
+      "id": "R100",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATE).withFormula('DATE(2024,3,1)-1').build().evaluate(new Account());",
+      "expected": "2024-02-29 00:00:00",
+      "compile": false,
+      "group": "operators-functions/date"
+    },
+    {
+      "id": "R101",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATE).withFormula('ADDMONTHS(DATE(2024,1,31),1)').build().evaluate(new Account());",
+      "expected": "2024-02-29 00:00:00",
+      "compile": false,
+      "group": "operators-functions/date"
+    },
+    {
+      "id": "R102",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATE).withFormula('ADDMONTHS(DATE(2024,2,29),12)').build().evaluate(new Account());",
+      "expected": "2025-02-28 00:00:00",
+      "compile": false,
+      "group": "operators-functions/date"
+    },
+    {
+      "id": "R103",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATE).withFormula('DATEVALUE(\"2024-02-29\")').build().evaluate(new Account());",
+      "expected": "2024-02-29 00:00:00",
+      "compile": false,
+      "group": "operators-functions/date"
+    },
+    {
+      "id": "R104",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATE).withFormula('DATEVALUE(\"bad-date\")').build().evaluate(new Account());",
+      "expected": "EXC|System.HandledException|Invalid year for DATEVALUE function",
+      "compile": false,
+      "group": "operators-functions/date"
+    },
+    {
+      "id": "R105",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATE).withFormula('DATEVALUE(DATETIMEVALUE(\"2024-02-29 12:30:00\"))').build().evaluate(new Account());",
+      "expected": "2024-02-29 00:00:00",
+      "compile": false,
+      "group": "operators-functions/date"
+    },
+    {
+      "id": "R106",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('YEAR(DATE(2024,2,29))').build().evaluate(new Account());",
+      "expected": "2024",
+      "compile": false,
+      "group": "operators-functions/date-to-decimal"
+    },
+    {
+      "id": "R107",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('MONTH(DATE(2024,2,29))').build().evaluate(new Account());",
+      "expected": "2",
+      "compile": false,
+      "group": "operators-functions/date-to-decimal"
+    },
+    {
+      "id": "R108",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('DAY(DATE(2024,2,29))').build().evaluate(new Account());",
+      "expected": "29",
+      "compile": false,
+      "group": "operators-functions/date-to-decimal"
+    },
+    {
+      "id": "R109",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('WEEKDAY(DATE(2024,2,29))').build().evaluate(new Account());",
+      "expected": "5",
+      "compile": false,
+      "group": "operators-functions/date-to-decimal"
+    },
+    {
+      "id": "R110",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('DATE(2024,3,1)-DATE(2024,2,28)').build().evaluate(new Account());",
+      "expected": "2",
+      "compile": false,
+      "group": "operators-functions/date-to-decimal"
+    },
+    {
+      "id": "R111",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATETIME).withFormula('DATETIMEVALUE(\"2024-02-29 12:30:00\")').build().evaluate(new Account());",
+      "expected": "2024-02-29 12:30:00",
+      "compile": false,
+      "group": "operators-functions/datetime"
+    },
+    {
+      "id": "R112",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATETIME).withFormula('DATETIMEVALUE(DATE(2024,2,29))').build().evaluate(new Account());",
+      "expected": "2024-02-29 00:00:00",
+      "compile": false,
+      "group": "operators-functions/datetime"
+    },
+    {
+      "id": "R113",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATETIME).withFormula('DATETIMEVALUE(\"bad-time\")').build().evaluate(new Account());",
+      "expected": "EXC|System.HandledException|Invalid year for DATEVALUE function",
+      "compile": false,
+      "group": "operators-functions/datetime"
+    },
+    {
+      "id": "R114",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATETIME).withFormula('DATETIMEVALUE(\"2024-01-01 00:00:00\")+0.5').build().evaluate(new Account());",
+      "expected": "2024-01-01 12:00:00",
+      "compile": false,
+      "group": "operators-functions/datetime"
+    },
+    {
+      "id": "R115",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.TIME).withFormula('TIMEVALUE(\"12:34:56.789\")').build().evaluate(new Account());",
+      "expected": "12:34:56.789Z",
+      "compile": false,
+      "group": "operators-functions/time"
+    },
+    {
+      "id": "R116",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.TIME).withFormula('TIMEVALUE(\"00:00:00.000\")').build().evaluate(new Account());",
+      "expected": "00:00:00.000Z",
+      "compile": false,
+      "group": "operators-functions/time"
+    },
+    {
+      "id": "R117",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.TIME).withFormula('TIMEVALUE(\"23:59:59.999\")').build().evaluate(new Account());",
+      "expected": "23:59:59.999Z",
+      "compile": false,
+      "group": "operators-functions/time"
+    },
+    {
+      "id": "R118",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.TIME).withFormula('TIMEVALUE(\"bad-time\")').build().evaluate(new Account());",
+      "expected": "EXC|System.HandledException|Invalid time format: bad-time",
+      "compile": false,
+      "group": "operators-functions/time"
+    },
+    {
+      "id": "R119",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.INTEGER).withFormula('1.5').build().evaluate(new Account());",
+      "expected": "1",
+      "compile": false,
+      "group": "operators-functions/integer"
+    },
+    {
+      "id": "R120",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.INTEGER).withFormula('2147483648').build().evaluate(new Account());",
+      "expected": "-2147483648",
+      "compile": false,
+      "group": "operators-functions/integer"
+    },
+    {
+      "id": "R121",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.LONG).withFormula('1.5').build().evaluate(new Account());",
+      "expected": "1",
+      "compile": false,
+      "group": "operators-functions/long"
+    },
+    {
+      "id": "R122",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.LONG).withFormula('2147483648').build().evaluate(new Account());",
+      "expected": "2147483648",
+      "compile": false,
+      "group": "operators-functions/long"
+    },
+    {
+      "id": "R123",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DOUBLE).withFormula('1.5').build().evaluate(new Account());",
+      "expected": "1.5",
+      "compile": false,
+      "group": "operators-functions/double"
+    },
+    {
+      "id": "R124",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DOUBLE).withFormula('2147483648').build().evaluate(new Account());",
+      "expected": "2.147483648E9",
+      "compile": false,
+      "group": "operators-functions/double"
+    },
+    {
+      "id": "R125",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('AnnualRevenue+1').build().evaluate(new Account(AnnualRevenue=null));",
+      "expected": "null",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R126",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(AnnualRevenue)').build().evaluate(new Account(AnnualRevenue=null));",
+      "expected": "true",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R127",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('BLANKVALUE(AnnualRevenue,9)').build().evaluate(new Account(AnnualRevenue=null));",
+      "expected": "9",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R128",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('AnnualRevenue+1').treatNumericNullAsZero(false).build().evaluate(new Account(AnnualRevenue=null));",
+      "expected": "null",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R129",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(AnnualRevenue)').treatNumericNullAsZero(false).build().evaluate(new Account(AnnualRevenue=null));",
+      "expected": "true",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R130",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('BLANKVALUE(AnnualRevenue,9)').treatNumericNullAsZero(false).build().evaluate(new Account(AnnualRevenue=null));",
+      "expected": "9",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R131",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('AnnualRevenue+1').treatNumericNullAsZero(true).build().evaluate(new Account(AnnualRevenue=null));",
+      "expected": "1",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R132",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(AnnualRevenue)').treatNumericNullAsZero(true).build().evaluate(new Account(AnnualRevenue=null));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R133",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('BLANKVALUE(AnnualRevenue,9)').treatNumericNullAsZero(true).build().evaluate(new Account(AnnualRevenue=null));",
+      "expected": "0",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R134",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('AnnualRevenue+1').build().evaluate(new Account(AnnualRevenue=0));",
+      "expected": "1.0",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R135",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(AnnualRevenue)').build().evaluate(new Account(AnnualRevenue=0));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R136",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('BLANKVALUE(AnnualRevenue,9)').build().evaluate(new Account(AnnualRevenue=0));",
+      "expected": "0.0",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R137",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('AnnualRevenue+1').treatNumericNullAsZero(false).build().evaluate(new Account(AnnualRevenue=0));",
+      "expected": "1.0",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R138",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(AnnualRevenue)').treatNumericNullAsZero(false).build().evaluate(new Account(AnnualRevenue=0));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R139",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('BLANKVALUE(AnnualRevenue,9)').treatNumericNullAsZero(false).build().evaluate(new Account(AnnualRevenue=0));",
+      "expected": "0.0",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R140",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('AnnualRevenue+1').treatNumericNullAsZero(true).build().evaluate(new Account(AnnualRevenue=0));",
+      "expected": "1.0",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R141",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(AnnualRevenue)').treatNumericNullAsZero(true).build().evaluate(new Account(AnnualRevenue=0));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R142",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('BLANKVALUE(AnnualRevenue,9)').treatNumericNullAsZero(true).build().evaluate(new Account(AnnualRevenue=0));",
+      "expected": "0.0",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R143",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('AnnualRevenue+1').build().evaluate(new Account(AnnualRevenue=-2.5));",
+      "expected": "-1.5",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R144",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(AnnualRevenue)').build().evaluate(new Account(AnnualRevenue=-2.5));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R145",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('BLANKVALUE(AnnualRevenue,9)').build().evaluate(new Account(AnnualRevenue=-2.5));",
+      "expected": "-2.5",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R146",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('AnnualRevenue+1').treatNumericNullAsZero(false).build().evaluate(new Account(AnnualRevenue=-2.5));",
+      "expected": "-1.5",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R147",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(AnnualRevenue)').treatNumericNullAsZero(false).build().evaluate(new Account(AnnualRevenue=-2.5));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R148",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('BLANKVALUE(AnnualRevenue,9)').treatNumericNullAsZero(false).build().evaluate(new Account(AnnualRevenue=-2.5));",
+      "expected": "-2.5",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R149",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('AnnualRevenue+1').treatNumericNullAsZero(true).build().evaluate(new Account(AnnualRevenue=-2.5));",
+      "expected": "-1.5",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R150",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(AnnualRevenue)').treatNumericNullAsZero(true).build().evaluate(new Account(AnnualRevenue=-2.5));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R151",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('BLANKVALUE(AnnualRevenue,9)').treatNumericNullAsZero(true).build().evaluate(new Account(AnnualRevenue=-2.5));",
+      "expected": "-2.5",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R152",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('AnnualRevenue+1').build().evaluate(new Account(AnnualRevenue=12.5));",
+      "expected": "13.5",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R153",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(AnnualRevenue)').build().evaluate(new Account(AnnualRevenue=12.5));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R154",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('BLANKVALUE(AnnualRevenue,9)').build().evaluate(new Account(AnnualRevenue=12.5));",
+      "expected": "12.5",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R155",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('AnnualRevenue+1').treatNumericNullAsZero(false).build().evaluate(new Account(AnnualRevenue=12.5));",
+      "expected": "13.5",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R156",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(AnnualRevenue)').treatNumericNullAsZero(false).build().evaluate(new Account(AnnualRevenue=12.5));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R157",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('BLANKVALUE(AnnualRevenue,9)').treatNumericNullAsZero(false).build().evaluate(new Account(AnnualRevenue=12.5));",
+      "expected": "12.5",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R158",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('AnnualRevenue+1').treatNumericNullAsZero(true).build().evaluate(new Account(AnnualRevenue=12.5));",
+      "expected": "13.5",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R159",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(AnnualRevenue)').treatNumericNullAsZero(true).build().evaluate(new Account(AnnualRevenue=12.5));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R160",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('BLANKVALUE(AnnualRevenue,9)').treatNumericNullAsZero(true).build().evaluate(new Account(AnnualRevenue=12.5));",
+      "expected": "12.5",
+      "compile": false,
+      "group": "null-blank/numeric"
+    },
+    {
+      "id": "R161",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(Name)').build().evaluate(new Account(Name=null));",
+      "expected": "true",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R162",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISNULL(Name)').build().evaluate(new Account(Name=null));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R163",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('BLANKVALUE(Name,\"fallback\")').build().evaluate(new Account(Name=null));",
+      "expected": "fallback",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R164",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('LEN(Name)').build().evaluate(new Account(Name=null));",
+      "expected": "0",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R165",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('Name & \"!\"').build().evaluate(new Account(Name=null));",
+      "expected": "!",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R166",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(Name)').build().evaluate(new Account(Name=''));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R167",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISNULL(Name)').build().evaluate(new Account(Name=''));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R168",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('BLANKVALUE(Name,\"fallback\")').build().evaluate(new Account(Name=''));",
+      "expected": "",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R169",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('LEN(Name)').build().evaluate(new Account(Name=''));",
+      "expected": "0",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R170",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('Name & \"!\"').build().evaluate(new Account(Name=''));",
+      "expected": "!",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R171",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(Name)').build().evaluate(new Account(Name=' '));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R172",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISNULL(Name)').build().evaluate(new Account(Name=' '));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R173",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('BLANKVALUE(Name,\"fallback\")').build().evaluate(new Account(Name=' '));",
+      "expected": " ",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R174",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('LEN(Name)').build().evaluate(new Account(Name=' '));",
+      "expected": "1",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R175",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('Name & \"!\"').build().evaluate(new Account(Name=' '));",
+      "expected": " !",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R176",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(Name)').build().evaluate(new Account(Name='AbC'));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R177",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISNULL(Name)').build().evaluate(new Account(Name='AbC'));",
+      "expected": "false",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R178",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('BLANKVALUE(Name,\"fallback\")').build().evaluate(new Account(Name='AbC'));",
+      "expected": "AbC",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R179",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('LEN(Name)').build().evaluate(new Account(Name='AbC'));",
+      "expected": "3",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R180",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('Name & \"!\"').build().evaluate(new Account(Name='AbC'));",
+      "expected": "AbC!",
+      "compile": false,
+      "group": "null-blank/text"
+    },
+    {
+      "id": "R181",
+      "code": "r=Formula.builder().withType(Contact.class).withReturnType(FormulaEval.FormulaReturnType.DATE).withFormula('Birthdate').build().evaluate(new Contact());",
+      "expected": "null",
+      "compile": false,
+      "group": "null-blank/date"
+    },
+    {
+      "id": "R182",
+      "code": "r=Formula.builder().withType(Contact.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('ISBLANK(Birthdate)').build().evaluate(new Contact());",
+      "expected": "true",
+      "compile": false,
+      "group": "null-blank/date"
+    },
+    {
+      "id": "R183",
+      "code": "r=Formula.builder().withType(Contact.class).withReturnType(FormulaEval.FormulaReturnType.DATE).withFormula('Birthdate+1').build().evaluate(new Contact());",
+      "expected": "null",
+      "compile": false,
+      "group": "null-blank/date"
+    },
+    {
+      "id": "R184",
+      "code": "r=Formula.builder().withType(Contact.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('TEXT(Birthdate)').build().evaluate(new Contact());",
+      "expected": "null",
+      "compile": false,
+      "group": "null-blank/date"
+    },
+    {
+      "id": "R185",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('1+').build().evaluate(new Account());",
+      "expected": "EXC|System.FormulaValidationException|Syntax error.  Found 'end of formula'",
+      "compile": false,
+      "group": "builder-errors/validation"
+    },
+    {
+      "id": "R186",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('NO_SUCH_FN(1)').build().evaluate(new Account());",
+      "expected": "EXC|System.FormulaValidationException|Unknown function NO_SUCH_FN. Check spelling.",
+      "compile": false,
+      "group": "builder-errors/validation"
+    },
+    {
+      "id": "R187",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('NoSuchField__c').build().evaluate(new Account());",
+      "expected": "EXC|System.FormulaValidationException|Could not access the following field: NoSuchField__c. Contact your administrator.",
+      "compile": false,
+      "group": "builder-errors/validation"
+    },
+    {
+      "id": "R188",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('\"text\"').build().evaluate(new Account());",
+      "expected": "EXC|System.FormulaValidationException|Formula result is data type (Text), incompatible with expected data type (Decimal).",
+      "compile": false,
+      "group": "builder-errors/validation"
+    },
+    {
+      "id": "R189",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('1').build().evaluate(new Account());",
+      "expected": "EXC|System.FormulaValidationException|Formula result is data type (Number), incompatible with expected data type (Boolean).",
+      "compile": false,
+      "group": "builder-errors/validation"
+    },
+    {
+      "id": "R190",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DATE).withFormula('TRUE').build().evaluate(new Account());",
+      "expected": "EXC|System.FormulaValidationException|Formula result is data type (Boolean), incompatible with expected data type (Date).",
+      "compile": false,
+      "group": "builder-errors/validation"
+    },
+    {
+      "id": "R191",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('IF(TRUE,1,\"x\")').build().evaluate(new Account());",
+      "expected": "EXC|System.FormulaValidationException|Incorrect parameter type for function 'IF()'. Expected Number, received Text",
+      "compile": false,
+      "group": "builder-errors/validation"
+    },
+    {
+      "id": "R192",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('LEFT(\"x\")').build().evaluate(new Account());",
+      "expected": "EXC|System.FormulaValidationException|Incorrect number of parameters for function 'LEFT()'. Expected 2, received 1",
+      "compile": false,
+      "group": "builder-errors/validation"
+    },
+    {
+      "id": "R193",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('').build().evaluate(new Account());",
+      "expected": "EXC|System.IllegalArgumentException|Formula text cannot be null or empty",
+      "compile": false,
+      "group": "builder-errors/validation"
+    },
+    {
+      "id": "R194",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('1 /* comment */ + 2').build().evaluate(new Account());",
+      "expected": "3",
+      "compile": false,
+      "group": "builder-errors/validation"
+    },
+    {
+      "id": "R195",
+      "code": "Object f=Formula.builder().build(); r=f!=null;",
+      "expected": "EXC|System.IllegalArgumentException|build() can be called only after all three required methods: withFormula(), withReturnType() and withType() have been called",
+      "compile": false,
+      "group": "builder-errors/configuration"
+    },
+    {
+      "id": "R196",
+      "code": "Object f=Formula.builder().withType(Account.class).withFormula('1').build(); r=f!=null;",
+      "expected": "EXC|System.IllegalArgumentException|build() can be called only after all three required methods: withFormula(), withReturnType() and withType() have been called",
+      "compile": false,
+      "group": "builder-errors/configuration"
+    },
+    {
+      "id": "R197",
+      "code": "Object f=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).build(); r=f!=null;",
+      "expected": "EXC|System.IllegalArgumentException|build() can be called only after all three required methods: withFormula(), withReturnType() and withType() have been called",
+      "compile": false,
+      "group": "builder-errors/configuration"
+    },
+    {
+      "id": "R198",
+      "code": "Object f=Formula.builder().withFormula('1').withReturnType(FormulaEval.FormulaReturnType.DECIMAL).build(); r=f!=null;",
+      "expected": "EXC|System.IllegalArgumentException|build() can be called only after all three required methods: withFormula(), withReturnType() and withType() have been called",
+      "compile": false,
+      "group": "builder-errors/configuration"
+    },
+    {
+      "id": "R199",
+      "code": "Object f=Formula.builder().withType(Account.class).withReturnType(null).withFormula('1').build(); r=f!=null;",
+      "expected": "EXC|System.IllegalArgumentException|Formula return type cannot be null",
+      "compile": false,
+      "group": "builder-errors/configuration"
+    },
+    {
+      "id": "R200",
+      "code": "Object f=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula(null).build(); r=f!=null;",
+      "expected": "EXC|System.IllegalArgumentException|Formula text cannot be null or empty",
+      "compile": false,
+      "group": "builder-errors/configuration"
+    },
+    {
+      "id": "R201",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('Name').build().evaluate(null);",
+      "expected": "EXC|System.IllegalArgumentException|evaluate method parameter cannot be null",
+      "compile": false,
+      "group": "builder-errors/context"
+    },
+    {
+      "id": "R202",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('Name').build().evaluate(new Contact(LastName='x'));",
+      "expected": "null",
+      "compile": false,
+      "group": "builder-errors/context"
+    },
+    {
+      "id": "R203",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('Name').build().evaluate(new Account(Name='ok'));",
+      "expected": "ok",
+      "compile": false,
+      "group": "builder-errors/context"
+    },
+    {
+      "id": "R204",
+      "code": "List<String> fields=new List<String>(Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('Name').build().getReferencedFields()); fields.sort(); r=String.join(fields,'|');",
+      "expected": "Name",
+      "compile": false,
+      "group": "builder/referenced-fields"
+    },
+    {
+      "id": "R205",
+      "code": "List<String> fields=new List<String>(Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('Name & Website').build().getReferencedFields()); fields.sort(); r=String.join(fields,'|');",
+      "expected": "Name|Website",
+      "compile": false,
+      "group": "builder/referenced-fields"
+    },
+    {
+      "id": "R206",
+      "code": "List<String> fields=new List<String>(Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('AnnualRevenue+NumberOfEmployees').build().getReferencedFields()); fields.sort(); r=String.join(fields,'|');",
+      "expected": "AnnualRevenue|NumberOfEmployees",
+      "compile": false,
+      "group": "builder/referenced-fields"
+    },
+    {
+      "id": "R207",
+      "code": "List<String> fields=new List<String>(Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('Name & Name').build().getReferencedFields()); fields.sort(); r=String.join(fields,'|');",
+      "expected": "Name",
+      "compile": false,
+      "group": "builder/referenced-fields"
+    },
+    {
+      "id": "R208",
+      "code": "List<String> fields=new List<String>(Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('1+2').build().getReferencedFields()); fields.sort(); r=String.join(fields,'|');",
+      "expected": "",
+      "compile": false,
+      "group": "builder/referenced-fields"
+    },
+    {
+      "id": "R209",
+      "code": "List<String> xs=new List<String>(); for(FormulaEval.FormulaReturnType t:FormulaEval.FormulaReturnType.values()){xs.add(String.valueOf(t));} xs.sort(); r=String.join(xs,'|');",
+      "expected": "BOOLEAN|DATE|DATETIME|DECIMAL|DOUBLE|ID|INTEGER|LONG|STRING|TIME",
+      "compile": false,
+      "group": "builder/return-types"
+    },
+    {
+      "id": "R210",
+      "code": "FormulaEval.FormulaInstance f=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('AnnualRevenue*2').build(); r=String.valueOf(f.evaluate(new Account(AnnualRevenue=2)))+'|'+String.valueOf(f.evaluate(new Account(AnnualRevenue=3)));",
+      "expected": "4.0|6.0",
+      "compile": false,
+      "group": "builder/reuse"
+    },
+    {
+      "id": "R211",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('{!Name} / {!Website}').parseAsTemplate(false).build().evaluate(new Account(Name='A',Website='B'));",
+      "expected": "EXC|System.FormulaValidationException|Incorrect parameter type for operator '/'. Expected Number, received Text",
+      "compile": false,
+      "group": "builder/template"
+    },
+    {
+      "id": "R212",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('{!Name} / {!Website}').parseAsTemplate(true).build().evaluate(new Account(Name='A',Website='B'));",
+      "expected": "A / B",
+      "compile": false,
+      "group": "builder/template"
+    },
+    {
+      "id": "R213",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('TEXT(DATE(2024,2,29))').parseAsTemplate(true).build().evaluate(new Account());",
+      "expected": "TEXT(DATE(2024,2,29))",
+      "compile": false,
+      "group": "builder/template-return-type"
+    },
+    {
+      "id": "R214",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('\"literal\"').parseAsTemplate(true).build().evaluate(new Account());",
+      "expected": "\"literal\"",
+      "compile": false,
+      "group": "builder/template-return-type"
+    },
+    {
+      "id": "R215",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('1+2').parseAsTemplate(true).build().evaluate(new Account());",
+      "expected": "EXC|System.IllegalArgumentException|The only supported return type for template mode is STRING.",
+      "compile": false,
+      "group": "builder/template-return-type"
+    },
+    {
+      "id": "R216",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.ID).withFormula('Id').build().evaluate(new Account(Id='001000000000001'));",
+      "expected": "001000000000001AAA",
+      "compile": false,
+      "group": "operators-functions/id"
+    },
+    {
+      "id": "R217",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.ID).withFormula('Id').build().evaluate(new Account());",
+      "expected": "null",
+      "compile": false,
+      "group": "null-blank/id"
+    },
+    {
+      "id": "R218",
+      "code": "r=Formula.builder().withType(Account.SObjectType).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('Name').build().evaluate(new Account(Name='shape'));",
+      "expected": "shape",
+      "compile": false,
+      "group": "builder/sobjecttype"
+    },
+    {
+      "id": "R219",
+      "code": "FormulaEval.FormulaBuilder b=Formula.builder(); r=b.withType(Account.class)===b;",
+      "expected": "true",
+      "compile": false,
+      "group": "builder/fluent-identity"
+    },
+    {
+      "id": "R220",
+      "code": "A25FormulaContext x=new A25FormulaContext(); x.amount=3; x.label='owned'; x.flag=true; x.day=Date.newInstance(2024,2,29); x.account=new Account(Name='parent'); r=Formula.builder().withType(A25FormulaContext.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('amount*2').build().evaluate(x);",
+      "expected": "6",
+      "compile": false,
+      "group": "builder/apex-context"
+    },
+    {
+      "id": "R221",
+      "code": "A25FormulaContext x=new A25FormulaContext(); x.amount=3; x.label='owned'; x.flag=true; x.day=Date.newInstance(2024,2,29); x.account=new Account(Name='parent'); r=Formula.builder().withType(A25FormulaContext.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('label & \"!\"').build().evaluate(x);",
+      "expected": "owned!",
+      "compile": false,
+      "group": "builder/apex-context"
+    },
+    {
+      "id": "R222",
+      "code": "A25FormulaContext x=new A25FormulaContext(); x.amount=3; x.label='owned'; x.flag=true; x.day=Date.newInstance(2024,2,29); x.account=new Account(Name='parent'); r=Formula.builder().withType(A25FormulaContext.class).withReturnType(FormulaEval.FormulaReturnType.BOOLEAN).withFormula('flag').build().evaluate(x);",
+      "expected": "true",
+      "compile": false,
+      "group": "builder/apex-context"
+    },
+    {
+      "id": "R223",
+      "code": "A25FormulaContext x=new A25FormulaContext(); x.amount=3; x.label='owned'; x.flag=true; x.day=Date.newInstance(2024,2,29); x.account=new Account(Name='parent'); r=Formula.builder().withType(A25FormulaContext.class).withReturnType(FormulaEval.FormulaReturnType.DATE).withFormula('day+1').build().evaluate(x);",
+      "expected": "2024-03-01 00:00:00",
+      "compile": false,
+      "group": "builder/apex-context"
+    },
+    {
+      "id": "R224",
+      "code": "A25FormulaContext x=new A25FormulaContext(); x.amount=3; x.label='owned'; x.flag=true; x.day=Date.newInstance(2024,2,29); x.account=new Account(Name='parent'); r=Formula.builder().withType(A25FormulaContext.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('account.Name').build().evaluate(x);",
+      "expected": "parent",
+      "compile": false,
+      "group": "builder/apex-context"
+    },
+    {
+      "id": "R225",
+      "code": "r=Formula.builder().withType(A25FormulaContext.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('amount+1').build().evaluate(new A25FormulaContext());",
+      "expected": "null",
+      "compile": false,
+      "group": "builder/apex-context-null"
+    },
+    {
+      "id": "R226",
+      "code": "r=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('1+2').withGlobalVariables(new List<FormulaEval.FormulaGlobal>()).build().evaluate(new Account());",
+      "expected": "EXC|System.IllegalArgumentException|Formula globals list cannot be null or empty",
+      "compile": false,
+      "group": "builder/empty-globals"
+    },
+    {
+      "id": "R227",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=null,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Double__c;",
+      "expected": "null",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R228",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=null,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Display__c;",
+      "expected": "abc",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R229",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=null,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Positive__c;",
+      "expected": "false",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R230",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=null,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.NextDay__c;",
+      "expected": "2024-03-01 00:00:00",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R231",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=null,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Midnight__c;",
+      "expected": "2024-02-29 00:00:00",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R232",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=null,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Divide__c;",
+      "expected": "null",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R233",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=0,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Double__c;",
+      "expected": "0",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R234",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=0,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Display__c;",
+      "expected": "abc",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R235",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=0,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Positive__c;",
+      "expected": "false",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R236",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=0,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.NextDay__c;",
+      "expected": "2024-03-01 00:00:00",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R237",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=0,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Midnight__c;",
+      "expected": "2024-02-29 00:00:00",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R238",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=0,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Divide__c;",
+      "expected": "null",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R239",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=-2,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Double__c;",
+      "expected": "-4",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R240",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=-2,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Display__c;",
+      "expected": "abc",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R241",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=-2,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Positive__c;",
+      "expected": "false",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R242",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=-2,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.NextDay__c;",
+      "expected": "2024-03-01 00:00:00",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R243",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=-2,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Midnight__c;",
+      "expected": "2024-02-29 00:00:00",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R244",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=-2,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Divide__c;",
+      "expected": "-0.5",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R245",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=3.25,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Double__c;",
+      "expected": "6.50",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R246",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=3.25,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Display__c;",
+      "expected": "abc",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R247",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=3.25,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Positive__c;",
+      "expected": "true",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R248",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=3.25,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.NextDay__c;",
+      "expected": "2024-03-01 00:00:00",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R249",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=3.25,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Midnight__c;",
+      "expected": "2024-02-29 00:00:00",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R250",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Name='owned',Amount__c=3.25,Text__c='abc',Day__c=Date.newInstance(2024,2,29)); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Divide__c;",
+      "expected": "0.307692",
+      "compile": false,
+      "group": "recalculate/field-values"
+    },
+    {
+      "id": "R251",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Text__c=null,Amount__c=2); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Display__c;",
+      "expected": "blank",
+      "compile": false,
+      "group": "recalculate/null-blank"
+    },
+    {
+      "id": "R252",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Text__c='',Amount__c=2); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Display__c;",
+      "expected": "blank",
+      "compile": false,
+      "group": "recalculate/null-blank"
+    },
+    {
+      "id": "R253",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Text__c=' ',Amount__c=2); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Display__c;",
+      "expected": "blank",
+      "compile": false,
+      "group": "recalculate/null-blank"
+    },
+    {
+      "id": "R254",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Text__c='value',Amount__c=2); Formula.recalculateFormulas(new List<SObject>{x}); r=x.Display__c;",
+      "expected": "value",
+      "compile": false,
+      "group": "recalculate/null-blank"
+    },
+    {
+      "id": "R255",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=0); List<FormulaRecalcResult> results=Formula.recalculateFormulas(new List<SObject>{x}); r=results[0].isSuccess();",
+      "expected": "false",
+      "compile": false,
+      "group": "recalculate/result-dto"
+    },
+    {
+      "id": "R256",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=0); List<FormulaRecalcResult> results=Formula.recalculateFormulas(new List<SObject>{x}); r=results[0].getSObject()===x;",
+      "expected": "true",
+      "compile": false,
+      "group": "recalculate/result-dto"
+    },
+    {
+      "id": "R257",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=0); List<FormulaRecalcResult> results=Formula.recalculateFormulas(new List<SObject>{x}); r=results[0].getErrors().size();",
+      "expected": "1",
+      "compile": false,
+      "group": "recalculate/result-dto"
+    },
+    {
+      "id": "R258",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=0); List<FormulaRecalcResult> results=Formula.recalculateFormulas(new List<SObject>{x}); List<String> errors=new List<String>(); for(FormulaRecalcFieldError e:results[0].getErrors()){errors.add(e.getFieldName()+'|'+e.getFieldError());} errors.sort(); r=String.join(errors,';');",
+      "expected": "Divide|Division by zero",
+      "compile": false,
+      "group": "recalculate/error-dto"
+    },
+    {
+      "id": "R259",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=2); List<FormulaRecalcResult> results=Formula.recalculateFormulas(new List<SObject>{x}); r=results[0].isSuccess();",
+      "expected": "true",
+      "compile": false,
+      "group": "recalculate/result-dto"
+    },
+    {
+      "id": "R260",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=2); List<FormulaRecalcResult> results=Formula.recalculateFormulas(new List<SObject>{x}); r=results[0].getSObject()===x;",
+      "expected": "true",
+      "compile": false,
+      "group": "recalculate/result-dto"
+    },
+    {
+      "id": "R261",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=2); List<FormulaRecalcResult> results=Formula.recalculateFormulas(new List<SObject>{x}); r=results[0].getErrors().size();",
+      "expected": "0",
+      "compile": false,
+      "group": "recalculate/result-dto"
+    },
+    {
+      "id": "R262",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=2); List<FormulaRecalcResult> results=Formula.recalculateFormulas(new List<SObject>{x}); List<String> errors=new List<String>(); for(FormulaRecalcFieldError e:results[0].getErrors()){errors.add(e.getFieldName()+'|'+e.getFieldError());} errors.sort(); r=String.join(errors,';');",
+      "expected": "",
+      "compile": false,
+      "group": "recalculate/error-dto"
+    },
+    {
+      "id": "R263",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=null); List<FormulaRecalcResult> results=Formula.recalculateFormulas(new List<SObject>{x}); r=results[0].isSuccess();",
+      "expected": "true",
+      "compile": false,
+      "group": "recalculate/result-dto"
+    },
+    {
+      "id": "R264",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=null); List<FormulaRecalcResult> results=Formula.recalculateFormulas(new List<SObject>{x}); r=results[0].getSObject()===x;",
+      "expected": "true",
+      "compile": false,
+      "group": "recalculate/result-dto"
+    },
+    {
+      "id": "R265",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=null); List<FormulaRecalcResult> results=Formula.recalculateFormulas(new List<SObject>{x}); r=results[0].getErrors().size();",
+      "expected": "0",
+      "compile": false,
+      "group": "recalculate/result-dto"
+    },
+    {
+      "id": "R266",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=null); List<FormulaRecalcResult> results=Formula.recalculateFormulas(new List<SObject>{x}); List<String> errors=new List<String>(); for(FormulaRecalcFieldError e:results[0].getErrors()){errors.add(e.getFieldName()+'|'+e.getFieldError());} errors.sort(); r=String.join(errors,';');",
+      "expected": "",
+      "compile": false,
+      "group": "recalculate/error-dto"
+    },
+    {
+      "id": "R267",
+      "code": "r=Formula.recalculateFormulas(new List<SObject>()).size();",
+      "expected": "0",
+      "compile": false,
+      "group": "recalculate/list-mutation-boundaries"
+    },
+    {
+      "id": "R268",
+      "code": "r=Formula.recalculateFormulas(null).size();",
+      "expected": "EXC|System.NullPointerException|Expected a non-null list of SObjects",
+      "compile": false,
+      "group": "recalculate/list-mutation-boundaries"
+    },
+    {
+      "id": "R269",
+      "code": "r=Formula.recalculateFormulas(new List<SObject>{null}).size();",
+      "expected": "EXC|System.IllegalArgumentException|Cannot recalculate formulas with null in set of entities",
+      "compile": false,
+      "group": "recalculate/list-mutation-boundaries"
+    },
+    {
+      "id": "R270",
+      "code": "Account x=new Account(Name='A'); List<FormulaRecalcResult> z=Formula.recalculateFormulas(new List<SObject>{x}); r=String.valueOf(z[0].isSuccess())+'|'+z[0].getErrors().size();",
+      "expected": "EXC|System.ListException|List index out of bounds: 0",
+      "compile": false,
+      "group": "recalculate/list-mutation-boundaries"
+    },
+    {
+      "id": "R271",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=2); Formula.recalculateFormulas(new List<SObject>{x}); x.Amount__c=7; Formula.recalculateFormulas(new List<SObject>{x}); r=x.Double__c;",
+      "expected": "14",
+      "compile": false,
+      "group": "recalculate/list-mutation-boundaries"
+    },
+    {
+      "id": "R272",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=2); r=Formula.recalculateFormulas(new List<SObject>{x,x}).size();",
+      "expected": "2",
+      "compile": false,
+      "group": "recalculate/list-mutation-boundaries"
+    },
+    {
+      "id": "R273",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=2); A25FormulaProbe__c y=new A25FormulaProbe__c(Amount__c=3); List<FormulaRecalcResult> z=Formula.recalculateFormulas(new List<SObject>{x,y}); r=String.valueOf(z[0].getSObject()==x)+'|'+String.valueOf(z[1].getSObject()==y)+'|'+x.Double__c+'|'+y.Double__c;",
+      "expected": "true|true|4|6",
+      "compile": false,
+      "group": "recalculate/list-mutation-boundaries"
+    },
+    {
+      "id": "R274",
+      "code": "A25FormulaProbe__c seed=new A25FormulaProbe__c(Name='A25-owned',Amount__c=2); insert seed; A25FormulaProbe__c x=[SELECT Id,Double__c FROM A25FormulaProbe__c WHERE Id=:seed.Id]; x.Amount__c=5; Formula.recalculateFormulas(new List<SObject>{x}); delete seed; r=x.Double__c;",
+      "expected": "10",
+      "compile": false,
+      "group": "recalculate/persisted-record"
+    },
+    {
+      "id": "R275",
+      "code": "A25FormulaProbe__c seed=new A25FormulaProbe__c(Name='A25-owned',Amount__c=2); insert seed; A25FormulaProbe__c x=[SELECT Id,Amount__c FROM A25FormulaProbe__c WHERE Id=:seed.Id]; x.Amount__c=5; Formula.recalculateFormulas(new List<SObject>{x}); delete seed; r=x.Double__c;",
+      "expected": "10",
+      "compile": false,
+      "group": "recalculate/persisted-record"
+    },
+    {
+      "id": "R276",
+      "code": "A25FormulaProbe__c seed=new A25FormulaProbe__c(Name='A25-owned',Amount__c=2); insert seed; A25FormulaProbe__c x=[SELECT Id,Amount__c,Double__c FROM A25FormulaProbe__c WHERE Id=:seed.Id]; x.Amount__c=5; Formula.recalculateFormulas(new List<SObject>{x}); delete seed; r=x.Double__c;",
+      "expected": "10",
+      "compile": false,
+      "group": "recalculate/persisted-record"
+    },
+    {
+      "id": "R277",
+      "code": "FormulaEval.FormulaInstance f=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.STRING).withFormula('Parent.Name').treatNumericNullAsZero(false).build(); Account x=new Account(); x.Parent=new Account(Name='A25-parent'); r=String.valueOf(f!=null)+'|'+String.valueOf(f.evaluate(x))+'|'+String.valueOf(f.evaluate(new Account()));",
+      "expected": "true|A25-parent|null",
+      "compile": false,
+      "group": "builder/sobject-relationship-context"
+    },
+    {
+      "id": "R278",
+      "code": "FormulaEval.FormulaInstance f=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('Parent.AnnualRevenue*2').treatNumericNullAsZero(false).build(); Account x=new Account(); x.Parent=new Account(AnnualRevenue=3); r=String.valueOf(f!=null)+'|'+String.valueOf(f.evaluate(x))+'|'+String.valueOf(f.evaluate(new Account()));",
+      "expected": "true|6.0|null",
+      "compile": false,
+      "group": "builder/sobject-relationship-context"
+    },
+    {
+      "id": "C001",
+      "code": "Object r=Formula.builder()!=null; pq.out('C001',r);",
+      "expected": "true",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C002",
+      "code": "FormulaEval.FormulaBuilder b=Formula.builder(); Object r=b!=null; pq.out('C002',r);",
+      "expected": "true",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C003",
+      "code": "FormulaEval.FormulaInstance f=Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('1').build(); Object r=f!=null; pq.out('C003',r);",
+      "expected": "true",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C004",
+      "code": "List<FormulaRecalcResult> z=Formula.recalculateFormulas(new List<SObject>()); Object r=z.size(); pq.out('C004',r);",
+      "expected": "0",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C005",
+      "code": "FormulaRecalcFieldError e; Object r=e==null; pq.out('C005',r);",
+      "expected": "true",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C006",
+      "code": "FormulaEval.FormulaReturnType t=FormulaEval.FormulaReturnType.ID; Object r=String.valueOf(t); pq.out('C006',r);",
+      "expected": "ID",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C007",
+      "code": "FormulaEval.FormulaInstance f=new FormulaEval.FormulaInstance(); Object r=f; pq.out('C007',r);",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [formulaeval.FormulaInstance].<Constructor>()",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C008",
+      "code": "Object r=Formula.builder().withReturnType('DECIMAL'); pq.out('C008',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void withReturnType(String) from the type formulaeval.FormulaBuilder",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C009",
+      "code": "Object r=Formula.builder().withType('Account'); pq.out('C009',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void withType(String) from the type formulaeval.FormulaBuilder",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C010",
+      "code": "Object r=Formula.builder().withFormula(1); pq.out('C010',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void withFormula(Integer) from the type formulaeval.FormulaBuilder",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C011",
+      "code": "Object r=Formula.builder().treatNumericNullAsZero(1); pq.out('C011',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void treatNumericNullAsZero(Integer) from the type formulaeval.FormulaBuilder",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C012",
+      "code": "Object r=Formula.recalculateFormulas(new List<Integer>{1}); pq.out('C012',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void recalculateFormulas(List<Integer>) from the type System.Formula",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C013",
+      "code": "FormulaRecalcResult z=new FormulaRecalcResult(); Object r=z; pq.out('C013',r);",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.FormulaRecalcResult].<Constructor>()",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C014",
+      "code": "FormulaRecalcFieldError e=new FormulaRecalcFieldError(); Object r=e; pq.out('C014',r);",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.FormulaRecalcFieldError].<Constructor>()",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C015",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Double__c=3); Object r=x; pq.out('C015',r);",
+      "expected": "COMPILE_ERROR\tline 6: Field is not writeable: A25FormulaProbe__c.Double__c",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C016",
+      "code": "FormulaEval.FormulaValidationException e; Object r=e==null; pq.out('C016',r);",
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: FormulaEval.FormulaValidationException",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    },
+    {
+      "id": "C017",
+      "code": "FormulaEval.FormulaEvaluationException e; Object r=e==null; pq.out('C017',r);",
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: FormulaEval.FormulaEvaluationException",
+      "compile": true,
+      "group": "compile/type-shape-and-errors"
+    }
+  ],
+  "buildOnlyRows": [
+    "R028",
+    "R031",
+    "R044",
+    "R097"
+  ],
+  "ticketRows": {},
+  "controls": [
+    {
+      "id": "F001",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(); x.Double__c=3; Object r=x.Double__c; pq.out('F001',r);",
+      "expected": "COMPILE_ERROR\tline 6: Field is not writeable: A25FormulaProbe__c.Double__c",
+      "compile": true
+    },
+    {
+      "id": "F002",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Display__c='x'); Object r=x; pq.out('F002',r);",
+      "expected": "COMPILE_ERROR\tline 6: Field is not writeable: A25FormulaProbe__c.Display__c",
+      "compile": true
+    },
+    {
+      "id": "F003",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=3); x.Amount__c=4; Object r=x.Amount__c; pq.out('F003',r);",
+      "expected": "4",
+      "compile": true
+    },
+    {
+      "id": "F004",
+      "code": "System.FormulaValidationException e; Object r=e==null; pq.out('F004',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "F005",
+      "code": "System.FormulaEvaluationException e; Object r=e==null; pq.out('F005',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "N001",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=3); String before=String.valueOf(x.Amount__c)+'|'+x.Amount__c.scale(); x.Amount__c=4; r=before+'|'+String.valueOf(x.Amount__c)+'|'+x.Amount__c.scale()+'|'+String.valueOf((Object)x.Amount__c);",
+      "expected": "3|0|4|0|4",
+      "compile": false
+    },
+    {
+      "id": "N002",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=4.00); String literal=String.valueOf(x.Amount__c)+'|'+x.Amount__c.scale(); Decimal d=4; x.Amount__c=d; String decimalValue=String.valueOf(x.Amount__c)+'|'+x.Amount__c.scale(); Double n=4; x.Amount__c=n; r=literal+'|'+decimalValue+'|'+String.valueOf(x.Amount__c)+'|'+x.Amount__c.scale();",
+      "expected": "4.00|2|4|0|4.0|1",
+      "compile": false
+    },
+    {
+      "id": "N003",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=3); x.Amount__c=null; Account a=new Account(AnnualRevenue=3,NumberOfEmployees=3); a.AnnualRevenue=4; a.NumberOfEmployees=4; r=String.valueOf(x.Amount__c)+'|'+String.valueOf(a.AnnualRevenue)+'|'+a.AnnualRevenue.scale()+'|'+String.valueOf(a.NumberOfEmployees);",
+      "expected": "null|4|0|4",
+      "compile": false
+    },
+    {
+      "id": "N004",
+      "code": "Schema.DescribeFieldResult f=A25FormulaProbe__c.Amount__c.getDescribe(); String observedText; try {A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=3); x.Amount__c=4; Object value=x.Amount__c; observedText=String.valueOf(value);} catch(Exception e) {observedText='EXC|'+e.getTypeName()+'|'+e.getMessage();} System.assert('4'.equals(observedText)); r=String.valueOf(f.getType())+'|'+f.getPrecision()+'|'+f.getScale()+'|'+f.isCalculated()+'|'+observedText;",
+      "expected": "DOUBLE|16|2|false|4",
+      "compile": false
+    },
+    {
+      "id": "N005",
+      "code": "Savepoint s=Database.setSavepoint(); A25FormulaProbe__c x=new A25FormulaProbe__c(Name='A25-number-neighbour',Amount__c=3); insert x; A25FormulaProbe__c y=[SELECT Amount__c FROM A25FormulaProbe__c WHERE Id=:x.Id]; r=String.valueOf(x.Amount__c)+'|'+x.Amount__c.scale()+'|'+String.valueOf(y.Amount__c)+'|'+y.Amount__c.scale(); Database.rollback(s);",
+      "expected": "3|0|3.00|2",
+      "compile": false
+    },
+    {
+      "id": "N006",
+      "code": "A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=100); r=String.valueOf(x.Amount__c)+'|'+x.Amount__c.scale();",
+      "expected": "100|0",
+      "compile": false
+    },
+    {
+      "id": "N007",
+      "code": "Double large=Double.valueOf('100000000'); A25FormulaProbe__c x=new A25FormulaProbe__c(Amount__c=large); String largeValue=String.valueOf(x.Amount__c)+'|'+x.Amount__c.scale(); Double small=Double.valueOf('0.0001'); x.Amount__c=small; String smallValue=String.valueOf(x.Amount__c)+'|'+x.Amount__c.scale(); Double fraction=Double.valueOf('4.5'); x.put('Amount__c',fraction); String fractionalValue=String.valueOf(x.Amount__c)+'|'+x.Amount__c.scale(); Double integral=4; x.put('Amount__c',integral); r=largeValue+'|'+smallValue+'|'+fractionalValue+'|'+String.valueOf(x.get('Amount__c'))+'|'+x.Amount__c.scale();",
+      "expected": "1.0E+8|-7|0.00010|5|4.5|1|4.0|1",
+      "compile": false
+    }
+  ]
+}

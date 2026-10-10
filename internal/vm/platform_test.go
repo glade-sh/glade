@@ -2,6 +2,7 @@ package vm
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -35,6 +36,36 @@ func TestExecWebStoreContextGetCommerceContextUnsupported(t *testing.T) {
 	}
 	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), `unsupported call "WebStoreContext.getCommerceContext local commerce context service"`) {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestExecChangeEventSObjectGetChangeEventHeader(t *testing.T) {
+	program, err := CompileAnonymous(`
+EventBus.ChangeEventHeader header = new EventBus.ChangeEventHeader();
+AccountChangeEvent eventRecord = new AccountChangeEvent(ChangeEventHeader = header);
+System.assertEquals(header, eventRecord.get('ChangeEventHeader'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecUnresolvedFlowInterviewClassLiteralUsesBaseTypeName(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type flowType = Flow.Interview.SomeBogusClassWhichDoesNotExist.class;
+System.assertEquals('Flow.Interview', flowType.getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -81,12 +112,12 @@ System.assert(Limits.getCpuTime() > 0);
 	}
 }
 
-func TestExecCustomMetadataSOQLDoesNotSpendQueryLimits(t *testing.T) {
+func TestExecCustomMetadataSOQLExemptsQueriesButCountsRows(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Feature__mdt> rows = [SELECT Id, DeveloperName FROM Feature__mdt];
 System.assertEquals(1, rows.size());
 System.assertEquals(0, Limits.getQueries());
-System.assertEquals(0, Limits.getQueryRows());
+System.assertEquals(1, Limits.getQueryRows());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -444,11 +475,7 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			src:  `Canvas.LifecycleHandler.onRender(null);`,
 			want: `unsupported call "Canvas.LifecycleHandler.onRender local canvas app integration surface"`,
 		},
-		{
-			name: "continuation static",
-			src:  `Continuation.getResponse('request-one');`,
-			want: `unsupported call "Continuation.getResponse local continuation callout surface"`,
-		},
+		// A40 R232: an unknown response label returns null, not a boundary error.
 		{
 			name: "continuation add request",
 			src:  `Continuation.addHttpRequest(null, null);`,
@@ -605,6 +632,32 @@ System.assertEquals(account.Id, inlineRows[0].Id);
 	}
 	org.Objects["Contact"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{APIName: "Contact", KeyPrefix: "003", Fields: map[string]storage.Field{"LastName": {APIName: "LastName", Type: storage.FieldString}, "Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSystemQualifiedSearchQueryUsesFixedSearchResults(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Qualified search');
+insert account;
+System.Test.setFixedSearchResults(new List<Id>{account.Id});
+List<List<SObject>> rows = System.Search.query('FIND {Qualified search} RETURNING Account(Id, Name)');
+System.assertEquals(1, rows.size());
+System.assertEquals(1, rows[0].size());
+System.assertEquals(account.Id, rows[0][0].Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
 		Records:    map[storage.ID]storage.Record{},
 	}
 	machine.SetOrg(&org)
@@ -975,8 +1028,9 @@ System.assertEquals('Hot Label', rows[0].get('ratingLabel'));
 }
 
 func TestExecSearchQueryReturnsDeterministicEmptyRows(t *testing.T) {
+	// R195 rejects explicit null access; R192 accepts the one-argument query.
 	program, err := CompileAnonymous(`
-List<List<SObject>> rows = Search.query('FIND {Missing*} IN ALL FIELDS RETURNING Account(Id), Contact(Id)', null);
+List<List<SObject>> rows = Search.query('FIND {Missing*} IN ALL FIELDS RETURNING Account(Id), Contact(Id)');
 System.assertEquals(2, rows.size());
 System.assertEquals(0, rows[0].size());
 System.assertEquals(0, rows[1].size());
@@ -992,6 +1046,7 @@ System.assertEquals(0, rows[1].size());
 }
 
 func TestExecMetadataDeployContainerLocalModel(t *testing.T) {
+	// A30 native J001 records the native assertion expectations.
 	program, err := CompileAnonymous(`
 Metadata.DeployContainer container = new Metadata.DeployContainer();
 Metadata.CustomMetadata item = new Metadata.CustomMetadata();
@@ -1011,7 +1066,7 @@ createdValue.value = true;
 created.values.add(createdValue);
 container.addMetadata(created);
 Id deploymentId = Metadata.Operations.enqueueDeployment(container, null);
-System.assertEquals('0Af000000000001', (String)deploymentId);
+System.assertEquals('0Af000000000001CAA', (String)deploymentId);
 Metadata.DeployResult deployStatus = Metadata.Operations.checkDeployStatus(deploymentId, true);
 System.assert(deployStatus.done);
 System.assert(deployStatus.success);
@@ -1081,7 +1136,8 @@ System.assertEquals('Succeeded', String.valueOf(succeeded));
 Metadata.MetadataType metadataType = Metadata.MetadataType.valueOf('CustomMetadata');
 System.assertEquals(Metadata.MetadataType.CustomMetadata, metadataType);
 System.assertEquals('CustomMetadata', metadataType.name());
-System.assertEquals('CustomMetadata', Metadata.MetadataType.values()[0].toString());
+// A44 R155: OmniInteractionAccessConfig precedes CustomMetadata.
+System.assertEquals('CustomMetadata', Metadata.MetadataType.values()[1].toString());
 try {
 	Metadata.DeployStatus.valueOf('missing');
 	System.assert(false);
@@ -1217,7 +1273,6 @@ System.assertEquals('Nook Supply', ((Account)suggestions.getSuggestionResults()[
 	storage.EnsureStandardObject(&org, "Account")
 	storage.EnsureStandardObject(&org, "Contact")
 	machine.SetOrg(&org)
-	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -1227,6 +1282,7 @@ func TestExecSearchAccessLevelAppliesLocalPermissions(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'Nook Supply', Score__c = 7);
 insert account;
+Test.setFixedSearchResults(new List<Id>{account.Id});
 Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
 User u = new User(
 	Username = 'search-user@example.invalid',
@@ -1271,42 +1327,55 @@ System.runAs(u) {
 	}
 }
 
-func TestExecReportsReportManagerLocalHarness(t *testing.T) {
+// R223/R225/R241/R242 replace the fabricated hosted success fixture.
+func TestExecReportsReportManagerBoundaries(t *testing.T) {
 	program, err := CompileAnonymous(`
-Id reportId = '00O000000000001';
-reports.ReportResults results = reports.ReportManager.runReport(reportId, true);
-System.assertEquals(false, results.getAllData());
-System.assertEquals(true, results.getHasDetailRows());
-System.assertEquals(0, results.getFactMap().size());
-System.assertEquals(reportId, results.getReportMetadata().getId());
-System.assertEquals('Local Report', results.getReportMetadata().getName());
-reports.ReportMetadata metadata = new reports.ReportMetadata();
-metadata.setName('Override');
-reports.ReportInstance instance = reports.ReportManager.runAsyncReport(reportId, metadata, false);
-System.assertEquals('Success', instance.getStatus());
-System.assertEquals(reportId, instance.getReportId());
-System.assertEquals(false, instance.getReportResults().getHasDetailRows());
-System.assertEquals('Override', instance.getReportResults().getReportMetadata().getName());
-System.assertEquals(instance.getId(), reports.ReportManager.getReportInstance(instance.getId()).getId());
-System.assertEquals(1, reports.ReportManager.getReportInstances(reportId).size());
-System.assertEquals(0, reports.ReportManager.getDatatypeFilterOperatorMap().size());
-reports.ReportDescribeResult describe = reports.ReportManager.describeReport(reportId);
-System.assertEquals(reportId, describe.getReportMetadata().getId());
-System.assertEquals(0, describe.getReportExtendedMetadata().getDetailColumnInfo().size());
-System.assertEquals(0, describe.getReportTypeMetadata().getStandardFilterInfos().size());
+Boolean caught = false;
+try { reports.ReportManager.describeReport((Id)null); }
+catch (System.NoDataFoundException e) {
+    caught = true;
+    System.assert('The data you’re trying to access is unavailable.'.equals(e.getMessage()));
+}
+System.assert(caught);
+caught = false;
+try { reports.ReportManager.runReport((Id)null); }
+catch (System.NoDataFoundException e) {
+    caught = true;
+    System.assert('The data you’re trying to access is unavailable.'.equals(e.getMessage()));
+}
+System.assert(caught);
+caught = false;
+try { reports.ReportManager.getReportInstance((Id)null); }
+catch (reports.ReportRunException e) {
+    caught = true;
+    System.assert('We ran into an error when running this report. Try to re-submit your query.'.equals(e.getMessage()));
+}
+System.assert(caught);
+caught = false;
+try { reports.ReportManager.getReportInstance(Id.valueOf('001000000000001')); }
+catch (System.NoDataFoundException e) {
+    caught = true;
+    System.assert('The instance you requested does not exist.'.equals(e.getMessage()));
+}
+System.assert(caught);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	machine := New(nil)
-	if _, err := machine.Execute(program); err != nil {
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestExecLocalTelemetryProvisioningAndPrefCenterHarnesses(t *testing.T) {
 	program, err := CompileAnonymous(`
-IsvPartners.AppAnalytics.logCustomInteraction('clicked');
+// A44 E010: a String label is invalid even when hosted telemetry is unavailable.
+try {
+    IsvPartners.AppAnalytics.logCustomInteraction('clicked');
+    System.assert(false, 'expected invalid interaction label');
+} catch (System.InvalidParameterValueException e) {
+    System.assert(e.getMessage().endsWith('must be an Apex enum.'));
+}
 UserProvisioning.UserProvisioningLog.log('0PR-local', 'Created');
 BcpProvisionService.enableC2C();
 DistributedLedgerService.enableC2C();
@@ -1443,6 +1512,12 @@ Test.stopTest();
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Metadata.Flows = []storage.FlowRule{{
+		Name: "LocalFlow", Active: true, ProcessType: "AutoLaunchedFlow",
+		Variables: []storage.FlowVariable{{Name: "answer", DataType: "Number", IsInput: true, IsOutput: true}},
+	}}
+	machine.SetOrg(&org)
 	machine.testContext = &TestContext{}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -1459,6 +1534,12 @@ System.assertEquals(42, (Integer)interview.getVariableValue('answer'));
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Metadata.Flows = []storage.FlowRule{{
+		Name: "LocalFlow", Active: true, ProcessType: "AutoLaunchedFlow",
+		Variables: []storage.FlowVariable{{Name: "answer", DataType: "Number", IsInput: true, IsOutput: true}},
+	}}
+	machine.SetOrg(&org)
 	if err := machine.RegisterClass(Class{
 		Name:       "Flow.Interview",
 		Dependency: true,
@@ -1474,12 +1555,53 @@ System.assertEquals(42, (Integer)interview.getVariableValue('answer'));
 	}
 }
 
+func TestExecFlowInterviewPreservesApexDefinedInput(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.TriggerOperation supplied = System.TriggerOperation.BEFORE_INSERT;
+Flow.Interview interview = Flow.Interview.createInterview(
+    'OpaqueFlow',
+    new Map<String,Object>{'pluginInput' => supplied}
+);
+interview.start();
+System.TriggerOperation returnedInput = (System.TriggerOperation) interview.getVariableValue('pluginInput');
+System.assertEquals('BEFORE_INSERT', returnedInput.name());
+System.assertEquals('started', interview.getVariableValue('status'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Metadata.Flows = []storage.FlowRule{{
+		Name:        "OpaqueFlow",
+		Active:      true,
+		ProcessType: "AutoLaunchedFlow",
+		Variables: []storage.FlowVariable{
+			{Name: "pluginInput", DataType: "Apex", IsInput: true, IsOutput: true},
+			{Name: "status", DataType: "String", IsOutput: true},
+		},
+		Steps: []storage.FlowStep{{
+			Kind: "assignment",
+			Assignment: storage.FlowAssignment{
+				Name:         "Set_status",
+				Target:       "status",
+				Operator:     "Assign",
+				LiteralValue: "started",
+			},
+		}},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecFlowInterviewMissingFlowIsCatchable(t *testing.T) {
 	program, err := CompileAnonymous(`
 Boolean caught = false;
 try {
     Flow.Interview.createInterview('MissingFlow', new Map<String,Object>()).start();
-} catch (FlowException e) {
+} catch (TypeException e) {
     caught = true;
 }
 System.assert(caught);
@@ -1562,12 +1684,14 @@ func TestExecQuickActionPerformReturnsCapturedLocalResult(t *testing.T) {
 QuickAction.QuickActionRequest request = new QuickAction.QuickActionRequest();
 request.setQuickActionName('Account.NewTask');
 request.setContextId('001000000000001');
+request.setRecord(new Contact(LastName='Captured local action'));
 QuickAction.QuickActionResult result = QuickAction.performQuickAction(request);
 System.assert(result.isSuccess());
 System.assert(!result.isCreated());
-System.assertEquals('001000000000001', String.valueOf(result.getContextId()));
+System.assertEquals('001000000000001AAA', String.valueOf(result.getContextId()));
 System.assertEquals(0, result.getErrors().size());
-System.assertEquals(0, result.getIds().size());
+System.assertEquals(1, result.getIds().size());
+request.setRecord(new Contact(LastName='Another captured local action'));
 List<QuickAction.QuickActionResult> results =
 	QuickAction.performQuickActions(new List<QuickAction.QuickActionRequest>{ request }, true);
 System.assertEquals(1, results.size());
@@ -1576,7 +1700,22 @@ System.assert(results.get(0).isSuccess());
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(nil).Execute(program); err != nil {
+	machine := New(nil)
+	org := testDataOrg()
+	org.Metadata.QuickActions = []storage.QuickActionMetadata{{Name: "Account.NewTask", Type: "Create", TargetObject: "Contact"}}
+	// R200-R202: the local action inserts into its declared Contact target.
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName": {APIName: "LastName", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1688,7 +1827,8 @@ System.assertEquals(true, container.removeMetadataByFullName('Invoice__c'));
 System.assertEquals(0, container.getMetadata().size());
 
 Metadata.CustomMetadata item = new Metadata.CustomMetadata();
-System.assertEquals(false, item.protected_x);
+// A44 R073/E003: unset protected_x is raw null.
+System.assertEquals(null, item.protected_x);
 System.assertEquals(0, item.values.size());
 Metadata.CustomMetadataValue value = new Metadata.CustomMetadataValue();
 System.assertEquals(null, value.field);
@@ -1703,20 +1843,21 @@ System.assertEquals(false, field.unique);
 System.assertEquals(false, field.externalId);
 
 Metadata.DeployResult result = new Metadata.DeployResult();
-System.assert(result.done);
-System.assert(result.success);
-System.assertEquals(0, result.numberComponentsTotal);
-System.assertEquals(0, result.numberComponentErrors);
-System.assertEquals(0, result.details.componentFailures.size());
-System.assertEquals(0, result.details.componentSuccesses.size());
+// A44 R141/R143/R145 and E002: defaults do not synthesize a completed deployment.
+System.assertEquals(null, result.done);
+System.assertEquals(null, result.success);
+System.assertEquals(null, result.numberComponentsTotal);
+System.assertEquals(null, result.numberComponentErrors);
+System.assertEquals(null, result.details);
 
 Metadata.DeployMessage message = new Metadata.DeployMessage();
-System.assertEquals(false, message.success);
-System.assertEquals(0, message.lineNumber);
+// A44 E001: every scalar DeployMessage constructor member is null.
+System.assertEquals(null, message.success);
+System.assertEquals(null, message.lineNumber);
 System.assertEquals(null, message.problem);
 Map<String,Object> messageValues = message.getAsMap();
 System.assert(messageValues.keySet().contains('success'));
-System.assertEquals(false, (Boolean)messageValues.get('success'));
+System.assertEquals(null, (Boolean)messageValues.get('success'));
 
 Metadata.AsyncResult asyncResult = new Metadata.AsyncResult();
 System.assert(asyncResult.done);
@@ -1822,6 +1963,7 @@ Metadata.Operations.checkDeployStatus('0Af000000000999', true);
 }
 
 func TestExecMetadataDeploymentInvalidSupportedItemReturnsFailureResult(t *testing.T) {
+	// A30 native J015 records the native assertion expectations.
 	program, err := CompileAnonymous(`
 Metadata.DeployContainer container = new Metadata.DeployContainer();
 Metadata.CustomObject objectDef = new Metadata.CustomObject();
@@ -1836,7 +1978,7 @@ Id deploymentId = Metadata.Operations.enqueueDeployment(container, null);
 Metadata.DeployResult result = Metadata.Operations.checkDeployStatus(deploymentId, true);
 System.assert(result.done);
 System.assert(!result.success);
-System.assertEquals('FAILED', result.status.name());
+System.assertEquals('Failed', result.status.name());
 System.assertEquals(2, result.numberComponentsTotal);
 System.assertEquals(0, result.numberComponentsDeployed);
 System.assertEquals(1, result.numberComponentErrors);
@@ -1865,6 +2007,56 @@ func TestExecEventBusPublishRejectsNonPlatformEvents(t *testing.T) {
 	}
 	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "platform event") {
 		t.Fatalf("err = %v, want platform-event-only rejection", err)
+	}
+}
+
+// A39 P001/P004: native typed publication is rejected; erased scalars throw.
+func TestExecEventBusPublishBatchApexErrorEventRejectsErasedScalar(t *testing.T) {
+	program, err := CompileAnonymous(`
+SObject event = new BatchApexErrorEvent();
+try {
+    EventBus.publish(event);
+    System.assert(false);
+} catch (TypeException err) {
+    System.assert('DML operation INSERT not allowed on BatchApexErrorEvent'.equals(err.getMessage()));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// A39 P002/P009: System-qualified publication preserves the same rejection.
+func TestExecSystemQualifiedEventBusPublishRejectsErasedScalar(t *testing.T) {
+	program, err := CompileAnonymous(`
+SObject event = new BatchApexErrorEvent();
+try {
+    System.EventBus.publish(event);
+    System.assert(false);
+} catch (TypeException err) {
+    System.assert('DML operation INSERT not allowed on BatchApexErrorEvent'.equals(err.getMessage()));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSystemQualifiedFeatureManagementCheckPermission(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(false, System.FeatureManagement.checkPermission('DefinitelyMissingGladePermission'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -1928,7 +2120,9 @@ System.assertEquals(2, results.size());
 	org := testDataOrg()
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Local_Event__e",
+			APIName: "Local_Event__e",
+			// A39 R002/R085: use explicit captured event provenance.
+			Metadata:  map[string]string{"publishBehavior": "PublishImmediately"},
 			KeyPrefix: "e00",
 			Fields: map[string]storage.Field{
 				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
@@ -1986,11 +2180,8 @@ EventBus.publish(new List<Local_Event__e>{
 	new Local_Event__e(Name__c = 'First'),
 	new Local_Event__e(Name__c = 'Second')
 });
-try {
-	Test.getEventBus().deliver();
-	System.assert(false);
-} catch (DmlException err) {
-}
+// A39 N012: broker delivery resumes a checkpointed failure without throwing.
+Test.getEventBus().deliver();
 Test.getEventBus().deliver();
 Test.stopTest();
 System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'resumed Second'].size());
@@ -2003,7 +2194,9 @@ System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'resumed First'].siz
 	org := testDataOrg()
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Local_Event__e",
+			APIName: "Local_Event__e",
+			// A39 R002/R085: use explicit captured event provenance.
+			Metadata:  map[string]string{"publishBehavior": "PublishImmediately"},
 			KeyPrefix: "e00",
 			Fields: map[string]storage.Field{
 				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
@@ -2030,7 +2223,7 @@ System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'resumed First'].siz
 func TestExecEventBusFailureWithoutCheckpointRetriesWholeBatch(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 if (RetryState.Attempts == null || RetryState.Attempts == 0) {
-	RetryState.Attempts++;
+	RetryState.Attempts = 1;
 	throw new DmlException('retry whole batch');
 }
 for (Local_Event__e eventRecord : Trigger.new) {
@@ -2063,7 +2256,9 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'whole Second'].size
 	org := testDataOrg()
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Local_Event__e",
+			APIName: "Local_Event__e",
+			// A39 R002/R085: use explicit captured event provenance.
+			Metadata:  map[string]string{"publishBehavior": "PublishImmediately"},
 			KeyPrefix: "e00",
 			Fields: map[string]storage.Field{
 				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
@@ -2122,7 +2317,9 @@ System.assertEquals('REQUIRED_FIELD_MISSING', String.valueOf(result.getErrors()[
 	org.Objects["Profile"] = profile
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Local_Event__e",
+			APIName: "Local_Event__e",
+			// A39 R002/R085: use explicit captured event provenance.
+			Metadata:  map[string]string{"publishBehavior": "PublishImmediately"},
 			KeyPrefix: "e00",
 			Fields: map[string]storage.Field{
 				"Name__c":    {APIName: "Name__c", Type: storage.FieldString},
@@ -2143,7 +2340,8 @@ Account account = new Account(Name = 'Event Account');
 insert account;
 Database.SaveResult result = EventBus.publish(new Local_Event__e(AccountId__c = account.Id, Name__c = 'Trail'));
 System.assert(result.isSuccess());
-System.assertEquals(0, result.getErrors().size());
+// A39 R003: successful publication includes OPERATION_ENQUEUED.
+System.assertEquals(1, result.getErrors().size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2164,7 +2362,9 @@ System.assertEquals(0, result.getErrors().size());
 	org.Objects["Profile"] = profile
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Local_Event__e",
+			APIName: "Local_Event__e",
+			// A39 R002/R085: use explicit captured event provenance.
+			Metadata:  map[string]string{"publishBehavior": "PublishImmediately"},
 			KeyPrefix: "e00",
 			Fields: map[string]storage.Field{
 				"AccountId__c": {APIName: "AccountId__c", Type: storage.FieldString, Required: true},
@@ -2209,7 +2409,9 @@ System.assertEquals('https://example.test', updated.Website);
 	org := testDataOrg()
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Local_Event__e",
+			APIName: "Local_Event__e",
+			// A39 R002/R085: use explicit captured event provenance.
+			Metadata:  map[string]string{"publishBehavior": "PublishImmediately"},
 			KeyPrefix: "e00",
 			Fields: map[string]storage.Field{
 				"AccountId__c": {APIName: "AccountId__c", Type: storage.FieldString, Required: true},
@@ -2264,7 +2466,9 @@ Test.stopTest();
 	org := testDataOrg()
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Local_Event__e",
+			APIName: "Local_Event__e",
+			// A39 R002/R085: use explicit captured event provenance.
+			Metadata:  map[string]string{"publishBehavior": "PublishImmediately"},
 			KeyPrefix: "e00",
 			Fields: map[string]storage.Field{
 				"AccountId__c": {APIName: "AccountId__c", Type: storage.FieldString, Required: true},
@@ -2311,7 +2515,9 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'pre-start event del
 	org := testDataOrg()
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Local_Event__e",
+			APIName: "Local_Event__e",
+			// A39 R002/R085: use explicit captured event provenance.
+			Metadata:  map[string]string{"publishBehavior": "PublishImmediately"},
 			KeyPrefix: "e00",
 			Fields: map[string]storage.Field{
 				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
@@ -2357,7 +2563,9 @@ System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'platform event queu
 	org := testDataOrg()
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Local_Event__e",
+			APIName: "Local_Event__e",
+			// A39 R002/R085: use explicit captured event provenance.
+			Metadata:  map[string]string{"publishBehavior": "PublishImmediately"},
 			KeyPrefix: "e00",
 			Fields: map[string]storage.Field{
 				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
@@ -2416,7 +2624,9 @@ System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'stale statics'].siz
 	org := testDataOrg()
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Local_Event__e",
+			APIName: "Local_Event__e",
+			// A39 R002/R085: use explicit captured event provenance.
+			Metadata:  map[string]string{"publishBehavior": "PublishImmediately"},
 			KeyPrefix: "e00",
 			Fields: map[string]storage.Field{
 				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
@@ -2471,7 +2681,9 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'explicit platform e
 	org := testDataOrg()
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Local_Event__e",
+			APIName: "Local_Event__e",
+			// A39 R002/R085: use explicit captured event provenance.
+			Metadata:  map[string]string{"publishBehavior": "PublishImmediately"},
 			KeyPrefix: "e00",
 			Fields: map[string]storage.Field{
 				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
@@ -2541,7 +2753,9 @@ System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'PowerCustomerSucces
 	org.Objects["Profile"] = profile
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Local_Event__e",
+			APIName: "Local_Event__e",
+			// A39 R002/R085: use explicit captured event provenance.
+			Metadata:  map[string]string{"publishBehavior": "PublishImmediately"},
 			KeyPrefix: "e00",
 			Fields: map[string]storage.Field{
 				"Name__c": {APIName: "Name__c", Type: storage.FieldString, Required: true},
@@ -2569,6 +2783,9 @@ func TestExecPlatformEventSObjectTypeNewSObjectSeedsEventUuid(t *testing.T) {
 	program, err := CompileAnonymous(`
 Event_Recipes_Demo__e directEvent = new Event_Recipes_Demo__e();
 System.assertEquals(null, directEvent.EventUuid);
+Schema.DescribeFieldResult eventUuidDescribe = Schema.Event_Recipes_Demo__e.EventUuid.getDescribe();
+System.assertEquals(Schema.DisplayType.STRING, eventUuidDescribe.getType());
+System.assertEquals(36, eventUuidDescribe.getLength());
 Event_Recipes_Demo__e tokenEvent = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true);
 System.assertNotEquals(null, tokenEvent.EventUuid);
 System.assertEquals(36, tokenEvent.EventUuid.length());
@@ -2581,6 +2798,8 @@ System.assertEquals(36, tokenEvent.EventUuid.length());
 	org.Objects["Event_Recipes_Demo__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "Event_Recipes_Demo__e",
+			// A39 R060/R061: UUID defaults use explicit captured event metadata.
+			Metadata: map[string]string{"publishBehavior": "PublishImmediately"},
 			Fields: map[string]storage.Field{
 				"EventUuid":    {APIName: "EventUuid", Type: storage.FieldString},
 				"AccountId__c": {APIName: "AccountId__c", Type: storage.FieldReference},
@@ -2603,7 +2822,8 @@ Database.SaveResult directResult = EventBus.publish(direct);
 String directOperationId = EventBus.getOperationId(directResult);
 System.assertNotEquals(null, directOperationId);
 System.assertEquals(36, directOperationId.length());
-System.assertEquals(null, direct.EventUuid);
+// A39 R005: publication populates the source event UUID.
+System.assertNotEquals(null, direct.EventUuid);
 
 Event_Recipes_Demo__e first = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true);
 first.Title__c = 'first';
@@ -2637,6 +2857,8 @@ System.assertEquals(null, EventBus.getOperationId(new Account()));
 	org.Objects["Event_Recipes_Demo__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "Event_Recipes_Demo__e",
+			// A39 R060/R061: UUID defaults use explicit captured event metadata.
+			Metadata: map[string]string{"publishBehavior": "PublishImmediately"},
 			Fields: map[string]storage.Field{
 				"EventUuid": {APIName: "EventUuid", Type: storage.FieldString},
 				"Title__c":  {APIName: "Title__c", Type: storage.FieldString, Required: true},
@@ -2676,8 +2898,13 @@ System.assertEquals(1, tasks.size());
 	machine.EnableTestContext()
 	org := testDataOrg()
 	org.Objects["Event_Recipes_Demo__e"] = storage.ObjectState{
-		Definition: storage.ObjectDefinition{APIName: "Event_Recipes_Demo__e", Fields: map[string]storage.Field{"EventUuid": {APIName: "EventUuid", Type: storage.FieldString}}},
-		Records:    map[storage.ID]storage.Record{},
+		Definition: storage.ObjectDefinition{
+			APIName: "Event_Recipes_Demo__e",
+			// A39 R060/R061: UUID defaults use explicit captured event metadata.
+			Metadata: map[string]string{"publishBehavior": "PublishImmediately"},
+			Fields:   map[string]storage.Field{"EventUuid": {APIName: "EventUuid", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{},
 	}
 	storage.EnsureStandardObject(&org, "Task")
 	machine.SetOrg(&org)
@@ -2726,8 +2953,13 @@ System.assertEquals(1, tasks.size());
 	machine.EnableTestContext()
 	org := testDataOrg()
 	org.Objects["Event_Recipes_Demo__e"] = storage.ObjectState{
-		Definition: storage.ObjectDefinition{APIName: "Event_Recipes_Demo__e", Fields: map[string]storage.Field{"EventUuid": {APIName: "EventUuid", Type: storage.FieldString}}},
-		Records:    map[storage.ID]storage.Record{},
+		Definition: storage.ObjectDefinition{
+			APIName: "Event_Recipes_Demo__e",
+			// A39 R060/R061: UUID defaults use explicit captured event metadata.
+			Metadata: map[string]string{"publishBehavior": "PublishImmediately"},
+			Fields:   map[string]storage.Field{"EventUuid": {APIName: "EventUuid", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{},
 	}
 	storage.EnsureStandardObject(&org, "Task")
 	machine.SetOrg(&org)
@@ -3152,9 +3384,16 @@ System.assertEquals(0, stage.position);
 	}
 }
 
+// R008/R021 reject local.local; N001/N002 cover the configured default path.
+// R172/R192 reject hyphens in cache keys.
 func TestExecPlatformCachePartitions(t *testing.T) {
 	program, err := CompileAnonymous(`
-Cache.OrgPartition orgCache = Cache.Org.getPartition('local');
+Cache.Org constructedOrg = new Cache.Org();
+Cache.Session constructedSession = new Cache.Session();
+System.assertNotEquals(null, constructedOrg);
+System.assertNotEquals(null, constructedSession);
+
+Cache.OrgPartition orgCache = Cache.Org.getPartition('local.default');
 System.assertEquals(null, orgCache.get('missing'));
 orgCache.put('name', 'Acme');
 orgCache.put('namespaceVisible', 'Scoped', Cache.Visibility.NAMESPACE);
@@ -3173,7 +3412,7 @@ System.assertEquals(true, orgCache.remove('name'));
 System.assert(!orgCache.contains('name'));
 System.assertEquals(2, orgCache.getNumKeys());
 
-Cache.SessionPartition sessionCache = Cache.Session.getPartition('local');
+Cache.SessionPartition sessionCache = Cache.Session.getPartition('local.default');
 Object sessionClone = sessionCache.clone();
 System.assertNotEquals(null, sessionClone);
 Cache.Partition generalSession = sessionCache;
@@ -3187,6 +3426,11 @@ generalOrg.put('general', 'org');
 System.assertEquals('session', (String) generalSession.get('general'));
 System.assertEquals('org', (String) generalOrg.get('general'));
 System.assertEquals(null, sessionCache.get('missing'));
+
+// N002: named and static default calls share one partition.
+orgCache.remove('namespaceVisible');
+orgCache.remove('visible');
+orgCache.remove('general');
 
 System.assert(Cache.Session.isAvailable());
 System.assert(Cache.Org.getCapacity() > 0);
@@ -3203,16 +3447,16 @@ Cache.OrgPartition.validateKey(false, 'account');
 Cache.OrgPartition.validateKeyValue(false, 'account', 'value');
 Cache.SessionPartition.createFullyQualifiedKey('local', 'default', 'account');
 Cache.Org.put('defaulted', 'org-default');
-Cache.Org.put('visible-default', 'org-visible', Cache.Visibility.ALL);
+Cache.Org.put('visibledefault', 'org-visible', Cache.Visibility.ALL);
 System.assert(Cache.Org.contains('defaulted'));
 System.assertEquals('org-default', (String) Cache.Org.get('defaulted'));
-System.assertEquals('org-visible', (String) Cache.Org.get('visible-default'));
+System.assertEquals('org-visible', (String) Cache.Org.get('visibledefault'));
 System.assert(Cache.Org.getKeys().contains('defaulted'));
 System.assertEquals(2, Cache.Org.getNumKeys());
 System.assertEquals('org-default', (String) Cache.Org.getPartition('default').get('defaulted'));
 System.assertEquals(true, Cache.Org.remove('defaulted'));
 System.assert(!Cache.Org.contains('defaulted'));
-System.assertEquals(true, Cache.Org.remove('visible-default'));
+System.assertEquals(true, Cache.Org.remove('visibledefault'));
 
 Cache.SecondaryKeyApi secondary = Cache.SecondaryKeyApi.get('localFeature');
 secondary.putImmediate('alpha', 'A', 'group-1');
@@ -3240,6 +3484,89 @@ System.assertEquals(2, secondary.scanForCount('', ''));
 	}
 }
 
+func TestExecPlatformExceptionClones(t *testing.T) {
+	program, err := CompileAnonymous(`
+QueryException cause = new QueryException('cause');
+
+Canvas.CanvasRenderException canvasEmpty = new Canvas.CanvasRenderException();
+Canvas.CanvasRenderException canvasFromCause = new Canvas.CanvasRenderException(cause);
+Canvas.CanvasRenderException canvasFromMessage = new Canvas.CanvasRenderException('message');
+Canvas.CanvasRenderException canvasFromBoth = new Canvas.CanvasRenderException('message', cause);
+System.assertNotEquals(null, canvasEmpty.clone());
+System.assertNotEquals(null, canvasFromCause.clone());
+System.assertNotEquals(null, canvasFromMessage.clone());
+System.assertNotEquals(null, canvasFromBoth.clone());
+Canvas.CanvasRenderException canvasClone = (Canvas.CanvasRenderException) canvasFromBoth.clone();
+System.assertEquals('message', canvasClone.getMessage());
+
+Cache.CacheException cache = new Cache.CacheException('cache');
+Cache.CacheException cacheClone = (Cache.CacheException) cache.clone();
+System.assertNotEquals(null, cacheClone);
+System.assertEquals('cache', cacheClone.getMessage());
+Cache.BulkApiKeysLimitExceededException bulkException = new Cache.BulkApiKeysLimitExceededException('bulk');
+Cache.CacheBuilderException builder = new Cache.CacheBuilderException('builder');
+Cache.CacheException cacheException = new Cache.CacheException('exception');
+Cache.CacheKeyTooLongException keyTooLong = new Cache.CacheKeyTooLongException('key');
+Cache.CacheValueTooLargeException valueTooLarge = new Cache.CacheValueTooLargeException('value');
+Cache.InvalidParamException invalidParam = new Cache.InvalidParamException('invalid');
+Cache.OrgCacheException orgCache = new Cache.OrgCacheException('org');
+Cache.SessionCacheException sessionCache = new Cache.SessionCacheException('session');
+System.assertNotEquals(null, bulkException.clone());
+System.assertNotEquals(null, builder.clone());
+System.assertNotEquals(null, cacheException.clone());
+System.assertNotEquals(null, keyTooLong.clone());
+System.assertNotEquals(null, valueTooLarge.clone());
+System.assertNotEquals(null, invalidParam.clone());
+System.assertNotEquals(null, orgCache.clone());
+System.assertNotEquals(null, sessionCache.clone());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPlatformGeneratedStaticConstants(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object canvasURL = Canvas.Test.KEY_CANVAS_URL;
+Object orgMaxTTL = Cache.Org.MAX_TTL_SECS;
+Object sessionMaxTTL = Cache.Session.MAX_TTL_SECS;
+System.assertNotEquals(null, canvasURL);
+System.assertNotEquals(null, orgMaxTTL);
+System.assertNotEquals(null, sessionMaxTTL);
+System.assertEquals('canvasUrl', (String) canvasURL);
+System.assertEquals(172800, (Integer) orgMaxTTL);
+System.assertEquals(28800, (Integer) sessionMaxTTL);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPlatformCacheNullPartitionNameMatchesSalesforce(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+    Cache.Org.getPartition(null);
+    System.assert(false, 'expected null partition error');
+} catch (Exception e) {
+    System.assertEquals('cache.InvalidParamException', e.getTypeName());
+    System.assertEquals('Partition name cannot be null or empty and must be alphanumeric', e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// R126/R137 specify the catchable native TTL diagnostic.
 func TestExecPlatformCacheSalesforceRemoveTTLAndBuilderContracts(t *testing.T) {
 	program, err := CompileAnonymous(`
 Cache.Org.put('salesforceRemove', 'value');
@@ -3264,7 +3591,7 @@ System.assertEquals(true, sessionRemoved);
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(nil).Execute(ttlProgram); err == nil || !strings.Contains(err.Error(), "at least 300 seconds") {
+	if _, err := New(nil).Execute(ttlProgram); err == nil || !strings.Contains(err.Error(), "below minimum allowed: 300 secs") {
 		t.Fatalf("Cache.Org.put should reject sub-minimum TTL, got %v", err)
 	}
 	builderProgram, err := CompileAnonymous(`Cache.Org.get(String.class, 'salesforceBuilder');`)
@@ -3276,6 +3603,7 @@ System.assertEquals(true, sessionRemoved);
 	}
 }
 
+// N003 rejects a dotted user key; inspect the builder key via getKeys instead.
 func TestExecPlatformCacheBuilderLoadsAndMemoizesDefaultPartition(t *testing.T) {
 	loadProgram, err := CompileAnonymous(`return 'loaded:' + requiredButNotUsed;`)
 	if err != nil {
@@ -3292,7 +3620,7 @@ Set<String> keys = named.getKeys();
 System.assertEquals(1, keys.size());
 System.assert(keys.toString().contains('CacheLoader'));
 System.assertEquals(true, (Boolean) Cache.Org.remove(CacheLoader.class, 'shape'));
-System.assert(!named.contains('CacheLoader.shape'));
+System.assert(!named.getKeys().contains('CacheLoader.shape'));
 System.assertEquals(0, named.getNumKeys());
 `)
 	if err != nil {
@@ -3326,16 +3654,16 @@ func TestExecPlatformCacheAPI67RejectedShapes(t *testing.T) {
 		`Cache.Org.getMaxValueSize();`,
 		`Cache.Session.getAvgValueSize();`,
 		`Cache.Session.getMaxValueSize();`,
-		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.getAvgValueSize();`,
-		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.getMaxValueSize();`,
-		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.createFullyQualifiedKey('a', 'b', 'c');`,
-		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.createFullyQualifiedPartition('a', 'b');`,
-		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validatePartitionName('a');`,
-		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKey(false, 'a');`,
-		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeyValue(false, 'a', 'v');`,
-		`Cache.OrgPartition p = Cache.Org.getPartition('local'); p.validateKeys(false, new Set<String>{'a'});`,
-		`Cache.SessionPartition p = Cache.Session.getPartition('local'); p.validateKeys(false, new Set<String>{'a'});`,
-		`Cache.Partition p = Cache.Org.getPartition('local'); p.validateKeyValue(false, 'a', 'v');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local.default'); p.getAvgValueSize();`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local.default'); p.getMaxValueSize();`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local.default'); p.createFullyQualifiedKey('a', 'b', 'c');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local.default'); p.createFullyQualifiedPartition('a', 'b');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local.default'); p.validatePartitionName('a');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local.default'); p.validateKey(false, 'a');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local.default'); p.validateKeyValue(false, 'a', 'v');`,
+		`Cache.OrgPartition p = Cache.Org.getPartition('local.default'); p.validateKeys(false, new Set<String>{'a'});`,
+		`Cache.SessionPartition p = Cache.Session.getPartition('local.default'); p.validateKeys(false, new Set<String>{'a'});`,
+		`Cache.Partition p = Cache.Org.getPartition('local.default'); p.validateKeyValue(false, 'a', 'v');`,
 	}
 	for _, source := range sources {
 		program, err := CompileAnonymous(source)
@@ -3437,10 +3765,14 @@ System.assertNotEquals(null, placeOrder);
 `, `
 System.assertEquals(false, YubiAuthForAloha.validateYubiKeyLogin('user', 'password'));
 `, `
-ConnectApi.LiteralJson waveResult = wave.QueryBuilder.load('dataset', 'v1').execute('q');
-System.assertNotEquals(null, waveResult);
-List<Object> rows = (List<Object>) waveResult.json;
-System.assertEquals(0, rows.size());
+// C022-C025 / D11: hosted execution must not return fabricated empty data.
+Boolean caught = false;
+try { wave.QueryBuilder.load('dataset', 'v1').execute('q'); }
+catch (System.UnsupportedOperationException e) {
+    caught = true;
+    System.assert('wave.QueryNode.execute requires the hosted CRM Analytics service'.equals(e.getMessage()));
+}
+System.assert(caught);
 `}
 	for _, source := range cases {
 		program, err := CompileAnonymous(source)
@@ -3537,6 +3869,48 @@ func TestExecPlatformHelperTailUnsupportedFences(t *testing.T) {
 		}
 		if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "unsupported") {
 			t.Fatalf("%s error = %v, want unsupported", source, err)
+		}
+	}
+}
+
+func TestPlatformCacheDefaultSelectionLocalBoundary(t *testing.T) {
+	// Native M001/D001-D004 cover one local default. Managed partitions
+	// cannot be installed in the scratch org: this asserts the explicit
+	// local-preference boundary policy, not native managed-package parity.
+	t.Log("mixed local/managed default boundary: scratch orgs cannot install the managed partition; prefer the local namespace default")
+	program, err := CompileAnonymous(`
+for (Integer i=0; i<128; i++) {
+ Cache.Org.put('A42DefaultBoundary',i);
+ Cache.Session.put('A42DefaultBoundary',i);
+ System.assert(String.valueOf(i).equals(String.valueOf(Cache.Org.get('local.A42Oracle.A42DefaultBoundary'))));
+ System.assert(String.valueOf(i).equals(String.valueOf(Cache.Session.get('local.A42Oracle.A42DefaultBoundary'))));
+ System.assert(Cache.Org.get('aaa.Managed.A42DefaultBoundary')==null);
+ System.assert(Cache.Session.get('aaa.Managed.A42DefaultBoundary')==null);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, localFirst := range []bool{false, true} {
+		org := storage.NewOrgState()
+		storage.EnsureStandardObject(&org, "PlatformCachePartition")
+		object := org.Objects["PlatformCachePartition"]
+		local := storage.Record{ID: "0Px000000000101", Object: "PlatformCachePartition", Fields: map[string]storage.Value{
+			"DeveloperName": storage.StringValue("A42Oracle"), "NamespacePrefix": storage.StringValue(""), "IsDefaultPartition": storage.BooleanValue(true),
+		}}
+		managed := storage.Record{ID: "0Px000000000102", Object: "PlatformCachePartition", Fields: map[string]storage.Value{
+			"DeveloperName": storage.StringValue("Managed"), "NamespacePrefix": storage.StringValue("aaa"), "IsDefaultPartition": storage.BooleanValue(true),
+		}}
+		if localFirst {
+			object.Records[local.ID], object.Records[managed.ID] = local, managed
+		} else {
+			object.Records[managed.ID], object.Records[local.ID] = managed, local
+		}
+		org.Objects["PlatformCachePartition"] = object
+		machine := New(nil)
+		machine.SetOrg(&org)
+		if _, err := machine.Execute(program); err != nil {
+			t.Fatalf("local first %t: %v", localFirst, err)
 		}
 	}
 }
@@ -4271,6 +4645,41 @@ System.assertEquals('Detail', message.getDetail());
 	}
 }
 
+func TestExecTestSetCurrentPageRequiresTestContext(t *testing.T) {
+	// Document source loading R011/R012 reject both forms outside test methods
+	// with this catchable exception at API 62 and 67.
+	for _, tc := range []struct {
+		name       string
+		expression string
+	}{
+		{name: "page token", expression: "Page.CurrentPageBoundary"},
+		{name: "page reference", expression: "new PageReference('/apex/CurrentPageBoundary')"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(fmt.Sprintf(`
+Boolean rejected = false;
+try {
+	Test.setCurrentPage(%s);
+} catch (StringException e) {
+	rejected = true;
+	System.assertEquals('System.StringException', e.getTypeName());
+	System.assertEquals('Test.setCurrentPage() can only be called from testMethods', e.getMessage());
+}
+System.assertEquals(true, rejected);
+System.assertEquals(null, ApexPages.currentPage());
+`, tc.expression))
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			machine.RegisterPageReference("CurrentPageBoundary")
+			if _, err := machine.Execute(program); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
 func TestExecApexPagesMessageValueContractsMatchSalesforce(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<ApexPages.Severity> severities = ApexPages.Severity.values();
@@ -4511,7 +4920,8 @@ page.getParameters().put('seen', 'yes');
 	}
 }
 
-func TestAssertEqualsTreatsCurrentNamespaceApexStubMessagesAsEquivalent(t *testing.T) {
+func TestAssertEqualsDistinguishesNamespaceApexStubMessages(t *testing.T) {
+	// A30 native J013 records the native assertion expectations.
 	program, err := CompileAnonymous(`
 System.assertEquals(
     'Wanted but not invoked: fflib_MyList__sfdc_ApexStub.add(String).',
@@ -4525,8 +4935,11 @@ System.assertEquals(
 	org := storage.NewOrgState()
 	org.Namespace = "PKG"
 	machine.SetOrg(&org)
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
+	_, err = machine.Execute(program)
+	const wantMessage = "Assertion Failed: Expected: Wanted but not invoked: fflib_MyList__sfdc_ApexStub.add(String)., Actual: Wanted but not invoked: PKG.fflib_MyList__sfdc_ApexStub.add(String)."
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || exceptionQualifiedTypeName(runtimeErr.Type) != "System.AssertException" || runtimeErr.ExceptionMessage() != wantMessage {
+		t.Fatalf("error = %#v, want System.AssertException with message %q", err, wantMessage)
 	}
 }
 
@@ -4555,14 +4968,25 @@ System.assertEquals(null, Packaging.getCurrentPackageId());
 
 func TestExecFeatureManagementPackageValuesRoundTrip(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals(false, System.FeatureManagement.checkPackageBooleanValue('LocalBooleanFeature'));
+// Execution-context R093/R096: absent managed feature parameters throw.
+try {
+    System.FeatureManagement.checkPackageBooleanValue('LocalBooleanFeature');
+    System.assert(false, 'expected missing feature parameter');
+} catch (System.NoDataFoundException e) {
+    System.assert('Unable to retrieve feature parameter LocalBooleanFeature. No results found.'.equals(e.getMessage()));
+}
 System.FeatureManagement.setPackageBooleanValue('LocalBooleanFeature', true);
 System.assertEquals(true, System.FeatureManagement.checkPackageBooleanValue('LocalBooleanFeature'));
 System.FeatureManagement.setPackageIntegerValue('LocalIntegerFeature', 7);
 System.assertEquals(7, System.FeatureManagement.checkPackageIntegerValue('LocalIntegerFeature'));
 System.FeatureManagement.setPackageDateValue('LocalDateFeature', Date.newInstance(2026, 6, 3));
 System.assertEquals(Date.newInstance(2026, 6, 3), System.FeatureManagement.checkPackageDateValue('LocalDateFeature'));
-System.assertEquals(null, System.FeatureManagement.checkPackageDateValue('MissingLocalDateFeature'));
+try {
+    System.FeatureManagement.checkPackageDateValue('MissingLocalDateFeature');
+    System.assert(false, 'expected missing feature parameter');
+} catch (System.NoDataFoundException e) {
+    System.assert('Unable to retrieve feature parameter MissingLocalDateFeature. No results found.'.equals(e.getMessage()));
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5061,7 +5485,8 @@ func TestExecSystemDeterministicLocalHelpers(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(false, System.isFunctionCallback());
 System.assertEquals(false, System.isRunningElasticCompute());
-System.assertEquals('R', System.getQuiddityShortCode(System.Request.getCurrent().getQuiddity()));
+// Execution-context SC001 at API62/67: anonymous request short code is X.
+System.assert('X'.equals(System.getQuiddityShortCode(System.Request.getCurrent().getQuiddity())));
 	System.assertEquals('READ_WRITE', String.valueOf(System.getApplicationReadWriteMode()));
 `)
 	if err != nil {
@@ -5072,13 +5497,15 @@ System.assertEquals('R', System.getQuiddityShortCode(System.Request.getCurrent()
 	}
 }
 
+// A14 V063 at API62/67 rejects requestVersion in an unmanaged namespace.
 func TestExecSystemRequestVersionUsesLocalAPIVersion(t *testing.T) {
-	program, err := CompileAnonymous(`System.assertEquals('65.0.0', System.requestVersion().toString());`)
+	program, err := CompileAnonymous(`System.requestVersion().toString();`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(nil).Execute(program); err != nil {
-		t.Fatal(err)
+	_, err = New(nil).Execute(program)
+	if err == nil || err.Error() != "System.ProcedureException: Method is not supported from an unmanaged namespace" {
+		t.Fatalf("unmanaged requestVersion error=%v", err)
 	}
 }
 
@@ -5514,6 +5941,7 @@ Account account = new Account(Name = 'Acme', Amount__c = 40, Paid__c = 12);
 formulaeval.FormulaInstance formulaInstance = Formula.builder()
 	.withFormula('Amount__c - Paid__c')
 	.withReturnType(formulaeval.FormulaReturnType.DECIMAL)
+	.withType(Account.class)
 	.build();
 System.assertEquals(28, formulaInstance.evaluate(account));
 Set<String> fields = formulaInstance.getReferencedFields();
@@ -5540,6 +5968,46 @@ System.assertEquals(account, single.getSObject());
 	account.Definition.Fields["Paid__c"] = storage.Field{APIName: "Paid__c", Type: storage.FieldDecimal, DisplayType: "CURRENCY"}
 	account.Definition.Fields["Balance__c"] = storage.Field{APIName: "Balance__c", Type: storage.FieldCalculated, DisplayType: "CURRENCY", Formula: "Amount__c - Paid__c"}
 	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFormulaBuilderValidatesFieldsForSObjectContext(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+    Formula.builder().withType(Account.class).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('NonExistentField + 123').build();
+    System.assert(false, 'expected FormulaValidationException');
+} catch (FormulaValidationException ex) {
+    System.assertEquals('Could not access the following field: NonExistentField. Contact your administrator.', ex.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFormulaBuilderValidatesFieldsForSObjectTypeContext(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+    Formula.builder().withType(Account.SObjectType).withReturnType(FormulaEval.FormulaReturnType.DECIMAL).withFormula('NonExistentField + 123').build();
+    System.assert(false, 'expected FormulaValidationException');
+} catch (FormulaValidationException ex) {
+    System.assertEquals('Could not access the following field: NonExistentField. Contact your administrator.', ex.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -5627,6 +6095,20 @@ System.assertEquals('/ss/apex/pkg__Login?startUrl=productdetails%3Fid%3DaO900000
 	}
 }
 
+// r_control_options_list_one/three/mixed observed the owned option on native
+// API 59/67. Keep this fixture confined to the StandardSetController contracts.
+func seedV05OwnedListView(org *storage.OrgState) {
+	storage.EnsureStandardObject(org, "ListView")
+	views := org.Objects["ListView"]
+	id := storage.ID("00B000000000001EAA")
+	views.Records[id] = storage.Record{ID: id, Object: "ListView", Fields: map[string]storage.Value{
+		"Name":          storage.StringValue("FamilyV05Owned"),
+		"DeveloperName": storage.StringValue("FamilyV05Owned"),
+		"SobjectType":   storage.StringValue("Account"),
+	}}
+	org.Objects["ListView"] = views
+}
+
 func TestExecVisualforceControllerAndSelectOptionSlice(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'VF');
@@ -5655,8 +6137,16 @@ System.assertEquals(2, setController.getResultSize());
 Account setRecord = (Account) setController.getRecord();
 System.assertEquals('000000000000000AAA', String.valueOf(setRecord.Id));
 System.assertEquals(null, setRecord.Name);
-System.assertEquals(1, setController.getListViewOptions().size());
-System.assertEquals('All', setController.getListViewOptions()[0].getLabel());
+Boolean ownedViewPresent = false;
+Boolean ownedFilterIdShape = false;
+for (SelectOption ownedOption : setController.getListViewOptions()) {
+    if (ownedOption.getLabel().equals('FamilyV05Owned')) {
+        ownedViewPresent = true;
+        ownedFilterIdShape = ownedOption.getValue().startsWith('00B');
+    }
+}
+System.assert(ownedViewPresent);
+System.assert(ownedFilterIdShape);
 setController.setSelected(new List<Account>{account});
 System.assertEquals(1, setController.getSelected().size());
 setController.setFilterId('00B000000000001');
@@ -5674,6 +6164,7 @@ try {
 	machine := New(nil)
 	org := testDataOrg()
 	storage.EnsureStandardObject(&org, "User")
+	seedV05OwnedListView(&org)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
@@ -5793,14 +6284,23 @@ try {
     System.assertEquals('Modified rows exist in the records collection!', e.getMessage());
 }
 System.assertEquals(true, controller.getCompleteResult());
-System.assertEquals(1, controller.getListViewOptions().size());
-System.assertEquals('All', controller.getListViewOptions()[0].getLabel());
+Boolean ownedViewPresent = false;
+Boolean ownedFilterIdShape = false;
+for (SelectOption ownedOption : controller.getListViewOptions()) {
+    if (ownedOption.getLabel().equals('FamilyV05Owned')) {
+        ownedViewPresent = true;
+        ownedFilterIdShape = ownedOption.getValue().startsWith('00B');
+    }
+}
+System.assert(ownedViewPresent);
+System.assert(ownedFilterIdShape);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	seedV05OwnedListView(&org)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
@@ -5942,7 +6442,8 @@ System.assertEquals('001B000001DVM9tIAH', option.getLabel());
 
 func TestExecRegisteredVisualforcePageReferences(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals('/apex/AccountView', Page.AccountView.getUrl());
+System.assertEquals('/apex/accountview', Page.AccountView.getUrl());
+System.assertEquals('/apex/AccountView', new PageReference('/apex/AccountView').getUrl());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -6055,7 +6556,13 @@ try {
 } catch (System.TypeException e) {
     System.assertEquals('Package Not Found', e.getMessage());
 }
-System.assertEquals(false, UserInfo.isCurrentUserLicensed('pkg'));
+// Execution-context R037: an absent package namespace throws.
+try {
+    UserInfo.isCurrentUserLicensed('pkg');
+    System.assert(false, 'expected missing package namespace');
+} catch (System.TypeException e) {
+    System.assert('Managed Package corresponding to namespace prefix not found'.equals(e.getMessage()));
+}
 try {
     UserInfo.isCurrentUserLicensedForPackage('050000000000001');
     System.assert(false, 'expected missing package to throw');
@@ -6099,7 +6606,12 @@ System.assertEquals(true, UserInfo.hasPackageLicense('050000000000001'));
 System.assertEquals(true, UserInfo.isCurrentUserLicensed('pkg'));
 System.assertEquals(true, UserInfo.isCurrentUserLicensedForPackage('050000000000001'));
 System.assertEquals(false, UserInfo.hasPackageLicense('050000000000002'));
-System.assertEquals(false, UserInfo.isCurrentUserLicensed('missing'));
+try {
+    UserInfo.isCurrentUserLicensed('missing');
+    System.assert(false, 'expected missing package namespace');
+} catch (System.TypeException e) {
+    System.assert('Managed Package corresponding to namespace prefix not found'.equals(e.getMessage()));
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -6263,6 +6775,7 @@ System.assertEquals('Log In', String.valueOf(output.Value));
 }
 
 func TestExecMessagingResultAndUnsupportedEdges(t *testing.T) {
+	// A30 native J002 records the native assertion expectations.
 	program, err := CompileAnonymous(`
 Messaging.EmailFileAttachment attachment = new Messaging.EmailFileAttachment();
 System.assertEquals(null, attachment.getBody());
@@ -6280,12 +6793,13 @@ System.assertEquals('text/plain', attachment.getContentType());
 System.assertEquals('trail.txt', attachment.getFileName());
 System.assertEquals('trail.txt', attachment.GETFILENAME());
 System.assertEquals(true, attachment.getInline());
+// Messaging R004-R013: native DTO defaults.
 Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();
-System.assertEquals(0, msg.getToAddresses().size());
-System.assertEquals(0, msg.getCcAddresses().size());
-System.assertEquals(0, msg.getBccAddresses().size());
-System.assertEquals(0, msg.getFileAttachments().size());
-System.assertEquals(0, msg.getEntityAttachments().size());
+System.assert(msg.getToAddresses()==null);
+System.assert(msg.getCcAddresses()==null);
+System.assert(msg.getBccAddresses()==null);
+System.assert(msg.getFileAttachments()==null);
+System.assert(msg.getEntityAttachments()==null);
 System.assertEquals(0, msg.getDocumentAttachments().size());
 System.assertEquals(0, msg.getTargetObjectIds().size());
 System.assertEquals(null, msg.getSubject());
@@ -6297,12 +6811,12 @@ System.assertEquals(null, msg.getTargetObjectId());
 System.assertEquals(null, msg.getWhatId());
 System.assertEquals(null, msg.getUnsubscribeComment());
 System.assertEquals(0, msg.getUnsubscribeUrls().size());
-System.assertEquals(false, msg.getSaveAsActivity());
+System.assertEquals(true, msg.getSaveAsActivity());
 System.assertEquals(false, msg.getTreatBodiesAsTemplate());
 System.assertEquals(false, msg.isTreatBodiesAsTemplate());
-System.assertEquals(false, msg.getTreatTargetObjectAsRecipient());
-System.assertEquals(false, msg.isTreatTargetObjectAsRecipient());
-System.assertEquals(false, msg.getUseSignature());
+System.assertEquals(true, msg.getTreatTargetObjectAsRecipient());
+System.assertEquals(true, msg.isTreatTargetObjectAsRecipient());
+System.assertEquals(true, msg.getUseSignature());
 System.assertEquals(false, msg.getBccSender());
 System.assertEquals(false, msg.getOneClickPost());
 System.assertEquals(false, msg.isUserMail());
@@ -6346,7 +6860,7 @@ System.assertEquals('Trail Sender', msg.getSenderDisplayName());
 System.assertEquals('UTF-8', msg.getCharset());
 System.assertEquals('<message@example.test>', msg.getInReplyTo());
 System.assertEquals('<root@example.test>', msg.getReferences());
-System.assertEquals('0D2000000000001', msg.getOrgWideEmailAddressId());
+System.assertEquals('0D2000000000001CAA', msg.getOrgWideEmailAddressId());
 System.assertEquals('003000000000001', msg.getTargetObjectId());
 System.assertEquals('00X000000000001', msg.getTemplateId());
 System.assertEquals('001000000000001', msg.getWhatId());
@@ -6688,7 +7202,13 @@ custom.setTitle('Title');
 custom.setBody('Body');
 custom.setTargetId('001000000000001AAA');
 custom.setTargetPageRef('/lightning/r/Account/001000000000001AAA/view');
-custom.send(new Set<String>{'005000000000001AAA'});
+// D11 / Messaging M024: hosted delivery is an explicit local boundary.
+try {
+ custom.send(new Set<String>{'005000000000001AAA'});
+ System.assert(false, 'Expected hosted-delivery boundary');
+} catch (UnsupportedOperationException e) {
+ System.assert('Messaging.CustomNotification.send requires hosted notification delivery'.equals(e.getMessage()));
+}
 
 Map<String,Object> payload = Messaging.PushNotificationPayload.apple('Alert', 'default', 1, new Map<String,Object>{'recordId' => '001000000000001AAA'});
 System.assert(payload.containsKey('aps'));
@@ -6885,7 +7405,8 @@ try {
 	Messaging.renderStoredEmailTemplate('00X000000000099AAA', null, null);
 	System.assert(false);
 } catch (Exception e) {
-	System.assert(e.getMessage().contains('Email template not found'));
+	// Messaging R215: missing template diagnostic, including the newline.
+	System.assert('INVALID_CROSS_REFERENCE_KEY: invalid cross reference id\n'.equals(e.getMessage()));
 }
 `)
 	if err != nil {
@@ -6959,7 +7480,7 @@ try {
 		{
 			name: "missing-template",
 			src:  `Messaging.renderStoredEmailTemplate('00X000000000099AAA', null, null);`,
-			want: `EmailException: Email template not found: 00X000000000099AAA`,
+			want: "EmailTemplateRenderException: INVALID_CROSS_REFERENCE_KEY: invalid cross reference id\n", // R215
 		},
 		{
 			name: "template-id-type",
@@ -7594,6 +8115,7 @@ func emailTemplateTestOrg() storage.OrgState {
 			"FirstName": storage.StringValue("Ada"),
 			"LastName":  storage.StringValue("Trail"),
 			"Name":      storage.StringValue("Ada Trail"),
+			"Email":     storage.StringValue("ada@example.test"),
 		},
 	}
 	org.Objects["Contact"] = contactObject
@@ -7688,9 +8210,10 @@ System.assertEquals(1, rows.get(0).size());
 
 func TestExecMessagingMassEmailLocalShape(t *testing.T) {
 	program, err := CompileAnonymous(`
+// Messaging R104-R108: native DTO defaults.
 Messaging.MassEmailMessage mass = new Messaging.MassEmailMessage();
-System.assertEquals(0, mass.getTargetObjectIds().size());
-System.assertEquals(0, mass.getWhatIds().size());
+System.assert(mass.getTargetObjectIds()==null);
+System.assert(mass.getWhatIds()==null);
 System.assertEquals(null, mass.getTemplateId());
 System.assertEquals('Mass Email (API)', mass.getDescription());
 System.assertEquals(null, mass.getOptOutPolicy());
@@ -7698,9 +8221,9 @@ System.assertEquals(null, mass.getEmailPriority());
 System.assertEquals(null, mass.getReplyTo());
 System.assertEquals(null, mass.getSenderDisplayName());
 System.assertEquals(null, mass.getSubject());
-System.assertEquals(false, mass.getSaveAsActivity());
+System.assertEquals(true, mass.getSaveAsActivity());
 System.assertEquals(false, mass.getBccSender());
-System.assertEquals(false, mass.getUseSignature());
+System.assertEquals(true, mass.getUseSignature());
 mass.setTargetObjectIds(new List<String>{'003000000000001', '003000000000002'});
 mass.setWhatIds(new List<String>{'001000000000001'});
 mass.setTemplateId('00X000000000001');
@@ -7835,8 +8358,8 @@ System.assertEquals(1, results[0].getErrors().size());
 func TestExecHttpResponseAndSendEmailResultDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
 HttpResponse response = new HttpResponse();
-System.assertEquals(200, response.getStatusCode());
-System.assertEquals('OK', response.getStatus());
+System.assertEquals(0, response.getStatusCode());
+System.assertEquals(null, response.getStatus());
 System.assertEquals('', response.getBody());
 response.setBody('<response><status>ok</status></response>');
 System.assertEquals('response', response.getBodyDocument().getRootElement().getName());
@@ -7880,13 +8403,31 @@ func TestExecTestSetMockRequiresTestContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(nil).Execute(program); err == nil || !strings.Contains(err.Error(), "Test.setMock is only available in test context") {
+	// A40 R136: the anonymous registration restriction is a catchable TypeException.
+	if _, err := New(nil).Execute(program); err == nil || !strings.Contains(err.Error(), "TypeException: Test.setMock() can only be called from test methods") {
 		t.Fatalf("err = %v", err)
 	}
 }
 
 func TestExecTestSetMockAcceptsTypeTokenForHttpMock(t *testing.T) {
 	program, err := CompileAnonymous(`Test.setMock(HttpCalloutMock.class, new MockResponse());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err = machine.Execute(program); err != nil {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestExecTestSetMockAcceptsSystemQualifiedTypeTokenForHttpMock(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.Test.setMock(System.HttpCalloutMock.class, new MockResponse(body = 'ok', statusCode = 201));
+System.HttpRequest request = new System.HttpRequest();
+request.setEndpoint('https://example.test');
+System.assertEquals(201, new System.Http().send(request).getStatusCode());
+`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -8161,16 +8702,21 @@ System.assertEquals('ResponseType', response.get('response_x'));
 	}
 }
 
-func TestExecWebServiceCalloutWithoutMockCreatesEmptyResponseShell(t *testing.T) {
+func TestExecWebServiceCalloutWithoutMockThrowsTestContextTypeException(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Object> response = new Map<String, Object>();
-WebServiceCallout.invoke(
+Boolean caught = false;
+try { WebServiceCallout.invoke(
   new Object(),
   'request',
   response,
   new String[]{'https://example.test', 'soapAction', 'requestNS', 'requestName', 'responseNS', 'responseName', 'ResponseType'}
 );
-System.assertNotEquals(null, response.get('response_x'));
+} catch (TypeException problem) {
+  caught = true;
+  System.assertEquals('Methods defined as TestMethod do not support Web service callouts', problem.getMessage());
+}
+System.assertEquals(true, caught);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -8181,12 +8727,12 @@ System.assertNotEquals(null, response.get('response_x'));
 	if err != nil {
 		t.Fatalf("err = %#v", err)
 	}
-	if result.Limits.Callouts != 1 {
-		t.Fatalf("callouts = %d, want 1", result.Limits.Callouts)
+	if result.Limits.Callouts != 0 {
+		t.Fatalf("callouts = %d, want 0", result.Limits.Callouts)
 	}
 }
 
-func TestExecWebServiceCalloutMockMaterializesGeneratedResponseShape(t *testing.T) {
+func TestExecWebServiceCalloutMockProvidesGeneratedResponseShape(t *testing.T) {
 	program, err := CompileAnonymous(`
 Test.setMock('WebServiceMock', new MockResponse());
 Map<String, Object> response = new Map<String, Object>();
@@ -8203,9 +8749,10 @@ System.assertEquals('mocked', shell.result);
 		t.Fatal(err)
 	}
 	doInvoke, err := CompileAnonymous(`
-GeneratedResponse shell = (GeneratedResponse)response.get('response_x');
-System.assertNotEquals(null, shell);
+System.assertEquals(false, response.containsKey('response_x'));
+GeneratedResponse shell = new GeneratedResponse();
 shell.result = 'mocked';
+response.put('response_x', shell);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -8254,13 +8801,31 @@ shell.result = 'mocked';
 	}
 }
 
+func TestExecWebServiceCalloutOutsideTestRequiresTransport(t *testing.T) {
+	program, err := CompileAnonymous(`
+WebServiceCallout.invoke(
+  new Object(), 'request', new Map<String,Object>(),
+  new String[]{'https://example.test', 'soapAction', 'requestNS', 'renameMetadata', 'responseNS', 'responseName', 'ResponseType'}
+);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = New(nil).Execute(program)
+	if err == nil || !strings.Contains(err.Error(), `unsupported call "WebServiceCallout.invoke real network transport"`) {
+		t.Fatalf("err = %v, want explicit unsupported transport", err)
+	}
+}
+
 func TestExecWebServiceCalloutRejectsMalformedOptions(t *testing.T) {
 	cases := []struct {
 		name string
 		src  string
+		want string
 	}{
 		{
 			name: "too-many-options",
+			want: "Invalid info with length 8",
 			src: `
 Map<String, Object> response = new Map<String, Object>();
 WebServiceCallout.invoke(
@@ -8273,6 +8838,7 @@ WebServiceCallout.invoke(
 		},
 		{
 			name: "non-string-option",
+			want: "WebServiceCallout.invoke expects 7 option strings",
 			src: `
 Map<String, Object> response = new Map<String, Object>();
 WebServiceCallout.invoke(
@@ -8291,7 +8857,7 @@ WebServiceCallout.invoke(
 				t.Fatal(err)
 			}
 			_, err = New(nil).Execute(program)
-			if err == nil || !strings.Contains(err.Error(), "WebServiceCallout.invoke expects 7 option strings") {
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
 				t.Fatalf("err = %v, want option validation", err)
 			}
 		})
@@ -8299,6 +8865,7 @@ WebServiceCallout.invoke(
 }
 
 func TestExecUnsupportedTestHelperAPIsHaveStableShape(t *testing.T) {
+	// A30 native Y001 records the native assertion expectations.
 	cases := []struct {
 		name string
 		src  string
@@ -8307,7 +8874,7 @@ func TestExecUnsupportedTestHelperAPIsHaveStableShape(t *testing.T) {
 		{
 			name: "createStub",
 			src:  `Test.createStub(Account.class, null);`,
-			want: `unsupported call "Test.createStub local stub API"`,
+			want: "Test.createStub() can only be called from test methods",
 		},
 	}
 	for _, tc := range cases {
@@ -8318,7 +8885,7 @@ func TestExecUnsupportedTestHelperAPIsHaveStableShape(t *testing.T) {
 			}
 			_, err = New(nil).Execute(program)
 			var runtimeErr *RuntimeError
-			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want || err.Error() != tc.want {
+			if !errors.As(err, &runtimeErr) || exceptionQualifiedTypeName(runtimeErr.Type) != "System.TypeException" || runtimeErr.ExceptionMessage() != tc.want {
 				t.Fatalf("err = %#v, want %q", err, tc.want)
 			}
 		})
@@ -8326,13 +8893,15 @@ func TestExecUnsupportedTestHelperAPIsHaveStableShape(t *testing.T) {
 }
 
 func TestExecSafeGeneratedTestHelpers(t *testing.T) {
+	// A30 native J006/J042 record the native assertion expectations.
 	program, err := CompileAnonymous(`
 List<Id> flexQueueOrder = Test.getFlexQueueOrder();
 System.assertEquals(0, flexQueueOrder.size());
-System.assertEquals(false, FlexQueue.moveJobToFront('707000000000001'));
-System.assertEquals(false, FlexQueue.moveJobToEnd('707000000000001'));
-System.assertEquals(false, FlexQueue.moveBeforeJob('707000000000001', '707000000000002'));
-System.assertEquals(false, FlexQueue.moveAfterJob('707000000000001', '707000000000002'));
+// A38 native controls F015-F018: missing mock jobs raise NoSuchElementException.
+try { FlexQueue.moveJobToFront('707000000000001'); System.assert(false); } catch(NoSuchElementException e) { System.assert('Job with id 707000000000001AAA not found in the queue'.equals(e.getMessage())); }
+try { FlexQueue.moveJobToEnd('707000000000001'); System.assert(false); } catch(NoSuchElementException e) { System.assert('Job with id 707000000000001AAA not found in the queue'.equals(e.getMessage())); }
+try { FlexQueue.moveBeforeJob('707000000000001', '707000000000002'); System.assert(false); } catch(NoSuchElementException e) { System.assert('Job with id 707000000000001AAA not found in the queue'.equals(e.getMessage())); }
+try { FlexQueue.moveAfterJob('707000000000001', '707000000000002'); System.assert(false); } catch(NoSuchElementException e) { System.assert('Job with id 707000000000001AAA not found in the queue'.equals(e.getMessage())); }
 System.pauseJobById('08e000000000001');
 System.pauseJobByName('local job');
 System.resumeJobById('08e000000000001');
@@ -8341,8 +8910,8 @@ System.assertEquals(0, System.purgeOldAsyncJobs(Date.today()));
 System.assertEquals(0, System.purgeOldAsyncJobs(Date.today(), 10));
 List<Id> batchJobIds = Test.enqueueBatchJobs(2);
 System.assertEquals(2, batchJobIds.size());
-System.assertEquals('707000000000001', String.valueOf(batchJobIds.get(0)));
-System.assertEquals('707000000000002', String.valueOf(batchJobIds.get(1)));
+System.assertEquals('707000000000001AAA', String.valueOf(batchJobIds.get(0)));
+System.assertEquals('707000000000002AAA', String.valueOf(batchJobIds.get(1)));
 Test.calculatePermissionSetGroup('0PG000000000001');
 Id permissionSetGroupId = '0PG000000000003';
 Test.calculatePermissionSetGroup(permissionSetGroupId);
@@ -8383,7 +8952,8 @@ func TestExecSafeGeneratedTestHelpersRequireTestContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(nil).Execute(program); err == nil || !strings.Contains(err.Error(), "only available in test context") {
+	// A38 R199 records the native test-only boundary message.
+	if _, err := New(nil).Execute(program); err == nil || err.Error() != "System.TypeException: Test.getFlexQueueOrder() can only be called from test methods" {
 		t.Fatalf("err = %v", err)
 	}
 }
@@ -8426,9 +8996,10 @@ System.assertEquals(false, result.isSuccess());
 }
 
 func TestExecTestSandboxPostCopyScriptInvokesRunApexClass(t *testing.T) {
+	// A30 native J007/J041 record the native assertion expectations.
 	copyProgram, err := CompileAnonymous(`
-System.assertEquals('00D000000000001', String.valueOf(context.organizationId()));
-System.assertEquals('0GR000000000001', String.valueOf(context.sandboxId()));
+System.assertEquals('00D000000000001EAA', String.valueOf(context.organizationId()));
+System.assertEquals('0GR000000000001GAA', String.valueOf(context.sandboxId()));
 System.assertEquals('preview', context.sandboxName());
 return null;
 `)
@@ -8468,7 +9039,7 @@ func TestExecDatabaseGetQueryLocator(t *testing.T) {
 insert new Account(Name = 'Acme');
 Object locator = Database.getQueryLocator('SELECT Id, Name FROM Account');
 System.assertEquals(1, Limits.getQueries());
-System.assertEquals(1, Limits.getQueryRows());
+System.assertEquals(0, Limits.getQueryRows()); // A34 R203: creation defers query rows until iteration.
 System.assertEquals(1, Limits.getQueryLocatorRows());
 System.assertEquals(10000, Limits.getLimitQueryLocatorRows());
 System.assertEquals('SELECT Id, Name FROM Account', locator.getQuery());
@@ -8508,7 +9079,7 @@ String wanted = 'Acme';
 Database.QueryLocator inlineAccessLocator = Database.getQueryLocator([SELECT Id, Name FROM Account WHERE Name = :wanted], AccessLevel.USER_MODE);
 System.assertEquals('SELECT Id , Name FROM Account WHERE Name = : wanted', inlineAccessLocator.getQuery());
 System.assertEquals(4, Limits.getQueries());
-System.assertEquals(4, Limits.getQueryRows());
+System.assertEquals(3, Limits.getQueryRows()); // A34 R204, N007-N010: only the first two traversals and ordinary query.
 System.assertEquals(3, Limits.getQueryLocatorRows());
 Object inlineAccessIterator = inlineAccessLocator.iterator();
 System.assert(inlineAccessIterator.hasNext());
@@ -9654,11 +10225,11 @@ func TestChildRelationshipListTypePrefersCurrentPackageObjectOverAliasRecordType
 	}
 }
 
-func TestExecNetworkGetNetworkIdFallbackIsValidId(t *testing.T) {
+func TestExecNetworkGetNetworkIdWithoutNetworkMetadataIsNull(t *testing.T) {
+	// R194: an unhosted context has no active Network ID at API 62/67.
 	program, err := CompileAnonymous(`
 String networkId = Network.getNetworkId();
-System.assertEquals('0DB000000000001', networkId);
-System.assertEquals(networkId, Id.valueOf(networkId).toString());
+System.assert(networkId == null, 'R194 expected raw null Network ID');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -10249,10 +10820,10 @@ func TestExecDatabaseSetSavepointIncrementsLimitsCounter(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(0, Limits.getSavepoints());
 System.Savepoint first = Database.setSavepoint();
-System.assertEquals(1, Limits.getSavepoints());
+System.assertEquals(Limits.getDMLStatements(), Limits.getSavepoints());
 System.Savepoint second = Database.setSavepoint();
-System.assertEquals(2, Limits.getSavepoints());
-System.assertEquals(5, Limits.getLimitSavepoints());
+System.assertEquals(Limits.getDMLStatements(), Limits.getSavepoints());
+System.assertEquals(Limits.getLimitDMLStatements(), Limits.getLimitSavepoints());
 System.assertNotEquals(null, first);
 System.assertNotEquals(null, second);
 `)
@@ -10270,15 +10841,15 @@ System.assertNotEquals(null, second);
 func TestExecDatabaseRollbackIncrementsRollbackLimitCounter(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(0, Limits.getSavepointRollbacks());
-System.assertEquals(100, Limits.getLimitSavepointRollbacks());
+System.assertEquals(Limits.getLimitDMLStatements(), Limits.getLimitSavepointRollbacks());
 System.Savepoint first = Database.setSavepoint();
 insert new Account(Name = 'rolled back');
 Database.rollback(first);
-System.assertEquals(1, Limits.getSavepointRollbacks());
-System.assertEquals(1, Limits.getSavepoints());
+System.assertEquals(Limits.getDMLStatements(), Limits.getSavepointRollbacks());
+System.assertEquals(Limits.getDMLStatements(), Limits.getSavepoints());
 System.Savepoint second = Database.setSavepoint();
 Database.rollback(second);
-System.assertEquals(2, Limits.getSavepointRollbacks());
+System.assertEquals(Limits.getDMLStatements(), Limits.getSavepointRollbacks());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -10440,7 +11011,7 @@ System.assertEquals('2026-01-02 03:04:05', row.CreatedDate.formatGmt('yyyy-MM-dd
 	}
 }
 
-func TestExecStopTestDoesNotDrainChainedAsyncJobs(t *testing.T) {
+func TestExecStopTestDrainsBatchQueuedByQueueable(t *testing.T) {
 	queueProgram, err := CompileAnonymous(`Database.executeBatch(new BatchWorker(), 200);`)
 	if err != nil {
 		t.Fatal(err)
@@ -10461,8 +11032,8 @@ func TestExecStopTestDoesNotDrainChainedAsyncJobs(t *testing.T) {
 Test.startTest();
 System.enqueueJob(new QueueWorker());
 Test.stopTest();
-System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'batch execute'].size());
-System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'batch finish'].size());
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'batch execute'].size());
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'batch finish'].size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -11050,8 +11621,20 @@ Test.stopTest();
 		t.Fatal(err)
 	}
 	jobs := org.Objects["AsyncApexJob"].Records
-	if len(jobs) != 4 {
-		t.Fatalf("AsyncApexJob records = %d, want 4: %#v", len(jobs), jobs)
+	// Fresh API67 Salesforce proof has one queueable and two empty batches.
+	// Retaining the caller's deduplication set prevents a second queueable.
+	if len(jobs) != 3 {
+		t.Fatalf("AsyncApexJob records = %d, want 3: %#v", len(jobs), jobs)
+	}
+	jobTypes := make(map[string]int)
+	for _, job := range jobs {
+		jobTypes[job.Fields["JobType"].String]++
+		if job.Fields["Status"].String != "Completed" || job.Fields["TotalJobItems"].Integer != 0 || job.Fields["JobItemsProcessed"].Integer != 0 {
+			t.Fatalf("empty inherited async job lifecycle = %#v", job)
+		}
+	}
+	if jobTypes["BatchApex"] != 2 || jobTypes["Queueable"] != 1 {
+		t.Fatalf("inherited async job types = %#v", jobTypes)
 	}
 }
 
@@ -11125,7 +11708,7 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'queue async'].size(
 	}
 }
 
-func TestExecStopTestDrainsOnlyJobsEnqueuedAfterStartTest(t *testing.T) {
+func TestExecStopTestDrainsQueueablesEnqueuedBeforeAndAfterStartTest(t *testing.T) {
 	preStartProgram, err := CompileAnonymous(`insert new Account(Name = 'pre-start async');`)
 	if err != nil {
 		t.Fatal(err)
@@ -11139,11 +11722,13 @@ func TestExecStopTestDrainsOnlyJobsEnqueuedAfterStartTest(t *testing.T) {
 	Test.startTest();
 	System.enqueueJob(new InsideWorker());
 	Test.stopTest();
-	System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'pre-start async'].size());
+	System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'pre-start async'].size());
 	System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'inside async'].size());
 	System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE Id = :preStartId]);
 	System.assertEquals(0, [SELECT COUNT() FROM AsyncApexJob WHERE Status = 'Deferred']);
 	System.assertEquals(2, [SELECT COUNT() FROM AsyncApexJob]);
+	System.assertEquals(2, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'Queueable' AND Status = 'Completed']);
+	System.assertEquals('Completed', [SELECT Status FROM AsyncApexJob WHERE Id = :preStartId].Status);
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -11250,7 +11835,9 @@ System.assertEquals(1, Limits.getPublishImmediateDML());
 	org := testDataOrg()
 	org.Objects["Local_Event__e"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Local_Event__e",
+			APIName: "Local_Event__e",
+			// A39 R002/R085: use explicit captured event provenance.
+			Metadata:  map[string]string{"publishBehavior": "PublishImmediately"},
 			KeyPrefix: "e00",
 			Fields: map[string]storage.Field{
 				"Name__c": {APIName: "Name__c", Type: storage.FieldString},
@@ -11908,7 +12495,8 @@ System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'Schedu
 	}
 }
 
-func TestExecScheduledApexWithExplicitFutureYearRemainsQueuedAtStopTest(t *testing.T) {
+// A38 F035/F042: stopTest invokes a far-future schedule and retains WAITING.
+func TestExecScheduledApexWithExplicitFutureYearRunsAtStopTest(t *testing.T) {
 	scheduledProgram, err := CompileAnonymous("ScheduledWorker.triggerId = context.getTriggerId();")
 	if err != nil {
 		t.Fatal(err)
@@ -11917,9 +12505,10 @@ func TestExecScheduledApexWithExplicitFutureYearRemainsQueuedAtStopTest(t *testi
 Test.startTest();
 String scheduleId = System.schedule('far-future', '0 0 0 1 1 ? 2050', new ScheduledWorker());
 Test.stopTest();
-System.assertEquals(null, ScheduledWorker.triggerId);
+System.assertNotEquals(null, ScheduledWorker.triggerId);
 CronTrigger ct = [SELECT Id, State FROM CronTrigger WHERE Id = :scheduleId];
-System.assertEquals('Waiting', ct.State);
+// A30 J089: native CronTrigger state retains uppercase.
+System.assertEquals('WAITING', ct.State);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -11950,7 +12539,8 @@ System.assertEquals('Waiting', ct.State);
 	}
 }
 
-func TestStopTestRunsScheduledApexLaterInCurrentYear(t *testing.T) {
+// A38 F035: the test-stop due boundary also includes an explicit future year.
+func TestStopTestRunsScheduledApexAcrossFutureYears(t *testing.T) {
 	machine := New(nil)
 	machine.EnableTestContext()
 	machine.fakeNow = time.Date(2026, 1, 1, 0, 0, 1, 0, time.UTC)
@@ -11962,8 +12552,8 @@ func TestStopTestRunsScheduledApexLaterInCurrentYear(t *testing.T) {
 		t.Fatal("scheduled Apex later in the current test year was not due at Test.stopTest")
 	}
 	job.NotBefore = time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
-	if machine.asyncJobDue(job) {
-		t.Fatal("far-future scheduled Apex became due at Test.stopTest")
+	if !machine.asyncJobDue(job) {
+		t.Fatal("far-future scheduled Apex was not due at Test.stopTest")
 	}
 }
 
@@ -12957,7 +13547,8 @@ System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'cursor batch ran'].
 	}
 }
 
-func TestExecAbortJobUnknownRecordsAreTypedUnsupported(t *testing.T) {
+// A38 R176: an unknown async identity raises the native StringException.
+func TestExecAbortJobUnknownRecordsRaiseStringException(t *testing.T) {
 	cases := []struct {
 		name string
 		src  string
@@ -12966,7 +13557,7 @@ func TestExecAbortJobUnknownRecordsAreTypedUnsupported(t *testing.T) {
 		{
 			name: "unknown",
 			src:  `System.abortJob('707000000999999');`,
-			want: `unsupported call "System.abortJob unknown local async records"`,
+			want: `Job does not exist or is already aborted.`,
 		},
 	}
 	for _, tc := range cases {
@@ -12987,8 +13578,8 @@ func TestExecAbortJobUnknownRecordsAreTypedUnsupported(t *testing.T) {
 			}
 			_, err = machine.Execute(program)
 			var runtimeErr *RuntimeError
-			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want {
-				t.Fatalf("err = %#v, want UnsupportedFeature %q", err, tc.want)
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "System.StringException" || runtimeErr.Message != tc.want {
+				t.Fatalf("err = %#v, want System.StringException %q", err, tc.want)
 			}
 		})
 	}
@@ -13090,6 +13681,45 @@ System.assertEquals(1, Limits.getQueueableJobs());
 	}
 }
 
+func TestExecAsyncTransactionsUseAsyncGovernorCaps(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.startTest();
+System.enqueueJob(new QueueWorker());
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	workerProgram, err := CompileAnonymous(`
+System.assertEquals(200, Limits.getLimitQueries());
+System.assertEquals(12582912, Limits.getLimitHeapSize());
+System.assertEquals(60000, Limits.getLimitCpuTime());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "QueueWorker",
+		Interfaces: []string{"Queueable"},
+		Methods: map[string]Method{
+			"execute": {
+				Name:       "QueueWorker.execute",
+				ClassName:  "QueueWorker",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "QueueableContext"}},
+				Program:    workerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecFinalizerContextMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 FinalizerContext fc = new FinalizerContext();
@@ -13125,6 +13755,80 @@ func TestExecSystemAttachFinalizerRejectsOutsideQueueable(t *testing.T) {
 	}
 }
 
+func TestExecQueueableFinalizerPreservesRepeatedObjectAliases(t *testing.T) {
+	queueProgram, err := CompileAnonymous(`
+System.attachFinalizer(this.finalizer);
+this.callback.marker = 'body';
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finalizerProgram, err := CompileAnonymous(`
+AliasedFinalizer.observed = this.marker;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+AliasedQueueable worker = new AliasedQueueable();
+AliasedFinalizer callback = new AliasedFinalizer();
+worker.callback = callback;
+worker.finalizer = callback;
+Test.startTest();
+System.enqueueJob(worker);
+Test.stopTest();
+System.assertEquals('body', AliasedFinalizer.observed);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "AliasedFinalizer",
+		Interfaces: []string{"Finalizer"},
+		Fields: map[string]Field{
+			"marker": {Name: "marker", Type: "String"},
+		},
+		StaticFields: map[string]Field{
+			"observed": {Name: "observed", Type: "String", Static: true},
+		},
+		Methods: map[string]Method{
+			"execute": {
+				Name:       "AliasedFinalizer.execute",
+				ClassName:  "AliasedFinalizer",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "FinalizerContext"}},
+				Program:    finalizerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "AliasedQueueable",
+		Interfaces: []string{"Queueable"},
+		Fields: map[string]Field{
+			"callback":  {Name: "callback", Type: "AliasedFinalizer"},
+			"finalizer": {Name: "finalizer", Type: "AliasedFinalizer"},
+		},
+		Methods: map[string]Method{
+			"execute": {
+				Name:       "AliasedQueueable.execute",
+				ClassName:  "AliasedQueueable",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "QueueableContext"}},
+				Program:    queueProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRunAsUserObjectScopesUserInfo(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username = 'user-a@example.test', LocaleSidKey = 'de_DE', LanguageLocaleKey = 'fr')) {
@@ -13136,7 +13840,7 @@ System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username =
   System.assertEquals('User', UserInfo.getLastName());
   System.assertEquals('system@example.invalid', UserInfo.getUserEmail());
   System.assertEquals('00D000000000001EAA', UserInfo.getOrganizationId());
-  System.assertEquals('', UserInfo.getSessionId());
+  System.assertEquals('local-session!ApexTestSession', UserInfo.getSessionId());
   System.assertEquals('de_DE', UserInfo.getLocale());
   System.assertEquals('fr', UserInfo.getLanguage());
   System.assertEquals(false, UserInfo.isMultiCurrencyOrganization());
@@ -13194,8 +13898,8 @@ System.assertEquals('system', USERINFO.getuserid());
 
 func TestExecCurrentUserTimeZoneScopesUserInfoAndDatetimeFormat(t *testing.T) {
 	program, err := CompileAnonymous(`
-Datetime winter = Datetime.valueOfGmt('2024-02-29T23:05:06Z');
-Datetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
+Datetime winter = Datetime.newInstanceGmt(2024, 2, 29, 23, 5, 6);
+Datetime summer = Datetime.newInstanceGmt(2024, 7, 1, 12, 0, 0);
 TimeZone tz = UserInfo.getTimeZone();
 System.assertEquals('America/Los_Angeles', tz.getID());
 System.assertEquals('(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)', tz.getDisplayName());
@@ -13222,8 +13926,8 @@ System.assertEquals('2/29/2024, 3:05 PM', winter.format());
 	}
 
 	easternProgram, err := CompileAnonymous(`
-Datetime winter = Datetime.valueOfGmt('2024-02-29T23:05:06Z');
-Datetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
+Datetime winter = Datetime.newInstanceGmt(2024, 2, 29, 23, 5, 6);
+Datetime summer = Datetime.newInstanceGmt(2024, 7, 1, 12, 0, 0);
 TimeZone eastern = UserInfo.getTimeZone();
 System.assertEquals('America/New_York', eastern.getID());
 System.assertEquals(-18000000, eastern.getOffset(winter));
@@ -13247,8 +13951,8 @@ System.assertEquals('7/1/2024, 8:00 AM', summer.format());
 	}
 
 	denverProgram, err := CompileAnonymous(`
-Datetime winter = Datetime.valueOfGmt('2024-02-29T23:05:06Z');
-Datetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
+Datetime winter = Datetime.newInstanceGmt(2024, 2, 29, 23, 5, 6);
+Datetime summer = Datetime.newInstanceGmt(2024, 7, 1, 12, 0, 0);
 TimeZone mountain = UserInfo.getTimeZone();
 System.assertEquals('America/Denver', mountain.getID());
 System.assertEquals(-25200000, mountain.getOffset(winter));
@@ -13340,11 +14044,11 @@ System.assertEquals(8, overlap.hourGmt());
 func TestExecRunAsIncrementsLimitsCounter(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(0, Limits.getRunAs());
-System.assertEquals(100, Limits.getLimitRunAs());
+System.assertEquals(Limits.getLimitDMLStatements(), Limits.getLimitRunAs());
 System.runAs(new User(Id = '005-user-a')) {
-	System.assertEquals(1, Limits.getRunAs());
+	System.assertEquals(Limits.getDMLStatements(), Limits.getRunAs());
 }
-System.assertEquals(1, Limits.getRunAs());
+System.assertEquals(Limits.getDMLStatements(), Limits.getRunAs());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -13434,7 +14138,13 @@ System.assertEquals(false, Site.forgotPassword('user@example.invalid', 'ResetTem
 
 func TestExecSitePasswordAndExperienceContracts(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals('', Site.getExperienceId());
+// Execution-context R180: an unhosted request has no community experience.
+try {
+    Site.getExperienceId();
+    System.assert(false, 'expected community boundary error');
+} catch (System.RequiredFeatureMissingException e) {
+    System.assert('This method can be invoked only from within a community.'.equals(e.getMessage()));
+}
 Site.setExperienceId('LocalExperience001');
 System.assertEquals('LocalExperience001', Site.getExperienceId());
 System.assertEquals(false, Site.forgotPassword('user@example.invalid'));
@@ -13585,7 +14295,8 @@ System.assertEquals(0, Network.loadAllPackageDefaultNetworkWorkspaceMetricSettin
 	ConnectApi.UserProfiles.setPhoto(Network.getNetworkId(), UserInfo.getUserId(), '069000000000001', null);
 	ConnectApi.UserProfiles.deletePhoto(Network.getNetworkId(), UserInfo.getUserId());
 ConnectApi.UserSettings userSettings = ConnectApi.Organization.getSettings().userSettings;
-System.assertEquals('005-local-user', userSettings.userId);
+// Execution-context R008/R031: context identity follows the stored user.
+System.assertEquals('005000000000001', userSettings.userId);
 ConnectApi.TimeZone zone = userSettings.timeZone;
 System.assertEquals('UTC', zone.name);
 System.assertEquals(false, Auth.CommunitiesUtil.isGuestUser());
@@ -13624,11 +14335,11 @@ System.assertEquals(null, Site.createPersonAccountPortalUser(externalUser, '0050
 	}
 }
 
-func TestExecNetworkGetNetworkIdFallbackIsApexIDShaped(t *testing.T) {
+func TestExecNetworkGetNetworkIdWithoutSiteContextIsNull(t *testing.T) {
 	program, err := CompileAnonymous(`
 String networkId = Network.getNetworkId();
-System.assertEquals('0DB000000000001', networkId);
-Id.valueOf(networkId);
+// Execution-context R194: no hosted network identity is synthesized.
+System.assert(networkId==null);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -13914,6 +14625,7 @@ System.assert(new Social.InboundSocialPostHandlerImpl().handleInboundSocialPost(
 }
 
 func TestExecLocalCurrentUserContextDoesNotEnableRunAs(t *testing.T) {
+	// A30 native R002 records the native assertion expectations.
 	program, err := CompileAnonymous(`
 System.assertEquals('005-local-user', UserInfo.getUserId());
 System.assertEquals('local@example.test', UserInfo.getUserName());
@@ -13944,8 +14656,10 @@ System.assertEquals('es', UserInfo.getLanguage());
 		t.Fatal(err)
 	}
 	_, err = machine.Execute(runAsProgram)
-	if err == nil || !strings.Contains(err.Error(), "System.runAs is only available in test context") {
-		t.Fatalf("runAs err = %v", err)
+	const wantMessage = "System.runAs can only be used within a test method: "
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || exceptionQualifiedTypeName(runtimeErr.Type) != "System.TypeException" || runtimeErr.ExceptionMessage() != wantMessage {
+		t.Fatalf("runAs err = %#v, want System.TypeException with message %q", err, wantMessage)
 	}
 }
 
@@ -14000,7 +14714,7 @@ URL base = System.URL.getSalesforceBaseURL();
 System.assertEquals('https://trail.example.test:8443', base.toExternalForm());
 System.assertEquals('trail.example.test', base.getHost());
 URL orgUrl = System.Url.getOrgDomainUrl();
-System.assertEquals('https://trail.example.test:8443', orgUrl.toString());
+System.assertEquals('https://local.glade.example', orgUrl.toString());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -14163,7 +14877,7 @@ func TestExecPermissionMetadataObjectsAreSetupDML(t *testing.T) {
 PermissionSet ps = new PermissionSet(Name = 'LocalPermissions');
 insert ps;
 insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
-insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Account', Field = 'Account.Name', PermissionsRead = true);
+insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Account', Field = 'Account.Phone', PermissionsRead = true);
 insert new SetupEntityAccess(ParentId = ps.Id, SetupEntityId = '01p000000000001', SetupEntityType = 'ApexClass');
 `)
 	if err != nil {
@@ -14289,6 +15003,7 @@ List<String> pieces = trimmed.split(',');
 System.assertEquals(3, pieces.size());
 System.assertEquals('Alpha|Beta|Alpha', String.join(pieces, '|'));
 System.assertEquals('Alpha|Beta', String.join(new Set<String>{'Alpha', 'Beta'}, '|'));
+System.assertEquals('001000000000001AAA', String.join(new List<Id>{'001000000000001'}, ','));
 System.assert(String.isBlank('   '));
 System.assert(String.isNotBlank('x'));
 System.assert(trimmed.equalsIgnoreCase('alpha,beta,alpha'));
@@ -14354,7 +15069,7 @@ Date dtDate = dt.date();
 System.assertEquals('2026-05-02', String.valueOf(dtDate));
 Datetime made = Datetime.newInstance(2026, 5, 2, 1, 2, 3);
 System.assertEquals('2026-05-02 01:02:03', made.formatGmt('yyyy-MM-dd HH:mm:ss'));
-System.assertEquals(1777683723000, made.getTime());
+System.assertEquals(1777683723000L, made.getTime());
 Datetime madePlusHour = made.addHours(1);
 System.assertEquals('2026-05-02 02:02:03', madePlusHour.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime madePlusMinutes = made.addMinutes(2);
@@ -14370,9 +15085,13 @@ System.assertEquals('2026-05-02 01:04:03', madePlusMinutes.formatGmt('yyyy-MM-dd
 	String parsedDtText = parsedDt.formatGmt('yyyy-MM-dd HH:mm:ss');
 	System.assertEquals(madeText, parsedDtText);
 	Object parsedDtObjectText = '2026-05-02 01:02:03';
-	System.assertEquals(madeText, Datetime.valueOf(parsedDtObjectText).formatGmt('yyyy-MM-dd HH:mm:ss'));
-	System.assertEquals('2026-05-02 08:02:03', Datetime.valueOf('2026-05-02 01:02:03-7').formatGmt('yyyy-MM-dd HH:mm:ss'));
-	System.assertEquals('2026-05-02 01:02:03', Datetime.valueOf('2026-05-02 01:02:030').formatGmt('yyyy-MM-dd HH:mm:ss'));
+	// Native preservation O020: Object strings do not use the String overload.
+	String objectDatetimeError = '';
+	try { Datetime.valueOf(parsedDtObjectText); } catch (TypeException e) { objectDatetimeError = e.getMessage(); }
+	System.assertEquals('Invalid date/time: 2026-05-02 01:02:03', objectDatetimeError);
+	// Native preservation O005/O006 (UTC execution context here): suffixes are ignored.
+	System.assertEquals('2026-05-02 01:02:03', Datetime.valueOf('2026-05-02 01:02:03-7').formatGmt('yyyy-MM-dd HH:mm:ss'));
+	System.assertEquals('2026-05-02 01:02:30', Datetime.valueOf('2026-05-02 01:02:030').formatGmt('yyyy-MM-dd HH:mm:ss'));
 	Object parsedDtObject = parsedDt;
 	System.assertEquals(madeText, Datetime.valueOf(parsedDtObject).formatGmt('yyyy-MM-dd HH:mm:ss'));
 	Time tm = Time.valueOf('01:02:03');
@@ -14425,31 +15144,33 @@ System.assert(!ApexPages.hasMessages());
 	}
 }
 
-func TestExecDateTimeConstructorsRejectInvalidParts(t *testing.T) {
-	for _, source := range []string{
-		`Datetime bad = Datetime.newInstance(2026, 5, 32, 1, 2, 3);`,
-		`Time bad = Time.newInstance(25, 0, 0);`,
-	} {
-		program, err := CompileAnonymous(source)
-		if err != nil {
-			t.Fatal(err)
-		}
-		machine := New(nil)
-		if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "invalid") {
-			t.Fatalf("source %q err = %v", source, err)
-		}
+// Native K007/K009 and T137-T145: construction carries calendar/clock overflow.
+func TestExecDateTimeConstructorsNormalizeOverflow(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('2026-06-01 08:02:03', Datetime.newInstance(2026,5,32,1,2,3).formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals(23, Time.newInstance(-1,0,0,0).hour());
+System.assertEquals('00:00:01.000Z', Time.newInstance(0,0,0,1000).toString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetCurrentUser(storage.Record{ID: "005-temporal-user", Object: "User", Fields: map[string]storage.Value{"TimeZoneSidKey": storage.StringValue("America/Los_Angeles")}})
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
-func TestExecDateNewInstanceAcceptsMonthDayYearUIParts(t *testing.T) {
+// Native factory controls Z030/Z031: argument order stays year, month, day.
+func TestExecDateNewInstanceNormalizesCalendarParts(t *testing.T) {
 	program, err := CompileAnonymous(`
-Date day = Date.newInstance(4, 20, 2020);
-System.assertEquals(Date.newInstance(2020, 4, 20), day);
+Object day = Date.newInstance(4, 20, 2020);
+System.assertEquals('0011-02-10 00:00:00', String.valueOf(day));
 System.assertEquals('0000-01-01', String.valueOf(Date.newInstance(0, 1, 1)));
 System.assertEquals('2027-01-02', String.valueOf(Date.newInstance(2026, 13, 2)));
 System.assertEquals('2017-11-30', String.valueOf(Date.newInstance(2018, 0, 0)));
 System.assertEquals('0000-01-01 01:02:03', Datetime.newInstanceGmt(Date.newInstance(0, 1, 1), Time.newInstance(1, 2, 3, 0)).formatGmt('yyyy-MM-dd HH:mm:ss'));
-System.assertEquals('2024-01-01 00:00:00', Datetime.newInstanceGmt(1, 1, 2024).formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals('0006-07-17 00:00:00', Datetime.newInstanceGmt(1, 1, 2024).formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals('2017-11-30 00:00:00', Datetime.newInstanceGmt(2018, 0, 0).formatGmt('yyyy-MM-dd HH:mm:ss'));
 `)
 	if err != nil {
@@ -14480,7 +15201,8 @@ System.assertEquals(2024, leap.year());
 System.assertEquals(29, Date.daysInMonth(2024, 2));
 System.assertEquals(28, Date.daysInMonth(2025, 2));
 Date monthStart = leap.toStartOfMonth();
-Date monthEnd = leap.toEndOfMonth();
+// Native C006 (API62/67) rejects Date.toEndOfMonth; use supported calendar members.
+Date monthEnd = leap.toStartOfMonth().addMonths(1).addDays(-1);
 System.assertEquals('2024-01-01', String.valueOf(monthStart));
 System.assertEquals('2024-01-31', String.valueOf(monthEnd));
 Date due = leap.addDays(10);
@@ -14526,26 +15248,6 @@ System.assertEquals(sameStamp, stamp);
 	}
 }
 
-func TestExecUserInfoGetTimeZoneRejectsUnsupportedCurrentUserZone(t *testing.T) {
-	program, err := CompileAnonymous(`TimeZone zone = UserInfo.getTimeZone();`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	machine := New(nil)
-	machine.SetCurrentUser(storage.Record{
-		ID:     "005-phoenix-user",
-		Object: "User",
-		Fields: map[string]storage.Value{
-			"TimeZoneSidKey": storage.StringValue("America/Phoenix"),
-		},
-	})
-	_, err = machine.Execute(program)
-	var runtimeErr *RuntimeError
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "TimeZone.getTimeZone America/Phoenix"` {
-		t.Fatalf("err = %#v, want UnsupportedFeature for unsupported current user timezone", err)
-	}
-}
-
 func TestExecTimeDatetimeGmtAndTimeZoneMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 Date today = Date.today();
@@ -14560,7 +15262,8 @@ System.assertEquals('2024-02-29', String.valueOf(gmtDate));
 System.assertEquals(Time.newInstance(23, 59, 58, 0), gmt.timeGmt());
 Datetime parsedGmt = Datetime.valueOfGmt('2024-02-29 23:59:58');
 System.assertEquals('2024-02-29 23:59:58', parsedGmt.formatGmt('yyyy-MM-dd HH:mm:ss'));
-Datetime fractionalGmt = Datetime.valueOfGmt('2024-02-29T23:59:58.250Z');
+// Native control K012 admits the space separator; K014 rejects ISO.
+Datetime fractionalGmt = Datetime.valueOfGmt('2024-02-29 23:59:58.250Z');
 System.assertEquals('2024-02-29 23:59:58', fractionalGmt.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals(0, fractionalGmt.millisecond());
 
@@ -14589,9 +15292,10 @@ System.assertEquals('GMT+05:30', offset.getID());
 System.assertEquals('(GMT+05:30) Pacific Standard Time (GMT+05:30)', offset.getDisplayName());
 System.assertEquals(19800000, offset.getOffset(gmt));
 TimeZone west = TimeZone.getTimeZone('UTC-02:00');
-System.assertEquals('GMT-02:00', west.getID());
-System.assertEquals('(GMT-02:00) Pacific Standard Time (GMT-02:00)', west.getDisplayName());
-System.assertEquals(-7200000, west.getOffset(gmt));
+// Native factory Z010-Z012: UTC offset-looking IDs fall back to GMT.
+System.assertEquals('GMT', west.getID());
+System.assertEquals('(GMT+00:00) Greenwich Mean Time (GMT)', west.getDisplayName());
+System.assertEquals(0, west.getOffset(gmt));
 TimeZone edge = TimeZone.getTimeZone('GMT+14:00');
 System.assertEquals('(GMT+14:00) Pacific Standard Time (GMT+14:00)', edge.getDisplayName());
 System.assertEquals(50400000, edge.getOffset(gmt));
@@ -14600,7 +15304,7 @@ System.assertEquals('America/Los_Angeles', pacific.getID());
 System.assertEquals('America/Los_Angeles', pacific.toString());
 System.assertEquals('(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)', pacific.getDisplayName());
 System.assertEquals(-28800000, pacific.getOffset(gmt));
-Datetime summerNoon = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
+Datetime summerNoon = Datetime.newInstanceGmt(2024, 7, 1, 12, 0, 0);
 System.assertEquals(-25200000, pacific.getOffset(summerNoon));
 TimeZone eastern = TimeZone.getTimeZone('America/New_York');
 System.assertEquals('America/New_York', eastern.getID());
@@ -14666,6 +15370,20 @@ System.assertEquals(36000000, sydney.getOffset(summerNoon));
 	}
 }
 
+func TestExecTimeZoneStaticCallAcceptsApexCaseInsensitiveTypeName(t *testing.T) {
+	program, err := CompileAnonymous(`
+TimeZone zone = Timezone.getTimeZone('America/Los_Angeles');
+System.assertEquals('America/Los_Angeles', zone.getID());
+System.assertEquals('America/Los_Angeles', zone.toString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTimeZoneGetDisplayNameBooleanIsUnsupported(t *testing.T) {
 	program, err := CompileAnonymous(`TimeZone zone = TimeZone.getTimeZone('UTC'); zone.getDisplayName(false);`)
 	if err != nil {
@@ -14688,7 +15406,8 @@ Datetime fractional = Datetime.valueOfGmt('2024-02-29 23:59:58.250Z');
 System.assertEquals('2024-02-29 23:59:58', fractional.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals(0, fractional.millisecond());
 Datetime offset = Datetime.valueOfGmt('2024-02-29 18:29:58-05:30');
-System.assertEquals('2024-02-29 23:59:58', offset.formatGmt('yyyy-MM-dd HH:mm:ss'));
+// Native K013: valueOfGmt reads the clock and ignores the offset suffix.
+System.assertEquals('2024-02-29 18:29:58', offset.formatGmt('yyyy-MM-dd HH:mm:ss'));
 Datetime assigned = '2024-02-29 23:59:58+0000';
 System.assertEquals('2024-02-29 23:59:58', assigned.formatGmt('yyyy-MM-dd HH:mm:ss'));
 `)
@@ -14703,15 +15422,16 @@ System.assertEquals('2024-02-29 23:59:58', assigned.formatGmt('yyyy-MM-dd HH:mm:
 func TestExecDatetimeValueOfTruncatesFractionalSeconds(t *testing.T) {
 	program, err := CompileAnonymous(`
 Datetime spaceSeparated = Datetime.valueOfGmt('2024-02-29 23:59:58.250Z');
-Datetime isoSeparated = Datetime.valueOfGmt('2024-02-29T23:59:58.250Z');
+// Native K014: ISO text must fail without changing implicit ISO assignment.
+String isoError = '';
+try { Datetime.valueOfGmt('2024-02-29T23:59:58.250Z'); } catch (TypeException e) { isoError = e.getMessage(); }
+System.assertEquals('Invalid date/time: 2024-02-29T23:59:58.250Z', isoError);
 Datetime localValue = Datetime.valueOf('2024-02-29 23:59:58.250');
 Datetime expectedGmt = Datetime.valueOfGmt('2024-02-29 23:59:58Z');
 Datetime expectedLocal = Datetime.valueOf('2024-02-29 23:59:58');
 System.assertEquals(expectedGmt, spaceSeparated);
-System.assertEquals(expectedGmt, isoSeparated);
 System.assertEquals(expectedLocal, localValue);
 System.assertEquals(0, spaceSeparated.millisecond());
-System.assertEquals(0, isoSeparated.millisecond());
 System.assertEquals(0, localValue.millisecond());
 `)
 	if err != nil {
@@ -14722,16 +15442,36 @@ System.assertEquals(0, localValue.millisecond());
 	}
 }
 
+func TestExecDatetimeValueOfAcceptsEpochInteger(t *testing.T) {
+	program, err := CompileAnonymous(`
+Long epoch = Long.valueOf('1777680000000');
+Datetime value = Datetime.valueOf(epoch);
+System.assertEquals(epoch, value.getTime());
+System.assertEquals(epoch, Datetime.valueOf(1777680000000L).getTime());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatetimePatternFormatting(t *testing.T) {
 	program, err := CompileAnonymous(`
 Datetime stamp = Datetime.newInstanceGmt(2024, 2, 29, 23, 5, 6);
-System.assertEquals('2024-02-29 23:05:06.000 +0000 UTC', stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS Z z'));
+System.assertEquals('5', stamp.formatGmt('F'));
+// Native control K029; P066/P096/P126 distinguish short/long GMT names.
+System.assertEquals('2024-02-29 23:05:06.000 +0000 GMT', stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS Z z'));
+System.assertEquals('2024-02-29 0000', stamp.formatGmt('yyyy-MM-dd SSSS')); // K035
+System.assertEquals('February', stamp.formatGmt('LLLL')); // K036
 System.assertEquals('Thu, Feb 29 2024 11:05 PM', stamp.formatGmt('EEE, MMM d yyyy h:mm a'));
 System.assertEquals('2024-03-01 04:35:06.000 +0530 GMT+05:30', stamp.format('yyyy-MM-dd HH:mm:ss.SSS Z z', 'GMT+05:30'));
-System.assertEquals('2024-02-29T21:05:06', stamp.format('yyyy-MM-dd''T''HH:mm:ss', 'UTC-02:00'));
+// Native factory Z028: invalid explicit zone uses GMT.
+System.assertEquals('2024-02-29T23:05:06', stamp.format('yyyy-MM-dd\'T\'HH:mm:ss', 'UTC-02:00'));
 System.assertEquals('2024-03-01 13:05:06 +1400 GMT+14:00', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'GMT+14:00'));
 System.assertEquals('2024-02-29 15:05:06 -0800 PST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Los_Angeles'));
-Datetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
+Datetime summer = Datetime.newInstanceGmt(2024, 7, 1, 12, 0, 0);
 System.assertEquals('2024-07-01 05:00:00 -0700 PDT', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Los_Angeles'));
 System.assertEquals('2024-02-29 18:05:06 -0500 EST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'America/New_York'));
 System.assertEquals('2024-07-01 08:00:00 -0400 EDT', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'America/New_York'));
@@ -14762,24 +15502,24 @@ System.assertEquals('2024-07-01 22:00:00 +1000 AEST', summer.format('yyyy-MM-dd 
 func TestExecNamedTimeZoneDSTBoundaries(t *testing.T) {
 	program, err := CompileAnonymous(`
 TimeZone central = TimeZone.getTimeZone('America/Chicago');
-System.assertEquals(-21600000, central.getOffset(Datetime.valueOfGmt('2024-03-10T07:59:59Z')));
-System.assertEquals(-18000000, central.getOffset(Datetime.valueOfGmt('2024-03-10T08:00:00Z')));
-System.assertEquals(-18000000, central.getOffset(Datetime.valueOfGmt('2024-11-03T06:59:59Z')));
-System.assertEquals(-21600000, central.getOffset(Datetime.valueOfGmt('2024-11-03T07:00:00Z')));
+System.assertEquals(-21600000, central.getOffset(Datetime.newInstanceGmt(2024, 3, 10, 7, 59, 59)));
+System.assertEquals(-18000000, central.getOffset(Datetime.newInstanceGmt(2024, 3, 10, 8, 0, 0)));
+System.assertEquals(-18000000, central.getOffset(Datetime.newInstanceGmt(2024, 11, 3, 6, 59, 59)));
+System.assertEquals(-21600000, central.getOffset(Datetime.newInstanceGmt(2024, 11, 3, 7, 0, 0)));
 
 TimeZone london = TimeZone.getTimeZone('Europe/London');
-System.assertEquals(0, london.getOffset(Datetime.valueOfGmt('2024-03-31T00:59:59Z')));
-System.assertEquals(3600000, london.getOffset(Datetime.valueOfGmt('2024-03-31T01:00:00Z')));
-System.assertEquals(3600000, london.getOffset(Datetime.valueOfGmt('2024-10-27T00:59:59Z')));
-System.assertEquals(0, london.getOffset(Datetime.valueOfGmt('2024-10-27T01:00:00Z')));
+System.assertEquals(0, london.getOffset(Datetime.newInstanceGmt(2024, 3, 31, 0, 59, 59)));
+System.assertEquals(3600000, london.getOffset(Datetime.newInstanceGmt(2024, 3, 31, 1, 0, 0)));
+System.assertEquals(3600000, london.getOffset(Datetime.newInstanceGmt(2024, 10, 27, 0, 59, 59)));
+System.assertEquals(0, london.getOffset(Datetime.newInstanceGmt(2024, 10, 27, 1, 0, 0)));
 
 TimeZone sydney = TimeZone.getTimeZone('Australia/Sydney');
-System.assertEquals(39600000, sydney.getOffset(Datetime.valueOfGmt('2024-04-06T15:59:59Z')));
-System.assertEquals(36000000, sydney.getOffset(Datetime.valueOfGmt('2024-04-06T16:00:00Z')));
-System.assertEquals(36000000, sydney.getOffset(Datetime.valueOfGmt('2024-10-05T15:59:59Z')));
-System.assertEquals(39600000, sydney.getOffset(Datetime.valueOfGmt('2024-10-05T16:00:00Z')));
+System.assertEquals(39600000, sydney.getOffset(Datetime.newInstanceGmt(2024, 4, 6, 15, 59, 59)));
+System.assertEquals(36000000, sydney.getOffset(Datetime.newInstanceGmt(2024, 4, 6, 16, 0, 0)));
+System.assertEquals(36000000, sydney.getOffset(Datetime.newInstanceGmt(2024, 10, 5, 15, 59, 59)));
+System.assertEquals(39600000, sydney.getOffset(Datetime.newInstanceGmt(2024, 10, 5, 16, 0, 0)));
 
-Datetime stamp = Datetime.valueOfGmt('2024-03-31T01:00:00Z');
+Datetime stamp = Datetime.newInstanceGmt(2024, 3, 31, 1, 0, 0);
 System.assertEquals('2024-03-31 02:00:00 +0100 BST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Europe/London'));
 `)
 	if err != nil {
@@ -14790,6 +15530,7 @@ System.assertEquals('2024-03-31 02:00:00 +0100 BST', stamp.format('yyyy-MM-dd HH
 	}
 }
 
+// Native controls K037/K038 back both error messages.
 func TestExecDatetimePatternFormattingRejectsUnsupportedEdges(t *testing.T) {
 	cases := []struct {
 		name string
@@ -14797,29 +15538,14 @@ func TestExecDatetimePatternFormattingRejectsUnsupportedEdges(t *testing.T) {
 		want string
 	}{
 		{
-			name: "unknown named timezone",
-			src:  `Datetime stamp = Datetime.now(); stamp.format('yyyy-MM-dd', 'America/Phoenix');`,
-			want: "Invalid timezone",
-		},
-		{
 			name: "unsupported token",
 			src:  `Datetime stamp = Datetime.now(); stamp.formatGmt('yyyy-QQ-dd');`,
-			want: "unsupported pattern token",
-		},
-		{
-			name: "unsupported millisecond token width",
-			src:  `Datetime stamp = Datetime.now(); stamp.formatGmt('yyyy-MM-dd SSSS');`,
-			want: "unsupported pattern token",
+			want: "Unrecognized format: yyyy-QQ-dd",
 		},
 		{
 			name: "unterminated literal",
-			src:  `Datetime stamp = Datetime.now(); stamp.formatGmt('yyyy-MM-dd''T');`,
-			want: "unterminated quoted literal",
-		},
-		{
-			name: "locale dependent pattern token",
-			src:  `Datetime stamp = Datetime.now(); stamp.formatGmt('LLLL');`,
-			want: `unsupported call "Datetime.format locale-dependent pattern token \"LLLL\""`,
+			src:  `Datetime stamp = Datetime.now(); stamp.formatGmt('yyyy-MM-dd\'T');`,
+			want: "Unrecognized format: yyyy-MM-dd'T",
 		},
 	}
 	for _, tc := range cases {
@@ -14839,7 +15565,6 @@ func TestExecDateTimeParsingRejectsInvalidText(t *testing.T) {
 	cases := []string{
 		`Date bad = Date.valueOf('2024-02-30');`,
 		`Date bad = Date.valueOf('0000-01-01');`,
-		`Datetime bad = Datetime.valueOfGmt('2024-02-29 25:00:00');`,
 		`Time bad = Time.valueOf('24:00:00');`,
 	}
 	for _, source := range cases {
@@ -14850,6 +15575,17 @@ func TestExecDateTimeParsingRejectsInvalidText(t *testing.T) {
 		if _, err := New(nil).Execute(program); err == nil {
 			t.Fatalf("source %q expected parse error", source)
 		}
+	}
+	// Native H001 (API62/67): valueOfGmt carries an out-of-range hour into March 1.
+	program, err := CompileAnonymous(`
+String observed = Datetime.valueOfGmt('2024-02-29 25:00:00').formatGmt('yyyy-MM-dd HH:mm:ss');
+System.assert('2024-03-01 01:00:00'.equals(observed), 'H001 expected <2024-03-01 01:00:00> actual <' + observed + '>');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -14884,7 +15620,8 @@ System.assertEquals('2024-01-15 10:30:45.123', dt.formatGmt('yyyy-MM-dd HH:mm:ss
 	}
 }
 
-func TestExecTimeZoneRejectsUnsupportedZones(t *testing.T) {
+// Native factory Z001/Z004/Z007 back the factory assertions.
+func TestExecTimeZoneFactoryIDsAndUnsupportedDisplayOverload(t *testing.T) {
 	cases := []struct {
 		name string
 		src  string
@@ -14892,18 +15629,15 @@ func TestExecTimeZoneRejectsUnsupportedZones(t *testing.T) {
 	}{
 		{
 			name: "trimmed ID",
-			src:  `TimeZone tz = TimeZone.getTimeZone(' UTC');`,
-			want: `unsupported call "TimeZone.getTimeZone  UTC"`,
+			src:  `TimeZone tz = TimeZone.getTimeZone(' UTC'); System.assertEquals('GMT',tz.getID());`,
 		},
 		{
 			name: "bad minute width",
-			src:  `TimeZone tz = TimeZone.getTimeZone('GMT+05:3');`,
-			want: `unsupported call "TimeZone.getTimeZone GMT+05:3"`,
+			src:  `TimeZone tz = TimeZone.getTimeZone('GMT+05:3'); System.assertEquals('GMT',tz.getID());`,
 		},
 		{
-			name: "offset outside deterministic slice",
-			src:  `TimeZone tz = TimeZone.getTimeZone('GMT+14:01');`,
-			want: `unsupported call "TimeZone.getTimeZone GMT+14:01"`,
+			name: "offset above fourteen hours",
+			src:  `TimeZone tz = TimeZone.getTimeZone('GMT+14:01'); System.assertEquals('GMT+14:01',tz.getID());`,
 		},
 		{
 			name: "display locale overload",
@@ -14918,6 +15652,12 @@ func TestExecTimeZoneRejectsUnsupportedZones(t *testing.T) {
 				t.Fatal(err)
 			}
 			_, err = New(nil).Execute(program)
+			if tc.want == "" {
+				if err != nil {
+					t.Fatal(err)
+				}
+				return
+			}
 			var runtimeErr *RuntimeError
 			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want {
 				t.Fatalf("err = %#v, want UnsupportedFeature %q", err, tc.want)
@@ -14958,6 +15698,7 @@ System.assert(message.contains('unknown field'));
 }
 
 func TestExecDatabaseErrorShapeAndUpsertResult(t *testing.T) {
+	// A30 J036/J052/J053 compare native enum values rather than Strings.
 	program, err := CompileAnonymous(`
 Account good = new Account(Name = 'Acme');
 Account missing = new Account();
@@ -14975,14 +15716,14 @@ System.assert(!third.isSuccess());
 
 List<Object> errors2 = second.getErrors();
 Object err2 = errors2.get(0);
-System.assertEquals('REQUIRED_FIELD_MISSING', err2.getStatusCode());
+System.assertEquals(System.StatusCode.REQUIRED_FIELD_MISSING, err2.getStatusCode());
 List<Object> fields2 = err2.getFields();
 System.assertEquals(1, fields2.size());
 System.assertEquals('Name', fields2.get(0));
 
 List<Object> errors3 = third.getErrors();
 Object err3 = errors3.get(0);
-System.assertEquals('INVALID_FIELD_FOR_INSERT_UPDATE', err3.getStatusCode());
+System.assertEquals(System.StatusCode.INVALID_FIELD_FOR_INSERT_UPDATE, err3.getStatusCode());
 List<Object> fields3 = err3.getFields();
 System.assertEquals(1, fields3.size());
 System.assertEquals('Bogus__c', fields3.get(0));
@@ -15094,6 +15835,27 @@ System.assertEquals(false, upperResults.get(0).isSuccess(), 'upper OptAllOrNone 
 	}
 }
 
+func TestExecDatabaseDMLOptionsLowercaseSpellingUsesNativeDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.DmlOptions options = new Database.DmlOptions();
+System.assertEquals(null, options.LocaleOptions);
+options.AllowFieldTruncation = true;
+options.OptAllOrNone = true;
+List<Database.SaveResult> results = Database.insert(new List<Account>{new Account(Name = 'Acme')}, options);
+System.assertEquals(1, results.size());
+System.assertEquals(true, results[0].isSuccess());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseDMLOptionsRejectConfiguredUnsupportedHeader(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -15103,7 +15865,7 @@ func TestExecDatabaseDMLOptionsRejectConfiguredUnsupportedHeader(t *testing.T) {
 		{name: "assignment rule", config: "opts.AssignmentRuleHeader.AssignmentRuleId = '01Q000000000001';", want: `unsupported call "Database.DMLOptions.AssignmentRuleHeader local DML option behavior"`},
 		{name: "email", config: "opts.EmailHeader.TriggerUserEmail = true;", want: `unsupported call "Database.DMLOptions.EmailHeader local DML option behavior"`},
 		{name: "locale", config: "opts.LocaleOptions = new Database.LocaleOptions();", want: `unsupported call "Database.DMLOptions.LocaleOptions local DML option behavior"`},
-		{name: "localize errors", config: "opts.LocalizeErrors = false;", want: `unsupported call "Database.DMLOptions.LocalizeErrors local DML option behavior"`},
+		{name: "localize errors enabled", config: "opts.LocalizeErrors = true;", want: `unsupported call "Database.DMLOptions.LocalizeErrors local DML option behavior"`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -15152,18 +15914,23 @@ System.assertEquals('localNoop', action.getType());
 System.assertEquals('', action.getNamespace());
 System.assertEquals('', action.getVersion());
 System.assertEquals(true, action.isStandard());
+Boolean rejected=false;
+try {action.invoke();} catch(TypeException e){rejected='"localNoop" isn\'t a valid action type.'.equals(e.getMessage());}
+System.assert(rejected);
+action=Invocable.Action.createCustomAction('apex','MissingLocalCallback');
+System.assertEquals(action, action.clearInvocations());
 System.assertEquals(action, action.addInvocation());
 System.assertEquals(action, action.setInvocationParameter('name', 'trail'));
 List<Invocable.Action.Result> results = action.invoke();
 System.assertEquals(1, results.size());
 Invocable.Action.Result result = results[0];
 System.assertEquals(action, result.getAction());
-System.assertEquals(true, result.isSuccess());
-System.assertEquals(0, result.getErrors().size());
+System.assertEquals(false, result.isSuccess());
+System.assertEquals(1, result.getErrors().size());
 System.assertEquals('trail', (String)result.getInvocationParameters().get('name'));
-System.assertEquals(0, result.getOutputParameters().size());
+System.assertEquals(null, result.getOutputParameters());
 Invocable.Action.Result copied = (Invocable.Action.Result)result.clone();
-System.assertEquals(true, copied.isSuccess());
+System.assertEquals(false, copied.isSuccess());
 System.assertEquals('trail', (String)copied.getInvocationParameters().get('name'));
 Invocable.Action custom = Invocable.Action.createCustomAction('flow', 'ns', 'TrailAction', '58.0');
 System.assertEquals('TrailAction', custom.getName());
@@ -15181,6 +15948,7 @@ System.assertEquals(false, custom.isStandard());
 }
 
 func TestExecDatabaseResultAccessorsAcrossLocalDML(t *testing.T) {
+	// A30 J036/J052/J053 compare native enum values rather than Strings.
 	program, err := CompileAnonymous(`
 Account base = new Account(Name = 'Base');
 Database.SaveResult inserted = Database.insert(base, false);
@@ -15192,7 +15960,7 @@ Database.SaveResult badInsert = Database.insert(new Account(Bogus__c = 'nope'), 
 System.assert(!badInsert.isSuccess());
 System.assertEquals(null, badInsert.getId());
 Object badInsertError = badInsert.getErrors().get(0);
-System.assertEquals('INVALID_FIELD_FOR_INSERT_UPDATE', badInsertError.getStatusCode());
+System.assertEquals(System.StatusCode.INVALID_FIELD_FOR_INSERT_UPDATE, badInsertError.getStatusCode());
 System.assert(badInsertError.getMessage().contains('unknown field'));
 System.assertEquals('Bogus__c', badInsertError.getFields().get(0));
 System.assertEquals(0, badInsertError.getExtendedErrorDetails().size());
@@ -15206,7 +15974,7 @@ formulaWrite.put('Score__c', null);
 Database.SaveResult badUpdate = Database.update(formulaWrite, false);
 System.assert(!badUpdate.isSuccess());
 Object badUpdateError = badUpdate.getErrors().get(0);
-System.assertEquals('INVALID_FIELD_FOR_INSERT_UPDATE', badUpdateError.getStatusCode());
+System.assertEquals(System.StatusCode.INVALID_FIELD_FOR_INSERT_UPDATE, badUpdateError.getStatusCode());
 System.assertEquals('Score__c', badUpdateError.getFields().get(0));
 
 Account upsertNew = new Account(Name = 'Upsert New', External_Key__c = 'ext-1');
@@ -15236,7 +16004,7 @@ System.assertEquals(null, merged.getErrors());
 Database.UndeleteResult activeUndelete = Database.undelete(base, false);
 System.assert(!activeUndelete.isSuccess());
 System.assertEquals(inserted.getId(), activeUndelete.getId());
-System.assertEquals('UNDELETE_FAILED', activeUndelete.getErrors().get(0).getStatusCode());
+System.assertEquals(System.StatusCode.UNDELETE_FAILED, activeUndelete.getErrors().get(0).getStatusCode());
 
 Account recycle = new Account(Name = 'Recycle');
 insert recycle;
@@ -15358,13 +16126,14 @@ System.assert(recycleRow.IsDeleted);
 }
 
 func TestExecDatabaseDeleteAndUndeleteResultTypes(t *testing.T) {
+	// A30 J036/J052/J053 compare native enum values rather than Strings.
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
 insert a;
 Database.UndeleteResult active = Database.undelete(a, false);
 System.assert(!active.isSuccess());
 System.assertEquals(a.Id, active.getId());
-System.assertEquals('UNDELETE_FAILED', active.getErrors().get(0).getStatusCode());
+System.assertEquals(System.StatusCode.UNDELETE_FAILED, active.getErrors().get(0).getStatusCode());
 Database.DeleteResult deleted = Database.delete(a, false);
 System.assert(deleted.isSuccess());
 System.assertEquals(a.Id, deleted.getId());
@@ -15431,34 +16200,46 @@ System.assertEquals(duplicateId, merged.getMergedRecordIds().get(0));
 }
 
 func TestExecDatabaseUndeleteMixedRowsAndRollback(t *testing.T) {
+	// A30 J036/J052/J053 compare native enum values rather than Strings.
 	program, err := CompileAnonymous(`
 Account deleted = new Account(Name = 'Deleted');
 Account active = new Account(Name = 'Active');
 insert new List<Account>{deleted, active};
 delete deleted;
 
-Account missing = new Account(Id = '001999999999999');
-Account wrongType = new Account(Id = '003000000000001');
-List<Account> mixed = new List<Account>{deleted, active, missing, wrongType};
+Savepoint missingPoint = Database.setSavepoint();
+Account missing = new Account(Name = 'Missing');
+insert missing;
+Id missingId = missing.Id;
+Database.rollback(missingPoint);
+
+Contact contact = new Contact(LastName = 'Wrong Type');
+insert contact;
+Boolean wrongTypeCaught = false;
+try {
+	Account wrongType = new Account(Id = contact.Id);
+} catch (TypeException e) {
+	wrongTypeCaught = true;
+	System.assertEquals('Invalid id value for this SObject type: ' + contact.Id, e.getMessage());
+}
+System.assert(wrongTypeCaught);
+
+List<Account> mixed = new List<Account>{deleted, active, new Account(Id = missingId)};
 List<Object> results = Database.undelete(mixed, false);
-System.assertEquals(4, results.size());
+System.assertEquals(3, results.size());
 
 Object restored = results.get(0);
 Object activeResult = results.get(1);
 Object missingResult = results.get(2);
-Object wrongTypeResult = results.get(3);
 
 System.assert(restored.isSuccess());
 System.assertEquals(deleted.Id, restored.getId());
 System.assert(!activeResult.isSuccess());
 System.assertEquals(active.Id, activeResult.getId());
-System.assertEquals('UNDELETE_FAILED', activeResult.getErrors().get(0).getStatusCode());
+System.assertEquals(System.StatusCode.UNDELETE_FAILED, activeResult.getErrors().get(0).getStatusCode());
 System.assert(!missingResult.isSuccess());
-System.assertEquals('001999999999999', missingResult.getId());
-System.assertEquals('ENTITY_IS_DELETED', missingResult.getErrors().get(0).getStatusCode());
-System.assert(!wrongTypeResult.isSuccess());
-System.assertEquals('003000000000001', wrongTypeResult.getId());
-System.assertEquals('INVALID_FIELD', wrongTypeResult.getErrors().get(0).getStatusCode());
+System.assertEquals(missingId, missingResult.getId());
+System.assertEquals(System.StatusCode.UNDELETE_FAILED, missingResult.getErrors().get(0).getStatusCode());
 
 List<Account> visible = [SELECT Id FROM Account WHERE Id = :deleted.Id];
 System.assertEquals(1, visible.size());
@@ -15483,6 +16264,7 @@ System.assert(rolledBackRow.IsDeleted);
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Contact")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -15552,6 +16334,8 @@ System.assert(upsertListResults.get(1).isSuccess());
 	account.Definition.Fields["Other_Key__c"] = storage.Field{APIName: "Other_Key__c", Type: storage.FieldString, ExternalID: true, Unique: true}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
+	// A28 named R120-R123 permits explicit SYSTEM_MODE.
+	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -15642,6 +16426,7 @@ System.assertEquals(1, badResult.getErrors().size());
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	testSeedApprovalMetadata(t, &org)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -15654,7 +16439,7 @@ Boolean caught = false;
 try {
 	Approval.process(new Approval.ProcessSubmitRequest());
 } catch (DmlException e) {
-	caught = e.getMessage().contains('ObjectId');
+	caught = e.getMessage().contains('objectId');
 }
 System.assert(caught);
 `)
@@ -15689,6 +16474,8 @@ undelete as system systemAccount;
 	machine := New(nil)
 	org := testDataOrg()
 	machine.SetOrg(&org)
+	// A28 named R135-R139 permits explicit SYSTEM_MODE.
+	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -15829,15 +16616,15 @@ System.assertEquals(1, Limits.getCallouts());
 }
 
 func TestExecHttpRequestValidationAndHeaderEdges(t *testing.T) {
+	// A40 R001-R004, R064/R065 and C019: native defaults and case-sensitive
+	// headers; request header-key and timeout getters are not source APIs.
 	program, err := CompileAnonymous(`
 	HttpRequest req = new HttpRequest();
-	System.assertEquals('', req.getEndpoint());
-System.assertEquals('', req.getMethod());
+	System.assert(req.getEndpoint()==null);
+System.assert(req.getMethod()==null);
 System.assertEquals('', req.getBody());
-System.assertEquals('', req.getBodyAsBlob().toString());
-System.assertEquals(0, req.getHeaderKeys().size());
+System.assert(req.getBodyAsBlob()==null);
 System.assertEquals(false, req.getCompressed());
-System.assertEquals(10000, req.getTimeout());
 req.setEndpoint('callout:NamedCredential/path');
 req.setMethod('post');
 System.assertEquals('post'.hashCode(), req.getMethod().hashCode());
@@ -15847,9 +16634,7 @@ req.setHeader('Accept', 'application/json');
 System.assertEquals(null, req.getHeader('X-TEST'));
 System.assertEquals('second', req.getHeader('x-test'));
 System.assertEquals(null, req.getHeader('Missing'));
-System.assertEquals(2, req.getHeaderKeys().size());
-System.assertEquals('Accept', req.getHeaderKeys().get(0));
-System.assertEquals('x-test', req.getHeaderKeys().get(1));
+System.assert('first'.equals(req.getHeader('X-Test')));
 req.setBody('');
 System.assertEquals('', req.getBody());
 System.assertEquals('', req.getBodyAsBlob().toString());
@@ -15869,7 +16654,8 @@ req.SETBODYDOCUMENT(doc);
 System.assert(req.getBody().contains('<payload>'));
 System.assertEquals('42', req.getBodyDocument().getRootElement().getChildElement('value', null).getText());
 req.setTimeout(120000);
-System.assertEquals(120000, req.getTimeout());
+req.setMethod('CONNECT');
+System.assert('CONNECT'.equals(req.getMethod()));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -15882,8 +16668,8 @@ System.assertEquals(120000, req.getTimeout());
 func TestExecHttpResponseConstructorDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
 HttpResponse res = new HttpResponse();
-System.assertEquals(200, res.getStatusCode());
-System.assertEquals('OK', res.getStatus());
+System.assertEquals(0, res.getStatusCode());
+System.assertEquals(null, res.getStatus());
 System.assertEquals('', res.getBody());
 System.assertEquals(0, res.getHeaderKeys().size());
 res.setBodyAsBlob(Blob.valueOf('response-body'));
@@ -16166,7 +16952,7 @@ try {
     new Http().send(req);
     System.assert(false, 'expected missing named credential');
 } catch (CalloutException e) {
-    System.assert(e.getMessage().contains('Named Credential'));
+    System.assert(e.getMessage().contains('named credential')); // A40 R143.
     System.assert(e.getMessage().contains('Maps'));
 }
 `)
@@ -16192,23 +16978,18 @@ func TestExecHttpRequestRejectsInvalidEdges(t *testing.T) {
 	}{
 		{
 			name: "endpoint-relative",
-			src:  `HttpRequest req = new HttpRequest(); req.setEndpoint('/relative'); req.setMethod('GET'); new Http().send(req);`,
-			want: "HttpRequest endpoint must be an absolute http, https, or callout URL",
-		},
-		{
-			name: "method",
-			src:  `HttpRequest req = new HttpRequest(); req.setMethod('CONNECT');`,
-			want: `HttpRequest method "CONNECT" is not supported`,
+			src:  `HttpRequest req = new HttpRequest(); req.setEndpoint('relative'); req.setMethod('GET'); new Http().send(req);`,
+			want: "CalloutException: no protocol: relative", // A40 R142.
 		},
 		{
 			name: "timeout-low",
 			src:  `HttpRequest req = new HttpRequest(); req.setTimeout(0);`,
-			want: "HttpRequest timeout must be between 1 and 120000 milliseconds",
+			want: "CalloutException: Timeout must be between 1 and 120000", // A40 R029.
 		},
 		{
 			name: "timeout-high",
 			src:  `HttpRequest req = new HttpRequest(); req.setTimeout(120001);`,
-			want: "HttpRequest timeout must be between 1 and 120000 milliseconds",
+			want: "CalloutException: Timeout must be between 1 and 120000", // A40 R034.
 		},
 		{
 			name: "endpoint-empty",
@@ -16261,13 +17042,18 @@ h.send(req);
 	}
 }
 
-func TestExecHttpSendWithoutMockReturnsStubInTestContext(t *testing.T) {
+func TestExecHttpSendWithoutMockThrowsInTestContext(t *testing.T) {
 	program, err := CompileAnonymous(`
 HttpRequest req = new HttpRequest();
 req.setEndpoint('https://example.test');
 req.setMethod('GET');
 Http h = new Http();
-h.send(req);
+try {
+    h.send(req);
+    System.assert(false, 'expected an unmocked test callout error');
+} catch (TypeException e) {
+    System.assertEquals('Methods defined as TestMethod do not support Web service callouts', e.getMessage());
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -16278,8 +17064,8 @@ h.send(req);
 	if err != nil {
 		t.Fatalf("err = %v, want nil", err)
 	}
-	if result.Limits.Callouts != 1 {
-		t.Fatalf("callouts = %d, want 1", result.Limits.Callouts)
+	if result.Limits.Callouts != 0 {
+		t.Fatalf("callouts = %d, want 0", result.Limits.Callouts)
 	}
 }
 
@@ -16372,8 +17158,8 @@ func TestExecUnsupportedHttpCalloutSurfacesHaveStableShape(t *testing.T) {
 	}{
 		{
 			name: "unknown-client-certificate-name",
-			src:  `HttpRequest req = new HttpRequest(); req.setClientCertificateName('LocalCert');`,
-			want: `CalloutException: HttpRequest client certificate LocalCert was not found in local certificate metadata`,
+			src:  `HttpRequest req = new HttpRequest(); req.setClientCertificateName('A40MissingCertificate');`,
+			want: `CalloutException: Could not find client cert with dev name: 'A40MissingCertificate'`, // A40 R070.
 		},
 	}
 	for _, tc := range cases {
@@ -16640,8 +17426,16 @@ System.assertEquals(0, selected.size());
 ssc.setSelected(accounts);
 System.assertEquals(3, ssc.getSelected().size());
 List<SelectOption> options = ssc.getListViewOptions();
-System.assertEquals(1, options.size());
-System.assertEquals('All', options[0].getLabel());
+Boolean ownedViewPresent = false;
+Boolean ownedFilterIdShape = false;
+for (SelectOption ownedOption : options) {
+    if (ownedOption.getLabel().equals('FamilyV05Owned')) {
+        ownedViewPresent = true;
+        ownedFilterIdShape = ownedOption.getValue().startsWith('00B');
+    }
+}
+System.assert(ownedViewPresent);
+System.assert(ownedFilterIdShape);
 ssc.setFilterId('Recent');
 System.assertEquals('Recent', ssc.getFilterId());
 System.assertEquals(false, ssc.getHasPrevious());
@@ -16669,6 +17463,7 @@ System.assertEquals(false, ssc.equals('not a controller'));
 	}
 	machine := New(nil)
 	org := storage.NewOrgState()
+	seedV05OwnedListView(&org)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {

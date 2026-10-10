@@ -1,0 +1,2277 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "cases": [
+    {
+      "id": "R001",
+      "group": "normal/abs/Integer",
+      "code": "Integer x=-5; Object y=Math.abs(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "5|Integer=true|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R002",
+      "group": "normal/abs/Long",
+      "code": "Long x=-5L; Object y=Math.abs(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "5|Integer=false|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R003",
+      "group": "normal/abs/Double",
+      "code": "Double x=-5.25; Object y=Math.abs(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "5.25|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R004",
+      "group": "normal/abs/Decimal",
+      "code": "Decimal x=-5.25; Object y=Math.abs(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "5.25|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R005",
+      "group": "normal/acos/Integer",
+      "code": "Integer x=1; Object y=Math.acos(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R006",
+      "group": "normal/acos/Long",
+      "code": "Long x=1L; Object y=Math.acos(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R007",
+      "group": "normal/acos/Double",
+      "code": "Double x=0.5; Object y=Math.acos(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1.0471975511965979|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R008",
+      "group": "normal/acos/Decimal",
+      "code": "Decimal x=0.5; Object y=Math.acos(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1.0471975511965979|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R009",
+      "group": "normal/asin/Integer",
+      "code": "Integer x=1; Object y=Math.asin(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1.5707963267948966|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R010",
+      "group": "normal/asin/Long",
+      "code": "Long x=1L; Object y=Math.asin(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1.5707963267948966|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R011",
+      "group": "normal/asin/Double",
+      "code": "Double x=0.5; Object y=Math.asin(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.5235987755982989|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R012",
+      "group": "normal/asin/Decimal",
+      "code": "Decimal x=0.5; Object y=Math.asin(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.5235987755982989|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R013",
+      "group": "normal/atan/Integer",
+      "code": "Integer x=1; Object y=Math.atan(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.7853981633974483|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R014",
+      "group": "normal/atan/Long",
+      "code": "Long x=1L; Object y=Math.atan(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.7853981633974483|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R015",
+      "group": "normal/atan/Double",
+      "code": "Double x=0.5; Object y=Math.atan(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.4636476090008061|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R016",
+      "group": "normal/atan/Decimal",
+      "code": "Decimal x=0.5; Object y=Math.atan(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.4636476090008061|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R017",
+      "group": "normal/cbrt/Integer",
+      "code": "Integer x=8; Object y=Math.cbrt(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R018",
+      "group": "normal/cbrt/Long",
+      "code": "Long x=8L; Object y=Math.cbrt(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R019",
+      "group": "normal/cbrt/Double",
+      "code": "Double x=8.0; Object y=Math.cbrt(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R020",
+      "group": "normal/cbrt/Decimal",
+      "code": "Decimal x=8.0; Object y=Math.cbrt(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R021",
+      "group": "normal/ceil/Integer",
+      "code": "Integer x=2; Object y=Math.ceil(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R022",
+      "group": "normal/ceil/Long",
+      "code": "Long x=2L; Object y=Math.ceil(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R023",
+      "group": "normal/ceil/Double",
+      "code": "Double x=2.1; Object y=Math.ceil(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "3.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R024",
+      "group": "normal/ceil/Decimal",
+      "code": "Decimal x=2.1; Object y=Math.ceil(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "3|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R025",
+      "group": "normal/cos/Integer",
+      "code": "Integer x=1; Object y=Math.cos(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.5403023058681398|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R026",
+      "group": "normal/cos/Long",
+      "code": "Long x=1L; Object y=Math.cos(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.5403023058681398|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R027",
+      "group": "normal/cos/Double",
+      "code": "Double x=0.5; Object y=Math.cos(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.8775825618903728|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R028",
+      "group": "normal/cos/Decimal",
+      "code": "Decimal x=0.5; Object y=Math.cos(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.8775825618903728|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R029",
+      "group": "normal/cosh/Integer",
+      "code": "Integer x=1; Object y=Math.cosh(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1.543080634815244|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R030",
+      "group": "normal/cosh/Long",
+      "code": "Long x=1L; Object y=Math.cosh(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1.543080634815244|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R031",
+      "group": "normal/cosh/Double",
+      "code": "Double x=0.5; Object y=Math.cosh(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1.1276259652063807|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R032",
+      "group": "normal/cosh/Decimal",
+      "code": "Decimal x=0.5; Object y=Math.cosh(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1.1276259652063807|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R033",
+      "group": "normal/exp/Integer",
+      "code": "Integer x=1; Object y=Math.exp(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.718281828459045|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R034",
+      "group": "normal/exp/Long",
+      "code": "Long x=1L; Object y=Math.exp(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.718281828459045|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R035",
+      "group": "normal/exp/Double",
+      "code": "Double x=0.5; Object y=Math.exp(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1.6487212707001282|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R036",
+      "group": "normal/exp/Decimal",
+      "code": "Decimal x=0.5; Object y=Math.exp(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1.6487212707001282|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R037",
+      "group": "normal/floor/Integer",
+      "code": "Integer x=2; Object y=Math.floor(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R038",
+      "group": "normal/floor/Long",
+      "code": "Long x=2L; Object y=Math.floor(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R039",
+      "group": "normal/floor/Double",
+      "code": "Double x=2.9; Object y=Math.floor(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R040",
+      "group": "normal/floor/Decimal",
+      "code": "Decimal x=2.9; Object y=Math.floor(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R041",
+      "group": "normal/log/Integer",
+      "code": "Integer x=2; Object y=Math.log(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.6931471805599453|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R042",
+      "group": "normal/log/Long",
+      "code": "Long x=2L; Object y=Math.log(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.6931471805599453|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R043",
+      "group": "normal/log/Double",
+      "code": "Double x=2.0; Object y=Math.log(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.6931471805599453|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R044",
+      "group": "normal/log/Decimal",
+      "code": "Decimal x=2.0; Object y=Math.log(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.6931471805599453|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R045",
+      "group": "normal/log10/Integer",
+      "code": "Integer x=100; Object y=Math.log10(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R046",
+      "group": "normal/log10/Long",
+      "code": "Long x=100L; Object y=Math.log10(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R047",
+      "group": "normal/log10/Double",
+      "code": "Double x=100.0; Object y=Math.log10(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R048",
+      "group": "normal/log10/Decimal",
+      "code": "Decimal x=100.0; Object y=Math.log10(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R049",
+      "group": "normal/rint/Integer",
+      "code": "Integer x=2; Object y=Math.rint(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R050",
+      "group": "normal/rint/Long",
+      "code": "Long x=2L; Object y=Math.rint(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R051",
+      "group": "normal/rint/Double",
+      "code": "Double x=2.1; Object y=Math.rint(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R052",
+      "group": "normal/rint/Decimal",
+      "code": "Decimal x=2.1; Object y=Math.rint(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R053",
+      "group": "normal/round/Integer",
+      "code": "Integer x=2; Object y=Math.round(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2|Integer=true|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R054",
+      "group": "normal/round/Long",
+      "code": "Long x=2L; Object y=Math.round(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2|Integer=true|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R055",
+      "group": "normal/round/Double",
+      "code": "Double x=2.1; Object y=Math.round(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2|Integer=true|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R056",
+      "group": "normal/round/Decimal",
+      "code": "Decimal x=2.1; Object y=Math.round(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2|Integer=true|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R057",
+      "group": "normal/roundToLong/Integer",
+      "code": "Integer x=2; Object y=Math.roundToLong(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2|Integer=false|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R058",
+      "group": "normal/roundToLong/Long",
+      "code": "Long x=2L; Object y=Math.roundToLong(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2|Integer=false|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R059",
+      "group": "normal/roundToLong/Double",
+      "code": "Double x=2.1; Object y=Math.roundToLong(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2|Integer=false|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R060",
+      "group": "normal/roundToLong/Decimal",
+      "code": "Decimal x=2.1; Object y=Math.roundToLong(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2|Integer=false|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R061",
+      "group": "normal/signum/Integer",
+      "code": "Integer x=-5; Object y=Math.signum(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "-1.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R062",
+      "group": "normal/signum/Long",
+      "code": "Long x=-5L; Object y=Math.signum(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "-1.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R063",
+      "group": "normal/signum/Double",
+      "code": "Double x=-5.25; Object y=Math.signum(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "-1.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R064",
+      "group": "normal/signum/Decimal",
+      "code": "Decimal x=-5.25; Object y=Math.signum(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "-1.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R065",
+      "group": "normal/sin/Integer",
+      "code": "Integer x=1; Object y=Math.sin(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.8414709848078965|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R066",
+      "group": "normal/sin/Long",
+      "code": "Long x=1L; Object y=Math.sin(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.8414709848078965|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R067",
+      "group": "normal/sin/Double",
+      "code": "Double x=0.5; Object y=Math.sin(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.479425538604203|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R068",
+      "group": "normal/sin/Decimal",
+      "code": "Decimal x=0.5; Object y=Math.sin(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.479425538604203|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R069",
+      "group": "normal/sinh/Integer",
+      "code": "Integer x=1; Object y=Math.sinh(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1.1752011936438014|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R070",
+      "group": "normal/sinh/Long",
+      "code": "Long x=1L; Object y=Math.sinh(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1.1752011936438014|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R071",
+      "group": "normal/sinh/Double",
+      "code": "Double x=0.5; Object y=Math.sinh(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.5210953054937474|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R072",
+      "group": "normal/sinh/Decimal",
+      "code": "Decimal x=0.5; Object y=Math.sinh(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.5210953054937474|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R073",
+      "group": "normal/sqrt/Integer",
+      "code": "Integer x=9; Object y=Math.sqrt(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "3.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R074",
+      "group": "normal/sqrt/Long",
+      "code": "Long x=9L; Object y=Math.sqrt(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "3.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R075",
+      "group": "normal/sqrt/Double",
+      "code": "Double x=9.0; Object y=Math.sqrt(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "3.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R076",
+      "group": "normal/sqrt/Decimal",
+      "code": "Decimal x=9.0; Object y=Math.sqrt(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "3.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R077",
+      "group": "normal/tan/Integer",
+      "code": "Integer x=1; Object y=Math.tan(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1.5574077246549023|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R078",
+      "group": "normal/tan/Long",
+      "code": "Long x=1L; Object y=Math.tan(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1.5574077246549023|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R079",
+      "group": "normal/tan/Double",
+      "code": "Double x=0.5; Object y=Math.tan(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.5463024898437905|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R080",
+      "group": "normal/tan/Decimal",
+      "code": "Decimal x=0.5; Object y=Math.tan(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.5463024898437905|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R081",
+      "group": "normal/tanh/Integer",
+      "code": "Integer x=1; Object y=Math.tanh(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.7615941559557649|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R082",
+      "group": "normal/tanh/Long",
+      "code": "Long x=1L; Object y=Math.tanh(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.7615941559557649|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R083",
+      "group": "normal/tanh/Double",
+      "code": "Double x=0.5; Object y=Math.tanh(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.46211715726000974|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R084",
+      "group": "normal/tanh/Decimal",
+      "code": "Decimal x=0.5; Object y=Math.tanh(x); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "0.46211715726000974|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R085",
+      "group": "normal/atan2/Integer",
+      "code": "Integer x=1; Integer z=-1; Object y=Math.atan2(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.356194490192345|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R086",
+      "group": "normal/atan2/Long",
+      "code": "Long x=1L; Long z=-1L; Object y=Math.atan2(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.356194490192345|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R087",
+      "group": "normal/atan2/Double",
+      "code": "Double x=1; Double z=-1; Object y=Math.atan2(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.356194490192345|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R088",
+      "group": "normal/atan2/Decimal",
+      "code": "Decimal x=1; Decimal z=-1; Object y=Math.atan2(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.356194490192345|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R089",
+      "group": "normal/max/Integer",
+      "code": "Integer x=3; Integer z=7; Object y=Math.max(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "7|Integer=true|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R090",
+      "group": "normal/max/Long",
+      "code": "Long x=3L; Long z=7L; Object y=Math.max(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "7|Integer=false|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R091",
+      "group": "normal/max/Double",
+      "code": "Double x=3; Double z=7; Object y=Math.max(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "7.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R092",
+      "group": "normal/max/Decimal",
+      "code": "Decimal x=3; Decimal z=7; Object y=Math.max(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "7|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R093",
+      "group": "normal/min/Integer",
+      "code": "Integer x=3; Integer z=7; Object y=Math.min(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "3|Integer=true|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R094",
+      "group": "normal/min/Long",
+      "code": "Long x=3L; Long z=7L; Object y=Math.min(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "3|Integer=false|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R095",
+      "group": "normal/min/Double",
+      "code": "Double x=3; Double z=7; Object y=Math.min(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "3.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R096",
+      "group": "normal/min/Decimal",
+      "code": "Decimal x=3; Decimal z=7; Object y=Math.min(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "3|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R097",
+      "group": "normal/mod/Integer",
+      "code": "Integer x=10; Integer z=3; Object y=Math.mod(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1|Integer=true|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R098",
+      "group": "normal/mod/Long",
+      "code": "Long x=10L; Long z=3L; Object y=Math.mod(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "1|Integer=false|Long=true|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R099",
+      "group": "normal/pow/Integer",
+      "code": "Integer x=2; Integer z=3; Object y=Math.pow(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "8.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R100",
+      "group": "normal/pow/Long",
+      "code": "Long x=2L; Long z=3L; Object y=Math.pow(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "8.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R101",
+      "group": "normal/pow/Double",
+      "code": "Double x=2; Double z=3; Object y=Math.pow(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "8.0|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R102",
+      "group": "normal/pow/Decimal",
+      "code": "Decimal x=2; Decimal z=3; Object y=Math.pow(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void pow(Decimal, Decimal) from the type System.Math",
+      "compile": false
+    },
+    {
+      "id": "R103",
+      "group": "normal/random/range",
+      "code": "Double x=Math.random(); Boolean inRange=x>=0 && x<1; for(Integer i=0;i<32;i++){Double z=Math.random(); inRange=inRange && z>=0 && z<1;} Object y=x; r=String.valueOf(inRange)+'|Double='+(y instanceof Double);",
+      "expected": "true|Double=true",
+      "compile": false
+    },
+    {
+      "id": "R104",
+      "group": "null/abs/Integer",
+      "code": "Integer x=null; r=Math.abs(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R105",
+      "group": "null/abs/Long",
+      "code": "Long x=null; r=Math.abs(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R106",
+      "group": "null/abs/Double",
+      "code": "Double x=null; r=Math.abs(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R107",
+      "group": "null/abs/Decimal",
+      "code": "Decimal x=null; r=Math.abs(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R108",
+      "group": "null/acos/Double",
+      "code": "Double x=null; r=Math.acos(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R109",
+      "group": "null/acos/Decimal",
+      "code": "Decimal x=null; r=Math.acos(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R110",
+      "group": "null/asin/Double",
+      "code": "Double x=null; r=Math.asin(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R111",
+      "group": "null/asin/Decimal",
+      "code": "Decimal x=null; r=Math.asin(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R112",
+      "group": "null/atan/Double",
+      "code": "Double x=null; r=Math.atan(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R113",
+      "group": "null/atan/Decimal",
+      "code": "Decimal x=null; r=Math.atan(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R114",
+      "group": "null/cbrt/Double",
+      "code": "Double x=null; r=Math.cbrt(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R115",
+      "group": "null/cbrt/Decimal",
+      "code": "Decimal x=null; r=Math.cbrt(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R116",
+      "group": "null/ceil/Double",
+      "code": "Double x=null; r=Math.ceil(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R117",
+      "group": "null/ceil/Decimal",
+      "code": "Decimal x=null; r=Math.ceil(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R118",
+      "group": "null/cos/Double",
+      "code": "Double x=null; r=Math.cos(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R119",
+      "group": "null/cos/Decimal",
+      "code": "Decimal x=null; r=Math.cos(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R120",
+      "group": "null/cosh/Double",
+      "code": "Double x=null; r=Math.cosh(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R121",
+      "group": "null/cosh/Decimal",
+      "code": "Decimal x=null; r=Math.cosh(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R122",
+      "group": "null/exp/Double",
+      "code": "Double x=null; r=Math.exp(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R123",
+      "group": "null/exp/Decimal",
+      "code": "Decimal x=null; r=Math.exp(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R124",
+      "group": "null/floor/Double",
+      "code": "Double x=null; r=Math.floor(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R125",
+      "group": "null/floor/Decimal",
+      "code": "Decimal x=null; r=Math.floor(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R126",
+      "group": "null/log/Double",
+      "code": "Double x=null; r=Math.log(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R127",
+      "group": "null/log/Decimal",
+      "code": "Decimal x=null; r=Math.log(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R128",
+      "group": "null/log10/Double",
+      "code": "Double x=null; r=Math.log10(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R129",
+      "group": "null/log10/Decimal",
+      "code": "Decimal x=null; r=Math.log10(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R130",
+      "group": "null/rint/Double",
+      "code": "Double x=null; r=Math.rint(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R131",
+      "group": "null/rint/Decimal",
+      "code": "Decimal x=null; r=Math.rint(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R132",
+      "group": "null/round/Double",
+      "code": "Double x=null; r=Math.round(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R133",
+      "group": "null/round/Decimal",
+      "code": "Decimal x=null; r=Math.round(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R134",
+      "group": "null/roundToLong/Double",
+      "code": "Double x=null; r=Math.roundToLong(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R135",
+      "group": "null/roundToLong/Decimal",
+      "code": "Decimal x=null; r=Math.roundToLong(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R136",
+      "group": "null/signum/Double",
+      "code": "Double x=null; r=Math.signum(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R137",
+      "group": "null/signum/Decimal",
+      "code": "Decimal x=null; r=Math.signum(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R138",
+      "group": "null/sin/Double",
+      "code": "Double x=null; r=Math.sin(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R139",
+      "group": "null/sin/Decimal",
+      "code": "Decimal x=null; r=Math.sin(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R140",
+      "group": "null/sinh/Double",
+      "code": "Double x=null; r=Math.sinh(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R141",
+      "group": "null/sinh/Decimal",
+      "code": "Decimal x=null; r=Math.sinh(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R142",
+      "group": "null/sqrt/Double",
+      "code": "Double x=null; r=Math.sqrt(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R143",
+      "group": "null/sqrt/Decimal",
+      "code": "Decimal x=null; r=Math.sqrt(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R144",
+      "group": "null/tan/Double",
+      "code": "Double x=null; r=Math.tan(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R145",
+      "group": "null/tan/Decimal",
+      "code": "Decimal x=null; r=Math.tan(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R146",
+      "group": "null/tanh/Double",
+      "code": "Double x=null; r=Math.tanh(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R147",
+      "group": "null/tanh/Decimal",
+      "code": "Decimal x=null; r=Math.tanh(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R148",
+      "group": "null/max/Integer/left",
+      "code": "Integer x=null; Integer z=2; r=Math.max(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R149",
+      "group": "null/max/Integer/right",
+      "code": "Integer x=2; Integer z=null; r=Math.max(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R150",
+      "group": "null/max/Long/left",
+      "code": "Long x=null; Long z=2L; r=Math.max(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R151",
+      "group": "null/max/Long/right",
+      "code": "Long x=2L; Long z=null; r=Math.max(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R152",
+      "group": "null/max/Double/left",
+      "code": "Double x=null; Double z=2; r=Math.max(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R153",
+      "group": "null/max/Double/right",
+      "code": "Double x=2; Double z=null; r=Math.max(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R154",
+      "group": "null/max/Decimal/left",
+      "code": "Decimal x=null; Decimal z=2; r=Math.max(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R155",
+      "group": "null/max/Decimal/right",
+      "code": "Decimal x=2; Decimal z=null; r=Math.max(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R156",
+      "group": "null/min/Integer/left",
+      "code": "Integer x=null; Integer z=2; r=Math.min(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R157",
+      "group": "null/min/Integer/right",
+      "code": "Integer x=2; Integer z=null; r=Math.min(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R158",
+      "group": "null/min/Long/left",
+      "code": "Long x=null; Long z=2L; r=Math.min(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R159",
+      "group": "null/min/Long/right",
+      "code": "Long x=2L; Long z=null; r=Math.min(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R160",
+      "group": "null/min/Double/left",
+      "code": "Double x=null; Double z=2; r=Math.min(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R161",
+      "group": "null/min/Double/right",
+      "code": "Double x=2; Double z=null; r=Math.min(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R162",
+      "group": "null/min/Decimal/left",
+      "code": "Decimal x=null; Decimal z=2; r=Math.min(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R163",
+      "group": "null/min/Decimal/right",
+      "code": "Decimal x=2; Decimal z=null; r=Math.min(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R164",
+      "group": "null/atan2/Double/left",
+      "code": "Double x=null; Double z=2; r=Math.atan2(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R165",
+      "group": "null/atan2/Double/right",
+      "code": "Double x=2; Double z=null; r=Math.atan2(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R166",
+      "group": "null/atan2/Decimal/left",
+      "code": "Decimal x=null; Decimal z=2; r=Math.atan2(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R167",
+      "group": "null/atan2/Decimal/right",
+      "code": "Decimal x=2; Decimal z=null; r=Math.atan2(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R168",
+      "group": "null/pow/Double/left",
+      "code": "Double x=null; Double z=2; r=Math.pow(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R169",
+      "group": "null/pow/Double/right",
+      "code": "Double x=2; Double z=null; r=Math.pow(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R170",
+      "group": "null/pow/Decimal/left",
+      "code": "Decimal x=null; Decimal z=2; r=Math.pow(x,z);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void pow(Decimal, Decimal) from the type System.Math",
+      "compile": false
+    },
+    {
+      "id": "R171",
+      "group": "null/pow/Decimal/right",
+      "code": "Decimal x=2; Decimal z=null; r=Math.pow(x,z);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void pow(Decimal, Decimal) from the type System.Math",
+      "compile": false
+    },
+    {
+      "id": "R172",
+      "group": "null/mod/Integer/left",
+      "code": "Integer x=null; Integer z=2; r=Math.mod(x,z);",
+      "expected": "EXC|System.NullPointerException|Script-thrown exception",
+      "compile": false
+    },
+    {
+      "id": "R173",
+      "group": "null/mod/Integer/right",
+      "code": "Integer x=2; Integer z=null; r=Math.mod(x,z);",
+      "expected": "EXC|System.NullPointerException|Script-thrown exception",
+      "compile": false
+    },
+    {
+      "id": "R174",
+      "group": "null/mod/Long/left",
+      "code": "Long x=null; Long z=2L; r=Math.mod(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R175",
+      "group": "null/mod/Long/right",
+      "code": "Long x=2L; Long z=null; r=Math.mod(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R176",
+      "group": "domain/acos/Double/-2",
+      "code": "Double x=-2; r=Math.acos(x);",
+      "expected": "EXC|System.MathException|Invalid argument",
+      "compile": false
+    },
+    {
+      "id": "R177",
+      "group": "domain/acos/Double/2",
+      "code": "Double x=2; r=Math.acos(x);",
+      "expected": "EXC|System.MathException|Invalid argument",
+      "compile": false
+    },
+    {
+      "id": "R178",
+      "group": "domain/asin/Double/-2",
+      "code": "Double x=-2; r=Math.asin(x);",
+      "expected": "EXC|System.MathException|Invalid argument",
+      "compile": false
+    },
+    {
+      "id": "R179",
+      "group": "domain/asin/Double/2",
+      "code": "Double x=2; r=Math.asin(x);",
+      "expected": "EXC|System.MathException|Invalid argument",
+      "compile": false
+    },
+    {
+      "id": "R180",
+      "group": "domain/sqrt/Double/-1",
+      "code": "Double x=-1; r=Math.sqrt(x);",
+      "expected": "EXC|System.MathException|Negative argument: -1.0",
+      "compile": false
+    },
+    {
+      "id": "R181",
+      "group": "domain/sqrt/Double/0",
+      "code": "Double x=0; r=Math.sqrt(x);",
+      "expected": "0.0",
+      "compile": false
+    },
+    {
+      "id": "R182",
+      "group": "domain/log/Double/0",
+      "code": "Double x=0; r=Math.log(x);",
+      "expected": "-Infinity",
+      "compile": false
+    },
+    {
+      "id": "R183",
+      "group": "domain/log/Double/-1",
+      "code": "Double x=-1; r=Math.log(x);",
+      "expected": "NaN",
+      "compile": false
+    },
+    {
+      "id": "R184",
+      "group": "domain/log10/Double/0",
+      "code": "Double x=0; r=Math.log10(x);",
+      "expected": "-Infinity",
+      "compile": false
+    },
+    {
+      "id": "R185",
+      "group": "domain/log10/Double/-1",
+      "code": "Double x=-1; r=Math.log10(x);",
+      "expected": "NaN",
+      "compile": false
+    },
+    {
+      "id": "R186",
+      "group": "domain/cbrt/Double/-8",
+      "code": "Double x=-8; r=Math.cbrt(x);",
+      "expected": "-2.0",
+      "compile": false
+    },
+    {
+      "id": "R187",
+      "group": "domain/exp/Double/1000",
+      "code": "Double x=1000; r=Math.exp(x);",
+      "expected": "Infinity",
+      "compile": false
+    },
+    {
+      "id": "R188",
+      "group": "domain/acos/Decimal/-2",
+      "code": "Decimal x=-2; r=Math.acos(x);",
+      "expected": "EXC|System.MathException|Invalid argument",
+      "compile": false
+    },
+    {
+      "id": "R189",
+      "group": "domain/acos/Decimal/2",
+      "code": "Decimal x=2; r=Math.acos(x);",
+      "expected": "EXC|System.MathException|Invalid argument",
+      "compile": false
+    },
+    {
+      "id": "R190",
+      "group": "domain/asin/Decimal/-2",
+      "code": "Decimal x=-2; r=Math.asin(x);",
+      "expected": "EXC|System.MathException|Invalid argument",
+      "compile": false
+    },
+    {
+      "id": "R191",
+      "group": "domain/asin/Decimal/2",
+      "code": "Decimal x=2; r=Math.asin(x);",
+      "expected": "EXC|System.MathException|Invalid argument",
+      "compile": false
+    },
+    {
+      "id": "R192",
+      "group": "domain/sqrt/Decimal/-1",
+      "code": "Decimal x=-1; r=Math.sqrt(x);",
+      "expected": "EXC|System.MathException|Negative argument: -1.0",
+      "compile": false
+    },
+    {
+      "id": "R193",
+      "group": "domain/sqrt/Decimal/0",
+      "code": "Decimal x=0; r=Math.sqrt(x);",
+      "expected": "0.0",
+      "compile": false
+    },
+    {
+      "id": "R194",
+      "group": "domain/log/Decimal/0",
+      "code": "Decimal x=0; r=Math.log(x);",
+      "expected": "EXC|System.MathException|Cannot represent Double 'Infinity' as a Decimal",
+      "compile": false
+    },
+    {
+      "id": "R195",
+      "group": "domain/log/Decimal/-1",
+      "code": "Decimal x=-1; r=Math.log(x);",
+      "expected": "EXC|System.MathException|Cannot represent Double 'NaN' as a Decimal",
+      "compile": false
+    },
+    {
+      "id": "R196",
+      "group": "domain/log10/Decimal/0",
+      "code": "Decimal x=0; r=Math.log10(x);",
+      "expected": "EXC|System.MathException|Cannot represent Double 'Infinity' as a Decimal",
+      "compile": false
+    },
+    {
+      "id": "R197",
+      "group": "domain/log10/Decimal/-1",
+      "code": "Decimal x=-1; r=Math.log10(x);",
+      "expected": "EXC|System.MathException|Cannot represent Double 'NaN' as a Decimal",
+      "compile": false
+    },
+    {
+      "id": "R198",
+      "group": "domain/cbrt/Decimal/-8",
+      "code": "Decimal x=-8; r=Math.cbrt(x);",
+      "expected": "-2.0",
+      "compile": false
+    },
+    {
+      "id": "R199",
+      "group": "domain/exp/Decimal/1000",
+      "code": "Decimal x=1000; r=Math.exp(x);",
+      "expected": "EXC|System.MathException|Cannot represent Double 'Infinity' as a Decimal",
+      "compile": false
+    },
+    {
+      "id": "R200",
+      "group": "rounding/rint/Double/1.5",
+      "code": "Double x=1.5; r=Math.rint(x);",
+      "expected": "2.0",
+      "compile": false
+    },
+    {
+      "id": "R201",
+      "group": "rounding/rint/Double/2.5",
+      "code": "Double x=2.5; r=Math.rint(x);",
+      "expected": "2.0",
+      "compile": false
+    },
+    {
+      "id": "R202",
+      "group": "rounding/rint/Double/-1.5",
+      "code": "Double x=-1.5; r=Math.rint(x);",
+      "expected": "-2.0",
+      "compile": false
+    },
+    {
+      "id": "R203",
+      "group": "rounding/rint/Double/-2.5",
+      "code": "Double x=-2.5; r=Math.rint(x);",
+      "expected": "-2.0",
+      "compile": false
+    },
+    {
+      "id": "R204",
+      "group": "rounding/round/Double/1.5",
+      "code": "Double x=1.5; r=Math.round(x);",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R205",
+      "group": "rounding/round/Double/2.5",
+      "code": "Double x=2.5; r=Math.round(x);",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "R206",
+      "group": "rounding/round/Double/-1.5",
+      "code": "Double x=-1.5; r=Math.round(x);",
+      "expected": "-1",
+      "compile": false
+    },
+    {
+      "id": "R207",
+      "group": "rounding/round/Double/-2.5",
+      "code": "Double x=-2.5; r=Math.round(x);",
+      "expected": "-2",
+      "compile": false
+    },
+    {
+      "id": "R208",
+      "group": "rounding/roundToLong/Double/1.5",
+      "code": "Double x=1.5; r=Math.roundToLong(x);",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R209",
+      "group": "rounding/roundToLong/Double/2.5",
+      "code": "Double x=2.5; r=Math.roundToLong(x);",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "R210",
+      "group": "rounding/roundToLong/Double/-1.5",
+      "code": "Double x=-1.5; r=Math.roundToLong(x);",
+      "expected": "-1",
+      "compile": false
+    },
+    {
+      "id": "R211",
+      "group": "rounding/roundToLong/Double/-2.5",
+      "code": "Double x=-2.5; r=Math.roundToLong(x);",
+      "expected": "-2",
+      "compile": false
+    },
+    {
+      "id": "R212",
+      "group": "overflow/round/Double/2147483648",
+      "code": "Double x=Double.valueOf('2147483648'); r=Math.round(x);",
+      "expected": "EXC|System.MathException|Integer overflow: 2147483648",
+      "compile": false
+    },
+    {
+      "id": "R213",
+      "group": "overflow/round/Double/-2147483649",
+      "code": "Double x=Double.valueOf('-2147483649'); r=Math.round(x);",
+      "expected": "EXC|System.MathException|Integer overflow: -2147483649",
+      "compile": false
+    },
+    {
+      "id": "R214",
+      "group": "overflow/roundToLong/Double/9223372036854775808",
+      "code": "Double x=Double.valueOf('9223372036854775808'); r=Math.roundToLong(x);",
+      "expected": "9223372036854775807",
+      "compile": false
+    },
+    {
+      "id": "R215",
+      "group": "overflow/roundToLong/Double/-9223372036854775809",
+      "code": "Double x=Double.valueOf('-9223372036854775809'); r=Math.roundToLong(x);",
+      "expected": "-9223372036854775808",
+      "compile": false
+    },
+    {
+      "id": "R216",
+      "group": "rounding/rint/Decimal/1.5",
+      "code": "Decimal x=1.5; r=Math.rint(x);",
+      "expected": "2.0",
+      "compile": false
+    },
+    {
+      "id": "R217",
+      "group": "rounding/rint/Decimal/2.5",
+      "code": "Decimal x=2.5; r=Math.rint(x);",
+      "expected": "2.0",
+      "compile": false
+    },
+    {
+      "id": "R218",
+      "group": "rounding/rint/Decimal/-1.5",
+      "code": "Decimal x=-1.5; r=Math.rint(x);",
+      "expected": "-2.0",
+      "compile": false
+    },
+    {
+      "id": "R219",
+      "group": "rounding/rint/Decimal/-2.5",
+      "code": "Decimal x=-2.5; r=Math.rint(x);",
+      "expected": "-2.0",
+      "compile": false
+    },
+    {
+      "id": "R220",
+      "group": "rounding/round/Decimal/1.5",
+      "code": "Decimal x=1.5; r=Math.round(x);",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R221",
+      "group": "rounding/round/Decimal/2.5",
+      "code": "Decimal x=2.5; r=Math.round(x);",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R222",
+      "group": "rounding/round/Decimal/-1.5",
+      "code": "Decimal x=-1.5; r=Math.round(x);",
+      "expected": "-2",
+      "compile": false
+    },
+    {
+      "id": "R223",
+      "group": "rounding/round/Decimal/-2.5",
+      "code": "Decimal x=-2.5; r=Math.round(x);",
+      "expected": "-2",
+      "compile": false
+    },
+    {
+      "id": "R224",
+      "group": "rounding/roundToLong/Decimal/1.5",
+      "code": "Decimal x=1.5; r=Math.roundToLong(x);",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R225",
+      "group": "rounding/roundToLong/Decimal/2.5",
+      "code": "Decimal x=2.5; r=Math.roundToLong(x);",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R226",
+      "group": "rounding/roundToLong/Decimal/-1.5",
+      "code": "Decimal x=-1.5; r=Math.roundToLong(x);",
+      "expected": "-2",
+      "compile": false
+    },
+    {
+      "id": "R227",
+      "group": "rounding/roundToLong/Decimal/-2.5",
+      "code": "Decimal x=-2.5; r=Math.roundToLong(x);",
+      "expected": "-2",
+      "compile": false
+    },
+    {
+      "id": "R228",
+      "group": "overflow/round/Decimal/2147483648",
+      "code": "Decimal x=Decimal.valueOf('2147483648'); r=Math.round(x);",
+      "expected": "-2147483648",
+      "compile": false
+    },
+    {
+      "id": "R229",
+      "group": "overflow/round/Decimal/-2147483649",
+      "code": "Decimal x=Decimal.valueOf('-2147483649'); r=Math.round(x);",
+      "expected": "2147483647",
+      "compile": false
+    },
+    {
+      "id": "R230",
+      "group": "overflow/roundToLong/Decimal/9223372036854775808",
+      "code": "Decimal x=Decimal.valueOf('9223372036854775808'); r=Math.roundToLong(x);",
+      "expected": "-9223372036854775808",
+      "compile": false
+    },
+    {
+      "id": "R231",
+      "group": "overflow/roundToLong/Decimal/-9223372036854775809",
+      "code": "Decimal x=Decimal.valueOf('-9223372036854775809'); r=Math.roundToLong(x);",
+      "expected": "9223372036854775807",
+      "compile": false
+    },
+    {
+      "id": "R232",
+      "group": "boundary/abs/Integer/minimum",
+      "code": "Integer x=Integer.valueOf('-2147483648'); r=Math.abs(x);",
+      "expected": "-2147483648",
+      "compile": false
+    },
+    {
+      "id": "R233",
+      "group": "boundary/mod/Integer/-10/3",
+      "code": "Integer x=-10; Integer z=3; r=Math.mod(x,z);",
+      "expected": "-1",
+      "compile": false
+    },
+    {
+      "id": "R234",
+      "group": "boundary/mod/Integer/10/-3",
+      "code": "Integer x=10; Integer z=-3; r=Math.mod(x,z);",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R235",
+      "group": "boundary/mod/Integer/-10/-3",
+      "code": "Integer x=-10; Integer z=-3; r=Math.mod(x,z);",
+      "expected": "-1",
+      "compile": false
+    },
+    {
+      "id": "R236",
+      "group": "boundary/mod/Integer/1/0",
+      "code": "Integer x=1; Integer z=0; r=Math.mod(x,z);",
+      "expected": "EXC|System.MathException|Divide by 0",
+      "compile": false
+    },
+    {
+      "id": "R237",
+      "group": "boundary/abs/Long/minimum",
+      "code": "Long x=Long.valueOf('-9223372036854775808'); r=Math.abs(x);",
+      "expected": "-9223372036854775808",
+      "compile": false
+    },
+    {
+      "id": "R238",
+      "group": "boundary/mod/Long/-10/3",
+      "code": "Long x=-10L; Long z=3L; r=Math.mod(x,z);",
+      "expected": "-1",
+      "compile": false
+    },
+    {
+      "id": "R239",
+      "group": "boundary/mod/Long/10/-3",
+      "code": "Long x=10L; Long z=-3L; r=Math.mod(x,z);",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R240",
+      "group": "boundary/mod/Long/-10/-3",
+      "code": "Long x=-10L; Long z=-3L; r=Math.mod(x,z);",
+      "expected": "-1",
+      "compile": false
+    },
+    {
+      "id": "R241",
+      "group": "boundary/mod/Long/1/0",
+      "code": "Long x=1L; Long z=0L; r=Math.mod(x,z);",
+      "expected": "EXC|System.MathException|Divide by 0",
+      "compile": false
+    },
+    {
+      "id": "R242",
+      "group": "precision/min/Long",
+      "code": "Long x=9223372036854775806L; Long z=9223372036854775807L; r=Math.min(x,z);",
+      "expected": "9223372036854775806",
+      "compile": false
+    },
+    {
+      "id": "R243",
+      "group": "precision/min/Decimal",
+      "code": "Decimal x=12345678901234567890.1234; Decimal z=12345678901234567890.1235; r=Math.min(x,z);",
+      "expected": "12345678901234567890.1234",
+      "compile": false
+    },
+    {
+      "id": "R244",
+      "group": "precision/max/Long",
+      "code": "Long x=9223372036854775806L; Long z=9223372036854775807L; r=Math.max(x,z);",
+      "expected": "9223372036854775807",
+      "compile": false
+    },
+    {
+      "id": "R245",
+      "group": "precision/max/Decimal",
+      "code": "Decimal x=12345678901234567890.1234; Decimal z=12345678901234567890.1235; r=Math.max(x,z);",
+      "expected": "12345678901234567890.1235",
+      "compile": false
+    },
+    {
+      "id": "R246",
+      "group": "precision/rounding/Decimal",
+      "code": "Decimal x=12345678901234567890.5; r=String.valueOf(Math.floor(x))+'|'+Math.ceil(x)+'|'+Math.rint(x);",
+      "expected": "12345678901234567890|12345678901234567891|1.2345678901234567E+19",
+      "compile": false
+    },
+    {
+      "id": "R247",
+      "group": "domain/pow/Double/-2/0.5",
+      "code": "Double x=-2; Double z=0.5; r=Math.pow(x,z);",
+      "expected": "NaN",
+      "compile": false
+    },
+    {
+      "id": "R248",
+      "group": "domain/pow/Double/0/-1",
+      "code": "Double x=0; Double z=-1; r=Math.pow(x,z);",
+      "expected": "Infinity",
+      "compile": false
+    },
+    {
+      "id": "R249",
+      "group": "domain/pow/Double/-2/3",
+      "code": "Double x=-2; Double z=3; r=Math.pow(x,z);",
+      "expected": "-8.0",
+      "compile": false
+    },
+    {
+      "id": "R250",
+      "group": "domain/pow/Double/0/0",
+      "code": "Double x=0; Double z=0; r=Math.pow(x,z);",
+      "expected": "1.0",
+      "compile": false
+    },
+    {
+      "id": "R251",
+      "group": "conversion/sqrt/Double/Integer",
+      "code": "Double x=9; Integer z=(Integer)Math.sqrt(x); r=z;",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "R252",
+      "group": "conversion/sqrt/Double/Long",
+      "code": "Double x=9; Long z=(Long)Math.sqrt(x); r=z;",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "R253",
+      "group": "conversion/sqrt/Double/Double",
+      "code": "Double x=9; Double z=(Double)Math.sqrt(x); r=z;",
+      "expected": "3.0",
+      "compile": false
+    },
+    {
+      "id": "R254",
+      "group": "conversion/sqrt/Double/Decimal",
+      "code": "Double x=9; Decimal z=(Decimal)Math.sqrt(x); r=z;",
+      "expected": "3.0",
+      "compile": false
+    },
+    {
+      "id": "R255",
+      "group": "conversion/sqrt/Decimal/Integer",
+      "code": "Decimal x=9; Integer z=(Integer)Math.sqrt(x); r=z;",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "R256",
+      "group": "conversion/sqrt/Decimal/Long",
+      "code": "Decimal x=9; Long z=(Long)Math.sqrt(x); r=z;",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "R257",
+      "group": "conversion/sqrt/Decimal/Double",
+      "code": "Decimal x=9; Double z=(Double)Math.sqrt(x); r=z;",
+      "expected": "3.0",
+      "compile": false
+    },
+    {
+      "id": "R258",
+      "group": "conversion/sqrt/Decimal/Decimal",
+      "code": "Decimal x=9; Decimal z=(Decimal)Math.sqrt(x); r=z;",
+      "expected": "3.0",
+      "compile": false
+    },
+    {
+      "id": "R259",
+      "group": "rounding-mode/UP/2.5",
+      "code": "Decimal x=2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.UP); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "2|3",
+      "compile": false
+    },
+    {
+      "id": "R260",
+      "group": "rounding-mode/UP/-2.5",
+      "code": "Decimal x=-2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.UP); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "-2|-3",
+      "compile": false
+    },
+    {
+      "id": "R261",
+      "group": "rounding-mode/DOWN/2.5",
+      "code": "Decimal x=2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.DOWN); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "2|2",
+      "compile": false
+    },
+    {
+      "id": "R262",
+      "group": "rounding-mode/DOWN/-2.5",
+      "code": "Decimal x=-2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.DOWN); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "-2|-2",
+      "compile": false
+    },
+    {
+      "id": "R263",
+      "group": "rounding-mode/CEILING/2.5",
+      "code": "Decimal x=2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.CEILING); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "2|3",
+      "compile": false
+    },
+    {
+      "id": "R264",
+      "group": "rounding-mode/CEILING/-2.5",
+      "code": "Decimal x=-2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.CEILING); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "-2|-2",
+      "compile": false
+    },
+    {
+      "id": "R265",
+      "group": "rounding-mode/FLOOR/2.5",
+      "code": "Decimal x=2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.FLOOR); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "2|2",
+      "compile": false
+    },
+    {
+      "id": "R266",
+      "group": "rounding-mode/FLOOR/-2.5",
+      "code": "Decimal x=-2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.FLOOR); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "-2|-3",
+      "compile": false
+    },
+    {
+      "id": "R267",
+      "group": "rounding-mode/HALF_UP/2.5",
+      "code": "Decimal x=2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.HALF_UP); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "2|3",
+      "compile": false
+    },
+    {
+      "id": "R268",
+      "group": "rounding-mode/HALF_UP/-2.5",
+      "code": "Decimal x=-2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.HALF_UP); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "-2|-3",
+      "compile": false
+    },
+    {
+      "id": "R269",
+      "group": "rounding-mode/HALF_DOWN/2.5",
+      "code": "Decimal x=2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.HALF_DOWN); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "2|2",
+      "compile": false
+    },
+    {
+      "id": "R270",
+      "group": "rounding-mode/HALF_DOWN/-2.5",
+      "code": "Decimal x=-2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.HALF_DOWN); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "-2|-2",
+      "compile": false
+    },
+    {
+      "id": "R271",
+      "group": "rounding-mode/HALF_EVEN/2.5",
+      "code": "Decimal x=2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.HALF_EVEN); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "2|2",
+      "compile": false
+    },
+    {
+      "id": "R272",
+      "group": "rounding-mode/HALF_EVEN/-2.5",
+      "code": "Decimal x=-2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.HALF_EVEN); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "-2|-2",
+      "compile": false
+    },
+    {
+      "id": "R273",
+      "group": "rounding-mode/UNNECESSARY/2.5",
+      "code": "Decimal x=2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.UNNECESSARY); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "EXC|System.MathException|Scale insufficient",
+      "compile": false
+    },
+    {
+      "id": "R274",
+      "group": "rounding-mode/UNNECESSARY/-2.5",
+      "code": "Decimal x=-2.5; Integer d=Math.round(x); Decimal z=x.round(RoundingMode.UNNECESSARY); r=String.valueOf(d)+'|'+String.valueOf(z);",
+      "expected": "EXC|System.MathException|Scale insufficient",
+      "compile": false
+    },
+    {
+      "id": "R275",
+      "group": "rounding-mode/UNNECESSARY/exact",
+      "code": "Decimal x=2.0; r=String.valueOf(Math.round(x))+'|'+x.round(RoundingMode.UNNECESSARY);",
+      "expected": "2|2",
+      "compile": false
+    },
+    {
+      "id": "R277",
+      "group": "constant/PI/value-and-type",
+      "code": "Object y=Math.PI; r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "3.141592653589793|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "R278",
+      "group": "constant/E/value-and-type",
+      "code": "Object y=Math.E; r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
+      "expected": "2.718281828459045|Integer=false|Long=false|Double=true|Decimal=true",
+      "compile": false
+    },
+    {
+      "id": "C001",
+      "group": "normal/mod/Double",
+      "code": "Object r; Double x=10; Double z=3; Object y=Math.mod(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal); pq.out('C001', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void mod(Double, Double) from the type System.Math",
+      "compile": true
+    },
+    {
+      "id": "C002",
+      "group": "normal/mod/Decimal",
+      "code": "Object r; Decimal x=10; Decimal z=3; Object y=Math.mod(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal); pq.out('C002', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void mod(Decimal, Decimal) from the type System.Math",
+      "compile": true
+    },
+    {
+      "id": "C003",
+      "group": "constant/PI/assignment/Integer",
+      "code": "Object r; Integer x=Math.PI; r=x; pq.out('C003', r);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Double to Integer",
+      "compile": true
+    },
+    {
+      "id": "C004",
+      "group": "constant/PI/assignment/Long",
+      "code": "Object r; Long x=Math.PI; r=x; pq.out('C004', r);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Double to Long",
+      "compile": true
+    },
+    {
+      "id": "C005",
+      "group": "constant/PI/assignment/Double",
+      "code": "Object r; Double x=Math.PI; r=x; pq.out('C005', r);",
+      "expected": "3.141592653589793",
+      "compile": true
+    },
+    {
+      "id": "C006",
+      "group": "constant/PI/assignment/Decimal",
+      "code": "Object r; Decimal x=Math.PI; r=x; pq.out('C006', r);",
+      "expected": "3.141592653589793",
+      "compile": true
+    },
+    {
+      "id": "C007",
+      "group": "constant/PI/pow-applicability",
+      "code": "Object r; r=Math.PI.pow(0); pq.out('C007', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void pow(Integer) from the type Double",
+      "compile": true
+    },
+    {
+      "id": "C008",
+      "group": "constant/E/assignment/Integer",
+      "code": "Object r; Integer x=Math.E; r=x; pq.out('C008', r);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Double to Integer",
+      "compile": true
+    },
+    {
+      "id": "C009",
+      "group": "constant/E/assignment/Long",
+      "code": "Object r; Long x=Math.E; r=x; pq.out('C009', r);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Double to Long",
+      "compile": true
+    },
+    {
+      "id": "C010",
+      "group": "constant/E/assignment/Double",
+      "code": "Object r; Double x=Math.E; r=x; pq.out('C010', r);",
+      "expected": "2.718281828459045",
+      "compile": true
+    },
+    {
+      "id": "C011",
+      "group": "constant/E/assignment/Decimal",
+      "code": "Object r; Decimal x=Math.E; r=x; pq.out('C011', r);",
+      "expected": "2.718281828459045",
+      "compile": true
+    },
+    {
+      "id": "C012",
+      "group": "constant/E/pow-applicability",
+      "code": "Object r; r=Math.E.pow(0); pq.out('C012', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void pow(Integer) from the type Double",
+      "compile": true
+    },
+    {
+      "id": "C013",
+      "group": "constant/control/Double/pow",
+      "code": "Object r; Double x=3.0; r=x.pow(0); pq.out('C013', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void pow(Integer) from the type Double",
+      "compile": true
+    },
+    {
+      "id": "C014",
+      "group": "constant/control/Decimal/pow",
+      "code": "Object r; Decimal x=3.0; r=x.pow(0); pq.out('C014', r);",
+      "expected": "1",
+      "compile": true
+    },
+    {
+      "id": "C015",
+      "group": "constant/PI/setScale-applicability",
+      "code": "Object r; r=Math.PI.setScale(2); pq.out('C015', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setScale(Integer) from the type Double",
+      "compile": true
+    },
+    {
+      "id": "C016",
+      "group": "constant/E/setScale-applicability",
+      "code": "Object r; r=Math.E.setScale(2); pq.out('C016', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setScale(Integer) from the type Double",
+      "compile": true
+    },
+    {
+      "id": "C017",
+      "group": "compile/abs/String",
+      "code": "Object r; r=Math.abs('1'); pq.out('C017', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void abs(String) from the type System.Math",
+      "compile": true
+    },
+    {
+      "id": "C018",
+      "group": "compile/sqrt/Boolean",
+      "code": "Object r; r=Math.sqrt(true); pq.out('C018', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void sqrt(Boolean) from the type System.Math",
+      "compile": true
+    },
+    {
+      "id": "C019",
+      "group": "compile/max/arity",
+      "code": "Object r; r=Math.max(1); pq.out('C019', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void max(Integer) from the type System.Math",
+      "compile": true
+    },
+    {
+      "id": "C020",
+      "group": "compile/random/arity",
+      "code": "Object r; r=Math.random(1); pq.out('C020', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void random(Integer) from the type System.Math",
+      "compile": true
+    },
+    {
+      "id": "C021",
+      "group": "compile/round/explicit-mode",
+      "code": "Object r; Decimal x=2.5; r=Math.round(x,RoundingMode.HALF_UP); pq.out('C021', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void round(Decimal, System.RoundingMode) from the type System.Math",
+      "compile": true
+    },
+    {
+      "id": "C022",
+      "group": "compile/rint/explicit-mode",
+      "code": "Object r; Decimal x=2.5; r=Math.rint(x,RoundingMode.HALF_EVEN); pq.out('C022', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void rint(Decimal, System.RoundingMode) from the type System.Math",
+      "compile": true
+    }
+  ],
+  "controls": [
+    {
+      "id": "K001",
+      "code": "r=Math.roundToLong(9007199254740993L);",
+      "expected": "9007199254740992",
+      "compile": false
+    },
+    {
+      "id": "K002",
+      "code": "r=Math.signum(Decimal.valueOf('9007199254740993')).toPlainString();",
+      "expected": "1.0",
+      "compile": false
+    },
+    {
+      "id": "K003",
+      "code": "r=Math.signum(1).toPlainString();",
+      "expected": "COMPILE_ERROR\tline 2: Method does not exist or incorrect signature: void toPlainString() from the type Double",
+      "compile": false
+    },
+    {
+      "id": "K004",
+      "code": "r=String.valueOf(Math.signum(1));",
+      "expected": "1.0",
+      "compile": false
+    },
+    {
+      "id": "K005",
+      "code": "r=Math.exp(1000);",
+      "expected": "Infinity",
+      "compile": false
+    },
+    {
+      "id": "K006",
+      "code": "r=Math.pow(10,1000);",
+      "expected": "Infinity",
+      "compile": false
+    },
+    {
+      "id": "K007",
+      "code": "r=JSON.serialize(new List<Object>{Math.abs(-5), Math.ceil(2.1), Math.floor(2.9), Math.max(3,7), Math.min(3,7), Math.pow(2,3), Math.round(2.5), Math.sqrt(9), Math.sin(0.0), Math.PI, Math.E});",
+      "expected": "[5,3,2,7,3,8.0,2,3.0,0.0,3.141592653589793,2.718281828459045]",
+      "compile": false
+    },
+    {
+      "id": "K008",
+      "code": "r=Math.round(Decimal.valueOf('2147483645.499999999'));",
+      "expected": "2147483645",
+      "compile": false
+    },
+    {
+      "id": "K009",
+      "code": "r=Math.roundToLong(Decimal.valueOf('9007199254740993.4'));",
+      "expected": "9007199254740993",
+      "compile": false
+    },
+    {
+      "id": "K010",
+      "code": "r=String.valueOf(Math.acos(-0.5))+'|'+Math.acos(0.25);",
+      "expected": "2.0943951023931957|1.318116071652818",
+      "compile": false
+    },
+    {
+      "id": "K011",
+      "code": "r=String.valueOf(Math.cosh(0))+'|'+Math.cosh(0.5)+'|'+Math.cosh(-1)+'|'+Math.cosh(2);",
+      "expected": "1.0|1.1276259652063807|1.543080634815244|3.7621956910836314",
+      "compile": false
+    },
+    {
+      "id": "K012",
+      "code": "r=String.valueOf(Math.tan(-1))+'|'+Math.tan(2)+'|'+Math.tan(10);",
+      "expected": "-1.5574077246549023|-2.185039863261519|0.6483608274590866",
+      "compile": false
+    },
+    {
+      "id": "K013",
+      "code": "Integer x=null; Long z=2L; r=Math.mod(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "K014",
+      "code": "Integer x=2; Long z=null; r=Math.mod(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "K015",
+      "code": "Long x=null; Long z=null; r=Math.mod(x,z);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "K016",
+      "group": "rounding-boundary/round/Double/4503599627370497.0",
+      "code": "Double x=4503599627370497.0; r=Math.round(x);",
+      "expected": "EXC|System.MathException|Integer overflow: 4503599627370497",
+      "compile": false
+    },
+    {
+      "id": "K017",
+      "group": "rounding-boundary/roundToLong/Double/4503599627370497.0",
+      "code": "Double x=4503599627370497.0; r=Math.roundToLong(x);",
+      "expected": "4503599627370497",
+      "compile": false
+    },
+    {
+      "id": "K018",
+      "group": "rounding-boundary/round/Double/4503599627370496.5",
+      "code": "Double x=4503599627370496.5; r=Math.round(x);",
+      "expected": "EXC|System.MathException|Integer overflow: 4503599627370496",
+      "compile": false
+    },
+    {
+      "id": "K019",
+      "group": "rounding-boundary/roundToLong/Double/4503599627370496.5",
+      "code": "Double x=4503599627370496.5; r=Math.roundToLong(x);",
+      "expected": "4503599627370496",
+      "compile": false
+    },
+    {
+      "id": "K020",
+      "group": "rounding-boundary/round/Double/-4503599627370497.0",
+      "code": "Double x=-4503599627370497.0; r=Math.round(x);",
+      "expected": "EXC|System.MathException|Integer overflow: -4503599627370497",
+      "compile": false
+    },
+    {
+      "id": "K021",
+      "group": "rounding-boundary/roundToLong/Double/-4503599627370497.0",
+      "code": "Double x=-4503599627370497.0; r=Math.roundToLong(x);",
+      "expected": "-4503599627370497",
+      "compile": false
+    },
+    {
+      "id": "K022",
+      "group": "rounding-boundary/round/Double/0.49999999999999994",
+      "code": "Double x=0.49999999999999994; r=Math.round(x);",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "K023",
+      "group": "rounding-boundary/roundToLong/Double/0.49999999999999994",
+      "code": "Double x=0.49999999999999994; r=Math.roundToLong(x);",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "K024",
+      "group": "rounding-boundary/round/Double/2.5",
+      "code": "Double x=2.5; r=Math.round(x);",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "K025",
+      "group": "rounding-boundary/roundToLong/Double/2.5",
+      "code": "Double x=2.5; r=Math.roundToLong(x);",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "K026",
+      "group": "rounding-boundary/round/Double/-2.5",
+      "code": "Double x=-2.5; r=Math.round(x);",
+      "expected": "-2",
+      "compile": false
+    },
+    {
+      "id": "K027",
+      "group": "rounding-boundary/roundToLong/Double/-2.5",
+      "code": "Double x=-2.5; r=Math.roundToLong(x);",
+      "expected": "-2",
+      "compile": false
+    }
+  ]
+}

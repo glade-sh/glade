@@ -56,14 +56,20 @@ test("MultiWidgetHost boots Lightning Out components in the rendered Visualforce
     assert.equal(await page.locator("c-service-host .toast-title").innerText(), "VF Toast");
     assert.equal(await page.locator("c-service-host .message-record").innerText(), "001XX0000000001");
     assert.equal(await page.locator("c-service-host .resource-status").innerText(), "loaded");
-    assert.equal(await page.locator("c-service-host .nav-error").innerText(), "GLADELWC042");
+    // Native L14 page_object_Account_new (VF host, APIs 59/67) resolves
+    // javascript:void(0); without an error. The conformance export checks the URL.
+    assert.equal(await page.locator("c-service-host .nav-error").innerText(), "");
     assert.match(await page.locator('c-base-component-host [data-probe="vf-base"] lightning-card').innerText(), /VF Base Card/);
     assert.match(await page.locator('c-base-component-host [data-probe="vf-base"] lightning-button').innerText(), /Save VF/);
     assert.equal(await page.locator('c-base-component-host [data-probe="vf-base"] lightning-input input').inputValue(), "Ada");
     assert.match(await page.locator('c-base-component-host [data-probe="vf-base"] lightning-datatable').innerText(), /VF Local Account/);
     assert.match(await page.locator('c-base-component-host [data-probe="vf-base"] lightning-record-form').innerText({ timeout: 10000 }), /Acme/);
     assert.match(await page.locator('c-base-component-host [data-probe="vf-base"] lightning-tabset').innerText(), /Details/);
-    await page.locator('c-base-component-host [data-probe="vf-base"] lightning-tab h3', { hasText: "Details" }).click();
+    // r_tab_normal / r_tabset_activate: select the inactive native tab header.
+    const detailsTab = page.locator('c-base-component-host [data-probe="vf-base"] lightning-tabset a[role="tab"]', { hasText: "Details" });
+    assert.equal(await detailsTab.getAttribute("aria-selected"), "false");
+    await detailsTab.click();
+    assert.equal(await detailsTab.getAttribute("aria-selected"), "true");
     assert.equal(await page.locator('c-base-component-host [data-probe="vf-base"] .tab-status').innerText(), "details");
     assert.equal(await page.locator(`link[href="${defaultSLDSHref}"]`).count(), 1);
 
@@ -88,6 +94,54 @@ test("MultiWidgetHost boots Lightning Out components in the rendered Visualforce
     assert.equal(await page.evaluate(() => window.__selected), "1");
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(consoleErrors, []);
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+    await server.close();
+  }
+});
+
+test("served record wire refreshes after LDS update and notification", async (t) => {
+  if (!requireLWCToolchain(t)) {
+    return;
+  }
+
+  const server = await startVisualforceDevServer(t, {
+    projectRel: fixture,
+    pagePath: "/apex/MultiWidgetHost",
+  });
+  if (!server) {
+    return;
+  }
+
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.goto(`${server.baseURL}/apex/MultiWidgetHost`, { waitUntil: "networkidle" });
+    const recordName = page.locator("c-record-wire-host .name");
+    assert.equal(await recordName.innerText({ timeout: 10000 }), "Acme");
+
+    await page.evaluate(async () => {
+      const { notifyRecordUpdateAvailable, updateRecord } = await import(
+        "/lightning/shims/lightning/uiRecordApi.js"
+      );
+      const recordId = "001XX0000000001";
+      await updateRecord({ fields: { Id: recordId, Name: "LDS Updated" } });
+      await notifyRecordUpdateAvailable([{ recordId }]);
+    });
+
+    const deadline = Date.now() + 10000;
+    let refreshed = false;
+    while (Date.now() < deadline) {
+      if ((await recordName.innerText({ timeout: 1000 })).trim() === "LDS Updated") {
+        refreshed = true;
+        break;
+      }
+      await page.waitForTimeout(50);
+    }
+    assert.equal(refreshed, true, `rendered name = ${await recordName.innerText()}`);
   } finally {
     if (browser) {
       await browser.close();

@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
@@ -40,6 +41,13 @@ type tabXML struct {
 	Description  string `xml:"description"`
 	Label        string `xml:"label"`
 	Motif        string `xml:"motif"`
+}
+
+type applicationXML struct {
+	Label       string   `xml:"label"`
+	Description string   `xml:"description"`
+	Logo        string   `xml:"logo"`
+	Tabs        []string `xml:"tabs"`
 }
 
 type quickActionXML struct {
@@ -129,6 +137,19 @@ type folderXML struct {
 	PublicFolderAccess string `xml:"publicFolderAccess"`
 }
 
+type documentXML struct {
+	XMLName         xml.Name `xml:"Document"`
+	InternalUseOnly *bool    `xml:"internalUseOnly"`
+	Name            string   `xml:"name"`
+	Public          *bool    `xml:"public"`
+}
+
+type reportXML struct {
+	XMLName xml.Name `xml:"Report"`
+	Format  string   `xml:"format"`
+	Name    string   `xml:"name"`
+}
+
 type visualforcePageXML struct {
 	APIVersion                string `xml:"apiVersion"`
 	AvailableInTouch          *bool  `xml:"availableInTouch"`
@@ -139,6 +160,11 @@ type visualforcePageXML struct {
 
 func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 	var registry storage.MetadataRegistry
+	scripts, err := loadDataWeaveResources(p.DataWeaveFiles, p.DataWeaveMetas, p.Namespace, p.SourceAPIVersion)
+	if err != nil {
+		return storage.MetadataRegistry{}, err
+	}
+	registry.DataWeaveResources = scripts
 	for _, path := range p.LabelFiles {
 		labels, err := loadLabels(path, p.Namespace)
 		if err != nil {
@@ -168,6 +194,13 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 		return storage.MetadataRegistry{}, err
 	}
 	registry.EmailTemplates = templates
+	for _, path := range p.MessageChannelFiles {
+		channel, err := loadMessageChannel(path, p.Namespace)
+		if err != nil {
+			return storage.MetadataRegistry{}, err
+		}
+		registry.MessageChannels = append(registry.MessageChannels, channel)
+	}
 	registry.ManagedLabelNamespaces = managedLabelNamespaces(p)
 	for _, path := range p.TabFiles {
 		tab, err := loadTab(path)
@@ -175,6 +208,13 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 			return storage.MetadataRegistry{}, err
 		}
 		registry.Tabs = append(registry.Tabs, tab)
+	}
+	for _, path := range p.ApplicationFiles {
+		app, err := loadApplication(path, p.Namespace)
+		if err != nil {
+			return storage.MetadataRegistry{}, err
+		}
+		registry.Applications = append(registry.Applications, app)
 	}
 	for _, path := range p.QuickActionFiles {
 		action, err := loadQuickAction(path)
@@ -230,10 +270,21 @@ func ApplyProject(org *storage.OrgState, p project.Project) error {
 	}
 	org.Metadata = registry
 	ensureMetadataObjects(org)
+	if err := applyPlatformCachePartitions(org, p); err != nil {
+		return err
+	}
 	if err := ensureFolderObject(org, projectFolderFilesWithDependencies(p), p.Namespace); err != nil {
 		return err
 	}
-	if err := ensureApexPageObject(org, p.VisualforcePageFiles, p.Namespace); err != nil {
+	// Email template FolderId must reference the loaded folder record so
+	// Folder.DeveloperName predicates work.
+	if len(org.Metadata.EmailTemplates) > 0 {
+		ensureEmailTemplateObject(org)
+	}
+	if err := ensureDocumentAndReportObjects(org, projectFolderFilesWithDependencies(p), p.Namespace); err != nil {
+		return err
+	}
+	if err := ensureApexPageObject(org, p.VisualforcePageFiles, p.Namespace, p.SourceAPIVersion); err != nil {
 		return err
 	}
 	return nil
@@ -277,9 +328,12 @@ func mergeRegistry(dst *storage.MetadataRegistry, src storage.MetadataRegistry) 
 	dst.ManagedLabelNamespaces = append(dst.ManagedLabelNamespaces, src.ManagedLabelNamespaces...)
 	dst.DataCategoryGroups = append(dst.DataCategoryGroups, src.DataCategoryGroups...)
 	dst.StaticResources = append(dst.StaticResources, src.StaticResources...)
+	dst.DataWeaveResources = append(dst.DataWeaveResources, src.DataWeaveResources...)
 	dst.ContentAssets = append(dst.ContentAssets, src.ContentAssets...)
 	dst.EmailTemplates = append(dst.EmailTemplates, src.EmailTemplates...)
+	dst.MessageChannels = append(dst.MessageChannels, src.MessageChannels...)
 	dst.Tabs = append(dst.Tabs, src.Tabs...)
+	dst.Applications = append(dst.Applications, src.Applications...)
 	dst.QuickActions = append(dst.QuickActions, src.QuickActions...)
 	dst.FieldSets = append(dst.FieldSets, src.FieldSets...)
 	dst.Endpoints = append(dst.Endpoints, src.Endpoints...)
@@ -300,6 +354,10 @@ func remapProjectRegistry(registry *storage.MetadataRegistry, p project.Project)
 	for i := range registry.DataCategoryGroups {
 		registry.DataCategoryGroups[i].SObjectName = remapProjectMetadataName(p, registry.DataCategoryGroups[i].SObjectName)
 	}
+	for i := range registry.DataWeaveResources {
+		registry.DataWeaveResources[i].Name = remapProjectMetadataName(p, registry.DataWeaveResources[i].Name)
+		registry.DataWeaveResources[i].Namespace = namespaceremap.ApplyNamespace(p.NamespaceRemaps, registry.DataWeaveResources[i].Namespace)
+	}
 	for i := range registry.StaticResources {
 		registry.StaticResources[i].Name = remapProjectMetadataName(p, registry.StaticResources[i].Name)
 		registry.StaticResources[i].NamespacePrefix = namespaceremap.ApplyNamespace(p.NamespaceRemaps, registry.StaticResources[i].NamespacePrefix)
@@ -312,6 +370,16 @@ func remapProjectRegistry(registry *storage.MetadataRegistry, p project.Project)
 	for i := range registry.Tabs {
 		registry.Tabs[i].Name = remapProjectMetadataName(p, registry.Tabs[i].Name)
 		registry.Tabs[i].SObjectName = remapProjectMetadataName(p, registry.Tabs[i].SObjectName)
+	}
+	for i := range registry.Applications {
+		app := &registry.Applications[i]
+		app.Name = remapProjectMetadataName(p, app.Name)
+		app.Namespace = namespaceremap.ApplyNamespace(p.NamespaceRemaps, app.Namespace)
+		for j, tab := range app.Tabs {
+			if !strings.HasPrefix(tab, "standard-") {
+				app.Tabs[j] = remapProjectMetadataName(p, tab)
+			}
+		}
 	}
 	for i := range registry.QuickActions {
 		registry.QuickActions[i].Name = remapProjectMetadataName(p, registry.QuickActions[i].Name)
@@ -332,6 +400,10 @@ func remapProjectRegistry(registry *storage.MetadataRegistry, p project.Project)
 		registry.EmailTemplates[i].Name = remapProjectMetadataName(p, registry.EmailTemplates[i].Name)
 		registry.EmailTemplates[i].DeveloperName = remapProjectMetadataName(p, registry.EmailTemplates[i].DeveloperName)
 		registry.EmailTemplates[i].Namespace = namespaceremap.ApplyNamespace(p.NamespaceRemaps, registry.EmailTemplates[i].Namespace)
+	}
+	for i := range registry.MessageChannels {
+		registry.MessageChannels[i].Name = remapProjectMetadataName(p, registry.MessageChannels[i].Name)
+		registry.MessageChannels[i].Namespace = namespaceremap.ApplyNamespace(p.NamespaceRemaps, registry.MessageChannels[i].Namespace)
 	}
 	for i := range registry.Endpoints {
 		registry.Endpoints[i].Name = remapProjectMetadataName(p, registry.Endpoints[i].Name)
@@ -412,6 +484,25 @@ func loadTab(path string) (storage.TabMetadata, error) {
 		tab.SObjectName = name
 	}
 	return tab, nil
+}
+
+func loadApplication(path, namespace string) (storage.ApplicationMetadata, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return storage.ApplicationMetadata{}, err
+	}
+	var raw applicationXML
+	if len(strings.TrimSpace(string(data))) > 0 {
+		if err := xml.Unmarshal(data, &raw); err != nil {
+			return storage.ApplicationMetadata{}, err
+		}
+	}
+	name := metadataNameFromPath(path, ".app-meta.xml", ".app")
+	return storage.ApplicationMetadata{
+		Name: name, Label: strings.TrimSpace(raw.Label),
+		Description: strings.TrimSpace(raw.Description), Namespace: namespace,
+		Logo: strings.TrimSpace(raw.Logo), Tabs: raw.Tabs, File: path,
+	}, nil
 }
 
 func loadQuickAction(path string) (storage.QuickActionMetadata, error) {
@@ -552,8 +643,8 @@ func fieldSetFromXML(raw fieldSetXML, objectName, fallbackName, namespace, path 
 	if name == "" {
 		name = fallbackName
 	}
-	members := make([]storage.FieldSetMemberMetadata, 0, len(raw.DisplayedFields)+len(raw.AvailableFields))
-	for _, member := range append(raw.DisplayedFields, raw.AvailableFields...) {
+	members := make([]storage.FieldSetMemberMetadata, 0, len(raw.DisplayedFields))
+	for _, member := range raw.DisplayedFields {
 		field := strings.TrimSpace(member.Field)
 		if field == "" {
 			continue
@@ -965,6 +1056,12 @@ func loadEmailTemplates(paths []string, namespace string) ([]storage.EmailTempla
 		template := byName[key]
 		if template == nil {
 			template = &storage.EmailTemplateMetadata{Name: name, DeveloperName: name, Namespace: namespace}
+			// Metadata API email templates identify their folder in the path;
+			// folderName is commonly absent from the companion XML (R205-R213).
+			folderPath := filepath.Dir(path)
+			if strings.EqualFold(filepath.Base(filepath.Dir(folderPath)), "email") {
+				template.FolderName = filepath.Base(folderPath)
+			}
 			byName[key] = template
 		}
 		lower := strings.ToLower(path)
@@ -992,7 +1089,9 @@ func loadEmailTemplates(paths []string, namespace string) ([]storage.EmailTempla
 			template.TemplateStyle = strings.TrimSpace(meta.TemplateStyle)
 			template.Encoding = strings.TrimSpace(meta.Encoding)
 			template.Description = strings.TrimSpace(meta.Description)
-			template.FolderName = strings.TrimSpace(meta.FolderName)
+			if folder := strings.TrimSpace(meta.FolderName); folder != "" {
+				template.FolderName = folder
+			}
 			template.Active = meta.Active == nil || *meta.Active
 			continue
 		}
@@ -1089,7 +1188,7 @@ func ensureMetadataObjects(org *storage.OrgState) {
 	}
 }
 
-func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace string) error {
+func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace, projectAPIVersion string) error {
 	if org == nil || len(pageFiles) == 0 {
 		return nil
 	}
@@ -1125,6 +1224,10 @@ func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace s
 		if err != nil {
 			return err
 		}
+		apiVersion, err := EffectiveVisualforceAPIVersion(path, projectAPIVersion)
+		if err != nil {
+			return err
+		}
 		markup := ""
 		if !hasSuffixFold(path, ".page-meta.xml") {
 			data, err := os.ReadFile(path)
@@ -1137,7 +1240,7 @@ func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace s
 			"Id":                          storage.IDValue(id),
 			"Name":                        storage.StringValue(name),
 			"NamespacePrefix":             storage.StringValue(namespace),
-			"ApiVersion":                  visualforcePageAPIVersion(meta.APIVersion),
+			"ApiVersion":                  visualforcePageAPIVersion(apiVersion),
 			"ControllerKey":               storage.NullValue(),
 			"ControllerType":              storage.NullValue(),
 			"Description":                 storage.StringValue(meta.Description),
@@ -1151,6 +1254,40 @@ func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace s
 	return nil
 }
 
+// EffectiveVisualforceAPIVersion returns the source API version declared by a
+// Visualforce page or component sidecar, falling back to the project version
+// when the sidecar is absent or does not declare one. Versions are normalized
+// and validated without deriving them from the resource name.
+func EffectiveVisualforceAPIVersion(path, fallback string) (string, error) {
+	projectVersion, err := apexversion.PreserveSource(fallback)
+	if err != nil {
+		return "", fmt.Errorf("invalid project source API version %q: %w", strings.TrimSpace(fallback), err)
+	}
+
+	metaPath := visualforceMetadataPath(path)
+	data, err := os.ReadFile(metaPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return projectVersion, nil
+		}
+		return "", fmt.Errorf("load Visualforce page metadata %s: %w", metaPath, err)
+	}
+	var metadata struct {
+		APIVersion string `xml:"apiVersion"`
+	}
+	if err := xml.Unmarshal(data, &metadata); err != nil {
+		return "", fmt.Errorf("load Visualforce page metadata %s: %w", metaPath, err)
+	}
+	if strings.TrimSpace(metadata.APIVersion) == "" {
+		return projectVersion, nil
+	}
+	version, err := apexversion.PreserveSource(metadata.APIVersion)
+	if err != nil {
+		return "", fmt.Errorf("unsupported Visualforce source API version %q in %s: %w", strings.TrimSpace(metadata.APIVersion), metaPath, err)
+	}
+	return version, nil
+}
+
 func ensureStaticResourceObject(org *storage.OrgState) {
 	object := storage.ObjectState{
 		Definition: storage.ObjectDefinition{
@@ -1160,6 +1297,7 @@ func ensureStaticResourceObject(org *storage.OrgState) {
 			Fields: map[string]storage.Field{
 				"Name":            {APIName: "Name", Label: "Name", Type: storage.FieldString},
 				"Body":            {APIName: "Body", Label: "Body", Type: storage.FieldBlob},
+				"BodyLength":      {APIName: "BodyLength", Label: "Size", Type: storage.FieldInteger},
 				"ContentType":     {APIName: "ContentType", Label: "Content Type", Type: storage.FieldString},
 				"CacheControl":    {APIName: "CacheControl", Label: "Cache Control", Type: storage.FieldString},
 				"NamespacePrefix": {APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: storage.FieldString},
@@ -1174,6 +1312,7 @@ func ensureStaticResourceObject(org *storage.OrgState) {
 		object.Records[id] = storage.Record{ID: id, Object: "StaticResource", Fields: map[string]storage.Value{
 			"Name":            storage.StringValue(resource.Name),
 			"Body":            storage.BlobValue(resource.Content),
+			"BodyLength":      storage.IntegerValue(int64(len(resource.Content))),
 			"ContentType":     storage.StringValue(resource.ContentType),
 			"CacheControl":    storage.StringValue(resource.CacheControl),
 			"NamespacePrefix": staticResourceNamespaceValue(resource.NamespacePrefix),
@@ -1196,6 +1335,10 @@ func ensureEmailTemplateObject(org *storage.OrgState) {
 	storage.EnsureStandardObject(org, "EmailTemplate")
 	object := org.Objects["EmailTemplate"]
 	for i, template := range org.Metadata.EmailTemplates {
+		folder := storage.StringValue(template.FolderName)
+		if folderID, ok := projectFolderID(org, "Email", template.FolderName); ok {
+			folder = storage.IDValue(folderID)
+		}
 		id := storage.ID("00X" + leftPad(i+100001, 12))
 		object.Records[id] = storage.Record{ID: id, Object: "EmailTemplate", Fields: map[string]storage.Value{
 			"Id":              storage.IDValue(id),
@@ -1210,7 +1353,7 @@ func ensureEmailTemplateObject(org *storage.OrgState) {
 			"Encoding":        storage.StringValue(template.Encoding),
 			"TemplateType":    storage.StringValue(template.TemplateType),
 			"TemplateStyle":   storage.StringValue(template.TemplateStyle),
-			"FolderId":        storage.StringValue(template.FolderName),
+			"FolderId":        folder,
 			"IsActive":        storage.BooleanValue(template.Active),
 		}}
 	}
@@ -1273,6 +1416,215 @@ func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace s
 	return nil
 }
 
+func ensureDocumentAndReportObjects(org *storage.OrgState, folderFiles []string, namespace string) error {
+	if org == nil || len(folderFiles) == 0 {
+		return nil
+	}
+	paths := append([]string(nil), folderFiles...)
+	sort.Strings(paths)
+	for _, path := range paths {
+		switch folderTypeFromPath(path) {
+		case "Document":
+			if err := loadFolderDocuments(org, path, namespace); err != nil {
+				return err
+			}
+		case "Report":
+			if err := loadFolderReports(org, path, namespace); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func loadFolderDocuments(org *storage.OrgState, folderPath, namespace string) error {
+	directory := filepath.Join(filepath.Dir(folderPath), folderDeveloperName(folderPath))
+	entries, err := os.ReadDir(directory)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	storage.EnsureStandardObject(org, "Document")
+	object := org.Objects["Document"]
+	folderID, ok := projectFolderID(org, "Document", folderDeveloperName(folderPath))
+	if !ok {
+		return fmt.Errorf("document folder %s was not indexed", folderPath)
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(name), "-meta.xml") {
+			continue
+		}
+		metaPath := filepath.Join(directory, name)
+		contentPath, err := documentContentPath(metaPath, entries)
+		if err != nil {
+			return err
+		}
+		content, err := os.ReadFile(contentPath)
+		if err != nil {
+			return fmt.Errorf("load document body %s: %w", contentPath, err)
+		}
+		meta, err := loadDocumentMeta(metaPath)
+		if err != nil {
+			return err
+		}
+		fileName := filepath.Base(contentPath)
+		documentName := firstNonEmpty(strings.TrimSpace(meta.Name), fileName)
+		developerName := strings.TrimSuffix(documentName, filepath.Ext(documentName))
+		id := metadataRecordIDForIdentity(object, func(record storage.Record) bool {
+			return record.Fields["FolderId"].ID == folderID && strings.EqualFold(record.Fields["DeveloperName"].String, developerName)
+		})
+		object.Records[id] = storage.Record{ID: id, Object: "Document", Fields: map[string]storage.Value{
+			"Id":                storage.IDValue(id),
+			"Name":              storage.StringValue(documentName),
+			"DeveloperName":     storage.StringValue(developerName),
+			"Body":              storage.BlobValue(string(content)),
+			"BodyLength":        storage.IntegerValue(int64(len(content))),
+			"FolderId":          storage.IDValue(folderID),
+			"IsInternalUseOnly": storage.BooleanValue(meta.InternalUseOnly != nil && *meta.InternalUseOnly),
+			"IsPublic":          storage.BooleanValue(meta.Public != nil && *meta.Public),
+			"NamespacePrefix":   nullableNamespace(namespace),
+			"Type":              storage.StringValue(strings.TrimPrefix(filepath.Ext(fileName), ".")),
+		}}
+	}
+	org.Objects["Document"] = object
+	return nil
+}
+
+// Source-format Document metadata omits the body's extension from its sidecar.
+// Metadata API source instead retains that extension before -meta.xml.
+func documentContentPath(metaPath string, entries []os.DirEntry) (string, error) {
+	if !hasSuffixFold(metaPath, ".document-meta.xml") {
+		return strings.TrimSuffix(metaPath, "-meta.xml"), nil
+	}
+	base := trimKnownSuffix(filepath.Base(metaPath), ".document-meta.xml")
+	var contentPath string
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || hasSuffixFold(name, "-meta.xml") || strings.TrimSuffix(name, filepath.Ext(name)) != base {
+			continue
+		}
+		if contentPath != "" {
+			return "", fmt.Errorf("multiple content files for document metadata %s", metaPath)
+		}
+		contentPath = filepath.Join(filepath.Dir(metaPath), name)
+	}
+	if contentPath == "" {
+		return "", fmt.Errorf("missing content file for document metadata %s", metaPath)
+	}
+	return contentPath, nil
+}
+
+func loadFolderReports(org *storage.OrgState, folderPath, namespace string) error {
+	directory := filepath.Join(filepath.Dir(folderPath), folderDeveloperName(folderPath))
+	entries, err := os.ReadDir(directory)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	storage.EnsureStandardObject(org, "Report")
+	object := org.Objects["Report"]
+	folderName := folderDeveloperName(folderPath)
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || (!strings.HasSuffix(strings.ToLower(name), ".report-meta.xml") && !strings.HasSuffix(strings.ToLower(name), ".report")) {
+			continue
+		}
+		metaPath := filepath.Join(directory, name)
+		meta, err := loadReportMeta(metaPath)
+		if err != nil {
+			return err
+		}
+		developerName := metadataNameFromPath(metaPath, ".report-meta.xml", ".report")
+		id := metadataRecordIDForIdentity(object, func(record storage.Record) bool {
+			return strings.EqualFold(record.Fields["FolderName"].String, folderName) && strings.EqualFold(record.Fields["DeveloperName"].String, developerName)
+		})
+		object.Records[id] = storage.Record{ID: id, Object: "Report", Fields: map[string]storage.Value{
+			"Id":              storage.IDValue(id),
+			"Name":            storage.StringValue(firstNonEmpty(strings.TrimSpace(meta.Name), developerName)),
+			"DeveloperName":   storage.StringValue(developerName),
+			"FolderName":      storage.StringValue(folderName),
+			"Format":          storage.StringValue(strings.TrimSpace(meta.Format)),
+			"NamespacePrefix": nullableNamespace(namespace),
+		}}
+	}
+	org.Objects["Report"] = object
+	return nil
+}
+
+func projectFolderID(org *storage.OrgState, folderType, developerName string) (storage.ID, bool) {
+	if org == nil {
+		return "", false
+	}
+	object, ok := org.Objects["Folder"]
+	if !ok {
+		return "", false
+	}
+	for id, record := range object.Records {
+		if strings.EqualFold(record.Fields["Type"].String, folderType) && strings.EqualFold(record.Fields["DeveloperName"].String, developerName) {
+			return id, true
+		}
+	}
+	return "", false
+}
+
+func metadataRecordIDForIdentity(object storage.ObjectState, matches func(storage.Record) bool) storage.ID {
+	var existing storage.ID
+	for id, record := range object.Records {
+		if matches(record) && (existing == "" || id < existing) {
+			existing = id
+		}
+	}
+	if existing != "" {
+		return existing
+	}
+	prefix := object.Definition.KeyPrefix
+	if prefix == "" {
+		prefix = "a00"
+	}
+	for index := 1; ; index++ {
+		id := storage.ID(prefix + leftPad(index, 15-len(prefix)))
+		if _, _, exists := storage.LookupRecordByID(object.Records, id); !exists {
+			return id
+		}
+	}
+}
+
+func nullableNamespace(namespace string) storage.Value {
+	if namespace = strings.TrimSpace(namespace); namespace == "" {
+		return storage.NullValue()
+	}
+	return storage.StringValue(namespace)
+}
+
+func loadDocumentMeta(path string) (documentXML, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return documentXML{}, err
+	}
+	var raw documentXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return documentXML{}, fmt.Errorf("load Document metadata %s: %w", path, err)
+	}
+	return raw, nil
+}
+
+func loadReportMeta(path string) (reportXML, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return reportXML{}, err
+	}
+	var raw reportXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return reportXML{}, fmt.Errorf("load Report metadata %s: %w", path, err)
+	}
+	return raw, nil
+}
+
 func ensureFolderFields(definition *storage.ObjectDefinition) {
 	if definition.Fields == nil {
 		definition.Fields = make(map[string]storage.Field)
@@ -1307,6 +1659,9 @@ func loadFolderMeta(path string) (folderXML, error) {
 }
 
 func folderDeveloperName(path string) string {
+	if isLegacyFolderMetadataPath(path) {
+		return metadataNameFromPath(path, "-meta.xml")
+	}
 	return metadataNameFromPath(path,
 		".documentFolder-meta.xml",
 		".emailFolder-meta.xml",
@@ -1315,7 +1670,28 @@ func folderDeveloperName(path string) string {
 	)
 }
 
+func isLegacyFolderMetadataPath(path string) bool {
+	base := strings.ToLower(filepath.Base(path))
+	if !strings.HasSuffix(base, "-meta.xml") || strings.HasSuffix(base, ".documentfolder-meta.xml") || strings.HasSuffix(base, ".emailfolder-meta.xml") || strings.HasSuffix(base, ".reportfolder-meta.xml") || strings.HasSuffix(base, ".dashboardfolder-meta.xml") {
+		return false
+	}
+	switch strings.ToLower(filepath.Base(filepath.Dir(path))) {
+	case "documents", "reports":
+		return true
+	default:
+		return false
+	}
+}
+
 func folderTypeFromPath(path string) string {
+	if isLegacyFolderMetadataPath(path) {
+		switch strings.ToLower(filepath.Base(filepath.Dir(path))) {
+		case "documents":
+			return "Document"
+		case "reports":
+			return "Report"
+		}
+	}
 	lower := strings.ToLower(filepath.Base(path))
 	switch {
 	case strings.HasSuffix(lower, ".documentfolder-meta.xml"):
@@ -1340,7 +1716,11 @@ func visualforcePageName(path string) string {
 }
 
 func visualforcePageMetaPath(path string) string {
-	if hasSuffixFold(path, ".page-meta.xml") {
+	return visualforceMetadataPath(path)
+}
+
+func visualforceMetadataPath(path string) string {
+	if hasSuffixFold(path, ".page-meta.xml") || hasSuffixFold(path, ".component-meta.xml") {
 		return path
 	}
 	return path + "-meta.xml"
@@ -1367,6 +1747,16 @@ func visualforcePageAPIVersion(raw string) storage.Value {
 }
 
 func sortRegistry(registry *storage.MetadataRegistry) {
+	sort.Slice(registry.DataWeaveResources, func(i, j int) bool {
+		a, b := registry.DataWeaveResources[i], registry.DataWeaveResources[j]
+		if a.Namespace != b.Namespace {
+			return a.Namespace < b.Namespace
+		}
+		if a.Name != b.Name {
+			return a.Name < b.Name
+		}
+		return a.ContentPath < b.ContentPath
+	})
 	sort.Slice(registry.Labels, func(i, j int) bool {
 		if registry.Labels[i].Name != registry.Labels[j].Name {
 			return registry.Labels[i].Name < registry.Labels[j].Name
@@ -1374,6 +1764,7 @@ func sortRegistry(registry *storage.MetadataRegistry) {
 		return registry.Labels[i].Language < registry.Labels[j].Language
 	})
 	sort.Slice(registry.Tabs, func(i, j int) bool { return registry.Tabs[i].Name < registry.Tabs[j].Name })
+	sort.Slice(registry.Applications, func(i, j int) bool { return registry.Applications[i].Name < registry.Applications[j].Name })
 	sort.Slice(registry.QuickActions, func(i, j int) bool { return registry.QuickActions[i].Name < registry.QuickActions[j].Name })
 	sort.Slice(registry.DataCategoryGroups, func(i, j int) bool {
 		if registry.DataCategoryGroups[i].SObjectName != registry.DataCategoryGroups[j].SObjectName {
@@ -1394,6 +1785,16 @@ func sortRegistry(registry *storage.MetadataRegistry) {
 			return registry.Endpoints[i].Name < registry.Endpoints[j].Name
 		}
 		return registry.Endpoints[i].Kind < registry.Endpoints[j].Kind
+	})
+	sort.Slice(registry.MessageChannels, func(i, j int) bool {
+		a, b := registry.MessageChannels[i], registry.MessageChannels[j]
+		if a.Namespace != b.Namespace {
+			return a.Namespace < b.Namespace
+		}
+		if a.Name != b.Name {
+			return a.Name < b.Name
+		}
+		return a.File < b.File
 	})
 	sort.Slice(registry.EmailTemplates, func(i, j int) bool {
 		return registry.EmailTemplates[i].DeveloperName < registry.EmailTemplates[j].DeveloperName

@@ -1,0 +1,2178 @@
+{
+  "family": "Compression",
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "oracle": "Owned Salesforce observations at both API endpoints.",
+  "declarations": {},
+  "cases": [
+    {
+      "id": "R001",
+      "group": "round-trip/text/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=Blob.valueOf(''); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.txt'));",
+      "expected": "",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R002",
+      "group": "round-trip/text/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=Blob.valueOf(''); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract(z.getEntry('a.txt')));",
+      "expected": "",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R003",
+      "group": "round-trip/text/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=Blob.valueOf('a'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.txt'));",
+      "expected": "61",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R004",
+      "group": "round-trip/text/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=Blob.valueOf('a'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract(z.getEntry('a.txt')));",
+      "expected": "61",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R005",
+      "group": "round-trip/text/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=Blob.valueOf('alpha'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.txt'));",
+      "expected": "616c706861",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R006",
+      "group": "round-trip/text/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=Blob.valueOf('alpha'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract(z.getEntry('a.txt')));",
+      "expected": "616c706861",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R007",
+      "group": "round-trip/text/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=Blob.valueOf('one\\ntwo\\r\\n'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.txt'));",
+      "expected": "6f6e650a74776f0d0a",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R008",
+      "group": "round-trip/text/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=Blob.valueOf('one\\ntwo\\r\\n'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract(z.getEntry('a.txt')));",
+      "expected": "6f6e650a74776f0d0a",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R009",
+      "group": "round-trip/text/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=Blob.valueOf('café λ 漢字 😀'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.txt'));",
+      "expected": "636166c3a920cebb20e6bca2e5ad9720f09f9880",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R010",
+      "group": "round-trip/text/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=Blob.valueOf('café λ 漢字 😀'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract(z.getEntry('a.txt')));",
+      "expected": "636166c3a920cebb20e6bca2e5ad9720f09f9880",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R011",
+      "group": "round-trip/text/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=Blob.valueOf('repeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeat'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.txt'));",
+      "expected": "726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R012",
+      "group": "round-trip/text/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=Blob.valueOf('repeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeat'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract(z.getEntry('a.txt')));",
+      "expected": "726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R013",
+      "group": "round-trip/binary/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=EncodingUtil.convertFromHex('00'); w.addEntry('a.bin',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.bin'));",
+      "expected": "00",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R014",
+      "group": "round-trip/binary/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=EncodingUtil.convertFromHex('0000ff'); w.addEntry('a.bin',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.bin'));",
+      "expected": "0000ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R015",
+      "group": "round-trip/binary/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=EncodingUtil.convertFromHex('0001027f80feff'); w.addEntry('a.bin',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.bin'));",
+      "expected": "0001027f80feff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R016",
+      "group": "round-trip/binary/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.STORED); Blob b=EncodingUtil.convertFromHex('000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff'); w.addEntry('a.bin',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.bin'));",
+      "expected": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R017",
+      "group": "round-trip/text/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=Blob.valueOf(''); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.txt'));",
+      "expected": "",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R018",
+      "group": "round-trip/text/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=Blob.valueOf(''); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract(z.getEntry('a.txt')));",
+      "expected": "",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R019",
+      "group": "round-trip/text/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=Blob.valueOf('a'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.txt'));",
+      "expected": "61",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R020",
+      "group": "round-trip/text/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=Blob.valueOf('a'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract(z.getEntry('a.txt')));",
+      "expected": "61",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R021",
+      "group": "round-trip/text/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=Blob.valueOf('alpha'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.txt'));",
+      "expected": "616c706861",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R022",
+      "group": "round-trip/text/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=Blob.valueOf('alpha'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract(z.getEntry('a.txt')));",
+      "expected": "616c706861",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R023",
+      "group": "round-trip/text/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=Blob.valueOf('one\\ntwo\\r\\n'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.txt'));",
+      "expected": "6f6e650a74776f0d0a",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R024",
+      "group": "round-trip/text/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=Blob.valueOf('one\\ntwo\\r\\n'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract(z.getEntry('a.txt')));",
+      "expected": "6f6e650a74776f0d0a",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R025",
+      "group": "round-trip/text/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=Blob.valueOf('café λ 漢字 😀'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.txt'));",
+      "expected": "636166c3a920cebb20e6bca2e5ad9720f09f9880",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R026",
+      "group": "round-trip/text/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=Blob.valueOf('café λ 漢字 😀'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract(z.getEntry('a.txt')));",
+      "expected": "636166c3a920cebb20e6bca2e5ad9720f09f9880",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R027",
+      "group": "round-trip/text/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=Blob.valueOf('repeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeat'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.txt'));",
+      "expected": "726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R028",
+      "group": "round-trip/text/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=Blob.valueOf('repeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeatrepeat'); w.addEntry('a.txt',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract(z.getEntry('a.txt')));",
+      "expected": "726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174726570656174",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R029",
+      "group": "round-trip/binary/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=EncodingUtil.convertFromHex('00'); w.addEntry('a.bin',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.bin'));",
+      "expected": "00",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R030",
+      "group": "round-trip/binary/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=EncodingUtil.convertFromHex('0000ff'); w.addEntry('a.bin',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.bin'));",
+      "expected": "0000ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R031",
+      "group": "round-trip/binary/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=EncodingUtil.convertFromHex('0001027f80feff'); w.addEntry('a.bin',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.bin'));",
+      "expected": "0001027f80feff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R032",
+      "group": "round-trip/binary/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(Compression.Method.DEFLATED); Blob b=EncodingUtil.convertFromHex('000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff'); w.addEntry('a.bin',b); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(z.extract('a.bin'));",
+      "expected": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R033",
+      "group": "levels-methods/DEFAULT_LEVEL/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.DEFAULT_LEVEL); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getLevel();",
+      "expected": "DEFAULT_LEVEL",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R034",
+      "group": "levels-methods/DEFAULT_LEVEL/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.DEFAULT_LEVEL); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getMethod();",
+      "expected": "STORED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R035",
+      "group": "levels-methods/DEFAULT_LEVEL/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.DEFAULT_LEVEL); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntry('a.txt').getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R036",
+      "group": "levels-methods/DEFAULT_LEVEL/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.DEFAULT_LEVEL); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.extract('a.txt').toString();",
+      "expected": "alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R037",
+      "group": "levels-methods/DEFAULT_LEVEL/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.DEFAULT_LEVEL); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getLevel();",
+      "expected": "DEFAULT_LEVEL",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R038",
+      "group": "levels-methods/DEFAULT_LEVEL/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.DEFAULT_LEVEL); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R039",
+      "group": "levels-methods/DEFAULT_LEVEL/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.DEFAULT_LEVEL); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntry('a.txt').getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R040",
+      "group": "levels-methods/DEFAULT_LEVEL/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.DEFAULT_LEVEL); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.extract('a.txt').toString();",
+      "expected": "alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R041",
+      "group": "levels-methods/NO_COMPRESSION/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.NO_COMPRESSION); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getLevel();",
+      "expected": "NO_COMPRESSION",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R042",
+      "group": "levels-methods/NO_COMPRESSION/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.NO_COMPRESSION); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getMethod();",
+      "expected": "STORED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R043",
+      "group": "levels-methods/NO_COMPRESSION/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.NO_COMPRESSION); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntry('a.txt').getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R044",
+      "group": "levels-methods/NO_COMPRESSION/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.NO_COMPRESSION); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.extract('a.txt').toString();",
+      "expected": "alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R045",
+      "group": "levels-methods/NO_COMPRESSION/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.NO_COMPRESSION); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getLevel();",
+      "expected": "NO_COMPRESSION",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R046",
+      "group": "levels-methods/NO_COMPRESSION/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.NO_COMPRESSION); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R047",
+      "group": "levels-methods/NO_COMPRESSION/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.NO_COMPRESSION); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntry('a.txt').getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R048",
+      "group": "levels-methods/NO_COMPRESSION/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.NO_COMPRESSION); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.extract('a.txt').toString();",
+      "expected": "alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R049",
+      "group": "levels-methods/BEST_SPEED/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_SPEED); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getLevel();",
+      "expected": "BEST_SPEED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R050",
+      "group": "levels-methods/BEST_SPEED/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_SPEED); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getMethod();",
+      "expected": "STORED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R051",
+      "group": "levels-methods/BEST_SPEED/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_SPEED); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntry('a.txt').getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R052",
+      "group": "levels-methods/BEST_SPEED/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_SPEED); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.extract('a.txt').toString();",
+      "expected": "alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R053",
+      "group": "levels-methods/BEST_SPEED/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_SPEED); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getLevel();",
+      "expected": "BEST_SPEED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R054",
+      "group": "levels-methods/BEST_SPEED/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_SPEED); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R055",
+      "group": "levels-methods/BEST_SPEED/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_SPEED); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntry('a.txt').getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R056",
+      "group": "levels-methods/BEST_SPEED/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_SPEED); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.extract('a.txt').toString();",
+      "expected": "alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R057",
+      "group": "levels-methods/BEST_COMPRESSION/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_COMPRESSION); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getLevel();",
+      "expected": "BEST_COMPRESSION",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R058",
+      "group": "levels-methods/BEST_COMPRESSION/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_COMPRESSION); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getMethod();",
+      "expected": "STORED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R059",
+      "group": "levels-methods/BEST_COMPRESSION/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_COMPRESSION); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntry('a.txt').getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R060",
+      "group": "levels-methods/BEST_COMPRESSION/STORED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_COMPRESSION); w.setMethod(Compression.Method.STORED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.extract('a.txt').toString();",
+      "expected": "alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R061",
+      "group": "levels-methods/BEST_COMPRESSION/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_COMPRESSION); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getLevel();",
+      "expected": "BEST_COMPRESSION",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R062",
+      "group": "levels-methods/BEST_COMPRESSION/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_COMPRESSION); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R063",
+      "group": "levels-methods/BEST_COMPRESSION/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_COMPRESSION); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntry('a.txt').getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R064",
+      "group": "levels-methods/BEST_COMPRESSION/DEFLATED",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(Compression.Level.BEST_COMPRESSION); w.setMethod(Compression.Method.DEFLATED); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.extract('a.txt').toString();",
+      "expected": "alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R065",
+      "group": "levels-methods/default-null-chain",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); r=w.getLevel();",
+      "expected": "BEST_SPEED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R066",
+      "group": "levels-methods/default-null-chain",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); r=w.getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R067",
+      "group": "levels-methods/default-null-chain",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); r=w.setLevel(Compression.Level.BEST_SPEED)===w;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R068",
+      "group": "levels-methods/default-null-chain",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); r=w.setMethod(Compression.Method.STORED)===w;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R069",
+      "group": "levels-methods/default-null-chain",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setLevel(null); r=w.getLevel();",
+      "expected": "EXC|System.TypeException|java.lang.NullPointerException: Cannot invoke \"java.lang.Number.intValue()\" because the return value of \"sun.invoke.util.ValueConversions.primitiveConversion(sun.invoke.util.Wrapper, Object, boolean)\" is null",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R070",
+      "group": "levels-methods/default-null-chain",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.setMethod(null); r=w.getMethod();",
+      "expected": "EXC|System.TypeException|java.lang.NullPointerException: Cannot invoke \"java.lang.Number.intValue()\" because the return value of \"sun.invoke.util.ValueConversions.primitiveConversion(sun.invoke.util.Wrapper, Object, boolean)\" is null",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R071",
+      "group": "entry-metadata/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.getName();",
+      "expected": "a.txt",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R072",
+      "group": "entry-metadata/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.getComment();",
+      "expected": "note",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R073",
+      "group": "entry-metadata/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R074",
+      "group": "entry-metadata/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.getContent()==null;",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R075",
+      "group": "entry-metadata/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.getUncompressedSize();",
+      "expected": "5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R076",
+      "group": "entry-metadata/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.getCompressedSize();",
+      "expected": "-1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R077",
+      "group": "entry-metadata/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.getCrc();",
+      "expected": "3504355690",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R078",
+      "group": "entry-metadata/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.getLastModifiedTime().formatGmt('yyyy-MM-dd HH:mm:ss');",
+      "expected": "2020-02-03 04:05:06",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R079",
+      "group": "entry-metadata/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.equals(e);",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R080",
+      "group": "entry-metadata/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.equals(null);",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R081",
+      "group": "entry-metadata/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.equals('a.txt');",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R082",
+      "group": "entry-metadata/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.hashCode()==e.hashCode();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R083",
+      "group": "entry-metadata/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.toString().contains('a.txt');",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R084",
+      "group": "entry-metadata/mutation/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); e.setComment('changed'); r=e.getComment();",
+      "expected": "changed",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R085",
+      "group": "entry-metadata/fluent/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.setComment('changed')===e;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R086",
+      "group": "entry-metadata/mutation/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); e.setContent(Blob.valueOf('beta')); r=e.getContent().toString();",
+      "expected": "beta",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R087",
+      "group": "entry-metadata/fluent/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.setContent(Blob.valueOf('beta'))===e;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R088",
+      "group": "entry-metadata/mutation/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); e.setLastModifiedTime(Datetime.newInstanceGmt(2020,2,3,4,5,6)); r=e.getLastModifiedTime().formatGmt('yyyy-MM-dd HH:mm:ss');",
+      "expected": "2020-02-03 04:05:06",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R089",
+      "group": "entry-metadata/fluent/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.setLastModifiedTime(Datetime.newInstanceGmt(2020,2,3,4,5,6))===e;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R090",
+      "group": "entry-metadata/mutation/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); e.setMethod(Compression.Method.STORED); r=e.getMethod();",
+      "expected": "STORED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R091",
+      "group": "entry-metadata/fluent/writer",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.setMethod(Compression.Method.STORED)===e;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R092",
+      "group": "entry-metadata/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.getName();",
+      "expected": "a.txt",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R093",
+      "group": "entry-metadata/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.getComment();",
+      "expected": "note",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R094",
+      "group": "entry-metadata/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.getMethod();",
+      "expected": "DEFLATED",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R095",
+      "group": "entry-metadata/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.getContent()==null;",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R096",
+      "group": "entry-metadata/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.getUncompressedSize();",
+      "expected": "5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R097",
+      "group": "entry-metadata/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.getCompressedSize();",
+      "expected": "7",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R098",
+      "group": "entry-metadata/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.getCrc();",
+      "expected": "3504355690",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R099",
+      "group": "entry-metadata/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.getLastModifiedTime().formatGmt('yyyy-MM-dd HH:mm:ss');",
+      "expected": "2020-02-03 04:05:06",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R100",
+      "group": "entry-metadata/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.equals(e);",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R101",
+      "group": "entry-metadata/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.equals(null);",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R102",
+      "group": "entry-metadata/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.equals('a.txt');",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R103",
+      "group": "entry-metadata/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.hashCode()==e.hashCode();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R104",
+      "group": "entry-metadata/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.toString().contains('a.txt');",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R105",
+      "group": "entry-metadata/mutation/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); e.setComment('changed'); r=e.getComment();",
+      "expected": "EXC|compression.ZipException|Unsupported on read-only ZipEntry",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R106",
+      "group": "entry-metadata/fluent/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.setComment('changed')===e;",
+      "expected": "EXC|compression.ZipException|Unsupported on read-only ZipEntry",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R107",
+      "group": "entry-metadata/mutation/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); e.setContent(Blob.valueOf('beta')); r=e.getContent().toString();",
+      "expected": "EXC|compression.ZipException|Unsupported on read-only ZipEntry",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R108",
+      "group": "entry-metadata/fluent/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.setContent(Blob.valueOf('beta'))===e;",
+      "expected": "EXC|compression.ZipException|Unsupported on read-only ZipEntry",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R109",
+      "group": "entry-metadata/mutation/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); e.setLastModifiedTime(Datetime.newInstanceGmt(2020,2,3,4,5,6)); r=e.getLastModifiedTime().formatGmt('yyyy-MM-dd HH:mm:ss');",
+      "expected": "EXC|compression.ZipException|Unsupported on read-only ZipEntry",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R110",
+      "group": "entry-metadata/fluent/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.setLastModifiedTime(Datetime.newInstanceGmt(2020,2,3,4,5,6))===e;",
+      "expected": "EXC|compression.ZipException|Unsupported on read-only ZipEntry",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R111",
+      "group": "entry-metadata/mutation/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); e.setMethod(Compression.Method.STORED); r=e.getMethod();",
+      "expected": "EXC|compression.ZipException|Unsupported on read-only ZipEntry",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R112",
+      "group": "entry-metadata/fluent/reader",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); e=z.getEntry('a.txt'); r=e.setMethod(Compression.Method.STORED)===e;",
+      "expected": "EXC|compression.ZipException|Unsupported on read-only ZipEntry",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R113",
+      "group": "round-trip/names",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n='a'; w.addEntry(n,Blob.valueOf('x')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=String.valueOf(z.getEntry(n).getName())+'|'+z.extract(n).toString();",
+      "expected": "a|x",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R114",
+      "group": "round-trip/names",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n='A.TXT'; w.addEntry(n,Blob.valueOf('x')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=String.valueOf(z.getEntry(n).getName())+'|'+z.extract(n).toString();",
+      "expected": "A.TXT|x",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R115",
+      "group": "round-trip/names",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n='dir/a.txt'; w.addEntry(n,Blob.valueOf('x')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=String.valueOf(z.getEntry(n).getName())+'|'+z.extract(n).toString();",
+      "expected": "dir/a.txt|x",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R116",
+      "group": "round-trip/names",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n='dir/'; w.addEntry(n,Blob.valueOf('x')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=String.valueOf(z.getEntry(n).getName())+'|'+z.extract(n).toString();",
+      "expected": "dir/|x",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R117",
+      "group": "round-trip/names",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n='../a'; w.addEntry(n,Blob.valueOf('x')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=String.valueOf(z.getEntry(n).getName())+'|'+z.extract(n).toString();",
+      "expected": "../a|x",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R118",
+      "group": "round-trip/names",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n='/a'; w.addEntry(n,Blob.valueOf('x')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=String.valueOf(z.getEntry(n).getName())+'|'+z.extract(n).toString();",
+      "expected": "/a|x",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R119",
+      "group": "round-trip/names",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n='a\\\\b'; w.addEntry(n,Blob.valueOf('x')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=String.valueOf(z.getEntry(n).getName())+'|'+z.extract(n).toString();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R120",
+      "group": "round-trip/names",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n='with space.txt'; w.addEntry(n,Blob.valueOf('x')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=String.valueOf(z.getEntry(n).getName())+'|'+z.extract(n).toString();",
+      "expected": "with space.txt|x",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R121",
+      "group": "round-trip/names",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n='café/漢字.txt'; w.addEntry(n,Blob.valueOf('x')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=String.valueOf(z.getEntry(n).getName())+'|'+z.extract(n).toString();",
+      "expected": "café/漢字.txt|x",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R122",
+      "group": "round-trip/names",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n=''; w.addEntry(n,Blob.valueOf('x')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=String.valueOf(z.getEntry(n).getName())+'|'+z.extract(n).toString();",
+      "expected": "EXC|compression.ZipException|Entry name empty",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R123",
+      "group": "round-trip/names",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n='a\\n.txt'; w.addEntry(n,Blob.valueOf('x')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=EncodingUtil.convertToHex(Blob.valueOf(z.getEntry(n).getName()))+'|'+z.extract(n).toString();",
+      "expected": "610a2e747874|x",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R124",
+      "group": "round-trip/multiple",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getEntries().size();",
+      "expected": "3",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R125",
+      "group": "round-trip/multiple",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getEntryNames().size();",
+      "expected": "3",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R126",
+      "group": "round-trip/multiple",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getEntry('a').getName();",
+      "expected": "a",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R127",
+      "group": "round-trip/multiple",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getEntry('missing')==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R128",
+      "group": "round-trip/multiple",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getEntry('A')==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R129",
+      "group": "round-trip/multiple",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntryNames();",
+      "expected": "(a, b, dir/)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R130",
+      "group": "round-trip/multiple",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntries().size();",
+      "expected": "3",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R131",
+      "group": "round-trip/multiple",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntriesMap().size();",
+      "expected": "3",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R132",
+      "group": "round-trip/multiple",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntriesMap().get('a').getName();",
+      "expected": "a",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R133",
+      "group": "round-trip/multiple",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntry('missing')==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R134",
+      "group": "round-trip/multiple",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntry('A')==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R135",
+      "group": "round-trip/multiple",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.extract('missing');",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R136",
+      "group": "round-trip/multiple",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.extract('A');",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R137",
+      "group": "round-trip/multiple",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.extract('dir/').size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R138",
+      "group": "entry-metadata/collection-mutation",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); w.removeEntry('a'); r=w.getEntries().size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R139",
+      "group": "entry-metadata/collection-mutation",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); w.removeEntry('missing'); r=w.getEntries().size();",
+      "expected": "EXC|compression.ZipException|Entry \"missing\" not found",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R140",
+      "group": "entry-metadata/collection-mutation",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); w.removeEntry(null); r=w.getEntries().size();",
+      "expected": "EXC|compression.ZipException|Entry \"\" not found",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R141",
+      "group": "entry-metadata/collection-mutation",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); w.removeEntry('a'); w.addEntry('a',Blob.valueOf('new')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.extract('a').toString();",
+      "expected": "new",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R142",
+      "group": "entry-metadata/collection-mutation",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); w.addEntry('a',Blob.valueOf('replacement')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntryNames()+'|'+z.extract('a').toString();",
+      "expected": "EXC|compression.ZipException|Duplicate entry \"a\" specified",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R143",
+      "group": "entry-metadata/collection-mutation",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); w.getEntries().clear(); r=w.getEntries().size();",
+      "expected": "3",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R144",
+      "group": "entry-metadata/collection-mutation",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); w.getEntryNames().clear(); r=w.getEntryNames().size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R145",
+      "group": "entry-metadata/collection-mutation",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); z.getEntries().clear(); r=z.getEntries().size();",
+      "expected": "3",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R146",
+      "group": "entry-metadata/collection-mutation",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('b',Blob.valueOf('two')); w.addEntry('a',Blob.valueOf('one')); w.addEntry('dir/',Blob.valueOf('')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); z.getEntriesMap().clear(); r=z.getEntriesMap().size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R147",
+      "group": "round-trip/archive-prototype",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); r=w.getArchive().size();",
+      "expected": "22",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R148",
+      "group": "round-trip/archive-prototype",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntryNames().size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R149",
+      "group": "round-trip/archive-prototype",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Blob a=w.getArchive(); Blob b=w.getArchive(); r=EncodingUtil.convertToHex(a)==EncodingUtil.convertToHex(b);",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R150",
+      "group": "round-trip/archive-prototype",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); w.getArchive(); w.addEntry('b',Blob.valueOf('new')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntries().size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R151",
+      "group": "round-trip/archive-prototype",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipWriter v=new Compression.ZipWriter(); Compression.ZipEntry f=v.addEntry(e); e.setContent(Blob.valueOf('changed')); r=f.getContent().toString();",
+      "expected": "alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R152",
+      "group": "round-trip/archive-prototype",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipWriter v=new Compression.ZipWriter(); r=v.addEntry(e)===e;",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R153",
+      "group": "null/arguments",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n=null; w.addEntry(n,Blob.valueOf('a')); r=w.getEntries().size();",
+      "expected": "EXC|compression.ZipException|Entry name empty",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R154",
+      "group": "null/arguments",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Blob b=null; w.addEntry('a',b); r=w.getArchive().size();",
+      "expected": "136",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R155",
+      "group": "null/arguments",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=null; w.addEntry(e); r=w.getEntries().size();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R156",
+      "group": "null/arguments",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); r=w.getEntry(null)==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R157",
+      "group": "null/arguments",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); e.setComment(null); r=e.getComment();",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R158",
+      "group": "null/arguments",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); e.setContent(null); r=e.getContent()==null;",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R159",
+      "group": "null/arguments",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); e.setLastModifiedTime(null); r=e.getLastModifiedTime()==null;",
+      "expected": "EXC|compression.ZipException|modTime may not be null",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R160",
+      "group": "null/arguments",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); e.setMethod(null); r=e.getMethod();",
+      "expected": "EXC|compression.ZipException|Method may not be null",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R161",
+      "group": "null/arguments",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); String n=null; r=z.extract(n);",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R162",
+      "group": "null/arguments",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); Compression.ZipEntry f=null; r=z.extract(f);",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R163",
+      "group": "null/arguments",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntry(null)==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R164",
+      "group": "null/arguments",
+      "code": "try{Compression.ZipWriter w=new Compression.ZipWriter(); Blob b=null; Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries().size();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R165",
+      "group": "null/receivers",
+      "code": "Compression.ZipWriter x=null; r=x.getArchive();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R166",
+      "group": "null/receivers",
+      "code": "Compression.ZipReader x=null; r=x.getEntries();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R167",
+      "group": "null/receivers",
+      "code": "Compression.ZipEntry x=null; r=x.getName();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R168",
+      "group": "invalid-archives/stored",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();",
+      "expected": "(fixture.bin)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R169",
+      "group": "invalid-archives/extract/stored",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=EncodingUtil.convertToHex(z.extract('fixture.bin'));",
+      "expected": "00616c706861ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R170",
+      "group": "invalid-archives/deflated",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000800a3204350a216197e09000000070000000b000000666978747572652e62696e6348cc29c848fc0f00504b01021403140000000800a3204350a216197e09000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000320000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();",
+      "expected": "(fixture.bin)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R171",
+      "group": "invalid-archives/extract/deflated",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000800a3204350a216197e09000000070000000b000000666978747572652e62696e6348cc29c848fc0f00504b01021403140000000800a3204350a216197e09000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000320000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=EncodingUtil.convertToHex(z.extract('fixture.bin'));",
+      "expected": "00616c706861ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R172",
+      "group": "invalid-archives/empty",
+      "code": "try{Blob b=EncodingUtil.convertFromHex(''); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R173",
+      "group": "invalid-archives/text",
+      "code": "try{Blob b=EncodingUtil.convertFromHex('6e6f742061207a6970'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R174",
+      "group": "invalid-archives/signature-only",
+      "code": "try{Blob b=EncodingUtil.convertFromHex('504b0304'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R175",
+      "group": "invalid-archives/empty-eocd",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0506000000000000000000000000000000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();",
+      "expected": "()",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R176",
+      "group": "invalid-archives/truncated-local",
+      "code": "try{Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e0700'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R177",
+      "group": "invalid-archives/truncated-directory",
+      "code": "try{Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R178",
+      "group": "invalid-archives/truncated-eocd",
+      "code": "try{Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b05060000000001000100480000003000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R179",
+      "group": "invalid-archives/trailing-junk",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b05060000000001000100480000003000000000006a756e6b'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();",
+      "expected": "(fixture.bin)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R180",
+      "group": "invalid-archives/extract/trailing-junk",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b05060000000001000100480000003000000000006a756e6b'); Compression.ZipReader z=new Compression.ZipReader(b); r=EncodingUtil.convertToHex(z.extract('fixture.bin'));",
+      "expected": "00616c706861ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R181",
+      "group": "invalid-archives/bad-local-crc",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a32043500000000007000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();",
+      "expected": "(fixture.bin)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R182",
+      "group": "invalid-archives/extract/bad-local-crc",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a32043500000000007000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=EncodingUtil.convertToHex(z.extract('fixture.bin'));",
+      "expected": "00616c706861ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R183",
+      "group": "invalid-archives/bad-central-crc",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a32043500000000007000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();",
+      "expected": "(fixture.bin)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R184",
+      "group": "invalid-archives/extract/bad-central-crc",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a32043500000000007000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=EncodingUtil.convertToHex(z.extract('fixture.bin'));",
+      "expected": "00616c706861ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R185",
+      "group": "invalid-archives/unsupported-local-method",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000006300a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();",
+      "expected": "(fixture.bin)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R186",
+      "group": "invalid-archives/extract/unsupported-local-method",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000006300a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=EncodingUtil.convertToHex(z.extract('fixture.bin'));",
+      "expected": "00616c706861ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R187",
+      "group": "invalid-archives/unsupported-central-method",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000006300a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();",
+      "expected": "(fixture.bin)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R188",
+      "group": "invalid-archives/extract/unsupported-central-method",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000006300a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=EncodingUtil.convertToHex(z.extract('fixture.bin'));",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R189",
+      "group": "invalid-archives/encrypted-local",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140001000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();",
+      "expected": "(fixture.bin)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R190",
+      "group": "invalid-archives/extract/encrypted-local",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140001000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=EncodingUtil.convertToHex(z.extract('fixture.bin'));",
+      "expected": "00616c706861ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R191",
+      "group": "invalid-archives/encrypted-central",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140001000000a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();",
+      "expected": "(fixture.bin)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R192",
+      "group": "invalid-archives/extract/encrypted-central",
+      "code": "try{Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140001000000a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=EncodingUtil.convertToHex(z.extract('fixture.bin'));}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
+      "expected": "EXC|compression.ZipException|Error reading Zip achive \\nUnsupported feature encryption used in entry fixture.bin",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R193",
+      "group": "invalid-archives/bad-uncompressed-size",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000d20400000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();",
+      "expected": "(fixture.bin)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R194",
+      "group": "invalid-archives/extract/bad-uncompressed-size",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000d20400000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=EncodingUtil.convertToHex(z.extract('fixture.bin'));",
+      "expected": "00616c706861ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R195",
+      "group": "invalid-archives/bad-local-offset",
+      "code": "try{Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f0000000000000080013f420f00666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R196",
+      "group": "invalid-archives/extract/bad-local-offset",
+      "code": "try{Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f0000000000000080013f420f00666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=EncodingUtil.convertToHex(z.extract('fixture.bin'));}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R197",
+      "group": "limits/name/0",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String s='x'.repeat(0); try{w.addEntry(s,Blob.valueOf('x')); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries().size();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().left(120);}",
+      "expected": "EXC|compression.ZipException|Entry name empty",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R198",
+      "group": "limits/comment/0",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String s='x'.repeat(0); try{Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); e.setComment(s); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries().size();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().left(120);}",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R199",
+      "group": "limits/name/1",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String s='x'.repeat(1); try{w.addEntry(s,Blob.valueOf('x')); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries().size();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().left(120);}",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R200",
+      "group": "limits/comment/1",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String s='x'.repeat(1); try{Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); e.setComment(s); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries().size();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().left(120);}",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R201",
+      "group": "limits/name/255",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String s='x'.repeat(255); try{w.addEntry(s,Blob.valueOf('x')); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries().size();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().left(120);}",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R202",
+      "group": "limits/comment/255",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String s='x'.repeat(255); try{Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); e.setComment(s); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries().size();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().left(120);}",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R203",
+      "group": "limits/name/256",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String s='x'.repeat(256); try{w.addEntry(s,Blob.valueOf('x')); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries().size();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().left(120);}",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R204",
+      "group": "limits/comment/256",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String s='x'.repeat(256); try{Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); e.setComment(s); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries().size();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().left(120);}",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R205",
+      "group": "limits/name/65535",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String s='x'.repeat(65535); try{w.addEntry(s,Blob.valueOf('x')); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries().size();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().left(120);}",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R206",
+      "group": "limits/comment/65535",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String s='x'.repeat(65535); try{Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); e.setComment(s); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries().size();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().left(120);}",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R207",
+      "group": "limits/name/65536",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String s='x'.repeat(65536); try{w.addEntry(s,Blob.valueOf('x')); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries().size();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().left(120);}",
+      "expected": "EXC|System.TypeException|entry name too long",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R208",
+      "group": "limits/comment/65536",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String s='x'.repeat(65536); try{Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); e.setComment(s); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries().size();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().left(120);}",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R209",
+      "group": "limits/entry-count/0",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); for(Integer i=0;i<0;i++){w.addEntry('e'+i,Blob.valueOf('x'));} Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntries().size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R210",
+      "group": "limits/entry-count/1",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); for(Integer i=0;i<1;i++){w.addEntry('e'+i,Blob.valueOf('x'));} Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntries().size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R211",
+      "group": "limits/entry-count/10",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); for(Integer i=0;i<10;i++){w.addEntry('e'+i,Blob.valueOf('x'));} Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntries().size();",
+      "expected": "10",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R212",
+      "group": "limits/entry-count/100",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); for(Integer i=0;i<100;i++){w.addEntry('e'+i,Blob.valueOf('x'));} Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntries().size();",
+      "expected": "100",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "C001",
+      "group": "api-availability",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); pq.out('C001',w.getEntries().size());",
+      "expected": "0",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C002",
+      "group": "api-availability",
+      "code": "Compression.ZipEntry e; pq.out('C002',e==null);",
+      "expected": "true",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C003",
+      "group": "api-availability",
+      "code": "pq.out('C003',Compression.Level.values());",
+      "expected": "(DEFAULT_LEVEL, NO_COMPRESSION, BEST_SPEED, BEST_COMPRESSION)",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C004",
+      "group": "api-availability",
+      "code": "pq.out('C004',Compression.Method.values());",
+      "expected": "(STORED, DEFLATED)",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C005",
+      "group": "api-availability",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); pq.out('C005',z.getEntries().size());",
+      "expected": "0",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C006",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; r=new Compression.ZipEntry(); pq.out('C006',r);",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [compression.ZipEntry].<Constructor>()",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Constructor not defined: [compression.ZipEntry].<Constructor>()",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C007",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; r=new Compression.ZipReader(); pq.out('C007',r);",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [compression.ZipReader].<Constructor>()",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Constructor not defined: [compression.ZipReader].<Constructor>()",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C008",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; r=new Compression.ZipWriter(Blob.valueOf('x')); pq.out('C008',r);",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [compression.ZipWriter].<Constructor>(Blob)",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Constructor not defined: [compression.ZipWriter].<Constructor>(Blob)",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C009",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; r=new Compression.ZipReader('x'); pq.out('C009',r);",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [compression.ZipReader].<Constructor>(String)",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Constructor not defined: [compression.ZipReader].<Constructor>(String)",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C010",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; r=Compression.Level.valueOf('BEST_SPEED'); pq.out('C010',r);",
+      "expected": "BEST_SPEED",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C011",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; r=Compression.Method.valueOf('STORED'); pq.out('C011',r);",
+      "expected": "STORED",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C012",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; r=Compression.Level.BOGUS; pq.out('C012',r);",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: BOGUS",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Variable does not exist: BOGUS",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C013",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; r=Compression.Method.BOGUS; pq.out('C013',r);",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: BOGUS",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Variable does not exist: BOGUS",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C014",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; Compression.ZipWriter w=new Compression.ZipWriter(); r=w.addEntry('a','x'); pq.out('C014',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void addEntry(String, String) from the type compression.ZipWriter",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void addEntry(String, String) from the type compression.ZipWriter",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C015",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; Compression.ZipWriter w=new Compression.ZipWriter(); r=w.addEntry(7,Blob.valueOf('x')); pq.out('C015',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void addEntry(Integer, Blob) from the type compression.ZipWriter",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void addEntry(Integer, Blob) from the type compression.ZipWriter",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C016",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; Compression.ZipWriter w=new Compression.ZipWriter(); try{r=w.addEntry(null);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();} pq.out('C016',r);",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C017",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; Compression.ZipWriter w=new Compression.ZipWriter(); r=w.setLevel(1); pq.out('C017',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setLevel(Integer) from the type compression.ZipWriter",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void setLevel(Integer) from the type compression.ZipWriter",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C018",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; Compression.ZipWriter w=new Compression.ZipWriter(); r=w.setMethod('STORED'); pq.out('C018',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setMethod(String) from the type compression.ZipWriter",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void setMethod(String) from the type compression.ZipWriter",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C019",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; Compression.ZipWriter w=new Compression.ZipWriter(); r=w.removeEntry('a'); pq.out('C019',r);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from void to Object",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Illegal assignment from void to Object",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C020",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; Compression.ZipWriter w=new Compression.ZipWriter(); r=w.getEntriesMap(); pq.out('C020',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getEntriesMap() from the type compression.ZipWriter",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void getEntriesMap() from the type compression.ZipWriter",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C021",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.extract(null); pq.out('C021',r);",
+      "expected": "COMPILE_ERROR\tline 6: Ambiguous method signature: void extract(NULL)",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Ambiguous method signature: void extract(NULL)",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C022",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.extract(1); pq.out('C022',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void extract(Integer) from the type compression.ZipReader",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void extract(Integer) from the type compression.ZipReader",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C023",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.setName('b'); pq.out('C023',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setName(String) from the type compression.ZipEntry",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void setName(String) from the type compression.ZipEntry",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C024",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.setContent('x'); pq.out('C024',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setContent(String) from the type compression.ZipEntry",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void setContent(String) from the type compression.ZipEntry",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C025",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.setLastModifiedTime(Date.newInstance(2020,2,3)); pq.out('C025',r);",
+      "expected": "a.txt",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C026",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.setMethod(1); pq.out('C026',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setMethod(Integer) from the type compression.ZipEntry",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void setMethod(Integer) from the type compression.ZipEntry",
+      "diagnosticOwner": "type system"
+    },
+    {
+      "id": "C027",
+      "group": "compile-error/conversion-overload",
+      "code": "Object r; Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); r=e.getCrc(1); pq.out('C027',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getCrc(Integer) from the type compression.ZipEntry",
+      "compile": true,
+      "nativeNull": false,
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void getCrc(Integer) from the type compression.ZipEntry",
+      "diagnosticOwner": "type system"
+    }
+  ],
+  "controls": [
+    {
+      "id": "K001",
+      "group": "review-control/R119",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n='a\\\\b'; w.addEntry(n,Blob.valueOf('x')); w.getEntries()[0].setLastModifiedTime(Datetime.newInstanceGmt(2020,2,3,4,5,6)); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getEntries()[0].getName()+'|'+z.getEntries()[0].getName()+'|'+z.getEntryNames();",
+      "expected": "a\\b|a/b|(a/b)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K002",
+      "group": "review-control/R119",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n='a\\\\b'; w.addEntry(n,Blob.valueOf('x')); w.getEntries()[0].setLastModifiedTime(Datetime.newInstanceGmt(2020,2,3,4,5,6)); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); String h=EncodingUtil.convertToHex(w.getArchive()); r=h.substring(0,8)+'|'+h.substring(52,56)+'|'+h.substring(60,80);",
+      "expected": "504b0304|0300|615c625554050001f29b",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K003",
+      "group": "review-control/R208",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); String s='BEGIN'+'x'.repeat(65525)+'END!!'; e.setComment(s); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); String c=z.getEntries()[0].getComment(); r=e.getComment().length()+'|'+b.size()+'|'+(c==null?'null':String.valueOf(c.length())+'|'+c.left(5)+'|'+c.right(5));",
+      "expected": "65535|65684|65535|BEGIN|END!!",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K004",
+      "group": "review-control/R208",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); String s='BEGIN'+'x'.repeat(65526)+'END!!'; e.setComment(s); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); String c=z.getEntries()[0].getComment(); r=e.getComment().length()+'|'+b.size()+'|'+(c==null?'null':String.valueOf(c.length())+'|'+c.left(5)+'|'+c.right(5));",
+      "expected": "65536|65684|65535|BEGIN|xEND!",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K005",
+      "group": "review-control/R208",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); String s='BEGIN'+'x'.repeat(65527)+'END!!'; e.setComment(s); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); String c=z.getEntries()[0].getComment(); r=e.getComment().length()+'|'+b.size()+'|'+(c==null?'null':String.valueOf(c.length())+'|'+c.left(5)+'|'+c.right(5));",
+      "expected": "65537|65684|65535|BEGIN|xxEND",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K006",
+      "group": "review-control/R208",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('a.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); String s='é'.repeat(32768); e.setComment(s); Blob b=w.getArchive(); Compression.ZipReader z=new Compression.ZipReader(b); String c=z.getEntries()[0].getComment(); r=e.getComment().length()+'|'+Blob.valueOf(s).size()+'|'+b.size()+'|'+(c==null?'null':String.valueOf(c.length())+'|'+c.left(1)+'|'+c.right(1));",
+      "expected": "32768|65536|65684|32768|é|?",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K007",
+      "group": "review-control/R119",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('a\\\\\\\\b',Blob.valueOf('x')); w.getEntries()[0].setLastModifiedTime(Datetime.newInstanceGmt(2020,2,3,4,5,6)); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getEntries()[0].getName()+'|'+z.getEntries()[0].getName();",
+      "expected": "a\\\\b|a//b",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K008",
+      "group": "review-control/R119",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); String n='a\\\\b'; w.addEntry(n,Blob.valueOf('x')); w.getEntries()[0].setLastModifiedTime(Datetime.newInstanceGmt(2020,2,3,4,5,6)); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); String h=EncodingUtil.convertToHex(w.getArchive()); Integer p=h.indexOf('504b0102'); r=h.substring(p+56,p+60)+'|'+h.substring(p+92,p+98);",
+      "expected": "0300|615c62",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K009",
+      "group": "review-control/R119",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('a\\\\b/c',Blob.valueOf('x')); w.getEntries()[0].setLastModifiedTime(Datetime.newInstanceGmt(2020,2,3,4,5,6)); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=w.getEntries()[0].getName()+'|'+z.getEntries()[0].getName();",
+      "expected": "a\\b/c|a\\b/c",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K010",
+      "group": "review-control/R119",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a32043508316dc8c010000000100000003000000615c6278504b01021403140000000000a32043508316dc8c0100000001000000030000000000000000000000800100000000615c62504b0506000000000100010031000000220000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries()[0].getName()+'|'+z.getEntryNames();",
+      "expected": "a\\b|(a\\b)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K011",
+      "group": "review-control/R119",
+      "code": "Blob b=EncodingUtil.convertFromHex('504b0304140000000000a32043508316dc8c010000000100000003000000615c6278504b01021400140000000000a32043508316dc8c0100000001000000030000000000000000000000800100000000615c62504b0506000000000100010031000000220000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries()[0].getName()+'|'+z.getEntryNames();",
+      "expected": "a/b|(a/b)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K012",
+      "group": "review-control/R119",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); w.addEntry('a\\\\b','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); w.addEntry('a/b','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('beta')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); r=z.getEntries().size()+'|'+z.getEntryNames()+'|'+z.getEntriesMap().size()+'|'+z.getEntries()[0].getContent().toString();",
+      "expected": "1|(a/b, a/b)|1|beta",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K013",
+      "group": "review-control/C025-display",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('compression.ZipEntry.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); Compression.ZipEntry re=z.getEntries()[0]; r=e.getName()+'|'+e.toString()+'|'+String.valueOf(e)+'|'+re.getName()+'|'+re.toString()+'|'+String.valueOf(re);",
+      "expected": "compression.ZipEntry.txt|compression.ZipEntry.txt|compression.ZipEntry.txt|compression.ZipEntry.txt|compression.ZipEntry.txt|compression.ZipEntry.txt",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K014",
+      "group": "review-control/C025-display",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('compression.ZipEntry.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); Compression.ZipEntry re=z.getEntries()[0]; r=e.getName()+'|'+e.toString()+'|'+('['+e+']')+'|'+re.getName()+'|'+re.toString()+'|'+('['+re+']');",
+      "expected": "compression.ZipEntry.txt|compression.ZipEntry.txt|[compression.ZipEntry.txt]|compression.ZipEntry.txt|compression.ZipEntry.txt|[compression.ZipEntry.txt]",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K015",
+      "group": "review-control/C025-display",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('compression.ZipEntry.txt','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); Compression.ZipEntry re=z.getEntries()[0]; System.debug(LoggingLevel.ERROR,'A20DEBUG-BEGIN|K015'); System.debug(LoggingLevel.ERROR,e); System.debug(LoggingLevel.ERROR,re); System.debug(LoggingLevel.ERROR,'A20DEBUG-END|K015'); r=e.getName()+'|'+e.toString()+'|'+re.getName()+'|'+re.toString();",
+      "expected": "compression.ZipEntry.txt|compression.ZipEntry.txt|compression.ZipEntry.txt|compression.ZipEntry.txt",
+      "compile": false,
+      "nativeNull": false,
+      "debugExpected": [
+        "A20DEBUG-BEGIN|K015",
+        "compression.ZipEntry.txt",
+        "compression.ZipEntry.txt",
+        "A20DEBUG-END|K015"
+      ]
+    },
+    {
+      "id": "K016",
+      "group": "review-control/C025-display",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('Compression.ZipEntry','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); Compression.ZipEntry re=z.getEntries()[0]; r=e.getName()+'|'+e.toString()+'|'+String.valueOf(e)+'|'+re.getName()+'|'+re.toString()+'|'+String.valueOf(re);",
+      "expected": "Compression.ZipEntry|Compression.ZipEntry|Compression.ZipEntry|Compression.ZipEntry|Compression.ZipEntry|Compression.ZipEntry",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K017",
+      "group": "review-control/C025-display",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('Compression.ZipEntry','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); Compression.ZipEntry re=z.getEntries()[0]; r=e.getName()+'|'+e.toString()+'|'+('['+e+']')+'|'+re.getName()+'|'+re.toString()+'|'+('['+re+']');",
+      "expected": "Compression.ZipEntry|Compression.ZipEntry|[Compression.ZipEntry]|Compression.ZipEntry|Compression.ZipEntry|[Compression.ZipEntry]",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K018",
+      "group": "review-control/C025-display",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('Compression.ZipEntry','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); Compression.ZipEntry re=z.getEntries()[0]; System.debug(LoggingLevel.ERROR,'A20DEBUG-BEGIN|K018'); System.debug(LoggingLevel.ERROR,e); System.debug(LoggingLevel.ERROR,re); System.debug(LoggingLevel.ERROR,'A20DEBUG-END|K018'); r=e.getName()+'|'+e.toString()+'|'+re.getName()+'|'+re.toString();",
+      "expected": "Compression.ZipEntry|Compression.ZipEntry|Compression.ZipEntry|Compression.ZipEntry",
+      "compile": false,
+      "nativeNull": false,
+      "debugExpected": [
+        "A20DEBUG-BEGIN|K018",
+        "Compression.ZipEntry",
+        "Compression.ZipEntry",
+        "A20DEBUG-END|K018"
+      ]
+    },
+    {
+      "id": "K019",
+      "group": "review-control/C025-display",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('ZipEntry','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); Compression.ZipEntry re=z.getEntries()[0]; r=e.getName()+'|'+e.toString()+'|'+String.valueOf(e)+'|'+re.getName()+'|'+re.toString()+'|'+String.valueOf(re);",
+      "expected": "ZipEntry|ZipEntry|ZipEntry|ZipEntry|ZipEntry|ZipEntry",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K020",
+      "group": "review-control/C025-display",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('ZipEntry','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); Compression.ZipEntry re=z.getEntries()[0]; r=e.getName()+'|'+e.toString()+'|'+('['+e+']')+'|'+re.getName()+'|'+re.toString()+'|'+('['+re+']');",
+      "expected": "ZipEntry|ZipEntry|[ZipEntry]|ZipEntry|ZipEntry|[ZipEntry]",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K021",
+      "group": "review-control/C025-display",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('ZipEntry','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); Compression.ZipEntry re=z.getEntries()[0]; System.debug(LoggingLevel.ERROR,'A20DEBUG-BEGIN|K021'); System.debug(LoggingLevel.ERROR,e); System.debug(LoggingLevel.ERROR,re); System.debug(LoggingLevel.ERROR,'A20DEBUG-END|K021'); r=e.getName()+'|'+e.toString()+'|'+re.getName()+'|'+re.toString();",
+      "expected": "ZipEntry|ZipEntry|ZipEntry|ZipEntry",
+      "compile": false,
+      "nativeNull": false,
+      "debugExpected": [
+        "A20DEBUG-BEGIN|K021",
+        "ZipEntry",
+        "ZipEntry",
+        "A20DEBUG-END|K021"
+      ]
+    },
+    {
+      "id": "K022",
+      "group": "review-control/C025-display",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('compression.ZipEntry','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); Compression.ZipEntry re=z.getEntries()[0]; r=e.getName()+'|'+e.toString()+'|'+String.valueOf(e)+'|'+re.getName()+'|'+re.toString()+'|'+String.valueOf(re);",
+      "expected": "compression.ZipEntry|compression.ZipEntry|compression.ZipEntry|compression.ZipEntry|compression.ZipEntry|compression.ZipEntry",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K023",
+      "group": "review-control/C025-display",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('compression.ZipEntry','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); Compression.ZipEntry re=z.getEntries()[0]; r=e.getName()+'|'+e.toString()+'|'+('['+e+']')+'|'+re.getName()+'|'+re.toString()+'|'+('['+re+']');",
+      "expected": "compression.ZipEntry|compression.ZipEntry|[compression.ZipEntry]|compression.ZipEntry|compression.ZipEntry|[compression.ZipEntry]",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "K024",
+      "group": "review-control/C025-display",
+      "code": "Compression.ZipWriter w=new Compression.ZipWriter(); Compression.ZipEntry e=w.addEntry('compression.ZipEntry','note',Datetime.newInstanceGmt(2020,2,3,4,5,6),Compression.Method.DEFLATED,Blob.valueOf('alpha')); Compression.ZipReader z=new Compression.ZipReader(w.getArchive()); Compression.ZipEntry re=z.getEntries()[0]; System.debug(LoggingLevel.ERROR,'A20DEBUG-BEGIN|K024'); System.debug(LoggingLevel.ERROR,e); System.debug(LoggingLevel.ERROR,re); System.debug(LoggingLevel.ERROR,'A20DEBUG-END|K024'); r=e.getName()+'|'+e.toString()+'|'+re.getName()+'|'+re.toString();",
+      "expected": "compression.ZipEntry|compression.ZipEntry|compression.ZipEntry|compression.ZipEntry",
+      "compile": false,
+      "nativeNull": false,
+      "debugExpected": [
+        "A20DEBUG-BEGIN|K024",
+        "compression.ZipEntry",
+        "compression.ZipEntry",
+        "A20DEBUG-END|K024"
+      ]
+    }
+  ],
+  "ticketRows": {}
+}

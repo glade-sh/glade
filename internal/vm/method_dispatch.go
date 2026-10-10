@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"strconv"
 	"strings"
 	"sync"
@@ -30,8 +31,33 @@ func (vm *VM) collectionMutationType(receiver Value) string {
 	return receiver.Type
 }
 
-func collectionStoreException(collectionType string, value Value) error {
-	return newExceptionError("System.TypeException", fmt.Sprintf("Collection store exception adding %s to %s", runtimeValueTypeName(value), typeExceptionAnyName(collectionType)))
+// A read has the collection expression's declared element view. Change only
+// the returned Value: the stored element and other aliases keep their views,
+// and the runtime type and reference remain available for virtual dispatch.
+func (vm *VM) collectionReadValue(receiver, value Value) Value {
+	for _, collectionType := range []string{receiver.Static, receiver.Type} {
+		var elementType string
+		var ok bool
+		if receiver.Kind == ValueMap {
+			_, elementType, ok = mapTypeArgs(collectionType)
+		} else {
+			elementType, ok = collectionElementType(collectionType)
+		}
+		if !ok || strings.TrimSpace(elementType) == "" {
+			continue
+		}
+		elementType = vm.resolveTypeNameInClass(vm.currentClass, elementType)
+		value.Static = elementType
+		if value.Kind == ValueNull {
+			value.Type = elementType
+		}
+		return value
+	}
+	return value
+}
+
+func (vm *VM) collectionStoreException(collectionType string, value Value) error {
+	return newExceptionError("System.TypeException", fmt.Sprintf("Collection store exception adding %s to %s", runtimeValueTypeName(value), vm.typeDisplayName(typeExceptionAnyName(collectionType))))
 }
 
 func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value, result *Result) (Value, error) {
@@ -40,6 +66,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	}
 	if len(args) != len(method.Params) {
 		return Null, fmt.Errorf("%s expects %d arguments", method.Name, len(method.Params))
+	}
+	if vm.rejectAsyncActions && methodHasModifier(method.Modifiers, "future") {
+		return Null, vm.rejectSynchronousAsyncAction(fmt.Sprintf("%s cannot cross the synchronous LWC action boundary", method.Name))
 	}
 	if value, handled := vm.callFrameworkIDGeneratorGenerate(method, args); handled {
 		return value, nil
@@ -97,6 +126,21 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	}
 	if methodHasModifier(method.Modifiers, "abstract") {
 		return Null, fmt.Errorf("cannot execute abstract method %s", method.Name)
+	}
+	// Generated platform exception constructors are passive methods, but their
+	// String/cause arguments still have observable Salesforce semantics. Apply
+	// those arguments before the passive return path so a constructed exception
+	// retains an explicit message or cause instead of falling back to the
+	// generic "Script-thrown exception" value.
+	if method.IsConstructor && receiver.Kind == ValueObject &&
+		methodHasModifier(method.Modifiers, "passive-generated") && isExceptionType(receiver.Type) {
+		handled, err := applyExceptionConstructorArgs(&receiver, args)
+		if err != nil {
+			return Null, err
+		}
+		if handled {
+			return receiver, nil
+		}
 	}
 	if method.ClassName != "" && !strings.Contains(method.Name, ".<static_") {
 		if err := vm.ensureClassInitialized(method.ClassName); err != nil {
@@ -213,6 +257,18 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		if className == "" {
 			className = receiver.Type
 		}
+		if receiver.Kind == ValueObject && (strings.EqualFold(className, "Approval.ProcessRequest") || strings.EqualFold(className, "Approval.ProcessSubmitRequest") || strings.EqualFold(className, "Approval.ProcessWorkitemRequest")) {
+			// The generated getter's generic collection
+			// default must not replace the request's native null default.
+			callArgs := make([]Value, 0, len(method.Params))
+			for _, param := range method.Params {
+				callArgs = append(callArgs, frame[param.Name])
+			}
+			value, _, _, handled, err := vm.callPlatformObjectMember(receiver, apexMethodMemberName(method.Name), callArgs, result)
+			if handled || err != nil {
+				return value, err
+			}
+		}
 		if strings.EqualFold(className, "Invocable.Action") &&
 			(strings.EqualFold(apexMethodMemberName(method.Name), "createCustomAction") || strings.EqualFold(apexMethodMemberName(method.Name), "createStandardAction")) {
 			callArgs := make([]Value, 0, len(method.Params))
@@ -224,11 +280,16 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			}
 		}
 		if receiver.Kind == ValueObject && strings.EqualFold(className, "Invocable.Action") {
+			if strings.EqualFold(apexMethodMemberName(method.Name), "invoke") {
+				if err := validateInvocableInvocation(receiver); err != nil {
+					return Null, err
+				}
+			}
 			callArgs := make([]Value, 0, len(method.Params))
 			for _, param := range method.Params {
 				callArgs = append(callArgs, frame[param.Name])
 			}
-			if value, handled := vm.callInvocableActionMember(receiver, apexMethodMemberName(method.Name), callArgs); handled {
+			if value, handled := vm.callInvocableActionMember(receiver, apexMethodMemberName(method.Name), callArgs, result); handled {
 				return value, nil
 			}
 		}
@@ -320,6 +381,22 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	callerSharingMode := vm.currentSharingMode()
 	callerStatement := vm.currentStatement
 	callerHasStatement := vm.hasStatement
+	// Salesforce reports the caller's call-site location in stack traces. The
+	// frame is created when the caller method starts, so refresh its source
+	// location immediately before entering a callee while the caller's current
+	// statement still identifies the invocation. This also keeps helper code
+	// that parses getStackTraceString (for example logging libraries) aligned
+	// with the platform.
+	if callerHasStatement && callerStatement.Line > 0 && len(vm.callStack) > 0 {
+		callerFrame := &vm.callStack[len(vm.callStack)-1]
+		callerFrame.Line = callerStatement.Line
+		if callerStatement.Column > 0 {
+			callerFrame.Column = callerStatement.Column
+		}
+		if callerStatement.File != "" {
+			callerFrame.File = callerStatement.File
+		}
+	}
 	vm.scopeStack = append(vm.scopeStack, caller)
 	vm.Globals = frame
 	vm.VarTypes = frameTypes
@@ -374,6 +451,10 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return Null, err
+		}
+		var pageFailure *StandardControllerPageError
+		if errors.As(err, &pageFailure) {
+			return Null, pageFailure
 		}
 		var runtimeErr *RuntimeError
 		if errors.As(err, &runtimeErr) {
@@ -576,10 +657,22 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 		}
 		receiver, err := vm.lookup(receiverName)
 		if err != nil {
+			// RestContext is a built-in static receiver, so a null
+			// field lookup is an instance failure rather than an unknown call.
+			if _, restContext := canonicalRestContextPath(receiverName); restContext {
+				return Null, true, err
+			}
 			if _, ok := vm.Globals[parts[0]]; ok {
 				return Null, true, err
 			}
 			return Null, false, nil
+		}
+		return vm.callValueMember(receiverName, receiver, method, args, result)
+	}
+	if strings.EqualFold(receiverName, "this") {
+		receiver, err := vm.lookup(receiverName)
+		if err != nil {
+			return Null, true, err
 		}
 		return vm.callValueMember(receiverName, receiver, method, args, result)
 	}
@@ -725,7 +818,7 @@ func (vm *VM) lookupStaticFieldStrict(typeName, fieldName string) (Field, string
 					field.Name = fieldName
 				}
 				field.StorageName = fieldName
-				return field, class.Name, true
+				return field, runtimeClassName(class), true
 			}
 			for candidate, field := range class.StaticFields {
 				if !strings.EqualFold(candidate, fieldName) {
@@ -735,7 +828,7 @@ func (vm *VM) lookupStaticFieldStrict(typeName, fieldName string) (Field, string
 					field.Name = candidate
 				}
 				field.StorageName = candidate
-				return field, class.Name, true
+				return field, runtimeClassName(class), true
 			}
 			current = class.SuperClass
 		}
@@ -844,8 +937,36 @@ func (vm *VM) callClassLiteralReceiverMember(callee string, args []Value, result
 }
 
 func (vm *VM) callValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	if isIteratorValue(receiver) && (strings.EqualFold(method, "hasNext") || strings.EqualFold(method, "next")) {
+		if _, locator := receiver.Fields["__queryLocator"]; locator {
+			value, updated, mutated, handled, err := vm.callQueryLocatorIterator(receiver, method, args)
+			if mutated && receiverName != "" {
+				if storeErr := vm.storeReceiver(receiverName, updated); storeErr != nil {
+					return Null, true, storeErr
+				}
+			}
+			return value, handled, err
+		}
+	}
+	if (receiver.Kind == ValueList || receiver.Kind == ValueSet) && strings.EqualFold(method, "iterator") && len(args) == 0 {
+		return vm.newCollectionIterator(receiver), true, nil
+	}
+	if isIteratorValue(receiver) && strings.EqualFold(method, "next") {
+		if _, tracked := receiver.Fields["__collection"]; tracked {
+			value, updated, mutated, handled, err := callIteratorMember(receiver, "next", args)
+			if mutated && updated.Fields["__index"].Int >= int64(len(updated.Fields["__values"].List)) {
+				vm.releaseCollectionIterator(updated)
+			}
+			if mutated && receiverName != "" {
+				if storeErr := vm.storeReceiver(receiverName, updated); storeErr != nil {
+					return Null, true, storeErr
+				}
+			}
+			return value, handled, err
+		}
+	}
 	if dataWeaveStaticScriptReceiver(receiverName) && strings.EqualFold(method, "createScript") {
-		value, err := dataWeaveCreateScript(args)
+		value, err := vm.dataWeaveCreateScript(args)
 		return value, true, err
 	}
 	if strings.EqualFold(method, "addError") && strings.Contains(receiverName, ".") {
@@ -855,19 +976,27 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		}
 	}
 	if receiver.Kind == ValueNull {
+		if strings.EqualFold(receiver.Type, "Boolean") && strings.EqualFold(method, "equals") {
+			return Null, true, newExceptionError("NullPointerException", "Argument 1 cannot be null")
+		}
+		if (strings.EqualFold(receiver.Type, "Integer") || strings.EqualFold(receiver.Type, "Long")) && strings.EqualFold(method, "format") {
+			return Null, true, newExceptionError("NullPointerException", "Argument cannot be null.")
+		}
+		if strings.EqualFold(receiver.Type, "Blob") && method == "toString" {
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("Blob.toString expects 0 arguments")
+			}
+			return Null, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+		}
 		if isImplicitCurrentPageNull(receiver) {
 			if vm.currentPage.Kind == "" {
 				vm.currentPage = newPageReference("")
 			}
 			receiver = vm.currentPage
-		} else if materialized, ok := materializeTypedNullCollection(receiver); ok {
-			receiver = materialized
-			if receiverName != "" {
-				if err := vm.storeReceiver(receiverName, receiver); err != nil {
-					return Null, true, err
-				}
-			}
 		} else {
+			if strings.EqualFold(canonicalApexScalarType(receiver.Type), "Double") {
+				return Null, true, newExceptionError("NullPointerException", "Argument cannot be null.")
+			}
 			return Null, true, newNullDereferenceError(nullMemberContext(receiverName, method))
 		}
 	}
@@ -910,19 +1039,63 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			receiver.Static = declaredType
 		}
 	}
+	if value, handled, err := vm.callLocaleNumberFormatMember(receiver, method, args); handled || err != nil {
+		return value, true, err
+	}
+	if receiver.Kind == ValueString && strings.EqualFold(method, "template") && len(args) == 1 && args[0].Kind == ValueMap {
+		text, err := stringTemplate(receiver.Text, args[0], func(value Value) (string, error) {
+			if value.Kind != ValueObject {
+				return value.String(), nil
+			}
+			target, ok, ambiguous := vm.resolveInstanceMethodForArgs(value.Type, "toString", nil)
+			if ambiguous {
+				return "", vm.ambiguousOverloadError("toString", nil)
+			}
+			if !ok || target.IsStatic || methodHasModifier(target.Modifiers, "passive-generated") {
+				return value.String(), nil
+			}
+			out, err := vm.callMethodWithReceiver(target, value, nil, result)
+			if err != nil {
+				return "", err
+			}
+			if out.Kind != ValueString {
+				return "", fmt.Errorf("%s returned %s, want String", target.Name, out.Kind)
+			}
+			return out.Text, nil
+		})
+		if err != nil {
+			return Null, true, err
+		}
+		return String(text), true, nil
+	}
 	if value, updated, mutated, ok, err := callStdlibMember(receiver, method, args); ok || err != nil {
 		if mutated {
 			if err := vm.storeReceiver(receiverName, updated); err != nil {
 				return Null, true, err
 			}
+			vm.propagateCollectionMutationFromSnapshot(snapshotAlias(receiver), updated)
 		}
 		return value, true, err
+	}
+	if receiver.Kind == ValueList && strings.EqualFold(method, "equals") {
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("List.equals expects 1 argument")
+		}
+		equal, err := vm.apexEquals(receiver, args[0], result)
+		return Bool(equal), true, err
+	}
+	if receiver.Kind == ValueMap && strings.EqualFold(method, "equals") {
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("Map.equals expects 1 argument")
+		}
+		equal, err := vm.apexMapsEqual(receiver, args[0], result, false)
+		return Bool(equal), true, err
 	}
 	if receiver.Kind != ValueObject && !(strings.EqualFold(method, "clone") && (receiver.Kind == ValueList || receiver.Kind == ValueSet || receiver.Kind == ValueMap)) {
 		if receiver.Kind == ValueString && strings.EqualFold(method, "name") && len(args) == 0 && (receiverName == "" || vm.declaredReceiverIsEnum(receiverName)) {
 			return String(receiver.Text), true, nil
 		}
-		if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
+		if value, handled, err := vm.callObjectMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
 	}
@@ -930,6 +1103,27 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		return vm.callObjectValueMember(receiverName, receiver, method, args, result)
 	}
 	return vm.callNonObjectValueMember(receiverName, receiver, method, args, result)
+}
+
+// callObjectMember shares ordinary-class formatting with String.valueOf and
+// retains the display-name rule for other source-defined nested objects.
+// The runtime type remains fully qualified for dispatch.
+func (vm *VM) callObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if receiver.Kind == ValueObject && canonicalObjectMemberMethod(method) == "toString" {
+		if class, ok := vm.lookupClass(runtimeObjectType(receiver)); ok &&
+			strings.TrimSpace(class.Namespace) == "" {
+			// Both ordinary display calls use brackets.
+			if len(args) == 0 && vm.hasDeclaredOrdinaryClassFields(receiver) {
+				return String(vm.defaultObjectDisplayString(receiver)), true, nil
+			}
+			if strings.Contains(class.Name, ".") {
+				display := receiver
+				display.Type = shortTypeName(class.Name)
+				return callObjectMember(display, method, args)
+			}
+		}
+	}
+	return callObjectMember(receiver, method, args)
 }
 
 // callObjectValueMember dispatches a member call whose receiver is a class
@@ -941,6 +1135,16 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 	if queueablePlatformObject && strings.EqualFold(receiver.Type, "Builder") {
 		_, queueablePlatformObject = vm.lookupClass(receiver.Type)
 		queueablePlatformObject = !queueablePlatformObject
+	}
+	// A project Builder's methods take precedence over the native
+	// signature handler. Passive generated classes also have Dependency=false;
+	// their empty bodies must retain native dispatch (T002). S004 retains
+	// explicit System platform dispatch.
+	if queueablePlatformObject && !strings.HasPrefix(strings.ToLower(receiver.Type), "system.") {
+		if class, exists := vm.lookupClass(receiver.Type); exists && !class.Dependency &&
+			(len(class.Methods) == 0 || !passiveRuntimeClass(class)) {
+			queueablePlatformObject = false
+		}
 	}
 	if queueablePlatformObject {
 		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
@@ -975,6 +1179,13 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 	}
 	if value, handled, err := vm.callFrameworkMatcherMember(receiver, method, args); handled || err != nil {
 		return value, true, err
+	}
+	// R055/R056/R137/R138: generated standard symbols can also expose a
+	// passive get method. Dynamic SObject field access must take precedence.
+	if vm.isSObjectLikeType(receiver.Type) && strings.EqualFold(method, "get") && len(args) == 1 {
+		if value, handled, err := vm.callSObjectMember(receiver, method, args); handled || err != nil {
+			return value, true, err
+		}
 	}
 	if strings.EqualFold(method, "values") || strings.EqualFold(method, "valueOf") {
 		if value, handled, err := vm.callEnumStaticMember(runtimeObjectType(receiver), method, args); handled || err != nil {
@@ -1078,7 +1289,7 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 	}
 	if _, classExists := vm.lookupClass(receiver.Type); classExists && !strings.EqualFold(receiver.Runtime, "System.Cookie") {
 		dispatchType := runtimeObjectType(receiver)
-		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, method, args)
+		target, ok, ambiguous := vm.resolveValueInstanceMethodForArgs(receiverName, receiver, method, args)
 		if ambiguous {
 			return Null, true, vm.ambiguousOverloadError(memberCallName(receiverName, dispatchType, method), args)
 		}
@@ -1130,7 +1341,7 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 	if value, handled := vm.commerceLocalHarnessInstanceDefault(receiverName, receiver, dispatchType, method, args); handled {
 		return value, true, nil
 	}
-	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, method, args)
+	target, ok, ambiguous := vm.resolveValueInstanceMethodForArgs(receiverName, receiver, method, args)
 	if ambiguous {
 		return Null, true, vm.ambiguousOverloadError(memberCallName(receiverName, dispatchType, method), args)
 	}
@@ -1156,10 +1367,10 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 			}
 			return value, true, err
 		}
-		if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
+		if value, handled, err := vm.callObjectMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
-		if value, handled := vm.generatedPlatformInstanceDefault(receiverName, receiver, method, args); handled {
+		if value, handled := vm.generatedPlatformInstanceDefault(receiverName, receiver, method, args, result); handled {
 			return value, true, nil
 		}
 		if value, handled, err := vm.callManagedPassiveMissingMember(receiver, method, args); handled || err != nil {
@@ -1221,6 +1432,8 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 func generatedPlatformRuntimePrecedenceType(typeName string) bool {
 	switch {
 	case strings.EqualFold(typeName, "Auth.JWT"),
+		strings.EqualFold(typeName, "Auth.JWTBearerTokenExchange"),
+		strings.EqualFold(typeName, "commercepayments.PaymentsHttp"),
 		strings.EqualFold(typeName, "Canvas.RenderContext"),
 		strings.EqualFold(typeName, "Canvas.ApplicationContext"),
 		strings.EqualFold(typeName, "Canvas.EnvironmentContext"),
@@ -1252,7 +1465,7 @@ func (vm *VM) callNonObjectValueMember(receiverName string, receiver Value, meth
 			return value, handled, err
 		}
 	}
-	if value, handled := vm.generatedPlatformInstanceDefault(receiverName, receiver, method, args); handled {
+	if value, handled := vm.generatedPlatformInstanceDefault(receiverName, receiver, method, args, result); handled {
 		return value, true, nil
 	}
 	if receiver.Kind == ValueObject && receiver.Fields != nil {
@@ -1503,6 +1716,9 @@ func (vm *VM) storeReceiver(receiverName string, value Value) error {
 	if receiverName == "" {
 		return nil
 	}
+	if vm.storeTriggerContextMap(receiverName, value) {
+		return nil
+	}
 	if strings.Contains(receiverName, ".") {
 		return vm.assign(receiverName, value)
 	}
@@ -1533,33 +1749,47 @@ func (vm *VM) mapKey(value Value) string {
 }
 
 func (vm *VM) apexObjectHashMapKey(value Value) (string, bool) {
-	if isStubProxy(value) {
+	key, handled, err := vm.apexObjectHashMapKeyChecked(value)
+	if err != nil {
+		if value.Ref != 0 {
+			return string(ValueObject) + ":" + value.Type + ":ref:" + strconv.FormatUint(value.Ref, 10), true
+		}
 		return "", false
+	}
+	return key, handled
+}
+
+func (vm *VM) apexObjectHashMapKeyChecked(value Value) (string, bool, error) {
+	if isStubProxy(value) {
+		return "", false, nil
 	}
 	if value.Kind != ValueObject || value.Type == "" ||
 		(sObjectValueType(value.Type) && !vm.userClassShadowsSObjectType(value.Type)) ||
 		strings.HasPrefix(value.Type, "Schema.") || platformScalarObject(value.Type) ||
 		strings.EqualFold(value.Type, "Type") {
-		return "", false
+		return "", false, nil
 	}
 	if key, ok := vm.frameworkQualifiedMethodMapKey(value); ok {
-		return key, true
+		return key, true, nil
 	}
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(value.Type, "hashCode", nil)
 	if !ok || ambiguous || target.Name == "" || strings.EqualFold(target.ClassName, "Object") {
 		if value.Ref != 0 {
-			return string(ValueObject) + ":" + value.Type + ":ref:" + strconv.FormatUint(value.Ref, 10), true
+			return string(ValueObject) + ":" + value.Type + ":ref:" + strconv.FormatUint(value.Ref, 10), true, nil
 		}
-		return "", false
+		return "", false, nil
 	}
 	result, err := vm.callMethodWithReceiver(target, value, nil, &Result{})
-	if err != nil || result.Kind != ValueInt {
-		if value.Ref != 0 {
-			return string(ValueObject) + ":" + value.Type + ":ref:" + strconv.FormatUint(value.Ref, 10), true
-		}
-		return "", false
+	if err != nil {
+		return "", true, err
 	}
-	return string(ValueObject) + ":" + value.Type + ":hash:" + strconv.FormatInt(result.Int, 10), true
+	if result.Kind != ValueInt {
+		if value.Ref != 0 {
+			return string(ValueObject) + ":" + value.Type + ":ref:" + strconv.FormatUint(value.Ref, 10), true, nil
+		}
+		return "", false, nil
+	}
+	return string(ValueObject) + ":" + value.Type + ":hash:" + strconv.FormatInt(result.Int, 10), true, nil
 }
 
 func objectStringField(value Value, field string) string {
@@ -1578,6 +1808,49 @@ func objectStringField(value Value, field string) string {
 		}
 	}
 	return ""
+}
+
+// Qualified schema keys must name the namespace of a declared field. Generic
+// namespace alias fallback must not turn an invented prefix into an existing key.
+func (vm *VM) invalidSObjectFieldMapNamespaceKey(receiver, key Value) bool {
+	if !isSObjectFieldMapValue(receiver) || key.Kind != ValueString {
+		return false
+	}
+	name := key.Text
+	if dot := strings.LastIndex(name, "."); dot >= 0 {
+		name = name[dot+1:]
+	}
+	separator := strings.Index(name, "__")
+	if separator < 0 {
+		return false
+	}
+	prefix := name[:separator]
+	suffix := strings.ToLower(name[separator:])
+	if suffix == "__c" || suffix == "__r" || suffix == "__pc" || suffix == "__pr" || suffix == "__s" {
+		return false
+	}
+	// Preserve the runtime's current-namespace aliases for standard fields.
+	// A foreign or doubled prefix cannot use that compatibility path.
+	base := name[separator+2:]
+	// A package-qualified custom field has two separators (for example
+	// PKG__Provider__r). A second namespace in the field body, as in
+	// PKG__OTHER__Household__c, is a doubled prefix and must remain invalid.
+	activeNamespace := strings.EqualFold(prefix, vm.currentCallerNamespace()) ||
+		(vm.Org != nil && strings.EqualFold(prefix, vm.Org.Namespace))
+	if activeNamespace && storage.StripAnyNamespaceToken(base) == base {
+		return false
+	}
+	for _, alias := range []string{name, strings.ToLower(name)} {
+		token, ok := receiver.Map[mapKey(String(alias))]
+		if !ok {
+			continue
+		}
+		field, ok := sObjectFieldMapCanonicalFieldName(token)
+		if ok && strings.EqualFold(vm.describeFieldName(field), name) {
+			return false
+		}
+	}
+	return true
 }
 
 func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
@@ -1702,6 +1975,11 @@ func recordTypeInfoKeyMatches(value Value, key string) bool {
 			return true
 		}
 	}
+	if candidate, ok := value.Fields["recordTypeId"]; ok {
+		if candidateID, ok := idValueText(candidate); ok && storage.IDsEqual(storage.ID(candidateID), storage.ID(key)) {
+			return true
+		}
+	}
 	return false
 }
 
@@ -1725,6 +2003,8 @@ func authConfigurationPlatformObjectType(typeName string) bool {
 
 func localRuntimeHarnessPlatformObjectType(typeName string) bool {
 	switch {
+	case strings.HasPrefix(strings.ToLower(strings.TrimSpace(typeName)), "flow.interview."):
+		return true
 	case strings.EqualFold(typeName, "eventbus.testbroker"),
 		strings.EqualFold(typeName, "externalservicetest"),
 		strings.EqualFold(typeName, "flow.interview"),
@@ -1745,70 +2025,6 @@ func localRuntimeHarnessPlatformObjectType(typeName string) bool {
 	default:
 		return false
 	}
-}
-
-func (vm *VM) namespaceStringMapLookup(receiver Value, key Value) (Value, bool) {
-	if receiver.Kind != ValueMap || key.Kind != ValueString {
-		return Null, false
-	}
-	if _, valueType, ok := mapTypeArgs(receiver.Type); ok && strings.EqualFold(valueType, "String") {
-		return Null, false
-	}
-	if !isCustomObjectLikeName(key.Text) && !hasSuffixFold(key.Text, "__mdt") && !hasManagedStringNamespaceToken(key.Text) && strings.TrimSpace(vm.currentCallerNamespace()) == "" {
-		return Null, false
-	}
-	aliases := []string{key.Text, localSchemaName(key.Text)}
-	if base, ok := managedStringNamespaceBase(key.Text); ok {
-		aliases = append(aliases, base)
-		if namespace := strings.TrimSpace(vm.currentCallerNamespace()); namespace != "" {
-			aliases = append(aliases, namespace+"__"+base)
-		}
-	} else if namespace := strings.TrimSpace(vm.currentCallerNamespace()); namespace != "" && !strings.Contains(key.Text, "__") {
-		aliases = append(aliases, namespace+"__"+key.Text)
-	}
-	if vm.Org != nil && vm.Org.Namespace != "" {
-		aliases = append(aliases,
-			storage.NamespaceTokenName(vm.Org.Namespace, key.Text),
-			storage.StripNamespaceToken(vm.Org.Namespace, key.Text),
-		)
-	}
-	seen := make(map[string]struct{}, len(aliases))
-	for _, alias := range aliases {
-		alias = strings.TrimSpace(alias)
-		if alias == "" {
-			continue
-		}
-		normalized := strings.ToLower(alias)
-		if _, ok := seen[normalized]; ok {
-			continue
-		}
-		seen[normalized] = struct{}{}
-		if value, ok := receiver.Map[mapKey(String(alias))]; ok {
-			return value, true
-		}
-	}
-	return Null, false
-}
-
-func hasManagedStringNamespaceToken(value string) bool {
-	_, ok := managedStringNamespaceBase(value)
-	return ok
-}
-
-func managedStringNamespaceBase(value string) (string, bool) {
-	value = strings.TrimSpace(value)
-	if value == "" || strings.Count(value, "__") != 1 {
-		return "", false
-	}
-	namespace, base, ok := strings.Cut(value, "__")
-	if !ok || namespace == "" || base == "" {
-		return "", false
-	}
-	switch strings.ToLower(base) {
-	case "c", "e", "r", "mdt":
-		return "", false
-	}
-	return base, true
 }
 
 func (vm *VM) populatedFieldsKeySetContains(receiver, key Value) (bool, bool) {
@@ -1902,7 +2118,27 @@ func (vm *VM) objectKeyMapLookup(receiver Value, key Value) (Value, bool, error)
 	if receiver.Kind != ValueMap || len(receiver.Map) == 0 || len(receiver.MapKeys) == 0 {
 		return Null, false, nil
 	}
+	encoded, handled, err := vm.apexObjectHashMapKeyChecked(key)
+	if err != nil {
+		return Null, false, err
+	}
+	customHash := handled && customObjectHashKey(key, encoded)
+	lookupHash := strings.TrimPrefix(encoded, string(ValueObject)+":"+key.Type+":hash:")
 	for rawKey, storedKey := range receiver.MapKeys {
+		if strings.HasPrefix(rawKey, unhashedMapEntryPrefix) {
+			continue
+		}
+		// Raw entry keys retain the insertion hash even when the key object mutates.
+		// Equality may resolve a hash collision, but cannot rescue a changed hash.
+		if customHash {
+			base, _, _ := strings.Cut(rawKey, "\x00collision:")
+			if customObjectHashKey(storedKey, base) {
+				storedHash := strings.TrimPrefix(base, string(ValueObject)+":"+storedKey.Type+":hash:")
+				if storedHash != lookupHash {
+					continue
+				}
+			}
+		}
 		equal, err := vm.mapKeysEqual(storedKey, key)
 		if err != nil {
 			return Null, false, err
@@ -1925,6 +2161,11 @@ func (vm *VM) declaredReceiverIsEnum(receiverName string) bool {
 }
 
 func (vm *VM) mapKeysEqual(storedKey, lookupKey Value) (bool, error) {
+	// Map lookup preserves the boxed numeric key kind; scalar == coercion does not apply.
+	if storedKey.Kind == ValueInt || storedKey.Kind == ValueDecimal || lookupKey.Kind == ValueInt || lookupKey.Kind == ValueDecimal {
+		return mapKey(storedKey) == mapKey(lookupKey), nil
+	}
+
 	if equal, ok := vm.frameworkQualifiedMethodKeysEqual(storedKey, lookupKey); ok {
 		return equal, nil
 	}
@@ -2132,7 +2373,7 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 				return value, true, err
 			}
 		}
-		if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
+		if value, handled, err := vm.callObjectMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
 		return vm.callStubProxyDynamicMember(receiver, method, args, result)
@@ -2153,6 +2394,7 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 	}
 	metadataArgs := []Value{
 		receiver,
+		// J009/J010: case-insensitive lookup passes the declared spelling.
 		String(apexMethodMemberName(target.Name)),
 		platformScalar("Type", returnType),
 		{Kind: ValueList, Type: "List<Type>", List: paramTypes},
@@ -2194,9 +2436,15 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 		if fallback, ok := frameworkMismatchedStubReturnFallback(target.ReturnType, value, provider); ok {
 			return fallback, true, nil
 		}
-		return Null, true, fmt.Errorf("stubbed %s.%s return: %w", receiver.Type, method, err)
+		var thrown *apexThrowError
+		if errors.As(err, &thrown) {
+			return Null, true, err
+		}
+		return Null, true, newExceptionError("TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", runtimeValueTypeName(value), typeExceptionTargetName(target.ReturnType)))
 	}
 	coerced = normalizeFrameworkStubReturnValue(target.ReturnType, coerced, provider)
+	// The caller sees the declared method return type, not the provider's Object.
+	coerced.Static = returnType
 	return coerced, true, nil
 }
 
@@ -2742,6 +2990,30 @@ func namespaceTokenInSchemaName(name string) string {
 // handled=false when the method is not a List member so callNonObjectValueMember
 // continues with the shared fall-through handling.
 func (vm *VM) callListValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	// Captured StandardSetController add/set/clear controls expose a fatal
+	// read-only message, but no Apex exception type. Other mutation routes
+	// retain their existing behavior until native controls establish it.
+	if flag := receiver.Fields["__collection_readonly"]; flag.Kind == ValueBool && flag.Bool {
+		switch method {
+		case "add", "set", "clear":
+			return Null, true, fmt.Errorf("Collection is read-only")
+		}
+	}
+	// Enum values() rejects every mutating list route,
+	// including indexed assignment, which lowers to set().
+	if flag := receiver.Fields["__enum_values_readonly"]; flag.Kind == ValueBool && flag.Bool {
+		switch method {
+		case "add", "addAll", "set", "remove", "clear", "sort":
+			return Null, true, &RuntimeError{Type: "System.FinalException", Message: "Collection is read-only"}
+		}
+	}
+	if vm.isTriggerContextList(receiver) {
+		switch method {
+		case "add", "addAll", "clear", "remove", "set", "sort":
+			// Readonly trigger collections reject mutations.
+			return Null, true, fmt.Errorf("System.FinalException: Collection is read-only")
+		}
+	}
 	switch method {
 	case "getSObjectType":
 		if len(args) != 0 {
@@ -2813,7 +3085,10 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		mutationType := vm.collectionMutationType(receiver)
 		item, err := vm.coerceCollectionElement(mutationType, valueArg)
 		if err != nil {
-			return Null, true, collectionStoreException(mutationType, valueArg)
+			return Null, true, vm.collectionStoreException(mutationType, valueArg)
+		}
+		if err := vm.rejectActiveCollectionAdd(receiver); err != nil {
+			return Null, true, err
 		}
 		vm.markCollectionRefsEscaped(item)
 		if insertAt >= 0 {
@@ -2821,6 +3096,12 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 			copy(receiver.List[insertAt+1:], receiver.List[insertAt:])
 			receiver.List[insertAt] = item
 		} else {
+			// Appending a native backing String or Id stores its ordinary value.
+			// The source element and existing backing slots retain their identity.
+			// Captured list-copy behavior distinguishes scalar and object Id slots.
+			if item.Kind == ValueString || item.Kind == ValueObject && strings.EqualFold(item.Type, "Id") {
+				item.nativeListElement = false
+			}
 			receiver.List = append(receiver.List, item)
 		}
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
@@ -2830,7 +3111,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if insertAt >= 0 {
 			return Null, true, nil
 		}
-		return Bool(true), true, nil
+		return Null, true, nil
 	case "addAll":
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("List.addAll expects List, Set, or Iterable")
@@ -2844,7 +3125,10 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		for _, value := range values {
 			item, err := vm.coerceCollectionElement(mutationType, value)
 			if err != nil {
-				return Null, true, collectionStoreException(mutationType, value)
+				return Null, true, vm.collectionStoreException(mutationType, value)
+			}
+			if err := vm.rejectActiveCollectionAdd(receiver); err != nil {
+				return Null, true, err
 			}
 			vm.markCollectionRefsEscaped(item)
 			receiver.List = append(receiver.List, item)
@@ -2893,6 +3177,9 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		}
 		return Bool(len(receiver.List) == 0), true, nil
 	case "get":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, true, newNullDereferenceError("")
+		}
 		if len(args) != 1 || args[0].Kind != ValueInt {
 			return Null, true, fmt.Errorf("List.get expects integer index")
 		}
@@ -2900,25 +3187,37 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if i < 0 || i >= len(receiver.List) {
 			return Null, true, listIndexException(i)
 		}
-		return receiver.List[i], true, nil
-	case "contains":
+		return vm.collectionReadValue(receiver, receiver.List[i]), true, nil
+	case "contains", "indexOf":
 		if len(args) != 1 {
-			return Null, true, fmt.Errorf("List.contains expects 1 argument")
+			return Null, true, fmt.Errorf("List.%s expects 1 argument", method)
 		}
-		contains, err := vm.collectionContainsValue(receiver.List, args[0], result)
+		index := -1
+		var err error
+		if receiver.nativeListMembership {
+			for i, item := range receiver.List {
+				if item.nativeListElement {
+					continue
+				}
+				equal, compareErr := vm.apexCollectionElementEquals(item, args[0], result)
+				if compareErr != nil {
+					return Null, true, compareErr
+				}
+				if equal {
+					index = i
+					break
+				}
+			}
+		} else {
+			index, err = vm.collectionIndexOfValue(receiver.List, args[0], result)
+		}
 		if err != nil {
 			return Null, true, err
 		}
-		return Bool(contains), true, nil
-	case "indexOf":
-		if len(args) != 1 {
-			return Null, true, fmt.Errorf("List.indexOf expects 1 argument")
+		if method == "contains" {
+			return Bool(index >= 0), true, nil
 		}
-		i, err := vm.collectionIndexOfValue(receiver.List, args[0], result)
-		if err != nil {
-			return Null, true, err
-		}
-		return Int(int64(i)), true, nil
+		return Int(int64(index)), true, nil
 	case "clone":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("List.clone expects 0 arguments")
@@ -2926,6 +3225,13 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		cloned := receiver
 		cloned.Ref = newValueRef()
 		cloned.List = append([]Value(nil), receiver.List...)
+		if flag := receiver.Fields["__enum_values_readonly"]; flag.Kind == ValueBool && flag.Bool {
+			cloned.Fields = nil
+		}
+		if flag := cloned.Fields["__collection_readonly"]; flag.Kind == ValueBool && flag.Bool {
+			cloned.Fields = maps.Clone(cloned.Fields)
+			delete(cloned.Fields, "__collection_readonly")
+		}
 		return cloned, true, nil
 	case "deepClone":
 		if len(args) > 3 {
@@ -2943,6 +3249,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		preserveReadonlyTimestamps := len(args) > 1 && args[1].Bool
 		preserveAutonumber := len(args) > 2 && args[2].Bool
 		cloned := cloneValue(receiver)
+		delete(cloned.Fields, "__collection_readonly")
 		for i := range cloned.List {
 			if cloned.List[i].Kind != ValueObject {
 				continue
@@ -2969,7 +3276,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("List.iterator expects 0 arguments")
 		}
-		return collectionIterator(receiver), true, nil
+		return vm.newCollectionIterator(receiver), true, nil
 	case "sort":
 		if len(args) > 1 {
 			return Null, true, fmt.Errorf("List.sort expects 0 or 1 arguments")
@@ -3000,6 +3307,9 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if i < 0 || i >= len(receiver.List) {
 			return Null, true, listIndexException(i)
 		}
+		if receiver.Ref != 0 && vm.activeCollectionTraversals[collectionTraversalKey{kind: receiver.Kind, ref: receiver.Ref}] > 0 {
+			return Null, true, fmt.Errorf("cannot remove elements during active collection traversal")
+		}
 		removed := receiver.List[i]
 		receiver.List = append(receiver.List[:i], receiver.List[i+1:]...)
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
@@ -3010,6 +3320,9 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 	case "clear":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("List.clear expects 0 arguments")
+		}
+		if len(receiver.List) != 0 && receiver.Ref != 0 && vm.activeCollectionTraversals[collectionTraversalKey{kind: receiver.Kind, ref: receiver.Ref}] > 0 {
+			return Null, true, fmt.Errorf("cannot remove elements during active collection traversal")
 		}
 		previous := snapshotAlias(receiver)
 		receiver.List = nil
@@ -3052,7 +3365,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 			if len(args) != 1 {
 				return Null, true, fmt.Errorf("Set-backed disabledTriggers.get expects 1 argument")
 			}
-			contains, err := vm.collectionContainsValue(receiver.Set, args[0], result)
+			contains, err := vm.setContainsValue(receiver, args[0], result)
 			if err != nil {
 				return Null, true, err
 			}
@@ -3071,12 +3384,20 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 			return Null, true, fmt.Errorf("Set.add: %w", err)
 		}
 		vm.markCollectionRefsEscaped(item)
-		contains, err := vm.collectionContainsValue(receiver.Set, item, result)
+		hash, err := vm.captureSetInsertionHash(item)
+		if err != nil {
+			return Null, true, err
+		}
+		index, err := vm.setIndexOfValueWithHash(receiver, item, hash, result)
+		contains := index >= 0
 		if err != nil {
 			return Null, true, err
 		}
 		if !contains {
-			receiver.Set = append(receiver.Set, item)
+			if err := vm.rejectActiveCollectionAdd(receiver); err != nil {
+				return Null, true, err
+			}
+			receiver = appendSetEntry(receiver, item, hash)
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
 			}
@@ -3100,12 +3421,20 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 				return Null, true, fmt.Errorf("Set.addAll: %w", err)
 			}
 			vm.markCollectionRefsEscaped(item)
-			contains, err := vm.collectionContainsValue(receiver.Set, item, result)
+			hash, err := vm.captureSetInsertionHash(item)
+			if err != nil {
+				return Null, true, err
+			}
+			index, err := vm.setIndexOfValueWithHash(receiver, item, hash, result)
+			contains := index >= 0
 			if err != nil {
 				return Null, true, err
 			}
 			if !contains {
-				receiver.Set = append(receiver.Set, item)
+				if err := vm.rejectActiveCollectionAdd(receiver); err != nil {
+					return Null, true, err
+				}
+				receiver = appendSetEntry(receiver, item, hash)
 				changed = true
 			}
 		}
@@ -3133,7 +3462,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		if contains, ok := vm.populatedFieldsKeySetContains(receiver, args[0]); ok {
 			return Bool(contains), true, nil
 		}
-		contains, err := vm.collectionContainsValue(receiver.Set, args[0], result)
+		contains, err := vm.setContainsValue(receiver, args[0], result)
 		if err != nil {
 			return Null, true, err
 		}
@@ -3143,7 +3472,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 			return Null, true, fmt.Errorf("Set.containsAll expects List or Set")
 		}
 		for _, value := range collectionMembers(args[0]) {
-			contains, err := vm.collectionContainsValue(receiver.Set, value, result)
+			contains, err := vm.setContainsValue(receiver, value, result)
 			if err != nil {
 				return Null, true, err
 			}
@@ -3156,15 +3485,20 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("Set.remove expects 1 argument")
 		}
-		i, err := vm.collectionIndexOfValue(receiver.Set, args[0], result)
+		i, err := vm.setIndexOfValue(receiver, args[0], result)
 		if err != nil {
 			return Null, true, err
 		}
 		if i >= 0 {
-			receiver.Set = append(receiver.Set[:i], receiver.Set[i+1:]...)
+			if receiver.Ref != 0 && vm.activeCollectionTraversals[collectionTraversalKey{kind: receiver.Kind, ref: receiver.Ref}] > 0 {
+				return Null, true, fmt.Errorf("cannot remove elements during active collection traversal")
+			}
+			previous := snapshotAlias(receiver)
+			receiver = removeSetEntry(receiver, i)
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
 			}
+			vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 			return Bool(true), true, nil
 		}
 		return Bool(false), true, nil
@@ -3172,19 +3506,27 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Set.clear expects 0 arguments")
 		}
+		if len(receiver.Set) != 0 && receiver.Ref != 0 && vm.activeCollectionTraversals[collectionTraversalKey{kind: receiver.Kind, ref: receiver.Ref}] > 0 {
+			return Null, true, fmt.Errorf("cannot remove elements during active collection traversal")
+		}
+		previous := snapshotAlias(receiver)
 		receiver.Set = nil
+		receiver.setInsertionHashes = nil
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
 			return Null, true, err
 		}
+		vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 		return Null, true, nil
 	case "removeAll":
 		if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
 			return Null, true, fmt.Errorf("Set.removeAll expects List or Set")
 		}
+		previous := snapshotAlias(receiver)
 		changed := false
-		out := receiver.Set[:0]
+		out := make([]Value, 0, len(receiver.Set))
+		hashes := make([]setInsertionHash, 0, len(receiver.Set))
 		remove := collectionMembers(args[0])
-		for _, value := range receiver.Set {
+		for index, value := range receiver.Set {
 			contains, err := vm.collectionContainsValue(remove, value, result)
 			if err != nil {
 				return Null, true, err
@@ -3194,37 +3536,51 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 				continue
 			}
 			out = append(out, value)
+			hashes = append(hashes, receiver.setInsertionHashAt(index))
+		}
+		if changed && receiver.Ref != 0 && vm.activeCollectionTraversals[collectionTraversalKey{kind: receiver.Kind, ref: receiver.Ref}] > 0 {
+			return Null, true, fmt.Errorf("cannot remove elements during active collection traversal")
 		}
 		receiver.Set = out
+		receiver.setInsertionHashes = hashes
 		if changed {
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
 			}
+			vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 		}
 		return Bool(changed), true, nil
 	case "retainAll":
 		if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
 			return Null, true, fmt.Errorf("Set.retainAll expects List or Set")
 		}
+		previous := snapshotAlias(receiver)
 		changed := false
 		keep := collectionMembers(args[0])
-		out := receiver.Set[:0]
-		for _, value := range receiver.Set {
+		out := make([]Value, 0, len(receiver.Set))
+		hashes := make([]setInsertionHash, 0, len(receiver.Set))
+		for index, value := range receiver.Set {
 			contains, err := vm.collectionContainsValue(keep, value, result)
 			if err != nil {
 				return Null, true, err
 			}
 			if contains {
 				out = append(out, value)
+				hashes = append(hashes, receiver.setInsertionHashAt(index))
 				continue
 			}
 			changed = true
 		}
+		if changed && receiver.Ref != 0 && vm.activeCollectionTraversals[collectionTraversalKey{kind: receiver.Kind, ref: receiver.Ref}] > 0 {
+			return Null, true, fmt.Errorf("cannot remove elements during active collection traversal")
+		}
 		receiver.Set = out
+		receiver.setInsertionHashes = hashes
 		if changed {
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
 			}
+			vm.propagateCollectionMutationFromSnapshot(previous, receiver)
 		}
 		return Bool(changed), true, nil
 	case "clone":
@@ -3234,6 +3590,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		cloned := receiver
 		cloned.Ref = newValueRef()
 		cloned.Set = append([]Value(nil), receiver.Set...)
+		cloned.setInsertionHashes = cloneSetInsertionHashes(receiver)
 		return cloned, true, nil
 	case "deepClone":
 		if len(args) > 3 {
@@ -3249,7 +3606,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Set.iterator expects 0 arguments")
 		}
-		return collectionIterator(receiver), true, nil
+		return vm.newCollectionIterator(receiver), true, nil
 	case "put":
 		if receiverName == "disabledTriggers" {
 			if len(args) != 2 {
@@ -3258,7 +3615,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 			if args[1].Kind != ValueInt {
 				return Null, true, fmt.Errorf("Set-backed disabledTriggers.put expects Integer counter")
 			}
-			contains, err := vm.collectionContainsValue(receiver.Set, args[0], result)
+			contains, err := vm.setContainsValue(receiver, args[0], result)
 			if err != nil {
 				return Null, true, err
 			}
@@ -3268,18 +3625,18 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 			}
 			if args[1].Int > 0 {
 				if !contains {
-					receiver.Set = append(receiver.Set, args[0])
+					receiver = appendSetEntry(receiver, args[0], setInsertionHash{})
 					if err := vm.storeReceiver(receiverName, receiver); err != nil {
 						return Null, true, err
 					}
 				}
 			} else if contains {
-				i, err := vm.collectionIndexOfValue(receiver.Set, args[0], result)
+				i, err := vm.setIndexOfValue(receiver, args[0], result)
 				if err != nil {
 					return Null, true, err
 				}
 				if i >= 0 {
-					receiver.Set = append(receiver.Set[:i], receiver.Set[i+1:]...)
+					receiver = removeSetEntry(receiver, i)
 					if err := vm.storeReceiver(receiverName, receiver); err != nil {
 						return Null, true, err
 					}
@@ -3295,6 +3652,9 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 // handled=false when the method is not a Map member so callNonObjectValueMember
 // continues with the shared fall-through handling.
 func (vm *VM) callMapValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	if method == "putAll" && len(args) == 1 && args[0].Kind == ValueNull {
+		return Null, true, newExceptionError("System.NullPointerException", "Argument 1 cannot be null")
+	}
 	switch method {
 	case "put":
 		if len(args) != 2 {
@@ -3307,7 +3667,30 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		}
 		vm.markCollectionRefsEscaped(key, item)
 		previous := Null
-		encodedKey := vm.mapKey(key)
+		encodedKey, err := vm.mapEntryKey(receiver, key)
+		if err != nil {
+			var thrown *apexThrowError
+			if !errors.As(err, &thrown) {
+				return Null, true, err
+			}
+			// Apex retains the new entry before propagating a key callback error.
+			// Without a completed hash the entry is enumerable but not searchable.
+			if encodedKey == "" {
+				encodedKey = unhashedMapEntryPrefix
+			}
+			encodedKey = vacantMapEntryKey(receiver, encodedKey)
+			receiver.Map[encodedKey] = item
+			if receiver.MapKeys == nil {
+				receiver.MapKeys = make(map[string]Value)
+			}
+			receiver.MapKeys[encodedKey] = key
+			receiver.MapOrder = append(receiver.MapOrder, encodedKey)
+			if storeErr := vm.storeReceiver(receiverName, receiver); storeErr != nil {
+				return Null, true, storeErr
+			}
+			vm.propagateCollectionMutationFromSnapshot(previousReceiver, receiver)
+			return Null, true, err
+		}
 		if existing, ok := receiver.Map[encodedKey]; ok {
 			previous = existing
 		} else {
@@ -3347,7 +3730,10 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 				return Null, true, fmt.Errorf("Map.putAll: %w", err)
 			}
 			vm.markCollectionRefsEscaped(key, item)
-			encodedKey := vm.mapKey(key)
+			encodedKey, err := vm.mapEntryKey(receiver, key)
+			if err != nil {
+				return Null, true, err
+			}
 			if _, exists := receiver.Map[encodedKey]; !exists {
 				receiver.MapOrder = append(receiver.MapOrder, encodedKey)
 			}
@@ -3366,14 +3752,17 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("Map.get expects 1 argument")
 		}
-		key := vm.mapLookupKey(receiver, args[0])
+		if vm.invalidSObjectFieldMapNamespaceKey(receiver, args[0]) {
+			return vm.collectionReadValue(receiver, missingMapValue(receiver)), true, nil
+		}
+		key, err := vm.resolvedMapLookupKey(receiver, args[0])
+		if err != nil {
+			return Null, true, err
+		}
 		if objectName, ok := sObjectFieldMapObjectName(receiver); ok && args[0].Kind == ValueString && vm.sObjectFieldMapKeyIsChildRelationship(objectName, args[0].Text) && !vm.sObjectFieldMapDirectValueMatchesKey(receiver, key, args[0].Text) {
-			return missingMapValue(receiver), true, nil
+			return vm.collectionReadValue(receiver, missingMapValue(receiver)), true, nil
 		}
 		value, ok := receiver.Map[key]
-		if !ok {
-			value, ok = vm.namespaceStringMapLookup(receiver, args[0])
-		}
 		if !ok {
 			value, ok = vm.populatedFieldsMapAliasLookup(receiver, args[0])
 		}
@@ -3388,12 +3777,12 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			}
 		}
 		if !ok {
-			return missingMapValue(receiver), true, nil
+			return vm.collectionReadValue(receiver, missingMapValue(receiver)), true, nil
 		}
 		if value.Kind == ValueNull && value.Type == "" {
 			value = missingMapValue(receiver)
 		}
-		return value, true, nil
+		return vm.collectionReadValue(receiver, value), true, nil
 	case "contains", "containsKey":
 		if len(args) != 1 {
 			if method == "contains" {
@@ -3401,13 +3790,27 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			}
 			return Null, true, fmt.Errorf("Map.containsKey expects 1 argument")
 		}
-		key := vm.mapLookupKey(receiver, args[0])
+		if vm.invalidSObjectFieldMapNamespaceKey(receiver, args[0]) {
+			return Bool(false), true, nil
+		}
+		// Salesforce's SObject field map accepts object-qualified aliases for
+		// direct lookup, but those aliases are not direct field keys. Keep
+		// containsKey consistent with that distinction so code that uses a
+		// dotted name to detect a relationship path takes its relationship
+		// branch (for example, Contact fields and Account.Name).
+		if isSObjectFieldMapValue(receiver) && args[0].Kind == ValueString && strings.Contains(args[0].Text, ".") {
+			return Bool(false), true, nil
+		}
+		key, err := vm.resolvedMapLookupKey(receiver, args[0])
+		if err != nil {
+			return Null, true, err
+		}
 		if objectName, ok := sObjectFieldMapObjectName(receiver); ok && args[0].Kind == ValueString && vm.sObjectFieldMapKeyIsChildRelationship(objectName, args[0].Text) && !vm.sObjectFieldMapDirectValueMatchesKey(receiver, key, args[0].Text) {
 			return Bool(false), true, nil
 		}
 		_, ok := receiver.Map[key]
 		if !ok {
-			_, ok = vm.namespaceStringMapLookup(receiver, args[0])
+			_, ok = vm.populatedFieldsMapAliasLookup(receiver, args[0])
 		}
 		if !ok {
 			ok = vm.specialMapContainsKey(receiver, args[0])
@@ -3435,7 +3838,10 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			return Null, true, fmt.Errorf("Map.remove expects 1 argument")
 		}
 		previousReceiver := snapshotAlias(receiver)
-		key := vm.mapLookupKey(receiver, args[0])
+		key, err := vm.resolvedMapLookupKey(receiver, args[0])
+		if err != nil {
+			return Null, true, err
+		}
 		removed := Null
 		if value, ok := receiver.Map[key]; ok {
 			removed = value
@@ -3468,7 +3874,15 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		}
 		out := Set()
 		for _, rawKey := range orderedValueMapKeys(receiver) {
-			out.Set = append(out.Set, mapStoredKey(receiver, rawKey))
+			key := mapStoredKey(receiver, rawKey)
+			hash, err := vm.captureSetInsertionHash(key)
+			if err != nil {
+				return Null, true, err
+			}
+			// This fresh Set has no aliases yet; keep each key paired with its
+			// captured hash without changing the Map's order or collision entries.
+			out.Set = append(out.Set, key)
+			out.setInsertionHashes = append(out.setInsertionHashes, hash)
 		}
 		if strings.HasPrefix(receiver.Runtime, "sobject-populated-fields:") {
 			out.Runtime = receiver.Runtime + ":keyset"

@@ -90,15 +90,15 @@ func TestMessageChannelModuleJSExportsChannelToken(t *testing.T) {
 
 func TestPackagePhase1ServiceModulesExportLocalContracts(t *testing.T) {
 	cases := map[string][]string{
-		"actions":            {ActionsModuleJS(), "CloseActionScreenEvent", "closeactionscreen"},
-		"alert":              {AlertModuleJS(), "LightningAlert", "static open", "gladealert"},
-		"confirm":            {ConfirmModuleJS(), "LightningConfirm", "Promise.resolve(true)"},
+		"actions":            {ActionsModuleJS(), "CloseActionScreenEvent", "lightning__actionsclosescreen"},
+		"alert":              {AlertModuleJS(), "LightningAlert", "static open", `openFeedback("alert"`},
+		"confirm":            {ConfirmModuleJS(), "LightningConfirm", "static open", `openFeedback("confirm"`},
 		"configProvider":     {ConfigProviderModuleJS(), "getPathPrefix", "getToken", "getIconSvgTemplates", "getLocalizationService", "getOneConfig"},
-		"customPermission":   {CustomPermissionModuleJS("LocalPermission"), "permissionName", "LocalPermission", "export default true"},
+		"customPermission":   {CustomPermissionModuleJS("LocalPermission"), "permissionName", "LocalPermission", "readCustomPermission(permissionName)"},
 		"empApi":             {EmpAPIModuleJS(), "subscribe", "unsubscribe", "isEmpEnabled"},
-		"flowSupport":        {FlowSupportModuleJS(), "FlowAttributeChangeEvent", "flownavigationnext", "flownavigationfinish"},
+		"flowSupport":        {FlowSupportModuleJS(), "FlowAttributeChangeEvent", "lightning__flownavigation", "navigationTarget", `"NEXT"`, `"FINISH"`},
 		"pageReferenceUtils": {PageReferenceUtilsModuleJS(), "encodeDefaultFieldValues", "decodeDefaultFieldValues"},
-		"prompt":             {PromptModuleJS(), "LightningPrompt", "static open", "gladeprompt"},
+		"prompt":             {PromptModuleJS(), "LightningPrompt", "static open", `openFeedback("prompt"`},
 		"refresh":            {RefreshModuleJS(), "RefreshEvent", "registerRefreshHandler", "unregisterRefreshHandler"},
 		"showToastEvent":     {ShowToastEventModuleJS(), "SHOW_TOAST_EVENT_NAME", "ShowToastEvent", "lightning__showtoast"},
 		"toast":              {ToastModuleJS(), "LightningToast", "static show", "lightning__showtoast"},
@@ -233,7 +233,7 @@ func TestLightningSourceBackedComponentModuleJSWrapsCompiledRuntimeAsset(t *test
 	if !ok {
 		t.Fatalf("badge should be source backed")
 	}
-	if !containsAll(js, `export { default }`, `/lightning/runtime/lightning/source/badge/badge.js`) {
+	if !containsAll(js, `export { default }`, `/lightning/runtime/lightning/badge.js`) {
 		t.Fatalf("source backed badge js = %q", js)
 	}
 	js, ok = LightningSourceBackedComponentModuleJS("recordPicker")
@@ -249,7 +249,8 @@ func TestLightningSourceBackedComponentModuleJSWrapsCompiledRuntimeAsset(t *test
 }
 
 func TestUserModuleJS(t *testing.T) {
-	if got := UserModuleJS("Id", "005000000000123"); !strings.Contains(got, `export default "005000000000123"`) {
+	// L13 r_user_Id_shape captures an 18-character virtual-module ID at 59/67.
+	if got := UserModuleJS("Id", "005000000000123"); !strings.Contains(got, `export default "005000000000123AAA"`) {
 		t.Fatalf("Id js = %q", got)
 	}
 	if got := UserModuleJS("isGuest", ""); !containsAll(got, `export default readGuest()`, "readCommunityContext") {
@@ -316,15 +317,62 @@ func TestI18nModuleJS(t *testing.T) {
 		"dir":                       `export default "ltr"`,
 		"lang":                      `export default "en-US"`,
 		"locale":                    `export default "en-US"`,
-		"number.currencyFormat":     `export default "¤#,##0.00;(¤#,##0.00)"`,
-		"number.numberFormat":       `export default "#,##0.###"`,
-		"number.percentFormat":      `export default "#,##0%"`,
-		"timeZone":                  `export default "UTC"`,
+		// L13 r_i18n_number_currencyFormat captures this exact pattern at 59/67.
+		"number.currencyFormat": `export default "¤#,##0.00"`,
+		"number.numberFormat":   `export default "#,##0.###"`,
+		"number.percentFormat":  `export default "#,##0%"`,
 	}
 	for property, want := range cases {
 		if got := I18nModuleJS(property); !strings.Contains(got, want) {
 			t.Fatalf("%s js = %q, want %q", property, got, want)
 		}
+	}
+}
+
+func TestI18nTimeZoneModuleJS(t *testing.T) {
+	if _, err := exec.LookPath("node"); err != nil {
+		t.Fatal("node is required for Salesforce timezone behavior coverage")
+	}
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "timezone.mjs"), []byte(I18nModuleJS("timeZone")), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// r_i18n_timeZone captures America/Los_Angeles at API 59/67. The
+	// standalone module retains UTC while native owns user-context hydration.
+	script := `import assert from "node:assert/strict";
+let revision = 0;
+async function observe(text, hasDocument = true) {
+  if (hasDocument) {
+    globalThis.document = { getElementById: () => text === null ? null : { textContent: text } };
+  } else {
+    delete globalThis.document;
+  }
+  const { default: value } = await import("./timezone.mjs?revision=" + revision++);
+  return value;
+}
+for (const [text, hasDocument] of [[null, false], [null, true], ["", true], ["{}", true], ["invalid json", true], ['{"i18n":{"timeZone":""}}', true]]) {
+  assert.equal(await observe(text, hasDocument), "UTC");
+}
+assert.equal(await observe('{"i18n":{"timeZone":"America/Los_Angeles"}}'), "America/Los_Angeles");
+assert.equal(await observe('{"timeZone":"America/Los_Angeles"}'), "America/Los_Angeles");
+assert.equal(await observe('{"i18n":{"timeZone":"America/Los_Angeles"},"timeZone":"UTC"}'), "America/Los_Angeles");
+process.stdout.write("DOM|" + JSON.stringify({type:"string",value:await observe(null)}));
+`
+	if err := os.WriteFile(filepath.Join(dir, "test.mjs"), []byte(script), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("node", "test.mjs")
+	cmd.Dir = dir
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("timezone module behavior failed: %v\n%s", err, output)
+	}
+	got := string(output)
+	if want := `DOM|{"type":"string","value":"UTC"}`; got != want {
+		t.Fatalf("standalone timezone expected <%s> actual <%s>", want, got)
+	}
+	for _, api := range []string{"59.0", "67.0"} {
+		t.Logf("r_i18n_timeZone API %s CARRIED expected <DOM|{\"type\":\"string\",\"value\":\"America/Los_Angeles\"}> actual <%s>: owner L23: standalone host has no native user timezone hydration", api, got)
 	}
 }
 
@@ -424,9 +472,10 @@ func TestUIRecordAPIModuleJSExportsRecordAndObjectInfoWires(t *testing.T) {
 	}
 }
 
-func TestUIListAPIModuleJSExportsGetListUiDiagnostic(t *testing.T) {
+func TestUIListAPIModuleJSExportsGetListUi(t *testing.T) {
 	js := UIListAPIModuleJS()
-	if !containsAll(js, "getListUi", "GLADELWC050", "getRelatedListRecords") {
+	// Native c_legacy_wire and r_legacy_* exercise the actual fetch adapter.
+	if !containsAll(js, "getListUi", "createFetchWireAdapter", "/lightning/wire/getListUi") {
 		t.Fatalf("js = %q", js)
 	}
 }
@@ -450,6 +499,8 @@ export function createGetRecordWireAdapter() { return class {}; }
 		t.Fatal(err)
 	}
 	cacheStub := `export function getRecordNotifyChange() {}
+export function ldsCacheKey() { throw new Error("Unexpected LDS cache use in record input helpers"); }
+export function writeLDSCache() { throw new Error("Unexpected LDS cache use in record input helpers"); }
 export function notifyRecordUpdateAvailable() { return Promise.resolve(); }
 export function refreshApex() { return Promise.resolve(); }
 `
@@ -492,12 +543,14 @@ assert.deepEqual(generateRecordInputForCreate(record, objectInfo), {
   fields: { Name: "Acme" },
 });
 assert.deepEqual(generateRecordInputForUpdate(record, objectInfo), {
+  apiName: undefined,
   fields: { Name: "Acme", Id: "001XX0000000001" },
 });
 assert.deepEqual(createRecordInputFilteredByEditedFields(
   { fields: { Id: "001XX0000000001", Name: "Acme", Phone: "555" } },
-  { fields: { Name: { value: "Acme" }, Phone: { value: "444" } } },
+  { id: "001XX0000000001", fields: { Name: { value: "Acme" }, Phone: { value: "444" } } },
 ), {
+  apiName: undefined,
   fields: { Id: "001XX0000000001", Phone: "555" },
 });
 `
@@ -622,7 +675,10 @@ assert.deepEqual(adapters[2].mapper({ fieldApiName: { objectApiName: "Account", 
   fieldApiName: "Account.Rating",
   recordTypeId: "012000000000123",
 });
-assert.equal(adapters[2].mapper({ fieldApiName: "Rating", recordTypeId: "012000000000123" }), null);
+assert.deepEqual(adapters[2].mapper({ fieldApiName: "Type", recordTypeId: "012000000000000AAA" }), {
+  fieldApiName: "Type",
+  recordTypeId: "012000000000000AAA",
+});
 assert.deepEqual(adapters[3].mapper({ objectApiName: { objectApiName: "Account" }, recordTypeId: "012000000000123" }), {
   objectApiName: "Account",
   recordTypeId: "012000000000123",
@@ -670,7 +726,8 @@ import assert from "node:assert/strict";
 import { adapters } from "./lightning/shims/core/wire-adapter.js";
 import { getRelatedListRecords } from "./uiRelatedListApi.mjs";
 assert.equal(typeof getRelatedListRecords, "function");
-assert.equal(adapters.length, 1);
+// Native c_related{Records,Count,Info,Infos,Batch,InfoBatch}_wire rows.
+assert.equal(adapters.length, 6);
 assert.equal(adapters[0].url, "/lightning/wire/getRelatedListRecords");
 assert.equal(adapters[0].mapper({ relatedListId: "Contacts" }), null);
 assert.deepEqual(adapters[0].mapper({

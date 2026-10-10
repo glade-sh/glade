@@ -28,6 +28,12 @@ func assertSupportedBaseComponentJS(t *testing.T, name, js string) {
 func baseComponentContractJS(t *testing.T, name string) string {
 	t.Helper()
 	js := LightningBaseComponentModuleJS(name)
+	switch normalizeLightningBaseComponentName(name) {
+	case "buttonicon":
+		return js + "\n" + readRuntimeLightningFile(t, "buttonIcon.mjs")
+	case "progressring":
+		return js + "\n" + readRuntimeLightningFile(t, "progressRing.mjs")
+	}
 	component, ok := sourceBackedLightningComponentName(name)
 	if !ok {
 		return js
@@ -37,7 +43,12 @@ func baseComponentContractJS(t *testing.T, name string) string {
 		parts = append(parts, readRuntimeLightningFile(t, "recordPicker.mjs"))
 	} else {
 		parts = append(parts, readRuntimeLightningFile(t, filepath.Join("source", component, component+".js")))
-		parts = append(parts, readRuntimeLightningFile(t, "lds-form.mjs"))
+		formJS := readRuntimeLightningFile(t, "lds-form.mjs")
+		parts = append(parts, formJS)
+		if strings.Contains(formJS, `from "lightning/uiRecordApi"`) {
+			// The form delegates record reads and mutations to the product LDS module.
+			parts = append(parts, UIRecordAPIModuleJS())
+		}
 	}
 	return js + "\n" + strings.Join(parts, "\n")
 }
@@ -360,7 +371,7 @@ func TestRecordFormModuleUsesLocalLDSEndpoints(t *testing.T) {
 }
 
 func TestTabModuleDispatchesActiveEvent(t *testing.T) {
-	js := LightningBaseComponentModuleJS("tab")
+	js := readRuntimeLightningFile(t, "tab.mjs")
 	if !containsAll(js, "handleActive", `"active"`, "this.value", "this.label") {
 		t.Fatalf("tab module missing active event support:\n%s", js)
 	}
@@ -403,7 +414,6 @@ func TestBaseComponentSourceReferenceContracts(t *testing.T) {
 			"buttonIconClassMap($cmp.variant, $cmp.size)",
 			"slds-button_icon-border-filled",
 			`slds-button_icon-small`,
-			`"aria-label": $cmp.alternativeText || undefined`,
 			"value: $cmp.value == null ? undefined : String($cmp.value)",
 		},
 		"card": {
@@ -433,6 +443,9 @@ func TestBaseComponentSourceReferenceContracts(t *testing.T) {
 	}
 	for name, parts := range cases {
 		js := LightningBaseComponentModuleJS(name)
+		if name == "buttonIcon" {
+			js = baseComponentContractJS(t, name)
+		}
 		if !containsAll(js, parts...) {
 			t.Fatalf("%s module missing source-reference contract parts %v:\n%s", name, parts, js)
 		}
@@ -448,8 +461,8 @@ func TestDatatableModuleKeepsActionColumnIndex(t *testing.T) {
 
 func TestModalModuleProvidesOpenStatic(t *testing.T) {
 	js := LightningBaseComponentModuleJS("modal")
-	if !containsAll(js, "static async open", "lightning__modalopen", "options.result") {
-		t.Fatalf("modal module missing static open approximation:\n%s", js)
+	if !containsAll(js, "static open", "/lightning/runtime/shell/modal-overlay.js", "openModal(this, options)", "close(result)", "closeModal(this, result)") {
+		t.Fatalf("modal module missing open/close lifetime:\n%s", js)
 	}
 }
 
@@ -477,7 +490,14 @@ func TestGeneratedPhase3BaseComponentsRunInBrowser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(repoRoot, "lwcruntime", "node_modules", "playwright")); err != nil {
+	playwrightPackage := os.Getenv("GLADE_LWC_PLAYWRIGHT_MODULE")
+	if playwrightPackage == "" {
+		playwrightPackage = filepath.Join(repoRoot, "lwcruntime", "node_modules", "playwright")
+	}
+	if _, err := os.Stat(playwrightPackage); err != nil {
+		if os.Getenv("GLADE_LWC_PLAYWRIGHT_MODULE") != "" {
+			t.Fatalf("configured Playwright module is unavailable: %v", err)
+		}
 		t.Skip("playwright node module not installed")
 	}
 	toolchainRoot := repoRoot
@@ -491,6 +511,8 @@ func TestGeneratedPhase3BaseComponentsRunInBrowser(t *testing.T) {
 	shims := map[string]string{
 		"checkboxGroup": LightningBaseComponentModuleJS("checkboxGroup"),
 		"dualListbox":   LightningBaseComponentModuleJS("dualListbox"),
+		"datatable":     LightningBaseComponentModuleJS("datatable"),
+		"treeGrid":      LightningBaseComponentModuleJS("treeGrid"),
 	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -498,7 +520,7 @@ func TestGeneratedPhase3BaseComponentsRunInBrowser(t *testing.T) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			fmt.Fprintf(w, `<!DOCTYPE html><html><head>
 <script>window.process = { env: { NODE_ENV: "production" } };</script>
-<script type="importmap">{"imports":{"lwc":"/lightning/vendor/lwc.js","@lwc/synthetic-shadow":"/lightning/vendor/synthetic-shadow.js","@glade/shell/diagnostics":"/lightning/runtime/shell/diagnostics.js","lightning/checkboxGroup":"/lightning/shims/lightning/checkboxGroup.js","lightning/dualListbox":"/lightning/shims/lightning/dualListbox.js"}}</script>
+<script type="importmap">{"imports":{"lwc":"/lightning/vendor/lwc.js","@lwc/synthetic-shadow":"/lightning/vendor/synthetic-shadow.js","@glade/shell/diagnostics":"/lightning/runtime/shell/diagnostics.js","lightning/checkboxGroup":"/lightning/shims/lightning/checkboxGroup.js","lightning/dualListbox":"/lightning/shims/lightning/dualListbox.js","lightning/datatable":"/lightning/shims/lightning/datatable.js","lightning/treeGrid":"/lightning/shims/lightning/treeGrid.js","lightning/uiRecordApi":"/lightning/shims/lightning/uiRecordApi.js","lightning/uiObjectInfoApi":"/lightning/shims/lightning/uiObjectInfoApi.js","@salesforce/i18n/locale":"/lightning/shims/i18n/locale.js","@salesforce/i18n/currency":"/lightning/shims/i18n/currency.js"}}</script>
 </head><body><div id="host"></div><script type="module" src="/entry.js"></script></body></html>`)
 		case "/entry.js":
 			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
@@ -507,6 +529,8 @@ import "@lwc/synthetic-shadow";
 import { createElement } from "lwc";
 import CheckboxGroup from "lightning/checkboxGroup";
 import DualListbox from "lightning/dualListbox";
+import Datatable from "lightning/datatable";
+import TreeGrid from "lightning/treeGrid";
 const host = document.getElementById("host");
 function append(tag, Ctor, props = {}) {
   const el = createElement(tag, { is: Ctor });
@@ -528,6 +552,27 @@ const dual = append("lightning-dual-listbox", DualListbox, {
   options: [{ label: "Alpha", value: "alpha" }, { label: "Beta", value: "beta" }]
 });
 dual.addEventListener("change", (event) => { window.__dualListbox = event.detail; });
+// Local regression fixture for the pre-existing public-assignment and save
+// contracts restored during L20 review; these are not new Salesforce rows.
+window.__l20Datatable = append("lightning-datatable", Datatable, {
+  keyField: "id",
+  columns: [{ label: "Name", fieldName: "Name", type: "text", editable: true }],
+  data: [{ id: "r1", Name: "Alpha" }, { id: "r2", Name: "Bravo" }],
+  selectedRows: ["r2"],
+  draftValues: []
+});
+window.__l20Saves = [];
+window.__l20Datatable.addEventListener("save", (event) => { window.__l20Saves.push(event.detail.draftValues); });
+// Local tree-grid review regressions, not additional native oracle rows.
+window.__l20TreeGrid = append("lightning-tree-grid", TreeGrid, {
+  keyField: "id",
+  columns: [{ label: "Name", fieldName: "Name", type: "text" }],
+  data: [{ id: "p", Name: "Parent", _children: [{ id: "c", Name: "Child" }] }, { id: "l", Name: "Leaf" }],
+  expandedRows: ["p"],
+  selectedRows: ["l"]
+});
+window.__l20GridSelections = [];
+window.__l20TreeGrid.addEventListener("rowselection", (event) => { window.__l20GridSelections.push(event.detail); });
 `)
 		case "/lightning/vendor/lwc.js":
 			serveTestFile(t, w, filepath.Join(toolchainRoot, "third_party", "lwc", "node_modules", "@lwc", "engine-dom", "dist", "index.js"))
@@ -542,6 +587,34 @@ dual.addEventListener("change", (event) => { window.__dualListbox = event.detail
 		case "/lightning/shims/lightning/dualListbox.js":
 			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 			fmt.Fprint(w, shims["dualListbox"])
+		case "/lightning/shims/lightning/datatable.js":
+			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+			fmt.Fprint(w, shims["datatable"])
+		case "/lightning/shims/lightning/treeGrid.js":
+			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+			fmt.Fprint(w, shims["treeGrid"])
+		case "/lightning/runtime/lightning/source/datatable/datatable.js":
+			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+			fmt.Fprint(w, readRuntimeLightningFile(t, filepath.Join("source", "datatable", "datatable.js")))
+		case "/lightning/runtime/lightning/lds-form.mjs":
+			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+			fmt.Fprint(w, readRuntimeLightningFile(t, "lds-form.mjs"))
+		case "/lightning/shims/lightning/uiRecordApi.js":
+			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+			fmt.Fprint(w, UIRecordAPIModuleJS())
+		case "/lightning/shims/lightning/uiObjectInfoApi.js":
+			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+			fmt.Fprint(w, UIObjectInfoAPIModuleJS())
+		case "/lightning/shims/i18n/locale.js":
+			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+			fmt.Fprint(w, I18nModuleJS("locale"))
+		case "/lightning/shims/i18n/currency.js":
+			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+			fmt.Fprint(w, I18nModuleJS("currency"))
+		case "/lightning/shims/core/wire-adapter.js":
+			serveTestFile(t, w, filepath.Join(repoRoot, "lwcruntime", "src", "shims", "wire-adapter.mjs"))
+		case "/lightning/shims/core/lds-cache.mjs":
+			serveTestFile(t, w, filepath.Join(repoRoot, "lwcruntime", "src", "shims", "lds-cache.mjs"))
 		default:
 			http.NotFound(w, r)
 		}
@@ -552,9 +625,12 @@ dual.addEventListener("change", (event) => { window.__dualListbox = event.detail
 	script := fmt.Sprintf(`
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-const require = createRequire(%q);
-const { chromium } = require("playwright");
-const browser = await chromium.launch({ headless: true });
+const require = createRequire(import.meta.url);
+const { chromium } = require(%q);
+const launchOptions = { headless: true };
+const browserExecutable = %q;
+if (browserExecutable !== "") launchOptions.executablePath = browserExecutable;
+const browser = await chromium.launch(launchOptions);
 try {
   const page = await browser.newPage();
   const pageErrors = [];
@@ -562,24 +638,127 @@ try {
   page.on("pageerror", (err) => pageErrors.push(err.message));
   page.on("console", (msg) => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
   await page.goto(%q, { waitUntil: "networkidle" });
+  assert.deepEqual(pageErrors, [], "generated component module errors");
+  assert.deepEqual(consoleErrors, [], "generated component resource errors");
   await page.locator('lightning-checkbox-group input[value="beta"]').check();
   assert.deepEqual(await page.evaluate(() => window.__checkboxGroup), { value: ["alpha", "beta"] });
-  assert.deepEqual(await page.locator('lightning-dual-listbox select[data-list="source"] option').allTextContents(), ["Beta"]);
-  assert.deepEqual(await page.locator('lightning-dual-listbox select[data-list="selected"] option').allTextContents(), ["Alpha"]);
-  await page.locator('lightning-dual-listbox select[data-list="source"]').selectOption("beta");
+  // L20 dual_move_normal: native options are selectable ARIA listbox items.
+  assert.deepEqual(await page.locator('lightning-dual-listbox [data-list="source"] [role="option"]').allTextContents(), ["Beta"]);
+  assert.deepEqual(await page.locator('lightning-dual-listbox [data-list="selected"] [role="option"]').allTextContents(), ["Alpha"]);
+  await page.locator('lightning-dual-listbox [data-list="source"] [role="option"]').click();
   await page.getByRole("button", { name: "Move selection to Selected" }).click();
   assert.deepEqual(await page.evaluate(() => window.__dualListbox), { value: ["alpha", "beta"] });
+  const grid = page.locator("lightning-tree-grid");
+  const expandedIDs = () => page.evaluate(() => window.__l20TreeGrid.getCurrentExpandedRows());
+  const gridSelectedIDs = () => page.evaluate(() => window.__l20TreeGrid.getSelectedRows().map((row) => row.id));
+  const collapseParent = grid.getByRole("button", { name: "Collapse Parent", exact: true });
+  const expandParent = grid.getByRole("button", { name: "Expand Parent", exact: true });
+  assert.deepEqual(await expandedIDs(), ["p"]);
+  await collapseParent.click();
+  assert.deepEqual(await expandedIDs(), []);
+  await grid.evaluate((element) => { element.expandedRows = element.expandedRows; });
+  assert.deepEqual(await expandedIDs(), ["p"]);
+  await collapseParent.waitFor({ state: "visible" });
+  await grid.evaluate((element) => { element.expandedRows = []; });
+  await expandParent.waitFor({ state: "visible" });
+  assert.equal(await grid.locator("tbody tr").count(), 2);
+  await grid.evaluate((element) => { element.expandAll(); });
+  assert.deepEqual(await expandedIDs(), ["p"]);
+  await collapseParent.waitFor({ state: "visible" });
+  await grid.evaluate((element) => { element.expandedRows = element.expandedRows; });
+  assert.deepEqual(await expandedIDs(), []);
+  await expandParent.waitFor({ state: "visible" });
+  await grid.evaluate((element) => { element.expandedRows = ["p"]; });
+  await collapseParent.waitFor({ state: "visible" });
+  await grid.evaluate((element) => { element.collapseAll(); });
+  assert.deepEqual(await expandedIDs(), []);
+  await expandParent.waitFor({ state: "visible" });
+  await grid.evaluate((element) => { element.expandedRows = element.expandedRows; });
+  assert.deepEqual(await expandedIDs(), ["p"]);
+  await collapseParent.waitFor({ state: "visible" });
+  await grid.evaluate((element) => { element.expandedRows = []; });
+  await expandParent.waitFor({ state: "visible" });
+
+  assert.deepEqual(await gridSelectedIDs(), ["l"]);
+  await grid.locator('tbody input[type="checkbox"]').first().check();
+  assert.deepEqual(await gridSelectedIDs(), ["p", "l"]);
+  await grid.evaluate((element) => { element.selectedRows = element.selectedRows; });
+  assert.deepEqual(await gridSelectedIDs(), ["l"]);
+  await grid.locator('tbody tr:first-child input[type="checkbox"]:checked').waitFor({ state: "detached" });
+  await grid.evaluate((element) => { element.selectedRows = []; });
+  assert.deepEqual(await gridSelectedIDs(), []);
+  await grid.locator('tbody input[type="checkbox"]:checked').waitFor({ state: "detached" });
+  await grid.locator('tbody input[type="checkbox"]').first().check();
+  assert.deepEqual(await gridSelectedIDs(), ["p"]);
+  assert.deepEqual(await page.evaluate(() => window.__l20GridSelections.at(-1).config), {
+    action: "rowSelect", value: "p", selectedRowKeys: ["p"]
+  });
+  await grid.evaluate((element) => { element.selectedRows = ["l"]; });
+  assert.deepEqual(await gridSelectedIDs(), ["l"]);
+  await grid.locator('tbody tr:first-child input[type="checkbox"]:checked').waitFor({ state: "detached" });
+  // The captured header remains visible; uncaptured bulk selection is removed.
+  const gridSelectionCount = await page.evaluate(() => window.__l20GridSelections.length);
+  await grid.locator('thead input[type="checkbox"]').click();
+  await grid.locator('thead input[type="checkbox"]').click();
+  assert.deepEqual(await gridSelectedIDs(), ["l"]);
+  assert.equal(await page.evaluate(() => window.__l20GridSelections.length), gridSelectionCount);
+
+  const table = page.locator("lightning-datatable");
+  const selectedIDs = () => page.evaluate(() => window.__l20Datatable.getSelectedRows().map((row) => row.id));
+  await table.locator('tbody input[type="checkbox"]').first().check();
+  assert.deepEqual(await selectedIDs(), ["r1", "r2"]);
+  // An assignment wins even when the public array reference is unchanged.
+  await table.evaluate((element) => { element.selectedRows = element.selectedRows; });
+  assert.deepEqual(await selectedIDs(), ["r2"]);
+  await table.evaluate((element) => { element.selectedRows = []; });
+  assert.deepEqual(await selectedIDs(), []);
+  await table.locator('tbody input[type="checkbox"]:checked').first().waitFor({ state: "detached" });
+  await table.evaluate((element) => { element.selectedRows = ["r1"]; });
+  await table.locator('tbody input[type="checkbox"]').nth(1).check();
+  assert.deepEqual(await selectedIDs(), ["r1", "r2"]);
+  await table.evaluate((element) => { element.selectedRows = []; });
+  assert.deepEqual(await selectedIDs(), []);
+
+  await table.getByRole("button", { name: "Edit Name", exact: true }).first().click();
+  await table.locator('input[data-field-name="Name"]').fill("Edited");
+  await table.locator('input[data-field-name="Name"]').press("Enter");
+  const save = table.getByRole("button", { name: "Save", exact: true });
+  await save.click();
+  await save.click();
+  assert.deepEqual(await page.evaluate(() => window.__l20Saves), [
+    [{ id: "r1", Name: "Edited" }], [{ id: "r1", Name: "Edited" }]
+  ]);
+  await table.evaluate((element) => { element.draftValues = [{ id: "r1", Name: "Assigned" }]; });
+  assert.match(await table.locator("tbody tr").first().innerText(), /Assigned/);
+  await table.getByRole("button", { name: "Edit Name", exact: true }).first().click();
+  await table.locator('input[data-field-name="Name"]').fill("Edited Again");
+  await table.locator('input[data-field-name="Name"]').press("Enter");
+  await table.evaluate((element) => { element.draftValues = element.draftValues; });
+  assert.match(await table.locator("tbody tr").first().innerText(), /Assigned/);
+  await table.evaluate((element) => { element.draftValues = []; });
+  await save.waitFor({ state: "detached" });
+  assert.match(await table.locator("tbody tr").first().innerText(), /Alpha/);
+
+  // Clearing during the application save handler also invalidates edits.
+  await table.getByRole("button", { name: "Edit Name", exact: true }).first().click();
+  await table.locator('input[data-field-name="Name"]').fill("App Clears");
+  await table.locator('input[data-field-name="Name"]').press("Enter");
+  await table.evaluate((element) => { element.addEventListener("save", () => { element.draftValues = []; }, { once: true }); });
+  await save.click();
+  await save.waitFor({ state: "detached" });
+  assert.match(await table.locator("tbody tr").first().innerText(), /Alpha/);
   assert.deepEqual(pageErrors, []);
   assert.deepEqual(consoleErrors, []);
 } finally {
   await browser.close();
 }
-`, filepath.Join(repoRoot, "lwcruntime", "package.json"), server.URL+"/gen.html")
+`, playwrightPackage, os.Getenv("GLADE_LWC_BROWSER_EXECUTABLE"), server.URL+"/gen.html")
 	if err := os.WriteFile(filepath.Join(dir, "test.mjs"), []byte(script), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	cmd := exec.Command("node", "test.mjs")
 	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "TMPDIR="+dir, "TMP="+dir, "TEMP="+dir)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("generated base component browser test failed: %v\n%s", err, output)

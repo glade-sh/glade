@@ -1,0 +1,300 @@
+R001	"abc"
+R002	EXC|System.StringException|Minimum abbreviation width is 4
+R003	"Abc"
+R004	" AbC abc\t "
+R005	" abc  "
+R006	" AbC abc\t "
+R007	98
+R008	EXC|System.StringException|Specified index is invalid.
+R009	97
+R010	98
+R011	98
+R012	EXC|System.StringException|Starting position out of bounds: 0
+R013	3
+R014	EXC|System.StringException|Starting position out of bounds: 2
+R015	32
+R016	EXC|System.NullPointerException|Argument cannot be null.
+R017	true
+R018	EXC|System.NullPointerException|Argument cannot be null.
+R019	false
+R020	EXC|System.NullPointerException|Argument cannot be null.
+R021	true
+R022	EXC|System.NullPointerException|Argument cannot be null.
+R023	true
+R024	EXC|System.NullPointerException|Argument cannot be null.
+R025	true
+R026	EXC|System.NullPointerException|Argument cannot be null.
+R027	false
+R028	true
+R029	1
+R030	0
+R031	"abc"
+R032	"AbCabc"
+R033	"x"
+R034	EXC|System.NullPointerException|Argument cannot be null.
+R035	true
+R036	EXC|System.NullPointerException|Argument cannot be null.
+R037	true
+R038	EXC|System.NullPointerException|Argument cannot be null.
+R039	false
+R040	false
+R041	true
+R042	false
+R043	1
+R044	-1
+R045	96354
+R046	119734139
+R047	1
+R048	2
+R049	2
+R050	EXC|System.NullPointerException|Argument cannot be null.
+R051	2
+R052	EXC|System.NullPointerException|Argument cannot be null.
+R053	1
+R054	2
+R055	2
+R056	EXC|System.NullPointerException|Argument cannot be null.
+R057	1
+R058	2
+R059	1
+R060	-1
+R061	1
+R062	-1
+R063	1
+R064	-1
+R065	"ab"
+R066	""
+R067	"   abc"
+R068	" AbC abc\t "
+R069	3
+R070	10
+R071	"bc"
+R072	" A"
+R073	"abc"
+R074	"AbC abc"
+R075	2
+R076	EXC|System.StringException|Code point offset out of bounds: -2
+R077	"ac"
+R078	EXC|System.NullPointerException|Argument cannot be null.
+R079	"ab"
+R080	EXC|System.NullPointerException|Argument cannot be null.
+R081	"ab"
+R082	EXC|System.NullPointerException|Argument cannot be null.
+R083	"bc"
+R084	EXC|System.NullPointerException|Argument cannot be null.
+R085	"bc"
+R086	EXC|System.NullPointerException|Argument cannot be null.
+R087	"abcabc"
+R088	" AbC abc\t - AbC abc\t - AbC abc\t "
+R089	"aXc"
+R090	EXC|System.NullPointerException|Argument cannot be null.
+R091	"XXc"
+R092	" AbbC abbc\t "
+R093	"aXc"
+R094	" AbbC abc\t "
+R095	"cba"
+R096	" \tcba CbA "
+R097	"bc"
+R098	""
+R099	"abc   "
+R100	" AbC abc\t "
+R101	["a","c"]
+R102	[" A","C abc\t "]
+R103	["abc"]
+R104	[" ","A","b","C"," ","abc","\t"," "]
+R105	["abc"]
+R106	[" ","Ab","C"," ","abc","\t"," "]
+R107	true
+R108	EXC|System.NullPointerException|Argument cannot be null.
+R109	true
+R110	EXC|System.NullPointerException|Argument cannot be null.
+R111	"A&"
+R112	"B"
+R113	"bc"
+R114	"A"
+R115	"c"
+R116	EXC|System.NullPointerException|Argument cannot be null.
+R117	"c"
+R118	EXC|System.NullPointerException|Argument cannot be null.
+R119	"a"
+R120	EXC|System.NullPointerException|Argument cannot be null.
+R121	"a"
+R122	EXC|System.NullPointerException|Argument cannot be null.
+R123	"ca"
+R124	"b"
+R125	"ABC"
+R126	" aBc ABC\t "
+R127	"abc"
+R128	" abc abc\t "
+R129	"ABC"
+R130	" ABC ABC\t "
+R131	"abc"
+R132	"AbC abc"
+R133	"abc"
+R134	" AbC abc\t "
+R135	false
+R136	false
+R137	false
+R138	false
+R139	false
+R140	false
+R141	false
+R142	false
+R143	false
+R144	true
+R145	false
+R146	false
+R147	false
+R148	false
+R149	false
+R150	true
+R151	true
+R152	false
+R153	true
+R154	true
+R155	false
+R156	false
+R157	false
+R158	false
+R159	true
+R160	false
+R161	false
+R162	true
+R163	false
+R164	false
+R165	[34,97,44,34,34,98,34,34,10,34]
+R166	[233,338,945,160]
+R167	[97,44,34,98,34,10]
+R168	[38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,35,54,53,59,38,97,112,111,115,59]
+R169	[97,44,92,34,98,92,34,92,110]
+R170	[92,117,48,48,69,57,92,117,48,49,53,50,92,117,48,51,66,49,92,117,48,48,65,48]
+R171	[97,44,34,98,34,10]
+R172	[38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,35,54,53,59,38,97,112,111,115,59]
+R173	[97,44,38,113,117,111,116,59,98,38,113,117,111,116,59,10]
+R174	[38,101,97,99,117,116,101,59,338,945,38,110,98,115,112,59]
+R175	[97,44,34,98,34,10]
+R176	[38,79,69,108,105,103,59,38,97,108,112,104,97,59,65,38,97,112,111,115,59]
+R177	[97,44,38,113,117,111,116,59,98,38,113,117,111,116,59,10]
+R178	[38,101,97,99,117,116,101,59,38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,110,98,115,112,59]
+R179	[97,44,34,98,34,10]
+R180	[338,945,65,38,97,112,111,115,59]
+R181	[97,44,92,34,98,92,34,92,110]
+R182	[92,117,48,48,69,57,92,117,48,49,53,50,92,117,48,51,66,49,92,117,48,48,65,48]
+R183	[97,44,34,98,34,10]
+R184	[38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,35,54,53,59,38,97,112,111,115,59]
+R185	[97,44,92,34,98,92,34,92,110]
+R186	[92,117,48,48,69,57,92,117,48,49,53,50,92,117,48,51,66,49,92,117,48,48,65,48]
+R187	[97,44,34,98,34,10]
+R188	[38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,35,54,53,59,38,97,112,111,115,59]
+R189	[97,44,38,113,117,111,116,59,98,38,113,117,111,116,59,10]
+R190	[233,338,945,160]
+R191	[97,44,34,98,34,10]
+R192	[38,79,69,108,105,103,59,38,97,108,112,104,97,59,65,39]
+R193	true
+R194	true
+R195	true
+R196	false
+R197	false
+R198	false
+R199	false
+R200	true
+R201	true
+R202	true
+R203	false
+R204	false
+R205	false
+R206	false
+R207	true
+R208	true
+R209	"a\\'b\\\\c"
+R210	EXC|System.NullPointerException|Argument cannot be null.
+R211	"Hello world"
+R212	"a{0}b Y"
+R213	[65,233,55349,56586]
+R214	[65535,0]
+R215	"ab"
+R216	""
+R217	"a,,b"
+R218	"a"
+R219	"2024-02-29"
+R220	"2024-02-29 12:30:00"
+R221	"1.20"
+R222	"12"
+R223	"12"
+R224	"true"
+R225	null
+R226	"(1, 2)"
+R227	[97,98,99]
+R228	4
+R229	55349
+R230	120074
+R231	56586
+R232	120074
+R233	3
+R234	3
+R235	1
+R236	3
+R237	3
+R238	[66,55349,56586,65]
+R239	[55349,56586]
+R240	1
+R241	3
+R242	"ab..."
+R243	EXC|System.StringException|Minimum abbreviation width is 4
+R244	" abc  "
+R245	EXC|System.NullPointerException|Argument cannot be null.
+R246	""
+R247	EXC|System.StringException|Starting position out of bounds: -1
+R248	EXC|System.StringException|Ending position out of bounds: 1
+R249	"c"
+R250	EXC|System.StringException|Threshold must not be negative
+R251	["a","b"]
+R252	["a","b",""]
+R253	["a","b"]
+R254	["a,b,"]
+R255	EXC|System.StringException|Invalid regex: Unclosed group near index 1
+R256	"abbc"
+R257	EXC|System.StringException|Index out of Bounds: No group 2
+R258	2
+R259	1
+R260	"a b"
+R261	""
+R262	[120,52,49,118]
+R263	[120,52,49,118]
+R264	[38,79,69,108,105,103,59]
+R265	[55349,56586]
+R266	[169,8364,913,8482]
+R267	[169,38,101,117,114,111,59]
+R268	EXC|System.NullPointerException|Attempt to de-reference a null object
+R269	EXC|System.NullPointerException|Attempt to de-reference a null object
+R270	[10]
+R271	[65]
+R272	[92]
+R273	[120,52,49]
+R274	false
+R275	false
+R276	" a "
+R277	"ıiiı"
+R278	"IİİI"
+R279	"Hello {!who}"
+R280	"x{!missing}"
+R281	EXC|System.NullPointerException|Argument cannot be null.
+R282	EXC|System.StringException|Ending position out of bounds: 99
+R283	EXC|System.StringException|Starting position out of bounds: 3
+R284	EXC|System.StringException|End position out of bounds: 99
+R285	EXC|System.StringException|Starting position out of bounds: 99
+R286	EXC|System.NullPointerException|Argument cannot be null.
+R287	EXC|System.NullPointerException|Argument cannot be null.
+R288	[38,108,116,59,38,97,109,112,59,38,35,51,57,59,38,113,117,111,116,59]
+R289	[38,108,116,59,38,97,109,112,59,38,35,51,57,59,38,113,117,111,116,59]
+R290	"Invalid regex: Unclosed group near index 1\n("
+R291	NATIVE_ERROR|System.UnexpectedException|Salesforce System Error
+R292	"Hello {who}"
+R293	"2024-02-29 12:30:00"
+R294	"STRASSE"
+K01	COMPILE_ERROR	line 6: Method does not exist or incorrect signature: void charAt(String) from the type String
+K02	COMPILE_ERROR	line 6: Method does not exist or incorrect signature: void substring() from the type String
+K03	COMPILE_ERROR	line 6: Method does not exist or incorrect signature: void isBlank(Integer) from the type String
+K04	COMPILE_ERROR	line 6: Method does not exist or incorrect signature: void containsValue(String) from the type String
+K05	COMPILE_ERROR	line 6: Method does not exist or incorrect signature: void fromCharArray(List<String>) from the type String
+K06	COMPILE_ERROR	line 6: Method does not exist or incorrect signature: void getChars(Integer) from the type String

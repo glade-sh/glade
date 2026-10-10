@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"sort"
@@ -114,11 +115,12 @@ func (a *Analyzer) checkMemberTypes(index typesys.Index) []diagnostic.Diagnostic
 					continue
 				}
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
-					Severity: diagnostic.Error,
-					Code:     "GLADESEMA002",
-					Message:  fmt.Sprintf("%s %q references unknown type %q", member.Kind, member.Name, ref),
-					File:     typ.File,
-					Range:    &member.Range,
+					Severity:      diagnostic.Error,
+					Code:          "GLADESEMA002",
+					Message:       fmt.Sprintf("%s %q references unknown type %q", member.Kind, member.Name, ref),
+					NativeMessage: "Invalid type: " + ref,
+					File:          typ.File,
+					Range:         &member.Range,
 				})
 			}
 		}
@@ -202,6 +204,97 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 	return diagnostics
 }
 
+var semaSOQLChildQueryStart = regexp.MustCompile(`(?i)\(\s*SELECT\b`)
+
+func semaSOQLHasNegativeChildLimit(text string) bool {
+	spans := newSemaCodeSpans(text)
+	for _, match := range semaSOQLChildQueryStart.FindAllStringIndex(text, -1) {
+		if !spans.contains(match[0]) {
+			continue
+		}
+		child, _, ok := semaBalancedUntil(text, match[0], '(', ')')
+		if !ok {
+			continue
+		}
+		_, err := soql.Parse(child)
+		var queryErr *soql.QueryError
+		if errors.As(err, &queryErr) && queryErr.Message == "Limit must be a non-negative value" {
+			return true
+		}
+	}
+	return false
+}
+
+// C008/C016: a malformed child query or TYPEOF can prevent the Apex parser
+// from retaining the enclosing class. Refine only generic syntax diagnostics
+// whose source parses successfully after repairing those query bodies.
+func (a *Analyzer) refineRelationshipSOQLParserDiagnostics(index typesys.Index) []diagnostic.Diagnostic {
+	replacements := make(map[string][]diagnostic.Diagnostic)
+	seen := make(map[string]bool)
+	out := make([]diagnostic.Diagnostic, 0, len(index.Diagnostics))
+	for _, item := range index.Diagnostics {
+		if item.Code != "APEXPARSE001" || item.Message != "syntax error" || item.File == "" || item.Severity != diagnostic.Error {
+			out = append(out, item)
+			continue
+		}
+		if !seen[item.File] {
+			seen[item.File] = true
+			replacements[item.File] = a.relationshipSOQLParserDiagnostics(index, item.File)
+			out = append(out, replacements[item.File]...)
+		}
+		if len(replacements[item.File]) == 0 {
+			out = append(out, item)
+		}
+	}
+	return out
+}
+
+func (a *Analyzer) relationshipSOQLParserDiagnostics(index typesys.Index, file string) []diagnostic.Diagnostic {
+	if a.sources == nil {
+		return nil
+	}
+	source, ok := a.sources.normalizedForType(typesys.TypeSymbol{File: file, SourceRoot: index.Project.Root, Namespace: index.Project.Namespace})
+	if !ok {
+		return nil
+	}
+	facts := newSourceFacts(source)
+	repaired := []byte(source)
+	const validQuery = "SELECT Id FROM Account"
+	var diagnostics []diagnostic.Diagnostic
+	for _, literal := range semaSOQLLiterals(source, facts.codeSpans()) {
+		_, err := soql.Parse(literal.text)
+		var queryErr *soql.QueryError
+		if !errors.As(err, &queryErr) {
+			continue
+		}
+		if queryErr.Message != "Missing 'END' at 'FROM'" &&
+			(queryErr.Message != "Limit must be a non-negative value" || !semaSOQLHasNegativeChildLimit(literal.text)) {
+			continue
+		}
+		if len(literal.text) < len(validQuery) {
+			return nil
+		}
+		start, end := literal.queryOffset, literal.queryOffset+len(literal.text)
+		for i := start; i < end; i++ {
+			repaired[i] = ' '
+		}
+		copy(repaired[start:end], validQuery)
+		ctx := queryTextContext{file: file, queryText: literal.text, queryOffset: literal.queryOffset, locator: newSemaSourceLocator(source)}
+		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_PARSE", queryCompileDiagnosticMessage(ctx, err), literal.text, 0))
+	}
+	if len(diagnostics) == 0 {
+		return nil
+	}
+	// An unrelated Apex syntax error must retain the original diagnostics.
+	parsed := apexast.ParseSource(file, string(repaired))
+	for _, item := range parsed.Diagnostics {
+		if item.Severity == diagnostic.Error {
+			return nil
+		}
+	}
+	return diagnostics
+}
+
 type querySemanticsChecker struct {
 	namespace      string
 	apiVersion     int
@@ -256,7 +349,12 @@ func (c querySemanticsChecker) checkFileWithFacts(file string, facts *sourceFact
 		query, err := soql.Parse(literal.text)
 		if err != nil {
 			ctx := queryTextContext{file: file, queryText: literal.text, queryOffset: literal.queryOffset, locator: locator}
-			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_PARSE", fmt.Sprintf("invalid SOQL query: %v", err), literal.text, 0))
+			code := "GLADESEMA_QUERY_PARSE"
+			var contract *soql.ContractError
+			if errors.As(err, &contract) {
+				code = "GLADESEMA_QUERY_CONTRACT"
+			}
+			diagnostics = append(diagnostics, ctx.diagnostic(code, queryCompileDiagnosticMessage(ctx, err), literal.text, 0))
 			continue
 		}
 		ctx := queryTextContext{
@@ -273,19 +371,20 @@ func (c querySemanticsChecker) checkFileWithFacts(file string, facts *sourceFact
 	}
 	for _, literal := range semaSOSLLiterals(source, spans) {
 		query, err := sosl.Parse(literal.text)
+		ctx := queryTextContext{file: file, queryText: literal.text, queryOffset: literal.queryOffset, locator: locator}
+		if item, ok := inlineSOSLNativeDiagnostic(ctx, query, err); ok {
+			diagnostics = append(diagnostics, item)
+			continue
+		}
 		if err != nil {
-			ctx := queryTextContext{file: file, queryText: literal.text, queryOffset: literal.queryOffset, locator: locator}
 			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_SOSL_PARSE", fmt.Sprintf("invalid SOSL query: %v", err), literal.text, 0))
 			continue
 		}
-		ctx := queryTextContext{
-			file:        file,
-			queryText:   literal.text,
-			queryOffset: literal.queryOffset,
-			locator:     locator,
-		}
 		diagnostics = append(diagnostics, c.checkSOSLQuery(query, ctx)...)
 		bindings := bindingResolver.bindingsAt(literal.queryOffset)
+		if bindType := bindings[strings.ToLower(query.SearchBind)]; strings.EqualFold(bindType, "Integer") || strings.EqualFold(bindType, "Boolean") {
+			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", "Specified search expression cannot be converted to string", ":"+query.SearchBind, findQueryIdentifier(ctx.queryText, ":"+query.SearchBind, 0)))
+		}
 		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings, c.knownTypes)...)
 		diagnostics = append(diagnostics, soslAssignmentDiagnostics(source, literal, ctx)...)
 		diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, query.Limit.Bind, "LIMIT")...)
@@ -299,23 +398,57 @@ func (c querySemanticsChecker) checkFileWithFacts(file string, facts *sourceFact
 	return diagnostics
 }
 
+func inlineSOSLNativeDiagnostic(ctx queryTextContext, query sosl.Query, err error) (diagnostic.Diagnostic, bool) {
+	message := sosl.InlineCompileDiagnosticMessage(ctx.queryText, query, err)
+	if message == "" {
+		return diagnostic.Diagnostic{}, false
+	}
+	return ctx.diagnostic("GLADESEMA_SOSL_PARSE", message, ctx.queryText, 0), true
+}
+
 func (c querySemanticsChecker) soslFieldBindDiagnostics(query sosl.Query, ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
-	for _, returning := range query.Returning {
-		if returning.Where == nil || returning.Where.Bind == "" {
-			continue
+	var check func(string, *sosl.Condition)
+	check = func(object string, bind *sosl.Condition) {
+		if bind == nil {
+			return
 		}
-		bind := returning.Where
-		field, ok := c.field(returning.Object, bind.Field)
+		for i := range bind.And {
+			check(object, &bind.And[i])
+		}
+		for i := range bind.Or {
+			check(object, &bind.Or[i])
+		}
+		if bind.Bind == "" {
+			return
+		}
+		field, ok := c.field(object, bind.Field)
 		if !ok {
-			continue
+			return
 		}
 		typeName := bindings[strings.ToLower(bind.Bind)]
+		if bind.Operator == "IN" || bind.Operator == "NOT IN" {
+			if elementType, collection := queryBindCollectionElementType(typeName); collection {
+				typeName = elementType
+			}
+		}
 		if typeName == "" || queryFieldAcceptsBindType(field.Type, typeName) {
-			continue
+			return
+		}
+		columnType := field.Type
+		switch strings.ToLower(field.Type) {
+		case "text", "string", "textarea", "email", "phone", "url", "picklist":
+			columnType = "String"
+		case "number", "currency", "percent", "double", "decimal":
+			columnType = "Decimal"
+		case "checkbox", "boolean":
+			columnType = "Boolean"
 		}
 		offset := findQueryIdentifier(ctx.queryText, ":"+bind.Bind, 0)
-		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("query bind variable %q of type %s is incompatible with field %s", bind.Bind, typeName, field.Name), ":"+bind.Bind, offset))
+		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("Invalid bind expression type of %s for column of type %s", typeName, columnType), ":"+bind.Bind, offset))
+	}
+	for _, returning := range query.Returning {
+		check(returning.Object, returning.Where)
 	}
 	return diagnostics
 }
@@ -335,17 +468,27 @@ func soslAssignmentDiagnostics(source string, literal semaQueryLiteral, ctx quer
 	prefix = strings.TrimSpace(strings.TrimSuffix(prefix, "["))
 	statementStart := strings.LastIndexAny(prefix, ";{}\n") + 1
 	match := semaSOSLAssignmentType.FindStringSubmatch(prefix[statementStart:])
-	if len(match) != 2 || sameSemaSignatureType(match[1], "List<List<SObject>>") {
+	suffix := strings.TrimSpace(source[literal.queryOffset+len(literal.text):])
+	suffix = strings.TrimSpace(strings.TrimPrefix(suffix, "]"))
+	if strings.HasPrefix(suffix, ".") || strings.HasPrefix(suffix, "[") {
+		return nil
+	}
+	if len(match) != 2 || sameSemaSignatureType(match[1], "List<List<SObject>>") || sameSemaSignatureType(match[1], "Object") {
 		return nil
 	}
 	return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA018", fmt.Sprintf("SOSL query result List<List<SObject>> is not assignable to %s", strings.TrimSpace(match[1])), "FIND", findQueryIdentifier(ctx.queryText, "FIND", 0))}
 }
 
 type semaBindingResolver struct {
-	source    string
-	spans     semaCodeSpans
-	locations []semaMethodLocation
-	methods   map[int]semaBindingScope
+	source       string
+	declarations string
+	spans        semaCodeSpans
+	locations    []semaMethodLocation
+	methods      map[int]semaBindingScope
+	// typeFields caches field declarations per enclosing type start. Every
+	// method of a type sees the same field declarations, so scanning the type
+	// body once per type instead of once per method keeps large classes linear.
+	typeFields map[int][]semaScopedBinding
 }
 
 type semaMethodLocation struct {
@@ -371,7 +514,33 @@ type semaScopedBinding struct {
 }
 
 func newSemaBindingResolver(source string, spans semaCodeSpans) *semaBindingResolver {
-	return &semaBindingResolver{source: source, spans: spans, locations: semaMethodLocations(source, spans), methods: make(map[int]semaBindingScope)}
+	// Query fields can look like local declarations, such as a line beginning
+	// SELECT DeveloperName. Mask literal contents for declaration discovery,
+	// retaining offsets and the original source for method/brace resolution.
+	declarations := []byte(source)
+	queries := append(semaSOQLLiterals(source, spans), semaSOSLLiterals(source, spans)...)
+	for _, query := range queries {
+		for i := query.queryOffset; i < query.queryOffset+len(query.text); i++ {
+			if declarations[i] != '\n' && declarations[i] != '\r' {
+				declarations[i] = ' '
+			}
+		}
+	}
+	return &semaBindingResolver{source: source, declarations: string(declarations), spans: spans, locations: semaMethodLocations(source, spans), methods: make(map[int]semaBindingScope), typeFields: make(map[int][]semaScopedBinding)}
+}
+
+// fieldBindings returns the cached field declarations visible from a type
+// start, computing them on first use.
+func (r *semaBindingResolver) fieldBindings(typeStart int) []semaScopedBinding {
+	if typeStart < 0 {
+		return nil
+	}
+	if fields, ok := r.typeFields[typeStart]; ok {
+		return fields
+	}
+	fields := semaTypeFieldBindings(r.declarations, typeStart, r.spans)
+	r.typeFields[typeStart] = fields
+	return fields
 }
 
 // bindingsAt returns source-backed parameter, field, and local declarations
@@ -385,7 +554,7 @@ func (r *semaBindingResolver) bindingsAt(offset int) map[string]string {
 		if typeStart, _ := semaEnclosingTypeRange(r.source, braces, r.spans); typeStart >= 0 {
 			return bindings
 		}
-		for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(r.source, -1) {
+		for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(r.declarations, -1) {
 			if len(match) != 6 || match[0] >= offset || offset > semaEnclosingCodeBraceEnd(r.source, 0, match[0], r.spans) {
 				continue
 			}
@@ -395,7 +564,8 @@ func (r *semaBindingResolver) bindingsAt(offset int) map[string]string {
 	}
 	scope, ok := r.methods[location.methodStart]
 	if !ok {
-		scope = semaBuildBindingScope(r.source, location.methodStart, location.methodEnd, location.headerStart, location.typeStart, location.typeEnd, r.spans)
+		scope = semaMethodBindingScope(r.declarations, location.methodStart, location.methodEnd, location.headerStart, location.typeStart, r.spans)
+		scope.bindings = append(scope.bindings, r.fieldBindings(location.typeStart)...)
 		r.methods[location.methodStart] = scope
 	}
 	for _, field := range scope.bindings {
@@ -465,7 +635,37 @@ func semaEnclosingTypeRange(source string, braces []int, spans semaCodeSpans) (i
 	return -1, -1
 }
 
+// semaEnclosingTypeRanges returns containing type bodies from outermost to
+// innermost. Nested Apex types can read static fields declared by an enclosing
+// type, including from SOQL bind expressions.
+func semaEnclosingTypeRanges(source string, typeStart int, spans semaCodeSpans) [][2]int {
+	if typeStart < 0 {
+		return nil
+	}
+	braces := semaOpenBraces(source, 0, typeStart+1, spans)
+	out := make([][2]int, 0, len(braces))
+	for _, start := range braces {
+		headerStart := semaHeaderStart(source, start, spans)
+		if !semaTypeHeader.MatchString(source[headerStart:start]) {
+			continue
+		}
+		end := semaMatchingCodeBrace(source, start, spans)
+		if end > start {
+			out = append(out, [2]int{start, end})
+		}
+	}
+	return out
+}
+
 func semaBuildBindingScope(source string, methodStart, methodEnd, headerStart, typeStart, typeEnd int, spans semaCodeSpans) semaBindingScope {
+	scope := semaMethodBindingScope(source, methodStart, methodEnd, headerStart, typeStart, spans)
+	scope.bindings = append(scope.bindings, semaTypeFieldBindings(source, typeStart, spans)...)
+	return scope
+}
+
+// semaMethodBindingScope collects the parameter and local declarations of one
+// method body. Its cost is proportional to that method alone.
+func semaMethodBindingScope(source string, methodStart, methodEnd, headerStart, typeStart int, spans semaCodeSpans) semaBindingScope {
 	scope := semaBindingScope{methodStart: methodStart, typeStart: typeStart}
 	for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(source[headerStart:methodStart], -1) {
 		if len(match) != 6 {
@@ -480,15 +680,24 @@ func semaBuildBindingScope(source string, methodStart, methodEnd, headerStart, t
 		start := methodStart + 1 + match[0]
 		scope.bindings = append(scope.bindings, semaScopedBinding{name: source[methodStart+1+match[4] : methodStart+1+match[5]], typeName: strings.TrimSpace(source[methodStart+1+match[2] : methodStart+1+match[3]]), start: start, end: semaEnclosingCodeBraceEnd(source, methodStart+1, start, spans)})
 	}
-	if typeStart >= 0 && typeEnd > typeStart {
-		for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(source[typeStart+1:typeEnd], -1) {
-			if len(match) != 6 || !semaDeclarationAtTypeScope(source, typeStart+1, typeStart+1+match[0], spans) {
+	return scope
+}
+
+// semaTypeFieldBindings collects field declarations from every enclosing type
+// body of typeStart, outermost first. The result depends only on the type, not
+// on the method asking, so callers may cache it per type start.
+func semaTypeFieldBindings(source string, typeStart int, spans semaCodeSpans) []semaScopedBinding {
+	var fields []semaScopedBinding
+	for _, typeRange := range semaEnclosingTypeRanges(source, typeStart, spans) {
+		rangeStart, rangeEnd := typeRange[0], typeRange[1]
+		for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(source[rangeStart+1:rangeEnd], -1) {
+			if len(match) != 6 || !semaDeclarationAtTypeScope(source, rangeStart+1, rangeStart+1+match[0], spans) {
 				continue
 			}
-			scope.bindings = append(scope.bindings, semaScopedBinding{name: source[typeStart+1+match[4] : typeStart+1+match[5]], typeName: strings.TrimSpace(source[typeStart+1+match[2] : typeStart+1+match[3]]), field: true})
+			fields = append(fields, semaScopedBinding{name: source[rangeStart+1+match[4] : rangeStart+1+match[5]], typeName: strings.TrimSpace(source[rangeStart+1+match[2] : rangeStart+1+match[3]]), field: true})
 		}
 	}
-	return scope
+	return fields
 }
 
 func semaMethodHeader(header string) bool {
@@ -527,16 +736,22 @@ func semaIdentifierByte(value byte) bool {
 }
 
 func semaHeaderStart(source string, brace int, spans semaCodeSpans) int {
+	start := 0
 	for i := brace - 1; i >= 0; i-- {
 		if !spans.contains(i) {
 			continue
 		}
-		switch source[i] {
-		case '{', '}', ';':
-			return i + 1
+		if source[i] == '{' || source[i] == '}' || source[i] == ';' {
+			start = i + 1
+			break
 		}
 	}
-	return 0
+	// A leading comment belongs to neither a method signature nor a control
+	// keyword. Keep it from disguising an if/for block as a nested method.
+	for start < brace && (!spans.contains(start) || unicode.IsSpace(rune(source[start]))) {
+		start++
+	}
+	return start
 }
 
 func semaOpenBraces(_ string, start, offset int, spans semaCodeSpans) []int {
@@ -564,7 +779,12 @@ func semaDeclarationAtTypeScope(source string, start, declaration int, spans sem
 
 func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string, knownTypes map[string]bool) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
-	for _, match := range semaInlineBindPattern.FindAllStringSubmatchIndex(ctx.queryText, -1) {
+	// Comments are valid inside an inline SOQL/SOSL literal. Scan a
+	// comment-masked copy so documentation such as "// :example" is not
+	// mistaken for an executable bind while retaining the original offsets for
+	// diagnostics.
+	scanText := maskInlineQueryComments(ctx.queryText)
+	for _, match := range semaInlineBindPattern.FindAllStringSubmatchIndex(scanText, -1) {
 		if len(match) != 4 {
 			continue
 		}
@@ -591,9 +811,74 @@ func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string
 			}
 		}
 		offset := match[0]
-		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("query bind variable %q is not declared", name), ctx.queryText[match[0]:match[1]], offset))
+		message := fmt.Sprintf("query bind variable %q is not declared", name)
+		if startsWithQueryKeyword(ctx.queryText, "SELECT") || startsWithQueryKeyword(ctx.queryText, "FIND") {
+			message = "Variable does not exist: " + name
+		}
+		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", message, ctx.queryText[match[0]:match[1]], offset))
 	}
 	return diagnostics
+}
+
+func maskInlineQueryComments(source string) string {
+	if source == "" {
+		return source
+	}
+	out := []byte(source)
+	const (
+		normal = iota
+		lineComment
+		blockComment
+		singleQuote
+		doubleQuote
+	)
+	mode := normal
+	escaped := false
+	for i := 0; i < len(source); i++ {
+		value := source[i]
+		switch mode {
+		case normal:
+			switch {
+			case value == '/' && i+1 < len(source) && source[i+1] == '/':
+				out[i], out[i+1] = ' ', ' '
+				mode = lineComment
+				i++
+			case value == '/' && i+1 < len(source) && source[i+1] == '*':
+				out[i], out[i+1] = ' ', ' '
+				mode = blockComment
+				i++
+			case value == '\'':
+				mode = singleQuote
+				escaped = false
+			case value == '"':
+				mode = doubleQuote
+				escaped = false
+			}
+		case lineComment:
+			if value == '\n' || value == '\r' {
+				mode = normal
+			} else {
+				out[i] = ' '
+			}
+		case blockComment:
+			if value == '*' && i+1 < len(source) && source[i+1] == '/' {
+				out[i], out[i+1] = ' ', ' '
+				mode = normal
+				i++
+			} else if value != '\n' && value != '\r' {
+				out[i] = ' '
+			}
+		case singleQuote, doubleQuote:
+			if escaped {
+				escaped = false
+			} else if value == '\\' {
+				escaped = true
+			} else if mode == singleQuote && value == '\'' || mode == doubleQuote && value == '"' {
+				mode = normal
+			}
+		}
+	}
+	return string(out)
 }
 
 func queryWindowBindDiagnostics(query soql.Query, ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {
@@ -665,7 +950,17 @@ func (c querySemanticsChecker) queryFieldBindDiagnostics(query soql.Query, ctx q
 				continue
 			}
 			offset := findQueryIdentifier(ctx.queryText, ":"+name, 0)
-			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("query bind variable %q of type %s is incompatible with field %s", name, typeName, field.Name), ":"+name, offset))
+			columnType := field.Type
+			switch strings.ToLower(strings.TrimSpace(field.Type)) {
+			case "number", "currency", "percent", "double", "decimal":
+				columnType = "Decimal"
+			case "text", "string", "textarea", "longtextarea", "richtextarea", "email", "phone", "url", "picklist", "multipicklist", "encryptedtext":
+				columnType = "String"
+			case "checkbox", "boolean":
+				columnType = "Boolean"
+			}
+			message := fmt.Sprintf("Invalid bind expression type of %s for column of type %s", typeName, columnType)
+			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", message, ":"+name, offset))
 		}
 	}
 	check(*query.Where)
@@ -722,7 +1017,7 @@ func queryFieldAcceptsBindType(fieldType, bindType string) bool {
 	switch fieldType {
 	case "text", "string", "textarea", "longtextarea", "richtextarea", "email", "phone", "url", "picklist", "multipicklist", "encryptedtext":
 		return bindType == "string" || bindType == "id"
-	case "number", "currency", "percent", "double", "integer", "long":
+	case "number", "currency", "percent", "double", "decimal", "integer", "long":
 		return bindType == "integer" || bindType == "int" || bindType == "long" || bindType == "decimal" || bindType == "double"
 	case "checkbox", "boolean":
 		return bindType == "boolean"
@@ -735,6 +1030,34 @@ type queryTextContext struct {
 	queryText   string
 	queryOffset int
 	locator     semaSourceLocator
+}
+
+func queryCompileDiagnosticMessage(ctx queryTextContext, err error) string {
+	var queryErr *soql.QueryError
+	if errors.As(err, &queryErr) {
+		if queryErr.Uncatchable {
+			return queryErr.Message
+		}
+		if queryErr.CompileSyntax {
+			// Native grammar recovery points at the local assignment target.
+			// Keep this source context separate from dynamic QueryExceptions.
+			prefix := strings.TrimSpace(ctx.locator.source[:ctx.queryOffset])
+			if bracket := strings.LastIndex(prefix, "["); bracket >= 0 {
+				prefix = strings.TrimSpace(prefix[:bracket])
+				statement := prefix[strings.LastIndexAny(prefix, ";{}\n")+1:]
+				if equal := strings.LastIndex(statement, "="); equal >= 0 && strings.TrimSpace(statement[equal+1:]) == "" {
+					words := strings.Fields(statement[:equal])
+					if len(words) >= 2 && semaBindName(words[len(words)-1]) {
+						return "Unexpected token '" + words[len(words)-1] + "'."
+					}
+				}
+			}
+		}
+		if queryErr.Message == "Limit must be a non-negative value" || strings.HasPrefix(queryErr.Message, "WHEN clause operand [") || queryErr.Message == "Missing 'END' at 'FROM'" {
+			return queryErr.Message
+		}
+	}
+	return fmt.Sprintf("invalid SOQL query: %v", err)
 }
 
 func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName string, ctx queryTextContext, cursor int, aggregateAliases map[string]bool) []diagnostic.Diagnostic {
@@ -768,7 +1091,7 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 		diagnostics = append(diagnostics, c.checkSOQLFieldCapability(object.Name, field, "groupable", ctx, cursor)...)
 	}
 	for _, order := range query.Order {
-		if aggregateAliases[strings.ToLower(order.Field)] {
+		if aggregateAliases[strings.ToLower(order.Field)] || order.RewrittenAggregate {
 			continue
 		}
 		diagnostics = append(diagnostics, c.checkSOQLField(object.Name, order.Field, ctx, cursor)...)
@@ -777,33 +1100,64 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 	if query.Where != nil {
 		diagnostics = append(diagnostics, c.checkSOQLCondition(object.Name, *query.Where, ctx, cursor, aggregateAliases)...)
 	}
+	if query.Having != nil {
+		// A select alias is not a column in HAVING.
+		havingCursor := findQueryIdentifier(ctx.queryText, "HAVING", cursor) + len("HAVING")
+		diagnostics = append(diagnostics, c.checkSOQLHavingCondition(object.Name, *query.Having, ctx, havingCursor, aggregateAliases)...)
+	}
+	seenChildren := map[string]bool{}
+	childSearch := cursor
 	for _, child := range query.ChildQueries {
-		childCursor := findChildQueryCursor(ctx.queryText, child.Query.Object, cursor)
+		childCursor := findChildQueryCursor(ctx.queryText, child.Query.Object, childSearch)
+		childOffset := findQueryIdentifier(ctx.queryText, child.Relationship, childCursor)
+		childSearch = childOffset + len(child.Relationship)
+		if seenChildren[strings.ToLower(child.Relationship)] {
+			message := "Cannot follow the same aggregate relationship twice: " + child.Relationship
+			diagnostics = append(diagnostics, ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_RELATIONSHIP", message, child.Relationship, childOffset+1, true))
+			continue
+		}
+		seenChildren[strings.ToLower(child.Relationship)] = true
+		if child.Query.HasOffset && (!query.HasLimit || query.Limit != 1 || query.LimitBind != "") {
+			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", "SOQL OFFSET clause may not appear in a sub-query where the parent query retrieves more than one record", child.Relationship, childOffset))
+		}
 		childObject, ok := c.childObjectForRelationship(object.Name, child.Relationship)
 		if !ok {
-			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_RELATIONSHIP", fmt.Sprintf("SOQL query references unknown child relationship %q on %s", child.Relationship, object.Name), child.Relationship, findQueryIdentifier(ctx.queryText, child.Relationship, childCursor)))
+			message := soql.MissingRelationshipMessage(child.Relationship, "FROM part of query call")
+			diagnostics = append(diagnostics, ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_RELATIONSHIP", message, child.Relationship, childOffset, true))
 			continue
 		}
 		diagnostics = append(diagnostics, c.checkSOQLQuery(child.Query, childObject.Name, ctx, childCursor, nil)...)
 	}
 	for _, spec := range query.Typeofs {
-		if _, _, ok := c.relationshipField(object.Name, spec.Relationship); !ok {
+		field, _, known := c.relationshipField(object.Name, spec.Relationship)
+		if !known {
 			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_RELATIONSHIP", fmt.Sprintf("SOQL query references unknown relationship %q on %s", spec.Relationship, object.Name), spec.Relationship, findQueryIdentifier(ctx.queryText, spec.Relationship, cursor)))
+			continue
+		}
+		if len(field.ReferenceTo) == 1 && !strings.EqualFold(field.ReferenceTo[0], "Name") {
+			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_RELATIONSHIP", "TYPEOF operand '"+spec.Relationship+"' is not a polymorphic relationship field", spec.Relationship, findQueryIdentifier(ctx.queryText, spec.Relationship, cursor)))
 			continue
 		}
 		for whenObject, fields := range spec.When {
 			branch, ok := c.object(whenObject)
 			whenCursor := findTypeofWhenObject(ctx.queryText, whenObject, cursor)
 			if !ok {
-				diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_OBJECT", fmt.Sprintf("TYPEOF branch references unknown SObject %q", whenObject), whenObject, whenCursor))
+				message := "sObject type '" + whenObject + "' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names."
+				diagnostics = append(diagnostics, ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_OBJECT", message, whenObject, whenCursor, true))
 				continue
 			}
 			for _, field := range fields {
-				diagnostics = append(diagnostics, c.checkSOQLField(branch.Name, field, ctx, whenCursor)...)
+				if _, known := c.field(branch.Name, field); !known && !strings.Contains(field, ".") {
+					diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_FIELD", soql.MissingColumnMessage(field, branch.Name), field, findQueryIdentifier(ctx.queryText, field, whenCursor)))
+				} else {
+					diagnostics = append(diagnostics, c.checkSOQLField(branch.Name, field, ctx, whenCursor)...)
+				}
 			}
 		}
 		for _, field := range spec.Else {
-			diagnostics = append(diagnostics, c.checkSOQLField(object.Name, spec.Relationship+"."+field, ctx, cursor)...)
+			if _, known := c.field("Name", field); !known {
+				diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_FIELD", soql.MissingColumnMessage(field, "Name"), field, findQueryIdentifier(ctx.queryText, field, cursor)))
+			}
 		}
 	}
 	return diagnostics
@@ -818,7 +1172,38 @@ func (c querySemanticsChecker) checkSOQLAggregateFieldType(objectName string, ag
 	if !ok || semaSOQLNumericAggregateFieldType(field.Type) {
 		return nil
 	}
-	return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", fmt.Sprintf("SOQL %s requires a numeric field; %s.%s is %s", function, objectName, aggregate.Field, field.Type), aggregate.Field, findQueryIdentifier(ctx.queryText, aggregate.Field, cursor))}
+	message := fmt.Sprintf("field %s does not support aggregate operator %s", aggregate.Field, function)
+	return []diagnostic.Diagnostic{ctx.nativeAggregateDiagnostic("GLADESEMA_QUERY_CONTRACT", message, aggregate.Field, findQueryIdentifier(ctx.queryText, aggregate.Field, cursor)-1)}
+}
+
+func (c querySemanticsChecker) checkSOQLHavingCondition(objectName string, condition soql.Condition, ctx queryTextContext, cursor int, aggregateAliases map[string]bool) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	if condition.Field != "" && !condition.RewrittenAggregate {
+		_, known := c.field(objectName, condition.Field)
+		if !known && aggregateAliases[strings.ToLower(condition.Field)] {
+			// C013: the native alias diagnostic points at the predicate operand.
+			offset := findQueryIdentifier(ctx.queryText, condition.Field, cursor) + len(condition.Field)
+			for offset < len(ctx.queryText) && isWhitespace(ctx.queryText[offset]) {
+				offset++
+			}
+			if strings.HasPrefix(ctx.queryText[offset:], condition.Op) {
+				offset += len(condition.Op)
+			}
+			for offset < len(ctx.queryText) && isWhitespace(ctx.queryText[offset]) {
+				offset++
+			}
+			diagnostics = append(diagnostics, ctx.nativeAggregateDiagnostic("GLADESEMA_QUERY_FIELD", soql.AggregateHavingColumnMessage(condition.Field, objectName), condition.Field, offset))
+		} else {
+			diagnostics = append(diagnostics, c.checkSOQLField(objectName, condition.Field, ctx, cursor)...)
+		}
+	}
+	for _, nested := range condition.And {
+		diagnostics = append(diagnostics, c.checkSOQLHavingCondition(objectName, nested, ctx, cursor, aggregateAliases)...)
+	}
+	for _, nested := range condition.Or {
+		diagnostics = append(diagnostics, c.checkSOQLHavingCondition(objectName, nested, ctx, cursor, aggregateAliases)...)
+	}
+	return diagnostics
 }
 
 func semaSOQLNumericAggregateFieldType(fieldType string) bool {
@@ -832,7 +1217,7 @@ func semaSOQLNumericAggregateFieldType(fieldType string) bool {
 
 func queryVersionDiagnostics(query soql.Query, ctx queryTextContext, apiVersion int) []diagnostic.Diagnostic {
 	if apiVersion >= 67 && strings.EqualFold(query.SecurityMode, "SECURITY_ENFORCED") {
-		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", "WITH SECURITY_ENFORCED is no longer supported at API 67.0; use WITH USER_MODE", "SECURITY_ENFORCED", findQueryIdentifier(ctx.queryText, "SECURITY_ENFORCED", 0))}
+		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.", "SECURITY_ENFORCED", findQueryIdentifier(ctx.queryText, "SECURITY_ENFORCED", 0))}
 	}
 	return nil
 }
@@ -855,11 +1240,11 @@ func queryShapeDiagnostics(query soql.Query, ctx queryTextContext) []diagnostic.
 		diagnosticFor("SOQL semi-join subqueries cannot reference the same SObject as the outer query", "SELECT")
 	}
 	if query.ForUpdate && len(query.Order) > 0 {
-		diagnosticFor("FOR UPDATE cannot be combined with ORDER BY", "FOR UPDATE")
+		diagnosticFor("Explicit ORDER BY not allowed when locking rows (Id order is implied)", "FOR UPDATE")
 	}
 	for _, field := range query.Fields {
-		if strings.EqualFold(strings.TrimSpace(field), "FIELDS(ALL)") {
-			diagnosticFor("FIELDS(ALL) is not supported in Apex", "FIELDS(ALL)")
+		if strings.EqualFold(strings.TrimSpace(field), "FIELDS(ALL)") || strings.EqualFold(strings.TrimSpace(field), "FIELDS(CUSTOM)") {
+			diagnosticFor("The SOQL FIELDS function is not supported with an unbounded set of fields in this API.", field)
 		}
 	}
 	return diagnostics
@@ -946,6 +1331,9 @@ func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx 
 		if c.allowsIncompleteExternalManagedPackageObject(objectName) {
 			return nil
 		}
+		if cursor > 0 {
+			return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_FIELD", soql.MissingColumnMessage(fieldPath, objectName), fieldPath, offset, true)}
+		}
 		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_FIELD", fmt.Sprintf("SOQL query references unknown field %s.%s", objectName, fieldPath), fieldPath, offset)}
 	}
 	parts := strings.Split(fieldPath, ".")
@@ -965,16 +1353,23 @@ func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx 
 			return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_FIELD", fmt.Sprintf("SOQL query references unknown field %s.%s via %q", current, parts[0], fieldPath), fieldPath, offset)}
 		}
 	}
-	for _, relationship := range parts[:len(parts)-1] {
+	if len(parts)-1 > 5 {
+		message := "cannot query foreign key relationships more than 5 levels away from the root SObject"
+		return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_RELATIONSHIP", message, fieldPath, offset, true)}
+	}
+	for i, relationship := range parts[:len(parts)-1] {
 		if !c.hasFieldMetadata(current) {
 			return nil
 		}
-		_, target, ok := c.relationshipField(current, relationship)
+		field, target, ok := c.relationshipField(current, relationship)
 		if !ok {
 			if c.allowsIncompleteExternalManagedPackageObject(current) {
 				return nil
 			}
-			return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_RELATIONSHIP", fmt.Sprintf("SOQL query references unknown relationship path %q on %s", fieldPath, current), fieldPath, offset)}
+			return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_RELATIONSHIP", soql.MissingRelationshipMessage(relationship, "field path"), fieldPath, offset, true)}
+		}
+		if i == len(parts)-2 && strings.EqualFold(parts[len(parts)-1], "Type") && (len(field.ReferenceTo) > 1 || len(field.ReferenceTo) == 1 && strings.EqualFold(field.ReferenceTo[0], "Name")) {
+			return nil
 		}
 		current = target
 	}
@@ -985,7 +1380,7 @@ func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx 
 		if c.allowsIncompleteExternalManagedPackageObject(current) {
 			return nil
 		}
-		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_FIELD", fmt.Sprintf("SOQL query references unknown field %s.%s via %q", current, parts[len(parts)-1], fieldPath), fieldPath, offset)}
+		return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_FIELD", soql.MissingColumnMessage(parts[len(parts)-1], current), fieldPath, offset, true)}
 	}
 	return nil
 }
@@ -1025,7 +1420,9 @@ func (c querySemanticsChecker) checkSOSLQuery(query sosl.Query, ctx queryTextCon
 		cursor = maxInt(objectCursor+len(returning.Object), cursor)
 		for _, field := range returning.Fields {
 			fieldCursor := findQueryIdentifier(ctx.queryText, field.Field, cursor)
-			if !c.hasFieldMetadata(object.Name) {
+			// C012: named-source inference can mark Account partial even though
+			// its standard field provider remains authoritative for SOSL.
+			if !c.hasFieldMetadata(object.Name) && !storage.IsKnownStandardObject(object.Name) {
 				cursor = maxInt(fieldCursor+len(field.Field), cursor)
 				continue
 			}
@@ -1034,7 +1431,7 @@ func (c querySemanticsChecker) checkSOSLQuery(query sosl.Query, ctx queryTextCon
 				continue
 			}
 			if _, ok := c.field(object.Name, field.Field); !ok {
-				diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_SOSL_FIELD", fmt.Sprintf("SOSL RETURNING references unknown field %s.%s", object.Name, field.Field), field.Field, fieldCursor))
+				diagnostics = append(diagnostics, ctx.nativeSOQLDiagnostic("GLADESEMA_SOSL_FIELD", soql.MissingColumnMessage(field.Field, object.Name), field.Field, fieldCursor, true))
 			}
 			cursor = maxInt(fieldCursor+len(field.Field), cursor)
 		}
@@ -1442,6 +1839,9 @@ func mergeQueryNameField(existing, incoming schema.NameField) schema.NameField {
 	if existing.DisplayFormat == "" {
 		existing.DisplayFormat = incoming.DisplayFormat
 	}
+	if existing.Length == 0 {
+		existing.Length = incoming.Length
+	}
 	return existing
 }
 
@@ -1661,6 +2061,7 @@ func schemaObjectFromStorageDefinition(definition storage.ObjectDefinition) sche
 			Length:                field.Length,
 			Precision:             field.Precision,
 			Scale:                 field.Scale,
+			ScaleSpecified:        field.ScaleSpecified,
 			ReferenceTo:           referenceTo,
 			RelationshipName:      relationshipName,
 			ChildRelationshipName: childRelationshipName,
@@ -1675,6 +2076,7 @@ func schemaObjectFromStorageDefinition(definition storage.ObjectDefinition) sche
 			Unique:                field.Unique,
 			Encrypted:             field.Encrypted,
 			Formula:               field.Formula,
+			FormulaTreatBlanksAs:  field.FormulaTreatBlanksAs,
 		})
 	}
 	fieldNames := make(map[string]bool, len(object.Fields)+len(definition.Relations))
@@ -1722,6 +2124,46 @@ func (ctx queryTextContext) diagnostic(code, message, token string, queryOffset 
 		File:     ctx.file,
 		Range:    &rng,
 	}
+}
+
+// C006/C007/C013: aggregate compile rejections include the native,
+// word-aligned query excerpt. Other query diagnostics keep their base format.
+func (ctx queryTextContext) nativeAggregateDiagnostic(code, message, token string, offset int) diagnostic.Diagnostic {
+	if offset >= 0 {
+		column := offset + 2
+		start := min(len(ctx.queryText), max(0, column-30))
+		for start > 0 && !isWhitespace(ctx.queryText[start-1]) {
+			start--
+		}
+		end := min(len(ctx.queryText), column+30)
+		for end < len(ctx.queryText) && !isWhitespace(ctx.queryText[end]) {
+			end++
+		}
+		message = " " + ctx.queryText[start:end] + strings.Repeat(" ", column-start) + "^ ERROR at Row:1:Column:" + fmt.Sprint(column) + " " + message
+	}
+	return ctx.diagnostic(code, message, token, offset)
+}
+
+// Native SOQL compile diagnostics show a word-aligned window around the
+// failing query column. Capture truncation belongs to the conformance harness.
+func (ctx queryTextContext) nativeSOQLDiagnostic(code, message, token string, offset int, excerpt bool) diagnostic.Diagnostic {
+	if excerpt && offset >= 0 {
+		column := offset + 2
+		// Inline SOSL's native column excludes SELECT's leading bracket.
+		if startsWithQueryKeyword(ctx.queryText, "FIND") {
+			column = offset + 1
+		}
+		start := max(0, column-30)
+		for start > 0 && !isWhitespace(ctx.queryText[start-1]) {
+			start--
+		}
+		end := min(len(ctx.queryText), column+30)
+		for end < len(ctx.queryText) && !isWhitespace(ctx.queryText[end]) {
+			end++
+		}
+		message = " " + ctx.queryText[start:end] + strings.Repeat(" ", column-start) + "^ ERROR at Row:1:Column:" + fmt.Sprint(column) + " " + message
+	}
+	return ctx.diagnostic(code, message, token, offset)
 }
 
 type semaQueryLiteral struct {
@@ -1808,6 +2250,10 @@ func semaMatchingBracket(source string, start int) int {
 			if source[i] == quote {
 				quote = 0
 			}
+			continue
+		}
+		if end, ok := skipSemaComment(source, i); ok {
+			i = end
 			continue
 		}
 		switch source[i] {
@@ -1973,6 +2419,14 @@ func (a *Analyzer) checkAnnotations(index typesys.Index) []diagnostic.Diagnostic
 	return diagnostics
 }
 func checkMemberAnnotations(typ typesys.TypeSymbol, member typesys.MemberSymbol) []diagnostic.Diagnostic {
+	// Preserve the legacy diagnostic code while using the measured declaration
+	// text for the same invalid annotation usages.
+	if hasAnyAnnotation(member.Modifiers, "TestSetup", "future", "HttpDelete", "HttpGet", "HttpPatch", "HttpPost", "HttpPut", "InvocableMethod", "InvocableVariable") {
+		if placement := annotationPlacementDiagnostics(typ, annotationTarget(member.Kind), member.Name, member.Type, member.Modifiers, member.Annotations); len(placement) > 0 {
+			placement[0].Code = "GLADESEMA026"
+			return placement[:1]
+		}
+	}
 	var diagnostics []diagnostic.Diagnostic
 	if hasModifier(member.Modifiers, "TestSetup") {
 		if member.Kind != apexast.DeclarationMethod || !hasModifier(typ.Modifiers, "IsTest") || !hasModifier(member.Modifiers, "static") || !strings.EqualFold(member.Type, "void") || len(member.Parameters) != 0 {
@@ -1980,7 +2434,9 @@ func checkMemberAnnotations(typ typesys.TypeSymbol, member typesys.MemberSymbol)
 		}
 	}
 	if hasModifier(member.Modifiers, "future") {
-		if member.Kind != apexast.DeclarationMethod || !hasModifier(member.Modifiers, "static") || !strings.EqualFold(member.Type, "void") {
+		if member.Kind == apexast.DeclarationMethod && !hasModifier(member.Modifiers, "static") {
+			diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, member.Range, "Future methods must be declared as static"))
+		} else if member.Kind != apexast.DeclarationMethod || !strings.EqualFold(member.Type, "void") {
 			diagnostics = append(diagnostics, annotationDiagnostic(typ.File, member.Range, "future methods must be static void methods"))
 		}
 	}
@@ -2148,18 +2604,24 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 		}
 		abstractClass := hasModifier(typ.Modifiers, "abstract")
 		missingSuperclass := semaTypeMissingSuperclass(model, typ)
+		var invalidOverrides map[string]int
 		for _, member := range typ.Members {
 			if member.Kind != apexast.DeclarationMethod {
 				continue
 			}
 			overridden, hasOverridden, objectFallback := overridableInheritedMethod(model, typ, member)
 			if hasModifier(member.Modifiers, "override") && !missingSuperclass && !hasOverridden && !hasPlatformInheritedMethodSignature(typ, member) {
+				if invalidOverrides == nil {
+					invalidOverrides = make(map[string]int)
+				}
+				invalidOverrides[normalizeName(member.Name)]++
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
-					Severity: diagnostic.Error,
-					Code:     "GLADESEMA016",
-					Message:  fmt.Sprintf("method %q is marked override but no inherited method has the same signature", member.Name),
-					File:     typ.File,
-					Range:    &member.Range,
+					Severity:      diagnostic.Error,
+					Code:          "GLADESEMA016",
+					Message:       fmt.Sprintf("method %q is marked override but no inherited method has the same signature", member.Name),
+					NativeMessage: nativeLifecycleOverrideMessage(model, typ, member),
+					File:          typ.File,
+					Range:         &member.Range,
 				})
 			}
 			abstractOverrideNotRequired := hasModifier(overridden.Modifiers, "abstract") && !typeUsesAPIVersionAtLeast(typ, 66)
@@ -2195,17 +2657,55 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 			continue
 		}
 		required := requiredMethodSignatures(model, typ)
+		var abstractRequirements map[string]int
+		if len(invalidOverrides) != 0 {
+			abstractRequirements = make(map[string]int)
+			for _, requirement := range required {
+				if requirement.sourceKind == "abstract" {
+					abstractRequirements[normalizeName(requirement.member.Name)]++
+				}
+			}
+		}
 		for _, requirement := range required {
+			// A rejected override already diagnoses this abstract method. Native
+			// compilation reports the signature error without a missing-method
+			// cascade (public-override C001 at API 62 and 67). Preserve missing
+			// requirements when overloads make the intended override ambiguous.
+			name := normalizeName(requirement.member.Name)
+			if requirement.sourceKind == "abstract" && invalidOverrides[name] == 1 && abstractRequirements[name] == 1 {
+				continue
+			}
 			requirePublic := requirement.sourceKind == "interface" && typ.Range.End.Offset > typ.Range.Start.Offset
 			if hasConcreteMethodSignature(model, typ.Name, requirement.member, requirePublic) {
 				continue
 			}
+			message, nativeHTTP := semaHTTPRequiredMethodMessage(typ.Name, requirement, model)
+			if !nativeHTTP {
+				message = fmt.Sprintf("concrete class %q must implement %s method %q from %q", typ.Name, requirement.sourceKind, requirement.member.Name, requirement.owner)
+			}
+			nativeMessage := nativeLifecycleMissingMethodMessage(model, typ, requirement)
+			if nativeHTTP && strings.HasPrefix(nativeMessage, "Class "+typ.Name+" must implement the method: ") {
+				nativeMessage = message // C029/C030/C032; retain distinct lifecycle visibility errors.
+			}
+			// An existing private callback needs the lifecycle
+			// visibility diagnostic, not the async missing-method text.
+			if !hasConcreteMethodSignature(model, typ.Name, requirement.member, false) {
+				if native := semaAsyncRequirementMessage(typ, requirement); native != "" && !semaProjectTypeShadowsPlatform(model, requirement.owner) {
+					message = native
+					nativeMessage = native
+				}
+				if native := semaTestRequiredMethodMessage(typ, requirement, model); native != "" {
+					message = native
+					nativeMessage = native
+				}
+			}
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
-				Severity: diagnostic.Error,
-				Code:     "GLADESEMA017",
-				Message:  fmt.Sprintf("concrete class %q must implement %s method %q from %q", typ.Name, requirement.sourceKind, requirement.member.Name, requirement.owner),
-				File:     typ.File,
-				Range:    &typ.Range,
+				Severity:      diagnostic.Error,
+				Code:          "GLADESEMA017",
+				Message:       message,
+				NativeMessage: nativeMessage,
+				File:          typ.File,
+				Range:         &typ.Range,
 			})
 		}
 		diagnostics = append(diagnostics, checkDatabaseBatchableGenericContract(model, typ)...)
@@ -2270,15 +2770,23 @@ func inheritanceTargetDiagnostics(model *semaTypeMemberView, typ typesys.TypeSym
 			if resolved == "" {
 				resolved = superClass
 			}
-			if members, ok := inheritanceTargetMembers(model, resolved); ok && !members.dependency && members.kind == apexast.DeclarationClass &&
+			members, ok := inheritanceTargetMembers(model, resolved)
+			// Platform dependencies normally bypass this check, but
+			// the captured LimitException superclass is explicitly non-virtual.
+			platformLimitException := members.platform && strings.EqualFold(semaCanonicalPlatformAlias(members.name), "LimitException")
+			if ok && (!members.dependency || platformLimitException) && members.kind == apexast.DeclarationClass &&
 				!hasModifier(members.modifiers, "virtual") && !hasModifier(members.modifiers, "abstract") {
-				diagnostics = append(diagnostics, diagnostic.Diagnostic{
+				d := diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
 					Code:     "GLADESEMA017",
 					Message:  fmt.Sprintf("class %q cannot extend non-virtual, non-abstract class %q", typ.Name, superClass),
 					File:     typ.File,
 					Range:    &typ.Range,
-				})
+				}
+				if platformLimitException {
+					d.NativeMessage = "Non-virtual and non-abstract type cannot be extended: System.LimitException"
+				}
+				diagnostics = append(diagnostics, d)
 			}
 		}
 		for _, iface := range typ.Interfaces {
@@ -2310,13 +2818,14 @@ func overridableInheritedMethod(model *semaTypeMemberView, typ typesys.TypeSymbo
 	if hasModifier(member.Modifiers, "static") {
 		return typesys.MemberSymbol{}, false, false
 	}
-	for current := typ.SuperClass; current != ""; {
+	owner := semaTypeMembersName(typ)
+	for current := resolveNestedTypeName(model, owner, typ.SuperClass); current != ""; {
 		members, ok := model.lookup(normalizeName(current))
 		if !ok {
 			break
 		}
 		for _, candidate := range members.methods[normalizeName(member.Name)] {
-			if sameSemaSignature(candidate, member) &&
+			if sameInheritedSemaSignature(model, members.name, candidate, owner, member) &&
 				(hasModifier(candidate.Modifiers, "virtual") || hasModifier(candidate.Modifiers, "abstract")) &&
 				semaInheritedMethodVisible(typ, members, candidate) {
 				return candidate, true, false
@@ -2359,6 +2868,39 @@ func semaOverriddenMethodFromDependency(model *semaTypeMemberView, typ typesys.T
 		current = members.superClass
 	}
 	return false
+}
+
+// Overrides require parameter identity, rather than the short-name or subtype
+// compatibility used elsewhere. Resolve each declaration in its own scope;
+// collection arguments retain their full identities after normalization.
+func sameInheritedSemaSignature(model *semaTypeMemberView, inheritedOwner string, inherited typesys.MemberSymbol, owner string, member typesys.MemberSymbol) bool {
+	if !strings.EqualFold(inherited.Name, member.Name) || len(inherited.Parameters) != len(member.Parameters) {
+		return false
+	}
+	inherited = semaNormalizeMemberTypes(model, inheritedOwner, semaCloneMemberSymbol(inherited))
+	member = semaNormalizeMemberTypes(model, owner, semaCloneMemberSymbol(member))
+	for i, param := range inherited.Parameters {
+		if !sameInheritedSemaParameterType(param.Type, member.Parameters[i].Type) {
+			return false
+		}
+	}
+	return true
+}
+
+func sameInheritedSemaParameterType(left, right string) bool {
+	leftBase, leftArgs := semaGenericBaseAndArgs(left)
+	rightBase, rightArgs := semaGenericBaseAndArgs(right)
+	// Preserve existing platform alias equivalence, without discarding the
+	// declaring outer scope of user types as short-name comparison would.
+	if len(leftArgs) != len(rightArgs) || !strings.EqualFold(semaCanonicalPlatformAlias(leftBase), semaCanonicalPlatformAlias(rightBase)) {
+		return false
+	}
+	for i := range leftArgs {
+		if !sameInheritedSemaParameterType(leftArgs[i], rightArgs[i]) {
+			return false
+		}
+	}
+	return true
 }
 
 func checkDatabaseBatchableGenericContract(model *semaTypeMemberView, typ typesys.TypeSymbol) []diagnostic.Diagnostic {
@@ -2495,12 +3037,41 @@ func databaseBatchableStartReturnCompatible(itemType, returnType string, model *
 		semaAssignableToType(elementType, itemType, model)
 }
 
+// A final property with a setter can initialize its backing value in its own
+// getter. This does not make other final fields or properties assignable.
+func semaFinalPropertyOwnGetterWrite(typ typesys.TypeSymbol, member typesys.MemberSymbol, target resolvedMember) bool {
+	return target.member.Kind == apexast.DeclarationProperty &&
+		typeContractPropertyHasAccessor(target.member, "set") &&
+		strings.EqualFold(target.owner, typ.Name) &&
+		strings.EqualFold(member.Name, target.member.Name+".get") &&
+		hasModifier(member.Modifiers, "static")
+}
+
+// The native final-field control allows initialization, but rejects a
+// subsequent method write. Locals and final properties use their own rules.
+func semaInstanceFinalFieldAssignmentDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, field resolvedMember, receiverIsThis bool, start, end int, source string) (diagnostic.Diagnostic, bool) {
+	if field.member.Kind != apexast.DeclarationField || !hasModifier(field.member.Modifiers, "final") || hasModifier(field.member.Modifiers, "static") {
+		return diagnostic.Diagnostic{}, false
+	}
+	initializing := member.Kind == apexast.DeclarationConstructor || member.Kind == apexast.DeclarationInitializer && !hasModifier(member.Modifiers, "static")
+	if initializing && receiverIsThis && strings.EqualFold(field.owner, typ.Name) {
+		return diagnostic.Diagnostic{}, false
+	}
+	return diagnostic.Diagnostic{
+		Severity: diagnostic.Error,
+		Code:     "GLADESEMA027",
+		Message:  "Final members can only be assigned in their declaration, init blocks, or constructors: " + field.member.Name,
+		File:     typ.File,
+		Range:    semaRange(source, start, end),
+	}, true
+}
+
 func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	body := scan.body
 	assignedStaticFinalFields := a.staticFinalFieldsInitializedElsewhere(typ, member, source, model, scopes.base)
 	for _, match := range scan.assignmentMatches {
-		if semaOffsetInIgnoredText(body, match[0]) {
+		if scan.ignored.contains(match[0]) {
 			continue
 		}
 		if semaAssignmentLooksLikeComparison(body, match[1]) {
@@ -2516,8 +3087,17 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		if semaAssignmentLooksLikeLocalDeclaration(body, match[2]) {
 			continue
 		}
+		if !scopes.localVisibleAt(target, match[2]) {
+			if field, found := semaResolveField(model, typ.Name, target, make(map[string]bool)); found {
+				if d, rejected := semaInstanceFinalFieldAssignmentDiagnostic(typ, member, field, true, bodyOffset+match[2], bodyOffset+match[3], source); rejected {
+					diagnostics = append(diagnostics, d)
+					continue
+				}
+			}
+		}
 		if field, found := semaResolveField(model, typ.Name, target, make(map[string]bool)); !scopes.localVisibleAt(target, match[2]) && found &&
-			hasModifier(field.member.Modifiers, "final") && hasModifier(field.member.Modifiers, "static") {
+			hasModifier(field.member.Modifiers, "final") && hasModifier(field.member.Modifiers, "static") &&
+			!semaFinalPropertyOwnGetterWrite(typ, member, field) {
 			fieldKey := normalizeName(target)
 			if !semaStaticInitializer(member) || !strings.EqualFold(field.owner, typ.Name) || assignedStaticFinalFields[fieldKey] {
 				diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, target, "final static fields can only be assigned in their declaration", bodyOffset+match[2], bodyOffset+match[3], source))
@@ -2528,7 +3108,7 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		targetType, ok := scopes.visibleAt(target, match[2])
 		if ok {
 			value := trimSemaArg(body, match[1], semaStatementEnd(body, match[1]))
-			valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flat())
+			valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatCopy())
 			queryText := strings.TrimSpace(value.text)
 			if strings.HasPrefix(queryText, "[") && strings.HasSuffix(queryText, "]") {
 				if queryType := semaSOQLLiteralType(queryText); queryType != "" {
@@ -2538,17 +3118,21 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 			if valueType == "" || valueType == "null" || semaAssignableToType(targetType, valueType, model) {
 				continue
 			}
+			message := fmt.Sprintf("%s %q assigns %s to %s variable %q", member.Kind, member.Name, valueType, targetType, target)
+			message = semaRelationshipAssignmentMessage(targetType, valueType, value.text, scopes.flat(), model, message)
+			message = semaAggregateAssignmentMessage(targetType, valueType, value.text, model, message)
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
 				Code:     "GLADESEMA018",
-				Message:  fmt.Sprintf("%s %q assigns %s to %s variable %q", member.Kind, member.Name, valueType, targetType, target),
+				Message:  message,
 				File:     typ.File,
 				Range:    semaRange(source, bodyOffset+value.start, bodyOffset+value.end),
 			})
 			continue
 		}
 		if field, found := semaResolveField(model, typ.Name, target, make(map[string]bool)); found {
-			if hasModifier(field.member.Modifiers, "final") && hasModifier(field.member.Modifiers, "static") {
+			if hasModifier(field.member.Modifiers, "final") && hasModifier(field.member.Modifiers, "static") &&
+				!semaFinalPropertyOwnGetterWrite(typ, member, field) {
 				diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, target, "final static fields can only be assigned in their declaration", bodyOffset+match[2], bodyOffset+match[3], source))
 				continue
 			}
@@ -2569,13 +3153,29 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		})
 	}
 	for _, match := range dottedAssignmentPattern.FindAllStringSubmatchIndex(body, -1) {
-		if semaOffsetInIgnoredText(body, match[0]) {
+		if scan.ignored.contains(match[0]) {
+			continue
+		}
+		// Map literals use `=>`; the assignment-shaped prefix is not a
+		// write to the key expression (for example `f.DeveloperName => ...`).
+		next := match[1]
+		for next < len(body) && unicode.IsSpace(rune(body[next])) {
+			next++
+		}
+		if next < len(body) && body[next] == '>' {
+			continue
+		}
+		if match[1] < len(body) && body[match[1]] == '=' {
 			continue
 		}
 		receiver := body[match[2]:match[3]]
 		fieldName := body[match[4]:match[5]]
 		receiverType, visible := scopes.visibleAt(receiver, match[2])
 		if !visible {
+			continue
+		}
+		if semaStandardFieldAssignmentReadOnly(model, receiverType, fieldName) {
+			diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, receiver+"."+fieldName, "field is not writeable", bodyOffset+match[2], bodyOffset+match[5], source))
 			continue
 		}
 		field, found := semaResolveFieldPath(model, receiverType, fieldName)
@@ -2591,13 +3191,17 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 }
 
 func semaFieldAccessDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, field, detail string, start, end int, source string) diagnostic.Diagnostic {
-	return diagnostic.Diagnostic{
+	d := diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
 		Code:     "GLADESEMA027",
 		Message:  fmt.Sprintf("method %q accesses field %q incorrectly: %s", member.Name, field, detail),
 		File:     typ.File,
 		Range:    semaRange(source, start, end),
 	}
+	if strings.HasPrefix(detail, "Variable is not visible: ") || strings.HasPrefix(detail, "Variable does not exist: ") {
+		d.NativeMessage = detail
+	}
+	return d
 }
 func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	if member.Type == "" {
@@ -2608,7 +3212,7 @@ func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.Membe
 	returnType := strings.TrimSpace(member.Type)
 	foundReturn := false
 	for _, match := range scan.returnMatches {
-		if semaReturnMatchInIgnoredText(body, match) {
+		if semaReturnMatchInIgnoredText(scan.ignored, match) {
 			continue
 		}
 		foundReturn = true
@@ -2630,7 +3234,7 @@ func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.Membe
 				continue
 			}
 		}
-		valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatAt(value.start))
+		valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatAtCopy(value.start))
 		if strings.EqualFold(returnType, "Boolean") && semaExprContainsComparison(value.text) {
 			valueType = "Boolean"
 		}
@@ -2646,8 +3250,9 @@ func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.Membe
 }
 
 func semaBodyContainsReturnKeyword(body string) bool {
+	ignored := newSemaIgnoredText(body)
 	for _, match := range semaReturnKeywordPattern.FindAllStringIndex(body, -1) {
-		if !semaOffsetInIgnoredText(body, match[0]) {
+		if !ignored.contains(match[0]) {
 			return true
 		}
 	}
@@ -2664,7 +3269,7 @@ func (a *Analyzer) checkBodyTernaryConditions(typ typesys.TypeSymbol, member typ
 			continue
 		}
 		seen[expr.start] = true
-		diagnostics = append(diagnostics, checkSemaTernaryCondition(typ, member, expr.text, bodyOffset+expr.start, source, scopes.flat(), model)...)
+		diagnostics = append(diagnostics, checkSemaTernaryCondition(typ, member, expr.text, bodyOffset+expr.start, source, scopes.flatCopy(), model)...)
 	}
 	return diagnostics
 }
@@ -2734,13 +3339,35 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	if semaProjectTypeShadowsPlatform(model, receiverType) {
 		return nil, false
 	}
+	if semaHTTPReceiver(receiverType) != "" {
+		httpArgTypes := make([]string, len(args))
+		for i, arg := range args {
+			httpArgTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
+		}
+		if d, rejected := semaHTTPMethodDiagnostic(typ, receiverType, method, httpArgTypes, model, receiverMode, start, end, source); rejected {
+			return []diagnostic.Diagnostic{d}, true
+		}
+	}
 	if semaPlatformTypeUnavailable(typ.EffectiveAPIVersion, receiverType) || semaPlatformMemberUnavailable(typ.EffectiveAPIVersion, receiverType, method) {
 		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, start, end, source)}, true
 	}
 	if semaAPI67RejectedPlatformCallAtVersion(typ.EffectiveAPIVersion, receiverType, method, receiverMode) {
 		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, start, end, source)}, true
 	}
+	if _, reports := semaReportsTypeName(receiverType, model); reports {
+		argTypes := make([]string, len(args))
+		for i, arg := range args {
+			argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
+		}
+		if d, rejected := semaReportsCallDiagnostic(typ, member, receiverType, method, argTypes, receiverMode, start, end, source, model); rejected {
+			return []diagnostic.Diagnostic{d}, true
+		}
+	}
 	if strings.EqualFold(receiverType, "System") && strings.EqualFold(method, "runAs") && len(args) == 1 {
+		argType := inferSemaArgTypeWithModel(args[0].text, scope, model)
+		if d, rejected := semaTestRunAsDiagnostic(typ, argType, start, end, source, model); rejected {
+			return []diagnostic.Diagnostic{d}, true
+		}
 		return nil, true
 	}
 	if semaDatabaseDynamicQueryCall(receiverType, method) {
@@ -2766,6 +3393,18 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	argTypes := make([]string, len(args))
 	for i, arg := range args {
 		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
+	}
+	if d, rejected := semaTestCallDiagnostic(typ, receiverType, method, argTypes, start, end, source, model); rejected {
+		return []diagnostic.Diagnostic{d}, true
+	}
+	if d, rejected := semaPlatformCacheCallDiagnostic(typ, receiverType, method, argTypes, receiverMode, start, end, source, model); rejected {
+		return []diagnostic.Diagnostic{d}, true
+	}
+	if d, rejected := semaQueryLocatorCallDiagnostic(typ, receiverType, method, argTypes, start, end, source, model); rejected {
+		return []diagnostic.Diagnostic{d}, true
+	}
+	if semaAmbiguousSObjectNullCall(receiverType, method, argTypes, model) {
+		return []diagnostic.Diagnostic{ambiguousCallDiagnostic(typ, member, receiverType+"."+method, len(args), start, end, source)}, true
 	}
 	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && semaResolvedMembersAllPlatformBacked(model, candidates) && semaPlatformResolvedMemberUnavailable(typ.EffectiveAPIVersion, candidate) {
 		return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiverType+"."+method, start, end, source)}, true

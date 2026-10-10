@@ -405,6 +405,9 @@ func (writer *runtimePatchFingerprintWriter) field(field vm.Field) {
 	writer.string(0x0c, field.File)
 	writer.boolean(0x0d, field.Dependency)
 	writer.string(0x0e, field.StorageName)
+	writer.boolean(0x0f, field.HasGetter)
+	writer.integer(0x10, int64(field.InitializerLine))
+	writer.integer(0x11, int64(field.InitializerColumn))
 }
 
 func (writer *runtimePatchFingerprintWriter) methodPointer(tag byte, method *vm.Method) {

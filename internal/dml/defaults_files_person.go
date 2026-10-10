@@ -125,10 +125,14 @@ func applyDefaultRecordTypeID(objectName string, definition storage.ObjectDefini
 		return
 	}
 	recordType, ok := defaultRecordTypeForRecord(objectName, definition.RecordTypes, *record)
-	if !ok || recordType.ID == "" {
+	if !ok || recordType.ID == "" || isDescribeOnlyMasterRecordTypeID(recordType.ID) {
 		return
 	}
 	record.Fields["RecordTypeId"] = storage.IDValue(recordType.ID)
+}
+
+func isDescribeOnlyMasterRecordTypeID(id storage.ID) bool {
+	return storage.IDsEqual(id, storage.ID("012000000000000AAA"))
 }
 
 func defaultRecordType(recordTypes []storage.RecordTypeInfo) (storage.RecordTypeInfo, bool) {
@@ -199,17 +203,54 @@ func applyAutoNumberName(definition storage.ObjectDefinition, sequence uint64, r
 	if record == nil {
 		return
 	}
-	nameField, ok := definition.Fields["Name"]
-	if !ok || !nameField.AutoNumber {
+	for name, field := range definition.Fields {
+		if !field.AutoNumber {
+			continue
+		}
+		// Contract's platform default already handles its number format and
+		// imported-number collisions in applyContractNumberDefault.
+		if definition.APIName == "Contract" && name == "ContractNumber" {
+			continue
+		}
+		if value, ok := record.Fields[name]; ok && value.Kind == storage.ValueString && strings.TrimSpace(value.String) != "" {
+			continue
+		}
+		if record.Fields == nil {
+			record.Fields = make(map[string]storage.Value)
+		}
+		// R183 requires generated fields such as CaseNumber, not only Name.
+		record.Fields[name] = storage.StringValue(formatAutoNumber(field.DisplayFormat, sequence))
+		// A caller's initial null must not hide the generated value on query.
+		delete(record.ExplicitNulls, name)
+	}
+}
+
+// ContractNumber has a platform-specific format and must avoid collisions with
+// imported values. Keep this default separate from ordinary auto-number formats.
+func (e *Engine) applyContractNumberDefault(objectName string, record *storage.Record) {
+	if objectName != "Contract" || record == nil {
 		return
 	}
-	if record.Fields == nil {
-		record.Fields = make(map[string]storage.Value)
-	}
-	if value, ok := record.Fields["Name"]; ok && value.Kind == storage.ValueString && strings.TrimSpace(value.String) != "" {
+	if value, ok := record.Fields["ContractNumber"]; ok && value.Kind == storage.ValueString && strings.TrimSpace(value.String) != "" {
 		return
 	}
-	record.Fields["Name"] = storage.StringValue(formatAutoNumber(nameField.DisplayFormat, sequence))
+	used := make(map[string]struct{})
+	for _, existing := range e.Org.Objects[objectName].Records {
+		if value, ok := existing.Fields["ContractNumber"]; ok && value.Kind == storage.ValueString {
+			used[value.String] = struct{}{}
+		}
+	}
+	for sequence := e.IDs.Sequences[objectName] + 1; ; sequence++ {
+		number := formatAutoNumber("{00000000}", sequence)
+		if _, exists := used[number]; exists {
+			continue
+		}
+		if record.Fields == nil {
+			record.Fields = make(map[string]storage.Value)
+		}
+		record.Fields["ContractNumber"] = storage.StringValue(number)
+		return
+	}
 }
 
 func formatAutoNumber(format string, sequence uint64) string {

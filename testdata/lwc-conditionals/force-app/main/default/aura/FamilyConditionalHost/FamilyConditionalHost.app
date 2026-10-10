@@ -1,0 +1,1 @@
+<aura:application access="GLOBAL" extends="force:slds"><c:familyConditional/></aura:application>

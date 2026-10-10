@@ -95,7 +95,15 @@ func unescapeApexStringLiteral(text string) string {
 }
 
 func evalUnary(op string, value Value) (Value, error) {
+	if value.Kind == ValueNull && (op == "-" || op == "+" || op == "~" || op == "!") {
+		return Null, newNullDereferenceError("unary operand")
+	}
 	switch op {
+	case "~":
+		if value.Kind != ValueInt {
+			return Null, fmt.Errorf("operator ~ requires Integer or Long, got %s", value.Kind)
+		}
+		return integerOperationResult(^value.Int, isLongIntValue(value)), nil
 	case "!":
 		boolValue, ok := booleanOperand(value)
 		if !ok {
@@ -115,14 +123,7 @@ func evalUnary(op string, value Value) (Value, error) {
 		if value.Kind != ValueInt {
 			return Null, fmt.Errorf("operator - requires numeric value, got %s", value.Kind)
 		}
-		if value.Int == math.MinInt64 {
-			return Null, fmt.Errorf("integer unary - overflow")
-		}
-		result := Int(-value.Int)
-		if isLongIntValue(value) {
-			result.Type = "Long"
-		}
-		return result, nil
+		return integerOperationResult(-value.Int, isLongIntValue(value)), nil
 	case "+":
 		return value, nil
 	default:
@@ -131,6 +132,12 @@ func evalUnary(op string, value Value) (Value, error) {
 }
 
 func evalBinary(op string, left, right Value) (Value, error) {
+	if nullNumericArithmeticOperand(op, left, right) {
+		if isNumeric(left) && !isFloatBackedDecimal(left) && right.Kind == ValueNull && strings.EqualFold(canonicalApexScalarType(right.Type), "Decimal") {
+			return Null, newExceptionError("NullPointerException", "Argument cannot be null.")
+		}
+		return Null, newNullDereferenceError("arithmetic operand")
+	}
 	switch op {
 	case "+":
 		if value, ok, err := platformDateArithmetic("+", left, right); ok || err != nil {
@@ -157,6 +164,9 @@ func evalBinary(op string, left, right Value) (Value, error) {
 		}
 		return intBinary(op, left, right, func(a, b int64) int64 { return a * b })
 	case "/":
+		if nullNumericArithmeticOperand(op, left, right) {
+			return Null, newNullDereferenceError("division operand")
+		}
 		if left.Kind == ValueDecimal || right.Kind == ValueDecimal {
 			return decimalBinary(op, left, right, func(a, b float64) float64 { return a / b })
 		}
@@ -169,25 +179,33 @@ func evalBinary(op string, left, right Value) (Value, error) {
 			return Null, newExceptionError("MathException", "Divide by 0")
 		}
 		return intBinary(op, left, right, func(a, b int64) int64 { return a % b })
-	case "<<", ">>":
+	case "<<", ">>", ">>>":
+		if left.Kind == ValueNull || right.Kind == ValueNull {
+			return Null, newNullDereferenceError("shift operand")
+		}
 		if left.Kind != ValueInt || right.Kind != ValueInt {
-			return Null, fmt.Errorf("operator %s requires Integer operands", op)
+			return Null, fmt.Errorf("operator %s requires Integer or Long operands", op)
 		}
-		if right.Int < 0 || right.Int > 63 {
-			return Null, fmt.Errorf("operator %s shift count out of range", op)
+		long := isLongIntValue(left)
+		mask := int64(31)
+		if long {
+			mask = 63
 		}
-		if op == "<<" {
-			result := Int(left.Int << uint(right.Int))
-			if isLongIntValue(left) {
-				result.Type = "Long"
+		shift := uint(right.Int & mask)
+		var result int64
+		switch op {
+		case "<<":
+			result = left.Int << shift
+		case ">>":
+			result = left.Int >> shift
+		case ">>>":
+			if long {
+				result = int64(uint64(left.Int) >> shift)
+			} else {
+				result = int64(uint32(left.Int) >> shift)
 			}
-			return result, nil
 		}
-		result := Int(left.Int >> uint(right.Int))
-		if isLongIntValue(left) {
-			result.Type = "Long"
-		}
-		return result, nil
+		return integerOperationResult(result, long), nil
 	case "==":
 		return Bool(left.Equal(right)), nil
 	case "!=":
@@ -276,6 +294,9 @@ func evalBinary(op string, left, right Value) (Value, error) {
 			return Bool(left.Int >= right.Int), nil
 		}
 	case "&&", "||":
+		if left.Kind == ValueNull || right.Kind == ValueNull {
+			return Null, newNullDereferenceError("Boolean operand")
+		}
 		leftBool, leftOK := booleanOperand(left)
 		rightBool, rightOK := booleanOperand(right)
 		if !leftOK || !rightOK {
@@ -286,6 +307,9 @@ func evalBinary(op string, left, right Value) (Value, error) {
 		}
 		return Bool(leftBool || rightBool), nil
 	case "&", "|", "^":
+		if nullTypedNumericArithmeticOperand(left) || nullTypedNumericArithmeticOperand(right) || left.Kind == ValueNull || right.Kind == ValueNull {
+			return Null, newNullDereferenceError("bitwise operand")
+		}
 		if left.Kind == ValueInt && right.Kind == ValueInt {
 			return intBinary(op, left, right, func(a, b int64) int64 {
 				switch op {
@@ -298,18 +322,19 @@ func evalBinary(op string, left, right Value) (Value, error) {
 				}
 			})
 		}
-		if op == "^" {
-			return Null, fmt.Errorf("operator %s requires Integer operands", op)
-		}
 		leftBool, leftOK := booleanOperand(left)
 		rightBool, rightOK := booleanOperand(right)
 		if !leftOK || !rightOK {
 			return Null, fmt.Errorf("operator %s requires Boolean operands", op)
 		}
-		if op == "&" {
+		switch op {
+		case "&":
 			return Bool(leftBool && rightBool), nil
+		case "|":
+			return Bool(leftBool || rightBool), nil
+		default:
+			return Bool(leftBool != rightBool), nil
 		}
-		return Bool(leftBool || rightBool), nil
 	default:
 		return Null, fmt.Errorf("unsupported binary operator %q", op)
 	}
@@ -364,9 +389,6 @@ func booleanOperand(value Value) (bool, bool) {
 	if value.Kind == ValueBool {
 		return value.Bool, true
 	}
-	if value.Kind == ValueNull && strings.EqualFold(value.Type, "Boolean") {
-		return false, true
-	}
 	return false, false
 }
 
@@ -379,10 +401,7 @@ func isStringConcatOperand(value Value) bool {
 
 func concatStringText(value Value, fallback string) string {
 	if value.Kind == ValueDecimal {
-		if value.ExplicitScale {
-			return decimalPlainText(value)
-		}
-		return decimalDisplayText(value)
+		return numericDisplayText(value)
 	}
 	return fallback
 }
@@ -458,7 +477,31 @@ func comparableIDText(value Value) (string, bool) {
 	return "", false
 }
 
+func nullNumericArithmeticOperand(op string, left, right Value) bool {
+	switch op {
+	case "+", "-", "*", "/":
+		return nullTypedNumericArithmeticOperand(left) || nullTypedNumericArithmeticOperand(right)
+	default:
+		return false
+	}
+}
+
+func nullTypedNumericArithmeticOperand(value Value) bool {
+	if value.Kind != ValueNull {
+		return false
+	}
+	switch canonicalApexScalarType(value.Type) {
+	case "Decimal", "Double", "Integer", "Long":
+		return true
+	default:
+		return false
+	}
+}
+
 func intBinary(op string, left, right Value, fn func(int64, int64) int64) (Value, error) {
+	if nullNumericArithmeticOperand(op, left, right) {
+		return Null, newNullDereferenceError("arithmetic operand")
+	}
 	if left.Kind == ValueNull && right.Kind == ValueInt {
 		left = Int(0)
 	}
@@ -468,17 +511,13 @@ func intBinary(op string, left, right Value, fn func(int64, int64) int64) (Value
 	if left.Kind != ValueInt || right.Kind != ValueInt {
 		return Null, fmt.Errorf("operator %s requires Integer operands", op)
 	}
-	if err := checkIntBinaryOverflow(op, left.Int, right.Int); err != nil {
-		return Null, err
-	}
-	result := Int(fn(left.Int, right.Int))
-	if isLongIntValue(left) || isLongIntValue(right) {
-		result.Type = "Long"
-	}
-	return result, nil
+	return integerOperationResult(fn(left.Int, right.Int), isLongIntValue(left) || isLongIntValue(right)), nil
 }
 
 func decimalBinary(op string, left, right Value, fn func(float64, float64) float64) (Value, error) {
+	if nullNumericArithmeticOperand(op, left, right) {
+		return Null, newNullDereferenceError("arithmetic operand")
+	}
 	if left.Kind == ValueNull && isNumeric(right) {
 		left = Decimal(0)
 	}
@@ -500,12 +539,14 @@ func decimalBinary(op string, left, right Value, fn func(float64, float64) float
 	result, ok := preciseDecimalBinary(op, left, right)
 	if !ok {
 		floatResult := fn(decimalOf(left), decimalOf(right))
-		if math.IsInf(floatResult, 0) || math.IsNaN(floatResult) {
+		floatOperands := (isFloatBackedDecimal(left) || isFloatBackedDecimal(right)) &&
+			(left.Kind != ValueDecimal || isFloatBackedDecimal(left)) && (right.Kind != ValueDecimal || isFloatBackedDecimal(right))
+		if (math.IsInf(floatResult, 0) || math.IsNaN(floatResult)) && !floatOperands {
 			return Null, fmt.Errorf("operator %s result must be finite", op)
 		}
 		result := Decimal(floatResult)
 		if isFloatBackedDecimal(left) || isFloatBackedDecimal(right) {
-			result.Static = "Double"
+			result = decimalAsDouble(result)
 		}
 		return result, nil
 	}
@@ -513,6 +554,25 @@ func decimalBinary(op string, left, right Value, fn func(float64, float64) float
 }
 
 func preciseDecimalBinary(op string, left, right Value) (Value, bool) {
+	// Decimal wins mixed arithmetic; a Double operand is converted using its
+	// public decimal representation, including the integral .0 scale.
+	if (left.Kind == ValueDecimal && !isFloatBackedDecimal(left)) ||
+		(right.Kind == ValueDecimal && !isFloatBackedDecimal(right)) {
+		if isFloatBackedDecimal(left) {
+			var err error
+			left, err = decimalFromText(doubleDisplayText(left.Decimal))
+			if err != nil {
+				return Null, false
+			}
+		}
+		if isFloatBackedDecimal(right) {
+			var err error
+			right, err = decimalFromText(doubleDisplayText(right.Decimal))
+			if err != nil {
+				return Null, false
+			}
+		}
+	}
 	leftRat, ok := valueDecimalRat(left)
 	if !ok {
 		return Null, false
@@ -538,7 +598,18 @@ func preciseDecimalBinary(op string, left, right Value) (Value, bool) {
 			return Null, false
 		}
 		result.Quo(leftRat, rightRat)
-		return decimalRatToPrecision(result, 33)
+		out, ok := decimalRatToPrecision(result, 33)
+		if ok {
+			minimumScale := max(decimalScale(left)-decimalScale(right), 0)
+			if decimalScale(out) < minimumScale {
+				rounded, _ := valueDecimalRat(out)
+				padded := decimalFromRat(rounded, int64(minimumScale))
+				if decimalPrecision(padded) <= 33 {
+					out = padded
+				}
+			}
+		}
+		return out, ok
 	default:
 		return Null, false
 	}
@@ -546,7 +617,6 @@ func preciseDecimalBinary(op string, left, right Value) (Value, bool) {
 	if math.IsInf(out.Decimal, 0) || math.IsNaN(out.Decimal) {
 		return Null, false
 	}
-	out.Text = normalizeComputedDecimalText(out.Text)
 	return out, true
 }
 
@@ -599,36 +669,13 @@ func normalizeComputedDecimalText(text string) string {
 	return text
 }
 
-func checkIntBinaryOverflow(op string, left, right int64) error {
-	switch op {
-	case "+":
-		if (right > 0 && left > math.MaxInt64-right) || (right < 0 && left < math.MinInt64-right) {
-			return fmt.Errorf("operator + integer overflow")
-		}
-	case "-":
-		if (right < 0 && left > math.MaxInt64+right) || (right > 0 && left < math.MinInt64+right) {
-			return fmt.Errorf("operator - integer overflow")
-		}
-	case "*":
-		if left != 0 && right != 0 {
-			if left == math.MinInt64 && right == -1 || right == math.MinInt64 && left == -1 {
-				return fmt.Errorf("operator * integer overflow")
-			}
-			product := left * right
-			if product/right != left {
-				return fmt.Errorf("operator * integer overflow")
-			}
-		}
-	case "/":
-		if left == math.MinInt64 && right == -1 {
-			return fmt.Errorf("operator / integer overflow")
-		}
-	case "%":
-		if left == math.MinInt64 && right == -1 {
-			return fmt.Errorf("operator %% integer overflow")
-		}
+// Apex evaluates Integer operations at 32 bits and Long operations at 64 bits.
+// Overflow wraps before an enclosing assignment can widen the result.
+func integerOperationResult(value int64, long bool) Value {
+	if long {
+		return longIntValue(value)
 	}
-	return nil
+	return Int(int64(int32(value)))
 }
 
 func isNumeric(value Value) bool {
@@ -671,7 +718,7 @@ func coerceAssignable(typeName string, value Value) (Value, error) {
 				return decimalAsDouble(value), nil
 			}
 			if isFloatBackedDecimal(value) {
-				return Decimal(value.Decimal), nil
+				return decimalFromText(doubleDisplayText(value.Decimal))
 			}
 			return value, nil
 		}
@@ -802,16 +849,20 @@ func coerceCollectionValue(typeName string, value Value) (Value, error) {
 			return value, nil
 		}
 		out := make([]Value, 0, len(value.Set))
-		for _, item := range value.Set {
+		hashes := make([]setInsertionHash, 0, len(value.Set))
+		for index, item := range value.Set {
 			coerced, err := coerceAssignable(elementType, item)
 			if err != nil {
 				return Null, err
 			}
-			if !containsValue(out, coerced) {
+			hash := value.setInsertionHashAt(index)
+			if !setTransportContains(out, hashes, coerced, hash) {
 				out = append(out, coerced)
+				hashes = append(hashes, hash)
 			}
 		}
 		value.Set = out
+		value.setInsertionHashes = hashes
 	}
 	return value, nil
 }

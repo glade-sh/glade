@@ -1,0 +1,148 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "oracle": {
+    "routes": [
+      "anonymous",
+      "named"
+    ],
+    "rows": 18,
+    "apiEndpointsIdentical": true,
+    "routesIdentical": true,
+    "versionDifference": "no version difference",
+    "captures": {
+      "anonymous": {
+        "revision": "r2",
+        "62.0": {
+        },
+        "67.0": {
+        }
+      },
+      "named": {
+        "revision": "r1",
+        "62.0": {
+        },
+        "67.0": {
+        }
+      }
+    }
+  },
+  "files": {
+    "SCWrap.cls": "public class SCWrap { public Integer n = 1; }\n"
+  },
+  "metadata": {
+    "cachePartitions/A42Oracle.cachePartition-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PlatformCachePartition xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <isDefaultPartition>true</isDefaultPartition>\n    <masterLabel>A42Oracle</masterLabel>\n    <platformCachePartitionTypes>\n        <allocatedCapacity>1</allocatedCapacity>\n        <allocatedPartnerCapacity>0</allocatedPartnerCapacity>\n        <allocatedPurchasedCapacity>0</allocatedPurchasedCapacity>\n        <allocatedTrialCapacity>0</allocatedTrialCapacity>\n        <cacheType>Organization</cacheType>\n    </platformCachePartitionTypes>\n    <platformCachePartitionTypes>\n        <allocatedCapacity>1</allocatedCapacity>\n        <allocatedPartnerCapacity>0</allocatedPartnerCapacity>\n        <allocatedPurchasedCapacity>0</allocatedPurchasedCapacity>\n        <allocatedTrialCapacity>0</allocatedTrialCapacity>\n        <cacheType>Session</cacheType>\n    </platformCachePartitionTypes>\n</PlatformCachePartition>\n"
+  },
+  "cases": [
+    {
+      "id": "PC001",
+      "oracleId": "PC001",
+      "code": "String k='local.A42Oracle.A42Copy20261009OrgPC001'; try { Cache.Org.remove(k); List<Integer> original=new List<Integer>{1}; Cache.Org.put(k,original); original.add(2); r=JSON.serialize(Cache.Org.get(k)); } finally { Cache.Org.remove(k); }",
+      "expected": "[1,2]"
+    },
+    {
+      "id": "PC002",
+      "oracleId": "PC002",
+      "code": "String k='local.A42Oracle.A42Copy20261009OrgPC002'; try { Cache.Org.remove(k); List<Integer> original=new List<Integer>{1}; Cache.Org.put(k,original); List<Integer> returned=(List<Integer>)Cache.Org.get(k); returned.add(2); r=JSON.serialize(Cache.Org.get(k)); } finally { Cache.Org.remove(k); }",
+      "expected": "[1,2]"
+    },
+    {
+      "id": "PC003",
+      "oracleId": "PC003",
+      "code": "String k='local.A42Oracle.A42Copy20261009OrgPC003'; try { Cache.Org.remove(k); Map<String,Integer> original=new Map<String,Integer>{'a'=>1}; Cache.Org.put(k,original); original.put('b',2); r=JSON.serialize(Cache.Org.get(k)); } finally { Cache.Org.remove(k); }",
+      "expected": "{\"b\":2,\"a\":1}"
+    },
+    {
+      "id": "PC004",
+      "oracleId": "PC004",
+      "code": "String k='local.A42Oracle.A42Copy20261009OrgPC004'; try { Cache.Org.remove(k); Account original=new Account(Name='x'); Cache.Org.put(k,original); original.Name='y'; r=((Account)Cache.Org.get(k)).Name; } finally { Cache.Org.remove(k); }",
+      "expected": "y"
+    },
+    {
+      "id": "PC005",
+      "oracleId": "PC005",
+      "code": "String k='local.A42Oracle.A42Copy20261009OrgPC005'; try { Cache.Org.remove(k); Account original=new Account(Name='x'); Cache.Org.put(k,original); Account returned=(Account)Cache.Org.get(k); returned.Name='y'; r=((Account)Cache.Org.get(k)).Name; } finally { Cache.Org.remove(k); }",
+      "expected": "y"
+    },
+    {
+      "id": "PC006",
+      "oracleId": "PC006",
+      "code": "String k='local.A42Oracle.A42Copy20261009OrgPC006'; try { Cache.Org.remove(k); Object o=new List<Integer>{1}; Cache.Org.put(k,o); r=(Cache.Org.get(k) === o); } finally { Cache.Org.remove(k); }",
+      "expected": "true"
+    },
+    {
+      "id": "PC007",
+      "oracleId": "PC007",
+      "code": "String k='local.A42Oracle.A42Copy20261009OrgPC007'; try { Cache.Org.remove(k); Cache.Org.put(k,'cache-copy-control'); r=(String)Cache.Org.get(k); } finally { Cache.Org.remove(k); }",
+      "expected": "cache-copy-control"
+    },
+    {
+      "id": "PC008",
+      "oracleId": "PC008",
+      "code": "String k='local.A42Oracle.A42Copy20261009OrgPC008'; try { Cache.Org.remove(k); Map<SCWrap,String> m=new Map<SCWrap,String>(); SCWrap orig=new SCWrap(); m.put(orig,'v'); Cache.Org.put(k,m); Map<SCWrap,String> c=(Map<SCWrap,String>)Cache.Org.get(k); SCWrap k2=new List<SCWrap>(c.keySet())[0]; Boolean has=c.containsKey(k2); c.remove(k2); Integer afterRemove=c.size(); c.put(k2,'w'); Integer afterPut=c.size(); r=has+'|'+afterRemove+'|'+afterPut; } finally { Cache.Org.remove(k); }",
+      "expected": "true|0|1"
+    },
+    {
+      "id": "PC009",
+      "oracleId": "PC009",
+      "code": "String k='local.A42Oracle.A42Copy20261009OrgPC009'; try { Cache.Org.remove(k); Map<SCWrap,String> m=new Map<SCWrap,String>(); SCWrap orig=new SCWrap(); m.put(orig,'v'); Cache.Org.put(k,m); Map<SCWrap,String> c=(Map<SCWrap,String>)Cache.Org.get(k); SCWrap k2=new List<SCWrap>(c.keySet())[0]; Boolean has=c.containsKey(orig); c.remove(orig); Integer afterRemove=c.size(); c.put(orig,'w'); Integer afterPut=c.size(); r=has+'|'+afterRemove+'|'+afterPut; } finally { Cache.Org.remove(k); }",
+      "expected": "true|0|1"
+    },
+    {
+      "id": "PC101",
+      "oracleId": "PC101",
+      "code": "String k='local.A42Oracle.A42Copy20261009SessionPC101'; try { Cache.Session.remove(k); List<Integer> original=new List<Integer>{1}; Cache.Session.put(k,original); original.add(2); r=JSON.serialize(Cache.Session.get(k)); } finally { Cache.Session.remove(k); }",
+      "expected": "[1,2]"
+    },
+    {
+      "id": "PC102",
+      "oracleId": "PC102",
+      "code": "String k='local.A42Oracle.A42Copy20261009SessionPC102'; try { Cache.Session.remove(k); List<Integer> original=new List<Integer>{1}; Cache.Session.put(k,original); List<Integer> returned=(List<Integer>)Cache.Session.get(k); returned.add(2); r=JSON.serialize(Cache.Session.get(k)); } finally { Cache.Session.remove(k); }",
+      "expected": "[1,2]"
+    },
+    {
+      "id": "PC103",
+      "oracleId": "PC103",
+      "code": "String k='local.A42Oracle.A42Copy20261009SessionPC103'; try { Cache.Session.remove(k); Map<String,Integer> original=new Map<String,Integer>{'a'=>1}; Cache.Session.put(k,original); original.put('b',2); r=JSON.serialize(Cache.Session.get(k)); } finally { Cache.Session.remove(k); }",
+      "expected": "{\"b\":2,\"a\":1}"
+    },
+    {
+      "id": "PC104",
+      "oracleId": "PC104",
+      "code": "String k='local.A42Oracle.A42Copy20261009SessionPC104'; try { Cache.Session.remove(k); Account original=new Account(Name='x'); Cache.Session.put(k,original); original.Name='y'; r=((Account)Cache.Session.get(k)).Name; } finally { Cache.Session.remove(k); }",
+      "expected": "y"
+    },
+    {
+      "id": "PC105",
+      "oracleId": "PC105",
+      "code": "String k='local.A42Oracle.A42Copy20261009SessionPC105'; try { Cache.Session.remove(k); Account original=new Account(Name='x'); Cache.Session.put(k,original); Account returned=(Account)Cache.Session.get(k); returned.Name='y'; r=((Account)Cache.Session.get(k)).Name; } finally { Cache.Session.remove(k); }",
+      "expected": "y"
+    },
+    {
+      "id": "PC106",
+      "oracleId": "PC106",
+      "code": "String k='local.A42Oracle.A42Copy20261009SessionPC106'; try { Cache.Session.remove(k); Object o=new List<Integer>{1}; Cache.Session.put(k,o); r=(Cache.Session.get(k) === o); } finally { Cache.Session.remove(k); }",
+      "expected": "true"
+    },
+    {
+      "id": "PC107",
+      "oracleId": "PC107",
+      "code": "String k='local.A42Oracle.A42Copy20261009SessionPC107'; try { Cache.Session.remove(k); Cache.Session.put(k,'cache-copy-control'); r=(String)Cache.Session.get(k); } finally { Cache.Session.remove(k); }",
+      "expected": "cache-copy-control"
+    },
+    {
+      "id": "PC108",
+      "oracleId": "PC108",
+      "code": "String k='local.A42Oracle.A42Copy20261009SessionPC108'; try { Cache.Session.remove(k); Map<SCWrap,String> m=new Map<SCWrap,String>(); SCWrap orig=new SCWrap(); m.put(orig,'v'); Cache.Session.put(k,m); Map<SCWrap,String> c=(Map<SCWrap,String>)Cache.Session.get(k); SCWrap k2=new List<SCWrap>(c.keySet())[0]; Boolean has=c.containsKey(k2); c.remove(k2); Integer afterRemove=c.size(); c.put(k2,'w'); Integer afterPut=c.size(); r=has+'|'+afterRemove+'|'+afterPut; } finally { Cache.Session.remove(k); }",
+      "expected": "true|0|1"
+    },
+    {
+      "id": "PC109",
+      "oracleId": "PC109",
+      "code": "String k='local.A42Oracle.A42Copy20261009SessionPC109'; try { Cache.Session.remove(k); Map<SCWrap,String> m=new Map<SCWrap,String>(); SCWrap orig=new SCWrap(); m.put(orig,'v'); Cache.Session.put(k,m); Map<SCWrap,String> c=(Map<SCWrap,String>)Cache.Session.get(k); SCWrap k2=new List<SCWrap>(c.keySet())[0]; Boolean has=c.containsKey(orig); c.remove(orig); Integer afterRemove=c.size(); c.put(orig,'w'); Integer afterPut=c.size(); r=has+'|'+afterRemove+'|'+afterPut; } finally { Cache.Session.remove(k); }",
+      "expected": "true|0|1"
+    }
+  ]
+}

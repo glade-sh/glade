@@ -1,0 +1,3958 @@
+[
+  {
+    "id": "modern_00",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": null,
+      "b": -1,
+      "c": "hello",
+      "row": {
+        "a": null,
+        "b": -1
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "else_00",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": null,
+      "b": -1,
+      "c": "hello",
+      "row": {
+        "a": null,
+        "b": -1
+      }
+    },
+    "expected": "C",
+    "initialExpected": "C",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_00",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": null,
+      "b": -1,
+      "c": "hello",
+      "row": {
+        "a": null,
+        "b": -1
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_00",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": null,
+      "b": -1,
+      "c": "hello",
+      "row": {
+        "a": null,
+        "b": -1
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_00",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": null,
+      "b": -1,
+      "c": "hello",
+      "row": {
+        "a": null,
+        "b": -1
+      }
+    },
+    "expected": "C",
+    "initialExpected": "C",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_00",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": null,
+      "b": -1,
+      "c": "hello",
+      "row": {
+        "a": null,
+        "b": -1
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_00",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": null,
+      "b": -1,
+      "c": "hello",
+      "row": {
+        "a": null,
+        "b": -1
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_false_00",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": null,
+      "b": -1,
+      "c": "hello",
+      "row": {
+        "a": null,
+        "b": -1
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_element_00",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": null,
+      "b": -1,
+      "c": "hello",
+      "row": {
+        "a": null,
+        "b": -1
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_00",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": null,
+      "b": -1,
+      "c": "hello",
+      "row": {
+        "a": null,
+        "b": -1
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_00",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "\t",
+      "b": null,
+      "c": -1
+    },
+    "initial": {
+      "a": null,
+      "b": -1,
+      "c": "hello",
+      "row": {
+        "a": null,
+        "b": -1
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_00",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": "\t",
+      "b": null,
+      "c": -1
+    },
+    "initial": {
+      "a": null,
+      "b": -1,
+      "c": "hello",
+      "row": {
+        "a": null,
+        "b": -1
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_01",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": false,
+      "b": "",
+      "c": [],
+      "row": {
+        "a": false,
+        "b": ""
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "else_01",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": false,
+      "b": "",
+      "c": [],
+      "row": {
+        "a": false,
+        "b": ""
+      }
+    },
+    "expected": "C",
+    "initialExpected": "C",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_01",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": false,
+      "b": "",
+      "c": [],
+      "row": {
+        "a": false,
+        "b": ""
+      }
+    },
+    "expected": "C",
+    "initialExpected": "C",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_01",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": false,
+      "b": "",
+      "c": [],
+      "row": {
+        "a": false,
+        "b": ""
+      }
+    },
+    "expected": "C",
+    "initialExpected": "C",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_01",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": false,
+      "b": "",
+      "c": [],
+      "row": {
+        "a": false,
+        "b": ""
+      }
+    },
+    "expected": "C",
+    "initialExpected": "C",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_01",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": false,
+      "b": "",
+      "c": [],
+      "row": {
+        "a": false,
+        "b": ""
+      }
+    },
+    "expected": "C",
+    "initialExpected": "C",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_01",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": false,
+      "b": "",
+      "c": [],
+      "row": {
+        "a": false,
+        "b": ""
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_false_01",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": false,
+      "b": "",
+      "c": [],
+      "row": {
+        "a": false,
+        "b": ""
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_element_01",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": false,
+      "b": "",
+      "c": [],
+      "row": {
+        "a": false,
+        "b": ""
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_01",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": false,
+      "b": "",
+      "c": [],
+      "row": {
+        "a": false,
+        "b": ""
+      }
+    },
+    "expected": "C",
+    "initialExpected": "C",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_01",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "0",
+      "b": false,
+      "c": ""
+    },
+    "initial": {
+      "a": false,
+      "b": "",
+      "c": [],
+      "row": {
+        "a": false,
+        "b": ""
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "C",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_01",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": "0",
+      "b": false,
+      "c": ""
+    },
+    "initial": {
+      "a": false,
+      "b": "",
+      "c": [],
+      "row": {
+        "a": false,
+        "b": ""
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_02",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": true,
+      "b": " ",
+      "c": [
+        0
+      ],
+      "row": {
+        "a": true,
+        "b": " "
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "else_02",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": true,
+      "b": " ",
+      "c": [
+        0
+      ],
+      "row": {
+        "a": true,
+        "b": " "
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_02",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": true,
+      "b": " ",
+      "c": [
+        0
+      ],
+      "row": {
+        "a": true,
+        "b": " "
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_02",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": true,
+      "b": " ",
+      "c": [
+        0
+      ],
+      "row": {
+        "a": true,
+        "b": " "
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_02",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": true,
+      "b": " ",
+      "c": [
+        0
+      ],
+      "row": {
+        "a": true,
+        "b": " "
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_02",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": true,
+      "b": " ",
+      "c": [
+        0
+      ],
+      "row": {
+        "a": true,
+        "b": " "
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_02",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": true,
+      "b": " ",
+      "c": [
+        0
+      ],
+      "row": {
+        "a": true,
+        "b": " "
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_false_02",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": true,
+      "b": " ",
+      "c": [
+        0
+      ],
+      "row": {
+        "a": true,
+        "b": " "
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_element_02",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": true,
+      "b": " ",
+      "c": [
+        0
+      ],
+      "row": {
+        "a": true,
+        "b": " "
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_02",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": true,
+      "b": " ",
+      "c": [
+        0
+      ],
+      "row": {
+        "a": true,
+        "b": " "
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_02",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "false",
+      "b": true,
+      "c": " "
+    },
+    "initial": {
+      "a": true,
+      "b": " ",
+      "c": [
+        0
+      ],
+      "row": {
+        "a": true,
+        "b": " "
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_02",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": "false",
+      "b": true,
+      "c": " "
+    },
+    "initial": {
+      "a": true,
+      "b": " ",
+      "c": [
+        0
+      ],
+      "row": {
+        "a": true,
+        "b": " "
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_03",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": 0,
+      "b": "\t",
+      "c": {},
+      "row": {
+        "a": 0,
+        "b": "\t"
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "else_03",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": 0,
+      "b": "\t",
+      "c": {},
+      "row": {
+        "a": 0,
+        "b": "\t"
+      }
+    },
+    "expected": "C",
+    "initialExpected": "C",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_03",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": 0,
+      "b": "\t",
+      "c": {},
+      "row": {
+        "a": 0,
+        "b": "\t"
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_03",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": 0,
+      "b": "\t",
+      "c": {},
+      "row": {
+        "a": 0,
+        "b": "\t"
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_03",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": 0,
+      "b": "\t",
+      "c": {},
+      "row": {
+        "a": 0,
+        "b": "\t"
+      }
+    },
+    "expected": "C",
+    "initialExpected": "C",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_03",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": 0,
+      "b": "\t",
+      "c": {},
+      "row": {
+        "a": 0,
+        "b": "\t"
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_03",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": 0,
+      "b": "\t",
+      "c": {},
+      "row": {
+        "a": 0,
+        "b": "\t"
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_false_03",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": 0,
+      "b": "\t",
+      "c": {},
+      "row": {
+        "a": 0,
+        "b": "\t"
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_element_03",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": 0,
+      "b": "\t",
+      "c": {},
+      "row": {
+        "a": 0,
+        "b": "\t"
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_03",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": 0,
+      "b": "\t",
+      "c": {},
+      "row": {
+        "a": 0,
+        "b": "\t"
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_03",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "hello",
+      "b": 0,
+      "c": "\t"
+    },
+    "initial": {
+      "a": 0,
+      "b": "\t",
+      "c": {},
+      "row": {
+        "a": 0,
+        "b": "\t"
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_03",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": "hello",
+      "b": 0,
+      "c": "\t"
+    },
+    "initial": {
+      "a": 0,
+      "b": "\t",
+      "c": {},
+      "row": {
+        "a": 0,
+        "b": "\t"
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_04",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": 1,
+      "b": "0",
+      "c": {
+        "ok": true
+      },
+      "row": {
+        "a": 1,
+        "b": "0"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "else_04",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": 1,
+      "b": "0",
+      "c": {
+        "ok": true
+      },
+      "row": {
+        "a": 1,
+        "b": "0"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_04",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": 1,
+      "b": "0",
+      "c": {
+        "ok": true
+      },
+      "row": {
+        "a": 1,
+        "b": "0"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_04",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": 1,
+      "b": "0",
+      "c": {
+        "ok": true
+      },
+      "row": {
+        "a": 1,
+        "b": "0"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_04",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": 1,
+      "b": "0",
+      "c": {
+        "ok": true
+      },
+      "row": {
+        "a": 1,
+        "b": "0"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_04",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": 1,
+      "b": "0",
+      "c": {
+        "ok": true
+      },
+      "row": {
+        "a": 1,
+        "b": "0"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_04",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": 1,
+      "b": "0",
+      "c": {
+        "ok": true
+      },
+      "row": {
+        "a": 1,
+        "b": "0"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_false_04",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": 1,
+      "b": "0",
+      "c": {
+        "ok": true
+      },
+      "row": {
+        "a": 1,
+        "b": "0"
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_element_04",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": 1,
+      "b": "0",
+      "c": {
+        "ok": true
+      },
+      "row": {
+        "a": 1,
+        "b": "0"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_04",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": 1,
+      "b": "0",
+      "c": {
+        "ok": true
+      },
+      "row": {
+        "a": 1,
+        "b": "0"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_04",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": [],
+      "b": 1,
+      "c": "0"
+    },
+    "initial": {
+      "a": 1,
+      "b": "0",
+      "c": {
+        "ok": true
+      },
+      "row": {
+        "a": 1,
+        "b": "0"
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_04",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": [],
+      "b": 1,
+      "c": "0"
+    },
+    "initial": {
+      "a": 1,
+      "b": "0",
+      "c": {
+        "ok": true
+      },
+      "row": {
+        "a": 1,
+        "b": "0"
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_05",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": -1,
+      "b": "false",
+      "c": null,
+      "row": {
+        "a": -1,
+        "b": "false"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "else_05",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": -1,
+      "b": "false",
+      "c": null,
+      "row": {
+        "a": -1,
+        "b": "false"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_05",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": -1,
+      "b": "false",
+      "c": null,
+      "row": {
+        "a": -1,
+        "b": "false"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_05",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": -1,
+      "b": "false",
+      "c": null,
+      "row": {
+        "a": -1,
+        "b": "false"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_05",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": -1,
+      "b": "false",
+      "c": null,
+      "row": {
+        "a": -1,
+        "b": "false"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_05",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": -1,
+      "b": "false",
+      "c": null,
+      "row": {
+        "a": -1,
+        "b": "false"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_05",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": -1,
+      "b": "false",
+      "c": null,
+      "row": {
+        "a": -1,
+        "b": "false"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_false_05",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": -1,
+      "b": "false",
+      "c": null,
+      "row": {
+        "a": -1,
+        "b": "false"
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_element_05",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": -1,
+      "b": "false",
+      "c": null,
+      "row": {
+        "a": -1,
+        "b": "false"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_05",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": -1,
+      "b": "false",
+      "c": null,
+      "row": {
+        "a": -1,
+        "b": "false"
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_05",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": [
+        0
+      ],
+      "b": -1,
+      "c": "false"
+    },
+    "initial": {
+      "a": -1,
+      "b": "false",
+      "c": null,
+      "row": {
+        "a": -1,
+        "b": "false"
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_05",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": [
+        0
+      ],
+      "b": -1,
+      "c": "false"
+    },
+    "initial": {
+      "a": -1,
+      "b": "false",
+      "c": null,
+      "row": {
+        "a": -1,
+        "b": "false"
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_06",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": "",
+      "b": "hello",
+      "c": false,
+      "row": {
+        "a": "",
+        "b": "hello"
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "else_06",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "",
+      "b": "hello",
+      "c": false,
+      "row": {
+        "a": "",
+        "b": "hello"
+      }
+    },
+    "expected": "C",
+    "initialExpected": "C",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_06",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "",
+      "b": "hello",
+      "c": false,
+      "row": {
+        "a": "",
+        "b": "hello"
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_06",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": "",
+      "b": "hello",
+      "c": false,
+      "row": {
+        "a": "",
+        "b": "hello"
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_06",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "",
+      "b": "hello",
+      "c": false,
+      "row": {
+        "a": "",
+        "b": "hello"
+      }
+    },
+    "expected": "C",
+    "initialExpected": "C",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_06",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": "",
+      "b": "hello",
+      "c": false,
+      "row": {
+        "a": "",
+        "b": "hello"
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_06",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": "",
+      "b": "hello",
+      "c": false,
+      "row": {
+        "a": "",
+        "b": "hello"
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_false_06",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": "",
+      "b": "hello",
+      "c": false,
+      "row": {
+        "a": "",
+        "b": "hello"
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_element_06",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": "",
+      "b": "hello",
+      "c": false,
+      "row": {
+        "a": "",
+        "b": "hello"
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_06",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "",
+      "b": "hello",
+      "c": false,
+      "row": {
+        "a": "",
+        "b": "hello"
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_06",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": {},
+      "b": "",
+      "c": "hello"
+    },
+    "initial": {
+      "a": "",
+      "b": "hello",
+      "c": false,
+      "row": {
+        "a": "",
+        "b": "hello"
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_06",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": {},
+      "b": "",
+      "c": "hello"
+    },
+    "initial": {
+      "a": "",
+      "b": "hello",
+      "c": false,
+      "row": {
+        "a": "",
+        "b": "hello"
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_07",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": " ",
+      "b": [],
+      "c": true,
+      "row": {
+        "a": " ",
+        "b": []
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "else_07",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": " ",
+      "b": [],
+      "c": true,
+      "row": {
+        "a": " ",
+        "b": []
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_07",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": " ",
+      "b": [],
+      "c": true,
+      "row": {
+        "a": " ",
+        "b": []
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_07",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": " ",
+      "b": [],
+      "c": true,
+      "row": {
+        "a": " ",
+        "b": []
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_07",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": " ",
+      "b": [],
+      "c": true,
+      "row": {
+        "a": " ",
+        "b": []
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_07",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": " ",
+      "b": [],
+      "c": true,
+      "row": {
+        "a": " ",
+        "b": []
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_07",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": " ",
+      "b": [],
+      "c": true,
+      "row": {
+        "a": " ",
+        "b": []
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_false_07",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": " ",
+      "b": [],
+      "c": true,
+      "row": {
+        "a": " ",
+        "b": []
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_element_07",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": " ",
+      "b": [],
+      "c": true,
+      "row": {
+        "a": " ",
+        "b": []
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_07",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": " ",
+      "b": [],
+      "c": true,
+      "row": {
+        "a": " ",
+        "b": []
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_07",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": {
+        "ok": true
+      },
+      "b": " ",
+      "c": []
+    },
+    "initial": {
+      "a": " ",
+      "b": [],
+      "c": true,
+      "row": {
+        "a": " ",
+        "b": []
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_07",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": {
+        "ok": true
+      },
+      "b": " ",
+      "c": []
+    },
+    "initial": {
+      "a": " ",
+      "b": [],
+      "c": true,
+      "row": {
+        "a": " ",
+        "b": []
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_08",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": "\t",
+      "b": [
+        0
+      ],
+      "c": 0,
+      "row": {
+        "a": "\t",
+        "b": [
+          0
+        ]
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "else_08",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "\t",
+      "b": [
+        0
+      ],
+      "c": 0,
+      "row": {
+        "a": "\t",
+        "b": [
+          0
+        ]
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_08",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "\t",
+      "b": [
+        0
+      ],
+      "c": 0,
+      "row": {
+        "a": "\t",
+        "b": [
+          0
+        ]
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_08",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": "\t",
+      "b": [
+        0
+      ],
+      "c": 0,
+      "row": {
+        "a": "\t",
+        "b": [
+          0
+        ]
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_08",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "\t",
+      "b": [
+        0
+      ],
+      "c": 0,
+      "row": {
+        "a": "\t",
+        "b": [
+          0
+        ]
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_08",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": "\t",
+      "b": [
+        0
+      ],
+      "c": 0,
+      "row": {
+        "a": "\t",
+        "b": [
+          0
+        ]
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_08",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": "\t",
+      "b": [
+        0
+      ],
+      "c": 0,
+      "row": {
+        "a": "\t",
+        "b": [
+          0
+        ]
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_false_08",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": "\t",
+      "b": [
+        0
+      ],
+      "c": 0,
+      "row": {
+        "a": "\t",
+        "b": [
+          0
+        ]
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_element_08",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": "\t",
+      "b": [
+        0
+      ],
+      "c": 0,
+      "row": {
+        "a": "\t",
+        "b": [
+          0
+        ]
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_08",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "\t",
+      "b": [
+        0
+      ],
+      "c": 0,
+      "row": {
+        "a": "\t",
+        "b": [
+          0
+        ]
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_08",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": null,
+      "b": "\t",
+      "c": [
+        0
+      ]
+    },
+    "initial": {
+      "a": "\t",
+      "b": [
+        0
+      ],
+      "c": 0,
+      "row": {
+        "a": "\t",
+        "b": [
+          0
+        ]
+      }
+    },
+    "reactive": true,
+    "expected": "B",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_08",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": null,
+      "b": "\t",
+      "c": [
+        0
+      ]
+    },
+    "initial": {
+      "a": "\t",
+      "b": [
+        0
+      ],
+      "c": 0,
+      "row": {
+        "a": "\t",
+        "b": [
+          0
+        ]
+      }
+    },
+    "reactive": true,
+    "expected": "B",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_09",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": "0",
+      "b": {},
+      "c": 1,
+      "row": {
+        "a": "0",
+        "b": {}
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "else_09",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "0",
+      "b": {},
+      "c": 1,
+      "row": {
+        "a": "0",
+        "b": {}
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_09",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "0",
+      "b": {},
+      "c": 1,
+      "row": {
+        "a": "0",
+        "b": {}
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_09",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": "0",
+      "b": {},
+      "c": 1,
+      "row": {
+        "a": "0",
+        "b": {}
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_09",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "0",
+      "b": {},
+      "c": 1,
+      "row": {
+        "a": "0",
+        "b": {}
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_09",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": "0",
+      "b": {},
+      "c": 1,
+      "row": {
+        "a": "0",
+        "b": {}
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_09",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": "0",
+      "b": {},
+      "c": 1,
+      "row": {
+        "a": "0",
+        "b": {}
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_false_09",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": "0",
+      "b": {},
+      "c": 1,
+      "row": {
+        "a": "0",
+        "b": {}
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_element_09",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": "0",
+      "b": {},
+      "c": 1,
+      "row": {
+        "a": "0",
+        "b": {}
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_09",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "0",
+      "b": {},
+      "c": 1,
+      "row": {
+        "a": "0",
+        "b": {}
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_09",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": false,
+      "b": "0",
+      "c": {}
+    },
+    "initial": {
+      "a": "0",
+      "b": {},
+      "c": 1,
+      "row": {
+        "a": "0",
+        "b": {}
+      }
+    },
+    "reactive": true,
+    "expected": "B",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_09",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": false,
+      "b": "0",
+      "c": {}
+    },
+    "initial": {
+      "a": "0",
+      "b": {},
+      "c": 1,
+      "row": {
+        "a": "0",
+        "b": {}
+      }
+    },
+    "reactive": true,
+    "expected": "B",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_10",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": "false",
+      "b": {
+        "ok": true
+      },
+      "c": -1,
+      "row": {
+        "a": "false",
+        "b": {
+          "ok": true
+        }
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "else_10",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "false",
+      "b": {
+        "ok": true
+      },
+      "c": -1,
+      "row": {
+        "a": "false",
+        "b": {
+          "ok": true
+        }
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_10",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "false",
+      "b": {
+        "ok": true
+      },
+      "c": -1,
+      "row": {
+        "a": "false",
+        "b": {
+          "ok": true
+        }
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_10",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": "false",
+      "b": {
+        "ok": true
+      },
+      "c": -1,
+      "row": {
+        "a": "false",
+        "b": {
+          "ok": true
+        }
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_10",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "false",
+      "b": {
+        "ok": true
+      },
+      "c": -1,
+      "row": {
+        "a": "false",
+        "b": {
+          "ok": true
+        }
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_10",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": "false",
+      "b": {
+        "ok": true
+      },
+      "c": -1,
+      "row": {
+        "a": "false",
+        "b": {
+          "ok": true
+        }
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_10",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": "false",
+      "b": {
+        "ok": true
+      },
+      "c": -1,
+      "row": {
+        "a": "false",
+        "b": {
+          "ok": true
+        }
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_false_10",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": "false",
+      "b": {
+        "ok": true
+      },
+      "c": -1,
+      "row": {
+        "a": "false",
+        "b": {
+          "ok": true
+        }
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_element_10",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": "false",
+      "b": {
+        "ok": true
+      },
+      "c": -1,
+      "row": {
+        "a": "false",
+        "b": {
+          "ok": true
+        }
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_10",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "false",
+      "b": {
+        "ok": true
+      },
+      "c": -1,
+      "row": {
+        "a": "false",
+        "b": {
+          "ok": true
+        }
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_10",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": true,
+      "b": "false",
+      "c": {
+        "ok": true
+      }
+    },
+    "initial": {
+      "a": "false",
+      "b": {
+        "ok": true
+      },
+      "c": -1,
+      "row": {
+        "a": "false",
+        "b": {
+          "ok": true
+        }
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_10",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": true,
+      "b": "false",
+      "c": {
+        "ok": true
+      }
+    },
+    "initial": {
+      "a": "false",
+      "b": {
+        "ok": true
+      },
+      "c": -1,
+      "row": {
+        "a": "false",
+        "b": {
+          "ok": true
+        }
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_11",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": "hello",
+      "b": null,
+      "c": "",
+      "row": {
+        "a": "hello",
+        "b": null
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "else_11",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "hello",
+      "b": null,
+      "c": "",
+      "row": {
+        "a": "hello",
+        "b": null
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_11",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "hello",
+      "b": null,
+      "c": "",
+      "row": {
+        "a": "hello",
+        "b": null
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_11",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": "hello",
+      "b": null,
+      "c": "",
+      "row": {
+        "a": "hello",
+        "b": null
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_11",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "hello",
+      "b": null,
+      "c": "",
+      "row": {
+        "a": "hello",
+        "b": null
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_11",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": "hello",
+      "b": null,
+      "c": "",
+      "row": {
+        "a": "hello",
+        "b": null
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_11",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": "hello",
+      "b": null,
+      "c": "",
+      "row": {
+        "a": "hello",
+        "b": null
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_false_11",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": "hello",
+      "b": null,
+      "c": "",
+      "row": {
+        "a": "hello",
+        "b": null
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_element_11",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": "hello",
+      "b": null,
+      "c": "",
+      "row": {
+        "a": "hello",
+        "b": null
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_11",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "hello",
+      "b": null,
+      "c": "",
+      "row": {
+        "a": "hello",
+        "b": null
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_11",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": 0,
+      "b": "hello",
+      "c": null
+    },
+    "initial": {
+      "a": "hello",
+      "b": null,
+      "c": "",
+      "row": {
+        "a": "hello",
+        "b": null
+      }
+    },
+    "reactive": true,
+    "expected": "B",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_11",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": 0,
+      "b": "hello",
+      "c": null
+    },
+    "initial": {
+      "a": "hello",
+      "b": null,
+      "c": "",
+      "row": {
+        "a": "hello",
+        "b": null
+      }
+    },
+    "reactive": true,
+    "expected": "B",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_12",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": [],
+      "b": false,
+      "c": " ",
+      "row": {
+        "a": [],
+        "b": false
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "else_12",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": [],
+      "b": false,
+      "c": " ",
+      "row": {
+        "a": [],
+        "b": false
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_12",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": [],
+      "b": false,
+      "c": " ",
+      "row": {
+        "a": [],
+        "b": false
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_12",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": [],
+      "b": false,
+      "c": " ",
+      "row": {
+        "a": [],
+        "b": false
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_12",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": [],
+      "b": false,
+      "c": " ",
+      "row": {
+        "a": [],
+        "b": false
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_12",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": [],
+      "b": false,
+      "c": " ",
+      "row": {
+        "a": [],
+        "b": false
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_12",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": [],
+      "b": false,
+      "c": " ",
+      "row": {
+        "a": [],
+        "b": false
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_false_12",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": [],
+      "b": false,
+      "c": " ",
+      "row": {
+        "a": [],
+        "b": false
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_element_12",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": [],
+      "b": false,
+      "c": " ",
+      "row": {
+        "a": [],
+        "b": false
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_12",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": [],
+      "b": false,
+      "c": " ",
+      "row": {
+        "a": [],
+        "b": false
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_12",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": 1,
+      "b": [],
+      "c": false
+    },
+    "initial": {
+      "a": [],
+      "b": false,
+      "c": " ",
+      "row": {
+        "a": [],
+        "b": false
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_12",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": 1,
+      "b": [],
+      "c": false
+    },
+    "initial": {
+      "a": [],
+      "b": false,
+      "c": " ",
+      "row": {
+        "a": [],
+        "b": false
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_13",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": [
+        0
+      ],
+      "b": true,
+      "c": "\t",
+      "row": {
+        "a": [
+          0
+        ],
+        "b": true
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "else_13",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": [
+        0
+      ],
+      "b": true,
+      "c": "\t",
+      "row": {
+        "a": [
+          0
+        ],
+        "b": true
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_13",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": [
+        0
+      ],
+      "b": true,
+      "c": "\t",
+      "row": {
+        "a": [
+          0
+        ],
+        "b": true
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_13",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": [
+        0
+      ],
+      "b": true,
+      "c": "\t",
+      "row": {
+        "a": [
+          0
+        ],
+        "b": true
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_13",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": [
+        0
+      ],
+      "b": true,
+      "c": "\t",
+      "row": {
+        "a": [
+          0
+        ],
+        "b": true
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_13",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": [
+        0
+      ],
+      "b": true,
+      "c": "\t",
+      "row": {
+        "a": [
+          0
+        ],
+        "b": true
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_13",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": [
+        0
+      ],
+      "b": true,
+      "c": "\t",
+      "row": {
+        "a": [
+          0
+        ],
+        "b": true
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_false_13",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": [
+        0
+      ],
+      "b": true,
+      "c": "\t",
+      "row": {
+        "a": [
+          0
+        ],
+        "b": true
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_element_13",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": [
+        0
+      ],
+      "b": true,
+      "c": "\t",
+      "row": {
+        "a": [
+          0
+        ],
+        "b": true
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_13",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": [
+        0
+      ],
+      "b": true,
+      "c": "\t",
+      "row": {
+        "a": [
+          0
+        ],
+        "b": true
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_13",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": -1,
+      "b": [
+        0
+      ],
+      "c": true
+    },
+    "initial": {
+      "a": [
+        0
+      ],
+      "b": true,
+      "c": "\t",
+      "row": {
+        "a": [
+          0
+        ],
+        "b": true
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_13",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": -1,
+      "b": [
+        0
+      ],
+      "c": true
+    },
+    "initial": {
+      "a": [
+        0
+      ],
+      "b": true,
+      "c": "\t",
+      "row": {
+        "a": [
+          0
+        ],
+        "b": true
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_14",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": {},
+      "b": 0,
+      "c": "0",
+      "row": {
+        "a": {},
+        "b": 0
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "else_14",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": {},
+      "b": 0,
+      "c": "0",
+      "row": {
+        "a": {},
+        "b": 0
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_14",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": {},
+      "b": 0,
+      "c": "0",
+      "row": {
+        "a": {},
+        "b": 0
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_14",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": {},
+      "b": 0,
+      "c": "0",
+      "row": {
+        "a": {},
+        "b": 0
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_14",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": {},
+      "b": 0,
+      "c": "0",
+      "row": {
+        "a": {},
+        "b": 0
+      }
+    },
+    "expected": "B",
+    "initialExpected": "B",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_14",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": {},
+      "b": 0,
+      "c": "0",
+      "row": {
+        "a": {},
+        "b": 0
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_14",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": {},
+      "b": 0,
+      "c": "0",
+      "row": {
+        "a": {},
+        "b": 0
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_false_14",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": {},
+      "b": 0,
+      "c": "0",
+      "row": {
+        "a": {},
+        "b": 0
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_element_14",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": {},
+      "b": 0,
+      "c": "0",
+      "row": {
+        "a": {},
+        "b": 0
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_14",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": {},
+      "b": 0,
+      "c": "0",
+      "row": {
+        "a": {},
+        "b": 0
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_14",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": "",
+      "b": {},
+      "c": 0
+    },
+    "initial": {
+      "a": {},
+      "b": 0,
+      "c": "0",
+      "row": {
+        "a": {},
+        "b": 0
+      }
+    },
+    "reactive": true,
+    "expected": "B",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_14",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": "",
+      "b": {},
+      "c": 0
+    },
+    "initial": {
+      "a": {},
+      "b": 0,
+      "c": "0",
+      "row": {
+        "a": {},
+        "b": 0
+      }
+    },
+    "reactive": true,
+    "expected": "B",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "modern_15",
+    "template": "<template><template lwc:if={a}><span>A</span></template></template>",
+    "properties": {
+      "a": {
+        "ok": true
+      },
+      "b": 1,
+      "c": "false",
+      "row": {
+        "a": {
+          "ok": true
+        },
+        "b": 1
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "else_15",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": {
+        "ok": true
+      },
+      "b": 1,
+      "c": "false",
+      "row": {
+        "a": {
+          "ok": true
+        },
+        "b": 1
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "chain_15",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": {
+        "ok": true
+      },
+      "b": 1,
+      "c": "false",
+      "row": {
+        "a": {
+          "ok": true
+        },
+        "b": 1
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "long_chain_15",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:elseif={c}><span>C</span></template><template lwc:else><span>D</span></template></template>",
+    "properties": {
+      "a": {
+        "ok": true
+      },
+      "b": 1,
+      "c": "false",
+      "row": {
+        "a": {
+          "ok": true
+        },
+        "b": 1
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "nested_15",
+    "template": "<template><template lwc:if={a}><template lwc:if={b}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": {
+        "ok": true
+      },
+      "b": 1,
+      "c": "false",
+      "row": {
+        "a": {
+          "ok": true
+        },
+        "b": 1
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "element_15",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif={b}>B</span><span lwc:else>C</span></template>",
+    "properties": {
+      "a": {
+        "ok": true
+      },
+      "b": 1,
+      "c": "false",
+      "row": {
+        "a": {
+          "ok": true
+        },
+        "b": 1
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_true_15",
+    "template": "<template><template if:true={a}><span>A</span></template></template>",
+    "properties": {
+      "a": {
+        "ok": true
+      },
+      "b": 1,
+      "c": "false",
+      "row": {
+        "a": {
+          "ok": true
+        },
+        "b": 1
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "legacy_false_15",
+    "template": "<template><template if:false={a}><span>B</span></template></template>",
+    "properties": {
+      "a": {
+        "ok": true
+      },
+      "b": 1,
+      "c": "false",
+      "row": {
+        "a": {
+          "ok": true
+        },
+        "b": 1
+      }
+    },
+    "expected": "",
+    "initialExpected": "",
+    "expectedTags": []
+  },
+  {
+    "id": "legacy_element_15",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": {
+        "ok": true
+      },
+      "b": 1,
+      "c": "false",
+      "row": {
+        "a": {
+          "ok": true
+        },
+        "b": 1
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "path_15",
+    "template": "<template><template lwc:if={row.a}><span>A</span></template><template lwc:elseif={row.b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": {
+        "ok": true
+      },
+      "b": 1,
+      "c": "false",
+      "row": {
+        "a": {
+          "ok": true
+        },
+        "b": 1
+      }
+    },
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_chain_15",
+    "template": "<template><template lwc:if={a}><span>A</span></template><template lwc:elseif={b}><span>B</span></template><template lwc:else><span>C</span></template></template>",
+    "properties": {
+      "a": " ",
+      "b": {
+        "ok": true
+      },
+      "c": 1
+    },
+    "initial": {
+      "a": {
+        "ok": true
+      },
+      "b": 1,
+      "c": "false",
+      "row": {
+        "a": {
+          "ok": true
+        },
+        "b": 1
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "reactive_legacy_element_15",
+    "template": "<template><span if:true={a}>A</span><span if:false={a}>B</span></template>",
+    "properties": {
+      "a": " ",
+      "b": {
+        "ok": true
+      },
+      "c": 1
+    },
+    "initial": {
+      "a": {
+        "ok": true
+      },
+      "b": 1,
+      "c": "false",
+      "row": {
+        "a": {
+          "ok": true
+        },
+        "b": 1
+      }
+    },
+    "reactive": true,
+    "expected": "A",
+    "initialExpected": "A",
+    "expectedTags": [
+      "span"
+    ]
+  },
+  {
+    "id": "orphan_elseif",
+    "template": "<template><span lwc:elseif={a}>A</span></template>",
+    "errorCode": "LWC1165",
+    "expected": "COMPILE_ERROR",
+    "problem": "[Line: 1, Col: 11] LWC1165: 'lwc:elseif' directive must be used immediately after an element with 'lwc:if' or 'lwc:elseif'. No such element found."
+  },
+  {
+    "id": "orphan_else",
+    "template": "<template><span lwc:else>A</span></template>",
+    "errorCode": "LWC1165",
+    "expected": "COMPILE_ERROR",
+    "problem": "[Line: 1, Col: 11] LWC1165: 'lwc:else' directive must be used immediately after an element with 'lwc:if' or 'lwc:elseif'. No such element found."
+  },
+  {
+    "id": "intervening_element",
+    "template": "<template><span lwc:if={a}>A</span><p>X</p><span lwc:else>B</span></template>",
+    "errorCode": "LWC1165",
+    "expected": "COMPILE_ERROR",
+    "problem": "[Line: 1, Col: 44] LWC1165: 'lwc:else' directive must be used immediately after an element with 'lwc:if' or 'lwc:elseif'. No such element found."
+  },
+  {
+    "id": "intervening_text",
+    "template": "<template><span lwc:if={a}>A</span>X<span lwc:else>B</span></template>",
+    "errorCode": "LWC1165",
+    "expected": "COMPILE_ERROR",
+    "problem": "[Line: 1, Col: 37] LWC1165: 'lwc:else' directive must be used immediately after an element with 'lwc:if' or 'lwc:elseif'. No such element found."
+  },
+  {
+    "id": "elseif_after_else",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:else>B</span><span lwc:elseif={b}>C</span></template>",
+    "errorCode": "LWC1165",
+    "expected": "COMPILE_ERROR",
+    "problem": "[Line: 1, Col: 59] LWC1165: 'lwc:elseif' directive must be used immediately after an element with 'lwc:if' or 'lwc:elseif'. No such element found."
+  },
+  {
+    "id": "duplicate_else",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:else>B</span><span lwc:else>C</span></template>",
+    "errorCode": "LWC1165",
+    "expected": "COMPILE_ERROR",
+    "problem": "[Line: 1, Col: 59] LWC1165: 'lwc:else' directive must be used immediately after an element with 'lwc:if' or 'lwc:elseif'. No such element found."
+  },
+  {
+    "id": "else_value",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:else={b}>B</span></template>",
+    "errorCode": "LWC1161",
+    "expected": "COMPILE_ERROR",
+    "problem": "[Line: 1, Col: 36] LWC1161: lwc:else directive cannot have a value"
+  },
+  {
+    "id": "literal_if",
+    "template": "<template><span lwc:if=\"true\">A</span></template>",
+    "errorCode": "LWC1159",
+    "expected": "COMPILE_ERROR",
+    "problem": "[Line: 1, Col: 17] LWC1159: lwc:if directive value should be an expression"
+  },
+  {
+    "id": "literal_elseif",
+    "template": "<template><span lwc:if={a}>A</span><span lwc:elseif=\"true\">B</span></template>",
+    "errorCode": "LWC1160",
+    "expected": "COMPILE_ERROR",
+    "problem": "[Line: 1, Col: 42] LWC1160: lwc:elseif directive value should be an expression"
+  },
+  {
+    "id": "mixed_legacy",
+    "template": "<template><span lwc:if={a} if:true={b}>A</span></template>",
+    "errorCode": "LWC1166",
+    "expected": "COMPILE_ERROR",
+    "problem": "[Line: 1, Col: 11] LWC1166: 'if:true' directive cannot be used with 'lwc:if', 'lwc:elseif', or 'lwc:else directives on the same element."
+  },
+  {
+    "id": "mixed_modern",
+    "template": "<template><span lwc:if={a} lwc:elseif={b}>A</span></template>",
+    "errorCode": "LWC1162",
+    "expected": "COMPILE_ERROR",
+    "problem": "[Line: 1, Col: 11] LWC1162: Invalid usage of 'lwc:if' and 'lwc:elseif' directives on the same element."
+  },
+  {
+    "id": "legacy_then_else",
+    "template": "<template><span if:true={a}>A</span><span lwc:else>B</span></template>",
+    "errorCode": "LWC1165",
+    "expected": "COMPILE_ERROR",
+    "problem": "[Line: 1, Col: 37] LWC1165: 'lwc:else' directive must be used immediately after an element with 'lwc:if' or 'lwc:elseif'. No such element found."
+  }
+]

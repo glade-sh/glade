@@ -28,7 +28,10 @@ type Object struct {
 	Label              string           `json:"label,omitempty"`
 	PluralLabel        string           `json:"pluralLabel,omitempty"`
 	SharingModel       string           `json:"sharingModel,omitempty"`
+	EnableSharing      bool             `json:"enableSharing,omitempty"`
+	SharingReasons     []string         `json:"sharingReasons,omitempty"`
 	CustomSettingsType string           `json:"customSettingsType,omitempty"`
+	PublishBehavior    string           `json:"publishBehavior,omitempty"`
 	EnableSearch       bool             `json:"enableSearch,omitempty"`
 	Triggerable        *bool            `json:"triggerable,omitempty"`
 	NameField          NameField        `json:"nameField,omitempty"`
@@ -51,6 +54,7 @@ type NameField struct {
 	Label         string `json:"label,omitempty"`
 	Type          string `json:"type,omitempty"`
 	DisplayFormat string `json:"displayFormat,omitempty"`
+	Length        int    `json:"length,omitempty"`
 }
 
 type Field struct {
@@ -62,8 +66,11 @@ type Field struct {
 	Length                        int                `json:"length,omitempty"`
 	Precision                     int                `json:"precision,omitempty"`
 	Scale                         int                `json:"scale,omitempty"`
+	ScaleSpecified                bool               `json:"scaleSpecified,omitempty"`
 	ReferenceTo                   []string           `json:"referenceTo,omitempty"`
 	RelationshipName              string             `json:"relationshipName,omitempty"`
+	RelationshipOrder             *int               `json:"relationshipOrder,omitempty"`
+	ReparentableMasterDetail      bool               `json:"reparentableMasterDetail,omitempty"`
 	ChildRelationshipName         string             `json:"childRelationshipName,omitempty"`
 	ChildRelationshipNameInferred bool               `json:"-"`
 	DeleteConstraint              string             `json:"deleteConstraint,omitempty"`
@@ -76,8 +83,10 @@ type Field struct {
 	Sortable                      *bool              `json:"sortable,omitempty"`
 	Aggregatable                  *bool              `json:"aggregatable,omitempty"`
 	Unique                        bool               `json:"unique,omitempty"`
+	CaseSensitive                 bool               `json:"caseSensitive,omitempty"`
 	Encrypted                     bool               `json:"encrypted,omitempty"`
 	Formula                       string             `json:"formula,omitempty"`
+	FormulaTreatBlanksAs          string             `json:"formulaTreatBlanksAs,omitempty"`
 	SummarizedField               string             `json:"summarizedField,omitempty"`
 	SummaryForeignKey             string             `json:"summaryForeignKey,omitempty"`
 	SummaryOperation              string             `json:"summaryOperation,omitempty"`
@@ -91,9 +100,20 @@ type Field struct {
 }
 
 type FilteredLookupInfo struct {
-	ControllingFields []string `json:"controllingFields,omitempty"`
-	Dependent         bool     `json:"dependent,omitempty"`
-	OptionalFilter    bool     `json:"optionalFilter,omitempty"`
+	ControllingFields []string           `json:"controllingFields,omitempty"`
+	Dependent         bool               `json:"dependent,omitempty"`
+	OptionalFilter    bool               `json:"optionalFilter,omitempty"`
+	Active            bool               `json:"active,omitempty"`
+	BooleanFilter     string             `json:"booleanFilter,omitempty"`
+	ErrorMessage      string             `json:"errorMessage,omitempty"`
+	FilterItems       []LookupFilterItem `json:"filterItems,omitempty"`
+}
+
+type LookupFilterItem struct {
+	Field      string `json:"field,omitempty"`
+	Operation  string `json:"operation,omitempty"`
+	Value      string `json:"value,omitempty"`
+	ValueField string `json:"valueField,omitempty"`
 }
 
 type SummaryFilter struct {
@@ -153,7 +173,9 @@ type customObjectXML struct {
 	Label              string              `xml:"label"`
 	PluralLabel        string              `xml:"pluralLabel"`
 	SharingModel       string              `xml:"sharingModel"`
+	EnableSharing      bool                `xml:"enableSharing"`
 	CustomSettingsType string              `xml:"customSettingsType"`
+	PublishBehavior    string              `xml:"publishBehavior"`
 	EnableSearch       bool                `xml:"enableSearch"`
 	NameField          nameFieldXML        `xml:"nameField"`
 	Fields             []customFieldXML    `xml:"fields"`
@@ -165,6 +187,7 @@ type nameFieldXML struct {
 	Label         string `xml:"label"`
 	Type          string `xml:"type"`
 	DisplayFormat string `xml:"displayFormat"`
+	Length        int    `xml:"length"`
 }
 
 type customFieldXML struct {
@@ -175,9 +198,11 @@ type customFieldXML struct {
 	DisplayFormat         string             `xml:"displayFormat"`
 	Length                int                `xml:"length"`
 	Precision             int                `xml:"precision"`
-	Scale                 int                `xml:"scale"`
+	Scale                 *int               `xml:"scale"`
 	ReferenceTo           []string           `xml:"referenceTo"`
 	RelationshipName      string             `xml:"relationshipName"`
+	RelationshipOrder     *int               `xml:"relationshipOrder"`
+	ReparentableMasterDetail bool             `xml:"reparentableMasterDetail"`
 	ChildRelationshipName string             `xml:"childRelationshipName"`
 	DeleteConstraint      string             `xml:"deleteConstraint"`
 	DefaultValue          string             `xml:"defaultValue"`
@@ -185,7 +210,9 @@ type customFieldXML struct {
 	ExternalID            bool               `xml:"externalId"`
 	IDLookup              bool               `xml:"idLookup"`
 	Unique                bool               `xml:"unique"`
+	CaseSensitive         bool               `xml:"caseSensitive"`
 	Formula               string             `xml:"formula"`
+	FormulaTreatBlanksAs  string             `xml:"formulaTreatBlanksAs"`
 	SummarizedField       string             `xml:"summarizedField"`
 	SummaryForeignKey     string             `xml:"summaryForeignKey"`
 	SummaryOperation      string             `xml:"summaryOperation"`
@@ -195,13 +222,18 @@ type customFieldXML struct {
 }
 
 type lookupFilterXML struct {
-	Active      *bool                 `xml:"active"`
-	FilterItems []lookupFilterItemXML `xml:"filterItems"`
-	IsOptional  *bool                 `xml:"isOptional"`
+	BooleanFilter string                `xml:"booleanFilter"`
+	ErrorMessage  string                `xml:"errorMessage"`
+	Active        *bool                 `xml:"active"`
+	FilterItems   []lookupFilterItemXML `xml:"filterItems"`
+	IsOptional    *bool                 `xml:"isOptional"`
 }
 
 type lookupFilterItemXML struct {
-	Field string `xml:"field"`
+	Field      string `xml:"field"`
+	Operation  string `xml:"operation"`
+	Value      string `xml:"value"`
+	ValueField string `xml:"valueField"`
 }
 
 type summaryFilterXML struct {
@@ -280,6 +312,10 @@ type customMetadataValueXML struct {
 type customMetadataTextXML struct {
 	Text string `xml:",chardata"`
 	Nil  bool   `xml:"nil,attr"`
+}
+
+type sharingReasonXML struct {
+	FullName string `xml:"fullName"`
 }
 
 func LoadProject(p project.Project) (Schema, error) {
@@ -458,6 +494,17 @@ func mergeObjectMetadata(dst *Object, src Object) {
 	}
 	if dst.SharingModel == "" {
 		dst.SharingModel = src.SharingModel
+	}
+	if src.EnableSharing {
+		dst.EnableSharing = true
+	}
+	for _, reason := range src.SharingReasons {
+		if !stringSliceContainsFold(dst.SharingReasons, reason) {
+			dst.SharingReasons = append(dst.SharingReasons, reason)
+		}
+	}
+	if dst.PublishBehavior == "" {
+		dst.PublishBehavior = src.PublishBehavior
 	}
 	if dst.CustomSettingsType == "" {
 		dst.CustomSettingsType = src.CustomSettingsType
@@ -673,14 +720,18 @@ func loadObject(path string, p project.Project) (Object, error) {
 		Label:              raw.Label,
 		PluralLabel:        raw.PluralLabel,
 		SharingModel:       raw.SharingModel,
+		EnableSharing:      raw.EnableSharing,
 		CustomSettingsType: strings.TrimSpace(raw.CustomSettingsType),
+		PublishBehavior:    strings.TrimSpace(raw.PublishBehavior),
 		EnableSearch:       raw.EnableSearch,
 		NameField: NameField{
 			Label:         strings.TrimSpace(raw.NameField.Label),
 			Type:          strings.TrimSpace(raw.NameField.Type),
 			DisplayFormat: strings.TrimSpace(raw.NameField.DisplayFormat),
+			Length:        raw.NameField.Length,
 		},
 	}
+	object.SharingReasons = loadSharingReasons(path, p)
 	for _, rawField := range raw.Fields {
 		field := fieldFromXML(rawField, "")
 		if field.Name != "" {
@@ -703,6 +754,42 @@ func loadObject(path string, p project.Project) (Object, error) {
 		}
 	}
 	return object, nil
+}
+
+func loadSharingReasons(objectPath string, p project.Project) []string {
+	dir := filepath.Join(filepath.Dir(objectPath), "sharingReasons")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+	reasons := make([]string, 0, len(entries))
+	seen := make(map[string]bool, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".sharingreason-meta.xml") {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(dir, entry.Name()))
+		if err != nil {
+			continue
+		}
+		var raw sharingReasonXML
+		if err := xml.Unmarshal(escapeBareAmpersands(data), &raw); err != nil {
+			continue
+		}
+		name := strings.TrimSpace(raw.FullName)
+		if name == "" {
+			name = trimMetadataSuffix(entry.Name(), ".sharingReason-meta.xml")
+		}
+		name = remapProjectAPIName(p, name)
+		name = namespaceAPIName(p.Namespace, name)
+		if name == "" || seen[strings.ToLower(name)] {
+			continue
+		}
+		seen[strings.ToLower(name)] = true
+		reasons = append(reasons, name)
+	}
+	sort.Strings(reasons)
+	return reasons
 }
 
 func loadField(path string) (Field, error) {
@@ -740,9 +827,12 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		DisplayFormat:                 strings.TrimSpace(raw.DisplayFormat),
 		Length:                        raw.Length,
 		Precision:                     raw.Precision,
-		Scale:                         raw.Scale,
+		Scale:                         metadataScale(raw.Scale),
+		ScaleSpecified:                raw.Scale != nil,
 		ReferenceTo:                   raw.ReferenceTo,
 		RelationshipName:              relationshipName,
+		RelationshipOrder:             raw.RelationshipOrder,
+		ReparentableMasterDetail:      raw.ReparentableMasterDetail,
 		ChildRelationshipName:         childRelationshipName,
 		ChildRelationshipNameInferred: childRelationshipNameInferred,
 		DeleteConstraint:              raw.DeleteConstraint,
@@ -751,8 +841,10 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		ExternalID:                    raw.ExternalID,
 		IDLookup:                      raw.IDLookup,
 		Unique:                        raw.Unique,
+		CaseSensitive:                 raw.CaseSensitive,
 		Encrypted:                     strings.EqualFold(raw.Type, "EncryptedText"),
 		Formula:                       strings.TrimSpace(raw.Formula),
+		FormulaTreatBlanksAs:          strings.TrimSpace(raw.FormulaTreatBlanksAs),
 		SummarizedField:               strings.TrimSpace(raw.SummarizedField),
 		SummaryForeignKey:             strings.TrimSpace(raw.SummaryForeignKey),
 		SummaryOperation:              strings.TrimSpace(raw.SummaryOperation),
@@ -785,6 +877,11 @@ func remapProjectField(p project.Project, field Field) Field {
 	}
 	for i, fieldName := range field.FilteredLookupInfo.ControllingFields {
 		field.FilteredLookupInfo.ControllingFields[i] = remapProjectAPIName(p, fieldName)
+	}
+	for i, item := range field.FilteredLookupInfo.FilterItems {
+		item.Field = mapLookupFilterPath(item.Field, func(name string) string { return remapProjectAPIName(p, name) })
+		item.ValueField = mapLookupFilterPath(item.ValueField, func(name string) string { return remapProjectAPIName(p, name) })
+		field.FilteredLookupInfo.FilterItems[i] = item
 	}
 	field.PicklistController = remapProjectAPIName(p, field.PicklistController)
 	field.ValueSetName = remapProjectAPIName(p, field.ValueSetName)
@@ -829,10 +926,23 @@ func namespaceObjectField(projectNamespace, objectName string, field Field) Fiel
 		field.SummaryFilterItems[i] = filter
 	}
 	for i, fieldName := range field.FilteredLookupInfo.ControllingFields {
-		field.FilteredLookupInfo.ControllingFields[i] = namespaceAPIName(namespace, fieldName)
+		field.FilteredLookupInfo.ControllingFields[i] = mapLookupFilterPath(fieldName, func(name string) string { return namespaceAPIName(namespace, name) })
+	}
+	for i, item := range field.FilteredLookupInfo.FilterItems {
+		item.Field = mapLookupFilterPath(item.Field, func(name string) string { return namespaceAPIName(namespace, name) })
+		item.ValueField = mapLookupFilterPath(item.ValueField, func(name string) string { return namespaceAPIName(namespace, name) })
+		field.FilteredLookupInfo.FilterItems[i] = item
 	}
 	field.PicklistController = namespaceAPIName(namespace, field.PicklistController)
 	return field
+}
+
+func mapLookupFilterPath(path string, convert func(string) string) string {
+	parts := strings.Split(path, ".")
+	for i, part := range parts {
+		parts[i] = convert(part)
+	}
+	return strings.Join(parts, ".")
 }
 
 func namespaceProjectObjectName(projectNamespace, objectName string) string {
@@ -959,6 +1069,14 @@ func filteredLookupInfoFromXML(raw lookupFilterXML) FilteredLookupInfo {
 	}
 	if raw.IsOptional != nil {
 		info.OptionalFilter = *raw.IsOptional
+	}
+	if raw.Active != nil {
+		info.Active = *raw.Active
+	}
+	info.BooleanFilter = strings.TrimSpace(raw.BooleanFilter)
+	info.ErrorMessage = raw.ErrorMessage
+	for _, item := range raw.FilterItems {
+		info.FilterItems = append(info.FilterItems, LookupFilterItem{Field: strings.TrimSpace(item.Field), Operation: strings.TrimSpace(item.Operation), Value: item.Value, ValueField: strings.TrimSpace(item.ValueField)})
 	}
 	return info
 }
@@ -1163,4 +1281,11 @@ func escapeBareAmpersands(data []byte) []byte {
 		}
 	}
 	return []byte(out.String())
+}
+
+func metadataScale(scale *int) int {
+	if scale == nil {
+		return 0
+	}
+	return *scale
 }

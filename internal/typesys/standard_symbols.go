@@ -177,10 +177,16 @@ func buildStandardPlatformSymbols() []TypeSymbol {
 	specs = append(specs, plan7SFDWSymbolSpecs...)
 	specs = append(specs, dataSourcePlatformSymbolOverlays...)
 	specs = append(specs, standardPlatformSymbolOverlays...)
+	known := make(map[string]struct{}, len(specs)+len(standardPlatformTypeNames))
+	for _, spec := range specs {
+		known[strings.ToLower(spec.Name)] = struct{}{}
+	}
 	for _, name := range standardPlatformTypeNames {
-		if standardSpecExists(specs, name) {
+		key := strings.ToLower(name)
+		if _, ok := known[key]; ok {
 			continue
 		}
+		known[key] = struct{}{}
 		specs = append(specs, StandardSymbolSpec{Name: name, Kind: apexast.DeclarationClass})
 	}
 	return StandardSymbolsFromSpecs(specs)
@@ -311,8 +317,10 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 			})
 		}
 		for _, method := range spec.Methods {
-			modifiers := []string{"public"}
-			modifiers = append(modifiers, method.Modifiers...)
+			modifiers := append([]string(nil), method.Modifiers...)
+			if !standardModifierContains(modifiers, "private") && !standardModifierContains(modifiers, "protected") && !standardModifierContains(modifiers, "public") && !standardModifierContains(modifiers, "global") {
+				modifiers = append([]string{"public"}, modifiers...)
+			}
 			if method.Static {
 				modifiers = append(modifiers, "static")
 			}
@@ -552,15 +560,6 @@ func standardTypeListKey(types []string) string {
 		normalized = append(normalized, strings.ToLower(strings.TrimSpace(typ)))
 	}
 	return strings.Join(normalized, ",")
-}
-
-func standardSpecExists(specs []StandardSymbolSpec, name string) bool {
-	for _, spec := range specs {
-		if strings.EqualFold(spec.Name, name) {
-			return true
-		}
-	}
-	return false
 }
 
 func splitStandardSymbolName(name string) (string, string, bool) {
@@ -891,6 +890,8 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 		{Name: "suggest", ReturnType: "Search.SuggestionResults", Parameters: []string{"String", "String", "Search.SuggestionOption", "AccessLevel"}, Static: true},
 	}},
 	{Name: "Exception", Constructors: [][]string{{}, {"Exception"}, {"String"}, {"String", "Exception"}}},
+	{Name: "System.SerializationException", SuperClass: "Exception", Constructors: [][]string{{}, {"String"}}},
+	{Name: "SerializationException", SuperClass: "Exception", Constructors: [][]string{{}, {"String"}}},
 	// VisualforceException is an Apex exception type, not a passive Object DTO.
 	// Keep the inheritance explicit because the generated system stub does not
 	// carry the platform exception superclass.
@@ -908,6 +909,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "NoAccessException", SuperClass: "Exception", Constructors: [][]string{{"Exception"}, {"String"}, {"String", "Exception"}}},
 	{Name: "NoDataFoundException", SuperClass: "Exception", Constructors: [][]string{{"Exception"}, {"String"}, {"String", "Exception"}}},
 	{Name: "NullPointerException", SuperClass: "Exception", Constructors: [][]string{{"Exception"}, {"String"}, {"String", "Exception"}}},
+	{Name: "HandledException", SuperClass: "Exception"},
 	{Name: "TouchHandledException", SuperClass: "Exception", Constructors: [][]string{{"String"}}, ReplaceConstructors: true},
 	{Name: "Answers", Methods: []StandardMethodSpec{{Name: "findSimilar", ReturnType: "List<Id>", Parameters: []string{"Question"}, Static: true}}},
 	{Name: "Approval", Methods: []StandardMethodSpec{
@@ -998,9 +1000,10 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	}},
 	{Name: "ConnectApi.OrchestrationWorkAssignment", Properties: []StandardPropertySpec{{Name: "id", Type: "Id"}, {Name: "label", Type: "String"}, {Name: "contextRecordId", Type: "Id"}, {Name: "screenFlowId", Type: "String"}}},
 	{Name: "ConnectApi.CommentInput", Properties: []StandardPropertySpec{{Name: "body", Type: "ConnectApi.MessageBodyInput"}}},
+	{Name: "ConnectApi.Comment", Properties: []StandardPropertySpec{{Name: "body", Type: "ConnectApi.MessageBody"}, {Name: "id", Type: "Id"}}},
 	{Name: "ConnectApi.FeedBody", Properties: []StandardPropertySpec{{Name: "messageSegments", Type: "List<ConnectApi.MessageSegment>"}}},
 	{Name: "ConnectApi.FeedElement", Properties: []StandardPropertySpec{{Name: "body", Type: "ConnectApi.FeedBody"}, {Name: "id", Type: "Id"}}},
-	{Name: "ConnectApi.FeedItemInput", SuperClass: "ConnectApi.FeedElementInput", Properties: []StandardPropertySpec{{Name: "body", Type: "ConnectApi.MessageBodyInput"}, {Name: "feedElementType", Type: "ConnectApi.FeedElementType"}, {Name: "subjectId", Type: "Id"}}},
+	{Name: "ConnectApi.FeedItemInput", SuperClass: "ConnectApi.FeedElementInput", Properties: []StandardPropertySpec{{Name: "body", Type: "ConnectApi.MessageBodyInput"}, {Name: "feedElementType", Type: "ConnectApi.FeedElementType"}, {Name: "subjectId", Type: "String"}}},
 	{Name: "ConnectApi.MessageBody", Properties: []StandardPropertySpec{{Name: "messageSegments", Type: "List<ConnectApi.MessageSegment>"}}},
 	{Name: "ConnectApi.MessageBodyInput", Properties: []StandardPropertySpec{{Name: "messageSegments", Type: "List<ConnectApi.MessageSegmentInput>"}}},
 	{Name: "ConnectApi.NBAActionParameter", Properties: []StandardPropertySpec{{Name: "name", Type: "String"}, {Name: "value", Type: "String"}, {Name: "type", Type: "String"}}},
@@ -1038,7 +1041,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "Messaging.InboundEnvelope", Properties: []StandardPropertySpec{{Name: "fromAddress", Type: "String"}, {Name: "toAddress", Type: "String"}}},
 	{Name: "Messaging.TextAttachment", Properties: []StandardPropertySpec{{Name: "body", Type: "String"}, {Name: "bodyIsTruncated", Type: "Boolean"}, {Name: "charset", Type: "String"}, {Name: "fileName", Type: "String"}, {Name: "headers", Type: "List<Messaging.InboundEmail.Header>"}, {Name: "mimeTypeSubType", Type: "String"}}},
 	{Name: "VisualEditor.DesignTimePageContext", Properties: []StandardPropertySpec{{Name: "entityName", Type: "String"}}},
-	{Name: "Metadata.Layout", Properties: []StandardPropertySpec{{Name: "layoutSections", Type: "List<Metadata.LayoutSection>"}}},
+	{Name: "Metadata.Layout", SuperClass: "Metadata.Metadata", Properties: []StandardPropertySpec{{Name: "layoutSections", Type: "List<Metadata.LayoutSection>"}}},
 	{Name: "Metadata.LayoutSection", Properties: []StandardPropertySpec{{Name: "layoutColumns", Type: "List<Metadata.LayoutColumn>"}}},
 	{Name: "Metadata.LayoutColumn", Properties: []StandardPropertySpec{{Name: "layoutItems", Type: "List<Metadata.LayoutItem>"}}},
 	{Name: "Metadata.LayoutItem", Properties: []StandardPropertySpec{{Name: "field", Type: "String"}}},
@@ -1055,7 +1058,12 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	}},
 	{Name: "System", Methods: []StandardMethodSpec{{Name: "now", ReturnType: "Datetime", Static: true}, {Name: "today", ReturnType: "Date", Static: true}, {Name: "debug", ReturnType: "void", Parameters: []string{"Object"}, Static: true}, {Name: "debug", ReturnType: "void", Parameters: []string{"LoggingLevel", "Object"}, Static: true}, {Name: "assert", ReturnType: "void", Parameters: []string{"Boolean"}, Static: true}, {Name: "assert", ReturnType: "void", Parameters: []string{"Boolean", "Object"}, Static: true}, {Name: "assertEquals", ReturnType: "void", Parameters: []string{"Object", "Object"}, Static: true}, {Name: "assertEquals", ReturnType: "void", Parameters: []string{"Object", "Object", "Object"}, Static: true}, {Name: "assertNotEquals", ReturnType: "void", Parameters: []string{"Object", "Object"}, Static: true}, {Name: "assertNotEquals", ReturnType: "void", Parameters: []string{"Object", "Object", "Object"}, Static: true}}},
 	{Name: "Test", Methods: []StandardMethodSpec{{Name: "isRunningTest", ReturnType: "Boolean", Static: true}, {Name: "setCurrentPage", ReturnType: "void", Parameters: []string{"PageReference"}, Static: true}, {Name: "setCurrentPageReference", ReturnType: "void", Parameters: []string{"PageReference"}, Static: true}, {Name: "setFixedSearchResults", ReturnType: "void", Parameters: []string{"List<Id>"}, Static: true}}},
-	{Name: "Math", Properties: []StandardPropertySpec{{Name: "E", Type: "Decimal", Static: true}, {Name: "PI", Type: "Decimal", Static: true}}},
+	{Name: "Math", Methods: []StandardMethodSpec{
+		// Integral signum arguments promote to Double (Math controls K003/K004).
+		// Record that selection explicitly so chained calls retain its contract.
+		{Name: "signum", ReturnType: "Double", Parameters: []string{"Integer"}, Static: true},
+		{Name: "signum", ReturnType: "Double", Parameters: []string{"Long"}, Static: true},
+	}, Properties: []StandardPropertySpec{{Name: "E", Type: "Double", Static: true}, {Name: "PI", Type: "Double", Static: true}}},
 	{Name: "UserInfo", Constructors: [][]string{{}}, Methods: []StandardMethodSpec{
 		{Name: "getCurrentUvid", ReturnType: "String", Static: true},
 		{Name: "getDefaultCurrency", ReturnType: "String", Static: true},
@@ -1196,9 +1204,9 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 		{Name: "merge", ReturnType: "List<Database.MergeResult>", Parameters: []string{"SObject", "List<Id>", "AccessLevel"}, Static: true},
 		{Name: "merge", ReturnType: "List<Database.MergeResult>", Parameters: []string{"SObject", "List<Id>", "Boolean", "AccessLevel"}, Static: true},
 	}},
-	{Name: "Date", Methods: []StandardMethodSpec{{Name: "today", ReturnType: "Date", Static: true}, {Name: "newInstance", ReturnType: "Date", Parameters: []string{"Integer", "Integer", "Integer"}, Static: true}, {Name: "daysInMonth", ReturnType: "Integer", Parameters: []string{"Integer", "Integer"}, Static: true}, {Name: "valueOf", ReturnType: "Date", Parameters: []string{"String"}, Static: true}, {Name: "valueOf", ReturnType: "Date", Parameters: []string{"Object"}, Static: true}, {Name: "addDays", ReturnType: "Date", Parameters: []string{"Integer"}}, {Name: "addMonths", ReturnType: "Date", Parameters: []string{"Integer"}}, {Name: "addYears", ReturnType: "Date", Parameters: []string{"Integer"}}, {Name: "daysBetween", ReturnType: "Integer", Parameters: []string{"Date"}}, {Name: "day", ReturnType: "Integer"}, {Name: "month", ReturnType: "Integer"}, {Name: "year", ReturnType: "Integer"}, {Name: "toStartOfMonth", ReturnType: "Date"}, {Name: "toEndOfMonth", ReturnType: "Date"}, {Name: "format", ReturnType: "String"}, {Name: "toString", ReturnType: "String"}}},
+	{Name: "Date", Methods: []StandardMethodSpec{{Name: "today", ReturnType: "Date", Static: true}, {Name: "newInstance", ReturnType: "Date", Parameters: []string{"Integer", "Integer", "Integer"}, Static: true}, {Name: "daysInMonth", ReturnType: "Integer", Parameters: []string{"Integer", "Integer"}, Static: true}, {Name: "valueOf", ReturnType: "Date", Parameters: []string{"String"}, Static: true}, {Name: "valueOf", ReturnType: "Date", Parameters: []string{"Object"}, Static: true}, {Name: "addDays", ReturnType: "Date", Parameters: []string{"Integer"}}, {Name: "addMonths", ReturnType: "Date", Parameters: []string{"Integer"}}, {Name: "addYears", ReturnType: "Date", Parameters: []string{"Integer"}}, {Name: "daysBetween", ReturnType: "Integer", Parameters: []string{"Date"}}, {Name: "day", ReturnType: "Integer"}, {Name: "month", ReturnType: "Integer"}, {Name: "year", ReturnType: "Integer"}, {Name: "toStartOfMonth", ReturnType: "Date"}, {Name: "format", ReturnType: "String"}, {Name: "toString", ReturnType: "String"}}},
 	{Name: "Schema", Methods: []StandardMethodSpec{{Name: "getGlobalDescribe", ReturnType: "Map<String,Schema.SObjectType>", Static: true}, {Name: "describeSObjects", ReturnType: "List<Schema.DescribeSObjectResult>", Parameters: []string{"List<String>"}, Static: true}, {Name: "describeTabs", ReturnType: "List<Schema.DescribeTabSetResult>", Static: true}, {Name: "getAppDescribe", ReturnType: "Map<String,Schema.SObjectType>", Parameters: []string{"String"}, Static: true}, {Name: "getModuleDescribe", ReturnType: "Map<String,Schema.SObjectType>", Static: true}, {Name: "getModuleDescribe", ReturnType: "Map<String,Schema.SObjectType>", Parameters: []string{"String"}, Static: true}}},
-	{Name: "Schema.SObjectType", Methods: []StandardMethodSpec{{Name: "getDescribe", ReturnType: "Schema.DescribeSObjectResult"}, {Name: "getDescribe", ReturnType: "Schema.DescribeSObjectResult", Parameters: []string{"SObjectDescribeOptions"}}, {Name: "newSObject", ReturnType: "SObject"}}},
+	{Name: "Schema.SObjectType", Methods: []StandardMethodSpec{{Name: "getDescribe", ReturnType: "Schema.DescribeSObjectResult"}, {Name: "getDescribe", ReturnType: "Schema.DescribeSObjectResult", Parameters: []string{"SObjectDescribeOptions"}}, {Name: "getLocalName", ReturnType: "String"}, {Name: "newSObject", ReturnType: "SObject"}}},
 	{Name: "Schema.SObjectField", Methods: []StandardMethodSpec{{Name: "getDescribe", ReturnType: "Schema.DescribeFieldResult"}, {Name: "isAccessible", ReturnType: "Boolean"}, {Name: "isCreateable", ReturnType: "Boolean"}, {Name: "isUpdateable", ReturnType: "Boolean"}}, Properties: []StandardPropertySpec{{Name: "label", Type: "String"}, {Name: "name", Type: "String"}}},
 	{Name: "Schema.DescribeSObjectResult", Methods: []StandardMethodSpec{{Name: "getName", ReturnType: "String"}, {Name: "getLabel", ReturnType: "String"}, {Name: "getLabelPlural", ReturnType: "String"}, {Name: "getKeyPrefix", ReturnType: "String"}, {Name: "getFields", ReturnType: "Schema.SObjectTypeFields"}, {Name: "getFieldSets", ReturnType: "Schema.SObjectTypeFieldSets"}, {Name: "getRecordTypeInfos", ReturnType: "List<Schema.RecordTypeInfo>"}, {Name: "getRecordTypeInfosByName", ReturnType: "Map<String,Schema.RecordTypeInfo>"}, {Name: "getRecordTypeInfosByDeveloperName", ReturnType: "Map<String,Schema.RecordTypeInfo>"}, {Name: "getRecordTypeInfosById", ReturnType: "Map<Id,Schema.RecordTypeInfo>"}, {Name: "getChildRelationships", ReturnType: "List<Schema.ChildRelationship>"}, {Name: "getSObjectType", ReturnType: "Schema.SObjectType"}, {Name: "isAccessible", ReturnType: "Boolean"}, {Name: "isCreateable", ReturnType: "Boolean"}, {Name: "isUpdateable", ReturnType: "Boolean"}, {Name: "isDeletable", ReturnType: "Boolean"}, {Name: "isQueryable", ReturnType: "Boolean"}, {Name: "isSearchable", ReturnType: "Boolean"}}, Properties: []StandardPropertySpec{{Name: "fields", Type: "Schema.SObjectTypeFields"}, {Name: "fieldSets", Type: "Schema.SObjectTypeFieldSets"}}},
 	{Name: "Schema.SObjectTypeFields", Methods: []StandardMethodSpec{{Name: "get", ReturnType: "Schema.SObjectField", Parameters: []string{"String"}}, {Name: "getMap", ReturnType: "Map<String,Schema.SObjectField>"}}},
@@ -1219,7 +1227,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "SObjectAccessDecision", Constructors: [][]string{{}}, Methods: []StandardMethodSpec{{Name: "clone", ReturnType: "Object"}, {Name: "getModifiedIndexes", ReturnType: "Set<Integer>"}, {Name: "getRecords", ReturnType: "List<SObject>"}, {Name: "getRemovedFields", ReturnType: "Map<String,Set<String>>"}}},
 	{Name: "Address", Methods: []StandardMethodSpec{{Name: "getStreet", ReturnType: "String"}, {Name: "getCity", ReturnType: "String"}, {Name: "getState", ReturnType: "String"}, {Name: "getStateCode", ReturnType: "String"}, {Name: "getPostalCode", ReturnType: "String"}, {Name: "getCountry", ReturnType: "String"}, {Name: "getCountryCode", ReturnType: "String"}, {Name: "getLatitude", ReturnType: "Double"}, {Name: "getLongitude", ReturnType: "Double"}, {Name: "getGeocodeAccuracy", ReturnType: "String"}}},
 	{Name: "Metadata.MetadataType", Kind: apexast.DeclarationEnum, Properties: []StandardPropertySpec{{Name: "CustomMetadata", Type: "Metadata.MetadataType", Static: true}}},
-	{Name: "Metadata.Operations", Methods: []StandardMethodSpec{{Name: "retrieve", ReturnType: "List<Metadata.CustomMetadata>", Parameters: []string{"Metadata.MetadataType", "List<String>"}, Static: true}, {Name: "enqueueDeployment", ReturnType: "Id", Parameters: []string{"Metadata.DeployContainer", "Metadata.DeployCallback"}, Static: true}, {Name: "checkDeployStatus", ReturnType: "Metadata.DeployResult", Parameters: []string{"Id"}, Static: true}}},
+	{Name: "Metadata.Operations", Methods: []StandardMethodSpec{{Name: "retrieve", ReturnType: "List<Metadata.Metadata>", Parameters: []string{"Metadata.MetadataType", "List<String>"}, Static: true}, {Name: "enqueueDeployment", ReturnType: "Id", Parameters: []string{"Metadata.DeployContainer", "Metadata.DeployCallback"}, Static: true}, {Name: "checkDeployStatus", ReturnType: "Metadata.DeployResult", Parameters: []string{"Id"}, Static: true}}},
 	{Name: "Messaging.SingleEmailMessage", SuperClass: "Messaging.Email", Methods: []StandardMethodSpec{{Name: "setToAddresses", ReturnType: "void", Parameters: []string{"List<String>"}}, {Name: "setSubject", ReturnType: "void", Parameters: []string{"String"}}, {Name: "setPlainTextBody", ReturnType: "void", Parameters: []string{"String"}}, {Name: "setWhatId", ReturnType: "void", Parameters: []string{"Id"}}, {Name: "getCustomHeaders", ReturnType: "Map<String,String>"}, {Name: "setCustomHeaders", ReturnType: "void", Parameters: []string{"Map<String,String>"}}}, Properties: []StandardPropertySpec{{Name: "customHeaders", Type: "Map<String,String>"}}},
 	{Name: "Messaging.AttachmentRetrievalOption", Kind: apexast.DeclarationEnum, Properties: standardEnumProperties("Messaging.AttachmentRetrievalOption", "METADATA_ONLY", "METADATA_WITH_BODY", "NONE")},
 	{Name: "Messaging", Methods: []StandardMethodSpec{
@@ -1230,7 +1238,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	}},
 	{Name: "SObject", Methods: []StandardMethodSpec{{Name: "setOptions", ReturnType: "void", Parameters: []string{"Database.DMLOptions"}}, {Name: "getOptions", ReturnType: "Database.DMLOptions"}}},
 	{Name: "ConnectApi.Organization", Methods: []StandardMethodSpec{{Name: "getSettings", ReturnType: "ConnectApi.OrganizationSettings", Static: true}}},
-	{Name: "ConnectApi.ChatterFeeds", Methods: []StandardMethodSpec{{Name: "postFeedElement", ReturnType: "ConnectApi.FeedElement", Parameters: []string{"String", "ConnectApi.FeedElementInput"}, Static: true}, {Name: "postFeedElement", ReturnType: "ConnectApi.FeedElement", Parameters: []string{"String", "String", "ConnectApi.FeedElementType", "String"}, Static: true}}},
+	{Name: "ConnectApi.ChatterFeeds", Methods: []StandardMethodSpec{{Name: "postFeedElement", ReturnType: "ConnectApi.FeedElement", Parameters: []string{"String", "ConnectApi.FeedElementInput"}, Static: true}, {Name: "postFeedElement", ReturnType: "ConnectApi.FeedElement", Parameters: []string{"String", "String", "ConnectApi.FeedElementType", "String"}, Static: true}, {Name: "postCommentToFeedElement", ReturnType: "ConnectApi.Comment", Parameters: []string{"String", "String", "ConnectApi.CommentInput", "ConnectApi.BinaryInput"}, Static: true}, {Name: "postCommentToFeedElement", ReturnType: "ConnectApi.Comment", Parameters: []string{"String", "String", "String"}, Static: true}}},
 	{Name: "ConnectApi.UserProfiles", Methods: []StandardMethodSpec{{Name: "getUserProfile", ReturnType: "ConnectApi.UserProfile", Parameters: []string{"String", "String"}, Static: true}}},
 	{Name: "Auth.AuthConfiguration", Constructors: [][]string{{"String", "String"}}, Methods: []StandardMethodSpec{{Name: "getAuthConfig", ReturnType: "Auth.AuthConfiguration", Static: true}, {Name: "getAuthProviders", ReturnType: "List<AuthProvider>"}, {Name: "getFooterText", ReturnType: "String"}, {Name: "getBackgroundColor", ReturnType: "String"}, {Name: "getStartUrl", ReturnType: "String"}, {Name: "isCommunityUsingSiteAsContainer", ReturnType: "Boolean"},
 		{Name: "getAllowInternalUserLoginEnabled", ReturnType: "Boolean"}, {Name: "getAuthConfigProviders", ReturnType: "List<Auth.AuthConfig>"}, {Name: "getAuthProviderSsoDomainUrl", ReturnType: "String", Parameters: []string{"String", "String", "String"}, Static: true}, {Name: "getAuthProviderSsoUrl", ReturnType: "String", Parameters: []string{"String", "String", "String"}, Static: true}, {Name: "getCertificateLoginEnabled", ReturnType: "Boolean", Parameters: []string{"String"}}, {Name: "getCertificateLoginUrl", ReturnType: "String", Parameters: []string{"String", "String"}, Static: true}, {Name: "getDefaultProfileForRegistration", ReturnType: "String"}, {Name: "getForgotPasswordUrl", ReturnType: "String"}, {Name: "getHeadlessForgotPasswordEnabled", ReturnType: "Boolean"}, {Name: "getHeadlessFrgtPswEnabled", ReturnType: "Boolean"}, {Name: "getHeadlessPasswordlessLoginEnabled", ReturnType: "Boolean"}, {Name: "getHeadlessRegistrationEnabled", ReturnType: "Boolean"}, {Name: "getLogoUrl", ReturnType: "String"}, {Name: "getRightFrameUrl", ReturnType: "String"}, {Name: "getSamlProviders", ReturnType: "List<Auth.AuthConfig>"}, {Name: "getSamlSsoUrl", ReturnType: "String", Parameters: []string{"String", "String", "String"}, Static: true}, {Name: "getSelfRegistrationEnabled", ReturnType: "Boolean"}, {Name: "getSelfRegistrationUrl", ReturnType: "String"}, {Name: "getUsernamePasswordEnabled", ReturnType: "Boolean"}}},
@@ -1277,10 +1285,10 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "Http", Methods: []StandardMethodSpec{{Name: "send", ReturnType: "HttpResponse", Parameters: []string{"HttpRequest"}}}},
 	{Name: "HttpRequest", Constructors: [][]string{{}}, Methods: []StandardMethodSpec{{Name: "setEndpoint", ReturnType: "void", Parameters: []string{"String"}}, {Name: "getEndpoint", ReturnType: "String"}, {Name: "setMethod", ReturnType: "void", Parameters: []string{"String"}}, {Name: "getMethod", ReturnType: "String"}, {Name: "setHeader", ReturnType: "void", Parameters: []string{"String", "String"}}, {Name: "getHeader", ReturnType: "String", Parameters: []string{"String"}}, {Name: "setBody", ReturnType: "void", Parameters: []string{"String"}}, {Name: "getBody", ReturnType: "String"}, {Name: "setBodyDocument", ReturnType: "void", Parameters: []string{"Dom.Document"}}, {Name: "setTimeout", ReturnType: "void", Parameters: []string{"Integer"}}}},
 	{Name: "HttpResponse", Methods: []StandardMethodSpec{{Name: "getStatusCode", ReturnType: "Integer"}, {Name: "getStatus", ReturnType: "String"}, {Name: "getBody", ReturnType: "String"}}},
-	{Name: "WebServiceCallout", Methods: []StandardMethodSpec{{Name: "invoke", ReturnType: "void", Parameters: []string{"Object", "Object", "Map<String,Object>", "List<String>"}, Static: true}}},
+	{Name: "WebServiceCallout", Methods: []StandardMethodSpec{{Name: "invoke", ReturnType: "void", Parameters: []string{"Object", "Object", "Map", "List"}, Static: true}}},
 	{Name: "WebServiceMock", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "doInvoke", ReturnType: "void", Parameters: []string{"Object", "Object", "Map<String,Object>", "String", "String", "String", "String", "String", "String"}}}},
 	{Name: "UserInfo", Methods: []StandardMethodSpec{{Name: "getUserId", ReturnType: "Id", Static: true}, {Name: "getProfileId", ReturnType: "Id", Static: true}, {Name: "getUserName", ReturnType: "String", Static: true}, {Name: "getName", ReturnType: "String", Static: true}, {Name: "getFirstName", ReturnType: "String", Static: true}, {Name: "getLastName", ReturnType: "String", Static: true}, {Name: "getUserEmail", ReturnType: "String", Static: true}, {Name: "getOrganizationId", ReturnType: "Id", Static: true}, {Name: "getUserType", ReturnType: "String", Static: true}, {Name: "getSessionId", ReturnType: "String", Static: true}, {Name: "getLocale", ReturnType: "String", Static: true}, {Name: "getLanguage", ReturnType: "String", Static: true}, {Name: "getTimeZone", ReturnType: "TimeZone", Static: true}, {Name: "isMultiCurrencyOrganization", ReturnType: "Boolean", Static: true}}},
-	{Name: "UUID", Methods: []StandardMethodSpec{{Name: "randomUUID", ReturnType: "String", Static: true}}},
+	{Name: "UUID", Methods: []StandardMethodSpec{{Name: "randomUUID", ReturnType: "UUID", Static: true}}},
 	{Name: "Object", Methods: []StandardMethodSpec{{Name: "equals", ReturnType: "Boolean", Parameters: []string{"Object"}}, {Name: "hashCode", ReturnType: "Integer"}, {Name: "toString", ReturnType: "String"}}},
 	{Name: "Enum"},
 	{Name: "List", Constructors: [][]string{{}, {"List"}}, Methods: []StandardMethodSpec{{Name: "addToRelationship", ReturnType: "void", Parameters: []string{"List<SObject>"}}, {Name: "addToRelationship", ReturnType: "void", Parameters: []string{"SObject"}}, {Name: "equals", ReturnType: "Boolean", Parameters: []string{"List"}}, {Name: "getAddedToRelationship", ReturnType: "List<SObject>"}, {Name: "getMarkedForDeletion", ReturnType: "List<SObject>"}, {Name: "markForDelete", ReturnType: "void", Parameters: []string{"List<SObject>"}}, {Name: "markForDelete", ReturnType: "void", Parameters: []string{"SObject"}}}},
@@ -1324,6 +1332,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "Database.DeleteFilter", Kind: apexast.DeclarationEnum},
 	{Name: "Database.DeletedRecord", Methods: []StandardMethodSpec{{Name: "getDeletedDate", ReturnType: "Datetime", Force: true}}},
+	{Name: "SObject", Methods: []StandardMethodSpec{{Name: "addError", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "exceptionError", Type: "Exception"}, {Name: "escape", Type: "Boolean"}}}}},
 	{Name: "commercepayments.PostAuthorizationResponse", Methods: []StandardMethodSpec{
 		{Name: "setCardPaymentMethodResponse", ReturnType: "void", Parameters: []string{"commercepayments.CardPaymentMethodResponse"}},
 		{Name: "setPaymentMethodDetailsResponse", ReturnType: "void", Parameters: []string{"commercepayments.PaymentMethodDetailsResponse"}},
@@ -1350,7 +1359,14 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "UserProvisioning.RequestingBatchable", Interfaces: []string{"Database.Batchable<UserProvisioningRequest>"}},
 	{Name: "UserProvisioning.UPASCleaningBatchable", Interfaces: []string{"Database.Batchable<SObject>"}},
 	{Name: "WebServiceCalloutFuture", Modifiers: []string{"abstract"}},
-	{Name: "VisualEditor.DynamicPickList", Modifiers: []string{"abstract"}},
+	// Both datasource methods are abstract native contracts.
+	{Name: "VisualEditor.DynamicPickList", Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{
+		{Name: "getDefaultValue", ReturnType: "VisualEditor.DataRow", Modifiers: []string{"abstract"}, Force: true},
+		{Name: "getValues", ReturnType: "VisualEditor.DynamicPickListRows", Modifiers: []string{"abstract"}, Force: true},
+	}},
+	{Name: "Metadata.Metadata", Modifiers: []string{"abstract"}},
+	{Name: "Metadata.DeployCallback", Kind: apexast.DeclarationInterface},
+	{Name: "Metadata.CustomMetadata", SuperClass: "Metadata.Metadata"},
 	{Name: "Search", Methods: []StandardMethodSpec{
 		{Name: "query", ReturnType: "List<List<SObject>>", Parameters: []string{"String", "Object"}, Static: true},
 		{Name: "find", ReturnType: "Search.SearchResults", Parameters: []string{"String", "Object"}, Static: true},
@@ -1371,6 +1387,7 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "Domain", ReplaceConstructors: true},
 	{Name: "FormulaRecalcFieldError", ReplaceConstructors: true},
 	{Name: "FormulaRecalcResult", ReplaceConstructors: true},
+	{Name: "formulaeval.FormulaInstance", ReplaceConstructors: true},
 	{Name: "OrgLimit", ReplaceConstructors: true},
 	{Name: "QueueableContextImpl", ReplaceConstructors: true},
 	{Name: "SchedulableContextImpl", ReplaceConstructors: true},
@@ -1378,8 +1395,9 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "Collator", ReplaceConstructors: true},
 	{Name: "FinalizerContextImpl", ReplaceConstructors: true},
 	{Name: "UIRequest", ReplaceConstructors: true},
-	{Name: "Cache.Org", ReplaceConstructors: true},
-	{Name: "Cache.Session", ReplaceConstructors: true},
+	// API 67 accepts the default constructors for the platform cache
+	// containers. Keep the generated cache.Org/cache.Session constructor
+	// declarations instead of overriding them with an empty set.
 	// API 67 platform enum hashes use a stable family seed plus declaration
 	// ordinal. Keep the seeds on the merged type metadata, not on members.
 	{Name: "Schema.SoapType", EnumHashBase: standardEnumHashBase(884834318)},
@@ -1677,11 +1695,16 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "reports.ReportDivisionInfo", ReplaceConstructors: true},
 	{Name: "reports.ReportExtendedMetadata", ReplaceConstructors: true},
 	{Name: "reports.ReportFact", ReplaceConstructors: true},
-	{Name: "reports.ReportFactWithDetails", ReplaceConstructors: true},
-	{Name: "reports.ReportFactWithSummaries", ReplaceConstructors: true},
+	// Fact-map DTOs share ReportFact as their
+	// base, while details and summaries remain incompatible sibling types.
+	{Name: "reports.ReportFactWithDetails", SuperClass: "reports.ReportFact", ReplaceConstructors: true},
+	{Name: "reports.ReportFactWithSummaries", SuperClass: "reports.ReportFact", ReplaceConstructors: true},
 	{Name: "reports.ReportInstance", ReplaceConstructors: true},
 	{Name: "reports.ReportInstanceAttributes", ReplaceConstructors: true},
-	{Name: "reports.ReportResults", ReplaceConstructors: true},
+	{Name: "reports.ReportResults", ReplaceConstructors: true, Methods: []StandardMethodSpec{
+		// C030/K051: the native DTO's setter exists but is private.
+		{Name: "setAllData", ReturnType: "void", Parameters: []string{"Boolean"}, Modifiers: []string{"private"}},
+	}},
 	{Name: "reports.ReportScopeInfo", ReplaceConstructors: true},
 	{Name: "reports.ReportScopeValue", ReplaceConstructors: true},
 	{Name: "reports.ReportTypeColumn", ReplaceConstructors: true},
@@ -1691,7 +1714,10 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "reports.StandardDateFilterDurationGroup", ReplaceConstructors: true},
 	{Name: "reports.StandardFilterInfo", ReplaceConstructors: true},
 	{Name: "reports.StandardFilterInfoPicklist", ReplaceConstructors: true},
-	{Name: "reports.SummaryValue", ReplaceConstructors: true},
+	{Name: "reports.SummaryValue", ReplaceConstructors: true, Methods: []StandardMethodSpec{
+		// C032/K048/K049: visibility uses the formal Object parameter.
+		{Name: "setValue", ReturnType: "void", Parameters: []string{"Object"}, Modifiers: []string{"private"}},
+	}},
 }
 
 func standardAssertMethods() []StandardMethodSpec {

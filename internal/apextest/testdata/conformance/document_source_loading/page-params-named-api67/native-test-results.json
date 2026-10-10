@@ -1,0 +1,16 @@
+[
+  {
+    "FullName": "CRT6732be0fd493ddR011.R011",
+    "MethodName": "R011",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|R011|/apex/respage67_f48cd82f84b648a89f0148cd?id=001000000000001AAA",
+    "StackTrace": "Class.CRT6732be0fd493ddR011.R011: line 12, column 1"
+  },
+  {
+    "FullName": "CRT6732be0fd493ddR012.R012",
+    "MethodName": "R012",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|R012|/apex/ResPage67_f48cd82f84b648a89f0148cd?id=001000000000001AAA",
+    "StackTrace": "Class.CRT6732be0fd493ddR012.R012: line 12, column 1"
+  }
+]

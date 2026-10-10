@@ -40,6 +40,7 @@ var nodeIntegrationTests = map[string][]string{
 		"TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare",
 	},
 	"github.com/glade-sh/glade/internal/lwc/compile": {
+		"TestBuildCompileConfigAPIVersionMatrix",
 		"TestCompileProjectLWCBundles",
 		"TestCompileRewritesTemplateStylesheetImports",
 		"TestCompileEmitsSiblingJSModules",
@@ -47,6 +48,10 @@ var nodeIntegrationTests = map[string][]string{
 		"TestCompileEmitsAdditionalHTMLTemplateModules",
 		"TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate",
 		"TestCompileEnablesLwcOnDirective",
+		"TestComplexTemplateExpressionsFollowBundleAPIVersion",
+		"TestHTMLDetailsNameFollowsBundleAPIVersion",
+		"TestLWCModuleAvailabilityFollowsBundleAPIVersion",
+		"TestCompilePreservesDeclaredAPI67",
 	},
 	"github.com/glade-sh/glade/internal/lwcbrowser": {
 		"TestSetupBundleIncludesLabelsSibling",
@@ -70,6 +75,9 @@ var nodeIntegrationTests = map[string][]string{
 }
 
 var nodeIntegrationRunNames = []string{
+	"TestBuildCompileConfigAPIVersionMatrix", "TestLWCModuleAvailabilityFollowsBundleAPIVersion",
+	"TestComplexTemplateExpressionsFollowBundleAPIVersion", "TestHTMLDetailsNameFollowsBundleAPIVersion",
+	"TestCompilePreservesDeclaredAPI67",
 	"TestCompileProjectLWCBundles", "TestCompileRewritesTemplateStylesheetImports", "TestCompileEmitsSiblingJSModules",
 	"TestCompileEmitsUtilityOnlyLWCModules", "TestCompileEmitsAdditionalHTMLTemplateModules",
 	"TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate", "TestCompileEnablesLwcOnDirective",
@@ -124,6 +132,179 @@ func semaFixturePlan() string {
 func semaPassEvent(name string) string {
 	return `{"Action":"pass","Package":"` + semaFixturePackage + `","Test":"` + name + `","Elapsed":1}` + "\n" +
 		`{"Action":"pass","Package":"` + semaFixturePackage + `","Elapsed":1}` + "\n"
+}
+
+const lwcCompileFixturePackage = "github.com/glade-sh/glade/internal/lwc/compile"
+
+func lwcCompileFixtureDiscovery() string {
+	names := append([]string{}, nodeIntegrationTests[lwcCompileFixturePackage]...)
+	for index := range 8 {
+		names = append(names, fmt.Sprintf("TestFamily%d", index))
+	}
+	sort.Strings(names)
+	return strings.Join(names, "\n") + "\nok  \t" + lwcCompileFixturePackage + "\n"
+}
+
+func lwcCompileFixturePlan(t *testing.T) string {
+	t.Helper()
+	var shards []map[string]any
+	for index := range 8 {
+		name := fmt.Sprintf("TestFamily%d", index)
+		shards = append(shards, map[string]any{"index": index, "tests": []string{name}, "estimatedDurationMillis": 0, "regex": "^(?:" + name + ")$"})
+	}
+	data, err := json.Marshal(map[string]any{"version": 1, "package": lwcCompileFixturePackage, "historyUsed": false, "shards": shards})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
+}
+
+func lwcCompilePassEvent(name string) string {
+	return strings.ReplaceAll(semaPassEvent(name), semaFixturePackage, lwcCompileFixturePackage)
+}
+
+func runLWCCompileShardFixture(t *testing.T, index, discovery, plan, events string, nativeRC int) (string, error, string) {
+	t.Helper()
+	dir := t.TempDir()
+	artifacts := filepath.Join(dir, "artifacts")
+	for name, contents := range map[string]string{"discovery": discovery, "plan": plan, "events": events} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(contents), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeApexFixtureExecutable(t, filepath.Join(dir, "go"), `#!/usr/bin/env bash
+if [[ "$*" == "test -list ^Test ./internal/lwc/compile" ]]; then cat "$FIXTURE_ROOT/discovery"; exit 0; fi
+if [[ "$1" == "test" && "$2" == "-json" ]]; then
+  printf '%s\n' "$*" >>"$FIXTURE_ROOT/calls"
+  cat "$FIXTURE_ROOT/events"
+  exit "$FIXTURE_NATIVE_RC"
+fi
+exit 97
+`)
+	writeApexFixtureExecutable(t, filepath.Join(dir, "planner"), `#!/usr/bin/env bash
+printf '%s\n' "$*" >"$FIXTURE_ROOT/planner-args"
+cat "$FIXTURE_ROOT/plan"
+`)
+	writeApexFixtureExecutable(t, filepath.Join(dir, "renderer"), "#!/usr/bin/env bash\ncat >/dev/null\n")
+	cmd := exec.Command("bash", "ci-go-test.sh", "lwc-compile-shard", index)
+	cmd.Env = append(os.Environ(), "PATH="+dir+":"+os.Getenv("PATH"), "FIXTURE_ROOT="+dir,
+		"CI_SHARD_PLANNER="+filepath.Join(dir, "planner"), "CI_TESTLOG_RENDERER="+filepath.Join(dir, "renderer"),
+		"CI_LWC_COMPILE_ARTIFACT_DIR="+artifacts, fmt.Sprintf("FIXTURE_NATIVE_RC=%d", nativeRC))
+	out, err := cmd.CombinedOutput()
+	return string(out), err, artifacts
+}
+
+func TestLWCCompileShardsPartitionDiscoveryAndNodeAuthority(t *testing.T) {
+	var union []string
+	for index := range 8 {
+		name := fmt.Sprintf("TestFamily%d", index)
+		out, err, artifacts := runLWCCompileShardFixture(t, strconv.Itoa(index), lwcCompileFixtureDiscovery(), lwcCompileFixturePlan(t), lwcCompilePassEvent(name), 0)
+		if err != nil {
+			t.Fatalf("shard %d failed: %v\n%s", index, err, out)
+		}
+		read := func(name string) string {
+			t.Helper()
+			data, err := os.ReadFile(filepath.Join(artifacts, name))
+			if err != nil {
+				t.Fatal(err)
+			}
+			return string(data)
+		}
+		calls := read("../calls")
+		wantCall := "test -json -vet=off -count=1 -timeout=90m -run ^(?:" + name + ")$ ./internal/lwc/compile\n"
+		if calls != wantCall {
+			t.Errorf("shard %d native call = %q, want %q", index, calls, wantCall)
+		}
+		if args := read("../planner-args"); !strings.Contains(args, "--package "+lwcCompileFixturePackage+" --shards 8 --tests "+filepath.Join(artifacts, "discovery.txt")) {
+			t.Errorf("planner args = %q", args)
+		}
+		full, filtered := strings.Fields(read("discovery-full.txt")), strings.Fields(read("discovery.txt"))
+		if len(full) != 20 || len(filtered) != 8 {
+			t.Fatalf("full/filtered counts = %d/%d, want 20/8", len(full), len(filtered))
+		}
+		for _, authority := range nodeIntegrationTests[lwcCompileFixturePackage] {
+			if !strings.Contains(read("node-integration-expected.tsv"), lwcCompileFixturePackage+"\t"+authority+"\n") {
+				t.Errorf("missing Node authority %s", authority)
+			}
+			for _, discovered := range filtered {
+				if discovered == authority {
+					t.Errorf("Node authority test selected for compile shards: %s", authority)
+				}
+			}
+		}
+		var selected struct {
+			Tests []string `json:"tests"`
+		}
+		if err := json.Unmarshal([]byte(read("selected-shard.json")), &selected); err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(selected.Tests, []string{name}) {
+			t.Fatalf("selected tests = %v, want %s", selected.Tests, name)
+		}
+		union = append(union, selected.Tests...)
+		for _, summaryFile := range []string{"validation-summary.json", "package-summary.json"} {
+			var summary struct {
+				Valid bool `json:"valid"`
+			}
+			if data := read(summaryFile); json.Unmarshal([]byte(data), &summary) != nil || !summary.Valid {
+				t.Errorf("invalid %s: %s", summaryFile, data)
+			}
+		}
+	}
+	var want []string
+	for index := range 8 {
+		want = append(want, fmt.Sprintf("TestFamily%d", index))
+	}
+	if !reflect.DeepEqual(union, want) {
+		t.Fatalf("shard union = %v, want %v", union, want)
+	}
+}
+
+func TestLWCCompileShardRejectsIncompleteCoverageAndPreservesNativeFailure(t *testing.T) {
+	plan, discovery, events := lwcCompileFixturePlan(t), lwcCompileFixtureDiscovery(), lwcCompilePassEvent("TestFamily0")
+	cases := []struct {
+		name, discovery, plan, events string
+		nativeRC, wantRC              int
+		wantNative                    bool
+	}{
+		{"missing Node authority", strings.Replace(discovery, nodeIntegrationTests[lwcCompileFixturePackage][0]+"\n", "", 1), plan, events, 0, 1, false},
+		{"missing family", discovery, strings.ReplaceAll(plan, "TestFamily7", "TestOther"), events, 0, 1, false},
+		{"Node authority in shard", discovery, strings.ReplaceAll(plan, "TestFamily7", nodeIntegrationTests[lwcCompileFixturePackage][0]), events, 0, 1, false},
+		{"broad selector", discovery, strings.Replace(plan, "^(?:TestFamily0)$", "^Test", 1), events, 0, 1, false},
+		{"missing test result", discovery, plan, strings.ReplaceAll(events, "TestFamily0", "TestFamily1"), 0, 1, true},
+		{"nested skip", discovery, plan, `{"Action":"skip","Package":"` + lwcCompileFixturePackage + `","Test":"TestFamily0/BrowserRuntime"}` + "\n" + events, 0, 1, true},
+		{"missing package result", discovery, plan, strings.SplitAfter(events, "\n")[0], 0, 1, true},
+		{"native failure", discovery, plan, strings.ReplaceAll(events, `"pass"`, `"fail"`), 23, 23, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			out, err, artifacts := runLWCCompileShardFixture(t, "0", tc.discovery, tc.plan, tc.events, tc.nativeRC)
+			exitErr, ok := err.(*exec.ExitError)
+			if !ok || exitErr.ExitCode() != tc.wantRC {
+				t.Fatalf("status = %v, want %d\n%s", err, tc.wantRC, out)
+			}
+			_, callErr := os.Stat(filepath.Join(filepath.Dir(artifacts), "calls"))
+			if (callErr == nil) != tc.wantNative {
+				t.Errorf("native execution = %v, want %v", callErr == nil, tc.wantNative)
+			}
+			if tc.wantNative {
+				data, err := os.ReadFile(filepath.Join(artifacts, "events.json"))
+				if err != nil || string(data) != tc.events {
+					t.Errorf("raw events lost: %q %v", data, err)
+				}
+			}
+		})
+	}
+	for _, index := range []string{"", "8", "-1", "01"} {
+		out, err, artifacts := runLWCCompileShardFixture(t, index, discovery, plan, events, 0)
+		exitErr, ok := err.(*exec.ExitError)
+		if !ok || exitErr.ExitCode() != 2 {
+			t.Errorf("index %q status = %v, want 2\n%s", index, err, out)
+		}
+		if _, err := os.Stat(filepath.Join(filepath.Dir(artifacts), "calls")); !os.IsNotExist(err) {
+			t.Errorf("invalid index %q executed tests", index)
+		}
+	}
 }
 
 func realGoCommand(t *testing.T) string {
@@ -595,7 +776,7 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 		t.Error("Apex duration history input and matrix jobs must be read-only")
 	}
 	for _, want := range []string{
-		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "apextest-duration-history-v1", "runner.os", "runner.arch", "1.26.6", "hashFiles('go.sum')",
+		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "apextest-duration-history-v1", "runner.os", "runner.arch", "1.26.9", "hashFiles('go.sum')",
 		"CI_APEXTEST_HISTORY_PATH", "CI_DURATION_HISTORY_CACHE_REF", "github.event.pull_request.base.sha", "github.event.before",
 		"mkdir -p ci-artifacts/apextest-history-input", "apextest-duration-history.json", "name: apextest-history-input",
 		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0",
@@ -800,7 +981,7 @@ func TestCIGoCacheOwnership(t *testing.T) {
 		}
 		for _, key := range keys {
 			for _, dimension := range []string{
-				"cache-v1", "1.26.6", "runner.os", "runner.arch", sumExpression,
+				"cache-v1", "1.26.9", "runner.os", "runner.arch", sumExpression,
 				"github.sha", "github.run_id", "github.run_attempt",
 			} {
 				if !strings.Contains(key, dimension) {
@@ -834,7 +1015,7 @@ func TestCIGoCacheOwnership(t *testing.T) {
 	if got := strings.Count(security, "ci-test-${{ hashFiles('go.sum') }}-"); got != 6 {
 		t.Errorf("security.yml digest-scoped ci-test restore prefixes = %d, want 6", got)
 	}
-	if got := strings.Count(security, "1.26.6-ci-test-"); got != 12 {
+	if got := strings.Count(security, "1.26.9-ci-test-"); got != 12 {
 		t.Errorf("security.yml ci-test restore prefixes = %d, want 12", got)
 	}
 
@@ -920,7 +1101,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	codeql := jobs["codeql"]
 	for _, want := range []string{
 		"name: CodeQL",
-		"timeout-minutes: 15",
+		"timeout-minutes: 45",
 		"languages: go",
 		"config: |",
 		"- uses: security-extended",
@@ -935,6 +1116,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		}
 	}
 	fullBranchWaivers := []string{
+		"go/allocation-size-overflow",
 		"go/incomplete-hostname-regexp",
 		"go/regex/missing-regexp-anchor",
 		"go/reflected-xss",
@@ -942,6 +1124,8 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		"go/bad-redirect-check",
 		"go/incorrect-integer-conversion",
 		"go/uncontrolled-allocation-size",
+		"go/unsafe-quoting",
+		"go/unvalidated-url-redirection",
 	}
 	prWaivers := []string{
 		"go/incomplete-hostname-regexp",
@@ -954,9 +1138,9 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	if count := strings.Count(codeql, initPin); count != 2 {
 		t.Fatalf("codeql init step count = %d, want 2", count)
 	}
-	prInit := workflowStepBlock(t, codeql, "name: Initialize pull request CodeQL")
+	prInit := workflowStepBlockText(codeql, "      - name: Initialize pull request CodeQL")
 	for _, want := range []string{
-		"if: github.event_name == 'pull_request'",
+		"if: github.event_name == 'pull_request' && github.event.pull_request.changed_files < 300",
 		initPin,
 		"- go/allocation-size-overflow",
 		"- go/incorrect-integer-conversion",
@@ -970,9 +1154,14 @@ func TestSecurityWorkflowContract(t *testing.T) {
 			t.Errorf("pull-request CodeQL init step does not exclude %q", query)
 		}
 	}
-	fullInit := workflowStepBlock(t, codeql, "name: Initialize full-branch CodeQL")
+	for _, init := range []string{prInit, workflowStepBlock(t, codeql, "name: Initialize full-branch CodeQL")} {
+		if !strings.Contains(init, "db-location: ${{ runner.temp }}/codeql_databases") {
+			t.Error("CodeQL init must use the archived database location")
+		}
+	}
+	fullInit := workflowStepBlockText(codeql, "      - name: Initialize full-branch CodeQL")
 	for _, want := range []string{
-		"if: github.event_name != 'pull_request'",
+		"if: github.event_name != 'pull_request' || github.event.pull_request.changed_files >= 300",
 		initPin,
 		"id:",
 		"- go/allocation-size-overflow",
@@ -983,6 +1172,9 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	if strings.Contains(fullInit, "disable-default-queries:") {
 		t.Error("full-branch CodeQL init step must retain the default query suite")
+	}
+	if strings.Contains(fullInit, "tools:") {
+		t.Error("full-branch CodeQL init step must use the action's default bundle")
 	}
 	for _, query := range fullBranchWaivers {
 		if !strings.Contains(fullInit, "- "+query) {
@@ -997,14 +1189,77 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		t.Fatalf("codeql analyze step count = %d, want 1", count)
 	}
 	analyze := workflowStepBlock(t, codeql, "name: Analyze CodeQL")
-	for _, unwanted := range []string{"threads:", "category:", "CODEQL_ACTION_EXTRA_OPTIONS"} {
-		if strings.Contains(analyze, unwanted) {
-			t.Errorf("CodeQL analyze step unexpectedly contains %q", unwanted)
+	for _, unwanted := range []string{"threads:", "CODEQL_ACTION_EXTRA_OPTIONS", "--tuple-counting", "codeql-evaluator", "codeql-resources"} {
+		if strings.Contains(codeql, unwanted) {
+			t.Errorf("CodeQL scan retains unsupported tuning or temporary diagnostics %q", unwanted)
 		}
 	}
-	for _, unwanted := range []string{"strategy:", "matrix.", "fromJSON("} {
+	if strings.Contains(codeql, "\n    continue-on-error:") || strings.Contains(analyze, "continue-on-error:") {
+		t.Error("CodeQL scan and analysis must fail on query errors")
+	}
+	for _, want := range []string{"timeout-minutes: 40", "category: codeql-go"} {
+		if !strings.Contains(analyze, want) {
+			t.Errorf("CodeQL analyze step missing %q", want)
+		}
+	}
+	upload := workflowStepBlock(t, codeql, "name: Upload failed CodeQL logs")
+	for _, want := range []string{"if: failure()", "name: codeql-logs", "${{ runner.temp }}/codeql_databases/go/log/", "retention-days: 7"} {
+		if !strings.Contains(upload, want) {
+			t.Errorf("CodeQL failed log upload step missing %q", want)
+		}
+	}
+	assertCodeQLProfileWaivers(t, prInit, prWaivers)
+	assertCodeQLProfileWaivers(t, fullInit, fullBranchWaivers)
+	// The completed full-profile scan in run 38072152005 resolved these 27
+	// queries. Its two isolated queries are the only additional full waivers.
+	fullProfileQueries := []string{
+		"go/request-forgery",
+		"go/html-template-escaping-bypass-xss",
+		"go/weak-crypto-key",
+		"go/path-injection",
+		"go/zipslip",
+		"go/unsafe-unzip-symlink",
+		"go/stack-trace-exposure",
+		"go/xml/xpath-injection",
+		"go/insecure-randomness",
+		"go/insecure-hostkeycallback",
+		"go/disabled-certificate-check",
+		"go/constant-oauth2-state",
+		"go/missing-jwt-signature-check",
+		"go/clear-text-logging",
+		"go/cookie-httponly-not-set",
+		"go/sql-injection",
+		"go/command-injection",
+		"go/insecure-tls",
+		"go/weak-cryptographic-algorithm",
+		"go/cookie-secure-not-set",
+		"go/email-injection",
+		"go/suspicious-character-in-regex",
+		"go/incomplete-url-scheme-check",
+		"go/log-injection",
+		"go/diagnostics/extraction-errors",
+		"go/diagnostics/successfully-extracted-files",
+		"go/summary/lines-of-code",
+		"go/unsafe-quoting",
+		"go/unvalidated-url-redirection",
+	}
+	retained := 0
+	for _, query := range fullProfileQueries {
+		if !strings.Contains(fullInit, "- "+query+"\n") {
+			retained++
+		}
+	}
+	if retained != 27 {
+		t.Errorf("full CodeQL profile retains %d observed queries, want 27", retained)
+	}
+	for _, query := range []string{"go/unsafe-quoting", "go/unvalidated-url-redirection"} {
+		if strings.Contains(prInit, query) {
+			t.Errorf("small-PR CodeQL profile must retain %s", query)
+		}
+	}
+	for _, unwanted := range []string{"strategy:", "matrix:", "needs:", "if: always()"} {
 		if strings.Contains(codeql, unwanted) {
-			t.Errorf("CodeQL job retains experimental matrix marker %q", unwanted)
+			t.Errorf("CodeQL job must run one required scan, found %q", unwanted)
 		}
 	}
 	if strings.Contains(codeql, "queries: +security-extended") {
@@ -1043,6 +1298,27 @@ func TestSecurityWorkflowContract(t *testing.T) {
 				t.Errorf("%s job missing preserved marker %q", jobName, marker)
 			}
 		}
+	}
+}
+
+func assertCodeQLProfileWaivers(t *testing.T, init string, waivers []string) {
+	t.Helper()
+	if strings.Count(init, "- exclude:") != 1 || strings.Contains(init, "- include:") {
+		t.Fatal("CodeQL profile must use one explicit exclusion filter")
+	}
+	wantExcluded := make(map[string]bool)
+	for _, id := range waivers {
+		wantExcluded[id] = true
+	}
+	excluded := make(map[string]bool)
+	for _, line := range strings.Split(init, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "- go/") {
+			excluded[strings.TrimPrefix(line, "- ")] = true
+		}
+	}
+	if !reflect.DeepEqual(excluded, wantExcluded) {
+		t.Fatalf("CodeQL profile exclusions = %v, want %v", excluded, wantExcluded)
 	}
 }
 
@@ -1809,7 +2085,7 @@ func browserWorkflowProblem(workflow string) string {
 		"github.event_name != 'pull_request'",
 		"run_expensive=$UNCONDITIONAL",
 		"uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0",
-		"go-version: \"1.26.6\"",
+		"go-version: \"1.26.9\"",
 		"cache: false",
 		"uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
 		"node-version: \"22\"",
@@ -1845,7 +2121,7 @@ func browserWorkflowProblem(workflow string) string {
 		`export PATH="$RUNNER_TEMP/browser-bin:$PATH"`,
 		`/usr/bin/time -v -o "$GITHUB_WORKSPACE/ci-artifacts/browser/resource-usage.txt"`,
 		"go test -json -vet=off -p=1 -count=1 -timeout=25m",
-		"-run '^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$'",
+		"-run '^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$'",
 		"./internal/lwcruntime ./internal/lwcbrowser",
 		`tee "$GITHUB_WORKSPACE/ci-artifacts/browser/go-test.json"`,
 		"PIPESTATUS[@]",
@@ -1856,6 +2132,7 @@ func browserWorkflowProblem(workflow string) string {
 		`node_events_path = artifact_dir / "node-test.log"`,
 		"TestBrowserRuntimeSuite",
 		"TestGeneratedPhase3BaseComponentsRunInBrowser",
+		"TestLWCAPI67RegistrationRunsInBrowser",
 		`action in {"pass", "fail", "skip"}`,
 		`if action == "skip":`,
 		`elif actions[0] != "pass":`,
@@ -2073,9 +2350,14 @@ func TestCIBrowserWorkflowContract(t *testing.T) {
 		"checkout overwrites early evidence": func(s string) string {
 			return strings.Replace(s, "          path: source\n", "", 1)
 		},
-		"missing Chromium": func(s string) string { return strings.Replace(s, "playwright install chromium", "playwright install", 1) },
+		"missing Chromium": func(s string) string {
+			return strings.Replace(s, "playwright install chromium", "playwright install", 1)
+		},
 		"missing selector": func(s string) string {
 			return strings.Replace(s, "|TestGeneratedPhase3BaseComponentsRunInBrowser", "", 1)
+		},
+		"missing API67 selector": func(s string) string {
+			return strings.Replace(s, "|TestLWCAPI67RegistrationRunsInBrowser", "", 1)
 		},
 		"weakened skip": func(s string) string {
 			return strings.Replace(s, `action in {"pass", "fail", "skip"}`, `action in {"pass", "fail"}`, 1)
@@ -2310,6 +2592,7 @@ func TestCIBrowserTAPValidationFixtures(t *testing.T) {
 	goEvents := strings.Join([]string{
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcruntime","Test":"TestBrowserRuntimeSuite"}`,
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestGeneratedPhase3BaseComponentsRunInBrowser"}`,
+		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestLWCAPI67RegistrationRunsInBrowser"}`,
 	}, "\n") + "\n"
 	cases := []struct {
 		name    string
@@ -2638,6 +2921,9 @@ exit "$FIXTURE_NATIVE_RC"
 }
 
 func TestCINodeIntegrationCommandExactSelectionAndEvidence(t *testing.T) {
+	if got := len(nodeIntegrationExpectedPairs()); got != 35 {
+		t.Fatalf("node integration expected pair count = %d, want 35", got)
+	}
 	out, err, artifacts, calls := runNodeIntegrationFixture(t, nodeIntegrationEvents("pass"), 0, nil)
 	if err != nil {
 		t.Fatalf("node integration fixture failed: %v\n%s", err, out)
@@ -2647,7 +2933,7 @@ func TestCINodeIntegrationCommandExactSelectionAndEvidence(t *testing.T) {
 		t.Fatalf("native executions = %d, want 1; calls:\n%s", len(callLines), calls)
 	}
 	call := callLines[0]
-	for _, marker := range []string{"test -json -vet=off", "-count=1", "-timeout=30m", "./internal/gladecli", "./internal/gladehome", "./internal/lwc/compile", "./internal/lwcbrowser", "./internal/server"} {
+	for _, marker := range []string{"test -json -vet=off", "-p=1", "-count=1", "-timeout=30m", "./internal/gladecli", "./internal/gladehome", "./internal/lwc/compile", "./internal/lwcbrowser", "./internal/server"} {
 		if !strings.Contains(call, marker) {
 			t.Errorf("native command missing %q: %s", marker, call)
 		}
@@ -2665,35 +2951,134 @@ func TestCINodeIntegrationCommandExactSelectionAndEvidence(t *testing.T) {
 		}
 	}
 	summary, err := os.ReadFile(filepath.Join(artifacts, "validation-summary.json"))
-	if err != nil || !strings.Contains(string(summary), `"tests": 30`) || !strings.Contains(string(summary), `"valid": true`) {
-		t.Errorf("validation summary invalid: err=%v data=%s", err, summary)
+	if err != nil {
+		t.Fatalf("read validation summary: %v", err)
+	}
+	for _, marker := range []string{`"tests": 35`, `"passed": 35`, `"skipped": 0`, `"failed": 0`, `"valid": true`} {
+		if !strings.Contains(string(summary), marker) {
+			t.Errorf("validation summary missing %s: %s", marker, summary)
+		}
 	}
 }
 
-func nodeIntegrationCountProblem(script string) string {
-	if !strings.Contains(script, `go test -json -vet=off -count=1 -timeout=30m -run "${node_integration_run_regex}"`) {
-		return "authoritative node integration command lacks -count=1"
+func nodeIntegrationCommandProblem(script string) string {
+	if !strings.Contains(script, `go test -json -vet=off -p=1 -count=1 -timeout=30m -run "${node_integration_run_regex}"`) {
+		return "authoritative node integration command requires -p=1 and -count=1"
 	}
 	return ""
 }
 
-func TestCINodeIntegrationCommandRequiresFreshExecution(t *testing.T) {
+func TestCINodeIntegrationCommandRequiresFreshSerialExecution(t *testing.T) {
 	data, err := os.ReadFile("ci-go-test.sh")
 	if err != nil {
 		t.Fatal(err)
 	}
 	script := string(data)
-	if problem := nodeIntegrationCountProblem(script); problem != "" {
+	if problem := nodeIntegrationCommandProblem(script); problem != "" {
 		t.Fatal(problem)
 	}
-	mutated := strings.Replace(script,
-		`go test -json -vet=off -count=1 -timeout=30m -run "${node_integration_run_regex}"`,
-		`go test -json -vet=off -timeout=30m -run "${node_integration_run_regex}"`, 1)
-	if mutated == script {
-		t.Fatal("fixture did not remove -count=1")
+	command := `go test -json -vet=off -p=1 -count=1 -timeout=30m -run "${node_integration_run_regex}"`
+	for _, flag := range []string{"-count=1", "-p=1"} {
+		t.Run(flag, func(t *testing.T) {
+			mutated := strings.Replace(script, command, strings.Replace(command, flag+" ", "", 1), 1)
+			if mutated == script {
+				t.Fatalf("fixture did not remove %s", flag)
+			}
+			if problem := nodeIntegrationCommandProblem(mutated); problem == "" {
+				t.Fatalf("node integration command contract accepted removal of %s", flag)
+			}
+		})
 	}
-	if problem := nodeIntegrationCountProblem(mutated); problem == "" {
-		t.Fatal("node integration command contract accepted removal of -count=1")
+}
+
+// Exercise the actual validator without the shell wrapper. This keeps the
+// validator contract test usable where legacy Bash heredocs require /tmp.
+// It does not qualify the wrapper or the native Node integration lane.
+func TestCINodeIntegrationValidatorBodyControls(t *testing.T) {
+	script, err := os.ReadFile("ci-go-test.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	extract := func(function, delimiter string) string {
+		t.Helper()
+		_, body, ok := strings.Cut(string(script), function+"() {")
+		if !ok {
+			t.Fatalf("missing %s", function)
+		}
+		_, body, ok = strings.Cut(body, "<<'"+delimiter+"'\n")
+		if !ok {
+			t.Fatalf("missing %s body", function)
+		}
+		body, _, ok = strings.Cut(body, "\n"+delimiter+"\n}")
+		if !ok {
+			t.Fatalf("missing %s boundary", function)
+		}
+		return body + "\n"
+	}
+	expected := extract("write_node_integration_expected", "EOF")
+	validator := extract("validate_node_integration_events", "PY")
+	pairs := nodeIntegrationExpectedPairs()
+	if len(pairs) != 35 {
+		t.Fatalf("expected pairs = %d, want 35", len(pairs))
+	}
+	var want strings.Builder
+	for _, pair := range pairs {
+		fmt.Fprintf(&want, "%s\t%s\n", pair[0], pair[1])
+	}
+	if expected != want.String() {
+		t.Fatal("actual expected set does not match 35 sorted fixture pairs")
+	}
+	valid := nodeIntegrationEvents("pass")
+	first := pairs[0]
+	terminal := fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":0.01}\n", first[0], first[1])
+	for _, tc := range []struct {
+		name, events, rejection string
+		pass                    bool
+	}{
+		{"complete35", valid, "", true},
+		{"missing", strings.Replace(valid, terminal, "", 1), "terminal count is 34, want 35", false},
+		{"duplicate", valid + terminal, "terminal count is 36, want 35", false},
+		{"skipped", strings.Replace(valid, `"Action":"pass"`, `"Action":"skip"`, 1), "skip event for selected test", false},
+		{"failed", strings.Replace(valid, `"Action":"pass"`, `"Action":"fail"`, 1), "non-pass terminal results:", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			eventsPath := filepath.Join(dir, "events.json")
+			expectedPath := filepath.Join(dir, "expected.txt")
+			discoveryPath := filepath.Join(dir, "discovery.txt")
+			summaryPath := filepath.Join(dir, "summary.json")
+			for path, body := range map[string]string{eventsPath: tc.events, expectedPath: expected} {
+				if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			cmd := exec.Command("python3", "-c", validator, eventsPath, expectedPath, discoveryPath, summaryPath)
+			out, err := cmd.CombinedOutput()
+			if !tc.pass {
+				if err == nil || !strings.Contains(string(out), "node integration validation rejected:") || !strings.Contains(string(out), tc.rejection) {
+					t.Fatalf("invalid stream did not reach rejection gate: %v\n%s", err, out)
+				}
+				if _, err := os.Stat(summaryPath); !os.IsNotExist(err) {
+					t.Fatalf("invalid stream left summary: %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("complete35 rejected: %v\n%s", err, out)
+			}
+			body, err := os.ReadFile(summaryPath)
+			var summary struct {
+				Valid                          bool
+				Tests, Passed, Skipped, Failed int
+			}
+			if err != nil || json.Unmarshal(body, &summary) != nil || !summary.Valid || summary.Tests != 35 || summary.Passed != 35 || summary.Skipped != 0 || summary.Failed != 0 {
+				t.Fatalf("invalid complete35 summary: %v %s", err, body)
+			}
+			discovery, err := os.ReadFile(discoveryPath)
+			if err != nil || string(discovery) != expected {
+				t.Fatalf("complete35 discovery does not match exact expected set: %v %s", err, discovery)
+			}
+		})
 	}
 }
 
@@ -2707,15 +3092,15 @@ func TestCINodeIntegrationValidatorRejectsInvalidEvidence(t *testing.T) {
 		nativeRC int
 		mutate   func(string) error
 	}{
-		"skip":          {events: strings.Replace(valid, `"Action":"pass"`, `"Action":"skip"`, 1)},
-		"fail":          {events: strings.Replace(valid, `"Action":"pass"`, `"Action":"fail"`, 1)},
-		"missing":       {events: strings.Replace(valid, terminal, "", 1)},
-		"extra":         {events: valid + `{"Action":"pass","Package":"github.com/glade-sh/glade/internal/server","Test":"TestUnexpected"}` + "\n"},
-		"duplicate":     {events: valid + terminal},
-		"malformed":     {events: valid + "{not-json}\n"},
-		"wrong package": {events: strings.Replace(valid, first[0], "example.invalid/wrong", 1)},
-		"nested skip":   {events: valid + fmt.Sprintf("{\"Action\":\"skip\",\"Package\":%q,\"Test\":%q}\n", first[0], first[1]+"/nested")},
-		"native":        {events: valid, nativeRC: 23},
+		"skipped terminal":   {events: strings.Replace(valid, `"Action":"pass"`, `"Action":"skip"`, 1)},
+		"failed terminal":    {events: strings.Replace(valid, `"Action":"pass"`, `"Action":"fail"`, 1)},
+		"missing terminal":   {events: strings.Replace(valid, terminal, "", 1)},
+		"extra":              {events: valid + `{"Action":"pass","Package":"github.com/glade-sh/glade/internal/server","Test":"TestUnexpected"}` + "\n"},
+		"duplicate terminal": {events: valid + terminal},
+		"malformed":          {events: valid + "{not-json}\n"},
+		"wrong package":      {events: strings.Replace(valid, first[0], "example.invalid/wrong", 1)},
+		"nested skip":        {events: valid + fmt.Sprintf("{\"Action\":\"skip\",\"Package\":%q,\"Test\":%q}\n", first[0], first[1]+"/nested")},
+		"native":             {events: valid, nativeRC: 23},
 		"tee": {events: valid, mutate: func(binDir string) error {
 			return os.WriteFile(filepath.Join(binDir, "tee"), []byte("#!/usr/bin/env bash\ncat >/dev/null\nexit 17\n"), 0o700)
 		}},
@@ -2735,10 +3120,13 @@ func TestCINodeIntegrationValidatorRejectsInvalidEvidence(t *testing.T) {
 
 func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
 	workflow, jobs := readCIWorkflow(t)
+	if !strings.Contains(jobs["test"], "GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright") {
+		t.Error("browser conformance must resolve Playwright from the installed checkout dependencies")
+	}
 	node := jobs["node-integration"]
 	for _, marker := range []string{
 		"runs-on: ubuntu-latest", "timeout-minutes: 30", "GOMAXPROCS: \"2\"",
-		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.6\"", "cache: false",
+		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.9\"", "cache: false",
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", "node-version: \"22\"", "cache: npm",
 		"cache-dependency-path: third_party/lwc/package-lock.json", "npm ci --prefix third_party/lwc",
 		"scripts/ci-go-test.sh node-integration", "ci-node-integration",
@@ -2749,21 +3137,79 @@ func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
 			t.Errorf("node-integration job missing %q", marker)
 		}
 	}
-	if strings.Count(node, "npm ci --prefix third_party/lwc") != 1 || strings.Count(workflow, "npm ci --prefix third_party/lwc") != 2 {
-		t.Errorf("third_party/lwc npm install ownership count workflow/node = %d/%d, want 2/1 (distribution smoke plus node lane)", strings.Count(workflow, "npm ci --prefix third_party/lwc"), strings.Count(node, "npm ci --prefix third_party/lwc"))
+	if strings.Count(node, "npm ci --prefix third_party/lwc") != 1 || strings.Count(workflow, "npm ci --prefix third_party/lwc") != 4 {
+		t.Errorf("third_party/lwc npm install ownership count workflow/node = %d/%d, want 4/1 (distribution smoke, node lane, and two conformance lanes)", strings.Count(workflow, "npm ci --prefix third_party/lwc"), strings.Count(node, "npm ci --prefix third_party/lwc"))
 	}
-	for _, name := range []string{"gladecli", "server-and-playground"} {
-		if strings.Contains(jobs[name], "actions/setup-node") || strings.Contains(jobs[name], "npm ci") {
-			t.Errorf("pure job %s mutates Node dependencies", name)
+	if strings.Contains(jobs["gladecli"], "actions/setup-node") || strings.Contains(jobs["gladecli"], "npm ci") {
+		t.Error("pure gladecli job mutates Node dependencies")
+	}
+	if got := strings.Count(workflow, "npm ci --prefix lwcruntime"); got != 2 {
+		t.Errorf("browser conformance npm install count = %d, want one per conformance lane", got)
+	}
+	for name, lane := range map[string]string{"server-and-playground": "server-and-playground", "test": "remaining-go"} {
+		job := jobs[name]
+		previous := -1
+		for _, marker := range []string{
+			"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
+			`node-version: "22"`,
+			"npm ci --prefix third_party/lwc",
+			"npm ci --prefix lwcruntime",
+			"./lwcruntime/node_modules/.bin/playwright install --with-deps chromium",
+			"scripts/ci-go-test.sh lane " + lane,
+		} {
+			index := strings.Index(job, marker)
+			if strings.Count(job, marker) != 1 || index <= previous {
+				t.Errorf("conformance job %s must contain %q exactly once after its prerequisites", name, marker)
+			}
+			previous = index
+		}
+		for _, forbidden := range []string{"cache: npm", "cache-dependency-path:"} {
+			if strings.Contains(job, forbidden) {
+				t.Errorf("conformance job %s contains an unowned npm cache %q", name, forbidden)
+			}
 		}
 	}
-	testJob := jobs["test"]
-	if !strings.Contains(testJob, "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0") || !strings.Contains(testJob, `node-version: "22"`) {
-		t.Error("pure test job must retain Node 22 runtime")
+}
+
+func TestCILWCCompileMatrixRoutesAllShardsAndPreservesFailureEvidence(t *testing.T) {
+	_, jobs := readCIWorkflow(t)
+	job := jobs["test"]
+	if !strings.Contains(job, "timeout-minutes: 100") || !strings.Contains(job, "fail-fast: false") {
+		t.Error("compile shards need the enclosing timeout and independent failure collection")
 	}
-	for _, forbidden := range []string{"cache: npm", "cache-dependency-path:", "npm ci --prefix third_party/lwc"} {
-		if strings.Contains(testJob, forbidden) {
-			t.Errorf("pure test job contains forbidden Node mutation %q", forbidden)
+	if !strings.Contains(job, "      NO_COLOR: \"1\"") {
+		t.Error("conformance diagnostics must stay plain text when CI enables terminal colors")
+	}
+	if strings.Count(job, "          - lane:") != 9 || !strings.Contains(job, "          - lane: remaining-go\n            name: test\n") {
+		t.Error("test matrix must contain one remaining-go row and eight compile shards")
+	}
+	for index := range 8 {
+		row := fmt.Sprintf("          - lane: lwc-compile-%d\n            name: LWC compile (%d)\n            shard: %d\n", index, index, index)
+		if strings.Count(job, row) != 1 {
+			t.Errorf("matrix must contain shard %d exactly once", index)
+		}
+	}
+	compile := workflowStepBlockText(job, "      - name: Test LWC compile shard")
+	for _, marker := range []string{"if: matrix.lane != 'remaining-go'", `scripts/ci-go-test.sh lwc-compile-shard "${{ matrix.shard }}"`, "ci-artifacts/lwc-compile-${{ matrix.shard }}/resource-usage.json"} {
+		if !strings.Contains(compile, marker) {
+			t.Errorf("compile step missing %q", marker)
+		}
+	}
+	for _, lane := range []string{"repoguard", "remaining-go"} {
+		step := workflowStepBlockText(job, "      - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-"+lane+".json")
+		if !strings.Contains(step, "if: matrix.lane == 'remaining-go'") {
+			t.Errorf("%s must only run in remaining-go matrix row", lane)
+		}
+	}
+	upload := workflowStepBlockText(job, "      - name: Upload LWC compile shard events")
+	for _, marker := range []string{"if: always() && matrix.lane != 'remaining-go'", "name: go-test-lwc-compile-shard-${{ matrix.shard }}", "path: ci-artifacts/lwc-compile-${{ matrix.shard }}/", "if-no-files-found: error"} {
+		if !strings.Contains(upload, marker) {
+			t.Errorf("compile evidence upload missing %q", marker)
+		}
+	}
+	for _, line := range strings.Split(job, "\n") {
+		if strings.Contains(line, "key: ") && strings.Contains(line, "github.run_id") && !strings.Contains(line, "matrix.lane") {
+			t.Errorf("matrix cache writers share a primary key: %s", line)
 		}
 	}
 }
@@ -2780,7 +3226,7 @@ func TestCINestedSourcesWorkflowContract(t *testing.T) {
 	for _, marker := range []string{
 		"runs-on: ubuntu-latest", "timeout-minutes: 30",
 		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
-		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.6\"", "cache: false",
+		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.9\"", "cache: false",
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", "node-version: \"22\"",
 		"- name: Test vendored parser", "(cd third_party/glade-apex-parser && go test ./...)",
 		"- name: Test vendored parser without CGO", "(cd third_party/glade-apex-parser && CGO_ENABLED=0 go test ./...)",
@@ -2807,13 +3253,13 @@ func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
 		"gladecli":              "^(?:TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$",
 		"server-and-playground": "^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents)$",
 		"repoguard":             "",
-		"remaining-go":          "^(?:TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$",
+		"remaining-go":          "^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$",
 	}
 	for lane, skip := range wantSkip {
 		t.Run(lane, func(t *testing.T) {
 			dir := t.TempDir()
 			calls := filepath.Join(dir, "calls")
-			goScript := "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >\"$FIXTURE_CALLS\"\nexit 0\n"
+			goScript := "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >>\"$FIXTURE_CALLS\"\nexit 0\n"
 			rendererScript := "#!/usr/bin/env bash\ncat >/dev/null\n"
 			for name, contents := range map[string]string{"go": goScript, "testlog": rendererScript} {
 				if err := os.WriteFile(filepath.Join(dir, name), []byte(contents), 0o700); err != nil {
@@ -2833,7 +3279,7 @@ func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			call := strings.TrimSpace(string(data))
+			call := strings.Split(strings.TrimSpace(string(data)), "\n")[0]
 			if skip == "" {
 				if strings.Contains(call, "-skip") {
 					t.Fatalf("repoguard unexpectedly skips tests: %s", call)
@@ -2912,8 +3358,12 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		}
 	}
 	for _, name := range []string{"site", "vet", "gladecli", "node-integration", "nested-sources", "sema", "sema-full", "server-and-playground", "test", "smoke-runtime", "smoke-distribution"} {
-		if !strings.Contains(jobs[name], "timeout-minutes: 30") {
-			t.Errorf("%s timeout is not 30 minutes", name)
+		timeout := "30"
+		if name == "test" {
+			timeout = "100" // 20m remaining packages, 70m Visualforce, and setup.
+		}
+		if !strings.Contains(jobs[name], "timeout-minutes: "+timeout) {
+			t.Errorf("%s timeout is not %s minutes", name, timeout)
 		}
 	}
 	if !strings.Contains(jobs["apextest"], "timeout-minutes: 35") || !strings.Contains(jobs["apextest-history"], "timeout-minutes: 5") {
@@ -2960,6 +3410,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 		"ci-artifacts/go-test/test-server-and-playground.json",
 		"ci-artifacts/go-test/test-repoguard.json",
 		"ci-artifacts/go-test/test-remaining-go.json",
+		"ci-artifacts/go-test/test-remaining-go-visualforce.json",
 	} {
 		if count := strings.Count(workflow, path); count != 1 {
 			t.Errorf("raw event path %q count = %d, want 1", path, count)
@@ -2996,9 +3447,9 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 		job := jobs[jobName]
 		sumPath := "go.sum"
 		for _, marker := range []string{
-			"GOMAXPROCS: \"2\"", "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.6\"", "cache: false",
+			"GOMAXPROCS: \"2\"", "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.9\"", "cache: false",
 			"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "continue-on-error: true", "if: success()",
-			"${{ runner.os }}-${{ runner.arch }}-1.26.6-" + namespace,
+			"${{ runner.os }}-${{ runner.arch }}-1.26.9-" + namespace,
 			"${{ hashFiles('" + sumPath + "') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
 		} {
 			if !strings.Contains(job, marker) {
@@ -3087,7 +3538,7 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	}
 	scriptText := string(script)
 	for _, want := range []string{
-		`export GOMAXPROCS="${GOMAXPROCS:-2}"`,
+		`printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS:-default}"`,
 		"run_with_heartbeat",
 		"run_core_tests",
 		"run_full_tests",
@@ -3114,6 +3565,24 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 			t.Fatalf("ci-go-test.sh missing %q", want)
 		}
 	}
+	for _, forbidden := range []string{"hostname", "export GOMAXPROCS=", "-parallel="} {
+		if strings.Contains(scriptText, forbidden) {
+			t.Errorf("ci-go-test.sh retains environment-specific execution policy %q", forbidden)
+		}
+	}
+	beforeNode, nodeAndAfter, foundNode := strings.Cut(scriptText, "run_node_integration() {")
+	_, afterNode, foundEnd := strings.Cut(nodeAndAfter, "\n}\n")
+	if !foundNode || !foundEnd {
+		t.Fatal("cannot identify node integration function")
+	}
+	remainingScript := beforeNode + afterNode
+	remainingScript = strings.Replace(remainingScript, `if [[ "${routing}" == "ci-remaining" ]]; then
+		# Remaining toolchain consumers share the user installation directory.
+		args+=(-p=1)
+	fi`, "", 1)
+	if strings.Contains(remainingScript, "-p=") {
+		t.Error("only node integration and CI remaining toolchain consumers may override package concurrency")
+	}
 	if strings.Contains(scriptText, `grep '^Test' || true`) {
 		t.Fatal("ci-go-test.sh must not suppress Apex test discovery failures")
 	}
@@ -3132,7 +3601,7 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	for _, want := range []string{
 		"timeout-minutes: 30",
 		"GOMAXPROCS: \"2\"",
-		"go-version: \"1.26.6\"",
+		"go-version: \"1.26.9\"",
 		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
 		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0",
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
@@ -3142,8 +3611,8 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		"shard: [0, 1]",
 		"cache: false",
 		"ci-apextest-${{ matrix.shard }}",
-		"go-mod-v1-1.26.6-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
-		"go-build-v1-1.26.6-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+		"go-mod-v1-1.26.9-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+		"go-build-v1-1.26.9-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
 		"scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
 		"if: always()",
 		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0",
@@ -3193,8 +3662,8 @@ func TestCIPackageLanesRouteThroughCheckedManifest(t *testing.T) {
 	for _, packages := range document.Lanes {
 		totalPackages += len(packages)
 	}
-	if totalPackages != 65 {
-		t.Fatalf("manifest package union = %d, want 65", totalPackages)
+	if totalPackages != 66 {
+		t.Fatalf("manifest package union = %d, want 66", totalPackages)
 	}
 	remaining := document.Lanes["remaining-go"]
 	if len(remaining) == 0 {
@@ -3250,13 +3719,12 @@ func TestCIPackageLaneCommandRunsOnlyRequestedManifestPackagesAndPreservesStatus
 	cases := []struct {
 		lane        string
 		wantTimeout string
-		wantP       string
 	}{
 		{lane: "gladecli", wantTimeout: "-timeout=30m"},
 		{lane: "sema", wantTimeout: "-timeout=30m"},
 		{lane: "server-and-playground", wantTimeout: "-timeout=30m"},
 		{lane: "repoguard", wantTimeout: "-timeout=30m"},
-		{lane: "remaining-go", wantTimeout: "-timeout=20m", wantP: "-p=2"},
+		{lane: "remaining-go", wantTimeout: "-timeout=20m"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.lane, func(t *testing.T) {
@@ -3295,10 +3763,17 @@ exit 23
 				t.Fatal(err)
 			}
 			lines := strings.Split(strings.TrimSpace(string(callData)), "\n")
-			if len(lines) != 1 {
-				t.Fatalf("native executions = %d, want 1; calls:\n%s", len(lines), callData)
+			wantCalls := 1
+			if tc.lane == "remaining-go" {
+				wantCalls = 2
+				if len(lines) == 2 && lines[1] != "test -json -vet=off -timeout=70m ./internal/visualforce" {
+					t.Fatalf("Visualforce invocation = %q", lines[1])
+				}
 			}
-			fields := strings.Fields(lines[0])
+			if len(lines) != wantCalls {
+				t.Fatalf("native executions = %d, want %d; calls:\n%s", len(lines), wantCalls, callData)
+			}
+			fields := strings.Fields(string(callData))
 			var gotPackages []string
 			for _, field := range fields {
 				if strings.HasPrefix(field, "./") {
@@ -3307,6 +3782,9 @@ exit 23
 			}
 			var wantPackages []string
 			for _, pkg := range manifest.Lanes[tc.lane] {
+				if tc.lane == "remaining-go" && pkg == "github.com/glade-sh/glade/internal/lwc/compile" {
+					continue // Dedicated LWC compile shards own this package in CI.
+				}
 				wantPackages = append(wantPackages, toArgument(pkg))
 			}
 			sort.Strings(gotPackages)
@@ -3319,15 +3797,14 @@ exit 23
 					t.Errorf("lane executed package %s owned by %s", field, owner)
 				}
 			}
+			if strings.Contains(lines[0], "-parallel=") || (tc.lane != "remaining-go" && strings.Contains(lines[0], "-p=")) {
+				t.Errorf("lane call overrides environment concurrency limits: %s", lines[0])
+			}
+			if tc.lane == "remaining-go" && !strings.Contains(lines[0], " -p=1 ") {
+				t.Errorf("remaining toolchain consumers must run serially: %s", lines[0])
+			}
 			if !strings.Contains(lines[0], tc.wantTimeout) {
 				t.Errorf("lane call missing timeout %s: %s", tc.wantTimeout, lines[0])
-			}
-			if tc.wantP != "" {
-				if !strings.Contains(lines[0], tc.wantP) {
-					t.Errorf("lane call missing parallelism %s: %s", tc.wantP, lines[0])
-				}
-			} else if strings.Contains(lines[0], "-p=") {
-				t.Errorf("lane call has unexpected parallelism: %s", lines[0])
 			}
 		})
 	}
@@ -3340,6 +3817,8 @@ func TestCIPackageLaneCommandRejectsInvalidArguments(t *testing.T) {
 		{"lane", "apextest"},
 		{"lane", "gladecli", "extra"},
 		{"node-integration", "extra"},
+		{"lwc-compile-shard"},
+		{"lwc-compile-shard", "0", "extra"},
 	}
 	for _, args := range cases {
 		t.Run(strings.Join(args, "_"), func(t *testing.T) {
@@ -3366,7 +3845,7 @@ func TestCIVetHasOneAuthoritativeGateAndNoImplicitLaneWork(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, want := range []string{
-		`go test -json -vet=off "$@"`,
+		`"${test_command[@]}" test -json -vet=off "$@"`,
 		`GOFLAGS="${GOFLAGS:+${GOFLAGS} }-vet=off" go test -list '^Test' "${apex_package}"`,
 	} {
 		if !strings.Contains(string(script), want) {
@@ -3383,9 +3862,9 @@ func TestCIGoTestLogModesPreserveFullDefaultAndCoreExcludesApex(t *testing.T) {
 		wantRace      bool
 		wantTestCalls int
 	}{
-		{name: "default", wantApex: true, wantTestCalls: 6},
-		{name: "test", args: []string{"test"}, wantApex: true, wantTestCalls: 6},
-		{name: "core", args: []string{"core"}, wantTestCalls: 5},
+		{name: "default", wantApex: true, wantTestCalls: 7},
+		{name: "test", args: []string{"test"}, wantApex: true, wantTestCalls: 7},
+		{name: "core", args: []string{"core"}, wantTestCalls: 6},
 		{name: "race", args: []string{"race"}, wantApex: true, wantRace: true, wantTestCalls: 6},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -3450,6 +3929,9 @@ tee "$output"
 				if strings.Contains(call, " -skip ") || strings.Contains(call, " -skip=") {
 					t.Errorf("aggregate mode filtered package coverage: %s", call)
 				}
+				if !tc.wantRace && strings.Contains(call, "./internal/visualforce") && call != "test -json -vet=off -timeout=70m ./internal/visualforce" {
+					t.Errorf("Visualforce must run separately with its own timeout: %s", call)
+				}
 			}
 			packageExecutions := make(map[string]int)
 			for _, call := range testCalls {
@@ -3459,7 +3941,7 @@ tee "$output"
 					}
 				}
 			}
-			for _, pkg := range []string{"./internal/gladecli", "./internal/playground", "./internal/sema", "./internal/semanticcache", "./internal/server", "./cmd/glade"} {
+			for _, pkg := range []string{"./internal/gladecli", "./internal/playground", "./internal/sema", "./internal/semanticcache", "./internal/server", "./internal/visualforce", "./internal/lwc/compile", "./cmd/glade"} {
 				if got := packageExecutions[pkg]; got != 1 {
 					t.Errorf("package lane %s executions = %d, want 1; calls:\n%s", pkg, got, b)
 				}
@@ -3494,7 +3976,6 @@ func TestCILocalReleaseModeIsExactOnceAndFailClosed(t *testing.T) {
 		"run_local_release_lane \"apextest\" \"apex\"",
 		"run_local_release_lane \"server-and-playground\" \"server-playground\"",
 		"run_local_release_lane \"remaining-go\" \"remaining\"",
-		"'^(?:TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$'",
 		"terminate_owned_children",
 	} {
 		if !strings.Contains(script, want) {
@@ -3676,10 +4157,8 @@ func TestCILocalReleaseExecutesExactAuthoritativeInventory(t *testing.T) {
 				seen[field]++
 			}
 		}
-		hasBrowserPackages := strings.Contains(line, "./internal/lwcbrowser") && strings.Contains(line, "./internal/lwcruntime")
-		hasSkip := strings.Contains(line, "-skip ^(?:TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$")
-		if hasBrowserPackages != hasSkip {
-			t.Fatalf("local-release browser lane ownership mismatch: %s", line)
+		if strings.Contains(line, "-skip") {
+			t.Fatalf("local-release must include every test: %s", line)
 		}
 	}
 	if !reflect.DeepEqual(seen, want) {
@@ -3692,12 +4171,12 @@ func TestCILocalReleaseExecutesExactAuthoritativeInventory(t *testing.T) {
 		packageArg string
 		timeout    string
 	}{
-		{"./internal/repoguard", "-timeout=15m"},
+		{"./internal/repoguard", "-timeout=30m"},
 		{"./internal/gladecli", "-timeout=30m"},
-		{"./internal/sema", "-timeout=45m"},
-		{"./internal/apextest", "-timeout=45m"},
+		{"./internal/sema", "-timeout=30m"},
+		{"./internal/apextest", "-timeout=90m"},
 		{"./internal/playground", "-timeout=30m"},
-		{"./cmd/glade", "-timeout=30m"},
+		{"./cmd/glade", "-timeout=70m"},
 	} {
 		for _, line := range strings.Split(strings.TrimSpace(calls), "\n") {
 			ownsPackage := false
@@ -3849,8 +4328,8 @@ func TestCIGoTestLogAlwaysPreservesNativeStatus(t *testing.T) {
 		wantRC     int
 		wantCalls  int
 	}{
-		{name: "both success", wantCalls: 5},
-		{name: "native success renderer fail", rendererRC: 7, wantCalls: 5},
+		{name: "both success", wantCalls: 6},
+		{name: "native success renderer fail", rendererRC: 7, wantCalls: 6},
 		{name: "native fail renderer success", nativeRC: 23, wantRC: 23, wantCalls: 1},
 		{name: "both fail", nativeRC: 23, rendererRC: 7, wantRC: 23, wantCalls: 1},
 	} {
@@ -3912,6 +4391,13 @@ exit "$FIXTURE_RENDERER_RC"
 			}
 			if got := strings.Count(string(callData), "test -json"); got != tc.wantCalls {
 				t.Fatalf("native test calls = %d, want %d; calls:\n%s", got, tc.wantCalls, callData)
+			}
+			wantVisualforceCalls := 0
+			if tc.nativeRC == 0 {
+				wantVisualforceCalls = 1
+			}
+			if got := strings.Count(string(callData), "./internal/visualforce"); got != wantVisualforceCalls {
+				t.Errorf("Visualforce calls = %d, want %d after native status %d; calls:\n%s", got, wantVisualforceCalls, tc.nativeRC, callData)
 			}
 			if tc.rendererRC != 0 && !strings.Contains(string(out), "renderer failed with status 7") {
 				t.Fatalf("renderer failure was not logged:\n%s", out)
@@ -4204,4 +4690,285 @@ func assertProcessesExit(t *testing.T, pids []int) {
 		}
 	}
 	t.Fatalf("owned processes survived wrapper signal: %v", alive)
+}
+
+func TestCILocalReleaseDataWeaveDeferralsAreExactAndVisible(t *testing.T) {
+	identities := [][2]string{
+		{"internal/gladecli", "TestDataWeaveToolchainCLIInstalledJSON"},
+		{"internal/gladehome", "TestDataWeaveInstallExecuteAndTamper"},
+		{"internal/dataweave", "TestOfficialEngineSourceAndDenials"},
+		{"internal/dataweave", "TestOfficialEngineExplicitProjectModules"},
+		{"internal/dataweave", "TestOfficialEngineTypedApexInputsAndOutput"},
+		{"internal/dataweave", "TestOfficialEngineUnprovedJavaOutputIsHostError"},
+		{"internal/dataweave", "TestOfficialEngineQueryRelationshipWriterBoundary"},
+		{"internal/dataweave", "TestOfficialEngineExtendedTypedValues"},
+		{"internal/dataweave", "TestVerifyEngineRequiresExactSourceOffers"},
+		{"internal/dataweave", "TestPinnedEngineInstallation"},
+		{"internal/apextest", "TestRunDataWeaveSourceSourceNames"},
+		{"internal/apextest", "TestRunDataWeaveSourceChangedSource"},
+		{"internal/apextest", "TestRunDataWeaveSourceBuiltinImports"},
+		{"internal/apextest", "TestRunDataWeaveSourceRestrictedWordsInLiterals"},
+		{"internal/apextest", "TestRunDataWeaveSourceLocalFunctionShadow"},
+		{"internal/apextest", "TestRunDataWeaveSourceReadURLDeadBranch"},
+		{"internal/apextest", "TestRunDataWeaveSourceEnvironmentDeadBranch"},
+		{"internal/apextest", "TestRunDataWeaveSourceReadURLAlias"},
+		{"internal/apextest", "TestRunDataWeaveSourceEnvironmentAlias"},
+		{"internal/apextest", "TestRunDataWeaveSourceProjectModule"},
+		{"internal/apextest", "TestRunDataWeaveTypedAdmitted"},
+		{"internal/apextest", "TestRunC5BulkTypedProof"},
+		{"internal/apextest", "TestRunC5LegacyAdmitted"},
+		{"internal/apextest", "TestRunC5QueryProvenanceAdmitted"},
+		{"internal/vm", "TestExecDataWeaveScriptResultCarriers"},
+		{"internal/vm", "TestNestedSOQLAPIVersion66"},
+		{"internal/vm", "TestNestedSOQLAPIVersion65ThrowsDataWeaveScriptException"},
+		{"internal/vm", "TestExecDataWeaveScriptErrorThrowsScriptException"},
+		{"internal/vm", "TestExecDataWeaveExcelOutputErrorThrowsScriptException"},
+		{"internal/vm", "TestExecDataWeaveMultipleInputsReturnsXMLString"},
+		{"internal/vm", "TestExecDataWeaveJsonDateFormatPreservesRecipeFieldOrder"},
+		{"internal/vm", "TestExecDataWeaveRecipeConversionsReturnStructuredValues"},
+		{"internal/apextest", "TestRunDataWeaveScriptResourceExecutesRuntimeStub"},
+	}
+	inputs := []string{"GLADE_DATAWEAVE_TEST_JAVA_HOME", "GLADE_DATAWEAVE_TEST_ENGINE", "GLADE_DATAWEAVE_TEST_CLASSPATH", "GLADE_DATAWEAVE_TEST_INSTALLED_ENGINE", "GLADE_DATAWEAVE_TEST_INSTALL_DIRECTORY", "GLADE_DATAWEAVE_APEX_TEST_HOME"}
+	check := func(t *testing.T, identity [2]string, configured bool, action, terminal string, valid bool, deferred int, override ...string) {
+		t.Helper()
+		dir := t.TempDir()
+		pkg := "github.com/glade-sh/glade/" + identity[0]
+		events, metadata, summaryPath := filepath.Join(dir, "events.json"), filepath.Join(dir, "metadata"), filepath.Join(dir, "summary.json")
+		cause := "explicit DataWeave engine and Java17 test toolchain required"
+		switch identity[1] {
+		case "TestDataWeaveToolchainCLIInstalledJSON", "TestDataWeaveInstallExecuteAndTamper":
+			cause = "explicit Java17 JDK and verified DataWeave engine required"
+		case "TestOfficialEngineQueryRelationshipWriterBoundary":
+			cause = "query relationship contract requires explicit real DataWeave toolchain; configured acceptance must execute this test"
+		case "TestVerifyEngineRequiresExactSourceOffers":
+			cause = "explicit provisioned engine required"
+		case "TestPinnedEngineInstallation":
+			cause = "explicit engine installation destination required"
+		}
+		if identity[0] == "internal/apextest" || identity[0] == "internal/vm" {
+			cause = "requires explicitly installed DataWeave toolchain"
+		}
+		if len(override) != 0 {
+			cause = override[0]
+		}
+		rows := ""
+		if cause != "" {
+			rows += fmt.Sprintf("{\"Action\":\"output\",\"Package\":%q,\"Test\":%q,\"Output\":%q}\n", pkg, identity[1], "    fixture_test.go:51: "+cause+"\n")
+		}
+		rows += fmt.Sprintf("{\"Action\":%q,\"Package\":%q,\"Test\":%q}\n", action, pkg, identity[1])
+		if terminal != "" {
+			rows += fmt.Sprintf("{\"Action\":%q,\"Package\":%q}\n", terminal, pkg)
+		}
+		if err := os.WriteFile(events, []byte(rows), 0600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(metadata, []byte(pkg+"\thas-tests\n"), 0600); err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command("bash", "-c", `source ./ci-go-test.sh; validate_local_release_package_summary lane fixture "$1" "$2" "$3" "$4"`, "fixture", events, summaryPath, metadata, "./"+identity[0])
+		cmd.Env = os.Environ()
+		for _, name := range inputs {
+			value := ""
+			if configured {
+				value = "/configured"
+			}
+			cmd.Env = append(cmd.Env, name+"="+value)
+		}
+		output, err := cmd.CombinedOutput()
+		if (err == nil) != valid {
+			t.Fatalf("valid=%v err=%v output=%s", valid, err, output)
+		}
+		raw, err := os.ReadFile(summaryPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var summary struct {
+			Valid    bool                                                 `json:"valid"`
+			Deferred []struct{ Package, Test, Reason, SkipReason string } `json:"deferred"`
+		}
+		if err := json.Unmarshal(raw, &summary); err != nil {
+			t.Fatal(err)
+		}
+		if summary.Valid != valid || len(summary.Deferred) != deferred {
+			t.Fatalf("summary=%s", raw)
+		}
+		if deferred != 0 {
+			entry := summary.Deferred[0]
+			if entry.Package != pkg || entry.Test != identity[1] || entry.SkipReason != cause || !strings.Contains(entry.Reason, "missing explicit prerequisites") || !strings.Contains(string(output), entry.Reason) {
+				t.Fatalf("deferral not visible: %s / %s", raw, output)
+			}
+		}
+	}
+	for _, identity := range identities {
+		t.Run(identity[1], func(t *testing.T) { check(t, identity, false, "skip", "pass", true, 1) })
+	}
+	base := identities[0]
+	t.Run("unknown skip rejected", func(t *testing.T) { check(t, [2]string{base[0], "TestUnknown"}, false, "skip", "pass", false, 0) })
+	t.Run("subtest skip rejected", func(t *testing.T) { check(t, [2]string{base[0], base[1] + "/nested"}, false, "skip", "pass", false, 0) })
+	t.Run("configured skip rejected", func(t *testing.T) { check(t, base, true, "skip", "pass", false, 0) })
+	t.Run("configured failure rejected", func(t *testing.T) { check(t, base, true, "fail", "fail", false, 0) })
+	t.Run("missing input failure rejected", func(t *testing.T) { check(t, base, false, "fail", "fail", false, 0) })
+	t.Run("missing package result rejected", func(t *testing.T) { check(t, base, false, "skip", "", false, 1) })
+	t.Run("unrelated skip cause rejected", func(t *testing.T) { check(t, base, false, "skip", "pass", false, 0, "unrelated runtime problem") })
+	t.Run("missing skip cause rejected", func(t *testing.T) { check(t, base, false, "skip", "pass", false, 0, "") })
+	t.Run("test failure despite package pass rejected", func(t *testing.T) { check(t, base, false, "fail", "pass", false, 0) })
+	for _, identity := range identities[22:] {
+		t.Run(identity[1]+" configured skip rejected", func(t *testing.T) { check(t, identity, true, "skip", "pass", false, 0) })
+		t.Run(identity[1]+" missing input failure rejected", func(t *testing.T) { check(t, identity, false, "fail", "fail", false, 0) })
+	}
+
+}
+
+func TestCIApexShardDataWeaveDeferrals(t *testing.T) {
+	const deferred = "TestRunDataWeaveSourceSourceNames"
+	const reason = "requires explicitly installed DataWeave toolchain"
+	for _, tc := range []struct {
+		name, test, cause, home string
+		valid                   bool
+	}{
+		{"missing prerequisite", deferred, reason, "", true},
+		{"configured prerequisite", deferred, reason, "/configured", false},
+		{"wrong reason", deferred, "unrelated runtime problem", "", false},
+		{"unrelated test", "TestUnrelated", reason, "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("GLADE_DATAWEAVE_APEX_TEST_HOME", tc.home)
+			events := fmt.Sprintf("{\"Action\":\"output\",\"Package\":%q,\"Test\":%q,\"Output\":%q}\n", fixturePackage, tc.test, "    fixture_test.go:1: "+tc.cause+"\n") +
+				fmt.Sprintf("{\"Action\":\"skip\",\"Package\":%q,\"Test\":%q}\n{\"Action\":\"pass\",\"Package\":%q}\n", fixturePackage, tc.test, fixturePackage)
+			plan := strings.ReplaceAll(validFixturePlan(), "TestAlpha", tc.test)
+			out, err, artifacts := runApexShardFixture(t, "0", tc.test+"\nTestBeta\n", 0, plan, 0, events, 0)
+			if (err == nil) != tc.valid {
+				t.Fatalf("valid=%v err=%v\n%s", tc.valid, err, out)
+			}
+			if !tc.valid {
+				return
+			}
+			var summary struct {
+				Valid            bool
+				Passed, Deferred []string
+			}
+			data, err := os.ReadFile(filepath.Join(artifacts, "validation-summary.json"))
+			if err != nil || json.Unmarshal(data, &summary) != nil || !summary.Valid || len(summary.Passed) != 0 || !reflect.DeepEqual(summary.Deferred, []string{deferred}) {
+				t.Fatalf("deferral must remain separate from passes: %v %s", err, data)
+			}
+			if !strings.Contains(out, "missing explicit prerequisites: GLADE_DATAWEAVE_APEX_TEST_HOME") {
+				t.Fatalf("missing visible deferral reason: %s", out)
+			}
+		})
+	}
+}
+
+func TestCIApexHistoryDeferralsKeepHistoryIncomplete(t *testing.T) {
+	const deferred = "TestRunDataWeaveSourceSourceNames"
+	for _, tc := range []struct {
+		name, test, cause, home string
+		valid                   bool
+	}{
+		{"missing prerequisite", deferred, "requires explicitly installed DataWeave toolchain", "", true},
+		{"configured prerequisite", deferred, "requires explicitly installed DataWeave toolchain", "/configured", false},
+		{"wrong reason", deferred, "unrelated failure", "", false},
+		{"unrelated test", "TestUnrelated", "requires explicitly installed DataWeave toolchain", "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("GLADE_DATAWEAVE_APEX_TEST_HOME", tc.home)
+			fixture := newApexHistoryFixtureWithCount(t, 4, [2]float64{0, 0})
+			// Use the last name to keep discovery and shard order canonical.
+			for _, dir := range fixture.shards {
+				for _, name := range []string{"discovery.txt", "plan.json", "selected-shard.json", "validation-summary.json", "events.json"} {
+					path := filepath.Join(dir, name)
+					data, err := os.ReadFile(path)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if err := os.WriteFile(path, []byte(strings.ReplaceAll(string(data), "TestHistory003", tc.test)), 0o600); err != nil {
+						t.Fatal(err)
+					}
+				}
+			}
+			dir := fixture.shards[1]
+			writeJSONFixture(t, filepath.Join(dir, "validation-summary.json"), map[string]any{
+				"valid": true, "expected": []string{"TestHistory002", tc.test}, "passed": []string{"TestHistory002"}, "deferred": []string{tc.test}, "errors": []string{},
+			})
+			events := fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q,\"Test\":\"TestHistory002\",\"Elapsed\":0}\n", fixturePackage) +
+				fmt.Sprintf("{\"Action\":\"output\",\"Package\":%q,\"Test\":%q,\"Output\":%q}\n", fixturePackage, tc.test, "    fixture_test.go:1: "+tc.cause+"\n") +
+				fmt.Sprintf("{\"Action\":\"skip\",\"Package\":%q,\"Test\":%q}\n{\"Action\":\"pass\",\"Package\":%q}\n", fixturePackage, tc.test, fixturePackage)
+			if err := os.WriteFile(filepath.Join(dir, "events.json"), []byte(events), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			out, err := runApexHistoryRefresh(t, fixture)
+			if (err == nil) != tc.valid {
+				t.Fatalf("valid=%v err=%v\n%s", tc.valid, err, out)
+			}
+			if !tc.valid {
+				if _, err := os.Stat(fixture.output); !os.IsNotExist(err) {
+					t.Fatalf("invalid history survived: %v", err)
+				}
+				return
+			}
+			var history struct {
+				Complete bool
+				Tests    []struct{ Name string }
+			}
+			data, err := os.ReadFile(fixture.output)
+			if err != nil || json.Unmarshal(data, &history) != nil || history.Complete || len(history.Tests) != 3 {
+				t.Fatalf("deferred history must remain incomplete: %v %s", err, data)
+			}
+			for _, test := range history.Tests {
+				if test.Name == deferred {
+					t.Fatalf("deferred test acquired a fabricated duration: %s", data)
+				}
+			}
+			if !strings.Contains(out, "using deterministic scheduling fallback") {
+				t.Fatalf("missing fallback explanation: %s", out)
+			}
+		})
+	}
+}
+
+func TestCIRemainingGoSeparatesVisualforceBudgetAndPreservesFailures(t *testing.T) {
+	for _, tc := range []struct {
+		name                   string
+		remaining, visualforce int
+		want                   int
+	}{
+		{"pass", 0, 0, 0}, {"remaining fails", 23, 0, 23},
+		{"Visualforce fails", 0, 29, 29}, {"both fail", 23, 29, 23},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			goScript := `#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$FIXTURE_CALLS"
+printf '%s\n' '{"Action":"pass","Package":"fixture"}'
+if [[ "$*" == *"./internal/visualforce"* ]]; then exit "$FIXTURE_VISUALFORCE_RC"; fi
+exit "$FIXTURE_REMAINING_RC"
+`
+			for name, body := range map[string]string{"go": goScript, "testlog": "#!/usr/bin/env bash\ncat >/dev/null\n"} {
+				writeApexFixtureExecutable(t, filepath.Join(dir, name), body)
+			}
+			cmd := exec.Command("bash", "-c", `source ./ci-go-test.sh; package_lane_rows=$'remaining-go\t./internal/soql\nremaining-go\t./internal/visualforce'; run_package_lane remaining-go test 20m`)
+			cmd.Env = append(os.Environ(), "PATH="+dir+":"+os.Getenv("PATH"),
+				"CI_TESTLOG_RENDERER="+filepath.Join(dir, "testlog"), "CI_GO_TEST_ARTIFACT_DIR="+dir,
+				"FIXTURE_CALLS="+filepath.Join(dir, "calls"),
+				fmt.Sprintf("FIXTURE_REMAINING_RC=%d", tc.remaining), fmt.Sprintf("FIXTURE_VISUALFORCE_RC=%d", tc.visualforce))
+			out, err := cmd.CombinedOutput()
+			if tc.want == 0 && err != nil {
+				t.Fatalf("lane failed: %v\n%s", err, out)
+			} else if tc.want != 0 {
+				var exitErr *exec.ExitError
+				if !errors.As(err, &exitErr) || exitErr.ExitCode() != tc.want {
+					t.Fatalf("lane status = %v, want %d\n%s", err, tc.want, out)
+				}
+			}
+			calls, err := os.ReadFile(filepath.Join(dir, "calls"))
+			want := "test -json -vet=off -timeout=20m ./internal/soql\ntest -json -vet=off -timeout=70m ./internal/visualforce\n"
+			if err != nil || string(calls) != want {
+				t.Fatalf("package ownership/timeouts changed: %v\n%s", err, calls)
+			}
+			for _, name := range []string{"test-remaining-go.json", "test-remaining-go-visualforce.json"} {
+				if data, err := os.ReadFile(filepath.Join(dir, name)); err != nil || len(data) == 0 {
+					t.Fatalf("raw event artifact %s missing: %v", name, err)
+				}
+			}
+		})
+	}
 }

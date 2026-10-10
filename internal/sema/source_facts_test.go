@@ -207,7 +207,7 @@ func FuzzSourceFactsBraceEquivalence(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, source string, start, offset int) {
 		if len(source) > 4096 {
-			t.Skip()
+			t.Skip("fuzz input exceeds the 4096-byte equivalence-check limit")
 		}
 		start = sourceFactsBound(start, len(source))
 		offset = sourceFactsBound(offset, len(source))
@@ -251,7 +251,7 @@ func FuzzSourceFactsSchemaMaskEquivalence(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, source string) {
 		if len(source) > 4096 {
-			t.Skip()
+			t.Skip("fuzz input exceeds the 4096-byte equivalence-check limit")
 		}
 		want := legacySourceFactsSchemaScanSource(source)
 		if got := newSourceFacts(source).schemaScanSource(); got != want {

@@ -46,8 +46,29 @@ type visualforceFunctionExpr struct {
 	args []Expression
 }
 
+type parameterMapExpr struct {
+	names  []string
+	values []Expression
+}
+
+func (expr parameterMapExpr) Eval(ctx *ExpressionContext) *vm.Value {
+	values := map[string]string{}
+	for i, name := range expr.names {
+		value := evalExpressionValue(expr.values[i], ctx)
+		if expressionEvaluationFailed(ctx) {
+			return &vm.Null
+		}
+		values[name] = visualforceFormulaText(value)
+	}
+	out := vm.NewStringMapValue(values)
+	return &out
+}
+
 func (expr binaryExpr) Eval(ctx *ExpressionContext) *vm.Value {
 	left := evalExpressionValue(expr.left, ctx)
+	if expressionEvaluationFailed(ctx) {
+		return &vm.Null
+	}
 	switch expr.op {
 	case "&&":
 		if !isTruthy(&left) {
@@ -55,6 +76,9 @@ func (expr binaryExpr) Eval(ctx *ExpressionContext) *vm.Value {
 			return &out
 		}
 		right := evalExpressionValue(expr.right, ctx)
+		if expressionEvaluationFailed(ctx) {
+			return &vm.Null
+		}
 		out := vm.Bool(isTruthy(&right))
 		return &out
 	case "||":
@@ -63,25 +87,68 @@ func (expr binaryExpr) Eval(ctx *ExpressionContext) *vm.Value {
 			return &out
 		}
 		right := evalExpressionValue(expr.right, ctx)
+		if expressionEvaluationFailed(ctx) {
+			return &vm.Null
+		}
 		out := vm.Bool(isTruthy(&right))
 		return &out
 	}
 	right := evalExpressionValue(expr.right, ctx)
+	if expressionEvaluationFailed(ctx) {
+		return &vm.Null
+	}
 	switch expr.op {
+	case "&":
+		out := vm.String(visualforceFormulaText(left) + visualforceFormulaText(right))
+		return &out
 	case "+", "-", "*", "/":
+		if number, ok := numericValue(right); expr.op == "/" && ok && number == 0 {
+			return failVisualforceFormula(ctx, "Arithmetic error: Division by zero")
+		}
 		out := evalArithmetic(expr.op, left, right)
 		return &out
-	case "==", "!=", ">", ">=", "<", "<=":
+	case "^":
+		leftNumber, leftOK := numericValue(left)
+		rightNumber, rightOK := numericValue(right)
+		if !leftOK || !rightOK {
+			return &vm.Null
+		}
+		out := numericResult(left, right, math.Pow(leftNumber, rightNumber))
+		return &out
+	case "==", "!=":
 		out := vm.Bool(compareValues(expr.op, left, right))
+		return &out
+	case ">", ">=", "<", "<=":
+		out := evaluateRelativeComparison(ctx, expr.op, left, right)
 		return &out
 	default:
 		return &vm.Null
 	}
 }
 
+func evaluateRelativeComparison(ctx *ExpressionContext, op string, left, right vm.Value) vm.Value {
+	if left.Kind == vm.ValueNull || right.Kind == vm.ValueNull {
+		if ctx != nil && ctx.evaluationError == nil {
+			ctx.evaluationError = vm.NewExecutionException("relative comparison with null")
+		}
+		return vm.Null
+	}
+	return vm.Bool(compareValues(op, left, right))
+}
+
 func (expr unaryExpr) Eval(ctx *ExpressionContext) *vm.Value {
 	value := evalExpressionValue(expr.value, ctx)
+	if expressionEvaluationFailed(ctx) {
+		return &vm.Null
+	}
 	switch expr.op {
+	case "-":
+		number, ok := numericValue(value)
+		if !ok {
+			return &vm.Null
+		}
+		out := numericResult(value, vm.Int(0), -number)
+		return &out
 	case "!":
 		out := vm.Bool(!isTruthy(&value))
 		return &out
@@ -92,12 +159,21 @@ func (expr unaryExpr) Eval(ctx *ExpressionContext) *vm.Value {
 
 func (expr indexExpr) Eval(ctx *ExpressionContext) *vm.Value {
 	target := evalExpressionValue(expr.target, ctx)
+	if expressionEvaluationFailed(ctx) {
+		return &vm.Null
+	}
 	key := evalExpressionValue(expr.key, ctx)
+	if expressionEvaluationFailed(ctx) {
+		return &vm.Null
+	}
 	if key.Kind == vm.ValueNull {
 		return &vm.Null
 	}
 	value, ok := readIndexValue(ctx, target, key)
 	if !ok {
+		if target.Kind == vm.ValueList || target.Kind == vm.ValueMap {
+			return failVisualforceFormula(ctx, "")
+		}
 		return &vm.Null
 	}
 	return &value
@@ -105,6 +181,9 @@ func (expr indexExpr) Eval(ctx *ExpressionContext) *vm.Value {
 
 func (expr memberExpr) Eval(ctx *ExpressionContext) *vm.Value {
 	target := evalExpressionValue(expr.target, ctx)
+	if expressionEvaluationFailed(ctx) {
+		return &vm.Null
+	}
 	value, ok := readVisualforceExtraMember(ctx, target, expr.field)
 	if !ok {
 		value, ok = readObjectMember(ctx, target, expr.field)
@@ -117,12 +196,18 @@ func (expr memberExpr) Eval(ctx *ExpressionContext) *vm.Value {
 
 func (expr methodCallExpr) Eval(ctx *ExpressionContext) *vm.Value {
 	target := evalExpressionValue(expr.target, ctx)
+	if expressionEvaluationFailed(ctx) {
+		return &vm.Null
+	}
 	if target.Kind == vm.ValueNull {
 		return &vm.Null
 	}
 	args := make([]vm.Value, 0, len(expr.args))
 	for _, arg := range expr.args {
 		args = append(args, evalExpressionValue(arg, ctx))
+		if expressionEvaluationFailed(ctx) {
+			return &vm.Null
+		}
 	}
 	if len(args) == 0 {
 		if value, ok := readObjectMember(ctx, target, expr.name); ok {
@@ -159,7 +244,7 @@ func writeBackVisualforceReceiver(ctx *ExpressionContext, target, updated vm.Val
 }
 
 func evalExpressionValue(expr Expression, ctx *ExpressionContext) vm.Value {
-	if expr == nil {
+	if expr == nil || expressionEvaluationFailed(ctx) {
 		return vm.Null
 	}
 	value := expr.Eval(ctx)
@@ -169,9 +254,27 @@ func evalExpressionValue(expr Expression, ctx *ExpressionContext) vm.Value {
 	return *value
 }
 
+func evalExpressionPointer(expr Expression, ctx *ExpressionContext) *vm.Value {
+	value := evalExpressionValue(expr, ctx)
+	return &value
+}
+
+func expressionEvaluationFailed(ctx *ExpressionContext) bool {
+	return ctx != nil && ctx.evaluationError != nil
+}
+
 func (expr visualforceIdentifierExpr) Eval(ctx *ExpressionContext) *vm.Value {
 	if len(expr.parts) == 0 {
 		return &vm.Null
+	}
+	if strings.EqualFold(expr.parts[0], "$component") && ctx != nil && ctx.ComponentReferenceScope != nil && len(expr.parts) > 1 {
+		clientID, ok := ctx.ComponentReferenceScope.resolve(expr.parts[1:])
+		if !ok {
+			value := vm.String("")
+			return &value
+		}
+		value := vm.String(clientID)
+		return &value
 	}
 	value, ok := resolveVisualforceExtraGlobal(ctx, expr.parts[0])
 	if !ok {
@@ -209,6 +312,9 @@ func evalVisualforceCase(ctx *ExpressionContext, args []Expression) *vm.Value {
 		return &vm.Null
 	}
 	target := evalExpressionValue(args[0], ctx)
+	if expressionEvaluationFailed(ctx) {
+		return &vm.Null
+	}
 	limit := len(args)
 	var fallback Expression
 	if (len(args)-1)%2 == 1 {
@@ -217,12 +323,15 @@ func evalVisualforceCase(ctx *ExpressionContext, args []Expression) *vm.Value {
 	}
 	for i := 1; i+1 < limit; i += 2 {
 		candidate := evalExpressionValue(args[i], ctx)
+		if expressionEvaluationFailed(ctx) {
+			return &vm.Null
+		}
 		if valuesComparableEqual(target, candidate) {
-			return args[i+1].Eval(ctx)
+			return evalExpressionPointer(args[i+1], ctx)
 		}
 	}
 	if fallback != nil {
-		return fallback.Eval(ctx)
+		return evalExpressionPointer(fallback, ctx)
 	}
 	return &vm.Null
 }
@@ -232,8 +341,11 @@ func evalVisualforceBlankValue(ctx *ExpressionContext, args []Expression) *vm.Va
 		return &vm.Null
 	}
 	value := evalExpressionValue(args[0], ctx)
+	if expressionEvaluationFailed(ctx) {
+		return &vm.Null
+	}
 	if isValueNullOrBlank(value) {
-		return args[1].Eval(ctx)
+		return evalExpressionPointer(args[1], ctx)
 	}
 	return &value
 }
@@ -243,8 +355,11 @@ func evalVisualforceNullValue(ctx *ExpressionContext, args []Expression) *vm.Val
 		return &vm.Null
 	}
 	value := evalExpressionValue(args[0], ctx)
+	if expressionEvaluationFailed(ctx) {
+		return &vm.Null
+	}
 	if value.Kind == vm.ValueNull {
-		return args[1].Eval(ctx)
+		return evalExpressionPointer(args[1], ctx)
 	}
 	return &value
 }
@@ -254,6 +369,9 @@ func evalVisualforceValue(ctx *ExpressionContext, args []Expression) *vm.Value {
 		return &vm.Null
 	}
 	value := evalExpressionValue(args[0], ctx)
+	if expressionEvaluationFailed(ctx) {
+		return &vm.Null
+	}
 	text := strings.TrimSpace(value.String())
 	if text == "" {
 		return &vm.Null
@@ -275,6 +393,8 @@ func evalVisualforceValue(ctx *ExpressionContext, args []Expression) *vm.Value {
 
 func resolveVisualforceExtraGlobal(ctx *ExpressionContext, name string) (vm.Value, bool) {
 	switch strings.ToLower(name) {
+	case "$page":
+		return vm.Object("$Page"), true
 	case "$objecttype":
 		return vm.Object("$ObjectType"), true
 	case "$permission":
@@ -295,6 +415,12 @@ func resolveVisualforceExtraGlobal(ctx *ExpressionContext, name string) (vm.Valu
 }
 
 func readIndexValue(ctx *ExpressionContext, target, key vm.Value) (vm.Value, bool) {
+	if err := validateRepetitionFieldAccess(ctx, target, key); err != nil {
+		if ctx.evaluationError == nil {
+			ctx.evaluationError = err
+		}
+		return vm.Null, false
+	}
 	switch target.Kind {
 	case vm.ValueList:
 		index, ok := listIndexFromValue(key)
@@ -336,6 +462,8 @@ func listIndexFromValue(value vm.Value) (int, bool) {
 
 func readVisualforceExtraMember(ctx *ExpressionContext, value vm.Value, field string) (vm.Value, bool) {
 	switch strings.ToLower(value.Type) {
+	case "$page":
+		return vm.String("/apex/" + field), true
 	case "$objecttype":
 		return visualforceObjectTypeValue(ctx, field)
 	case "schema.sobjecttype":
@@ -614,6 +742,9 @@ func evalArithmetic(op string, left, right vm.Value) vm.Value {
 		}
 		return vm.Null
 	}
+	if value, ok := exactVisualforceArithmetic(op, left, right); ok {
+		return value
+	}
 	switch op {
 	case "+":
 		return numericResult(left, right, leftNumber+rightNumber)
@@ -704,6 +835,9 @@ func compareString(op string, left, right string) bool {
 }
 
 func valuesComparableEqual(left, right vm.Value) bool {
+	if left.Kind == vm.ValueNull || right.Kind == vm.ValueNull {
+		return visualforceFormulaText(left) == visualforceFormulaText(right)
+	}
 	if left.Kind == vm.ValueBool || right.Kind == vm.ValueBool {
 		return isTruthy(&left) == isTruthy(&right)
 	}

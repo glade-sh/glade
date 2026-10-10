@@ -282,6 +282,8 @@ System.assertEquals('Acme', ((Account)rows[0]).Name);
 	machine := New(nil)
 	org := testDataOrg()
 	machine.SetOrg(&org)
+	// A28 named R091 permits explicit SYSTEM_MODE.
+	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -863,6 +865,263 @@ func TestCloneRuntimeSharesDMLSummaryRelationCacheForSameSchemaStamp(t *testing.
 	clone := base.CloneRuntime(nil)
 	if clone.dmlSummaryByChild != base.dmlSummaryByChild {
 		t.Fatal("DML summary relation cache was not shared")
+	}
+}
+
+// summarySideEffectTestOrg returns an org whose Invoice__c roll-up summarizes
+// child; DML on that child (not on Invoice__c) is summary-sensitive.
+func summarySideEffectTestOrg(child string) storage.OrgState {
+	org := storage.NewOrgState()
+	for _, name := range []string{"Line__c", "Item__c"} {
+		org.Objects[name] = storage.ObjectState{Definition: storage.ObjectDefinition{
+			APIName: name,
+			Fields:  map[string]storage.Field{"Amount__c": {APIName: "Amount__c", Type: storage.FieldDecimal}},
+		}}
+	}
+	org.Objects["Invoice__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Invoice__c",
+		Fields: map[string]storage.Field{"Total__c": {
+			APIName:           "Total__c",
+			Type:              storage.FieldSummary,
+			SummarizedField:   child + ".Amount__c",
+			SummaryForeignKey: child + ".Invoice__c",
+		}},
+	}}
+	return org
+}
+
+func primedSummarySideEffectBase(t *testing.T, org storage.OrgState) (*VM, *storage.RuntimeTemplate) {
+	t.Helper()
+	template := storage.NewRuntimeTemplate(org)
+	PrimeRuntimeTemplateSchema(&template)
+	base := New(nil)
+	base.PrimeMetadataSchema(&template.Org)
+	if strings.TrimSpace(base.metadataCacheStamp) == "" {
+		t.Fatal("base schema stamp was not primed")
+	}
+	return base, &template
+}
+
+func summarySideEffectCloneForRow(base *VM, template *storage.RuntimeTemplate) *VM {
+	clone := base.CloneRuntime(nil)
+	org := template.CloneRuntimeOrg()
+	clone.SetRuntimeTemplateOrg(&org)
+	return clone
+}
+
+// Sibling clones of a primed base install private orgs of one schema
+// generation. The first DML builds the summary side-effect index once; every
+// other sibling must reuse that build instead of rescanning every field.
+func TestCloneRuntimeSharesSummarySideEffectIndexForSameSchemaStamp(t *testing.T) {
+	base, template := primedSummarySideEffectBase(t, summarySideEffectTestOrg("Line__c"))
+	first := summarySideEffectCloneForRow(base, template)
+	second := summarySideEffectCloneForRow(base, template)
+	if first.summarySideEffectObjects != base.summarySideEffectObjects || second.summarySideEffectObjects != base.summarySideEffectObjects {
+		t.Fatal("clones of a primed base did not share the summary side-effect cache")
+	}
+	if !first.hasSummarySideEffectsForDML([]storage.Record{{Object: "Line__c"}}) {
+		t.Fatal("Line__c DML should be summary-sensitive")
+	}
+	built := first.summarySideEffectObjectIndex()
+	if got := second.summarySideEffectObjectIndex(); reflect.ValueOf(got).Pointer() != reflect.ValueOf(built).Pointer() {
+		t.Fatal("sibling clone rebuilt the summary side-effect index")
+	}
+	third := summarySideEffectCloneForRow(base, template)
+	if got := third.summarySideEffectObjectIndex(); reflect.ValueOf(got).Pointer() != reflect.ValueOf(built).Pointer() {
+		t.Fatal("clone created after the first build rebuilt the summary side-effect index")
+	}
+	if !second.hasSummarySideEffectsForDML([]storage.Record{{Object: "Line__c"}}) || second.hasSummarySideEffectsForDML([]storage.Record{{Object: "Item__c"}}) {
+		t.Fatalf("shared index = %#v, want only Line__c", built)
+	}
+}
+
+// Every path that can install another schema must detach the shared index:
+// SetOrg with a changed schema, SetOrg with the same schema (fail closed), an
+// untrusted org under SetRuntimeTemplateOrg, and runtime metadata deployment.
+func TestSummarySideEffectIndexInvalidatesOnSchemaChange(t *testing.T) {
+	base, template := primedSummarySideEffectBase(t, summarySideEffectTestOrg("Line__c"))
+	first := summarySideEffectCloneForRow(base, template)
+	if !first.hasSummarySideEffectsForDML([]storage.Record{{Object: "Line__c"}}) {
+		t.Fatal("Line__c DML should be summary-sensitive")
+	}
+	shared := base.summarySideEffectObjects
+
+	t.Run("SetOrg with a new summary field", func(t *testing.T) {
+		clone := summarySideEffectCloneForRow(base, template)
+		org := summarySideEffectTestOrg("Item__c")
+		clone.SetOrg(&org)
+		if clone.summarySideEffectObjects == shared {
+			t.Fatal("SetOrg kept the shared summary side-effect cache")
+		}
+		if !clone.hasSummarySideEffectsForDML([]storage.Record{{Object: "Item__c"}}) {
+			t.Fatal("clone after SetOrg did not see the new Item__c summary field")
+		}
+		if clone.hasSummarySideEffectsForDML([]storage.Record{{Object: "Line__c"}}) {
+			t.Fatal("clone after SetOrg kept the old Line__c summary dependency")
+		}
+	})
+	t.Run("SetOrg with the same schema", func(t *testing.T) {
+		clone := summarySideEffectCloneForRow(base, template)
+		org := template.CloneRuntimeOrg()
+		clone.SetOrg(&org)
+		if clone.summarySideEffectObjects == shared {
+			t.Fatal("SetOrg kept the shared summary side-effect cache for a mutable org")
+		}
+	})
+	t.Run("SetRuntimeTemplateOrg with a cleared stamp", func(t *testing.T) {
+		clone := base.CloneRuntime(nil)
+		org := template.CloneRuntimeOrg()
+		definition, ok := storage.EnsureMutableObjectDefinition(&org, "Invoice__c")
+		if !ok {
+			t.Fatal("Invoice__c definition missing")
+		}
+		definition.Fields["ItemTotal__c"] = storage.Field{APIName: "ItemTotal__c", Type: storage.FieldSummary, SummarizedField: "Item__c.Amount__c", SummaryForeignKey: "Item__c.Invoice__c"}
+		clone.SetRuntimeTemplateOrg(&org)
+		if clone.summarySideEffectObjects == shared {
+			t.Fatal("SetRuntimeTemplateOrg kept the shared cache for a mutated definition")
+		}
+		if !clone.hasSummarySideEffectsForDML([]storage.Record{{Object: "Item__c"}}) {
+			t.Fatal("clone did not see the Item__c summary field added before install")
+		}
+	})
+	t.Run("metadata deployment", func(t *testing.T) {
+		clone := summarySideEffectCloneForRow(base, template)
+		_ = clone.summarySideEffectObjectIndex()
+		clone.clearMetadataCaches()
+		if clone.summarySideEffectObjects == shared {
+			t.Fatal("clearMetadataCaches kept the shared summary side-effect cache")
+		}
+		if base.summarySideEffectObjects != shared || !shared.objects["line__c"] {
+			t.Fatal("clearing a clone's caches changed the shared base cache")
+		}
+	})
+	t.Run("unprimed base", func(t *testing.T) {
+		unprimed := New(nil)
+		left := unprimed.CloneRuntime(nil)
+		right := unprimed.CloneRuntime(nil)
+		org := summarySideEffectTestOrg("Line__c")
+		left.Org, right.Org = &org, &org
+		leftIndex, rightIndex := left.summarySideEffectObjectIndex(), right.summarySideEffectObjectIndex()
+		if left.summarySideEffectObjects != nil || right.summarySideEffectObjects != nil || reflect.ValueOf(leftIndex).Pointer() == reflect.ValueOf(rightIndex).Pointer() {
+			t.Fatal("clones of an unprimed base shared one summary side-effect cache")
+		}
+	})
+}
+
+// retargetInstalledSummary changes the installed org's Invoice__c roll-up from
+// Line__c to Item__c through the mutable-definition path, which clears the
+// org's schema stamp after SetRuntimeTemplateOrg kept the shared caches.
+func retargetInstalledSummary(t *testing.T, machine *VM) {
+	t.Helper()
+	definition, ok := storage.EnsureMutableObjectDefinition(machine.Org, "Invoice__c")
+	if !ok {
+		t.Fatal("Invoice__c definition missing")
+	}
+	definition.Fields["Total__c"] = storage.Field{APIName: "Total__c", Type: storage.FieldSummary, SummarizedField: "Item__c.Amount__c", SummaryForeignKey: "Item__c.Invoice__c"}
+	if machine.Org.RuntimeSchemaStamp != "" {
+		t.Fatal("mutable definition kept the org schema stamp")
+	}
+}
+
+func assertSummarySideEffectTargets(t *testing.T, label string, machine *VM, want, notWant string) {
+	t.Helper()
+	if !machine.hasSummarySideEffectsForDML([]storage.Record{{Object: want}}) {
+		t.Fatalf("%s: %s DML should be summary-sensitive", label, want)
+	}
+	if machine.hasSummarySideEffectsForDML([]storage.Record{{Object: notWant}}) {
+		t.Fatalf("%s: %s DML should not be summary-sensitive", label, notWant)
+	}
+}
+
+// A clone whose definitions change after installation must neither build nor
+// read the shared index: its siblings keep the template schema.
+func TestSummarySideEffectIndexIsolatesCloneMutatedAfterInstall(t *testing.T) {
+	t.Run("shared index unbuilt", func(t *testing.T) {
+		base, template := primedSummarySideEffectBase(t, summarySideEffectTestOrg("Line__c"))
+		mutated := summarySideEffectCloneForRow(base, template)
+		sibling := summarySideEffectCloneForRow(base, template)
+		retargetInstalledSummary(t, mutated)
+		assertSummarySideEffectTargets(t, "mutated clone", mutated, "Item__c", "Line__c")
+		assertSummarySideEffectTargets(t, "sibling", sibling, "Line__c", "Item__c")
+		assertSummarySideEffectTargets(t, "later clone", summarySideEffectCloneForRow(base, template), "Line__c", "Item__c")
+	})
+	t.Run("shared index built", func(t *testing.T) {
+		base, template := primedSummarySideEffectBase(t, summarySideEffectTestOrg("Line__c"))
+		mutated := summarySideEffectCloneForRow(base, template)
+		sibling := summarySideEffectCloneForRow(base, template)
+		assertSummarySideEffectTargets(t, "sibling before mutation", sibling, "Line__c", "Item__c")
+		retargetInstalledSummary(t, mutated)
+		assertSummarySideEffectTargets(t, "mutated clone", mutated, "Item__c", "Line__c")
+		assertSummarySideEffectTargets(t, "sibling after mutation", sibling, "Line__c", "Item__c")
+		assertSummarySideEffectTargets(t, "later clone", summarySideEffectCloneForRow(base, template), "Line__c", "Item__c")
+	})
+	t.Run("sibling mutated after the other built", func(t *testing.T) {
+		base, template := primedSummarySideEffectBase(t, summarySideEffectTestOrg("Line__c"))
+		builder := summarySideEffectCloneForRow(base, template)
+		mutated := summarySideEffectCloneForRow(base, template)
+		retargetInstalledSummary(t, mutated)
+		assertSummarySideEffectTargets(t, "builder", builder, "Line__c", "Item__c")
+		assertSummarySideEffectTargets(t, "mutated clone", mutated, "Item__c", "Line__c")
+		assertSummarySideEffectTargets(t, "builder after sibling read", builder, "Line__c", "Item__c")
+	})
+}
+
+// A clone that already looked up its index and then changes its own
+// definitions must rebuild: the early rollback snapshot depends on it.
+func TestSummarySideEffectIndexRevalidatesAfterOwnLookup(t *testing.T) {
+	needsSnapshot := func(machine *VM, object string) bool {
+		return machine.needsEarlyDMLRollbackSnapshot("insert", []storage.Record{{Object: object}}, true)
+	}
+	t.Run("template stamp cleared", func(t *testing.T) {
+		base, template := primedSummarySideEffectBase(t, summarySideEffectTestOrg("Line__c"))
+		mutated := summarySideEffectCloneForRow(base, template)
+		sibling := summarySideEffectCloneForRow(base, template)
+		assertSummarySideEffectTargets(t, "mutated clone before change", mutated, "Line__c", "Item__c")
+		assertSummarySideEffectTargets(t, "sibling before change", sibling, "Line__c", "Item__c")
+		retargetInstalledSummary(t, mutated)
+		assertSummarySideEffectTargets(t, "mutated clone after change", mutated, "Item__c", "Line__c")
+		if !needsSnapshot(mutated, "Item__c") || needsSnapshot(mutated, "Line__c") {
+			t.Fatal("mutated clone: early rollback snapshot does not follow the Item__c roll-up")
+		}
+		assertSummarySideEffectTargets(t, "sibling after change", sibling, "Line__c", "Item__c")
+		if !needsSnapshot(sibling, "Line__c") || needsSnapshot(sibling, "Item__c") {
+			t.Fatal("sibling: early rollback snapshot does not follow the Line__c roll-up")
+		}
+		assertSummarySideEffectTargets(t, "later clone", summarySideEffectCloneForRow(base, template), "Line__c", "Item__c")
+	})
+	t.Run("unstamped org changed twice", func(t *testing.T) {
+		machine := New(nil)
+		org := summarySideEffectTestOrg("Line__c")
+		machine.SetOrg(&org)
+		machine.Org.ClearRuntimeSchemaStamp()
+		assertSummarySideEffectTargets(t, "before change", machine, "Line__c", "Item__c")
+		retargetInstalledSummary(t, machine)
+		assertSummarySideEffectTargets(t, "after first change", machine, "Item__c", "Line__c")
+		definition, _ := storage.EnsureMutableObjectDefinition(machine.Org, "Invoice__c")
+		definition.Fields["Total__c"] = storage.Field{APIName: "Total__c", Type: storage.FieldSummary, SummarizedField: "Line__c.Amount__c", SummaryForeignKey: "Line__c.Invoice__c"}
+		assertSummarySideEffectTargets(t, "after second change", machine, "Line__c", "Item__c")
+		if !needsSnapshot(machine, "Line__c") || needsSnapshot(machine, "Item__c") {
+			t.Fatal("early rollback snapshot does not follow the restored Line__c roll-up")
+		}
+	})
+}
+
+func TestSummarySideEffectIndexSharedBuildIsRaceFree(t *testing.T) {
+	base, template := primedSummarySideEffectBase(t, summarySideEffectTestOrg("Line__c"))
+	clones := make([]*VM, 8)
+	for i := range clones {
+		clones[i] = summarySideEffectCloneForRow(base, template)
+	}
+	results := make(chan bool, len(clones))
+	for _, clone := range clones {
+		go func(machine *VM) {
+			results <- machine.hasSummarySideEffectsForDML([]storage.Record{{Object: "Line__c"}})
+		}(clone)
+	}
+	for range clones {
+		if !<-results {
+			t.Fatal("concurrent clone missed the Line__c summary dependency")
+		}
 	}
 }
 
@@ -1530,6 +1789,7 @@ SObject row = Database.query('SELECT Id, Name FROM Account WHERE Id = :accountId
 System.assertEquals(a.Id, row.Id);
 System.assertEquals('Single', row.get('Name'));
 System.assertEquals(a, (Account)row);
+System.assertEquals((Account)row, a);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1643,6 +1903,24 @@ System.assertEquals(Schema.SOAPType.ID, ownerField.getDescribe().getSOAPType());
 	machine := New(nil)
 	org := testDataOrg()
 	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecQualifiedSchemaSObjectTypeRemainsObjectToken(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.SObjectType logType = Schema.Log__c.SObjectType;
+Schema.SObjectField nameField = Schema.Log__c.Name;
+System.assertEquals('Log__c', logType.getDescribe().getName());
+System.assertEquals('Name', nameField.getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -2434,6 +2712,7 @@ System.assertEquals('2030', profile.ExpirationYear__c);
 	}
 }
 
+// R005: the loaded parent uses the canonical parent relationship name.
 func TestExecLoadedRelationshipAllowsMissingLookupRepair(t *testing.T) {
 	org := storage.OrgState{Objects: map[string]storage.ObjectState{
 		"Account": {
@@ -2452,7 +2731,7 @@ func TestExecLoadedRelationshipAllowsMissingLookupRepair(t *testing.T) {
 				KeyPrefix: "a00",
 				Fields: map[string]storage.Field{
 					"Id":        {APIName: "Id", Type: storage.FieldID},
-					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Children"},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent__r"},
 				},
 			},
 			Records: map[storage.ID]storage.Record{
@@ -2710,7 +2989,16 @@ func TestAssignReferenceFieldWithSObjectStoresParentRelationshipSlot(t *testing.
 	transaction := Object("Transaction__c")
 	deferredSchedule := Object("DeferredSchedule__c")
 	deferredSchedule.Fields["Id"] = String("a010000000000001AAA")
-	if err := machine.assignPath(transaction, []string{"DeferredSchedule__c"}, deferredSchedule); err != nil {
+	// SC045: a reference column is scalar (Id), so assigning a record raises
+	// "Illegal assignment from <SObject> to Id". SC044/SC046 distinguish invalid
+	// parent-name put from supported parent-relationship writes.
+	err := machine.assignPath(transaction, []string{"DeferredSchedule__c"}, deferredSchedule)
+	var thrown *apexThrowError
+	if !errors.As(err, &thrown) || thrown.value.Type != "SObjectException" ||
+		thrown.value.Fields["message"].Text != "Illegal assignment from DeferredSchedule__c to Id" {
+		t.Fatalf("reference column assignment = %v, want exact SObjectException", err)
+	}
+	if err := machine.assignPath(transaction, []string{"DeferredSchedule__r"}, deferredSchedule); err != nil {
 		t.Fatal(err)
 	}
 	lookup, err := machine.lookupPath(transaction, []string{"DeferredSchedule__c"})
@@ -2732,9 +3020,9 @@ func TestAssignReferenceFieldWithSObjectStoresParentRelationshipSlot(t *testing.
 func TestLookupExplicitNullParentRelationshipWithLookupIDUsesTypedShellForNestedField(t *testing.T) {
 	machine := New(nil)
 	org := storage.OrgState{Namespace: "PKG", Objects: map[string]storage.ObjectState{
-		"CartItemLine__c": {
+		"BasketLine__c": {
 			Definition: storage.ObjectDefinition{
-				APIName: "CartItemLine__c",
+				APIName: "BasketLine__c",
 				Fields: map[string]storage.Field{
 					"Id":          {APIName: "Id", Type: storage.FieldID},
 					"Product2__c": {APIName: "Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}, RelationshipName: "Product2__r"},
@@ -2757,7 +3045,7 @@ func TestLookupExplicitNullParentRelationshipWithLookupIDUsesTypedShellForNested
 		},
 	}}
 	machine.SetOrg(&org)
-	line := Object("CartItemLine__c")
+	line := Object("BasketLine__c")
 	line.Fields["Product2__c"] = String("aHA000000000006")
 	setExplicitSObjectField(&line, "Product2__r", Null)
 	relationship, err := machine.lookupPath(line, []string{"Product2__r"})
@@ -3436,7 +3724,9 @@ System.assertNotEquals(null, queried.Due__c);
 	}
 }
 
-func TestExecUnqueriedLookupFieldDefaultsNull(t *testing.T) {
+// R012/R013/R042/R043: omitted lookup and parent fields are unavailable,
+// including when the stored relationship is null.
+func TestExecUnqueriedLookupAndParentFieldsRemainHidden(t *testing.T) {
 	machine := New(nil)
 	org := storage.OrgState{Objects: map[string]storage.ObjectState{
 		"Child__c": {
@@ -3453,11 +3743,11 @@ func TestExecUnqueriedLookupFieldDefaultsNull(t *testing.T) {
 	machine.SetOrg(&org)
 	child := Object("Child__c")
 	child.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue("Child__c", map[string]bool{"id": true})
-	if err := machine.unqueriedSObjectFieldError(child, "Parent__c", true); err != nil {
-		t.Fatal(err)
+	if err := machine.unqueriedSObjectFieldError(child, "Parent__c", true); err == nil || !strings.Contains(err.Error(), "without querying the requested field: Child__c.Parent__c") {
+		t.Fatalf("omitted lookup error = %v", err)
 	}
-	if err := machine.unqueriedSObjectFieldError(child, "Parent__r", true); err != nil {
-		t.Fatal(err)
+	if err := machine.unqueriedSObjectFieldError(child, "Parent__r", true); err == nil || !strings.Contains(err.Error(), "without querying the requested field: Child__c.Parent__r") {
+		t.Fatalf("omitted parent error = %v", err)
 	}
 	if err := machine.unqueriedSObjectFieldError(child, "Name", true); err == nil {
 		t.Fatal("expected unqueried non-lookup field to error")
@@ -4009,7 +4299,7 @@ System.assertEquals(null, child.Parent__r.Name);
 
 func TestRelationshipNullRequiresMetadataForCustomRelationshipHops(t *testing.T) {
 	machine := New(nil)
-	orderItem, ok := machine.relationshipNullFieldAccessValue("pkg__OrderItemLine__c", "pkg__OrderItem__r")
+	orderItem, ok := machine.relationshipNullFieldAccessValue("pkg__BundleLine__c", "pkg__OrderItem__r")
 	if ok {
 		t.Fatalf("order item relationship = %#v, ok=%v; want no inferred relationship without metadata", orderItem, ok)
 	}
@@ -4121,9 +4411,9 @@ Child__c child = (Child__c)JSON.deserialize('{"Parent__r":{"Id":"a01000000000001
 System.assertEquals('Parent', child.Parent__r.Name);
 System.assertEquals('a01000000000001AAA', child.Parent__r.Id);
 
-Subscription__c membership = (Subscription__c)JSON.deserialize('{"StartDate__c":"2026-05-01","EndDate__c":"2026-05-31T00:00:00.000Z","OrderItemLine__r":{"Id":"a02000000000001AAA","OrderItem__c":"a03000000000001AAA"}}', Subscription__c.class);
+Subscription__c membership = (Subscription__c)JSON.deserialize('{"StartDate__c":"2026-05-01","EndDate__c":"2026-05-31T00:00:00.000Z","BundleLine__r":{"Id":"a02000000000001AAA","OrderItem__c":"a03000000000001AAA"}}', Subscription__c.class);
 System.assertEquals(Date.newInstance(2026, 5, 1), membership.StartDate__c);
-System.assertEquals('a03000000000001AAA', membership.OrderItemLine__r.OrderItem__c);
+System.assertEquals('a03000000000001AAA', membership.BundleLine__r.OrderItem__c);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4156,17 +4446,17 @@ System.assertEquals('a03000000000001AAA', membership.OrderItemLine__r.OrderItem_
 				APIName:   "Subscription__c",
 				KeyPrefix: "a04",
 				Fields: map[string]storage.Field{
-					"Id":               {APIName: "Id", Type: storage.FieldID},
-					"StartDate__c":     {APIName: "StartDate__c", Type: storage.FieldDate},
-					"EndDate__c":       {APIName: "EndDate__c", Type: storage.FieldDateTime},
-					"OrderItemLine__c": {APIName: "OrderItemLine__c", Type: storage.FieldReference, ReferenceTo: []string{"OrderItemLine__c"}},
+					"Id":            {APIName: "Id", Type: storage.FieldID},
+					"StartDate__c":  {APIName: "StartDate__c", Type: storage.FieldDate},
+					"EndDate__c":    {APIName: "EndDate__c", Type: storage.FieldDateTime},
+					"BundleLine__c": {APIName: "BundleLine__c", Type: storage.FieldReference, ReferenceTo: []string{"BundleLine__c"}},
 				},
 			},
 			Records: map[storage.ID]storage.Record{},
 		},
-		"OrderItemLine__c": {
+		"BundleLine__c": {
 			Definition: storage.ObjectDefinition{
-				APIName:   "OrderItemLine__c",
+				APIName:   "BundleLine__c",
 				KeyPrefix: "a02",
 				Fields: map[string]storage.Field{
 					"Id":           {APIName: "Id", Type: storage.FieldID},
@@ -4232,10 +4522,15 @@ System.assertEquals(null, child.Parent__r);
 }
 
 func TestExecJSONDeserializeParentRelationshipAliasesShareLoadedParent(t *testing.T) {
+	// Exercise alias identity and shared mutation without asserting the
+	// unobserved precedence of competing namespaced relationship payloads.
 	program, err := CompileAnonymous(`
 Child__c child = (Child__c)JSON.deserialize('{"pkg__Parent__r":{"Id":"001000000000001AAA","Name":"First"},"Parent__r":{"Id":"001000000000002AAA","Name":"Second"}}', Child__c.class);
-System.assertEquals('First', child.Parent__r.Name);
-System.assertEquals('First', child.getSObject('pkg__Parent__r').get('Name'));
+String loadedName = child.Parent__r.Name;
+System.assertEquals(loadedName, child.getSObject('pkg__Parent__r').get('Name'));
+System.assert(child.Parent__r === child.getSObject('pkg__Parent__r'));
+child.Parent__r.Name = 'Shared mutation';
+System.assertEquals('Shared mutation', child.getSObject('pkg__Parent__r').get('Name'));
 System.assertEquals(null, child.Parent__c);
 
 Child__c explicitLookup = (Child__c)JSON.deserialize('{"Parent__c":"001000000000003AAA","Parent__r":{"Id":"001000000000004AAA","Name":"Loaded"}}', Child__c.class);
@@ -4319,20 +4614,34 @@ System.assertEquals('CREATABLE', AccessType.CREATABLE.name());
 	}
 }
 
+func TestExecSystemQualifiedSecurityStripInaccessibleReturnsDecision(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SObject> records = new List<SObject>{ new Account(Name = 'Qualified security') };
+System.SObjectAccessDecision decision = System.Security.stripInaccessible(System.AccessType.READABLE, records);
+System.assertEquals(1, decision.getRecords().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSecurityStripInaccessiblePermissionSetScoped(t *testing.T) {
 	program, err := CompileAnonymous(`
 PermissionSet ps = new PermissionSet(Name = 'ScopedStrip', Label = 'Scoped Strip');
 insert ps;
 insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
 insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Contact', PermissionsRead = true, PermissionsCreate = true);
-insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Account', Field = 'Account.Name', PermissionsEdit = true);
-insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Contact', Field = 'Contact.LastName', PermissionsEdit = true);
+insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Account', Field = 'Account.Phone', PermissionsEdit = true);
+insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Contact', Field = 'Contact.Title', PermissionsEdit = true);
 
-Account source = new Account(Name = 'Acme', Secret__c = 'Hidden');
+Account source = new Account(Name = 'Acme', Phone = '415-555-0100', Secret__c = 'Hidden');
 insert source;
-insert new Contact(AccountId = source.Id, LastName = 'Child', Email = 'hidden@example.invalid');
+insert new Contact(AccountId = source.Id, LastName = 'Child', Title = 'Child Title', Email = 'hidden@example.invalid');
 Account row = [
-	SELECT Id, Name, Description, Secret__c, (SELECT Id, LastName, Email FROM Contacts)
+	SELECT Id, Name, Phone, Description, Secret__c, (SELECT Id, LastName, Title, Email FROM Contacts)
 	FROM Account
 	WHERE Id = :source.Id
 ];
@@ -4346,11 +4655,11 @@ SObjectAccessDecision decision = Security.stripInaccessible(
 );
 List<Account> stripped = (List<Account>) decision.getRecords();
 Map<String, Set<String>> removed = decision.getRemovedFields();
-System.assertEquals('Acme', stripped[0].Name, 'allowed root field');
+System.assertEquals('415-555-0100', stripped[0].Phone, 'allowed root field');
 System.assert(removed.get('Account').contains('Description'), 'selected absent root field reported');
 System.assert(removed.get('Account').contains('Secret__c'), 'populated root field reported');
 System.assertEquals(1, decision.getModifiedIndexes().size(), 'root modified index');
-System.assertEquals('Child', stripped[0].Contacts[0].LastName, 'allowed recursive field');
+System.assertEquals('Child Title', stripped[0].Contacts[0].Title, 'allowed recursive field');
 System.assert(removed.get('Contact').contains('Email'));
 Boolean secretStripped = false;
 try {
@@ -4477,6 +4786,55 @@ System.assert(caught);
 	machine := New(nil)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSecurityStripInaccessibleRejectsAggregateResult(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<AggregateResult> aggregateRows = [SELECT COUNT(Id) total FROM Account];
+List<SObject> sourceRows = new List<SObject>();
+for (AggregateResult row : aggregateRows) {
+	sourceRows.add(row);
+}
+Boolean caught = false;
+try {
+	Security.stripInaccessible(AccessType.READABLE, sourceRows);
+} catch (SObjectException e) {
+	caught = e.getMessage() == 'AggregateResult SObject types are not supported';
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAggregateResultJSONMockSObjectTypeMatchesSchemaToken(t *testing.T) {
+	program, err := CompileAnonymous(`
+AggregateResult row = (AggregateResult)JSON.deserialize(JSON.serialize(new Map<String, Object>()), AggregateResult.class);
+System.assertEquals('AggregateResult', row.getSObjectType().getDescribe().getName());
+System.assertEquals(Schema.AggregateResult.SObjectType, row.getSObjectType());
+Object missingId = row.Id;
+System.assertEquals(null, missingId);
+List<AggregateResult> aggregateRows = new List<AggregateResult>{row};
+System.assertEquals(Schema.AggregateResult.SObjectType, aggregateRows.getSObjectType());
+List<SObject> genericRows = new List<SObject>();
+genericRows.add(row);
+System.assertEquals(Schema.AggregateResult.SObjectType, genericRows.getSObjectType());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -4994,7 +5352,7 @@ func TestExecSecurityStripInaccessibleRemovesInaccessibleChildSubquery(t *testin
 PermissionSet ps = new PermissionSet(Name = 'ReadAccountOnly', Label = 'Read Account Only');
 insert ps;
 insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
-insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Account', Field = 'Account.Name', PermissionsRead = true);
+insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Account', Field = 'Account.Phone', PermissionsRead = true);
 Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
 User u = new User(
 	Username = 'subquery-user@example.invalid',
@@ -5419,7 +5777,7 @@ update queried;
 	}
 }
 
-func TestDMLAccessibleMarkerOverridesExistingSOQLProjection(t *testing.T) {
+func TestDMLResultPreservesExistingSOQLProjection(t *testing.T) {
 	machine := New(nil)
 	org := testDataOrg()
 	storage.EnsureStandardObject(&org, "Contact")
@@ -5432,8 +5790,14 @@ func TestDMLAccessibleMarkerOverridesExistingSOQLProjection(t *testing.T) {
 	if !handled {
 		t.Fatal("SObject.get was not handled")
 	}
-	if err != nil {
-		t.Fatalf("DML-accessible projection read returned error: %v", err)
+	// Salesforce API53: an ID-only queried Contact still rejects an omitted
+	// Salutation read after successful DML (fresh and sparse callers differ).
+	var thrown *apexThrowError
+	if !errors.As(err, &thrown) || thrown.value.Type != "SObjectException" {
+		t.Fatalf("queried DML caller error = %#v, want SObjectException", err)
+	}
+	if message := thrown.value.Fields["message"].Text; message != "SObject row was retrieved via SOQL without querying the requested field: Contact.Salutation" {
+		t.Fatalf("queried DML caller message = %q", message)
 	}
 }
 
@@ -5549,7 +5913,8 @@ func TestExecDescribeFieldTypeCanCompareUnqualifiedDisplayType(t *testing.T) {
 Schema.DescribeFieldResult describe = Account.Name.getDescribe();
 System.assertEquals(Schema.DisplayType.STRING, describe.getType());
 System.assertEquals(DisplayType.STRING, describe.getType());
-System.assertEquals('STRING', describe.getType());
+// A30 J087: explicit String conversion retains text verification.
+System.assertEquals('STRING', String.valueOf(describe.getType()));
 System.assertEquals(false, describe.isAutoNumber());
 System.assertEquals('Name', describe.compoundFieldName);
 System.assertEquals('Name', describe.getCompoundFieldName());
@@ -5859,12 +6224,13 @@ func TestExecDescribeSObjectsUnknownObjectIsCatchable(t *testing.T) {
 	program, err := CompileAnonymous(`
 String caught = '';
 try {
-	Schema.describeSObjects(new String[]{'Missing__c'});
+	Schema.describeSObjects(new String[]{'A23MissingObject__c'});
 	System.assert(false, 'expected describe failure');
 } catch (Exception e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assertEquals('System.SObjectException:Schema.describeSObjects unknown object Missing__c', caught);
+// Schema describe R047 (API 62/67).
+System.assertEquals('System.InvalidParameterValueException:Invalid sobject provided. The Schema.describeSObject() methods does not support the A23MissingObject__c sobject as a parameter. The sobject provided does not exist.', caught);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -5974,7 +6340,9 @@ func TestExecCustomObjectDescribeMapIncludesOwnerSystemField(t *testing.T) {
 Schema.SObjectField ownerField = Widget__c.SObjectType.getDescribe().fields.getMap().get('OwnerId');
 System.assertEquals('OwnerId', ownerField.getDescribe().getName());
 System.assertEquals('Owner', ownerField.getDescribe().getRelationshipName());
-System.assertEquals(User.SObjectType, ownerField.getDescribe().getReferenceTo()[0]);
+System.assertEquals(2, ownerField.getDescribe().getReferenceTo().size());
+System.assertEquals(Group.SObjectType, ownerField.getDescribe().getReferenceTo()[0]);
+System.assertEquals(User.SObjectType, ownerField.getDescribe().getReferenceTo()[1]);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -6071,6 +6439,38 @@ System.assertEquals(null, container.getCompoundFieldName());
 	}
 }
 
+func TestExecLocationComponentFieldsResolveFromCompoundMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Location');
+account.PrimaryLocation__Latitude__s = 1.25;
+account.PrimaryLocation__Longitude__s = -2.5;
+System.assertEquals(1.25, account.PrimaryLocation__Latitude__s);
+System.assertEquals(-2.5, account.PrimaryLocation__Longitude__s);
+insert account;
+Account stored = [SELECT PrimaryLocation__Latitude__s, PrimaryLocation__Longitude__s FROM Account WHERE Id = :account.Id];
+System.assertEquals(1.25, stored.PrimaryLocation__Latitude__s);
+System.assertEquals(-2.5, stored.PrimaryLocation__Longitude__s);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["PrimaryLocation__c"] = storage.Field{
+		APIName:     "PrimaryLocation__c",
+		Label:       "Primary Location",
+		Type:        storage.FieldLocation,
+		DisplayType: "LOCATION",
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeFieldNumericAndTextMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeFieldResult amount = Account.Amount__c.getDescribe();
@@ -6081,7 +6481,8 @@ System.assertEquals(0, amount.getLength());
 System.assert(!amount.isHtmlFormatted());
 System.assert(amount.isSortable());
 Schema.DescribeFieldResult doubleDescribe = Account.Number__c.getDescribe();
-System.assertEquals(12, doubleDescribe.getDigits());
+// Schema describe R124: Number precision is separate from integral digits.
+System.assertEquals(0, doubleDescribe.getDigits());
 Schema.DescribeFieldResult notes = Account.Notes__c.getDescribe();
 System.assertEquals(1024, notes.getLength());
 System.assertEquals(3072, notes.getByteLength());
@@ -6164,8 +6565,14 @@ func TestExecSObjectTypeNewSObject(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account emptyAccount = (Account)Account.SObjectType.newSObject();
 System.assertEquals('Account', emptyAccount.getSObjectType().getDescribe().getName());
-Account accountWithRecordTypeId = (Account)Account.SObjectType.newSObject('012000000000001AAA');
-System.assertEquals('012000000000001AAA', accountWithRecordTypeId.RecordTypeId);
+Boolean invalidAccountIdCaught = false;
+try {
+    Account.SObjectType.newSObject('012000000000001AAA');
+} catch (SObjectException e) {
+    invalidAccountIdCaught = true;
+    System.assertEquals('Invalid Id for Account', e.getMessage());
+}
+System.assert(invalidAccountIdCaught);
 Account accountWithId = (Account)Account.SObjectType.newSObject('001000000000001AAA');
 System.assertEquals('001000000000001AAA', accountWithId.Id);
 Account accountWithDefaults = (Account)Account.SObjectType.newSObject(null, true);
@@ -6700,12 +7107,21 @@ System.assert(Date.newInstance(2026, 1, 1) <= Date.newInstance(2026, 1, 2));
 System.assert(Date.newInstance(2026, 1, 2) >= Date.newInstance(2026, 1, 1));
 Date missingDate = null;
 System.assertEquals(false, missingDate < Date.newInstance(2026, 1, 1));
-System.assertEquals('Local_Message', Label.Local_Message);
+String expectedText = 'A26 & locale';
+String observedText = String.valueOf(Label.A26ExecutionContextLabel);
+System.assert(expectedText.equals(observedText), 'R062 expected <'+expectedText+'> actual <'+observedText+'>');
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(nil).Execute(program); err != nil {
+	// R062/R086 resolve the installed native label, rather than a name fallback.
+	org := storage.NewOrgState()
+	org.Metadata.Labels = []storage.LabelMetadata{
+		{Name: "A26ExecutionContextLabel", Language: "en_US", Value: "A26 & locale"},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -6836,6 +7252,7 @@ System.assertEquals(account.Id, stored.Parent__c);
 }
 
 func TestExecNestedParentRelationshipUsesStoredLookupField(t *testing.T) {
+	// Native R024/H011/H012: a lookup Id does not select its parent relationship.
 	program, err := CompileAnonymous(`
 Grandparent__c grandparent = new Grandparent__c(Name = 'Grand');
 insert grandparent;
@@ -6843,7 +7260,7 @@ Parent__c parent = new Parent__c(Name = 'Parent', Grandparent__c = grandparent.I
 insert parent;
 Child__c child = new Child__c(Name = 'Child', Parent__c = parent.Id);
 insert child;
-Child__c stored = [SELECT Parent__c FROM Child__c WHERE Id = :child.Id];
+Child__c stored = [SELECT Parent__c, Parent__r.Grandparent__r.Name FROM Child__c WHERE Id = :child.Id];
 System.assertEquals('Grand', stored.Parent__r.Grandparent__r.Name);
 `)
 	if err != nil {
@@ -7113,7 +7530,8 @@ func TestPopulatedFieldsKeySetContainsNamespaceAlias(t *testing.T) {
 	}
 }
 
-func TestExecGetPopulatedFieldsAsMapIncludesQueriedNullFields(t *testing.T) {
+// R195: a queried null Phone is selected but absent from the populated map.
+func TestExecGetPopulatedFieldsAsMapOmitsQueriedNullFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
 insert a;
@@ -7121,7 +7539,7 @@ Account queried = [SELECT Id, Name, Phone FROM Account WHERE Id = :a.Id];
 Map<String,Object> populated = queried.getPopulatedFieldsAsMap();
 System.assert(populated.containsKey('Id'));
 System.assert(populated.containsKey('Name'));
-System.assert(populated.containsKey('Phone'));
+System.assert(!populated.containsKey('Phone'));
 System.assertEquals(null, populated.get('Phone'));
 `)
 	if err != nil {
@@ -7303,9 +7721,10 @@ System.assertEquals(null, parent);
 }
 
 func TestExecGetSObjectWithLookupFieldTokenPrefersLoadedParent(t *testing.T) {
+	// SC044/SC046: parent-name put is invalid; putSObject publishes the parent.
 	program, err := CompileAnonymous(`
 Child__c child = new Child__c(Parent__c = '001000000000001AAA');
-child.put('Parent__r', new Account(Id = '001000000000001AAA', Name = 'Loaded Parent'));
+child.putSObject('Parent__r', new Account(Id = '001000000000001AAA', Name = 'Loaded Parent'));
 Account parent = child.getSObject(Child__c.Parent__c);
 System.assertEquals('Loaded Parent', parent.Name);
 System.assertEquals('Parent__r', Child__c.Parent__c.getDescribe().getRelationshipName());
@@ -7367,12 +7786,14 @@ System.assertEquals('String Parent', child.getSobject('Parent__r').Name);
 }
 
 func TestExecSObjectCloneAndRelationshipAccessors(t *testing.T) {
+	// Native H010 rejects put('Contacts', ...); H014 loads children via SOQL.
 	program, err := CompileAnonymous(`
 Account parent = new Account(Name = 'Parent');
-Account row = new Account(Name = 'Child');
-row.put('Id', '001000000000001');
-row.put('Parent', parent);
-row.put('Contacts', new List<Contact>{new Contact(LastName = 'Smith')});
+insert parent;
+Account seed = new Account(Name = 'Child', ParentId = parent.Id);
+insert seed;
+insert new Contact(LastName = 'Smith', AccountId = seed.Id);
+Account row = [SELECT Id, Name, Parent.Name, (SELECT LastName FROM Contacts) FROM Account WHERE Id = :seed.Id];
 Account parentRow = row.getSObject('Parent');
 System.assertEquals('Parent', parentRow.Name);
 List<Contact> contacts = row.getSObjects('Contacts');
@@ -7382,6 +7803,7 @@ System.assertEquals(1, contacts.size());
 	System.assertEquals(row.get('Id'), cloneNoId.getCloneSourceId());
 	System.assertEquals(null, cloneNoId.get('Id'));
 	System.assertEquals('Child', cloneNoId.Name);
+	System.assertEquals(1, cloneNoId.getSObjects('Contacts').size());
 	Account cloneWithId = row.clone(true, true, false, false);
 	System.assertEquals(true, cloneWithId.isClone());
 	System.assertEquals(row.get('Id'), cloneWithId.getCloneSourceId());
@@ -7411,8 +7833,16 @@ System.assertEquals(null, lowerIdClone.get('id'));
 			APIName:   "Contact",
 			KeyPrefix: "003",
 			Fields: map[string]storage.Field{
-				"LastName": {APIName: "LastName", Type: storage.FieldString},
+				"Id":        {APIName: "Id", Type: storage.FieldID},
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
 			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+				ChildRelationship:  "Contacts",
+			}},
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
@@ -7444,10 +7874,7 @@ func TestDeleteObjectFieldRemovesAllCaseVariants(t *testing.T) {
 func TestExecSObjectGetSObjectsUsesCanonicalChildRelationshipValue(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account row = new Account(Name = 'Parent');
-row.put('Contacts__r', new List<Contact>{new Contact(LastName = 'Child')});
-List<Contact> contacts = row.getSObjects('Contacts');
-System.assertEquals(1, contacts.size());
-System.assertEquals('Child', contacts[0].LastName);
+List<Contact> children = new List<Contact>{new Contact(LastName = 'Child')};
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -7468,6 +7895,14 @@ System.assertEquals('Child', contacts[0].LastName);
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
+	// SC040/SC041: child relationship put is invalid; inject the query-result list to test
+	// canonical getSObjects lookup independently of public writer validation.
+	aliasSObjectPruneInjectField(machine, "row", "Contacts__r", machine.Globals["children"])
+	aliasSObjectPruneExecute(t, machine, `
+List<Contact> contacts = row.getSObjects('Contacts');
+System.assertEquals(1, contacts.size());
+System.assertEquals('Child', contacts[0].LastName);
+`)
 }
 
 func TestExecSObjectGetSObjectsWithFieldToken(t *testing.T) {
@@ -7681,7 +8116,8 @@ func TestExecDescribePicklistValues(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object describe = Account.Rating.getDescribe();
 System.assertEquals('Rating', describe.getName());
-System.assertEquals('PICKLIST', describe.getType());
+// A30 X097: compare the native picklist enum value.
+System.assertEquals(Schema.DisplayType.PICKLIST, describe.getType());
 List<Object> values = describe.getPicklistValues();
 System.assertEquals(2, values.size());
 Object hot = values.get(0);
@@ -8239,6 +8675,49 @@ System.assertEquals('012000000000101', stored.RecordTypeId);
 	}
 }
 
+func TestExecMasterRecordTypeDMLDistinguishesExplicitAndImplicit(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id master = Opportunity.SObjectType.getDescribe().getRecordTypeInfosByName().get('Master').getRecordTypeId();
+
+Opportunity explicit = new Opportunity(Name = 'Explicit Master', StageName = 'Prospecting', CloseDate = Date.today(), RecordTypeId = master);
+insert explicit;
+Opportunity explicitFifteen = new Opportunity(Name = 'Explicit Fifteen Master', StageName = 'Prospecting', CloseDate = Date.today(), RecordTypeId = '012000000000000');
+insert explicitFifteen;
+Opportunity implicit = new Opportunity(Name = 'Implicit Master', StageName = 'Prospecting', CloseDate = Date.today());
+insert implicit;
+Opportunity explicitNull = new Opportunity(Name = 'Explicit Null Master', StageName = 'Prospecting', CloseDate = Date.today(), RecordTypeId = null);
+insert explicitNull;
+
+System.assertEquals(master, [SELECT RecordTypeId FROM Opportunity WHERE Id = :explicit.Id].RecordTypeId);
+System.assertEquals(master, [SELECT RecordTypeId FROM Opportunity WHERE Id = :explicitFifteen.Id].RecordTypeId);
+System.assertEquals(null, [SELECT RecordTypeId FROM Opportunity WHERE Id = :implicit.Id].RecordTypeId);
+System.assertEquals(null, [SELECT RecordTypeId FROM Opportunity WHERE Id = :explicitNull.Id].RecordTypeId);
+System.assertEquals(0, [SELECT COUNT() FROM RecordType WHERE SObjectType = 'Opportunity' AND DeveloperName = 'Master']);
+
+Opportunity promoted = new Opportunity(Id = implicit.Id, RecordTypeId = master);
+update promoted;
+Opportunity promotedFifteen = new Opportunity(Id = implicit.Id, RecordTypeId = '012000000000000');
+update promotedFifteen;
+Opportunity sparse = new Opportunity(Id = promoted.Id, Name = 'Implicit Master promoted');
+update sparse;
+System.assertEquals(master, [SELECT RecordTypeId FROM Opportunity WHERE Id = :promoted.Id].RecordTypeId);
+
+Opportunity invalid = new Opportunity(Name = 'Missing Record Type', StageName = 'Prospecting', CloseDate = Date.today(), RecordTypeId = '012000000000999AAA');
+Database.SaveResult invalidResult = Database.insert(invalid, false);
+System.assertEquals(false, invalidResult.isSuccess());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Opportunity")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecInsertAccountDefaultRecordTypeHonorsPersonSignals(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account business = new Account(Name = 'Business');
@@ -8756,8 +9235,8 @@ insert new Child__c(Name = 'C', Parent__c = parent.Id, RecordTypeId = recordType
 Parent__c queried = [SELECT Id, (SELECT Id, Parent__c, RecordTypeId FROM Children__r) FROM Parent__c WHERE Id = :parent.Id];
 Child__c child = queried.Children__r[0];
 Map<Id, Parent__c> parentsById = new Map<Id, Parent__c>(new List<Parent__c>{queried});
-System.assertNotEquals(null, parentsById.get(child.Parent__c));
-System.assertNotEquals(null, parentsById.get(String.valueOf(child.Parent__c) + 'AAA'));
+System.assertNotEquals(null, parentsById.get(child.Parent__c), 'parent-map-raw-id');
+System.assertNotEquals(null, parentsById.get(String.valueOf(child.Parent__c)), 'parent-map-18char-id');
 update queried;
 Schema.RecordTypeInfo matched;
 for (Schema.RecordTypeInfo info : Child__c.SObjectType.getDescribe().getRecordTypeInfosByName().values()) {
@@ -8765,7 +9244,7 @@ for (Schema.RecordTypeInfo info : Child__c.SObjectType.getDescribe().getRecordTy
 		matched = info;
 	}
 }
-System.assertNotEquals(null, matched);
+System.assertNotEquals(null, matched, 'record-type-info-match');
 System.assertEquals('Scheduled Batch', matched.getName());
 `)
 	if err != nil {
@@ -8996,7 +9475,8 @@ System.assert(nameDescribe.isNameField());
 System.assert(!nameDescribe.isEncrypted());
 System.assert(!nameDescribe.isCalculated());
 System.assert(!nameDescribe.isCustom());
-System.assertEquals('STRING', nameDescribe.getType());
+// A30 J085: compare the native enum value.
+System.assertEquals(Schema.DisplayType.STRING, nameDescribe.getType());
 System.assert(nameField.isAccessible());
 System.assert(nameField.isCreateable());
 System.assert(nameField.isUpdateable());
@@ -9516,14 +9996,14 @@ System.assertEquals(1, [SELECT COUNT() FROM ActionRequest__c WHERE SourceRecordI
 	}
 }
 
-func TestExecUnqueriedChildRelationshipHydratesFromOrg(t *testing.T) {
+// R137: direct child access does not query stored children implicitly.
+func TestExecUnqueriedChildRelationshipRemainsEmpty(t *testing.T) {
 	program, err := CompileAnonymous(`
 Parent__c parent = new Parent__c(Name = 'P');
 insert parent;
 insert new Child__c(Name = 'C', Parent__c = parent.Id);
 Parent__c queried = [SELECT Id FROM Parent__c WHERE Id = :parent.Id];
-System.assertEquals(1, queried.Children__r.size());
-System.assertEquals('C', queried.Children__r[0].Name);
+System.assertEquals(0, queried.Children__r.size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -9562,8 +10042,8 @@ System.assertEquals('C', queried.Children__r[0].Name);
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
-	if machine.lazyChildRelCache.size() == 0 {
-		t.Fatalf("lazy child relationship lookup cache was not populated")
+	if machine.lazyChildRelCache.size() != 0 {
+		t.Fatalf("unloaded query relationship populated the lazy lookup cache")
 	}
 }
 
@@ -9573,7 +10053,13 @@ Parent__c parent = new Parent__c(Name = 'P');
 insert parent;
 insert new Child__c(Name = 'C', Parent__c = parent.Id);
 Parent__c queried = [SELECT Id FROM Parent__c WHERE Id = :parent.Id];
-System.assertEquals(0, queried.getSObjects('Children__r').size());
+// R138: getSObjects rejects a child relationship omitted from the query.
+Boolean caught=false;
+try { queried.getSObjects('Children__r'); }
+catch(SObjectException e) {
+ caught=e.getMessage().equals('SObject row was retrieved via SOQL without querying the requested field: Parent__c.Children__r');
+}
+System.assert(caught);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -9836,7 +10322,7 @@ insert new ObjectPermissions(
 insert new FieldPermissions(
 	ParentId = ps.Id,
 	SObjectType = 'Account',
-	Field = 'Account.Name',
+	Field = 'Account.Phone',
 	PermissionsRead = true,
 	PermissionsEdit = true
 );
@@ -9857,22 +10343,29 @@ insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id);
 
 System.runAs(u) {
 	System.assert(Account.SObjectType.getDescribe().isAccessible());
-	System.assert(Account.Name.getDescribe().isAccessible());
+	System.assert(Account.Phone.getDescribe().isAccessible());
+	System.assert(Account.Phone.getDescribe().isUpdateable());
 
+	// Seed the required Name in system mode; exercise the explicit FLS grant on Phone.
 	Account created = new Account(Name = 'Access Consistency');
-	Database.SaveResult result = Database.insert(created, AccessLevel.USER_MODE);
+	insert created;
+	Database.SaveResult result = Database.update(
+		new Account(Id = created.Id, Phone = '415-555-0100'),
+		AccessLevel.USER_MODE
+	);
 	System.assert(result.isSuccess());
 
-	List<Account> queried = Database.query('SELECT Id, Name FROM Account WHERE Id = :created.Id WITH USER_MODE');
+	List<Account> queried = Database.query('SELECT Id, Phone FROM Account WHERE Id = :created.Id WITH USER_MODE');
 	System.assertEquals(1, queried.size());
+	System.assertEquals('415-555-0100', queried[0].Phone);
 
 	SObjectAccessDecision decision = Security.stripInaccessible(
 		AccessType.CREATABLE,
-		new List<Account>{ new Account(Name = 'Access Consistency Strip') }
+		new List<Account>{ new Account(Phone = '415-555-0101') }
 	);
-	System.assert(!decision.getRemovedFields().get('Account').contains('Name'));
+	System.assert(!decision.getRemovedFields().get('Account').contains('Phone'));
 	List<Account> stripped = (List<Account>) decision.getRecords();
-	System.assertEquals('Access Consistency Strip', stripped[0].Name);
+	System.assertEquals('415-555-0101', stripped[0].Phone);
 
 	List<Account> visible = [SELECT Id FROM Account WHERE Id = :created.Id];
 	System.assertEquals(1, visible.size());
@@ -10506,10 +10999,11 @@ System.runAs(u) {
 }
 
 func TestExecRunAsUserCanQueryOwnContactAccountWithSharing(t *testing.T) {
+	// A30 native J003/J016 record the native assertion expectations.
 	program, err := CompileAnonymous(`
 User u = [SELECT Id, ContactId FROM User WHERE Id = '005000000000777' LIMIT 1];
 System.runAs(u) {
-	System.assertEquals('005000000000777', UserInfo.getUserId());
+	System.assertEquals('005000000000777AAA', UserInfo.getUserId());
 	List<Account> rows = [SELECT Id FROM Account WHERE Id = '001000000000777'];
 	System.assertEquals(1, rows.size());
 }
@@ -11118,6 +11612,9 @@ Database.queryWithBinds('SELECT Id, Hidden__c FROM Account', new Map<String,Obje
 	machine = New(nil)
 	machine.SetOrg(&org)
 	machine.executionUser = user
+	// A28 named R091 permits explicit SYSTEM_MODE without changing the selected user.
+	machine.EnableTestContext()
+	machine.testContext.CurrentUser = user
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -11191,7 +11688,8 @@ Map<String,Object> fields = fieldsToken.getMap();
 System.assert(fields.containsKey('Name'));
 Object contactFieldDescribe = Contact.AccountId.getDescribe();
 System.assertEquals('Account', contactFieldDescribe.getLabel());
-System.assertEquals('REFERENCE', contactFieldDescribe.getType());
+// A30 J086: compare the native enum value.
+System.assertEquals(Schema.DisplayType.REFERENCE, contactFieldDescribe.getType());
 System.assert(contactFieldDescribe.isNillable());
 System.assert(contactFieldDescribe.isAccessible());
 System.assert(contactFieldDescribe.isCreateable());
@@ -11265,19 +11763,37 @@ System.assertEquals('Widget__c', tab.getName());
 System.assertEquals('Widgets', tab.getLabel());
 System.assertEquals('Widget__c', tab.getSObjectName());
 System.assert(tab.isCustom());
-System.assertEquals('Custom1: Heart', tab.getIconUrl());
+// Schema describe R245: the tab icon URL is absolute.
+String iconUrl = tab.getIconUrl();
+System.assert(iconUrl != null && iconUrl.startsWith('https://'));
 List<Object> icons = tab.getIcons();
 System.assertEquals(1, icons.size());
 Object icon = icons.get(0);
 System.assertEquals('image/svg+xml', icon.getContentType());
 System.assertEquals('/img/icon/t4v35/custom/widget_120.png.svg', icon.getUrl());
-System.assertEquals('/lightning/o/Widget__c/list', tab.getUrl());
+// Schema describe R239/R240: the viewing URL is absolute and uses the key prefix.
+String viewingUrl = tab.getUrl();
+System.assert(viewingUrl != null && viewingUrl.startsWith('https://'));
+System.assert(viewingUrl.contains('/' + Widget__c.SObjectType.getDescribe().getKeyPrefix()));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	// R239/R240 use a tab whose SObject exists in the configured schema.
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:     "Widget__c",
+			Label:       "Widget",
+			PluralLabel: "Widgets",
+			KeyPrefix:   "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
 	org.Metadata.Tabs = []storage.TabMetadata{{
 		Name:        "Widget__c",
 		Label:       "Widgets",
@@ -11376,7 +11892,15 @@ System.assertEquals(1, hardware.getChildCategories().size());
 
 List<Object> topOnly = Schema.describeDataCategoryGroupStructures(new List<Schema.DataCategoryGroupSobjectTypePair>{pair}, true)[0].getTopCategories();
 System.assertEquals(0, topOnly[0].getChildCategories().size());
-System.assertEquals(0, Schema.describeDataCategoryGroups(new List<String>{'Missing__kav'}).size());
+// Schema describe legacy-api62/67 R001: missing objects raise this exact error.
+try {
+	Schema.describeDataCategoryGroups(new List<String>{'Missing__kav'});
+	System.assert(false, 'expected missing category object error');
+} catch (System.InvalidParameterValueException e) {
+	String observedText = 'EXC|' + e.getTypeName() + '|' + e.getMessage();
+	String expectedText = 'EXC|System.InvalidParameterValueException|Invalid sobject provided. The Schema.describeDataCategoryGroups() methods does not support the Missing__kav sobject as a parameter. The sobject provided does not exist.';
+	System.assert(expectedText.equals(observedText), 'legacy R001 expected <' + expectedText + '> actual <' + observedText + '>');
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -11569,11 +12093,12 @@ for (Child__c child : account.pkg__Children__r) {
 	count++;
 }
 System.assertEquals(0, account.pkg__Children__r.size());
-account.put('Children__r', null);
-for (Child__c child : account.Children__r) {
-	count++;
-}
-System.assertEquals(0, account.Children__r.size());
+String putType;
+String putMessage;
+try { account.put('Children__r', null); }
+catch (SObjectException e) { putType = e.getTypeName(); putMessage = e.getMessage(); }
+System.assertEquals('System.SObjectException', putType);
+System.assertEquals('Invalid field Children__r for Account', putMessage);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -11600,6 +12125,14 @@ System.assertEquals(0, account.Children__r.size());
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
+	// SC041: null also cannot be written through put to a child relationship. Preserve
+	// explicit-null read behavior using an internal query-result graph.
+	aliasSObjectPruneInjectField(machine, "account", "Children__r", Null)
+	aliasSObjectPruneExecute(t, machine, `
+for (Child__c child : account.Children__r) { count++; }
+System.assertEquals(0, count);
+System.assertEquals(0, account.Children__r.size());
+`)
 }
 
 func TestExecMissingChildRelationshipDerivedFromLookupFieldDefaultsToEmptyList(t *testing.T) {
@@ -11703,12 +12236,17 @@ System.assertEquals(1, rows.size());
 }
 
 func TestExecDatabaseTreeSaveInsertsParentAndChildren(t *testing.T) {
-	program, err := CompileAnonymous(`
+	setup, err := CompileAnonymous(`
 Account account = new Account(Name = 'Tree Parent');
-account.put('Contacts', new List<Contact>{
+List<Contact> treeChildren = new List<Contact>{
     new Contact(LastName = 'One'),
     new Contact(LastName = 'Two')
-});
+};
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
 Database.NestedSaveResult result = Database.treeSave(account);
 System.assert(result.isSuccess());
 System.assert(result.getId() != null);
@@ -11749,18 +12287,29 @@ System.assertEquals(accounts[0].Id, contacts[1].AccountId);
 		Records: make(map[storage.ID]storage.Record),
 	}
 	machine.SetOrg(&org)
+	if _, err := machine.Execute(setup); err != nil {
+		t.Fatal(err)
+	}
+	// SC040/SC041: public put rejects child relationships; create the treeSave input graph
+	// internally so its parent/child persistence assertions remain covered.
+	aliasSObjectPruneInjectField(machine, "account", "Contacts", machine.Globals["treeChildren"])
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestExecDatabaseTreeSaveUpdatesParentAndInsertsChildren(t *testing.T) {
-	program, err := CompileAnonymous(`
+	setup, err := CompileAnonymous(`
 Account account = new Account(Name = 'Tree Parent');
 insert account;
 account.Name = 'Tree Parent Updated';
-account.put('Contacts', new List<Contact>{new Contact(LastName = 'New Child')});
+List<Contact> treeChildren = new List<Contact>{new Contact(LastName = 'New Child')};
 
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
 Database.NestedSaveResult result = Database.treeSave(account);
 System.assert(result.isSuccess());
 System.assertEquals(account.Id, result.getId());
@@ -11798,13 +12347,19 @@ System.assertEquals(account.Id, child.AccountId);
 		Records: make(map[storage.ID]storage.Record),
 	}
 	machine.SetOrg(&org)
+	if _, err := machine.Execute(setup); err != nil {
+		t.Fatal(err)
+	}
+	// SC040/SC041: public put rejects child relationships; create the treeSave input graph
+	// internally so its parent/child persistence assertions remain covered.
+	aliasSObjectPruneInjectField(machine, "account", "Contacts", machine.Globals["treeChildren"])
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestExecDatabaseTreeSaveUpdatesFirstLevelChildren(t *testing.T) {
-	program, err := CompileAnonymous(`
+	setup, err := CompileAnonymous(`
 Account account = new Account(Name = 'Tree Parent');
 insert account;
 Contact contact = new Contact(LastName = 'Old Child', AccountId = account.Id);
@@ -11812,8 +12367,13 @@ insert contact;
 
 account.Name = 'Tree Parent Updated';
 contact.LastName = 'Updated Child';
-account.put('Contacts', new List<Contact>{contact});
+List<Contact> treeChildren = new List<Contact>{contact};
 
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
 Database.NestedSaveResult result = Database.treeSave(account);
 System.assert(result.isSuccess());
 System.assertEquals(1, result.getRelationshipSaveResults().size());
@@ -11850,6 +12410,12 @@ System.assertEquals(account.Id, savedChild.AccountId);
 		Records: make(map[storage.ID]storage.Record),
 	}
 	machine.SetOrg(&org)
+	if _, err := machine.Execute(setup); err != nil {
+		t.Fatal(err)
+	}
+	// SC040/SC041: public put rejects child relationships; create the treeSave input graph
+	// internally so its parent/child persistence assertions remain covered.
+	aliasSObjectPruneInjectField(machine, "account", "Contacts", machine.Globals["treeChildren"])
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -12002,12 +12568,46 @@ System.assertEquals('Prospecting', opportunity.StageName);
 System.assertEquals(Date.today(), opportunity.CloseDate);
 Lead converted = [SELECT Id, ConvertedOpportunityId FROM Lead WHERE Id = :lead.Id];
 System.assertEquals(opportunity.Id, converted.ConvertedOpportunityId);
+List<OpportunityContactRole> roles = [SELECT OpportunityId, ContactId, IsPrimary FROM OpportunityContactRole WHERE OpportunityId = :opportunity.Id];
+System.assertEquals(1, roles.size());
+System.assertEquals(result.getOpportunityId(), roles[0].OpportunityId);
+System.assertEquals(result.getContactId(), roles[0].ContactId);
+System.assertEquals(true, roles[0].IsPrimary);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := testLeadConvertOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseConvertLeadLazilyInitializesOpportunityContactRole(t *testing.T) {
+	program, err := CompileAnonymous(`
+Lead lead = new Lead(FirstName = 'Ada', LastName = 'Lovelace', Company = 'Analytical Engines', Status = 'Open');
+insert lead;
+Database.LeadConvert convert = new Database.LeadConvert();
+convert.setLeadId(lead.Id);
+convert.setConvertedStatus('Qualified');
+convert.setOpportunityName('Difference Engine');
+Database.LeadConvertResult result = Database.convertLead(convert);
+System.assert(result.isSuccess());
+System.assertNotEquals(null, result.getOpportunityId());
+List<OpportunityContactRole> roles = [SELECT OpportunityId, ContactId, IsPrimary FROM OpportunityContactRole WHERE OpportunityId = :result.getOpportunityId()];
+System.assertEquals(1, roles.size());
+System.assertEquals(result.getOpportunityId(), roles[0].OpportunityId);
+System.assertEquals(result.getContactId(), roles[0].ContactId);
+System.assertEquals(true, roles[0].IsPrimary);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testLeadConvertOrg()
+	delete(org.Objects, "OpportunityContactRole")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -12058,6 +12658,7 @@ func testLeadConvertOrg() storage.OrgState {
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
+	storage.EnsureStandardObject(&org, "OpportunityContactRole")
 	return org
 }
 
@@ -12348,7 +12949,7 @@ func TestExecDMLAccessibleSummaryFieldDoesNotReadLiveRollup(t *testing.T) {
 Account parent = new Account(Name = 'Acme');
 insert parent;
 insert new WidgetLine__c(Account__c = parent.Id, Amount__c = 7);
-System.assertEquals(0, parent.SubTotal__c, 'inserted parent should keep stale summary value');
+System.assertEquals(null, parent.SubTotal__c, 'caller parent does not materialize summary');
 Account fresh = [SELECT SubTotal__c FROM Account WHERE Id = :parent.Id LIMIT 1];
 System.assertEquals(7, fresh.SubTotal__c, 'queried parent should read current summary value');
 `)
@@ -12388,9 +12989,11 @@ func TestExecSummaryFieldCountsChildRecords(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account parent = new Account(Name = 'Acme');
 insert parent;
-System.assertEquals(0, parent.LineCount__c);
-insert new WidgetLine__c(Account__c = parent.Id);
+System.assertEquals(null, parent.LineCount__c);
 Account row = [SELECT LineCount__c FROM Account WHERE Id = :parent.Id LIMIT 1];
+System.assertEquals(0, row.LineCount__c);
+insert new WidgetLine__c(Account__c = parent.Id);
+row = [SELECT LineCount__c FROM Account WHERE Id = :parent.Id LIMIT 1];
 System.assertEquals(1, row.LineCount__c);
 WidgetLine__c line = [SELECT Id FROM WidgetLine__c WHERE Account__c = :parent.Id LIMIT 1];
 delete line;
@@ -12579,13 +13182,13 @@ func TestExecNullSummaryFieldReevaluatesToZero(t *testing.T) {
 	}
 }
 
-func TestExecMissingSummaryFieldOnNewSObjectReturnsEmptyAggregate(t *testing.T) {
+func TestExecMissingSummaryFieldOnNewSObjectRemainsNull(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'Acme');
-System.assertEquals(0, account.get('SubTotal__c'));
-System.assertEquals(0, account.SubTotal__c);
-System.assertEquals(0, account.get('LineCount__c'));
-System.assertEquals(0, account.LineCount__c);
+System.assertEquals(null, account.get('SubTotal__c'));
+System.assertEquals(null, account.SubTotal__c);
+System.assertEquals(null, account.get('LineCount__c'));
+System.assertEquals(null, account.LineCount__c);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -12698,6 +13301,8 @@ System.assert(caught);
 	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
+	// A28 named R091 permits explicit SYSTEM_MODE.
+	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -12738,7 +13343,8 @@ binds.put('rating', 'Hot');
 Integer hotCount = Database.countQueryWithBinds('SELECT COUNT() FROM Account WHERE Rating = :rating', binds, AccessLevel.USER_MODE);
 System.assertEquals(1, hotCount);
 binds.put('ratings', new List<String>{'Hot', 'Warm'});
-Integer totalCount = Database.countQueryWithBinds('SELECT Id FROM Account WHERE Rating IN :ratings', binds, AccessLevel.SYSTEM_MODE);
+// A33 N021: countQueryWithBinds requires scalar COUNT().
+Integer totalCount = Database.countQueryWithBinds('SELECT COUNT() FROM Account WHERE Rating IN :ratings', binds, AccessLevel.SYSTEM_MODE);
 System.assertEquals(2, totalCount);
 binds.put('filter.rating', 'Warm');
 Integer warmCount = Database.countQueryWithBinds('SELECT COUNT() FROM Account WHERE Rating = :filter.rating', binds, AccessLevel.USER_MODE);
@@ -12753,6 +13359,8 @@ System.assertEquals(1, warmCount);
 	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
+	// A28 named R096 permits explicit SYSTEM_MODE.
+	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -12777,7 +13385,8 @@ func TestExecDatabaseCountQueryAccessLevel(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme', Rating = 'Hot');
 insert new Account(Name = 'Beta', Rating = 'Warm');
-Integer hotCount = Database.countQuery('SELECT Id FROM Account WHERE Rating = \'Hot\'', AccessLevel.USER_MODE);
+// A33 R025: countQuery requires scalar COUNT().
+Integer hotCount = Database.countQuery('SELECT COUNT() FROM Account WHERE Rating = \'Hot\'', AccessLevel.USER_MODE);
 System.assertEquals(1, hotCount);
 Integer totalCount = Database.countQuery('SELECT COUNT() FROM Account', AccessLevel.SYSTEM_MODE);
 System.assertEquals(2, totalCount);
@@ -12855,12 +13464,18 @@ System.assertEquals('Beta', row.Name);
 }
 
 func TestExecSOQLFieldsFunction(t *testing.T) {
+	// Native A31 R197/R199 allow STANDARD and reject the unbounded ALL set.
 	program, err := CompileAnonymous(`
-insert new Account(Name = 'Acme', Rating = 'Hot', Score__c = 7);
-Account row = [SELECT FIELDS(ALL) FROM Account WHERE Name = 'Acme'];
+insert new Account(Name = 'Acme', Rating = 'Hot');
+Account row = [SELECT FIELDS(STANDARD) FROM Account WHERE Name = 'Acme'];
 System.assertEquals('Acme', row.Name);
 System.assertEquals('Hot', row.Rating);
-System.assertEquals(7, row.Score__c);
+try {
+ Database.query('SELECT FIELDS(ALL) FROM Account WHERE Name = \'Acme\'');
+ System.assert(false, 'Expected unbounded FIELDS rejection');
+} catch (QueryException e) {
+ System.assert('The SOQL FIELDS function is not supported with an unbounded set of fields in this API.'.equals(e.getMessage()));
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -12869,7 +13484,6 @@ System.assertEquals(7, row.Score__c);
 	org := testDataOrg()
 	account := org.Objects["Account"]
 	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
-	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldInteger}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
@@ -12934,6 +13548,7 @@ System.assertEquals('Acme', row.What.Name);
 				Field:              "WhatId",
 				ParentObjects:      []string{"Account"},
 				ParentRelationship: "What",
+				Polymorphic:        true, // R142: Task.What is polymorphic even with one seeded target.
 			}},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -13198,11 +13813,13 @@ System.assertEquals(null, a.MasterRecordId);
 	}
 }
 
-func TestExecMissingCalculatedNumericFieldDefaultsToZero(t *testing.T) {
+// The admitted API53 Currency lifecycle keeps missing caller-owned formula
+// values null after DML; querying materializes the calculated field.
+func TestExecMissingCallerCurrencyFormulaIsNull(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme', Amount__c = 2, Paid__c = 3);
 insert a;
-System.assertEquals('0', String.valueOf(a.Balance__c));
+System.assertEquals(null, a.Balance__c);
 Account row = [SELECT Id, Balance__c FROM Account WHERE Id = :a.Id];
 System.assertEquals('-1', String.valueOf(row.Balance__c));
 `)
@@ -13222,13 +13839,15 @@ System.assertEquals('-1', String.valueOf(row.Balance__c));
 	}
 }
 
-func TestExecDMLAccessibleTextFormulaEvaluatesFromFields(t *testing.T) {
+func TestExecCallerTextFormulaRemainsNullUntilQueried(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
 a.Street__c = 'Line1';
 a.City__c = 'Austin';
 insert a;
-System.assertEquals('Line1<br />Austin', a.Address__c);
+System.assertEquals(null, a.Address__c);
+Account queried = [SELECT Address__c FROM Account WHERE Id=:a.Id];
+System.assertEquals('Line1<br />Austin', queried.Address__c);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -13379,8 +13998,10 @@ Approval.LockResult locked = Approval.lock(a, false);
 System.assert(locked.isSuccess());
 System.assertEquals(a.Id, locked.getId());
 System.assertEquals(0, locked.getErrors().size());
-System.assert(Approval.isLocked(a.Id));
-Map<Id, Boolean> lockStates = Approval.isLocked(new List<Id>{a.Id});
+	System.assert(Approval.isLocked(a.Id));
+	String stringId = a.Id;
+	System.assert(Approval.isLocked(stringId));
+	Map<Id, Boolean> lockStates = Approval.isLocked(new List<Id>{a.Id});
 System.assertEquals(true, lockStates.get(a.Id));
 Approval.UnlockResult unlocked = Approval.unlock(a.Id, false);
 System.assert(unlocked.isSuccess());
@@ -13408,7 +14029,7 @@ func TestExecUnsupportedDatabaseAndApprovalSurfacesReturnUnsupportedFeature(t *t
 		{
 			name:    "approvalProcess",
 			source:  "Approval.process(null);",
-			message: `unsupported call "Approval.process request type null"`,
+			message: "DML statement found null SObject at position 0",
 		},
 	}
 	for _, tc := range tests {
@@ -13422,8 +14043,8 @@ func TestExecUnsupportedDatabaseAndApprovalSurfacesReturnUnsupportedFeature(t *t
 			machine.SetOrg(&org)
 			_, err = machine.Execute(program)
 			var runtimeErr *RuntimeError
-			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.message {
-				t.Fatalf("error = %#v, want UnsupportedFeature %q", err, tc.message)
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "System.ListException" || runtimeErr.Message != tc.message {
+				t.Fatalf("error = %#v, want System.ListException %q", err, tc.message)
 			}
 		})
 	}
@@ -13474,25 +14095,23 @@ func TestExecSOQLAggregateResultFields(t *testing.T) {
 insert new Account(Name = 'Acme', AnnualRevenue = 100, Rating = 'Hot');
 insert new Account(Name = 'Beta', AnnualRevenue = 250, Rating = 'Warm');
 insert new Account(Name = 'Gamma', AnnualRevenue = 300, Rating = 'Hot');
-	List<Object> rows = [SELECT COUNT(Name) namedCount, COUNT_DISTINCT(Rating), SUM(AnnualRevenue) totalRevenue, MIN(AnnualRevenue), MAX(AnnualRevenue), AVG(AnnualRevenue) averageRevenue FROM Account];
+	// A33 S001/S002 and N017/N018: exprN counts only unnamed aggregates.
+	List<AggregateResult> rows = [SELECT COUNT(Name) namedCount, COUNT_DISTINCT(Rating), SUM(AnnualRevenue) totalRevenue, MIN(AnnualRevenue), MAX(AnnualRevenue), AVG(AnnualRevenue) averageRevenue FROM Account];
 	System.assertEquals(1, rows.size());
-	Object row = rows.get(0);
-	System.assertEquals(3, row.get('expr0'));
+	AggregateResult row = rows.get(0);
+	System.assertEquals(2, row.get('expr0'));
 	System.assertEquals(3, [SELECT COUNT() FROM Account]);
-	System.assertEquals(3, [SELECT COUNT(Id) FROM Account]);
+	System.assertEquals(3, [SELECT COUNT(Id) FROM Account][0].get('expr0'));
 	integer lowerCaseCount = [SELECT COUNT() FROM Account WHERE Rating = 'Hot'];
 	System.assertEquals(2, lowerCaseCount);
 	System.assertEquals(0, [SELECT COUNT() FROM Widget__c]);
 	System.assertEquals(3, [SELECT COUNT(Id) FROM Account][0].get('expr0'));
-	System.assertEquals(3, row.expr0);
-System.assertEquals(2, row.expr1);
-System.assertEquals(650.0, row.expr2);
-System.assertEquals(100.0, row.expr3);
-System.assertEquals(300.0, row.expr4);
-System.assertEquals(216.6666666667, row.expr5);
-System.assertEquals(3, row.namedCount);
-System.assertEquals(650.0, row.totalRevenue);
-System.assertEquals(216.6666666667, row.averageRevenue);
+	// A33 C016: AggregateResult fields are accessed through get().
+System.assertEquals(100.0, row.get('expr1'));
+System.assertEquals(300.0, row.get('expr2'));
+System.assertEquals(3, row.get('namedCount'));
+System.assertEquals(650.0, row.get('totalRevenue'));
+System.assertEquals(216.66666666666666, row.get('averageRevenue'));
 Integer iteratedGroups = 0;
 for (AggregateResult ar : [SELECT COUNT(Id) cnt, Rating FROM Account WHERE Rating = 'Hot' GROUP BY Rating]) {
   iteratedGroups++;
@@ -13500,30 +14119,31 @@ for (AggregateResult ar : [SELECT COUNT(Id) cnt, Rating FROM Account WHERE Ratin
   System.assertEquals(2, ar.get('cnt'));
 }
 System.assertEquals(1, iteratedGroups);
-List<Object> grouped = [SELECT Rating, COUNT(Id) accountCount, SUM(AnnualRevenue) totalRevenue FROM Account GROUP BY Rating HAVING accountCount > 1 ORDER BY totalRevenue];
+// A33 R214/C013: HAVING uses the aggregate expression, not its select alias.
+List<AggregateResult> grouped = [SELECT Rating, COUNT(Id) accountCount, SUM(AnnualRevenue) totalRevenue FROM Account GROUP BY Rating HAVING COUNT(Id) > 1 ORDER BY totalRevenue];
 System.assertEquals(1, grouped.size());
-Object groupRow = grouped.get(0);
-System.assertEquals('Hot', groupRow.Rating);
-System.assertEquals(2, groupRow.expr0);
-System.assertEquals(400.0, groupRow.expr1);
-System.assertEquals(2, groupRow.accountCount);
-System.assertEquals(400.0, groupRow.totalRevenue);
-List<Object> hiddenHaving = [SELECT Rating, COUNT(Id) accountCount FROM Account GROUP BY Rating HAVING SUM(AnnualRevenue) > 300];
+AggregateResult groupRow = grouped.get(0);
+// A33 S003/S004: explicit aliases have no additional exprN fields.
+System.assertEquals('Hot', groupRow.get('Rating'));
+System.assertEquals(2, groupRow.get('accountCount'));
+System.assertEquals(400.0, groupRow.get('totalRevenue'));
+List<AggregateResult> hiddenHaving = [SELECT Rating, COUNT(Id) accountCount FROM Account GROUP BY Rating HAVING SUM(AnnualRevenue) > 300];
 System.assertEquals(1, hiddenHaving.size());
-Object hiddenRow = hiddenHaving.get(0);
-System.assertEquals('Hot', hiddenRow.Rating);
-System.assertEquals(2, hiddenRow.accountCount);
-List<Object> groupedOnlyHiddenHaving = [SELECT Rating FROM Account GROUP BY Rating HAVING SUM(AnnualRevenue) > 300];
+AggregateResult hiddenRow = hiddenHaving.get(0);
+System.assertEquals('Hot', hiddenRow.get('Rating'));
+System.assertEquals(2, hiddenRow.get('accountCount'));
+List<AggregateResult> groupedOnlyHiddenHaving = [SELECT Rating FROM Account GROUP BY Rating HAVING SUM(AnnualRevenue) > 300];
 System.assertEquals(1, groupedOnlyHiddenHaving.size());
-Object groupedOnlyHiddenRow = groupedOnlyHiddenHaving.get(0);
-System.assertEquals('Hot', groupedOnlyHiddenRow.Rating);
-List<Object> rollupRows = [SELECT Rating, COUNT(Id) accountCount, GROUPING(Rating) ratingGrouped FROM Account GROUP BY ROLLUP(Rating) ORDER BY ratingGrouped];
+AggregateResult groupedOnlyHiddenRow = groupedOnlyHiddenHaving.get(0);
+System.assertEquals('Hot', groupedOnlyHiddenRow.get('Rating'));
+List<AggregateResult> rollupRows = [SELECT Rating, COUNT(Id) accountCount, GROUPING(Rating) ratingGrouped FROM Account GROUP BY ROLLUP(Rating) ORDER BY ratingGrouped];
 System.assertEquals(3, rollupRows.size());
-Object totalRow = rollupRows.get(2);
-System.assertEquals(null, totalRow.Rating);
-System.assertEquals(3, totalRow.accountCount);
-System.assertEquals(1, totalRow.ratingGrouped);
-List<Object> cubeRows = [SELECT Rating, Name, COUNT(Id) accountCount, GROUPING(Rating) ratingGrouped, GROUPING(Name) nameGrouped FROM Account GROUP BY CUBE(Rating, Name) HAVING accountCount >= 2];
+AggregateResult totalRow = rollupRows.get(2);
+System.assertEquals(null, totalRow.get('Rating'));
+System.assertEquals(3, totalRow.get('accountCount'));
+System.assertEquals(1, totalRow.get('ratingGrouped'));
+// A33 S005/S006 and R214/C013: CUBE HAVING also uses the expression.
+List<AggregateResult> cubeRows = [SELECT Rating, Name, COUNT(Id) accountCount, GROUPING(Rating) ratingGrouped, GROUPING(Name) nameGrouped FROM Account GROUP BY CUBE(Rating, Name) HAVING COUNT(Id) >= 2];
 System.assertEquals(2, cubeRows.size());
 `)
 	if err != nil {
@@ -13844,7 +14464,8 @@ Boolean caughtAggregateField = false;
 try {
     Database.query('SELECT SUM(Name) bad FROM Account');
 } catch (QueryException qe) {
-    caughtAggregateField = qe.getMessage().contains('SUM requires numeric field Name');
+    // A33 R207: check the exact native diagnostic.
+    caughtAggregateField = qe.getMessage().equals('field Name does not support aggregate operator SUM');
 }
 System.assert(caughtAggregateField);
 Boolean caughtAlias = false;
@@ -14025,17 +14646,16 @@ func TestExecSObjectSystemFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'System Fields');
 insert a;
-System.assert(a.CreatedDate != null);
-System.assert(a.LastModifiedDate != null);
+System.assertEquals(null, a.CreatedDate);
+System.assertEquals(null, a.LastModifiedDate);
 System.assert(a.SystemModstamp != null);
 System.assertEquals('005000000000001', a.CreatedById);
 System.assertEquals('005000000000001', a.LastModifiedById);
 System.assertEquals('005000000000001', a.OwnerId);
 System.assert(!a.IsDeleted);
-System.assertEquals('2026-05-02 12:00:00', a.CreatedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
 a.Name = 'System Fields Updated';
 update a;
-System.assert(a.LastModifiedDate != null);
+System.assertEquals(null, a.LastModifiedDate);
 Account row = [SELECT Id, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, OwnerId, IsDeleted FROM Account WHERE Id = :a.Id];
 System.assertEquals('2026-05-02 12:00:00', row.CreatedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals('005000000000001', row.CreatedById);
@@ -14387,7 +15007,8 @@ insert new Contact(AccountId = stored.Id, LastName = 'Child');
 Account fabricated = new Account(Id = stored.Id);
 System.assertEquals(0, fabricated.Contacts.size());
 Account queried = [SELECT Id FROM Account WHERE Id = :stored.Id];
-System.assertEquals(1, queried.Contacts.size());
+// Native R137: an unselected child relationship remains empty on a queried row.
+System.assertEquals(0, queried.Contacts.size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -14647,7 +15268,7 @@ System.assertEquals('Test Org', rows[0].Name);
 
 func TestExecGenericListInsertKeepsRecordTypeIdWhenExplicitMarkerIsLost(t *testing.T) {
 	program, err := CompileAnonymous(`
-Id businessRecordTypeId = '012RL00000CgP6aYAF';
+Id businessRecordTypeId = '012000000000c01AAA';
 SObject record = Account.SObjectType.newSObject(null, true);
 record.put(Account.Name, 'Test Org');
 record.put(Account.RecordTypeId, businessRecordTypeId);
@@ -15320,6 +15941,7 @@ try {
 }
 
 func TestExecDMLRejectsCalculatedFieldWrites(t *testing.T) {
+	// A30 J036/J052/J053 compare native enum values rather than Strings.
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
 a.put('Score__c', null);
@@ -15328,7 +15950,7 @@ System.assert(!result.isSuccess());
 List<Object> errors = result.getErrors();
 System.assertEquals(1, errors.size());
 Object err = errors.get(0);
-System.assertEquals('INVALID_FIELD_FOR_INSERT_UPDATE', err.getStatusCode());
+System.assertEquals(System.StatusCode.INVALID_FIELD_FOR_INSERT_UPDATE, err.getStatusCode());
 System.assertEquals('Score__c', err.getFields().get(0));
 List<Account> rows = [SELECT Id FROM Account];
 System.assertEquals(0, rows.size());
@@ -15348,6 +15970,7 @@ System.assertEquals(0, rows.size());
 }
 
 func TestExecDMLRejectsNonNullCalculatedFieldWritesAsSaveResult(t *testing.T) {
+	// A30 J036/J052/J053 compare native enum values rather than Strings.
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
 a.put('Score__c', 7);
@@ -15356,7 +15979,7 @@ System.assert(!result.isSuccess());
 List<Object> errors = result.getErrors();
 System.assertEquals(1, errors.size());
 Object err = errors.get(0);
-System.assertEquals('INVALID_FIELD_FOR_INSERT_UPDATE', err.getStatusCode());
+System.assertEquals(System.StatusCode.INVALID_FIELD_FOR_INSERT_UPDATE, err.getStatusCode());
 System.assertEquals('Score__c', err.getFields().get(0));
 List<Account> rows = [SELECT Id FROM Account];
 System.assertEquals(0, rows.size());
@@ -15476,6 +16099,7 @@ func TestRecordFromValueSkipsImplicitCalculatedFieldsOnUpdate(t *testing.T) {
 }
 
 func TestExecDatabaseErrorDetailsAndDmlExceptionParity(t *testing.T) {
+	// A30 J036/J052/J053 compare native enum values rather than Strings.
 	program, err := CompileAnonymous(`
 Account existing = new Account(Name = 'Existing', Code__c = 'A');
 insert existing;
@@ -15487,11 +16111,11 @@ List<Account> records = new List<Account>{missing, duplicate, blocked};
 
 List<Object> partial = Database.insert(records, false);
 System.assertEquals(3, partial.size());
-System.assertEquals('REQUIRED_FIELD_MISSING', partial.get(0).getErrors().get(0).getStatusCode());
+System.assertEquals(System.StatusCode.REQUIRED_FIELD_MISSING, partial.get(0).getErrors().get(0).getStatusCode());
 System.assertEquals('Name', partial.get(0).getErrors().get(0).getFields().get(0));
-System.assertEquals('DUPLICATE_VALUE', partial.get(1).getErrors().get(0).getStatusCode());
+System.assertEquals(System.StatusCode.DUPLICATE_VALUE, partial.get(1).getErrors().get(0).getStatusCode());
 System.assertEquals(0, partial.get(1).getErrors().get(0).getFields().size());
-System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', partial.get(2).getErrors().get(0).getStatusCode());
+System.assertEquals(System.StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION, partial.get(2).getErrors().get(0).getStatusCode());
 System.assertEquals('Name', partial.get(2).getErrors().get(0).getFields().get(0));
 
 Boolean caught = false;
@@ -15949,6 +16573,7 @@ System.assert(caught);
 }
 
 func TestExecTriggerAddErrorProducesDMLResults(t *testing.T) {
+	// A30 J036/J052/J053 compare native enum values rather than Strings.
 	triggerProgram, err := CompileAnonymous(`
 for (Account a : Trigger.new) {
 	if (a.Name == 'Block') {
@@ -15973,7 +16598,7 @@ System.assert(!second.isSuccess());
 List<Object> errors = second.getErrors();
 System.assertEquals(1, errors.size(), 'failed row should expose addError');
 Object err = errors.get(0);
-System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', err.getStatusCode());
+System.assertEquals(System.StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION, err.getStatusCode());
 System.assertEquals('blocked by trigger', err.getMessage());
 List<Object> fields = err.getFields();
 System.assertEquals(1, fields.size());
@@ -17760,6 +18385,16 @@ func TestTriggerContextListsCarryConcreteSObjectType(t *testing.T) {
 	}
 }
 
+func TestConversionScoreUsesRuntimeCollectionTypeForEmptyCovariantList(t *testing.T) {
+	machine := New(nil)
+	values := List()
+	values.Type = "List<SObject>"
+	values.Runtime = "List<Opportunity>"
+	if score := machine.conversionScore("List<Opportunity>", values); score < 0 {
+		t.Fatalf("empty list with concrete runtime type should be assignable, score=%d", score)
+	}
+}
+
 func TestNamespacedCustomMetadataListAssignsToLocalType(t *testing.T) {
 	machine := New(nil)
 	org := storage.NewOrgState()
@@ -17901,6 +18536,66 @@ update updateRecord;
 		if got := record.Fields["LastName"]; got.Kind != storage.ValueString || got.String != "after ran" {
 			t.Fatalf("contact last name = %#v", got)
 		}
+	}
+}
+
+// A37's readonly Trigger records must retain the admitted Decimal lifecycle's
+// formula inputs without permitting the assignment or DML writes it rejects.
+func TestTriggerReadOnlyFormulaRecordKeepsWriteGuards(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		trigger  bool
+		readOnly bool
+		readable bool
+	}{
+		{"before-trigger", true, false, true},
+		{"readonly-trigger", true, true, true},
+		{"readonly-non-trigger", false, true, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			machine := New(nil)
+			org := testDataOrg()
+			account := org.Objects["Account"]
+			account.Definition.Fields["Amount__c"] = storage.Field{APIName: "Amount__c", Type: storage.FieldDecimal, DisplayType: "CURRENCY", Scale: 2, ScaleSpecified: true}
+			org.Objects["Account"] = account
+			machine.SetOrg(&org)
+			value := Object("Account")
+			amount, err := decimalFromText("33.335")
+			if err != nil {
+				t.Fatal(err)
+			}
+			value.Fields["Amount__c"] = amount
+			if tc.trigger {
+				markTriggerSObject(&value)
+			}
+			if tc.readOnly {
+				value.Fields[sobjectReadOnlyField] = String("trigger record")
+			}
+			record, readable := machine.formulaRecordFromSObject(value)
+			if readable != tc.readable {
+				t.Fatalf("formula record readable = %t, want %t", readable, tc.readable)
+			}
+			if readable {
+				got, ok := record.GetField("Amount__c")
+				if !ok || got.Kind != storage.ValueDecimal || got.Decimal != "33.335" {
+					t.Fatalf("formula amount = %#v, want unchanged Decimal 33.335", got)
+				}
+			}
+			if tc.readOnly {
+				if _, ok := sobjectReadOnlyReason(value); !ok {
+					t.Fatal("formula read removed the original write guard")
+				}
+				if _, err := machine.recordFromValue(&value); err == nil {
+					t.Fatal("formula read enabled DML on the original record")
+				}
+				if err := machine.assignPath(value, []string{"Amount__c"}, Int(1)); err == nil {
+					t.Fatal("formula read enabled assignment on the original record")
+				}
+			}
+			if got := decimalPlainText(value.Fields["Amount__c"]); got != "33.335" {
+				t.Fatalf("original amount = %q, want unchanged scale", got)
+			}
+		})
 	}
 }
 
@@ -18246,7 +18941,8 @@ System.assert(Trigger.isExecuting);
 System.assert(Trigger.isBefore);
 System.assert(Trigger.isInsert);
 System.assert(trigger.isInsert);
-System.assertEquals(3, Trigger.size);
+// A37 B001: before-insert sees 3 rows, then retries the 2 survivors.
+System.assertEquals(Trigger.new[0].Name == 'Block' ? 3 : 2, Trigger.size);
 System.assertEquals(null, Trigger.old);
 System.assertEquals(null, Trigger.newMap);
 for (Account a : Trigger.new) {
@@ -18661,6 +19357,7 @@ System.assertEquals('Merge Master', masterRow.Name);
 }
 
 func TestExecDMLExternalIDValidationAndUndelete(t *testing.T) {
+	// A30 J036/J052/J053 compare native enum values rather than Strings.
 	program, err := CompileAnonymous(`
 Account first = new Account(Name = 'Acme', External_Key__c = 'ext-1', Code__c = 'A');
 Object created = Database.upsert(first, Account.External_Key__c, false);
@@ -18706,14 +19403,14 @@ Object duplicateResult = Database.insert(duplicate, false);
 System.assert(!duplicateResult.isSuccess(), 'duplicate unique insert should fail');
 List<Object> duplicateErrors = duplicateResult.getErrors();
 Object duplicateError = duplicateErrors.get(0);
-System.assertEquals('DUPLICATE_VALUE', duplicateError.getStatusCode());
+System.assertEquals(System.StatusCode.DUPLICATE_VALUE, duplicateError.getStatusCode());
 
 Contact bad = new Contact(LastName = 'Smith', AccountId = '001999999999999');
 Object badResult = Database.insert(bad, false);
 System.assert(!badResult.isSuccess(), 'bad lookup insert should fail');
 List<Object> badErrors = badResult.getErrors();
 Object badError = badErrors.get(0);
-System.assertEquals('FIELD_INTEGRITY_EXCEPTION', badError.getStatusCode());
+System.assertEquals(System.StatusCode.FIELD_INTEGRITY_EXCEPTION, badError.getStatusCode());
 
 Contact good = new Contact(LastName = 'Jones', AccountId = created.getId());
 insert good;
@@ -18797,6 +19494,7 @@ System.assertEquals(0, cascadeDeleted.size(), 'deleting parent should cascade so
 }
 
 func TestExecUpsertRejectsCustomObjectOwnerIdSetViaFieldToken(t *testing.T) {
+	// A30 J036/J052/J053 compare native enum values rather than Strings.
 	program, err := CompileAnonymous(`
 Contact provider = new Contact(LastName = 'Owner Target');
 insert provider;
@@ -18808,7 +19506,7 @@ List<Object> results = Database.upsert(new List<SObject>{workflow}, Review_Workf
 System.assertEquals(1, results.size());
 Object result = results.get(0);
 System.assert(!result.isSuccess());
-System.assertEquals('FIELD_INTEGRITY_EXCEPTION', result.getErrors().get(0).getStatusCode());
+System.assertEquals(System.StatusCode.FIELD_INTEGRITY_EXCEPTION, result.getErrors().get(0).getStatusCode());
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -18842,6 +19540,7 @@ System.assertEquals('FIELD_INTEGRITY_EXCEPTION', result.getErrors().get(0).getSt
 }
 
 func TestExecDatabaseMergeResultMergedRecordIdsForPartialList(t *testing.T) {
+	// A30 J036/J052/J053 compare native enum values rather than Strings.
 	program, err := CompileAnonymous(`
 Account master = new Account(Name = 'Master');
 insert master;
@@ -18861,7 +19560,7 @@ System.assertEquals(1, mergedIds.size());
 System.assertEquals(duplicate.Id, mergedIds.get(0));
 System.assert(!failure.isSuccess());
 System.assertEquals(0, failure.getMergedRecordIds().size());
-System.assertEquals('ENTITY_IS_DELETED', failure.getErrors().get(0).getStatusCode());
+System.assertEquals(System.StatusCode.ENTITY_IS_DELETED, failure.getErrors().get(0).getStatusCode());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -19011,7 +19710,8 @@ cfg.get(createdDateField);
 
 func TestExecCustomSettingGetInstanceMissingReturnsTypedNull(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals(null, Local_Setting__c.getInstance(null));
+// A24 R263: a null name returns raw null even when a List Setting has a row.
+System.assert(Local_Setting__c.getInstance((String)null)==null);
 System.assertEquals(null, Local_Setting__c.getInstance('Missing'));
 `)
 	if err != nil {
@@ -19189,7 +19889,8 @@ System.assertEquals(true, Hierarchy_Setting__c.getValues('00D000000000001').Enab
 Id ownerId = '00D000000000001';
 System.assertEquals(true, Hierarchy_Setting__c.getValues(ownerId).Enabled__c);
 System.assertEquals(null, Hierarchy_Setting__c.getValues('005000000000001').Enabled__c);
-System.assertEquals(false, Hierarchy_Setting__c.getValues('005000000000001').Defaulted__c);
+// A24 R228/R235: getValues returns raw null when the requested owner has no row.
+System.assertEquals(null, Hierarchy_Setting__c.getValues('005000000000001'));
 System.assertEquals(true, Hierarchy_Setting__c.getInstance('005000000000001').Enabled__c);
 System.assertEquals(true, Hierarchy_SETTING__c.getInstance().Enabled__c);
 `)
@@ -19221,9 +19922,16 @@ func TestExecHierarchyCustomSettingOrgDefaultsIgnoreUserRecords(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(null, Hierarchy_Setting__c.getOrgDefaults().Enabled__c);
 System.assertEquals(false, Hierarchy_Setting__c.getOrgDefaults().Defaulted__c);
-System.assertEquals(null, Hierarchy_Setting__c.getInstance().Enabled__c);
+// A24 R264: getInstance selects the current-user row even without an org row.
+System.assert(true == Hierarchy_Setting__c.getInstance().Enabled__c);
 System.assertEquals(false, Hierarchy_Setting__c.getInstance().Defaulted__c);
-System.assertEquals(null, Hierarchy_Setting__c.getInstance('a02000000000002').Enabled__c);
+// A24 R242: an invalid setup owner raises the native parameter exception.
+try {
+    Hierarchy_Setting__c.getInstance('not-an-id');
+    System.assert(false, 'expected invalid setup owner');
+} catch (InvalidParameterValueException e) {
+    System.assert('Invalid SetupOwner for Custom Settings: not-an-id'.equals(e.getMessage()));
+}
 System.assertEquals(true, Hierarchy_Setting__c.getValues('005000000000001').Enabled__c);
 `)
 	if err != nil {

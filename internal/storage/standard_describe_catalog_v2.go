@@ -183,7 +183,7 @@ func lookupStandardDescribeCatalogV2Index(index []standardDescribeCatalogV2Index
 		return standardDescribeCatalogV2IndexEntry{}, false
 	}
 	position := sort.Search(len(index), func(position int) bool {
-		return strings.ToLower(index[position].Name) >= key
+		return standardDescribeNameAtLeast(index[position].Name, key)
 	})
 	if position == len(index) || !strings.EqualFold(index[position].Name, key) {
 		return standardDescribeCatalogV2IndexEntry{}, false
@@ -191,13 +191,33 @@ func lookupStandardDescribeCatalogV2Index(index []standardDescribeCatalogV2Index
 	return index[position], true
 }
 
+// standardDescribeNameAtLeast compares a catalog name with an already lowercased
+// key. Catalog names are ASCII; folding each compared byte avoids allocating a
+// lowercase copy at every step of the binary search. Keep strings.ToLower's
+// ordering for non-ASCII names as well, including malformed UTF-8.
+func standardDescribeNameAtLeast(name, key string) bool {
+	for i := 0; i < len(name) && i < len(key); i++ {
+		c := name[i]
+		if c >= 0x80 {
+			return strings.ToLower(name) >= key
+		}
+		if c >= 'A' && c <= 'Z' {
+			c += 'a' - 'A'
+		}
+		if c != key[i] {
+			return c > key[i]
+		}
+	}
+	return len(name) >= len(key)
+}
+
 func decodeStandardDescribeCatalogV2Member(pack []byte, entry standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error) {
 	data, err := decodeStandardDescribeCatalogV2MemberBytes(pack, entry, standardDescribeCatalogV2Magic, len(standardDescribeCatalogV2Index))
 	if err != nil {
 		return standardDescribeObject{}, err
 	}
-	var describe standardDescribeObject
-	if err := json.Unmarshal(data, &describe); err != nil {
+	describe, err := decodeStandardDescribeObjectJSON(data)
+	if err != nil {
 		return standardDescribeObject{}, fmt.Errorf("decode standard describe member %q: %w", entry.Name, err)
 	}
 	return describe, nil
@@ -212,12 +232,13 @@ func decodeStandardDescribeCatalogV2MemberBytes(pack []byte, entry standardDescr
 		return nil, fmt.Errorf("decode standard describe member %q: member bounds [%d,%d) exceed pack length %d", entry.Name, entry.Offset, end, len(pack))
 	}
 	memberReader := bytes.NewReader(pack[entry.Offset:end])
-	reader, err := gzip.NewReader(memberReader)
+	reader, err := standardDescribeGzipReader(memberReader)
 	if err != nil {
 		return nil, fmt.Errorf("decode standard describe member %q: %w", entry.Name, err)
 	}
+	defer standardDescribeGzipReaders.Put(reader)
 	reader.Multistream(false)
-	data, readErr := io.ReadAll(io.LimitReader(reader, int64(entry.UncompressedLength)+1))
+	data, readErr := readAllSized(io.LimitReader(reader, int64(entry.UncompressedLength)+1), int(entry.UncompressedLength)+1)
 	closeErr := reader.Close()
 	if readErr != nil {
 		return nil, fmt.Errorf("decode standard describe member %q: %w", entry.Name, readErr)
@@ -289,4 +310,38 @@ func standardDescribeChildRelationshipMapV2(reverse standardDescribeChildRelatio
 		out[key] = existing
 	}
 	return out
+}
+
+// standardDescribeGzipReaders reuses gzip readers, and their inflate windows,
+// across catalog members. Reset reinitializes all reader state.
+var standardDescribeGzipReaders sync.Pool
+
+func standardDescribeGzipReader(source io.Reader) (*gzip.Reader, error) {
+	if reader, ok := standardDescribeGzipReaders.Get().(*gzip.Reader); ok {
+		if err := reader.Reset(source); err != nil {
+			standardDescribeGzipReaders.Put(reader)
+			return nil, err
+		}
+		return reader, nil
+	}
+	return gzip.NewReader(source)
+}
+
+// readAllSized is io.ReadAll with an initial capacity, so a member whose size
+// the index records is read without regrowing the buffer.
+func readAllSized(reader io.Reader, capacity int) ([]byte, error) {
+	data := make([]byte, 0, capacity)
+	for {
+		if len(data) == cap(data) {
+			data = append(data, 0)[:len(data)]
+		}
+		n, err := reader.Read(data[len(data):cap(data)])
+		data = data[:len(data)+n]
+		if err != nil {
+			if err == io.EOF {
+				err = nil
+			}
+			return data, err
+		}
+	}
 }

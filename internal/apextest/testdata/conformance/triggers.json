@@ -1,0 +1,2642 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "Files": {
+    "force-app/main/default/classes/A37Oracle.cls": "/** Owned A37 Salesforce fixture. Every run rolls back its own inserted records. */\npublic class A37Oracle {\n    public static Boolean enabled = false;\n    public static String targetEvent;\n    public static String action;\n    public static Integer recursionLimit;\n    public static Integer recursionDepth;\n    public static List<String> events;\n    public static Map<String, List<Map<String, String>>> observations;\n\n    public static void capture() {\n        if (!enabled) return;\n        String ev = String.valueOf(Trigger.operationType);\n        events.add(ev);\n        if (!observations.containsKey(ev)) observations.put(ev, new List<Map<String, String>>());\n        Map<String, String> o = new Map<String, String>();\n        o.put('flags', String.valueOf(Trigger.isExecuting)+'|'+Trigger.isBefore+'|'+Trigger.isAfter+'|'+Trigger.isInsert+'|'+Trigger.isUpdate+'|'+Trigger.isDelete+'|'+Trigger.isUndelete);\n        o.put('operation', ev);\n        o.put('size', String.valueOf(Trigger.size));\n        o.put('nulls', String.valueOf(Trigger.new==null)+'|'+(Trigger.old==null)+'|'+(Trigger.newMap==null)+'|'+(Trigger.oldMap==null));\n        o.put('sizes', (Trigger.new==null?'null':String.valueOf(Trigger.new.size()))+'|'+(Trigger.old==null?'null':String.valueOf(Trigger.old.size()))+'|'+(Trigger.newMap==null?'null':String.valueOf(Trigger.newMap.size()))+'|'+(Trigger.oldMap==null?'null':String.valueOf(Trigger.oldMap.size())));\n        A37Probe__c fresh = Trigger.new==null || Trigger.new.isEmpty() ? null : (A37Probe__c)Trigger.new[0];\n        A37Probe__c prior = Trigger.old==null || Trigger.old.isEmpty() ? null : (A37Probe__c)Trigger.old[0];\n        o.put('new-score', fresh==null?'absent':String.valueOf(fresh.Score__c));\n        o.put('old-score', prior==null?'absent':String.valueOf(prior.Score__c));\n        o.put('new-id-null', fresh==null?'absent':String.valueOf(fresh.Id==null));\n        o.put('old-id-null', prior==null?'absent':String.valueOf(prior.Id==null));\n        o.put('new-map-member', fresh==null || Trigger.newMap==null?'absent':String.valueOf(Trigger.newMap.containsKey(fresh.Id)));\n        o.put('old-map-member', prior==null || Trigger.oldMap==null?'absent':String.valueOf(Trigger.oldMap.containsKey(prior.Id)));\n        o.put('new-map-reference', fresh==null || Trigger.newMap==null?'absent':String.valueOf(Trigger.newMap.get(fresh.Id)===fresh));\n        o.put('old-map-reference', prior==null || Trigger.oldMap==null?'absent':String.valueOf(Trigger.oldMap.get(prior.Id)===prior));\n        o.put('converted', fresh==null?'absent':String.valueOf(((A37Probe__c)(SObject)fresh).Score__c));\n        o.put('delta', fresh==null || prior==null?'absent':(fresh.Score__c==null || prior.Score__c==null?'null':String.valueOf(fresh.Score__c-prior.Score__c)));\n        o.put('depth', String.valueOf(recursionDepth));\n        o.put('mutation', 'none');\n        observations.get(ev).add(o);\n        if (ev==targetEvent) {\n            try {\n                if (action=='new-field') fresh.Score__c=9;\n                else if (action=='old-field') prior.Score__c=9;\n                else if (action=='new-null') fresh.Score__c=null;\n                else if (action=='new-list-add') Trigger.new.add(new A37Probe__c(Name='Extra'));\n                else if (action=='old-list-clear') Trigger.old.clear();\n                else if (action=='new-map-clear') Trigger.newMap.clear();\n                else if (action=='old-map-clear') Trigger.oldMap.clear();\n                if (action!='none') o.put('mutation','ok');\n            } catch (Exception e) { o.put('mutation',e.getTypeName()); }\n            if (action=='error-all' || action=='error-first' || action=='error-position-first' || action=='field-error') {\n                List<SObject> affected=Trigger.isDelete?Trigger.old:Trigger.new;\n                for(Integer i=0;i<affected.size();i++) {\n                    if (action=='error-all' || (action=='error-position-first' && i==0) || ((action=='error-first' || action=='field-error') && affected[i].get('Name')=='A37-0')) {\n                        if(action=='field-error') ((A37Probe__c)affected[i]).Score__c.addError('A37 field rejected');\n                        else affected[i].addError('A37 record rejected');\n                    }\n                }\n            }\n            if (action=='throw') throw new A37Exception('A37 fixture throw');\n        }\n        if (action=='recurse' && Trigger.isAfter && (Trigger.isInsert || Trigger.isUpdate) && recursionDepth<recursionLimit) {\n            recursionDepth++;\n            List<A37Probe__c> changes=new List<A37Probe__c>();\n            for(SObject s:Trigger.new) changes.add(new A37Probe__c(Id=s.Id,Score__c=recursionDepth));\n            update changes;\n            recursionDepth--;\n        }\n    }\n    public class A37Exception extends Exception {}\n\n    public static String run(String ev,Integer n,String mode,String metric) {\n        Savepoint sp=Database.setSavepoint();\n        try {\n            enabled=false;\n            List<A37Probe__c> rows=new List<A37Probe__c>();\n            for(Integer i=0;i<n;i++) rows.add(new A37Probe__c(Name='A37-'+i,Score__c=mode=='score-null'?null:0));\n            if (!ev.endsWith('INSERT')) insert rows;\n            if (ev=='AFTER_UNDELETE') delete rows;\n            events=new List<String>(); observations=new Map<String,List<Map<String,String>>>();\n            targetEvent=ev; action=mode; recursionDepth=0;\n            recursionLimit=mode=='recurse'?n:0;\n            if(mode=='recurse') { rows=new List<A37Probe__c>{new A37Probe__c(Name='A37-recursion',Score__c=0)}; }\n            if(ev.endsWith('UPDATE')) for(A37Probe__c row:rows) row.Score__c=mode=='score-null'?null:1;\n            enabled=true;\n            List<String> outcomes=new List<String>();\n            try {\n                Boolean atomic=metric=='atomic';\n                if(ev.endsWith('INSERT')) for(Database.SaveResult s:Database.insert(rows,atomic)) outcomes.add(result(s.isSuccess(),s.getErrors()));\n                else if(ev.endsWith('UPDATE')) for(Database.SaveResult s:Database.update(rows,atomic)) outcomes.add(result(s.isSuccess(),s.getErrors()));\n                else if(ev.endsWith('DELETE') && ev!='AFTER_UNDELETE') for(Database.DeleteResult s:Database.delete(rows,atomic)) outcomes.add(result(s.isSuccess(),s.getErrors()));\n                else for(Database.UndeleteResult s:Database.undelete(rows,atomic)) outcomes.add(result(s.isSuccess(),s.getErrors()));\n            } catch(DmlException e) { outcomes.add(e.getTypeName()+'|'+e.getNumDml()+'|'+e.getDmlStatusCode(0)); }\n            enabled=false;\n            if(metric=='sequence') return String.join(events,',');\n            if(metric=='outcome' || metric=='atomic') return String.join(outcomes,',');\n            if(metric=='stored') {\n                Set<Id> ids=new Set<Id>(); for(A37Probe__c row:rows) if(row.Id!=null) ids.add(row.Id);\n                List<A37Probe__c> stored=[SELECT Score__c FROM A37Probe__c WHERE Id IN :ids ORDER BY Name];\n                List<String> scores=new List<String>(); for(A37Probe__c s:stored) scores.add(String.valueOf(s.Score__c));\n                return String.join(scores,',');\n            }\n            if(metric=='persist-count') {Set<Id> ids=new Set<Id>(); for(A37Probe__c row:rows) if(row.Id!=null) ids.add(row.Id); return String.valueOf([SELECT COUNT() FROM A37Probe__c WHERE Id IN :ids]);}\n            if(!observations.containsKey(ev)) return 'no-event';\n            List<String> values=new List<String>();\n            for(Map<String,String> o:observations.get(ev)) values.add(o.get(metric));\n            return String.join(values,',');\n        } finally { enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp); }\n    }\n    private static String result(Boolean success,Database.Error[] errors) {\n        if(success) return 'ok';\n        List<String> messages=new List<String>();\n        for(Database.Error e:errors) messages.add(String.valueOf(e.getStatusCode())+'|'+e.getMessage()+'|'+String.join(e.getFields(),':'));\n        return String.join(messages,';');\n    }\n}\n",
+    "force-app/main/default/classes/A37Oracle.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+    "force-app/main/default/objects/A37Probe__c/A37Probe__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>A37 Probe</label><pluralLabel>A37 Probes</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+    "force-app/main/default/objects/A37Probe__c/fields/Score__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Score__c</fullName><label>Score</label><precision>8</precision><scale>0</scale><type>Number</type></CustomField>\n",
+    "force-app/main/default/triggers/A37ProbeTrigger.trigger": "trigger A37ProbeTrigger on A37Probe__c (before insert,after insert,before update,after update,before delete,after delete,after undelete) {\n    A37Oracle.capture();\n}\n",
+    "force-app/main/default/triggers/A37ProbeTrigger.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexTrigger>\n"
+  },
+  "Cases": [
+    {
+      "ID": "R001",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','flags');",
+      "Expected": "true|true|false|true|false|false|false",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R002",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','operation');",
+      "Expected": "BEFORE_INSERT",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R003",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','size');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R004",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','nulls');",
+      "Expected": "false|true|true|true",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R005",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','sizes');",
+      "Expected": "1|null|null|null",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R006",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','new-score');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R007",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','old-score');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R008",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','new-id-null');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R009",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','old-id-null');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R010",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','new-map-member');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R011",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','old-map-member');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R012",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','new-map-reference');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R013",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','old-map-reference');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R014",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','converted');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R015",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','delta');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R016",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'none','sequence');",
+      "Expected": "BEFORE_INSERT,AFTER_INSERT",
+      "Compile": false,
+      "Group": "context/event/BEFORE_INSERT"
+    },
+    {
+      "ID": "R017",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'score-null','new-score');",
+      "Expected": "",
+      "Compile": false,
+      "Group": "context/null/BEFORE_INSERT"
+    },
+    {
+      "ID": "R018",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'score-null','old-score');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/null/BEFORE_INSERT"
+    },
+    {
+      "ID": "R019",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'new-field','mutation');",
+      "Expected": "ok",
+      "Compile": false,
+      "Group": "mutability/BEFORE_INSERT"
+    },
+    {
+      "ID": "R020",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'old-field','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/BEFORE_INSERT"
+    },
+    {
+      "ID": "R021",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'new-null','mutation');",
+      "Expected": "ok",
+      "Compile": false,
+      "Group": "mutability/BEFORE_INSERT"
+    },
+    {
+      "ID": "R022",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'new-list-add','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/BEFORE_INSERT"
+    },
+    {
+      "ID": "R023",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'old-list-clear','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/BEFORE_INSERT"
+    },
+    {
+      "ID": "R024",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'new-map-clear','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/BEFORE_INSERT"
+    },
+    {
+      "ID": "R025",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'old-map-clear','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/BEFORE_INSERT"
+    },
+    {
+      "ID": "R026",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'new-field','stored');",
+      "Expected": "9",
+      "Compile": false,
+      "Group": "mutability/persistence/BEFORE_INSERT"
+    },
+    {
+      "ID": "R027",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','flags');",
+      "Expected": "true|false|true|true|false|false|false",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R028",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','operation');",
+      "Expected": "AFTER_INSERT",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R029",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','size');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R030",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','nulls');",
+      "Expected": "false|true|false|true",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R031",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','sizes');",
+      "Expected": "1|null|1|null",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R032",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','new-score');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R033",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','old-score');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R034",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','new-id-null');",
+      "Expected": "false",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R035",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','old-id-null');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R036",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','new-map-member');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R037",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','old-map-member');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R038",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','new-map-reference');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R039",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','old-map-reference');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R040",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','converted');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R041",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','delta');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R042",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','sequence');",
+      "Expected": "BEFORE_INSERT,AFTER_INSERT",
+      "Compile": false,
+      "Group": "context/event/AFTER_INSERT"
+    },
+    {
+      "ID": "R043",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'score-null','new-score');",
+      "Expected": "",
+      "Compile": false,
+      "Group": "context/null/AFTER_INSERT"
+    },
+    {
+      "ID": "R044",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'score-null','old-score');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/null/AFTER_INSERT"
+    },
+    {
+      "ID": "R045",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'new-field','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/AFTER_INSERT"
+    },
+    {
+      "ID": "R046",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'old-field','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/AFTER_INSERT"
+    },
+    {
+      "ID": "R047",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'new-null','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/AFTER_INSERT"
+    },
+    {
+      "ID": "R048",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'new-list-add','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/AFTER_INSERT"
+    },
+    {
+      "ID": "R049",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'old-list-clear','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/AFTER_INSERT"
+    },
+    {
+      "ID": "R050",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'new-map-clear','mutation');",
+      "Expected": "ok",
+      "Compile": false,
+      "Group": "mutability/AFTER_INSERT"
+    },
+    {
+      "ID": "R051",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'old-map-clear','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/AFTER_INSERT"
+    },
+    {
+      "ID": "R052",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'new-field','stored');",
+      "Expected": "",
+      "Compile": false,
+      "Group": "mutability/persistence/AFTER_INSERT"
+    },
+    {
+      "ID": "R053",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','flags');",
+      "Expected": "true|true|false|false|true|false|false",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R054",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','operation');",
+      "Expected": "BEFORE_UPDATE",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R055",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','size');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R056",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','nulls');",
+      "Expected": "false|false|false|false",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R057",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','sizes');",
+      "Expected": "1|1|1|1",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R058",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','new-score');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R059",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','old-score');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R060",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','new-id-null');",
+      "Expected": "false",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R061",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','old-id-null');",
+      "Expected": "false",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R062",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','new-map-member');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R063",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','old-map-member');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R064",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','new-map-reference');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R065",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','old-map-reference');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R066",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','converted');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R067",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','delta');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R068",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'none','sequence');",
+      "Expected": "BEFORE_UPDATE,AFTER_UPDATE",
+      "Compile": false,
+      "Group": "context/event/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R069",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'score-null','new-score');",
+      "Expected": "",
+      "Compile": false,
+      "Group": "context/null/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R070",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'score-null','old-score');",
+      "Expected": "",
+      "Compile": false,
+      "Group": "context/null/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R071",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'new-field','mutation');",
+      "Expected": "ok",
+      "Compile": false,
+      "Group": "mutability/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R072",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'old-field','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R073",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'new-null','mutation');",
+      "Expected": "ok",
+      "Compile": false,
+      "Group": "mutability/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R074",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'new-list-add','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R075",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'old-list-clear','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R076",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'new-map-clear','mutation');",
+      "Expected": "ok",
+      "Compile": false,
+      "Group": "mutability/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R077",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'old-map-clear','mutation');",
+      "Expected": "ok",
+      "Compile": false,
+      "Group": "mutability/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R078",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',1,'new-field','stored');",
+      "Expected": "9",
+      "Compile": false,
+      "Group": "mutability/persistence/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R079",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','flags');",
+      "Expected": "true|false|true|false|true|false|false",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R080",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','operation');",
+      "Expected": "AFTER_UPDATE",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R081",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','size');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R082",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','nulls');",
+      "Expected": "false|false|false|false",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R083",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','sizes');",
+      "Expected": "1|1|1|1",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R084",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','new-score');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R085",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','old-score');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R086",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','new-id-null');",
+      "Expected": "false",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R087",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','old-id-null');",
+      "Expected": "false",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R088",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','new-map-member');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R089",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','old-map-member');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R090",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','new-map-reference');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R091",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','old-map-reference');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R092",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','converted');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R093",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','delta');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R094",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','sequence');",
+      "Expected": "BEFORE_UPDATE,AFTER_UPDATE",
+      "Compile": false,
+      "Group": "context/event/AFTER_UPDATE"
+    },
+    {
+      "ID": "R095",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'score-null','new-score');",
+      "Expected": "",
+      "Compile": false,
+      "Group": "context/null/AFTER_UPDATE"
+    },
+    {
+      "ID": "R096",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'score-null','old-score');",
+      "Expected": "",
+      "Compile": false,
+      "Group": "context/null/AFTER_UPDATE"
+    },
+    {
+      "ID": "R097",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'new-field','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/AFTER_UPDATE"
+    },
+    {
+      "ID": "R098",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'old-field','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/AFTER_UPDATE"
+    },
+    {
+      "ID": "R099",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'new-null','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/AFTER_UPDATE"
+    },
+    {
+      "ID": "R100",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'new-list-add','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/AFTER_UPDATE"
+    },
+    {
+      "ID": "R101",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'old-list-clear','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/AFTER_UPDATE"
+    },
+    {
+      "ID": "R102",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'new-map-clear','mutation');",
+      "Expected": "ok",
+      "Compile": false,
+      "Group": "mutability/AFTER_UPDATE"
+    },
+    {
+      "ID": "R103",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'old-map-clear','mutation');",
+      "Expected": "ok",
+      "Compile": false,
+      "Group": "mutability/AFTER_UPDATE"
+    },
+    {
+      "ID": "R104",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'new-field','stored');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "mutability/persistence/AFTER_UPDATE"
+    },
+    {
+      "ID": "R105",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','flags');",
+      "Expected": "true|true|false|false|false|true|false",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R106",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','operation');",
+      "Expected": "BEFORE_DELETE",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R107",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','size');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R108",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','nulls');",
+      "Expected": "true|false|true|false",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R109",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','sizes');",
+      "Expected": "null|1|null|1",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R110",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','new-score');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R111",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','old-score');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R112",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','new-id-null');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R113",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','old-id-null');",
+      "Expected": "false",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R114",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','new-map-member');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R115",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','old-map-member');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R116",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','new-map-reference');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R117",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','old-map-reference');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R118",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','converted');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R119",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','delta');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R120",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'none','sequence');",
+      "Expected": "BEFORE_DELETE,AFTER_DELETE",
+      "Compile": false,
+      "Group": "context/event/BEFORE_DELETE"
+    },
+    {
+      "ID": "R121",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'score-null','new-score');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/null/BEFORE_DELETE"
+    },
+    {
+      "ID": "R122",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'score-null','old-score');",
+      "Expected": "",
+      "Compile": false,
+      "Group": "context/null/BEFORE_DELETE"
+    },
+    {
+      "ID": "R123",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'new-field','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/BEFORE_DELETE"
+    },
+    {
+      "ID": "R124",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'old-field','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/BEFORE_DELETE"
+    },
+    {
+      "ID": "R125",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'new-null','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/BEFORE_DELETE"
+    },
+    {
+      "ID": "R126",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'new-list-add','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/BEFORE_DELETE"
+    },
+    {
+      "ID": "R127",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'old-list-clear','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/BEFORE_DELETE"
+    },
+    {
+      "ID": "R128",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'new-map-clear','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/BEFORE_DELETE"
+    },
+    {
+      "ID": "R129",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'old-map-clear','mutation');",
+      "Expected": "ok",
+      "Compile": false,
+      "Group": "mutability/BEFORE_DELETE"
+    },
+    {
+      "ID": "R130",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',1,'new-field','stored');",
+      "Expected": "",
+      "Compile": false,
+      "Group": "mutability/persistence/BEFORE_DELETE"
+    },
+    {
+      "ID": "R131",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','flags');",
+      "Expected": "true|false|true|false|false|true|false",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R132",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','operation');",
+      "Expected": "AFTER_DELETE",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R133",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','size');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R134",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','nulls');",
+      "Expected": "true|false|true|false",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R135",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','sizes');",
+      "Expected": "null|1|null|1",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R136",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','new-score');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R137",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','old-score');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R138",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','new-id-null');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R139",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','old-id-null');",
+      "Expected": "false",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R140",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','new-map-member');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R141",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','old-map-member');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R142",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','new-map-reference');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R143",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','old-map-reference');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R144",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','converted');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R145",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','delta');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R146",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','sequence');",
+      "Expected": "BEFORE_DELETE,AFTER_DELETE",
+      "Compile": false,
+      "Group": "context/event/AFTER_DELETE"
+    },
+    {
+      "ID": "R147",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'score-null','new-score');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/null/AFTER_DELETE"
+    },
+    {
+      "ID": "R148",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'score-null','old-score');",
+      "Expected": "",
+      "Compile": false,
+      "Group": "context/null/AFTER_DELETE"
+    },
+    {
+      "ID": "R149",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'new-field','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/AFTER_DELETE"
+    },
+    {
+      "ID": "R150",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'old-field','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/AFTER_DELETE"
+    },
+    {
+      "ID": "R151",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'new-null','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/AFTER_DELETE"
+    },
+    {
+      "ID": "R152",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'new-list-add','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/AFTER_DELETE"
+    },
+    {
+      "ID": "R153",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'old-list-clear','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/AFTER_DELETE"
+    },
+    {
+      "ID": "R154",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'new-map-clear','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/AFTER_DELETE"
+    },
+    {
+      "ID": "R155",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'old-map-clear','mutation');",
+      "Expected": "ok",
+      "Compile": false,
+      "Group": "mutability/AFTER_DELETE"
+    },
+    {
+      "ID": "R156",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'new-field','stored');",
+      "Expected": "",
+      "Compile": false,
+      "Group": "mutability/persistence/AFTER_DELETE"
+    },
+    {
+      "ID": "R157",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','flags');",
+      "Expected": "true|false|true|false|false|false|true",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R158",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','operation');",
+      "Expected": "AFTER_UNDELETE",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R159",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','size');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R160",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','nulls');",
+      "Expected": "false|true|false|true",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R161",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','sizes');",
+      "Expected": "1|null|1|null",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R162",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','new-score');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R163",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','old-score');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R164",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','new-id-null');",
+      "Expected": "false",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R165",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','old-id-null');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R166",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','new-map-member');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R167",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','old-map-member');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R168",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','new-map-reference');",
+      "Expected": "true",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R169",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','old-map-reference');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R170",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','converted');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R171",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','delta');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R172",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','sequence');",
+      "Expected": "AFTER_UNDELETE",
+      "Compile": false,
+      "Group": "context/event/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R173",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'score-null','new-score');",
+      "Expected": "",
+      "Compile": false,
+      "Group": "context/null/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R174",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'score-null','old-score');",
+      "Expected": "absent",
+      "Compile": false,
+      "Group": "context/null/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R175",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'new-field','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R176",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'old-field','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R177",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'new-null','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R178",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'new-list-add','mutation');",
+      "Expected": "none",
+      "Compile": false,
+      "Group": "mutability/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R179",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'old-list-clear','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R180",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'new-map-clear','mutation');",
+      "Expected": "ok",
+      "Compile": false,
+      "Group": "mutability/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R181",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'old-map-clear','mutation');",
+      "Expected": "System.NullPointerException",
+      "Compile": false,
+      "Group": "mutability/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R182",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'new-field','stored');",
+      "Expected": "",
+      "Compile": false,
+      "Group": "mutability/persistence/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R183",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',0,'none','size');",
+      "Expected": "no-event",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_INSERT"
+    },
+    {
+      "ID": "R184",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',0,'none','size');",
+      "Expected": "no-event",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_UPDATE"
+    },
+    {
+      "ID": "R185",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',0,'none','size');",
+      "Expected": "no-event",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_DELETE"
+    },
+    {
+      "ID": "R186",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',0,'none','size');",
+      "Expected": "no-event",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R187",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'none','size');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_INSERT"
+    },
+    {
+      "ID": "R188",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'none','size');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_UPDATE"
+    },
+    {
+      "ID": "R189",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',1,'none','size');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_DELETE"
+    },
+    {
+      "ID": "R190",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',1,'none','size');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R191",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',199,'none','size');",
+      "Expected": "199",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_INSERT"
+    },
+    {
+      "ID": "R192",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',199,'none','size');",
+      "Expected": "199",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_UPDATE"
+    },
+    {
+      "ID": "R193",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',199,'none','size');",
+      "Expected": "199",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_DELETE"
+    },
+    {
+      "ID": "R194",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',199,'none','size');",
+      "Expected": "199",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R195",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',200,'none','size');",
+      "Expected": "200",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_INSERT"
+    },
+    {
+      "ID": "R196",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',200,'none','size');",
+      "Expected": "200",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_UPDATE"
+    },
+    {
+      "ID": "R197",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',200,'none','size');",
+      "Expected": "200",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_DELETE"
+    },
+    {
+      "ID": "R198",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',200,'none','size');",
+      "Expected": "200",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R199",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',201,'none','size');",
+      "Expected": "200,1",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_INSERT"
+    },
+    {
+      "ID": "R200",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',201,'none','size');",
+      "Expected": "200,1",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_UPDATE"
+    },
+    {
+      "ID": "R201",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',201,'none','size');",
+      "Expected": "201",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_DELETE"
+    },
+    {
+      "ID": "R202",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',201,'none','size');",
+      "Expected": "201",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R203",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',400,'none','size');",
+      "Expected": "200,200",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_INSERT"
+    },
+    {
+      "ID": "R204",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',400,'none','size');",
+      "Expected": "200,200",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_UPDATE"
+    },
+    {
+      "ID": "R205",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',400,'none','size');",
+      "Expected": "400",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_DELETE"
+    },
+    {
+      "ID": "R206",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',400,'none','size');",
+      "Expected": "400",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R207",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',401,'none','size');",
+      "Expected": "200,200,1",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_INSERT"
+    },
+    {
+      "ID": "R208",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',401,'none','size');",
+      "Expected": "200,200,1",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_UPDATE"
+    },
+    {
+      "ID": "R209",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',401,'none','size');",
+      "Expected": "401",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_DELETE"
+    },
+    {
+      "ID": "R210",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',401,'none','size');",
+      "Expected": "401",
+      "Compile": false,
+      "Group": "bulk-chunking/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R211",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',0,'recurse','sequence');",
+      "Expected": "BEFORE_INSERT,AFTER_INSERT",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R212",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',0,'recurse','depth');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R213",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',0,'recurse','stored');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R214",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'recurse','sequence');",
+      "Expected": "BEFORE_INSERT,AFTER_INSERT,BEFORE_UPDATE,AFTER_UPDATE",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R215",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'recurse','depth');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R216",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',1,'recurse','stored');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R217",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',2,'recurse','sequence');",
+      "Expected": "BEFORE_INSERT,AFTER_INSERT,BEFORE_UPDATE,AFTER_UPDATE,BEFORE_UPDATE,AFTER_UPDATE",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R218",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',2,'recurse','depth');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R219",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',2,'recurse','stored');",
+      "Expected": "2",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R220",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',3,'recurse','sequence');",
+      "Expected": "BEFORE_INSERT,AFTER_INSERT,BEFORE_UPDATE,AFTER_UPDATE,BEFORE_UPDATE,AFTER_UPDATE,BEFORE_UPDATE,AFTER_UPDATE",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R221",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',3,'recurse','depth');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R222",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',3,'recurse','stored');",
+      "Expected": "3",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R223",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',5,'recurse','sequence');",
+      "Expected": "BEFORE_INSERT,AFTER_INSERT,BEFORE_UPDATE,AFTER_UPDATE,BEFORE_UPDATE,AFTER_UPDATE,BEFORE_UPDATE,AFTER_UPDATE,BEFORE_UPDATE,AFTER_UPDATE,BEFORE_UPDATE,AFTER_UPDATE",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R224",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',5,'recurse','depth');",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R225",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',5,'recurse','stored');",
+      "Expected": "5",
+      "Compile": false,
+      "Group": "recursion"
+    },
+    {
+      "ID": "R226",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',2,'error-all','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "addError/rollback/BEFORE_INSERT"
+    },
+    {
+      "ID": "R227",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',2,'error-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,ok",
+      "Compile": false,
+      "Group": "addError/rollback/BEFORE_INSERT"
+    },
+    {
+      "ID": "R228",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',2,'error-first','atomic');",
+      "Expected": "System.DmlException|1|FIELD_CUSTOM_VALIDATION_EXCEPTION",
+      "Compile": false,
+      "Group": "addError/rollback/BEFORE_INSERT"
+    },
+    {
+      "ID": "R229",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',2,'error-first','persist-count');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "addError/rollback/BEFORE_INSERT"
+    },
+    {
+      "ID": "R230",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',2,'error-all','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_INSERT"
+    },
+    {
+      "ID": "R231",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',2,'error-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,ok",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_INSERT"
+    },
+    {
+      "ID": "R232",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',2,'error-first','atomic');",
+      "Expected": "System.DmlException|1|FIELD_CUSTOM_VALIDATION_EXCEPTION",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_INSERT"
+    },
+    {
+      "ID": "R233",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',2,'error-first','persist-count');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_INSERT"
+    },
+    {
+      "ID": "R234",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',2,'error-all','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "addError/rollback/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R235",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',2,'error-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,ok",
+      "Compile": false,
+      "Group": "addError/rollback/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R236",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',2,'error-first','atomic');",
+      "Expected": "System.DmlException|1|FIELD_CUSTOM_VALIDATION_EXCEPTION",
+      "Compile": false,
+      "Group": "addError/rollback/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R237",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',2,'error-first','persist-count');",
+      "Expected": "2",
+      "Compile": false,
+      "Group": "addError/rollback/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R238",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',2,'error-all','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_UPDATE"
+    },
+    {
+      "ID": "R239",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',2,'error-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,ok",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_UPDATE"
+    },
+    {
+      "ID": "R240",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',2,'error-first','atomic');",
+      "Expected": "System.DmlException|1|FIELD_CUSTOM_VALIDATION_EXCEPTION",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_UPDATE"
+    },
+    {
+      "ID": "R241",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',2,'error-first','persist-count');",
+      "Expected": "2",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_UPDATE"
+    },
+    {
+      "ID": "R242",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',2,'error-all','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "addError/rollback/BEFORE_DELETE"
+    },
+    {
+      "ID": "R243",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',2,'error-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,ok",
+      "Compile": false,
+      "Group": "addError/rollback/BEFORE_DELETE"
+    },
+    {
+      "ID": "R244",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',2,'error-first','atomic');",
+      "Expected": "System.DmlException|1|FIELD_CUSTOM_VALIDATION_EXCEPTION",
+      "Compile": false,
+      "Group": "addError/rollback/BEFORE_DELETE"
+    },
+    {
+      "ID": "R245",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',2,'error-first','persist-count');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "addError/rollback/BEFORE_DELETE"
+    },
+    {
+      "ID": "R246",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',2,'error-all','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_DELETE"
+    },
+    {
+      "ID": "R247",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',2,'error-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,ok",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_DELETE"
+    },
+    {
+      "ID": "R248",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',2,'error-first','atomic');",
+      "Expected": "System.DmlException|1|FIELD_CUSTOM_VALIDATION_EXCEPTION",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_DELETE"
+    },
+    {
+      "ID": "R249",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',2,'error-first','persist-count');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_DELETE"
+    },
+    {
+      "ID": "R250",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',2,'error-all','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R251",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',2,'error-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,ok",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R252",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',2,'error-first','atomic');",
+      "Expected": "System.DmlException|1|FIELD_CUSTOM_VALIDATION_EXCEPTION",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R253",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',2,'error-first','persist-count');",
+      "Expected": "1",
+      "Compile": false,
+      "Group": "addError/rollback/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R254",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',2,'field-error','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 field rejected|Score__c,ok",
+      "Compile": false,
+      "Group": "addError/field/BEFORE_INSERT"
+    },
+    {
+      "ID": "R255",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',1,'throw','atomic');",
+      "Expected": "System.DmlException|1|CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+      "Compile": false,
+      "Group": "exception/rollback/BEFORE_INSERT"
+    },
+    {
+      "ID": "R256",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',2,'field-error','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 field rejected|Score__c,ok",
+      "Compile": false,
+      "Group": "addError/field/AFTER_UPDATE"
+    },
+    {
+      "ID": "R257",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',1,'throw','atomic');",
+      "Expected": "System.DmlException|1|CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+      "Compile": false,
+      "Group": "exception/rollback/AFTER_UPDATE"
+    },
+    {
+      "ID": "R258",
+      "Code": "r=Trigger.isExecuting;",
+      "Expected": "false",
+      "Compile": false,
+      "Group": "context/outside-trigger"
+    },
+    {
+      "ID": "R259",
+      "Code": "r=Trigger.isBefore;",
+      "Expected": "null",
+      "Compile": false,
+      "Group": "context/outside-trigger",
+      "NativeNull": true
+    },
+    {
+      "ID": "R260",
+      "Code": "r=Trigger.isAfter;",
+      "Expected": "null",
+      "Compile": false,
+      "Group": "context/outside-trigger",
+      "NativeNull": true
+    },
+    {
+      "ID": "R261",
+      "Code": "r=Trigger.isInsert;",
+      "Expected": "null",
+      "Compile": false,
+      "Group": "context/outside-trigger",
+      "NativeNull": true
+    },
+    {
+      "ID": "R262",
+      "Code": "r=Trigger.isUpdate;",
+      "Expected": "null",
+      "Compile": false,
+      "Group": "context/outside-trigger",
+      "NativeNull": true
+    },
+    {
+      "ID": "R263",
+      "Code": "r=Trigger.isDelete;",
+      "Expected": "null",
+      "Compile": false,
+      "Group": "context/outside-trigger",
+      "NativeNull": true
+    },
+    {
+      "ID": "R264",
+      "Code": "r=Trigger.isUndelete;",
+      "Expected": "null",
+      "Compile": false,
+      "Group": "context/outside-trigger",
+      "NativeNull": true
+    },
+    {
+      "ID": "R265",
+      "Code": "r=Trigger.size;",
+      "Expected": "null",
+      "Compile": false,
+      "Group": "context/outside-trigger",
+      "NativeNull": true
+    },
+    {
+      "ID": "R266",
+      "Code": "r=Trigger.operationType;",
+      "Expected": "null",
+      "Compile": false,
+      "Group": "context/outside-trigger",
+      "NativeNull": true
+    },
+    {
+      "ID": "R267",
+      "Code": "r=Trigger.new;",
+      "Expected": "null",
+      "Compile": false,
+      "Group": "context/outside-trigger",
+      "NativeNull": true
+    },
+    {
+      "ID": "R268",
+      "Code": "r=Trigger.old;",
+      "Expected": "null",
+      "Compile": false,
+      "Group": "context/outside-trigger",
+      "NativeNull": true
+    },
+    {
+      "ID": "R269",
+      "Code": "r=Trigger.newMap;",
+      "Expected": "null",
+      "Compile": false,
+      "Group": "context/outside-trigger",
+      "NativeNull": true
+    },
+    {
+      "ID": "R270",
+      "Code": "r=Trigger.oldMap;",
+      "Expected": "null",
+      "Compile": false,
+      "Group": "context/outside-trigger",
+      "NativeNull": true
+    },
+    {
+      "ID": "R271",
+      "Code": "r=System.TriggerOperation.valueOf('BEFORE_INSERT');",
+      "Expected": "BEFORE_INSERT",
+      "Compile": false,
+      "Group": "conversion/operationType"
+    },
+    {
+      "ID": "R272",
+      "Code": "r=System.TriggerOperation.valueOf('AFTER_UNDELETE');",
+      "Expected": "AFTER_UNDELETE",
+      "Compile": false,
+      "Group": "conversion/operationType"
+    },
+    {
+      "ID": "R273",
+      "Code": "r=System.TriggerOperation.valueOf('NO_SUCH_EVENT');",
+      "Expected": "EXC|System.NoSuchElementException|No enum value found called NO_SUCH_EVENT",
+      "Compile": false,
+      "Group": "conversion/operationType"
+    },
+    {
+      "ID": "R274",
+      "Code": "r=System.TriggerOperation.valueOf(null);",
+      "Expected": "EXC|System.NoSuchElementException|No enum value found called null",
+      "Compile": false,
+      "Group": "conversion/operationType"
+    },
+    {
+      "ID": "R275",
+      "Code": "r=System.TriggerOperation.values().size();",
+      "Expected": "7",
+      "Compile": false,
+      "Group": "conversion/operationType"
+    },
+    {
+      "ID": "R276",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',2,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "addError/positional-retry/BEFORE_INSERT"
+    },
+    {
+      "ID": "R277",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',2,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "addError/positional-retry/AFTER_INSERT"
+    },
+    {
+      "ID": "R278",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',2,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "addError/positional-retry/BEFORE_UPDATE"
+    },
+    {
+      "ID": "R279",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',2,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "addError/positional-retry/AFTER_UPDATE"
+    },
+    {
+      "ID": "R280",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',2,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "addError/positional-retry/BEFORE_DELETE"
+    },
+    {
+      "ID": "R281",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',2,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "addError/positional-retry/AFTER_DELETE"
+    },
+    {
+      "ID": "R282",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',2,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "addError/positional-retry/AFTER_UNDELETE"
+    },
+    {
+      "ID": "R283",
+      "Code": "r=[SELECT COUNT() FROM A37Probe__c];",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "transaction/rollback-cleanup"
+    },
+    {
+      "ID": "R284",
+      "Code": "r=[SELECT COUNT() FROM A37Probe__c ALL ROWS];",
+      "Expected": "0",
+      "Compile": false,
+      "Group": "transaction/rollback-cleanup"
+    },
+    {
+      "ID": "C001",
+      "Code": "Object r; Trigger.isExecuting=true; pq.out('C001',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Expression cannot be assigned",
+      "Compile": true,
+      "Group": "compile-error/context",
+      "NativeLine": 6
+    },
+    {
+      "ID": "C002",
+      "Code": "Object r; Trigger.isBefore=false; pq.out('C002',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Expression cannot be assigned",
+      "Compile": true,
+      "Group": "compile-error/context",
+      "NativeLine": 6
+    },
+    {
+      "ID": "C003",
+      "Code": "Object r; Trigger.size=2; pq.out('C003',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Expression cannot be assigned",
+      "Compile": true,
+      "Group": "compile-error/context",
+      "NativeLine": 6
+    },
+    {
+      "ID": "C004",
+      "Code": "Object r; Trigger.operationType=System.TriggerOperation.BEFORE_INSERT; pq.out('C004',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Expression cannot be assigned",
+      "Compile": true,
+      "Group": "compile-error/context",
+      "NativeLine": 6
+    },
+    {
+      "ID": "C005",
+      "Code": "Object r; Trigger.new=new List<SObject>(); pq.out('C005',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Expression cannot be assigned",
+      "Compile": true,
+      "Group": "compile-error/context",
+      "NativeLine": 6
+    },
+    {
+      "ID": "C006",
+      "Code": "Object r; Trigger.old=new List<SObject>(); pq.out('C006',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Expression cannot be assigned",
+      "Compile": true,
+      "Group": "compile-error/context",
+      "NativeLine": 6
+    },
+    {
+      "ID": "C007",
+      "Code": "Object r; Trigger.newMap=new Map<Id,SObject>(); pq.out('C007',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Expression cannot be assigned",
+      "Compile": true,
+      "Group": "compile-error/context",
+      "NativeLine": 6
+    },
+    {
+      "ID": "C008",
+      "Code": "Object r; Trigger.oldMap=new Map<Id,SObject>(); pq.out('C008',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Expression cannot be assigned",
+      "Compile": true,
+      "Group": "compile-error/context",
+      "NativeLine": 6
+    },
+    {
+      "ID": "C009",
+      "Code": "Object r; Integer x=Trigger.isInsert; pq.out('C009',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Boolean to Integer",
+      "Compile": true,
+      "Group": "compile-error/context",
+      "NativeLine": 6
+    },
+    {
+      "ID": "C010",
+      "Code": "Object r; String x=Trigger.operationType; pq.out('C010',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from System.TriggerOperation to String",
+      "Compile": true,
+      "Group": "compile-error/context",
+      "NativeLine": 6
+    },
+    {
+      "ID": "C011",
+      "Code": "Object r; System.TriggerOperation x=1; pq.out('C011',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to System.TriggerOperation",
+      "Compile": true,
+      "Group": "compile-error/context",
+      "NativeLine": 6
+    },
+    {
+      "ID": "C012",
+      "Code": "Object r; r=Trigger.noSuchContext; pq.out('C012',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Variable does not exist: noSuchContext",
+      "Compile": true,
+      "Group": "compile-error/context",
+      "NativeLine": 6
+    },
+    {
+      "ID": "C013",
+      "Code": "Object r; r=System.TriggerOperation.BEFORE_UNDELETE; pq.out('C013',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Variable does not exist: BEFORE_UNDELETE",
+      "Compile": true,
+      "Group": "compile-error/context",
+      "NativeLine": 6
+    }
+  ],
+  "Remaining": [],
+  "TicketRows": {},
+  "Controls": [
+    {
+      "ID": "T001",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',2,'error-first','sequence');",
+      "Expected": "BEFORE_INSERT,AFTER_INSERT,BEFORE_INSERT,AFTER_INSERT",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T002",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',2,'error-position-first','sequence');",
+      "Expected": "BEFORE_INSERT,AFTER_INSERT,BEFORE_INSERT",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T003",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',3,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T004",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',5,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Too many retries of batch save in the presence of Apex triggers with failures: when triggers are present partial save requires that some subset of rows save without any errors in order to avoid inconsistent side effects from those triggers. Number of retries: 2|,CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Too many retries of batch save in the presence of Apex triggers with failures: when triggers are present partial save requires that some subset of rows save without any errors in order to avoid inconsistent side effects from those triggers. Number of retries: 2|",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T005",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',2,'error-first','sequence');",
+      "Expected": "BEFORE_INSERT,AFTER_INSERT,BEFORE_INSERT,AFTER_INSERT",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T006",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',2,'error-position-first','sequence');",
+      "Expected": "BEFORE_INSERT,AFTER_INSERT,BEFORE_INSERT,AFTER_INSERT",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T007",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',3,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T008",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',5,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Too many retries of batch save in the presence of Apex triggers with failures: when triggers are present partial save requires that some subset of rows save without any errors in order to avoid inconsistent side effects from those triggers. Number of retries: 2|,CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Too many retries of batch save in the presence of Apex triggers with failures: when triggers are present partial save requires that some subset of rows save without any errors in order to avoid inconsistent side effects from those triggers. Number of retries: 2|",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T009",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',2,'error-first','sequence');",
+      "Expected": "BEFORE_UPDATE,AFTER_UPDATE,BEFORE_UPDATE,AFTER_UPDATE",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T010",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',2,'error-position-first','sequence');",
+      "Expected": "BEFORE_UPDATE,AFTER_UPDATE,BEFORE_UPDATE",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T011",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',3,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T012",
+      "Code": "r=A37Oracle.run('BEFORE_UPDATE',5,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Too many retries of batch save in the presence of Apex triggers with failures: when triggers are present partial save requires that some subset of rows save without any errors in order to avoid inconsistent side effects from those triggers. Number of retries: 2|,CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Too many retries of batch save in the presence of Apex triggers with failures: when triggers are present partial save requires that some subset of rows save without any errors in order to avoid inconsistent side effects from those triggers. Number of retries: 2|",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T013",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',2,'error-first','sequence');",
+      "Expected": "BEFORE_UPDATE,AFTER_UPDATE,BEFORE_UPDATE,AFTER_UPDATE",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T014",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',2,'error-position-first','sequence');",
+      "Expected": "BEFORE_UPDATE,AFTER_UPDATE,BEFORE_UPDATE,AFTER_UPDATE",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T015",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',3,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T016",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',5,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Too many retries of batch save in the presence of Apex triggers with failures: when triggers are present partial save requires that some subset of rows save without any errors in order to avoid inconsistent side effects from those triggers. Number of retries: 2|,CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Too many retries of batch save in the presence of Apex triggers with failures: when triggers are present partial save requires that some subset of rows save without any errors in order to avoid inconsistent side effects from those triggers. Number of retries: 2|",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T017",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',2,'error-first','sequence');",
+      "Expected": "BEFORE_DELETE,AFTER_DELETE,BEFORE_DELETE,AFTER_DELETE",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T018",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',2,'error-position-first','sequence');",
+      "Expected": "BEFORE_DELETE,AFTER_DELETE,BEFORE_DELETE",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T019",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',3,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T020",
+      "Code": "r=A37Oracle.run('BEFORE_DELETE',5,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,DELETE_FAILED|Too many retries of batch save in the presence of Apex triggers with failures: when triggers are present partial save requires that some subset of rows save without any errors in order to avoid inconsistent side effects from those triggers. Number of retries: 2|,DELETE_FAILED|Too many retries of batch save in the presence of Apex triggers with failures: when triggers are present partial save requires that some subset of rows save without any errors in order to avoid inconsistent side effects from those triggers. Number of retries: 2|",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T021",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',2,'error-first','sequence');",
+      "Expected": "BEFORE_DELETE,AFTER_DELETE,BEFORE_DELETE,AFTER_DELETE",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T022",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',2,'error-position-first','sequence');",
+      "Expected": "BEFORE_DELETE,AFTER_DELETE,BEFORE_DELETE,AFTER_DELETE",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T023",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',3,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T024",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',5,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,DELETE_FAILED|Too many retries of batch save in the presence of Apex triggers with failures: when triggers are present partial save requires that some subset of rows save without any errors in order to avoid inconsistent side effects from those triggers. Number of retries: 2|,DELETE_FAILED|Too many retries of batch save in the presence of Apex triggers with failures: when triggers are present partial save requires that some subset of rows save without any errors in order to avoid inconsistent side effects from those triggers. Number of retries: 2|",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T025",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',2,'error-first','sequence');",
+      "Expected": "AFTER_UNDELETE,AFTER_UNDELETE",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T026",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',2,'error-position-first','sequence');",
+      "Expected": "AFTER_UNDELETE,AFTER_UNDELETE",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T027",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',3,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "T028",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',5,'error-position-first','outcome');",
+      "Expected": "FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,FIELD_CUSTOM_VALIDATION_EXCEPTION|A37 record rejected|,UNDELETE_FAILED|Too many retries of batch save in the presence of Apex triggers with failures: when triggers are present partial save requires that some subset of rows save without any errors in order to avoid inconsistent side effects from those triggers. Number of retries: 2|,UNDELETE_FAILED|Too many retries of batch save in the presence of Apex triggers with failures: when triggers are present partial save requires that some subset of rows save without any errors in order to avoid inconsistent side effects from those triggers. Number of retries: 2|",
+      "Compile": false,
+      "Group": "retry"
+    },
+    {
+      "ID": "L001",
+      "Code": "Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); String outcome=A37Oracle.run('BEFORE_INSERT',2,'none','outcome'); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "4|2",
+      "Compile": false,
+      "Group": "retry-limits"
+    },
+    {
+      "ID": "L002",
+      "Code": "Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); String outcome=A37Oracle.run('BEFORE_INSERT',2,'error-first','outcome'); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "4|2",
+      "Compile": false,
+      "Group": "retry-limits"
+    },
+    {
+      "ID": "L003",
+      "Code": "Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); String outcome=A37Oracle.run('BEFORE_INSERT',2,'error-position-first','outcome'); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "4|2",
+      "Compile": false,
+      "Group": "retry-limits"
+    },
+    {
+      "ID": "L004",
+      "Code": "Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); String outcome=A37Oracle.run('AFTER_INSERT',2,'none','outcome'); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "4|2",
+      "Compile": false,
+      "Group": "retry-limits"
+    },
+    {
+      "ID": "L005",
+      "Code": "Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); String outcome=A37Oracle.run('AFTER_INSERT',2,'error-first','outcome'); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "4|2",
+      "Compile": false,
+      "Group": "retry-limits"
+    },
+    {
+      "ID": "L006",
+      "Code": "Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); String outcome=A37Oracle.run('AFTER_INSERT',2,'error-position-first','outcome'); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "4|2",
+      "Compile": false,
+      "Group": "retry-limits"
+    },
+    {
+      "ID": "L007",
+      "Code": "Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); String outcome=A37Oracle.run('AFTER_UPDATE',2,'none','outcome'); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "5|4",
+      "Compile": false,
+      "Group": "retry-limits"
+    },
+    {
+      "ID": "L008",
+      "Code": "Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); String outcome=A37Oracle.run('AFTER_UPDATE',2,'error-first','outcome'); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "5|4",
+      "Compile": false,
+      "Group": "retry-limits"
+    },
+    {
+      "ID": "L009",
+      "Code": "Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); String outcome=A37Oracle.run('AFTER_UPDATE',2,'error-position-first','outcome'); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "5|4",
+      "Compile": false,
+      "Group": "retry-limits"
+    },
+    {
+      "ID": "L010",
+      "Code": "Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); String outcome=A37Oracle.run('AFTER_UNDELETE',2,'none','outcome'); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "6|6",
+      "Compile": false,
+      "Group": "retry-limits"
+    },
+    {
+      "ID": "L011",
+      "Code": "Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); String outcome=A37Oracle.run('AFTER_UNDELETE',2,'error-first','outcome'); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "6|6",
+      "Compile": false,
+      "Group": "retry-limits"
+    },
+    {
+      "ID": "L012",
+      "Code": "Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); String outcome=A37Oracle.run('AFTER_UNDELETE',2,'error-position-first','outcome'); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "6|6",
+      "Compile": false,
+      "Group": "retry-limits"
+    },
+    {
+      "ID": "B001",
+      "Code": "r=A37Oracle.run('BEFORE_INSERT',3,'error-first','size')+'|'+A37Oracle.observations.get('AFTER_INSERT').get(0).get('size')+'|'+A37Oracle.observations.get('AFTER_INSERT').get(1).get('size');",
+      "Expected": "3,2|2|2",
+      "Compile": false,
+      "Group": "retry-sizes"
+    },
+    {
+      "ID": "B002",
+      "Code": "r=A37Oracle.run('AFTER_INSERT',201,'none','sequence');",
+      "Expected": "BEFORE_INSERT,AFTER_INSERT,BEFORE_INSERT,AFTER_INSERT",
+      "Compile": false,
+      "Group": "retry-sizes"
+    },
+    {
+      "ID": "B003",
+      "Code": "r=A37Oracle.run('AFTER_UPDATE',201,'none','sequence');",
+      "Expected": "BEFORE_UPDATE,AFTER_UPDATE,BEFORE_UPDATE,AFTER_UPDATE",
+      "Compile": false,
+      "Group": "retry-sizes"
+    },
+    {
+      "ID": "B004",
+      "Code": "r=A37Oracle.run('AFTER_DELETE',201,'none','sequence');",
+      "Expected": "BEFORE_DELETE,AFTER_DELETE",
+      "Compile": false,
+      "Group": "retry-sizes"
+    },
+    {
+      "ID": "B005",
+      "Code": "r=A37Oracle.run('AFTER_UNDELETE',201,'none','sequence');",
+      "Expected": "AFTER_UNDELETE",
+      "Compile": false,
+      "Group": "retry-sizes"
+    },
+    {
+      "ID": "N001",
+      "Code": "Savepoint sp=Database.setSavepoint();\ntry {\n A37Oracle.enabled=false;\n A37Probe__c row=new A37Probe__c(Name='A37-number-control',Score__c=0);\n String constructorText=String.valueOf(row.Score__c);\n A37Oracle.events=new List<String>();\n A37Oracle.observations=new Map<String,List<Map<String,String>>>();\n A37Oracle.targetEvent='BEFORE_INSERT'; A37Oracle.action='none';\n A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;\n A37Oracle.enabled=true; insert row; A37Oracle.enabled=false;\n A37Probe__c queried=[SELECT Score__c FROM A37Probe__c WHERE Id=:row.Id];\n r=constructorText+'|'+A37Oracle.observations.get('BEFORE_INSERT')[0].get('new-score')+'|'+A37Oracle.observations.get('AFTER_INSERT')[0].get('new-score')+'|'+String.valueOf(queried.Score__c)+'|'+String.valueOf(row.Score__c);\n} finally { A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp); }",
+      "Expected": "0|0|0|0|0",
+      "Compile": false,
+      "Group": "org"
+    },
+    {
+      "ID": "N002",
+      "Code": "Savepoint sp=Database.setSavepoint();\ntry {\n A37Oracle.enabled=false;\n A37Probe__c row=new A37Probe__c(Name='A37-number-control',Score__c=1);\n String constructorText=String.valueOf(row.Score__c);\n A37Oracle.events=new List<String>();\n A37Oracle.observations=new Map<String,List<Map<String,String>>>();\n A37Oracle.targetEvent='BEFORE_INSERT'; A37Oracle.action='none';\n A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;\n A37Oracle.enabled=true; insert row; A37Oracle.enabled=false;\n A37Probe__c queried=[SELECT Score__c FROM A37Probe__c WHERE Id=:row.Id];\n r=constructorText+'|'+A37Oracle.observations.get('BEFORE_INSERT')[0].get('new-score')+'|'+A37Oracle.observations.get('AFTER_INSERT')[0].get('new-score')+'|'+String.valueOf(queried.Score__c)+'|'+String.valueOf(row.Score__c);\n} finally { A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp); }",
+      "Expected": "1|1|1|1|1",
+      "Compile": false,
+      "Group": "org"
+    },
+    {
+      "ID": "N003",
+      "Code": "Savepoint sp=Database.setSavepoint();\ntry {\n A37Oracle.enabled=false;\n A37Probe__c row=new A37Probe__c(Name='A37-number-control',Score__c=0.00);\n String constructorText=String.valueOf(row.Score__c);\n A37Oracle.events=new List<String>();\n A37Oracle.observations=new Map<String,List<Map<String,String>>>();\n A37Oracle.targetEvent='BEFORE_INSERT'; A37Oracle.action='none';\n A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;\n A37Oracle.enabled=true; insert row; A37Oracle.enabled=false;\n A37Probe__c queried=[SELECT Score__c FROM A37Probe__c WHERE Id=:row.Id];\n r=constructorText+'|'+A37Oracle.observations.get('BEFORE_INSERT')[0].get('new-score')+'|'+A37Oracle.observations.get('AFTER_INSERT')[0].get('new-score')+'|'+String.valueOf(queried.Score__c)+'|'+String.valueOf(row.Score__c);\n} finally { A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp); }",
+      "Expected": "0.00|0.00|0.00|0|0.00",
+      "Compile": false,
+      "Group": "org"
+    },
+    {
+      "ID": "N004",
+      "Code": "Savepoint sp=Database.setSavepoint();\ntry {\n A37Oracle.enabled=false;\n A37Probe__c row=new A37Probe__c(Name='A37-number-control',Score__c=9.00);\n String constructorText=String.valueOf(row.Score__c);\n A37Oracle.events=new List<String>();\n A37Oracle.observations=new Map<String,List<Map<String,String>>>();\n A37Oracle.targetEvent='BEFORE_INSERT'; A37Oracle.action='none';\n A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;\n A37Oracle.enabled=true; insert row; A37Oracle.enabled=false;\n A37Probe__c queried=[SELECT Score__c FROM A37Probe__c WHERE Id=:row.Id];\n r=constructorText+'|'+A37Oracle.observations.get('BEFORE_INSERT')[0].get('new-score')+'|'+A37Oracle.observations.get('AFTER_INSERT')[0].get('new-score')+'|'+String.valueOf(queried.Score__c)+'|'+String.valueOf(row.Score__c);\n} finally { A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp); }",
+      "Expected": "9.00|9.00|9.00|9|9.00",
+      "Compile": false,
+      "Group": "org"
+    },
+    {
+      "ID": "N005",
+      "Code": "Savepoint sp=Database.setSavepoint();\ntry {\n A37Oracle.enabled=false;\n A37Probe__c row=new A37Probe__c(Name='A37-number-control',Score__c=Decimal.valueOf('1.25'));\n String constructorText=String.valueOf(row.Score__c);\n A37Oracle.events=new List<String>();\n A37Oracle.observations=new Map<String,List<Map<String,String>>>();\n A37Oracle.targetEvent='BEFORE_INSERT'; A37Oracle.action='none';\n A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;\n A37Oracle.enabled=true; insert row; A37Oracle.enabled=false;\n A37Probe__c queried=[SELECT Score__c FROM A37Probe__c WHERE Id=:row.Id];\n r=constructorText+'|'+A37Oracle.observations.get('BEFORE_INSERT')[0].get('new-score')+'|'+A37Oracle.observations.get('AFTER_INSERT')[0].get('new-score')+'|'+String.valueOf(queried.Score__c)+'|'+String.valueOf(row.Score__c);\n} finally { A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp); }",
+      "Expected": "1.25|1.25|1.25|1.25|1.25",
+      "Compile": false,
+      "Group": "org"
+    },
+    {
+      "ID": "N006",
+      "Code": "Savepoint sp=Database.setSavepoint();\ntry {\n A37Oracle.enabled=false;\n A37Probe__c row=new A37Probe__c(Name='A37-number-control',Score__c=Decimal.valueOf('-1.25'));\n String constructorText=String.valueOf(row.Score__c);\n A37Oracle.events=new List<String>();\n A37Oracle.observations=new Map<String,List<Map<String,String>>>();\n A37Oracle.targetEvent='BEFORE_INSERT'; A37Oracle.action='none';\n A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;\n A37Oracle.enabled=true; insert row; A37Oracle.enabled=false;\n A37Probe__c queried=[SELECT Score__c FROM A37Probe__c WHERE Id=:row.Id];\n r=constructorText+'|'+A37Oracle.observations.get('BEFORE_INSERT')[0].get('new-score')+'|'+A37Oracle.observations.get('AFTER_INSERT')[0].get('new-score')+'|'+String.valueOf(queried.Score__c)+'|'+String.valueOf(row.Score__c);\n} finally { A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp); }",
+      "Expected": "-1.25|-1.25|-1.25|-1.25|-1.25",
+      "Compile": false,
+      "Group": "org"
+    },
+    {
+      "ID": "N007",
+      "Code": "Savepoint sp=Database.setSavepoint();\ntry {\n A37Oracle.enabled=false;\n A37Probe__c row=new A37Probe__c(Name='A37-number-control',Score__c=null);\n String constructorText=String.valueOf(row.Score__c);\n A37Oracle.events=new List<String>();\n A37Oracle.observations=new Map<String,List<Map<String,String>>>();\n A37Oracle.targetEvent='BEFORE_INSERT'; A37Oracle.action='none';\n A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;\n A37Oracle.enabled=true; insert row; A37Oracle.enabled=false;\n A37Probe__c queried=[SELECT Score__c FROM A37Probe__c WHERE Id=:row.Id];\n r=constructorText+'|'+A37Oracle.observations.get('BEFORE_INSERT')[0].get('new-score')+'|'+A37Oracle.observations.get('AFTER_INSERT')[0].get('new-score')+'|'+String.valueOf(queried.Score__c)+'|'+String.valueOf(row.Score__c);\n} finally { A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp); }",
+      "Expected": "null|null|null|null|null",
+      "Compile": false,
+      "Group": "org"
+    },
+    {
+      "ID": "N008",
+      "Code": "Savepoint sp=Database.setSavepoint();\ntry {\n A37Oracle.enabled=false;\n A37Probe__c row=new A37Probe__c(Name='A37-number-control',Score__c=Decimal.valueOf('0.000'));\n String constructorText=String.valueOf(row.Score__c);\n A37Oracle.events=new List<String>();\n A37Oracle.observations=new Map<String,List<Map<String,String>>>();\n A37Oracle.targetEvent='BEFORE_INSERT'; A37Oracle.action='none';\n A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;\n A37Oracle.enabled=true; insert row; A37Oracle.enabled=false;\n A37Probe__c queried=[SELECT Score__c FROM A37Probe__c WHERE Id=:row.Id];\n r=constructorText+'|'+A37Oracle.observations.get('BEFORE_INSERT')[0].get('new-score')+'|'+A37Oracle.observations.get('AFTER_INSERT')[0].get('new-score')+'|'+String.valueOf(queried.Score__c)+'|'+String.valueOf(row.Score__c);\n} finally { A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp); }",
+      "Expected": "0.000|0.000|0.000|0|0.000",
+      "Compile": false,
+      "Group": "org"
+    },
+    {
+      "ID": "N009",
+      "Code": "Savepoint sp=Database.setSavepoint();\ntry {\n A37Oracle.enabled=false;\n A37Probe__c row=new A37Probe__c(Name='A37-number-control',Score__c=Decimal.valueOf('1.20'));\n String constructorText=String.valueOf(row.Score__c);\n A37Oracle.events=new List<String>();\n A37Oracle.observations=new Map<String,List<Map<String,String>>>();\n A37Oracle.targetEvent='BEFORE_INSERT'; A37Oracle.action='none';\n A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;\n A37Oracle.enabled=true; insert row; A37Oracle.enabled=false;\n A37Probe__c queried=[SELECT Score__c FROM A37Probe__c WHERE Id=:row.Id];\n r=constructorText+'|'+A37Oracle.observations.get('BEFORE_INSERT')[0].get('new-score')+'|'+A37Oracle.observations.get('AFTER_INSERT')[0].get('new-score')+'|'+String.valueOf(queried.Score__c)+'|'+String.valueOf(row.Score__c);\n} finally { A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp); }",
+      "Expected": "1.20|1.20|1.20|1.2|1.20",
+      "Compile": false,
+      "Group": "org"
+    },
+    {
+      "ID": "N010",
+      "Code": "Savepoint sp=Database.setSavepoint();\ntry {\n A37Oracle.enabled=false;\n A37Probe__c row=new A37Probe__c(Name='A37-number-control',Score__c=Decimal.valueOf('-1.200'));\n String constructorText=String.valueOf(row.Score__c);\n A37Oracle.events=new List<String>();\n A37Oracle.observations=new Map<String,List<Map<String,String>>>();\n A37Oracle.targetEvent='BEFORE_INSERT'; A37Oracle.action='none';\n A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;\n A37Oracle.enabled=true; insert row; A37Oracle.enabled=false;\n A37Probe__c queried=[SELECT Score__c FROM A37Probe__c WHERE Id=:row.Id];\n r=constructorText+'|'+A37Oracle.observations.get('BEFORE_INSERT')[0].get('new-score')+'|'+A37Oracle.observations.get('AFTER_INSERT')[0].get('new-score')+'|'+String.valueOf(queried.Score__c)+'|'+String.valueOf(row.Score__c);\n} finally { A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp); }",
+      "Expected": "-1.200|-1.200|-1.200|-1.2|-1.200",
+      "Compile": false,
+      "Group": "org"
+    },
+    {
+      "ID": "N011",
+      "Code": "Savepoint sp=Database.setSavepoint();\ntry {\n A37Oracle.enabled=false;\n A37Probe__c row=new A37Probe__c(Name='A37-number-control',Score__c=Decimal.valueOf('1.2500'));\n String constructorText=String.valueOf(row.Score__c);\n A37Oracle.events=new List<String>();\n A37Oracle.observations=new Map<String,List<Map<String,String>>>();\n A37Oracle.targetEvent='BEFORE_INSERT'; A37Oracle.action='none';\n A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;\n A37Oracle.enabled=true; insert row; A37Oracle.enabled=false;\n A37Probe__c queried=[SELECT Score__c FROM A37Probe__c WHERE Id=:row.Id];\n r=constructorText+'|'+A37Oracle.observations.get('BEFORE_INSERT')[0].get('new-score')+'|'+A37Oracle.observations.get('AFTER_INSERT')[0].get('new-score')+'|'+String.valueOf(queried.Score__c)+'|'+String.valueOf(row.Score__c);\n} finally { A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp); }",
+      "Expected": "1.2500|1.2500|1.2500|1.25|1.2500",
+      "Compile": false,
+      "Group": "org"
+    },
+    {
+      "ID": "K001",
+      "Code": "Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); Savepoint sp=Database.setSavepoint(); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows); Database.rollback(sp); Database.releaseSavepoint(sp);",
+      "Expected": "1|0",
+      "Compile": false,
+      "Group": "savepoint-limits"
+    },
+    {
+      "ID": "K002",
+      "Code": "Savepoint sp=Database.setSavepoint(); Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); Database.rollback(sp); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows); Database.releaseSavepoint(sp);",
+      "Expected": "1|0",
+      "Compile": false,
+      "Group": "savepoint-limits"
+    },
+    {
+      "ID": "K003",
+      "Code": "Savepoint sp=Database.setSavepoint(); Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); Database.releaseSavepoint(sp); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "1|0",
+      "Compile": false,
+      "Group": "savepoint-limits"
+    },
+    {
+      "ID": "K004",
+      "Code": "Savepoint sp=Database.setSavepoint(); Database.rollback(sp); Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); Database.releaseSavepoint(sp); r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "1|0",
+      "Compile": false,
+      "Group": "savepoint-limits"
+    },
+    {
+      "ID": "K005",
+      "Code": "Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); String status='ok'; try {Database.releaseSavepoint(null);} catch(Exception e) {status=e.getTypeName();} r=status+'|'+String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "System.NullPointerException|0|0",
+      "Compile": false,
+      "Group": "savepoint-limits"
+    },
+    {
+      "ID": "K006",
+      "Code": "Savepoint sp=Database.setSavepoint(); Database.releaseSavepoint(sp); Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); String status='ok'; try {Database.releaseSavepoint(sp);} catch(Exception e) {status=e.getTypeName();} r=status+'|'+String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);",
+      "Expected": "System.TypeException|0|0",
+      "Compile": false,
+      "Group": "savepoint-limits"
+    },
+    {
+      "ID": "M001",
+      "Code": "Savepoint sp=Database.setSavepoint(); try {A37Oracle.enabled=false;List<A37Probe__c> subjects=new List<A37Probe__c>{new A37Probe__c(Name='A37-0',Score__c=0),new A37Probe__c(Name='A37-1',Score__c=0)};A37Oracle.events=new List<String>(); A37Oracle.observations=new Map<String,List<Map<String,String>>>();A37Oracle.targetEvent='BEFORE_INSERT'; A37Oracle.action='none'; A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); A37Oracle.enabled=true;Database.insert(subjects,false); A37Oracle.enabled=false;r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);} finally {A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp);}",
+      "Expected": "1|2",
+      "Compile": false,
+      "Group": "retry-operation-limits"
+    },
+    {
+      "ID": "M002",
+      "Code": "Savepoint sp=Database.setSavepoint(); try {A37Oracle.enabled=false;List<A37Probe__c> subjects=new List<A37Probe__c>{new A37Probe__c(Name='A37-0',Score__c=0),new A37Probe__c(Name='A37-1',Score__c=0)};A37Oracle.events=new List<String>(); A37Oracle.observations=new Map<String,List<Map<String,String>>>();A37Oracle.targetEvent='BEFORE_INSERT'; A37Oracle.action='error-first'; A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); A37Oracle.enabled=true;Database.insert(subjects,false); A37Oracle.enabled=false;r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);} finally {A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp);}",
+      "Expected": "1|2",
+      "Compile": false,
+      "Group": "retry-operation-limits"
+    },
+    {
+      "ID": "M003",
+      "Code": "Savepoint sp=Database.setSavepoint(); try {A37Oracle.enabled=false;List<A37Probe__c> subjects=new List<A37Probe__c>{new A37Probe__c(Name='A37-0',Score__c=0),new A37Probe__c(Name='A37-1',Score__c=0)};A37Oracle.events=new List<String>(); A37Oracle.observations=new Map<String,List<Map<String,String>>>();A37Oracle.targetEvent='BEFORE_INSERT'; A37Oracle.action='error-position-first'; A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); A37Oracle.enabled=true;Database.insert(subjects,false); A37Oracle.enabled=false;r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);} finally {A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp);}",
+      "Expected": "1|2",
+      "Compile": false,
+      "Group": "retry-operation-limits"
+    },
+    {
+      "ID": "M004",
+      "Code": "Savepoint sp=Database.setSavepoint(); try {A37Oracle.enabled=false;List<A37Probe__c> subjects=new List<A37Probe__c>{new A37Probe__c(Name='A37-0',Score__c=0),new A37Probe__c(Name='A37-1',Score__c=0)};A37Oracle.events=new List<String>(); A37Oracle.observations=new Map<String,List<Map<String,String>>>();A37Oracle.targetEvent='AFTER_INSERT'; A37Oracle.action='none'; A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); A37Oracle.enabled=true;Database.insert(subjects,false); A37Oracle.enabled=false;r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);} finally {A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp);}",
+      "Expected": "1|2",
+      "Compile": false,
+      "Group": "retry-operation-limits"
+    },
+    {
+      "ID": "M005",
+      "Code": "Savepoint sp=Database.setSavepoint(); try {A37Oracle.enabled=false;List<A37Probe__c> subjects=new List<A37Probe__c>{new A37Probe__c(Name='A37-0',Score__c=0),new A37Probe__c(Name='A37-1',Score__c=0)};A37Oracle.events=new List<String>(); A37Oracle.observations=new Map<String,List<Map<String,String>>>();A37Oracle.targetEvent='AFTER_INSERT'; A37Oracle.action='error-first'; A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); A37Oracle.enabled=true;Database.insert(subjects,false); A37Oracle.enabled=false;r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);} finally {A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp);}",
+      "Expected": "1|2",
+      "Compile": false,
+      "Group": "retry-operation-limits"
+    },
+    {
+      "ID": "M006",
+      "Code": "Savepoint sp=Database.setSavepoint(); try {A37Oracle.enabled=false;List<A37Probe__c> subjects=new List<A37Probe__c>{new A37Probe__c(Name='A37-0',Score__c=0),new A37Probe__c(Name='A37-1',Score__c=0)};A37Oracle.events=new List<String>(); A37Oracle.observations=new Map<String,List<Map<String,String>>>();A37Oracle.targetEvent='AFTER_INSERT'; A37Oracle.action='error-position-first'; A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); A37Oracle.enabled=true;Database.insert(subjects,false); A37Oracle.enabled=false;r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);} finally {A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp);}",
+      "Expected": "1|2",
+      "Compile": false,
+      "Group": "retry-operation-limits"
+    },
+    {
+      "ID": "M007",
+      "Code": "Savepoint sp=Database.setSavepoint(); try {A37Oracle.enabled=false;List<A37Probe__c> subjects=new List<A37Probe__c>{new A37Probe__c(Name='A37-0',Score__c=0),new A37Probe__c(Name='A37-1',Score__c=0)};insert subjects;for(A37Probe__c subject:subjects) subject.Score__c=1;A37Oracle.events=new List<String>(); A37Oracle.observations=new Map<String,List<Map<String,String>>>();A37Oracle.targetEvent='AFTER_UPDATE'; A37Oracle.action='none'; A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); A37Oracle.enabled=true;Database.update(subjects,false); A37Oracle.enabled=false;r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);} finally {A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp);}",
+      "Expected": "1|2",
+      "Compile": false,
+      "Group": "retry-operation-limits"
+    },
+    {
+      "ID": "M008",
+      "Code": "Savepoint sp=Database.setSavepoint(); try {A37Oracle.enabled=false;List<A37Probe__c> subjects=new List<A37Probe__c>{new A37Probe__c(Name='A37-0',Score__c=0),new A37Probe__c(Name='A37-1',Score__c=0)};insert subjects;for(A37Probe__c subject:subjects) subject.Score__c=1;A37Oracle.events=new List<String>(); A37Oracle.observations=new Map<String,List<Map<String,String>>>();A37Oracle.targetEvent='AFTER_UPDATE'; A37Oracle.action='error-first'; A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); A37Oracle.enabled=true;Database.update(subjects,false); A37Oracle.enabled=false;r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);} finally {A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp);}",
+      "Expected": "1|2",
+      "Compile": false,
+      "Group": "retry-operation-limits"
+    },
+    {
+      "ID": "M009",
+      "Code": "Savepoint sp=Database.setSavepoint(); try {A37Oracle.enabled=false;List<A37Probe__c> subjects=new List<A37Probe__c>{new A37Probe__c(Name='A37-0',Score__c=0),new A37Probe__c(Name='A37-1',Score__c=0)};insert subjects;for(A37Probe__c subject:subjects) subject.Score__c=1;A37Oracle.events=new List<String>(); A37Oracle.observations=new Map<String,List<Map<String,String>>>();A37Oracle.targetEvent='AFTER_UPDATE'; A37Oracle.action='error-position-first'; A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); A37Oracle.enabled=true;Database.update(subjects,false); A37Oracle.enabled=false;r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);} finally {A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp);}",
+      "Expected": "1|2",
+      "Compile": false,
+      "Group": "retry-operation-limits"
+    },
+    {
+      "ID": "M010",
+      "Code": "Savepoint sp=Database.setSavepoint(); try {A37Oracle.enabled=false;List<A37Probe__c> subjects=new List<A37Probe__c>{new A37Probe__c(Name='A37-0',Score__c=0),new A37Probe__c(Name='A37-1',Score__c=0)};insert subjects;delete subjects;A37Oracle.events=new List<String>(); A37Oracle.observations=new Map<String,List<Map<String,String>>>();A37Oracle.targetEvent='AFTER_UNDELETE'; A37Oracle.action='none'; A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); A37Oracle.enabled=true;Database.undelete(subjects,false); A37Oracle.enabled=false;r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);} finally {A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp);}",
+      "Expected": "1|2",
+      "Compile": false,
+      "Group": "retry-operation-limits"
+    },
+    {
+      "ID": "M011",
+      "Code": "Savepoint sp=Database.setSavepoint(); try {A37Oracle.enabled=false;List<A37Probe__c> subjects=new List<A37Probe__c>{new A37Probe__c(Name='A37-0',Score__c=0),new A37Probe__c(Name='A37-1',Score__c=0)};insert subjects;delete subjects;A37Oracle.events=new List<String>(); A37Oracle.observations=new Map<String,List<Map<String,String>>>();A37Oracle.targetEvent='AFTER_UNDELETE'; A37Oracle.action='error-first'; A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); A37Oracle.enabled=true;Database.undelete(subjects,false); A37Oracle.enabled=false;r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);} finally {A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp);}",
+      "Expected": "1|2",
+      "Compile": false,
+      "Group": "retry-operation-limits"
+    },
+    {
+      "ID": "M012",
+      "Code": "Savepoint sp=Database.setSavepoint(); try {A37Oracle.enabled=false;List<A37Probe__c> subjects=new List<A37Probe__c>{new A37Probe__c(Name='A37-0',Score__c=0),new A37Probe__c(Name='A37-1',Score__c=0)};insert subjects;delete subjects;A37Oracle.events=new List<String>(); A37Oracle.observations=new Map<String,List<Map<String,String>>>();A37Oracle.targetEvent='AFTER_UNDELETE'; A37Oracle.action='error-position-first'; A37Oracle.recursionDepth=0; A37Oracle.recursionLimit=0;Integer statements=Limits.getDmlStatements(); Integer rows=Limits.getDmlRows(); A37Oracle.enabled=true;Database.undelete(subjects,false); A37Oracle.enabled=false;r=String.valueOf(Limits.getDmlStatements()-statements)+'|'+String.valueOf(Limits.getDmlRows()-rows);} finally {A37Oracle.enabled=false; Database.rollback(sp); Database.releaseSavepoint(sp);}",
+      "Expected": "1|2",
+      "Compile": false,
+      "Group": "retry-operation-limits"
+    }
+  ]
+}

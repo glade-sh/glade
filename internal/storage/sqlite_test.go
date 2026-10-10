@@ -178,3 +178,73 @@ func TestSQLiteStoreSavesAndLoadsLargeFixture(t *testing.T) {
 		t.Fatalf("missing last generated Account record")
 	}
 }
+
+func TestSQLiteStoreOrgDomainURLRoundTrip(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "glade.db")
+	store, err := OpenSQLite(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = store.Close() })
+	org, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if org.DomainURL != "" {
+		t.Fatalf("old/unset org materialized a domain: %q", org.DomainURL)
+	}
+	org.DomainURL = " https://stored.example.test:8443/ "
+	if err := store.Save(org); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+	store, err = OpenSQLite(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loaded.DomainURL != "https://stored.example.test:8443" {
+		t.Fatalf("persisted origin = %q", loaded.DomainURL)
+	}
+	version, err := store.SchemaVersion()
+	if err != nil || version != 1 {
+		t.Fatalf("schema version = %d, %v; want unchanged version 1", version, err)
+	}
+}
+
+func TestSQLiteStoreRejectsInvalidOrgDomainURLWithoutReplacingState(t *testing.T) {
+	store, err := OpenSQLite(filepath.Join(t.TempDir(), "glade.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	org := NewOrgState()
+	org.OrgID = "original-org"
+	org.DomainURL = "https://stored.example.test"
+	if err := store.Save(org); err != nil {
+		t.Fatal(err)
+	}
+	org.OrgID = "replacement-org"
+	org.DomainURL = "https://invalid.example.test#fragment"
+	if err := store.Save(org); err == nil {
+		t.Fatal("Save accepted an origin with a fragment")
+	}
+	loaded, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loaded.OrgID != "original-org" || loaded.DomainURL != "https://stored.example.test" {
+		t.Fatalf("invalid Save replaced stored metadata: %#v", loaded)
+	}
+	if _, err := store.db.Exec(`update org_meta set value = ? where key = ?`, "https://invalid.example.test?", metaOrgDomainURL); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Load(); err == nil {
+		t.Fatal("Load accepted an invalid persisted origin")
+	}
+}

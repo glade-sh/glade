@@ -1,0 +1,15 @@
+R001	id-map
+R002	string-class
+R003	base-base
+R004	base-base
+R005	narrow-leaf
+R006	base-base
+R007	map
+R008	List<String>
+C001	COMPILE_ERROR	line 6: Ambiguous method signature: void choose(NarrowValue, LeafValue)
+C002	COMPILE_ERROR	line 6: Ambiguous method signature: void choose(String, String)
+C003	COMPILE_ERROR	line 6: Ambiguous method signature: void choose(NULL, NULL)
+C004	COMPILE_ERROR	line 6: Ambiguous method signature: void choose(Integer, String)
+C005	COMPILE_ERROR	line 27: Ambiguous method signature: void nullOnly(NULL)
+C006	COMPILE_ERROR	line 27: Method does not exist or incorrect signature: void stringOnly(Object) from the type OverloadProbe
+C007	COMPILE_ERROR	line 6: Ambiguous method signature: void sequence(NULL)

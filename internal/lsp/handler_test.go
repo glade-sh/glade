@@ -36,12 +36,16 @@ func TestHandleJSONInitializeAndShutdown(t *testing.T) {
 		t.Fatalf("capabilities = %#v", caps)
 	}
 
+	openParsers := apexast.OpenParsersForTesting()
 	data, err = handler.HandleJSON([]byte(`{"jsonrpc":"2.0","id":2,"method":"shutdown"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !handler.Shutdown() {
 		t.Fatal("shutdown flag not set")
+	}
+	if got := apexast.OpenParsersForTesting(); got >= openParsers {
+		t.Fatalf("shutdown did not close its parser: open before = %d, after = %d", openParsers, got)
 	}
 	var shutdown map[string]json.RawMessage
 	if err := json.Unmarshal(data, &shutdown); err != nil {

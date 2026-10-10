@@ -23,10 +23,10 @@ func (vm *VM) mapFromSObjectList(mapType string, list Value) (Value, error) {
 	trustDeclaredValueType := sObjectListDeclaresMapValueType(list, valueType)
 	for i, item := range list.List {
 		if item.Kind == ValueNull {
-			return Null, fmt.Errorf("Map constructor from SObject list requires non-null SObject at index %d", i)
+			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Map constructor from SObject list requires non-null SObject at index %d", i))
 		}
 		if item.Kind != ValueObject {
-			return Null, fmt.Errorf("Map constructor from SObject list requires SObject values at index %d", i)
+			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Map constructor from SObject list requires SObject values at index %d", i))
 		}
 		coerced := item
 		if trustDeclaredValueType {
@@ -40,16 +40,16 @@ func (vm *VM) mapFromSObjectList(mapType string, list Value) (Value, error) {
 			var err error
 			coerced, err = vm.coerceAssignable(valueType, item)
 			if err != nil {
-				return Null, fmt.Errorf("Map constructor from SObject list: value at index %d: %w", i, err)
+				return Null, newExceptionError("System.TypeException", fmt.Sprintf("Map constructor from SObject list: value at index %d: %v", i, err))
 			}
 		}
 		keyValue, ok := mapConstructorKeyValue(keyType, coerced)
 		if !ok || keyValue.Kind == ValueNull {
-			return Null, fmt.Errorf("Map constructor from SObject list requires non-null %s at index %d", keyType, i)
+			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Map constructor from SObject list requires non-null %s at index %d", keyType, i))
 		}
 		key, err := vm.coerceAssignable(keyType, keyValue)
 		if err != nil {
-			return Null, fmt.Errorf("Map constructor from SObject list: key at index %d: %w", i, err)
+			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Map constructor from SObject list: key at index %d: %v", i, err))
 		}
 		encodedKey := mapKey(key)
 		if _, exists := out.Map[encodedKey]; !exists {
@@ -124,6 +124,66 @@ func (vm *VM) mapLookupKey(receiver Value, key Value) string {
 		return vm.mapKey(key)
 	}
 	return vm.mapKey(coerced)
+}
+
+// mapEntryKey resolves hash collisions by Apex equality. The encoded hash is a
+// bucket identity; distinct keys in that bucket need distinct storage slots.
+func (vm *VM) mapEntryKey(receiver Value, key Value) (string, error) {
+	base, handled, err := vm.apexObjectHashMapKeyChecked(key)
+	if err != nil {
+		return "", err
+	}
+	if !handled {
+		base = mapKey(key)
+	}
+	return vm.mapEntryKeyWithHash(receiver, key, base)
+}
+
+func customObjectHashKey(key Value, encoded string) bool {
+	return key.Kind == ValueObject && strings.HasPrefix(encoded, string(ValueObject)+":"+key.Type+":hash:")
+}
+
+func (vm *VM) mapEntryKeyWithHash(receiver Value, key Value, base string) (string, error) {
+	if !customObjectHashKey(key, base) {
+		return base, nil
+	}
+	prefix := base + "\x00collision:"
+	for _, raw := range orderedValueMapKeys(receiver) {
+		if raw != base && !strings.HasPrefix(raw, prefix) {
+			continue
+		}
+		equal, err := vm.mapKeysEqual(mapStoredKey(receiver, raw), key)
+		if err != nil {
+			return base, err
+		}
+		if equal {
+			return raw, nil
+		}
+	}
+	return vacantMapEntryKey(receiver, base), nil
+}
+
+const unhashedMapEntryPrefix = "\x00unhashed:"
+
+func vacantMapEntryKey(receiver Value, base string) string {
+	if _, exists := receiver.Map[base]; !exists {
+		return base
+	}
+	prefix := base + "\x00collision:"
+	for i := 1; ; i++ {
+		candidate := fmt.Sprintf("%s%d", prefix, i)
+		if _, exists := receiver.Map[candidate]; !exists {
+			return candidate
+		}
+	}
+}
+func (vm *VM) resolvedMapLookupKey(receiver Value, key Value) (string, error) {
+	if keyType, _, ok := mapTypeArgs(receiver.Type); ok && strings.TrimSpace(keyType) != "" {
+		if coerced, err := vm.coerceAssignable(keyType, key); err == nil {
+			key = coerced
+		}
+	}
+	return vm.mapEntryKey(receiver, key)
 }
 func caseInsensitiveStringMapStoredKey(receiver Value, key Value) (string, bool) {
 	if receiver.Kind != ValueMap || key.Kind != ValueString {
@@ -225,6 +285,13 @@ func collectionStringLike(value Value) bool {
 	return value.Kind == ValueString || (value.Kind == ValueObject && strings.EqualFold(value.Type, "String"))
 }
 func (vm *VM) iterableCollectionMembers(value Value, result *Result, context string) ([]Value, error) {
+	if value.Kind == ValueNull {
+		message := "Argument 1 cannot be null"
+		if strings.HasPrefix(context, "List.") {
+			message = "Attempt to de-reference a null object"
+		}
+		return nil, newExceptionError("System.NullPointerException", message)
+	}
 	switch value.Kind {
 	case ValueList, ValueSet:
 		return collectionMembers(value), nil
@@ -288,6 +355,29 @@ func collectionIterator(value Value) Value {
 	iterator.Fields["__values"] = snapshot
 	iterator.Fields["__index"] = Int(0)
 	return iterator
+}
+
+func (vm *VM) newCollectionIterator(value Value) Value {
+	iterator := collectionIterator(value)
+	if len(collectionMembers(value)) > 0 && value.Ref != 0 {
+		vm.beginCollectionTraversal(value)
+		iterator.Fields["__collection"] = value
+	}
+	return iterator
+}
+
+func (vm *VM) releaseCollectionIterator(iterator Value) {
+	collection, locked := iterator.Fields["__collection"]
+	if !locked {
+		return
+	}
+	key := collectionTraversalKey{kind: collection.Kind, ref: collection.Ref}
+	if vm.activeCollectionTraversals[key] <= 1 {
+		delete(vm.activeCollectionTraversals, key)
+	} else {
+		vm.activeCollectionTraversals[key]--
+	}
+	delete(iterator.Fields, "__collection")
 }
 func collectionIteratorType(collectionType string) string {
 	if elementType, ok := collectionElementType(collectionType); ok {
@@ -382,6 +472,9 @@ func (vm *VM) sortValuesWithComparator(values []Value, comparator Value, result 
 	if comparatorType == "" {
 		return fmt.Errorf("List.sort comparator type is required")
 	}
+	if !vm.comparatorTypeImplementsInterface(comparatorType) {
+		return unsupportedCallError("List.sort comparator without Comparator interface")
+	}
 	var sortErr error
 	sort.SliceStable(values, func(i, j int) bool {
 		if sortErr != nil {
@@ -395,6 +488,30 @@ func (vm *VM) sortValuesWithComparator(values []Value, comparator Value, result 
 		return compare < 0
 	})
 	return sortErr
+}
+func (vm *VM) comparatorTypeImplementsInterface(typeName string) bool {
+	class, ok := vm.lookupClass(typeName)
+	if !ok {
+		// Collator.getInstance returns a platform object, without a registered
+		// VM class. Collator is a documented built-in Comparator.
+		if unqualified, ok := stripLeadingSystemNamespace(typeName); ok {
+			typeName = unqualified
+		}
+		return strings.EqualFold(typeName, "Collator")
+	}
+	for _, iface := range vm.resolvedInterfaceNamesInHierarchy(class) {
+		base, generic := genericBaseName(iface)
+		if !generic {
+			base = strings.TrimSpace(iface)
+			if unqualified, ok := stripLeadingSystemNamespace(base); ok {
+				base = unqualified
+			}
+		}
+		if strings.EqualFold(base, "Comparator") {
+			return true
+		}
+	}
+	return false
 }
 func (vm *VM) compareValuesWithComparator(comparator Value, comparatorType string, left, right Value, result *Result) (int64, error) {
 	args := []Value{left, right}
@@ -547,7 +664,14 @@ func (vm *VM) isSortableSObjectValue(value Value) bool {
 		return false
 	}
 	runtimeType := runtimeObjectType(value)
-	if _, ok := vm.lookupClass(runtimeType); ok {
+	// A source package may legally contain a namespaced class whose short name
+	// matches a standard object (for example Schema.Profile). Query values still
+	// carry the unqualified object name, so resolve the concrete object before
+	// applying the user-class shadowing guard.
+	if !strings.Contains(runtimeType, ".") && vm.isSObjectType(runtimeType) {
+		return true
+	}
+	if vm.userClassShadowsSObjectType(runtimeType) {
 		return false
 	}
 	return vm.isSObjectLikeType(runtimeType)

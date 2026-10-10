@@ -37,13 +37,94 @@ func (e *Engine) cascadeDeleteChildren(objectName string, id storage.ID, seen ma
 			}
 			value, ok := childRecord.Fields[relation.field]
 			if ok && idFromStorageValue(value) == id {
-				if err := e.deleteRecord(relation.childObject, childID, seen, ctx); err != nil {
+				if err := e.deleteRecord(relation.childObject, childID, seen, ctx, &cascadeDeleteParent{object: objectName, id: id}); err != nil {
 					return err
 				}
 			}
 		}
 	}
 	return nil
+}
+
+func (e *Engine) restoreCascadeDeletedChildren(objectName string, id storage.ID, seen map[string]bool) {
+	key := objectName + ":" + string(id)
+	if seen[key] {
+		return
+	}
+	seen[key] = true
+	for _, relation := range e.cascadeDeleteRelations(objectName, nil) {
+		childObject := e.Org.Objects[relation.childObject]
+		changed := false
+		for childID, child := range childObject.Records {
+			if !child.System.IsDeleted || child.System.RecycleBinEmptied || !strings.EqualFold(child.System.CascadeDeletedByObject, objectName) || !storage.IDsEqual(child.System.CascadeDeletedByID, id) {
+				continue
+			}
+			value, ok := child.GetField(relation.field)
+			if !ok || !storage.IDsEqual(idFromStorageValue(value), id) {
+				continue
+			}
+			if e.childHasDeletedCascadeMaster(childObject, child) {
+				continue
+			}
+			if _, cloned := storage.EnsureMutableObjectRecords(e.Org, relation.childObject); cloned {
+				childObject = e.Org.Objects[relation.childObject]
+				child = childObject.Records[childID]
+			}
+			if e.IsolationJournal != nil {
+				e.IsolationJournal.RecordUpdate(relation.childObject, childID, child)
+			}
+			before := child.Clone()
+			child.System.IsDeleted = false
+			child.System.RecycleBinEmptied = false
+			child.System.CascadeDeletedByObject = ""
+			child.System.CascadeDeletedByID = ""
+			stamp := e.systemTimestamp()
+			child.System.LastModifiedDate = stamp
+			child.System.SystemModstamp = stamp
+			child.System.LastModifiedByID = e.systemUserID()
+			childObject.Records[childID] = child
+			e.Org.Objects[relation.childObject] = childObject
+			e.addUniqueIndexRecord(relation.childObject, childObject.Definition, child)
+			e.recalculateSummaryFieldsForChildren(relation.childObject, before, child)
+			changed = true
+			e.restoreCascadeDeletedChildren(relation.childObject, childID, seen)
+		}
+		if changed {
+			childObject.Indexes = nil
+			e.Org.Objects[relation.childObject] = childObject
+		}
+	}
+}
+
+// childHasDeletedCascadeMaster prevents a cascade-deleted junction child from
+// being restored while any cascade-owning parent it still references is deleted.
+// The relation that initiated this restore is included; by this point it is active.
+func (e *Engine) childHasDeletedCascadeMaster(childObject storage.ObjectState, child storage.Record) bool {
+	for _, relation := range childObject.Definition.Relations {
+		if !relation.CascadeDelete {
+			continue
+		}
+		value, ok := child.GetField(relation.Field)
+		if !ok {
+			continue
+		}
+		parentID := idFromStorageValue(value)
+		if parentID == "" {
+			continue
+		}
+		for _, parentObjectName := range relation.ParentObjects {
+			parentObjectName, ok := storage.ResolveObjectName(*e.Org, parentObjectName)
+			if !ok {
+				continue
+			}
+			parentObject := e.Org.Objects[parentObjectName]
+			_, parent, ok := storage.LookupRecordByID(parentObject.Records, parentID)
+			if ok && parent.System.IsDeleted {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (e *Engine) buildDeleteContext() *deleteContext {
@@ -53,11 +134,12 @@ func (e *Engine) buildDeleteContext() *deleteContext {
 	ctx := &deleteContext{
 		restrictedByParent: make(map[string][]deleteRelation),
 		cascadeByParent:    make(map[string][]deleteRelation),
+		setNullByParent:    make(map[string][]deleteRelation),
 		referenceIndex:     make(map[string]map[storage.ID][]storage.ID),
 	}
 	for childObjectName, childObject := range e.Org.Objects {
 		for _, relation := range childObject.Definition.Relations {
-			if !relation.RestrictedDelete && !relation.CascadeDelete {
+			if !relation.RestrictedDelete && !relation.CascadeDelete && !relation.SetNullOnDelete {
 				continue
 			}
 			index := make(map[storage.ID][]storage.ID)
@@ -73,6 +155,9 @@ func (e *Engine) buildDeleteContext() *deleteContext {
 				if parentID == "" {
 					continue
 				}
+				if relation.SetNullOnDelete {
+					parentID = setNullReferenceID(parentID)
+				}
 				index[parentID] = append(index[parentID], childID)
 			}
 			ctx.referenceIndex[deleteRelationKey(childObjectName, relation.Field)] = index
@@ -83,6 +168,11 @@ func (e *Engine) buildDeleteContext() *deleteContext {
 				}
 				if relation.CascadeDelete {
 					ctx.cascadeByParent[parentObject] = append(ctx.cascadeByParent[parentObject], rel)
+				}
+				if relation.SetNullOnDelete {
+					if canonical, ok := storage.ResolveObjectName(*e.Org, parentObject); ok {
+						ctx.setNullByParent[canonical] = append(ctx.setNullByParent[canonical], rel)
+					}
 				}
 			}
 		}
@@ -187,4 +277,53 @@ func idFromStorageValue(value storage.Value) storage.ID {
 	default:
 		return ""
 	}
+}
+
+// SetNull is a relationship side effect, not a child DML update. Apply it before
+// the VM dispatches the parent's after-delete triggers, without mutating any
+// previously queried Apex record values.
+func (e *Engine) clearDeletedParentReferences(objectName string, id storage.ID, ctx *deleteContext) {
+	if ctx == nil {
+		ctx = e.buildDeleteContext()
+	}
+	for _, relation := range ctx.setNullByParent[objectName] {
+		index := ctx.referenceIndex[deleteRelationKey(relation.childObject, relation.field)]
+		for _, childID := range index[setNullReferenceID(id)] {
+			childObject := e.Org.Objects[relation.childObject]
+			child, ok := childObject.Records[childID]
+			if !ok || child.System.IsDeleted {
+				continue
+			}
+			value, present := child.GetField(relation.field)
+			if !present || !storage.IDsEqual(idFromStorageValue(value), id) {
+				continue
+			}
+			storage.EnsureMutableObjectRecords(e.Org, relation.childObject)
+			childObject = e.Org.Objects[relation.childObject]
+			child = childObject.Records[childID]
+			if e.IsolationJournal != nil {
+				e.IsolationJournal.RecordUpdate(relation.childObject, childID, child)
+			}
+			updated := child.Clone()
+			delete(updated.Fields, relation.field)
+			if updated.ExplicitNulls == nil {
+				updated.ExplicitNulls = make(map[string]bool)
+			}
+			updated.ExplicitNulls[relation.field] = true
+			e.removeUniqueIndexRecord(relation.childObject, childObject.Definition, child)
+			childObject.Records[childID] = updated
+			// Parent DML does not rebuild this indirectly changed child object.
+			// Drop its candidate indexes so queries scan the updated records.
+			childObject.Indexes = nil
+			e.Org.Objects[relation.childObject] = childObject
+			e.addUniqueIndexRecord(relation.childObject, childObject.Definition, updated)
+		}
+	}
+}
+
+func setNullReferenceID(id storage.ID) storage.ID {
+	if len(id) >= 15 {
+		return id[:15]
+	}
+	return id
 }

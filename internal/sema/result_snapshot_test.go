@@ -37,11 +37,32 @@ func TestResultSnapshotDeepCopyClassifiesReferenceFields(t *testing.T) {
 		"Types":       reflect.Map,
 	})
 	assertReferenceFields("Diagnostic", diagnostic.Diagnostic{}, map[string]reflect.Kind{
-		"Range": reflect.Pointer,
+		"Range":      reflect.Pointer,
+		"NativeLine": reflect.Pointer,
 	})
 	assertReferenceFields("ProjectInfo", typesys.ProjectInfo{}, nil)
 	assertReferenceFields("Summary", Summary{}, nil)
 	assertReferenceFields("TypeReference", TypeReference{}, nil)
+
+	// C043 has a native line of -1. Both incoming and returned diagnostics
+	// remain request-local, including a NativeLine without a Range.
+	line := -1
+	input := Result{Diagnostics: []diagnostic.Diagnostic{{NativeLine: &line}}}
+	snapshot := SnapshotResult(input)
+	line = 99
+	first := snapshot.Result()
+	if first.Diagnostics[0].NativeLine == nil || *first.Diagnostics[0].NativeLine != -1 {
+		t.Fatal("input mutation reached diagnostic snapshot")
+	}
+	*first.Diagnostics[0].NativeLine = 42
+	second := snapshot.Result()
+	if second.Diagnostics[0].NativeLine == nil || *second.Diagnostics[0].NativeLine != -1 {
+		t.Fatal("returned mutation reached diagnostic snapshot")
+	}
+	withoutLine := EstimateResultRetainedBytes(Result{Diagnostics: []diagnostic.Diagnostic{{}}})
+	if EstimateResultRetainedBytes(second) <= withoutLine {
+		t.Fatal("native-line allocation omitted from retained-byte estimate")
+	}
 }
 
 func TestEstimateResultRetainedBytesCountsContainersAndRanges(t *testing.T) {

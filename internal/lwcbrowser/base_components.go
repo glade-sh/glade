@@ -73,7 +73,7 @@ func init() {
 		baseComponent("formattedText", 3, true, textContainerTemplateJS("span", "slds-truncate")),
 		baseComponent("formattedTime", 3, true, textContainerTemplateJS("time", "slds-truncate")),
 		baseComponent("formattedUrl", 3, true, formattedLinkTemplateJS("url")),
-		baseComponent("groupedCombobox", 3, true, comboboxTemplateJS()),
+		baseComponent("groupedCombobox", 3, true, groupedComboboxTemplateJS()),
 		baseComponent("helptext", 3, true, helptextTemplateJS()),
 		baseComponent("inputAddress", 3, true, inputAddressTemplateJS()),
 		baseComponent("inputLocation", 3, true, inputLocationTemplateJS()),
@@ -112,12 +112,12 @@ func init() {
 		baseComponent("toastContainer", 3, true, slotContainerTemplateJS("section", "slds-notify_container")),
 		baseComponent("tree", 3, true, treeTemplateJS()),
 		baseComponent("treeGrid", 3, true, treeGridTemplateJS()),
-		baseComponent("verticalNavigation", 3, true, slotContainerTemplateJS("nav", "slds-nav-vertical")),
+		baseComponent("verticalNavigation", 3, true, verticalNavigationTemplateJS()),
 		baseComponent("verticalNavigationItem", 3, true, verticalNavigationItemTemplateJS()),
 		baseComponent("verticalNavigationItemBadge", 3, true, verticalNavigationItemBadgeTemplateJS()),
 		baseComponent("verticalNavigationItemIcon", 3, true, verticalNavigationItemIconTemplateJS()),
 		baseComponent("verticalNavigationOverflow", 3, true, verticalNavigationOverflowTemplateJS()),
-		baseComponent("verticalNavigationSection", 3, true, titledSlotTemplateJS("section", "slds-nav-vertical__section")),
+		baseComponent("verticalNavigationSection", 3, true, verticalNavigationSectionTemplateJS()),
 	} {
 		lightningBaseComponentDefinitions[normalizeLightningBaseComponentName(def.Name)] = def
 	}
@@ -168,25 +168,74 @@ func LightningBaseComponentModuleJS(name string) string {
 	if js, ok := LightningSourceBackedComponentModuleJS(def.Name); ok {
 		return js
 	}
-	classExtraJS := ""
+	if js, ok := lightningInputComponentModuleJS(def); ok {
+		return js
+	}
+	if js, ok := lightningChoiceComponentModuleJS(def); ok {
+		return js
+	}
 	switch normalizeLightningBaseComponentName(def.Name) {
+	case "accordion", "accordionsection", "avatar", "buttonicon", "buttonmenu", "carousel", "carouselimage", "formattedaddress", "formatteddatetime", "formattedemail", "formattedlocation", "formattedname", "formattedphone", "formattedrichtext", "formattedtext", "formattedtime", "formattedurl", "helptext", "icon", "map", "menuitem", "pill", "progressbar", "progressindicator", "progressring", "progressstep", "tab", "tabset", "tile":
+		return fmt.Sprintf("export { default } from \"/lightning/runtime/lightning/%s.js\";\n", def.Name)
+	}
+	classExtraJS := ""
+	moduleExtraJS := ""
+	engineImports := ""
+	connectedExtraJS := ""
+	switch normalizeLightningBaseComponentName(def.Name) {
+	case "button":
+		connectedExtraJS = `    const key = Symbol.for("glade.component.privateShadowHosts");
+    (globalThis[key] ||= new WeakSet()).add(this.template.host);`
+	case "verticalnavigation":
+		classExtraJS = `  get selectedItem() {
+    return this.__navigationSelectedItem;
+  }
+  set selectedItem(value) {
+    setVerticalNavigationSelection(this, value);
+  }
+  disconnectedCallback() {
+    disconnectVerticalNavigation(this);
+  }
+`
+	case "layout":
+		classExtraJS = `  get horizontalAlign() {
+    return this.__layoutHorizontalAlign;
+  }
+  set horizontalAlign(t) {
+    t = t || " ";
+    const value = t.toLowerCase();
+    this.__layoutHorizontalAlign = ["center", "space", "spread", "end"].includes(value) ? value : " ";
+    applyLayoutClasses(this, layoutClassMap(this));
+  }
+`
+	case "layoutitem":
+		classExtraJS = `  get size() {
+    return this.__layoutSize;
+  }
+  set size(value) {
+    this.__layoutSize = value == null ? value : Number(value);
+    if (this.__layoutSize != null && (!Number.isInteger(this.__layoutSize) || this.__layoutSize < 1 || this.__layoutSize > 12)) {
+      throw new Error("Invalid \u0060size\u0060 attribute for <lightning-layout-item> component. The \u0060size\u0060 attribute should be an integer between 1 and 12");
+    }
+    applyLayoutClasses(this, layoutItemClassMap(this));
+  }
+`
 	case "alert":
+		engineImports = ""
+		moduleExtraJS = `import { openFeedback } from "/lightning/runtime/shell/overlay.js";`
 		classExtraJS = `  static open(options = {}) {
-    window.dispatchEvent(new CustomEvent("gladealert", { detail: options, bubbles: true, composed: true }));
-    return Promise.resolve(options.result);
+    return openFeedback("alert", options);
   }
 `
 	case "modal":
-		classExtraJS = `  static async open(options = {}) {
-    const detail = { ...options };
-    window.dispatchEvent(new CustomEvent("lightning__modalopen", { detail }));
-    return options.result;
-  }
-`
+		classExtraJS = modalClassExtraJS
+		moduleExtraJS = modalModuleHelpersJS
+		engineImports = ", createElement"
 	case "prompt":
+		engineImports = ""
+		moduleExtraJS = `import { openFeedback } from "/lightning/runtime/shell/overlay.js";`
 		classExtraJS = `  static open(options = {}) {
-    window.dispatchEvent(new CustomEvent("gladeprompt", { detail: options, bubbles: true, composed: true }));
-    return Promise.resolve(options.value ?? options.defaultValue ?? "");
+    return openFeedback("prompt", options);
   }
 `
 	case "toast":
@@ -202,20 +251,41 @@ func LightningBaseComponentModuleJS(name string) string {
   }
 `
 	}
-	return fmt.Sprintf(`import { LightningElement, registerDecorators, registerTemplate, freezeTemplate, registerComponent } from "lwc";
+	templateSlotsJS := `[""]`
+	if def.Name == "card" {
+		templateSlotsJS = `["", "actions", "footer", "title"]`
+	}
+	return fmt.Sprintf(`import { LightningElement, registerDecorators, registerTemplate, freezeTemplate, registerComponent%[6]s } from "lwc";
 import { reportDiagnostic } from "@glade/shell/diagnostics";
+%[5]s
 function createBaseComponent() {}
+let treeGridInstance = 0;
 function tmpl($api, $cmp, $slotset, $ctx) {
   const { h: api_element, t: api_text, d: api_dynamic_text, b: api_bind, s: api_slot } = $api;
   return %[1]s;
 }
 tmpl.stylesheets = [];
-tmpl.slots = [""];
+tmpl.slots = %[7]s;
 const template = registerTemplate(tmpl);
 freezeTemplate(tmpl);
 class %[2]s extends LightningElement {
 %[4]s
   connectedCallback() {
+%[8]s
+    if (%[3]q === "lightning-tree-grid" && !this.__gridID) {
+      this.__gridID = "glade-tree-grid-" + (++treeGridInstance);
+    }
+    if (%[3]q === "lightning-vertical-navigation") {
+      connectVerticalNavigation(this);
+    }
+    if (%[3]q === "lightning-spinner") {
+      this.classList.add("slds-spinner_container");
+    }
+    if (%[3]q === "lightning-layout") {
+      applyLayoutClasses(this, layoutClassMap(this));
+    } else if (%[3]q === "lightning-layout-item") {
+      applyLayoutClasses(this, layoutItemClassMap(this));
+    }
     if (this.__initialValue === undefined) {
       this.__initialValue = this.value;
     }
@@ -228,6 +298,11 @@ class %[2]s extends LightningElement {
     }
     if (isRecordFormSelector(%[3]q)) {
       this.loadRecordFormRecord();
+    }
+  }
+  renderedCallback() {
+    if (%[3]q === "lightning-layout" || %[3]q === "lightning-layout-item") {
+      applyLayoutClasses(this, this.__layoutRenderClasses);
     }
   }
   reportUnsupportedAttributes() {
@@ -262,26 +337,133 @@ class %[2]s extends LightningElement {
     this.checked = Boolean(target.checked);
     this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: target.value, checked: Boolean(target.checked) } }));
   }
+  handleComboboxToggle(event) {
+    if (event && event.stopPropagation) {
+      event.stopPropagation();
+    }
+    if (!this.disabled) {
+      this.__comboboxOpen = !this.__comboboxOpen;
+    }
+  }
+  handleComboboxSelect(event) {
+    if (event && event.stopPropagation) {
+      event.stopPropagation();
+    }
+    if (this.disabled) {
+      return;
+    }
+    const dataset = event && event.currentTarget && event.currentTarget.dataset || {};
+    const option = (this.options || [])[Number(dataset.optionIndex)];
+    if (!option) {
+      return;
+    }
+    this.__comboboxOpen = false;
+    this.value = option.value;
+    this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: this.value } }));
+  }
+  handleTreeSelect(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const path = event.currentTarget.dataset.path;
+    const item = treeItemAtPath(this.items, path);
+    if (!item || item.disabled) {
+      return;
+    }
+    this.__treeSelectedPath = path;
+    this.dispatchEvent(new CustomEvent("select", { bubbles: true, composed: true, cancelable: true, detail: { name: item.name } }));
+  }
+  handleTreeToggle(event) {
+    event.stopPropagation();
+    const path = event.currentTarget.dataset.path;
+    const item = treeItemAtPath(this.items, path);
+    if (!item || item.disabled) {
+      return;
+    }
+    this.__treeExpanded = { ...this.__treeExpanded, [path]: !treeItemExpanded(this, item, path) };
+  }
+  getCurrentExpandedRows() {
+    const rows = this.__gridExpandedRows ?? this.expandedRows;
+    return Array.isArray(rows) ? rows.slice() : [];
+  }
+  expandAll() {
+    this.__gridExpandedRows = treeGridEntries(this).filter((entry) => entry.children.length).map((entry) => entry.name);
+  }
+  collapseAll() {
+    this.__gridExpandedRows = [];
+  }
+  getSelectedRows() {
+    const selected = treeGridSelectedKeys(this);
+    return treeGridEntries(this).filter((entry) => selected.includes(entry.name)).map((entry) => entry.row);
+  }
+  handleTreeGridToggle(event) {
+    event.stopPropagation();
+    const entry = treeGridEntries(this, true).find((entry) => entry.path === event.currentTarget.dataset.path);
+    if (!entry) {
+      return;
+    }
+    const isExpanded = !entry.expanded;
+    const keys = this.getCurrentExpandedRows();
+    this.__gridExpandedRows = isExpanded ? Array.from(new Set([...keys, entry.name])) : keys.filter((key) => key !== entry.name);
+    this.dispatchEvent(new CustomEvent("toggle", { detail: { name: entry.name, isExpanded, hasChildrenContent: Boolean(entry.children.length) } }));
+  }
+  handleTreeGridSelection(event) {
+    event.stopPropagation();
+    const entry = treeGridEntries(this, true).find((entry) => entry.path === event.currentTarget.dataset.path);
+    if (!entry) {
+      return;
+    }
+    const checked = event.currentTarget.checked;
+    const keys = treeGridSelectedKeys(this);
+    this.__gridSelectedRows = checked ? Array.from(new Set([...keys, entry.name])) : keys.filter((key) => key !== entry.name);
+    this.dispatchEvent(new CustomEvent("rowselection", { detail: {
+      selectedRows: this.getSelectedRows(),
+      config: { action: checked ? "rowSelect" : "rowDeselect", value: entry.name, selectedRowKeys: this.__gridSelectedRows.slice() }
+    } }));
+  }
+  handleTreeGridActionMenu(event) {
+    event.stopPropagation();
+    const data = event.currentTarget.dataset;
+    const menu = data.path + ":" + data.columnIndex;
+    this.__gridActionMenu = this.__gridActionMenu === menu ? undefined : menu;
+  }
+  handleTreeGridAction(event) {
+    event.stopPropagation();
+    const data = event.currentTarget.dataset;
+    const entry = treeGridEntries(this, true).find((entry) => entry.path === data.path);
+    const column = (this.columns || [])[Number(data.columnIndex)];
+    const action = (column && column.typeAttributes && column.typeAttributes.rowActions || [])[Number(data.actionIndex)];
+    if (!entry || !action) {
+      return;
+    }
+    this.__gridActionMenu = undefined;
+    this.dispatchEvent(new CustomEvent("rowaction", { detail: { action, row: entry.row } }));
+  }
   handleDualListboxMove(event) {
     if (event && event.stopPropagation) {
       event.stopPropagation();
     }
+    if (this.disabled) {
+      return;
+    }
     const action = event && event.currentTarget && event.currentTarget.dataset && event.currentTarget.dataset.action || "";
-    const current = selectedValueList(this.value);
-    const sourceSelect = this.template && this.template.querySelector ? this.template.querySelector('[data-list="source"]') : null;
-    const selectedSelect = this.template && this.template.querySelector ? this.template.querySelector('[data-list="selected"]') : null;
-    const sourceValues = Array.from(sourceSelect && sourceSelect.selectedOptions || []).map((option) => option.value);
-    const selectedValues = Array.from(selectedSelect && selectedSelect.selectedOptions || []).map((option) => option.value);
+    const model = dualListboxOptions(this);
+    const current = model.values;
+    const sourceValues = this.__dualSelectedSource || [];
+    const selectedValues = this.__dualSelectedTarget || [];
     let values = current.slice();
     if (action === "add") {
-      for (const option of this.options || []) {
-        const value = String(option.value ?? option.label ?? "");
+      for (const option of model.source) {
+        const value = option.value;
+        // The captured numeric option does not become a string selection.
+        if (typeof value !== "string") {
+          continue;
+        }
         if (sourceValues.includes(value) && !values.includes(value)) {
           values.push(value);
         }
       }
     } else if (action === "remove") {
-      const removing = new Set(selectedValues);
+      const removing = new Set(selectedValues.filter((value) => !model.required.includes(value)));
       values = values.filter((value) => !removing.has(value));
     } else if (action === "up") {
       const moving = new Set(selectedValues);
@@ -298,16 +480,32 @@ class %[2]s extends LightningElement {
         }
       }
     }
+    if (action === "add" || action === "remove") {
+      this.__dualSelectedSource = [];
+      this.__dualSelectedTarget = [];
+    }
+    if (values.length === current.length && values.every((value, index) => value === current[index])) {
+      return;
+    }
     this.value = values;
     this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: values } }));
   }
-  handleDualListboxChange(event) {
+  handleDualListboxSelect(event) {
     if (event && event.stopPropagation) {
       event.stopPropagation();
     }
-    const values = Array.from(event && event.target && event.target.selectedOptions || []).map((option) => option.value);
-    this.value = values;
-    this.dispatchEvent(new CustomEvent("change", { bubbles: true, composed: true, detail: { value: values } }));
+    if (this.disabled) {
+      return;
+    }
+    const dataset = event && event.currentTarget && event.currentTarget.dataset || {};
+    const model = dualListboxOptions(this);
+    const options = dataset.list === "source" ? model.source : model.selected;
+    const option = options[Number(dataset.optionIndex)];
+    if (!option) {
+      return;
+    }
+    this.__dualSelectedSource = dataset.list === "source" ? [option.value] : [];
+    this.__dualSelectedTarget = dataset.list === "selected" ? [option.value] : [];
   }
   handleRichTextChange(event) {
     if (event && event.stopPropagation) {
@@ -423,6 +621,9 @@ class %[2]s extends LightningElement {
     }
   }
   checkValidity() {
+    if (%[3]q === "lightning-dual-listbox") {
+      return !dualListboxValidityMessage(this);
+    }
     const control = baseFormControl(this);
     if (control && control.setCustomValidity) {
       control.setCustomValidity(this.__customValidityMessage || "");
@@ -433,6 +634,10 @@ class %[2]s extends LightningElement {
     return control && control.checkValidity ? control.checkValidity() : true;
   }
   reportValidity() {
+    if (%[3]q === "lightning-dual-listbox") {
+      this.__dualValidityMessage = dualListboxValidityMessage(this);
+      return !this.__dualValidityMessage;
+    }
     const control = baseFormControl(this);
     if (control && control.setCustomValidity) {
       control.setCustomValidity(this.__customValidityMessage || "");
@@ -506,16 +711,100 @@ class %[2]s extends LightningElement {
     this.dispatchEvent(new CustomEvent("active", { bubbles: true, composed: true, detail: { value: this.value || this.name || this.label || "", label: this.label || "" } }));
   }
 }
-registerDecorators(%[2]s, { publicProps: basePublicProps(), publicMethods: basePublicMethods() });
+if (%[3]q === "lightning-tree-grid") {
+  Object.defineProperties(%[2]s.prototype, {
+    expandedRows: {
+      configurable: true, enumerable: true,
+      get() { return this.__gridExpandedRowsInput; },
+      set(value) {
+        this.__gridExpandedRowsInput = value;
+        this.__gridExpandedRows = undefined;
+      }
+    },
+    selectedRows: {
+      configurable: true, enumerable: true,
+      get() { return this.__gridSelectedRowsInput; },
+      set(value) {
+        this.__gridSelectedRowsInput = value;
+        this.__gridSelectedRows = undefined;
+      }
+    }
+  });
+}
+registerDecorators(%[2]s, {
+  publicProps: basePublicProps(),
+  publicMethods: basePublicMethods(),
+  fields: basePrivateFields()
+});
 function basePublicProps() {
   const props = {};
 	for (const name of ["label","title","value","options","checked","disabled","type","variant","iconName","iconPosition","iconClass","alternativeText","size","columns","data","keyField","objectApiName","recordId","fields","mode","name","fieldName","error","content","href","target","street","city","province","postalCode","country","items","header","placeholder","accept","multiple","flowApiName","flowInputVariables","initials","fallbackIconName","labelWhenOff","labelWhenOn","labelWhenHover","selected","sourceLabel","selectedLabel","min","max","step","mapMarkers","zoomLevel","markersTitle","src","description","dirty","required","message","theme","defaultValue","latitude","longitude","salutation","firstName","middleName","lastName","suffix","informalName","format","formatStyle","displayValue","tabIndex","badgeCount","assistiveText","readOnly","maxToasts","toastPosition","containerPosition","expanded","horizontalAlign","verticalAlign","pullToBoundary","multipleRows","smallDeviceSize","mediumDeviceSize","largeDeviceSize","padding","flexibility","alignmentBump","currencyCode","currencyDisplayAs","minimumIntegerDigits","minimumFractionDigits","maximumFractionDigits","minimumSignificantDigits","maximumSignificantDigits"]) {
     props[name] = { config: 0 };
   }
+  if (%[3]q === "lightning-dual-listbox") {
+    props.requiredOptions = { config: 0 };
+  }
+  if (%[3]q === "lightning-tree-grid") {
+    for (const name of ["expandedRows", "selectedRows"]) {
+      props[name] = { config: 3 };
+    }
+    props.hideCheckboxColumn = { config: 0 };
+  }
+  if (%[3]q === "lightning-modal") props.disableClose = { config: 3 };
+  if (%[3]q === "lightning-layout") props.horizontalAlign = { config: 3 };
+  if (%[3]q === "lightning-layout-item") props.size = { config: 3 };
+  if (%[3]q === "lightning-vertical-navigation") props.selectedItem = { config: 3 };
   return props;
 }
 function basePublicMethods() {
-  return ["setErrors","getErrors","wireRecordUi","getWiredData","wirePicklistValues","getWiredPicklistValues","setValue","clean","reset","setCustomValidity","checkValidity","reportValidity","focus","blur"];
+  const methods = ["setErrors","getErrors","wireRecordUi","getWiredData","wirePicklistValues","getWiredPicklistValues","setValue","clean","reset","setCustomValidity","checkValidity","reportValidity","focus","blur"];
+  if (%[3]q === "lightning-modal") methods.push("close");
+  return %[3]q === "lightning-tree-grid" ? methods.concat(["expandAll", "collapseAll", "getCurrentExpandedRows", "getSelectedRows"]) : methods;
+}
+function basePrivateFields() {
+  if (%[3]q === "lightning-dual-listbox") {
+    return ["__dualSelectedSource", "__dualSelectedTarget", "__dualValidityMessage"];
+  }
+  if (%[3]q === "lightning-combobox") {
+    return ["__comboboxOpen"];
+  }
+  if (%[3]q === "lightning-tree") {
+    return ["__treeExpanded", "__treeSelectedPath"];
+  }
+  if (%[3]q === "lightning-tree-grid") {
+    return ["__gridExpandedRows", "__gridSelectedRows", "__gridActionMenu", "__gridExpandedRowsInput", "__gridSelectedRowsInput"];
+  }
+  return [];
+}
+// Dual-listbox captures at API 59/67: unknown values are omitted, duplicate
+// selected values use the last option, and numeric values stay numeric.
+function dualListboxOptions(component) {
+  const options = component.options || [];
+  const byValue = new Map(options.map((option) => [option.value, option]));
+  const values = Array.isArray(component.value) ? component.value.filter((value) => byValue.has(value)) : [];
+  return {
+    values,
+    source: options.filter((option) => !values.includes(option.value)),
+    selected: values.map((value) => byValue.get(value)),
+    required: Array.isArray(component.requiredOptions) ? component.requiredOptions : []
+  };
+}
+function dualListboxValidityMessage(component) {
+  if (component.disabled) {
+    return "";
+  }
+  if (component.__customValidityMessage) {
+    return component.__customValidityMessage;
+  }
+  const count = dualListboxOptions(component).values.length;
+  if (component.required && count === 0) {
+    return "An option must be selected";
+  }
+  if (Number(component.min) > count) {
+    return "Select at least " + component.min + " option" + (Number(component.min) === 1 ? "" : "s") +
+      (component.max == null ? "" : " [and a maximum of " + component.max + "]");
+  }
+  return "";
 }
 function unsupportedBaseAttributes(component) {
   const host = component && component.hostElement || component;
@@ -679,12 +968,44 @@ function selectedValueList(value) {
   }
   return [String(value)];
 }
-function flattenTreeRows(rows, level = 0) {
-  const out = [];
-  for (const row of rows || []) {
-    out.push({ row, level });
-    out.push(...flattenTreeRows(row._children || row.children || row.items || [], level + 1));
+function treeItemAtPath(items, path) {
+  let item;
+  for (const index of String(path).split(".")) {
+    item = (items || [])[Number(index)];
+    items = item && item.items;
   }
+  return item;
+}
+function treeItemExpanded(component, item, path) {
+  const expanded = component.__treeExpanded || {};
+  return Object.prototype.hasOwnProperty.call(expanded, path) ? expanded[path] : Boolean(item.expanded);
+}
+function treeGridSelectedKeys(component) {
+  const keys = component.__gridSelectedRows ?? component.selectedRows;
+  return Array.isArray(keys) ? keys : [];
+}
+// grid_* native rows distinguish the branch marker (_children present) from
+// child content, and return normalized hierarchy metadata in row actions.
+function treeGridEntries(component, visibleOnly = false) {
+  const out = [];
+  const expandedKeys = component.getCurrentExpandedRows();
+  const visit = (rows, level, parentPath) => {
+    for (let index = 0; index < rows.length; index += 1) {
+      const source = rows[index];
+      const path = parentPath ? parentPath + "." + index : String(index);
+      const name = source[component.keyField || "id"];
+      const hasChildren = Object.prototype.hasOwnProperty.call(source, "_children");
+      const children = Array.isArray(source._children) ? source._children : [];
+      const expanded = Boolean(children.length && expandedKeys.includes(name));
+      const { _children, ...fields } = source;
+      const row = { ...fields, hasChildren, isExpanded: expanded, level, posInSet: index + 1, setSize: rows.length };
+      out.push({ path, name, hasChildren, children, expanded, row });
+      if (!visibleOnly || expanded) {
+        visit(children, level + 1, path);
+      }
+    }
+  };
+  visit(component.data || [], 1, "");
   return out;
 }
 function markerText(marker) {
@@ -778,7 +1099,7 @@ function normalizedLayoutSize(value) {
   return Number.isFinite(size) && size >= 1 && size <= 12 ? size : null;
 }
 function layoutItemClassMap(component) {
-  const classes = { "slds-col": true };
+  const classes = {};
   const padding = String(component && component.padding || "").toLowerCase();
   const paddingClasses = {
     "horizontal-small": ["slds-p-right_small", "slds-p-left_small"],
@@ -808,6 +1129,51 @@ function layoutItemClassMap(component) {
   const bump = normalizeChoice(component && component.alignmentBump, ["left", "top", "right", "bottom"], "");
   if (bump) classes["slds-col_bump-" + bump] = true;
   return classes;
+}
+function applyLayoutClasses(component, classes) {
+  component.__layoutRenderClasses = classes;
+  for (const name of component.__layoutClasses || []) component.classList.remove(name);
+  const names = Object.keys(classes).filter((name) => classes[name]);
+  for (const name of names) component.classList.add(name);
+  component.__layoutClasses = names;
+}
+function connectVerticalNavigation(component) {
+  component.__navigationItems = new Map();
+  component.__navigationRegister = (event) => {
+    event.stopPropagation();
+    const detail = event.detail;
+    component.__navigationItems.set(detail.name, detail.callbacks);
+    reflectVerticalNavigationSelection(component);
+  };
+  component.__navigationSelect = (event) => {
+    event.stopPropagation();
+    // control_legacy_menu_navigation: canceled beforeselect stops selection.
+    const name = event.detail.name;
+    if (!component.dispatchEvent(new CustomEvent("beforeselect", {
+      cancelable: true,
+      detail: { name },
+    }))) return;
+    component.selectedItem = name;
+  };
+  component.addEventListener("privateitemregister", component.__navigationRegister);
+  component.addEventListener("privateitemselect", component.__navigationSelect);
+}
+function disconnectVerticalNavigation(component) {
+  component.removeEventListener("privateitemregister", component.__navigationRegister);
+  component.removeEventListener("privateitemselect", component.__navigationSelect);
+  component.__navigationItems.clear();
+}
+function reflectVerticalNavigationSelection(component) {
+  for (const [name, callbacks] of component.__navigationItems || []) {
+    if (name === component.__navigationSelectedItem) callbacks.select();
+    else callbacks.deselect();
+  }
+}
+function setVerticalNavigationSelection(component, value) {
+  const name = typeof value === "string" ? value : "";
+  component.__navigationSelectedItem = name;
+  reflectVerticalNavigationSelection(component);
+  component.dispatchEvent(new CustomEvent("select", { detail: { name } }));
 }
 function numericOption(value) {
   if (value === undefined || value === null || value === "") {
@@ -849,7 +1215,7 @@ function formatNumberValue(component) {
   }
 }
 export default registerComponent(%[2]s, { tmpl: template, sel: %[3]q });
-`, def.TemplateJS, def.ClassName, def.Tag, classExtraJS)
+`, def.TemplateJS, def.ClassName, def.Tag, classExtraJS, moduleExtraJS, engineImports, templateSlotsJS, connectedExtraJS)
 }
 
 func normalizeLightningBaseComponentName(name string) string {
@@ -946,7 +1312,7 @@ func unsupportedLightningBaseComponentNames() []string {
 }
 
 func buttonTemplateJS() string {
-	return `[api_element("button", { classMap: buttonClassMap($cmp.variant), attrs: { type: normalizedButtonType($cmp.type), name: $cmp.name || undefined, value: $cmp.value == null ? undefined : String($cmp.value), title: $cmp.title || undefined, "aria-label": $cmp.alternativeText || undefined }, props: { disabled: Boolean($cmp.disabled) }, key: 0 }, [api_text($cmp.iconName && $cmp.iconPosition !== "right" ? ($cmp.iconName || "").split(":").pop() + " " : ""), api_text($cmp.label || ""), api_text($cmp.iconName && $cmp.iconPosition === "right" ? " " + ($cmp.iconName || "").split(":").pop() : "")])]`
+	return `[api_element("button", { className: Object.entries(buttonClassMap($cmp.variant)).filter(([, enabled]) => enabled).map(([name]) => name).join(" "), attrs: { type: normalizedButtonType($cmp.type), name: $cmp.name || undefined, value: $cmp.value == null ? undefined : String($cmp.value), title: $cmp.title || undefined, "aria-label": $cmp.alternativeText || undefined }, props: { disabled: Boolean($cmp.disabled) }, key: 0 }, [api_text($cmp.iconName && $cmp.iconPosition !== "right" ? ($cmp.iconName || "").split(":").pop() + " " : ""), api_text($cmp.label || ""), api_text($cmp.iconName && $cmp.iconPosition === "right" ? " " + ($cmp.iconName || "").split(":").pop() : "")])]`
 }
 
 func buttonStatefulTemplateJS() string {
@@ -959,19 +1325,20 @@ func iconButtonTemplateJS() string {
 
 func cardTemplateJS() string {
 	return `(() => {
-  const titleChildren = $cmp.title ? [api_text($cmp.title)] : [api_slot("title", { key: 8 }, [], $slotset)];
+  const titleChildren = $cmp.title ? [api_text($cmp.title)] : [api_slot("title", { attrs: { name: "title" }, key: 8 }, [], $slotset)];
   const mediaChildren = [];
   if ($cmp.iconName) {
     mediaChildren.push(api_element("span", { classMap: { "slds-media__figure": true, "slds-icon_container": true }, attrs: { title: $cmp.iconName }, key: 4 }, [api_text(($cmp.iconName || "").split(":").pop())]));
   }
-  mediaChildren.push(api_element("div", { classMap: { "slds-media__body": true, "slds-truncate": true }, key: 5 }, [api_element("h2", { classMap: { "slds-card__header-title": true }, key: 6 }, [api_element("span", { classMap: { "slds-text-heading_small": true }, key: 7 }, titleChildren)])]));
-  return [api_element("article", { classMap: cardClassMap($cmp.variant), key: 0 }, [
-    api_element("header", { classMap: { "slds-card__header": true, "slds-grid": true }, key: 1 }, [
-      api_element("div", { classMap: { "slds-media": true, "slds-media_center": true, "slds-has-flexi-truncate": true }, key: 2 }, mediaChildren),
-      api_element("div", { classMap: { "slds-no-flex": true }, key: 9 }, [api_slot("actions", { key: 10 }, [], $slotset)])
+  mediaChildren.push(api_element("div", { classMap: { "slds-media__body": true }, key: 5 }, [api_element("h2", { classMap: { "slds-card__header-title": true }, key: 6 }, [api_element("span", { classMap: { "slds-truncate": true }, key: 7 }, titleChildren)])]));
+  mediaChildren.push(api_element("div", { classMap: { "slds-no-flex": true }, key: 9 }, [api_slot("actions", { attrs: { name: "actions" }, key: 10 }, [], $slotset)]));
+  const cardClasses = cardClassMap($cmp.variant);
+  return [api_element("article", { className: Object.keys(cardClasses).filter((name) => cardClasses[name]).join(" "), key: 0 }, [
+    api_element("div", { classMap: { "slds-card__header": true, "slds-grid": true }, key: 1 }, [
+      api_element("header", { classMap: { "slds-media": true, "slds-media_center": true, "slds-has-flexi-truncate": true }, key: 2 }, mediaChildren)
     ]),
     api_element("div", { classMap: { "slds-card__body": true }, key: 11 }, [api_slot("", { key: 12 }, [], $slotset)]),
-    api_element("div", { classMap: { "slds-card__footer": true }, key: 13 }, [api_slot("footer", { key: 14 }, [], $slotset)])
+    api_element("div", { classMap: { "slds-card__footer": true }, key: 13 }, [api_slot("footer", { attrs: { name: "footer" }, key: 14 }, [], $slotset)])
   ])];
 })()`
 }
@@ -985,15 +1352,46 @@ func textareaTemplateJS() string {
 }
 
 func comboboxTemplateJS() string {
+	return `(() => {
+  const options = $cmp.options || [];
+  const selected = options.find((option) => option.value === $cmp.value);
+  const open = Boolean($cmp.__comboboxOpen);
+  return [api_element("div", { classMap: { "slds-form-element": true }, key: 0 }, [
+    api_element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [api_text($cmp.label || "")]),
+    api_element("div", { classMap: { "slds-combobox": true, "slds-is-open": open }, key: 2 }, [
+      api_element("button", {
+        classMap: { "slds-combobox__input": true, "slds-input_faux": true },
+        attrs: { type: "button", role: "combobox", "aria-label": $cmp.label || "", "aria-expanded": String(open), "aria-haspopup": "listbox" },
+        props: { disabled: Boolean($cmp.disabled) }, key: 3, on: { click: api_bind($cmp.handleComboboxToggle) }
+      }, [api_text(selected ? selected.label : ($cmp.placeholder || "Select an Option"))]),
+      open ? api_element("ul", { classMap: { "slds-listbox": true, "slds-listbox_vertical": true }, attrs: { role: "listbox" }, key: 4 }, $api.i(options, (option, index) =>
+        api_element("li", {
+          classMap: { "slds-listbox__item": true },
+          attrs: { role: "option", "data-option-index": String(index), "aria-selected": String(option.value === $cmp.value) },
+          key: 20 + index, on: { click: api_bind($cmp.handleComboboxSelect) }
+        }, [api_text(option.label || "")])
+      )) : null
+    ])
+  ])];
+})()`
+}
+
+func groupedComboboxTemplateJS() string {
 	return `[api_element("label", { classMap: { "slds-form-element": true, "slds-combobox": true }, key: 0 }, [api_element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [api_text($cmp.label || "")]), api_element("select", { classMap: { "slds-select": true }, props: { value: $cmp.value || "", required: Boolean($cmp.required) }, key: 2, on: { change: api_bind($cmp.handleChange) } }, ($cmp.options || []).map((option, index) => api_element("option", { attrs: { value: String(option.value ?? option.label ?? "") }, props: { selected: String(option.value ?? option.label ?? "") === String($cmp.value ?? "") }, key: 20 + index }, [api_text(option.label || option.value || "")])))])]`
 }
 
 func layoutTemplateJS() string {
-	return `[api_element("div", { classMap: layoutClassMap($cmp), key: 0 }, [api_slot("", { key: 1 }, [], $slotset)])]`
+	return `(() => {
+  $cmp.__layoutRenderClasses = layoutClassMap($cmp);
+  return [api_slot("", { classMap: { "slds-slot": true }, key: 0 }, [], $slotset)];
+})()`
 }
 
 func layoutItemTemplateJS() string {
-	return `[api_element("div", { classMap: layoutItemClassMap($cmp), key: 0 }, [api_slot("", { key: 1 }, [], $slotset)])]`
+	return `(() => {
+  $cmp.__layoutRenderClasses = layoutItemClassMap($cmp);
+  return [api_slot("", { key: 0 }, [], $slotset)];
+})()`
 }
 
 func tabsetTemplateJS() string {
@@ -1005,7 +1403,7 @@ func tabTemplateJS() string {
 }
 
 func spinnerTemplateJS() string {
-	return `[api_element("div", { classMap: { "slds-spinner": true }, attrs: { role: "status" }, key: 0 }, [api_text($cmp.alternativeText || "Loading")])]`
+	return `[api_element("div", { key: 0 }, []), api_element("div", { className: "slds-spinner slds-spinner_" + normalizeChoice($cmp.size, ["small", "medium", "large"], "medium"), attrs: { role: "status" }, key: 1 }, [api_element("span", { classMap: { "slds-assistive-text": true }, key: 2 }, [api_text($cmp.alternativeText || "Loading")]), api_element("div", { classMap: { "slds-spinner__dot-a": true }, key: 3 }, []), api_element("div", { classMap: { "slds-spinner__dot-b": true }, key: 4 }, [])])]`
 }
 
 func iconTemplateJS() string {
@@ -1076,7 +1474,7 @@ func formattedEmailTemplateJS() string {
 }
 
 func formattedNumberTemplateJS() string {
-	return `(() => { const text = formatNumberValue($cmp); return [api_element("span", { classMap: { "slds-truncate": true }, attrs: { title: text }, key: 0 }, [api_text(text)])]; })()`
+	return `(() => { const text = formatNumberValue($cmp); return text === "" ? [] : [api_text(text)]; })()`
 }
 
 func slotContainerTemplateJS(tag, className string) string {
@@ -1175,7 +1573,14 @@ func menuItemTemplateJS() string {
 }
 
 func optionGroupTemplateJS(inputType string) string {
-	return fmt.Sprintf(`[api_element("fieldset", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("legend", { classMap: { "slds-form-element__legend": true }, key: 1 }, [api_text($cmp.label || "")]), api_element("div", { classMap: { "slds-form-element__control": true }, key: 2 }, ($cmp.options || []).map((option, index) => { const optionValue = String(option.value ?? option.label ?? ""); return api_element("label", { classMap: { "slds-%[1]s": true }, key: 20 + index }, [api_element("input", { attrs: { type: %[1]q, value: optionValue, name: $cmp.name || $cmp.label || %[1]q }, props: { checked: selectedValueList($cmp.value).includes(optionValue) }, key: 200 + index, on: { change: api_bind($cmp.handleOptionGroupChange) } }), api_element("span", { key: 400 + index }, [api_text(option.label || option.value || "")])]); }) )])]`, inputType)
+	checked := "selectedValueList($cmp.value).includes(optionValue)"
+	if inputType == "checkbox" {
+		// Native checkbox groups require an initialized value before rendering
+		// options. Keep the direct value operation, including its TypeError for
+		// an omitted value, rather than silently supplying an empty selection.
+		checked = "$cmp.value.indexOf(optionValue) !== -1"
+	}
+	return fmt.Sprintf(`[api_element("fieldset", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("legend", { classMap: { "slds-form-element__legend": true }, key: 1 }, [api_text($cmp.label || "")]), api_element("div", { classMap: { "slds-form-element__control": true }, key: 2 }, ($cmp.options || []).map((option, index) => { const optionValue = String(option.value ?? option.label ?? ""); return api_element("label", { classMap: { "slds-%[1]s": true }, key: 20 + index }, [api_element("input", { attrs: { type: %[1]q, value: optionValue, name: $cmp.name || $cmp.label || %[1]q }, props: { checked: %[2]s }, key: 200 + index, on: { change: api_bind($cmp.handleOptionGroupChange) } }), api_element("span", { key: 400 + index }, [api_text(option.label || option.value || "")])]); }) )])]`, inputType, checked)
 }
 
 func selectTemplateJS() string {
@@ -1188,32 +1593,39 @@ func sliderTemplateJS() string {
 
 func dualListboxTemplateJS() string {
 	return `(() => {
-  const values = selectedValueList($cmp.value);
-  const options = $cmp.options || [];
-  const sourceOptions = options.filter((option) => !values.includes(String(option.value ?? option.label ?? "")));
-  const selectedOptions = values.map((value) => options.find((option) => String(option.value ?? option.label ?? "") === value) || { label: value, value });
+  const { source: sourceOptions, selected: selectedOptions, required } = dualListboxOptions($cmp);
+  const disabled = Boolean($cmp.disabled);
+  const list = (name, options, key) => api_element("ul", {
+    classMap: { "slds-dueling-list__options": true },
+    attrs: { role: "listbox", "data-list": name, "aria-multiselectable": "true" }, key
+  }, $api.i(options, (option, index) => {
+    const selection = name === "source" ? $cmp.__dualSelectedSource : $cmp.__dualSelectedTarget;
+    const label = option.label || option.value || "";
+    const text = name === "selected" && required.includes(option.value) ? label + " : item cannot be removed from " + ($cmp.selectedLabel || "Selected") : label;
+    return api_element("li", {
+      classMap: { "slds-dueling-list__item": true },
+      attrs: { role: "option", "data-list": name, "data-option-index": String(index),
+        "aria-selected": String(Boolean(selection && selection.includes(option.value))), "aria-disabled": String(disabled) },
+      key: key * 100 + index, on: { click: api_bind($cmp.handleDualListboxSelect) }
+    }, [api_text(text)]);
+  }));
   return [api_element("fieldset", { classMap: { "slds-form-element": true, "slds-dueling-list": true }, key: 0 }, [
     api_element("legend", { classMap: { "slds-form-element__legend": true }, key: 1 }, [api_text($cmp.label || "")]),
     api_element("div", { classMap: { "slds-dueling-list__column": true }, key: 2 }, [
       api_element("span", { key: 3 }, [api_text($cmp.sourceLabel || "Available")]),
-      api_element("select", { classMap: { "slds-select": true }, attrs: { multiple: "", "data-list": "source" }, props: { disabled: Boolean($cmp.disabled) }, key: 4 }, sourceOptions.map((option, index) => {
-        const optionValue = String(option.value ?? option.label ?? "");
-        return api_element("option", { attrs: { value: optionValue }, key: 40 + index }, [api_text(option.label || option.value || "")]);
-      }))
+      list("source", sourceOptions, 4)
     ]),
     api_element("div", { classMap: { "slds-dueling-list__column": true }, key: 5 }, [
-      api_element("button", { classMap: { "slds-button": true, "slds-button_icon": true }, attrs: { type: "button", "data-action": "add", "aria-label": "Move selection to Selected" }, props: { disabled: Boolean($cmp.disabled) }, key: 50, on: { click: api_bind($cmp.handleDualListboxMove) } }, [api_text("Move selection to Selected")]),
-      api_element("button", { classMap: { "slds-button": true, "slds-button_icon": true }, attrs: { type: "button", "data-action": "remove", "aria-label": "Move selection to Available" }, props: { disabled: Boolean($cmp.disabled) }, key: 51, on: { click: api_bind($cmp.handleDualListboxMove) } }, [api_text("Move selection to Available")]),
-      api_element("button", { classMap: { "slds-button": true, "slds-button_icon": true }, attrs: { type: "button", "data-action": "up", "aria-label": "Move selection up" }, props: { disabled: Boolean($cmp.disabled) }, key: 52, on: { click: api_bind($cmp.handleDualListboxMove) } }, [api_text("Move selection up")]),
-      api_element("button", { classMap: { "slds-button": true, "slds-button_icon": true }, attrs: { type: "button", "data-action": "down", "aria-label": "Move selection down" }, props: { disabled: Boolean($cmp.disabled) }, key: 53, on: { click: api_bind($cmp.handleDualListboxMove) } }, [api_text("Move selection down")])
+      api_element("button", { classMap: { "slds-button": true, "slds-button_icon": true }, attrs: { type: "button", "data-action": "add", title: "Move selection to Selected" }, props: { disabled: disabled || !sourceOptions.length }, key: 50, on: { click: api_bind($cmp.handleDualListboxMove) } }, [api_text("Move selection to Selected")]),
+      api_element("button", { classMap: { "slds-button": true, "slds-button_icon": true }, attrs: { type: "button", "data-action": "remove", title: "Move selection to Available" }, props: { disabled: disabled || !selectedOptions.some((option) => !required.includes(option.value)) }, key: 51, on: { click: api_bind($cmp.handleDualListboxMove) } }, [api_text("Move selection to Available")]),
+      api_element("button", { classMap: { "slds-button": true, "slds-button_icon": true }, attrs: { type: "button", "data-action": "up", title: "Move selection up" }, props: { disabled: disabled || selectedOptions.length < 2 }, key: 52, on: { click: api_bind($cmp.handleDualListboxMove) } }, [api_text("Move selection up")]),
+      api_element("button", { classMap: { "slds-button": true, "slds-button_icon": true }, attrs: { type: "button", "data-action": "down", title: "Move selection down" }, props: { disabled: disabled || selectedOptions.length < 2 }, key: 53, on: { click: api_bind($cmp.handleDualListboxMove) } }, [api_text("Move selection down")])
     ]),
     api_element("div", { classMap: { "slds-dueling-list__column": true }, key: 6 }, [
       api_element("span", { key: 7 }, [api_text($cmp.selectedLabel || "Selected")]),
-      api_element("select", { classMap: { "slds-select": true }, attrs: { multiple: "", "data-list": "selected" }, props: { disabled: Boolean($cmp.disabled) }, key: 8 }, selectedOptions.map((option, index) => {
-        const optionValue = String(option.value ?? option.label ?? "");
-        return api_element("option", { attrs: { value: optionValue }, key: 80 + index }, [api_text(option.label || option.value || "")]);
-      }))
-    ])
+      list("selected", selectedOptions, 8)
+    ]),
+    $cmp.__dualValidityMessage ? api_element("div", { classMap: { "slds-form-element__help": true }, attrs: { role: "alert" }, key: 9 }, [api_text($cmp.__dualValidityMessage)]) : null
   ])];
 })()`
 }
@@ -1267,11 +1679,109 @@ func recordPickerTemplateJS() string {
 }
 
 func treeTemplateJS() string {
-	return `[api_element("ul", { classMap: { "slds-tree": true }, attrs: { role: "tree" }, key: 0 }, ($cmp.items || []).map((item, index) => api_element("li", { attrs: { role: "treeitem" }, key: 20 + index }, [api_text(item.label || item.name || "")])).concat([api_slot("", { key: 1 }, [], $slotset)]))]`
+	return `(() => {
+  const renderItems = (items, parentPath, level) => $api.i(items || [], (item, index) => {
+    const path = parentPath ? parentPath + "." + index : String(index);
+    const children = item.items || [];
+    const branch = Boolean(children.length);
+    const expanded = treeItemExpanded($cmp, item, path);
+    const disabled = Boolean(item.disabled);
+    const label = (item.label || item.name || "") + (item.metatext ? " : " + item.metatext : "");
+    const toggleLabel = expanded ? "Collapse Tree Branch" : "Expand Tree Branch";
+    return api_element("li", {
+      attrs: { role: "treeitem", "aria-level": String(level), "aria-selected": String($cmp.__treeSelectedPath === path),
+        "aria-expanded": branch ? String(expanded) : undefined, "aria-disabled": String(disabled) }, key: "item-" + path
+    }, [
+      api_element("div", { classMap: { "slds-tree__item": true }, key: "label-" + path }, [
+        branch && !disabled ? api_element("button", { classMap: { "slds-button": true, "slds-button_icon": true },
+          attrs: { type: "button", title: toggleLabel, "data-path": path }, key: "toggle-" + path,
+          on: { click: api_bind($cmp.handleTreeToggle) } }, [api_text(toggleLabel)]) : null,
+        branch && !disabled ? api_text(" ") : null,
+        api_element(disabled ? "span" : "a", { classMap: { "slds-tree__item-label": true },
+          attrs: { href: disabled ? undefined : (item.href || "javascript:void(0)"), "data-path": path }, key: "link-" + path,
+          on: disabled ? {} : { click: api_bind($cmp.handleTreeSelect) } }, [api_text(label)])
+      ]),
+      branch && expanded && !disabled ? api_element("ul", { attrs: { role: "group" }, key: "children-" + path }, renderItems(children, path, level + 1)) : null
+    ]);
+  });
+  return [api_element("div", { classMap: { "slds-tree_container": true }, key: 0 }, [
+    api_element("h3", { classMap: { "slds-tree__group-header": true }, key: 1 }, [api_text($cmp.header || "")]),
+    api_element("ul", { classMap: { "slds-tree": true }, attrs: { role: "tree" }, key: 2 }, renderItems($cmp.items, "", 1))
+  ])];
+})()`
 }
 
 func treeGridTemplateJS() string {
-	return `(() => { const columns = $cmp.columns || []; const rows = flattenTreeRows($cmp.data || []); return [api_element("table", { classMap: { "slds-table": true, "slds-tree": true }, attrs: { role: "treegrid" }, key: 0 }, [api_element("thead", { key: 1 }, [api_element("tr", { key: 2 }, columns.map((column, index) => api_element("th", { key: 20 + index }, [api_text(column.label || column.fieldName || "")])))]), api_element("tbody", { key: 3 }, rows.map((entry, rowIndex) => api_element("tr", { attrs: { "aria-level": String(entry.level + 1) }, key: 100 + rowIndex }, columns.map((column, colIndex) => api_element("td", { key: 1000 + rowIndex * 50 + colIndex }, [api_text((colIndex === 0 ? "  ".repeat(entry.level) : "") + ((entry.row && entry.row[column.fieldName]) ?? ""))])))))])]; })()`
+	return `(() => {
+  const columns = $cmp.columns || [];
+  const rows = treeGridEntries($cmp, true);
+  const selected = treeGridSelectedKeys($cmp);
+  const selectionVisible = !$cmp.hideCheckboxColumn;
+  const header = [];
+  if (selectionVisible) {
+    header.push(api_element("th", { key: "selection-header" }, [
+      api_element("input", { attrs: { type: "checkbox", id: $cmp.__gridID + "-all" },
+        props: { checked: Boolean(selected.length), indeterminate: selected.length > 0 && selected.length < rows.length, disabled: !rows.length },
+        key: "select-all" }),
+      api_element("label", { classMap: { "slds-assistive-text": true }, attrs: { for: $cmp.__gridID + "-all" }, key: "select-all-label" }, [api_text("Select All")])
+    ]));
+  }
+  header.push(...columns.map((column, columnIndex) => {
+    const label = column.label || column.fieldName || "";
+    const title = "Show " + label + " column actions";
+    return api_element("th", { attrs: { scope: "col" }, key: "header-" + columnIndex },
+      column.type === "action" ? [] : [
+        api_text(label),
+        api_element("button", { classMap: { "slds-button": true, "slds-button_icon": true }, attrs: { type: "button", title }, key: "column-action-" + columnIndex }, [api_text(title)]),
+        api_element("input", { attrs: { type: "range", min: "50", max: "1000", "aria-label": label + " column width", "data-column-index": String(columnIndex) },
+          props: { value: String(column.initialWidth ?? 1000) }, key: "column-width-" + columnIndex })
+      ]);
+  }));
+  const body = $api.i(rows, (entry, rowIndex) => {
+    const checked = selected.includes(entry.name);
+    const cells = [];
+    if (selectionVisible) {
+      const id = $cmp.__gridID + "-" + entry.path;
+      cells.push(api_element("td", { key: "selection-" + entry.path }, [
+        api_element("input", { attrs: { type: "checkbox", id, "data-path": entry.path }, props: { checked }, key: "input-" + entry.path,
+          on: { change: api_bind($cmp.handleTreeGridSelection) } }),
+        api_element("label", { attrs: { for: id }, key: "select-label-" + entry.path }, [api_text("Select Item " + (rowIndex + 1))])
+      ]));
+    }
+    cells.push(...columns.map((column, columnIndex) => {
+      const key = entry.path + ":" + columnIndex;
+      if (column.type === "action") {
+        const actions = column.typeAttributes && column.typeAttributes.rowActions || [];
+        return api_element("td", { key: "action-cell-" + key }, [
+          api_element("button", { classMap: { "slds-button": true, "slds-button_icon": true },
+            attrs: { type: "button", "data-path": entry.path, "data-column-index": String(columnIndex) }, key: "action-menu-" + key,
+            on: { click: api_bind($cmp.handleTreeGridActionMenu) } }, [api_text("Show actions")]),
+          $cmp.__gridActionMenu === key ? api_element("div", { attrs: { role: "menu" }, key: "menu-" + key }, $api.i(actions, (action, actionIndex) =>
+            api_element("button", { attrs: { type: "button", role: "menuitem", "data-path": entry.path, "data-column-index": String(columnIndex), "data-action-index": String(actionIndex) },
+              key: "action-" + actionIndex, on: { click: api_bind($cmp.handleTreeGridAction) } }, [api_text(action.label || action.name || "")])
+          )) : null
+        ]);
+      }
+      const value = entry.row[column.fieldName] ?? "";
+      const toggleLabel = (entry.expanded ? "Collapse " : "Expand ") + String(value);
+      const content = [];
+      if (columnIndex === 0 && entry.hasChildren) {
+        content.push(api_element("button", { classMap: { "slds-button": true, "slds-button_icon": true },
+          attrs: { type: "button", title: toggleLabel, "data-path": entry.path }, key: "toggle-" + entry.path,
+          on: { click: api_bind($cmp.handleTreeGridToggle) } }, [api_text(toggleLabel)]), api_text(" "));
+      }
+      content.push(api_text(value));
+      return api_element(columnIndex === 0 ? "th" : "td", { attrs: { scope: columnIndex === 0 ? "row" : undefined },
+        key: "cell-" + key }, content);
+    }));
+    return api_element("tr", { attrs: { "aria-level": String(entry.row.level), "aria-expanded": entry.hasChildren ? String(entry.expanded) : undefined,
+      "aria-selected": selectionVisible ? String(checked) : undefined }, key: "row-" + entry.path }, cells);
+  });
+  return [api_element("table", { classMap: { "slds-table": true, "slds-tree": true }, attrs: { role: "treegrid" }, key: 0 }, [
+    api_element("thead", { key: 1 }, [api_element("tr", { key: 2 }, header)]),
+    api_element("tbody", { key: 3 }, body)
+  ])];
+})()`
 }
 
 func mapTemplateJS() string {
@@ -1280,6 +1790,14 @@ func mapTemplateJS() string {
 
 func carouselImageTemplateJS() string {
 	return `[api_element("figure", { classMap: { "slds-carousel__panel": true }, key: 0 }, [api_element("img", { attrs: { src: $cmp.src || "", alt: $cmp.alternativeText || $cmp.header || "" }, key: 1 }), api_element("figcaption", { key: 2 }, [api_element("h3", { key: 3 }, [api_text($cmp.header || $cmp.label || "")]), api_element("p", { key: 4 }, [api_text($cmp.description || "")])])])]`
+}
+
+func verticalNavigationTemplateJS() string {
+	return `[api_element("nav", { classMap: { "slds-nav-vertical": true }, attrs: { "aria-label": $cmp.ariaLabel || "Sub page" }, key: 0 }, [api_slot("", { key: 1 }, [], $slotset)])]`
+}
+
+func verticalNavigationSectionTemplateJS() string {
+	return `[api_element("div", { classMap: { "slds-nav-vertical__section": true }, key: 0 }, [api_element("h2", { classMap: { "slds-nav-vertical__title": true }, key: 1 }, [api_text($cmp.label || $cmp.title || "")]), api_element("div", { attrs: { role: "list" }, key: 2 }, [api_slot("", { key: 3 }, [], $slotset)])])]`
 }
 
 func verticalNavigationItemTemplateJS() string {

@@ -3,12 +3,13 @@ package vm
 import "testing"
 
 func TestCB203MetadataDeploymentInvokesCallbackWithResult(t *testing.T) {
+	// A30 native J001/J034 record the native assertion expectations.
 	callbackProgram, err := CompileAnonymous(`
 CB203MetadataCallback.called = true;
-System.assertEquals('0Af000000000001', (String)result.id);
-System.assertEquals('SUCCEEDED', result.status.name());
+System.assertEquals('0Af000000000001CAA', (String)result.id);
+System.assertEquals('Succeeded', result.status.name());
 System.assertEquals(1, result.numberComponentsTotal);
-System.assertEquals('0Af000000000001', (String)context.getCallbackJobId());
+System.assertEquals('0Af000000000001CAA', (String)context.getCallbackJobId());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -20,7 +21,7 @@ item.fullName = 'Feature.Callback';
 container.addMetadata(item);
 CB203MetadataCallback callback = new CB203MetadataCallback();
 Id deploymentId = Metadata.Operations.enqueueDeployment(container, callback);
-System.assertEquals('0Af000000000001', (String)deploymentId);
+System.assertEquals('0Af000000000001CAA', (String)deploymentId);
 System.assertEquals(true, CB203MetadataCallback.called);
 `)
 	if err != nil {
@@ -57,11 +58,12 @@ System.assertEquals(true, CB203MetadataCallback.called);
 }
 
 func TestCB203MetadataDeploymentInvokesCallbackWithFailureResult(t *testing.T) {
+	// A30 native J001/J015 record the native assertion expectations.
 	callbackProgram, err := CompileAnonymous(`
 CB203MetadataCallback.failed = true;
-System.assertEquals('FAILED', result.status.name());
+System.assertEquals('Failed', result.status.name());
 System.assertEquals(false, result.success);
-System.assertEquals('0Af000000000001', (String)context.getCallbackJobId());
+System.assertEquals('0Af000000000001CAA', (String)context.getCallbackJobId());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -73,7 +75,7 @@ item.fullName = 'InvalidCallbackFailure';
 container.addMetadata(item);
 CB203MetadataCallback callback = new CB203MetadataCallback();
 Id deploymentId = Metadata.Operations.enqueueDeployment(container, callback);
-System.assertEquals('0Af000000000001', (String)deploymentId);
+System.assertEquals('0Af000000000001CAA', (String)deploymentId);
 System.assertEquals(true, CB203MetadataCallback.failed);
 `)
 	if err != nil {

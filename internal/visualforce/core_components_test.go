@@ -24,10 +24,10 @@ func TestRenderCoreVisualforceComponents(t *testing.T) {
 		`Hello Ada, balance 42`,
 		`class="message"`,
 		`data-for="name"`,
-		`<textarea name="notes" rows="4" cols="30">Line 1`,
+		`<textarea name="notes" id="j_id0:notes" rows="4" cols="30">Line 1`,
 		`&lt;Line 2&gt;</textarea>`,
-		`<input type="password" name="secret" value="sauce" />`,
-		`<input type="hidden" name="active" value="false" /><input type="checkbox" name="active" value="true" checked="checked" />`,
+		`<input type="password" name="secret" id="j_id0:secret" value="sauce" />`,
+		`<input type="hidden" name="active" value="false" /><input type="checkbox" name="active" id="j_id0:active" value="true" checked="checked" />`,
 		`<iframe src="/apex/Nested" width="320" height="200"></iframe>`,
 	} {
 		assertContains(t, rendered, want)
@@ -47,15 +47,40 @@ func TestRenderCoreSelectComponents(t *testing.T) {
 	</apex:page>`)
 
 	for _, want := range []string{
-		`<span class="selectCheckboxes"`,
+		`<span id="j_id0:colors" data-rerender="j_id0:colors" class="selectCheckboxes"`,
 		`<input type="checkbox" name="colors" value="red" checked="checked" />`,
-		`<label>Red</label>`,
+		`<label> Red</label>`,
 		`<input type="checkbox" name="colors" value="blue" />`,
-		`<span class="selectRadio"`,
+		`<span id="j_id0:size" data-rerender="j_id0:size" class="selectRadio"`,
 		`<input type="radio" name="size" value="large" checked="checked" />`,
-		`<label>Large</label>`,
+		`<label> Large</label>`,
 	} {
 		assertContains(t, rendered, want)
+	}
+}
+
+func TestRenderSelectListPreservesLiteralValue(t *testing.T) {
+	// Preserve the pre-Select controls template behavior; native default-selection rows
+	// exercise bound values and do not authorize changing literal attributes.
+	for _, literal := range []string{"b", "country"} {
+		t.Run(literal, func(t *testing.T) {
+			rendered := renderCoreComponentMarkup(t, `<apex:page><apex:selectList value="`+literal+`">
+				<apex:selectOption itemValue="a" itemLabel="Alpha"/>
+				<apex:selectOption itemValue="`+literal+`" itemLabel="Selected"/>
+			</apex:selectList></apex:page>`)
+			assertContains(t, rendered, `<option value="`+literal+`" selected="selected">Selected</option>`)
+		})
+	}
+	for _, attribute := range []string{` value=""`, ""} {
+		t.Run("empty"+attribute, func(t *testing.T) {
+			rendered := renderCoreComponentMarkup(t, `<apex:page><apex:selectList`+attribute+`>
+				<apex:selectOption itemValue="" itemLabel="Empty"/>
+				<apex:selectOption itemValue="a" itemLabel="Alpha"/>
+			</apex:selectList></apex:page>`)
+			if strings.Contains(rendered, `selected="selected"`) {
+				t.Fatalf("empty literal selected an option: %s", rendered)
+			}
+		})
 	}
 }
 
@@ -79,28 +104,33 @@ func TestRenderSelectListExpandsSelectOptionsValue(t *testing.T) {
 }
 
 func TestRenderPageBlockTableDerivesHeaderFromFieldExpression(t *testing.T) {
+	// Native child_pageBlockTable_column/context_pageBlockTable_column require a container.
+	// Native table rendering records the default raw colspan="1".
 	rendered := renderCoreComponentMarkup(t, `<apex:page>
-		<apex:pageBlockTable value="{!accounts}" var="a">
-			<apex:column value="{!a.Name}"/>
-		</apex:pageBlockTable>
+		<apex:pageBlock>
+			<apex:pageBlockTable value="{!accounts}" var="a">
+				<apex:column value="{!a.Name}"/>
+			</apex:pageBlockTable>
+		</apex:pageBlock>
 	</apex:page>`)
 
 	for _, want := range []string{
-		`<th>Account Name</th>`,
-		`<td>Acme Probe</td>`,
+		`<th colspan="1">Account Name</th>`,
+		`<td colspan="1">Acme Probe</td>`,
 	} {
 		assertContains(t, rendered, want)
 	}
 }
 
 func TestRenderDataTableDoesNotDeriveHeaderFromFieldExpression(t *testing.T) {
+	// Native table rendering records the default raw colspan="1".
 	rendered := renderCoreComponentMarkup(t, `<apex:page>
 		<apex:dataTable value="{!accounts}" var="a">
 			<apex:column value="{!a.Name}"/>
 		</apex:dataTable>
 	</apex:page>`)
 
-	assertContains(t, rendered, `<table class="dataTable"><thead><tr><th></th></tr></thead>`)
+	assertContains(t, rendered, `<table class="dataTable"><thead><tr><th colspan="1"></th></tr></thead>`)
 	if strings.Contains(rendered, "Account Name") {
 		t.Fatalf("dataTable derived default field header: %s", rendered)
 	}
@@ -119,9 +149,9 @@ func TestRenderPanelGridUsesTableRowsAndFacets(t *testing.T) {
 	</apex:page>`)
 
 	for _, want := range []string{
-		`<table id="probeGrid">`,
+		`<table id="j_id0:probeGrid">`,
 		`<caption class="gridCaption">Probe grid</caption>`,
-		`<thead><tr><th class="gridHeader" colspan="2"><span>Left</span><span>Right</span></th></tr></thead>`,
+		`<thead><tr><th class="gridHeader" colspan="2" scope="colgroup"><span>Left</span><span>Right</span></th></tr></thead>`,
 		`<tbody><tr><td>A</td><td>B</td></tr><tr><td>C</td></tr></tbody>`,
 		`<tfoot><tr><td class="gridFooter" colspan="2">Done</td></tr></tfoot>`,
 	} {

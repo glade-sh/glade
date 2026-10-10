@@ -1,0 +1,14 @@
+[
+  {
+    "id": "c_metadata_bad_target",
+    "group": "envelope and errors",
+    "kind": "compile",
+    "scenario": "compile-error",
+    "expect": "?",
+    "basis": "org",
+    "js": "import { gql, graphql, refreshGraphQL } from 'lightning/uiGraphQLApi';\nimport { LightningElement, wire } from 'lwc'; export default class FamilyUiGraphql extends LightningElement { document = gql`query L12Owned { uiapi { query { FamilyL12Record__c(where: { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }`; @wire(graphql, { query: \"$document\" }) result; }",
+    "template": "<template><span>L12 compiler question</span></template>",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__OwnedMissing</target></targets>",
+    "isolated_deploy": true
+  }
+]

@@ -71,14 +71,15 @@ var commandReferences = []CommandHelp{
 	},
 	{
 		Name:        "toolchain",
-		Description: "Install or inspect the global LWC toolchain for Lightning Out.",
-		Usage:       []string{"glade toolchain install [--from <glade-checkout>]", "glade toolchain status [--json]"},
+		Description: "Install or inspect local runtime toolchains.",
+		Usage:       []string{"glade toolchain install [--from <glade-checkout>]", "glade toolchain status [--json]", "glade toolchain install dataweave --java-home <Java17-JDK> [--json]", "glade toolchain status dataweave [--json]"},
 		Subcommands: []SubcommandHelp{
-			{Name: "install", Description: "Install the LWC runtime toolchain."},
-			{Name: "status", Description: "Print the current LWC toolchain status."},
+			{Name: "install", Description: "Install LWC assets or the DataWeave engine."},
+			{Name: "status", Description: "Print LWC or DataWeave toolchain status."},
 		},
 		Flags: []FlagHelp{
 			{Name: "--from", Value: "<glade-checkout>", Description: "Install from another glade checkout. Defaults to the current checkout."},
+			{Name: "--java-home", Value: "<path>", Description: "Explicit Java17 JDK for DataWeave installation."},
 			{Name: "--json", Description: "Write toolchain status as JSON."},
 		},
 		Notes: []string{

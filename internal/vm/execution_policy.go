@@ -62,11 +62,57 @@ func (vm *VM) resolveDMLMode(mode ir.DMLMode) string {
 	}
 }
 
+// Explicit access arguments have an anonymous-only boundary. Source defaults
+// and a WITH SYSTEM_MODE suffix in a dynamic query are separate contracts.
+func (vm *VM) validateExplicitAccessLevel(accessLevel Value) error {
+	if databaseAccessLevelSecurityMode(accessLevel) == "SYSTEM_MODE" && vm.testContext == nil &&
+		vm.currentClass == "" && vm.currentMethod.ClassName == "" && !vm.currentTrigger {
+		return newExceptionError("SecurityException", "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.")
+	}
+	return nil
+}
+
+func (vm *VM) validateDynamicQueryAccessLevel(queryText string, accessLevel Value) error {
+	if err := vm.validateExplicitAccessLevel(accessLevel); err != nil {
+		return err
+	}
+	if query, err := vm.parseSOQLAt(queryText); err == nil {
+		if strings.EqualFold(query.SecurityMode, "USER_MODE") || strings.EqualFold(query.SecurityMode, "SYSTEM_MODE") {
+			return newExceptionError("SecurityException", "Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.")
+		}
+		// R089: at the floor USER_MODE cannot combine with SECURITY_ENFORCED.
+		// API 67 instead rejects the removed clause in the query route.
+		if strings.EqualFold(query.SecurityMode, "SECURITY_ENFORCED") &&
+			databaseAccessLevelSecurityMode(accessLevel) == "USER_MODE" &&
+			!apexversion.Enabled(vm.currentMethod.APIVersion, apexversion.SecureDefaults) {
+			return newExceptionError("SecurityException", "Cannot use the WITH SECURITY_ENFORCED clause in queries using USER_MODE access level.")
+		}
+	}
+	return nil
+}
+
 func (vm *VM) currentSharingMode() string {
 	if vm == nil {
 		return "without sharing"
 	}
 	if vm.currentTrigger {
+		return "without sharing"
+	}
+	if vm.currentMethod.SourceContextBound {
+		switch strings.ToLower(strings.TrimSpace(vm.currentMethod.SharingMode)) {
+		case "with sharing", "without sharing":
+			return strings.ToLower(strings.TrimSpace(vm.currentMethod.SharingMode))
+		case "inherited sharing":
+			if mode, ok := vm.nearestCallStackSharingMode(); ok {
+				return mode
+			}
+			if mode := strings.TrimSpace(vm.entrySharingMode); mode != "" {
+				return mode
+			}
+		}
+		if apexversion.Enabled(vm.currentMethod.APIVersion, apexversion.SecureDefaults) {
+			return "with sharing"
+		}
 		return "without sharing"
 	}
 	if vm.currentClass == "" && len(vm.callStack) == 0 && vm.entrySharingMode == "" {

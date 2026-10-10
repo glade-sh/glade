@@ -1,3 +1,17 @@
-import { createBaseComponent, renderBreadcrumb } from "./base.mjs";
+import { registerComponent } from "lwc";
+import LightningBreadcrumb from "./source/breadcrumb/breadcrumb.js";
+import template from "./source/breadcrumb/breadcrumb.html.js";
 
-export default createBaseComponent("lightning-breadcrumb", renderBreadcrumb);
+class Breadcrumb extends LightningBreadcrumb {
+  connectedCallback() {
+    const suppliedCapsClass = this.classList.contains("slds-text-title_caps");
+    super.connectedCallback();
+    if (!suppliedCapsClass) this.classList.remove("slds-text-title_caps");
+  }
+}
+
+export default registerComponent(Breadcrumb, {
+  tmpl: template,
+  sel: "lightning-breadcrumb",
+  apiVersion: 63,
+});

@@ -1,0 +1,21 @@
+<template><section data-l19-host>
+ <pre data-page-ready>Record forms capture shell ready</pre>
+ <input data-case-state type="hidden" />
+ <button data-start hidden onclick={startNext}>Mount next owned case</button>
+ <template lwc:if={mounted}>
+  <section data-native data-component={component}>
+   <template lwc:if={isForm}><lightning-record-form object-api-name={objectName} record-id={recordId} fields={fields} density={density} mode={mode} columns={columns} layout-type={layoutType} onload={record} onsubmit={record} onsuccess={record} onerror={record} oncancel={record}></lightning-record-form></template>
+   <template lwc:if={isEdit}><lightning-record-edit-form object-api-name={objectName} record-id={recordId} density={density} onload={record} onsubmit={record} onsuccess={record} onerror={record} onchange={record}>
+    <lightning-messages></lightning-messages>
+    <template for:each={fieldSpecs} for:item="field"><lightning-input-field key={field.key} field-name={field.name} value={fieldValue} required={required} disabled={disabled} read-only={readOnly} variant={variant}></lightning-input-field></template>
+    <lightning-button data-submit type="submit" label="Owned Save"></lightning-button>
+   </lightning-record-edit-form></template>
+   <template lwc:if={isView}><lightning-record-view-form object-api-name={objectName} record-id={recordId} density={density} onload={record} onerror={record}>
+    <template for:each={fieldSpecs} for:item="field"><lightning-output-field key={field.key} field-name={field.name}></lightning-output-field></template>
+   </lightning-record-view-form></template>
+   <template lwc:if={isPicker}><lightning-record-picker label={label} object-api-name={objectName} value={pickerValue} required={required} disabled={disabled} variant={variant} placeholder={placeholder} display-info={displayInfo} matching-info={matchingInfo} filter={filter} onready={record} onchange={record} onerror={record} onfocus={record} onblur={record}></lightning-record-picker></template>
+  </section>
+  <button data-run onclick={execute}>Run owned operation</button><button data-finish onclick={finish}>Finish observation</button>
+  <pre data-result>{result}</pre>
+ </template>
+</section></template>

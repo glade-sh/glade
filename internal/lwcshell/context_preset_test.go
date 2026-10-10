@@ -20,7 +20,9 @@ func TestLoadContextPresetsReadsProjectFile(t *testing.T) {
       "app": "Sales",
       "tab": "Accounts",
       "formFactor": "Large",
-      "state": {"c__mode": "demo"}
+      "state": {"c__mode": "demo"},
+      "userPermissions": {"ViewSetup": true, "ModifyAllData": false},
+      "customPermissions": {"Glade_Lwc_Oracle": true}
     }
   }
 }`)
@@ -41,6 +43,20 @@ func TestLoadContextPresetsReadsProjectFile(t *testing.T) {
 	}
 	if got := preset.State["c__mode"]; got != "demo" {
 		t.Fatalf("state c__mode = %q", got)
+	}
+	ctx, err := preset.ToPageContext()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ctx.UserPermissions["ViewSetup"] || ctx.UserPermissions["ModifyAllData"] {
+		t.Fatalf("user permissions = %#v", ctx.UserPermissions)
+	}
+	if !ctx.CustomPermissions["Glade_Lwc_Oracle"] {
+		t.Fatalf("custom permissions = %#v", ctx.CustomPermissions)
+	}
+	preset.UserPermissions["ViewSetup"] = false
+	if !ctx.UserPermissions["ViewSetup"] {
+		t.Fatal("page context aliases the source user-permission map")
 	}
 }
 

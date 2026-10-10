@@ -19,11 +19,23 @@ const (
 	StatusUnsupported  Status = "unsupported"
 )
 
+// Reason separates terminal causes without changing the legacy status enum.
+type Reason string
+
+const (
+	ReasonTimeout            Reason = "timeout"
+	ReasonCancelled          Reason = "cancelled"
+	ReasonUnsupportedFeature Reason = "unsupported-feature"
+	ReasonAssertion          Reason = "assertion"
+	ReasonRuntimeError       Reason = "runtime-error"
+)
+
 type Run struct {
-	Name         string                   `json:"name,omitempty"`
-	DurationMS   int64                    `json:"durationMs,omitempty"`
-	Dependencies []typesys.DependencyInfo `json:"dependencies,omitempty"`
-	Suites       []Suite                  `json:"suites"`
+	RuntimeRESTAPIVersion string                   `json:"runtimeRestApiVersion,omitempty"`
+	Name                  string                   `json:"name,omitempty"`
+	DurationMS            int64                    `json:"durationMs,omitempty"`
+	Dependencies          []typesys.DependencyInfo `json:"dependencies,omitempty"`
+	Suites                []Suite                  `json:"suites"`
 }
 
 type Suite struct {
@@ -33,14 +45,18 @@ type Suite struct {
 }
 
 type Case struct {
-	Name       string          `json:"name,omitempty"`
-	ClassName  string          `json:"className,omitempty"`
-	MethodName string          `json:"methodName,omitempty"`
-	Status     Status          `json:"status"`
-	DurationMS int64           `json:"durationMs,omitempty"`
-	Problem    *Problem        `json:"problem,omitempty"`
-	Trace      []trace.Event   `json:"trace,omitempty"`
-	Profile    *profile.Report `json:"profile,omitempty"`
+	Name       string `json:"name,omitempty"`
+	ClassName  string `json:"className,omitempty"`
+	MethodName string `json:"methodName,omitempty"`
+	SourceFile string `json:"sourceFile,omitempty"`
+	// SelectedSourceFile identifies the planned occurrence, not an executed body.
+	SelectedSourceFile string          `json:"selectedSourceFile,omitempty"`
+	Status             Status          `json:"status"`
+	Reason             Reason          `json:"reason,omitempty"`
+	DurationMS         int64           `json:"durationMs,omitempty"`
+	Problem            *Problem        `json:"problem,omitempty"`
+	Trace              []trace.Event   `json:"trace,omitempty"`
+	Profile            *profile.Report `json:"profile,omitempty"`
 }
 
 type Problem struct {
@@ -127,22 +143,24 @@ func (s Suite) Summary() Summary {
 
 func (r Run) MarshalJSON() ([]byte, error) {
 	type jsonRun struct {
-		Name         string                   `json:"name,omitempty"`
-		DurationMS   int64                    `json:"durationMs,omitempty"`
-		Dependencies []typesys.DependencyInfo `json:"dependencies,omitempty"`
-		Summary      Summary                  `json:"summary"`
-		Suites       []Suite                  `json:"suites"`
+		RuntimeRESTAPIVersion string                   `json:"runtimeRestApiVersion,omitempty"`
+		Name                  string                   `json:"name,omitempty"`
+		DurationMS            int64                    `json:"durationMs,omitempty"`
+		Dependencies          []typesys.DependencyInfo `json:"dependencies,omitempty"`
+		Summary               Summary                  `json:"summary"`
+		Suites                []Suite                  `json:"suites"`
 	}
 	suites := r.Suites
 	if suites == nil {
 		suites = []Suite{}
 	}
 	return json.Marshal(jsonRun{
-		Name:         r.Name,
-		DurationMS:   r.DurationMS,
-		Dependencies: r.Dependencies,
-		Summary:      r.Summary(),
-		Suites:       suites,
+		RuntimeRESTAPIVersion: r.RuntimeRESTAPIVersion,
+		Name:                  r.Name,
+		DurationMS:            r.DurationMS,
+		Dependencies:          r.Dependencies,
+		Summary:               r.Summary(),
+		Suites:                suites,
 	})
 }
 
@@ -165,24 +183,31 @@ func (s Suite) MarshalJSON() ([]byte, error) {
 
 func (c Case) MarshalJSON() ([]byte, error) {
 	type jsonCase struct {
-		Name       string          `json:"name,omitempty"`
-		ClassName  string          `json:"className,omitempty"`
-		MethodName string          `json:"methodName,omitempty"`
-		Status     Status          `json:"status"`
-		DurationMS int64           `json:"durationMs,omitempty"`
-		Problem    *Problem        `json:"problem,omitempty"`
-		Trace      []trace.Event   `json:"trace,omitempty"`
-		Profile    *profile.Report `json:"profile,omitempty"`
+		Name       string `json:"name,omitempty"`
+		ClassName  string `json:"className,omitempty"`
+		MethodName string `json:"methodName,omitempty"`
+		SourceFile string `json:"sourceFile,omitempty"`
+		// SelectedSourceFile identifies the planned occurrence, not an executed body.
+		SelectedSourceFile string          `json:"selectedSourceFile,omitempty"`
+		Status             Status          `json:"status"`
+		Reason             Reason          `json:"reason,omitempty"`
+		DurationMS         int64           `json:"durationMs,omitempty"`
+		Problem            *Problem        `json:"problem,omitempty"`
+		Trace              []trace.Event   `json:"trace,omitempty"`
+		Profile            *profile.Report `json:"profile,omitempty"`
 	}
 	return json.Marshal(jsonCase{
-		Name:       c.Name,
-		ClassName:  c.ClassName,
-		MethodName: c.MethodName,
-		Status:     normalizeStatus(c.Status),
-		DurationMS: c.DurationMS,
-		Problem:    c.Problem,
-		Trace:      c.Trace,
-		Profile:    c.Profile,
+		Name:               c.Name,
+		ClassName:          c.ClassName,
+		MethodName:         c.MethodName,
+		SourceFile:         c.SourceFile,
+		SelectedSourceFile: c.SelectedSourceFile,
+		Status:             normalizeStatus(c.Status),
+		Reason:             c.Reason,
+		DurationMS:         c.DurationMS,
+		Problem:            c.Problem,
+		Trace:              c.Trace,
+		Profile:            c.Profile,
 	})
 }
 

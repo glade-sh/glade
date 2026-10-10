@@ -15,29 +15,40 @@ type Param struct {
 }
 
 type Method struct {
-	Name            string
-	ReturnType      string
-	Params          []Param
-	Program         ir.Program
-	ClassName       string
-	IsStatic        bool
-	IsConstructor   bool
-	Access          string
-	Modifiers       []string
-	File            string
-	APIVersion      string
-	Line            int
-	Column          int
-	Unsupported     string
-	RuntimeLowering bool
-	Dependency      bool
+	Name          string
+	ReturnType    string
+	Params        []Param
+	Program       ir.Program
+	ClassName     string
+	IsStatic      bool
+	IsConstructor bool
+	Access        string
+	Modifiers     []string
+	File          string
+	APIVersion    string
+	// SourceContextBound preserves the source occurrence context for runners
+	// that compile an entry method outside the shared project class registry.
+	// Namespace and SharingMode are meaningful only when this is true.
+	SourceContextBound bool
+	Namespace          string
+	SharingMode        string
+	Line               int
+	Column             int
+	Unsupported        string
+	RuntimeLowering    bool
+	Dependency         bool
 }
 
 func (vm *VM) RegisterMethod(method Method) error {
 	if method.Name == "" {
 		return fmt.Errorf("method name is required")
 	}
-	vm.ensureRuntimeArtifactsOwned()
+	if vm.runtimeArtifactsShared {
+		vm.registerSharedMethod(method)
+		vm.methodCandidates = nil
+		vm.methodResolveCache = nil
+		return nil
+	}
 	if vm.Methods == nil {
 		vm.Methods = make(map[string]Method)
 	}
@@ -108,10 +119,17 @@ type Field struct {
 	Property     bool
 	Getter       *Method
 	Setter       *Method
+	HasGetter    bool
 	HasSetter    bool
 	File         string
 	Dependency   bool
 	StorageName  string
+
+	// InitializerLine/Column mark a folded instance initializer's source position.
+	// Its value is assigned among the executable initializer bodies, rather than
+	// when the receiver's fields are first allocated. Zero retains eager defaults.
+	InitializerLine   int
+	InitializerColumn int
 }
 
 type Class struct {
@@ -141,6 +159,7 @@ func (vm *VM) RegisterClass(class Class) error {
 	if class.Name == "" {
 		return fmt.Errorf("class name is required")
 	}
+	initializeReportsRuntimeClass(&class)
 	ownerName := runtimeClassName(class)
 	if class.Fields == nil {
 		class.Fields = make(map[string]Field)
@@ -179,7 +198,18 @@ func (vm *VM) RegisterClass(class Class) error {
 		vm.unregisterClassMethods(existingClass)
 		class = mergeDuplicateClass(existingClass, class)
 	}
-	for name, method := range class.Methods {
+	methodNames := make([]string, 0, len(class.Methods))
+	for name := range class.Methods {
+		methodNames = append(methodNames, name)
+	}
+	if mergeWithExisting {
+		// Duplicate definitions can share a method name under distinct source
+		// keys. Materializing the same merge on a fresh or cloned VM must not
+		// give it a different order. Ordinary registration keeps its map order.
+		sort.Strings(methodNames)
+	}
+	for _, name := range methodNames {
+		method := class.Methods[name]
 		if method.Name == "" {
 			method.Name = class.Name + "." + name
 		}
@@ -217,6 +247,7 @@ func (vm *VM) RegisterClass(class Class) error {
 
 func stampFieldAccessorOwners(ownerName, className, fieldName string, field Field) Field {
 	if field.Getter != nil {
+		field.HasGetter = true
 		getter := *field.Getter
 		if getter.Name == "" {
 			getter.Name = className + "." + fieldName + ".get"

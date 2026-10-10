@@ -235,6 +235,8 @@ func TestRemoteObjectsUnsupportedOperationsReturnDiagnostics(t *testing.T) {
 }
 
 func TestRemoteObjectsRejectsUndeclaredObjectsAndFields(t *testing.T) {
+	// e_ro_model_unknown and e_ro_field_unknown capture these native diagnostic
+	// templates; the declared schema below keeps each rejection independent.
 	tree, err := ParseMarkupTree(`<apex:remoteObjects>
   <apex:remoteObjectModel name="Account" fields="Name,Secret__c"/>
 </apex:remoteObjects>`)
@@ -242,13 +244,13 @@ func TestRemoteObjectsRejectsUndeclaredObjectsAndFields(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = BuildRemoteObjectsDescriptor(tree, RemoteObjectSchema{"Contact": {"Name"}})
-	if err == nil || !strings.Contains(err.Error(), "undeclared remote object Account") {
-		t.Fatalf("err = %v, want undeclared object diagnostic", err)
+	if err == nil || err.Error() != `Wrong type for attribute <apex:remoteObjectModel name="">. Expected valid entity name, found Account` {
+		t.Fatalf("err = %v, want native entity diagnostic", err)
 	}
 
 	_, err = BuildRemoteObjectsDescriptor(tree, RemoteObjectSchema{"Account": {"Name"}})
-	if err == nil || !strings.Contains(err.Error(), "undeclared remote field Account.Secret__c") {
-		t.Fatalf("err = %v, want undeclared field diagnostic", err)
+	if err == nil || err.Error() != "Invalid field 'Account.Secret__c' specified. Ensure that you use the full API name for any custom fields." {
+		t.Fatalf("err = %v, want native field diagnostic", err)
 	}
 }
 

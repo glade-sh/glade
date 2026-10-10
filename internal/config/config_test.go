@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -308,5 +309,53 @@ project:
 	want := filepath.Clean(filepath.Join(root, "packages", "pkg.glade-package.json"))
 	if dep.ArtifactPath != want || dep.Version != "2.0" {
 		t.Fatalf("dependency = %#v", dep)
+	}
+}
+
+func TestParseYAMLSubsetOrgDomainURL(t *testing.T) {
+	for _, test := range []struct {
+		name, value, want string
+	}{
+		{"unset", "", ""},
+		{"https", "https://canonical.example.test", "https://canonical.example.test"},
+		{"trailing slash", "https://canonical.example.test/", "https://canonical.example.test"},
+		{"http port", "http://canonical.example.test:8080/", "http://canonical.example.test:8080"},
+		{"comment", "https://canonical.example.test/ # origin", "https://canonical.example.test"},
+		{"quoted comment", `"https://canonical.example.test/" # origin`, "https://canonical.example.test"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			cfg, err := parseYAMLSubset("project:\n  defaultNamespace: samplepkg\norg:\n  features: [MultiCurrency]\n  domainUrl: " + test.value + "\n")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.Org.DomainURL != test.want {
+				t.Fatalf("org domain URL = %q, want %q", cfg.Org.DomainURL, test.want)
+			}
+			if cfg.Project.DefaultNamespace != "samplepkg" || len(cfg.Org.Features) != 1 || cfg.Org.Features[0] != "MultiCurrency" {
+				t.Fatalf("other config changed: %#v", cfg)
+			}
+		})
+	}
+}
+
+func TestParseYAMLSubsetRejectsInvalidOrgDomainURL(t *testing.T) {
+	for _, value := range []string{
+		"canonical.example.test",
+		"ftp://canonical.example.test",
+		"https://user:pass@canonical.example.test",
+		"https://canonical.example.test/path",
+		"https://canonical.example.test?query=1",
+		"https://canonical.example.test?",
+		"https://canonical.example.test#anchor",
+		"https://canonical.example.test#",
+		`"https://canonical.example.test/#anchor"`,
+		`'https://canonical.example.test/#'`,
+	} {
+		t.Run(value, func(t *testing.T) {
+			_, err := parseYAMLSubset("org:\n  features: [MultiCurrency]\n  domainUrl: " + value + "\n")
+			if err == nil || !strings.Contains(err.Error(), "glade.yml:3: org.domainUrl:") {
+				t.Fatalf("invalid origin %q error = %v", value, err)
+			}
+		})
 	}
 }

@@ -2,6 +2,7 @@ package visualforce
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 )
@@ -67,16 +68,25 @@ func TestVisualforceLimitConstantsMatchDocs(t *testing.T) {
 }
 
 func TestVisualforceLimitChecksReturnStableErrors(t *testing.T) {
+	t.Run("view state", func(t *testing.T) {
+		err := CheckVisualforceViewStateSize(MaxVisualforceViewStateBytes + 1)
+		if !errors.Is(err, ErrVisualforceLimitExceeded) {
+			t.Fatalf("err = %#v, want ErrVisualforceLimitExceeded", err)
+		}
+		// View state r_limit_persist_160000/200000 and the repeated size controls
+		// capture this rejection framing. Their measured KB values vary between
+		// native runs and are retired observables, so do not assert a numeric value.
+		const prefix = "Maximum view state size limit (170KB) exceeded. Actual view state size for this page was "
+		const suffix = "KB"
+		if got := err.Error(); !strings.HasPrefix(got, prefix) || !strings.HasSuffix(got, suffix) || len(got) <= len(prefix)+len(suffix) {
+			t.Fatalf("err = %q, want %q followed by a measurement and %q", got, prefix, suffix)
+		}
+	})
 	checks := []struct {
 		name string
 		err  error
 		want string
 	}{
-		{
-			name: "view state",
-			err:  CheckVisualforceViewStateSize(MaxVisualforceViewStateBytes + 1),
-			want: "visualforce view state limit exceeded: 174081 bytes > 174080 bytes",
-		},
 		{
 			name: "upload",
 			err:  CheckVisualforceUploadSize(MaxVisualforceUploadBytes + 1),

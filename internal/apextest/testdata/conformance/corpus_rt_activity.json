@@ -1,0 +1,1162 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "expectationStatus": "native captured",
+  "metadataByAPI": {
+    "62.0": {
+      "objects/Activity.object": "<?xml version='1.0' encoding='utf-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fields><fullName>RT6A62a66538fe13Related__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>Related record</label><referenceTo>RT6A62a66538fe13Parent__c</referenceTo><relationshipLabel>Activities</relationshipLabel><relationshipName>RT6A62a66538fe13Links</relationshipName><required>false</required><type>Lookup</type></fields><fields><fullName>RT6A62a66538fe13Detail__c</fullName><label>Activity detail</label><length>40</length><required>false</required><type>Text</type></fields><fields><fullName>RT6A62a66538fe13TaskOverlap__c</fullName><label>Activity detail</label><length>40</length><required>false</required><type>Text</type></fields><fields><fullName>RT6A62a66538fe13EventOverlap__c</fullName><label>Activity detail</label><length>40</length><required>false</required><type>Text</type></fields></CustomObject>",
+      "objects/RT6A62a66538fe13Parent__c.object": "<?xml version='1.0' encoding='utf-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Activity parent</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Activity parents</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    "67.0": {
+      "objects/Activity.object": "<?xml version='1.0' encoding='utf-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fields><fullName>RT6A674445548451Related__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>Related record</label><referenceTo>RT6A674445548451Parent__c</referenceTo><relationshipLabel>Activities</relationshipLabel><relationshipName>RT6A674445548451Links</relationshipName><required>false</required><type>Lookup</type></fields><fields><fullName>RT6A674445548451Detail__c</fullName><label>Activity detail</label><length>40</length><required>false</required><type>Text</type></fields><fields><fullName>RT6A674445548451TaskOverlap__c</fullName><label>Activity detail</label><length>40</length><required>false</required><type>Text</type></fields><fields><fullName>RT6A674445548451EventOverlap__c</fullName><label>Activity detail</label><length>40</length><required>false</required><type>Text</type></fields></CustomObject>",
+      "objects/RT6A674445548451Parent__c.object": "<?xml version='1.0' encoding='utf-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Activity parent</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Activity parents</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    }
+  },
+  "cases": [
+    {
+      "id": "A201",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A62a66538fe13Related__c').getDescribe();List<String> targets=new List<String>();for(Schema.SObjectType t:d.getReferenceTo())targets.add(String.valueOf(t));targets.sort();r=String.valueOf(d.getType())+'|'+String.join(targets,',')+'|'+d.isNillable()+'|'+(d.getRelationshipName()=='RT6A62a66538fe13Related__r')+'|'+d.getRelationshipName()+'|'+d.getLabel();",
+        "67.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A674445548451Related__c').getDescribe();List<String> targets=new List<String>();for(Schema.SObjectType t:d.getReferenceTo())targets.add(String.valueOf(t));targets.sort();r=String.valueOf(d.getType())+'|'+String.join(targets,',')+'|'+d.isNillable()+'|'+(d.getRelationshipName()=='RT6A674445548451Related__r')+'|'+d.getRelationshipName()+'|'+d.getLabel();"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A62a66538fe13Related__c').getDescribe();List<String> targets=new List<String>();for(Schema.SObjectType t:d.getReferenceTo())targets.add(String.valueOf(t));targets.sort();r=String.valueOf(d.getType())+'|'+String.join(targets,',')+'|'+d.isNillable()+'|'+(d.getRelationshipName()=='RT6A62a66538fe13Related__r')+'|'+d.getRelationshipName()+'|'+d.getLabel(); pq.out('A201',r);}catch(Exception e){pq.err('A201',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A674445548451Related__c').getDescribe();List<String> targets=new List<String>();for(Schema.SObjectType t:d.getReferenceTo())targets.add(String.valueOf(t));targets.sort();r=String.valueOf(d.getType())+'|'+String.join(targets,',')+'|'+d.isNillable()+'|'+(d.getRelationshipName()=='RT6A674445548451Related__r')+'|'+d.getRelationshipName()+'|'+d.getLabel(); pq.out('A201',r);}catch(Exception e){pq.err('A201',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "REFERENCE|RT6A62a66538fe13Parent__c|true|true|RT6A62a66538fe13Related__r|Related record",
+          "67.0": "REFERENCE|RT6A674445548451Parent__c|true|true|RT6A674445548451Related__r|Related record"
+        },
+        "isTest": {
+          "62.0": "REFERENCE|RT6A62a66538fe13Parent__c|true|true|RT6A62a66538fe13Related__r|Related record",
+          "67.0": "REFERENCE|RT6A674445548451Parent__c|true|true|RT6A674445548451Related__r|Related record"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA201",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA201 {\n\n@IsTest static void A201() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A62a66538fe13Related__c').getDescribe();List<String> targets=new List<String>();for(Schema.SObjectType t:d.getReferenceTo())targets.add(String.valueOf(t));targets.sort();r=String.valueOf(d.getType())+'|'+String.join(targets,',')+'|'+d.isNillable()+'|'+(d.getRelationshipName()=='RT6A62a66538fe13Related__r')+'|'+d.getRelationshipName()+'|'+d.getLabel();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A201|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A201",
+          "source": "@IsTest private class CRT678334a7630df1A201 {\n\n@IsTest static void A201() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A674445548451Related__c').getDescribe();List<String> targets=new List<String>();for(Schema.SObjectType t:d.getReferenceTo())targets.add(String.valueOf(t));targets.sort();r=String.valueOf(d.getType())+'|'+String.join(targets,',')+'|'+d.isNillable()+'|'+(d.getRelationshipName()=='RT6A674445548451Related__r')+'|'+d.getRelationshipName()+'|'+d.getLabel();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A201|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A202",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A62a66538fe13Detail__c').getDescribe();r=String.valueOf(d.getType())+'|'+d.isNillable()+'|'+d.getRelationshipName()+'|'+d.getLabel()+'|'+d.getLength();",
+        "67.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A674445548451Detail__c').getDescribe();r=String.valueOf(d.getType())+'|'+d.isNillable()+'|'+d.getRelationshipName()+'|'+d.getLabel()+'|'+d.getLength();"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A62a66538fe13Detail__c').getDescribe();r=String.valueOf(d.getType())+'|'+d.isNillable()+'|'+d.getRelationshipName()+'|'+d.getLabel()+'|'+d.getLength(); pq.out('A202',r);}catch(Exception e){pq.err('A202',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A674445548451Detail__c').getDescribe();r=String.valueOf(d.getType())+'|'+d.isNillable()+'|'+d.getRelationshipName()+'|'+d.getLabel()+'|'+d.getLength(); pq.out('A202',r);}catch(Exception e){pq.err('A202',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "STRING|true|null|Activity detail|40",
+          "67.0": "STRING|true|null|Activity detail|40"
+        },
+        "isTest": {
+          "62.0": "STRING|true|null|Activity detail|40",
+          "67.0": "STRING|true|null|Activity detail|40"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA202",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA202 {\n\n@IsTest static void A202() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A62a66538fe13Detail__c').getDescribe();r=String.valueOf(d.getType())+'|'+d.isNillable()+'|'+d.getRelationshipName()+'|'+d.getLabel()+'|'+d.getLength();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A202|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A202",
+          "source": "@IsTest private class CRT678334a7630df1A202 {\n\n@IsTest static void A202() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A674445548451Detail__c').getDescribe();r=String.valueOf(d.getType())+'|'+d.isNillable()+'|'+d.getRelationshipName()+'|'+d.getLabel()+'|'+d.getLength();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A202|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A203",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "SObject item=Schema.getGlobalDescribe().get('Task').newSObject();Id value=Id.valueOf('001000000000001');item.put('RT6A62a66538fe13Related__c',value);Object got=item.get('RT6A62a66538fe13Related__c');Boolean same=(got==value);Boolean typed=(got instanceof Id);item.put('RT6A62a66538fe13Related__c',null);r=String.valueOf(same)+'|'+typed+'|'+(item.get('RT6A62a66538fe13Related__c')==null);",
+        "67.0": "SObject item=Schema.getGlobalDescribe().get('Task').newSObject();Id value=Id.valueOf('001000000000001');item.put('RT6A674445548451Related__c',value);Object got=item.get('RT6A674445548451Related__c');Boolean same=(got==value);Boolean typed=(got instanceof Id);item.put('RT6A674445548451Related__c',null);r=String.valueOf(same)+'|'+typed+'|'+(item.get('RT6A674445548451Related__c')==null);"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Task').newSObject();Id value=Id.valueOf('001000000000001');item.put('RT6A62a66538fe13Related__c',value);Object got=item.get('RT6A62a66538fe13Related__c');Boolean same=(got==value);Boolean typed=(got instanceof Id);item.put('RT6A62a66538fe13Related__c',null);r=String.valueOf(same)+'|'+typed+'|'+(item.get('RT6A62a66538fe13Related__c')==null); pq.out('A203',r);}catch(Exception e){pq.err('A203',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Task').newSObject();Id value=Id.valueOf('001000000000001');item.put('RT6A674445548451Related__c',value);Object got=item.get('RT6A674445548451Related__c');Boolean same=(got==value);Boolean typed=(got instanceof Id);item.put('RT6A674445548451Related__c',null);r=String.valueOf(same)+'|'+typed+'|'+(item.get('RT6A674445548451Related__c')==null); pq.out('A203',r);}catch(Exception e){pq.err('A203',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "true|true|true",
+          "67.0": "true|true|true"
+        },
+        "isTest": {
+          "62.0": "true|true|true",
+          "67.0": "true|true|true"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA203",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA203 {\n\n@IsTest static void A203() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Task').newSObject();Id value=Id.valueOf('001000000000001');item.put('RT6A62a66538fe13Related__c',value);Object got=item.get('RT6A62a66538fe13Related__c');Boolean same=(got==value);Boolean typed=(got instanceof Id);item.put('RT6A62a66538fe13Related__c',null);r=String.valueOf(same)+'|'+typed+'|'+(item.get('RT6A62a66538fe13Related__c')==null);\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A203|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A203",
+          "source": "@IsTest private class CRT678334a7630df1A203 {\n\n@IsTest static void A203() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Task').newSObject();Id value=Id.valueOf('001000000000001');item.put('RT6A674445548451Related__c',value);Object got=item.get('RT6A674445548451Related__c');Boolean same=(got==value);Boolean typed=(got instanceof Id);item.put('RT6A674445548451Related__c',null);r=String.valueOf(same)+'|'+typed+'|'+(item.get('RT6A674445548451Related__c')==null);\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A203|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A204",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A62a66538fe13Detail__c','Activity detail value');String got=(String)item.get('RT6A62a66538fe13Detail__c');item.put('RT6A62a66538fe13Detail__c',null);r=got+'|'+(item.get('RT6A62a66538fe13Detail__c')==null);",
+        "67.0": "SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A674445548451Detail__c','Activity detail value');String got=(String)item.get('RT6A674445548451Detail__c');item.put('RT6A674445548451Detail__c',null);r=got+'|'+(item.get('RT6A674445548451Detail__c')==null);"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A62a66538fe13Detail__c','Activity detail value');String got=(String)item.get('RT6A62a66538fe13Detail__c');item.put('RT6A62a66538fe13Detail__c',null);r=got+'|'+(item.get('RT6A62a66538fe13Detail__c')==null); pq.out('A204',r);}catch(Exception e){pq.err('A204',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A674445548451Detail__c','Activity detail value');String got=(String)item.get('RT6A674445548451Detail__c');item.put('RT6A674445548451Detail__c',null);r=got+'|'+(item.get('RT6A674445548451Detail__c')==null); pq.out('A204',r);}catch(Exception e){pq.err('A204',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "Activity detail value|true",
+          "67.0": "Activity detail value|true"
+        },
+        "isTest": {
+          "62.0": "Activity detail value|true",
+          "67.0": "Activity detail value|true"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA204",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA204 {\n\n@IsTest static void A204() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A62a66538fe13Detail__c','Activity detail value');String got=(String)item.get('RT6A62a66538fe13Detail__c');item.put('RT6A62a66538fe13Detail__c',null);r=got+'|'+(item.get('RT6A62a66538fe13Detail__c')==null);\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A204|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A204",
+          "source": "@IsTest private class CRT678334a7630df1A204 {\n\n@IsTest static void A204() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A674445548451Detail__c','Activity detail value');String got=(String)item.get('RT6A674445548451Detail__c');item.put('RT6A674445548451Detail__c',null);r=got+'|'+(item.get('RT6A674445548451Detail__c')==null);\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A204|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A205",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId).substring(0,15));r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A62a66538fe13Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}",
+        "67.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId).substring(0,15));r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A674445548451Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId).substring(0,15));r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A62a66538fe13Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A205',r);}catch(Exception e){pq.err('A205',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId).substring(0,15));r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A674445548451Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A205',r);}catch(Exception e){pq.err('A205',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "query|1",
+          "67.0": "query|1"
+        },
+        "isTest": {
+          "62.0": "query|1",
+          "67.0": "query|1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA205",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA205 {\n\n@IsTest static void A205() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId).substring(0,15));r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A62a66538fe13Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A205|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A205",
+          "source": "@IsTest private class CRT678334a7630df1A205 {\n\n@IsTest static void A205() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId).substring(0,15));r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A674445548451Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A205|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A206",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId));r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A62a66538fe13Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}",
+        "67.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId));r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A674445548451Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId));r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A62a66538fe13Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A206',r);}catch(Exception e){pq.err('A206',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId));r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A674445548451Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A206',r);}catch(Exception e){pq.err('A206',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "query|1",
+          "67.0": "query|1"
+        },
+        "isTest": {
+          "62.0": "query|1",
+          "67.0": "query|1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA206",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA206 {\n\n@IsTest static void A206() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId));r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A62a66538fe13Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A206|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A206",
+          "source": "@IsTest private class CRT678334a7630df1A206 {\n\n@IsTest static void A206() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId));r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A674445548451Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A206|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A207",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Set<Id> wanted=new Set<Id>{ownerId};r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A62a66538fe13Related__c IN :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}",
+        "67.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Set<Id> wanted=new Set<Id>{ownerId};r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A674445548451Related__c IN :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Set<Id> wanted=new Set<Id>{ownerId};r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A62a66538fe13Related__c IN :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A207',r);}catch(Exception e){pq.err('A207',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Set<Id> wanted=new Set<Id>{ownerId};r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A674445548451Related__c IN :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A207',r);}catch(Exception e){pq.err('A207',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "query|1",
+          "67.0": "query|1"
+        },
+        "isTest": {
+          "62.0": "query|1",
+          "67.0": "query|1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA207",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA207 {\n\n@IsTest static void A207() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Set<Id> wanted=new Set<Id>{ownerId};r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A62a66538fe13Related__c IN :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A207|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A207",
+          "source": "@IsTest private class CRT678334a7630df1A207 {\n\n@IsTest static void A207() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Set<Id> wanted=new Set<Id>{ownerId};r='query|'+Database.query('SELECT Id FROM Task WHERE Id=:itemId AND RT6A674445548451Related__c IN :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A207|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A208",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "List<String> entries=new List<String>();for(Schema.ChildRelationship c:Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').getDescribe().getChildRelationships()){if(String.valueOf(c.getChildSObject())=='Task' && c.getField().getDescribe().getName()=='RT6A62a66538fe13Related__c')entries.add(String.valueOf(c.getChildSObject())+'|'+c.getField().getDescribe().getName()+'|'+(c.getRelationshipName()=='RT6A62a66538fe13Links__r')+'|'+c.getRelationshipName()+'|'+c.isCascadeDelete()+'|'+c.isRestrictedDelete());}entries.sort();r=String.join(entries,';');",
+        "67.0": "List<String> entries=new List<String>();for(Schema.ChildRelationship c:Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').getDescribe().getChildRelationships()){if(String.valueOf(c.getChildSObject())=='Task' && c.getField().getDescribe().getName()=='RT6A674445548451Related__c')entries.add(String.valueOf(c.getChildSObject())+'|'+c.getField().getDescribe().getName()+'|'+(c.getRelationshipName()=='RT6A674445548451Links__r')+'|'+c.getRelationshipName()+'|'+c.isCascadeDelete()+'|'+c.isRestrictedDelete());}entries.sort();r=String.join(entries,';');"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;List<String> entries=new List<String>();for(Schema.ChildRelationship c:Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').getDescribe().getChildRelationships()){if(String.valueOf(c.getChildSObject())=='Task' && c.getField().getDescribe().getName()=='RT6A62a66538fe13Related__c')entries.add(String.valueOf(c.getChildSObject())+'|'+c.getField().getDescribe().getName()+'|'+(c.getRelationshipName()=='RT6A62a66538fe13Links__r')+'|'+c.getRelationshipName()+'|'+c.isCascadeDelete()+'|'+c.isRestrictedDelete());}entries.sort();r=String.join(entries,';'); pq.out('A208',r);}catch(Exception e){pq.err('A208',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;List<String> entries=new List<String>();for(Schema.ChildRelationship c:Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').getDescribe().getChildRelationships()){if(String.valueOf(c.getChildSObject())=='Task' && c.getField().getDescribe().getName()=='RT6A674445548451Related__c')entries.add(String.valueOf(c.getChildSObject())+'|'+c.getField().getDescribe().getName()+'|'+(c.getRelationshipName()=='RT6A674445548451Links__r')+'|'+c.getRelationshipName()+'|'+c.isCascadeDelete()+'|'+c.isRestrictedDelete());}entries.sort();r=String.join(entries,';'); pq.out('A208',r);}catch(Exception e){pq.err('A208',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "",
+          "67.0": ""
+        },
+        "isTest": {
+          "62.0": "",
+          "67.0": ""
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA208",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA208 {\n\n@IsTest static void A208() {\nString corpusObserved;\ntry {\nObject r;\nList<String> entries=new List<String>();for(Schema.ChildRelationship c:Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').getDescribe().getChildRelationships()){if(String.valueOf(c.getChildSObject())=='Task' && c.getField().getDescribe().getName()=='RT6A62a66538fe13Related__c')entries.add(String.valueOf(c.getChildSObject())+'|'+c.getField().getDescribe().getName()+'|'+(c.getRelationshipName()=='RT6A62a66538fe13Links__r')+'|'+c.getRelationshipName()+'|'+c.isCascadeDelete()+'|'+c.isRestrictedDelete());}entries.sort();r=String.join(entries,';');\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A208|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A208",
+          "source": "@IsTest private class CRT678334a7630df1A208 {\n\n@IsTest static void A208() {\nString corpusObserved;\ntry {\nObject r;\nList<String> entries=new List<String>();for(Schema.ChildRelationship c:Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').getDescribe().getChildRelationships()){if(String.valueOf(c.getChildSObject())=='Task' && c.getField().getDescribe().getName()=='RT6A674445548451Related__c')entries.add(String.valueOf(c.getChildSObject())+'|'+c.getField().getDescribe().getName()+'|'+(c.getRelationshipName()=='RT6A674445548451Links__r')+'|'+c.getRelationshipName()+'|'+c.isCascadeDelete()+'|'+c.isRestrictedDelete());}entries.sort();r=String.join(entries,';');\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A208|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A209",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='delete';delete owner;List<SObject> remaining=Database.query('SELECT RT6A62a66538fe13Related__c FROM Task WHERE Id=:itemId');r='delete|'+String.valueOf(remaining.size())+'|'+(remaining.size()==1 && remaining[0].get('RT6A62a66538fe13Related__c')==null);}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}",
+        "67.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='delete';delete owner;List<SObject> remaining=Database.query('SELECT RT6A674445548451Related__c FROM Task WHERE Id=:itemId');r='delete|'+String.valueOf(remaining.size())+'|'+(remaining.size()==1 && remaining[0].get('RT6A674445548451Related__c')==null);}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='delete';delete owner;List<SObject> remaining=Database.query('SELECT RT6A62a66538fe13Related__c FROM Task WHERE Id=:itemId');r='delete|'+String.valueOf(remaining.size())+'|'+(remaining.size()==1 && remaining[0].get('RT6A62a66538fe13Related__c')==null);}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A209',r);}catch(Exception e){pq.err('A209',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='delete';delete owner;List<SObject> remaining=Database.query('SELECT RT6A674445548451Related__c FROM Task WHERE Id=:itemId');r='delete|'+String.valueOf(remaining.size())+'|'+(remaining.size()==1 && remaining[0].get('RT6A674445548451Related__c')==null);}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A209',r);}catch(Exception e){pq.err('A209',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "delete|1|true",
+          "67.0": "delete|1|true"
+        },
+        "isTest": {
+          "62.0": "delete|1|true",
+          "67.0": "delete|1|true"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA209",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA209 {\n\n@IsTest static void A209() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='delete';delete owner;List<SObject> remaining=Database.query('SELECT RT6A62a66538fe13Related__c FROM Task WHERE Id=:itemId');r='delete|'+String.valueOf(remaining.size())+'|'+(remaining.size()==1 && remaining[0].get('RT6A62a66538fe13Related__c')==null);}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A209|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A209",
+          "source": "@IsTest private class CRT678334a7630df1A209 {\n\n@IsTest static void A209() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('Subject','Activity control');item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='delete';delete owner;List<SObject> remaining=Database.query('SELECT RT6A674445548451Related__c FROM Task WHERE Id=:itemId');r='delete|'+String.valueOf(remaining.size())+'|'+(remaining.size()==1 && remaining[0].get('RT6A674445548451Related__c')==null);}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A209|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A210",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A62a66538fe13Related__c').getDescribe();List<String> targets=new List<String>();for(Schema.SObjectType t:d.getReferenceTo())targets.add(String.valueOf(t));targets.sort();r=String.valueOf(d.getType())+'|'+String.join(targets,',')+'|'+d.isNillable()+'|'+(d.getRelationshipName()=='RT6A62a66538fe13Related__r')+'|'+d.getRelationshipName()+'|'+d.getLabel();",
+        "67.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A674445548451Related__c').getDescribe();List<String> targets=new List<String>();for(Schema.SObjectType t:d.getReferenceTo())targets.add(String.valueOf(t));targets.sort();r=String.valueOf(d.getType())+'|'+String.join(targets,',')+'|'+d.isNillable()+'|'+(d.getRelationshipName()=='RT6A674445548451Related__r')+'|'+d.getRelationshipName()+'|'+d.getLabel();"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A62a66538fe13Related__c').getDescribe();List<String> targets=new List<String>();for(Schema.SObjectType t:d.getReferenceTo())targets.add(String.valueOf(t));targets.sort();r=String.valueOf(d.getType())+'|'+String.join(targets,',')+'|'+d.isNillable()+'|'+(d.getRelationshipName()=='RT6A62a66538fe13Related__r')+'|'+d.getRelationshipName()+'|'+d.getLabel(); pq.out('A210',r);}catch(Exception e){pq.err('A210',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A674445548451Related__c').getDescribe();List<String> targets=new List<String>();for(Schema.SObjectType t:d.getReferenceTo())targets.add(String.valueOf(t));targets.sort();r=String.valueOf(d.getType())+'|'+String.join(targets,',')+'|'+d.isNillable()+'|'+(d.getRelationshipName()=='RT6A674445548451Related__r')+'|'+d.getRelationshipName()+'|'+d.getLabel(); pq.out('A210',r);}catch(Exception e){pq.err('A210',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "REFERENCE|RT6A62a66538fe13Parent__c|true|true|RT6A62a66538fe13Related__r|Related record",
+          "67.0": "REFERENCE|RT6A674445548451Parent__c|true|true|RT6A674445548451Related__r|Related record"
+        },
+        "isTest": {
+          "62.0": "REFERENCE|RT6A62a66538fe13Parent__c|true|true|RT6A62a66538fe13Related__r|Related record",
+          "67.0": "REFERENCE|RT6A674445548451Parent__c|true|true|RT6A674445548451Related__r|Related record"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA210",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA210 {\n\n@IsTest static void A210() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A62a66538fe13Related__c').getDescribe();List<String> targets=new List<String>();for(Schema.SObjectType t:d.getReferenceTo())targets.add(String.valueOf(t));targets.sort();r=String.valueOf(d.getType())+'|'+String.join(targets,',')+'|'+d.isNillable()+'|'+(d.getRelationshipName()=='RT6A62a66538fe13Related__r')+'|'+d.getRelationshipName()+'|'+d.getLabel();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A210|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A210",
+          "source": "@IsTest private class CRT678334a7630df1A210 {\n\n@IsTest static void A210() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A674445548451Related__c').getDescribe();List<String> targets=new List<String>();for(Schema.SObjectType t:d.getReferenceTo())targets.add(String.valueOf(t));targets.sort();r=String.valueOf(d.getType())+'|'+String.join(targets,',')+'|'+d.isNillable()+'|'+(d.getRelationshipName()=='RT6A674445548451Related__r')+'|'+d.getRelationshipName()+'|'+d.getLabel();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A210|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A211",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A62a66538fe13Detail__c').getDescribe();r=String.valueOf(d.getType())+'|'+d.isNillable()+'|'+d.getRelationshipName()+'|'+d.getLabel()+'|'+d.getLength();",
+        "67.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A674445548451Detail__c').getDescribe();r=String.valueOf(d.getType())+'|'+d.isNillable()+'|'+d.getRelationshipName()+'|'+d.getLabel()+'|'+d.getLength();"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A62a66538fe13Detail__c').getDescribe();r=String.valueOf(d.getType())+'|'+d.isNillable()+'|'+d.getRelationshipName()+'|'+d.getLabel()+'|'+d.getLength(); pq.out('A211',r);}catch(Exception e){pq.err('A211',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A674445548451Detail__c').getDescribe();r=String.valueOf(d.getType())+'|'+d.isNillable()+'|'+d.getRelationshipName()+'|'+d.getLabel()+'|'+d.getLength(); pq.out('A211',r);}catch(Exception e){pq.err('A211',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "STRING|true|null|Activity detail|40",
+          "67.0": "STRING|true|null|Activity detail|40"
+        },
+        "isTest": {
+          "62.0": "STRING|true|null|Activity detail|40",
+          "67.0": "STRING|true|null|Activity detail|40"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA211",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA211 {\n\n@IsTest static void A211() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A62a66538fe13Detail__c').getDescribe();r=String.valueOf(d.getType())+'|'+d.isNillable()+'|'+d.getRelationshipName()+'|'+d.getLabel()+'|'+d.getLength();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A211|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A211",
+          "source": "@IsTest private class CRT678334a7630df1A211 {\n\n@IsTest static void A211() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A674445548451Detail__c').getDescribe();r=String.valueOf(d.getType())+'|'+d.isNillable()+'|'+d.getRelationshipName()+'|'+d.getLabel()+'|'+d.getLength();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A211|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A212",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "SObject item=Schema.getGlobalDescribe().get('Event').newSObject();Id value=Id.valueOf('001000000000001');item.put('RT6A62a66538fe13Related__c',value);Object got=item.get('RT6A62a66538fe13Related__c');Boolean same=(got==value);Boolean typed=(got instanceof Id);item.put('RT6A62a66538fe13Related__c',null);r=String.valueOf(same)+'|'+typed+'|'+(item.get('RT6A62a66538fe13Related__c')==null);",
+        "67.0": "SObject item=Schema.getGlobalDescribe().get('Event').newSObject();Id value=Id.valueOf('001000000000001');item.put('RT6A674445548451Related__c',value);Object got=item.get('RT6A674445548451Related__c');Boolean same=(got==value);Boolean typed=(got instanceof Id);item.put('RT6A674445548451Related__c',null);r=String.valueOf(same)+'|'+typed+'|'+(item.get('RT6A674445548451Related__c')==null);"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Event').newSObject();Id value=Id.valueOf('001000000000001');item.put('RT6A62a66538fe13Related__c',value);Object got=item.get('RT6A62a66538fe13Related__c');Boolean same=(got==value);Boolean typed=(got instanceof Id);item.put('RT6A62a66538fe13Related__c',null);r=String.valueOf(same)+'|'+typed+'|'+(item.get('RT6A62a66538fe13Related__c')==null); pq.out('A212',r);}catch(Exception e){pq.err('A212',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Event').newSObject();Id value=Id.valueOf('001000000000001');item.put('RT6A674445548451Related__c',value);Object got=item.get('RT6A674445548451Related__c');Boolean same=(got==value);Boolean typed=(got instanceof Id);item.put('RT6A674445548451Related__c',null);r=String.valueOf(same)+'|'+typed+'|'+(item.get('RT6A674445548451Related__c')==null); pq.out('A212',r);}catch(Exception e){pq.err('A212',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "true|true|true",
+          "67.0": "true|true|true"
+        },
+        "isTest": {
+          "62.0": "true|true|true",
+          "67.0": "true|true|true"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA212",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA212 {\n\n@IsTest static void A212() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Event').newSObject();Id value=Id.valueOf('001000000000001');item.put('RT6A62a66538fe13Related__c',value);Object got=item.get('RT6A62a66538fe13Related__c');Boolean same=(got==value);Boolean typed=(got instanceof Id);item.put('RT6A62a66538fe13Related__c',null);r=String.valueOf(same)+'|'+typed+'|'+(item.get('RT6A62a66538fe13Related__c')==null);\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A212|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A212",
+          "source": "@IsTest private class CRT678334a7630df1A212 {\n\n@IsTest static void A212() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Event').newSObject();Id value=Id.valueOf('001000000000001');item.put('RT6A674445548451Related__c',value);Object got=item.get('RT6A674445548451Related__c');Boolean same=(got==value);Boolean typed=(got instanceof Id);item.put('RT6A674445548451Related__c',null);r=String.valueOf(same)+'|'+typed+'|'+(item.get('RT6A674445548451Related__c')==null);\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A212|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A213",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A62a66538fe13Detail__c','Activity detail value');String got=(String)item.get('RT6A62a66538fe13Detail__c');item.put('RT6A62a66538fe13Detail__c',null);r=got+'|'+(item.get('RT6A62a66538fe13Detail__c')==null);",
+        "67.0": "SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A674445548451Detail__c','Activity detail value');String got=(String)item.get('RT6A674445548451Detail__c');item.put('RT6A674445548451Detail__c',null);r=got+'|'+(item.get('RT6A674445548451Detail__c')==null);"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A62a66538fe13Detail__c','Activity detail value');String got=(String)item.get('RT6A62a66538fe13Detail__c');item.put('RT6A62a66538fe13Detail__c',null);r=got+'|'+(item.get('RT6A62a66538fe13Detail__c')==null); pq.out('A213',r);}catch(Exception e){pq.err('A213',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A674445548451Detail__c','Activity detail value');String got=(String)item.get('RT6A674445548451Detail__c');item.put('RT6A674445548451Detail__c',null);r=got+'|'+(item.get('RT6A674445548451Detail__c')==null); pq.out('A213',r);}catch(Exception e){pq.err('A213',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "Activity detail value|true",
+          "67.0": "Activity detail value|true"
+        },
+        "isTest": {
+          "62.0": "Activity detail value|true",
+          "67.0": "Activity detail value|true"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA213",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA213 {\n\n@IsTest static void A213() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A62a66538fe13Detail__c','Activity detail value');String got=(String)item.get('RT6A62a66538fe13Detail__c');item.put('RT6A62a66538fe13Detail__c',null);r=got+'|'+(item.get('RT6A62a66538fe13Detail__c')==null);\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A213|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A213",
+          "source": "@IsTest private class CRT678334a7630df1A213 {\n\n@IsTest static void A213() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A674445548451Detail__c','Activity detail value');String got=(String)item.get('RT6A674445548451Detail__c');item.put('RT6A674445548451Detail__c',null);r=got+'|'+(item.get('RT6A674445548451Detail__c')==null);\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A213|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A214",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId).substring(0,15));r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A62a66538fe13Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}",
+        "67.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId).substring(0,15));r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A674445548451Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId).substring(0,15));r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A62a66538fe13Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A214',r);}catch(Exception e){pq.err('A214',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId).substring(0,15));r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A674445548451Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A214',r);}catch(Exception e){pq.err('A214',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "query|1",
+          "67.0": "query|1"
+        },
+        "isTest": {
+          "62.0": "query|1",
+          "67.0": "query|1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA214",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA214 {\n\n@IsTest static void A214() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId).substring(0,15));r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A62a66538fe13Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A214|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A214",
+          "source": "@IsTest private class CRT678334a7630df1A214 {\n\n@IsTest static void A214() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId).substring(0,15));r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A674445548451Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A214|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A215",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId));r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A62a66538fe13Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}",
+        "67.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId));r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A674445548451Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId));r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A62a66538fe13Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A215',r);}catch(Exception e){pq.err('A215',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId));r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A674445548451Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A215',r);}catch(Exception e){pq.err('A215',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "query|1",
+          "67.0": "query|1"
+        },
+        "isTest": {
+          "62.0": "query|1",
+          "67.0": "query|1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA215",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA215 {\n\n@IsTest static void A215() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId));r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A62a66538fe13Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A215|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A215",
+          "source": "@IsTest private class CRT678334a7630df1A215 {\n\n@IsTest static void A215() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Id wanted=Id.valueOf(String.valueOf(ownerId));r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A674445548451Related__c = :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A215|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A216",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Set<Id> wanted=new Set<Id>{ownerId};r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A62a66538fe13Related__c IN :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}",
+        "67.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Set<Id> wanted=new Set<Id>{ownerId};r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A674445548451Related__c IN :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Set<Id> wanted=new Set<Id>{ownerId};r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A62a66538fe13Related__c IN :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A216',r);}catch(Exception e){pq.err('A216',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Set<Id> wanted=new Set<Id>{ownerId};r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A674445548451Related__c IN :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A216',r);}catch(Exception e){pq.err('A216',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "query|1",
+          "67.0": "query|1"
+        },
+        "isTest": {
+          "62.0": "query|1",
+          "67.0": "query|1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA216",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA216 {\n\n@IsTest static void A216() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Set<Id> wanted=new Set<Id>{ownerId};r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A62a66538fe13Related__c IN :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A216|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A216",
+          "source": "@IsTest private class CRT678334a7630df1A216 {\n\n@IsTest static void A216() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='query';Set<Id> wanted=new Set<Id>{ownerId};r='query|'+Database.query('SELECT Id FROM Event WHERE Id=:itemId AND RT6A674445548451Related__c IN :wanted').size();}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A216|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A217",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "List<String> entries=new List<String>();for(Schema.ChildRelationship c:Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').getDescribe().getChildRelationships()){if(String.valueOf(c.getChildSObject())=='Event' && c.getField().getDescribe().getName()=='RT6A62a66538fe13Related__c')entries.add(String.valueOf(c.getChildSObject())+'|'+c.getField().getDescribe().getName()+'|'+(c.getRelationshipName()=='RT6A62a66538fe13Links__r')+'|'+c.getRelationshipName()+'|'+c.isCascadeDelete()+'|'+c.isRestrictedDelete());}entries.sort();r=String.join(entries,';');",
+        "67.0": "List<String> entries=new List<String>();for(Schema.ChildRelationship c:Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').getDescribe().getChildRelationships()){if(String.valueOf(c.getChildSObject())=='Event' && c.getField().getDescribe().getName()=='RT6A674445548451Related__c')entries.add(String.valueOf(c.getChildSObject())+'|'+c.getField().getDescribe().getName()+'|'+(c.getRelationshipName()=='RT6A674445548451Links__r')+'|'+c.getRelationshipName()+'|'+c.isCascadeDelete()+'|'+c.isRestrictedDelete());}entries.sort();r=String.join(entries,';');"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;List<String> entries=new List<String>();for(Schema.ChildRelationship c:Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').getDescribe().getChildRelationships()){if(String.valueOf(c.getChildSObject())=='Event' && c.getField().getDescribe().getName()=='RT6A62a66538fe13Related__c')entries.add(String.valueOf(c.getChildSObject())+'|'+c.getField().getDescribe().getName()+'|'+(c.getRelationshipName()=='RT6A62a66538fe13Links__r')+'|'+c.getRelationshipName()+'|'+c.isCascadeDelete()+'|'+c.isRestrictedDelete());}entries.sort();r=String.join(entries,';'); pq.out('A217',r);}catch(Exception e){pq.err('A217',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;List<String> entries=new List<String>();for(Schema.ChildRelationship c:Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').getDescribe().getChildRelationships()){if(String.valueOf(c.getChildSObject())=='Event' && c.getField().getDescribe().getName()=='RT6A674445548451Related__c')entries.add(String.valueOf(c.getChildSObject())+'|'+c.getField().getDescribe().getName()+'|'+(c.getRelationshipName()=='RT6A674445548451Links__r')+'|'+c.getRelationshipName()+'|'+c.isCascadeDelete()+'|'+c.isRestrictedDelete());}entries.sort();r=String.join(entries,';'); pq.out('A217',r);}catch(Exception e){pq.err('A217',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "",
+          "67.0": ""
+        },
+        "isTest": {
+          "62.0": "",
+          "67.0": ""
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA217",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA217 {\n\n@IsTest static void A217() {\nString corpusObserved;\ntry {\nObject r;\nList<String> entries=new List<String>();for(Schema.ChildRelationship c:Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').getDescribe().getChildRelationships()){if(String.valueOf(c.getChildSObject())=='Event' && c.getField().getDescribe().getName()=='RT6A62a66538fe13Related__c')entries.add(String.valueOf(c.getChildSObject())+'|'+c.getField().getDescribe().getName()+'|'+(c.getRelationshipName()=='RT6A62a66538fe13Links__r')+'|'+c.getRelationshipName()+'|'+c.isCascadeDelete()+'|'+c.isRestrictedDelete());}entries.sort();r=String.join(entries,';');\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A217|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A217",
+          "source": "@IsTest private class CRT678334a7630df1A217 {\n\n@IsTest static void A217() {\nString corpusObserved;\ntry {\nObject r;\nList<String> entries=new List<String>();for(Schema.ChildRelationship c:Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').getDescribe().getChildRelationships()){if(String.valueOf(c.getChildSObject())=='Event' && c.getField().getDescribe().getName()=='RT6A674445548451Related__c')entries.add(String.valueOf(c.getChildSObject())+'|'+c.getField().getDescribe().getName()+'|'+(c.getRelationshipName()=='RT6A674445548451Links__r')+'|'+c.getRelationshipName()+'|'+c.isCascadeDelete()+'|'+c.isRestrictedDelete());}entries.sort();r=String.join(entries,';');\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A217|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A218",
+      "stage": "base",
+      "codeByAPI": {
+        "62.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='delete';delete owner;List<SObject> remaining=Database.query('SELECT RT6A62a66538fe13Related__c FROM Event WHERE Id=:itemId');r='delete|'+String.valueOf(remaining.size())+'|'+(remaining.size()==1 && remaining[0].get('RT6A62a66538fe13Related__c')==null);}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}",
+        "67.0": "Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='delete';delete owner;List<SObject> remaining=Database.query('SELECT RT6A674445548451Related__c FROM Event WHERE Id=:itemId');r='delete|'+String.valueOf(remaining.size())+'|'+(remaining.size()==1 && remaining[0].get('RT6A674445548451Related__c')==null);}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='delete';delete owner;List<SObject> remaining=Database.query('SELECT RT6A62a66538fe13Related__c FROM Event WHERE Id=:itemId');r='delete|'+String.valueOf(remaining.size())+'|'+(remaining.size()==1 && remaining[0].get('RT6A62a66538fe13Related__c')==null);}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A218',r);}catch(Exception e){pq.err('A218',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Savepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='delete';delete owner;List<SObject> remaining=Database.query('SELECT RT6A674445548451Related__c FROM Event WHERE Id=:itemId');r='delete|'+String.valueOf(remaining.size())+'|'+(remaining.size()==1 && remaining[0].get('RT6A674445548451Related__c')==null);}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);} pq.out('A218',r);}catch(Exception e){pq.err('A218',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "delete|1|true",
+          "67.0": "delete|1|true"
+        },
+        "isTest": {
+          "62.0": "delete|1|true",
+          "67.0": "delete|1|true"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62ebe2f3dbbbafA218",
+          "source": "@IsTest private class CRT62ebe2f3dbbbafA218 {\n\n@IsTest static void A218() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A62a66538fe13Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A62a66538fe13Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='delete';delete owner;List<SObject> remaining=Database.query('SELECT RT6A62a66538fe13Related__c FROM Event WHERE Id=:itemId');r='delete|'+String.valueOf(remaining.size())+'|'+(remaining.size()==1 && remaining[0].get('RT6A62a66538fe13Related__c')==null);}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A218|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT678334a7630df1A218",
+          "source": "@IsTest private class CRT678334a7630df1A218 {\n\n@IsTest static void A218() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint();try{String phase='setup';try{SObject owner=Schema.getGlobalDescribe().get('RT6A674445548451Parent__c').newSObject();owner.put('Name','Activity parent');insert owner;Id ownerId=(Id)owner.get('Id');SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('Subject','Activity control');item.put('StartDateTime',Datetime.newInstanceGmt(2026,1,1,12,0,0));item.put('EndDateTime',Datetime.newInstanceGmt(2026,1,1,13,0,0));item.put('RT6A674445548451Related__c',ownerId);insert item;Id itemId=(Id)item.get('Id');phase='delete';delete owner;List<SObject> remaining=Database.query('SELECT RT6A674445548451Related__c FROM Event WHERE Id=:itemId');r='delete|'+String.valueOf(remaining.size())+'|'+(remaining.size()==1 && remaining[0].get('RT6A674445548451Related__c')==null);}catch(Exception e){r=phase+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}}finally{Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A218|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A219",
+      "stage": "task",
+      "codeByAPI": {
+        "62.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A62a66538fe13TaskOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();",
+        "67.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A674445548451TaskOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A62a66538fe13TaskOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable(); pq.out('A219',r);}catch(Exception e){pq.err('A219',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A674445548451TaskOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable(); pq.out('A219',r);}catch(Exception e){pq.err('A219',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "Activity detail|40|STRING|true",
+          "67.0": "Activity detail|40|STRING|true"
+        },
+        "isTest": {
+          "62.0": "Activity detail|40|STRING|true",
+          "67.0": "Activity detail|40|STRING|true"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT624337c525c9a7A219",
+          "source": "@IsTest private class CRT624337c525c9a7A219 {\n\n@IsTest static void A219() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A62a66538fe13TaskOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A219|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT67c3ff8c422393A219",
+          "source": "@IsTest private class CRT67c3ff8c422393A219 {\n\n@IsTest static void A219() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A674445548451TaskOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A219|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A220",
+      "stage": "task",
+      "codeByAPI": {
+        "62.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A62a66538fe13TaskOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();",
+        "67.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A674445548451TaskOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A62a66538fe13TaskOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable(); pq.out('A220',r);}catch(Exception e){pq.err('A220',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A674445548451TaskOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable(); pq.out('A220',r);}catch(Exception e){pq.err('A220',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "Activity detail|40|STRING|true",
+          "67.0": "Activity detail|40|STRING|true"
+        },
+        "isTest": {
+          "62.0": "Activity detail|40|STRING|true",
+          "67.0": "Activity detail|40|STRING|true"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT624337c525c9a7A220",
+          "source": "@IsTest private class CRT624337c525c9a7A220 {\n\n@IsTest static void A220() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A62a66538fe13TaskOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A220|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT67c3ff8c422393A220",
+          "source": "@IsTest private class CRT67c3ff8c422393A220 {\n\n@IsTest static void A220() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A674445548451TaskOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A220|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A221",
+      "stage": "task",
+      "codeByAPI": {
+        "62.0": "SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A62a66538fe13TaskOverlap__c','Overlap value');r=item.get('RT6A62a66538fe13TaskOverlap__c');",
+        "67.0": "SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A674445548451TaskOverlap__c','Overlap value');r=item.get('RT6A674445548451TaskOverlap__c');"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A62a66538fe13TaskOverlap__c','Overlap value');r=item.get('RT6A62a66538fe13TaskOverlap__c'); pq.out('A221',r);}catch(Exception e){pq.err('A221',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A674445548451TaskOverlap__c','Overlap value');r=item.get('RT6A674445548451TaskOverlap__c'); pq.out('A221',r);}catch(Exception e){pq.err('A221',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "Overlap value",
+          "67.0": "Overlap value"
+        },
+        "isTest": {
+          "62.0": "Overlap value",
+          "67.0": "Overlap value"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT624337c525c9a7A221",
+          "source": "@IsTest private class CRT624337c525c9a7A221 {\n\n@IsTest static void A221() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A62a66538fe13TaskOverlap__c','Overlap value');r=item.get('RT6A62a66538fe13TaskOverlap__c');\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A221|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT67c3ff8c422393A221",
+          "source": "@IsTest private class CRT67c3ff8c422393A221 {\n\n@IsTest static void A221() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A674445548451TaskOverlap__c','Overlap value');r=item.get('RT6A674445548451TaskOverlap__c');\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A221|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A222",
+      "stage": "task",
+      "codeByAPI": {
+        "62.0": "SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A62a66538fe13TaskOverlap__c','Overlap value');r=item.get('RT6A62a66538fe13TaskOverlap__c');",
+        "67.0": "SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A674445548451TaskOverlap__c','Overlap value');r=item.get('RT6A674445548451TaskOverlap__c');"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A62a66538fe13TaskOverlap__c','Overlap value');r=item.get('RT6A62a66538fe13TaskOverlap__c'); pq.out('A222',r);}catch(Exception e){pq.err('A222',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A674445548451TaskOverlap__c','Overlap value');r=item.get('RT6A674445548451TaskOverlap__c'); pq.out('A222',r);}catch(Exception e){pq.err('A222',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "Overlap value",
+          "67.0": "Overlap value"
+        },
+        "isTest": {
+          "62.0": "Overlap value",
+          "67.0": "Overlap value"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT624337c525c9a7A222",
+          "source": "@IsTest private class CRT624337c525c9a7A222 {\n\n@IsTest static void A222() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A62a66538fe13TaskOverlap__c','Overlap value');r=item.get('RT6A62a66538fe13TaskOverlap__c');\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A222|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT67c3ff8c422393A222",
+          "source": "@IsTest private class CRT67c3ff8c422393A222 {\n\n@IsTest static void A222() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A674445548451TaskOverlap__c','Overlap value');r=item.get('RT6A674445548451TaskOverlap__c');\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A222|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A223",
+      "stage": "event",
+      "codeByAPI": {
+        "62.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A62a66538fe13EventOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();",
+        "67.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A674445548451EventOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A62a66538fe13EventOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable(); pq.out('A223',r);}catch(Exception e){pq.err('A223',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A674445548451EventOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable(); pq.out('A223',r);}catch(Exception e){pq.err('A223',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "Activity detail|40|STRING|true",
+          "67.0": "Activity detail|40|STRING|true"
+        },
+        "isTest": {
+          "62.0": "Activity detail|40|STRING|true",
+          "67.0": "Activity detail|40|STRING|true"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62670f7e02472dA223",
+          "source": "@IsTest private class CRT62670f7e02472dA223 {\n\n@IsTest static void A223() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A62a66538fe13EventOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A223|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT67ed8b320ca236A223",
+          "source": "@IsTest private class CRT67ed8b320ca236A223 {\n\n@IsTest static void A223() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap().get('RT6A674445548451EventOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A223|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A224",
+      "stage": "event",
+      "codeByAPI": {
+        "62.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A62a66538fe13EventOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();",
+        "67.0": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A674445548451EventOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A62a66538fe13EventOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable(); pq.out('A224',r);}catch(Exception e){pq.err('A224',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A674445548451EventOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable(); pq.out('A224',r);}catch(Exception e){pq.err('A224',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "Activity detail|40|STRING|true",
+          "67.0": "Activity detail|40|STRING|true"
+        },
+        "isTest": {
+          "62.0": "Activity detail|40|STRING|true",
+          "67.0": "Activity detail|40|STRING|true"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62670f7e02472dA224",
+          "source": "@IsTest private class CRT62670f7e02472dA224 {\n\n@IsTest static void A224() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A62a66538fe13EventOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A224|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT67ed8b320ca236A224",
+          "source": "@IsTest private class CRT67ed8b320ca236A224 {\n\n@IsTest static void A224() {\nString corpusObserved;\ntry {\nObject r;\nSchema.DescribeFieldResult d=Schema.getGlobalDescribe().get('Event').getDescribe().fields.getMap().get('RT6A674445548451EventOverlap__c').getDescribe();r=d.getLabel()+'|'+d.getLength()+'|'+d.getType()+'|'+d.isNillable();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A224|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A225",
+      "stage": "event",
+      "codeByAPI": {
+        "62.0": "SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A62a66538fe13EventOverlap__c','Overlap value');r=item.get('RT6A62a66538fe13EventOverlap__c');",
+        "67.0": "SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A674445548451EventOverlap__c','Overlap value');r=item.get('RT6A674445548451EventOverlap__c');"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A62a66538fe13EventOverlap__c','Overlap value');r=item.get('RT6A62a66538fe13EventOverlap__c'); pq.out('A225',r);}catch(Exception e){pq.err('A225',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A674445548451EventOverlap__c','Overlap value');r=item.get('RT6A674445548451EventOverlap__c'); pq.out('A225',r);}catch(Exception e){pq.err('A225',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "Overlap value",
+          "67.0": "Overlap value"
+        },
+        "isTest": {
+          "62.0": "Overlap value",
+          "67.0": "Overlap value"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62670f7e02472dA225",
+          "source": "@IsTest private class CRT62670f7e02472dA225 {\n\n@IsTest static void A225() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A62a66538fe13EventOverlap__c','Overlap value');r=item.get('RT6A62a66538fe13EventOverlap__c');\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A225|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT67ed8b320ca236A225",
+          "source": "@IsTest private class CRT67ed8b320ca236A225 {\n\n@IsTest static void A225() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Task').newSObject();item.put('RT6A674445548451EventOverlap__c','Overlap value');r=item.get('RT6A674445548451EventOverlap__c');\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A225|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "A226",
+      "stage": "event",
+      "codeByAPI": {
+        "62.0": "SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A62a66538fe13EventOverlap__c','Overlap value');r=item.get('RT6A62a66538fe13EventOverlap__c');",
+        "67.0": "SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A674445548451EventOverlap__c','Overlap value');r=item.get('RT6A674445548451EventOverlap__c');"
+      },
+      "anonymousSourcesByAPI": {
+        "62.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A62a66538fe13EventOverlap__c','Overlap value');r=item.get('RT6A62a66538fe13EventOverlap__c'); pq.out('A226',r);}catch(Exception e){pq.err('A226',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+        "67.0": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;SObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A674445548451EventOverlap__c','Overlap value');r=item.get('RT6A674445548451EventOverlap__c'); pq.out('A226',r);}catch(Exception e){pq.err('A226',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+      },
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "Overlap value",
+          "67.0": "Overlap value"
+        },
+        "isTest": {
+          "62.0": "Overlap value",
+          "67.0": "Overlap value"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT62670f7e02472dA226",
+          "source": "@IsTest private class CRT62670f7e02472dA226 {\n\n@IsTest static void A226() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A62a66538fe13EventOverlap__c','Overlap value');r=item.get('RT6A62a66538fe13EventOverlap__c');\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A226|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT67ed8b320ca236A226",
+          "source": "@IsTest private class CRT67ed8b320ca236A226 {\n\n@IsTest static void A226() {\nString corpusObserved;\ntry {\nObject r;\nSObject item=Schema.getGlobalDescribe().get('Event').newSObject();item.put('RT6A674445548451EventOverlap__c','Overlap value');r=item.get('RT6A674445548451EventOverlap__c');\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|A226|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    }
+  ],
+  "metadataObservationsByAPI": {
+    "62.0": {
+      "M001": {
+        "success": true,
+        "status": "Succeeded",
+        "failures": [],
+        "completedOwned": [
+          "Activity.RT6A62a66538fe13Detail__c",
+          "Activity.RT6A62a66538fe13EventOverlap__c",
+          "Activity.RT6A62a66538fe13Related__c",
+          "Activity.RT6A62a66538fe13TaskOverlap__c",
+          "RT6A62a66538fe13Parent__c"
+        ]
+      },
+      "M002": {
+        "success": false,
+        "status": "Failed",
+        "failures": [
+          {
+            "componentType": "CustomField",
+            "fullName": "Task.RT6A62a66538fe13TaskOverlap__c",
+            "problem": "Entity Enumeration Or ID: bad value for restricted picklist field: Task",
+            "problemType": "Error"
+          }
+        ],
+        "completedOwned": []
+      },
+      "M003": {
+        "success": false,
+        "status": "Failed",
+        "failures": [
+          {
+            "componentType": "CustomField",
+            "fullName": "Event.RT6A62a66538fe13EventOverlap__c",
+            "problem": "Entity Enumeration Or ID: bad value for restricted picklist field: Event",
+            "problemType": "Error"
+          }
+        ],
+        "completedOwned": []
+      },
+      "M004": [
+        {
+          "fullName": "Activity.RT6A62a66538fe13Related__c",
+          "metadata": {
+            "type": "Lookup",
+            "label": "Related record",
+            "length": null,
+            "required": false,
+            "referenceTo": "RT6A62a66538fe13Parent__c",
+            "relationshipName": "RT6A62a66538fe13Links",
+            "relationshipLabel": "Activities",
+            "deleteConstraint": "SetNull"
+          }
+        }
+      ],
+      "M005": {
+        "deployment": {
+          "success": true,
+          "status": "Succeeded",
+          "failures": [],
+          "completedOwned": [
+            "RT6A62a66538fe13Access"
+          ]
+        },
+        "permission": "RT6A62a66538fe13Access",
+        "assignmentVerified": true,
+        "fieldPermissions": [
+          {
+            "Field": "Event.RT6A62a66538fe13Detail__c",
+            "SobjectType": "Event",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          },
+          {
+            "Field": "Event.RT6A62a66538fe13EventOverlap__c",
+            "SobjectType": "Event",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          },
+          {
+            "Field": "Event.RT6A62a66538fe13Related__c",
+            "SobjectType": "Event",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          },
+          {
+            "Field": "Event.RT6A62a66538fe13TaskOverlap__c",
+            "SobjectType": "Event",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          },
+          {
+            "Field": "Task.RT6A62a66538fe13Detail__c",
+            "SobjectType": "Task",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          },
+          {
+            "Field": "Task.RT6A62a66538fe13EventOverlap__c",
+            "SobjectType": "Task",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          },
+          {
+            "Field": "Task.RT6A62a66538fe13Related__c",
+            "SobjectType": "Task",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          },
+          {
+            "Field": "Task.RT6A62a66538fe13TaskOverlap__c",
+            "SobjectType": "Task",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          }
+        ],
+        "objectPermissions": [
+          {
+            "SobjectType": "RT6A62a66538fe13Parent__c",
+            "PermissionsCreate": true,
+            "PermissionsDelete": true,
+            "PermissionsEdit": true,
+            "PermissionsRead": true
+          }
+        ]
+      }
+    },
+    "67.0": {
+      "M001": {
+        "success": true,
+        "status": "Succeeded",
+        "failures": [],
+        "completedOwned": [
+          "Activity.RT6A674445548451Detail__c",
+          "Activity.RT6A674445548451EventOverlap__c",
+          "Activity.RT6A674445548451Related__c",
+          "Activity.RT6A674445548451TaskOverlap__c",
+          "RT6A674445548451Parent__c"
+        ]
+      },
+      "M002": {
+        "success": false,
+        "status": "Failed",
+        "failures": [
+          {
+            "componentType": "CustomField",
+            "fullName": "Task.RT6A674445548451TaskOverlap__c",
+            "problem": "Entity Enumeration Or ID: bad value for restricted picklist field: Task",
+            "problemType": "Error"
+          }
+        ],
+        "completedOwned": []
+      },
+      "M003": {
+        "success": false,
+        "status": "Failed",
+        "failures": [
+          {
+            "componentType": "CustomField",
+            "fullName": "Event.RT6A674445548451EventOverlap__c",
+            "problem": "Entity Enumeration Or ID: bad value for restricted picklist field: Event",
+            "problemType": "Error"
+          }
+        ],
+        "completedOwned": []
+      },
+      "M004": [
+        {
+          "fullName": "Activity.RT6A674445548451Related__c",
+          "metadata": {
+            "type": "Lookup",
+            "label": "Related record",
+            "length": null,
+            "required": false,
+            "referenceTo": "RT6A674445548451Parent__c",
+            "relationshipName": "RT6A674445548451Links",
+            "relationshipLabel": "Activities",
+            "deleteConstraint": "SetNull"
+          }
+        }
+      ],
+      "M005": {
+        "deployment": {
+          "success": true,
+          "status": "Succeeded",
+          "failures": [],
+          "completedOwned": [
+            "RT6A674445548451Access"
+          ]
+        },
+        "permission": "RT6A674445548451Access",
+        "assignmentVerified": true,
+        "fieldPermissions": [
+          {
+            "Field": "Event.RT6A674445548451Detail__c",
+            "SobjectType": "Event",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          },
+          {
+            "Field": "Event.RT6A674445548451EventOverlap__c",
+            "SobjectType": "Event",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          },
+          {
+            "Field": "Event.RT6A674445548451Related__c",
+            "SobjectType": "Event",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          },
+          {
+            "Field": "Event.RT6A674445548451TaskOverlap__c",
+            "SobjectType": "Event",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          },
+          {
+            "Field": "Task.RT6A674445548451Detail__c",
+            "SobjectType": "Task",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          },
+          {
+            "Field": "Task.RT6A674445548451EventOverlap__c",
+            "SobjectType": "Task",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          },
+          {
+            "Field": "Task.RT6A674445548451Related__c",
+            "SobjectType": "Task",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          },
+          {
+            "Field": "Task.RT6A674445548451TaskOverlap__c",
+            "SobjectType": "Task",
+            "PermissionsRead": true,
+            "PermissionsEdit": true
+          }
+        ],
+        "objectPermissions": [
+          {
+            "SobjectType": "RT6A674445548451Parent__c",
+            "PermissionsCreate": true,
+            "PermissionsDelete": true,
+            "PermissionsEdit": true,
+            "PermissionsRead": true
+          }
+        ]
+      }
+    }
+  },
+  "sourceEvidence": "native-r5; cross-checked native-r4",
+  "cleanupIsRowBehavior": false,
+  "crosscheck": {
+    "runtimeObservations": 104,
+    "semanticDifferences": [],
+    "rawFixtureNameDifferences": [
+      {
+        "apiVersion": "62.0",
+        "route": "anonymous",
+        "id": "A201",
+        "reason": "attempt-specific fixture names only"
+      },
+      {
+        "apiVersion": "62.0",
+        "route": "anonymous",
+        "id": "A210",
+        "reason": "attempt-specific fixture names only"
+      },
+      {
+        "apiVersion": "62.0",
+        "route": "isTest",
+        "id": "A201",
+        "reason": "attempt-specific fixture names only"
+      },
+      {
+        "apiVersion": "62.0",
+        "route": "isTest",
+        "id": "A210",
+        "reason": "attempt-specific fixture names only"
+      },
+      {
+        "apiVersion": "67.0",
+        "route": "anonymous",
+        "id": "A201",
+        "reason": "attempt-specific fixture names only"
+      },
+      {
+        "apiVersion": "67.0",
+        "route": "anonymous",
+        "id": "A210",
+        "reason": "attempt-specific fixture names only"
+      },
+      {
+        "apiVersion": "67.0",
+        "route": "isTest",
+        "id": "A201",
+        "reason": "attempt-specific fixture names only"
+      },
+      {
+        "apiVersion": "67.0",
+        "route": "isTest",
+        "id": "A210",
+        "reason": "attempt-specific fixture names only"
+      }
+    ],
+    "metadata": "M001-M005 match after exact fixture-name substitution"
+  }
+}

@@ -1,0 +1,2346 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "cases": [
+    {
+      "id": "R001",
+      "code": "Matcher m=Pattern.compile('a').matcher('a'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R002",
+      "code": "Matcher m=Pattern.compile('a').matcher('a'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R003",
+      "code": "Matcher m=Pattern.compile('a').matcher('a'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R004",
+      "code": "Matcher m=Pattern.compile('a').matcher('ba'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|false|false",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R005",
+      "code": "Matcher m=Pattern.compile('a').matcher('ba'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|1|2|\"a\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R006",
+      "code": "Matcher m=Pattern.compile('a').matcher('ba'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|false|false",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R007",
+      "code": "Matcher m=Pattern.compile('a').matcher('ab'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|false|false",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R008",
+      "code": "Matcher m=Pattern.compile('a').matcher('ab'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R009",
+      "code": "Matcher m=Pattern.compile('a').matcher('ab'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R010",
+      "code": "Matcher m=Pattern.compile('a').matcher('b'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|false|false",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R011",
+      "code": "Matcher m=Pattern.compile('a').matcher('b'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R012",
+      "code": "Matcher m=Pattern.compile('a').matcher('b'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|false|false",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R013",
+      "code": "Matcher m=Pattern.compile('').matcher(''); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|0|\"\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R014",
+      "code": "Matcher m=Pattern.compile('').matcher(''); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|0|\"\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R015",
+      "code": "Matcher m=Pattern.compile('').matcher(''); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|0|\"\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R016",
+      "code": "Matcher m=Pattern.compile('').matcher('abc'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|false|false",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R017",
+      "code": "Matcher m=Pattern.compile('').matcher('abc'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|0|\"\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R018",
+      "code": "Matcher m=Pattern.compile('').matcher('abc'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|0|\"\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R019",
+      "code": "Matcher m=Pattern.compile('a*').matcher(''); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|0|\"\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R020",
+      "code": "Matcher m=Pattern.compile('a*').matcher(''); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|0|\"\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R021",
+      "code": "Matcher m=Pattern.compile('a*').matcher(''); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|0|\"\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R022",
+      "code": "Matcher m=Pattern.compile('a+').matcher('aaa'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"aaa\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R023",
+      "code": "Matcher m=Pattern.compile('a+').matcher('aaa'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"aaa\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R024",
+      "code": "Matcher m=Pattern.compile('a+').matcher('aaa'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"aaa\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R025",
+      "code": "Matcher m=Pattern.compile('a{2,3}').matcher('aaa'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|3|\"aaa\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R026",
+      "code": "Matcher m=Pattern.compile('a{2,3}').matcher('aaa'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|3|\"aaa\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R027",
+      "code": "Matcher m=Pattern.compile('a{2,3}').matcher('aaa'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|3|\"aaa\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R028",
+      "code": "Matcher m=Pattern.compile('a+?').matcher('aaa'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|3|\"aaa\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R029",
+      "code": "Matcher m=Pattern.compile('a+?').matcher('aaa'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R030",
+      "code": "Matcher m=Pattern.compile('a+?').matcher('aaa'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R031",
+      "code": "Matcher m=Pattern.compile('a++a').matcher('aaa'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R032",
+      "code": "Matcher m=Pattern.compile('a++a').matcher('aaa'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R033",
+      "code": "Matcher m=Pattern.compile('a++a').matcher('aaa'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R034",
+      "code": "Matcher m=Pattern.compile('[a-z]+').matcher('abc'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"abc\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R035",
+      "code": "Matcher m=Pattern.compile('[a-z]+').matcher('abc'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"abc\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R036",
+      "code": "Matcher m=Pattern.compile('[a-z]+').matcher('abc'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"abc\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R037",
+      "code": "Matcher m=Pattern.compile('[^a]+').matcher('bbb'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"bbb\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R038",
+      "code": "Matcher m=Pattern.compile('[^a]+').matcher('bbb'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"bbb\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R039",
+      "code": "Matcher m=Pattern.compile('[^a]+').matcher('bbb'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"bbb\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R040",
+      "code": "Matcher m=Pattern.compile('\\\\d+').matcher('123'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"123\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R041",
+      "code": "Matcher m=Pattern.compile('\\\\d+').matcher('123'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"123\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R042",
+      "code": "Matcher m=Pattern.compile('\\\\d+').matcher('123'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"123\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R043",
+      "code": "Matcher m=Pattern.compile('\\\\w+').matcher('a_1'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"a_1\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R044",
+      "code": "Matcher m=Pattern.compile('\\\\w+').matcher('a_1'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"a_1\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R045",
+      "code": "Matcher m=Pattern.compile('\\\\w+').matcher('a_1'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|3|\"a_1\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R046",
+      "code": "Matcher m=Pattern.compile('\\\\s+').matcher(' \\t'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|2|\" \\t\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R047",
+      "code": "Matcher m=Pattern.compile('\\\\s+').matcher(' \\t'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|2|\" \\t\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R048",
+      "code": "Matcher m=Pattern.compile('\\\\s+').matcher(' \\t'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|2|\" \\t\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R049",
+      "code": "Matcher m=Pattern.compile('(ab|a)b').matcher('ab'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|2|\"ab\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R050",
+      "code": "Matcher m=Pattern.compile('(ab|a)b').matcher('ab'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|2|\"ab\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R051",
+      "code": "Matcher m=Pattern.compile('(ab|a)b').matcher('ab'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|2|\"ab\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R052",
+      "code": "Matcher m=Pattern.compile('(a)\\\\1').matcher('aa'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|2|\"aa\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R053",
+      "code": "Matcher m=Pattern.compile('(a)\\\\1').matcher('aa'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|2|\"aa\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R054",
+      "code": "Matcher m=Pattern.compile('(a)\\\\1').matcher('aa'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|2|\"aa\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R055",
+      "code": "Matcher m=Pattern.compile('a(?=b)').matcher('ab'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|false|false",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R056",
+      "code": "Matcher m=Pattern.compile('a(?=b)').matcher('ab'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R057",
+      "code": "Matcher m=Pattern.compile('a(?=b)').matcher('ab'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R058",
+      "code": "Matcher m=Pattern.compile('(?<=a)b').matcher('ab'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|false|false",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R059",
+      "code": "Matcher m=Pattern.compile('(?<=a)b').matcher('ab'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|1|2|\"b\"",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R060",
+      "code": "Matcher m=Pattern.compile('(?<=a)b').matcher('ab'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|false|false",
+      "compile": false,
+      "group": "match/find/lookingAt/normal"
+    },
+    {
+      "id": "R061",
+      "code": "Matcher m=Pattern.compile('(?i)abc').matcher('ABC'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|3|\"ABC\"",
+      "compile": false,
+      "group": "compile/inline-flags"
+    },
+    {
+      "id": "R062",
+      "code": "Matcher m=Pattern.compile('(?i:ab)c').matcher('ABc'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|3|\"ABc\"",
+      "compile": false,
+      "group": "compile/inline-flags"
+    },
+    {
+      "id": "R063",
+      "code": "Matcher m=Pattern.compile('(?i:ab)c').matcher('ABC'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "compile/inline-flags"
+    },
+    {
+      "id": "R064",
+      "code": "Matcher m=Pattern.compile('(?i)ab(?-i)c').matcher('ABC'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "compile/inline-flags"
+    },
+    {
+      "id": "R065",
+      "code": "Matcher m=Pattern.compile('(?m)^b').matcher('a\\nb'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|2|3|\"b\"",
+      "compile": false,
+      "group": "compile/inline-flags"
+    },
+    {
+      "id": "R066",
+      "code": "Matcher m=Pattern.compile('(?s)a.b').matcher('a\\nb'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|3|\"a\\nb\"",
+      "compile": false,
+      "group": "compile/inline-flags"
+    },
+    {
+      "id": "R067",
+      "code": "Matcher m=Pattern.compile('a.b').matcher('a\\nb'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "compile/inline-flags"
+    },
+    {
+      "id": "R068",
+      "code": "Matcher m=Pattern.compile('(?x)a # comment\\n b').matcher('ab'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|2|\"ab\"",
+      "compile": false,
+      "group": "compile/inline-flags"
+    },
+    {
+      "id": "R069",
+      "code": "Matcher m=Pattern.compile('(?d).').matcher('\\r'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"\\r\"",
+      "compile": false,
+      "group": "compile/inline-flags"
+    },
+    {
+      "id": "R070",
+      "code": "Matcher m=Pattern.compile('(?u)(?i)é').matcher('É'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"É\"",
+      "compile": false,
+      "group": "compile/inline-flags"
+    },
+    {
+      "id": "R071",
+      "code": "Matcher m=Pattern.compile('(?U)\\\\w+').matcher('é'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|1|\"é\"",
+      "compile": false,
+      "group": "compile/inline-flags"
+    },
+    {
+      "id": "R072",
+      "code": "Pattern p=Pattern.compile('a'); r=JSON.serialize(p.pattern());",
+      "expected": "\"a\"",
+      "compile": false,
+      "group": "compile/pattern-text"
+    },
+    {
+      "id": "R073",
+      "code": "Pattern p=Pattern.compile('(?i)a'); r=JSON.serialize(p.pattern());",
+      "expected": "\"(?i)a\"",
+      "compile": false,
+      "group": "compile/pattern-text"
+    },
+    {
+      "id": "R074",
+      "code": "Pattern p=Pattern.compile('(?m)^a$'); r=JSON.serialize(p.pattern());",
+      "expected": "\"(?m)^a$\"",
+      "compile": false,
+      "group": "compile/pattern-text"
+    },
+    {
+      "id": "R075",
+      "code": "Pattern p=Pattern.compile('(?s).'); r=JSON.serialize(p.pattern());",
+      "expected": "\"(?s).\"",
+      "compile": false,
+      "group": "compile/pattern-text"
+    },
+    {
+      "id": "R076",
+      "code": "Pattern p=Pattern.compile('(?x)a b'); r=JSON.serialize(p.pattern());",
+      "expected": "\"(?x)a b\"",
+      "compile": false,
+      "group": "compile/pattern-text"
+    },
+    {
+      "id": "R077",
+      "code": "Pattern p=Pattern.compile('\\\\Q[a]\\\\E'); r=JSON.serialize(p.pattern());",
+      "expected": "\"\\\\Q[a]\\\\E\"",
+      "compile": false,
+      "group": "compile/pattern-text"
+    },
+    {
+      "id": "R078",
+      "code": "Pattern p=Pattern.compile('['); r=p.pattern();",
+      "expected": "EXC|System.StringException|Invalid regex: Unclosed character class near index 0\n[\n^",
+      "compile": false,
+      "group": "compile/malformed-regex-exception"
+    },
+    {
+      "id": "R079",
+      "code": "Pattern p=Pattern.compile('('); r=p.pattern();",
+      "expected": "EXC|System.StringException|Invalid regex: Unclosed group near index 1\n(",
+      "compile": false,
+      "group": "compile/malformed-regex-exception"
+    },
+    {
+      "id": "R080",
+      "code": "Pattern p=Pattern.compile('a{2,1}'); r=p.pattern();",
+      "expected": "EXC|System.StringException|Invalid regex: Illegal repetition range near index 5\na{2,1}\n     ^",
+      "compile": false,
+      "group": "compile/malformed-regex-exception"
+    },
+    {
+      "id": "R081",
+      "code": "Pattern p=Pattern.compile('*a'); r=p.pattern();",
+      "expected": "EXC|System.StringException|Invalid regex: Dangling meta character '*' near index 0\n*a\n^",
+      "compile": false,
+      "group": "compile/malformed-regex-exception"
+    },
+    {
+      "id": "R082",
+      "code": "Pattern p=Pattern.compile('a\\\\'); r=p.pattern();",
+      "expected": "EXC|System.StringException|Invalid regex: Unescaped trailing backslash near index 2\na\\",
+      "compile": false,
+      "group": "compile/malformed-regex-exception"
+    },
+    {
+      "id": "R083",
+      "code": "Pattern p=Pattern.compile('(?q)a'); r=p.pattern();",
+      "expected": "EXC|System.StringException|Invalid regex: Unknown inline modifier near index 2\n(?q)a\n  ^",
+      "compile": false,
+      "group": "compile/malformed-regex-exception"
+    },
+    {
+      "id": "R084",
+      "code": "Pattern p=Pattern.compile('(?<1bad>a)'); r=p.pattern();",
+      "expected": "EXC|System.StringException|Invalid regex: capturing group name does not start with a Latin letter near index 3\n(?<1bad>a)\n   ^",
+      "compile": false,
+      "group": "compile/malformed-regex-exception"
+    },
+    {
+      "id": "R085",
+      "code": "Pattern p=Pattern.compile('(?<x>a)(?<x>b)'); r=p.pattern();",
+      "expected": "EXC|System.StringException|Invalid regex: Named capturing group <x> is already defined near index 11\n(?<x>a)(?<x>b)\n           ^",
+      "compile": false,
+      "group": "compile/malformed-regex-exception"
+    },
+    {
+      "id": "R086",
+      "code": "Pattern p=Pattern.compile('[z-a]'); r=p.pattern();",
+      "expected": "EXC|System.StringException|Invalid regex: Illegal character range near index 3\n[z-a]\n   ^",
+      "compile": false,
+      "group": "compile/malformed-regex-exception"
+    },
+    {
+      "id": "R087",
+      "code": "Pattern p=Pattern.compile('(?<=a*)b'); r=p.pattern();",
+      "expected": "(?<=a*)b",
+      "compile": false,
+      "group": "compile/malformed-regex-exception"
+    },
+    {
+      "id": "R088",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); List<String> xs=new List<String>(); for(Integer i=0;i<5;i++){Boolean ok=m.find(); String s=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){s+='|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());} xs.add(s);} r=JSON.serialize(xs);",
+      "expected": "[\"true|false|false|0|1|\\\"a\\\"\",\"true|false|false|2|3|\\\"a\\\"\",\"false|true|false\",\"false|true|false\",\"false|true|false\"]",
+      "compile": false,
+      "group": "state/repeated-find"
+    },
+    {
+      "id": "R089",
+      "code": "Matcher m=Pattern.compile('').matcher('ab'); List<String> xs=new List<String>(); for(Integer i=0;i<5;i++){Boolean ok=m.find(); String s=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){s+='|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());} xs.add(s);} r=JSON.serialize(xs);",
+      "expected": "[\"true|false|false|0|0|\\\"\\\"\",\"true|false|false|1|1|\\\"\\\"\",\"true|false|false|2|2|\\\"\\\"\",\"false|false|false\",\"false|false|false\"]",
+      "compile": false,
+      "group": "state/repeated-find"
+    },
+    {
+      "id": "R090",
+      "code": "Matcher m=Pattern.compile('a*').matcher('ba'); List<String> xs=new List<String>(); for(Integer i=0;i<5;i++){Boolean ok=m.find(); String s=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){s+='|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());} xs.add(s);} r=JSON.serialize(xs);",
+      "expected": "[\"true|false|false|0|0|\\\"\\\"\",\"true|true|false|1|2|\\\"a\\\"\",\"true|true|false|2|2|\\\"\\\"\",\"false|true|false\",\"false|true|false\"]",
+      "compile": false,
+      "group": "state/repeated-find"
+    },
+    {
+      "id": "R091",
+      "code": "Matcher m=Pattern.compile('z').matcher('abc'); List<String> xs=new List<String>(); for(Integer i=0;i<5;i++){Boolean ok=m.find(); String s=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){s+='|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());} xs.add(s);} r=JSON.serialize(xs);",
+      "expected": "[\"false|true|false\",\"false|true|false\",\"false|true|false\",\"false|true|false\",\"false|true|false\"]",
+      "compile": false,
+      "group": "state/repeated-find"
+    },
+    {
+      "id": "R092",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Boolean a=m.matches(); Boolean b=m.matches(); r=String.valueOf(a)+'|'+b; if(b){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "false|false",
+      "compile": false,
+      "group": "state/search-after-search"
+    },
+    {
+      "id": "R093",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Boolean a=m.matches(); Boolean b=m.find(); r=String.valueOf(a)+'|'+b; if(b){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "false|true|0|1",
+      "compile": false,
+      "group": "state/search-after-search"
+    },
+    {
+      "id": "R094",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Boolean a=m.matches(); Boolean b=m.lookingAt(); r=String.valueOf(a)+'|'+b; if(b){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "false|true|0|1",
+      "compile": false,
+      "group": "state/search-after-search"
+    },
+    {
+      "id": "R095",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Boolean a=m.find(); Boolean b=m.matches(); r=String.valueOf(a)+'|'+b; if(b){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "true|false",
+      "compile": false,
+      "group": "state/search-after-search"
+    },
+    {
+      "id": "R096",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Boolean a=m.find(); Boolean b=m.find(); r=String.valueOf(a)+'|'+b; if(b){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "true|true|2|3",
+      "compile": false,
+      "group": "state/search-after-search"
+    },
+    {
+      "id": "R097",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Boolean a=m.find(); Boolean b=m.lookingAt(); r=String.valueOf(a)+'|'+b; if(b){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "true|true|0|1",
+      "compile": false,
+      "group": "state/search-after-search"
+    },
+    {
+      "id": "R098",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Boolean a=m.lookingAt(); Boolean b=m.matches(); r=String.valueOf(a)+'|'+b; if(b){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "true|false",
+      "compile": false,
+      "group": "state/search-after-search"
+    },
+    {
+      "id": "R099",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Boolean a=m.lookingAt(); Boolean b=m.find(); r=String.valueOf(a)+'|'+b; if(b){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "true|true|2|3",
+      "compile": false,
+      "group": "state/search-after-search"
+    },
+    {
+      "id": "R100",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Boolean a=m.lookingAt(); Boolean b=m.lookingAt(); r=String.valueOf(a)+'|'+b; if(b){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "true|true|0|1",
+      "compile": false,
+      "group": "state/search-after-search"
+    },
+    {
+      "id": "R101",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); m.find(); Boolean ok=m.find(-1); r=String.valueOf(ok)+'|'+m.hitEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "EXC|System.StringException|Starting index out of bounds (parameter 1): Illegal start index",
+      "compile": false,
+      "group": "state/find-start-boundaries"
+    },
+    {
+      "id": "R102",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); m.find(); Boolean ok=m.find(0); r=String.valueOf(ok)+'|'+m.hitEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "true|false|0|1",
+      "compile": false,
+      "group": "state/find-start-boundaries"
+    },
+    {
+      "id": "R103",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); m.find(); Boolean ok=m.find(1); r=String.valueOf(ok)+'|'+m.hitEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "true|false|2|3",
+      "compile": false,
+      "group": "state/find-start-boundaries"
+    },
+    {
+      "id": "R104",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); m.find(); Boolean ok=m.find(2); r=String.valueOf(ok)+'|'+m.hitEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "true|false|2|3",
+      "compile": false,
+      "group": "state/find-start-boundaries"
+    },
+    {
+      "id": "R105",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); m.find(); Boolean ok=m.find(3); r=String.valueOf(ok)+'|'+m.hitEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "false|true",
+      "compile": false,
+      "group": "state/find-start-boundaries"
+    },
+    {
+      "id": "R106",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); m.find(); Boolean ok=m.find(4); r=String.valueOf(ok)+'|'+m.hitEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "EXC|System.StringException|Starting index out of bounds (parameter 1): Illegal start index",
+      "compile": false,
+      "group": "state/find-start-boundaries"
+    },
+    {
+      "id": "R107",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('aba'); m.find(); m.reset();r=m.group();",
+      "expected": "EXC|System.StringException|No match found",
+      "compile": false,
+      "group": "state/mutator-group-invalidation"
+    },
+    {
+      "id": "R108",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('aba'); m.find(); m.reset('baa');r=m.group();",
+      "expected": "EXC|System.StringException|No match found",
+      "compile": false,
+      "group": "state/mutator-group-invalidation"
+    },
+    {
+      "id": "R109",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('aba'); m.find(); m.usePattern(Pattern.compile('b'));r=m.group();",
+      "expected": "null",
+      "compile": false,
+      "group": "state/mutator-group-invalidation"
+    },
+    {
+      "id": "R110",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('aba'); m.find(); m.region(1,3);r=m.group();",
+      "expected": "EXC|System.StringException|No match found",
+      "compile": false,
+      "group": "state/mutator-group-invalidation"
+    },
+    {
+      "id": "R111",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Matcher n=m.reset(); r=n===m;",
+      "expected": "false",
+      "compile": false,
+      "group": "state/mutator-identity"
+    },
+    {
+      "id": "R112",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Matcher n=m.reset('baa'); r=n===m;",
+      "expected": "false",
+      "compile": false,
+      "group": "state/mutator-identity"
+    },
+    {
+      "id": "R113",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Matcher n=m.usePattern(Pattern.compile('b')); r=n===m;",
+      "expected": "false",
+      "compile": false,
+      "group": "state/mutator-identity"
+    },
+    {
+      "id": "R114",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Matcher n=m.region(1,3); r=n===m;",
+      "expected": "false",
+      "compile": false,
+      "group": "state/mutator-identity"
+    },
+    {
+      "id": "R115",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Boolean a=m.find(); m.usePattern(Pattern.compile('b')); Boolean b=m.find(); r=String.valueOf(a)+'|'+b; if(b){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|1|2|\"b\"",
+      "compile": false,
+      "group": "state/usePattern-preserves-cursor"
+    },
+    {
+      "id": "R116",
+      "code": "Matcher m=Pattern.compile('a').matcher('aaa'); Boolean a=m.find(); m.usePattern(Pattern.compile('a')); Boolean b=m.find(); r=String.valueOf(a)+'|'+b; if(b){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|1|2|\"a\"",
+      "compile": false,
+      "group": "state/usePattern-preserves-cursor"
+    },
+    {
+      "id": "R117",
+      "code": "Matcher m=Pattern.compile('a').matcher('abcabc'); Boolean a=m.find(); m.usePattern(Pattern.compile('c')); Boolean b=m.find(); r=String.valueOf(a)+'|'+b; if(b){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|2|3|\"c\"",
+      "compile": false,
+      "group": "state/usePattern-preserves-cursor"
+    },
+    {
+      "id": "R118",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('aba'); Boolean a=m.find(); m.usePattern(Pattern.compile('(b)')); Boolean b=m.find(); r=String.valueOf(a)+'|'+b; if(b){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|1|2|\"b\"",
+      "compile": false,
+      "group": "state/usePattern-preserves-cursor"
+    },
+    {
+      "id": "R119",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); m.find(); m.usePattern(Pattern.compile('a')); m.reset(); m.find(); r=m.start();",
+      "expected": "0",
+      "compile": false,
+      "group": "state/usePattern-reset-control"
+    },
+    {
+      "id": "R120",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('aba'); m.find(); m.usePattern(Pattern.compile('(b)')); r=m.group(1);",
+      "expected": "null",
+      "compile": false,
+      "group": "state/usePattern-groups-cleared"
+    },
+    {
+      "id": "R121",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); m.find(); m.reset();Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.regionStart()+'|'+m.regionEnd(); if(ok){r=String.valueOf(r)+'|'+m.start();}",
+      "expected": "true|0|3|0",
+      "compile": false,
+      "group": "state/reset-and-region"
+    },
+    {
+      "id": "R122",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); m.find(); m.reset('ba');Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.regionStart()+'|'+m.regionEnd(); if(ok){r=String.valueOf(r)+'|'+m.start();}",
+      "expected": "true|0|2|1",
+      "compile": false,
+      "group": "state/reset-and-region"
+    },
+    {
+      "id": "R123",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); m.find(); m.find(0);Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.regionStart()+'|'+m.regionEnd(); if(ok){r=String.valueOf(r)+'|'+m.start();}",
+      "expected": "true|0|3|2",
+      "compile": false,
+      "group": "state/reset-and-region"
+    },
+    {
+      "id": "R124",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); m.find(); m.region(1,3);Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.regionStart()+'|'+m.regionEnd(); if(ok){r=String.valueOf(r)+'|'+m.start();}",
+      "expected": "true|1|3|2",
+      "compile": false,
+      "group": "state/reset-and-region"
+    },
+    {
+      "id": "R125",
+      "code": "Matcher m=Pattern.compile('a*').matcher('aba'); m.region(0,3); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.regionStart()+'|'+m.regionEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "false|0|3",
+      "compile": false,
+      "group": "regions/boundary"
+    },
+    {
+      "id": "R126",
+      "code": "Matcher m=Pattern.compile('a*').matcher('aba'); m.region(1,2); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.regionStart()+'|'+m.regionEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "false|1|2",
+      "compile": false,
+      "group": "regions/boundary"
+    },
+    {
+      "id": "R127",
+      "code": "Matcher m=Pattern.compile('a*').matcher('aba'); m.region(0,0); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.regionStart()+'|'+m.regionEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "true|0|0|0|0",
+      "compile": false,
+      "group": "regions/boundary"
+    },
+    {
+      "id": "R128",
+      "code": "Matcher m=Pattern.compile('a*').matcher('aba'); m.region(3,3); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.regionStart()+'|'+m.regionEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "true|3|3|3|3",
+      "compile": false,
+      "group": "regions/boundary"
+    },
+    {
+      "id": "R129",
+      "code": "Matcher m=Pattern.compile('a*').matcher('aba'); m.region(-1,2); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.regionStart()+'|'+m.regionEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "EXC|System.StringException|Start/end index out of bounds: start",
+      "compile": false,
+      "group": "regions/boundary"
+    },
+    {
+      "id": "R130",
+      "code": "Matcher m=Pattern.compile('a*').matcher('aba'); m.region(0,4); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.regionStart()+'|'+m.regionEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "EXC|System.StringException|Start/end index out of bounds: end",
+      "compile": false,
+      "group": "regions/boundary"
+    },
+    {
+      "id": "R131",
+      "code": "Matcher m=Pattern.compile('a*').matcher('aba'); m.region(2,1); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.regionStart()+'|'+m.regionEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end();}",
+      "expected": "EXC|System.StringException|Start/end index out of bounds: start > end",
+      "compile": false,
+      "group": "regions/boundary"
+    },
+    {
+      "id": "R132",
+      "code": "Matcher m=Pattern.compile('^a$').matcher('bab'); m.region(1,2); m.useAnchoringBounds(true); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|1|2|\"a\"",
+      "compile": false,
+      "group": "regions/anchoring-bounds"
+    },
+    {
+      "id": "R133",
+      "code": "Matcher m=Pattern.compile('\\\\Aa\\\\z').matcher('bab'); m.region(1,2); m.useAnchoringBounds(true); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|1|2|\"a\"",
+      "compile": false,
+      "group": "regions/anchoring-bounds"
+    },
+    {
+      "id": "R134",
+      "code": "Matcher m=Pattern.compile('a$').matcher('bab'); m.region(1,2); m.useAnchoringBounds(true); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|1|2|\"a\"",
+      "compile": false,
+      "group": "regions/anchoring-bounds"
+    },
+    {
+      "id": "R135",
+      "code": "Matcher m=Pattern.compile('(?<=b)a').matcher('bab'); m.region(1,2); m.useTransparentBounds(true); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|1|2|\"a\"",
+      "compile": false,
+      "group": "regions/transparent-bounds"
+    },
+    {
+      "id": "R136",
+      "code": "Matcher m=Pattern.compile('a(?=b)').matcher('bab'); m.region(1,2); m.useTransparentBounds(true); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|1|2|\"a\"",
+      "compile": false,
+      "group": "regions/transparent-bounds"
+    },
+    {
+      "id": "R137",
+      "code": "Matcher m=Pattern.compile('\\\\ba\\\\b').matcher('bab'); m.region(1,2); m.useTransparentBounds(true); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "regions/transparent-bounds"
+    },
+    {
+      "id": "R138",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Matcher a=m.useAnchoringBounds(true); Matcher b=m.useTransparentBounds(true); r=String.valueOf(a===m)+'|'+(b===m)+'|'+m.hasAnchoringBounds()+'|'+m.hasTransparentBounds();",
+      "expected": "false|false|true|true",
+      "compile": false,
+      "group": "regions/bounds-identity"
+    },
+    {
+      "id": "R139",
+      "code": "Matcher m=Pattern.compile('^a$').matcher('bab'); m.region(1,2); m.useAnchoringBounds(false); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|false|false",
+      "compile": false,
+      "group": "regions/anchoring-bounds"
+    },
+    {
+      "id": "R140",
+      "code": "Matcher m=Pattern.compile('\\\\Aa\\\\z').matcher('bab'); m.region(1,2); m.useAnchoringBounds(false); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|false|false",
+      "compile": false,
+      "group": "regions/anchoring-bounds"
+    },
+    {
+      "id": "R141",
+      "code": "Matcher m=Pattern.compile('a$').matcher('bab'); m.region(1,2); m.useAnchoringBounds(false); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "regions/anchoring-bounds"
+    },
+    {
+      "id": "R142",
+      "code": "Matcher m=Pattern.compile('(?<=b)a').matcher('bab'); m.region(1,2); m.useTransparentBounds(false); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "regions/transparent-bounds"
+    },
+    {
+      "id": "R143",
+      "code": "Matcher m=Pattern.compile('a(?=b)').matcher('bab'); m.region(1,2); m.useTransparentBounds(false); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "regions/transparent-bounds"
+    },
+    {
+      "id": "R144",
+      "code": "Matcher m=Pattern.compile('\\\\ba\\\\b').matcher('bab'); m.region(1,2); m.useTransparentBounds(false); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|1|2|\"a\"",
+      "compile": false,
+      "group": "regions/transparent-bounds"
+    },
+    {
+      "id": "R145",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); Matcher a=m.useAnchoringBounds(false); Matcher b=m.useTransparentBounds(false); r=String.valueOf(a===m)+'|'+(b===m)+'|'+m.hasAnchoringBounds()+'|'+m.hasTransparentBounds();",
+      "expected": "false|false|false|false",
+      "compile": false,
+      "group": "regions/bounds-identity"
+    },
+    {
+      "id": "R146",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); r=String.valueOf(m.hasAnchoringBounds())+'|'+m.hasTransparentBounds()+'|'+m.regionStart()+'|'+m.regionEnd();",
+      "expected": "true|false|0|3",
+      "compile": false,
+      "group": "regions/default-modes"
+    },
+    {
+      "id": "R147",
+      "code": "Matcher m=Pattern.compile('a').matcher('aba'); m.region(1,2); m.useAnchoringBounds(false); m.useTransparentBounds(true); m.reset(); r=String.valueOf(m.regionStart())+'|'+m.regionEnd()+'|'+m.hasAnchoringBounds()+'|'+m.hasTransparentBounds();",
+      "expected": "0|3|false|true",
+      "compile": false,
+      "group": "regions/reset-restores-full-input"
+    },
+    {
+      "id": "R148",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab'); m.find(); r=JSON.serialize(m.group(0))+'|'+m.start(0)+'|'+m.end(0)+'|'+m.groupCount();",
+      "expected": "\"ab\"|0|2|2",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R149",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab'); m.find(); r=JSON.serialize(m.group(1))+'|'+m.start(1)+'|'+m.end(1)+'|'+m.groupCount();",
+      "expected": "\"a\"|0|1|2",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R150",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab'); m.find(); r=JSON.serialize(m.group(2))+'|'+m.start(2)+'|'+m.end(2)+'|'+m.groupCount();",
+      "expected": "\"b\"|1|2|2",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R151",
+      "code": "Matcher m=Pattern.compile('(a)?(b)').matcher('b'); m.find(); r=JSON.serialize(m.group(0))+'|'+m.start(0)+'|'+m.end(0)+'|'+m.groupCount();",
+      "expected": "\"b\"|0|1|2",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R152",
+      "code": "Matcher m=Pattern.compile('(a)?(b)').matcher('b'); m.find(); r=JSON.serialize(m.group(1))+'|'+m.start(1)+'|'+m.end(1)+'|'+m.groupCount();",
+      "expected": "null|-1|-1|2",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R153",
+      "code": "Matcher m=Pattern.compile('(a)?(b)').matcher('b'); m.find(); r=JSON.serialize(m.group(2))+'|'+m.start(2)+'|'+m.end(2)+'|'+m.groupCount();",
+      "expected": "\"b\"|0|1|2",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R154",
+      "code": "Matcher m=Pattern.compile('()(a)').matcher('a'); m.find(); r=JSON.serialize(m.group(0))+'|'+m.start(0)+'|'+m.end(0)+'|'+m.groupCount();",
+      "expected": "\"a\"|0|1|2",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R155",
+      "code": "Matcher m=Pattern.compile('()(a)').matcher('a'); m.find(); r=JSON.serialize(m.group(1))+'|'+m.start(1)+'|'+m.end(1)+'|'+m.groupCount();",
+      "expected": "\"\"|0|0|2",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R156",
+      "code": "Matcher m=Pattern.compile('()(a)').matcher('a'); m.find(); r=JSON.serialize(m.group(2))+'|'+m.start(2)+'|'+m.end(2)+'|'+m.groupCount();",
+      "expected": "\"a\"|0|1|2",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R157",
+      "code": "Matcher m=Pattern.compile('(?:a)(b)').matcher('ab'); m.find(); r=JSON.serialize(m.group(0))+'|'+m.start(0)+'|'+m.end(0)+'|'+m.groupCount();",
+      "expected": "\"ab\"|0|2|1",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R158",
+      "code": "Matcher m=Pattern.compile('(?:a)(b)').matcher('ab'); m.find(); r=JSON.serialize(m.group(1))+'|'+m.start(1)+'|'+m.end(1)+'|'+m.groupCount();",
+      "expected": "\"b\"|1|2|1",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R159",
+      "code": "Matcher m=Pattern.compile('(?:a)(b)').matcher('ab'); m.find(); r=JSON.serialize(m.group(2))+'|'+m.start(2)+'|'+m.end(2)+'|'+m.groupCount();",
+      "expected": "EXC|System.StringException|Group index out of bounds (parameter 1): No group 2",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R160",
+      "code": "Matcher m=Pattern.compile('((a)+)').matcher('aaa'); m.find(); r=JSON.serialize(m.group(0))+'|'+m.start(0)+'|'+m.end(0)+'|'+m.groupCount();",
+      "expected": "\"aaa\"|0|3|2",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R161",
+      "code": "Matcher m=Pattern.compile('((a)+)').matcher('aaa'); m.find(); r=JSON.serialize(m.group(1))+'|'+m.start(1)+'|'+m.end(1)+'|'+m.groupCount();",
+      "expected": "\"aaa\"|0|3|2",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R162",
+      "code": "Matcher m=Pattern.compile('((a)+)').matcher('aaa'); m.find(); r=JSON.serialize(m.group(2))+'|'+m.start(2)+'|'+m.end(2)+'|'+m.groupCount();",
+      "expected": "\"a\"|2|3|2",
+      "compile": false,
+      "group": "groups/index-and-optional"
+    },
+    {
+      "id": "R163",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('ab'); r=m.group();",
+      "expected": "EXC|System.StringException|No match found",
+      "compile": false,
+      "group": "groups/valid-and-invalid-state"
+    },
+    {
+      "id": "R164",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('ab'); r=m.start();",
+      "expected": "EXC|System.StringException|No match found",
+      "compile": false,
+      "group": "groups/valid-and-invalid-state"
+    },
+    {
+      "id": "R165",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('ab'); r=m.end();",
+      "expected": "EXC|System.StringException|No match found",
+      "compile": false,
+      "group": "groups/valid-and-invalid-state"
+    },
+    {
+      "id": "R166",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('ab'); m.find();r=m.group();",
+      "expected": "a",
+      "compile": false,
+      "group": "groups/valid-and-invalid-state"
+    },
+    {
+      "id": "R167",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('ab'); m.find();r=m.start();",
+      "expected": "0",
+      "compile": false,
+      "group": "groups/valid-and-invalid-state"
+    },
+    {
+      "id": "R168",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('ab'); m.find();r=m.end();",
+      "expected": "1",
+      "compile": false,
+      "group": "groups/valid-and-invalid-state"
+    },
+    {
+      "id": "R169",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('ab'); m.find(); m.find();r=m.group();",
+      "expected": "EXC|System.StringException|No match found",
+      "compile": false,
+      "group": "groups/valid-and-invalid-state"
+    },
+    {
+      "id": "R170",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('ab'); m.find(); m.find();r=m.start();",
+      "expected": "EXC|System.StringException|No match found",
+      "compile": false,
+      "group": "groups/valid-and-invalid-state"
+    },
+    {
+      "id": "R171",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('ab'); m.find(); m.find();r=m.end();",
+      "expected": "EXC|System.StringException|No match found",
+      "compile": false,
+      "group": "groups/valid-and-invalid-state"
+    },
+    {
+      "id": "R172",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('ab'); m.matches();r=m.group();",
+      "expected": "EXC|System.StringException|No match found",
+      "compile": false,
+      "group": "groups/valid-and-invalid-state"
+    },
+    {
+      "id": "R173",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('ab'); m.matches();r=m.start();",
+      "expected": "EXC|System.StringException|No match found",
+      "compile": false,
+      "group": "groups/valid-and-invalid-state"
+    },
+    {
+      "id": "R174",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('ab'); m.matches();r=m.end();",
+      "expected": "EXC|System.StringException|No match found",
+      "compile": false,
+      "group": "groups/valid-and-invalid-state"
+    },
+    {
+      "id": "R175",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('a'); m.find(); r=m.group(-1);",
+      "expected": "EXC|System.StringException|Group index out of bounds (parameter 1): No group -1",
+      "compile": false,
+      "group": "groups/index-exception"
+    },
+    {
+      "id": "R176",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('a'); m.find(); r=m.group(2);",
+      "expected": "EXC|System.StringException|Group index out of bounds (parameter 1): No group 2",
+      "compile": false,
+      "group": "groups/index-exception"
+    },
+    {
+      "id": "R177",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('éa'); m.find(); r=String.valueOf(m.start())+'|'+m.end()+'|'+m.start(1)+'|'+m.end(1);",
+      "expected": "1|2|1|2",
+      "compile": false,
+      "group": "groups/unicode-offset-conversion"
+    },
+    {
+      "id": "R178",
+      "code": "Matcher m=Pattern.compile('(a)').matcher('😀a'); m.find(); r=String.valueOf(m.start())+'|'+m.end()+'|'+m.start(1)+'|'+m.end(1);",
+      "expected": "2|3|2|3",
+      "compile": false,
+      "group": "groups/unicode-offset-conversion"
+    },
+    {
+      "id": "R179",
+      "code": "Matcher m=Pattern.compile('(?<word>a)').matcher('a'); m.find(); r=JSON.serialize(m.group(1))+'|'+m.groupCount();",
+      "expected": "\"a\"|1",
+      "compile": false,
+      "group": "groups/named-regex-numbered-access"
+    },
+    {
+      "id": "R180",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceAll('X'));",
+      "expected": "\"X X\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R181",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceFirst('X'));",
+      "expected": "\"X ab\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R182",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceAll(''));",
+      "expected": "\" \"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R183",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceFirst(''));",
+      "expected": "\" ab\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R184",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceAll('$0'));",
+      "expected": "\"ab ab\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R185",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceFirst('$0'));",
+      "expected": "\"ab ab\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R186",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceAll('$1'));",
+      "expected": "\"a a\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R187",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceFirst('$1'));",
+      "expected": "\"a ab\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R188",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceAll('$2$1'));",
+      "expected": "\"ba ba\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R189",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceFirst('$2$1'));",
+      "expected": "\"ba ab\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R190",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceAll('$12'));",
+      "expected": "\"a2 a2\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R191",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceFirst('$12'));",
+      "expected": "\"a2 ab\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R192",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceAll('$3'));",
+      "expected": "EXC|System.StringException|No group 3",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R193",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceFirst('$3'));",
+      "expected": "EXC|System.StringException|No group 3",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R194",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceAll('$'));",
+      "expected": "EXC|System.StringException|Illegal group reference: group index is missing  (Invalid replacement string: '$'.  '$' should be escaped if you do not intend to use a backreference.  Try using Matcher.quoteReplacement() for your argument)",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R195",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceFirst('$'));",
+      "expected": "EXC|System.StringException|Illegal group reference: group index is missing  (Invalid replacement string: '$'.  '$' should be escaped if you do not intend to use a backreference.  Try using Matcher.quoteReplacement() for your argument)",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R196",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceAll('\\\\'));",
+      "expected": "EXC|System.StringException|character to be escaped is missing  (Invalid replacement string: '\\'.  '$' should be escaped if you do not intend to use a backreference.  Try using Matcher.quoteReplacement() for your argument)",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R197",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceFirst('\\\\'));",
+      "expected": "EXC|System.StringException|character to be escaped is missing  (Invalid replacement string: '\\'.  '$' should be escaped if you do not intend to use a backreference.  Try using Matcher.quoteReplacement() for your argument)",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R198",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceAll('\\\\$1'));",
+      "expected": "\"$1 $1\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R199",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceFirst('\\\\$1'));",
+      "expected": "\"$1 ab\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R200",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceAll('\\\\\\\\'));",
+      "expected": "\"\\\\ \\\\\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R201",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceFirst('\\\\\\\\'));",
+      "expected": "\"\\\\ ab\"",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R202",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceAll('${word}'));",
+      "expected": "EXC|System.StringException|No group with name {word}  (Invalid replacement string: '${word}'.  '$' should be escaped if you do not intend to use a backreference.  Try using Matcher.quoteReplacement() for your argument)",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R203",
+      "code": "Matcher m=Pattern.compile('(a)(b)').matcher('ab ab'); r=JSON.serialize(m.replaceFirst('${word}'));",
+      "expected": "EXC|System.StringException|No group with name {word}  (Invalid replacement string: '${word}'.  '$' should be escaped if you do not intend to use a backreference.  Try using Matcher.quoteReplacement() for your argument)",
+      "compile": false,
+      "group": "replacement/escapes-and-groups"
+    },
+    {
+      "id": "R204",
+      "code": "Matcher m=Pattern.compile('z').matcher('abc'); r=JSON.serialize(m.replaceAll('$1X'));",
+      "expected": "\"abc\"",
+      "compile": false,
+      "group": "replacement/no-match-zero-width-optional"
+    },
+    {
+      "id": "R205",
+      "code": "Matcher m=Pattern.compile('').matcher('ab'); r=JSON.serialize(m.replaceAll('$1X'));",
+      "expected": "EXC|System.StringException|No group 1",
+      "compile": false,
+      "group": "replacement/no-match-zero-width-optional"
+    },
+    {
+      "id": "R206",
+      "code": "Matcher m=Pattern.compile('a*').matcher('ba'); r=JSON.serialize(m.replaceAll('$1X'));",
+      "expected": "EXC|System.StringException|No group 1",
+      "compile": false,
+      "group": "replacement/no-match-zero-width-optional"
+    },
+    {
+      "id": "R207",
+      "code": "Matcher m=Pattern.compile('(a)?b').matcher('b ab'); r=JSON.serialize(m.replaceAll('$1X'));",
+      "expected": "\"X aX\"",
+      "compile": false,
+      "group": "replacement/no-match-zero-width-optional"
+    },
+    {
+      "id": "R208",
+      "code": "String x='a.b'; String q=Pattern.quote(x); r=JSON.serialize(q)+'|'+Pattern.matches(q,x);",
+      "expected": "\"\\\\Qa.b\\\\E\"|true",
+      "compile": false,
+      "group": "quote/pattern"
+    },
+    {
+      "id": "R209",
+      "code": "String x='[a]'; String q=Pattern.quote(x); r=JSON.serialize(q)+'|'+Pattern.matches(q,x);",
+      "expected": "\"\\\\Q[a]\\\\E\"|true",
+      "compile": false,
+      "group": "quote/pattern"
+    },
+    {
+      "id": "R210",
+      "code": "String x='a\\\\b'; String q=Pattern.quote(x); r=JSON.serialize(q)+'|'+Pattern.matches(q,x);",
+      "expected": "\"\\\\Qa\\\\b\\\\E\"|true",
+      "compile": false,
+      "group": "quote/pattern"
+    },
+    {
+      "id": "R211",
+      "code": "String x='a$^'; String q=Pattern.quote(x); r=JSON.serialize(q)+'|'+Pattern.matches(q,x);",
+      "expected": "\"\\\\Qa$^\\\\E\"|true",
+      "compile": false,
+      "group": "quote/pattern"
+    },
+    {
+      "id": "R212",
+      "code": "String x=''; String q=Pattern.quote(x); r=JSON.serialize(q)+'|'+Pattern.matches(q,x);",
+      "expected": "\"\\\\Q\\\\E\"|true",
+      "compile": false,
+      "group": "quote/pattern"
+    },
+    {
+      "id": "R213",
+      "code": "String x='x\\\\Ey'; String q=Pattern.quote(x); r=JSON.serialize(q)+'|'+Pattern.matches(q,x);",
+      "expected": "\"\\\\Qx\\\\E\\\\\\\\E\\\\Qy\\\\E\"|true",
+      "compile": false,
+      "group": "quote/pattern"
+    },
+    {
+      "id": "R214",
+      "code": "String x='é😀'; String q=Pattern.quote(x); r=JSON.serialize(q)+'|'+Pattern.matches(q,x);",
+      "expected": "\"\\\\Qé😀\\\\E\"|true",
+      "compile": false,
+      "group": "quote/pattern"
+    },
+    {
+      "id": "R215",
+      "code": "Matcher m=Pattern.compile('a').matcher('aa'); String q=Matcher.quoteReplacement('$1'); r=JSON.serialize(q)+'|'+JSON.serialize(m.replaceAll(q));",
+      "expected": "\"\\\\$1\"|\"$1$1\"",
+      "compile": false,
+      "group": "quote/replacement"
+    },
+    {
+      "id": "R216",
+      "code": "Matcher m=Pattern.compile('a').matcher('aa'); String q=Matcher.quoteReplacement('\\\\$'); r=JSON.serialize(q)+'|'+JSON.serialize(m.replaceAll(q));",
+      "expected": "\"\\\\\\\\\\\\$\"|\"\\\\$\\\\$\"",
+      "compile": false,
+      "group": "quote/replacement"
+    },
+    {
+      "id": "R217",
+      "code": "Matcher m=Pattern.compile('a').matcher('aa'); String q=Matcher.quoteReplacement('plain'); r=JSON.serialize(q)+'|'+JSON.serialize(m.replaceAll(q));",
+      "expected": "\"plain\"|\"plainplain\"",
+      "compile": false,
+      "group": "quote/replacement"
+    },
+    {
+      "id": "R218",
+      "code": "Matcher m=Pattern.compile('a').matcher('aa'); String q=Matcher.quoteReplacement(''); r=JSON.serialize(q)+'|'+JSON.serialize(m.replaceAll(q));",
+      "expected": "\"\"|\"\"",
+      "compile": false,
+      "group": "quote/replacement"
+    },
+    {
+      "id": "R219",
+      "code": "Matcher m=Pattern.compile('a').matcher('aa'); String q=Matcher.quoteReplacement('${word}'); r=JSON.serialize(q)+'|'+JSON.serialize(m.replaceAll(q));",
+      "expected": "\"\\\\${word}\"|\"${word}${word}\"",
+      "compile": false,
+      "group": "quote/replacement"
+    },
+    {
+      "id": "R220",
+      "code": "String p=null; String s='a'; r=Pattern.matches(p,s);",
+      "expected": "EXC|System.NullPointerException|Null regex",
+      "compile": false,
+      "group": "null/Pattern.matches"
+    },
+    {
+      "id": "R221",
+      "code": "String p='a'; String s=null; r=Pattern.matches(p,s);",
+      "expected": "EXC|System.NullPointerException|Script-thrown exception",
+      "compile": false,
+      "group": "null/Pattern.matches"
+    },
+    {
+      "id": "R222",
+      "code": "String p=null; String s=null; r=Pattern.matches(p,s);",
+      "expected": "EXC|System.NullPointerException|Null regex",
+      "compile": false,
+      "group": "null/Pattern.matches"
+    },
+    {
+      "id": "R223",
+      "code": "String x=null; Pattern p=Pattern.compile(x); r=p.pattern();",
+      "expected": "EXC|System.NullPointerException|Null regex",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R224",
+      "code": "String x=null; r=Pattern.quote(x);",
+      "expected": "UNCAUGHT|System.UnexpectedException: Salesforce System Error",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R225",
+      "code": "String x=null; r=Matcher.quoteReplacement(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R226",
+      "code": "String x=null; Matcher m=Pattern.compile('a').matcher(x); r=m.find();",
+      "expected": "EXC|System.NullPointerException|Script-thrown exception",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R227",
+      "code": "Matcher m=Pattern.compile('a').matcher('a'); String x=null; m.reset(x); r=m.find();",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R228",
+      "code": "Matcher m=Pattern.compile('a').matcher('a'); Pattern p=null; m.usePattern(p); r=m.find();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R229",
+      "code": "Matcher m=Pattern.compile('a').matcher('a'); String x=null; r=m.replaceAll(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R230",
+      "code": "Matcher m=Pattern.compile('a').matcher('a'); String x=null; r=m.replaceFirst(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R231",
+      "code": "Matcher m=Pattern.compile('z').matcher('a'); String x=null; r=m.replaceAll(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R232",
+      "code": "Matcher m=Pattern.compile('a').matcher('a'); Integer x=null; r=m.find(x);",
+      "expected": "UNCAUGHT|System.UnexpectedException: Salesforce System Error",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R233",
+      "code": "Matcher m=Pattern.compile('a').matcher('a'); Integer x=null; m.region(x,1); r=m.find();",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R234",
+      "code": "Matcher m=Pattern.compile('a').matcher('a'); Boolean x=null; m.useAnchoringBounds(x); r=m.hasAnchoringBounds();",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R235",
+      "code": "Matcher m=Pattern.compile('a').matcher('a'); Boolean x=null; m.useTransparentBounds(x); r=m.hasTransparentBounds();",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R236",
+      "code": "Matcher m=null; r=m.find();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R237",
+      "code": "Pattern p=null; r=p.matcher('a');",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "null/arguments-and-receivers"
+    },
+    {
+      "id": "R238",
+      "code": "Matcher m=Pattern.compile('a').matcher('a'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "end/successful-search-flags"
+    },
+    {
+      "id": "R239",
+      "code": "Matcher m=Pattern.compile('a$').matcher('a'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/successful-search-flags"
+    },
+    {
+      "id": "R240",
+      "code": "Matcher m=Pattern.compile('a\\\\Z').matcher('a'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/successful-search-flags"
+    },
+    {
+      "id": "R241",
+      "code": "Matcher m=Pattern.compile('a\\\\z').matcher('a'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|1|\"a\"",
+      "compile": false,
+      "group": "end/successful-search-flags"
+    },
+    {
+      "id": "R242",
+      "code": "Matcher m=Pattern.compile('a.*').matcher('a'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|false|0|1|\"a\"",
+      "compile": false,
+      "group": "end/successful-search-flags"
+    },
+    {
+      "id": "R243",
+      "code": "Matcher m=Pattern.compile('a.*$').matcher('a'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/successful-search-flags"
+    },
+    {
+      "id": "R244",
+      "code": "Matcher m=Pattern.compile('a(?=b|$)').matcher('a'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/successful-search-flags"
+    },
+    {
+      "id": "R245",
+      "code": "Matcher m=Pattern.compile('z').matcher('a'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "end/successful-search-flags"
+    },
+    {
+      "id": "R246",
+      "code": "Matcher m=Pattern.compile('a$').matcher('a\\n'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R247",
+      "code": "Matcher m=Pattern.compile('(?m)a$').matcher('a\\n'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R248",
+      "code": "Matcher m=Pattern.compile('a\\\\Z').matcher('a\\n'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R249",
+      "code": "Matcher m=Pattern.compile('a\\\\z').matcher('a\\n'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R250",
+      "code": "Matcher m=Pattern.compile('a$').matcher('a\\r\\n'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R251",
+      "code": "Matcher m=Pattern.compile('(?m)a$').matcher('a\\r\\n'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R252",
+      "code": "Matcher m=Pattern.compile('a\\\\Z').matcher('a\\r\\n'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R253",
+      "code": "Matcher m=Pattern.compile('a\\\\z').matcher('a\\r\\n'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R254",
+      "code": "Matcher m=Pattern.compile('a$').matcher('a\\r'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R255",
+      "code": "Matcher m=Pattern.compile('(?m)a$').matcher('a\\r'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R256",
+      "code": "Matcher m=Pattern.compile('a\\\\Z').matcher('a\\r'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R257",
+      "code": "Matcher m=Pattern.compile('a\\\\z').matcher('a\\r'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R258",
+      "code": "Matcher m=Pattern.compile('a$').matcher('a\\u0085'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R259",
+      "code": "Matcher m=Pattern.compile('(?m)a$').matcher('a\\u0085'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R260",
+      "code": "Matcher m=Pattern.compile('a\\\\Z').matcher('a\\u0085'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R261",
+      "code": "Matcher m=Pattern.compile('a\\\\z').matcher('a\\u0085'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R262",
+      "code": "Matcher m=Pattern.compile('a$').matcher('a\\u2028'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R263",
+      "code": "Matcher m=Pattern.compile('(?m)a$').matcher('a\\u2028'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R264",
+      "code": "Matcher m=Pattern.compile('a\\\\Z').matcher('a\\u2028'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R265",
+      "code": "Matcher m=Pattern.compile('a\\\\z').matcher('a\\u2028'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R266",
+      "code": "Matcher m=Pattern.compile('a$').matcher('a\\u2029'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R267",
+      "code": "Matcher m=Pattern.compile('(?m)a$').matcher('a\\u2029'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R268",
+      "code": "Matcher m=Pattern.compile('a\\\\Z').matcher('a\\u2029'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R269",
+      "code": "Matcher m=Pattern.compile('a\\\\z').matcher('a\\u2029'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "end/final-terminators-and-modes"
+    },
+    {
+      "id": "R270",
+      "code": "Matcher m=Pattern.compile('(?m)$').matcher('a\\r\\nb'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|1|1|\"\"",
+      "compile": false,
+      "group": "end/interior-terminator-and-mode-control"
+    },
+    {
+      "id": "R271",
+      "code": "Matcher m=Pattern.compile('(?m)a$').matcher('a\\r\\nb'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "end/interior-terminator-and-mode-control"
+    },
+    {
+      "id": "R272",
+      "code": "Matcher m=Pattern.compile('(?m)a\\\\Z').matcher('a\\r\\nb'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "end/interior-terminator-and-mode-control"
+    },
+    {
+      "id": "R273",
+      "code": "Matcher m=Pattern.compile('(?d)a$').matcher('a\\r\\nb'); Boolean ok=m.find(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "false|true|false",
+      "compile": false,
+      "group": "end/interior-terminator-and-mode-control"
+    },
+    {
+      "id": "R274",
+      "code": "r=Pattern.matches('a','a');",
+      "expected": "true",
+      "compile": false,
+      "group": "match/static-Pattern.matches"
+    },
+    {
+      "id": "R275",
+      "code": "r=Pattern.matches('a','ba');",
+      "expected": "false",
+      "compile": false,
+      "group": "match/static-Pattern.matches"
+    },
+    {
+      "id": "R276",
+      "code": "r=Pattern.matches('','');",
+      "expected": "true",
+      "compile": false,
+      "group": "match/static-Pattern.matches"
+    },
+    {
+      "id": "R277",
+      "code": "r=Pattern.matches('(?i)a','A');",
+      "expected": "true",
+      "compile": false,
+      "group": "match/static-Pattern.matches"
+    },
+    {
+      "id": "R278",
+      "code": "Matcher m=Pattern.compile('a').matcher('a'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "end/other-successful-search-routes"
+    },
+    {
+      "id": "R279",
+      "code": "Matcher m=Pattern.compile('a$').matcher('a'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/other-successful-search-routes"
+    },
+    {
+      "id": "R280",
+      "code": "Matcher m=Pattern.compile('a\\\\Z').matcher('a'); Boolean ok=m.matches(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/other-successful-search-routes"
+    },
+    {
+      "id": "R281",
+      "code": "Matcher m=Pattern.compile('a').matcher('a'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|false|false|0|1|\"a\"",
+      "compile": false,
+      "group": "end/other-successful-search-routes"
+    },
+    {
+      "id": "R282",
+      "code": "Matcher m=Pattern.compile('a$').matcher('a'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/other-successful-search-routes"
+    },
+    {
+      "id": "R283",
+      "code": "Matcher m=Pattern.compile('a\\\\Z').matcher('a'); Boolean ok=m.lookingAt(); r=String.valueOf(ok)+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+JSON.serialize(m.group());}",
+      "expected": "true|true|true|0|1|\"a\"",
+      "compile": false,
+      "group": "end/other-successful-search-routes"
+    },
+    {
+      "id": "R284",
+      "code": "Pattern p=Pattern.compile('a'); Matcher m=p.matcher('a'); Object x=m.pattern(); r=String.valueOf(x instanceof Pattern)+'|'+(m.pattern()===p)+'|'+JSON.serialize(m.pattern().pattern());",
+      "expected": "true|false|\"a\"",
+      "compile": false,
+      "group": "state/pattern-receiver-identity-conversion"
+    },
+    {
+      "id": "C001",
+      "code": "Object r; Matcher m=Pattern.compile('(?<word>a)').matcher('a'); m.find(); r=m.group('word'); pq.out('C001',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void group(String) from the type System.Matcher",
+      "compile": true,
+      "group": "groups/named-overload-applicability"
+    },
+    {
+      "id": "C002",
+      "code": "Object r; Matcher m=Pattern.compile('(?<word>a)').matcher('a'); m.find(); r=m.start('word'); pq.out('C002',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void start(String) from the type System.Matcher",
+      "compile": true,
+      "group": "groups/named-overload-applicability"
+    },
+    {
+      "id": "C003",
+      "code": "Object r; Matcher m=Pattern.compile('(?<word>a)').matcher('a'); m.find(); r=m.end('word'); pq.out('C003',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void end(String) from the type System.Matcher",
+      "compile": true,
+      "group": "groups/named-overload-applicability"
+    },
+    {
+      "id": "C004",
+      "code": "Object r; Matcher m=Pattern.compile('(?<word>a)').matcher('a'); m.find(); r=m.group('missing'); pq.out('C004',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void group(String) from the type System.Matcher",
+      "compile": true,
+      "group": "groups/named-overload-applicability"
+    },
+    {
+      "id": "C005",
+      "code": "Object r; r=Pattern.compile('a',2); pq.out('C005',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void compile(String, Integer) from the type System.Pattern",
+      "compile": true,
+      "group": "compile/signature-and-conversion-errors"
+    },
+    {
+      "id": "C006",
+      "code": "Object r; r=Pattern.CASE_INSENSITIVE; pq.out('C006',r);",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: CASE_INSENSITIVE",
+      "compile": true,
+      "group": "compile/signature-and-conversion-errors"
+    },
+    {
+      "id": "C008",
+      "code": "Object r; r=Pattern.matches(1,'a'); pq.out('C008',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void matches(Integer, String) from the type System.Pattern",
+      "compile": true,
+      "group": "compile/signature-and-conversion-errors"
+    },
+    {
+      "id": "C009",
+      "code": "Object r; r=Pattern.compile(1); pq.out('C009',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void compile(Integer) from the type System.Pattern",
+      "compile": true,
+      "group": "compile/signature-and-conversion-errors"
+    },
+    {
+      "id": "C010",
+      "code": "Object r; r=Pattern.compile('a').matcher(1); pq.out('C010',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void matcher(Integer) from the type System.Pattern",
+      "compile": true,
+      "group": "compile/signature-and-conversion-errors"
+    },
+    {
+      "id": "C011",
+      "code": "Object r; r=Pattern.quote(1); pq.out('C011',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void quote(Integer) from the type System.Pattern",
+      "compile": true,
+      "group": "compile/signature-and-conversion-errors"
+    },
+    {
+      "id": "C012",
+      "code": "Object r; r=Matcher.quoteReplacement(1); pq.out('C012',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void quoteReplacement(Integer) from the type System.Matcher",
+      "compile": true,
+      "group": "compile/signature-and-conversion-errors"
+    },
+    {
+      "id": "C013",
+      "code": "Object r; Matcher m=Pattern.compile('a').matcher('a'); r=m.find('0'); pq.out('C013',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void find(String) from the type System.Matcher",
+      "compile": true,
+      "group": "compile/signature-and-conversion-errors"
+    },
+    {
+      "id": "C014",
+      "code": "Object r; Matcher m=Pattern.compile('a').matcher('a'); r=m.region('0',1); pq.out('C014',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void region(String, Integer) from the type System.Matcher",
+      "compile": true,
+      "group": "compile/signature-and-conversion-errors"
+    },
+    {
+      "id": "C015",
+      "code": "Object r; Matcher m=Pattern.compile('a').matcher('a'); r=m.replaceAll(1); pq.out('C015',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void replaceAll(Integer) from the type System.Matcher",
+      "compile": true,
+      "group": "compile/signature-and-conversion-errors"
+    },
+    {
+      "id": "C016",
+      "code": "Object r; Matcher m=Pattern.compile('a').matcher('a'); r=m.usePattern('a'); pq.out('C016',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void usePattern(String) from the type System.Matcher",
+      "compile": true,
+      "group": "compile/signature-and-conversion-errors"
+    }
+  ],
+  "controls": [
+    {
+      "id": "K001",
+      "code": "r=Pattern.matches('[','x');",
+      "expected": "EXC|System.StringException|Invalid regex: Unclosed character class near index 0\n[\n^",
+      "compile": false
+    },
+    {
+      "id": "K002",
+      "code": "Matcher m=Pattern.compile('[A-Z]+').matcher('ABC DEF'); m.region(4,7); Boolean ok=m.find(0); r=String.valueOf(ok)+'|'+m.regionStart()+'|'+m.regionEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.end()+'|'+m.group();}",
+      "expected": "true|0|7|0|3|ABC",
+      "compile": false
+    },
+    {
+      "id": "K003",
+      "code": "Matcher m=Pattern.compile('[A-Z]+').matcher('aa ABC bb DEF cc'); m.region(3,10); String x=m.replaceAll('x'); Boolean ok=m.find(); r=x+'|'+ok+'|'+m.hitEnd()+'|'+m.requireEnd(); if(ok){r=String.valueOf(r)+'|'+m.start()+'|'+m.group();}",
+      "expected": "aa x bb x cc|false|true|false",
+      "compile": false
+    },
+    {
+      "id": "K004",
+      "code": "Pattern p=Pattern.compile('(?x)a # ignored (?q)'); r=p.matcher('a').matches();",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "K005",
+      "code": "Matcher m=Pattern.compile('(?<word>a)').matcher('a'); r=m.replaceAll('${word}x');",
+      "expected": "ax",
+      "compile": false
+    },
+    {
+      "id": "K006",
+      "code": "r=Pattern.matches('[[a].]','.');",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "K007",
+      "code": "r=Pattern.matches('[[a].]','b');",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "K008",
+      "code": "r=Pattern.matches('[[a].]','a');",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "K009",
+      "code": "r=Pattern.compile('[[a](?q)]').pattern();",
+      "expected": "[[a](?q)]",
+      "compile": false
+    },
+    {
+      "id": "K010",
+      "code": "r=Pattern.matches('[[a](?q)]','?');",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "K011",
+      "code": "r=Pattern.matches('[[a](?q)]','b');",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "K012",
+      "code": "r=Pattern.matches('[[[a]].]','.');",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "K013",
+      "code": "r=Pattern.matches('[[[a]].]','b');",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "K014",
+      "code": "r=Pattern.matches('(?d)[[a].]','.');",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "K015",
+      "code": "r=Pattern.matches('(?d)[[a].]','b');",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "K016",
+      "code": "r=Pattern.compile('[[a]](?q)').pattern();",
+      "expected": "EXC|System.StringException|Invalid regex: Unknown inline modifier near index 7\n[[a]](?q)\n       ^",
+      "compile": false
+    },
+    {
+      "id": "K017",
+      "code": "r=Pattern.matches('[]a.]','.');",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "K018",
+      "code": "r=Pattern.matches('[]a.]','b');",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "K019",
+      "code": "r=Pattern.matches('[[a]\\\\].]','.');",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "K020",
+      "code": "r=Pattern.matches('[[a](?s)].','q\\n');",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "K021",
+      "code": "r=Pattern.matches('(?d)[[a]$]','$');",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "K022",
+      "code": "r=Pattern.matches('[^]a.]','b');",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "K023",
+      "code": "r=Pattern.matches('[^]a.]','.');",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "K024",
+      "code": "Pattern p=Pattern.compile('ab\\n['); r=p.pattern();",
+      "expected": "EXC|System.StringException|Invalid regex: Unclosed character class near index 3\nab\n[\n   ^",
+      "compile": false
+    },
+    {
+      "id": "K025",
+      "code": "r=Pattern.matches('ab\\r\\n[','a');",
+      "expected": "EXC|System.StringException|Invalid regex: Unclosed character class near index 4\nab\r\n[\n    ^",
+      "compile": false
+    }
+  ],
+  "remaining": [
+    {
+      "id": "C007",
+      "code": "Object r; r=Pattern.compile('a').flags(); pq.out('C007',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void flags() from the type System.Pattern",
+      "compile": true,
+      "group": "compile/signature-and-conversion-errors",
+      "owner": "type system",
+      "reason": "Chained Pattern.compile(...).flags() needs compile-time receiver/member rejection in type system (type system and dispatch)."
+    }
+  ],
+  "caseRows": {
+    "use-pattern-state": [
+      "R115",
+      "R116",
+      "R117",
+      "R118",
+      "R119",
+      "R120"
+    ],
+    "successful-search-end": [
+      "R238",
+      "R239",
+      "R240",
+      "R241",
+      "R242",
+      "R243",
+      "R244",
+      "R245",
+      "R278",
+      "R279",
+      "R280",
+      "R281",
+      "R282",
+      "R283"
+    ],
+    "final-terminators": [
+      "R246",
+      "R247",
+      "R248",
+      "R249",
+      "R250",
+      "R251",
+      "R252",
+      "R253",
+      "R254",
+      "R255",
+      "R256",
+      "R257",
+      "R258",
+      "R259",
+      "R260",
+      "R261",
+      "R262",
+      "R263",
+      "R264",
+      "R265",
+      "R266",
+      "R267",
+      "R268",
+      "R269"
+    ],
+    "terminators-and-modes": [
+      "R246",
+      "R247",
+      "R248",
+      "R249",
+      "R250",
+      "R251",
+      "R252",
+      "R253",
+      "R254",
+      "R255",
+      "R256",
+      "R257",
+      "R258",
+      "R259",
+      "R260",
+      "R261",
+      "R262",
+      "R263",
+      "R264",
+      "R265",
+      "R266",
+      "R267",
+      "R268",
+      "R269",
+      "R270",
+      "R271",
+      "R272",
+      "R273"
+    ]
+  }
+}

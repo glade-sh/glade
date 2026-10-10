@@ -24,12 +24,12 @@ func checkAnnotationCatalog(index typesys.Index) []diagnostic.Diagnostic {
 		if skipProjectDiagnosticType(typ) {
 			continue
 		}
-		diagnostics = append(diagnostics, annotationCatalogDiagnostics(typ.File, typ.Range, typ.Annotations)...)
+		diagnostics = append(diagnostics, annotationCatalogForTarget(typ, "classes", typ.Name, "", typ.Modifiers, typ.Annotations)...)
 		for _, member := range typ.Members {
 			if member.Kind == apexast.DeclarationClass || member.Kind == apexast.DeclarationInterface || member.Kind == apexast.DeclarationEnum {
 				continue
 			}
-			diagnostics = append(diagnostics, annotationCatalogDiagnostics(typ.File, member.Range, member.Annotations)...)
+			diagnostics = append(diagnostics, annotationCatalogForTarget(typ, annotationTarget(member.Kind), member.Name, member.Type, member.Modifiers, member.Annotations)...)
 			for _, parameter := range member.Parameters {
 				diagnostics = append(diagnostics, annotationCatalogDiagnostics(typ.File, parameter.Range, parameter.Annotations)...)
 			}
@@ -91,7 +91,14 @@ func annotationCatalogDiagnostics(file string, fallback diagnostic.Range, annota
 					diagnostics = append(diagnostics, annotationCatalogDiagnostic(file, argument.Range, fmt.Sprintf("annotation @%s property %q requires a string literal", annotation.Name, argument.Name)))
 				}
 			case apexlang.AnnotationBooleanArgument:
-				if !strings.EqualFold(strings.TrimSpace(argument.Value), "true") && !strings.EqualFold(strings.TrimSpace(argument.Value), "false") {
+				value := strings.TrimSpace(argument.Value)
+				// C161 accepts the quoted InvocableVariable required flag.
+				if strings.EqualFold(annotation.Name, "InvocableVariable") && strings.EqualFold(argument.Name, "required") {
+					if quoted, ok := apexStringLiteralValue(value); ok {
+						value = quoted
+					}
+				}
+				if !strings.EqualFold(value, "true") && !strings.EqualFold(value, "false") {
 					diagnostics = append(diagnostics, annotationCatalogDiagnostic(file, argument.Range, fmt.Sprintf("annotation @%s property %q requires a Boolean literal", annotation.Name, argument.Name)))
 				}
 			}
@@ -110,6 +117,7 @@ func checkAnnotationContracts(index typesys.Index) []diagnostic.Diagnostic {
 			continue
 		}
 		diagnostics = append(diagnostics, checkTypeAnnotationContracts(typ)...)
+		diagnostics = append(diagnostics, namedAnnotationExposureDiagnostics(index, typ)...)
 		testSetups := 0
 		invocableMethods := 0
 		auraMethods := map[string]int{}
@@ -141,7 +149,7 @@ func checkAnnotationContracts(index typesys.Index) []diagnostic.Diagnostic {
 			diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, typ.Range, "TestSetup cannot be combined with IsTest(SeeAllData=true)"))
 		}
 		for name, count := range auraMethods {
-			if count > 1 {
+			if count > 1 && !apexversion.Before(typ.EffectiveAPIVersion, 55) {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, typ.Range, fmt.Sprintf("AuraEnabled methods cannot be overloaded: %s", name)))
 			}
 		}
@@ -198,6 +206,9 @@ func invocableTypeHasVisibleNoArgConstructor(typ typesys.TypeSymbol, ownerNamesp
 }
 
 func checkTypeAnnotationContracts(typ typesys.TypeSymbol) []diagnostic.Diagnostic {
+	if diagnostics := annotationPlacementDiagnostics(typ, "classes", typ.Name, "", typ.Modifiers, typ.Annotations); len(diagnostics) > 0 {
+		return diagnostics
+	}
 	var diagnostics []diagnostic.Diagnostic
 	for _, annotation := range typ.Annotations {
 		switch {
@@ -227,6 +238,13 @@ func checkTypeAnnotationContracts(typ typesys.TypeSymbol) []diagnostic.Diagnosti
 
 func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.MemberSymbol) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
+	for _, parameter := range member.Parameters {
+		diagnostics = append(diagnostics, annotationPlacementDiagnostics(typ, "parameters", parameter.Name, parameter.Type, parameter.Modifiers, parameter.Annotations)...)
+	}
+	placement := annotationPlacementDiagnostics(typ, annotationTarget(member.Kind), member.Name, member.Type, member.Modifiers, member.Annotations)
+	if len(placement) > 0 {
+		return append(diagnostics, placement...)
+	}
 	for _, annotation := range member.Annotations {
 		switch {
 		case strings.EqualFold(annotation.Name, "IsTest"):
@@ -238,7 +256,9 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "TestSetup methods must be static void no-argument methods inside an IsTest class"))
 			}
 		case strings.EqualFold(annotation.Name, "future"):
-			if member.Kind != apexast.DeclarationMethod || !hasModifier(member.Modifiers, "static") || !strings.EqualFold(member.Type, "void") || !annotationBooleanArguments(annotation, "callout") || !futureParametersAllowed(member.Parameters) {
+			if member.Kind == apexast.DeclarationMethod && !hasModifier(member.Modifiers, "static") {
+				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "Future methods must be declared as static"))
+			} else if member.Kind != apexast.DeclarationMethod || !strings.EqualFold(member.Type, "void") || !annotationBooleanArguments(annotation, "callout") || !futureParametersAllowed(member.Parameters) {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "future methods must be static void methods with supported parameter types"))
 			}
 		case strings.EqualFold(annotation.Name, "AuraEnabled"):
@@ -260,12 +280,8 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 			if member.Kind != apexast.DeclarationField || !hasEitherModifier(member.Modifiers, "public", "global") || hasModifier(member.Modifiers, "static") || hasModifier(member.Modifiers, "final") || strings.EqualFold(member.Type, "Object") || !invocableVariableArgumentsAllowed(member.Type, annotation) {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "InvocableVariable must annotate a public or global nonstatic nonfinal field"))
 			}
-		case strings.EqualFold(annotation.Name, "RemoteAction"):
-			if member.Kind != apexast.DeclarationMethod || !hasEitherModifier(member.Modifiers, "public", "global") || !hasModifier(member.Modifiers, "static") {
-				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "RemoteAction must annotate a public or global static method"))
-			}
 		case strings.EqualFold(annotation.Name, "ReadOnly"):
-			valid := member.Kind == apexast.DeclarationMethod && hasEitherModifier(member.Modifiers, "public", "global")
+			valid := member.Kind == apexast.DeclarationMethod && readOnlyMethodAllowed(typ, member.Name, member.Modifiers, member.Annotations)
 			if valid && hasModifier(member.Modifiers, "static") {
 				valid = hasAnnotation(typ.Annotations, "RestResource") && memberHasRESTVerb(member)
 				if apexversion.Before(typ.EffectiveAPIVersion, 49) {
@@ -534,7 +550,8 @@ func genericTypeArguments(name string) ([]string, bool) {
 }
 
 func isListType(name string) bool {
-	return strings.HasPrefix(strings.ToLower(strings.ReplaceAll(name, " ", "")), "list<")
+	normalized := strings.ToLower(strings.ReplaceAll(name, " ", ""))
+	return strings.HasPrefix(normalized, "list<") || strings.HasSuffix(normalized, "[]")
 }
 
 func annotationPropertyTrue(annotations []apexast.Annotation, annotationName, propertyName string) bool {

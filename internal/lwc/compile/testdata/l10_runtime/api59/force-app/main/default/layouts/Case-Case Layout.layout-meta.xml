@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Layout xmlns="http://soap.sforce.com/2006/04/metadata">
+    <layoutSections>
+        <label>Case Information</label>
+        <style>OneColumn</style>
+        <editHeading>false</editHeading>
+        <detailHeading>false</detailHeading>
+        <layoutColumns>
+            <layoutItems>
+                <field>Subject</field>
+                <behavior>Edit</behavior>
+            </layoutItems>
+            <layoutItems>
+                <field>Status</field>
+                <behavior>Edit</behavior>
+            </layoutItems>
+            <layoutItems>
+                <field>Priority</field>
+                <behavior>Edit</behavior>
+            </layoutItems>
+            <layoutItems>
+                <field>Origin</field>
+                <behavior>Edit</behavior>
+            </layoutItems>
+            <layoutItems>
+                <field>Reason</field>
+                <behavior>Edit</behavior>
+            </layoutItems>
+            <layoutItems>
+                <field>Type</field>
+                <behavior>Edit</behavior>
+            </layoutItems>
+            <layoutItems>
+                <field>ContactId</field>
+                <behavior>Edit</behavior>
+            </layoutItems>
+            <layoutItems>
+                <field>AccountId</field>
+                <behavior>Edit</behavior>
+            </layoutItems>
+            <layoutItems>
+                <field>OwnerId</field>
+                <behavior>Edit</behavior>
+            </layoutItems>
+        </layoutColumns>
+    </layoutSections>
+</Layout>

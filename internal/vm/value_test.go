@@ -12,10 +12,12 @@ func TestValueStringGenericObjectIncludesApexTypeDelimiter(t *testing.T) {
 
 func TestValueStringGenericObjectIncludesFields(t *testing.T) {
 	value := Object("Query")
+	value.projectClass = true
 	value.Fields["condition"] = String("Pro forma")
 	value.Fields["limit"] = Int(10)
 
-	if got := value.String(); got != "Query:{condition=Pro forma, limit=10}" {
+	// R082 captures the delimiter for populated default user classes.
+	if got := value.String(); got != "Query:[condition=Pro forma, limit=10]" {
 		t.Fatalf("String() = %q", got)
 	}
 }
@@ -198,15 +200,15 @@ func TestSObjectValueEqualityTreatsStringAndPlatformIDFieldsAsEqual(t *testing.T
 func TestSObjectValueEqualityTreatsTypedRelationshipNullAndMissingProjectionAsEqual(t *testing.T) {
 	left := Object("Product__c")
 	relationshipNull := Null
-	relationshipNull.Type = "DeferredRevenueMethod__c"
+	relationshipNull.Type = "RevenuePlan__c"
 	relationshipNull.Runtime = relationshipNullRuntime
-	left.Fields["DeferredRevenueMethod__r"] = relationshipNull
+	left.Fields["RevenuePlan__r"] = relationshipNull
 
 	right := Object("Product__c")
-	relationship := Object("deferredrevenuemethod__r")
+	relationship := Object("revenueplan__r")
 	relationship.Fields["name"] = Null
 	relationship.Fields["recognition__c"] = Null
-	right.Fields["deferredrevenuemethod__r"] = relationship
+	right.Fields["revenueplan__r"] = relationship
 
 	if !left.Equal(right) {
 		t.Fatal("expected typed relationship null and all-null relationship projection to compare equal")

@@ -32,6 +32,20 @@ System.assertEquals('probe', inbound.headers[2].value);
 	}
 }
 
+func TestExecMessagingInboundEmailResultDefaultsSuccess(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.InboundEmailResult result = new Messaging.InboundEmailResult();
+System.assertEquals(true, result.success);
+System.assertEquals(null, result.message);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExtractInboundEmailParsesMultipartBodiesAndAttachments(t *testing.T) {
 	raw := "From: sender@example.com\r\n" +
 		"To: recipient@example.com\r\n" +
@@ -252,14 +266,140 @@ System.assertEquals('REQUIRED_FIELD_MISSING', String.valueOf(results[0].getError
 	}
 }
 
+func TestExecMessagingSendEmailMissingRecipientReturnsFailedResult(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage();
+message.setHtmlBody('body');
+List<Messaging.SendEmailResult> results = Messaging.sendEmail(
+	new List<Messaging.SingleEmailMessage>{message}, false
+);
+System.assertEquals(1, results.size());
+System.assertEquals(false, results[0].isSuccess());
+System.assertEquals(1, results[0].getErrors().size());
+// Messaging R095/R201: native missing-recipient text.
+System.assert('Add a recipient (To, CC, or BCC) to send an email.'.equals(results[0].getErrors()[0].getMessage()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMessagingSendEmailRejectsUnknownTemplate(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage();
+message.setToAddresses(new List<String>{'recipient@example.test'});
+message.setTemplateId('00X000000000099AAA');
+List<Messaging.SendEmailResult> results = Messaging.sendEmail(
+	new List<Messaging.SingleEmailMessage>{message}, false
+);
+System.assertEquals(false, results[0].isSuccess());
+System.assertEquals('INVALID_CROSS_REFERENCE_KEY', String.valueOf(results[0].getErrors()[0].getStatusCode()));
+System.assertEquals('invalid cross reference id', results[0].getErrors()[0].getMessage());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := emailTemplateTestOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMessagingSendEmailAllowsTemplateIDWithEmptyLocalCatalog(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage();
+	message.setToAddresses(new List<String>{'recipient@example.test'});
+	message.setPlainTextBody('body');
+	message.setTemplateId('00X000000000099AAA');
+	message.setWhatId('001000000000099AAA');
+	List<Messaging.SendEmailResult> results = Messaging.sendEmail(
+	new List<Messaging.SingleEmailMessage>{message}
+);
+	System.assertEquals(1, results.size());
+	System.assert(results[0].isSuccess());
+EmailMessage captured = [SELECT EmailTemplateId, RelatedToId FROM EmailMessage LIMIT 1];
+System.assertEquals('00X000000000099AAA', captured.EmailTemplateId);
+System.assertEquals('001000000000099AAA', captured.RelatedToId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "EmailTemplate")
+	storage.EnsureStandardObject(&org, "Account")
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMessagingSendEmailRejectsEmailTemplateWhatIdForUserTarget(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage();
+message.setToAddresses(new List<String>{'recipient@example.test'});
+message.setTemplateId('00X000000000003AAA');
+message.setTargetObjectId('005000000000001AAA');
+message.setWhatId('00X000000000003AAA');
+List<Messaging.SendEmailResult> results = Messaging.sendEmail(
+	new List<Messaging.SingleEmailMessage>{message}, false
+);
+System.assertEquals(false, results[0].isSuccess());
+System.assertEquals('INVALID_ID_FIELD', String.valueOf(results[0].getErrors()[0].getStatusCode()));
+System.assertEquals('WhatId is not available for sending emails to UserIds.', results[0].getErrors()[0].getMessage());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := emailTemplateTestOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMessagingSendEmailPersistsEmailMessageIdentifier(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage();
+message.setToAddresses(new List<String>{'recipient@example.test'});
+message.setSubject('Persisted subject');
+message.setPlainTextBody('Persisted body');
+List<Messaging.SendEmailResult> results = Messaging.sendEmail(
+	new List<Messaging.SingleEmailMessage>{message}
+);
+System.assertEquals(true, results[0].isSuccess());
+List<EmailMessage> rows = [SELECT MessageIdentifier, Subject, TextBody, ToAddress FROM EmailMessage];
+System.assertEquals(1, rows.size());
+System.assert(rows[0].MessageIdentifier != null);
+System.assertEquals('Persisted subject', rows[0].Subject);
+System.assertEquals('Persisted body', rows[0].TextBody);
+System.assertEquals('recipient@example.test', rows[0].ToAddress);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMessagingMassEmailMessageSalesforceDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.MassEmailMessage mass = new Messaging.MassEmailMessage();
 System.assertEquals('Mass Email (API)', mass.description);
 System.assertEquals(null, mass.targetObjectIds);
 System.assertEquals(null, mass.whatIds);
-System.assertEquals(0, mass.getTargetObjectIds().size());
-System.assertEquals(0, mass.getWhatIds().size());
+System.assert(mass.getTargetObjectIds()==null); // R104/R105
+System.assert(mass.getWhatIds()==null); // R104/R105
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -476,4 +616,36 @@ func fullLocalEmailOrg() storage.OrgState {
 	}
 	org.Objects["ContentDocumentLink"] = linkObject
 	return org
+}
+
+func TestSendEmailTargetValidationPreservesValidPartialCapture(t *testing.T) {
+	machine := New(nil)
+	machine.Org = &storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Contact": {Definition: storage.ObjectDefinition{APIName: "Contact", Fields: map[string]storage.Field{"Email": {APIName: "Email", Type: storage.FieldString}}}, Records: map[storage.ID]storage.Record{
+			"003000000000001": {ID: "003000000000001", Object: "Contact", Fields: map[string]storage.Value{"Email": storage.StringValue("valid@example.invalid")}},
+			"003000000000002": {ID: "003000000000002", Object: "Contact", Fields: map[string]storage.Value{"Email": storage.NullValue()}},
+		}},
+	}}
+	messages := []Value{}
+	for _, id := range []string{"003000000000001AAA", "003000000000002AAA"} {
+		message := newSingleEmailMessage()
+		message.Fields["plainTextBody"] = String("Owned body")
+		message.Fields["targetObjectId"] = platformScalar("Id", id)
+		message.Fields["treatTargetObjectAsRecipient"] = Bool(true)
+		messages = append(messages, message)
+	}
+	results, err := machine.sendEmail([]Value{List(messages...), Bool(false)}, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results.List) != 2 || !results.List[0].Fields["success"].Bool || results.List[1].Fields["success"].Bool {
+		t.Fatalf("partial results = %#v", results)
+	}
+	failed := results.List[1].Fields["errors"].List[0]
+	if failed.Fields["statusCode"].Text != "INVALID_EMAIL_ADDRESS" || stringValue(failed.Fields["targetObjectId"]) != "003000000000002AAA" {
+		t.Fatalf("target error = %#v", failed)
+	}
+	if len(machine.capturedEmails) != 1 || machine.capturedEmails[0].TargetObjectID != "003000000000001AAA" {
+		t.Fatalf("captures = %#v", machine.capturedEmails)
+	}
 }

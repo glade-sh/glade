@@ -24,6 +24,7 @@ import (
 	"github.com/glade-sh/glade/internal/flagparse"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/trace"
@@ -42,6 +43,11 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		return testreport.Run{}, nil
 	}
 	if hasUIFlag(args) {
+		for _, arg := range args {
+			if arg == "--read-only" {
+				return testreport.Run{}, errors.New("--read-only cannot be combined with --ui")
+			}
+		}
 		if err := runTUIView(ctx, args, tui.BoardTests, w, progressW); err != nil {
 			return testreport.Run{}, err
 		}
@@ -109,6 +115,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	methodName := ""
 	classFile := ""
 	var selectedClasses []string
+	emptyClassShard := false
+	classFileProblem := ""
 	shardCount := 0
 	shardIndex := 0
 	shardIndexSet := false
@@ -167,6 +175,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		Bool("no-parallel-methods", "").
 		String("parallelism", "").
 		String("test-timeout", "").
+		String("runtime-rest-api-version", "").
 		Bool("gc-aggressive", "").
 		String("cpu-profile", "").
 		String("mem-profile", "").
@@ -200,6 +209,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		Bool("daemon", "").
 		Bool("connect", "").
 		Bool("no-serve", "").
+		Bool("read-only", "").
 		Bool("no-cache", "").
 		Bool("last-failed", "").
 		Bool("wizard", "").
@@ -217,6 +227,14 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if parsed.String("project") != "" {
 		root = parsed.String("project")
 	}
+	runtimeRESTAPIVersion, err := storage.ResolveRESTAPIVersion(parsed.String("runtime-rest-api-version"))
+	if err != nil {
+		return testreport.Run{}, fmt.Errorf("--runtime-rest-api-version: %w", err)
+	}
+	if strings.TrimSpace(parsed.String("runtime-rest-api-version")) == "" {
+		// Preserve the optional wire field for clients that retain the default.
+		runtimeRESTAPIVersion = ""
+	}
 	filter = parsed.String("filter")
 	className = strings.TrimSpace(parsed.String("class"))
 	methodName = strings.TrimSpace(parsed.String("method"))
@@ -230,10 +248,14 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		return testreport.Run{}, errors.New("--method requires --class")
 	}
 	if classFile != "" {
-		selectedClasses, err = readTestClassFile(classFile)
+		selection, readErr := readTestClassFile(classFile)
+		err = readErr
 		if err != nil {
 			return testreport.Run{}, err
 		}
+		selectedClasses = selection.Classes
+		emptyClassShard = selection.EmptyShard
+		classFileProblem = selection.Problem
 	}
 	if className != "" {
 		selectedClasses = []string{className}
@@ -339,7 +361,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	daemonMode = parsed.Bool("daemon")
 	connectMode = parsed.Bool("connect")
 	noServe = parsed.Bool("no-serve")
-	noCache = parsed.Bool("no-cache")
+	readOnly := parsed.Bool("read-only")
+	noCache = parsed.Bool("no-cache") || readOnly
 	lastFailed = parsed.Bool("last-failed")
 	wizard = parsed.Bool("wizard")
 	debug = parsed.Bool("debug")
@@ -356,6 +379,38 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			return testreport.Run{}, err
 		}
 		backend = parsedBackend
+	}
+	if readOnly {
+		switch {
+		case wizard:
+			return testreport.Run{}, errors.New("--read-only cannot be combined with --wizard")
+		case debug:
+			return testreport.Run{}, errors.New("--read-only cannot be combined with --debug")
+		case connectMode:
+			return testreport.Run{}, errors.New("--read-only cannot be combined with --connect")
+		case daemonMode:
+			return testreport.Run{}, errors.New("--read-only cannot be combined with --daemon")
+		case watchMode:
+			return testreport.Run{}, errors.New("--read-only cannot be combined with --watch or --watch-once")
+		}
+		if writeClassShardsDir != "" {
+			return testreport.Run{}, errors.New("--read-only cannot be combined with --write-class-shards")
+		}
+		readOnlyProject, err := project.Load(root)
+		if err != nil {
+			return testreport.Run{}, fmt.Errorf("load project for --read-only: %w", err)
+		}
+		if err := validateReadOnlyTestOutputPaths(root,
+			readOnlyProject.Root,
+			cliArtifactDestination{Name: "--junit", Path: junitPath},
+			cliArtifactDestination{Name: "--cpu-profile", Path: cpuProfilePath},
+			cliArtifactDestination{Name: "--mem-profile", Path: memProfilePath},
+			cliArtifactDestination{Name: "--perf-json", Path: perfJSONPath},
+			cliArtifactDestination{Name: "--trace", Path: tracePath},
+			cliArtifactDestination{Name: "--write-class-shards", Path: writeClassShardsDir},
+		); err != nil {
+			return testreport.Run{}, err
+		}
 	}
 	perfEnabled := strings.TrimSpace(perfJSONPath) != ""
 	if perfEnabled {
@@ -405,7 +460,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 	}
 	durationHistoryWritePath := ""
-	if !durationHistoryExplicit && shouldPersistCLIDurationHistory(filter, selectedClasses, methodName, changedSince, shardCount, writeClassShardsDir) {
+	if !readOnly && !durationHistoryExplicit && shouldPersistCLIDurationHistory(filter, selectedClasses, methodName, changedSince, shardCount, writeClassShardsDir) {
 		durationHistoryWritePath = defaultDurationHistoryPath
 	}
 	historyDestination := cliArtifactDestination{}
@@ -445,6 +500,43 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			return testreport.Run{}, errors.New("--connect cannot be combined with --no-serve")
 		}
 	}
+	if classFile != "" && len(selectedClasses) == 0 {
+		for _, output := range []cliArtifactDestination{
+			{Name: "--perf-json", Path: perfJSONPath},
+			{Name: "--cpu-profile", Path: cpuProfilePath},
+			{Name: "--mem-profile", Path: memProfilePath},
+		} {
+			if strings.TrimSpace(output.Path) != "" {
+				return testreport.Run{}, fmt.Errorf("%s cannot be combined with an empty --class-file selection", output.Name)
+			}
+		}
+		var result testreport.Run
+		if emptyClassShard {
+			result = testreport.Run{}
+		} else {
+			message := classFileProblem
+			if message == "" {
+				message = fmt.Sprintf("--class-file %q must contain at least one test class", classFile)
+			}
+			result = selectorFailureRun(
+				"empty test class file",
+				message,
+				"An empty explicit class file is not an unrestricted test selection.",
+			)
+		}
+		if err := writeTestTraceFile(tracePath, result); err != nil {
+			return result, err
+		}
+		if junitPath != "" {
+			if err := writeJUnitFile(junitPath, result); err != nil {
+				return result, err
+			}
+		}
+		if format == "json" {
+			return result, writeTestJSONEnvelope(w, result, junitPath)
+		}
+		return result, testreport.WriteConsole(w, result)
+	}
 	stopProfile, err := startCLIProfiler(cpuProfilePath, memProfilePath)
 	if err != nil {
 		return testreport.Run{}, err
@@ -464,19 +556,20 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		defer progressReporter.finish()
 	}
 	testOpts := apextest.Options{
-		Filter:              filter,
-		SelectedClasses:     selectedClasses,
-		SelectedMethod:      methodName,
-		LimitMode:           limitMode,
-		LimitCaps:           limitCaps,
-		LimitCapsSet:        limitCapsSet,
-		TraceBlocked:        traceBlocked,
-		TraceAll:            tracePath != "",
-		SlowTestThresholdMS: slowTestThresholdMS,
-		ParallelMethods:     parallelMethods,
-		TimeoutMS:           testTimeout.Milliseconds(),
-		NoDiskCache:         noCache,
-		PerfCounters:        perfEnabled,
+		RuntimeRESTAPIVersion: runtimeRESTAPIVersion,
+		Filter:                filter,
+		SelectedClasses:       selectedClasses,
+		SelectedMethod:        methodName,
+		LimitMode:             limitMode,
+		LimitCaps:             limitCaps,
+		LimitCapsSet:          limitCapsSet,
+		TraceBlocked:          traceBlocked,
+		TraceAll:              tracePath != "",
+		SlowTestThresholdMS:   slowTestThresholdMS,
+		ParallelMethods:       parallelMethods,
+		TimeoutMS:             testTimeout.Milliseconds(),
+		NoDiskCache:           noCache,
+		PerfCounters:          perfEnabled,
 	}
 	durationHistory, err := loadCLIDurationHistory(durationHistoryPath)
 	if err != nil {
@@ -560,8 +653,10 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 					return result, err
 				}
 			}
-			if err := writeLastFailedTests(root, result); err != nil {
-				return result, err
+			if !readOnly {
+				if err := writeLastFailedTests(root, result); err != nil {
+					return result, err
+				}
 			}
 			if junitPath != "" {
 				if err := writeJUnitFile(junitPath, result); err != nil {
@@ -602,8 +697,10 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			}
 			return testreport.Run{}, writeCLIClassShardPlan(writeClassShardsDir, *shardPlan, effectiveShardCount)
 		}
-		if err := writeLastFailedTests(root, result); err != nil {
-			return result, err
+		if !readOnly {
+			if err := writeLastFailedTests(root, result); err != nil {
+				return result, err
+			}
 		}
 		if progressReporter != nil {
 			result.DurationMS = time.Since(progressReporter.started).Milliseconds()
@@ -691,7 +788,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		if strings.TrimSpace(testOpts.Filter) != "" {
 			selectorCases = apextest.Discover(index, selectorOpts)
 		}
-		if selectorRun, ok := exactTestSelectorFailureRun(selectorCases, className, methodName, func() []apextest.TestCase {
+		if selectorRun, ok := exactTestSelectorFailureRun(selectorCases, className, methodName, selectedClasses, func() []apextest.TestCase {
 			classOpts := selectorOpts
 			classOpts.SelectedMethod = ""
 			return apextest.Discover(index, classOpts)
@@ -736,7 +833,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		if strings.TrimSpace(testOpts.Filter) != "" {
 			selectorCases = apextest.Discover(index, selectorOpts)
 		}
-		if selectorRun, ok := exactTestSelectorFailureRun(selectorCases, className, methodName, func() []apextest.TestCase {
+		if selectorRun, ok := exactTestSelectorFailureRun(selectorCases, className, methodName, selectedClasses, func() []apextest.TestCase {
 			classOpts := selectorOpts
 			classOpts.SelectedMethod = ""
 			return apextest.Discover(index, classOpts)
@@ -813,8 +910,10 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if debug {
 		return result, serveDAPSnapshot(testRunSnapshot(result), w)
 	}
-	if err := writeLastFailedTests(root, result); err != nil {
-		return result, err
+	if !readOnly {
+		if err := writeLastFailedTests(root, result); err != nil {
+			return result, err
+		}
 	}
 	if junitPath != "" {
 		if err := writeJUnitFile(junitPath, result); err != nil {
@@ -884,6 +983,162 @@ func loadTestIndexWithPerfPhases(root string, enabled bool) (testBuildGeneration
 	return testBuildGeneration{Project: p, Index: index, Artifacts: artifacts, Phases: phases}, nil
 }
 
+func validateReadOnlyTestOutputPaths(root string, effectiveRoot string, destinations ...cliArtifactDestination) error {
+	projectRoots := make([]string, 0, 2)
+	for _, candidate := range []string{root, effectiveRoot} {
+		if strings.TrimSpace(candidate) == "" {
+			continue
+		}
+		projectRoot, err := resolveCLIArtifactDestination(candidate)
+		if err != nil {
+			return fmt.Errorf("resolve project root for --read-only: %w", err)
+		}
+		alreadySeen := false
+		for _, existing := range projectRoots {
+			if existing == projectRoot {
+				alreadySeen = true
+				break
+			}
+		}
+		if !alreadySeen {
+			projectRoots = append(projectRoots, projectRoot)
+		}
+	}
+	for _, destination := range destinations {
+		if strings.TrimSpace(destination.Path) == "" {
+			continue
+		}
+		path, err := resolveReadOnlyTestOutputPath(destination.Path)
+		if err != nil {
+			return fmt.Errorf("resolve %s output for --read-only: %w", destination.Name, err)
+		}
+		for _, projectRoot := range projectRoots {
+			rel, err := filepath.Rel(projectRoot, path)
+			if err != nil {
+				return fmt.Errorf("compare %s output with project root: %w", destination.Name, err)
+			}
+			if rel == "." || (rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))) {
+				return fmt.Errorf("%s output must be outside the project when --read-only is used", destination.Name)
+			}
+		}
+	}
+	return nil
+}
+
+func resolveReadOnlyTestOutputPath(path string) (string, error) {
+	if err := rejectAmbiguousReadOnlyParentTraversal(path); err != nil {
+		return "", err
+	}
+	absolute, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	current := filepath.Clean(absolute)
+	for depth := 0; depth < 40; depth++ {
+		resolved, err := filepath.EvalSymlinks(current)
+		if err == nil {
+			return filepath.Clean(resolved), nil
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return "", err
+		}
+		ancestor := current
+		var suffix []string
+		for {
+			info, lstatErr := os.Lstat(ancestor)
+			if lstatErr == nil {
+				if info.Mode()&os.ModeSymlink != 0 {
+					target, readErr := os.Readlink(ancestor)
+					if readErr != nil {
+						return "", readErr
+					}
+					rawTargetPath := target
+					if !filepath.IsAbs(target) {
+						rawTargetPath = filepath.Dir(ancestor) + string(filepath.Separator) + target
+					}
+					if err := rejectAmbiguousReadOnlyParentTraversal(rawTargetPath); err != nil {
+						return "", err
+					}
+					if !filepath.IsAbs(target) {
+						target = filepath.Join(filepath.Dir(ancestor), target)
+					}
+					for index := len(suffix) - 1; index >= 0; index-- {
+						target = filepath.Join(target, suffix[index])
+					}
+					current = filepath.Clean(target)
+					break
+				}
+				resolvedAncestor, resolveErr := filepath.EvalSymlinks(ancestor)
+				if resolveErr != nil {
+					return "", resolveErr
+				}
+				for index := len(suffix) - 1; index >= 0; index-- {
+					resolvedAncestor = filepath.Join(resolvedAncestor, suffix[index])
+				}
+				return filepath.Clean(resolvedAncestor), nil
+			}
+			if !errors.Is(lstatErr, os.ErrNotExist) {
+				return "", lstatErr
+			}
+			parent := filepath.Dir(ancestor)
+			if parent == ancestor {
+				return current, nil
+			}
+			suffix = append(suffix, filepath.Base(ancestor))
+			ancestor = parent
+		}
+	}
+	return "", errors.New("too many symlinks resolving read-only output")
+}
+
+func rejectAmbiguousReadOnlyParentTraversal(path string) error {
+	absolute := path
+	if !filepath.IsAbs(absolute) {
+		workingDir, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		workingDir, err = filepath.EvalSymlinks(workingDir)
+		if err != nil {
+			return err
+		}
+		absolute = workingDir + string(filepath.Separator) + absolute
+	}
+	volume := filepath.VolumeName(absolute)
+	current := volume + string(filepath.Separator)
+	components := strings.Split(strings.TrimLeft(strings.TrimPrefix(absolute, volume), string(filepath.Separator)), string(filepath.Separator))
+	sawSymlink := false
+	unresolved := false
+	for _, component := range components {
+		switch component {
+		case "", ".":
+			continue
+		case "..":
+			if sawSymlink || unresolved {
+				return errors.New("read-only output path has ambiguous '..' traversal after a symlink or missing component")
+			}
+			parent := filepath.Dir(current)
+			if parent != current {
+				current = parent
+			}
+		default:
+			current = filepath.Join(current, component)
+			info, err := os.Lstat(current)
+			if err == nil {
+				if info.Mode()&os.ModeSymlink != 0 {
+					sawSymlink = true
+				}
+				continue
+			}
+			if !errors.Is(err, os.ErrNotExist) {
+				return err
+			}
+			unresolved = true
+		}
+	}
+	return nil
+}
+
 func preRunPerfSnapshot(phases apextest.PreRunPhaseDurations) apextest.PerfCounters {
 	return apextest.PerfCounters{
 		Enabled: true,
@@ -905,7 +1160,7 @@ func writeTestJSONEnvelope(w io.Writer, result testreport.Run, junitPath string)
 	}
 	return writeCLIJSONEnvelope(w, cliJSONEnvelope{
 		Command:     "test",
-		Status:      statusForOK(ok),
+		Status:      testStatusForSummary(summary),
 		ExitCode:    exitCodeForOK(ok),
 		Summary:     summary,
 		Tests:       flattenTestCases(result),
@@ -915,11 +1170,24 @@ func writeTestJSONEnvelope(w io.Writer, result testreport.Run, junitPath string)
 	})
 }
 
-func exactTestSelectorFailureRun(cases []apextest.TestCase, className, methodName string, discoverClassCases func() []apextest.TestCase) (testreport.Run, bool) {
+func testStatusForSummary(summary testreport.Summary) string {
+	if summary.Total == 0 {
+		return "empty"
+	}
+	if summary.Failed > 0 || summary.Errors > 0 {
+		return "failed"
+	}
+	if summary.Skipped > 0 {
+		return "partial"
+	}
+	return "passed"
+}
+
+func exactTestSelectorFailureRun(cases []apextest.TestCase, className, methodName string, selectedClasses []string, discoverClassCases func() []apextest.TestCase) (testreport.Run, bool) {
 	className = strings.TrimSpace(className)
 	methodName = strings.TrimSpace(methodName)
 	if className == "" {
-		return testreport.Run{}, false
+		return missingClassFileEntryRun(cases, selectedClasses)
 	}
 	if len(cases) > 0 {
 		return testreport.Run{}, false
@@ -936,6 +1204,37 @@ func exactTestSelectorFailureRun(cases []apextest.TestCase, className, methodNam
 		fmt.Sprintf("no test class matched --class %q", className),
 		fmt.Sprintf("Glade did not discover an exact test class named %q.", className),
 	), true
+}
+
+func missingClassFileEntryRun(cases []apextest.TestCase, selectedClasses []string) (testreport.Run, bool) {
+	if len(selectedClasses) == 0 {
+		return testreport.Run{}, false
+	}
+	discoveredClasses := make(map[string]struct{}, len(cases))
+	for _, testCase := range cases {
+		if name := strings.ToLower(strings.TrimSpace(testCase.ClassName)); name != "" {
+			discoveredClasses[name] = struct{}{}
+		}
+	}
+	for _, requestedClass := range selectedClasses {
+		requestedClass = strings.TrimSpace(requestedClass)
+		if requestedClass == "" {
+			continue
+		}
+		if _, ok := discoveredClasses[strings.ToLower(requestedClass)]; ok {
+			continue
+		}
+		selector := fmt.Sprintf("--class %q", requestedClass)
+		if len(selectedClasses) > 1 {
+			selector = fmt.Sprintf("--class-file entry %q", requestedClass)
+		}
+		return selectorFailureRun(
+			"missing test class",
+			fmt.Sprintf("no test class matched %s", selector),
+			fmt.Sprintf("Glade did not discover a test class for explicitly requested name %q.", requestedClass),
+		), true
+	}
+	return testreport.Run{}, false
 }
 
 func selectorFailureRun(name, message, detail string) testreport.Run {
@@ -980,6 +1279,15 @@ func flattenTestCases(result testreport.Run) []map[string]any {
 				"status":     testCase.Status,
 				"durationMs": testCase.DurationMS,
 			}
+			if testCase.SelectedSourceFile != "" {
+				row["selectedSourceFile"] = testCase.SelectedSourceFile
+			}
+			if testCase.SourceFile != "" {
+				row["sourceFile"] = testCase.SourceFile
+			}
+			if testCase.Reason != "" {
+				row["reason"] = testCase.Reason
+			}
 			if testCase.Problem != nil {
 				row["problem"] = testCase.Problem
 			}
@@ -1010,20 +1318,45 @@ func writeTestTraceFile(path string, result testreport.Run) error {
 	return trace.WriteJSON(file, trace.NewDocument(events))
 }
 
-func readTestClassFile(path string) ([]string, error) {
+const generatedEmptyClassShardMarker = "# glade-empty-class-shard-v1"
+
+type testClassFileSelection struct {
+	Classes    []string
+	EmptyShard bool
+	Problem    string
+}
+
+func readTestClassFile(path string) (testClassFileSelection, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read --class-file: %w", err)
+		return testClassFileSelection{}, fmt.Errorf("read --class-file: %w", err)
 	}
 	var out []string
+	emptyShard := false
 	for _, line := range strings.Split(string(data), "\n") {
 		line = strings.TrimSpace(strings.TrimSuffix(line, "\r"))
+		if line == generatedEmptyClassShardMarker {
+			if emptyShard {
+				return testClassFileSelection{Problem: "generated empty-shard marker must appear at most once"}, nil
+			}
+			emptyShard = true
+			continue
+		}
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 		out = append(out, line)
 	}
-	return out, nil
+	if emptyShard && len(out) > 0 {
+		return testClassFileSelection{Problem: "generated empty-shard marker cannot be combined with test class names"}, nil
+	}
+	if emptyShard {
+		return testClassFileSelection{EmptyShard: true}, nil
+	}
+	if len(out) == 0 {
+		return testClassFileSelection{Problem: fmt.Sprintf("--class-file %q must contain at least one test class", path)}, nil
+	}
+	return testClassFileSelection{Classes: out}, nil
 }
 
 type cliClassShard struct {
@@ -1081,7 +1414,9 @@ func writeCLIClassShardPlan(dir string, plan testdaemon.ClassShardPlanV1, expect
 		classes := append([]string(nil), shard.Classes...)
 		sort.Strings(classes)
 		data := strings.Join(classes, "\n")
-		if data != "" {
+		if len(classes) == 0 {
+			data = generatedEmptyClassShardMarker
+		} else {
 			data += "\n"
 		}
 		path := filepath.Join(dir, fmt.Sprintf("shard-%0*d.txt", width, shard.Index))
@@ -1212,8 +1547,9 @@ func maybeWriteCLIDurationHistory(path string, result testreport.Run, previous c
 }
 
 func writeCLIDurationHistory(path string, result testreport.Run, previous cliDurationHistory) error {
-	classDurations := mergeCLIDurationMap(previous.Classes, runClassDurations(result))
-	methodDurations := mergeCLIDurationMap(previous.Methods, runMethodDurations(result))
+	observed := durationHistoryObservedRun(result)
+	classDurations := mergeCLIDurationMap(previous.Classes, runClassDurations(observed))
+	methodDurations := mergeCLIDurationMap(previous.Methods, runMethodDurations(observed))
 	payload := struct {
 		ClassDurations  map[string]int64 `json:"classDurations,omitempty"`
 		MethodDurations map[string]int64 `json:"methodDurations,omitempty"`
@@ -1230,6 +1566,34 @@ func writeCLIDurationHistory(path string, result testreport.Run, previous cliDur
 		return err
 	}
 	return os.WriteFile(path, data, 0o644)
+}
+
+// durationHistoryObservedRun returns a copy of result in which every executed
+// test method reports at least 1ms. Case durations are truncated to whole
+// milliseconds, so a method that finishes in under 1ms reports 0, and the
+// history drops non-positive durations. Without the floor, whether a fast
+// method appears in the history depends on timing.
+//
+// Only pass and fail mean the test body ran: the runner reports compile
+// errors, setup or preparation failures and cancellations before invocation
+// as compile_error, runtime_error or unsupported cases with no duration. Those
+// keep their recorded duration and are never given a synthetic entry.
+func durationHistoryObservedRun(result testreport.Run) testreport.Run {
+	suites := make([]testreport.Suite, len(result.Suites))
+	for suiteIndex, suite := range result.Suites {
+		cases := make([]testreport.Case, len(suite.Cases))
+		for caseIndex, testCase := range suite.Cases {
+			executed := testCase.Status == testreport.StatusPass || testCase.Status == testreport.StatusFail
+			if executed && testCase.DurationMS <= 0 && strings.TrimSpace(testCase.MethodName) != "" {
+				testCase.DurationMS = 1
+			}
+			cases[caseIndex] = testCase
+		}
+		suite.Cases = cases
+		suites[suiteIndex] = suite
+	}
+	result.Suites = suites
+	return result
 }
 
 func mergeCLIDurationMap(previous, observed map[string]int64) map[string]int64 {
@@ -1301,6 +1665,7 @@ Common flags:
   --write-class-shards <dir> Write class shard files and exit.
   --connect                 Require a running test server (see serve).
   --no-serve                Do not auto-connect to a running test server.
+  --read-only               Run one local test pass without project writes; incompatible with UI, wizard, debug, watch, daemon, connect, and shard generation.
   --no-cache                Bypass startup and semantic caches for this run.
   --last-failed             Rerun tests that failed in the last completed run.
   --ui                      Open the TUI on the test board.
@@ -1327,6 +1692,8 @@ Common flags:
   --no-parallel-methods     Force serial method execution within a class.
   --parallelism <n>         Worker count (default: GOMAXPROCS).
   --test-timeout <dur>      Per-test timeout (default 5m, e.g. 30s, 2m).
+  --runtime-rest-api-version <version>
+                           Test org REST context (default 65.0); does not change source API versions.
   --gc-aggressive           Reduce heap growth on memory-constrained hosts.
   --limit-mode <mode>       Use strict or permissive governor limits.
 
@@ -1344,23 +1711,24 @@ Examples:
 }
 
 type cliTestProgressReporter struct {
-	renderer  cliui.Renderer
-	started   time.Time
-	total     int
-	done      int
-	inflight  int
-	passed    int
-	failed    int
-	errors    int
-	active    string
-	phase     string
-	immediate cliui.Event
-	mu        sync.Mutex
-	renderMu  sync.Mutex
-	finished  bool
-	events    chan apextest.TestProgress
-	closeOnce sync.Once
-	wg        sync.WaitGroup
+	renderer    cliui.Renderer
+	started     time.Time
+	total       int
+	done        int
+	inflight    int
+	passed      int
+	failed      int
+	errors      int
+	setupErrors int
+	active      string
+	phase       string
+	immediate   cliui.Event
+	mu          sync.Mutex
+	renderMu    sync.Mutex
+	finished    bool
+	events      chan apextest.TestProgress
+	closeOnce   sync.Once
+	wg          sync.WaitGroup
 }
 
 const progressEventBuffer = 8192
@@ -1560,7 +1928,7 @@ func (r *cliTestProgressReporter) apply(progress apextest.TestProgress) bool {
 		}
 	case "setup_done":
 		if progress.Status != "pass" {
-			r.errors++
+			r.setupErrors++
 			r.immediate = cliui.Event{
 				Kind:    cliui.EventFail,
 				Phase:   "test",
@@ -1657,7 +2025,7 @@ func (r *cliTestProgressReporter) finish() {
 		return
 	}
 	r.finished = true
-	ok := r.failed == 0 && r.errors == 0
+	ok := r.failed == 0 && r.errors == 0 && r.setupErrors == 0
 	current := r.done
 	if r.total > 0 && current < r.total {
 		current = r.total
@@ -1670,9 +2038,17 @@ func (r *cliTestProgressReporter) finish() {
 		Current: current,
 		Total:   r.total,
 	})
+	label := fmt.Sprintf("%d passed, %d failed, %d errors", r.passed, r.failed, r.errors)
+	if r.setupErrors > 0 {
+		noun := "setup failures"
+		if r.setupErrors == 1 {
+			noun = "setup failure"
+		}
+		label += fmt.Sprintf(" · %d %s", r.setupErrors, noun)
+	}
 	r.renderFinish(cliui.Result{
 		OK:       ok,
-		Label:    fmt.Sprintf("%d passed, %d failed, %d errors · %s", r.passed, r.failed, r.errors, elapsed),
+		Label:    label + " · " + elapsed,
 		ExitCode: exitCodeForOK(ok),
 	})
 }
@@ -1780,7 +2156,7 @@ func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpu
 		Command:         "test",
 		GeneratedAt:     time.Now().UTC().Format(time.RFC3339),
 		Project:         absRoot,
-		Status:          statusForOK(ok),
+		Status:          testStatusForSummary(summary),
 		ExitCode:        exitCodeForOK(ok),
 		DurationMS:      summary.DurationMS,
 		DiscoverMS:      discoverMS,

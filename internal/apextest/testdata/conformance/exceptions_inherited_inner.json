@@ -1,0 +1,745 @@
+{
+  "apiVersions": [
+    "62.0",
+    "64.0",
+    "67.0"
+  ],
+  "Provenance": {
+    "Notes": "Named compilation only. Source prefixes stop at the rejected component; no anonymous or runtime outcomes are asserted.",
+    "Matrix": {
+      "Notes": "All 63 matrix observations are compiler rejections. Anonymous declarations reject inner nesting; IsTest positives reject virtual outer classes; anonymous runtime predicates reject always-true Exception instanceof. No successful native execution is asserted. Rows compare the primary compiler response, with exact text and source line for anonymous routes; named inputs retain only the attempted prefix. API declarations contain only natively compiled earlier named rows and verified anonymous setup. Anonymous declaration programs use the captured standard exception-transport helper and unchanged row bodies."
+    }
+  },
+  "Cases": [
+    {
+      "ID": "C001",
+      "Group": "inherited-inner/positive",
+      "NamedCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C001bb972e57": "public virtual class A06W5BaseWidget62C001bb972e57 {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget62C001bb972e57": "public virtual class A06W5Widget62C001bb972e57 extends A06W5BaseWidget62C001bb972e57 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "compiled"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0011eb6b341": "public virtual class A06W5BaseWidget64C0011eb6b341 {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget64C0011eb6b341": "public virtual class A06W5Widget64C0011eb6b341 extends A06W5BaseWidget64C0011eb6b341 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C00107e165d8": "public virtual class A06W5BaseWidget67C00107e165d8 {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget67C00107e165d8": "public virtual class A06W5Widget67C00107e165d8 extends A06W5BaseWidget67C00107e165d8 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "compiled"
+        }
+      },
+      "IsTestCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C0015d79f66d": "public virtual class A06W5BaseWidget62C0015d79f66d {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget62C0015d79f66d": "@IsTest public virtual class A06W5Widget62C0015d79f66d extends A06W5BaseWidget62C0015d79f66d {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget62C0015d79f66d.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C001|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tIsTest classes cannot be virtual"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0014b48c483": "public virtual class A06W5BaseWidget64C0014b48c483 {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget64C0014b48c483": "@IsTest public virtual class A06W5Widget64C0014b48c483 extends A06W5BaseWidget64C0014b48c483 {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget64C0014b48c483.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C001|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tIsTest classes cannot be virtual"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C0017471d1de": "public virtual class A06W5BaseWidget67C0017471d1de {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget67C0017471d1de": "@IsTest public virtual class A06W5Widget67C0017471d1de extends A06W5BaseWidget67C0017471d1de {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget67C0017471d1de.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C001|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tIsTest classes cannot be virtual"
+        }
+      },
+      "AnonymousDeclarations": {
+        "62.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    public virtual class BaseException extends Exception {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C001','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "64.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    public virtual class BaseException extends Exception {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C001','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    public virtual class BaseException extends Exception {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C001','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        }
+      },
+      "AnonymousRuntime": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C0019d79660f": "public virtual class A06W5BaseWidget62C0019d79660f {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget62C0019d79660f": "public virtual class A06W5Widget62C0019d79660f extends A06W5BaseWidget62C0019d79660f {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;try{throw new A06W5Widget62C0019d79660f.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);} pq.out('C001',r);}catch(Exception e){pq.err('C001',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 6: Operation instanceof is always true since an instance of Exception is always an instance of Exception"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C00126787d52": "public virtual class A06W5BaseWidget64C00126787d52 {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget64C00126787d52": "public virtual class A06W5Widget64C00126787d52 extends A06W5BaseWidget64C00126787d52 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;try{throw new A06W5Widget64C00126787d52.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);} pq.out('C001',r);}catch(Exception e){pq.err('C001',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 6: Operation instanceof is always true since an instance of Exception is always an instance of Exception"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C001e74adf98": "public virtual class A06W5BaseWidget67C001e74adf98 {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget67C001e74adf98": "public virtual class A06W5Widget67C001e74adf98 extends A06W5BaseWidget67C001e74adf98 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;try{throw new A06W5Widget67C001e74adf98.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);} pq.out('C001',r);}catch(Exception e){pq.err('C001',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 6: Operation instanceof is always true since an instance of Exception is always an instance of Exception"
+        }
+      }
+    },
+    {
+      "ID": "C002",
+      "Group": "inherited-inner/rejection-name",
+      "NamedCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C002bb972e57": "public virtual class A06W5BaseWidget62C002bb972e57 {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget62C002bb972e57": "public virtual class A06W5Widget62C002bb972e57 extends A06W5BaseWidget62C002bb972e57 {\n    public class Detail extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06W5Widget62C002bb972e57.Detail"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0021eb6b341": "public virtual class A06W5BaseWidget64C0021eb6b341 {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget64C0021eb6b341": "public virtual class A06W5Widget64C0021eb6b341 extends A06W5BaseWidget64C0021eb6b341 {\n    public class Detail extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06W5Widget64C0021eb6b341.Detail"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C00207e165d8": "public virtual class A06W5BaseWidget67C00207e165d8 {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget67C00207e165d8": "public virtual class A06W5Widget67C00207e165d8 extends A06W5BaseWidget67C00207e165d8 {\n    public class Detail extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06W5Widget67C00207e165d8.Detail"
+        }
+      },
+      "IsTestCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C0025d79f66d": "public virtual class A06W5BaseWidget62C0025d79f66d {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget62C0025d79f66d": "@IsTest public virtual class A06W5Widget62C0025d79f66d extends A06W5BaseWidget62C0025d79f66d {\n    public class Detail extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget62C0025d79f66d.Detail('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C002|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06W5Widget62C0025d79f66d.Detail"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0024b48c483": "public virtual class A06W5BaseWidget64C0024b48c483 {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget64C0024b48c483": "@IsTest public virtual class A06W5Widget64C0024b48c483 extends A06W5BaseWidget64C0024b48c483 {\n    public class Detail extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget64C0024b48c483.Detail('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C002|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06W5Widget64C0024b48c483.Detail"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C0027471d1de": "public virtual class A06W5BaseWidget67C0027471d1de {\n    public virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget67C0027471d1de": "@IsTest public virtual class A06W5Widget67C0027471d1de extends A06W5BaseWidget67C0027471d1de {\n    public class Detail extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget67C0027471d1de.Detail('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C002|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06W5Widget67C0027471d1de.Detail"
+        }
+      },
+      "AnonymousDeclarations": {
+        "62.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    public virtual class BaseException extends Exception {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class Detail extends BaseException {}\n}\npq.out('C002','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "64.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    public virtual class BaseException extends Exception {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class Detail extends BaseException {}\n}\npq.out('C002','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    public virtual class BaseException extends Exception {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class Detail extends BaseException {}\n}\npq.out('C002','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        }
+      }
+    },
+    {
+      "ID": "C003",
+      "Group": "inherited-inner/rejection-base",
+      "NamedCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C003bb972e57": "public virtual class A06W5BaseWidget62C003bb972e57 {\n    public virtual class BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: A06W5BaseWidget62C003bb972e57.BaseException"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0031eb6b341": "public virtual class A06W5BaseWidget64C0031eb6b341 {\n    public virtual class BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: A06W5BaseWidget64C0031eb6b341.BaseException"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C00307e165d8": "public virtual class A06W5BaseWidget67C00307e165d8 {\n    public virtual class BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: A06W5BaseWidget67C00307e165d8.BaseException"
+        }
+      },
+      "IsTestCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C0035d79f66d": "public virtual class A06W5BaseWidget62C0035d79f66d {\n    public virtual class BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: A06W5BaseWidget62C0035d79f66d.BaseException"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0034b48c483": "public virtual class A06W5BaseWidget64C0034b48c483 {\n    public virtual class BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: A06W5BaseWidget64C0034b48c483.BaseException"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C0037471d1de": "public virtual class A06W5BaseWidget67C0037471d1de {\n    public virtual class BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: A06W5BaseWidget67C0037471d1de.BaseException"
+        }
+      },
+      "AnonymousDeclarations": {
+        "62.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    public virtual class BaseException {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C003','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "64.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    public virtual class BaseException {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C003','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    public virtual class BaseException {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C003','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        }
+      }
+    },
+    {
+      "ID": "C007",
+      "Group": "inherited-inner/rejection-private",
+      "NamedCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C007bb972e57": "public virtual class A06W5BaseWidget62C007bb972e57 {\n    private virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget62C007bb972e57": "public virtual class A06W5Widget62C007bb972e57 extends A06W5BaseWidget62C007bb972e57 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget62C007bb972e57.BaseException"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0071eb6b341": "public virtual class A06W5BaseWidget64C0071eb6b341 {\n    private virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget64C0071eb6b341": "public virtual class A06W5Widget64C0071eb6b341 extends A06W5BaseWidget64C0071eb6b341 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget64C0071eb6b341.BaseException"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C00707e165d8": "public virtual class A06W5BaseWidget67C00707e165d8 {\n    private virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget67C00707e165d8": "public virtual class A06W5Widget67C00707e165d8 extends A06W5BaseWidget67C00707e165d8 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget67C00707e165d8.BaseException"
+        }
+      },
+      "IsTestCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C0075d79f66d": "public virtual class A06W5BaseWidget62C0075d79f66d {\n    private virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget62C0075d79f66d": "@IsTest public virtual class A06W5Widget62C0075d79f66d extends A06W5BaseWidget62C0075d79f66d {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget62C0075d79f66d.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C007|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget62C0075d79f66d.BaseException"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0074b48c483": "public virtual class A06W5BaseWidget64C0074b48c483 {\n    private virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget64C0074b48c483": "@IsTest public virtual class A06W5Widget64C0074b48c483 extends A06W5BaseWidget64C0074b48c483 {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget64C0074b48c483.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C007|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget64C0074b48c483.BaseException"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C0077471d1de": "public virtual class A06W5BaseWidget67C0077471d1de {\n    private virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget67C0077471d1de": "@IsTest public virtual class A06W5Widget67C0077471d1de extends A06W5BaseWidget67C0077471d1de {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget67C0077471d1de.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C007|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget67C0077471d1de.BaseException"
+        }
+      },
+      "AnonymousDeclarations": {
+        "62.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    private virtual class BaseException extends Exception {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C007','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "64.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    private virtual class BaseException extends Exception {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C007','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    private virtual class BaseException extends Exception {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C007','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        }
+      }
+    },
+    {
+      "ID": "C008",
+      "Group": "inherited-inner/rejection-implicit-private",
+      "NamedCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C008bb972e57": "public virtual class A06W5BaseWidget62C008bb972e57 {\n     virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget62C008bb972e57": "public virtual class A06W5Widget62C008bb972e57 extends A06W5BaseWidget62C008bb972e57 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget62C008bb972e57.BaseException"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0081eb6b341": "public virtual class A06W5BaseWidget64C0081eb6b341 {\n     virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget64C0081eb6b341": "public virtual class A06W5Widget64C0081eb6b341 extends A06W5BaseWidget64C0081eb6b341 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget64C0081eb6b341.BaseException"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C00807e165d8": "public virtual class A06W5BaseWidget67C00807e165d8 {\n     virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget67C00807e165d8": "public virtual class A06W5Widget67C00807e165d8 extends A06W5BaseWidget67C00807e165d8 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget67C00807e165d8.BaseException"
+        }
+      },
+      "IsTestCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C0085d79f66d": "public virtual class A06W5BaseWidget62C0085d79f66d {\n     virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget62C0085d79f66d": "@IsTest public virtual class A06W5Widget62C0085d79f66d extends A06W5BaseWidget62C0085d79f66d {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget62C0085d79f66d.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C008|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget62C0085d79f66d.BaseException"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0084b48c483": "public virtual class A06W5BaseWidget64C0084b48c483 {\n     virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget64C0084b48c483": "@IsTest public virtual class A06W5Widget64C0084b48c483 extends A06W5BaseWidget64C0084b48c483 {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget64C0084b48c483.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C008|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget64C0084b48c483.BaseException"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C0087471d1de": "public virtual class A06W5BaseWidget67C0087471d1de {\n     virtual class BaseException extends Exception {}\n}\n",
+            "A06W5Widget67C0087471d1de": "@IsTest public virtual class A06W5Widget67C0087471d1de extends A06W5BaseWidget67C0087471d1de {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget67C0087471d1de.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C008|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget67C0087471d1de.BaseException"
+        }
+      },
+      "AnonymousDeclarations": {
+        "62.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n     virtual class BaseException extends Exception {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C008','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "64.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n     virtual class BaseException extends Exception {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C008','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n     virtual class BaseException extends Exception {}\n}\npublic virtual class Widget extends BaseWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C008','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        }
+      }
+    },
+    {
+      "ID": "C009",
+      "Group": "inherited-inner/rejection-private-transitive",
+      "NamedCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C009bb972e57": "public virtual class A06W5BaseWidget62C009bb972e57 {\n    private virtual class BaseException extends Exception {}\n}\n",
+            "A06W5MiddleWidget62C009bb972e57": "public virtual class A06W5MiddleWidget62C009bb972e57 extends A06W5BaseWidget62C009bb972e57 {}\n",
+            "A06W5Widget62C009bb972e57": "public virtual class A06W5Widget62C009bb972e57 extends A06W5MiddleWidget62C009bb972e57 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget62C009bb972e57.BaseException"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0091eb6b341": "public virtual class A06W5BaseWidget64C0091eb6b341 {\n    private virtual class BaseException extends Exception {}\n}\n",
+            "A06W5MiddleWidget64C0091eb6b341": "public virtual class A06W5MiddleWidget64C0091eb6b341 extends A06W5BaseWidget64C0091eb6b341 {}\n",
+            "A06W5Widget64C0091eb6b341": "public virtual class A06W5Widget64C0091eb6b341 extends A06W5MiddleWidget64C0091eb6b341 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget64C0091eb6b341.BaseException"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C00907e165d8": "public virtual class A06W5BaseWidget67C00907e165d8 {\n    private virtual class BaseException extends Exception {}\n}\n",
+            "A06W5MiddleWidget67C00907e165d8": "public virtual class A06W5MiddleWidget67C00907e165d8 extends A06W5BaseWidget67C00907e165d8 {}\n",
+            "A06W5Widget67C00907e165d8": "public virtual class A06W5Widget67C00907e165d8 extends A06W5MiddleWidget67C00907e165d8 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget67C00907e165d8.BaseException"
+        }
+      },
+      "IsTestCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C0095d79f66d": "public virtual class A06W5BaseWidget62C0095d79f66d {\n    private virtual class BaseException extends Exception {}\n}\n",
+            "A06W5MiddleWidget62C0095d79f66d": "public virtual class A06W5MiddleWidget62C0095d79f66d extends A06W5BaseWidget62C0095d79f66d {}\n",
+            "A06W5Widget62C0095d79f66d": "@IsTest public virtual class A06W5Widget62C0095d79f66d extends A06W5MiddleWidget62C0095d79f66d {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget62C0095d79f66d.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C009|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget62C0095d79f66d.BaseException"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0094b48c483": "public virtual class A06W5BaseWidget64C0094b48c483 {\n    private virtual class BaseException extends Exception {}\n}\n",
+            "A06W5MiddleWidget64C0094b48c483": "public virtual class A06W5MiddleWidget64C0094b48c483 extends A06W5BaseWidget64C0094b48c483 {}\n",
+            "A06W5Widget64C0094b48c483": "@IsTest public virtual class A06W5Widget64C0094b48c483 extends A06W5MiddleWidget64C0094b48c483 {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget64C0094b48c483.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C009|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget64C0094b48c483.BaseException"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C0097471d1de": "public virtual class A06W5BaseWidget67C0097471d1de {\n    private virtual class BaseException extends Exception {}\n}\n",
+            "A06W5MiddleWidget67C0097471d1de": "public virtual class A06W5MiddleWidget67C0097471d1de extends A06W5BaseWidget67C0097471d1de {}\n",
+            "A06W5Widget67C0097471d1de": "@IsTest public virtual class A06W5Widget67C0097471d1de extends A06W5MiddleWidget67C0097471d1de {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget67C0097471d1de.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C009|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget67C0097471d1de.BaseException"
+        }
+      },
+      "AnonymousDeclarations": {
+        "62.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    private virtual class BaseException extends Exception {}\n}\npublic virtual class MiddleWidget extends BaseWidget {}\npublic virtual class Widget extends MiddleWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C009','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "64.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    private virtual class BaseException extends Exception {}\n}\npublic virtual class MiddleWidget extends BaseWidget {}\npublic virtual class Widget extends MiddleWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C009','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    private virtual class BaseException extends Exception {}\n}\npublic virtual class MiddleWidget extends BaseWidget {}\npublic virtual class Widget extends MiddleWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C009','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        }
+      }
+    },
+    {
+      "ID": "C010",
+      "Group": "inherited-inner/rejection-implicit-private-transitive",
+      "NamedCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C010bb972e57": "public virtual class A06W5BaseWidget62C010bb972e57 {\n     virtual class BaseException extends Exception {}\n}\n",
+            "A06W5MiddleWidget62C010bb972e57": "public virtual class A06W5MiddleWidget62C010bb972e57 extends A06W5BaseWidget62C010bb972e57 {}\n",
+            "A06W5Widget62C010bb972e57": "public virtual class A06W5Widget62C010bb972e57 extends A06W5MiddleWidget62C010bb972e57 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget62C010bb972e57.BaseException"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0101eb6b341": "public virtual class A06W5BaseWidget64C0101eb6b341 {\n     virtual class BaseException extends Exception {}\n}\n",
+            "A06W5MiddleWidget64C0101eb6b341": "public virtual class A06W5MiddleWidget64C0101eb6b341 extends A06W5BaseWidget64C0101eb6b341 {}\n",
+            "A06W5Widget64C0101eb6b341": "public virtual class A06W5Widget64C0101eb6b341 extends A06W5MiddleWidget64C0101eb6b341 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget64C0101eb6b341.BaseException"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C01007e165d8": "public virtual class A06W5BaseWidget67C01007e165d8 {\n     virtual class BaseException extends Exception {}\n}\n",
+            "A06W5MiddleWidget67C01007e165d8": "public virtual class A06W5MiddleWidget67C01007e165d8 extends A06W5BaseWidget67C01007e165d8 {}\n",
+            "A06W5Widget67C01007e165d8": "public virtual class A06W5Widget67C01007e165d8 extends A06W5MiddleWidget67C01007e165d8 {\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget67C01007e165d8.BaseException"
+        }
+      },
+      "IsTestCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C0105d79f66d": "public virtual class A06W5BaseWidget62C0105d79f66d {\n     virtual class BaseException extends Exception {}\n}\n",
+            "A06W5MiddleWidget62C0105d79f66d": "public virtual class A06W5MiddleWidget62C0105d79f66d extends A06W5BaseWidget62C0105d79f66d {}\n",
+            "A06W5Widget62C0105d79f66d": "@IsTest public virtual class A06W5Widget62C0105d79f66d extends A06W5MiddleWidget62C0105d79f66d {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget62C0105d79f66d.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C010|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget62C0105d79f66d.BaseException"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0104b48c483": "public virtual class A06W5BaseWidget64C0104b48c483 {\n     virtual class BaseException extends Exception {}\n}\n",
+            "A06W5MiddleWidget64C0104b48c483": "public virtual class A06W5MiddleWidget64C0104b48c483 extends A06W5BaseWidget64C0104b48c483 {}\n",
+            "A06W5Widget64C0104b48c483": "@IsTest public virtual class A06W5Widget64C0104b48c483 extends A06W5MiddleWidget64C0104b48c483 {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget64C0104b48c483.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C010|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget64C0104b48c483.BaseException"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C0107471d1de": "public virtual class A06W5BaseWidget67C0107471d1de {\n     virtual class BaseException extends Exception {}\n}\n",
+            "A06W5MiddleWidget67C0107471d1de": "public virtual class A06W5MiddleWidget67C0107471d1de extends A06W5BaseWidget67C0107471d1de {}\n",
+            "A06W5Widget67C0107471d1de": "@IsTest public virtual class A06W5Widget67C0107471d1de extends A06W5MiddleWidget67C0107471d1de {\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5Widget67C0107471d1de.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C010|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tType is not visible: A06W5BaseWidget67C0107471d1de.BaseException"
+        }
+      },
+      "AnonymousDeclarations": {
+        "62.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n     virtual class BaseException extends Exception {}\n}\npublic virtual class MiddleWidget extends BaseWidget {}\npublic virtual class Widget extends MiddleWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C010','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "64.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n     virtual class BaseException extends Exception {}\n}\npublic virtual class MiddleWidget extends BaseWidget {}\npublic virtual class Widget extends MiddleWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C010','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n     virtual class BaseException extends Exception {}\n}\npublic virtual class MiddleWidget extends BaseWidget {}\npublic virtual class Widget extends MiddleWidget {\n    public class InnerException extends BaseException {}\n}\npq.out('C010','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        }
+      }
+    },
+    {
+      "ID": "C011",
+      "Group": "lexical-inner/private-positive",
+      "NamedCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C011bb972e57": "public virtual class A06W5BaseWidget62C011bb972e57 {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "compiled"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0111eb6b341": "public virtual class A06W5BaseWidget64C0111eb6b341 {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C01107e165d8": "public virtual class A06W5BaseWidget67C01107e165d8 {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "compiled"
+        }
+      },
+      "IsTestCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C0115d79f66d": "@IsTest public virtual class A06W5BaseWidget62C0115d79f66d {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5BaseWidget62C0115d79f66d.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C011|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tIsTest classes cannot be virtual"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0114b48c483": "@IsTest public virtual class A06W5BaseWidget64C0114b48c483 {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5BaseWidget64C0114b48c483.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C011|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tIsTest classes cannot be virtual"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C0117471d1de": "@IsTest public virtual class A06W5BaseWidget67C0117471d1de {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5BaseWidget67C0117471d1de.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C011|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tIsTest classes cannot be virtual"
+        }
+      },
+      "AnonymousDeclarations": {
+        "62.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\npq.out('C011','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "64.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\npq.out('C011','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\npq.out('C011','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        }
+      },
+      "AnonymousRuntime": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C011d493839b": "public virtual class A06W5BaseWidget62C011d493839b {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;try{throw new A06W5BaseWidget62C011d493839b.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);} pq.out('C011',r);}catch(Exception e){pq.err('C011',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 6: Operation instanceof is always true since an instance of Exception is always an instance of Exception"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C011368b92f4": "public virtual class A06W5BaseWidget64C011368b92f4 {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;try{throw new A06W5BaseWidget64C011368b92f4.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);} pq.out('C011',r);}catch(Exception e){pq.err('C011',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 6: Operation instanceof is always true since an instance of Exception is always an instance of Exception"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C01139c4d220": "public virtual class A06W5BaseWidget67C01139c4d220 {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;try{throw new A06W5BaseWidget67C01139c4d220.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);} pq.out('C011',r);}catch(Exception e){pq.err('C011',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 6: Operation instanceof is always true since an instance of Exception is always an instance of Exception"
+        }
+      }
+    },
+    {
+      "ID": "C012",
+      "Group": "lexical-inner/implicit-private-positive",
+      "NamedCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C012bb972e57": "public virtual class A06W5BaseWidget62C012bb972e57 {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "compiled"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0121eb6b341": "public virtual class A06W5BaseWidget64C0121eb6b341 {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C01207e165d8": "public virtual class A06W5BaseWidget67C01207e165d8 {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Expected": "compiled"
+        }
+      },
+      "IsTestCompilations": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C0125d79f66d": "@IsTest public virtual class A06W5BaseWidget62C0125d79f66d {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5BaseWidget62C0125d79f66d.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C012|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tIsTest classes cannot be virtual"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C0124b48c483": "@IsTest public virtual class A06W5BaseWidget64C0124b48c483 {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5BaseWidget64C0124b48c483.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C012|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tIsTest classes cannot be virtual"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C0127471d1de": "@IsTest public virtual class A06W5BaseWidget67C0127471d1de {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n@IsTest static void observed(){Object r;try{throw new A06W5BaseWidget67C0127471d1de.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);}System.assert(false,'A06W5|C012|'+String.valueOf(r)+'|A06W5END');}\n}\n"
+          },
+          "Expected": "COMPILE_ERROR\tIsTest classes cannot be virtual"
+        }
+      },
+      "AnonymousDeclarations": {
+        "62.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\npq.out('C012','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "64.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\npq.out('C012','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic virtual class BaseWidget {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\npq.out('C012','compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+        }
+      },
+      "AnonymousRuntime": {
+        "62.0": {
+          "Sources": {
+            "A06W5BaseWidget62C012607c9728": "public virtual class A06W5BaseWidget62C012607c9728 {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;try{throw new A06W5BaseWidget62C012607c9728.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);} pq.out('C012',r);}catch(Exception e){pq.err('C012',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 6: Operation instanceof is always true since an instance of Exception is always an instance of Exception"
+        },
+        "64.0": {
+          "Sources": {
+            "A06W5BaseWidget64C01227f442d4": "public virtual class A06W5BaseWidget64C01227f442d4 {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;try{throw new A06W5BaseWidget64C01227f442d4.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);} pq.out('C012',r);}catch(Exception e){pq.err('C012',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 6: Operation instanceof is always true since an instance of Exception is always an instance of Exception"
+        },
+        "67.0": {
+          "Sources": {
+            "A06W5BaseWidget67C012e711ecba": "public virtual class A06W5BaseWidget67C012e711ecba {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+          },
+          "Program": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;try{throw new A06W5BaseWidget67C012e711ecba.InnerException('owned');}catch(Exception e){r=e.getMessage()+'|'+(e instanceof Exception);} pq.out('C012',r);}catch(Exception e){pq.err('C012',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+          "Expected": "COMPILE_ERROR\tline 6: Operation instanceof is always true since an instance of Exception is always an instance of Exception"
+        }
+      }
+    }
+  ],
+  "Declarations": {
+    "62.0": {
+      "A06W5BaseWidget62C001bb972e57": "public virtual class A06W5BaseWidget62C001bb972e57 {\n    public virtual class BaseException extends Exception {}\n}\n",
+      "A06W5Widget62C001bb972e57": "public virtual class A06W5Widget62C001bb972e57 extends A06W5BaseWidget62C001bb972e57 {\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget62C0019d79660f": "public virtual class A06W5BaseWidget62C0019d79660f {\n    public virtual class BaseException extends Exception {}\n}\n",
+      "A06W5Widget62C0019d79660f": "public virtual class A06W5Widget62C0019d79660f extends A06W5BaseWidget62C0019d79660f {\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget62C011bb972e57": "public virtual class A06W5BaseWidget62C011bb972e57 {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget62C011d493839b": "public virtual class A06W5BaseWidget62C011d493839b {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget62C012bb972e57": "public virtual class A06W5BaseWidget62C012bb972e57 {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget62C012607c9728": "public virtual class A06W5BaseWidget62C012607c9728 {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+    },
+    "64.0": {
+      "A06W5BaseWidget64C0011eb6b341": "public virtual class A06W5BaseWidget64C0011eb6b341 {\n    public virtual class BaseException extends Exception {}\n}\n",
+      "A06W5Widget64C0011eb6b341": "public virtual class A06W5Widget64C0011eb6b341 extends A06W5BaseWidget64C0011eb6b341 {\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget64C00126787d52": "public virtual class A06W5BaseWidget64C00126787d52 {\n    public virtual class BaseException extends Exception {}\n}\n",
+      "A06W5Widget64C00126787d52": "public virtual class A06W5Widget64C00126787d52 extends A06W5BaseWidget64C00126787d52 {\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget64C0111eb6b341": "public virtual class A06W5BaseWidget64C0111eb6b341 {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget64C011368b92f4": "public virtual class A06W5BaseWidget64C011368b92f4 {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget64C0121eb6b341": "public virtual class A06W5BaseWidget64C0121eb6b341 {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget64C01227f442d4": "public virtual class A06W5BaseWidget64C01227f442d4 {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+    },
+    "67.0": {
+      "A06W5BaseWidget67C00107e165d8": "public virtual class A06W5BaseWidget67C00107e165d8 {\n    public virtual class BaseException extends Exception {}\n}\n",
+      "A06W5Widget67C00107e165d8": "public virtual class A06W5Widget67C00107e165d8 extends A06W5BaseWidget67C00107e165d8 {\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget67C001e74adf98": "public virtual class A06W5BaseWidget67C001e74adf98 {\n    public virtual class BaseException extends Exception {}\n}\n",
+      "A06W5Widget67C001e74adf98": "public virtual class A06W5Widget67C001e74adf98 extends A06W5BaseWidget67C001e74adf98 {\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget67C01107e165d8": "public virtual class A06W5BaseWidget67C01107e165d8 {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget67C01139c4d220": "public virtual class A06W5BaseWidget67C01139c4d220 {\n    private virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget67C01207e165d8": "public virtual class A06W5BaseWidget67C01207e165d8 {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n",
+      "A06W5BaseWidget67C012e711ecba": "public virtual class A06W5BaseWidget67C012e711ecba {\n     virtual class BaseException extends Exception {}\n    public class InnerException extends BaseException {}\n}\n"
+    }
+  },
+  "CaptureBoundaries": [
+    {
+      "ID": "C004",
+      "Boundary": "unprovisioned-package-namespace",
+      "Reason": "Package-namespace positive: the named Tooling route cannot provision a namespace on org A.",
+      "Status": "unobserved"
+    },
+    {
+      "ID": "C005",
+      "Boundary": "unprovisioned-package-namespace",
+      "Reason": "Package-namespace invalid-name twin: the named Tooling route cannot provision a namespace on org A.",
+      "Status": "unobserved"
+    },
+    {
+      "ID": "C006",
+      "Boundary": "unprovisioned-package-namespace",
+      "Reason": "Package-namespace invalid-base twin: the named Tooling route cannot provision a namespace on org A.",
+      "Status": "unobserved"
+    },
+    {
+      "ID": "C013",
+      "Boundary": "unprovisioned-package-namespace",
+      "Reason": "Package-namespace private-base rejection twin: the named Tooling route cannot provision a namespace on org A.",
+      "Status": "unobserved"
+    },
+    {
+      "ID": "C014",
+      "Boundary": "unprovisioned-package-namespace",
+      "Reason": "Package-namespace default-private-base rejection twin: the named Tooling route cannot provision a namespace on org A.",
+      "Status": "unobserved"
+    },
+    {
+      "ID": "C015",
+      "Boundary": "unprovisioned-package-namespace",
+      "Reason": "Package-namespace transitive private-base rejection twin: the named Tooling route cannot provision a namespace on org A.",
+      "Status": "unobserved"
+    },
+    {
+      "ID": "C016",
+      "Boundary": "unprovisioned-package-namespace",
+      "Reason": "Package-namespace transitive default-private-base rejection twin: the named Tooling route cannot provision a namespace on org A.",
+      "Status": "unobserved"
+    },
+    {
+      "ID": "C017",
+      "Boundary": "unprovisioned-package-namespace",
+      "Reason": "Package-namespace private lexical positive: the named Tooling route cannot provision a namespace on org A.",
+      "Status": "unobserved"
+    },
+    {
+      "ID": "C018",
+      "Boundary": "unprovisioned-package-namespace",
+      "Reason": "Package-namespace default-private lexical positive: the named Tooling route cannot provision a namespace on org A.",
+      "Status": "unobserved"
+    }
+  ]
+}

@@ -2,6 +2,7 @@ package vm_test
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,6 +27,79 @@ System.assert(body.toString().contains('Invoice Total'));
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestPageReferenceGetContentSurfacesVisualforceRenderFailureAsExecutionException(t *testing.T) {
+	root := makePageReferenceContentProject(t, `<apex:page><h1>Invoice Total</h1></apex:page>`)
+	machine := compileContentProject(t, root)
+	visualforce.SetVMRenderEnvironment(machine, mustLoadProject(t, root))
+
+	program, err := vm.CompileAnonymous(`
+Boolean caught = false;
+try {
+    new PageReference('/apex/Missing').getContent();
+} catch (ExecutionException e) {
+    caught = true;
+}
+System.assertEquals(true, caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPageReferenceGetContentPreservesUnsupportedVisualforceGlobal(t *testing.T) {
+	root := makePageReferenceContentProject(t, `<apex:page><h1>Global Probe</h1></apex:page>`)
+	writePageRenderTestFile(t, filepath.Join(root, "force-app/main/default/pages/Global.page"), `<apex:page><apex:outputText value="{!$Action.Widget.save}"/></apex:page>`)
+	machine := compileContentProject(t, root)
+	visualforce.SetVMRenderEnvironment(machine, mustLoadProject(t, root))
+
+	program, err := vm.CompileAnonymous(`
+Boolean caught = false;
+try {
+    new PageReference('/apex/Global').getContent();
+} catch (ExecutionException e) {
+    caught = true;
+}
+System.assertEquals(false, caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "$Action") {
+		t.Fatalf("err = %v, want unsupported $Action diagnostic", err)
+	}
+}
+
+func TestPageReferenceGetContentPreservesUnsupportedVisualforceSurface(t *testing.T) {
+	for _, method := range []string{"getContent", "getContentAsPDF"} {
+		t.Run(method, func(t *testing.T) {
+			root := makePageReferenceContentProject(t, `<apex:page><flow:interview name="demo"/></apex:page>`)
+			machine := compileContentProject(t, root)
+			visualforce.SetVMRenderEnvironment(machine, mustLoadProject(t, root))
+
+			program, err := vm.CompileAnonymous(`
+Boolean caught = false;
+try {
+    Page.Invoice.` + method + `();
+} catch (ExecutionException e) {
+    caught = true;
+}
+System.assertEquals(false, caught);
+`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = machine.Execute(program)
+			var runtimeErr *vm.RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(err.Error(), "flow:interview") {
+				t.Fatalf("err = %v, want unsupported flow:interview diagnostic", err)
+			}
+		})
 	}
 }
 
@@ -115,7 +189,9 @@ func makePageReferenceContentProject(t *testing.T, pageMarkup string) string {
 func compileContentProject(t *testing.T, root string) *vm.VM {
 	t.Helper()
 	machine := vm.New(nil)
-	idx, err := visualforce.LoadProject(mustLoadProject(t, root))
+	// Register render metadata without requiring hosted deployment dependencies.
+	// Source admission is covered by the separate Salesforce conformance tests.
+	idx, err := visualforce.LoadProjectForRender(mustLoadProject(t, root))
 	if err != nil {
 		t.Fatal(err)
 	}

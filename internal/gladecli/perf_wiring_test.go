@@ -105,6 +105,10 @@ func TestRunCheckArtifactPermissionsAreRestricted(t *testing.T) {
 }
 
 func TestRunCheckPerfProfilesCloseOnSuccessDiagnosticsAndError(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	successRoot := writePerfCheckProject(t, false)
 	diagnosticRoot := writePerfCheckProject(t, true)
 	invalidRoot := t.TempDir()
@@ -371,6 +375,10 @@ func TestRunTestPerfJSONPreservesExistingArtifactPermissions(t *testing.T) {
 }
 
 func TestRunTestPerfJSONPreservesLegacyShapeAndDerivesDurationsFromPhases(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := writePerfTestProject(t)
 	dir := t.TempDir()
 	perfPath := filepath.Join(dir, "test-perf.json")
@@ -609,6 +617,10 @@ func TestRunTestPerfJSONRejectsEarlySuccessAndArtifactOnlyModes(t *testing.T) {
 }
 
 func TestRunTestPerfProfilesAloneDoNotEnablePerfCounters(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := writePerfTestProject(t)
 	memPath := filepath.Join(t.TempDir(), "mem.pprof")
 	apextest.ResetPerfCounters()

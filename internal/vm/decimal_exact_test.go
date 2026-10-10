@@ -25,7 +25,8 @@ System.assert(a + b > a);
 func TestExecDecimalPreservesExactIntegerConversionAndUnaryText(t *testing.T) {
 	program, err := CompileAnonymous(`
 Decimal value = Decimal.valueOf('9007199254740993');
-System.assertEquals(9007199254740993, value.longValue());
+System.assertEquals(9007199254740993L, value.longValue());
+System.assertEquals(9223372036854775807L, (Math.pow(2, 63) - 1).longValue());
 System.assertEquals('-9007199254740993', (-value).toPlainString());
 Long whole = 9007199254740993L;
 System.assertEquals('9007199254740993', whole.decimalValue().toPlainString());
@@ -63,10 +64,10 @@ System.assertEquals('1.20', Decimal.valueOf('+1.20').toPlainString());
 func TestExecDecimalPreservesDoubleFloatSemantics(t *testing.T) {
 	program, err := CompileAnonymous(`
 Double doubleValue = Double.valueOf('9007199254740993');
-System.assertEquals(9007199254740992, doubleValue + 1);
+System.assertEquals(9007199254740992L, doubleValue + 1);
 Decimal decimalValue = Decimal.valueOf('9007199254740993');
-System.assertEquals(9007199254740992, decimalValue.doubleValue());
-System.assertEquals(9007199254740992, decimalValue.doubleValue() + 1);
+System.assertEquals(9007199254740992L, decimalValue.doubleValue());
+System.assertEquals(9007199254740992L, decimalValue.doubleValue() + 1);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -79,10 +80,10 @@ System.assertEquals(9007199254740992, decimalValue.doubleValue() + 1);
 func TestExecDecimalPreservesStaticIntegerConversions(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(2147483647, Integer.valueOf(Decimal.valueOf('2147483647.999999999')));
-System.assertEquals(9223372036854775807, Long.valueOf(Decimal.valueOf('9223372036854775807')));
+System.assertEquals(9223372036854775807L, Long.valueOf(Decimal.valueOf('9223372036854775807')));
 Decimal decimalValue = Decimal.valueOf('9007199254740993');
 Long castValue = (Long) decimalValue;
-System.assertEquals(9007199254740993, castValue);
+System.assertEquals(9007199254740993L, castValue);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -110,8 +111,8 @@ func TestDecimalFloatBackedMarkerIsCaseInsensitive(t *testing.T) {
 
 func TestExecMathResultsRemainFloatBacked(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals(9007199254740992, Math.pow(9007199254740992L, 1) + 1);
-System.assertEquals(9007199254740992, Math.random() + 9007199254740992L);
+System.assertEquals(9007199254740992L, Math.pow(9007199254740992L, 1) + 1);
+System.assertEquals(9007199254740992L, Math.random() + 9007199254740992L);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -165,13 +166,15 @@ System.assertEquals('1.5625', Decimal.valueOf('1.25').pow(2).toPlainString());
 	}
 }
 
-func TestExecDecimalMathRoundingAndSignumRemainExact(t *testing.T) {
+func TestExecMathRoundingOverloadsAndSignum(t *testing.T) {
+	// Math controls K001-K004: Long promotes to Double; signum renders 1.0,
+	// and the promoted Integer overload has no Decimal-only toPlainString.
 	program, err := CompileAnonymous(`
-System.assertEquals(9007199254740993, Math.roundToLong(Decimal.valueOf('9007199254740993.4')));
+System.assertEquals(9007199254740993L, Math.roundToLong(Decimal.valueOf('9007199254740993.4')));
 System.assertEquals(2147483645, Math.round(Decimal.valueOf('2147483645.499999999')));
-System.assertEquals(9007199254740993, Math.roundToLong(9007199254740993L));
-System.assertEquals('1', Math.signum(Decimal.valueOf('9007199254740993')).toPlainString());
-System.assertEquals('1', Math.signum(1).toPlainString());
+System.assertEquals(9007199254740992L, Math.roundToLong(9007199254740993L));
+System.assertEquals('1.0', Math.signum(Decimal.valueOf('9007199254740993')).toPlainString());
+System.assertEquals('1.0', String.valueOf(Math.signum(1)));
 Double doubleValue = Double.valueOf('-9007199254740993');
 System.assertEquals(-1, Math.signum(doubleValue));
 `)
@@ -209,7 +212,7 @@ func TestExecDecimalSetScalePreservesExplicitScaleInConcatenation(t *testing.T) 
 	program, err := CompileAnonymous(`
 Decimal amount = Decimal.valueOf('10') + Decimal.valueOf('20');
 System.assertEquals('30.00', amount.setScale(2) + '');
-System.assertEquals('30', 30.00 + '');
+System.assertEquals('30.00', 30.00 + '');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -412,7 +415,7 @@ func TestExecDoublePathsRetainDoubleIdentity(t *testing.T) {
 JSONParser parser = JSON.createParser('9007199254740993.0');
 parser.nextToken();
 Double parsed = parser.getDoubleValue();
-System.assertEquals(9007199254740992, parsed + 1);
+System.assertEquals(9007199254740992L, parsed + 1);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -433,8 +436,9 @@ System.assertEquals(9007199254740992, parsed + 1);
 	}
 	missing := Object("Location")
 	latitude, _, _, handled, err := callLocationMember(missing, "getLatitude", nil)
-	if err != nil || !handled || !isFloatBackedDecimal(latitude) {
-		t.Fatalf("missing Location latitude = handled %v, value %#v, err %v; want Double-backed zero", handled, latitude, err)
+	// API62/API67 Location control C002: empty coordinates are null.
+	if err != nil || !handled || latitude.Kind != ValueNull {
+		t.Fatalf("missing Location latitude = handled %v, value %#v, err %v; want null", handled, latitude, err)
 	}
 }
 
@@ -465,13 +469,13 @@ func TestDecimalDivisionRejectsUntextedDecimal(t *testing.T) {
 	}
 }
 
-func TestExecMathAbsRejectsIntegerOverflow(t *testing.T) {
-	program, err := CompileAnonymous(`Math.abs(Integer.MIN_VALUE);`)
+func TestExecMathAbsWrapsIntegerOverflow(t *testing.T) {
+	program, err := CompileAnonymous(`System.assertEquals(Integer.MIN_VALUE, Math.abs(Integer.MIN_VALUE));`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err == nil {
-		t.Fatal("Math.abs accepted an Integer result outside the Integer range")
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 

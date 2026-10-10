@@ -54,7 +54,7 @@ function appendControls(data,root){
   Array.prototype.forEach.call(root.querySelectorAll("input,select,textarea,button"),function(el){appendControl(data,el);});
 }
 function appendFormControlFields(data,form){
-  ["` + ViewStateActionFieldName() + `","` + ViewStateFormFieldName() + `","__vf_csrf"].forEach(function(name){
+  ["` + ViewStateActionFieldName() + `","` + ViewStateFormFieldName() + `","__vf_csrf","__vf_form","__vf_command"].forEach(function(name){
     var el=form&&form.querySelector&&form.querySelector('[name="'+name+'"]');
     if(el){appendControl(data,el);}
   });
@@ -76,6 +76,8 @@ function setStatus(id,active){
 }
 window.GLADEVF.submit=function(form,action,targets,options){
   if(!form){return false;}
+
+  if(form.reportValidity&&!form.reportValidity()){return false;}
   options=options||{};
   var data=new URLSearchParams();
   if(options.region){appendControls(data,options.region);appendFormControlFields(data,form);}else{appendControls(data,form);}

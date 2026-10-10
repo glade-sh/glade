@@ -8,7 +8,27 @@ import (
 )
 
 func (vm *VM) lookup(name string) (Value, error) {
+	if strings.EqualFold(name, "this") {
+		if value, ok := vm.Globals["this"]; ok {
+			// The caller's receiver view is not the type of this expression.
+			// Use the enclosing method's class, retaining the runtime identity
+			// for virtual dispatch and leaving stored aliases unchanged.
+			className := vm.methodTypeResolutionClass(vm.currentMethod)
+			if className == "" {
+				className = vm.currentClass
+			}
+			if className != "" {
+				value.Static = className
+			}
+			return value, nil
+		}
+	}
 	if value, ok := vm.Globals[name]; ok {
+		// Alias updates can carry another reference's declared view. The
+		// local binding remains authoritative for overload applicability.
+		if declaredType := vm.VarTypes[name]; declaredType != "" {
+			value.Static = vm.resolveTypeNameInClass(vm.currentClass, declaredType)
+		}
 		if value.Kind == ValueNull && value.Type == "" {
 			value.Type = vm.VarTypes[name]
 		}
@@ -19,6 +39,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 	}
 	if actual, ok := vm.lookupGlobalName(name); ok {
 		value := vm.Globals[actual]
+		if declaredType := vm.VarTypes[actual]; declaredType != "" {
+			value.Static = vm.resolveTypeNameInClass(vm.currentClass, declaredType)
+		}
 		if value.Kind == ValueNull && value.Type == "" {
 			value.Type = vm.VarTypes[actual]
 		}
@@ -63,17 +86,55 @@ func (vm *VM) lookup(name string) (Value, error) {
 	if hasSuffixFold(name, ".class") {
 		className := name[:len(name)-len(".class")]
 		if exceptionName := exceptionTypeName(className); isBuiltinExceptionType(exceptionName) {
-			return Value{Kind: ValueObject, Type: "Type", Text: "System." + exceptionName}, nil
+			return vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: "System." + exceptionName}, "System."+exceptionName), nil
 		}
 		if resolved, ok := vm.resolveClassName(className); ok {
 			if class, ok := vm.lookupClass(resolved); ok {
-				return Value{Kind: ValueObject, Type: "Type", Text: vm.classTypeToken(class)}, nil
+				return vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: vm.classTypeToken(class)}, vm.classTypeToken(class)), nil
 			}
-			return Value{Kind: ValueObject, Type: "Type", Text: resolved}, nil
+			return vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: resolved}, resolved), nil
 		}
-		return Value{Kind: ValueObject, Type: "Type", Text: className}, nil
+		// Salesforce exposes an unresolved Flow.Interview.<name> class literal
+		// as the Flow.Interview base type. This lets callers distinguish a
+		// missing flow from a non-flow type through Type.getName().
+		if strings.HasPrefix(strings.ToLower(className), "flow.interview.") {
+			return vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: "Flow.Interview"}, "Flow.Interview"), nil
+		}
+		return vm.markReflectionTypeToken(Value{Kind: ValueObject, Type: "Type", Text: className}, className), nil
 	}
 	parts := strings.Split(name, ".")
+	if token, ok := vm.lookupSObjectSharingReasonToken(parts); ok {
+		return token, nil
+	}
+	// A qualified Schema object member is normally a field token, even when a
+	// generated platform type exposes a same-named static member for the object
+	// segment. SObjectType is the one object-level member and must win before
+	// the custom-object field synthesizer can mistake it for a field token.
+	if len(parts) == 3 && strings.EqualFold(parts[0], "Schema") {
+		if token, ok := vm.lookupSObjectTypeToken(parts); ok {
+			return token, nil
+		}
+		// A loaded schema field wins over the SObjectType describe shorthand.
+		// For example, Schema.Account.Name is a Schema.SObjectField token even
+		// though Name is also the describe result's object-name property.
+		if token, ok := vm.lookupDeclaredSchemaObjectFieldToken(parts); ok {
+			return token, nil
+		}
+		// `Schema.<Object>.<member>` can address either a field token or a
+		// describe property. Resolve it through the object type first so
+		// properties such as `label` and `fields` retain their object-level
+		// meaning instead of being synthesized as custom fields.
+		if objectType, ok := vm.lookupSObjectTypeToken(parts[:2]); ok {
+			if value, err := vm.lookupPath(objectType, []string{parts[2]}); err != nil {
+				return Null, err
+			} else if value.Kind != ValueNull {
+				return value, nil
+			}
+		}
+		if token, ok := vm.lookupSObjectFieldToken(parts); ok {
+			return token, nil
+		}
+	}
 	if len(parts) > 1 {
 		if strings.EqualFold(parts[0], "super") {
 			if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
@@ -93,9 +154,6 @@ func (vm *VM) lookup(name string) (Value, error) {
 		}
 		if className, memberName, ok := vm.splitClassMember(name); ok {
 			if class, ok := vm.lookupClass(className); ok && len(class.EnumValues) > 0 {
-				if err := vm.ensureClassInitialized(class.Name); err != nil {
-					return Null, err
-				}
 				for _, enumValue := range class.EnumValues {
 					if strings.EqualFold(enumValue, memberName) {
 						return Value{Kind: ValueObject, Type: class.Name, Text: enumValue}, nil
@@ -168,6 +226,11 @@ func (vm *VM) lookup(name string) (Value, error) {
 			}
 		}
 		if className, memberName, ok := vm.splitClassMember(name); ok {
+			if generatedPlatformTypeName(className) {
+				if value, ok := builtinStaticField(className, memberName); ok {
+					return value, nil
+				}
+			}
 			preferDependency := vm.classMemberReferenceUsesExplicitNamespace(name, className)
 			if field, owner, ok := vm.lookupStaticFieldForReceiver(className, memberName, preferDependency); ok {
 				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+memberName, field.Modifiers); err != nil {
@@ -190,11 +253,28 @@ func (vm *VM) lookup(name string) (Value, error) {
 			if strings.EqualFold(parts[0], "Page") {
 				pageName := parts[1]
 				if vm.pageReferences != nil {
+					// A namespaced package's Apex source refers to its own
+					// Visualforce pages without the namespace prefix, while the
+					// resulting PageReference URL includes it. Prefer the
+					// namespace-qualified registration for that execution context.
+					if !strings.Contains(pageName, "__") {
+						if namespace := strings.TrimSpace(vm.currentExecutionNamespace()); namespace != "" {
+							if registered, ok := vm.pageReferences[strings.ToLower(namespace+"__"+pageName)]; ok {
+								pageName = registered
+							}
+						}
+					}
 					registered, ok := vm.pageReferences[strings.ToLower(pageName)]
 					if !ok {
 						return Null, fmt.Errorf("unknown Visualforce page Page.%s", pageName)
 					}
 					pageName = registered
+					// document loading R004 at API 62/67 observes lowercase URLs for
+					// registered, unqualified pages. The nil-registry path
+					// remains a local fallback without a native URL observation.
+					if !strings.Contains(pageName, "__") {
+						pageName = strings.ToLower(pageName)
+					}
 				}
 				return newPageTokenReference("/apex/" + pageName), nil
 			}
@@ -231,9 +311,6 @@ func (vm *VM) lookup(name string) (Value, error) {
 				return value, nil
 			}
 			if class, ok := vm.lookupClass(className); ok {
-				if err := vm.ensureClassInitialized(class.Name); err != nil {
-					return Null, err
-				}
 				for _, enumValue := range class.EnumValues {
 					if strings.EqualFold(enumValue, memberName) {
 						return Value{Kind: ValueObject, Type: class.Name, Text: enumValue}, nil
@@ -673,9 +750,24 @@ func (vm *VM) setGraphFieldValue(object *Value, name string, value Value) {
 		object.Fields = make(map[string]Value)
 	}
 	object.Fields[name] = value
+	vm.registerSObjectAliasField(*object, name, value)
+}
+
+// Schema Id fields retain their declared identity even when a constructor or
+// imported record stored their scalar value as a String.
+func coerceReadSchemaFieldIdentity(receiver, value Value, field storage.Field) Value {
+	value = coerceReadSObjectFieldRuntimeValue(receiver, value, field)
+	if field.Type == storage.FieldID && value.Kind == ValueString && validateApexIDShape(value.Text) == nil {
+		value.Type = "Id"
+	}
+	return value
 }
 
 func (vm *VM) setExplicitSObjectFieldValue(object *Value, name string, value Value) {
+	if object != nil && object.Kind == ValueObject {
+		vm.markCollectionRefsEscaped(value)
+		vm.registerSObjectAliasField(*object, name, value)
+	}
 	vm.advanceAliasContainmentMutation()
 	setExplicitSObjectField(object, name, value)
 }
@@ -1078,14 +1170,15 @@ func defaultTriggerGlobal(name string) (Value, bool) {
 	switch strings.ToLower(name) {
 	case "trigger.new", "trigger.old", "trigger.newmap", "trigger.oldmap":
 		return Null, true
-	case "trigger.isexecuting", "trigger.isbefore", "trigger.isafter", "trigger.isinsert", "trigger.isupdate", "trigger.isdelete", "trigger.isundelete":
+	case "trigger.isexecuting":
 		return Bool(false), true
+	case "trigger.isbefore", "trigger.isafter", "trigger.isinsert", "trigger.isupdate", "trigger.isdelete", "trigger.isundelete", "trigger.size":
+		// Only isExecuting is false outside a trigger.
+		return Null, true
 	case "trigger.operationtype":
 		value := Null
 		value.Type = "TriggerOperation"
 		return value, true
-	case "trigger.size":
-		return Int(0), true
 	default:
 		return Null, false
 	}
@@ -1126,12 +1219,15 @@ func (vm *VM) assignmentTargetType(name string) string {
 }
 
 func (vm *VM) fieldPathTargetType(typeName string, parts []string) string {
+	typeName = vm.resolveTypeNameInClass(vm.currentClass, typeName)
 	for _, part := range parts {
 		if typeName == "" {
 			return ""
 		}
-		if field, _, ok := vm.lookupField(typeName, part); ok {
-			typeName = field.Type
+		if field, owner, ok := vm.lookupField(typeName, part); ok {
+			// Native provenance R010/R021, R026 and R027: nested names belong
+			// to the declaring field owner, including inherited and shadowed fields.
+			typeName = vm.resolveTypeNameInClass(owner, field.Type)
 			continue
 		}
 		if vm.Org != nil {
@@ -1185,9 +1281,65 @@ func storageFieldTypeName(field storage.Field) string {
 		return "Date"
 	case storage.FieldDateTime:
 		return "Datetime"
+	case storage.FieldTime:
+		return "Time"
+	case storage.FieldBlob:
+		return "Blob"
 	default:
 		return ""
 	}
+}
+
+// Dynamic put and Object-typed direct writes share Apex's runtime type spelling.
+func sObjectIllegalAssignmentError(value Value, target string) error {
+	return newExceptionError("SObjectException", "Illegal assignment from "+runtimeValueTypeName(value)+" to "+typeExceptionTargetName(target))
+}
+
+func (vm *VM) nonScalarSObjectFieldAssignmentError(receiver Value, fieldName string, value Value) error {
+	// Resolved class instances can shadow SObject names. A schema-created record
+	// remains subject to validation even with a same-name class loaded in the VM.
+	if receiver.classInstance {
+		return nil
+	}
+	switch value.Kind {
+	case ValueMap, ValueSet, ValueList:
+	case ValueObject:
+		// Apex scalars such as Date and Blob have object-backed VM values.
+		// Loaded user classes, including names that shadow platform types,
+		// remain ordinary objects rather than scalar field values.
+		if _, userClass := vm.lookupClass(runtimeObjectType(value)); !userClass {
+			switch canonicalJSONScalarType(runtimeObjectType(value)) {
+			case "Date", "Datetime", "Time", "Blob", "Id", "String", "Boolean", "Integer", "Long", "Decimal", "Double":
+				return nil
+			}
+		}
+	default:
+		return nil
+	}
+	_, field, known := vm.sObjectFieldDefinition(receiver.Type, fieldName)
+	if !known {
+		return nil
+	}
+	target := storageFieldTypeName(field)
+	if target == "" {
+		// Storage has no separate Long/Double kinds. A loaded typed field
+		// can still supply its declared Apex scalar type without guessing
+		// from describe display types (DOUBLE often means Apex Decimal).
+		if declared, _, ok := vm.lookupReceiverField(receiver.Type, fieldName); ok {
+			switch canonicalJSONScalarType(declared.Type) {
+			case "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "Id", "Blob":
+				target = canonicalJSONScalarType(declared.Type)
+			}
+		}
+	}
+	// A lookup column holds an Id; its relationship holds the SObject.
+	if field.Type == storage.FieldReference {
+		target = "Id"
+	}
+	if target == "" {
+		return nil
+	}
+	return sObjectIllegalAssignmentError(value, target)
 }
 
 func isDecimalRoundingModeName(name string) bool {
@@ -1210,6 +1362,8 @@ func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
 	}
 	var objectName string
 	switch {
+	case len(parts) == 2 && strings.EqualFold(parts[0], "Schema"):
+		objectName = parts[1]
 	case len(parts) == 2 && strings.EqualFold(parts[1], "SObjectType"):
 		objectName = parts[0]
 	case len(parts) == 3 && strings.EqualFold(parts[0], "Schema") && strings.EqualFold(parts[1], "SObjectType"):
@@ -1220,6 +1374,9 @@ func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
 		objectName = parts[1]
 	default:
 		return Null, false
+	}
+	if strings.EqualFold(objectName, "AggregateResult") {
+		return sObjectTypeToken("AggregateResult"), true
 	}
 	if vm.Org != nil {
 		if canonical, ok := vm.resolveObjectName(objectName); ok {
@@ -1283,6 +1440,9 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 	objectName := parts[0]
 	fieldName := ""
 	switch {
+	case len(parts) == 4 && strings.EqualFold(parts[0], "Schema") && strings.EqualFold(parts[2], "Fields"):
+		objectName = parts[1]
+		fieldName = parts[3]
 	case len(parts) == 2:
 		fieldName = parts[1]
 	case len(parts) == 3 && strings.EqualFold(parts[0], "Schema"):
@@ -1337,6 +1497,105 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 	return vm.sObjectFieldTokenFromField(objectName, field), true
 }
 
+// lookupDeclaredSchemaObjectFieldToken resolves only fields backed by the
+// loaded object definition. The direct Schema.<Object>.<member> form also has
+// a compatibility fallback for an unmodeled custom object's implicit Name
+// field; other synthetic fields remain behind the describe-property path.
+func (vm *VM) lookupDeclaredSchemaObjectFieldToken(parts []string) (Value, bool) {
+	if len(parts) != 3 || !strings.EqualFold(parts[0], "Schema") {
+		return Null, false
+	}
+	objectName := parts[1]
+	canonicalObject, definition, ok := vm.describeObjectDefinition(objectName)
+	if !ok {
+		return Null, false
+	}
+	namespace := ""
+	if vm.Org != nil {
+		namespace = vm.Org.Namespace
+	}
+	field, ok := vm.resolveDeclaredSObjectTokenField(canonicalObject, definition, namespace, parts[2])
+	if !ok && len(definition.Fields) == 0 && isCustomObjectLikeName(canonicalObject) && strings.EqualFold(parts[2], "Name") {
+		field, ok = vm.resolveSObjectTokenFieldWithSynthetic(canonicalObject, definition, namespace, parts[2], true)
+	}
+	if !ok {
+		return Null, false
+	}
+	return vm.sObjectFieldTokenFromField(canonicalObject, field), true
+}
+
+func (vm *VM) resolveDeclaredSObjectTokenField(objectName string, definition storage.ObjectDefinition, namespace, fieldName string) (storage.Field, bool) {
+	canonical, field, ok := storage.ResolveFieldDefinition(definition, namespace, fieldName)
+	if !ok {
+		if _, standardObject := storage.ResolveKnownStandardObjectName(objectName); standardObject {
+			standardDefinition := definition.Clone()
+			storage.EnsureStandardObjectFieldsForFeatures(&standardDefinition, []string{"PersonAccounts"})
+			if standardField, standardFieldValue, standardOK := storage.ResolveFieldDefinition(standardDefinition, namespace, fieldName); standardOK {
+				canonical = standardField
+				field = standardFieldValue
+				ok = true
+			}
+		}
+	}
+	if !ok {
+		if !isSObjectSystemField(fieldName) {
+			return storage.Field{}, false
+		}
+		canonical = fieldName
+	}
+	if field.APIName == "" {
+		field = definition.Fields[canonical]
+	}
+	if field.APIName == "" {
+		field.APIName = canonical
+	}
+	return field, true
+}
+
+func (vm *VM) lookupSObjectSharingReasonToken(parts []string) (Value, bool) {
+	shareName := ""
+	reasonName := ""
+	switch {
+	case len(parts) == 4 && strings.EqualFold(parts[0], "Schema") && strings.EqualFold(parts[2], "RowCause"):
+		shareName = parts[1]
+		reasonName = parts[3]
+	case len(parts) == 3 && strings.EqualFold(parts[1], "RowCause"):
+		shareName = parts[0]
+		reasonName = parts[2]
+	default:
+		return Null, false
+	}
+	if !strings.HasSuffix(strings.ToLower(strings.TrimSpace(shareName)), "__share") {
+		return Null, false
+	}
+	_, definition, ok := vm.describeObjectDefinition(shareName)
+	if !ok {
+		return Null, false
+	}
+	fieldName, ok := vm.resolveFieldName(definition, "RowCause")
+	if !ok {
+		return Null, false
+	}
+	field, ok := definition.Fields[fieldName]
+	if !ok || (field.Type != storage.FieldPicklist && field.Type != storage.FieldMultiPicklist) {
+		return Null, false
+	}
+	for _, picklistValue := range field.PicklistValues {
+		value := strings.TrimSpace(picklistValue.Value)
+		if value == "" {
+			value = strings.TrimSpace(picklistValue.Label)
+		}
+		localValue := value
+		if vm.Org != nil {
+			localValue = storage.StripNamespaceToken(vm.Org.Namespace, localValue)
+		}
+		if value != "" && (strings.EqualFold(value, reasonName) || strings.EqualFold(localValue, reasonName)) {
+			return String(localValue), true
+		}
+	}
+	return Null, false
+}
+
 func (vm *VM) lookupSObjectRelationshipFieldToken(objectName, relationshipFieldName, targetFieldName string) (Value, bool) {
 	_, definition, ok := vm.describeObjectDefinition(objectName)
 	if !ok {
@@ -1389,18 +1648,22 @@ func (vm *VM) lookupSObjectRelationshipFieldToken(objectName, relationshipFieldN
 }
 
 func (vm *VM) resolveSObjectTokenField(objectName string, definition storage.ObjectDefinition, namespace, fieldName string) (storage.Field, bool) {
-	canonical, ok := storage.ResolveFieldName(definition, namespace, fieldName)
+	return vm.resolveSObjectTokenFieldWithSynthetic(objectName, definition, namespace, fieldName, true)
+}
+
+func (vm *VM) resolveSObjectTokenFieldWithSynthetic(objectName string, definition storage.ObjectDefinition, namespace, fieldName string, allowSynthetic bool) (storage.Field, bool) {
+	canonical, field, ok := storage.ResolveFieldDefinition(definition, namespace, fieldName)
 	if !ok {
 		standardDefinition := definition.Clone()
 		storage.EnsureStandardObjectFieldsForFeatures(&standardDefinition, []string{"PersonAccounts"})
-		if standardField, standardOK := storage.ResolveFieldName(standardDefinition, namespace, fieldName); standardOK {
-			field := standardDefinition.Fields[standardField]
+		if standardField, standardFieldValue, standardOK := storage.ResolveFieldDefinition(standardDefinition, namespace, fieldName); standardOK {
+			field := standardFieldValue
 			if field.APIName == "" {
 				field.APIName = standardField
 			}
 			return field, true
 		}
-		if vm.canSynthesizeSchemaField(objectName) {
+		if allowSynthetic && vm.canSynthesizeSchemaField(objectName) {
 			synthetic := syntheticSchemaField(fieldName)
 			if synthetic.APIName != "" {
 				return synthetic, true
@@ -1411,7 +1674,9 @@ func (vm *VM) resolveSObjectTokenField(objectName string, definition storage.Obj
 		}
 		canonical = fieldName
 	}
-	field := definition.Fields[canonical]
+	if field.APIName == "" {
+		field = definition.Fields[canonical]
+	}
 	if field.APIName == "" {
 		field.APIName = canonical
 	}
@@ -1710,6 +1975,12 @@ func (vm *VM) sObjectFieldTokenFromField(objectName string, field storage.Field)
 func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 	current := root
 	for i, part := range parts {
+		// Publishing identity is not a readable event Id.
+		if vm.hasPlatformEventMetadata(current.Type) && strings.EqualFold(part, "Id") {
+			if _, published := current.Fields[sobjectPublishedEventIDField]; published {
+				return Null, newExceptionError("SObjectException", "Invalid field Id")
+			}
+		}
 		if current.Kind == ValueNull {
 			if vm.isSObjectLikeType(current.Type) {
 				if defaultValue, ok := vm.defaultNullSObjectAccessValue(current.Type); ok {
@@ -1799,6 +2070,17 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				current = value
 				continue
 			}
+			// Qualified Schema.Object.Field paths reach this type token before
+			// the full field-token lookup. Keep describe properties above, and
+			// resolve only fields present in the object's schema here.
+			if objectName, definition, ok := vm.describeObjectDefinition(objectValue.Text); ok {
+				if fieldName, found := vm.resolveFieldName(definition, part); found {
+					if field, present := definition.Fields[fieldName]; present {
+						current = vm.sObjectFieldTokenFromField(objectName, field)
+						continue
+					}
+				}
+			}
 		case "Schema.SObjectFieldMap":
 			mapValue, ok := current.Fields["map"]
 			if !ok || mapValue.Kind != ValueMap {
@@ -1820,11 +2102,11 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				return Null, fmt.Errorf("Schema.FieldSetMap is missing map")
 			}
 			if value, ok := mapValue.Map[mapKey(String(part))]; ok {
-				current = value
+				current = privateDescribeFieldSet(value)
 				continue
 			}
 			if value, ok := mapValue.Map[mapKey(String(strings.ToLower(part)))]; ok {
-				current = value
+				current = privateDescribeFieldSet(value)
 				continue
 			}
 			current = Null
@@ -1891,8 +2173,9 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				}
 				value = coerceRawRecordTypeDefaultTokenRuntimeValue(field.Name, value)
 				if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, field.Name); exists {
-					value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
+					value = coerceReadSchemaFieldIdentity(current, value, fieldDef)
 				}
+				value = vm.datetimeFieldReadValue(owner, field, value)
 				current = value
 				continue
 			}
@@ -1903,8 +2186,9 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				}
 				value = coerceRawRecordTypeDefaultTokenRuntimeValue(part, value)
 				if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, part); exists {
-					value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
+					value = coerceReadSchemaFieldIdentity(current, value, fieldDef)
 				}
+				value = vm.datetimeFieldReadValue(owner, field, value)
 				current = value
 				continue
 			}
@@ -1916,8 +2200,9 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 					}
 					value = coerceRawRecordTypeDefaultTokenRuntimeValue(canonical, value)
 					if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonical); exists {
-						value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
+						value = coerceReadSchemaFieldIdentity(current, value, fieldDef)
 					}
+					value = vm.datetimeFieldReadValue(owner, field, value)
 					current = value
 					continue
 				}
@@ -1989,7 +2274,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				continue
 			}
 			if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists {
-				value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
+				value = coerceReadSchemaFieldIdentity(current, value, fieldDef)
 				if fieldDef.Type == storage.FieldSummary && !isExplicitSObjectField(current, canonicalPart) && !vm.queriedSObjectFieldsIncludes(current, canonicalPart) {
 					if summaryValue, hasSummary := vm.evaluateSummaryField(current, fieldDef); hasSummary {
 						value = vmValueFromStorage(summaryValue)
@@ -2072,6 +2357,13 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				continue
 			}
 			if componentApexRuntimeType(current.Type) {
+				current = Null
+				continue
+			}
+			if strings.EqualFold(runtimeObjectType(current), "AggregateResult") {
+				// AggregateResult is a dynamic projection type. Salesforce returns
+				// null for an unprojected field (for example Id) rather than
+				// treating the field access as a local unknown-member error.
 				current = Null
 				continue
 			}
@@ -2181,6 +2473,14 @@ func (vm *VM) addQueriedRelationshipFieldToPopulatedMap(out *Value, receiver Val
 	if relationshipName == "" || strings.EqualFold(relationshipName, "object") || isInternalSObjectField(relationshipName) {
 		return
 	}
+	if actual, loaded, ok := objectFieldValue(receiver, relationshipName); ok {
+		if loaded.Kind != ValueObject {
+			return
+		}
+		relationshipName = actual
+	} else if _, queried := receiver.Fields[sobjectQueriedFieldsField]; queried {
+		return
+	}
 	encodedRelationship := mapKey(String(relationshipName))
 	relationshipValue := Null
 	if existing, ok := out.Map[encodedRelationship]; ok && existing.Kind == ValueObject {
@@ -2230,6 +2530,19 @@ func (vm *VM) isCurrentGetter(getter *Method) bool {
 		return true
 	}
 	return hasSuffixFold(vm.currentMethod.Name, "."+strings.ToLower(getter.Name))
+}
+
+// datetimeFieldReadValue preserves the declared overload view without changing
+// the stored value, runtime type, or reference identity.
+func (vm *VM) datetimeFieldReadValue(owner string, field Field, value Value) Value {
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "Datetime") {
+		fieldType := vm.resolveTypeNameInClass(owner, field.Type)
+		canonicalType := canonicalRuntimePlatformType(fieldType)
+		if strings.EqualFold(canonicalType, "Object") || strings.EqualFold(canonicalType, "Datetime") {
+			value.Static = fieldType
+		}
+	}
+	return value
 }
 
 func (vm *VM) currentGetterStoredValue(owner string, field Field, value Value) Value {
@@ -2660,9 +2973,42 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	if current.Kind != ValueObject {
 		return fmt.Errorf("cannot assign field %s on %s", fieldName, current.Kind)
 	}
+	if vm.isSObjectLikeType(current.Type) && sObjectIDFromFields(current.Fields) != "" {
+		if objectName, ok := vm.resolveObjectName(current.Type); ok {
+			if object, exists := vm.Org.Objects[objectName]; exists {
+				canonical := vm.resolveSObjectFieldName(current.Type, fieldName)
+				if fieldDef, known := object.Definition.Fields[canonical]; known &&
+					(fieldDef.MasterDetail || (fieldDef.Required && fieldDef.Updateable != nil && !storage.FieldFlagValue(fieldDef.Updateable, true))) &&
+					!fieldDef.ReparentableMasterDetail {
+					return newExceptionError("SObjectException", fmt.Sprintf("Field is not writeable: %s.%s", object.Definition.APIName, canonical))
+				}
+			}
+		}
+	}
+	if vm.isSObjectLikeType(current.Type) && value.Kind == ValueString {
+		// User classes can share names with standard sObjects (for example,
+		// Quip's Folder/FolderRef DTOs). Only apply sObject Id validation when
+		// the receiver is not a loaded Apex class with the same runtime name.
+		if _, classExists := vm.lookupClass(current.Type); !classExists {
+			if _, field, ok := vm.sObjectFieldDefinition(current.Type, fieldName); ok && field.Type == storage.FieldID {
+				if err := validateApexIDShape(value.Text); err != nil {
+					return newExceptionError("System.StringException", "Invalid id: "+value.Text)
+				}
+			}
+		}
+	}
 	previousLeaf = snapshotAlias(current)
 	if reason, ok := sobjectReadOnlyReason(current); ok {
+		if isTriggerSObject(current) {
+			// Trigger records reject direct field assignment.
+			return fmt.Errorf("System.FinalException: Record is read-only")
+		}
 		return fmt.Errorf("cannot modify read-only %s", reason)
+	}
+	if vm.isSObjectLikeType(current.Type) && sObjectIDFromFields(current.Fields) != "" {
+		if definition, field, ok := vm.sObjectFieldDefinition(current.Type, fieldName); ok && storage.StandardFieldAssignmentRequiresEmptyID(definition.APIName, field.APIName) {
+			return newExceptionError("SObjectException", fmt.Sprintf("Field is not writeable: %s.%s", definition.APIName, field.APIName))
+		}
 	}
 	if vm.isSObjectLikeType(current.Type) && vm.sObjectParentRelationshipField(current.Type, fieldName) {
 		vm.markCollectionRefsEscaped(value)
@@ -2672,6 +3018,11 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		markQueriedSObjectField(&current, fieldName)
 		propagate(current)
 		return nil
+	}
+	if vm.isSObjectLikeType(current.Type) {
+		if err := vm.nonScalarSObjectFieldAssignmentError(current, fieldName, value); err != nil {
+			return err
+		}
 	}
 	if vm.isSObjectLikeType(current.Type) && value.Kind == ValueObject && vm.isSObjectLikeType(value.Type) {
 		if definition, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, fieldName); exists && fieldDef.Type == storage.FieldReference {
@@ -2710,6 +3061,10 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			return fmt.Errorf("%s.%s: %w", current.Type, fieldName, err)
 		}
 		value = coerced
+		if vm.assignSingleEmailRecipientField(&current, actualName, value) {
+			propagate(current)
+			return nil
+		}
 		if def.Setter != nil {
 			key := activeInstanceSetterKey(owner, actualName, current)
 			if vm.activeSetters[key] > 0 {
@@ -2764,8 +3119,10 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		if err != nil {
 			return fmt.Errorf("%s.%s: %w", current.Type, fieldName, err)
 		}
-		vm.markCollectionRefsEscaped(coerced)
-		vm.setGraphFieldValue(&current, actualName, coerced)
+		if !vm.assignSingleEmailRecipientField(&current, actualName, coerced) {
+			vm.markCollectionRefsEscaped(coerced)
+			vm.setGraphFieldValue(&current, actualName, coerced)
+		}
 		syncDatabaseOptionAliasField(&current, actualName, coerced)
 		propagate(current)
 		return nil

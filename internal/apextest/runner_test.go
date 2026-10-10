@@ -164,7 +164,7 @@ test body
 	}
 	cases := Discover(index, Options{})
 	testMethods, testErrs := compileTestMethods(cases)
-	if len(testErrs) != 0 || testMethods["BodyKindsTest.run"].APIVersion != "67.0" {
+	if len(testErrs) != 0 || testMethods[testCaseKey(cases[0])].APIVersion != "67.0" {
 		t.Fatalf("test methods = %#v errors = %#v", testMethods, testErrs)
 	}
 }
@@ -315,7 +315,7 @@ test method quote: ' and brace: }
 			}
 			cases := Discover(index, Options{})
 			testMethods, testErrs := compileTestMethods(cases)
-			if len(testErrs) != 0 || testMethods["BodyRangeProbeTest.run"].Name == "" {
+			if len(testErrs) != 0 || testMethods[testCaseKey(cases[0])].Name == "" {
 				t.Fatalf("test executable body = %#v errors = %#v", testMethods, testErrs)
 			}
 		})
@@ -428,7 +428,7 @@ func TestRunMarksRuntimeUnlowerableBodyUnsupported(t *testing.T) {
 	path := filepath.Join(root, "RuntimeGapTest.cls")
 	writeFile(t, path, `
 public class RuntimeGapHelper {
-  public static void run() { Integer flags = 1 >>> 2; }
+  public static void run() { System.assert(true); }
 }
 @isTest
 private class RuntimeGapTest {
@@ -437,6 +437,7 @@ private class RuntimeGapTest {
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	seedUnlowerableMethod(t, index, "RuntimeGapHelper.run")
 	cases := Discover(index, Options{})
 	if len(cases) != 1 {
 		t.Fatalf("discovered cases = %#v", cases)
@@ -546,9 +547,17 @@ func TestTestSemanticGateWritesCheckCompatibleCacheIdentity(t *testing.T) {
 	path := filepath.Join(root, "CheckCompatibleSemanticTest.cls")
 	writeFile(t, path, `@isTest private class CheckCompatibleSemanticTest { @isTest static void passes() { System.assertEquals(1, 1); } }`)
 	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
-	identity, err := semanticcache.IdentityForBuild(semanticAnalysisIndex(index), &artifacts, sema.AnalyzeOptions{Diagnostics: true, ExportTypes: true, SuppressPerformanceDiagnostics: true, BuildArtifacts: &artifacts})
+	options := sema.AnalyzeOptions{Diagnostics: true, ExportTypes: true, SuppressPerformanceDiagnostics: true, BuildArtifacts: &artifacts}
+	identity, err := semanticcache.IdentityForBuild(SemanticAnalysisIndex(index), &artifacts, options)
 	if err != nil {
 		t.Fatal(err)
+	}
+	rawIdentity, err := semanticcache.IdentityForBuild(index, &artifacts, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rawIdentity != identity {
+		t.Fatalf("defensive semantic analysis view changed cache identity:\nraw=%#v\nview=%#v", rawIdentity, identity)
 	}
 	run := RunCasesContext(context.Background(), index, Options{BuildArtifacts: &artifacts}, Discover(index, Options{}))
 	if summary := run.Summary(); summary.Passed != 1 {
@@ -571,7 +580,7 @@ func TestSemanticNoCacheReadsWritesOrRetainsNothing(t *testing.T) {
 	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
 	cases := Discover(index, Options{})
 	options := sema.AnalyzeOptions{Diagnostics: true, SuppressPerformanceDiagnostics: true, BuildArtifacts: &artifacts}
-	identity, err := semanticcache.IdentityForBuild(semanticAnalysisIndex(index), &artifacts, options)
+	identity, err := semanticcache.IdentityForBuild(SemanticAnalysisIndex(index), &artifacts, options)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1486,6 +1495,7 @@ private class CanvasMapLiteralTest {
 	}
 }
 
+// N005/N006/N007 capture the exact nested cache exception type names.
 func TestRunCasesContextCacheRejectsNonAlphanumericPartitionName(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "CachePartitionNameTest.cls")
@@ -1499,7 +1509,7 @@ private class CachePartitionNameTest {
         Cache.Org.getPartition(name);
         System.assert(false, 'expected invalid partition error');
       } catch (Exception e) {
-        System.assertEquals('cache.OrgCacheException', e.getTypeName());
+        System.assertEquals('cache.Org.OrgCacheException', e.getTypeName());
         System.assertEquals('Invalid partition: partition name must be alphanumeric.', e.getMessage());
       }
     }
@@ -1507,7 +1517,7 @@ private class CachePartitionNameTest {
       Cache.Session.getPartition('cb114-test');
       System.assert(false, 'expected invalid session partition error');
     } catch (Exception e) {
-      System.assertEquals('cache.SessionCacheException', e.getTypeName());
+      System.assertEquals('cache.Session.SessionCacheException', e.getTypeName());
       System.assertEquals('Invalid partition: partition name must be alphanumeric.', e.getMessage());
     }
   }
@@ -1787,9 +1797,9 @@ func TestRuntimeKeyIncludesSemanticMetadata(t *testing.T) {
 	}
 }
 
-func TestRunWithSourceDigestsPersistsExactV6RuntimeKey(t *testing.T) {
-	if testRuntimeCacheABI != "apextest-runtime-v6" {
-		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v6", testRuntimeCacheABI)
+func TestRunWithSourceDigestsPersistsExactV7RuntimeKey(t *testing.T) {
+	if testRuntimeCacheABI != "apextest-runtime-v7" {
+		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v7", testRuntimeCacheABI)
 	}
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)
@@ -2655,13 +2665,18 @@ private class SecondTest {
 }
 
 func TestRunDataWeaveScriptResourceExecutesRuntimeStub(t *testing.T) {
+	home := os.Getenv("GLADE_DATAWEAVE_APEX_TEST_HOME")
+	if home == "" {
+		t.Skip("requires explicitly installed DataWeave toolchain")
+	}
+	t.Setenv("GLADE_HOME", home)
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"65.0","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/dw/helloWorld.dwl"), `%dw 2.0
 output text/plain
 ---
 "Hello World"`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/dw/helloWorld.dwl-meta.xml"), `<DataWeaveResource/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/dw/helloWorld.dwl-meta.xml"), `<DataWeaveResource><apiVersion>65.0</apiVersion></DataWeaveResource>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/DataWeaveHarness.cls"), `
 public class DataWeaveHarness {
   public static String staticInvocation() {
@@ -2679,7 +2694,7 @@ public class DataWeaveHarness {
 @isTest
 private class DataWeaveHarnessTest {
   @isTest static void staticResourceExecuteReturnsScriptOutput() {
-    System.assertEquals('"Hello World"', DataWeaveHarness.staticInvocation());
+    System.assertEquals('Hello World', DataWeaveHarness.staticInvocation());
   }
 
   @isTest static void dynamicCreateScriptThrowsScriptException() {
@@ -2693,6 +2708,11 @@ private class DataWeaveHarnessTest {
   }
 }
 `)
+
+	writeFile(t, filepath.Join(root, "force-app/main/default/dw/error.dwl"), "%dw 2.0 \noutput application/json\n--- \n1/0")
+	writeFile(t, filepath.Join(root, "force-app/main/default/dw/error.dwl-meta.xml"), "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<DataWeaveResource\n    xmlns=\"http://soap.sforce.com/2006/04/metadata\"\n    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n>\n    <content xsi:nil=\"true\" />\n    <apiVersion>62.0</apiVersion>\n    <isGlobal>false</isGlobal>\n    <isProtected>false</isProtected>\n</DataWeaveResource>\n")
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/DataWeaveHarness.cls-meta.xml"), `<ApexClass><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/DataWeaveHarnessTest.cls-meta.xml"), `<ApexClass><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>`)
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
@@ -2803,17 +2823,22 @@ func TestEnsureProjectDataReferencedObjectFieldPreservesExistingLookupTarget(t *
 	}
 }
 
-func TestRunHttpSendWithoutMockReturnsStubInTestContext(t *testing.T) {
+func TestRunHttpSendWithoutMockThrowsInTestContext(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/HttpHarnessTest.cls"), `
 @isTest
 private class HttpHarnessTest {
-  @isTest static void sendsWithoutExternalNetwork() {
+  @isTest static void rejectsUnmockedTestCallout() {
     HttpRequest req = new HttpRequest();
     req.setEndpoint('https://example.invalid/probe');
     req.setMethod('GET');
-    new Http().send(req);
+    try {
+      new Http().send(req);
+      System.assert(false, 'expected an unmocked test callout error');
+    } catch (TypeException e) {
+      System.assertEquals('Methods defined as TestMethod do not support Web service callouts', e.getMessage());
+    }
   }
 }
 	`)
@@ -2838,14 +2863,24 @@ func TestRunnerDoesNotLeakHTTPMocksAcrossMethods(t *testing.T) {
     System.assertEquals(201, send().getStatusCode());
   }
   @isTest static void usesFreshContext() {
-    System.assertEquals(200, send().getStatusCode());
+    try {
+      send();
+      System.assert(false, 'mock leaked from another method');
+    } catch (TypeException e) {
+      System.assertEquals('Methods defined as TestMethod do not support Web service callouts', e.getMessage());
+    }
   }`,
 		},
 		{
 			name: "mock second",
 			methods: `
   @isTest static void usesFreshContext() {
-    System.assertEquals(200, send().getStatusCode());
+    try {
+      send();
+      System.assert(false, 'mock leaked from another method');
+    } catch (TypeException e) {
+      System.assertEquals('Methods defined as TestMethod do not support Web service callouts', e.getMessage());
+    }
   }
   @isTest static void installsMock() {
     Test.setMock(HttpCalloutMock.class, new ResponseMock());
@@ -3396,6 +3431,10 @@ func TestPerfCountersDiscoverRemainsZeroWithoutPreRunWiring(t *testing.T) {
 }
 
 func TestDiskStartupCacheInvalidationMatchesNoCache(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	ResetPerfCounters()
 	InvalidateRuntimeCaches()
 	wasDiskCacheDisabled := disableDiskCache.Load()
@@ -5082,6 +5121,76 @@ private class FailingTest {
 	}
 }
 
+func TestRunExecutesDuplicateTestBodiesBySourceFile(t *testing.T) {
+	root := t.TempDir()
+	first := filepath.Join(root, "preczn", "DuplicateSourceTest.cls")
+	second := filepath.Join(root, "cardpointe", "DuplicateSourceTest.cls")
+	writeFile(t, first, `
+@isTest
+private without sharing class DuplicateSourceTest {
+  @isTest static void runsOwnBody() {
+    System.assert(true);
+  }
+}
+`)
+	writeFile(t, second, `
+@isTest
+private with sharing class DuplicateSourceTest {
+  @isTest static void runsOwnBody() {
+    System.assert(false);
+  }
+}
+`)
+	writeFile(t, first+"-meta.xml", `<ApexClass><apiVersion>66.0</apiVersion></ApexClass>`)
+	writeFile(t, second+"-meta.xml", `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
+
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{first, second}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	run := Run(index, Options{NoDiskCache: true})
+	if got := run.Summary(); got.Total != 2 || got.Passed != 1 || got.Failed != 1 {
+		t.Fatalf("summary = %#v cases = %#v", got, run.Suites)
+	}
+
+	bySource := make(map[string]testreport.Case)
+	for _, suite := range run.Suites {
+		for _, testCase := range suite.Cases {
+			bySource[testCase.SourceFile] = testCase
+		}
+	}
+	if got := bySource[first].Status; got != testreport.StatusPass {
+		t.Fatalf("first source status = %q, want pass; cases = %#v", got, run.Suites)
+	}
+	if got := bySource[second].Status; got != testreport.StatusFail {
+		t.Fatalf("second source status = %q, want fail; cases = %#v", got, run.Suites)
+	}
+	cases := Discover(index, Options{})
+	methods, errs := compileTestMethods(cases)
+	if len(errs) != 0 {
+		t.Fatalf("compile test methods errors = %#v", errs)
+	}
+	contexts := make(map[string]vm.Method)
+	for _, testCase := range cases {
+		contexts[testCase.File] = methods[testCaseKey(testCase)]
+	}
+	if got := contexts[first]; !got.SourceContextBound || got.SharingMode != "without sharing" || got.APIVersion != "66.0" {
+		t.Fatalf("first source context = %#v", got)
+	}
+	if got := contexts[second]; !got.SourceContextBound || got.SharingMode != "with sharing" || got.APIVersion != "67.0" {
+		t.Fatalf("second source context = %#v", got)
+	}
+	encoded, err := json.Marshal(run)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, source := range []string{first, second} {
+		if !strings.Contains(string(encoded), `"sourceFile":"`+source+`"`) {
+			t.Fatalf("report JSON omitted source file %q: %s", source, encoded)
+		}
+	}
+}
+
 func TestRunExecutesStaticHelperMethod(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -5238,6 +5347,36 @@ private class LocalTestHelper {
 `)
 
 	run := Run(loadTestIndex(t, root), Options{Filter: "callsHelper"})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunSelectedIsTestMethodCanCallVoidIsTestHelper(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LocalVoidTestHelper.cls"), `
+@isTest
+private class LocalVoidTestHelper {
+  private static Boolean called;
+
+  @isTest static void helper() {
+    called = true;
+  }
+
+  @isTest static void wrapper() {
+    helper();
+    System.assertEquals(true, called);
+  }
+}
+`)
+
+	index := loadTestIndex(t, root)
+	cases := Discover(index, Options{SelectedClasses: []string{"LocalVoidTestHelper"}, SelectedMethod: "wrapper"})
+	if len(cases) != 1 || cases[0].MethodName != "wrapper" {
+		t.Fatalf("selected cases = %#v", cases)
+	}
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true}, cases)
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
 	}
@@ -6390,7 +6529,8 @@ public class LocalCallable implements System.Callable {
 private class LocalCallableTest {
   @isTest static void invokesCallable() {
     System.Callable callable = new LocalCallable();
-    System.assert(callable instanceof System.Callable);
+    Object callableValue = callable;
+    System.assert(callableValue instanceof System.Callable);
     System.assertEquals('go', callable.call('go', new Map<String, Object>()));
   }
 }
@@ -6663,6 +6803,48 @@ private class PassiveGeneratedStubTest {
 	run := Run(loadTestIndex(t, root), Options{})
 	summary := run.Summary()
 	if summary.Total != 1 || summary.Passed != 1 {
+		if len(run.Suites) > 0 && len(run.Suites[0].Cases) > 0 {
+			t.Fatalf("summary = %#v problem=%#v", summary, run.Suites[0].Cases[0].Problem)
+		}
+		t.Fatalf("summary = %#v suites=%#v", summary, run.Suites)
+	}
+}
+
+func TestRunInvocableActionDispatchesLocalApexMethod(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ActionTarget.cls"), `
+public class ActionTarget {
+  public class Request {
+    @InvocableVariable public String value;
+  }
+  public class Response {
+    @InvocableVariable public String output;
+  }
+  @InvocableMethod
+  public static List<Response> run(List<Request> requests) {
+    System.debug('handled ' + requests[0].value);
+    Response response = new Response();
+    response.output = requests[0].value + '-handled';
+    return new List<Response>{response};
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ActionTest.cls"), `
+@IsTest
+private class ActionTest {
+  @IsTest static void dispatches() {
+    Invocable.Action action = Invocable.Action.createCustomAction('apex', 'ActionTarget');
+    action.setInvocationParameter('value', 'input');
+    List<Invocable.Action.Result> results = action.invoke();
+    System.assertEquals(1, results.size());
+    System.assertEquals(true, results[0].isSuccess());
+    System.assertEquals('input-handled', (String)results[0].getOutputParameters().get('output'));
+  }
+}
+`)
+	run := Run(loadTestIndex(t, root), Options{})
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
 		if len(run.Suites) > 0 && len(run.Suites[0].Cases) > 0 {
 			t.Fatalf("summary = %#v problem=%#v", summary, run.Suites[0].Cases[0].Problem)
 		}
@@ -8047,7 +8229,7 @@ private class MultiMethodJobTest {
 	}
 }
 
-func TestRunDoesNotDrainQueueableEnqueuedBeforeStartTest(t *testing.T) {
+func TestRunDrainsQueueableEnqueuedBeforeStartTest(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/PreStartJob.cls"), `
@@ -8060,11 +8242,11 @@ public class PreStartJob implements Queueable {
 	writeFile(t, filepath.Join(root, "force-app/main/classes/PreStartJobTest.cls"), `
 @isTest
 private class PreStartJobTest {
-  @isTest static void stopTestSkipsPreStartQueue() {
+  @isTest static void stopTestRunsPreStartQueue() {
     System.enqueueJob(new PreStartJob());
 	    Test.startTest();
 	    Test.stopTest();
-	    System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'pre-start async ran']);
+	    System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'pre-start async ran']);
 	    System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob]);
 	  }
 	}
@@ -8166,7 +8348,8 @@ private class ScheduledWorkerTest {
     System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
     Test.stopTest();
     System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'scheduled']);
-    System.assertEquals(1, [SELECT COUNT() FROM CronTrigger WHERE State = 'Complete']);
+    // A38 T001/F034/F035: stopTest invokes a scheduled callback but leaves its cron WAITING.
+    System.assertEquals(1, [SELECT COUNT() FROM CronTrigger WHERE State = 'WAITING']);
   }
 }
 `)
@@ -8303,7 +8486,9 @@ private class AsyncSemanticsTest {
     System.assertEquals(2, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApexWorker']);
     List<CronTrigger> crons = [SELECT Id, State FROM CronTrigger];
     System.assertEquals(2, crons.size());
-    System.assertEquals(2, [SELECT COUNT() FROM CronTrigger WHERE State = 'Complete']);
+    // A38 T047 (API62/67): scheduled batch and recurring schedule crons remain WAITING.
+    System.assertEquals(0, [SELECT COUNT() FROM CronTrigger WHERE State = 'Complete']);
+    System.assertEquals(2, [SELECT COUNT() FROM CronTrigger WHERE State = 'WAITING']);
     System.assertEquals(7, AsyncState.futureRan);
     System.assertEquals(12, AsyncState.batchSum);
     System.assertEquals(1, AsyncState.batchFinish);
@@ -8589,7 +8774,7 @@ private class IterableBatchTest {
 	}
 }
 
-func TestRunAppliesCustomObjectNameDefaultWhenTestSetsNull(t *testing.T) {
+func TestRunUsesGeneratedIDForExplicitNullCustomObjectName(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/objects/Widget__c/Widget__c.object-meta.xml"), `
@@ -8606,7 +8791,8 @@ private class WidgetNameDefaultTest {
     Widget__c widget = new Widget__c(Name = null);
     insert widget;
     Widget__c loaded = [SELECT Name FROM Widget__c WHERE Id = :widget.Id];
-    System.assertEquals('Widget', loaded.Name);
+    // A30 Q109 (API 62/67): explicit-null Text Name defaults to the first 15 Id characters.
+    System.assert(String.valueOf(widget.Id).substring(0, 15).equals(loaded.Name));
   }
 }
 `)
@@ -8665,7 +8851,11 @@ private class AsyncContextIdsTest {
     Test.stopTest();
     Integer batchRows = [SELECT COUNT() FROM Account WHERE Name = '707000000000002'];
     Integer queueRows = [SELECT COUNT() FROM Account WHERE Name = '707000000000001'];
-    Integer triggerRows = [SELECT COUNT() FROM Account WHERE Name = '08e000000000003'];
+    // Native R029/R031: an Id bind uses its 18-character text; Name
+    // does not treat a 15-character text literal as the same stored text.
+    Id triggerBind = (Id) schedId;
+    Integer triggerRows = [SELECT COUNT() FROM Account WHERE Name = :triggerBind];
+    System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = '08e000000000003']);
     System.assertEquals(2, batchRows);
     System.assertEquals(1, queueRows);
     System.assertEquals(1, triggerRows);
@@ -8686,11 +8876,11 @@ private class AsyncContextIdsTest {
       AND Id = '707000000000002'
     ];
     System.assertEquals(1, pendingBatches.size());
-    List<CronTrigger> crons = [SELECT Id, State, CronExpression, CronJobDetail FROM CronTrigger];
+    List<CronTrigger> crons = [SELECT Id, State, CronExpression, CronJobDetail.Name FROM CronTrigger];
     System.assertEquals(1, crons.size());
     CronTrigger cron = crons.get(0);
     System.assertEquals('0 0 0 * * ?', cron.CronExpression);
-    System.assertEquals('nightly', cron.CronJobDetail);
+    System.assertEquals('nightly', cron.CronJobDetail.Name);
   }
 }
 `)
@@ -8854,13 +9044,14 @@ func TestRunAsSetsUserContextForBlock(t *testing.T) {
 @isTest
 private class RunAsTest {
   @isTest static void scopesCurrentUser() {
-    System.assertEquals('005000000000001', UserInfo.getUserId());
+    // A30 J016 and A26 R008 (API 62/67): UserInfo returns the 18-character user Id.
+    System.assert('005000000000001AAA'.equals(UserInfo.getUserId()));
     System.runAs(new User(Id = 'user-a', ProfileId = 'profile-a', Username = 'user-a@example.test')) {
       System.assertEquals('user-a', UserInfo.getUserId());
       System.assertEquals('profile-a', UserInfo.getProfileId());
       System.assertEquals('user-a@example.test', UserInfo.getUserName());
     }
-    System.assertEquals('005000000000001', UserInfo.getUserId());
+    System.assert('005000000000001AAA'.equals(UserInfo.getUserId()));
   }
 }
 `)
@@ -9269,11 +9460,11 @@ func TestRunValidationRuleResolvesParentFormulaFieldFromSplitLookupID(t *testing
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Payment__c/fields/IsCredit__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>IsCredit__c</fullName><type>Checkbox</type><defaultValue>false</defaultValue></CustomField>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Payment__c/fields/PaymentAmount__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>PaymentAmount__c</fullName><type>Currency</type><precision>18</precision><scale>2</scale><defaultValue>0</defaultValue></CustomField>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Payment__c/fields/TotalPaymentApplied__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>TotalPaymentApplied__c</fullName><type>Summary</type><summaryOperation>sum</summaryOperation><summaryForeignKey>PaymentLine__c.Payment__c</summaryForeignKey><summarizedField>PaymentLine__c.PaymentAmount__c</summarizedField></CustomField>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Payment__c/fields/AvailableCreditBalance__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>AvailableCreditBalance__c</fullName><type>Currency</type><precision>18</precision><scale>2</scale><formula>IF(IsCredit__c, PaymentAmount__c - TotalPaymentApplied__c, 0)</formula></CustomField>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/CartPayment__c/fields/PaymentAmount__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>PaymentAmount__c</fullName><type>Currency</type><precision>18</precision><scale>2</scale></CustomField>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/CartPayment__c/fields/CreditPayment__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>CreditPayment__c</fullName><type>Lookup</type><referenceTo>Payment__c</referenceTo><relationshipName>CreditPayment</relationshipName></CustomField>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/CartPayment__c/validationRules/PrepaymentAmountCannotExceedBalance.validationRule-meta.xml"), `<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>PrepaymentAmountCannotExceedBalance</fullName><active>true</active><errorConditionFormula>IsBlank(CreditPayment__c) = false &amp;&amp; PaymentAmount__c &gt; CreditPayment__r.AvailableCreditBalance__c</errorConditionFormula><errorMessage>The prepayment amount cannot exceed the available credit balance on the prepayment.</errorMessage></ValidationRule>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Payment__c/fields/TotalTenderApplied__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>TotalTenderApplied__c</fullName><type>Summary</type><summaryOperation>sum</summaryOperation><summaryForeignKey>ReceiptLine__c.Payment__c</summaryForeignKey><summarizedField>ReceiptLine__c.PaymentAmount__c</summarizedField></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Payment__c/fields/AvailableCreditBalance__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>AvailableCreditBalance__c</fullName><type>Currency</type><precision>18</precision><scale>2</scale><formula>IF(IsCredit__c, PaymentAmount__c - TotalTenderApplied__c, 0)</formula></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/BasketTender__c/fields/PaymentAmount__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>PaymentAmount__c</fullName><type>Currency</type><precision>18</precision><scale>2</scale></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/BasketTender__c/fields/CreditTender__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>CreditTender__c</fullName><type>Lookup</type><referenceTo>Payment__c</referenceTo><relationshipName>CreditTender</relationshipName></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/BasketTender__c/validationRules/TenderCannotExceedBalance.validationRule-meta.xml"), `<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>TenderCannotExceedBalance</fullName><active>true</active><errorConditionFormula>IsBlank(CreditTender__c) = false &amp;&amp; PaymentAmount__c &gt; CreditTender__r.AvailableCreditBalance__c</errorConditionFormula><errorMessage>The tender amount cannot exceed the available credit balance.</errorMessage></ValidationRule>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/CreditValidationTest.cls"), `
 @isTest
 private class CreditValidationTest {
@@ -9281,15 +9472,15 @@ private class CreditValidationTest {
     Payment__c credit = new Payment__c(IsCredit__c = true, PaymentAmount__c = 9);
     insert credit;
     String[] parts = ('Pay Up To &&&epm&&&check&&&' + credit.Id).split('&&&');
-    CartPayment__c applied = new CartPayment__c(PaymentAmount__c = 10);
-    applied.CreditPayment__c = parts[3];
+    BasketTender__c applied = new BasketTender__c(PaymentAmount__c = 10);
+    applied.CreditTender__c = parts[3];
     try {
       upsert applied;
       System.assert(false, 'expected validation failure');
     } catch (DmlException e) {
       System.assert(e.getMessage().contains('available credit balance'), e.getMessage());
     }
-    System.assertEquals(0, [SELECT Id FROM CartPayment__c].size());
+    System.assertEquals(0, [SELECT Id FROM BasketTender__c].size());
   }
 }
 `)
@@ -9307,7 +9498,7 @@ func TestRunResolvesVisualforcePageReferencesAndControllerConstructors(t *testin
   <c:AccountBadge value="{!Account.Name}" />
 </apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/components/AccountBadge.component"), `<apex:component controller="AccountBadgeController">
-  <apex:attribute name="value" type="String" assignTo="{!value}" />
+  <apex:attribute name="value" type="String" assignTo="{!value}" description="Account name" />
 </apex:component>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/AccountViewExtension.cls"), `
 public class AccountViewExtension {
@@ -9333,13 +9524,40 @@ private class VisualforceControllerContractTest {
     System.assertEquals('Acme', extension.name);
     Test.setCurrentPage(Page.AccountView);
     ApexPages.currentPage().getParameters().put('id', '001000000000001AAA');
-    System.assertEquals('/apex/AccountView?id=001000000000001AAA', ApexPages.currentPage().getUrl());
+    // Native document loading named R011 at API 62/67 observes lowercase Page-token URLs with id.
+    System.assertEquals('/apex/accountview?id=001000000000001AAA', ApexPages.currentPage().getUrl());
     System.assertEquals('001000000000001AAA', ApexPages.currentPage().getParameters().get('id'));
   }
 }
 `)
 
-	run := Run(loadTestIndex(t, root), Options{})
+	index := loadTestIndex(t, root)
+	// This contract exercises a known page. Invalid component metadata must
+	// not silently turn it into the nil-registry snippet fallback.
+	if names := visualforcePageNames(index); len(names) != 1 || names[0] != "AccountView" {
+		t.Fatalf("registered page names = %v, want [AccountView]", names)
+	}
+	// document loading R004 observes a lowercase known-page URL on both native routes
+	// at API 62/67. Both runtime registration entry points use the strict loader.
+	for name, register := range map[string]func(*vm.VM, typesys.Index) error{
+		"project": RegisterProjectRuntime,
+		"request": RegisterProjectRuntimeForRequest,
+	} {
+		t.Run(name, func(t *testing.T) {
+			machine := vm.New(nil)
+			if err := register(machine, index); err != nil {
+				t.Fatal(err)
+			}
+			program, err := vm.CompileAnonymous("System.assertEquals('/apex/accountview', Page.AccountView.getUrl());")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := machine.Execute(program); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+	run := Run(index, Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
 	}
@@ -9366,6 +9584,26 @@ private class PageDependencyTest {
 `)
 
 	run := Run(loadTestIndex(t, consumerRoot), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunResolvesNamespacedProjectVisualforcePageReferences(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Order.page"), `<apex:page/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/PageProjectTest.cls"), `
+@isTest
+private class PageProjectTest {
+  @isTest static void namespacedProjectPageTokenResolves() {
+    PageReference page = Page.Order;
+    System.assertEquals('/apex/pkg__Order', page.getUrl());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
 	}
@@ -10336,6 +10574,8 @@ private class InlineHelpTextTest {
 func TestRunListCustomSettingRequiredFieldDescribeDrivesInsert(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	// Native controls R266/R267 at API65: literal null is ambiguous, while
+	// a String-null lookup returns null rather than the first inserted row.
 	writeFile(t, filepath.Join(root, "force-app/main/classes/ListSettingDescribeTest.cls"), `
 @isTest
 private class ListSettingDescribeTest {
@@ -10352,8 +10592,8 @@ private class ListSettingDescribeTest {
     Card__c actual = Card__c.getInstance('Example');
     System.assertNotEquals(null, actual);
     System.assertEquals('Example', actual.Type__c);
-    Card__c nullName = Card__c.getInstance(null);
-    System.assertEquals(null, nullName);
+    Card__c nullName = Card__c.getInstance((String)null);
+    System.assert(nullName == null, 'R267 expected raw null for a String-null name');
   }
 }
 `)
@@ -10380,6 +10620,7 @@ private class ListSettingDescribeTest {
 
 func loadTestIndex(t *testing.T, root string) typesys.Index {
 	t.Helper()
+	releaseRuntimeCachesAfterTest(t)
 	p, err := project.Load(root)
 	if err != nil {
 		t.Fatal(err)
@@ -10415,6 +10656,23 @@ func TestOrgFromIndexKeepsEndpointDefaultIndependentOfSourceVersion(t *testing.T
 
 	if org.APIVersion != storage.DefaultRESTAPIVersion {
 		t.Fatalf("org API version = %q, want %s", org.APIVersion, storage.DefaultRESTAPIVersion)
+	}
+}
+
+func TestOrgFromIndexIncludesGeneratedCustomShareShapeWhenSharingMetadataUnknown(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/UnknownSharingObject__c/UnknownSharingObject__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Unknown Sharing Object</label><sharingModel>ReadWrite</sharingModel></CustomObject>`)
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	state, ok := org.Objects["UnknownSharingObject__Share"]
+	if !ok {
+		t.Fatalf("generated share object was not exposed; objects=%v", org.Objects)
+	}
+	for _, fieldName := range []string{"AccessLevel", "RowCause"} {
+		if _, ok := state.Definition.Fields[fieldName]; !ok {
+			t.Fatalf("generated share field %s was not exposed; fields=%v", fieldName, state.Definition.Fields)
+		}
 	}
 }
 
@@ -11676,19 +11934,19 @@ func TestOrgFromIndexDoesNotInferProductDownloadURLFormula(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/BasePkgObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
-  <objectPermissions><allowRead>true</allowRead><object>pkg__OrderItemLine__c</object></objectPermissions>
+  <objectPermissions><allowRead>true</allowRead><object>pkg__BundleLine__c</object></objectPermissions>
   <objectPermissions><allowRead>true</allowRead><object>pkg__Product__c</object></objectPermissions>
-  <fieldPermissions><readable>true</readable><field>pkg__OrderItemLine__c.pkg__Product2__c</field></fieldPermissions>
-  <fieldPermissions><readable>true</readable><field>pkg__OrderItemLine__c.pkg__DownloadUrl__c</field></fieldPermissions>
+  <fieldPermissions><readable>true</readable><field>pkg__BundleLine__c.pkg__Product2__c</field></fieldPermissions>
+  <fieldPermissions><readable>true</readable><field>pkg__BundleLine__c.pkg__DownloadUrl__c</field></fieldPermissions>
   <fieldPermissions><readable>true</readable><field>pkg__Product__c.pkg__IsDownloadable__c</field></fieldPermissions>
   <fieldPermissions><readable>true</readable><field>pkg__Product__c.pkg__DownloadUrl__c</field></fieldPermissions>
 </PermissionSet>`)
 
 	org := orgFromIndex(loadTestIndex(t, root))
-	line := org.Objects["pkg__OrderItemLine__c"]
+	line := org.Objects["pkg__BundleLine__c"]
 	field := line.Definition.Fields["pkg__DownloadUrl__c"]
 	if field.Type == storage.FieldCalculated || strings.TrimSpace(field.Formula) != "" {
-		t.Fatalf("order item line download field = %#v", field)
+		t.Fatalf("bundle line download field = %#v", field)
 	}
 }
 
@@ -12088,16 +12346,16 @@ func TestManagedDependencyClassQueriesOwnNamespacedSObjectRecordTypeRelationship
 	depRoot := filepath.Join(root, "dep")
 	consumerRoot := filepath.Join(root, "consumer")
 	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"pkg"}`)
-	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/ShipMethod__c/ShipMethod__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Ship Method</label></CustomObject>`)
-	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/ShipMethod__c/fields/CommunityEnabled__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>CommunityEnabled__c</fullName><label>Community Enabled</label><type>Checkbox</type><defaultValue>false</defaultValue></CustomField>`)
-	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/ShipMethod__c/recordTypes/FlatRate.recordType-meta.xml"), `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>FlatRate</fullName><label>Flat Rate</label><active>true</active></RecordType>`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/DeliveryOption__c/DeliveryOption__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Delivery Option</label></CustomObject>`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/DeliveryOption__c/fields/CommunityEnabled__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>CommunityEnabled__c</fullName><label>Community Enabled</label><type>Checkbox</type><defaultValue>false</defaultValue></CustomField>`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/DeliveryOption__c/recordTypes/FlatRate.recordType-meta.xml"), `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>FlatRate</fullName><label>Flat Rate</label><active>true</active></RecordType>`)
 	writeFile(t, filepath.Join(depRoot, "force-app/main/default/classes/ShippingProbe.cls"), `
 global class ShippingProbe {
   global static String firstRecordTypeName() {
-    Id recordTypeId = Schema.SObjectType.ShipMethod__c.getRecordTypeInfosByName().get('Flat Rate').getRecordTypeId();
-    insert new ShipMethod__c(Name = 'Ground', RecordTypeId = recordTypeId, CommunityEnabled__c = true);
-    List<ShipMethod__c> rows = [SELECT Id, RecordType.Name, CommunityEnabled__c FROM ShipMethod__c WHERE CommunityEnabled__c = true];
-    Map<Id, ShipMethod__c> byId = new Map<Id, ShipMethod__c>(rows);
+    Id recordTypeId = Schema.SObjectType.DeliveryOption__c.getRecordTypeInfosByName().get('Flat Rate').getRecordTypeId();
+    insert new DeliveryOption__c(Name = 'Ground', RecordTypeId = recordTypeId, CommunityEnabled__c = true);
+    List<DeliveryOption__c> rows = [SELECT Id, RecordType.Name, CommunityEnabled__c FROM DeliveryOption__c WHERE CommunityEnabled__c = true];
+    Map<Id, DeliveryOption__c> byId = new Map<Id, DeliveryOption__c>(rows);
     System.assert(!byId.keySet().isEmpty(), 'expected map constructor to key queried rows by Id');
     return rows[0].RecordType.Name;
   }
@@ -12263,7 +12521,8 @@ private class LoadDataEdgesTest {
     System.assertEquals('said "hello"', row.Quoted__c);
     System.assertEquals(null, row.Blank__c);
     System.assertEquals(Date.newInstance(2024, 2, 29), row.When__c);
-    System.assertEquals(Datetime.valueOfGmt('2024-02-29T12:34:56Z'), row.At__c);
+    // Native L003 (API62/67) rejects the ISO valueOfGmt comparator; CSV input stays ISO.
+    System.assertEquals(Datetime.newInstanceGmt(2024, 2, 29, 12, 34, 56), row.At__c);
     System.assertEquals(true, row.Ready__c);
     System.assertEquals(42.50, row.Amount__c);
     System.assertEquals('001000000000001AAA', row.Lookup__c);
@@ -12276,13 +12535,17 @@ private class LoadDataEdgesTest {
       Test.loadData(Load_Row__c.SObjectType, 'MissingRows');
       System.assert(false, 'missing resource should fail');
     } catch (Exception e) {
-      System.assert(e.getMessage().contains('static resource MissingRows not found'));
+      // A30 T055 (API 62/67): exact missing-resource exception type and message.
+      System.assert('System.NullPointerException'.equals(e.getTypeName()));
+      System.assert('Static Resource not found: MissingRows'.equals(e.getMessage()));
     }
     try {
       Test.loadData(Load_Row__c.SObjectType, 'BadLoadRows');
       System.assert(false, 'bad header should fail');
     } catch (Exception e) {
-      System.assert(e.getMessage().contains('Unknown field Missing__c'));
+      // A30 T054 (API 62/67): exact unknown-field exception type and message.
+      System.assert('System.StringException'.equals(e.getTypeName()));
+      System.assert('Unknown field: Missing__c'.equals(e.getMessage()));
     }
   }
 }
@@ -12653,6 +12916,7 @@ private class ReflectiveHelperTest {
 	}
 }
 
+// R225 captures the partition builder overload rejecting a null key.
 func TestRunPlatformCacheNestedBuilderUsesStringKey(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -12699,7 +12963,12 @@ private class CacheHostTest {
     System.assertEquals('loaded:USD', (String) CacheHost.load(code));
     System.assertEquals(null, CacheHost.loadFromAccount(new Account(Name = 'Local')));
     System.assertEquals(null, new CacheHost().loadField());
-    System.assertEquals(null, CacheHost.loadRaw(null));
+    try {
+      CacheHost.loadRaw(null);
+      System.assert(false, 'expected invalid null cache key');
+    } catch (cache.InvalidParamException e) {
+      System.assert('Invalid Key, Key cannot be null or empty and must be alphanumeric'.equals(e.getMessage()));
+    }
   }
 }
 `)
@@ -12847,5 +13116,35 @@ func writeCapturedBillingArtifact(t *testing.T, path string) {
 	}
 	if err := packageartifact.WriteJSON(path, artifact); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestRuntimeCanonicalOrgOriginSeedAndCacheIdentity(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/OriginProbe.cls"), "public class OriginProbe {}")
+	writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  domainUrl: https://first-seed.example.test/\n")
+	index := loadTestIndex(t, root)
+	keyA, entryA, err := runtimeFromIndexWithSourceDigests(index, nil, newSourceCache(), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := entryA.restored.CloneOrg().DomainURL; got != "https://first-seed.example.test" {
+		t.Fatalf("first runtime origin = %q", got)
+	}
+	writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  domainUrl: https://second-seed.example.test\n")
+	keyB, entryB, err := runtimeFromIndexWithSourceDigests(index, nil, newSourceCache(), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if keyA == keyB {
+		t.Fatal("changed canonical seed reused the runtime key")
+	}
+	if got := entryB.restored.CloneOrg().DomainURL; got != "https://second-seed.example.test" {
+		t.Fatalf("second runtime origin = %q", got)
+	}
+	writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  domainUrl: https://invalid.example.test/path\n")
+	if _, _, err := runtimeFromIndexWithSourceDigests(index, nil, newSourceCache(), false); err == nil {
+		t.Fatal("runtime construction accepted invalid org.domainUrl")
 	}
 }

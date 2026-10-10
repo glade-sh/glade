@@ -49,6 +49,9 @@ func TestAliasContainmentCacheRetainsOneEntryPerStablePairAcrossMutations(t *tes
 	target := Map()
 	target.Type = "Map<String,String>"
 	root := testTypedList("List<Object>", String("absent"))
+	for range 11 {
+		root.List = append(root.List, String("absent"))
+	}
 	previous := snapshotAlias(target)
 	seen := make(map[uint64]bool)
 
@@ -297,6 +300,10 @@ func TestAliasContainmentCacheInvalidatesTypedRootsAfterUnitOfWorkRegistration(t
 }
 
 func TestAliasContainmentCacheBoundsDistinctPairsWithoutMutation(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	const maxEntries = 16_384
 	ResetPerfCounters()
 	SetPerfCountersEnabled(true)
@@ -304,6 +311,9 @@ func TestAliasContainmentCacheBoundsDistinctPairsWithoutMutation(t *testing.T) {
 
 	machine := New(nil)
 	root := testTypedList("List<String>", String("absent"))
+	for range 11 {
+		root.List = append(root.List, String("absent"))
+	}
 	seen := make(map[uint64]bool)
 	for range 20_000 {
 		target := testTypedList("List<String>")

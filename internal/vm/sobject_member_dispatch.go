@@ -80,7 +80,8 @@ func listRelationshipSObjectValue(value Value) bool {
 		isCommonSObjectTypeName(value.Type) ||
 		strings.HasSuffix(value.Type, "__c") ||
 		strings.HasSuffix(value.Type, "__e") ||
-		strings.HasSuffix(value.Type, "__mdt")
+		strings.HasSuffix(value.Type, "__mdt") ||
+		strings.HasSuffix(strings.ToLower(value.Type), "__share")
 }
 func sObjectAddErrorMessage(args []Value, name string) (string, error) {
 	message, _, err := sObjectAddErrorArgs(args, name)
@@ -394,6 +395,12 @@ func (vm *VM) isSObjectLikeType(typeName string) bool {
 	if isCommonSObjectTypeName(typeName) || isCustomObjectLikeName(typeName) {
 		return true
 	}
+	// Change-event sObjects are standard Salesforce types, but they are not
+	// present in the ordinary object describe catalog. They still expose the
+	// SObject member surface (including get('ChangeEventHeader')).
+	if strings.HasSuffix(strings.ToLower(strings.TrimSpace(typeName)), "changeevent") {
+		return true
+	}
 	return vm.isSObjectType(typeName)
 }
 func sObjectMemberCallShapeSupported(method string, args []Value) bool {
@@ -481,19 +488,36 @@ func sObjectTypeTokenObjectName(value Value) (string, bool) {
 	_, objectName, ok := objectFieldValue(value, "object")
 	return objectName.Text, ok && objectName.Kind == ValueString
 }
-func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
+func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (out Value, handled bool, err error) {
 	method = canonicalStdlibMemberName(method,
 		"addError", "hasErrors", "getErrors", "get", "put", "putSObject", "isSet", "clear",
 		"getPopulatedFieldsAsMap", "getSObjectType", "getSObject", "getSObjects", "getQuickActionName",
 		"getAll", "getInstance", "getOrgDefaults", "getValues", "recalculateFormulas", "setOptions", "getOptions",
 		"clone", "isClone", "getCloneSourceId",
 	)
+	if method == "get" {
+		// Both field-selector overloads return Object, including absent fields.
+		// Keep the payload's runtime type while preserving overload selection
+		// for callers such as Date.valueOf and Datetime.valueOf.
+		defer func() {
+			if handled && err == nil {
+				out.Static = "Object"
+			}
+		}()
+	}
 	switch method {
 	case "addError":
-		if reason, ok := sobjectReadOnlyReason(receiver); ok {
+		if reason, ok := sobjectReadOnlyReason(receiver); ok && !isTriggerSObject(receiver) {
 			return Null, true, fmt.Errorf("cannot modify read-only %s", reason)
 		}
-		message, fields, err := sObjectAddErrorArgs(args, "SObject.addError")
+		// Readonly trigger records still accept
+		// addError metadata; this does not make their fields writable.
+		errorArgs := args
+		// A null field selector associates the error with the SObject.
+		if (len(args) == 2 || (len(args) == 3 && args[2].Kind == ValueBool)) && args[0].Kind == ValueNull && args[1].Kind == ValueString {
+			errorArgs = args[1:]
+		}
+		message, fields, err := sObjectAddErrorArgs(errorArgs, "SObject.addError")
 		if err != nil {
 			return Null, true, err
 		}
@@ -515,6 +539,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("SObject.get expects field name String or Schema.SObjectField")
 		}
+		if args[0].Kind == ValueNull && !isSObjectFieldTokenType(args[0].Type) {
+			return Null, true, newExceptionError("NullPointerException", "Argument cannot be null.")
+		}
 		fieldArg, err := vm.sObjectFieldArg(receiver.Type, args[0])
 		if err != nil {
 			if errors.Is(err, errSObjectFieldTokenWrongObject) {
@@ -526,6 +553,33 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.get expects field name String or Schema.SObjectField")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
+		if strings.HasPrefix(strings.ToLower(fieldArg), "__glade_") || strings.HasPrefix(strings.ToLower(field), "__glade_") {
+			if err := vm.unknownSObjectFieldError(receiver, field); err != nil {
+				return Null, true, err
+			}
+			return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
+		}
+		if vm.hasPlatformEventMetadata(receiver.Type) && strings.EqualFold(field, "Id") {
+			if _, published := receiver.Fields[sobjectPublishedEventIDField]; published {
+				return Null, true, newExceptionError("SObjectException", "Invalid field Id for "+receiver.Type)
+			}
+		}
+		if strings.EqualFold(runtimeObjectType(receiver), "AggregateResult") {
+			if _, value, present := objectFieldValue(receiver, fieldArg); present {
+				return value, true, nil
+			}
+			if strings.EqualFold(fieldArg, "Id") {
+				return Null, true, nil
+			}
+			return Null, true, newExceptionError("SObjectException", "Invalid field "+fieldArg+" for AggregateResult")
+		}
+		if _, _, present := objectFieldValue(receiver, field); !present && !vm.queriedSObjectFieldsIncludes(receiver, field) {
+			if _, relationship := vm.parentRelationshipObjectType(receiver.Type, field); !relationship {
+				if err := vm.unknownSObjectFieldError(receiver, field); err != nil {
+					return Null, true, err
+				}
+			}
+		}
 		if err := vm.unqueriedSObjectFieldError(receiver, field, true); err != nil {
 			return Null, true, err
 		}
@@ -546,7 +600,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		}
 		value = coerceRawRecordTypeDefaultTokenRuntimeValue(actualField, value)
 		if _, fieldDef, exists := vm.sObjectFieldDefinition(receiver.Type, actualField); exists {
-			value = coerceReadSObjectFieldRuntimeValue(value, fieldDef)
+			value = coerceReadSObjectFieldRuntimeValue(receiver, value, fieldDef)
 		}
 		if value.Kind == ValueNull {
 			if addressValue, hasAddress := vm.sObjectCompoundAddressValue(receiver, field); hasAddress {
@@ -597,11 +651,52 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			}
 			return Null, true, fmt.Errorf("SObject.put expects field name String or Schema.SObjectField and value")
 		}
+		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
+		if strings.HasPrefix(strings.ToLower(fieldArg), "__glade_") || strings.HasPrefix(strings.ToLower(field), "__glade_") {
+			if err := vm.unknownSObjectFieldError(receiver, field); err != nil {
+				return Null, true, err
+			}
+			return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
+		}
+		if strings.EqualFold(runtimeObjectType(receiver), "AggregateResult") {
+			return Null, true, newExceptionError("SObjectException", "Invalid field "+fieldArg+" for AggregateResult")
+		}
+		// Dynamic put accepts columns only. Parent and child relationships
+		// follow the same invalid-field path regardless of the supplied value.
+		// Resolved class instances shadowing SObject names use their own surface;
+		// schema records keep this restriction even when a same-name class is loaded.
+		if !receiver.classInstance && (vm.sObjectParentRelationshipField(receiver.Type, field) || vm.sObjectChildRelationshipField(receiver.Type, field)) {
+			if err := vm.unknownSObjectFieldError(receiver, field); err != nil {
+				return Null, true, err
+			}
+			return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
+		}
+		if err := vm.nonScalarSObjectFieldAssignmentError(receiver, field, args[1]); err != nil {
+			return Null, true, err
+		}
 		if reason, ok := sobjectReadOnlyReason(receiver); ok {
+			if _, definition, kind, custom := vm.customDataObject(receiver.Type); custom && kind == "custom metadata" && storage.IsCustomMetadataDefinition(definition) {
+				return Null, true, fmt.Errorf("System.FinalException: Record is read-only")
+			}
 			return Null, true, fmt.Errorf("cannot modify read-only %s", reason)
 		}
 		previousReceiver := snapshotAlias(receiver)
-		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
+		// Events have a closed, typed field surface.
+		if vm.hasPlatformEventMetadata(receiver.Type) {
+			if err := vm.unknownSObjectFieldError(receiver, field); err != nil {
+				return Null, true, err
+			}
+			if strings.EqualFold(field, "EventUuid") || strings.EqualFold(field, "ReplayId") {
+				return Null, true, newExceptionError("SObjectException", "Field "+field+" is not editable")
+			}
+			if _, definition, ok := vm.sObjectFieldDefinition(receiver.Type, field); ok && args[1].Kind != ValueNull {
+				target := storageFieldTypeName(definition)
+				if definition.Type == storage.FieldString && args[1].Kind != ValueString ||
+					definition.Type == storage.FieldDecimal && args[1].Kind != ValueInt && args[1].Kind != ValueDecimal {
+					return Null, true, sObjectIllegalAssignmentError(args[1], target)
+				}
+			}
+		}
 		actualField, previous, ok := objectFieldValue(receiver, field)
 		if !ok {
 			actualField = field
@@ -613,7 +708,24 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 				definition := vm.Org.Objects[objectName].Definition
 				if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, actualField); ok {
 					actualField = canonical
-					value = coerceSObjectFieldRuntimeValue(value, definition.Fields[canonical])
+					fieldDef := definition.Fields[canonical]
+					if strings.TrimSpace(fieldDef.Formula) != "" || fieldDef.Type == storage.FieldSummary || systemFieldDynamicPutReadOnly(canonical) {
+						return Null, true, newExceptionError("System.SObjectException", "Field "+canonical+" is not editable")
+					}
+					if value.Kind == ValueString && (fieldDef.Type == storage.FieldInteger || fieldDef.Type == storage.FieldDate) {
+						target := "Integer"
+						if fieldDef.Type == storage.FieldDate {
+							target = "Date"
+						}
+						return Null, true, sObjectIllegalAssignmentError(value, target)
+					}
+					// A caller-owned metadata Number preserves its input rendering
+					// (R258); persisted and cached rows are separate materializations.
+					if storage.IsCustomMetadataDefinition(definition) && fieldDef.Type == storage.FieldDecimal && value.Kind == ValueInt {
+						value, _ = decimalFromText(value.String())
+					} else {
+						value = coerceSObjectFieldRuntimeValue(value, fieldDef)
+					}
 				}
 			}
 		}
@@ -633,6 +745,10 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if err != nil {
 			return Null, true, fmt.Errorf("SObject.putSObject expects relationship name String or Schema.SObjectField and SObject value")
 		}
+		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
+		if strings.HasPrefix(strings.ToLower(fieldArg), "__glade_") || strings.HasPrefix(strings.ToLower(field), "__glade_") {
+			return Null, true, newExceptionError("SObjectException", fmt.Sprintf("Invalid relationship %s for %s", fieldArg, receiver.Type))
+		}
 		if args[1].Kind != ValueNull && (args[1].Kind != ValueObject || !vm.isSObjectLikeType(args[1].Type)) {
 			return Null, true, fmt.Errorf("SObject.putSObject expects SObject value")
 		}
@@ -642,11 +758,17 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		previousReceiver := snapshotAlias(receiver)
 		relationshipName := fieldArg
 		if fieldTokenArg {
-			field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
 			if definition, fieldDef, exists := vm.sObjectFieldDefinition(receiver.Type, field); exists && fieldDef.Type == storage.FieldReference {
 				relationshipName = vm.parentRelationshipNameForReferenceField(definition, fieldDef)
 			} else if derived := lookupFieldRelationshipName(field); derived != "" {
 				relationshipName = derived
+			}
+		}
+		if vm.Org != nil {
+			if _, known := vm.resolveObjectName(receiver.Type); known {
+				if _, valid := vm.parentRelationshipObjectType(receiver.Type, relationshipName); !valid {
+					return Null, true, newExceptionError("SObjectException", fmt.Sprintf("Invalid relationship %s for %s", relationshipName, receiver.Type))
+				}
 			}
 		}
 		if relationshipName == "" {
@@ -670,6 +792,14 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.isSet expects field name String or Schema.SObjectField")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
+		if strings.HasPrefix(strings.ToLower(fieldArg), "__glade_") || strings.HasPrefix(strings.ToLower(field), "__glade_") {
+			return Null, true, newExceptionError("SObjectException", "Invalid field: "+fieldArg)
+		}
+		if vm.Org != nil {
+			if _, known := vm.resolveObjectName(receiver.Type); known && !vm.hasSObjectField(receiver.Type, field) {
+				return Null, true, newExceptionError("SObjectException", "Invalid field: "+fieldArg)
+			}
+		}
 		if _, _, ok := objectFieldValue(receiver, field); ok {
 			return Bool(true), true, nil
 		}
@@ -698,8 +828,24 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		out.Type = "Map<String,Object>"
 		out.Runtime = "sobject-populated-fields:" + receiver.Type
 		added := make(map[string]struct{}, len(receiver.Fields))
+		omitNullCurrency := func(field string, value Value) bool {
+			if _, queried := receiver.Fields[sobjectQueriedFieldsField]; queried && !isTriggerSObject(receiver) {
+				if _, dmlView := receiver.Fields[sobjectDMLAccessibleField]; !dmlView && (value.Kind == ValueNull || value.Kind == ValueList && len(value.List) == 0) {
+					return true
+				}
+			}
+			if value.Kind != ValueNull {
+				return false
+			}
+			_, queried := receiver.Fields[sobjectQueriedFieldsField]
+			if !queried && !isTriggerSObject(receiver) {
+				return false
+			}
+			_, definition, ok := vm.sObjectFieldDefinition(receiver.Type, field)
+			return ok && strings.EqualFold(definition.DisplayType, "CURRENCY")
+		}
 		addField := func(field string, value Value, includeSystem bool) {
-			if isInternalSObjectField(field) || (!includeSystem && isSObjectSystemField(field)) {
+			if isInternalSObjectField(field) || (!includeSystem && isSObjectSystemField(field)) || omitNullCurrency(field, value) {
 				return
 			}
 			encoded := mapKey(String(field))
@@ -757,6 +903,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 					field = actual
 					value = existing
 				}
+				if omitNullCurrency(field, value) {
+					continue
+				}
 				encoded := mapKey(String(field))
 				if _, exists := out.Map[encoded]; !exists {
 					out.Map[encoded] = value
@@ -804,6 +953,10 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		vm.advanceAliasContainmentMutation()
 		return result, true, nil
 	case "setOptions":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			// A null options argument is rejected before assignment.
+			return Null, true, newExceptionError("System.NullPointerException", "Argument cannot be null")
+		}
 		if len(args) != 1 || !isDatabaseDMLOptionsValue(args[0]) {
 			return Null, true, fmt.Errorf("SObject.setOptions expects Database.DMLOptions")
 		}
@@ -818,7 +971,22 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.getOptions expects 0 arguments")
 		}
 		if options, ok := receiver.Fields[sobjectDMLOptionsField]; ok {
-			return cloneValue(options), true, nil
+			options = cloneValue(options)
+			// Task setOptions retains the applied options internally, but the
+			// proved false TriggerUserEmail setting reads back as null.
+			if strings.EqualFold(vm.canonicalSObjectValueType(receiver), "Task") {
+				for key, header := range options.Fields {
+					if !strings.EqualFold(key, "EmailHeader") || header.Kind != ValueObject {
+						continue
+					}
+					for flag, setting := range header.Fields {
+						if strings.EqualFold(flag, "TriggerUserEmail") && setting.Kind == ValueBool && !setting.Bool {
+							header.Fields[flag] = Null
+						}
+					}
+				}
+			}
+			return options, true, nil
 		}
 		return Null, true, nil
 	case "isClone":
@@ -844,23 +1012,39 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 				return Null, true, fmt.Errorf("SObject.clone preserve flags must be Boolean")
 			}
 		}
-		cloned := cloneValue(receiver)
+		if strings.EqualFold(runtimeObjectType(receiver), "AggregateResult") {
+			// R200/N020: cloning preserves the SObject type, but no query columns.
+			cloned := Object("AggregateResult")
+			vm.rememberLocalOnlyObject(cloned)
+			return cloned, true, nil
+		}
+		deep := len(args) > 1 && args[1].Bool
+		cloned := cloneSObjectValue(receiver, deep)
 		if cloned.Fields == nil {
 			cloned.Fields = make(map[string]Value)
 		}
-		vm.hydrateCloneRecordTypeID(receiver, &cloned)
+		preserveID := len(args) > 0 && args[0].Bool
+		_, queried := receiver.Fields[sobjectQueriedFieldsField]
+		// A clone that keeps a queried record's identity also keeps its selected
+		// field view. Rehydrating an omitted lookup would change equality/hash.
+		if !preserveID || !queried || dmlAccessibleSObject(receiver) {
+			vm.hydrateCloneRecordTypeID(receiver, &cloned)
+		}
 		sourceID := Null
 		if _, value, ok := objectFieldValue(receiver, "Id"); ok {
 			sourceID = cloneValue(value)
 		}
 		cloned.Fields[sobjectCloneMarkerField] = Bool(sourceID.Kind != ValueNull)
 		cloned.Fields[sobjectCloneSourceIDField] = sourceID
-		preserveID := len(args) > 0 && args[0].Bool
 		if !preserveID {
 			deleteObjectField(cloned.Fields, "Id")
+			// Event publication identity follows preserveId.
+			delete(cloned.Fields, sobjectPublishedEventIDField)
 		}
 		deleteObjectField(cloned.Fields, sobjectErrorsField)
 		deleteObjectField(cloned.Fields, sobjectReadOnlyField)
+		vm.registerSObjectAliasRecord(cloned)
+		vm.rememberLocalOnlyObject(cloned)
 		return cloned, true, nil
 	case "getSObject":
 		if len(args) != 1 {
@@ -872,6 +1056,19 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.getSObject expects relationship name String or Schema.SObjectField")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
+		if strings.HasPrefix(strings.ToLower(fieldArg), "__glade_") || strings.HasPrefix(strings.ToLower(field), "__glade_") {
+			return Null, true, newExceptionError("SObjectException", fmt.Sprintf("Invalid relationship %s for %s", fieldArg, receiver.Type))
+		}
+		if err := vm.unqueriedSObjectFieldError(receiver, field, true); err != nil {
+			return Null, true, err
+		}
+		if !fieldTokenArg && vm.Org != nil {
+			if _, known := vm.resolveObjectName(receiver.Type); known {
+				if _, valid := vm.parentRelationshipObjectType(receiver.Type, field); !valid {
+					return Null, true, newExceptionError("SObjectException", fmt.Sprintf("Invalid relationship %s for %s", fieldArg, receiver.Type))
+				}
+			}
+		}
 		_, value, ok := objectFieldValue(receiver, field)
 		if !ok && !strings.EqualFold(field, fieldArg) {
 			if actualField, explicitValue, found := objectFieldValue(receiver, fieldArg); found {
@@ -928,10 +1125,16 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.getSObjects expects relationship name String or Schema.SObjectField")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
-		if _, hasQueriedFields := receiver.Fields[sobjectQueriedFieldsField]; !hasQueriedFields || vm.queriedSObjectFieldsIncludes(receiver, field) || strippedChildRelationship(receiver, field) {
-			if err := vm.unqueriedSObjectFieldError(receiver, field, true); err != nil {
-				return Null, true, err
+		if strings.HasPrefix(strings.ToLower(fieldArg), "__glade_") || strings.HasPrefix(strings.ToLower(field), "__glade_") {
+			return Null, true, newExceptionError("SObjectException", fmt.Sprintf("Invalid aggregate relationship %s for %s", fieldArg, receiver.Type))
+		}
+		if !fieldTokenArg && vm.Org != nil {
+			if objectName, known := vm.resolveObjectName(receiver.Type); known && vm.childRelationshipLookup(objectName, field).ChildType == "" {
+				return Null, true, newExceptionError("SObjectException", fmt.Sprintf("Invalid aggregate relationship %s for %s", fieldArg, receiver.Type))
 			}
+		}
+		if err := vm.unqueriedSObjectFieldError(receiver, field, true); err != nil {
+			return Null, true, err
 		}
 		if _, value, ok := vm.loadedChildRelationshipValue(receiver, field); ok {
 			if value.Kind == ValueNull {
@@ -943,7 +1146,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			if value.Kind != ValueList {
 				return Null, true, fmt.Errorf("SObject.getSObjects field %s is not a List", field)
 			}
-			if fieldTokenArg && len(value.List) == 0 {
+			if _, queried := receiver.Fields[sobjectQueriedFieldsField]; len(value.List) == 0 && (fieldTokenArg || queried) {
 				return Null, true, nil
 			}
 			return value, true, nil
@@ -958,7 +1161,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		}
 		_, value, ok := objectFieldValue(receiver, field)
 		if !ok || value.Kind == ValueNull {
-			if fieldTokenArg {
+			if _, queried := receiver.Fields[sobjectQueriedFieldsField]; fieldTokenArg || !queried {
 				return Null, true, nil
 			}
 			return List(), true, nil
@@ -973,4 +1176,33 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 	default:
 		return Null, false, nil
 	}
+}
+
+// systemFieldDynamicPutReadOnly covers platform-maintained fields whose dynamic
+// setter rejects writes independently of the current user's field permissions.
+func systemFieldDynamicPutReadOnly(field string) bool {
+	switch strings.ToLower(field) {
+	case "isdeleted", "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid", "systemmodstamp":
+		return true
+	default:
+		return false
+	}
+}
+
+// cloneSObjectValue follows the independently captured clone depth flag. A
+// shallow clone is a new record whose relationship values retain their identity.
+func cloneSObjectValue(receiver Value, deep bool) Value {
+	if deep {
+		return cloneValue(receiver)
+	}
+	cloned := receiver
+	cloned.Ref = newValueRef()
+	cloned.Fields = make(map[string]Value, len(receiver.Fields))
+	for field, value := range receiver.Fields {
+		if isInternalSObjectField(field) {
+			value = cloneValue(value)
+		}
+		cloned.Fields[field] = value
+	}
+	return cloned
 }

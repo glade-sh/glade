@@ -32,6 +32,9 @@ func (vm *VM) schemaGlobalDescribeAliasShouldReplace(alias, objectName string, e
 	}
 }
 func (vm *VM) schemaDescribeObjectName(value Value) (string, error) {
+	if value.Kind == ValueNull {
+		return "", invalidSchemaSObject("describeSObject", "null", false)
+	}
 	if value.Kind == ValueString {
 		return value.Text, nil
 	}
@@ -43,6 +46,32 @@ func (vm *VM) schemaDescribeObjectName(value Value) (string, error) {
 		return objectValue.Text, nil
 	}
 	return "", fmt.Errorf("Schema.describeSObjects expects object names or SObjectType tokens")
+}
+
+func invalidSchemaSObject(method, name string, exists bool) error {
+	reason := "does not exist."
+	if exists {
+		reason = "can not be associated with data category groups."
+	}
+	return newExceptionError("System.InvalidParameterValueException", fmt.Sprintf(
+		"Invalid sobject provided. The Schema.%s() methods does not support the %s sobject as a parameter. The sobject provided %s", method, name, reason))
+}
+
+func (vm *VM) validateDataCategorySObject(value Value) error {
+	if value.Kind == ValueNull {
+		return invalidSchemaSObject("describeDataCategoryGroups", "null", false)
+	}
+	if value.Kind != ValueString {
+		return fmt.Errorf("Schema.describeDataCategoryGroups expects object names")
+	}
+	if len(vm.dataCategoryGroupsForSObject(value.Text)) > 0 {
+		return nil
+	}
+	_, exists := vm.resolveObjectName(value.Text)
+	if !exists {
+		_, exists = storage.ResolveKnownStandardObjectName(value.Text)
+	}
+	return invalidSchemaSObject("describeDataCategoryGroups", value.Text, exists)
 }
 func (vm *VM) schemaDescribeTabs() Value {
 	if vm.describeTabsCache != nil {
@@ -56,6 +85,36 @@ func (vm *VM) schemaDescribeTabs() Value {
 			tabs = append(tabs, localTabs...)
 		}
 		tabSets = append(tabSets, describeTabSetValue(template, tabs))
+	}
+	if vm.Org != nil {
+		for _, app := range vm.Org.Metadata.Applications {
+			var tabs []Value
+			for _, name := range app.Tabs {
+				if strings.HasPrefix(name, "standard-") {
+					objectName := strings.TrimPrefix(name, "standard-")
+					label := objectName
+					if _, definition, ok := vm.describeObjectDefinition(objectName); ok {
+						label = definition.PluralLabel
+					}
+					tabs = append(tabs, vm.describeTabValue(storage.TabMetadata{Name: name, Label: label, SObjectName: objectName}))
+					continue
+				}
+				for _, tab := range vm.Org.Metadata.Tabs {
+					if strings.EqualFold(tab.Name, name) {
+						tabs = append(tabs, vm.describeTabValue(tab))
+						break
+					}
+				}
+			}
+			value := describeTabSetValue(describeTabSetTemplate{
+				Name: app.Name, Label: metadataLabel(app.Label, app.Name),
+				Description: app.Description, Namespace: app.Namespace,
+			}, tabs)
+			// R224: an unmanaged app exposes an empty namespace String.
+			value.Fields["namespace"] = String(app.Namespace)
+			value.Fields["logoUrl"] = String(vm.salesforceBaseURL() + "/img/salesforce_logo.gif")
+			tabSets = append(tabSets, value)
+		}
 	}
 	value := List(tabSets...)
 	vm.describeTabsCache = &value
@@ -212,8 +271,20 @@ func (vm *VM) describeTabValue(tab storage.TabMetadata) Value {
 		label = tab.Name
 	}
 	value.Fields["name"] = String(tab.Name)
-	value.Fields["label"] = String(label)
 	sObjectName := describeTabSObjectName(tab)
+	viewingPath := describeTabURL(tab)
+	if sObjectName != "" {
+		if canonical, definition, ok := vm.describeObjectDefinition(sObjectName); ok {
+			definition = vm.describePreparedDefinition(canonical, definition)
+			if label == tab.Name && definition.PluralLabel != "" {
+				label = definition.PluralLabel
+			}
+			if definition.KeyPrefix != "" {
+				viewingPath = "/" + definition.KeyPrefix + "/o"
+			}
+		}
+	}
+	value.Fields["label"] = String(label)
 	if sObjectName == "" {
 		value.Fields["sObjectName"] = Null
 	} else {
@@ -221,12 +292,14 @@ func (vm *VM) describeTabValue(tab storage.TabMetadata) Value {
 		value.Fields["sObjectName"] = String(sObjectName)
 	}
 	value.Fields["custom"] = Bool(tab.Custom)
-	value.Fields["iconUrl"] = String(tab.Motif)
+	iconURL := vm.salesforceBaseURL() + describeTabIconURL(tab)
+	value.Fields["iconUrl"] = String(iconURL)
 	value.Fields["icons"] = List(describeTabIconValue(tab))
 	value.Fields["colors"] = List(describeTabColorValue(tab))
-	value.Fields["miniIconUrl"] = String(describeTabIconURL(tab))
-	value.Fields["url"] = String(describeTabURL(tab))
-	value.Fields["mobileUrl"] = value.Fields["url"]
+	value.Fields["miniIconUrl"] = String(iconURL)
+	relativeURL := describeTabURL(tab)
+	value.Fields["url"] = String(vm.salesforceBaseURL() + viewingPath)
+	value.Fields["mobileUrl"] = String(relativeURL)
 	value.Fields["tabEnumOrId"] = String(tab.Name)
 	return value
 }

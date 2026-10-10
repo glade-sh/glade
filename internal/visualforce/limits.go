@@ -51,6 +51,10 @@ func (e *VisualforceLimitError) Error() string {
 	if unit == "" {
 		unit = "bytes"
 	}
+	if e.Name == "view state" && unit == "bytes" && e.Max == MaxVisualforceViewStateBytes && !e.Inclusive {
+		actual := strings.TrimRight(strings.TrimRight(fmt.Sprintf("%.3f", float64(e.Actual)/1024), "0"), ".")
+		return fmt.Sprintf("Maximum view state size limit (170KB) exceeded. Actual view state size for this page was %sKB", actual)
+	}
 	return fmt.Sprintf("visualforce %s limit exceeded: %d %s %s %d %s", e.Name, e.Actual, unit, operator, e.Max, unit)
 }
 

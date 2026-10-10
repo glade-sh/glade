@@ -11,22 +11,39 @@ import (
 )
 
 type Value struct {
-	Kind          ValueKind        `json:"kind"`
-	Int           int64            `json:"int,omitempty"`
-	Decimal       float64          `json:"decimal,omitempty"`
-	Bool          bool             `json:"bool,omitempty"`
-	Text          string           `json:"text,omitempty"`
-	Type          string           `json:"type,omitempty"`
-	Static        string           `json:"-"`
-	Runtime       string           `json:"-"`
-	Ref           uint64           `json:"-"`
-	ExplicitScale bool             `json:"-"`
-	Fields        map[string]Value `json:"fields,omitempty"`
-	List          []Value          `json:"list,omitempty"`
-	Set           []Value          `json:"set,omitempty"`
-	Map           map[string]Value `json:"map,omitempty"`
-	MapKeys       map[string]Value `json:"-"`
-	MapOrder      []string         `json:"-"`
+	// Loaded SOQL reference authority cannot be authored by Apex JSON fields.
+	loadedReferenceSnapshot *sobjectLoadedReferenceSnapshot
+
+	// Display ownership is retained when the constructor resolves its symbol;
+	// source classes may share a platform DTO's short name.
+	platformHTTPDTO bool
+	projectClass    bool
+	// Resolved class-instance provenance includes dependency classes and stays
+	// separate from project-only display ownership. Schema records leave it false.
+	classInstance bool
+
+	Kind          ValueKind `json:"kind"`
+	Int           int64     `json:"int,omitempty"`
+	Decimal       float64   `json:"decimal,omitempty"`
+	Bool          bool      `json:"bool,omitempty"`
+	Text          string    `json:"text,omitempty"`
+	Type          string    `json:"type,omitempty"`
+	Static        string    `json:"-"`
+	Runtime       string    `json:"-"`
+	Ref           uint64    `json:"-"`
+	ExplicitScale bool      `json:"-"`
+	// Native list membership retains backing values until materialized in an ordinary list.
+	nativeListMembership bool
+	// Set history belongs to this collection, not to its mutable elements.
+	setInsertionHashes []setInsertionHash
+
+	nativeListElement bool
+	Fields            map[string]Value `json:"fields,omitempty"`
+	List              []Value          `json:"list,omitempty"`
+	Set               []Value          `json:"set,omitempty"`
+	Map               map[string]Value `json:"map,omitempty"`
+	MapKeys           map[string]Value `json:"-"`
+	MapOrder          []string         `json:"-"`
 }
 
 type ValueKind string
@@ -91,12 +108,13 @@ func Decimal(v float64) Value {
 }
 
 func isFloatBackedDecimal(value Value) bool {
-	return value.Kind == ValueDecimal && strings.EqualFold(strings.TrimSpace(value.Static), "Double")
+	return value.Kind == ValueDecimal && (strings.EqualFold(strings.TrimSpace(value.Runtime), "Double") || strings.EqualFold(strings.TrimSpace(value.Static), "Double"))
 }
 
 func decimalAsDouble(value Value) Value {
 	out := Decimal(value.Decimal)
 	out.Static = "Double"
+	out.Runtime = "Double"
 	return out
 }
 
@@ -140,10 +158,7 @@ func canonicalDecimalText(text string) (string, error) {
 		fractionDigits = len(mantissa) - dotIndex - 1
 	}
 	scale := fractionDigits - exponent
-	if scale < 0 {
-		scale = 0
-	}
-	return rat.FloatString(scale), nil
+	return ratFixedText(rat, int64(scale)), nil
 }
 
 func decimalFromRat(value *big.Rat, scale int64) Value {
@@ -164,13 +179,26 @@ func String(v string) Value {
 }
 
 func List(values ...Value) Value {
+	// Apex collection values are never null merely because they contain no
+	// elements. Keep the backing slice non-nil so an empty query result remains
+	// a usable empty List value (and continues to differ from Null).
+	if values == nil {
+		values = []Value{}
+	}
 	return Value{Kind: ValueList, List: values, Ref: newValueRef()}
 }
 
 func Set(values ...Value) Value {
 	out := Value{Kind: ValueSet, Ref: newValueRef()}
 	for _, value := range values {
-		if !containsValue(out.Set, value) {
+		found := false
+		for _, stored := range out.Set {
+			if setPrimitiveValuesEqual(stored, value) {
+				found = true
+				break
+			}
+		}
+		if !found {
 			out.Set = append(out.Set, value)
 		}
 	}
@@ -192,10 +220,7 @@ func (v Value) String() string {
 	case ValueInt:
 		return strconv.FormatInt(v.Int, 10)
 	case ValueDecimal:
-		if v.Text != "" {
-			return v.Text
-		}
-		return strconv.FormatFloat(v.Decimal, 'f', -1, 64)
+		return numericDisplayText(v)
 	case ValueBool:
 		if v.Bool {
 			return "true"
@@ -208,16 +233,31 @@ func (v Value) String() string {
 	case ValueSet:
 		return "Set" + valuesString(v.Set)
 	case ValueMap:
-		return mapString(v.Map)
+		return mapString(v)
 	case ValueObject:
+		if text, ok := httpDTOString(v); ok {
+			return text
+		}
+		if strings.EqualFold(v.Runtime, "System.Location") {
+			return locationString(v)
+		}
 		if strings.EqualFold(v.Type, "AccessLevel") {
 			return accessLevelString(v)
 		}
 		if text, ok := databaseDTOString(v, make(map[uint64]bool)); ok {
 			return text
 		}
+		if text, ok := automationDTOString(v, make(map[uint64]bool)); ok {
+			return text
+		}
 		if stubbedType, ok := stubProxyTypeName(v); ok {
 			return fmt.Sprintf("%s__sfdc_ApexStub:%d", stubbedType, v.Ref)
+		}
+		// Source exceptions retain the message fallback used by surfaced errors
+		// (r_error_custom_imperative and r_repeat_exception).
+		if v.projectClass && !isExceptionType(v.Type) {
+			text, _ := objectFieldsString(v, make(map[uint64]bool))
+			return text
 		}
 		if strings.EqualFold(v.Type, "PageReference") {
 			if rawURL, ok := v.Fields["url"]; ok && rawURL.Kind == ValueString {
@@ -335,10 +375,16 @@ func accessLevelPermissionSetDisplay(value Value) string {
 }
 
 func objectFieldsString(v Value, seen map[uint64]bool) (string, bool) {
-	if v.Kind != ValueObject || len(v.Fields) == 0 {
+	if v.Kind != ValueObject || (len(v.Fields) == 0 && !v.projectClass) {
 		return "", false
 	}
+	if text, ok := automationDTOString(v, seen); ok {
+		return text, true
+	}
 	if text, ok := databaseDTOString(v, seen); ok {
+		return text, true
+	}
+	if text, ok := messagingTemplateResultString(v); ok {
 		return text, true
 	}
 	if v.Ref != 0 {
@@ -350,12 +396,20 @@ func objectFieldsString(v Value, seen map[uint64]bool) (string, bool) {
 	}
 	keys := make([]string, 0, len(v.Fields))
 	for key := range v.Fields {
+		// R243: Object text includes populated fields, without implicit
+		// SObject defaults or the VM's field-tracking metadata.
+		if sObjectValueType(v.Type) && (isInternalSObjectField(key) || isDefaultedSObjectField(v, key)) {
+			continue
+		}
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
 	parts := make([]string, 0, len(keys))
 	for _, key := range keys {
 		parts = append(parts, key+"="+valueStringWithSeen(v.Fields[key], seen))
+	}
+	if v.projectClass {
+		return fmt.Sprintf("%s:[%s]", v.Type, strings.Join(parts, ", ")), true
 	}
 	return fmt.Sprintf("%s:{%s}", v.Type, strings.Join(parts, ", ")), true
 }
@@ -490,7 +544,7 @@ func valueStringWithSeen(v Value, seen map[uint64]bool) string {
 		keys := sortedMapKeys(v.Map)
 		parts := make([]string, 0, len(keys))
 		for _, key := range keys {
-			parts = append(parts, valueFromMapKey(key).String()+"="+valueStringWithSeen(v.Map[key], seen))
+			parts = append(parts, valueStringWithSeen(mapStoredKey(v, key), seen)+"="+valueStringWithSeen(v.Map[key], seen))
 		}
 		return "Map{" + strings.Join(parts, ", ") + "}"
 	case ValueObject:
@@ -594,7 +648,7 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 	case ValueBool:
 		return v.Bool == other.Bool
 	case ValueString:
-		if shouldCompareTextAsID(v.Text, other.Text) {
+		if strings.EqualFold(v.Type, "Id") && strings.EqualFold(other.Type, "Id") {
 			return apexIDTextEqual(v.Text, other.Text)
 		}
 		// Apex String equality is case-sensitive. SOQL text comparison is intentionally
@@ -626,7 +680,7 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 		}
 		for key, value := range v.Map {
 			otherValue, ok := other.Map[key]
-			if !ok || !value.equal(otherValue, seen) {
+			if !ok || !mapStoredKey(v, key).equal(mapStoredKey(other, key), seen) || !value.equal(otherValue, seen) {
 				return false
 			}
 		}
@@ -642,10 +696,10 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 			return isDescribeFieldResultType(v.Type) && isDescribeFieldResultType(other.Type) && describeFieldResultIdentityEqual(v, other)
 		}
 		if strings.EqualFold(v.Type, "Type") && strings.EqualFold(other.Type, "Type") {
-			leftType := typeValueText(v)
-			rightType := typeValueText(other)
+			leftType := typeValueIdentityName(v)
+			rightType := typeValueIdentityName(other)
 			if leftType != "" || rightType != "" {
-				return canonicalTypeValueText(leftType) == canonicalTypeValueText(rightType)
+				return canonicalTypeValueIdentity(leftType) == canonicalTypeValueIdentity(rightType)
 			}
 		}
 		if strings.EqualFold(v.Type, "Schema.SObjectType") && strings.EqualFold(other.Type, "Schema.SObjectType") {
@@ -688,6 +742,9 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 		}
 		if sObjectValueType(v.Type) && sObjectValueType(other.Type) {
 			return sObjectValuesEqual(v, other, seen)
+		}
+		if strings.HasPrefix(strings.ToLower(v.Type), "connectapi.") && strings.HasPrefix(strings.ToLower(other.Type), "connectapi.") {
+			return strings.EqualFold(v.Type, other.Type) && objectFieldsEqual(v.Fields, other.Fields, seen)
 		}
 		if v.Ref == 0 && other.Ref == 0 && strings.EqualFold(v.Type, other.Type) {
 			return objectFieldsEqual(v.Fields, other.Fields, seen)
@@ -769,8 +826,8 @@ func sObjectValueType(typeName string) bool {
 	key := strings.ToLower(typeName)
 	return strings.EqualFold(typeName, "sObject") || strings.EqualFold(typeName, "AggregateResult") ||
 		isCommonSObjectTypeName(typeName) || strings.HasSuffix(key, "__c") ||
-		strings.HasSuffix(key, "__e") || strings.HasSuffix(key, "__mdt") ||
-		strings.HasSuffix(key, "__r")
+		strings.HasSuffix(key, "__b") || strings.HasSuffix(key, "__e") || strings.HasSuffix(key, "__mdt") ||
+		strings.HasSuffix(key, "__r") || strings.HasSuffix(key, "__share")
 }
 
 func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
@@ -778,14 +835,11 @@ func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
 		return false
 	}
 	for key, leftValue := range left.Fields {
-		if isInternalSObjectField(key) {
+		if !sObjectEqualityFieldIncluded(left, key, leftValue) {
 			continue
 		}
 		_, rightValue, ok := objectFieldValue(right, key)
-		if !ok {
-			if sObjectMissingFieldEqualsImplicitDefault(left, key, leftValue) {
-				continue
-			}
+		if !ok || !sObjectEqualityFieldIncluded(right, key, rightValue) {
 			return false
 		}
 		if !sObjectFieldValuesEqual(leftValue, rightValue, seen) {
@@ -793,17 +847,38 @@ func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
 		}
 	}
 	for key, rightValue := range right.Fields {
-		if isInternalSObjectField(key) {
+		if !sObjectEqualityFieldIncluded(right, key, rightValue) {
 			continue
 		}
-		if _, _, ok := objectFieldValue(left, key); !ok {
-			if sObjectMissingFieldEqualsImplicitDefault(right, key, rightValue) {
-				continue
-			}
+		if _, leftValue, ok := objectFieldValue(left, key); !ok || !sObjectEqualityFieldIncluded(left, key, leftValue) {
 			return false
 		}
 	}
 	return true
+}
+
+// Equality and hashing use the same field projection: implicit defaults are
+// absent, while explicitly assigned nulls remain present.
+func sObjectEqualityFieldIncluded(owner Value, field string, value Value) bool {
+	return !isInternalSObjectField(field) && sObjectEqualityFieldVisible(owner, field) &&
+		!sObjectMissingFieldEqualsImplicitDefault(owner, field, value)
+}
+
+// System fields hydrated for runtime bookkeeping do not widen an SObject's
+// field values for equality. Explicit assignments and SOQL selections do.
+func sObjectEqualityFieldVisible(owner Value, field string) bool {
+	if !isSObjectSystemField(field) || strings.EqualFold(field, "Id") || isExplicitSObjectField(owner, field) {
+		return true
+	}
+	selected, queried := owner.Fields[sobjectQueriedFieldsField]
+	if !queried || selected.Kind != ValueMap {
+		return true
+	}
+	if dmlAccessibleSObject(owner) {
+		return false
+	}
+	value, ok := selected.Map[mapKey(String(strings.ToLower(field)))]
+	return ok && value.Kind == ValueBool && value.Bool
 }
 
 func listElementValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
@@ -843,6 +918,21 @@ func sObjectMissingFieldEqualsImplicitDefault(owner Value, field string, value V
 	if isExplicitSObjectField(owner, field) {
 		return false
 	}
+	// All-null parent projections represent the same absence as a typed null.
+	// Explicit fields keep constructed parents from being treated as missing.
+	if value.Kind == ValueObject && sObjectValueType(value.Type) && sObjectHashMissingRelationship(value, map[uint64]bool{}) {
+		return true
+	}
+	// Queried non-null values remain present even when they are zero or false.
+	// A queried null stays absent until the caller explicitly assigns it.
+	if value.Kind != ValueNull {
+		if selected, queried := owner.Fields[sobjectQueriedFieldsField]; queried && selected.Kind == ValueMap {
+			selectedValue, ok := selected.Map[mapKey(String(strings.ToLower(field)))]
+			if ok && selectedValue.Kind == ValueBool && selectedValue.Bool {
+				return false
+			}
+		}
+	}
 	switch value.Kind {
 	case ValueNull:
 		return true
@@ -870,14 +960,20 @@ func isStringComparableEnum(typeName string) bool {
 }
 
 func apexIDTextEqual(left, right string) bool {
-	if len(left) >= 15 && len(right) >= 15 {
-		return left[:15] == right[:15]
+	if left == right {
+		return true
 	}
-	return left == right
+	if len(left) == 15 && len(right) == 18 {
+		return validateApexID(right) == nil && left == right[:15]
+	}
+	if len(left) == 18 && len(right) == 15 {
+		return validateApexID(left) == nil && left[:15] == right
+	}
+	return false
 }
 
 func canonicalIDMapKey(value string) string {
-	if len(value) >= 15 {
+	if len(value) == 15 || (len(value) == 18 && validateApexID(value) == nil) {
 		return value[:15]
 	}
 	return value
@@ -982,6 +1078,13 @@ func platformScalarObjectText(value Value) (string, bool) {
 	return raw.Text, true
 }
 
+func typeValueIdentityName(value Value) string {
+	if identity, ok := value.Fields[reflectionTypeIdentityField]; ok && identity.Kind == ValueString {
+		return identity.Text
+	}
+	return typeValueText(value)
+}
+
 func typeValueText(value Value) string {
 	if value.Text != "" {
 		return value.Text
@@ -990,6 +1093,11 @@ func typeValueText(value Value) string {
 		return raw.Text
 	}
 	return ""
+}
+
+// Type identity ignores spelling case; token display retains its original name.
+func canonicalTypeValueIdentity(text string) string {
+	return strings.ToLower(canonicalTypeValueText(text))
 }
 
 func canonicalTypeValueText(text string) string {
@@ -1064,8 +1172,10 @@ func mapKey(v Value) string {
 			}
 		}
 	}
-	if v.Kind == ValueObject && v.Type == "Type" && v.Text != "" {
-		return string(v.Kind) + ":" + v.Type + ":" + v.Text
+	if v.Kind == ValueObject && strings.EqualFold(v.Type, "Type") {
+		if name := typeValueIdentityName(v); name != "" {
+			return string(v.Kind) + ":Type:" + canonicalTypeValueIdentity(name)
+		}
 	}
 	if v.Kind == ValueObject && platformScalarObject(v.Type) {
 		if raw, ok := v.Fields["value"]; ok && raw.Kind == ValueString {
@@ -1104,6 +1214,12 @@ func mapKey(v Value) string {
 	}
 	if v.Kind == ValueObject && v.Type != "" && v.Text != "" {
 		return string(v.Kind) + ":" + v.Type + ":" + v.Text
+	}
+	if v.Kind == ValueInt && strings.EqualFold(v.Type, "Long") {
+		return "long:" + v.String()
+	}
+	if isFloatBackedDecimal(v) {
+		return "double:" + v.String()
 	}
 	return string(v.Kind) + ":" + v.String()
 }
@@ -1298,23 +1414,26 @@ func apexCollectionString(value Value) string {
 		}
 		return "{" + strings.Join(parts, ", ") + "}"
 	case ValueMap:
-		return mapString(value.Map)
+		return mapString(value)
 	default:
 		return value.String()
 	}
 }
 
-func mapString(values map[string]Value) string {
+func mapString(value Value) string {
+	values := value.Map
 	if len(values) == 0 {
 		return "{}"
 	}
 	keys := sortedMapKeys(values)
-	out := "Map{"
+	// Map text has bare braces, with the
+	// ordinary Apex representation for nested collection values.
+	out := "{"
 	for i, key := range keys {
 		if i > 0 {
 			out += ", "
 		}
-		out += valueFromMapKey(key).String() + "=" + values[key].String()
+		out += mapStoredKey(value, key).String() + "=" + apexCollectionString(values[key])
 	}
 	return out + "}"
 }

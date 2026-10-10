@@ -135,6 +135,12 @@ func TestAnalyzeAllowsEveryDocumentedSystemQualifiedTypeSpelling(t *testing.T) {
 	t.Parallel()
 	typeNames := make([]string, 0, len(typesys.StandardSystemNamespaceTypeNames()))
 	for _, name := range typesys.StandardSystemNamespaceTypeNames() {
+		// A04 R201/C056 and N005-N008 reject these System-qualified local
+		// value/collection declarations at API 62/67. Call receivers retain
+		// their accepted qualified spelling (N004).
+		if name == "String" || name == "Integer" || name == "List" {
+			continue
+		}
 		// The generated catalog still contains the stale qualified PushUpgrade
 		// alias. Salesforce rejects that spelling; the canonical unqualified
 		// type remains covered by the residual contract tests.
@@ -151,7 +157,15 @@ func TestAnalyzeAllowsEveryDocumentedSystemQualifiedTypeSpelling(t *testing.T) {
 
 func TestAnalyzeAllowsEveryDocumentedSchemaImplicitTypeSpelling(t *testing.T) {
 	t.Parallel()
-	result := analyzeSingleGeneratedClass(t, "UsesSchemaImplicit.cls", namespaceResolutionSourceForTypes("UsesSchemaImplicit", typesys.StandardSchemaNamespaceTypeNames()))
+	var typeNames []string
+	for _, name := range typesys.StandardSchemaNamespaceTypeNames() {
+		// V007-V010/V012-V015 reject these Schema spellings at API 62/67.
+		if semaAPI67RejectedPlatformType(semaCanonicalPlatformAlias(name)) {
+			continue
+		}
+		typeNames = append(typeNames, name)
+	}
+	result := analyzeSingleGeneratedClass(t, "UsesSchemaImplicit.cls", namespaceResolutionSourceForTypes("UsesSchemaImplicit", typeNames))
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics for documented Schema implicit types: %#v", result.Diagnostics)
 	}

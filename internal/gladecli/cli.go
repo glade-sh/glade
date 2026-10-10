@@ -1202,7 +1202,7 @@ func checkDoctorLocalDataBinding(store *storage.SQLiteStore, root string, org st
 // emits APEXPARSECGO and cannot parse project sources; surfacing this in doctor
 // makes a broken distribution obvious right away.
 func parserSelfCheck() string {
-	file := apexast.NewParser().ParseSource("doctor.cls", "public class GladeDoctor {}")
+	file := apexast.ParseSource("doctor.cls", "public class GladeDoctor {}")
 	for _, diag := range file.Diagnostics {
 		if diag.Code == "APEXPARSECGO" {
 			return "UNAVAILABLE (binary built without CGO; check/test/parse on project sources will fail)"
@@ -1246,6 +1246,7 @@ func runParse(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 	}
 
 	parser := apexast.NewParser()
+	defer parser.Close()
 	result := apexast.Result{Files: make([]apexast.File, 0, len(files))}
 	for i, path := range files {
 		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "parse", Label: filepath.Base(path), Current: i + 1, Total: len(files)})
@@ -2308,7 +2309,8 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 			PerfCounters:                   semaCounters,
 			BuildArtifacts:                 &buildArtifacts,
 		}
-		identity, identityErr := semanticcache.IdentityForBuild(index, &buildArtifacts, analyzeOptions)
+		analysisIndex := apextest.SemanticAnalysisIndex(index)
+		identity, identityErr := semanticcache.IdentityForBuild(analysisIndex, &buildArtifacts, analyzeOptions)
 		if identityErr != nil {
 			return sema.Result{}, identityErr
 		}
@@ -2323,7 +2325,7 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 			NoDisk:       !cacheAllowed,
 			BypassMemory: !cacheAllowed,
 		}, func() (sema.Result, error) {
-			analyzed := sema.AnalyzeWithOptions(index, analyzeOptions)
+			analyzed := sema.AnalyzeWithOptions(analysisIndex, analyzeOptions)
 			if err := typesys.ValidateBuildGeneration(index, &buildArtifacts); err != nil {
 				return sema.Result{}, err
 			}
@@ -2684,7 +2686,29 @@ func loadProjectIndexWithProgress(root, phase string, renderer cliui.Renderer) (
 	return p, index, nil
 }
 
+type execProjectLoad struct {
+	index  typesys.Index
+	org    storage.OrgState
+	orgErr error
+	err    error
+}
+
+func loadExecProject(root string, loadOrg bool) execProjectLoad {
+	p, index, err := loadProjectIndex(root)
+	load := execProjectLoad{index: index, err: err}
+	if err == nil && loadOrg {
+		load.org, load.orgErr = orgStateFromIndex(root, p, index)
+	}
+	return load
+}
+
 func runExec(ctx context.Context, args []string, w io.Writer) error {
+	return runExecWithProjectLoader(ctx, args, w, loadExecProject)
+}
+
+// Pass the loader per call so tests can control its lifetime without changing
+// shared process state while exec runs concurrently.
+func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, loader func(string, bool) execProjectLoad) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -2781,10 +2805,23 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 
 	anonymousSource := strings.Join(sourceParts, " ")
 
+	// Project loading owns its index and org until the channel transfers them.
+	// Only the immutable, sync.Once-protected platform tables are shared with
+	// VM startup. Join the loader before returning, even on cancellation: the
+	// underlying project loader does not support interrupting filesystem work.
+	var projectLoad chan execProjectLoad
+	if runtimeProjectRoot != "" {
+		projectLoad = make(chan execProjectLoad, 1)
+		go func(root string, loadOrg bool) {
+			projectLoad <- loader(root, loadOrg)
+		}(runtimeProjectRoot, dbPath == "")
+	}
+
 	stdout := w
 	if jsonOut || debug || debugLogMode == "summary" || debugLogMode == "raw" || debugLogPath != "" {
 		stdout = nil
 	}
+	vm.PrewarmPlatformIndexes()
 	machine := vm.New(stdout)
 	machine.SetTraceEnabled(tracePath != "" || debug || jsonOut || debugLogMode != "" || debugLogPath != "")
 	if limitMode != "" {
@@ -2797,17 +2834,19 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	var projectIndex typesys.Index
 	hasProjectRuntime := false
 	if runtimeProjectRoot != "" {
-		p, index, err := loadProjectIndex(runtimeProjectRoot)
-		if err != nil {
-			return err
+		load := <-projectLoad
+		// Preserve the serial loader's error precedence even if cancellation
+		// arrived while loading. Org loading also finishes before this join.
+		if load.err != nil {
+			return load.err
 		}
-		projectIndex = index
+		if dbPath == "" && load.orgErr != nil {
+			return load.orgErr
+		}
+		projectIndex = load.index
 		hasProjectRuntime = true
 		if dbPath == "" {
-			org, err := orgStateFromIndex(runtimeProjectRoot, p, index)
-			if err != nil {
-				return err
-			}
+			org := load.org
 			machine.SetOrg(&org)
 			machine.SetCurrentNamespace(org.Namespace)
 		}
@@ -2822,7 +2861,7 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		machine.SetOrg(&org)
 		machine.SetCurrentNamespace(org.Namespace)
 	}
-	preparedAnonymous, err := prepareAnonymousSource(anonymousSource, projectIndex.Project.SourceAPIVersion)
+	preparedAnonymous, err := prepareAnonymousSourceInContext(anonymousSource, projectIndex)
 	if err != nil {
 		return err
 	}
@@ -2843,7 +2882,8 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 			return err
 		}
 	}
-	program, err := vm.CompileAnonymousWithOptions(preparedAnonymous.body, vm.CompileOptions{APIVersion: preparedAnonymous.apiVersion})
+	approved := sema.ApprovedAnonymousPrefixStatements(analysisIndex, preparedAnonymous.body, preparedAnonymous.apiVersion)
+	program, err := vm.CompileAnonymousWithOptions(preparedAnonymous.body, vm.CompileOptions{APIVersion: preparedAnonymous.apiVersion, ApprovedPrefixStatements: approved})
 	if err != nil {
 		return err
 	}

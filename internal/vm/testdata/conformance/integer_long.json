@@ -1,0 +1,2211 @@
+{
+  "family": "Integer+Long",
+  "apiVersion": "67.0",
+  "oracle": "Owned integer and long observations at API 67.0.",
+  "cases": [
+    {
+      "id": "L01",
+      "code": "2147483647 + 1",
+      "expected": "-2147483648",
+      "compile": false,
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "L02",
+      "code": "-2147483647 - 2",
+      "expected": "2147483647",
+      "compile": false,
+      "floorExpected": "2147483647"
+    },
+    {
+      "id": "L03",
+      "code": "2147483647 * 2",
+      "expected": "-2",
+      "compile": false,
+      "floorExpected": "-2"
+    },
+    {
+      "id": "L04",
+      "code": "Integer i = 2147483647; i++; r = i;",
+      "expected": "-2147483648",
+      "compile": false,
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "L05",
+      "code": "Integer i = -2147483647 - 1; i--; r = i;",
+      "expected": "2147483647",
+      "compile": false,
+      "floorExpected": "2147483647"
+    },
+    {
+      "id": "L06",
+      "code": "Integer i = 2147483647; i += 1; r = i;",
+      "expected": "-2147483648",
+      "compile": false,
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "L07",
+      "code": "Integer mn = -2147483647 - 1; r = -mn;",
+      "expected": "-2147483648",
+      "compile": false,
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "L08",
+      "code": "Integer mn = -2147483647 - 1; r = mn / -1;",
+      "expected": "-2147483648",
+      "compile": false,
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "L09",
+      "code": "Integer mn = -2147483647 - 1; r = Math.abs(mn);",
+      "expected": "-2147483648",
+      "compile": false,
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "L10",
+      "code": "2147483647 + 1L",
+      "expected": "2147483648",
+      "compile": false,
+      "floorExpected": "2147483648"
+    },
+    {
+      "id": "L11",
+      "code": "Long x = 2147483647 + 1; r = x;",
+      "expected": "-2147483648",
+      "compile": false,
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "L12",
+      "code": "Integer a = 65536; r = a * a;",
+      "expected": "0",
+      "compile": false,
+      "floorExpected": "0"
+    },
+    {
+      "id": "L13",
+      "code": "1000000 * 1000000",
+      "expected": "-727379968",
+      "compile": false,
+      "floorExpected": "-727379968"
+    },
+    {
+      "id": "L14",
+      "code": "Integer i = 2147483647; r = i * i;",
+      "expected": "1",
+      "compile": false,
+      "floorExpected": "1"
+    },
+    {
+      "id": "L15",
+      "code": "Integer i = 2147483647; r = i - (-1);",
+      "expected": "-2147483648",
+      "compile": false,
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "L16",
+      "code": "Integer i = 46341; r = i * i;",
+      "expected": "-2147479015",
+      "compile": false,
+      "floorExpected": "-2147479015"
+    },
+    {
+      "id": "D01",
+      "code": "7 / 2",
+      "expected": "3",
+      "compile": false,
+      "floorExpected": "3"
+    },
+    {
+      "id": "D02",
+      "code": "-7 / 2",
+      "expected": "-3",
+      "compile": false,
+      "floorExpected": "-3"
+    },
+    {
+      "id": "D03",
+      "code": "7 / -2",
+      "expected": "-3",
+      "compile": false,
+      "floorExpected": "-3"
+    },
+    {
+      "id": "D04",
+      "code": "1 / 0",
+      "expected": "EXC|System.MathException|Divide by 0",
+      "compile": false,
+      "floorExpected": "EXC|System.MathException|Divide by 0"
+    },
+    {
+      "id": "D05",
+      "code": "0 / 0",
+      "expected": "EXC|System.MathException|Divide by 0",
+      "compile": false,
+      "floorExpected": "EXC|System.MathException|Divide by 0"
+    },
+    {
+      "id": "D06",
+      "code": "Integer z = 0; r = 5 / z;",
+      "expected": "EXC|System.MathException|Divide by 0",
+      "compile": false,
+      "floorExpected": "EXC|System.MathException|Divide by 0"
+    },
+    {
+      "id": "D07",
+      "code": "Math.mod(7, 3)",
+      "expected": "1",
+      "compile": false,
+      "floorExpected": "1"
+    },
+    {
+      "id": "D08",
+      "code": "Math.mod(-7, 3)",
+      "expected": "-1",
+      "compile": false,
+      "floorExpected": "-1"
+    },
+    {
+      "id": "D09",
+      "code": "Math.mod(7, -3)",
+      "expected": "1",
+      "compile": false,
+      "floorExpected": "1"
+    },
+    {
+      "id": "D10",
+      "code": "Math.mod(7, 0)",
+      "expected": "EXC|System.MathException|Divide by 0",
+      "compile": false,
+      "floorExpected": "EXC|System.MathException|Divide by 0"
+    },
+    {
+      "id": "D11",
+      "code": "7 / 2.0",
+      "expected": "3.5",
+      "compile": false,
+      "floorExpected": "3.5"
+    },
+    {
+      "id": "D12",
+      "code": "Decimal d = 7 / 2; r = d;",
+      "expected": "3",
+      "compile": false,
+      "floorExpected": "3"
+    },
+    {
+      "id": "D13",
+      "code": "7 / 2L",
+      "expected": "3",
+      "compile": false,
+      "floorExpected": "3"
+    },
+    {
+      "id": "D14",
+      "code": "Double x = 7; r = x / 2;",
+      "expected": "3.5",
+      "compile": false,
+      "floorExpected": "3.5"
+    },
+    {
+      "id": "D15",
+      "code": "1 / 0.0",
+      "expected": "EXC|System.MathException|Divide by 0",
+      "compile": false,
+      "floorExpected": "EXC|System.MathException|Divide by 0"
+    },
+    {
+      "id": "D16",
+      "code": "Double dz = 0; r = 1 / dz;",
+      "expected": "EXC|System.MathException|Divide by 0",
+      "compile": false,
+      "floorExpected": "EXC|System.MathException|Divide by 0"
+    },
+    {
+      "id": "D17",
+      "code": "Integer a = 7; a /= 2; r = a;",
+      "expected": "3",
+      "compile": false,
+      "floorExpected": "3"
+    },
+    {
+      "id": "D18",
+      "code": "Integer n; r = Math.mod(n, 2);",
+      "expected": "EXC|System.NullPointerException|Script-thrown exception",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Script-thrown exception"
+    },
+    {
+      "id": "D19",
+      "code": "Integer mn = -2147483647 - 1; r = Math.mod(mn, -1);",
+      "expected": "0",
+      "compile": false,
+      "floorExpected": "0"
+    },
+    {
+      "id": "U01",
+      "code": "Integer i = 5; r = -i;",
+      "expected": "-5",
+      "compile": false,
+      "floorExpected": "-5"
+    },
+    {
+      "id": "U02",
+      "code": "Integer i = 0; Integer j = i++ + ++i; r = j;",
+      "expected": "2",
+      "compile": false,
+      "floorExpected": "2"
+    },
+    {
+      "id": "U03",
+      "code": "Integer i = 0; Integer j = i++; r = String.valueOf(i) + ',' + j;",
+      "expected": "1,0",
+      "compile": false,
+      "floorExpected": "1,0"
+    },
+    {
+      "id": "U04",
+      "code": "Integer i = 5; i--; --i; r = i;",
+      "expected": "3",
+      "compile": false,
+      "floorExpected": "3"
+    },
+    {
+      "id": "U05",
+      "code": "Integer n; n++; r = n;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "U06",
+      "code": "Integer n; r = -n;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "B01",
+      "code": "6 & 3",
+      "expected": "2",
+      "compile": false,
+      "floorExpected": "2"
+    },
+    {
+      "id": "B02",
+      "code": "6 | 3",
+      "expected": "7",
+      "compile": false,
+      "floorExpected": "7"
+    },
+    {
+      "id": "B03",
+      "code": "6 ^ 3",
+      "expected": "5",
+      "compile": false,
+      "floorExpected": "5"
+    },
+    {
+      "id": "B04",
+      "code": "-1 & 255",
+      "expected": "255",
+      "compile": false,
+      "floorExpected": "255"
+    },
+    {
+      "id": "B05",
+      "code": "1 << 31",
+      "expected": "-2147483648",
+      "compile": false,
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "B06",
+      "code": "1 << 32",
+      "expected": "1",
+      "compile": false,
+      "floorExpected": "1"
+    },
+    {
+      "id": "B07",
+      "code": "1 << 33",
+      "expected": "2",
+      "compile": false,
+      "floorExpected": "2"
+    },
+    {
+      "id": "B08",
+      "code": "-8 >> 1",
+      "expected": "-4",
+      "compile": false,
+      "floorExpected": "-4"
+    },
+    {
+      "id": "B09",
+      "code": "-8 >>> 28",
+      "expected": "15",
+      "compile": false,
+      "floorExpected": "15"
+    },
+    {
+      "id": "B10",
+      "code": "-1 >>> 0",
+      "expected": "-1",
+      "compile": false,
+      "floorExpected": "-1"
+    },
+    {
+      "id": "B11",
+      "code": "1 << -1",
+      "expected": "-2147483648",
+      "compile": false,
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "B12",
+      "code": "1L << 32",
+      "expected": "4294967296",
+      "compile": false,
+      "floorExpected": "4294967296"
+    },
+    {
+      "id": "B13",
+      "code": "Integer i = 1; i <<= 4; r = i;",
+      "expected": "16",
+      "compile": false,
+      "floorExpected": "16"
+    },
+    {
+      "id": "B14",
+      "code": "Integer i = -16; i >>= 2; r = i;",
+      "expected": "-4",
+      "compile": false,
+      "floorExpected": "-4"
+    },
+    {
+      "id": "B15",
+      "code": "Integer i = -16; i >>>= 28; r = i;",
+      "expected": "15",
+      "compile": false,
+      "floorExpected": "15"
+    },
+    {
+      "id": "B16",
+      "code": "Integer i = 12; i &= 10; r = i;",
+      "expected": "8",
+      "compile": false,
+      "floorExpected": "8"
+    },
+    {
+      "id": "B17",
+      "code": "Integer i = 12; i |= 3; r = i;",
+      "expected": "15",
+      "compile": false,
+      "floorExpected": "15"
+    },
+    {
+      "id": "B18",
+      "code": "Integer i = 12; i ^= 5; r = i;",
+      "expected": "9",
+      "compile": false,
+      "floorExpected": "9"
+    },
+    {
+      "id": "B19",
+      "code": "5 & 3L",
+      "expected": "1",
+      "compile": false,
+      "floorExpected": "1"
+    },
+    {
+      "id": "B20",
+      "code": "Integer n; r = n & 1;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "B21",
+      "code": "Integer i = 1; r = i << 2 + 1;",
+      "expected": "8",
+      "compile": false,
+      "floorExpected": "8"
+    },
+    {
+      "id": "B22",
+      "code": "1 | 2 ^ 3",
+      "expected": "1",
+      "compile": false,
+      "floorExpected": "1"
+    },
+    {
+      "id": "B23",
+      "code": "2 + 3 << 1",
+      "expected": "10",
+      "compile": false,
+      "floorExpected": "10"
+    },
+    {
+      "id": "B24",
+      "code": "1 << 2 * 3",
+      "expected": "64",
+      "compile": false,
+      "floorExpected": "64"
+    },
+    {
+      "id": "B25",
+      "code": "7 & 3 + 1",
+      "expected": "4",
+      "compile": false,
+      "floorExpected": "4"
+    },
+    {
+      "id": "B26",
+      "code": "65535 << 16",
+      "expected": "-65536",
+      "compile": false,
+      "floorExpected": "-65536"
+    },
+    {
+      "id": "B27",
+      "code": "Integer mn = -2147483647 - 1; r = mn >> 31;",
+      "expected": "-1",
+      "compile": false,
+      "floorExpected": "-1"
+    },
+    {
+      "id": "B28",
+      "code": "Integer mn = -2147483647 - 1; r = mn >>> 31;",
+      "expected": "1",
+      "compile": false,
+      "floorExpected": "1"
+    },
+    {
+      "id": "C01",
+      "code": "Integer a = 1000; Integer b = 1000; r = a == b;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "C02",
+      "code": "Integer i = 1; Long l = 1; r = i == l;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "C03",
+      "code": "Integer i = 1; Decimal d = 1.0; r = i == d;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "C04",
+      "code": "Integer i = 1; Double d = 1.0; r = i == d;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "C05",
+      "code": "Object a = 1; Object b = 1L; r = a == b;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "C06",
+      "code": "Object a = 1; Object b = 1L; r = a.equals(b);",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "C07",
+      "code": "Object a = 1; Object b = 1.0; r = a == b;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "C08",
+      "code": "Integer n; r = n == null;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "C09",
+      "code": "Integer n; r = n == 0;",
+      "expected": "false",
+      "compile": false,
+      "floorExpected": "false"
+    },
+    {
+      "id": "C10",
+      "code": "Integer n; r = n < 5;",
+      "expected": "false",
+      "compile": false,
+      "floorExpected": "false"
+    },
+    {
+      "id": "C11",
+      "code": "Integer n; r = n >= 5;",
+      "expected": "false",
+      "compile": false,
+      "floorExpected": "false"
+    },
+    {
+      "id": "C12",
+      "code": "Integer n; r = 5 > n;",
+      "expected": "false",
+      "compile": false,
+      "floorExpected": "false"
+    },
+    {
+      "id": "C13",
+      "code": "Integer n; r = n != 0;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "C14",
+      "code": "Integer a = 3; r = a < 3.5;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "C15",
+      "code": "2147483647 < 2147483648L",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "C16",
+      "code": "Integer n; Integer m; r = n == m;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "C17",
+      "code": "Integer n; r = n <= n;",
+      "expected": "false",
+      "compile": false,
+      "floorExpected": "false"
+    },
+    {
+      "id": "C18",
+      "code": "Integer mn = -2147483647 - 1; r = mn < 2147483647;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "P01",
+      "code": "Object o = 5; r = o instanceof Integer;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "P02",
+      "code": "Object o = 5; r = o instanceof Long;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "P03",
+      "code": "Object o = 5; r = o instanceof Decimal;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "P04",
+      "code": "Object o = 5; r = o instanceof Double;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "P05",
+      "code": "Object o = 5L; r = o instanceof Integer;",
+      "expected": "false",
+      "compile": false,
+      "floorExpected": "false"
+    },
+    {
+      "id": "P06",
+      "code": "Object o = 1 + 1L; r = o instanceof Long;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "P07",
+      "code": "Object o = 1 + 1.0; r = o instanceof Decimal;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "P08",
+      "code": "Double d = 1; Object o = 1 + d; r = o instanceof Double;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "P09",
+      "code": "1 + 1.0",
+      "expected": "2.0",
+      "compile": false,
+      "floorExpected": "2.0"
+    },
+    {
+      "id": "P10",
+      "code": "Double d = 5; r = d;",
+      "expected": "5.0",
+      "compile": false,
+      "floorExpected": "5.0"
+    },
+    {
+      "id": "P11",
+      "code": "Decimal d = 5; r = d;",
+      "expected": "5",
+      "compile": false,
+      "floorExpected": "5"
+    },
+    {
+      "id": "P12",
+      "code": "Long l = 5; r = l;",
+      "expected": "5",
+      "compile": false,
+      "floorExpected": "5"
+    },
+    {
+      "id": "P13",
+      "code": "Object o = true ? 1 : 2.5; r = o;",
+      "expected": "1",
+      "compile": false,
+      "floorExpected": "1"
+    },
+    {
+      "id": "P14",
+      "code": "Object o = true ? 1 : 2L; r = o instanceof Long;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "P15",
+      "code": "Object o = 5; r = (Long) o;",
+      "expected": "5",
+      "compile": false,
+      "floorExpected": "5"
+    },
+    {
+      "id": "P16",
+      "code": "Object o = 5L; r = (Integer) o;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Long to Integer",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid conversion from runtime type Long to Integer"
+    },
+    {
+      "id": "P17",
+      "code": "Object o = 5; r = (Decimal) o;",
+      "expected": "5",
+      "compile": false,
+      "floorExpected": "5"
+    },
+    {
+      "id": "P18",
+      "code": "Object o = '5'; r = (Integer) o;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type String to Integer",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid conversion from runtime type String to Integer"
+    },
+    {
+      "id": "P19",
+      "code": "Object o = 5.0; r = (Integer) o;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Decimal to Integer",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid conversion from runtime type Decimal to Integer"
+    },
+    {
+      "id": "P20",
+      "code": "Integer i = 5; Long l = i; r = l;",
+      "expected": "5",
+      "compile": false,
+      "floorExpected": "5"
+    },
+    {
+      "id": "P21",
+      "code": "Long l = 3000000000L; r = l.intValue();",
+      "expected": "-1294967296",
+      "compile": false,
+      "floorExpected": "-1294967296"
+    },
+    {
+      "id": "P22",
+      "code": "Decimal d = 3.7; r = d.intValue();",
+      "expected": "3",
+      "compile": false,
+      "floorExpected": "3"
+    },
+    {
+      "id": "P23",
+      "code": "Decimal d = -3.7; r = d.intValue();",
+      "expected": "-3",
+      "compile": false,
+      "floorExpected": "-3"
+    },
+    {
+      "id": "P24",
+      "code": "Double d = 3.99; r = d.intValue();",
+      "expected": "3",
+      "compile": false,
+      "floorExpected": "3"
+    },
+    {
+      "id": "P25",
+      "code": "Decimal d = 3000000000.5; r = d.intValue();",
+      "expected": "-1294967296",
+      "compile": false,
+      "floorExpected": "-1294967296"
+    },
+    {
+      "id": "P26",
+      "code": "Double d = Math.pow(10, 20); r = d.intValue();",
+      "expected": "2147483647",
+      "compile": false,
+      "floorExpected": "2147483647"
+    },
+    {
+      "id": "P27",
+      "code": "Integer i = 7; Decimal d = i; r = d.scale();",
+      "expected": "0",
+      "compile": false,
+      "floorExpected": "0"
+    },
+    {
+      "id": "P28",
+      "code": "Integer i = 7; Double d = i; r = d;",
+      "expected": "7.0",
+      "compile": false,
+      "floorExpected": "7.0"
+    },
+    {
+      "id": "P29",
+      "code": "Object o = 5; r = o instanceof Object;",
+      "expected": "COMPILE_ERROR\tline 132: Operation instanceof is always true since an instance of Object is always an instance of Object",
+      "compile": false,
+      "floorExpected": "COMPILE_ERROR\tline 32: Operation instanceof is always true since an instance of Object is always an instance of Object"
+    },
+    {
+      "id": "V01",
+      "code": "Integer.valueOf('12')",
+      "expected": "12",
+      "compile": false,
+      "floorExpected": "12"
+    },
+    {
+      "id": "V02",
+      "code": "Integer.valueOf('-12')",
+      "expected": "-12",
+      "compile": false,
+      "floorExpected": "-12"
+    },
+    {
+      "id": "V03",
+      "code": "Integer.valueOf('+12')",
+      "expected": "12",
+      "compile": false,
+      "floorExpected": "12"
+    },
+    {
+      "id": "V04",
+      "code": "Integer.valueOf('007')",
+      "expected": "7",
+      "compile": false,
+      "floorExpected": "7"
+    },
+    {
+      "id": "V05",
+      "code": "Integer.valueOf('2147483647')",
+      "expected": "2147483647",
+      "compile": false,
+      "floorExpected": "2147483647"
+    },
+    {
+      "id": "V06",
+      "code": "Integer.valueOf('-2147483648')",
+      "expected": "-2147483648",
+      "compile": false,
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "V07",
+      "code": "Integer.valueOf('2147483648')",
+      "expected": "EXC|System.TypeException|Invalid integer: 2147483648",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid integer: 2147483648"
+    },
+    {
+      "id": "V08",
+      "code": "Integer.valueOf('abc')",
+      "expected": "EXC|System.TypeException|Invalid integer: abc",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid integer: abc"
+    },
+    {
+      "id": "V09",
+      "code": "Integer.valueOf('')",
+      "expected": "EXC|System.TypeException|Invalid integer: ",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid integer: "
+    },
+    {
+      "id": "V10",
+      "code": "Integer.valueOf(' 12')",
+      "expected": "EXC|System.TypeException|Invalid integer:  12",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid integer:  12"
+    },
+    {
+      "id": "V11",
+      "code": "Integer.valueOf('12 ')",
+      "expected": "EXC|System.TypeException|Invalid integer: 12 ",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid integer: 12 "
+    },
+    {
+      "id": "V12",
+      "code": "Integer.valueOf('12.0')",
+      "expected": "12",
+      "compile": false,
+      "floorExpected": "12"
+    },
+    {
+      "id": "V13",
+      "code": "Integer.valueOf('1e3')",
+      "expected": "EXC|System.TypeException|Invalid integer: 1e3",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid integer: 1e3"
+    },
+    {
+      "id": "V14",
+      "code": "Integer.valueOf('0x10')",
+      "expected": "EXC|System.TypeException|Invalid integer: 0x10",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid integer: 0x10"
+    },
+    {
+      "id": "V15",
+      "code": "Integer.valueOf('1,000')",
+      "expected": "EXC|System.TypeException|Invalid integer: 1,000",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid integer: 1,000"
+    },
+    {
+      "id": "V16",
+      "code": "Integer.valueOf('\\u0661\\u0662')",
+      "expected": "12",
+      "compile": false,
+      "floorExpected": "12"
+    },
+    {
+      "id": "V17",
+      "code": "String s = null; r = Integer.valueOf(s);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "id": "V18",
+      "code": "Object o = null; r = Integer.valueOf(o);",
+      "expected": "null",
+      "compile": false,
+      "floorExpected": "null"
+    },
+    {
+      "id": "V19",
+      "code": "Object o = 12; r = Integer.valueOf(o);",
+      "expected": "12",
+      "compile": false,
+      "floorExpected": "12"
+    },
+    {
+      "id": "V20",
+      "code": "Object o = 12L; r = Integer.valueOf(o);",
+      "expected": "12",
+      "compile": false,
+      "floorExpected": "12"
+    },
+    {
+      "id": "V21",
+      "code": "Object o = 3.7; r = Integer.valueOf(o);",
+      "expected": "3",
+      "compile": false,
+      "floorExpected": "3"
+    },
+    {
+      "id": "V22",
+      "code": "Object o = '12'; r = Integer.valueOf(o);",
+      "expected": "12",
+      "compile": false,
+      "floorExpected": "12"
+    },
+    {
+      "id": "V23",
+      "code": "Object o = true; r = Integer.valueOf(o);",
+      "expected": "EXC|System.TypeException|Invalid integer: true",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid integer: true"
+    },
+    {
+      "id": "V24",
+      "code": "Integer.valueOf('-0')",
+      "expected": "0",
+      "compile": false,
+      "floorExpected": "0"
+    },
+    {
+      "id": "V25",
+      "code": "Integer.valueOf('--1')",
+      "expected": "EXC|System.TypeException|Invalid integer: --1",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid integer: --1"
+    },
+    {
+      "id": "V26",
+      "code": "Integer.valueOf('+')",
+      "expected": "EXC|System.TypeException|Invalid integer: +",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid integer: +"
+    },
+    {
+      "id": "V27",
+      "code": "Object o = 3000000000L; r = Integer.valueOf(o);",
+      "expected": "-1294967296",
+      "compile": false,
+      "floorExpected": "-1294967296"
+    },
+    {
+      "id": "V28",
+      "code": "Integer.valueOf('1_000')",
+      "expected": "EXC|System.TypeException|Invalid integer: 1_000",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid integer: 1_000"
+    },
+    {
+      "id": "V29",
+      "code": "Integer.valueOf('\\t12')",
+      "expected": "EXC|System.TypeException|Invalid integer: \t12",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid integer: \t12"
+    },
+    {
+      "id": "V30",
+      "code": "Integer.valueOf('\\uFF11\\uFF12')",
+      "expected": "12",
+      "compile": false,
+      "floorExpected": "12"
+    },
+    {
+      "id": "V31",
+      "code": "Integer.valueOf('-2147483649')",
+      "expected": "EXC|System.TypeException|Invalid integer: -2147483649",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid integer: -2147483649"
+    },
+    {
+      "id": "F01",
+      "code": "Integer i = 1234567; r = i.format();",
+      "expected": "1,234,567",
+      "compile": false,
+      "floorExpected": "1,234,567"
+    },
+    {
+      "id": "F02",
+      "code": "Integer i = -1234; r = i.format();",
+      "expected": "-1,234",
+      "compile": false,
+      "floorExpected": "-1,234"
+    },
+    {
+      "id": "F03",
+      "code": "Integer i = 0; r = i.format();",
+      "expected": "0",
+      "compile": false,
+      "floorExpected": "0"
+    },
+    {
+      "id": "F04",
+      "code": "Integer i = -2147483647 - 1; r = i.format();",
+      "expected": "-2,147,483,648",
+      "compile": false,
+      "floorExpected": "-2,147,483,648"
+    },
+    {
+      "id": "F05",
+      "code": "String.valueOf(42)",
+      "expected": "42",
+      "compile": false,
+      "floorExpected": "42"
+    },
+    {
+      "id": "F06",
+      "code": "Integer n; r = String.valueOf(n);",
+      "expected": "null",
+      "compile": false,
+      "floorExpected": "null"
+    },
+    {
+      "id": "F07",
+      "code": "'a' + 5",
+      "expected": "a5",
+      "compile": false,
+      "floorExpected": "a5"
+    },
+    {
+      "id": "F08",
+      "code": "'a' + 1 + 2",
+      "expected": "a12",
+      "compile": false,
+      "floorExpected": "a12"
+    },
+    {
+      "id": "F09",
+      "code": "Integer n; r = 'v=' + n;",
+      "expected": "v=null",
+      "compile": false,
+      "floorExpected": "v=null"
+    },
+    {
+      "id": "F10",
+      "code": "String.format('{0}', new List<Object>{1234})",
+      "expected": "1234",
+      "compile": false,
+      "floorExpected": "1234"
+    },
+    {
+      "id": "F11",
+      "code": "String.format('{0}', new List<Object>{-5})",
+      "expected": "-5",
+      "compile": false,
+      "floorExpected": "-5"
+    },
+    {
+      "id": "F12",
+      "code": "('' + 2147483647).length()",
+      "expected": "10",
+      "compile": false,
+      "floorExpected": "10"
+    },
+    {
+      "id": "F13",
+      "code": "String.valueOf(1 + 1L)",
+      "expected": "2",
+      "compile": false,
+      "floorExpected": "2"
+    },
+    {
+      "id": "F14",
+      "code": "Integer i = 999; r = i.format();",
+      "expected": "999",
+      "compile": false,
+      "floorExpected": "999"
+    },
+    {
+      "id": "F15",
+      "code": "Integer i = 1000; r = i.format();",
+      "expected": "1,000",
+      "compile": false,
+      "floorExpected": "1,000"
+    },
+    {
+      "id": "N01",
+      "code": "Integer n; r = n + 1;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N02",
+      "code": "Integer n; r = 1 + n;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N03",
+      "code": "Integer n; r = n * 2;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N04",
+      "code": "Integer n; r = n / 2;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N05",
+      "code": "Integer n; r = n.format();",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "id": "N06",
+      "code": "Integer n; Long l = n; r = l;",
+      "expected": "null",
+      "compile": false,
+      "floorExpected": "null"
+    },
+    {
+      "id": "N07",
+      "code": "Integer n; Decimal d = n; r = d;",
+      "expected": "null",
+      "compile": false,
+      "floorExpected": "null"
+    },
+    {
+      "id": "N08",
+      "code": "Integer n; r = n << 1;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N09",
+      "code": "Integer n; Integer m = n ?? 7; r = m;",
+      "expected": "7",
+      "compile": false,
+      "floorExpected": "7"
+    },
+    {
+      "id": "N10",
+      "code": "Integer n; r = Math.abs(n);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "id": "N11",
+      "code": "Integer n; r = n instanceof Integer;",
+      "expected": "COMPILE_ERROR\tline 188: Operation instanceof is always true since an instance of Integer is always an instance of Integer",
+      "compile": false,
+      "floorExpected": "COMPILE_ERROR\tline 39: Operation instanceof is always true since an instance of Integer is always an instance of Integer"
+    },
+    {
+      "id": "N12",
+      "code": "Integer n; r = n - 1;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "S01",
+      "code": "Integer i = 2; String s; switch on i { when 1, 2 { s = 'a'; } when else { s = 'b'; } } r = s;",
+      "expected": "a",
+      "compile": false,
+      "floorExpected": "a"
+    },
+    {
+      "id": "S02",
+      "code": "Integer i; String s; switch on i { when null { s = 'n'; } when 1 { s = 'a'; } when else { s = 'b'; } } r = s;",
+      "expected": "n",
+      "compile": false,
+      "floorExpected": "n"
+    },
+    {
+      "id": "S03",
+      "code": "List<Integer> l = new List<Integer>{3, null, 1, 2}; l.sort(); r = l;",
+      "expected": "(null, 1, 2, 3)",
+      "compile": false,
+      "floorExpected": "(null, 1, 2, 3)"
+    },
+    {
+      "id": "S04",
+      "code": "Set<Integer> s = new Set<Integer>{1, 2, 1}; r = s.size();",
+      "expected": "2",
+      "compile": false,
+      "floorExpected": "2"
+    },
+    {
+      "id": "S05",
+      "code": "Set<Object> s = new Set<Object>{1, 1L}; r = s.size();",
+      "expected": "2",
+      "compile": false,
+      "floorExpected": "2"
+    },
+    {
+      "id": "S06",
+      "code": "Map<Object, String> m = new Map<Object, String>{1 => 'a'}; r = m.get(1L);",
+      "expected": "null",
+      "compile": false,
+      "floorExpected": "null"
+    },
+    {
+      "id": "S07",
+      "code": "List<Integer> l = new List<Integer>{1, 2}; r = l;",
+      "expected": "(1, 2)",
+      "compile": false,
+      "floorExpected": "(1, 2)"
+    },
+    {
+      "id": "S08",
+      "code": "Integer[] a = new Integer[2]; r = a[0];",
+      "expected": "null",
+      "compile": false,
+      "floorExpected": "null"
+    },
+    {
+      "id": "S09",
+      "code": "List<Object> lo = new List<Integer>{1}; lo.add('x'); r = lo;",
+      "expected": "EXC|System.TypeException|Collection store exception adding String to List<Integer>",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Collection store exception adding String to List<Integer>"
+    },
+    {
+      "id": "S10",
+      "code": "List<Integer> l = new List<Integer>{1, 2, 3}; r = l.indexOf(2);",
+      "expected": "1",
+      "compile": false,
+      "floorExpected": "1"
+    },
+    {
+      "id": "S11",
+      "code": "Set<Integer> s = new Set<Integer>{1}; r = s.contains(null);",
+      "expected": "false",
+      "compile": false,
+      "floorExpected": "false"
+    },
+    {
+      "id": "S12",
+      "code": "Map<Integer, Integer> m = new Map<Integer, Integer>{2147483647 => 1}; r = m.get(-2147483647 - 2);",
+      "expected": "1",
+      "compile": false,
+      "floorExpected": "1"
+    },
+    {
+      "id": "S13",
+      "code": "JSON.serialize(5)",
+      "expected": "5",
+      "compile": false,
+      "floorExpected": "5"
+    },
+    {
+      "id": "S14",
+      "code": "JSON.serialize(new Map<String, Object>{'a' => 2147483647, 'b' => -1})",
+      "expected": "{\"b\":-1,\"a\":2147483647}",
+      "compile": false,
+      "floorExpected": "{\"b\":-1,\"a\":2147483647}"
+    },
+    {
+      "id": "S15",
+      "code": "JSON.deserialize('42', Integer.class)",
+      "expected": "42",
+      "compile": false,
+      "floorExpected": "42"
+    },
+    {
+      "id": "S16",
+      "code": "JSON.deserialize('42.7', Integer.class)",
+      "expected": "42",
+      "compile": false,
+      "floorExpected": "42"
+    },
+    {
+      "id": "S17",
+      "code": "JSON.deserialize('\"42\"', Integer.class)",
+      "expected": "42",
+      "compile": false,
+      "floorExpected": "42"
+    },
+    {
+      "id": "S18",
+      "code": "JSON.deserialize('2147483648', Integer.class)",
+      "expected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at [line:1, column:21]",
+      "compile": false,
+      "floorExpected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at [line:1, column:21]"
+    },
+    {
+      "id": "S19",
+      "code": "Object o = JSON.deserializeUntyped('5'); r = o instanceof Integer;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "S20",
+      "code": "Object o = JSON.deserializeUntyped('3000000000'); r = o instanceof Long;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "S21",
+      "code": "Object o = JSON.deserializeUntyped('5.0'); r = o instanceof Decimal;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "S22",
+      "code": "JSON.deserialize('null', Integer.class)",
+      "expected": "null",
+      "compile": false,
+      "floorExpected": "null"
+    },
+    {
+      "id": "S23",
+      "code": "List<Integer> l = (List<Integer>) JSON.deserialize('[1,2,null]', List<Integer>.class); r = l;",
+      "expected": "(1, 2, null)",
+      "compile": false,
+      "floorExpected": "(1, 2, null)"
+    },
+    {
+      "id": "S24",
+      "code": "JSON.serialize(new List<Integer>{1, null})",
+      "expected": "[1,null]",
+      "compile": false,
+      "floorExpected": "[1,null]"
+    },
+    {
+      "id": "S25",
+      "code": "JSONParser jp = JSON.createParser('123'); jp.nextToken(); r = jp.getIntegerValue();",
+      "expected": "123",
+      "compile": false,
+      "floorExpected": "123"
+    },
+    {
+      "id": "S26",
+      "code": "JSONParser jp = JSON.createParser('3000000000'); jp.nextToken(); r = jp.getIntegerValue();",
+      "expected": "EXC|System.JSONException|Numeric value (3000000000) out of range of int at input location [1,21]",
+      "compile": false,
+      "floorExpected": "EXC|System.JSONException|Numeric value (3000000000) out of range of int at input location [1,21]"
+    },
+    {
+      "id": "S27",
+      "code": "JSONParser jp = JSON.createParser('1.9'); jp.nextToken(); r = jp.getIntegerValue();",
+      "expected": "1",
+      "compile": false,
+      "floorExpected": "1"
+    },
+    {
+      "id": "S28",
+      "code": "Map<Integer, String> m = new Map<Integer, String>{1 => 'a'}; r = JSON.serialize(m);",
+      "expected": "{\"1\":\"a\"}",
+      "compile": false,
+      "floorExpected": "{\"1\":\"a\"}"
+    },
+    {
+      "id": "S29",
+      "code": "Map<String, Object> m = (Map<String, Object>) JSON.deserializeUntyped('{\"a\":2147483648}'); r = m.get('a') instanceof Long;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "M01",
+      "code": "Math.max(3, 7)",
+      "expected": "7",
+      "compile": false,
+      "floorExpected": "7"
+    },
+    {
+      "id": "M02",
+      "code": "Object o = Math.max(3, 7L); r = o instanceof Long;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "M03",
+      "code": "Math.abs(-5)",
+      "expected": "5",
+      "compile": false,
+      "floorExpected": "5"
+    },
+    {
+      "id": "M04",
+      "code": "Math.min(-2147483647 - 1, 0)",
+      "expected": "-2147483648",
+      "compile": false,
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "M05",
+      "code": "Object o = Math.abs(-5); r = o instanceof Integer;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "O01",
+      "code": "r = ov.k(5);",
+      "expected": "Integer",
+      "compile": false,
+      "floorExpected": "Integer"
+    },
+    {
+      "id": "O02",
+      "code": "r = ov.k(5L);",
+      "expected": "Long",
+      "compile": false,
+      "floorExpected": "Long"
+    },
+    {
+      "id": "O03",
+      "code": "Integer n; r = ov.k(n);",
+      "expected": "Integer",
+      "compile": false,
+      "floorExpected": "Integer"
+    },
+    {
+      "id": "O04",
+      "code": "r = ov.h(5);",
+      "expected": "Long",
+      "compile": false,
+      "floorExpected": "Long"
+    },
+    {
+      "id": "O05",
+      "code": "r = ov.h((Object) 5);",
+      "expected": "Object",
+      "compile": false,
+      "floorExpected": "Object"
+    },
+    {
+      "id": "O06",
+      "code": "r = ov.f(5);",
+      "expected": "Long",
+      "compile": false,
+      "floorExpected": "Long"
+    },
+    {
+      "id": "O07",
+      "code": "r = ov.m(5);",
+      "expected": "Decimal",
+      "compile": false,
+      "floorExpected": "Decimal"
+    },
+    {
+      "id": "Q01",
+      "code": "9223372036854775807L + 1L",
+      "expected": "-9223372036854775808",
+      "compile": false,
+      "floorExpected": "-9223372036854775808"
+    },
+    {
+      "id": "Q02",
+      "code": "-9223372036854775807L - 2L",
+      "expected": "9223372036854775807",
+      "compile": false,
+      "floorExpected": "9223372036854775807"
+    },
+    {
+      "id": "Q03",
+      "code": "9223372036854775807L * 2L",
+      "expected": "-2",
+      "compile": false,
+      "floorExpected": "-2"
+    },
+    {
+      "id": "Q04",
+      "code": "Long x = 9223372036854775807L; x++; r = x;",
+      "expected": "-9223372036854775808",
+      "compile": false,
+      "floorExpected": "-9223372036854775808"
+    },
+    {
+      "id": "Q05",
+      "code": "Long x = -9223372036854775807L - 1L; x--; r = x;",
+      "expected": "9223372036854775807",
+      "compile": false,
+      "floorExpected": "9223372036854775807"
+    },
+    {
+      "id": "Q06",
+      "code": "Long x = -9223372036854775807L - 1L; r = -x;",
+      "expected": "-9223372036854775808",
+      "compile": false,
+      "floorExpected": "-9223372036854775808"
+    },
+    {
+      "id": "Q07",
+      "code": "Long x = -9223372036854775807L - 1L; r = x / -1L;",
+      "expected": "-9223372036854775808",
+      "compile": false,
+      "floorExpected": "-9223372036854775808"
+    },
+    {
+      "id": "Q08",
+      "code": "Long x = -9223372036854775807L - 1L; r = Math.abs(x);",
+      "expected": "-9223372036854775808",
+      "compile": false,
+      "floorExpected": "-9223372036854775808"
+    },
+    {
+      "id": "Q09",
+      "code": "Long x = 9223372036854775807L; x += 1; r = x;",
+      "expected": "-9223372036854775808",
+      "compile": false,
+      "floorExpected": "-9223372036854775808"
+    },
+    {
+      "id": "Q10",
+      "code": "Long x = 4294967296L; r = x * x;",
+      "expected": "0",
+      "compile": false,
+      "floorExpected": "0"
+    },
+    {
+      "id": "Q11",
+      "code": "1L << 63",
+      "expected": "-9223372036854775808",
+      "compile": false,
+      "floorExpected": "-9223372036854775808"
+    },
+    {
+      "id": "Q12",
+      "code": "1L << 64",
+      "expected": "1",
+      "compile": false,
+      "floorExpected": "1"
+    },
+    {
+      "id": "Q13",
+      "code": "1L << 65",
+      "expected": "2",
+      "compile": false,
+      "floorExpected": "2"
+    },
+    {
+      "id": "Q14",
+      "code": "1L << -1",
+      "expected": "-9223372036854775808",
+      "compile": false,
+      "floorExpected": "-9223372036854775808"
+    },
+    {
+      "id": "Q15",
+      "code": "-8L >> 1",
+      "expected": "-4",
+      "compile": false,
+      "floorExpected": "-4"
+    },
+    {
+      "id": "Q16",
+      "code": "-8L >>> 60",
+      "expected": "15",
+      "compile": false,
+      "floorExpected": "15"
+    },
+    {
+      "id": "Q17",
+      "code": "-1L >>> 0",
+      "expected": "-1",
+      "compile": false,
+      "floorExpected": "-1"
+    },
+    {
+      "id": "Q18",
+      "code": "-1L >>> 63",
+      "expected": "1",
+      "compile": false,
+      "floorExpected": "1"
+    },
+    {
+      "id": "Q19",
+      "code": "Long x = -16L; x >>= 2; r = x;",
+      "expected": "-4",
+      "compile": false,
+      "floorExpected": "-4"
+    },
+    {
+      "id": "Q20",
+      "code": "Long x = -16L; x >>>= 60; r = x;",
+      "expected": "15",
+      "compile": false,
+      "floorExpected": "15"
+    },
+    {
+      "id": "Q21",
+      "code": "Long x = 12L; x &= 10; r = x;",
+      "expected": "8",
+      "compile": false,
+      "floorExpected": "8"
+    },
+    {
+      "id": "Q22",
+      "code": "Long x = 12L; x |= 3; r = x;",
+      "expected": "15",
+      "compile": false,
+      "floorExpected": "15"
+    },
+    {
+      "id": "Q23",
+      "code": "Long x = 12L; x ^= 5; r = x;",
+      "expected": "9",
+      "compile": false,
+      "floorExpected": "9"
+    },
+    {
+      "id": "Q24",
+      "code": "Long x; r = x + 1L;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "Q25",
+      "code": "Long x; r = -x;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "Q26",
+      "code": "Long x; r = x << 1;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "Q27",
+      "code": "Long x; r = x < 1L;",
+      "expected": "false",
+      "compile": false,
+      "floorExpected": "false"
+    },
+    {
+      "id": "Q28",
+      "code": "Long x; r = x == null;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "Q29",
+      "code": "Long.valueOf('9223372036854775807')",
+      "expected": "9223372036854775807",
+      "compile": false,
+      "floorExpected": "9223372036854775807"
+    },
+    {
+      "id": "Q30",
+      "code": "Long.valueOf('-9223372036854775808')",
+      "expected": "-9223372036854775808",
+      "compile": false,
+      "floorExpected": "-9223372036854775808"
+    },
+    {
+      "id": "Q31",
+      "code": "Long.valueOf('9223372036854775808')",
+      "expected": "EXC|System.TypeException|Invalid long: 9223372036854775808",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid long: 9223372036854775808"
+    },
+    {
+      "id": "Q32",
+      "code": "Long.valueOf(' 12 ')",
+      "expected": "EXC|System.TypeException|Invalid long:  12 ",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid long:  12 "
+    },
+    {
+      "id": "Q33",
+      "code": "Long.valueOf('')",
+      "expected": "EXC|System.TypeException|Invalid long: ",
+      "compile": false,
+      "floorExpected": "EXC|System.TypeException|Invalid long: "
+    },
+    {
+      "id": "Q34",
+      "code": "Long.valueOf((String)null)",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "id": "Q35",
+      "code": "Long x = 4294967295L; r = x.intValue();",
+      "expected": "-1",
+      "compile": false,
+      "floorExpected": "-1"
+    },
+    {
+      "id": "Q36",
+      "code": "Long x = 4294967296L; r = x.intValue();",
+      "expected": "0",
+      "compile": false,
+      "floorExpected": "0"
+    },
+    {
+      "id": "Q37",
+      "code": "Long x = -4294967297L; r = x.intValue();",
+      "expected": "-1",
+      "compile": false,
+      "floorExpected": "-1"
+    },
+    {
+      "id": "Q38",
+      "code": "Object x = 9223372036854775807L; r = x instanceof Long;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "Q39",
+      "code": "Object x = 1L + 1; r = x instanceof Long;",
+      "expected": "true",
+      "compile": false,
+      "floorExpected": "true"
+    },
+    {
+      "id": "Q40",
+      "code": "Long x = 7L; r = x / 2;",
+      "expected": "3",
+      "compile": false,
+      "floorExpected": "3"
+    },
+    {
+      "id": "Q41",
+      "code": "Long x = -7L; r = Math.mod(x, 3L);",
+      "expected": "-1",
+      "compile": false,
+      "floorExpected": "-1"
+    },
+    {
+      "id": "Q42",
+      "code": "Long x = 7L; r = Math.mod(x, 0L);",
+      "expected": "EXC|System.MathException|Divide by 0",
+      "compile": false,
+      "floorExpected": "EXC|System.MathException|Divide by 0"
+    },
+    {
+      "id": "Q43",
+      "code": "Long x = 9223372036854775807L; r = String.valueOf(x);",
+      "expected": "9223372036854775807",
+      "compile": false,
+      "floorExpected": "9223372036854775807"
+    },
+    {
+      "id": "Q44",
+      "code": "Long x = 5L; r = JSON.serialize(x);",
+      "expected": "5",
+      "compile": false,
+      "floorExpected": "5"
+    },
+    {
+      "id": "K01",
+      "code": "Integer i = 2147483648; pq.out('K01', i);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal integer"
+    },
+    {
+      "id": "K02",
+      "code": "Integer i = -2147483648; pq.out('K02', i);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal integer"
+    },
+    {
+      "id": "K03",
+      "code": "Long l = 2147483648; pq.out('K03', l);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal integer"
+    },
+    {
+      "id": "K04",
+      "code": "Integer i = 7 % 2; pq.out('K04', i);",
+      "expected": "COMPILE_ERROR\tline 6: Found punctuation symbol or operator '%' that isn't valid in Apex.",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Found punctuation symbol or operator '%' that isn't valid in Apex."
+    },
+    {
+      "id": "K05",
+      "code": "Integer i = 0x10; pq.out('K05', i);",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'i'.",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Unexpected token 'i'."
+    },
+    {
+      "id": "K06",
+      "code": "Integer i = 5L; pq.out('K06', i);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Long to Integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Long to Integer"
+    },
+    {
+      "id": "K07",
+      "code": "Integer i = 1.0; pq.out('K07', i);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Integer"
+    },
+    {
+      "id": "K08",
+      "code": "Integer i = 5; i += 1.5; pq.out('K08', i);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Integer"
+    },
+    {
+      "id": "K09",
+      "code": "Integer i = 5; Integer j = ~i; pq.out('K09', j);",
+      "expected": "-6",
+      "compile": true,
+      "floorExpected": "-6"
+    },
+    {
+      "id": "K10",
+      "code": "Integer i = +5; pq.out('K10', i);",
+      "expected": "5",
+      "compile": true,
+      "floorExpected": "5"
+    },
+    {
+      "id": "K11",
+      "code": "Object r = 5 + 'a'; pq.out('K11', r);",
+      "expected": "5a",
+      "compile": true,
+      "floorExpected": "5a"
+    },
+    {
+      "id": "K12",
+      "code": "Object r = 1 + 2 + 'a'; pq.out('K12', r);",
+      "expected": "3a",
+      "compile": true,
+      "floorExpected": "3a"
+    },
+    {
+      "id": "K13",
+      "code": "Integer a = 5; Integer b = 5; Boolean r = a === b; pq.out('K13', r);",
+      "expected": "COMPILE_ERROR\tline 6: Exact equality operator only allowed for reference types: Integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Exact equality operator only allowed for reference types: Integer"
+    },
+    {
+      "id": "K14",
+      "code": "Integer a = 1; Boolean r = a.equals(1); pq.out('K14', r);",
+      "expected": "true",
+      "compile": true,
+      "floorExpected": "true"
+    },
+    {
+      "id": "K15",
+      "code": "Integer a = 1; Integer h = a.hashCode(); pq.out('K15', h);",
+      "expected": "1",
+      "compile": true,
+      "floorExpected": "1"
+    },
+    {
+      "id": "K16",
+      "code": "String s; switch on 1 { when -1 { s = 'neg'; } when else { s = 'else'; } } pq.out('K16', s);",
+      "expected": "else",
+      "compile": true,
+      "floorExpected": "else"
+    },
+    {
+      "id": "K17",
+      "code": "Integer i = (Integer) '5'; pq.out('K17', i);",
+      "expected": "COMPILE_ERROR\tline 6: Incompatible types since an instance of String is never an instance of Integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Incompatible types since an instance of String is never an instance of Integer"
+    },
+    {
+      "id": "K18",
+      "code": "Integer i = 1_000; pq.out('K18', i);",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'i'.",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Unexpected token 'i'."
+    },
+    {
+      "id": "K19",
+      "code": "Object r = 6 & 3 == 2; pq.out('K19', r);",
+      "expected": "COMPILE_ERROR\tline 6: & operator can only be applied to Boolean expressions or to Integer or Long expressions",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: & operator can only be applied to Boolean expressions or to Integer or Long expressions"
+    },
+    {
+      "id": "K20",
+      "code": "Integer i = 07; pq.out('K20', i);",
+      "expected": "7",
+      "compile": true,
+      "floorExpected": "7"
+    },
+    {
+      "id": "K21",
+      "code": "Integer i = 5; i = i / 2.0; pq.out('K21', i);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Integer"
+    },
+    {
+      "id": "K22",
+      "code": "Long l = 5; Integer i = l; pq.out('K22', i);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Long to Integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Long to Integer"
+    },
+    {
+      "id": "K23",
+      "code": "Integer i = null + 1; pq.out('K23', i);",
+      "expected": "COMPILE_ERROR\tline 6: Arithmetic expressions must use numeric arguments",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Arithmetic expressions must use numeric arguments"
+    },
+    {
+      "id": "K24",
+      "code": "List<Long> l = new List<Integer>{1}; pq.out('K24', l);",
+      "expected": "(1)",
+      "compile": true,
+      "floorExpected": "(1)"
+    },
+    {
+      "id": "K25",
+      "code": "Integer i = 1; i = i >>> 1L; pq.out('K25', i);",
+      "expected": "0",
+      "compile": true,
+      "floorExpected": "0"
+    },
+    {
+      "id": "K26",
+      "code": "Integer i = true ? 1 : 2L; pq.out('K26', i);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Long to Integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Long to Integer"
+    },
+    {
+      "id": "K27",
+      "code": "Integer i = 2147483647L; pq.out('K27', i);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Long to Integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Long to Integer"
+    },
+    {
+      "id": "K28",
+      "code": "class G { public String g(Double x) { return 'Double'; } public String g(Decimal x) { return 'Decimal'; } } pq.out('K28', new G().g(5));",
+      "expected": "Double",
+      "compile": true,
+      "floorExpected": "Double"
+    },
+    {
+      "id": "K29",
+      "code": "Integer i = 5; Integer j = i.intValue(); pq.out('K29', j);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void intValue() from the type Integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void intValue() from the type Integer"
+    },
+    {
+      "id": "K30",
+      "code": "Integer i = 5; Long j = i.longValue(); pq.out('K30', j);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void longValue() from the type Integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void longValue() from the type Integer"
+    },
+    {
+      "id": "K31",
+      "code": "Map<Integer, String> m = new Map<Integer, String>{1 => 'a'}; String s = m.get(1L); pq.out('K31', s);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void get(Long) from the type Map<Integer,String>",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void get(Long) from the type Map<Integer,String>"
+    },
+    {
+      "id": "K32",
+      "code": "Boolean b = 1; pq.out('K32', b);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to Boolean",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to Boolean"
+    },
+    {
+      "id": "K33",
+      "code": "Integer i = 'a'.length() + 2147483647; pq.out('K33', i);",
+      "expected": "-2147483648",
+      "compile": true,
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "K34",
+      "code": "Integer i = 0; Boolean b = (i = 5) == 5; pq.out('K34', b);",
+      "expected": "true",
+      "compile": true,
+      "floorExpected": "true"
+    },
+    {
+      "id": "K35",
+      "code": "Double d = 1e20; pq.out('K35', d);",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'd'.",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Unexpected token 'd'."
+    },
+    {
+      "id": "Z01",
+      "code": "Long x = 9223372036854775808L; pq.out('Z01', x);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal long",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal long"
+    },
+    {
+      "id": "Z02",
+      "code": "Long x = -9223372036854775808L; pq.out('Z02', x);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal long",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal long"
+    },
+    {
+      "id": "Z03",
+      "code": "Long x = 1.0; pq.out('Z03', x);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Long",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Long"
+    },
+    {
+      "id": "Z04",
+      "code": "Long x = 5L; Integer y = x; pq.out('Z04', y);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Long to Integer",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Long to Integer"
+    },
+    {
+      "id": "Z05",
+      "code": "Long x = 1L; x += 0.5; pq.out('Z05', x);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Long",
+      "compile": true,
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Long"
+    },
+    {
+      "id": "Z06",
+      "code": "Long x = 1L; Long y = ~x; pq.out('Z06', y);",
+      "expected": "-2",
+      "compile": true,
+      "floorExpected": "-2"
+    }
+  ],
+  "preservation": [
+    {
+      "id": "U01",
+      "code": "List<Integer> xs = new List<Integer>{-1}; xs[0] >>>= 1; r = xs[0];",
+      "expected": "2147483647",
+      "compile": false
+    },
+    {
+      "id": "U02",
+      "code": "class G { public Integer n = -1; } G h = new G(); h.n >>>= 1; r = h.n;",
+      "expected": "2147483647",
+      "compile": false
+    },
+    {
+      "id": "U03",
+      "code": "List<Long> xs = new List<Long>{-1L}; xs[0] >>>= 1; r = xs[0];",
+      "expected": "9223372036854775807",
+      "compile": false
+    },
+    {
+      "id": "U04",
+      "code": "class G { public Long n = -1L; } G h = new G(); h.n >>>= 1; r = h.n;",
+      "expected": "9223372036854775807",
+      "compile": false
+    },
+    {
+      "id": "W01",
+      "code": "Integer.valueOf('12.3')",
+      "expected": "EXC|System.TypeException|Invalid integer: 12.3",
+      "compile": false
+    },
+    {
+      "id": "W02",
+      "code": "Integer.valueOf('-12.9')",
+      "expected": "EXC|System.TypeException|Invalid integer: -12.9",
+      "compile": false
+    },
+    {
+      "id": "W03",
+      "code": "Integer.valueOf('+12.0')",
+      "expected": "12",
+      "compile": false
+    },
+    {
+      "id": "W04",
+      "code": "Integer.valueOf('1.')",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "W05",
+      "code": "Integer.valueOf('.5')",
+      "expected": "EXC|System.TypeException|Invalid integer: .5",
+      "compile": false
+    },
+    {
+      "id": "W06",
+      "code": "Integer.valueOf('2147483648.0')",
+      "expected": "EXC|System.TypeException|Invalid integer: 2147483648.0",
+      "compile": false
+    },
+    {
+      "id": "W07",
+      "code": "Long.valueOf('12.0')",
+      "expected": "12",
+      "compile": false
+    },
+    {
+      "id": "W08",
+      "code": "Long.valueOf('12.3')",
+      "expected": "EXC|System.TypeException|Invalid long: 12.3",
+      "compile": false
+    },
+    {
+      "id": "J01",
+      "code": "Integer i = 5; Decimal r = i.decimalValue(); pq.out('J01',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void decimalValue() from the type Integer",
+      "compile": true
+    },
+    {
+      "id": "O01",
+      "code": "class OverloadOrgControl { public String pick(Integer count, Object label) { return 'integer-object'; } public String pick(Long count, String label) { return 'long-string'; } } new OverloadOrgControl().pick(1, 'one');",
+      "expected": "COMPILE_ERROR\tline 9: Ambiguous method signature: void pick(Integer, String)",
+      "compile": true
+    },
+    {
+      "id": "O02",
+      "code": "class DominantOverloadControl { public String pick(Integer left, Double right) { return 'integer-double'; } public String pick(Double left, Integer right) { return 'double-integer'; } public String pick(Integer left, Integer right) { return 'integer-integer'; } } r = new DominantOverloadControl().pick(1, 1);",
+      "expected": "integer-integer",
+      "compile": false
+    }
+  ],
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "floorOracle": {
+    "apiVersion": "62.0",
+    "route": "anonymous",
+    "rows": 300
+  },
+  "preservationAPIVersions": [
+    "67.0"
+  ]
+}

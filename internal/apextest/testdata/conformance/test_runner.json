@@ -1,0 +1,3102 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "oracle": {
+    "originalRows": 242,
+    "anonymousRows": 16,
+    "compilerRows": 20,
+    "nativeTestRows": 206,
+    "nativeControls": 161,
+    "unassertedControlEvidence": {
+      "K022": "Hosted Salesforce UnexpectedException with an incident ID; no local expectation inferred.",
+      "K023": "Hosted Salesforce UnexpectedException with an incident ID; no local expectation inferred."
+    },
+    "anonymousControls": 13,
+    "getterControlCapture": {
+      "anonymousEndpoints": "Owned anonymous getter controls at API 62.0 and 67.0.",
+      "namedEndpoints": "Owned named getter controls J073-J081 at API 62.0 and 67.0."
+    },
+    "reviewControlCapture": "Owned regression controls J082-J096 and review controls X097-X099/Z082-Z084 at API 62.0 and 67.0.",
+    "compilerControls": 3,
+    "rawNullControlCapture": "Owned control J097 at API 62.0 and 67.0 uses the original T038 Provider body and A30StubTarget.empty to observe raw null plus text null",
+    "trainRegressionCapture": "Owned regression controls at API 62.0 and 67.0: Q101-Q111, native @IsTest JSON integer identity and system-mode explicit-null Text Name",
+    "interfaceNestedCapture": "Owned interface callback casing and nested List return controls Q112/Q113 at API 55.0, 62.0 and 67.0; API 55.0 is enforced by TestRunStubProviderPreservesCallSiteCaseForNestedList"
+  },
+  "declarations": {
+    "A30State": "public class A30State {\n public static Integer value=0;\n @future public static void futureWork(){insert new Account(Name='future',AccountNumber='A30-future');}\n public class Work implements Queueable {public void execute(QueueableContext c){insert new Account(Name='queue',AccountNumber='A30-queue');}}\n public class SoapRequest {\n  public String input='owned';\n  private String[] input_type_info=new String[]{'input','urn:a30',null,'0','1','false'};\n  private String[] apex_schema_type_info=new String[]{'urn:a30','true','false'};\n  private String[] field_order_type_info=new String[]{'input'};\n }\n public class SoapResponse {\n  public String output;\n  private String[] output_type_info=new String[]{'output','urn:a30',null,'0','1','false'};\n  private String[] apex_schema_type_info=new String[]{'urn:a30','true','false'};\n  private String[] field_order_type_info=new String[]{'output'};\n }\n public static String soap(){\n  Map<String,SoapResponse> response=new Map<String,SoapResponse>{'response_x'=>null};\n  WebServiceCallout.invoke(new A30State(),new SoapRequest(),response,new String[]{'https://a30.invalid/soap','urn:a30','urn:a30','request','urn:a30','response','A30State.SoapResponse'});\n  return response.get('response_x').output;\n }\n}\n",
+    "A30Batch": "public class A30Batch implements Database.Batchable<SObject> {\n public Iterable<SObject> start(Database.BatchableContext c){return new List<SObject>{new Account(Name='batch',AccountNumber='A30-batch')};}\n public void execute(Database.BatchableContext c,List<SObject> rows){insert rows;}\n public void finish(Database.BatchableContext c){}\n}\n",
+    "A30StubTarget": "public virtual class A30StubTarget {\n public virtual String text(String input){return 'real:'+input;}\n public virtual Integer number(Integer input){return input;}\n public virtual String empty(){return 'real';}\n public virtual void touch(){}\n}\n",
+    "A30RegressionGateway": "public virtual class A30RegressionGateway {public virtual String getPaymentLinesByIds(Set<Id> ids){return 'real';}}\n",
+    "A30RegressionChangeEvent": "public virtual class A30RegressionChangeEvent {public virtual String ping(){return 'real';}}\n",
+    "A30NestedListDrive62": "public interface A30NestedListDrive62 {\n    List<List<String>> getSpreadsheetData(String id);\n}\n",
+    "A30NestedListDrive67": "public interface A30NestedListDrive67 {\n    List<List<String>> getSpreadsheetData(String id);\n}\n"
+  },
+  "testHeads": {
+    "A30NativeOracle": "@IsTest private class A30NativeOracle {\n @TestSetup static void seed(){\n  insert new Account(Name='setup',AccountNumber='A30-setup');\n  A30State.value=7;\n }\n private class HttpMock implements HttpCalloutMock {\n  public HttpResponse respond(HttpRequest q){HttpResponse a=new HttpResponse(); a.setStatusCode(201); a.setBody(q.getMethod()); a.setHeader('A30','first'); return a;}\n }\n private class OtherHttpMock implements HttpCalloutMock {\n  public HttpResponse respond(HttpRequest q){HttpResponse a=new HttpResponse(); a.setStatusCode(202); a.setBody(q.getMethod()); a.setHeader('A30','second'); return a;}\n }\n private class SoapMock implements WebServiceMock {\n  public void doInvoke(Object stub,Object request,Map<String,Object> response,String endpoint,String action,String requestName,String responseNS,String responseName,String responseType){\n   A30State.SoapResponse a=new A30State.SoapResponse(); a.output='soap-mock'; response.put('response_x',a);\n  }\n }\n private class Provider implements System.StubProvider {\n  public Object handleMethodCall(Object receiver,String method,Type returnType,List<Type> paramTypes,List<String> paramNames,List<Object> args){\n   if(method=='text')return method+'|'+returnType.getName()+'|'+paramTypes[0].getName()+'|'+paramNames[0]+'|'+String.valueOf(args[0]);\n   if(method=='number')return ((Integer)args[0])+10;\n   return null;\n  }\n }\n",
+    "A30MockOracle": "@IsTest private class A30MockOracle {\n private class HttpMock implements HttpCalloutMock {\n  public HttpResponse respond(HttpRequest q){HttpResponse a=new HttpResponse(); a.setStatusCode(201); a.setBody(q.getMethod()); a.setHeader('A30','first'); return a;}\n }\n private class OtherHttpMock implements HttpCalloutMock {\n  public HttpResponse respond(HttpRequest q){HttpResponse a=new HttpResponse(); a.setStatusCode(202); a.setBody(q.getMethod()); a.setHeader('A30','second'); return a;}\n }\n private class SoapMock implements WebServiceMock {\n  public void doInvoke(Object stub,Object request,Map<String,Object> response,String endpoint,String action,String requestName,String responseNS,String responseName,String responseType){\n   A30State.SoapResponse a=new A30State.SoapResponse(); a.output='soap-mock'; response.put('response_x',a);\n  }\n }\n private class Provider implements System.StubProvider {\n  public Object handleMethodCall(Object receiver,String method,Type returnType,List<Type> paramTypes,List<String> paramNames,List<Object> args){\n   if(method=='text')return method+'|'+returnType.getName()+'|'+paramTypes[0].getName()+'|'+paramNames[0]+'|'+String.valueOf(args[0]);\n   if(method=='number')return ((Integer)args[0])+10;\n   return null;\n  }\n }\n",
+    "A30AssertControls": "@IsTest private class A30AssertControls {\n private class Message {public override String toString(){return 'custom object message';}}\n",
+    "A30BoundaryControls": "@IsTest private class A30BoundaryControls {\n",
+    "A30SetupLimitsControls": "@IsTest private class A30SetupLimitsControls {\n @TestSetup static void setupRows(){List<Account> rows=new List<Account>{new Account(Name='setup-one'),new Account(Name='setup-two')}; insert rows; List<Account> saved=[SELECT Id,Name FROM Account]; saved[0].Description='updated'; update saved[0];}\n",
+    "A30SetupWindowControls": "@IsTest private class A30SetupWindowControls {\n @TestSetup static void setupRows(){Test.startTest(); insert new Account(Name='inside-setup'); List<Account> rows=[SELECT Id FROM Account]; Test.stopTest();}\n",
+    "A30NoSetupControls": "@IsTest private class A30NoSetupControls {\n",
+    "A30RegressionControls": "@IsTest private class A30RegressionControls {\n private class Box {public String Code; public Box(String code){this.Code=code;} public Boolean equals(Object other){return other instanceof Box && Code==((Box)other).Code;}}\n private class Named {public override String toString(){return 'named-value';}}\n private class Provider implements System.StubProvider {public Object handleMethodCall(Object receiver,String method,Type returnType,List<Type> paramTypes,List<String> paramNames,List<Object> args){return method;}}\n private class Scheduled implements Schedulable {public void execute(SchedulableContext context){}}\n private class T038Provider implements System.StubProvider {\n  public Object handleMethodCall(Object receiver,String method,Type returnType,List<Type> paramTypes,List<String> paramNames,List<Object> args){\n   if(method=='text')return method+'|'+returnType.getName()+'|'+paramTypes[0].getName()+'|'+paramNames[0]+'|'+String.valueOf(args[0]);\n   if(method=='number')return ((Integer)args[0])+10;\n   return null;\n  }\n }\n",
+    "A30TrainRegression": "@IsTest private class A30TrainRegression {\n",
+    "A30NestedListControls": "@IsTest private class A30NestedListControls {\n    private class Provider implements System.StubProvider {\n        public String observedMethod;\n        public Object handleMethodCall(Object stubbedObject, String stubbedMethodName, Type returnType,\n            List<Type> listOfParamTypes, List<String> listOfParamNames, List<Object> listOfArgs) {\n            observedMethod = stubbedMethodName;\n            return new List<List<String>>{ new List<String>{ 'nested-value' } };\n        }\n    }\n"
+  },
+  "resources": {
+    "A30Rows": "Name,AccountNumber\nLoaded Alpha,A30-load\nLoaded Beta,A30-load\n",
+    "A30BadRows": "NoSuchField__c\ninvalid\n",
+    "A30EmptyRows": "Name,AccountNumber\n"
+  },
+  "cases": [
+    {
+      "ID": "R001",
+      "Group": "running-test",
+      "Code": "r=Test.isRunningTest();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R002",
+      "Group": "runAs/context",
+      "Code": "System.runAs(new User(Id=UserInfo.getUserId())) {r=UserInfo.getUserId()!=null;}",
+      "Expected": "EXC|System.TypeException|System.runAs can only be used within a test method: ",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R003",
+      "Group": "runAs/null",
+      "Code": "System.runAs((User)null) {r='entered';}",
+      "Expected": "EXC|System.TypeException|System.runAs can only be used within a test method: ",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R004",
+      "Group": "fixed-search-results/context",
+      "Code": "Test.setFixedSearchResults(new Id[]{}); r='returned';",
+      "Expected": "EXC|System.StringException|Test.setFixedSearchResults() can only be called from testMethods",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R005",
+      "Group": "fixed-search-results/null",
+      "Code": "Test.setFixedSearchResults(null); r='returned';",
+      "Expected": "EXC|System.StringException|Test.setFixedSearchResults() can only be called from testMethods",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R006",
+      "Group": "fixed-search-results/context",
+      "Code": "Test.setFixedSearchResults(new Id[]{'001000000000001'}); r='returned';",
+      "Expected": "EXC|System.StringException|Test.setFixedSearchResults() can only be called from testMethods",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R007",
+      "Group": "loadData/context",
+      "Code": "r=Test.loadData(Account.SObjectType,'A30Rows').size();",
+      "Expected": "EXC|System.TypeException|Test.loadData() can only be called from test methods",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R008",
+      "Group": "loadData/missing",
+      "Code": "r=Test.loadData(Account.SObjectType,'A30MissingRows').size();",
+      "Expected": "EXC|System.TypeException|Test.loadData() can only be called from test methods",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R009",
+      "Group": "loadData/null-name",
+      "Code": "r=Test.loadData(Account.SObjectType,null);",
+      "Expected": "EXC|System.TypeException|Test.loadData() can only be called from test methods",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R010",
+      "Group": "loadData/null-type",
+      "Code": "r=Test.loadData(null,'A30Rows');",
+      "Expected": "EXC|System.TypeException|Test.loadData() can only be called from test methods",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R011",
+      "Group": "mocks/null",
+      "Code": "Test.setMock(HttpCalloutMock.class,null); r='returned';",
+      "Expected": "EXC|System.TypeException|Test.setMock() can only be called from test methods",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R012",
+      "Group": "mocks/null",
+      "Code": "Test.setMock(WebServiceMock.class,null); r='returned';",
+      "Expected": "EXC|System.TypeException|Test.setMock() can only be called from test methods",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R013",
+      "Group": "mocks/invalid-type",
+      "Code": "Test.setMock(String.class,'x'); r='returned';",
+      "Expected": "EXC|System.TypeException|Test.setMock() can only be called from test methods",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R014",
+      "Group": "mocks/null-type",
+      "Code": "Test.setMock(null,null); r='returned';",
+      "Expected": "EXC|System.TypeException|Test.setMock() can only be called from test methods",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R015",
+      "Group": "stubs/native-type",
+      "Code": "r=Test.createStub(String.class,null);",
+      "Expected": "EXC|System.TypeException|Test.createStub() can only be called from test methods",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R016",
+      "Group": "stubs/null-type",
+      "Code": "r=Test.createStub(null,null);",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C001",
+      "Group": "Assert/compile",
+      "Code": "Assert.isTrue(1); Object r='compiled'; pq.out('C001',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void isTrue(Integer) from the type System.Assert",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C002",
+      "Group": "Assert/compile",
+      "Code": "Assert.isFalse('false'); Object r='compiled'; pq.out('C002',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void isFalse(String) from the type System.Assert",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C003",
+      "Group": "Assert/compile",
+      "Code": "Assert.areEqual(1); Object r='compiled'; pq.out('C003',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void areEqual(Integer) from the type System.Assert",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C004",
+      "Group": "Assert/compile",
+      "Code": "Assert.isNull(); Object r='compiled'; pq.out('C004',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void isNull() from the type System.Assert",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C005",
+      "Group": "Assert/compile",
+      "Code": "Assert.fail(1); Object r='compiled'; pq.out('C005',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void fail(Integer) from the type System.Assert",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C006",
+      "Group": "Assert/compile",
+      "Code": "Assert.areEqual(1,2,3); Object r='compiled'; pq.out('C006',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void areEqual(Integer, Integer, Integer) from the type System.Assert",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C007",
+      "Group": "Assert/compile",
+      "Code": "Assert.isInstanceOfType(1,'Integer'); Object r='compiled'; pq.out('C007',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void isInstanceOfType(Integer, String) from the type System.Assert",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C008",
+      "Group": "start-stop/compile",
+      "Code": "Test.startTest(1); Object r='compiled'; pq.out('C008',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void startTest(Integer) from the type System.Test",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C009",
+      "Group": "start-stop/compile",
+      "Code": "Test.stopTest(true); Object r='compiled'; pq.out('C009',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void stopTest(Boolean) from the type System.Test",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C010",
+      "Group": "running-test/compile",
+      "Code": "Boolean x=Test.isRunningTest(1); Object r='compiled'; pq.out('C010',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void isRunningTest(Integer) from the type System.Test",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C011",
+      "Group": "runAs/compile",
+      "Code": "System.runAs(1) {} Object r='compiled'; pq.out('C011',r);",
+      "Expected": "COMPILE_ERROR\tline 6: runAs requires a single argument of type 'User' or 'Version'",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C012",
+      "Group": "mocks/compile",
+      "Code": "Test.setMock(HttpCalloutMock.class); Object r='compiled'; pq.out('C012',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setMock(System.Type) from the type System.Test",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C013",
+      "Group": "stubs/compile",
+      "Code": "Test.createStub(String.class); Object r='compiled'; pq.out('C013',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void createStub(System.Type) from the type System.Test",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C014",
+      "Group": "fixed-search-results/compile",
+      "Code": "Test.setFixedSearchResults(123); Object r='compiled'; pq.out('C014',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setFixedSearchResults(Integer) from the type System.Test",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C015",
+      "Group": "loadData/compile",
+      "Code": "Test.loadData(Account.class,'A30Rows'); Object r='compiled'; pq.out('C015',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void loadData(System.Type, String) from the type System.Test",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C016",
+      "Group": "setup-isolation/compile",
+      "Code": "@TestSetup void setup() {} Object r='compiled'; pq.out('C016',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Defining type for TestSetup methods must be declared as IsTest",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C017",
+      "Group": "setup-isolation/compile",
+      "Code": "@IsTest class A30InlineTest { @TestSetup static void seed() {} @IsTest static void sample() {} } Object r='compiled'; pq.out('C017',r);",
+      "Expected": "COMPILE_ERROR\tline 6: static can only be used on methods of a top level type",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C018",
+      "Group": "mocks/compile",
+      "Code": "class A30IncompleteMock implements HttpCalloutMock {} Object r='compiled'; pq.out('C018',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Class A30IncompleteMock must implement the method: System.HttpResponse System.HttpCalloutMock.respond(System.HttpRequest)",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C019",
+      "Group": "stubs/compile",
+      "Code": "class A30IncompleteStub implements System.StubProvider {} Object r='compiled'; pq.out('C019',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Class A30IncompleteStub must implement the method: Object System.StubProvider.handleMethodCall(Object, String, System.Type, List<System.Type>, List<String>, List<Object>)",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C020",
+      "Group": "mocks/compile",
+      "Code": "class A30IncompleteSoap implements WebServiceMock {} Object r='compiled'; pq.out('C020',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Class A30IncompleteSoap must implement the method: void System.WebServiceMock.doInvoke(Object, Object, Map<String,Object>, String, String, String, String, String, String)",
+      "Compile": true,
+      "NativeLine": 6
+    }
+  ],
+  "nativeCases": [
+    {
+      "ID": "T001",
+      "Group": "setup-isolation",
+      "Code": "r=[SELECT count() FROM Account WHERE AccountNumber='A30-setup'];",
+      "Expected": "1",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T002",
+      "Group": "setup-isolation",
+      "Code": "Account a=[SELECT Name FROM Account WHERE AccountNumber='A30-setup']; r=a.Name;",
+      "Expected": "setup",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T003",
+      "Group": "setup-isolation",
+      "Code": "Account a=[SELECT Id,Name FROM Account WHERE AccountNumber='A30-setup']; a.Name='changed'; update a; r=[SELECT Name FROM Account WHERE Id=:a.Id].Name;",
+      "Expected": "changed",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T004",
+      "Group": "setup-isolation",
+      "Code": "delete [SELECT Id FROM Account WHERE AccountNumber='A30-setup']; r=[SELECT count() FROM Account WHERE AccountNumber='A30-setup'];",
+      "Expected": "0",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T005",
+      "Group": "setup-isolation",
+      "Code": "insert new Account(Name='method',AccountNumber='A30-method'); r=[SELECT count() FROM Account WHERE AccountNumber='A30-method'];",
+      "Expected": "1",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T006",
+      "Group": "setup-isolation",
+      "Code": "r=[SELECT count() FROM Account WHERE AccountNumber='A30-method'];",
+      "Expected": "0",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T007",
+      "Group": "setup-isolation",
+      "Code": "r=A30State.value;",
+      "Expected": "0",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T008",
+      "Group": "setup-isolation",
+      "Code": "A30State.value=9; r=A30State.value;",
+      "Expected": "9",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T009",
+      "Group": "setup-isolation",
+      "Code": "r=Test.isRunningTest();",
+      "Expected": "true",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T010",
+      "Group": "start-stop-limits/async-drain",
+      "Code": "Integer before=Limits.getQueries(); List<Account> a=[SELECT Id FROM Account]; Integer used=Limits.getQueries()-before; Test.startTest(); Integer insideCount=Limits.getQueries(); Test.stopTest(); r=used+'|'+insideCount+'|'+(Limits.getQueries()-before);",
+      "Expected": "1|0|1",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T011",
+      "Group": "start-stop-limits/async-drain",
+      "Code": "insert new Account(Name='before'); Integer used=Limits.getDmlStatements(); Test.startTest(); Integer insideCount=Limits.getDmlStatements(); insert new Account(Name='inside'); Integer after=Limits.getDmlStatements(); Test.stopTest(); r=used+'|'+insideCount+'|'+after+'|'+Limits.getDmlStatements();",
+      "Expected": "2|0|1|2",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T012",
+      "Group": "start-stop-limits/async-drain",
+      "Code": "Test.startTest(); r=Limits.getLimitQueries()+'|'+Limits.getLimitDmlStatements(); Test.stopTest();",
+      "Expected": "100|150",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T013",
+      "Group": "start-stop-limits/async-drain",
+      "Code": "Test.startTest(); Test.stopTest(); r=Test.isRunningTest();",
+      "Expected": "true",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T014",
+      "Group": "start-stop-limits/async-drain",
+      "Code": "Test.startTest(); Test.startTest(); r='returned';",
+      "Expected": "TEST_Fail|System.FinalException: Testing already started",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T015",
+      "Group": "start-stop-limits/async-drain",
+      "Code": "Test.stopTest(); r='returned';",
+      "Expected": "TEST_Fail|System.FinalException: Testing has not started",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T016",
+      "Group": "start-stop-limits/async-drain",
+      "Code": "Test.startTest(); Test.stopTest(); Test.stopTest(); r='returned';",
+      "Expected": "TEST_Fail|System.FinalException: Testing already stopped",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T017",
+      "Group": "start-stop-limits/async-drain",
+      "Code": "Test.startTest(); Test.stopTest(); Test.startTest(); r='returned';",
+      "Expected": "TEST_Fail|System.FinalException: Testing already started",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T018",
+      "Group": "start-stop-limits/async-drain",
+      "Code": "Test.startTest(); A30State.futureWork(); Integer before=[SELECT count() FROM Account WHERE AccountNumber='A30-future']; Test.stopTest(); r=before+'|'+[SELECT count() FROM Account WHERE AccountNumber='A30-future'];",
+      "Expected": "0|1",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T019",
+      "Group": "start-stop-limits/async-drain",
+      "Code": "Test.startTest(); Id j=System.enqueueJob(new A30State.Work()); Integer before=[SELECT count() FROM Account WHERE AccountNumber='A30-queue']; Test.stopTest(); r=before+'|'+[SELECT count() FROM Account WHERE AccountNumber='A30-queue']+'|'+[SELECT Status FROM AsyncApexJob WHERE Id=:j].Status;",
+      "Expected": "0|1|Completed",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T020",
+      "Group": "start-stop-limits/async-drain",
+      "Code": "Test.startTest(); Database.executeBatch(new A30Batch(),1); Test.stopTest(); r=[SELECT count() FROM Account WHERE AccountNumber='A30-batch'];",
+      "Expected": "1",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T021",
+      "Group": "runAs",
+      "Code": "Id before=UserInfo.getUserId(); System.runAs(new User(Id=before)){r=UserInfo.getUserId()==before;}",
+      "Expected": "true",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T022",
+      "Group": "runAs",
+      "Code": "System.runAs((User)null){r='entered';}",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T023",
+      "Group": "runAs",
+      "Code": "System.runAs(new User(Id=UserInfo.getUserId())){r=Test.isRunningTest();}",
+      "Expected": "true",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T024",
+      "Group": "runAs",
+      "Code": "Id before=UserInfo.getUserId(); System.runAs(new User(Id=before)){} r=UserInfo.getUserId()==before;",
+      "Expected": "true",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T025",
+      "Group": "mocks/http",
+      "Code": "Test.setMock(HttpCalloutMock.class,new HttpMock()); HttpRequest q=new HttpRequest(); q.setEndpoint('https://a30.invalid/path'); q.setMethod('GET'); HttpResponse a=new Http().send(q); r=a.getStatusCode()+'|'+a.getBody()+'|'+a.getHeader('A30');",
+      "Expected": "201|GET|first",
+      "Class": "A30MockOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T026",
+      "Group": "mocks/http",
+      "Code": "Test.setMock(HttpCalloutMock.class,new HttpMock()); HttpRequest q=new HttpRequest(); q.setEndpoint('https://a30.invalid/path'); q.setMethod('POST'); HttpResponse a=new Http().send(q); r=a.getStatusCode()+'|'+a.getBody()+'|'+a.getHeader('A30');",
+      "Expected": "201|POST|first",
+      "Class": "A30MockOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T027",
+      "Group": "mocks/http",
+      "Code": "Test.setMock(HttpCalloutMock.class,new HttpMock()); HttpRequest q=new HttpRequest(); q.setEndpoint('https://a30.invalid/path'); q.setMethod('DELETE'); HttpResponse a=new Http().send(q); r=a.getStatusCode()+'|'+a.getBody()+'|'+a.getHeader('A30');",
+      "Expected": "201|DELETE|first",
+      "Class": "A30MockOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T028",
+      "Group": "mocks/http",
+      "Code": "Test.setMock(HttpCalloutMock.class,new HttpMock()); Test.setMock(HttpCalloutMock.class,new OtherHttpMock()); HttpRequest q=new HttpRequest(); q.setEndpoint('https://a30.invalid/path'); q.setMethod('GET'); HttpResponse a=new Http().send(q); r=a.getStatusCode()+'|'+a.getBody()+'|'+a.getHeader('A30');",
+      "Expected": "202|GET|second",
+      "Class": "A30MockOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T029",
+      "Group": "mocks/http",
+      "Code": "Test.setMock(HttpCalloutMock.class,new HttpMock()); Test.setMock(HttpCalloutMock.class,new OtherHttpMock()); HttpRequest q=new HttpRequest(); q.setEndpoint('https://a30.invalid/path'); q.setMethod('POST'); HttpResponse a=new Http().send(q); r=a.getStatusCode()+'|'+a.getBody()+'|'+a.getHeader('A30');",
+      "Expected": "202|POST|second",
+      "Class": "A30MockOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T030",
+      "Group": "mocks/http",
+      "Code": "Test.setMock(HttpCalloutMock.class,new HttpMock()); Test.setMock(HttpCalloutMock.class,new OtherHttpMock()); HttpRequest q=new HttpRequest(); q.setEndpoint('https://a30.invalid/path'); q.setMethod('DELETE'); HttpResponse a=new Http().send(q); r=a.getStatusCode()+'|'+a.getBody()+'|'+a.getHeader('A30');",
+      "Expected": "202|DELETE|second",
+      "Class": "A30MockOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T031",
+      "Group": "mocks/registration-soap",
+      "Code": "Test.setMock(HttpCalloutMock.class,null); r='returned';",
+      "Expected": "returned",
+      "Class": "A30MockOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T032",
+      "Group": "mocks/registration-soap",
+      "Code": "Test.setMock(WebServiceMock.class,new SoapMock()); r=A30State.soap();",
+      "Expected": "soap-mock",
+      "Class": "A30MockOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T033",
+      "Group": "mocks/registration-soap",
+      "Code": "Test.setMock(WebServiceMock.class,null); r='returned';",
+      "Expected": "returned",
+      "Class": "A30MockOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T034",
+      "Group": "mocks/registration-soap",
+      "Code": "Test.setMock(String.class,'x'); r='returned';",
+      "Expected": "EXC|System.TypeException|Supplied type is not an interface",
+      "Class": "A30MockOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T035",
+      "Group": "stubs/provider",
+      "Code": "A30StubTarget s=(A30StubTarget)Test.createStub(A30StubTarget.class,new Provider()); r=s.text('x');",
+      "Expected": "text|String|String|input|x",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T036",
+      "Group": "stubs/provider",
+      "Code": "A30StubTarget s=(A30StubTarget)Test.createStub(A30StubTarget.class,new Provider()); r=s.text(null);",
+      "Expected": "text|String|String|input|null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T037",
+      "Group": "stubs/provider",
+      "Code": "A30StubTarget s=(A30StubTarget)Test.createStub(A30StubTarget.class,new Provider()); r=s.number(4);",
+      "Expected": "14",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T038",
+      "Group": "stubs/provider",
+      "Code": "A30StubTarget s=(A30StubTarget)Test.createStub(A30StubTarget.class,new Provider()); r=s.empty();",
+      "Expected": "null",
+      "Class": "A30NativeOracle",
+      "NativeNull": true
+    },
+    {
+      "ID": "T039",
+      "Group": "stubs/provider",
+      "Code": "A30StubTarget s=(A30StubTarget)Test.createStub(A30StubTarget.class,new Provider()); s.touch(); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T040",
+      "Group": "stubs/provider",
+      "Code": "r=Test.createStub(A30StubTarget.class,null);",
+      "Expected": "EXC|System.NullPointerException|stubProvider cannot be null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T041",
+      "Group": "stubs/provider",
+      "Code": "r=Test.createStub(null,new Provider());",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T042",
+      "Group": "stubs/provider",
+      "Code": "r=Test.createStub(Account.class,new Provider());",
+      "Expected": "EXC|System.TypeException|Test.createStub() can only be invoked on user defined types.",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T043",
+      "Group": "stubs/provider",
+      "Code": "r=Test.createStub(String.class,new Provider());",
+      "Expected": "EXC|System.TypeException|Test.createStub() can only be invoked on user defined types.",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T044",
+      "Group": "fixed-search-results",
+      "Code": "Test.setFixedSearchResults(new Id[]{}); r=[FIND 'anything' IN ALL FIELDS RETURNING Account(Id)].get(0).size();",
+      "Expected": "0",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T045",
+      "Group": "fixed-search-results",
+      "Code": "Account a=[SELECT Id FROM Account WHERE AccountNumber='A30-setup']; Test.setFixedSearchResults(new Id[]{a.Id}); r=[FIND 'nomatch' IN ALL FIELDS RETURNING Account(Name)].get(0).size();",
+      "Expected": "1",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T046",
+      "Group": "fixed-search-results",
+      "Code": "Account a=[SELECT Id FROM Account WHERE AccountNumber='A30-setup']; Test.setFixedSearchResults(new Id[]{a.Id,a.Id}); r=[FIND 'nomatch' IN ALL FIELDS RETURNING Account(Id)].get(0).size();",
+      "Expected": "1",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T047",
+      "Group": "fixed-search-results",
+      "Code": "Account a=[SELECT Id FROM Account WHERE AccountNumber='A30-setup']; Test.setFixedSearchResults(new Id[]{a.Id}); r=[FIND 'nomatch' IN ALL FIELDS RETURNING Account(Id WHERE Name='absent')].get(0).size();",
+      "Expected": "0",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T048",
+      "Group": "fixed-search-results",
+      "Code": "Test.setFixedSearchResults(null); r=[FIND 'anything' IN ALL FIELDS RETURNING Account(Id)].get(0).size();",
+      "Expected": "0",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T049",
+      "Group": "loadData",
+      "Code": "List<SObject> xs=Test.loadData(Account.SObjectType,'A30Rows'); r=xs.size();",
+      "Expected": "2",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T050",
+      "Group": "loadData",
+      "Code": "List<SObject> xs=Test.loadData(Account.SObjectType,'A30Rows'); r=xs[0].get('Name')+'|'+xs[1].get('Name');",
+      "Expected": "Loaded Alpha|Loaded Beta",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T051",
+      "Group": "loadData",
+      "Code": "List<SObject> xs=Test.loadData(Account.SObjectType,'A30Rows'); r=xs[0].Id!=null && xs[1].Id!=null;",
+      "Expected": "true",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T052",
+      "Group": "loadData",
+      "Code": "Test.loadData(Account.SObjectType,'A30Rows'); r=[SELECT count() FROM Account WHERE AccountNumber='A30-load'];",
+      "Expected": "2",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T053",
+      "Group": "loadData",
+      "Code": "r=Test.loadData(Account.SObjectType,'A30EmptyRows').size();",
+      "Expected": "EXC|System.StringException|Static Resource has no content: A30EmptyRows",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T054",
+      "Group": "loadData",
+      "Code": "r=Test.loadData(Account.SObjectType,'A30BadRows').size();",
+      "Expected": "EXC|System.StringException|Unknown field: NoSuchField__c",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T055",
+      "Group": "loadData",
+      "Code": "r=Test.loadData(Account.SObjectType,'A30MissingRows').size();",
+      "Expected": "EXC|System.NullPointerException|Static Resource not found: A30MissingRows",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T056",
+      "Group": "loadData",
+      "Code": "r=Test.loadData(Account.SObjectType,null);",
+      "Expected": "EXC|System.NullPointerException|staticResourceName cannot be null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T057",
+      "Group": "loadData",
+      "Code": "r=Test.loadData(null,'A30Rows');",
+      "Expected": "EXC|System.NullPointerException|sObject type token cannot be null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T058",
+      "Group": "Assert-messages/named",
+      "Code": "System.assertEquals('Case','case'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: Case, Actual: case",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T059",
+      "Group": "Assert-messages/named",
+      "Code": "Assert.areEqual('Case','case'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: Case, Actual: case",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T060",
+      "Group": "Assert-messages/named",
+      "Code": "Assert.isTrue(false,'native message'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: native message",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T061",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isTrue(true); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T062",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isTrue(true, 'A30 message'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T063",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isTrue(true, ''); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T064",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isTrue(true, null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Message parameter cannot be null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T065",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isTrue(false); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T066",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isTrue(false, 'A30 message'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: A30 message",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T067",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isTrue(false, ''); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed:",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T068",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isTrue(false, null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Message parameter cannot be null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T069",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isTrue(null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T070",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isTrue(null, 'A30 message'); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T071",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isTrue(null, ''); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T072",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isTrue(null, null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T073",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isFalse(true); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T074",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isFalse(true, 'A30 message'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: A30 message",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T075",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isFalse(true, ''); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed:",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T076",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isFalse(true, null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Message parameter cannot be null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T077",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isFalse(false); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T078",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isFalse(false, 'A30 message'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T079",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isFalse(false, ''); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T080",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isFalse(false, null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Message parameter cannot be null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T081",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isFalse(null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T082",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isFalse(null, 'A30 message'); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T083",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isFalse(null, ''); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T084",
+      "Group": "Assert-messages/boolean",
+      "Code": "Assert.isFalse(null, null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T085",
+      "Group": "Assert-messages/boolean",
+      "Code": "System.assert(true); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T086",
+      "Group": "Assert-messages/boolean",
+      "Code": "System.assert(true, 'A30 message'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T087",
+      "Group": "Assert-messages/boolean",
+      "Code": "System.assert(true, ''); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T088",
+      "Group": "Assert-messages/boolean",
+      "Code": "System.assert(true, null); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T089",
+      "Group": "Assert-messages/boolean",
+      "Code": "System.assert(false); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T090",
+      "Group": "Assert-messages/boolean",
+      "Code": "System.assert(false, 'A30 message'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: A30 message",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T091",
+      "Group": "Assert-messages/boolean",
+      "Code": "System.assert(false, ''); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed:",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T092",
+      "Group": "Assert-messages/boolean",
+      "Code": "System.assert(false, null); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T093",
+      "Group": "Assert-messages/boolean",
+      "Code": "System.assert(null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T094",
+      "Group": "Assert-messages/boolean",
+      "Code": "System.assert(null, 'A30 message'); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T095",
+      "Group": "Assert-messages/boolean",
+      "Code": "System.assert(null, ''); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T096",
+      "Group": "Assert-messages/boolean",
+      "Code": "System.assert(null, null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T097",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areEqual('Case','case'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: Case, Actual: case",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T098",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areEqual('Case','Case'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T099",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areEqual(null,null); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T100",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areEqual(null,'x'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: null, Actual: x",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T101",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areEqual(1,1L); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T102",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areEqual(1,1.0); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T103",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areEqual(1,2); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: 1, Actual: 2",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T104",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areEqual(true,false); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: true, Actual: false",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T105",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areEqual('',null); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: , Actual: null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T106",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areEqual(new List<Integer>{1,null},new List<Integer>{1,null}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T107",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areEqual(new Set<Integer>{1,2},new Set<Integer>{2,1}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T108",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areEqual(new Account(Name='A'),new Account(Name='a')); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: Account:{Name=A}, Actual: Account:{Name=a}",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T109",
+      "Group": "Assert-messages/equality-message",
+      "Code": "Assert.areEqual(1,2,'custom'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: custom: Expected: 1, Actual: 2",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T110",
+      "Group": "Assert-messages/equality-message",
+      "Code": "Assert.areEqual(1,2,''); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: : Expected: 1, Actual: 2",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T111",
+      "Group": "Assert-messages/equality-message",
+      "Code": "Assert.areEqual(1,2,null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T112",
+      "Group": "Assert-messages/equality-message",
+      "Code": "Assert.areEqual(1,2,'line1\\nline2'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: line1\\nline2: Expected: 1, Actual: 2",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T113",
+      "Group": "Assert-messages/equality-message",
+      "Code": "Assert.areEqual(1,2,'pipe|tab\\tend'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: pipe|tab\tend: Expected: 1, Actual: 2",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T114",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areNotEqual('Case','case'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T115",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areNotEqual('Case','Case'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Same value: Case",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T116",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areNotEqual(null,null); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Same value: null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T117",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areNotEqual(null,'x'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T118",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areNotEqual(1,1L); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Same value: 1",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T119",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areNotEqual(1,1.0); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Same value: 1",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T120",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areNotEqual(1,2); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T121",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areNotEqual(true,false); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T122",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areNotEqual('',null); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T123",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areNotEqual(new List<Integer>{1,null},new List<Integer>{1,null}); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Same value: (1, null)",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T124",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areNotEqual(new Set<Integer>{1,2},new Set<Integer>{2,1}); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Same value: {1, 2}",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T125",
+      "Group": "Assert-messages/equality",
+      "Code": "Assert.areNotEqual(new Account(Name='A'),new Account(Name='a')); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T126",
+      "Group": "Assert-messages/equality-message",
+      "Code": "Assert.areNotEqual(1,2,'custom'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T127",
+      "Group": "Assert-messages/equality-message",
+      "Code": "Assert.areNotEqual(1,2,''); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T128",
+      "Group": "Assert-messages/equality-message",
+      "Code": "Assert.areNotEqual(1,2,null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T129",
+      "Group": "Assert-messages/equality-message",
+      "Code": "Assert.areNotEqual(1,2,'line1\\nline2'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T130",
+      "Group": "Assert-messages/equality-message",
+      "Code": "Assert.areNotEqual(1,2,'pipe|tab\\tend'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T131",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertEquals('Case','case'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: Case, Actual: case",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T132",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertEquals('Case','Case'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T133",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertEquals(null,null); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T134",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertEquals(null,'x'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: null, Actual: x",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T135",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertEquals(1,1L); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T136",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertEquals(1,1.0); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T137",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertEquals(1,2); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: 1, Actual: 2",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T138",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertEquals(true,false); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: true, Actual: false",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T139",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertEquals('',null); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: , Actual: null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T140",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertEquals(new List<Integer>{1,null},new List<Integer>{1,null}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T141",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertEquals(new Set<Integer>{1,2},new Set<Integer>{2,1}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T142",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertEquals(new Account(Name='A'),new Account(Name='a')); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: Account:{Name=A}, Actual: Account:{Name=a}",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T143",
+      "Group": "Assert-messages/equality-message",
+      "Code": "System.assertEquals(1,2,'custom'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: custom: Expected: 1, Actual: 2",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T144",
+      "Group": "Assert-messages/equality-message",
+      "Code": "System.assertEquals(1,2,''); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: : Expected: 1, Actual: 2",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T145",
+      "Group": "Assert-messages/equality-message",
+      "Code": "System.assertEquals(1,2,null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T146",
+      "Group": "Assert-messages/equality-message",
+      "Code": "System.assertEquals(1,2,'line1\\nline2'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: line1\\nline2: Expected: 1, Actual: 2",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T147",
+      "Group": "Assert-messages/equality-message",
+      "Code": "System.assertEquals(1,2,'pipe|tab\\tend'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: pipe|tab\tend: Expected: 1, Actual: 2",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T148",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertNotEquals('Case','case'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T149",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertNotEquals('Case','Case'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Same value: Case",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T150",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertNotEquals(null,null); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Same value: null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T151",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertNotEquals(null,'x'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T152",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertNotEquals(1,1L); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Same value: 1",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T153",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertNotEquals(1,1.0); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Same value: 1",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T154",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertNotEquals(1,2); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T155",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertNotEquals(true,false); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T156",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertNotEquals('',null); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T157",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertNotEquals(new List<Integer>{1,null},new List<Integer>{1,null}); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Same value: (1, null)",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T158",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertNotEquals(new Set<Integer>{1,2},new Set<Integer>{2,1}); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Same value: {1, 2}",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T159",
+      "Group": "Assert-messages/equality",
+      "Code": "System.assertNotEquals(new Account(Name='A'),new Account(Name='a')); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T160",
+      "Group": "Assert-messages/equality-message",
+      "Code": "System.assertNotEquals(1,2,'custom'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T161",
+      "Group": "Assert-messages/equality-message",
+      "Code": "System.assertNotEquals(1,2,''); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T162",
+      "Group": "Assert-messages/equality-message",
+      "Code": "System.assertNotEquals(1,2,null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T163",
+      "Group": "Assert-messages/equality-message",
+      "Code": "System.assertNotEquals(1,2,'line1\\nline2'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T164",
+      "Group": "Assert-messages/equality-message",
+      "Code": "System.assertNotEquals(1,2,'pipe|tab\\tend'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T165",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNull(null); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T166",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNull(null, 'null check'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T167",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNull(''); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Nullable object asserted with non null value",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T168",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNull('', 'null check'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Nullable object asserted with non null value: null check",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T169",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNull(0); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Nullable object asserted with non null value",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T170",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNull(0, 'null check'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Nullable object asserted with non null value: null check",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T171",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNull(false); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Nullable object asserted with non null value",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T172",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNull(false, 'null check'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Nullable object asserted with non null value: null check",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T173",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNull(new List<Integer>()); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Nullable object asserted with non null value",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T174",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNull(new List<Integer>(), 'null check'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Nullable object asserted with non null value: null check",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T175",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNotNull(null); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Instance expected to be a non null value",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T176",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNotNull(null, 'null check'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Instance expected to be a non null value: null check",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T177",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNotNull(''); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T178",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNotNull('', 'null check'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T179",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNotNull(0); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T180",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNotNull(0, 'null check'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T181",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNotNull(false); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T182",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNotNull(false, 'null check'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T183",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNotNull(new List<Integer>()); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T184",
+      "Group": "Assert-messages/null",
+      "Code": "Assert.isNotNull(new List<Integer>(), 'null check'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T185",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isInstanceOfType('x',String.class,'type check'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T186",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isNotInstanceOfType('x',String.class,'type check'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: The provided object is an instance of class String: type check",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T187",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isInstanceOfType(1,Integer.class,'type check'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T188",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isNotInstanceOfType(1,Integer.class,'type check'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: The provided object is an instance of class Integer: type check",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T189",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isInstanceOfType(1L,Long.class,'type check'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T190",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isNotInstanceOfType(1L,Long.class,'type check'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: The provided object is an instance of class Long: type check",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T191",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isInstanceOfType(1,Long.class,'type check'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T192",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isNotInstanceOfType(1,Long.class,'type check'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: The provided object is an instance of class Long: type check",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T193",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isInstanceOfType(null,String.class,'type check'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: The provided object is not an instance of class String: type check",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T194",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isNotInstanceOfType(null,String.class,'type check'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T195",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isInstanceOfType(new Account(),Account.class,'type check'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T196",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isNotInstanceOfType(new Account(),Account.class,'type check'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: The provided object is an instance of class Account: type check",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T197",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isInstanceOfType(new Account(),SObject.class,'type check'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T198",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isNotInstanceOfType(new Account(),SObject.class,'type check'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: The provided object is an instance of class SObject: type check",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T199",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isInstanceOfType(new List<Integer>(),List<Integer>.class,'type check'); r='returned';",
+      "Expected": "returned",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T200",
+      "Group": "Assert-messages/type",
+      "Code": "Assert.isNotInstanceOfType(new List<Integer>(),List<Integer>.class,'type check'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: The provided object is an instance of class List<Integer>: type check",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T201",
+      "Group": "Assert-messages/fail",
+      "Code": "Assert.fail('failure'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Assertion failed: failure",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T202",
+      "Group": "Assert-messages/fail",
+      "Code": "Assert.fail(''); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Assertion failed:",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T203",
+      "Group": "Assert-messages/fail",
+      "Code": "Assert.fail(null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Message parameter cannot be null",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T204",
+      "Group": "Assert-messages/fail",
+      "Code": "Assert.fail('a\\nb'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Assertion failed: a\\nb",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T205",
+      "Group": "Assert-messages/fail",
+      "Code": "Assert.fail('a|b'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Assertion failed: a|b",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    },
+    {
+      "ID": "T206",
+      "Group": "Assert-messages/fail-default",
+      "Code": "Assert.fail(); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Assertion failed",
+      "Class": "A30NativeOracle",
+      "NativeNull": false
+    }
+  ],
+  "controls": [
+    {
+      "ID": "K001",
+      "Code": "System.assertEquals('001000000000001','001000000000001AAA'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: 001000000000001, Actual: 001000000000001AAA",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K002",
+      "Code": "Id a='001000000000001'; Id b='001000000000001AAA'; System.assertEquals(a,b); r='returned';",
+      "Expected": "returned",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K003",
+      "Code": "System.assertEquals(new List<String>{'Case'},new List<String>{'case'}); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: (Case), Actual: (case)",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K004",
+      "Code": "System.assertEquals(new Set<String>{'Case'},new Set<String>{'case'}); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: {Case}, Actual: {case}",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K005",
+      "Code": "System.assertEquals(new Map<String,String>{'k'=>'Case'},new Map<String,String>{'k'=>'case'}); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: {k=Case}, Actual: {k=case}",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K006",
+      "Code": "r='Case'=='case';",
+      "Expected": "true",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K007",
+      "Code": "System.assertEquals(new List<Id>{'001000000000001'},new List<Id>{'001000000000001AAA'}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K008",
+      "Code": "System.assertEquals('left','right',null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K009",
+      "Code": "System.assert(false,null); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K010",
+      "Code": "System.assertNotEquals('same','same',new DmlException('duplicate')); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: System.DmlException: duplicate: Same value: same",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K011",
+      "Code": "System.assert(false,new Message()); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: custom object message",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K012",
+      "Code": "System.Assert.areEqual('left','right','mismatch'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: mismatch: Expected: left, Actual: right",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K013",
+      "Code": "System.Assert.areNotEqual('same','same','duplicate'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: duplicate: Same value: same",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K014",
+      "Code": "System.Assert.isFalse(true,'truthy'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: truthy",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K015",
+      "Code": "System.Assert.isNull('value','not null'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Nullable object asserted with non null value: not null",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K016",
+      "Code": "System.Assert.isNotNull(null,'missing'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Instance expected to be a non null value: missing",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K017",
+      "Code": "System.Assert.isNotInstanceOfType(new Account(),Account.class,'type'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: The provided object is an instance of class Account: type",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K018",
+      "Code": "System.Assert.fail('forced'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Assertion failed: forced",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K019",
+      "Code": "Assert.areEqual(1,1,null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K020",
+      "Code": "Assert.isNull(null,null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Message parameter cannot be null",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K021",
+      "Code": "Assert.isNotNull(1,null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Message parameter cannot be null",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K024",
+      "Code": "System.assertEquals(1,1,null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K025",
+      "Code": "Assert.areEqual(new List<String>{'Case'},new List<String>{'case'}); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: (Case), Actual: (case)",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K026",
+      "Code": "String a='001000000000001'; Id b='001000000000001AAA'; System.assertEquals(a,b); r='returned';",
+      "Expected": "returned",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K027",
+      "Code": "Assert.isTrue(false,''); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed:",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K028",
+      "Code": "Assert.areEqual(1,2,''); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: : Expected: 1, Actual: 2",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K029",
+      "Code": "Assert.isInstanceOfType(null,null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "K030",
+      "Code": "System.assertEquals('same','same',new Message()); r='returned';",
+      "Expected": "returned",
+      "Class": "A30AssertControls"
+    },
+    {
+      "ID": "N001",
+      "Code": "r=Test.isRunningTest();",
+      "Expected": "true",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N002",
+      "Code": "System.runAs(new User(Id=UserInfo.getUserId())) {r=UserInfo.getUserId()!=null;}",
+      "Expected": "true",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N003",
+      "Code": "System.runAs((User)null) {r='entered';}",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N004",
+      "Code": "Test.setFixedSearchResults(new Id[]{}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N005",
+      "Code": "Test.setFixedSearchResults(null); r='returned';",
+      "Expected": "returned",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N006",
+      "Code": "Test.setFixedSearchResults(new Id[]{'001000000000001'}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N007",
+      "Code": "r=Test.loadData(Account.SObjectType,'A30Rows').size();",
+      "Expected": "2",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N008",
+      "Code": "r=Test.loadData(Account.SObjectType,'A30MissingRows').size();",
+      "Expected": "EXC|System.NullPointerException|Static Resource not found: A30MissingRows",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N009",
+      "Code": "r=Test.loadData(Account.SObjectType,null);",
+      "Expected": "EXC|System.NullPointerException|staticResourceName cannot be null",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N010",
+      "Code": "r=Test.loadData(null,'A30Rows');",
+      "Expected": "EXC|System.NullPointerException|sObject type token cannot be null",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N011",
+      "Code": "Test.setMock(HttpCalloutMock.class,null); r='returned';",
+      "Expected": "returned",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N012",
+      "Code": "Test.setMock(WebServiceMock.class,null); r='returned';",
+      "Expected": "returned",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N013",
+      "Code": "Test.setMock(String.class,'x'); r='returned';",
+      "Expected": "EXC|System.TypeException|Supplied type is not an interface",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N014",
+      "Code": "Test.setMock(null,null); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Null type token",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N015",
+      "Code": "r=Test.createStub(String.class,null);",
+      "Expected": "EXC|System.NullPointerException|stubProvider cannot be null",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "N016",
+      "Code": "r=Test.createStub(null,null);",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Class": "A30BoundaryControls"
+    },
+    {
+      "ID": "S001",
+      "Class": "A30SetupLimitsControls",
+      "Code": "r=Limits.getQueries()+'|'+Limits.getQueryRows()+'|'+Limits.getDmlStatements()+'|'+Limits.getDmlRows();",
+      "Expected": "1|2|2|3",
+      "Group": "setup-budget-controls",
+      "NativeNull": false
+    },
+    {
+      "ID": "S002",
+      "Class": "A30SetupLimitsControls",
+      "Code": "String before=Limits.getQueries()+'|'+Limits.getQueryRows()+'|'+Limits.getDmlStatements()+'|'+Limits.getDmlRows(); Test.startTest(); String insideCount=Limits.getQueries()+'|'+Limits.getQueryRows()+'|'+Limits.getDmlStatements()+'|'+Limits.getDmlRows(); Test.stopTest(); r=before+';'+insideCount+';'+(Limits.getQueries()+'|'+Limits.getQueryRows()+'|'+Limits.getDmlStatements()+'|'+Limits.getDmlRows());",
+      "Expected": "1|2|2|3;0|0|0|0;1|2|2|3",
+      "Group": "setup-budget-controls",
+      "NativeNull": false
+    },
+    {
+      "ID": "S003",
+      "Class": "A30SetupLimitsControls",
+      "Code": "List<Account> rows=[SELECT Id FROM Account]; r=Limits.getQueries()+'|'+Limits.getQueryRows()+'|'+Limits.getDmlStatements()+'|'+Limits.getDmlRows();",
+      "Expected": "2|4|2|3",
+      "Group": "setup-budget-controls",
+      "NativeNull": false
+    },
+    {
+      "ID": "S004",
+      "Class": "A30SetupLimitsControls",
+      "Code": "insert new Account(Name='test-row'); r=Limits.getQueries()+'|'+Limits.getQueryRows()+'|'+Limits.getDmlStatements()+'|'+Limits.getDmlRows();",
+      "Expected": "1|2|3|4",
+      "Group": "setup-budget-controls",
+      "NativeNull": false
+    },
+    {
+      "ID": "S005",
+      "Class": "A30SetupLimitsControls",
+      "Code": "r=Limits.getQueries()+'|'+Limits.getQueryRows()+'|'+Limits.getDmlStatements()+'|'+Limits.getDmlRows();",
+      "Expected": "1|2|2|3",
+      "Group": "setup-budget-controls",
+      "NativeNull": false
+    },
+    {
+      "ID": "S006",
+      "Class": "A30SetupWindowControls",
+      "Code": "r=Limits.getQueries()+'|'+Limits.getQueryRows()+'|'+Limits.getDmlStatements()+'|'+Limits.getDmlRows();",
+      "Expected": "0|0|0|0",
+      "Group": "setup-budget-controls",
+      "NativeNull": false
+    },
+    {
+      "ID": "S007",
+      "Class": "A30NoSetupControls",
+      "Code": "r=Limits.getQueries()+'|'+Limits.getQueryRows()+'|'+Limits.getDmlStatements()+'|'+Limits.getDmlRows();",
+      "Expected": "0|0|0|0",
+      "Group": "setup-budget-controls",
+      "NativeNull": false
+    },
+    {
+      "ID": "J001",
+      "Class": "A30RegressionControls",
+      "Code": "r=(String)(Id)'0Af000000000001';",
+      "Expected": "0Af000000000001CAA"
+    },
+    {
+      "ID": "J002",
+      "Class": "A30RegressionControls",
+      "Code": "r=(String)(Id)'0D2000000000001';",
+      "Expected": "0D2000000000001CAA"
+    },
+    {
+      "ID": "J003",
+      "Class": "A30RegressionControls",
+      "Code": "r=(String)(Id)'005000000000777';",
+      "Expected": "005000000000777AAA"
+    },
+    {
+      "ID": "J004",
+      "Class": "A30RegressionControls",
+      "Code": "r=(String)(Id)'003000000000001';",
+      "Expected": "003000000000001AAA"
+    },
+    {
+      "ID": "J005",
+      "Class": "A30RegressionControls",
+      "Code": "r=(String)(Id)'001B000001DVM9t';",
+      "Expected": "001B000001DVM9tIAH"
+    },
+    {
+      "ID": "J006",
+      "Class": "A30RegressionControls",
+      "Code": "r=(String)(Id)'707000000000001';",
+      "Expected": "707000000000001AAA"
+    },
+    {
+      "ID": "J007",
+      "Class": "A30RegressionControls",
+      "Code": "r=(String)(Id)'00D000000000001';",
+      "Expected": "00D000000000001EAA"
+    },
+    {
+      "ID": "J008",
+      "Class": "A30RegressionControls",
+      "Code": "Map<String,Box> a=new Map<String,Box>{'one'=>new Box('same')}; Map<String,Box> b=new Map<String,Box>{'one'=>new Box('same')}; System.assertEquals(a,b); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J009",
+      "Class": "A30RegressionControls",
+      "Code": "A30RegressionGateway a=(A30RegressionGateway)Test.createStub(A30RegressionGateway.class,new Provider()); r=a.getPaymentLinesByIDs(new Set<Id>());",
+      "Expected": "getPaymentLinesByIds"
+    },
+    {
+      "ID": "J010",
+      "Class": "A30RegressionControls",
+      "Code": "A30RegressionGateway a=(A30RegressionGateway)Test.createStub(A30RegressionGateway.class,new Provider()); r=a.getPaymentLinesByIds(new Set<Id>());",
+      "Expected": "getPaymentLinesByIds"
+    },
+    {
+      "ID": "J011",
+      "Class": "A30RegressionControls",
+      "Code": "r=Test.createStub(Order.class,new Provider());",
+      "Expected": "EXC|System.TypeException|Test.createStub() can only be invoked on user defined types."
+    },
+    {
+      "ID": "J012",
+      "Class": "A30RegressionControls",
+      "Code": "Object actual=new Named(); System.assertEquals((Object)'expected-value',actual); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: String, A30RegressionControls.Named"
+    },
+    {
+      "ID": "J013",
+      "Class": "A30RegressionControls",
+      "Code": "System.assertEquals('Wanted but not invoked: fflib_MyList__sfdc_ApexStub.add(String).','Wanted but not invoked: PKG.fflib_MyList__sfdc_ApexStub.add(String).'); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: Wanted but not invoked: fflib_MyList__sfdc_ApexStub.add(String)., Actual: Wanted but not invoked: PKG.fflib_MyList__sfdc_ApexStub.add(String)."
+    },
+    {
+      "ID": "J014",
+      "Class": "A30RegressionControls",
+      "Code": "r=Type.forName('Map<String,sObject>').getName();",
+      "Expected": "Map<String,SObject>"
+    },
+    {
+      "ID": "J015",
+      "Class": "A30RegressionControls",
+      "Code": "r=Metadata.DeployStatus.Failed.name();",
+      "Expected": "Failed"
+    },
+    {
+      "ID": "J016",
+      "Class": "A30RegressionControls",
+      "Code": "r=String.valueOf(UserInfo.getUserId()).length();",
+      "Expected": "18"
+    },
+    {
+      "ID": "J017",
+      "Class": "A30RegressionControls",
+      "Code": "r=Test.createStub(Account.class,null);",
+      "Expected": "EXC|System.NullPointerException|stubProvider cannot be null"
+    },
+    {
+      "ID": "J018",
+      "Class": "A30RegressionControls",
+      "Code": "System.assertEquals(null,new Named()); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: null, Actual: named-value"
+    },
+    {
+      "ID": "J019",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=1; Object b=new Named(); System.assertEquals(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: Integer, A30RegressionControls.Named"
+    },
+    {
+      "ID": "J020",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new Named(); Object b='expected-value'; System.assertEquals(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: A30RegressionControls.Named, String"
+    },
+    {
+      "ID": "J021",
+      "Class": "A30RegressionControls",
+      "Code": "Object a='expected-value'; Object b=new Named(); Assert.areEqual(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: String, A30RegressionControls.Named"
+    },
+    {
+      "ID": "J022",
+      "Class": "A30RegressionControls",
+      "Code": "Object a='expected-value'; Object b=new Named(); System.assertNotEquals(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: String, A30RegressionControls.Named"
+    },
+    {
+      "ID": "J023",
+      "Class": "A30RegressionControls",
+      "Code": "Object a='expected-value'; Object b=new Named(); Assert.areNotEqual(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: String, A30RegressionControls.Named"
+    },
+    {
+      "ID": "J024",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=1; Object b='1'; System.assertEquals(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: Integer, String"
+    },
+    {
+      "ID": "J025",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=1; Object b=1.0; System.assertEquals(a,b); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J026",
+      "Class": "A30RegressionControls",
+      "Code": "Object a='001000000000001'; Object b=(Id)'001000000000001AAA'; System.assertEquals(a,b); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J027",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new Named(); Object b=new Box('same'); System.assertEquals(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: A30RegressionControls.Named, A30RegressionControls.Box"
+    },
+    {
+      "ID": "J028",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new Named(); Object b=new Named(); System.assertEquals(a,b); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: named-value, Actual: named-value"
+    },
+    {
+      "ID": "J029",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new Named(); Object b=new Named(); Assert.areNotEqual(a,b); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J030",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new List<String>{'a'}; Object b='a'; System.assertEquals(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: List<String>, String"
+    },
+    {
+      "ID": "J031",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new Named(); Object b=1; Assert.areNotEqual(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: A30RegressionControls.Named, Integer"
+    },
+    {
+      "ID": "J032",
+      "Class": "A30RegressionControls",
+      "Code": "Map<String,Id> a=new Map<String,Id>{'one'=>(Id)'001000000000001'}; Map<String,Id> b=new Map<String,Id>{'one'=>(Id)'001000000000001AAA'}; System.assertEquals(a,b); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J033",
+      "Class": "A30RegressionControls",
+      "Code": "Map<String,Box> a=new Map<String,Box>{'one'=>new Box('a')}; Map<String,Box> b=new Map<String,Box>{'one'=>new Box('b')}; System.assertEquals(a,b); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: {one=Box:[Code=a]}, Actual: {one=Box:[Code=b]}"
+    },
+    {
+      "ID": "J034",
+      "Class": "A30RegressionControls",
+      "Code": "r=Metadata.DeployStatus.Succeeded.name();",
+      "Expected": "Succeeded"
+    },
+    {
+      "ID": "J035",
+      "Class": "A30RegressionControls",
+      "Code": "Object a='Failed'; Object b=Metadata.DeployStatus.Failed; System.assertEquals(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: String, Metadata.DeployStatus"
+    },
+    {
+      "ID": "J036",
+      "Class": "A30RegressionControls",
+      "Code": "Object a='UNDELETE_FAILED'; Object b=System.StatusCode.UNDELETE_FAILED; System.assertEquals(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: String, System.StatusCode"
+    },
+    {
+      "ID": "J037",
+      "Class": "A30RegressionControls",
+      "Code": "Object a='2024-01-01'; Object b=Date.newInstance(2024,1,1); System.assertEquals(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: String, Date"
+    },
+    {
+      "ID": "J038",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=Date.newInstance(2024,1,1); Object b=Datetime.newInstanceGmt(2024,1,1,0,0,0); System.assertEquals(a,b); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J039",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new List<Integer>{1}; Object b=new List<Decimal>{1}; System.assertEquals(a,b); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: (1), Actual: (1)"
+    },
+    {
+      "ID": "J040",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new List<String>{'001000000000001'}; Object b=new List<Id>{(Id)'001000000000001AAA'}; System.assertEquals(a,b); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: (001000000000001), Actual: (001000000000001AAA)"
+    },
+    {
+      "ID": "J041",
+      "Class": "A30RegressionControls",
+      "Code": "r=(String)(Id)'0GR000000000001';",
+      "Expected": "0GR000000000001GAA"
+    },
+    {
+      "ID": "J042",
+      "Class": "A30RegressionControls",
+      "Code": "r=(String)(Id)'707000000000002';",
+      "Expected": "707000000000002AAA"
+    },
+    {
+      "ID": "J043",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new List<Object>{1}; Object b=new List<Integer>{1}; System.assertEquals(a,b); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J044",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new List<Integer>{1}; Object b=new List<Long>{1L}; System.assertEquals(a,b); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: (1), Actual: (1)"
+    },
+    {
+      "ID": "J045",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new List<Integer>(); Object b=new List<Decimal>(); System.assertEquals(a,b); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J046",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new List<String>{'001000000000001AAA'}; Object b=new List<Id>{(Id)'001000000000001AAA'}; System.assertEquals(a,b); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J047",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new List<Object>{new Box('same')}; Object b=new List<Box>{new Box('same')}; System.assertEquals(a,b); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J048",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new List<Object>{1}; Object b=new List<Decimal>{1}; System.assertEquals(a,b); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: (1), Actual: (1)"
+    },
+    {
+      "ID": "J049",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=new Map<String,Integer>{'one'=>1}; Object b=new Map<String,Decimal>{'one'=>1}; System.assertEquals(a,b); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: {one=1}, Actual: {one=1}"
+    },
+    {
+      "ID": "J050",
+      "Class": "A30RegressionControls",
+      "Code": "Object a='DEBUG'; Object b=System.LoggingLevel.DEBUG; System.assertEquals(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: String, System.LoggingLevel"
+    },
+    {
+      "ID": "J051",
+      "Class": "A30RegressionControls",
+      "Code": "Object a='START_OBJECT'; Object b=JSONToken.START_OBJECT; System.assertEquals(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: String, System.JSONToken"
+    },
+    {
+      "ID": "J052",
+      "Class": "A30RegressionControls",
+      "Code": "r=System.StatusCode.UNDELETE_FAILED.name();",
+      "Expected": "UNDELETE_FAILED"
+    },
+    {
+      "ID": "J053",
+      "Class": "A30RegressionControls",
+      "Code": "System.assertEquals(System.StatusCode.UNDELETE_FAILED,System.StatusCode.UNDELETE_FAILED); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J054",
+      "Class": "A30RegressionControls",
+      "Code": "Id a=(Id)'001B000001DVM9t'; r=a.toString();",
+      "Expected": "001B000001DVM9tIAH"
+    },
+    {
+      "ID": "J055",
+      "Class": "A30RegressionControls",
+      "Code": "r=String.valueOf((Id)'003000000000001');",
+      "Expected": "003000000000001AAA"
+    },
+    {
+      "ID": "J056",
+      "Class": "A30RegressionControls",
+      "Code": "Map<String,Object> a=new Map<String,Object>(); a.put('self',a); System.assertEquals(a,a); r='returned';",
+      "Expected": "TEST_Fail|System.LimitException: Maximum stack depth reached: 2"
+    },
+    {
+      "ID": "J057",
+      "Class": "A30RegressionControls",
+      "Code": "Map<String,Object> a=new Map<String,Object>(); Map<String,Object> b=new Map<String,Object>(); a.put('self',a); b.put('self',b); System.assertEquals(a,b); r='returned';",
+      "Expected": "TEST_Fail|System.LimitException: Maximum stack depth reached: 2"
+    },
+    {
+      "ID": "J058",
+      "Class": "A30RegressionControls",
+      "Code": "List<Object> a=new List<Object>(); a.add(a); System.assertEquals(a,a); r='returned';",
+      "Expected": "TEST_Fail|System.LimitException: Maximum stack depth reached: 2"
+    },
+    {
+      "ID": "J059",
+      "Class": "A30RegressionControls",
+      "Code": "List<Object> a=new List<Object>(); List<Object> b=new List<Object>(); a.add(a); b.add(b); System.assertEquals(a,b); r='returned';",
+      "Expected": "TEST_Fail|System.LimitException: Maximum stack depth reached: 2"
+    },
+    {
+      "ID": "J060",
+      "Class": "A30RegressionControls",
+      "Code": "Map<String,Object> a=new Map<String,Object>(); Map<String,Object> b=new Map<String,Object>(); a.put('self',a); b.put('self',b); a.put('value',1); b.put('value',2); System.assertNotEquals(a,b); r='returned';",
+      "Expected": "TEST_Fail|System.LimitException: Maximum stack depth reached: 2"
+    },
+    {
+      "ID": "J061",
+      "Class": "A30RegressionControls",
+      "Code": "Map<String,Object> a=new Map<String,Object>(); List<Object> l=new List<Object>{a}; a.put('self',l); System.assertEquals(a,a); r='returned';",
+      "Expected": "TEST_Fail|System.LimitException: Maximum stack depth reached: 2"
+    },
+    {
+      "ID": "J062",
+      "Class": "A30RegressionControls",
+      "Code": "A30RegressionChangeEvent a=(A30RegressionChangeEvent)Test.createStub(A30RegressionChangeEvent.class,new Provider()); r=a.ping();",
+      "Expected": "ping"
+    },
+    {
+      "ID": "J063",
+      "Class": "A30RegressionControls",
+      "Code": "Map<String,Object> a=new Map<String,Object>(); a.put('self',a); r='constructed';",
+      "Expected": "constructed"
+    },
+    {
+      "ID": "J064",
+      "Class": "A30RegressionControls",
+      "Code": "List<Object> a=new List<Object>(); a.add(a); r='constructed';",
+      "Expected": "constructed"
+    },
+    {
+      "ID": "J065",
+      "Class": "A30RegressionControls",
+      "Code": "Map<String,Object> a=new Map<String,Object>(); List<Object> l=new List<Object>{a}; a.put('self',l); r='constructed';",
+      "Expected": "constructed"
+    },
+    {
+      "ID": "J066",
+      "Class": "A30RegressionControls",
+      "Code": "Map<String,Object> a=new Map<String,Object>{'value'=>1}; Map<String,Object> b=new Map<String,Object>{'value'=>1}; a.put('child',b); System.assertEquals(a,a); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J067",
+      "Class": "A30RegressionControls",
+      "Code": "List<Object> a=new List<Object>(); List<Object> b=new List<Object>{1}; a.add(b); System.assertEquals(a,a); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J068",
+      "Class": "A30RegressionControls",
+      "Code": "Map<String,Object> a=new Map<String,Object>{'value'=>1}; Map<String,Object> b=new Map<String,Object>{'value'=>2}; a.put('self',a); b.put('self',b); System.assertNotEquals(a,b); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J069",
+      "Class": "A30RegressionControls",
+      "Code": "Map<String,Object> a=new Map<String,Object>(); a.put('self',a); Map<String,Object> b=new Map<String,Object>(); System.assertNotEquals(a,b); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J070",
+      "Class": "A30RegressionControls",
+      "Code": "List<Object> a=new List<Object>{1}; List<Object> b=new List<Object>{2}; a.add(a); b.add(b); System.assertNotEquals(a,b); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J071",
+      "Class": "A30RegressionControls",
+      "Code": "Map<String,Object> a=new Map<String,Object>(); Map<String,Object> b=new Map<String,Object>(); a.put('child',b); System.assertEquals(a,a); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J072",
+      "Class": "A30RegressionControls",
+      "Code": "Map<String,Object> a=new Map<String,Object>(); Map<String,Object> b=new Map<String,Object>(); a.put('child',b); b.put('parent',a); System.assertEquals(a,a); r='returned';",
+      "Expected": "TEST_Fail|System.LimitException: Maximum stack depth reached: 2"
+    },
+    {
+      "ID": "J073",
+      "Class": "A30RegressionControls",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTargetObjectId('003000000000001'); r=m.getTargetObjectId();",
+      "Expected": "003000000000001AAA"
+    },
+    {
+      "ID": "J074",
+      "Class": "A30RegressionControls",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTemplateId('00X000000000001'); r=m.getTemplateId();",
+      "Expected": "00X000000000001EAA"
+    },
+    {
+      "ID": "J075",
+      "Class": "A30RegressionControls",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setWhatId('001000000000001'); r=m.getWhatId();",
+      "Expected": "001000000000001AAA"
+    },
+    {
+      "ID": "J076",
+      "Class": "A30RegressionControls",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEntityAttachments(new List<String>{'015000000000001'}); r=m.getEntityAttachments().get(0);",
+      "Expected": "015000000000001"
+    },
+    {
+      "ID": "J077",
+      "Class": "A30RegressionControls",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEntityAttachments(new List<String>{'015000000000001'}); System.assertEquals('015000000000001',m.getEntityAttachments().get(0)); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J078",
+      "Class": "A30RegressionControls",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTargetObjectId('003000000000001'); Object v=m.getTargetObjectId(); r=String.valueOf(v instanceof Id)+'|'+String.valueOf(v instanceof String);",
+      "Expected": "true|true"
+    },
+    {
+      "ID": "J079",
+      "Class": "A30RegressionControls",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTargetObjectId('003000000000001'); System.assertEquals('003000000000001',m.getTargetObjectId()); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J080",
+      "Class": "A30RegressionControls",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTemplateId('00X000000000001'); System.assertEquals('00X000000000001',m.getTemplateId()); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J081",
+      "Class": "A30RegressionControls",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setWhatId('001000000000001'); System.assertEquals('001000000000001',m.getWhatId()); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J082",
+      "Class": "A30RegressionControls",
+      "Code": "Object a='STRING'; Object b=Account.Name.getDescribe().getType(); System.assertEquals(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: String, Schema.DisplayType"
+    },
+    {
+      "ID": "J083",
+      "Class": "A30RegressionControls",
+      "Code": "Object a='REFERENCE'; Object b=Contact.AccountId.getDescribe().getType(); System.assertEquals(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: String, Schema.DisplayType"
+    },
+    {
+      "ID": "J084",
+      "Class": "A30RegressionControls",
+      "Code": "Object a=Date.valueOf('2026-05-02 00:00:00'); Object b='2026-05-02'; System.assertEquals(a,b); r='returned';",
+      "Expected": "EXC|System.TypeException|Comparison arguments must be compatible types: Date, String"
+    },
+    {
+      "ID": "J085",
+      "Class": "A30RegressionControls",
+      "Code": "System.assertEquals(Schema.DisplayType.STRING,Account.Name.getDescribe().getType()); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J086",
+      "Class": "A30RegressionControls",
+      "Code": "System.assertEquals(DisplayType.REFERENCE,Contact.AccountId.getDescribe().getType()); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J087",
+      "Class": "A30RegressionControls",
+      "Code": "System.assertEquals('STRING',String.valueOf(Account.Name.getDescribe().getType())); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J088",
+      "Class": "A30RegressionControls",
+      "Code": "System.assertEquals('2026-05-02',String.valueOf(Date.valueOf('2026-05-02 00:00:00'))); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "J089",
+      "Class": "A30RegressionControls",
+      "Code": "Test.startTest(); String id=System.schedule('A30-review-future','0 0 0 1 1 ? 2050',new Scheduled()); Test.stopTest(); r=[SELECT State FROM CronTrigger WHERE Id=:id].State;",
+      "Expected": "WAITING"
+    },
+    {
+      "ID": "J090",
+      "Class": "A30RegressionControls",
+      "Code": "r=new Box('a');",
+      "Expected": "Box:[Code=a]"
+    },
+    {
+      "ID": "J091",
+      "Class": "A30RegressionControls",
+      "Code": "System.assertEquals(new Box('a'),new Box('b')); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: Box:[Code=a], Actual: Box:[Code=b]"
+    },
+    {
+      "ID": "J092",
+      "Class": "A30RegressionControls",
+      "Code": "System.assertEquals(new List<Box>{new Box('a')},new List<Box>{new Box('b')}); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: (Box:[Code=a]), Actual: (Box:[Code=b])"
+    },
+    {
+      "ID": "J093",
+      "Class": "A30RegressionControls",
+      "Code": "r=new Map<String,Box>{'one'=>new Box('a')};",
+      "Expected": "{one=Box:[Code=a]}"
+    },
+    {
+      "ID": "J094",
+      "Class": "A30RegressionControls",
+      "Code": "r=new Map<String,Named>{'one'=>new Named()};",
+      "Expected": "{one=named-value}"
+    },
+    {
+      "ID": "J095",
+      "Class": "A30RegressionControls",
+      "Code": "System.assertEquals(new Map<String,Named>{'one'=>new Named()},new Map<String,Named>{'two'=>new Named()}); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: {one=named-value}, Actual: {two=named-value}"
+    },
+    {
+      "ID": "J096",
+      "Class": "A30RegressionControls",
+      "Code": "Account a=new Account(Name='A30-sosl-a'); Account b=new Account(Name='A30-sosl-b'); insert new List<Account>{a,b}; Test.setFixedSearchResults(new Id[]{a.Id,b.Id,a.Id}); r=[FIND 'nomatch' IN ALL FIELDS RETURNING Account(Id)].get(0).size();",
+      "Expected": "2"
+    },
+    {
+      "ID": "J097",
+      "Class": "A30RegressionControls",
+      "Code": "A30StubTarget s=(A30StubTarget)Test.createStub(A30StubTarget.class,new T038Provider()); Object value=s.empty(); r=String.valueOf(value==null)+'|'+String.valueOf(value);",
+      "Expected": "true|null"
+    },
+    {
+      "ID": "Q101",
+      "Code": "System.assertEquals(JSON.deserializeUntyped('{\"millis\":1777618800000}'),new Map<String,Object>{'millis'=>1777618800000L}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30TrainRegression"
+    },
+    {
+      "ID": "Q102",
+      "Code": "System.assertEquals(JSON.deserializeUntyped('{\"count\":1}'),new Map<String,Object>{'count'=>1}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30TrainRegression"
+    },
+    {
+      "ID": "Q103",
+      "Code": "System.assertEquals(JSON.deserializeUntyped('{\"count\":1}'),new Map<String,Object>{'count'=>1L}); r='returned';",
+      "Expected": "TEST_Fail|System.AssertException: Assertion Failed: Expected: {count=1}, Actual: {count=1}",
+      "Class": "A30TrainRegression"
+    },
+    {
+      "ID": "Q104",
+      "Code": "System.assertEquals(JSON.deserializeUntyped('{\"count\":2147483647}'),new Map<String,Object>{'count'=>2147483647}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30TrainRegression"
+    },
+    {
+      "ID": "Q105",
+      "Code": "System.assertEquals(JSON.deserializeUntyped('{\"count\":-2147483648}'),new Map<String,Object>{'count'=>Integer.valueOf('-2147483648')}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30TrainRegression"
+    },
+    {
+      "ID": "Q106",
+      "Code": "System.assertEquals(JSON.deserializeUntyped('{\"count\":2147483648}'),new Map<String,Object>{'count'=>2147483648L}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30TrainRegression"
+    },
+    {
+      "ID": "Q107",
+      "Code": "System.assertEquals(JSON.deserializeUntyped('{\"count\":-2147483649}'),new Map<String,Object>{'count'=>-2147483649L}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30TrainRegression"
+    },
+    {
+      "ID": "Q108",
+      "Code": "System.assertEquals(JSON.deserializeUntyped('{\"millis\":1777618800000}'),new Map<String,Object>{'millis'=>Datetime.newInstanceGmt(2026,5,1,7,0,0).getTime()}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30TrainRegression"
+    },
+    {
+      "ID": "Q109",
+      "Code": "A30TextName__c x=new A30TextName__c(Name=null); insert x; A30TextName__c stored=[SELECT Name FROM A30TextName__c WHERE Id=:x.Id]; r=String.valueOf(stored.Name.length())+'|'+stored.Name.equals(String.valueOf(x.Id).substring(0,15))+'|'+String.valueOf(x.Id).length();",
+      "Expected": "15|true|18",
+      "Class": "A30TrainRegression"
+    },
+    {
+      "ID": "Q110",
+      "Code": "System.assertEquals(JSON.deserializeUntyped('{\"count\":9223372036854775807}'),new Map<String,Object>{'count'=>9223372036854775807L}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30TrainRegression"
+    },
+    {
+      "ID": "Q111",
+      "Code": "System.assertEquals(JSON.deserializeUntyped('{\"count\":1.5}'),new Map<String,Object>{'count'=>Decimal.valueOf('1.5')}); r='returned';",
+      "Expected": "returned",
+      "Class": "A30TrainRegression"
+    },
+    {
+      "ID": "Q112",
+      "CodeByAPI": {
+        "62.0": "Provider provider=new Provider(); A30NestedListDrive62 drive=(A30NestedListDrive62)Test.createStub(A30NestedListDrive62.class,provider); List<List<String>> rows=drive.GetSpreadsheetData('sheet'); r=provider.observedMethod+'|'+rows[0][0];",
+        "67.0": "Provider provider=new Provider(); A30NestedListDrive67 drive=(A30NestedListDrive67)Test.createStub(A30NestedListDrive67.class,provider); List<List<String>> rows=drive.GetSpreadsheetData('sheet'); r=provider.observedMethod+'|'+rows[0][0];"
+      },
+      "Expected": "getSpreadsheetData|nested-value",
+      "Class": "A30NestedListControls"
+    },
+    {
+      "ID": "Q113",
+      "CodeByAPI": {
+        "62.0": "Provider provider=new Provider(); A30NestedListDrive62 drive=(A30NestedListDrive62)Test.createStub(A30NestedListDrive62.class,provider); List<List<String>> rows=drive.getSpreadsheetData('sheet'); r=provider.observedMethod+'|'+rows[0][0];",
+        "67.0": "Provider provider=new Provider(); A30NestedListDrive67 drive=(A30NestedListDrive67)Test.createStub(A30NestedListDrive67.class,provider); List<List<String>> rows=drive.getSpreadsheetData('sheet'); r=provider.observedMethod+'|'+rows[0][0];"
+      },
+      "Expected": "getSpreadsheetData|nested-value",
+      "Class": "A30NestedListControls"
+    }
+  ],
+  "namedControls": {
+    "R001": "N001",
+    "R002": "N002",
+    "R003": "N003",
+    "R004": "N004",
+    "R005": "N005",
+    "R006": "N006",
+    "R007": "N007",
+    "R008": "N008",
+    "R009": "N009",
+    "R010": "N010",
+    "R011": "N011",
+    "R012": "N012",
+    "R013": "N013",
+    "R014": "N014",
+    "R015": "N015",
+    "R016": "N016",
+    "X073": "J073",
+    "X074": "J074",
+    "X075": "J075",
+    "X076": "J076",
+    "X077": "J077",
+    "X078": "J078",
+    "X079": "J079",
+    "X080": "J080",
+    "X081": "J081"
+  },
+  "remaining": [],
+  "anonymousControls": [
+    {
+      "ID": "Y001",
+      "Code": "r=Test.createStub(Account.class,null);",
+      "Expected": "EXC|System.TypeException|Test.createStub() can only be called from test methods"
+    },
+    {
+      "ID": "X073",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTargetObjectId('003000000000001'); r=m.getTargetObjectId();",
+      "Expected": "003000000000001AAA"
+    },
+    {
+      "ID": "X074",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTemplateId('00X000000000001'); r=m.getTemplateId();",
+      "Expected": "00X000000000001EAA"
+    },
+    {
+      "ID": "X075",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setWhatId('001000000000001'); r=m.getWhatId();",
+      "Expected": "001000000000001AAA"
+    },
+    {
+      "ID": "X076",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEntityAttachments(new List<String>{'015000000000001'}); r=m.getEntityAttachments().get(0);",
+      "Expected": "015000000000001"
+    },
+    {
+      "ID": "X077",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEntityAttachments(new List<String>{'015000000000001'}); System.assertEquals('015000000000001',m.getEntityAttachments().get(0)); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "X078",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTargetObjectId('003000000000001'); Object v=m.getTargetObjectId(); r=String.valueOf(v instanceof Id)+'|'+String.valueOf(v instanceof String);",
+      "Expected": "true|true"
+    },
+    {
+      "ID": "X079",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTargetObjectId('003000000000001'); System.assertEquals('003000000000001',m.getTargetObjectId()); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "X080",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTemplateId('00X000000000001'); System.assertEquals('00X000000000001',m.getTemplateId()); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "X081",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setWhatId('001000000000001'); System.assertEquals('001000000000001',m.getWhatId()); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "X097",
+      "Code": "System.assertEquals(Schema.DisplayType.PICKLIST,Account.Rating.getDescribe().getType()); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "X098",
+      "Code": "System.assertEquals('EMAIL',String.valueOf(Contact.Email.getDescribe().getType())); r='returned';",
+      "Expected": "returned"
+    },
+    {
+      "ID": "X099",
+      "Code": "System.assertEquals('URL',String.valueOf(Account.Website.getDescribe().getType())); r='returned';",
+      "Expected": "returned"
+    }
+  ],
+  "compileControls": [
+    {
+      "ID": "Z082",
+      "Code": "System.assertEquals('STRING',Account.Name.getDescribe().getType()); Object r='compiled'; pq.out('Z082',r);",
+      "Compile": true,
+      "NativeLine": 6,
+      "Expected": "COMPILE_ERROR\tline 6: Comparison arguments must be compatible types: String, Schema.DisplayType"
+    },
+    {
+      "ID": "Z083",
+      "Code": "System.assertEquals('REFERENCE',Contact.AccountId.getDescribe().getType()); Object r='compiled'; pq.out('Z083',r);",
+      "Compile": true,
+      "NativeLine": 6,
+      "Expected": "COMPILE_ERROR\tline 6: Comparison arguments must be compatible types: String, Schema.DisplayType"
+    },
+    {
+      "ID": "Z084",
+      "Code": "System.assertEquals(Date.valueOf('2026-05-02 00:00:00'),'2026-05-02'); Object r='compiled'; pq.out('Z084',r);",
+      "Compile": true,
+      "NativeLine": 6,
+      "Expected": "COMPILE_ERROR\tline 6: Comparison arguments must be compatible types: Date, String"
+    }
+  ],
+  "metadataFiles": {
+    "objects/A30TextName__c/A30TextName__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>A30 Text Name</label><pluralLabel>A30 Text Names</pluralLabel><nameField><type>Text</type><label>Name</label></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n"
+  }
+}

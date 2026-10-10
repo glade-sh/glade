@@ -26,7 +26,8 @@ func TestVisualforceExpressionParserCoversPhase3Grammar(t *testing.T) {
 		{name: "comparison", expr: "5 >= 3", want: "true"},
 		{name: "and", expr: "true && false", want: "false"},
 		{name: "or", expr: "false || true", want: "true"},
-		{name: "nested function call", expr: "IF(ISBLANK(blank), UPPER('yes'), 'no')", want: "YES"},
+		// Native V02 r_fn_isblank_empty returns false for an empty String.
+		{name: "nested function call", expr: "IF(ISBLANK(blank), UPPER('yes'), 'no')", want: "no"},
 	}
 
 	controller := vm.Object("ParserController")
@@ -77,19 +78,27 @@ func TestEvaluateVisualforceExpressionIndexesObjectsAndNulls(t *testing.T) {
 	}
 
 	cases := []struct {
-		expr string
-		want string
+		expr  string
+		want  string
+		error bool
 	}{
-		{"rows[1]", "second"},
-		{"byName['target']", "mapped"},
-		{"account.Name", "Acme"},
-		{"accounts[0].Rating", "Hot"},
-		{"nothing.Name", ""},
-		{"rows[99]", ""},
-		{"byName['missing']", ""},
+		{"rows[1]", "second", false},
+		{"byName['target']", "mapped", false},
+		{"account.Name", "Acme", false},
+		{"accounts[0].Rating", "Hot", false},
+		{"nothing.Name", "", false},
+		// Native V02 r_binding_list_oob/r_binding_map_missing raise errors.
+		{"rows[99]", "", true},
+		{"byName['missing']", "", true},
 	}
 	for _, tc := range cases {
 		got, err := EvaluateExpression(tc.expr, ctx)
+		if tc.error {
+			if _, ok := err.(*formulaEvaluationError); !ok {
+				t.Fatalf("%s: expected formula failure, got %q, %v", tc.expr, got, err)
+			}
+			continue
+		}
 		if err != nil {
 			t.Fatalf("%s: %v", tc.expr, err)
 		}
@@ -360,7 +369,8 @@ func TestEvaluateVisualforceEncodeFunctions(t *testing.T) {
 		expr string
 		want string
 	}{
-		{"JSENCODE('quote \" and </script>')", `quote \" and <\/script>`},
+		// Native V02 r_escape_jsencode_hostile/r_escape_jsencode_slash.
+		{"JSENCODE('quote \" and </script>')", `quote \" and \u003C/script\u003E`},
 		{"HTMLENCODE('<b>Tom & Jerry</b>')", "&lt;b&gt;Tom &amp; Jerry&lt;/b&gt;"},
 	}
 	for _, tc := range cases {
@@ -457,6 +467,7 @@ func TestRenderExpressionTemplateResolvesVisualforceSchemaAndContextGlobals(t *t
 	}}
 	machine := vm.New(nil)
 	machine.SetOrg(&org)
+	machine.SetCurrentUser(org.Objects["User"].Records["005000000000777AAA"])
 	ctx := &ExpressionContext{VM: machine}
 
 	got, err := RenderExpressionTemplate(
@@ -522,15 +533,7 @@ func TestRenderExpressionTemplateResolvesVisualforceUserAndOrganizationGlobals(t
 	}}
 	machine := vm.New(nil)
 	machine.SetOrg(&org)
-	machine.SetCurrentUser(storage.Record{
-		ID:     "005000000000777AAA",
-		Object: "User",
-		Fields: map[string]storage.Value{
-			"Username":  storage.StringValue("ada@example.test"),
-			"Email":     storage.StringValue("ada-email@example.test"),
-			"ProfileId": storage.IDValue("00e000000000777AAA"),
-		},
-	})
+	machine.SetCurrentUser(org.Objects["User"].Records["005000000000777AAA"])
 
 	ctx := &ExpressionContext{VM: machine}
 	got, err := RenderExpressionTemplate(

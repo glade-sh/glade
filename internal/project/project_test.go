@@ -557,6 +557,32 @@ func TestLoadResolvesLocalSFDXPackageDependencies(t *testing.T) {
 	}
 }
 
+func TestLoadSkipsSFDXPackageDependenciesSatisfiedWithinManifest(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{
+  "packageDirectories": [
+    {"path":"core","package":"Core"},
+    {"path":"consumer","default":true,"package":"Consumer","dependencies":[{"package":"Core@1.0.0-1"}]}
+  ]
+}`)
+	writeFile(t, filepath.Join(root, "core/main/default/classes/CoreHelper.cls"), "global class CoreHelper {}")
+	writeFile(t, filepath.Join(root, "consumer/main/default/classes/Consumer.cls"), "public class Consumer {}")
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 0 {
+		t.Fatalf("dependencies = %#v, want no external dependency", p.ManagedPackageDependencies)
+	}
+	if len(p.DependencyDiagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v, want no missing dependency", p.DependencyDiagnostics)
+	}
+	if len(p.ApexFiles) != 2 {
+		t.Fatalf("apex files = %#v, want both package directories", p.ApexFiles)
+	}
+}
+
 func TestLoadRejectsAmbiguousLocalSFDXPackageDependency(t *testing.T) {
 	root := t.TempDir()
 	workspaceRoot := filepath.Join(root, "workspace")
@@ -599,6 +625,42 @@ func TestLoadRejectsAmbiguousLocalSFDXPackageDependency(t *testing.T) {
 	wantRoots := []string{firstRoot, secondRoot}
 	if !strings.Contains(diagnostic.Message, wantRoots[0]) || !strings.Contains(diagnostic.Message, wantRoots[1]) || strings.Index(diagnostic.Message, wantRoots[0]) > strings.Index(diagnostic.Message, wantRoots[1]) {
 		t.Fatalf("diagnostic message = %q, want sorted roots %#v", diagnostic.Message, wantRoots)
+	}
+}
+
+func TestLoadResolvesAliasedNestedSFDXPackageDependency(t *testing.T) {
+	root := t.TempDir()
+	workspaceRoot := filepath.Join(root, "workspace")
+	consumerRoot := filepath.Join(workspaceRoot, "flow_screen_components", "consumer")
+	dependencyRoot := filepath.Join(workspaceRoot, "flow_action_components", "dependency-source")
+	writeFile(t, filepath.Join(dependencyRoot, "sfdx-project.json"), `{
+  "namespace": "shared",
+  "packageDirectories": [{"path":"force-app","default":true,"package":"SharedPkg"}]
+}`)
+	writeFile(t, filepath.Join(dependencyRoot, "force-app/main/default/classes/SharedHelper.cls"), "global class SharedHelper {}")
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{
+  "packageDirectories": [{
+    "path":"force-app",
+    "default":true,
+    "package":"Consumer",
+    "dependencies": [{"package":"SharedPkg@1.0.0-0"}]
+  }],
+  "packageAliases": {"SharedPkg@1.0.0-0":"04t000000000001AAA"}
+}`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/classes/Consumer.cls"), "public class Consumer {}")
+
+	p, err := Load(consumerRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 || p.ManagedPackageDependencies[0].Status != "loaded" {
+		t.Fatalf("dependencies = %#v, want one loaded nested dependency", p.ManagedPackageDependencies)
+	}
+	if got := p.ManagedPackageDependencies[0].Namespace; got != "shared" {
+		t.Fatalf("dependency namespace = %q, want source namespace", got)
+	}
+	if len(p.DependencyDiagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v, want none", p.DependencyDiagnostics)
 	}
 }
 
@@ -698,13 +760,48 @@ func TestLoadResolvesSiblingSFDXPackageDependencyWithAncestorGladeConfig(t *test
 	}
 }
 
+func TestLoadResolvesSiblingSFDXPackageDependencyWithoutConfig(t *testing.T) {
+	root := t.TempDir()
+	workspaceRoot := filepath.Join(root, "workspace")
+	dependencyRoot := filepath.Join(workspaceRoot, "NebulaLogger")
+	consumerRoot := filepath.Join(workspaceRoot, "apex-rollup")
+	writeFile(t, filepath.Join(dependencyRoot, "sfdx-project.json"), `{
+  "packageDirectories": [{"path":"src","default":true,"package":"Nebula Logger - Core"}]
+}`)
+	writeFile(t, filepath.Join(dependencyRoot, "src/main/default/classes/Logger.cls"), "global class Logger {}")
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{
+  "packageDirectories": [{
+    "path":"src",
+    "default":true,
+    "package":"Consumer",
+    "dependencies": [{"package":"Nebula Logger - Core@4.14.4-optionally-auto-call-lightning-logger-lwc"}]
+  }]
+}`)
+	writeFile(t, filepath.Join(consumerRoot, "src/main/default/classes/Consumer.cls"), "public class Consumer {}")
+
+	p, err := Load(consumerRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 {
+		t.Fatalf("dependencies = %#v, want one sibling dependency", p.ManagedPackageDependencies)
+	}
+	dep := p.ManagedPackageDependencies[0]
+	if dep.Status != "loaded" || dep.SourceRoot != dependencyRoot || dep.Project == nil {
+		t.Fatalf("dependency = %#v", dep)
+	}
+	if dep.Project.Root != dependencyRoot || len(dep.Project.ApexFiles) != 1 || filepath.Base(dep.Project.ApexFiles[0]) != "Logger.cls" {
+		t.Fatalf("loaded dependency project = %#v", dep.Project)
+	}
+}
+
 func TestLoadResolvesReferencedNamespaceSFDXDependencyWithoutPackageName(t *testing.T) {
 	root := t.TempDir()
 	workspaceRoot := filepath.Join(root, "workspace")
 	depRoot := filepath.Join(workspaceRoot, "dep-package")
 	sameNamespaceRoot := filepath.Join(workspaceRoot, "same-namespace-package")
 	consumerRoot := filepath.Join(workspaceRoot, "consumer-package")
-	writeFile(t, filepath.Join(workspaceRoot, "glade.yml"), `project: {}`)
+	writeFile(t, filepath.Join(workspaceRoot, "glade.yml"), "project:\n")
 	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{
   "namespace": "depns",
   "packageDirectories": [{"path":"force-app","default":true}]
@@ -1141,5 +1238,79 @@ func writeFile(t *testing.T, path, content string) {
 	}
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestLoadOrgDomainURLConfigPrecedence(t *testing.T) {
+	for _, test := range []struct {
+		name, localConfig, want string
+	}{
+		{"nearest", "", "https://workspace.example.test"},
+		{"local", "org:\n  domainUrl: https://project.example.test/\n", "https://project.example.test"},
+		{"local unset", "org:\n  features: [MultiCurrency]\n", ""},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			workspace := t.TempDir()
+			root := filepath.Join(workspace, "nested", "project")
+			writeFile(t, filepath.Join(workspace, "glade.yml"), "project:\n  root: ignored-parent-root\n  defaultNamespace: ignored-parent-namespace\norg:\n  domainUrl: https://workspace.example.test/\n")
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","sourceApiVersion":"67.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeFile(t, filepath.Join(root, "force-app", "main", "classes", "Hello.cls"), "public class Hello {}")
+			if test.localConfig != "" {
+				writeFile(t, filepath.Join(root, "glade.yml"), test.localConfig)
+			}
+			p, err := Load(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if p.OrgDomainURL != test.want {
+				t.Fatalf("project origin = %q, want %q", p.OrgDomainURL, test.want)
+			}
+			seed, err := OrgDomainURL(root)
+			if err != nil || seed != test.want {
+				t.Fatalf("OrgDomainURL = %q, %v; want %q", seed, err, test.want)
+			}
+			if p.Root != root || p.Namespace != "pkg" || p.SourceAPIVersion != "67.0" || len(p.ApexFiles) != 1 || len(p.PackageDirectories) != 1 || p.PackageDirectories[0].Path != "force-app" {
+				t.Fatalf("SFDX project changed: %#v", p)
+			}
+		})
+	}
+}
+
+func TestLoadAndOrgDomainURLRejectInvalidLocalAndNearestConfig(t *testing.T) {
+	for _, nearest := range []bool{false, true} {
+		name := "local"
+		if nearest {
+			name = "nearest"
+		}
+		t.Run(name, func(t *testing.T) {
+			workspace := t.TempDir()
+			root := filepath.Join(workspace, "project")
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+			configRoot := root
+			if nearest {
+				configRoot = workspace
+			}
+			writeFile(t, filepath.Join(configRoot, "glade.yml"), "org:\n  domainUrl: https://canonical.example.test/path\n")
+			if _, err := Load(root); err == nil || !strings.Contains(err.Error(), "org.domainUrl") {
+				t.Fatalf("Load error = %v", err)
+			}
+			if _, err := OrgDomainURL(root); err == nil || !strings.Contains(err.Error(), "org.domainUrl") {
+				t.Fatalf("OrgDomainURL error = %v", err)
+			}
+		})
+	}
+}
+
+func TestLoadAndOrgDomainURLWithoutConfigLeaveSeedUnset(t *testing.T) {
+	root := t.TempDir()
+	p, err := Load(root)
+	if err != nil || p.OrgDomainURL != "" {
+		t.Fatalf("Load origin = %q, %v; want unset", p.OrgDomainURL, err)
+	}
+	if seed, err := OrgDomainURL(root); err != nil || seed != "" {
+		t.Fatalf("OrgDomainURL = %q, %v; want unset", seed, err)
+	}
+	if seed, err := OrgDomainURL(""); err != nil || seed != "" {
+		t.Fatalf("empty-root origin = %q, %v; want unset", seed, err)
 	}
 }

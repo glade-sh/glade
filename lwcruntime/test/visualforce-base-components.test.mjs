@@ -31,7 +31,11 @@ test("Visualforce Lightning Out renders supported base components with SLDS", as
     assert.match(await host.locator("lightning-datatable").innerText(), /VF Local Account/);
     assert.match(await host.locator("lightning-record-form").innerText({ timeout: 10000 }), /Acme/);
     assert.match(await host.locator("lightning-tabset").innerText(), /Details/);
-    await host.locator("lightning-tab h3", { hasText: "Details" }).click();
+    // r_tab_normal / r_tabset_activate: select the inactive native tab header.
+    const detailsTab = host.locator('lightning-tabset a[role="tab"]', { hasText: "Details" });
+    assert.equal(await detailsTab.getAttribute("aria-selected"), "false");
+    await detailsTab.click();
+    assert.equal(await detailsTab.getAttribute("aria-selected"), "true");
     assert.equal(await host.locator(".tab-status").innerText(), "details");
     assert.equal(await page.locator("link[data-glade-slds]").count(), 1);
   } finally {

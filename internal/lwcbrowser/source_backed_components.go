@@ -31,6 +31,18 @@ func LightningSourceBackedComponentModuleJS(name string) (string, bool) {
 		return `export { default } from "/lightning/runtime/lightning/recordPicker.js";
 `, true
 	}
+	if component == "breadcrumb" {
+		return `export { default } from "/lightning/runtime/lightning/breadcrumb.js";
+`, true
+	}
+	if component == "badge" {
+		return `export { default } from "/lightning/runtime/lightning/badge.js";
+`, true
+	}
+	if component == "verticalNavigationItem" {
+		return `export { default } from "/lightning/runtime/lightning/verticalNavigationItem.js";
+`, true
+	}
 	return fmt.Sprintf(`export { default } from "/lightning/runtime/lightning/source/%[1]s/%[1]s.js";
 `, component), true
 }

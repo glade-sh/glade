@@ -70,21 +70,29 @@ test("community shim exposes expanded site and container values", async () => {
   assert.equal(community.readCommunityContextQuiet().aura, false);
 });
 
-test("userPermission shim returns booleans from shell context and defaults false", async () => {
+test("permission shims return true only for grants and undefined otherwise", async () => {
   const permission = await importRuntimeShim("user-permission.mjs");
 
   clearDocumentContext();
-  assert.equal(permission.readUserPermission("ViewSetup"), false);
+  assert.equal(permission.readUserPermission("ViewSetup"), undefined);
+  assert.equal(permission.readCustomPermission("Glade_Lwc_Oracle"), undefined);
 
   installDocumentContext({
     userPermissions: {
       ViewSetup: true,
       ModifyAllData: false,
     },
+    customPermissions: {
+      Glade_Lwc_Oracle: true,
+      LocalDenied: false,
+    },
   });
   assert.equal(permission.readUserPermission("ViewSetup"), true);
-  assert.equal(permission.readUserPermission("ModifyAllData"), false);
-  assert.equal(permission.readUserPermission("AuthorApex"), false);
+  assert.equal(permission.readUserPermission("ModifyAllData"), undefined);
+  assert.equal(permission.readUserPermission("AuthorApex"), undefined);
+  assert.equal(permission.readCustomPermission("Glade_Lwc_Oracle"), true);
+  assert.equal(permission.readCustomPermission("LocalDenied"), undefined);
+  assert.equal(permission.readCustomPermission("MissingPermission"), undefined);
 });
 
 test("apexContinuation shim returns promise-based simulated result", async () => {

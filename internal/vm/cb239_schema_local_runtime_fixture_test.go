@@ -180,12 +180,12 @@ List<Object> tabSets = Schema.describeTabs();
 System.assert(0 < tabSets.size());
 Object ts = tabSets.get(0);
 // Getters return values — must not throw
-String name = ts.getName();
+// Schema describe C011: DescribeTabSetResult has no getName method.
 String label = ts.getLabel();
 String tabDesc = ts.getDescription();
 Boolean sel = ts.isSelected();
 List<Object> tabs = ts.getTabs();
-Boolean ok = name != null && label != null && tabDesc != null && sel != null && tabs != null;
+Boolean ok = label != null && tabDesc != null && sel != null && tabs != null;
 // Field access — must not throw
 Object logoUrl = ts.logoUrl;
 Object ns = ts.namespace;

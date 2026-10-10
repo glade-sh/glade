@@ -19,6 +19,9 @@ func TestLoadCustomTabParsesLWCComponentTarget(t *testing.T) {
 	if tab.Target != "c:contextProbe" {
 		t.Fatalf("target = %q", tab.Target)
 	}
+	if tab.Motif != "Custom1: Heart" {
+		t.Fatalf("motif = %q", tab.Motif)
+	}
 }
 
 func TestLoadCustomTabParsesVisualforceTabTarget(t *testing.T) {

@@ -14,7 +14,6 @@ func newJSONGenerator(pretty bool) Value {
 	gen := Object("JSONGenerator")
 	gen.Fields["pretty"] = Bool(pretty)
 	gen.Fields["closed"] = Bool(false)
-	gen.Fields["unfinishedClose"] = Bool(false)
 	gen.Fields["rootWritten"] = Bool(false)
 	gen.Fields["out"] = String("")
 	gen.Fields["stack"] = List()
@@ -26,6 +25,17 @@ func (vm *VM) callJSONGeneratorMember(receiver Value, method string, args []Valu
 		return Null, receiver, false, false, nil
 	}
 	method = canonicalJSONGeneratorMethod(method)
+	switch method {
+	case "writeFieldName", "writeString", "writeStringField", "writeObject", "writeObjectField",
+		"writeNumber", "writeNumberField", "writeBoolean", "writeBooleanField", "writeNullField",
+		"writeDate", "writeDateField", "writeDateTime", "writeDatetime", "writeDateTimeField", "writeDatetimeField",
+		"writeTime", "writeTimeField", "writeId", "writeIdField", "writeBlob", "writeBlobField", "writeRaw", "writeRawValue", "writeRawField":
+		for _, arg := range args {
+			if arg.Kind == ValueNull {
+				return Null, receiver, false, true, newExceptionError("System.NullPointerException", "null argument for JSONGenerator."+method+"()")
+			}
+		}
+	}
 	switch method {
 	case "writeStartObject":
 		if len(args) != 0 {
@@ -237,16 +247,19 @@ func jsonGeneratorEndContainer(receiver Value, kind string) (Value, Value, bool,
 	}
 	stack := jsonGeneratorStack(receiver)
 	if len(stack.List) == 0 {
+		if kind == "object" {
+			return Null, receiver, false, true, jsonGeneratorException("Current context not an object but ROOT")
+		}
 		return Null, receiver, false, true, jsonGeneratorException("JSONGenerator.writeEnd%s has no open %s", jsonGeneratorContainerName(kind), kind)
 	}
 	frame := stack.List[len(stack.List)-1]
 	openKind := jsonGeneratorStringField(frame, "kind").Text
 	if openKind != kind {
 		if kind == "object" && openKind == "array" {
-			return Null, receiver, false, true, newExceptionError("JSONException", "JSONGenerator.writeEndObject cannot be called inside an array")
+			return Null, receiver, false, true, jsonGeneratorException("Current context not an object but ARRAY")
 		}
 		if kind == "array" && openKind == "object" {
-			return Null, receiver, false, true, newExceptionError("JSONException", "JSONGenerator.writeEndArray cannot be called inside an object")
+			return Null, receiver, false, true, jsonGeneratorException("Current context not an ARRAY but OBJECT")
 		}
 		return Null, receiver, false, true, jsonGeneratorException("JSONGenerator.writeEnd%s called while %s is open", jsonGeneratorContainerName(kind), openKind)
 	}
@@ -254,8 +267,12 @@ func jsonGeneratorEndContainer(receiver Value, kind string) (Value, Value, bool,
 		return Null, receiver, false, true, jsonGeneratorException("JSONGenerator object field is missing a value")
 	}
 	updated := receiver
-	if jsonGeneratorIntField(frame, "count").Int > 0 && jsonGeneratorPretty(receiver) {
-		jsonGeneratorAppend(&updated, "\n"+strings.Repeat("  ", len(stack.List)-1))
+	if jsonGeneratorPretty(receiver) {
+		if kind == "object" && jsonGeneratorIntField(frame, "count").Int > 0 {
+			jsonGeneratorAppend(&updated, "\n"+strings.Repeat("  ", jsonGeneratorObjectDepth(stack)-1))
+		} else {
+			jsonGeneratorAppend(&updated, " ")
+		}
 	}
 	if kind == "object" {
 		jsonGeneratorAppend(&updated, "}")
@@ -265,6 +282,17 @@ func jsonGeneratorEndContainer(receiver Value, kind string) (Value, Value, bool,
 	stack.List = stack.List[:len(stack.List)-1]
 	updated.Fields["stack"] = stack
 	return Null, updated, true, true, nil
+}
+
+// Pretty arrays remain inline; only object frames increase indentation.
+func jsonGeneratorObjectDepth(stack Value) int {
+	depth := 0
+	for _, frame := range stack.List {
+		if jsonGeneratorStringField(frame, "kind").Text == "object" {
+			depth++
+		}
+	}
+	return depth
 }
 
 func jsonGeneratorContainerName(kind string) string {
@@ -300,14 +328,14 @@ func jsonGeneratorWriteFieldName(receiver Value, name string) (Value, error) {
 	}
 	stack := jsonGeneratorStack(receiver)
 	if len(stack.List) == 0 {
-		return receiver, jsonGeneratorException("JSONGenerator.writeFieldName requires an open object")
+		return receiver, jsonGeneratorException("Can not write a field name, expecting a value")
 	}
 	frame := stack.List[len(stack.List)-1]
 	if jsonGeneratorStringField(frame, "kind").Text != "object" {
-		return receiver, newExceptionError("JSONException", "JSONGenerator.writeFieldName cannot be called inside an array")
+		return receiver, jsonGeneratorException("Can not write a field name, expecting a value")
 	}
 	if !jsonGeneratorBoolField(frame, "expectingField").Bool {
-		return receiver, jsonGeneratorException("JSONGenerator field %q is missing a value", jsonGeneratorStringField(frame, "pendingField").Text)
+		return receiver, jsonGeneratorException("Can not write a field name, expecting a value")
 	}
 	updated := receiver
 	count := jsonGeneratorIntField(frame, "count").Int
@@ -315,7 +343,7 @@ func jsonGeneratorWriteFieldName(receiver Value, name string) (Value, error) {
 		jsonGeneratorAppend(&updated, ",")
 	}
 	if jsonGeneratorPretty(updated) {
-		jsonGeneratorAppend(&updated, "\n"+strings.Repeat("  ", len(stack.List)))
+		jsonGeneratorAppend(&updated, "\n"+strings.Repeat("  ", jsonGeneratorObjectDepth(stack)))
 	}
 	jsonGeneratorAppend(&updated, jsonGeneratorQuote(name))
 	if jsonGeneratorPretty(updated) {
@@ -333,6 +361,15 @@ func jsonGeneratorWriteFieldName(receiver Value, name string) (Value, error) {
 func jsonGeneratorWriteScalar(receiver Value, value Value) (Value, Value, bool, bool, error) {
 	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
 		return Null, receiver, false, true, err
+	}
+	if value.Kind == ValueString {
+		stack := jsonGeneratorStack(receiver)
+		if len(stack.List) > 0 {
+			frame := stack.List[len(stack.List)-1]
+			if jsonGeneratorStringField(frame, "kind").Text == "object" && jsonGeneratorBoolField(frame, "expectingField").Bool {
+				return Null, receiver, false, true, jsonGeneratorException("Can not write text value, expecting field name")
+			}
+		}
 	}
 	updated, err := jsonGeneratorBeforeValue(receiver)
 	if err != nil {
@@ -419,7 +456,7 @@ func jsonGeneratorBeforeValue(receiver Value) (Value, error) {
 	stack := jsonGeneratorStack(updated)
 	if len(stack.List) == 0 {
 		if jsonGeneratorBoolField(updated, "rootWritten").Bool {
-			return updated, jsonGeneratorException("JSONGenerator root value already written")
+			jsonGeneratorAppend(&updated, " ")
 		}
 		updated.Fields["rootWritten"] = Bool(true)
 		return updated, nil
@@ -432,7 +469,7 @@ func jsonGeneratorBeforeValue(receiver Value) (Value, error) {
 			jsonGeneratorAppend(&updated, ",")
 		}
 		if jsonGeneratorPretty(updated) {
-			jsonGeneratorAppend(&updated, "\n"+strings.Repeat("  ", len(stack.List)))
+			jsonGeneratorAppend(&updated, " ")
 		}
 		frame.Fields["count"] = Int(count + 1)
 		stack.List[len(stack.List)-1] = frame
@@ -458,30 +495,39 @@ func jsonGeneratorClose(receiver Value) (Value, error) {
 	if jsonGeneratorBoolField(updated, "closed").Bool {
 		return updated, nil
 	}
-	stack := jsonGeneratorStack(updated)
-	if len(stack.List) > 0 {
-		updated.Fields["unfinishedClose"] = Bool(true)
+	for {
+		stack := jsonGeneratorStack(updated)
+		if len(stack.List) == 0 {
+			break
+		}
+		frame := stack.List[len(stack.List)-1]
+		kind := jsonGeneratorStringField(frame, "kind").Text
+		if kind == "object" && !jsonGeneratorBoolField(frame, "expectingField").Bool {
+			// Closing retains a pending field name without inventing a value.
+			// Its separator is only observable once a value is written.
+			separator := ":"
+			if jsonGeneratorPretty(updated) {
+				separator = " : "
+			}
+			out := jsonGeneratorStringField(updated, "out").Text
+			updated.Fields["out"] = String(strings.TrimSuffix(out, separator))
+			frame.Fields["expectingField"] = Bool(true)
+			frame.Fields["pendingField"] = String("")
+			stack.List[len(stack.List)-1] = frame
+			updated.Fields["stack"] = stack
+		}
+		_, next, _, _, err := jsonGeneratorEndContainer(updated, kind)
+		updated = next
+		if err != nil {
+			return updated, err
+		}
 	}
-	updated.Fields["stack"] = stack
 	updated.Fields["closed"] = Bool(true)
 	return updated, nil
 }
 
 func jsonGeneratorFinish(receiver Value) (Value, error) {
-	updated := receiver
-	if jsonGeneratorBoolField(updated, "unfinishedClose").Bool {
-		return updated, jsonGeneratorException("JSONGenerator cannot close with open JSON containers")
-	}
-	if jsonGeneratorBoolField(updated, "closed").Bool {
-		return updated, nil
-	}
-	stack := jsonGeneratorStack(updated)
-	if len(stack.List) > 0 {
-		return updated, nil
-	}
-	updated.Fields["stack"] = stack
-	updated.Fields["closed"] = Bool(true)
-	return updated, nil
+	return jsonGeneratorClose(receiver)
 }
 
 func jsonGeneratorEnsureOpen(receiver Value) error {
@@ -566,7 +612,7 @@ func jsonPlatformScalarFromValue(value Value) (any, bool) {
 		typeName = rest
 	}
 	switch typeName {
-	case "Date", "Datetime", "URL":
+	case "Date", "Datetime", "URL", "UUID":
 		return text.Text, true
 	case "Time":
 		if clock, err := parseTimeText(text.Text); err == nil {
@@ -576,7 +622,7 @@ func jsonPlatformScalarFromValue(value Value) (any, bool) {
 	case "Blob":
 		return base64.StdEncoding.EncodeToString([]byte(text.Text)), true
 	case "Id":
-		return text.Text, true
+		return displayIDText(text.Text), true
 	default:
 		return nil, false
 	}

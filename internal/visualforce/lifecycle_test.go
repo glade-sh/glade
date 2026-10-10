@@ -1,7 +1,11 @@
 package visualforce
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -264,6 +268,8 @@ func TestRenderPageStandardControllerSaveUpdatesCurrentPageRecord(t *testing.T) 
 	}
 	machine := vm.New(nil)
 	machine.SetOrg(&org)
+	authorizeFieldRenderingFixture(t, &org, machine)
+	authorizeFieldRenderingWriteFixture(t, &org)
 
 	_, err = RenderPage(PageRenderRequest{
 		Project:  p,
@@ -308,6 +314,7 @@ func TestRenderPageStandardSetRecordSetVarUsesOrgRecords(t *testing.T) {
 	org := standardSetControllerOrg()
 	machine := vm.New(nil)
 	machine.SetOrg(&org)
+	machine.SetCurrentUser(org.Objects["User"].Records[standardSetControllerUserID])
 
 	result, err := RenderPage(PageRenderRequest{
 		Project:  p,
@@ -356,6 +363,7 @@ this.controller.setPageSize(2);
 	org := standardSetControllerOrg()
 	machine := vm.New(nil)
 	machine.SetOrg(&org)
+	machine.SetCurrentUser(org.Objects["User"].Records[standardSetControllerUserID])
 	if err := machine.RegisterClass(vm.Class{
 		Name: "ProbeStandardSetControllerExtension",
 		Fields: map[string]vm.Field{
@@ -427,6 +435,7 @@ this.controller.setPageSize(5);
 	org := standardSetControllerOrg()
 	machine := vm.New(nil)
 	machine.SetOrg(&org)
+	machine.SetCurrentUser(org.Objects["User"].Records[standardSetControllerUserID])
 	if err := machine.RegisterClass(vm.Class{
 		Name: "ProbeStandardSetPageSizeExtension",
 		Fields: map[string]vm.Field{
@@ -490,6 +499,7 @@ return null;
 	org := standardSetControllerOrg()
 	machine := vm.New(nil)
 	machine.SetOrg(&org)
+	machine.SetCurrentUser(org.Objects["User"].Records[standardSetControllerUserID])
 	if err := machine.RegisterClass(vm.Class{
 		Name: "ProbeStandardSetActionExtension",
 		Fields: map[string]vm.Field{
@@ -527,10 +537,13 @@ return null;
 func TestRenderPageStandardSetTableIncludesHeaderAndOrgRows(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	// Native child_pageBlockTable_column/context_pageBlockTable_column require a container.
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/ProbeStandardSetTable.page"), `<apex:page standardController="Account" recordSetVar="accounts">
-  <apex:pageBlockTable value="{!accounts}" var="a">
-    <apex:column value="{!a.Name}"/>
-  </apex:pageBlockTable>
+  <apex:pageBlock>
+    <apex:pageBlockTable value="{!accounts}" var="a">
+      <apex:column value="{!a.Name}"/>
+    </apex:pageBlockTable>
+  </apex:pageBlock>
 </apex:page>`)
 
 	p, err := project.Load(root)
@@ -544,6 +557,7 @@ func TestRenderPageStandardSetTableIncludesHeaderAndOrgRows(t *testing.T) {
 	org := standardSetControllerOrg()
 	machine := vm.New(nil)
 	machine.SetOrg(&org)
+	machine.SetCurrentUser(org.Objects["User"].Records[standardSetControllerUserID])
 
 	result, err := RenderPage(PageRenderRequest{
 		Project:  p,
@@ -563,8 +577,63 @@ func TestRenderPageStandardSetTableIncludesHeaderAndOrgRows(t *testing.T) {
 	}
 }
 
+const (
+	standardSetControllerUserID    storage.ID = "005000000000099AAA"
+	standardSetControllerProfileID storage.ID = "00e000000000099AAA"
+)
+
 func standardSetControllerOrg() storage.OrgState {
 	org := storage.NewOrgState()
+	user := storage.Record{
+		ID: standardSetControllerUserID, Object: "User",
+		Fields: map[string]storage.Value{
+			"ProfileId": storage.IDValue(standardSetControllerProfileID),
+			"Username":  storage.StringValue("vf-standard-set-reader@example.test"),
+		},
+	}
+	org.Objects["User"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "User", KeyPrefix: "005"},
+		Records:    map[storage.ID]storage.Record{standardSetControllerUserID: user},
+	}
+	org.Objects["Profile"] = storage.ObjectState{
+		Records: map[storage.ID]storage.Record{
+			standardSetControllerProfileID: {
+				ID: standardSetControllerProfileID, Object: "Profile",
+				Fields: map[string]storage.Value{"Name": storage.StringValue("Minimum Access - Salesforce")},
+			},
+		},
+	}
+	org.Objects["ObjectPermissions"] = storage.ObjectState{
+		Records: map[storage.ID]storage.Record{
+			"110000000000099": {
+				ID: "110000000000099", Object: "ObjectPermissions",
+				Fields: map[string]storage.Value{
+					"ParentId":                    storage.IDValue(standardSetControllerProfileID),
+					"SObjectType":                 storage.StringValue("Account"),
+					"PermissionsRead":             storage.BooleanValue(true),
+					"PermissionsCreate":           storage.BooleanValue(false),
+					"PermissionsEdit":             storage.BooleanValue(false),
+					"PermissionsDelete":           storage.BooleanValue(false),
+					"PermissionsViewAllRecords":   storage.BooleanValue(false),
+					"PermissionsModifyAllRecords": storage.BooleanValue(false),
+				},
+			},
+		},
+	}
+	org.Objects["FieldPermissions"] = storage.ObjectState{
+		Records: map[storage.ID]storage.Record{
+			"0FP000000000099": {
+				ID: "0FP000000000099", Object: "FieldPermissions",
+				Fields: map[string]storage.Value{
+					"ParentId":        storage.IDValue(standardSetControllerProfileID),
+					"SObjectType":     storage.StringValue("Account"),
+					"Field":           storage.StringValue("Account.Name"),
+					"PermissionsRead": storage.BooleanValue(true),
+					"PermissionsEdit": storage.BooleanValue(false),
+				},
+			},
+		},
+	}
 	org.Objects["Account"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{
 			"Name": {APIName: "Name", Label: "Account Name", Type: storage.FieldString},
@@ -720,6 +789,21 @@ func TestRenderPageRejectsOversizedViewStatePayload(t *testing.T) {
 	if err := machine.RegisterClass(vm.Class{Name: "LargeController"}); err != nil {
 		t.Fatal(err)
 	}
+	// r_limit_persist_200000 accepts prepare, then rejects restore after the
+	// observation also retains JSON for the persisted digest list. Use those
+	// captured values instead of an uncaptured, highly repetitive string.
+	var items []vm.Value
+	var textItems []string
+	for i := 0; i < 200000/64; i++ {
+		digest := sha256.Sum256([]byte(fmt.Sprintf("V11_FIXED_%d", i)))
+		text := hex.EncodeToString(digest[:])
+		items = append(items, vm.String(text))
+		textItems = append(textItems, text)
+	}
+	observation, err := json.Marshal(map[string]any{"posts": 2, "value": textItems})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	_, err = RenderPage(PageRenderRequest{
 		Project:  p,
@@ -728,9 +812,11 @@ func TestRenderPageRejectsOversizedViewStatePayload(t *testing.T) {
 		PageName: "Large",
 		PageURL:  "/apex/Large",
 		ViewState: &ViewStatePayload{
-			PageName:         "Large",
-			CSRF:             "token",
-			ControllerFields: map[string]string{"blob": strings.Repeat("x", MaxVisualforceViewStateBytes)},
+			PageName: "Large",
+			CSRF:     "token",
+			ControllerValues: map[string]vm.Value{
+				"value": vm.List(items...), "posts": vm.Int(2), "observation": vm.String(string(observation)),
+			},
 		},
 	})
 	if !errors.Is(err, ErrVisualforceLimitExceeded) {

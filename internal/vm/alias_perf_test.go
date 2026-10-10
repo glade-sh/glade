@@ -49,6 +49,10 @@ func TestScopeAliasPerfCapturesCallsRootsVisitsCacheOutcomesAndReplacementTime(t
 	containing.Type = "List<List<String>>"
 	absent := List(String("absent"))
 	absent.Type = "List<String>"
+	for range 11 {
+		containing.List = append(containing.List, target)
+		absent.List = append(absent.List, String("absent"))
+	}
 
 	scope := map[string]Value{"containing": containing, "absent": absent}
 	machine.propagateAliasSnapshotToScope(scope, snapshotAlias(target), updated)

@@ -72,6 +72,7 @@ func (h *Handler) handle(method string, params json.RawMessage) (any, *ResponseE
 		return h.Initialize(p), nil
 	case "shutdown":
 		h.shutdown = true
+		h.parser.Close()
 		return nil, nil
 	case "textDocument/didOpen":
 		var p DidOpenTextDocumentParams

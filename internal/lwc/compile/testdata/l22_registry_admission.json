@@ -1,0 +1,16 @@
+[
+  {
+    "id": "c_import_case_sensitive_module",
+    "group": "envelope and errors",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { graphql } from 'lightning/uiGraphqlApi';\nimport { LightningElement, wire } from 'lwc'; export default class FamilyUiGraphql extends LightningElement {}",
+    "template": "<template><span>L12 compiler question</span></template>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "bundle_name": "familyL12007",
+    "native_control": "native-controls/ui-graphql/api59/org.tsv:8 and api67/org.tsv:8"
+  }
+]

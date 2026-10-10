@@ -14,6 +14,80 @@ type RuntimeLoweringError struct {
 	Message string
 }
 
+// ApexSyntaxError marks a source construct rejected by the Apex language,
+// distinct from valid Apex that this VM cannot yet lower.
+type ApexSyntaxError struct {
+	Message       string
+	NativeMessage string
+	Offset        int
+	// EndOffset bounds an orphan clause header for declaration diagnostics.
+	// Other errors retain a point diagnosis at Offset.
+	EndOffset int
+}
+
+func (e *ApexSyntaxError) Error() string { return e.Message }
+
+// ExceptionSyntaxError also recognizes exception grammar inside a declaration
+// source. The parser adapter can retain its own error while reporting the same
+// measured exception diagnostic as anonymous and named method compilation.
+func ExceptionSyntaxError(source string) *ApexSyntaxError {
+	// C020/C024-C026/C029-C033 include annotated named classes. This scan
+	// only locates exception statements; the declaration parser owns annotations.
+	tokens, err := lexWithAnnotations(source, true)
+	if err != nil {
+		return nil
+	}
+	for i := 0; i < len(tokens)-1; i++ {
+		if tokens[i].kind != tokenIdent {
+			continue
+		}
+		switch strings.ToLower(tokens[i].text) {
+		case "throw", "try", "catch", "finally":
+			p := parser{tokens: tokens, pos: i}
+			_, err := p.parseStatement()
+			if syntax, ok := err.(*ApexSyntaxError); ok && syntax.NativeMessage != "" {
+				if strings.HasPrefix(syntax.NativeMessage, "Missing '<EOF>' at ") && (p.peek(tokenIdent, "catch") || p.peek(tokenIdent, "finally")) {
+					syntax.EndOffset = exceptionClauseHeaderEnd(p.tokens, p.pos)
+				}
+				return syntax
+			}
+			if err != nil {
+				// An unrelated lowering failure cannot establish that the
+				// following catch/finally is orphaned.
+				return nil
+			}
+			i = p.pos - 1
+		}
+	}
+	return nil
+}
+
+// C029/C030/C032/C033: declaration parser recovery can diagnose an orphan
+// clause inside its header, while native text identifies the clause keyword.
+// A valid catch header extends the span through ')'; clause bodies are excluded.
+func exceptionClauseHeaderEnd(tokens []token, pos int) int {
+	start := tokens[pos]
+	end := start.pos + len(start.text)
+	if !strings.EqualFold(start.text, "catch") {
+		return end
+	}
+	header := parser{tokens: tokens, pos: pos + 1}
+	if _, err := header.expect(tokenSymbol, "("); err != nil {
+		return end
+	}
+	if _, err := header.parseTypeName(); err != nil {
+		return end
+	}
+	if _, err := header.expect(tokenIdent, ""); err != nil {
+		return end
+	}
+	closing, err := header.expect(tokenSymbol, ")")
+	if err != nil {
+		return end
+	}
+	return closing.pos + len(closing.text)
+}
+
 func (e *RuntimeLoweringError) Error() string {
 	return e.Message
 }
@@ -21,6 +95,14 @@ func (e *RuntimeLoweringError) Error() string {
 type CompileOptions struct {
 	APIVersion string
 	Trigger    bool
+	// A ++/-- statement in a captured spelling that the name path cannot lower
+	// is a prefix candidate. By default every candidate keeps the name path.
+	// PrefixStatementCandidates lowers all of them as expressions, so semantic
+	// analysis can type them against its captured rules. ApprovedPrefixStatements
+	// lowers only the candidates starting at these byte offsets, the ones
+	// semantic analysis approved.
+	PrefixStatementCandidates bool
+	ApprovedPrefixStatements  map[int]bool
 }
 
 func CompileAnonymous(source string) (ir.Program, error) {
@@ -32,7 +114,7 @@ func CompileAnonymousWithOptions(source string, options CompileOptions) (ir.Prog
 	if err != nil {
 		return ir.Program{}, classifyCompileError(source, err)
 	}
-	p := parser{tokens: tokens}
+	p := parser{tokens: tokens, prefixCandidates: options.PrefixStatementCandidates, approvedPrefix: options.ApprovedPrefixStatements}
 	program, err := p.parseProgram()
 	if err != nil {
 		return ir.Program{}, classifyCompileError(source, err)
@@ -44,6 +126,9 @@ func CompileAnonymousWithOptions(source string, options CompileOptions) (ir.Prog
 }
 
 func classifyCompileError(source string, err error) error {
+	if _, syntax := err.(*ApexSyntaxError); syntax {
+		return err
+	}
 	if !runtimeLoweringSourceAccepted(source) {
 		return err
 	}
@@ -51,13 +136,12 @@ func classifyCompileError(source string, err error) error {
 }
 
 func runtimeLoweringSourceAccepted(source string) bool {
-	parser := apexparser.NewParser()
 	probes := []string{
 		source,
 		"public class GladeRuntimeLoweringProbe { public void run() {\n" + source + "\n} }",
 	}
 	for i, probe := range probes {
-		if !parser.ParseSource(fmt.Sprintf("__glade_runtime_lowering_%d.cls", i), probe).HasErrors() {
+		if !apexparser.ParseSource(fmt.Sprintf("__glade_runtime_lowering_%d.cls", i), probe).HasErrors() {
 			return true
 		}
 	}
@@ -91,12 +175,17 @@ const (
 )
 
 type token struct {
-	kind tokenKind
-	text string
-	pos  int
+	kind                    tokenKind
+	text                    string
+	escapedBackslashOffsets []int
+	pos                     int
 }
 
 func lex(source string) ([]token, error) {
+	return lexWithAnnotations(source, false)
+}
+
+func lexWithAnnotations(source string, annotations bool) ([]token, error) {
 	var tokens []token
 	for i := 0; i < len(source); {
 		r := rune(source[i])
@@ -154,7 +243,25 @@ func lex(source string) ([]token, error) {
 			if i < len(source) && strings.ContainsRune("LlDdFf", rune(source[i])) {
 				i++
 			}
-			tokens = append(tokens, token{kind: tokenNumber, text: source[start:i], pos: start})
+			if i < len(source) && (isIdentStart(source[i]) || source[i] == '_') {
+				return nil, &ApexSyntaxError{Message: fmt.Sprintf("invalid numeric literal at byte %d", start), Offset: start}
+			}
+			raw := source[start:i]
+			if strings.ContainsAny(raw, "eE") {
+				return nil, &ApexSyntaxError{Message: fmt.Sprintf("scientific notation is not an Apex numeric literal at byte %d", start), Offset: start}
+			}
+			integer := raw
+			bits := 32
+			if strings.HasSuffix(strings.ToLower(raw), "l") {
+				integer = raw[:len(raw)-1]
+				bits = 64
+			}
+			if !strings.ContainsAny(integer, ".dDfF") {
+				if _, err := strconv.ParseInt(integer, 10, bits); err != nil {
+					return nil, &ApexSyntaxError{Message: fmt.Sprintf("illegal %d-bit integer literal %q at byte %d", bits, raw, start), NativeMessage: nativeIntegerLiteralError(bits), Offset: start}
+				}
+			}
+			tokens = append(tokens, token{kind: tokenNumber, text: raw, pos: start})
 		case i+2 < len(source) && source[i:i+3] == "'''":
 			var tok token
 			var next int
@@ -179,8 +286,18 @@ func lex(source string) ([]token, error) {
 			}
 			tokens = append(tokens, tok)
 			i = next
+		case source[i] == '%':
+			return nil, &ApexSyntaxError{Message: fmt.Sprintf("operator %% is not valid in Apex at byte %d", i), NativeMessage: "Found punctuation symbol or operator '%' that isn't valid in Apex.", Offset: i}
+		case annotations && source[i] == '@':
+			tokens = append(tokens, token{kind: tokenSymbol, text: "@", pos: i})
+			i++
 		default:
 			start := i
+			if i+3 < len(source) && source[i:i+4] == ">>>=" {
+				tokens = append(tokens, token{kind: tokenSymbol, text: ">>>=", pos: start})
+				i += 4
+				goto next
+			}
 			if i+2 < len(source) {
 				three := source[i : i+3]
 				switch three {
@@ -204,7 +321,7 @@ func lex(source string) ([]token, error) {
 				}
 			}
 			switch source[i] {
-			case '(', ')', '{', '}', '[', ']', ';', ',', '.', ':', '?', '+', '-', '*', '/', '%', '=', '<', '>', '!', '&', '|', '^':
+			case '@', '(', ')', '{', '}', '[', ']', ';', ',', '.', ':', '?', '+', '-', '*', '/', '%', '=', '<', '>', '!', '&', '|', '^', '~':
 				tokens = append(tokens, token{kind: tokenSymbol, text: source[i : i+1], pos: start})
 				i++
 			default:
@@ -252,6 +369,7 @@ func lexMultilineString(source string, start int) (token, int, error) {
 func lexSingleString(source string, start int) (token, int, error) {
 	i := start + 1
 	var text strings.Builder
+	var escapedBackslashOffsets []int
 	for i < len(source) {
 		if source[i] == '\'' {
 			if i+1 < len(source) && source[i+1] == '\'' {
@@ -259,10 +377,28 @@ func lexSingleString(source string, start int) (token, int, error) {
 				i += 2
 				continue
 			}
-			return token{kind: tokenString, text: text.String(), pos: start}, i + 1, nil
+			return token{kind: tokenString, text: text.String(), escapedBackslashOffsets: escapedBackslashOffsets, pos: start}, i + 1, nil
 		}
 		if source[i] == '\\' && i+1 < len(source) {
 			switch source[i+1] {
+			case 'u':
+				end := apexUnicodeEscapeEnd(source, i)
+				if end > i {
+					decoded, err := unescapeJavaLike("Apex string literal", source[i:end])
+					if err == nil {
+						decodedOffset := text.Len()
+						for offset := 0; offset < len(decoded); offset++ {
+							if decoded[offset] == '\\' {
+								escapedBackslashOffsets = append(escapedBackslashOffsets, decodedOffset+offset)
+							}
+						}
+						text.WriteString(decoded)
+						i = end
+						continue
+					}
+				}
+				text.WriteByte('\\')
+				text.WriteByte('u')
 			case '\'':
 				if i+2 < len(source) && source[i+2] == '\'' && i+3 < len(source) && isIdentPart(source[i+3]) {
 					text.WriteByte('\\')
@@ -272,6 +408,7 @@ func lexSingleString(source string, start int) (token, int, error) {
 				}
 				text.WriteByte('\'')
 			case '\\':
+				escapedBackslashOffsets = append(escapedBackslashOffsets, text.Len())
 				text.WriteByte('\\')
 			case '"':
 				text.WriteByte('"')
@@ -281,6 +418,10 @@ func lexSingleString(source string, start int) (token, int, error) {
 				text.WriteByte('\r')
 			case 't':
 				text.WriteByte('\t')
+			case 'b':
+				text.WriteByte('\b')
+			case 'f':
+				text.WriteByte('\f')
 			default:
 				text.WriteByte('\\')
 				text.WriteByte(source[i+1])
@@ -294,9 +435,22 @@ func lexSingleString(source string, start int) (token, int, error) {
 	return token{}, start, fmt.Errorf("unterminated string literal at byte %d", start)
 }
 
+func apexUnicodeEscapeEnd(source string, start int) int {
+	end := start
+	for end+6 <= len(source) && source[end] == '\\' && source[end+1] == 'u' {
+		if _, err := strconv.ParseUint(source[end+2:end+6], 16, 16); err != nil {
+			return start
+		}
+		end += 6
+	}
+	return end
+}
+
 type parser struct {
-	tokens []token
-	pos    int
+	tokens           []token
+	pos              int
+	prefixCandidates bool
+	approvedPrefix   map[int]bool
 }
 
 func (p *parser) parseProgram() (ir.Program, error) {
@@ -313,6 +467,12 @@ func (p *parser) parseProgram() (ir.Program, error) {
 
 func (p *parser) parseStatement() (ir.Instruction, error) {
 	start := p.tokens[p.pos]
+	if p.peek(tokenSymbol, "@") {
+		return p.parseAnnotatedDeclaration()
+	}
+	if p.peek(tokenIdent, "webservice") {
+		return ir.Instruction{}, &ApexSyntaxError{Message: "Defining type for webService fields must be declared as global", Offset: start.pos}
+	}
 	if p.peek(tokenIdent, "System") && p.peekNext(tokenSymbol, ".") && p.peekN(2, tokenIdent, "runAs") {
 		p.advance()
 		p.advance()
@@ -436,8 +596,9 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 	}
 
 	if p.match(tokenIdent, "throw") {
-		if p.match(tokenSymbol, ";") {
-			return ir.Instruction{Op: ir.OpThrow, Pos: start.pos}, nil
+		if p.peek(tokenSymbol, ";") {
+			// C020: Apex rethrows with `throw e`, never a bare `throw;`.
+			return ir.Instruction{}, &ApexSyntaxError{Message: "Unexpected token ';'.", NativeMessage: "Unexpected token ';'.", Offset: p.tokens[p.pos].pos}
 		}
 		expr, err := p.parseAssignmentExpression()
 		if err != nil {
@@ -474,12 +635,18 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 			}
 			catchName, err := p.expect(tokenIdent, "")
 			if err != nil {
+				if p.peek(tokenSymbol, ")") {
+					return ir.Instruction{}, &ApexSyntaxError{Message: err.Error(), NativeMessage: "Unexpected token ')'.", Offset: p.tokens[p.pos].pos}
+				}
 				return ir.Instruction{}, err
 			}
 			if err := validateLocalIdentifier(catchName); err != nil {
 				return ir.Instruction{}, err
 			}
 			if _, err := p.expect(tokenSymbol, ")"); err != nil {
+				if p.peek(tokenSymbol, ",") {
+					return ir.Instruction{}, &ApexSyntaxError{Message: err.Error(), NativeMessage: "Expecting ')' but was: ','", Offset: p.tokens[p.pos].pos}
+				}
 				return ir.Instruction{}, err
 			}
 			catchBlock, err := p.parseStatementBlock()
@@ -494,17 +661,21 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 				inst.Catch = catchBlock
 			}
 		}
-		if p.match(tokenIdent, "finally") {
+		hasFinally := p.match(tokenIdent, "finally")
+		if hasFinally {
 			finallyBlock, err := p.parseStatementBlock()
 			if err != nil {
 				return ir.Instruction{}, err
 			}
 			inst.Finally = finallyBlock
 		}
-		if len(inst.Catches) == 0 && len(inst.Catch) == 0 && len(inst.Finally) == 0 {
-			return ir.Instruction{}, fmt.Errorf("try requires catch or finally at byte %d", start.pos)
+		if len(inst.Catches) == 0 && !hasFinally {
+			return ir.Instruction{}, &ApexSyntaxError{Message: fmt.Sprintf("try requires catch or finally at byte %d", start.pos), NativeMessage: "Try block must have at least one catch block or a finally block", Offset: start.pos}
 		}
 		return inst, nil
+	}
+	if p.peek(tokenIdent, "catch") || p.peek(tokenIdent, "finally") {
+		return ir.Instruction{}, &ApexSyntaxError{Message: "Unexpected token '" + start.text + "'.", NativeMessage: "Missing '<EOF>' at '" + start.text + "'", Offset: start.pos}
 	}
 
 	if p.match(tokenIdent, "switch") {
@@ -706,6 +877,11 @@ func (p *parser) parseFor(pos int) (ir.Instruction, error) {
 		if err != nil {
 			return ir.Instruction{}, err
 		}
+		// Salesforce permits multiple initial declarations, but the update
+		// clause has one expression.
+		if len(stmts) > 1 {
+			return ir.Instruction{}, fmt.Errorf("for update requires one expression")
+		}
 		updates = stmts
 		if len(stmts) > 0 {
 			update = &stmts[0]
@@ -856,7 +1032,7 @@ func (p *parser) parseAssignmentLike(requireSemicolon bool) (ir.Instruction, boo
 		p.pos = save
 		return ir.Instruction{}, false, nil
 	}
-	if p.match(tokenSymbol, "=") || p.match(tokenSymbol, "+=") || p.match(tokenSymbol, "-=") || p.match(tokenSymbol, "*=") || p.match(tokenSymbol, "/=") || p.match(tokenSymbol, "%=") || p.match(tokenSymbol, "&=") || p.match(tokenSymbol, "|=") || p.match(tokenSymbol, "^=") || p.match(tokenSymbol, "<<=") || p.match(tokenSymbol, ">>=") {
+	if p.match(tokenSymbol, "=") || p.match(tokenSymbol, "+=") || p.match(tokenSymbol, "-=") || p.match(tokenSymbol, "*=") || p.match(tokenSymbol, "/=") || p.match(tokenSymbol, "%=") || p.match(tokenSymbol, "&=") || p.match(tokenSymbol, "|=") || p.match(tokenSymbol, "^=") || p.match(tokenSymbol, "<<=") || p.match(tokenSymbol, ">>=") || p.match(tokenSymbol, ">>>=") {
 		op := p.tokens[p.pos-1].text
 		expr, err := p.parseAssignmentExpression()
 		if err != nil {
@@ -900,7 +1076,7 @@ func (p *parser) parseComplexAssignmentLike(requireSemicolon bool) (ir.Instructi
 		p.pos = save
 		return ir.Instruction{}, false, nil
 	}
-	if !p.match(tokenSymbol, "=") && !p.match(tokenSymbol, "+=") && !p.match(tokenSymbol, "-=") && !p.match(tokenSymbol, "*=") && !p.match(tokenSymbol, "/=") && !p.match(tokenSymbol, "%=") && !p.match(tokenSymbol, "&=") && !p.match(tokenSymbol, "|=") && !p.match(tokenSymbol, "^=") && !p.match(tokenSymbol, "<<=") && !p.match(tokenSymbol, ">>=") {
+	if !p.match(tokenSymbol, "=") && !p.match(tokenSymbol, "+=") && !p.match(tokenSymbol, "-=") && !p.match(tokenSymbol, "*=") && !p.match(tokenSymbol, "/=") && !p.match(tokenSymbol, "%=") && !p.match(tokenSymbol, "&=") && !p.match(tokenSymbol, "|=") && !p.match(tokenSymbol, "^=") && !p.match(tokenSymbol, "<<=") && !p.match(tokenSymbol, ">>=") && !p.match(tokenSymbol, ">>>=") {
 		p.pos = save
 		return ir.Instruction{}, false, nil
 	}
@@ -941,7 +1117,7 @@ func (p *parser) parsePrefixIncrementLike(requireSemicolon bool) (ir.Instruction
 	save := p.pos
 	start := p.advance()
 	name, ok := p.parseAssignableName()
-	if !ok {
+	if !ok || requireSemicolon && (p.prefixCandidates || p.approvedPrefix[start.pos]) && p.prefixCandidate(save, name) {
 		p.pos = save
 		return ir.Instruction{}, false, nil
 	}
@@ -956,6 +1132,44 @@ func (p *parser) parsePrefixIncrementLike(requireSemicolon bool) (ir.Instruction
 		}
 	}
 	return ir.Instruction{Op: ir.OpAssign, Name: name, Expr: expr, Pos: start.pos}, true, nil
+}
+
+// prefixCandidate reports a statement the name path cannot lower in one of the
+// captured spellings: ++l[0]; and ++l[0].field; (C163-C176, R014-R024,
+// R4-42-R4-43), and ++m.get(key).field; with a string literal, a local or one
+// field of a local as key (R4-03-R4-38), with -- alike. A candidate goes to the
+// expression parser, which keeps the index or call and the field receiver.
+// Semantic analysis decides by type, operator and route which candidates a
+// captured row covers. Other prefix statements keep the name path.
+func (p *parser) prefixCandidate(start int, name string) bool {
+	_, method, dotted := strings.Cut(name, ".")
+	mapGet := dotted && method == "get" && p.peek(tokenSymbol, "(")
+	if !mapGet && (dotted || !p.peek(tokenSymbol, "[")) {
+		return false
+	}
+	resume := p.pos
+	p.pos = start
+	expr, err := p.parseUnary()
+	terminated := err == nil && p.peek(tokenSymbol, ";")
+	p.pos = resume
+	if !terminated || expr.Left == nil {
+		return false
+	}
+	target := *expr.Left
+	field := strings.HasPrefix(target.Callee, "__field:") && target.Left != nil
+	if field {
+		target = *target.Left
+	}
+	if mapGet {
+		if !field || target.Kind != ir.ExprCall || target.Callee != name || target.Left != nil || len(target.Args) != 1 {
+			return false
+		}
+		key := target.Args[0]
+		return key.Kind == ir.ExprLiteral && strings.HasPrefix(key.Value, "'") ||
+			key.Kind == ir.ExprVariable && strings.Count(key.Name, ".") <= 1 && !strings.Contains(key.Name, "?")
+	}
+	return target.Kind == ir.ExprCall && target.Callee == "get" && target.Operator == "[]" && len(target.Args) == 1 &&
+		target.Args[0].Kind == ir.ExprLiteral && target.Left != nil && target.Left.Kind == ir.ExprVariable && !strings.Contains(target.Left.Name, ".")
 }
 
 func (p *parser) parseAssignableName() (string, bool) {
@@ -976,7 +1190,7 @@ func (p *parser) parseAssignableName() (string, bool) {
 func (p *parser) parseAssignmentExpression() (ir.Expr, error) {
 	save := p.pos
 	name, ok := p.parseAssignableName()
-	if ok && p.peekAnySymbol("=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=") && !p.peekNext(tokenSymbol, ">") {
+	if ok && p.peekAnySymbol("=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", ">>>=") && !p.peekNext(tokenSymbol, ">") {
 		op := p.advance().text
 		value, err := p.parseAssignmentExpression()
 		if err != nil {
@@ -1269,6 +1483,11 @@ func (p *parser) parseComparison() (ir.Expr, error) {
 		if op == "" {
 			return left, nil
 		}
+		// Apex accepts a separated greater-than/equal comparison (SF196).
+		// Join it here so generic type delimiters and assignment stay unchanged.
+		if op == ">" && p.match(tokenSymbol, "=") {
+			op = ">="
+		}
 		right, err := p.parseShift()
 		if err != nil {
 			return ir.Expr{}, err
@@ -1290,12 +1509,18 @@ func (p *parser) parseShift() (ir.Expr, error) {
 				return ir.Expr{}, err
 			}
 			left = binary("<<", left, right)
-		case p.match(tokenSymbol, ">>"):
+		case p.peek(tokenSymbol, ">") && p.peekNext(tokenSymbol, ">") && p.tokens[p.pos+1].pos == p.tokens[p.pos].pos+1:
+			op := ">>"
+			p.pos += 2
+			if p.peek(tokenSymbol, ">") && p.tokens[p.pos].pos == p.tokens[p.pos-1].pos+1 {
+				p.pos++
+				op = ">>>"
+			}
 			right, err := p.parseTerm()
 			if err != nil {
 				return ir.Expr{}, err
 			}
-			left = binary(">>", left, right)
+			left = binary(op, left, right)
 		default:
 			return left, nil
 		}
@@ -1367,6 +1592,12 @@ func (p *parser) parseUnary() (ir.Expr, error) {
 			return ir.Expr{}, err
 		}
 		return ir.Expr{Kind: ir.ExprCall, Callee: "__prefix:" + op, Left: &expr}, nil
+	case p.match(tokenSymbol, "~"):
+		expr, err := p.parseUnary()
+		if err != nil {
+			return ir.Expr{}, err
+		}
+		return ir.Expr{Kind: ir.ExprUnary, Operator: "~", Left: &expr}, nil
 	case p.match(tokenSymbol, "!"):
 		expr, err := p.parseUnary()
 		if err != nil {
@@ -1405,7 +1636,8 @@ func (p *parser) parsePostfix(expr ir.Expr) (ir.Expr, error) {
 				return ir.Expr{}, err
 			}
 			receiver := expr
-			expr = ir.Expr{Kind: ir.ExprCall, Callee: "get", Args: []ir.Expr{index}, Left: &receiver}
+			// Retain bracket syntax so semantic analysis can distinguish it from get().
+			expr = ir.Expr{Kind: ir.ExprCall, Callee: "get", Operator: "[]", Args: []ir.Expr{index}, Left: &receiver}
 			continue
 		}
 		if p.matchAnySymbol(".", "?.") {
@@ -1761,17 +1993,35 @@ func (p *parser) parseSOQLLiteral(pos int) (ir.Expr, error) {
 			case "]":
 				depth--
 				if depth == 0 {
-					return ir.Expr{Kind: ir.ExprSOQL, Value: strings.Join(compactSOQLDateLiteralParts(parts), " ")}, nil
+					parts = compactSOQLDateLiteralParts(parts)
+					if len(parts) > 0 && strings.EqualFold(parts[0], "FIND") {
+						parts = compactSOSLWindowParts(parts)
+					}
+					return ir.Expr{Kind: ir.ExprSOQL, Value: strings.Join(parts, " ")}, nil
 				}
 			}
 		}
 		if tok.kind == tokenString {
-			parts = append(parts, soqlStringLiteralFromTokenText(tok.text))
+			parts = append(parts, soqlStringLiteralFromTokenText(tok.text, tok.escapedBackslashOffsets))
 		} else {
 			parts = append(parts, tok.text)
 		}
 	}
 	return ir.Expr{}, fmt.Errorf("unterminated SOQL literal at byte %d", pos)
+}
+
+// The Apex lexer separates unary minus. Rejoin SOSL literal windows before
+// runtime query parsing, without changing SELECT dates, arithmetic or binds.
+func compactSOSLWindowParts(parts []string) []string {
+	var out []string
+	for i := 0; i < len(parts); i++ {
+		out = append(out, parts[i])
+		if (strings.EqualFold(parts[i], "OFFSET") || strings.EqualFold(parts[i], "LIMIT")) && i+2 < len(parts) && parts[i+1] == "-" && isAllDigits(parts[i+2]) {
+			out = append(out, "-"+parts[i+2])
+			i += 2
+		}
+	}
+	return out
 }
 
 func compactSOQLDateLiteralParts(parts []string) []string {
@@ -1822,11 +2072,17 @@ func isAllDigits(part string) bool {
 	return part != ""
 }
 
-func soqlStringLiteralFromTokenText(text string) string {
+func soqlStringLiteralFromTokenText(text string, escapedBackslashOffsets []int) string {
 	var out strings.Builder
 	out.Grow(len(text) + 2)
 	out.WriteByte('\'')
+	backslashOffsetIndex := 0
 	for i := 0; i < len(text); i++ {
+		if backslashOffsetIndex < len(escapedBackslashOffsets) && escapedBackslashOffsets[backslashOffsetIndex] == i {
+			out.WriteString(`\\`)
+			backslashOffsetIndex++
+			continue
+		}
 		if text[i] == '\'' {
 			out.WriteString("''")
 			continue
@@ -2015,4 +2271,12 @@ func isIdentStart(b byte) bool {
 
 func isIdentPart(b byte) bool {
 	return isIdentStart(b) || (b >= '0' && b <= '9')
+}
+
+// Integer/Long rows Z01/Z02 use the suffixed literal's Long range at both API endpoints.
+func nativeIntegerLiteralError(bits int) string {
+	if bits == 64 {
+		return "Illegal long"
+	}
+	return "Illegal integer"
 }

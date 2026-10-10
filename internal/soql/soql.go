@@ -20,7 +20,11 @@ var parsedQueryCache sync.Map
 const virtualSchemaHydrationStampKey = "__glade_virtual_schema_hydration_stamp"
 
 func cachedParsedQuery(input string, now time.Time, fiscalYearStartMonth int) (Query, bool) {
-	value, ok := parsedQueryCache.Load(parsedQueryCacheKey(input, now, fiscalYearStartMonth))
+	return cachedParsedQueryWithTimeZone(input, now, fiscalYearStartMonth, "UTC")
+}
+
+func cachedParsedQueryWithTimeZone(input string, now time.Time, fiscalYearStartMonth int, timeZoneID string) (Query, bool) {
+	value, ok := parsedQueryCache.Load(parsedQueryCacheKey(input, now, fiscalYearStartMonth, timeZoneID))
 	if !ok {
 		return Query{}, false
 	}
@@ -32,11 +36,15 @@ func cachedParsedQuery(input string, now time.Time, fiscalYearStartMonth int) (Q
 }
 
 func storeParsedQuery(input string, now time.Time, fiscalYearStartMonth int, query Query) {
-	parsedQueryCache.Store(parsedQueryCacheKey(input, now, fiscalYearStartMonth), cloneQuery(query))
+	storeParsedQueryWithTimeZone(input, now, fiscalYearStartMonth, "UTC", query)
 }
 
-func parsedQueryCacheKey(input string, now time.Time, fiscalYearStartMonth int) string {
-	return now.UTC().Truncate(time.Minute).Format("2006-01-02T15:04") + "\x00" + strconv.Itoa(normalizeFiscalYearStartMonth(fiscalYearStartMonth)) + "\x00" + input
+func storeParsedQueryWithTimeZone(input string, now time.Time, fiscalYearStartMonth int, timeZoneID string, query Query) {
+	parsedQueryCache.Store(parsedQueryCacheKey(input, now, fiscalYearStartMonth, timeZoneID), cloneQuery(query))
+}
+
+func parsedQueryCacheKey(input string, now time.Time, fiscalYearStartMonth int, timeZoneID string) string {
+	return now.UTC().Truncate(time.Minute).Format("2006-01-02T15:04") + "\x00" + strconv.Itoa(normalizeFiscalYearStartMonth(fiscalYearStartMonth)) + "\x00" + timeZoneID + "\x00" + input
 }
 
 func cloneQuery(query Query) Query {
@@ -184,21 +192,31 @@ func ParseAt(input string, now time.Time) (Query, error) {
 }
 
 func ParseAtWithFiscalYearStartMonth(input string, now time.Time, fiscalYearStartMonth int) (Query, error) {
+	return ParseAtWithFiscalYearStartMonthAndTimeZone(input, now, fiscalYearStartMonth, "UTC")
+}
+
+// ParseAtWithFiscalYearStartMonthAndTimeZone parses a query using the
+// execution user's timezone for date-literal ranges. Date literals are
+// calendar ranges in that timezone when matched against Datetime fields.
+func ParseAtWithFiscalYearStartMonthAndTimeZone(input string, now time.Time, fiscalYearStartMonth int, timeZoneID string) (Query, error) {
 	now = now.UTC()
 	fiscalYearStartMonth = normalizeFiscalYearStartMonth(fiscalYearStartMonth)
-	if query, ok := cachedParsedQuery(input, now, fiscalYearStartMonth); ok {
+	if strings.TrimSpace(timeZoneID) == "" {
+		timeZoneID = "UTC"
+	}
+	if query, ok := cachedParsedQueryWithTimeZone(input, now, fiscalYearStartMonth, timeZoneID); ok {
 		return query, nil
 	}
 	tokens, err := lex(input)
 	if err != nil {
 		return Query{}, err
 	}
-	p := parser{tokens: tokens, now: now, fiscalYearStartMonth: fiscalYearStartMonth}
+	p := parser{tokens: tokens, now: dateLiteralNow(now, timeZoneID), fiscalYearStartMonth: fiscalYearStartMonth, dateLiteralTimeZoneID: timeZoneID}
 	query, err := p.parseQuery()
 	if err != nil {
 		return Query{}, err
 	}
-	storeParsedQuery(input, now, fiscalYearStartMonth, query)
+	storeParsedQueryWithTimeZone(input, now, fiscalYearStartMonth, timeZoneID, query)
 	return query, nil
 }
 
@@ -207,6 +225,12 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 }
 
 func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) (Result, error) {
+	if err := validateSemiAntiQuery(query); err != nil {
+		return Result{}, err
+	}
+	if err := validateAggregateQuery(query); err != nil {
+		return Result{}, err
+	}
 	if strings.EqualFold(query.Object, "PlatformCachePartition") {
 		if object, ok := org.Objects["PlatformCachePartition"]; !ok || len(object.Records) == 0 {
 			org = org.Clone()
@@ -224,17 +248,30 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 		objectName, ok = storage.ResolveObjectName(org, query.Object)
 	}
 	if !ok {
-		return Result{}, fmt.Errorf("soql: unknown object %s", query.Object)
+		// Retain the executor's diagnostic while
+		// supplying the native QueryException text to Apex runtime callers.
+		return Result{}, queryError(MissingObjectMessage(query.Object), "unknown object "+query.Object)
 	}
 	object := org.Objects[objectName]
+	if err := validateSemiAntiJoinReferences(org, objectName, query, object.Definition); err != nil {
+		return Result{}, err
+	}
 	if len(query.Fields) == 0 && len(query.ChildQueries) == 0 && len(query.Typeofs) == 0 {
 		return Result{}, fmt.Errorf("soql: SELECT requires at least one field")
 	}
-	fields, err := expandFieldsFunctions(object.Definition, query.Fields)
+	fields, err := ExpandFieldsFunctions(object.Definition, query.Fields)
 	if err != nil {
 		return Result{}, err
 	}
 	query.Fields = fields
+	if err := validateAggregateQuery(query); err != nil {
+		return Result{}, err
+	}
+	if len(query.GroupBy) > 0 && len(query.Aggregates) == 0 && len(query.HavingAggregates) == 0 {
+		if err := validateGroupedSelectedFields(query, false); err != nil {
+			return Result{}, err
+		}
+	}
 	var childCache *childRelationshipQueryCache
 	if len(query.ChildQueries) > 0 {
 		childCache = newChildRelationshipQueryCache(cache)
@@ -284,6 +321,12 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 		}
 	}
 	if queryHasAggregates(query) {
+		// Scalar COUNT() windows the source rows, while
+		// grouped and field aggregates window the aggregate result rows.
+		scalarCount := query.Count && len(query.GroupBy) == 0 && query.Having == nil
+		if scalarCount {
+			matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit, query.HasLimit)
+		}
 		records, err := aggregateRecords(org, object.Definition, matchedRecords, query)
 		if err != nil {
 			return Result{}, err
@@ -293,7 +336,9 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 				return aggregateOrderedBefore(records[i], records[j], query.Order)
 			})
 		}
-		records = applyWindow(records, query.Offset, query.Limit, query.HasLimit)
+		if !scalarCount {
+			records = applyWindow(records, query.Offset, query.Limit, query.HasLimit)
+		}
 		return Result{Records: records, Rows: len(records)}, nil
 	}
 	if len(query.Order) > 0 {
@@ -319,6 +364,75 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 		records = append(records, projected)
 	}
 	return Result{Records: records, Rows: len(records)}, nil
+}
+
+func validateSemiAntiJoinReferences(org storage.OrgState, outerObjectName string, query Query, outer storage.ObjectDefinition) error {
+	joins, _, err := semiAntiConditions(query.Where)
+	if err != nil {
+		return err
+	}
+	for _, join := range joins {
+		outerTargets, ok := semiAntiReferenceTargets(org, outerObjectName, outer, join.Field)
+		if !ok {
+			return fmt.Errorf("soql: semi-join main operand %s must be an ID or reference field", join.Field)
+		}
+		subquery := join.Subquery
+		subqueryObject, ok := storage.ResolveObjectName(org, subquery.Object)
+		if !ok {
+			continue // The ordinary object validator reports the unknown subquery object.
+		}
+		if strings.EqualFold(outerObjectName, subqueryObject) {
+			return fmt.Errorf("soql: semi-join and anti-join subqueries cannot query the same object as the outer query")
+		}
+		subqueryDefinition := org.Objects[subqueryObject].Definition
+		subqueryTargets, ok := semiAntiReferenceTargets(org, subqueryObject, subqueryDefinition, subquery.Fields[0])
+		if !ok {
+			return fmt.Errorf("soql: semi-join subquery field %s must be an ID or reference field", subquery.Fields[0])
+		}
+		if !semiAntiTargetsOverlap(outerTargets, subqueryTargets) {
+			return fmt.Errorf("soql: semi-join subquery field %s must reference the outer object", subquery.Fields[0])
+		}
+	}
+	return nil
+}
+
+func semiAntiReferenceTargets(org storage.OrgState, objectName string, definition storage.ObjectDefinition, fieldName string) ([]string, bool) {
+	if strings.Contains(fieldName, ".") {
+		return nil, false
+	}
+	if strings.EqualFold(fieldName, "Id") {
+		return []string{semiAntiCanonicalObjectTarget(org, objectName)}, true
+	}
+	_, field, ok := storage.ResolveFieldDefinition(definition, org.Namespace, fieldName)
+	if !ok {
+		field, ok = fieldDefinitionsForReferenceField(definition, fieldName)
+	}
+	if !ok || field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
+		return nil, false
+	}
+	targets := make([]string, 0, len(field.ReferenceTo))
+	for _, target := range field.ReferenceTo {
+		targets = append(targets, semiAntiCanonicalObjectTarget(org, target))
+	}
+	return targets, true
+}
+
+func semiAntiCanonicalObjectTarget(org storage.OrgState, target string) string {
+	if resolved, ok := storage.ResolveObjectName(org, target); ok {
+		return strings.ToLower(resolved)
+	}
+	return strings.ToLower(strings.TrimSpace(target))
+}
+
+func semiAntiTargetsOverlap(left, right []string) bool {
+	for _, leftTarget := range left {
+		for _, rightTarget := range right {
+			if strings.EqualFold(leftTarget, rightTarget) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func recordHiddenFromSOQL(definition storage.ObjectDefinition, record storage.Record) bool {
@@ -762,6 +876,13 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 				if !ok {
 					value = storage.NullValue()
 				}
+				// R127/N019: grouped dates retain their field type, including
+				// records loaded from fixtures that store the date as text.
+				if value.Kind == storage.ValueString {
+					if definitions, known := fieldDefinitionsForReference(org, definition, field); known && len(definitions) == 1 && definitions[0].Type == storage.FieldDate {
+						value = storage.DateValue(value.String)
+					}
+				}
 				values[field] = value
 				parts = append(parts, "0:"+valueKey(value))
 			}
@@ -970,7 +1091,14 @@ func aggregateValue(org storage.OrgState, definition storage.ObjectDefinition, r
 		if aggregate.Func == "AVG" {
 			sum.Quo(sum, new(big.Rat).SetInt64(count))
 		}
-		return storage.DecimalValue(decimalString(sum)), nil
+		// R072/R075/R079/R109/R135/R142: aggregate SUM/AVG return a
+		// Decimal carrying the query engine's double precision and minimum scale.
+		number, _ := sum.Float64()
+		text := strconv.FormatFloat(number, 'f', -1, 64)
+		if !strings.Contains(text, ".") {
+			text += ".0"
+		}
+		return storage.DecimalValue(text), nil
 	case "MIN", "MAX":
 		var best storage.Value
 		found := false
@@ -1092,9 +1220,12 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 	}
 	if condition.Not {
 		return !matches(org, definition, record, &Condition{
-			And: condition.And, Or: condition.Or,
+			RewrittenAggregate: condition.RewrittenAggregate,
+			And:                condition.And, Or: condition.Or,
 			Field: condition.Field, Op: condition.Op,
-			Value: condition.Value, Value2: condition.Value2, Range: condition.Range, Values: condition.Values, Subquery: condition.Subquery,
+			Value: condition.Value, Value2: condition.Value2, Range: condition.Range,
+			DateLiteralTimeZoneID: condition.DateLiteralTimeZoneID,
+			Values:                condition.Values, Subquery: condition.Subquery,
 		})
 	}
 	if len(condition.And) > 0 {
@@ -1117,22 +1248,39 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 	if !ok {
 		left = storage.NullValue()
 	}
+	if condition.Range && condition.DateLiteralTimeZoneID != "" {
+		if matched, handled := matchesDateLiteralRange(left, condition); handled {
+			return matched
+		}
+	}
+	// R164 and N001-N014: a null relational operand omits that HAVING
+	// aggregate predicate. Equality still tests the aggregate's raw null.
+	if record.Object == "AggregateResult" && condition.RewrittenAggregate && !condition.Range && condition.Value.Kind == storage.ValueNull {
+		switch condition.Op {
+		case ">", ">=", "<", "<=":
+			return true
+		}
+	}
 	switch condition.Op {
 	case "=":
 		if condition.Range {
 			return compareValues(left, condition.Value) >= 0 && compareValues(left, condition.Value2) < 0
 		}
-		return equalValuesInOrg(org, left, condition.Value)
+		return equalFieldValuesInOrg(org, definition, condition.Field, left, condition.Value)
 	case "!=":
 		if condition.Range {
 			return compareValues(left, condition.Value) < 0 || compareValues(left, condition.Value2) >= 0
 		}
-		return !equalValuesInOrg(org, left, condition.Value)
+		return !equalFieldValuesInOrg(org, definition, condition.Field, left, condition.Value)
 	case ">":
-		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
+		bound := condition.Value
+		if condition.Range {
+			bound = condition.Value2
+		}
+		if left.Kind == storage.ValueNull || bound.Kind == storage.ValueNull {
 			return false
 		}
-		return compareValues(left, condition.Value) > 0
+		return compareValues(left, bound) > 0
 	case ">=":
 		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
 			return false
@@ -1144,10 +1292,17 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 		}
 		return compareValues(left, condition.Value) < 0
 	case "<=":
-		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
+		bound := condition.Value
+		if condition.Range {
+			bound = condition.Value2
+		}
+		if left.Kind == storage.ValueNull || bound.Kind == storage.ValueNull {
 			return false
 		}
-		return compareValues(left, condition.Value) <= 0
+		if condition.Range {
+			return compareValues(left, bound) < 0
+		}
+		return compareValues(left, bound) <= 0
 	case "LIKE":
 		return likeMatch(left, condition.Value)
 	case "NOT LIKE":
@@ -1164,7 +1319,7 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 			return true
 		}
 		for _, v := range condition.Values {
-			if equalValuesInOrg(org, left, v) {
+			if equalFieldValuesInOrg(org, definition, condition.Field, left, v) {
 				return true
 			}
 		}
@@ -1174,10 +1329,7 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 			return false
 		}
 		for _, v := range condition.Values {
-			if v.Kind == storage.ValueNull {
-				continue
-			}
-			if equalValuesInOrg(org, left, v) {
+			if equalFieldValuesInOrg(org, definition, condition.Field, left, v) {
 				return false
 			}
 		}
@@ -1185,6 +1337,135 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 	default:
 		return false
 	}
+}
+
+// dateLiteralNow projects the execution instant's local calendar fields into
+// a UTC location. The parser stores date-literal bounds as calendar labels,
+// so this preserves the running user's date without changing arithmetic.
+func dateLiteralNow(now time.Time, timeZoneID string) time.Time {
+	local := now.UTC().In(dateLiteralLocation(timeZoneID))
+	return time.Date(local.Year(), local.Month(), local.Day(), local.Hour(), local.Minute(), local.Second(), local.Nanosecond(), time.UTC)
+}
+
+// matchesDateLiteralRange applies a date-literal range to the stored field
+// type. Date fields use the calendar labels in the literal. Datetime fields
+// compare against UTC instants for local midnight in the execution user's
+// timezone. The parser keeps the range values as Date values so existing Date
+// field behavior remains unchanged.
+func matchesDateLiteralRange(left storage.Value, condition *Condition) (bool, bool) {
+	if left.Kind == storage.ValueNull || condition.Value.Kind != storage.ValueDate || condition.Value2.Kind != storage.ValueDate {
+		return false, false
+	}
+	compareStart, compareEnd := 0, 0
+	if left.Kind == storage.ValueDate {
+		compareStart = strings.Compare(left.String, condition.Value.String)
+		compareEnd = strings.Compare(left.String, condition.Value2.String)
+	} else if left.Kind == storage.ValueDateTime {
+		start, end, ok := dateLiteralUTCBounds(condition.Value.String, condition.Value2.String, condition.DateLiteralTimeZoneID)
+		if !ok {
+			return false, false
+		}
+		value, ok := parseISODateTime(left.String)
+		if !ok {
+			return false, false
+		}
+		compareStart = compareTime(value, start)
+		compareEnd = compareTime(value, end)
+	} else {
+		return false, false
+	}
+
+	switch condition.Op {
+	case "=":
+		return compareStart >= 0 && compareEnd < 0, true
+	case "!=":
+		return compareStart < 0 || compareEnd >= 0, true
+	case ">":
+		return compareEnd > 0, true
+	case ">=":
+		return compareStart >= 0, true
+	case "<":
+		return compareStart < 0, true
+	case "<=":
+		return compareEnd < 0, true
+	default:
+		return false, false
+	}
+}
+
+func dateLiteralUTCBounds(startText, endText, timeZoneID string) (time.Time, time.Time, bool) {
+	location := dateLiteralLocation(timeZoneID)
+	start, err := time.ParseInLocation("2006-01-02", startText, location)
+	if err != nil {
+		return time.Time{}, time.Time{}, false
+	}
+	end, err := time.ParseInLocation("2006-01-02", endText, location)
+	if err != nil {
+		return time.Time{}, time.Time{}, false
+	}
+	return start.UTC(), end.UTC(), true
+}
+
+func dateLiteralLocation(timeZoneID string) *time.Location {
+	trimmed := strings.TrimSpace(timeZoneID)
+	if trimmed == "" || strings.EqualFold(trimmed, "UTC") || strings.EqualFold(trimmed, "GMT") {
+		return time.UTC
+	}
+	if location, err := time.LoadLocation(trimmed); err == nil {
+		return location
+	}
+	if offset, ok := parseDateLiteralFixedOffset(trimmed); ok {
+		return time.FixedZone(trimmed, offset)
+	}
+	return time.UTC
+}
+
+func parseDateLiteralFixedOffset(value string) (int, bool) {
+	upper := strings.ToUpper(strings.TrimSpace(value))
+	if strings.HasPrefix(upper, "UTC") || strings.HasPrefix(upper, "GMT") {
+		upper = upper[3:]
+	} else {
+		return 0, false
+	}
+	if upper == "" {
+		return 0, true
+	}
+	sign := 1
+	if upper[0] == '+' {
+		upper = upper[1:]
+	} else if upper[0] == '-' {
+		sign = -1
+		upper = upper[1:]
+	}
+	parts := strings.Split(upper, ":")
+	if len(parts) > 2 || len(parts) == 0 || parts[0] == "" {
+		return 0, false
+	}
+	hours, err := strconv.Atoi(parts[0])
+	if err != nil || hours > 23 {
+		return 0, false
+	}
+	minutes := 0
+	if len(parts) == 2 {
+		if len(parts[1]) != 2 {
+			return 0, false
+		}
+		minutes, err = strconv.Atoi(parts[1])
+		if err != nil || minutes > 59 {
+			return 0, false
+		}
+	}
+	return sign * (hours*int(time.Hour) + minutes*int(time.Minute)), true
+}
+
+func compareTime(left, right time.Time) int {
+	if left.Before(right) {
+		return -1
+	}
+	if left.After(right) {
+		return 1
+	}
+	return 0
 }
 
 func asyncApexJobTestPendingStatusMatches(definition storage.ObjectDefinition, record storage.Record, condition *Condition) bool {
@@ -1221,7 +1502,12 @@ func resolveSubqueries(org storage.OrgState, condition Condition) (Condition, er
 		for _, record := range result.Records {
 			value, ok := subqueryRecordValue(org, record, field)
 			if !ok {
-				return Condition{}, fmt.Errorf("soql: unknown subquery field %s", field)
+				// References were validated before execution. An omitted value
+				// in a projected row is null, not an unknown selected field.
+				value = storage.NullValue()
+			}
+			if value.Kind == storage.ValueNull {
+				continue
 			}
 			values = append(values, value)
 		}
@@ -1276,9 +1562,29 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 	for _, field := range fields {
 		if expr, ok := parseSelectFieldExpression(field); ok {
 			if value, ok := selectFieldExpressionValue(org, definition, record, expr); ok {
-				out.Fields[expr.outputName()] = value.Clone()
+				output := expr.outputName()
+				if expr.Func == "TOLABEL" && expr.Alias != "" && len(expr.Args) == 1 {
+					source := selectFunctionFieldArg(expr.Args[0])
+					if dot := strings.LastIndexByte(source, '.'); dot >= 0 {
+						qualifier, qualified := storage.ResolveObjectName(org, source[:dot])
+						if !qualified || qualifier != definition.APIName {
+							if relationship, missing := relationshipLookupMissing(org, record, source); missing {
+								out.Fields[relationship] = storage.NullValue()
+								continue
+							}
+							output = source[:dot+1] + expr.Alias
+							projectRelationshipIDs(org, record, source, out.Fields)
+						}
+					}
+				}
+				out.Fields[output] = value.Clone()
 			}
 			continue
+		}
+		if strings.Contains(field, ".") {
+			if base, qualified := stripQualifiedCurrentObjectField(org, definition, field); qualified {
+				field = base
+			}
 		}
 		canonicalField, ok := storage.ResolveFieldName(definition, org.Namespace, field)
 		if !ok {
@@ -1365,7 +1671,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		}
 	} else if !isSystemRelationshipField(relation.Field) {
 		index := childRelationshipIndex(org, childObjectName, childObject, relation.Field, childCache)
-		ids = append([]string(nil), index[parent.ID]...)
+		ids = append([]string(nil), index[storage.IDIndexKey(parent.ID)]...)
 	} else {
 		ids = make([]string, 0, len(childObject.Records))
 		for id := range childObject.Records {
@@ -1423,7 +1729,7 @@ func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		return preparedChildRelationshipQuery{}, fmt.Errorf("soql: aggregate child relationship subqueries are not supported")
 	}
 	query.Fields = normalizeChildRelationshipSelectFields(org, childObjectName, childObject.Definition, query.Fields, childCache)
-	fields, err := expandFieldsFunctions(childObject.Definition, query.Fields)
+	fields, err := ExpandFieldsFunctions(childObject.Definition, query.Fields)
 	if err != nil {
 		return preparedChildRelationshipQuery{}, err
 	}
@@ -1529,6 +1835,7 @@ func childRelationshipIndex(org storage.OrgState, childObjectName string, childO
 		if parentID == "" {
 			continue
 		}
+		parentID = storage.IDIndexKey(parentID)
 		index[parentID] = append(index[parentID], string(id))
 	}
 	for parentID := range index {
@@ -1905,48 +2212,76 @@ func normalizeDerivedChildRelationshipName(name string) string {
 	return name + "s"
 }
 
-func expandFieldsFunctions(definition storage.ObjectDefinition, fields []string) ([]string, error) {
+// ExpandFieldsFunctions resolves FIELDS projections from the schema, including
+// selected fields whose values are absent from a returned record.
+func ExpandFieldsFunctions(definition storage.ObjectDefinition, fields []string) ([]string, error) {
 	out := make([]string, 0, len(fields))
 	seen := make(map[string]bool, len(fields))
-	appendField := func(field string) {
-		if seen[field] {
-			return
+	hasExpansion := false
+	for _, field := range fields {
+		if _, ok := fieldsFunctionMode(field); ok {
+			hasExpansion = true
 		}
-		seen[field] = true
+	}
+	appendField := func(field string) error {
+		key := strings.ToLower(field)
+		if seen[key] {
+			if hasExpansion {
+				return queryError("duplicate field selected: "+field, "duplicate field selected: "+field)
+			}
+			return nil
+		}
+		seen[key] = true
 		out = append(out, field)
+		return nil
 	}
 	names := make([]string, 0, len(definition.Fields))
 	for name := range definition.Fields {
+		if strings.EqualFold(name, "Id") {
+			continue
+		}
 		names = append(names, name)
 	}
 	sort.Strings(names)
 	for _, field := range fields {
 		mode, ok := fieldsFunctionMode(field)
 		if !ok {
-			appendField(field)
+			if err := appendField(field); err != nil {
+				return nil, err
+			}
 			continue
 		}
 		switch mode {
 		case "ALL":
-			appendField("Id")
+			if err := appendField("Id"); err != nil {
+				return nil, err
+			}
 			for _, name := range names {
-				appendField(name)
+				if err := appendField(name); err != nil {
+					return nil, err
+				}
 			}
 		case "STANDARD":
-			appendField("Id")
+			if err := appendField("Id"); err != nil {
+				return nil, err
+			}
 			for _, name := range names {
 				if !isCustomFieldName(name) {
-					appendField(name)
+					if err := appendField(name); err != nil {
+						return nil, err
+					}
 				}
 			}
 		case "CUSTOM":
 			for _, name := range names {
 				if isCustomFieldName(name) {
-					appendField(name)
+					if err := appendField(name); err != nil {
+						return nil, err
+					}
 				}
 			}
 		default:
-			return nil, fmt.Errorf("soql: unsupported FIELDS(%s)", mode)
+			return nil, queryError("The SOQL FIELDS function only supports arguments of (all), (custom), (standard); ("+mode+") is not supported.", "unsupported FIELDS("+mode+")")
 		}
 	}
 	return out, nil
@@ -1964,7 +2299,49 @@ func validateQueryReferences(org storage.OrgState, definition storage.ObjectDefi
 	return validateQueryReferencesWithChildCache(org, definition, query, mode, nil)
 }
 
+// ValidateReferences shares field and relationship resolution with consumers
+// such as SOSL, without executing a SELECT or spending query governor limits.
+func ValidateReferences(org storage.OrgState, definition storage.ObjectDefinition, query Query) error {
+	if err := validateQueryReferences(org, definition, query, ""); err != nil {
+		// R081/R112: SOSL reports the same native column text for a plain
+		// missing projection, filter or sort field, even with no candidates.
+		// Existing SELECT callers retain their own diagnostic adapters.
+		var fields []string
+		fields = append(fields, query.Fields...)
+		var conditions func(*Condition)
+		conditions = func(condition *Condition) {
+			if condition == nil {
+				return
+			}
+			if condition.Field != "" {
+				fields = append(fields, condition.Field)
+			}
+			for i := range condition.And {
+				conditions(&condition.And[i])
+			}
+			for i := range condition.Or {
+				conditions(&condition.Or[i])
+			}
+		}
+		conditions(query.Where)
+		for _, order := range query.Order {
+			fields = append(fields, order.Field)
+		}
+		for _, field := range fields {
+			if !strings.ContainsAny(field, ".() ") && !fieldKnown(org, definition, field) {
+				message := MissingColumnMessage(field, definition.APIName)
+				return queryError(message, message)
+			}
+		}
+		return err
+	}
+	return nil
+}
+
 func validateQueryReferencesWithChildCache(org storage.OrgState, definition storage.ObjectDefinition, query Query, mode string, childCache *childRelationshipQueryCache) error {
+	if err := validateDateFunctionGrouping(query, org, &definition); err != nil {
+		return err
+	}
 	if err := validateAggregateAliases(query); err != nil {
 		return err
 	}
@@ -2006,6 +2383,14 @@ func validateQueryReferencesWithChildCache(org storage.OrgState, definition stor
 		if err := validateFieldReference(org, definition, field, mode); err != nil {
 			return err
 		}
+		if fields, known := fieldDefinitionsForReference(org, definition, field); known {
+			for _, fieldDef := range fields {
+				if fieldDef.Groupable != nil && !*fieldDef.Groupable {
+					message := fmt.Sprintf("field '%s' can not be grouped in a query call", field)
+					return unexpectedQueryError(message, message)
+				}
+			}
+		}
 	}
 	if err := validateConditionReferences(org, definition, query.Where, mode); err != nil {
 		return err
@@ -2045,7 +2430,7 @@ func validateQueryReferencesWithChildCache(org storage.OrgState, definition stor
 		}
 		child := org.Objects[childName]
 		normalizedFields := normalizeChildRelationshipSelectFields(org, childName, child.Definition, childQuery.Query.Fields, childCache)
-		childFields, err := expandFieldsFunctions(child.Definition, normalizedFields)
+		childFields, err := ExpandFieldsFunctions(child.Definition, normalizedFields)
 		if err != nil {
 			return err
 		}
@@ -2067,7 +2452,18 @@ func validateAggregateReference(org storage.OrgState, definition storage.ObjectD
 		return err
 	}
 	if (aggregate.Func == "SUM" || aggregate.Func == "AVG") && !aggregateFieldMayBeNumeric(org, definition, aggregate.Field) {
-		return fmt.Errorf("soql: %s requires numeric field %s", aggregate.Func, aggregate.Field)
+		message := fmt.Sprintf("field %s does not support aggregate operator %s", aggregate.Field, aggregate.Func)
+		return queryError(message, fmt.Sprintf("%s requires numeric field %s", aggregate.Func, aggregate.Field))
+	}
+	if aggregate.Func == "MIN" || aggregate.Func == "MAX" {
+		if fields, known := fieldDefinitionsForReference(org, definition, aggregate.Field); known {
+			for _, field := range fields {
+				if field.Type == storage.FieldBoolean {
+					message := fmt.Sprintf("field %s does not support aggregate operator %s", aggregate.Field, aggregate.Func)
+					return queryError(message, message)
+				}
+			}
+		}
 	}
 	return nil
 }
@@ -2104,6 +2500,9 @@ func fieldDefinitionsForReference(org storage.OrgState, definition storage.Objec
 			return []storage.Field{{APIName: parts[1], Type: storage.FieldID}}, true
 		}
 		for _, relation := range matchingParentRelations(org.Namespace, definition, parts[0]) {
+			if relation.Polymorphic && strings.EqualFold(parts[1], "Type") {
+				return []storage.Field{{APIName: "Type", Type: storage.FieldString}}, true
+			}
 			if len(relation.ParentObjects) == 0 {
 				return nil, false
 			}
@@ -2194,6 +2593,12 @@ func validateHavingReferences(org storage.OrgState, definition storage.ObjectDef
 	return validateAggregateConditionReferences(org, definition, query, *query.Having, mode)
 }
 
+// AggregateHavingColumnMessage is the native rejection text for an unknown
+// HAVING column (R214/C013). Ordinary field validation keeps its base behavior.
+func AggregateHavingColumnMessage(field, object string) string {
+	return "No such column '" + field + "' on entity '" + object + "'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+}
+
 func validateAggregateConditionReferences(org storage.OrgState, definition storage.ObjectDefinition, query Query, condition Condition, mode string) error {
 	if condition.Not {
 		condition.Not = false
@@ -2212,7 +2617,7 @@ func validateAggregateConditionReferences(org storage.OrgState, definition stora
 	if condition.Field == "" {
 		return nil
 	}
-	if aggregateOrderFieldKnown(query, condition.Field) {
+	if condition.RewrittenAggregate && aggregateOrderFieldKnown(query, condition.Field) {
 		return nil
 	}
 	aggregate, ok, err := parseAggregateField(condition.Field)
@@ -2231,7 +2636,8 @@ func validateAggregateConditionReferences(org storage.OrgState, definition stora
 	if fieldKnown(org, definition, condition.Field) {
 		return fmt.Errorf("soql: HAVING field %s must be grouped or aggregated", condition.Field)
 	}
-	return fieldUnavailableError(condition.Field, mode)
+	message := AggregateHavingColumnMessage(condition.Field, definition.APIName)
+	return queryError(message, message)
 }
 
 func validateConditionReferences(org storage.OrgState, definition storage.ObjectDefinition, condition *Condition, mode string) error {
@@ -2286,8 +2692,10 @@ func validateMultiSelectPicklistCondition(org storage.OrgState, definition stora
 func validateTypeofReference(org storage.OrgState, definition storage.ObjectDefinition, spec TypeofSpec, mode string) error {
 	allowedTargets := map[string]bool{}
 	relationshipKnown := false
+	polymorphic := false
 	for _, relation := range matchingParentRelations(org.Namespace, definition, spec.Relationship) {
 		relationshipKnown = true
+		polymorphic = polymorphic || relation.Polymorphic || len(relation.ParentObjects) > 1
 		for _, parentName := range relation.ParentObjects {
 			canonical, ok := storage.ResolveObjectName(org, parentName)
 			if ok {
@@ -2296,7 +2704,13 @@ func validateTypeofReference(org storage.OrgState, definition storage.ObjectDefi
 		}
 	}
 	if !relationshipKnown {
-		return fieldUnavailableError(spec.Relationship, mode)
+		message := MissingColumnMessage(spec.Relationship, definition.APIName)
+		message = strings.Replace(message, "No such column", "No such relation", 1)
+		return queryError(message, message)
+	}
+	if !polymorphic {
+		message := "TYPEOF operand '" + spec.Relationship + "' is not a polymorphic relationship field"
+		return queryError(message, message)
 	}
 	for typeName, fields := range spec.When {
 		parentName, ok := storage.ResolveObjectName(org, typeName)
@@ -2306,13 +2720,17 @@ func validateTypeofReference(org storage.OrgState, definition storage.ObjectDefi
 		parent := org.Objects[parentName]
 		for _, field := range fields {
 			if err := validateFieldReference(org, parent.Definition, field, mode); err != nil {
-				return fieldUnavailableError(typeName+"."+field, mode)
+				message := MissingColumnMessage(field, parent.Definition.APIName)
+				return queryError(message, message)
 			}
 		}
 	}
 	for _, field := range spec.Else {
-		if err := validateFieldReference(org, definition, spec.Relationship+"."+field, mode); err != nil {
-			return err
+		// ELSE has the common polymorphic Name shape, not the union of the
+		// concrete WHEN objects' fields.
+		if !strings.EqualFold(field, "Id") && !strings.EqualFold(field, "Name") && !strings.EqualFold(field, "Type") {
+			message := MissingColumnMessage(field, "Name")
+			return queryError(message, message)
 		}
 	}
 	return nil
@@ -2330,7 +2748,48 @@ func validateFieldReference(org storage.OrgState, definition storage.ObjectDefin
 	if fieldKnownForMode(org, definition, field, mode != "") {
 		return nil
 	}
+	if strings.Contains(field, ".") {
+		parts := strings.Split(field, ".")
+		current := definition
+		for _, relationship := range parts[:len(parts)-1] {
+			relations := matchingParentRelations(org.Namespace, current, relationship)
+			// R221/R222 back the missing leaf diagnostic on resolved,
+			// nonpolymorphic parent paths. Do not choose the first target of
+			// an ambiguous relationship or invent a target for missing metadata.
+			if len(relations) != 1 || relations[0].Polymorphic || len(relations[0].ParentObjects) != 1 {
+				return fieldUnavailableError(field, mode)
+			}
+			parent, ok := storage.ResolveObjectName(org, relations[0].ParentObjects[0])
+			if !ok {
+				return fieldUnavailableError(field, mode)
+			}
+			current = org.Objects[parent].Definition
+		}
+		leaf := parts[len(parts)-1]
+		if _, known := storage.ResolveFieldName(current, org.Namespace, leaf); known {
+			return fieldUnavailableError(field, mode)
+		}
+		message := MissingColumnMessage(leaf, current.APIName)
+		return queryError(message, message)
+	}
+	if mode == "" {
+		// Unqualified fields use the captured missing-column diagnostic.
+		// Relationship and access-mode failures retain their existing paths.
+		return queryError(MissingColumnMessage(field, definition.APIName), "unknown field "+field)
+	}
 	return fieldUnavailableError(field, mode)
+}
+
+func MissingObjectMessage(object string) string {
+	return "sObject type '" + object + "' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names."
+}
+
+func MissingColumnMessage(field, object string) string {
+	return "No such column '" + field + "' on entity '" + object + "'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+}
+
+func MissingRelationshipMessage(relationship, part string) string {
+	return "Didn't understand relationship '" + relationship + "' in " + part + ". If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
 }
 
 func fieldKnown(org storage.OrgState, definition storage.ObjectDefinition, field string) bool {
@@ -2369,6 +2828,9 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 			return true
 		}
 		for _, relation := range matchingParentRelations(org.Namespace, definition, parts[0]) {
+			if relation.Polymorphic && strings.EqualFold(parts[1], "Type") {
+				return true
+			}
 			if len(relation.ParentObjects) == 0 {
 				return false
 			}
@@ -2495,10 +2957,8 @@ func fieldUnavailableError(field, mode string) error {
 }
 
 func childRelationshipUnavailableError(relationship, mode string) error {
-	if mode != "" {
-		return fmt.Errorf("soql: unknown child relationship %s in %s mode", relationship, mode)
-	}
-	return fmt.Errorf("soql: unknown child relationship %s", relationship)
+	message := MissingRelationshipMessage(relationship, "FROM part of query call")
+	return queryError(message, message)
 }
 
 func typeofTargetUnavailableError(typeName, mode string) error {
@@ -2560,6 +3020,9 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 	if canonical, resolved := storage.ResolveObjectName(org, objectName); resolved {
 		objectName = canonical
 	}
+	if automatedProcessProfileRelationshipIsNull(objectName, record, parts[0]) {
+		return storage.NullValue(), true
+	}
 	object, ok := org.Objects[objectName]
 	if !ok {
 		return storage.Value{}, false
@@ -2589,6 +3052,11 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 				continue
 			}
 			parent.Object = canonicalParent
+			// Type on a polymorphic relationship identifies the target object;
+			// it is not the target's ordinary field named Type.
+			if relation.Polymorphic && strings.EqualFold(parts[1], "Type") {
+				return storage.StringValue(canonicalParent), true
+			}
 			if strings.Contains(parts[1], ".") {
 				return relationshipValue(org, parent, parts[1])
 			}
@@ -2600,6 +3068,17 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 		}
 	}
 	return storage.Value{}, false
+}
+
+// Salesforce exposes the Automated Process user's ProfileId but its Profile
+// relationship is null. Keep that special relationship behavior while
+// retaining the profile id for direct field and permission checks.
+func automatedProcessProfileRelationshipIsNull(objectName string, record storage.Record, relationship string) bool {
+	if !strings.EqualFold(objectName, "User") || !strings.EqualFold(relationship, "Profile") {
+		return false
+	}
+	value, ok := record.GetField("UserType")
+	return ok && value.Kind == storage.ValueString && strings.EqualFold(strings.TrimSpace(value.String), "AutomatedProcess")
 }
 
 func lookupRecordByIDInOrg(org storage.OrgState, id storage.ID) (string, storage.ObjectState, storage.Record, bool) {
@@ -2902,6 +3381,14 @@ func derivedParentRelationshipName(fieldName string) string {
 }
 
 func systemParentRelationship(definition storage.ObjectDefinition, candidate string) (storage.Relationship, bool) {
+	if storage.IsCustomSettingDefinition(definition) && strings.EqualFold(candidate, "SetupOwner") {
+		return storage.Relationship{
+			Field:              "SetupOwnerId",
+			ParentObjects:      []string{"Organization", "Profile", "User"},
+			ParentRelationship: "SetupOwner",
+			Polymorphic:        true,
+		}, true
+	}
 	if strings.EqualFold(definition.APIName, "RelationshipDomain") {
 		switch strings.ToLower(strings.TrimSpace(candidate)) {
 		case "childsobject":
@@ -2952,15 +3439,15 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	if expr, ok := parseSelectFieldExpression(field); ok {
 		return selectFieldExpressionValue(org, definition, record, expr)
 	}
-	if canonical, ok := resolveSOQLFieldName(definition, org.Namespace, field); ok && canonical == "Id" {
-		return storage.IDValue(record.ID), true
-	}
 	if strings.Contains(field, ".") {
 		if base, ok := stripQualifiedCurrentObjectField(org, definition, field); ok {
 			field = base
 		} else {
 			return relationshipValue(org, record, field)
 		}
+	}
+	if canonical, ok := resolveSOQLFieldName(definition, org.Namespace, field); ok && canonical == "Id" {
+		return storage.IDValue(record.ID), true
 	}
 	if strings.Contains(field, ".") {
 		return relationshipValue(org, record, field)
@@ -3034,6 +3521,15 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 		return value, true
 	}
 	value, ok := recordFieldValue(org, record, canonicalField)
+	if ok && value.Kind == storage.ValueString {
+		if fieldDef, known := fieldDefinitionsForReferenceField(definition, canonicalField); known &&
+			(fieldDef.Type == storage.FieldID || fieldDef.Type == storage.FieldReference) {
+			// Imported/defaulted reference fields may have string-backed IDs.
+			// Their schema, rather than their storage representation, determines
+			// Id comparison semantics.
+			value = idFieldValue(value)
+		}
+	}
 	if ok && strings.EqualFold(canonicalField, "NamespacePrefix") && value.Kind == storage.ValueString && strings.TrimSpace(value.String) == "" {
 		return storage.NullValue(), true
 	}
@@ -3062,6 +3558,13 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 		}
 	}
 	return value, ok
+}
+
+func idFieldValue(value storage.Value) storage.Value {
+	if value.Kind == storage.ValueString && value.String != "" {
+		return storage.IDValue(storage.ID(value.String))
+	}
+	return value
 }
 
 func customObjectLikeSOQLName(name string) bool {
@@ -3235,10 +3738,13 @@ func equalValues(left, right storage.Value) bool {
 		return leftNumber.Cmp(rightNumber) == 0
 	}
 	if left.Kind == storage.ValueID && right.Kind == storage.ValueString {
-		return idTextEqual(string(left.ID), right.String)
+		return idStringEqual(string(left.ID), right.String)
 	}
 	if left.Kind == storage.ValueString && right.Kind == storage.ValueID {
-		return idTextEqual(left.String, string(right.ID))
+		// Text fields compare the complete 18-character typed Id bind. The
+		// checksum distinguishes IDs whose case-sensitive portions differ
+		// only by case; dropping it would merge those distinct identities.
+		return strings.EqualFold(left.String, string(right.ID))
 	}
 	if left.Kind == storage.ValueID && right.Kind == storage.ValueInteger {
 		return idEqualsInteger(left.ID, right.Integer)
@@ -3253,9 +3759,6 @@ func equalValues(left, right storage.Value) bool {
 	case storage.ValueNull:
 		return true
 	case storage.ValueString:
-		if idTextEqual(left.String, right.String) {
-			return true
-		}
 		// SOQL text equality is case-insensitive. Apex VM String == remains
 		// case-sensitive in internal/vm/value.go.
 		return strings.EqualFold(left.String, right.String)
@@ -3274,10 +3777,31 @@ func equalValues(left, right storage.Value) bool {
 	}
 }
 
-func equalValuesInOrg(org storage.OrgState, left, right storage.Value) bool {
-	if equalValues(left, right) {
-		return true
+// Text predicates compare complete text, even when both strings resemble Ids.
+// Resolve the declared field type so Id/reference predicates retain their
+// existing 15/18-character comparison, including relationship fields.
+func equalFieldValuesInOrg(org storage.OrgState, definition storage.ObjectDefinition, field string, left, right storage.Value) bool {
+	if left.Kind == storage.ValueString && right.Kind == storage.ValueString {
+		fields, known := fieldDefinitionsForReference(org, definition, field)
+		text := known && len(fields) > 0
+		for _, declared := range fields {
+			if declared.Type != storage.FieldString {
+				text = false
+				break
+			}
+		}
+		if text {
+			return strings.EqualFold(left.String, right.String) || equalNamespacedTextValues(org, left, right)
+		}
 	}
+	return equalValuesInOrg(org, left, right)
+}
+
+func equalValuesInOrg(org storage.OrgState, left, right storage.Value) bool {
+	return equalValues(left, right) || equalNamespacedTextValues(org, left, right)
+}
+
+func equalNamespacedTextValues(org storage.OrgState, left, right storage.Value) bool {
 	if org.Namespace == "" || left.Kind != storage.ValueString || right.Kind != storage.ValueString {
 		return false
 	}
@@ -3293,7 +3817,25 @@ func equalValuesInOrg(org storage.OrgState, left, right storage.Value) bool {
 }
 
 func idTextEqual(left, right string) bool {
-	if strings.EqualFold(left, right) {
+	// The 15-character portion of a Salesforce Id is case-sensitive. The
+	// 18-character form is a case-safe representation of that same value, so
+	// compare the canonical 15-character portions exactly when widths differ.
+	// Do not use EqualFold here: custom-object key prefixes can differ only by
+	// case, and those are distinct Salesforce objects.
+	if left == right {
+		return true
+	}
+	if len(left) == 15 && len(right) == 18 {
+		return left == right[:15]
+	}
+	if len(left) == 18 && len(right) == 15 {
+		return left[:15] == right
+	}
+	return false
+}
+
+func idStringEqual(left, right string) bool {
+	if idTextEqual(left, right) {
 		return true
 	}
 	if len(left) == 15 && len(right) == 18 {
@@ -3302,7 +3844,7 @@ func idTextEqual(left, right string) bool {
 	if len(left) == 18 && len(right) == 15 {
 		return strings.EqualFold(left[:15], right)
 	}
-	return false
+	return strings.EqualFold(left, right)
 }
 
 func idEqualsInteger(id storage.ID, value int64) bool {
@@ -3437,11 +3979,11 @@ func aggregateOrderedBefore(leftRecord, rightRecord storage.Record, order []Orde
 }
 
 func orderCompare(left, right storage.Value, spec OrderSpec) int {
-	if spec.Nulls != "" && (left.Kind == storage.ValueNull || right.Kind == storage.ValueNull) {
+	if left.Kind == storage.ValueNull || right.Kind == storage.ValueNull {
 		if left.Kind == right.Kind {
 			return 0
 		}
-		if spec.Nulls == "FIRST" {
+		if spec.Nulls == "" || spec.Nulls == "FIRST" {
 			if left.Kind == storage.ValueNull {
 				return -1
 			}
@@ -3522,6 +4064,10 @@ func valueKey(value storage.Value) string {
 }
 
 func likeMatch(left, right storage.Value) bool {
+	if right.Kind == storage.ValueID {
+		// Typed Id binds carry their complete 18-character text into LIKE.
+		right = storage.StringValue(string(right.ID))
+	}
 	if left.Kind != storage.ValueString || right.Kind != storage.ValueString {
 		return false
 	}
@@ -3623,16 +4169,35 @@ func splitMultiPicklistValue(text string) []string {
 }
 
 func matchLikePattern(text, pattern string) bool {
-	// Dynamic programming approach for SQL LIKE matching.
-	// % matches any sequence, _ matches any single character.
-	m, n := len(text), len(pattern)
+	// Tokenize escaped LIKE wildcards before matching. SOQL string decoding
+	// keeps these markers so a literal backslash remains distinct from \_ / \%.
+	type patternToken struct {
+		kind  byte // '%', '_', or literal
+		value byte
+	}
+	tokens := make([]patternToken, 0, len(pattern))
+	for i := 0; i < len(pattern); i++ {
+		if pattern[i] == '\\' && i+1 < len(pattern) && (pattern[i+1] == '\\' || pattern[i+1] == '_' || pattern[i+1] == '%') {
+			i++
+			tokens = append(tokens, patternToken{value: pattern[i]})
+			continue
+		}
+		switch pattern[i] {
+		case '%', '_':
+			tokens = append(tokens, patternToken{kind: pattern[i]})
+		default:
+			tokens = append(tokens, patternToken{value: pattern[i]})
+		}
+	}
+	// Dynamic programming over text bytes and the tokenized LIKE pattern.
+	m, n := len(text), len(tokens)
 	// dp[i][j] = true if text[i:] matches pattern[j:]
 	// Use two rows to keep O(n) space.
 	prev := make([]bool, n+1)
 	curr := make([]bool, n+1)
 	prev[n] = true
 	for j := n - 1; j >= 0; j-- {
-		if pattern[j] == '%' {
+		if tokens[j].kind == '%' {
 			prev[j] = prev[j+1]
 		} else {
 			prev[j] = false
@@ -3641,13 +4206,13 @@ func matchLikePattern(text, pattern string) bool {
 	for i := m - 1; i >= 0; i-- {
 		curr[n] = false
 		for j := n - 1; j >= 0; j-- {
-			switch pattern[j] {
+			switch tokens[j].kind {
 			case '%':
 				curr[j] = curr[j+1] || prev[j]
 			case '_':
 				curr[j] = prev[j+1]
 			default:
-				curr[j] = (asciiLower(text[i]) == asciiLower(pattern[j])) && prev[j+1]
+				curr[j] = (asciiLower(text[i]) == asciiLower(tokens[j].value)) && prev[j+1]
 			}
 		}
 		prev, curr = curr, prev

@@ -1,0 +1,161 @@
+{
+  "source": "4688101856a5a9181c615c7b4cd2161e1feee523",
+  "rows": [
+    {
+      "id": "r_control_handler_duplicate_same",
+      "group": "registration-handles",
+      "kind": "runtime",
+      "control": true,
+      "spec": {
+        "id": "r_control_handler_duplicate_same",
+        "group": "registration-handles",
+        "kind": "runtime",
+        "scenario": "boundary",
+        "expected": "?",
+        "basis": "org",
+        "category": "boundary",
+        "operation": "registration_control",
+        "control": true,
+        "registry": "handler",
+        "control_mode": "duplicate_same",
+        "component_source": "CONTROL_NODE_METHOD in familyL16ControlsBranch{59,67}.js",
+        "direct_operation": "registerRefreshHandler(this, firstProvider); registerRefreshHandler(this, firstProvider)",
+        "distinguishes": "Direct same-context/same-function second registration: first rejection text versus stable-handle reuse."
+      },
+      "expected": {
+        "59.0": "BROWSER|{\"id\":\"r_control_handler_duplicate_same\",\"observation\":{\"boundary\":\"completion-observed\",\"cleanupErrors\":[],\"completions\":[{\"complete\":false,\"error\":false,\"node\":\"root\",\"type\":\"number\",\"value\":1,\"withError\":false}],\"constants\":{\"complete\":{\"type\":\"undefined\"},\"distinct\":false,\"error\":{\"type\":\"undefined\"},\"withError\":{\"type\":\"undefined\"}},\"events\":[{\"bubbles\":true,\"cancelable\":true,\"composed\":true,\"defaultPrevented\":false,\"returned\":true,\"type\":\"lightning__refresh\"}],\"operations\":[{\"attempts\":[{\"phase\":\"first-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":null},{\"error\":{\"message\":\"Invalid duplicate element registration. Element cannot be registered multiple times as a container or handler.\",\"name\":\"Error\"},\"phase\":\"second-direct-function\"}],\"context\":\"LightningElement\",\"mode\":\"duplicate_same\",\"node\":\"a\",\"phase\":\"registration-control\",\"registry\":\"handler\",\"sameProvider\":true},{\"node\":\"root\",\"phase\":\"container-start\",\"promise\":{\"type\":\"boolean\",\"value\":true},\"thenType\":\"function\"}],\"registrations\":[{\"node\":\"root\",\"registry\":\"container\",\"signature\":\"function\",\"value\":{\"finite\":true,\"integer\":true,\"type\":\"number\"}}],\"trace\":[{\"node\":\"a\",\"phase\":\"control-provider\",\"provider\":\"first\"},{\"node\":\"a\",\"phase\":\"start\"},{\"node\":\"a\",\"phase\":\"end\",\"result\":true}]},\"stage\":\"done\"}",
+        "67.0": "BROWSER|{\"id\":\"r_control_handler_duplicate_same\",\"observation\":{\"boundary\":\"completion-observed\",\"cleanupErrors\":[],\"completions\":[{\"complete\":false,\"error\":false,\"node\":\"root\",\"type\":\"number\",\"value\":1,\"withError\":false}],\"constants\":{\"complete\":{\"type\":\"undefined\"},\"distinct\":false,\"error\":{\"type\":\"undefined\"},\"withError\":{\"type\":\"undefined\"}},\"events\":[{\"bubbles\":true,\"cancelable\":true,\"composed\":true,\"defaultPrevented\":false,\"returned\":true,\"type\":\"lightning__refresh\"}],\"operations\":[{\"attempts\":[{\"phase\":\"first-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":null},{\"error\":{\"message\":\"Invalid duplicate element registration. Element cannot be registered multiple times as a container or handler.\",\"name\":\"Error\"},\"phase\":\"second-direct-function\"}],\"context\":\"LightningElement\",\"mode\":\"duplicate_same\",\"node\":\"a\",\"phase\":\"registration-control\",\"registry\":\"handler\",\"sameProvider\":true},{\"node\":\"root\",\"phase\":\"container-start\",\"promise\":{\"type\":\"boolean\",\"value\":true},\"thenType\":\"function\"}],\"registrations\":[{\"node\":\"root\",\"registry\":\"container\",\"signature\":\"function\",\"value\":{\"finite\":true,\"integer\":true,\"type\":\"number\"}}],\"trace\":[{\"node\":\"a\",\"phase\":\"control-provider\",\"provider\":\"first\"},{\"node\":\"a\",\"phase\":\"start\"},{\"node\":\"a\",\"phase\":\"end\",\"result\":true}]},\"stage\":\"done\"}"
+      }
+    },
+    {
+      "id": "r_control_handler_duplicate_new",
+      "group": "registration-handles",
+      "kind": "runtime",
+      "control": true,
+      "spec": {
+        "id": "r_control_handler_duplicate_new",
+        "group": "registration-handles",
+        "kind": "runtime",
+        "scenario": "boundary",
+        "expected": "?",
+        "basis": "org",
+        "category": "boundary",
+        "operation": "registration_control",
+        "control": true,
+        "registry": "handler",
+        "control_mode": "duplicate_new",
+        "component_source": "CONTROL_NODE_METHOD in familyL16ControlsBranch{59,67}.js",
+        "direct_operation": "registerRefreshHandler(this, firstProvider); registerRefreshHandler(this, secondProvider)",
+        "distinguishes": "Direct same-context/fresh-function second registration: context uniqueness versus provider identity or replacement."
+      },
+      "expected": {
+        "59.0": "BROWSER|{\"id\":\"r_control_handler_duplicate_new\",\"observation\":{\"boundary\":\"completion-observed\",\"cleanupErrors\":[],\"completions\":[{\"complete\":false,\"error\":false,\"node\":\"root\",\"type\":\"number\",\"value\":1,\"withError\":false}],\"constants\":{\"complete\":{\"type\":\"undefined\"},\"distinct\":false,\"error\":{\"type\":\"undefined\"},\"withError\":{\"type\":\"undefined\"}},\"events\":[{\"bubbles\":true,\"cancelable\":true,\"composed\":true,\"defaultPrevented\":false,\"returned\":true,\"type\":\"lightning__refresh\"}],\"operations\":[{\"attempts\":[{\"phase\":\"first-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":null},{\"error\":{\"message\":\"Invalid duplicate element registration. Element cannot be registered multiple times as a container or handler.\",\"name\":\"Error\"},\"phase\":\"second-direct-function\"}],\"context\":\"LightningElement\",\"mode\":\"duplicate_new\",\"node\":\"a\",\"phase\":\"registration-control\",\"registry\":\"handler\",\"sameProvider\":false},{\"node\":\"root\",\"phase\":\"container-start\",\"promise\":{\"type\":\"boolean\",\"value\":true},\"thenType\":\"function\"}],\"registrations\":[{\"node\":\"root\",\"registry\":\"container\",\"signature\":\"function\",\"value\":{\"finite\":true,\"integer\":true,\"type\":\"number\"}}],\"trace\":[{\"node\":\"a\",\"phase\":\"control-provider\",\"provider\":\"first\"},{\"node\":\"a\",\"phase\":\"start\"},{\"node\":\"a\",\"phase\":\"end\",\"result\":true}]},\"stage\":\"done\"}",
+        "67.0": "BROWSER|{\"id\":\"r_control_handler_duplicate_new\",\"observation\":{\"boundary\":\"completion-observed\",\"cleanupErrors\":[],\"completions\":[{\"complete\":false,\"error\":false,\"node\":\"root\",\"type\":\"number\",\"value\":1,\"withError\":false}],\"constants\":{\"complete\":{\"type\":\"undefined\"},\"distinct\":false,\"error\":{\"type\":\"undefined\"},\"withError\":{\"type\":\"undefined\"}},\"events\":[{\"bubbles\":true,\"cancelable\":true,\"composed\":true,\"defaultPrevented\":false,\"returned\":true,\"type\":\"lightning__refresh\"}],\"operations\":[{\"attempts\":[{\"phase\":\"first-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":null},{\"error\":{\"message\":\"Invalid duplicate element registration. Element cannot be registered multiple times as a container or handler.\",\"name\":\"Error\"},\"phase\":\"second-direct-function\"}],\"context\":\"LightningElement\",\"mode\":\"duplicate_new\",\"node\":\"a\",\"phase\":\"registration-control\",\"registry\":\"handler\",\"sameProvider\":false},{\"node\":\"root\",\"phase\":\"container-start\",\"promise\":{\"type\":\"boolean\",\"value\":true},\"thenType\":\"function\"}],\"registrations\":[{\"node\":\"root\",\"registry\":\"container\",\"signature\":\"function\",\"value\":{\"finite\":true,\"integer\":true,\"type\":\"number\"}}],\"trace\":[{\"node\":\"a\",\"phase\":\"control-provider\",\"provider\":\"first\"},{\"node\":\"a\",\"phase\":\"start\"},{\"node\":\"a\",\"phase\":\"end\",\"result\":true}]},\"stage\":\"done\"}"
+      }
+    },
+    {
+      "id": "r_control_handler_reregister_same",
+      "group": "registration-handles",
+      "kind": "runtime",
+      "control": true,
+      "spec": {
+        "id": "r_control_handler_reregister_same",
+        "group": "registration-handles",
+        "kind": "runtime",
+        "scenario": "boundary",
+        "expected": "?",
+        "basis": "org",
+        "category": "boundary",
+        "operation": "registration_control",
+        "control": true,
+        "registry": "handler",
+        "control_mode": "reregister_same",
+        "component_source": "CONTROL_NODE_METHOD in familyL16ControlsBranch{59,67}.js",
+        "direct_operation": "registerRefreshHandler(this, firstProvider); unregisterRefreshHandler(firstHandle); registerRefreshHandler(this, firstProvider)",
+        "distinguishes": "Unregister the first numeric handle, then register the same function: duplicate rejection versus a stale registry entry."
+      },
+      "expected": {
+        "59.0": "BROWSER|{\"id\":\"r_control_handler_reregister_same\",\"observation\":{\"boundary\":\"completion-observed\",\"cleanupErrors\":[],\"completions\":[{\"complete\":false,\"error\":false,\"node\":\"root\",\"type\":\"number\",\"value\":1,\"withError\":false}],\"constants\":{\"complete\":{\"type\":\"undefined\"},\"distinct\":false,\"error\":{\"type\":\"undefined\"},\"withError\":{\"type\":\"undefined\"}},\"events\":[{\"bubbles\":true,\"cancelable\":true,\"composed\":true,\"defaultPrevented\":false,\"returned\":true,\"type\":\"lightning__refresh\"}],\"operations\":[{\"attempts\":[{\"phase\":\"first-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":null},{\"phase\":\"unregister-first\",\"returned\":{\"type\":\"undefined\",\"value\":\"<undefined>\"}},{\"phase\":\"second-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":false}],\"context\":\"LightningElement\",\"mode\":\"reregister_same\",\"node\":\"a\",\"phase\":\"registration-control\",\"registry\":\"handler\",\"sameProvider\":true},{\"node\":\"root\",\"phase\":\"container-start\",\"promise\":{\"type\":\"boolean\",\"value\":true},\"thenType\":\"function\"}],\"registrations\":[{\"node\":\"root\",\"registry\":\"container\",\"signature\":\"function\",\"value\":{\"finite\":true,\"integer\":true,\"type\":\"number\"}}],\"trace\":[{\"node\":\"a\",\"phase\":\"control-provider\",\"provider\":\"first\"},{\"node\":\"a\",\"phase\":\"start\"},{\"node\":\"a\",\"phase\":\"end\",\"result\":true}]},\"stage\":\"done\"}",
+        "67.0": "BROWSER|{\"id\":\"r_control_handler_reregister_same\",\"observation\":{\"boundary\":\"completion-observed\",\"cleanupErrors\":[],\"completions\":[{\"complete\":false,\"error\":false,\"node\":\"root\",\"type\":\"number\",\"value\":1,\"withError\":false}],\"constants\":{\"complete\":{\"type\":\"undefined\"},\"distinct\":false,\"error\":{\"type\":\"undefined\"},\"withError\":{\"type\":\"undefined\"}},\"events\":[{\"bubbles\":true,\"cancelable\":true,\"composed\":true,\"defaultPrevented\":false,\"returned\":true,\"type\":\"lightning__refresh\"}],\"operations\":[{\"attempts\":[{\"phase\":\"first-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":null},{\"phase\":\"unregister-first\",\"returned\":{\"type\":\"undefined\",\"value\":\"<undefined>\"}},{\"phase\":\"second-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":false}],\"context\":\"LightningElement\",\"mode\":\"reregister_same\",\"node\":\"a\",\"phase\":\"registration-control\",\"registry\":\"handler\",\"sameProvider\":true},{\"node\":\"root\",\"phase\":\"container-start\",\"promise\":{\"type\":\"boolean\",\"value\":true},\"thenType\":\"function\"}],\"registrations\":[{\"node\":\"root\",\"registry\":\"container\",\"signature\":\"function\",\"value\":{\"finite\":true,\"integer\":true,\"type\":\"number\"}}],\"trace\":[{\"node\":\"a\",\"phase\":\"control-provider\",\"provider\":\"first\"},{\"node\":\"a\",\"phase\":\"start\"},{\"node\":\"a\",\"phase\":\"end\",\"result\":true}]},\"stage\":\"done\"}"
+      }
+    },
+    {
+      "id": "r_control_container_duplicate_same",
+      "group": "registration-handles",
+      "kind": "runtime",
+      "control": true,
+      "spec": {
+        "id": "r_control_container_duplicate_same",
+        "group": "registration-handles",
+        "kind": "runtime",
+        "scenario": "boundary",
+        "expected": "?",
+        "basis": "org",
+        "category": "boundary",
+        "operation": "registration_control",
+        "control": true,
+        "registry": "container",
+        "control_mode": "duplicate_same",
+        "component_source": "CONTROL_NODE_METHOD in familyL16ControlsTree{59,67}.js",
+        "direct_operation": "registerRefreshContainer(this, firstProvider); registerRefreshContainer(this, firstProvider)",
+        "distinguishes": "Direct same-context/same-function second registration: first rejection text versus stable-handle reuse."
+      },
+      "expected": {
+        "59.0": "BROWSER|{\"id\":\"r_control_container_duplicate_same\",\"observation\":{\"boundary\":\"completion-observed\",\"cleanupErrors\":[],\"completions\":[{\"complete\":false,\"error\":false,\"node\":\"first-root\",\"type\":\"number\",\"value\":1,\"withError\":false}],\"constants\":{\"complete\":{\"type\":\"undefined\"},\"distinct\":false,\"error\":{\"type\":\"undefined\"},\"withError\":{\"type\":\"undefined\"}},\"events\":[{\"bubbles\":true,\"cancelable\":true,\"composed\":true,\"defaultPrevented\":false,\"returned\":true,\"type\":\"lightning__refresh\"}],\"operations\":[{\"attempts\":[{\"phase\":\"first-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":null},{\"error\":{\"message\":\"Invalid duplicate element registration. Element cannot be registered multiple times as a container or handler.\",\"name\":\"Error\"},\"phase\":\"second-direct-function\"}],\"context\":\"LightningElement\",\"mode\":\"duplicate_same\",\"node\":\"root\",\"phase\":\"registration-control\",\"registry\":\"container\",\"sameProvider\":true},{\"node\":\"first-root\",\"phase\":\"container-start\",\"promise\":{\"type\":\"boolean\",\"value\":true},\"thenType\":\"function\"}],\"registrations\":[{\"node\":\"a\",\"registry\":\"handler\",\"signature\":\"function\",\"value\":{\"finite\":true,\"integer\":true,\"type\":\"number\"}}],\"trace\":[{\"node\":\"root\",\"phase\":\"control-provider\",\"provider\":\"first\"},{\"node\":\"a\",\"phase\":\"start\"},{\"node\":\"a\",\"phase\":\"end\",\"result\":true}]},\"stage\":\"done\"}",
+        "67.0": "BROWSER|{\"id\":\"r_control_container_duplicate_same\",\"observation\":{\"boundary\":\"completion-observed\",\"cleanupErrors\":[],\"completions\":[{\"complete\":false,\"error\":false,\"node\":\"first-root\",\"type\":\"number\",\"value\":1,\"withError\":false}],\"constants\":{\"complete\":{\"type\":\"undefined\"},\"distinct\":false,\"error\":{\"type\":\"undefined\"},\"withError\":{\"type\":\"undefined\"}},\"events\":[{\"bubbles\":true,\"cancelable\":true,\"composed\":true,\"defaultPrevented\":false,\"returned\":true,\"type\":\"lightning__refresh\"}],\"operations\":[{\"attempts\":[{\"phase\":\"first-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":null},{\"error\":{\"message\":\"Invalid duplicate element registration. Element cannot be registered multiple times as a container or handler.\",\"name\":\"Error\"},\"phase\":\"second-direct-function\"}],\"context\":\"LightningElement\",\"mode\":\"duplicate_same\",\"node\":\"root\",\"phase\":\"registration-control\",\"registry\":\"container\",\"sameProvider\":true},{\"node\":\"first-root\",\"phase\":\"container-start\",\"promise\":{\"type\":\"boolean\",\"value\":true},\"thenType\":\"function\"}],\"registrations\":[{\"node\":\"a\",\"registry\":\"handler\",\"signature\":\"function\",\"value\":{\"finite\":true,\"integer\":true,\"type\":\"number\"}}],\"trace\":[{\"node\":\"root\",\"phase\":\"control-provider\",\"provider\":\"first\"},{\"node\":\"a\",\"phase\":\"start\"},{\"node\":\"a\",\"phase\":\"end\",\"result\":true}]},\"stage\":\"done\"}"
+      }
+    },
+    {
+      "id": "r_control_container_duplicate_new",
+      "group": "registration-handles",
+      "kind": "runtime",
+      "control": true,
+      "spec": {
+        "id": "r_control_container_duplicate_new",
+        "group": "registration-handles",
+        "kind": "runtime",
+        "scenario": "boundary",
+        "expected": "?",
+        "basis": "org",
+        "category": "boundary",
+        "operation": "registration_control",
+        "control": true,
+        "registry": "container",
+        "control_mode": "duplicate_new",
+        "component_source": "CONTROL_NODE_METHOD in familyL16ControlsTree{59,67}.js",
+        "direct_operation": "registerRefreshContainer(this, firstProvider); registerRefreshContainer(this, secondProvider)",
+        "distinguishes": "Direct same-context/fresh-function second registration: context uniqueness versus provider identity or replacement."
+      },
+      "expected": {
+        "59.0": "BROWSER|{\"id\":\"r_control_container_duplicate_new\",\"observation\":{\"boundary\":\"completion-observed\",\"cleanupErrors\":[],\"completions\":[{\"complete\":false,\"error\":false,\"node\":\"first-root\",\"type\":\"number\",\"value\":1,\"withError\":false}],\"constants\":{\"complete\":{\"type\":\"undefined\"},\"distinct\":false,\"error\":{\"type\":\"undefined\"},\"withError\":{\"type\":\"undefined\"}},\"events\":[{\"bubbles\":true,\"cancelable\":true,\"composed\":true,\"defaultPrevented\":false,\"returned\":true,\"type\":\"lightning__refresh\"}],\"operations\":[{\"attempts\":[{\"phase\":\"first-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":null},{\"error\":{\"message\":\"Invalid duplicate element registration. Element cannot be registered multiple times as a container or handler.\",\"name\":\"Error\"},\"phase\":\"second-direct-function\"}],\"context\":\"LightningElement\",\"mode\":\"duplicate_new\",\"node\":\"root\",\"phase\":\"registration-control\",\"registry\":\"container\",\"sameProvider\":false},{\"node\":\"first-root\",\"phase\":\"container-start\",\"promise\":{\"type\":\"boolean\",\"value\":true},\"thenType\":\"function\"}],\"registrations\":[{\"node\":\"a\",\"registry\":\"handler\",\"signature\":\"function\",\"value\":{\"finite\":true,\"integer\":true,\"type\":\"number\"}}],\"trace\":[{\"node\":\"root\",\"phase\":\"control-provider\",\"provider\":\"first\"},{\"node\":\"a\",\"phase\":\"start\"},{\"node\":\"a\",\"phase\":\"end\",\"result\":true}]},\"stage\":\"done\"}",
+        "67.0": "BROWSER|{\"id\":\"r_control_container_duplicate_new\",\"observation\":{\"boundary\":\"completion-observed\",\"cleanupErrors\":[],\"completions\":[{\"complete\":false,\"error\":false,\"node\":\"first-root\",\"type\":\"number\",\"value\":1,\"withError\":false}],\"constants\":{\"complete\":{\"type\":\"undefined\"},\"distinct\":false,\"error\":{\"type\":\"undefined\"},\"withError\":{\"type\":\"undefined\"}},\"events\":[{\"bubbles\":true,\"cancelable\":true,\"composed\":true,\"defaultPrevented\":false,\"returned\":true,\"type\":\"lightning__refresh\"}],\"operations\":[{\"attempts\":[{\"phase\":\"first-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":null},{\"error\":{\"message\":\"Invalid duplicate element registration. Element cannot be registered multiple times as a container or handler.\",\"name\":\"Error\"},\"phase\":\"second-direct-function\"}],\"context\":\"LightningElement\",\"mode\":\"duplicate_new\",\"node\":\"root\",\"phase\":\"registration-control\",\"registry\":\"container\",\"sameProvider\":false},{\"node\":\"first-root\",\"phase\":\"container-start\",\"promise\":{\"type\":\"boolean\",\"value\":true},\"thenType\":\"function\"}],\"registrations\":[{\"node\":\"a\",\"registry\":\"handler\",\"signature\":\"function\",\"value\":{\"finite\":true,\"integer\":true,\"type\":\"number\"}}],\"trace\":[{\"node\":\"root\",\"phase\":\"control-provider\",\"provider\":\"first\"},{\"node\":\"a\",\"phase\":\"start\"},{\"node\":\"a\",\"phase\":\"end\",\"result\":true}]},\"stage\":\"done\"}"
+      }
+    },
+    {
+      "id": "r_control_container_reregister_same",
+      "group": "registration-handles",
+      "kind": "runtime",
+      "control": true,
+      "spec": {
+        "id": "r_control_container_reregister_same",
+        "group": "registration-handles",
+        "kind": "runtime",
+        "scenario": "boundary",
+        "expected": "?",
+        "basis": "org",
+        "category": "boundary",
+        "operation": "registration_control",
+        "control": true,
+        "registry": "container",
+        "control_mode": "reregister_same",
+        "component_source": "CONTROL_NODE_METHOD in familyL16ControlsTree{59,67}.js",
+        "direct_operation": "registerRefreshContainer(this, firstProvider); unregisterRefreshContainer(firstHandle); registerRefreshContainer(this, firstProvider)",
+        "distinguishes": "Unregister the first numeric handle, then register the same function: duplicate rejection versus a stale registry entry."
+      },
+      "expected": {
+        "59.0": "BROWSER|{\"id\":\"r_control_container_reregister_same\",\"observation\":{\"boundary\":\"completion-observed\",\"cleanupErrors\":[],\"completions\":[{\"complete\":false,\"error\":false,\"node\":\"first-root\",\"type\":\"number\",\"value\":1,\"withError\":false}],\"constants\":{\"complete\":{\"type\":\"undefined\"},\"distinct\":false,\"error\":{\"type\":\"undefined\"},\"withError\":{\"type\":\"undefined\"}},\"events\":[{\"bubbles\":true,\"cancelable\":true,\"composed\":true,\"defaultPrevented\":false,\"returned\":true,\"type\":\"lightning__refresh\"}],\"operations\":[{\"attempts\":[{\"phase\":\"first-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":null},{\"phase\":\"unregister-first\",\"returned\":{\"type\":\"undefined\",\"value\":\"<undefined>\"}},{\"phase\":\"second-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":false}],\"context\":\"LightningElement\",\"mode\":\"reregister_same\",\"node\":\"root\",\"phase\":\"registration-control\",\"registry\":\"container\",\"sameProvider\":true},{\"node\":\"first-root\",\"phase\":\"container-start\",\"promise\":{\"type\":\"boolean\",\"value\":true},\"thenType\":\"function\"}],\"registrations\":[{\"node\":\"a\",\"registry\":\"handler\",\"signature\":\"function\",\"value\":{\"finite\":true,\"integer\":true,\"type\":\"number\"}}],\"trace\":[{\"node\":\"root\",\"phase\":\"control-provider\",\"provider\":\"first\"},{\"node\":\"a\",\"phase\":\"start\"},{\"node\":\"a\",\"phase\":\"end\",\"result\":true}]},\"stage\":\"done\"}",
+        "67.0": "BROWSER|{\"id\":\"r_control_container_reregister_same\",\"observation\":{\"boundary\":\"completion-observed\",\"cleanupErrors\":[],\"completions\":[{\"complete\":false,\"error\":false,\"node\":\"first-root\",\"type\":\"number\",\"value\":1,\"withError\":false}],\"constants\":{\"complete\":{\"type\":\"undefined\"},\"distinct\":false,\"error\":{\"type\":\"undefined\"},\"withError\":{\"type\":\"undefined\"}},\"events\":[{\"bubbles\":true,\"cancelable\":true,\"composed\":true,\"defaultPrevented\":false,\"returned\":true,\"type\":\"lightning__refresh\"}],\"operations\":[{\"attempts\":[{\"phase\":\"first-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":null},{\"phase\":\"unregister-first\",\"returned\":{\"type\":\"undefined\",\"value\":\"<undefined>\"}},{\"phase\":\"second-direct-function\",\"returned\":{\"finite\":true,\"integer\":true,\"type\":\"number\"},\"sameAsFirst\":false}],\"context\":\"LightningElement\",\"mode\":\"reregister_same\",\"node\":\"root\",\"phase\":\"registration-control\",\"registry\":\"container\",\"sameProvider\":true},{\"node\":\"first-root\",\"phase\":\"container-start\",\"promise\":{\"type\":\"boolean\",\"value\":true},\"thenType\":\"function\"}],\"registrations\":[{\"node\":\"a\",\"registry\":\"handler\",\"signature\":\"function\",\"value\":{\"finite\":true,\"integer\":true,\"type\":\"number\"}}],\"trace\":[{\"node\":\"root\",\"phase\":\"control-provider\",\"provider\":\"first\"},{\"node\":\"a\",\"phase\":\"start\"},{\"node\":\"a\",\"phase\":\"end\",\"result\":true}]},\"stage\":\"done\"}"
+      }
+    }
+  ]
+}

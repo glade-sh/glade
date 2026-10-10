@@ -1,0 +1,160 @@
+[
+  {
+    "id": "r_getRecord_name",
+    "basis": "org",
+    "body": "const a=await this.make({Description:\"OWNED_DESCRIPTION\",NumberOfEmployees:7,AnnualRevenue:12.5}); return this.projectRecord(await this.read(a.id,{\"fields\": [\"Account.Name\"]}));",
+    "config": {
+      "recordId": "001000000070101AAA",
+      "fields": [
+        "Account.Name"
+      ]
+    },
+    "expected": {
+      "59.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"}},\"id\":\"[OWNED_1]\"}}",
+      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"}},\"id\":\"[OWNED_1]\"}}"
+    },
+    "pending": false,
+    "oracle": "Salesforce API 59/67 record data observation"
+  },
+  {
+    "id": "r_getRecord_optional",
+    "basis": "org",
+    "body": "const a=await this.make({Description:\"OWNED_DESCRIPTION\",NumberOfEmployees:7,AnnualRevenue:12.5}); return this.projectRecord(await this.read(a.id,{\"fields\": [\"Account.Name\"], \"optionalFields\": [\"Account.Phone\"]}));",
+    "config": {
+      "recordId": "001000000070102AAA",
+      "fields": [
+        "Account.Name"
+      ],
+      "optionalFields": [
+        "Account.Phone"
+      ]
+    },
+    "expected": {
+      "59.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}",
+      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}"
+    },
+    "pending": false,
+    "oracle": "Salesforce API 59/67 record data observation"
+  },
+  {
+    "id": "r_getRecord_empty_fields",
+    "basis": "org",
+    "body": "const a=await this.make({Description:\"OWNED_DESCRIPTION\",NumberOfEmployees:7,AnnualRevenue:12.5}); return this.projectRecord(await this.read(a.id,{\"fields\": []}));",
+    "config": {
+      "recordId": "001000000070103AAA",
+      "fields": []
+    },
+    "expected": {
+      "59.0": "JSON|{\"returned\":{\"noDataOrErrorWithinMs\":4000}}",
+      "67.0": "JSON|{\"returned\":{\"noDataOrErrorWithinMs\":4000}}"
+    },
+    "pending": true,
+    "oracle": "Salesforce API 59/67 record data observation"
+  },
+  {
+    "id": "r_getRecord_null_fields",
+    "basis": "org",
+    "body": "const a=await this.make({Description:\"OWNED_DESCRIPTION\",NumberOfEmployees:7,AnnualRevenue:12.5}); return this.projectRecord(await this.read(a.id,{\"fields\": null}));",
+    "config": {
+      "recordId": "001000000070104AAA",
+      "fields": null
+    },
+    "expected": {
+      "59.0": "JSON|{\"returned\":{\"noEmissionWithinMs\":4000}}",
+      "67.0": "JSON|{\"returned\":{\"noEmissionWithinMs\":4000}}"
+    },
+    "pending": true,
+    "oracle": "Salesforce API 59/67 record data observation"
+  },
+  {
+    "id": "r_getRecord_compact",
+    "basis": "org",
+    "body": "const a=await this.make({Description:\"OWNED_DESCRIPTION\",NumberOfEmployees:7,AnnualRevenue:12.5}); return this.projectRecord(await this.read(a.id,{\"layoutTypes\": [\"Compact\"], \"modes\": [\"View\"]}));",
+    "config": {
+      "recordId": "001000000070105AAA",
+      "layoutTypes": [
+        "Compact"
+      ],
+      "modes": [
+        "View"
+      ]
+    },
+    "expected": {
+      "59.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"AnnualRevenue\":{\"displayValue\":\"$13\",\"value\":12.5},\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"ParentId\":{\"displayValue\":null,\"value\":null},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}",
+      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"AnnualRevenue\":{\"displayValue\":\"$13\",\"value\":12.5},\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"ParentId\":{\"displayValue\":null,\"value\":null},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}"
+    },
+    "pending": false,
+    "oracle": "Salesforce API 59/67 record data observation"
+  },
+  {
+    "id": "r_getRecord_fields_and_layout",
+    "basis": "org",
+    "body": "const a=await this.make({Description:\"OWNED_DESCRIPTION\",NumberOfEmployees:7,AnnualRevenue:12.5}); return this.projectRecord(await this.read(a.id,{\"fields\": [\"Account.Name\"], \"layoutTypes\": [\"Compact\"]}));",
+    "config": {
+      "recordId": "001000000070106AAA",
+      "fields": [
+        "Account.Name"
+      ],
+      "layoutTypes": [
+        "Compact"
+      ]
+    },
+    "expected": {
+      "59.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"AnnualRevenue\":{\"displayValue\":\"$13\",\"value\":12.5},\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"ParentId\":{\"displayValue\":null,\"value\":null},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}",
+      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"AnnualRevenue\":{\"displayValue\":\"$13\",\"value\":12.5},\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"},\"ParentId\":{\"displayValue\":null,\"value\":null},\"Phone\":{\"displayValue\":null,\"value\":null}},\"id\":\"[OWNED_1]\"}}"
+    },
+    "pending": false,
+    "oracle": "Salesforce API 59/67 record data observation"
+  },
+  {
+    "id": "r_getRecord_id15",
+    "basis": "org",
+    "body": "const a=await this.make({});return this.projectRecord(await this.read(a.id.slice(0,15),{fields:[\"Account.Name\"]}));",
+    "config": {
+      "recordId": "001000000070107",
+      "fields": [
+        "Account.Name"
+      ]
+    },
+    "expected": {
+      "59.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"}},\"id\":\"[OWNED_1]\"}}",
+      "67.0": "JSON|{\"returned\":{\"apiName\":\"Account\",\"fields\":{\"Name\":{\"displayValue\":null,\"value\":\"[OWNED_NAME]\"}},\"id\":\"[OWNED_1]\"}}"
+    },
+    "pending": false,
+    "oracle": "Salesforce API 59/67 record data observation"
+  },
+  {
+    "id": "r_getRecord_empty",
+    "basis": "org",
+    "body": "const a=await this.make({});return this.projectRecord(await this.read(\"\",{fields:[\"Account.Name\"]}));",
+    "config": {
+      "recordId": "",
+      "fields": [
+        "Account.Name"
+      ]
+    },
+    "expected": {
+      "59.0": "JSON|{\"returned\":{\"noEmissionWithinMs\":4000}}",
+      "67.0": "JSON|{\"returned\":{\"noEmissionWithinMs\":4000}}"
+    },
+    "pending": true,
+    "oracle": "Salesforce API 59/67 record data observation"
+  },
+  {
+    "id": "r_getRecord_malformed",
+    "basis": "org",
+    "body": "const a=await this.make({});return this.projectRecord(await this.read(\"L09_BAD_ID\",{fields:[\"Account.Name\"]}));",
+    "config": {
+      "recordId": "L09_BAD_ID",
+      "fields": [
+        "Account.Name"
+      ]
+    },
+    "expected": {
+      "59.0": "JSON|{\"returned\":{\"noDataOrErrorWithinMs\":30000}}",
+      "67.0": "JSON|{\"returned\":{\"noDataOrErrorWithinMs\":30000}}"
+    },
+    "pending": true,
+    "oracle": "Salesforce API 59/67 record data observation"
+  }
+]

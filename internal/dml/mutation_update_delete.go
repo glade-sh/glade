@@ -40,19 +40,23 @@ func (e *Engine) updateOne(record storage.Record) error {
 		return err
 	}
 	stripReadOnlyUpdateFields(object.Definition, e.Org.Namespace, &record)
+	normalizeUserNameFields(objectName, object.Definition, &record)
 	if err := e.applyStringLengthRules(object.Definition, &record); err != nil {
 		return err
 	}
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
 		return err
 	}
-	if err := e.validateReferences(object.Definition, record); err != nil {
+	if err := e.validateUpdateReferences(object.Definition, record); err != nil {
 		return err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, storedID); err != nil {
 		return err
 	}
 	finalRecord := existing.Clone()
+	if record.System.OwnerID != "" {
+		finalRecord.System.OwnerID = record.System.OwnerID
+	}
 	if finalRecord.Fields == nil {
 		finalRecord.Fields = make(map[string]storage.Value)
 	}
@@ -89,6 +93,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err := e.validateValidationRules(objectName, object.Definition, finalRecord, &priorRecord, false); err != nil {
 		return err
 	}
+	if err := e.validateLookupFilters(object.Definition, finalRecord); err != nil {
+		return err
+	}
 	needsRollback := !e.DeferAutomation && hasObjectAutomation(object.Definition)
 	rollback := e.beginRollbackPoint(needsRollback)
 	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
@@ -103,6 +110,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	}
 	stamp := e.systemTimestamp()
 	oldRecord := existing.Clone()
+	existing.System.OwnerID = finalRecord.System.OwnerID
 	for field, value := range record.Fields {
 		deleteCaseInsensitiveFieldAlias(object.Definition, e.Org.Namespace, existing.Fields, field)
 		deleteCaseInsensitiveNullAlias(object.Definition, e.Org.Namespace, existing.ExplicitNulls, field)
@@ -227,10 +235,15 @@ func (e *Engine) deleteOneWithContext(record storage.Record, ctx *deleteContext)
 	if stored.System.IsDeleted {
 		return fmt.Errorf("dml: record %s is deleted", record.ID)
 	}
-	return e.deleteRecord(objectName, storedID, make(map[string]bool), ctx)
+	return e.deleteRecord(objectName, storedID, make(map[string]bool), ctx, nil)
 }
 
-func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]bool, ctx *deleteContext) error {
+type cascadeDeleteParent struct {
+	object string
+	id     storage.ID
+}
+
+func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]bool, ctx *deleteContext, cascadeParent *cascadeDeleteParent) error {
 	key := objectName + ":" + string(id)
 	if seen[key] {
 		return nil
@@ -259,6 +272,14 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 		e.IsolationJournal.RecordUpdate(objectName, storedID, stored)
 	}
 	stored.System.IsDeleted = true
+	stored.System.RecycleBinEmptied = false
+	if cascadeParent == nil {
+		stored.System.CascadeDeletedByObject = ""
+		stored.System.CascadeDeletedByID = ""
+	} else {
+		stored.System.CascadeDeletedByObject = cascadeParent.object
+		stored.System.CascadeDeletedByID = cascadeParent.id
+	}
 	stored.System.LastModifiedDate = stamp
 	stored.System.SystemModstamp = stamp
 	stored.System.LastModifiedByID = e.systemUserID()
@@ -266,6 +287,7 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	e.Org.Objects[objectName] = object
 	e.removeUniqueIndexRecord(objectName, object.Definition, stored)
 	e.recalculateSummaryFieldsForChildren(objectName, stored)
+	e.clearDeletedParentReferences(objectName, storedID, ctx)
 	return e.cascadeDeleteChildren(objectName, storedID, seen, ctx)
 }
 
@@ -315,7 +337,7 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 		matches = append(matches, id)
 	}
 	if len(matches) > 1 {
-		return "", false, dmlErrorf("DUPLICATE_VALUE", []string{field}, "dml: external id %s.%s matched multiple records", objectName, field)
+		return "", false, dmlErrorf("DUPLICATE_EXTERNAL_ID", []string{field}, "dml: external id %s.%s matched multiple records", objectName, field)
 	}
 	if len(matches) == 0 {
 		id, err := e.insertOne(record, nil)

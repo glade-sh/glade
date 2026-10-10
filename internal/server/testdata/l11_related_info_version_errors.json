@@ -1,0 +1,191 @@
+[
+  {
+    "api": "59.0",
+    "error": {
+      "body": {
+        "errorCode": "INSUFFICIENT_ACCESS",
+        "id": "2121206592",
+        "message": "You don't have access to this record. Ask your administrator for help or to request access.",
+        "statusCode": 403
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 403,
+      "statusText": "Unexpected HTTP Status Code: 403"
+    },
+    "oracle": "Salesforce API native observation",
+    "config": {
+      "parentObjectApiName": "L11_INVALID",
+      "relatedListId": "Children__r"
+    }
+  },
+  {
+    "api": "60.0",
+    "error": {
+      "body": {
+        "errorCode": "INSUFFICIENT_ACCESS",
+        "id": "-1365054019",
+        "message": "You don't have access to this record. Ask your administrator for help or to request access.",
+        "statusCode": 403
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 403,
+      "statusText": "Unexpected HTTP Status Code: 403"
+    },
+    "oracle": "Salesforce API runtime observation",
+    "config": {
+      "parentObjectApiName": "L11_INVALID",
+      "relatedListId": "Children__r"
+    }
+  },
+  {
+    "api": "61.0",
+    "error": {
+      "body": {
+        "errorCode": "INSUFFICIENT_ACCESS",
+        "id": "-1365054019",
+        "message": "You don't have access to this record. Ask your administrator for help or to request access.",
+        "statusCode": 403
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 403,
+      "statusText": "Unexpected HTTP Status Code: 403"
+    },
+    "oracle": "Salesforce API runtime observation",
+    "config": {
+      "parentObjectApiName": "L11_INVALID",
+      "relatedListId": "Children__r"
+    }
+  },
+  {
+    "api": "62.0",
+    "error": {
+      "body": {
+        "errorCode": "INSUFFICIENT_ACCESS",
+        "id": "-1365054019",
+        "message": "You don't have access to this record. Ask your administrator for help or to request access.",
+        "statusCode": 403
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 403,
+      "statusText": "Unexpected HTTP Status Code: 403"
+    },
+    "oracle": "Salesforce API runtime observation",
+    "config": {
+      "parentObjectApiName": "L11_INVALID",
+      "relatedListId": "Children__r"
+    }
+  },
+  {
+    "api": "63.0",
+    "error": {
+      "body": {
+        "errorCode": "INSUFFICIENT_ACCESS",
+        "id": "2121206592",
+        "message": "You don't have access to this record. Ask your administrator for help or to request access.",
+        "statusCode": 403
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 403,
+      "statusText": "Unexpected HTTP Status Code: 403"
+    },
+    "oracle": "Salesforce API runtime observation",
+    "config": {
+      "parentObjectApiName": "L11_INVALID",
+      "relatedListId": "Children__r"
+    }
+  },
+  {
+    "api": "64.0",
+    "error": {
+      "body": {
+        "errorCode": "INSUFFICIENT_ACCESS",
+        "id": "2121206592",
+        "message": "You don't have access to this record. Ask your administrator for help or to request access.",
+        "statusCode": 403
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 403,
+      "statusText": "Unexpected HTTP Status Code: 403"
+    },
+    "oracle": "Salesforce API runtime observation",
+    "config": {
+      "parentObjectApiName": "L11_INVALID",
+      "relatedListId": "Children__r"
+    }
+  },
+  {
+    "api": "65.0",
+    "error": {
+      "body": {
+        "errorCode": "INSUFFICIENT_ACCESS",
+        "id": "-1365054019",
+        "message": "You don't have access to this record. Ask your administrator for help or to request access.",
+        "statusCode": 403
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 403,
+      "statusText": "Unexpected HTTP Status Code: 403"
+    },
+    "oracle": "Salesforce API runtime observation",
+    "config": {
+      "parentObjectApiName": "L11_INVALID",
+      "relatedListId": "Children__r"
+    }
+  },
+  {
+    "api": "66.0",
+    "error": {
+      "body": {
+        "errorCode": "INSUFFICIENT_ACCESS",
+        "id": "-1365054019",
+        "message": "You don't have access to this record. Ask your administrator for help or to request access.",
+        "statusCode": 403
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 403,
+      "statusText": "Unexpected HTTP Status Code: 403"
+    },
+    "oracle": "Salesforce API runtime observation",
+    "config": {
+      "parentObjectApiName": "L11_INVALID",
+      "relatedListId": "Children__r"
+    }
+  },
+  {
+    "api": "67.0",
+    "error": {
+      "body": {
+        "errorCode": "INSUFFICIENT_ACCESS",
+        "id": "-1365054019",
+        "message": "You don't have access to this record. Ask your administrator for help or to request access.",
+        "statusCode": 403
+      },
+      "errorType": "fetchResponse",
+      "headers": {},
+      "ok": false,
+      "status": 403,
+      "statusText": "Unexpected HTTP Status Code: 403"
+    },
+    "oracle": "Salesforce API native observation",
+    "config": {
+      "parentObjectApiName": "L11_INVALID",
+      "relatedListId": "Children__r"
+    }
+  }
+]

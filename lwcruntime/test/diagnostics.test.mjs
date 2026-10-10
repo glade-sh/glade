@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { chromium } from "playwright";
@@ -9,11 +7,12 @@ import {
   requireLWCToolchain,
   repoRoot,
   startLightningServer,
+  testTempDir,
 } from "./helpers.mjs";
 
 const gladeOutJS = path.join(repoRoot, "internal/lwcruntime/embed/glade.out.js");
 
-test("bootstrap stub reports ERROR when Lightning Out app is missing", async () => {
+test("bootstrap stub reports ERROR when Lightning Out app is missing", async (t) => {
   const config = {
     namespace: "c",
     outApps: ["c:lightningout"],
@@ -32,7 +31,7 @@ test("bootstrap stub reports ERROR when Lightning Out app is missing", async () 
   `;
 
   const server = await startLightningServer({
-    compiledDir: fs.mkdtempSync(path.join(os.tmpdir(), "glade-lwc-diagnostics-")),
+    compiledDir: testTempDir(t, "glade-lwc-diagnostics-"),
     gladeOutJS,
     pages: {},
   });
@@ -55,7 +54,7 @@ test("bootstrap stub reports ERROR when Lightning Out app is missing", async () 
   }
 });
 
-test("bootstrap stub reports ERROR when Lightning component alias is missing", async () => {
+test("bootstrap stub reports ERROR when Lightning component alias is missing", async (t) => {
   const config = {
     namespace: "c",
     outApps: ["c:lightningout"],
@@ -74,7 +73,7 @@ test("bootstrap stub reports ERROR when Lightning component alias is missing", a
   `;
 
   const server = await startLightningServer({
-    compiledDir: fs.mkdtempSync(path.join(os.tmpdir(), "glade-lwc-diagnostics-")),
+    compiledDir: testTempDir(t, "glade-lwc-diagnostics-"),
     gladeOutJS,
     pages: {},
   });
@@ -125,7 +124,7 @@ test("runtime reports ERROR when Lightning component alias is missing after use"
   `;
 
   const server = await startLightningServer({
-    compiledDir: fs.mkdtempSync(path.join(os.tmpdir(), "glade-lwc-diagnostics-")),
+    compiledDir: testTempDir(t, "glade-lwc-diagnostics-"),
     gladeOutJS,
     pages: {},
   });
@@ -173,7 +172,7 @@ test("runtime reports ERROR when Lightning Out app is missing after load", async
   `;
 
   const server = await startLightningServer({
-    compiledDir: fs.mkdtempSync(path.join(os.tmpdir(), "glade-lwc-diagnostics-")),
+    compiledDir: testTempDir(t, "glade-lwc-diagnostics-"),
     gladeOutJS,
     pages: {},
   });

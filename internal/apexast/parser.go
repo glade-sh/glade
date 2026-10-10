@@ -1,7 +1,11 @@
 package apexast
 
 import (
+	"os"
+	"runtime"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	external "github.com/glade-sh/apex-parser"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -12,31 +16,86 @@ type ASTNode = external.ASTNode
 type Range = external.Range
 
 type Parser struct {
-	parser *external.Parser
+	parser    *external.Parser
+	closeOnce sync.Once
 }
 
+var openParsers atomic.Int64
+
+var parserPool = sync.Pool{New: func() any { return NewParser() }}
+
 func NewParser() *Parser {
-	return &Parser{parser: external.NewParser()}
+	p := &Parser{parser: external.NewParser()}
+	openParsers.Add(1)
+	runtime.SetFinalizer(p, (*Parser).Close)
+	return p
+}
+
+// Close releases the parser's native memory. It is nil-safe and idempotent;
+// the parser must not be used after Close.
+func (p *Parser) Close() {
+	if p == nil {
+		return
+	}
+	p.closeOnce.Do(func() {
+		runtime.SetFinalizer(p, nil)
+		if p.parser != nil {
+			p.parser.Close()
+			openParsers.Add(-1)
+		}
+	})
+}
+
+// OpenParsersForTesting reports parsers created by NewParser that are not closed.
+func OpenParsersForTesting() int64 {
+	return openParsers.Load()
+}
+
+// ParseSource parses source using an exclusively borrowed parser.
+func ParseSource(path, source string) File {
+	p := parserPool.Get().(*Parser)
+	defer parserPool.Put(p)
+	return p.ParseSource(path, source)
+}
+
+// ParseSourceAST parses source using an exclusively borrowed parser.
+func ParseSourceAST(path, source string) ASTFile {
+	p := parserPool.Get().(*Parser)
+	defer parserPool.Put(p)
+	return p.ParseSourceAST(path, source)
 }
 
 func (p *Parser) ParseFile(path string) (File, error) {
-	file, err := p.parser.ParseFile(path)
+	source, err := os.ReadFile(path)
 	if err != nil {
 		return File{}, err
 	}
-	return convertFile(file), nil
+	return p.ParseSource(path, string(source)), nil
 }
 
 func (p *Parser) ParseFileAST(path string) (ASTFile, error) {
-	return p.parser.ParseFileAST(path)
+	defer runtime.KeepAlive(p)
+	file, err := p.parser.ParseFileAST(path)
+	if err == nil && hasGenericSOSLSyntaxDiagnostic(file.Diagnostics) {
+		if source, err := os.ReadFile(path); err == nil {
+			file.Diagnostics = p.refineInlineSOSLDiagnostics(path, string(source), file.Diagnostics)
+		}
+	}
+	return file, err
 }
 
 func (p *Parser) ParseSource(path, source string) File {
-	return convertFile(p.parser.ParseSource(path, source))
+	defer runtime.KeepAlive(p)
+	file := p.parser.ParseSource(path, source)
+	file.Diagnostics = p.refineInlineSOSLDiagnostics(path, source, file.Diagnostics)
+	return withSharingDeclarationDiagnostics(nativePropertySyntax(nativeAnnotationSyntax(convertFile(file), source), source), source)
 }
 
 func (p *Parser) ParseSourceAST(path, source string) ASTFile {
-	return p.parser.ParseSourceAST(path, source)
+	defer runtime.KeepAlive(p)
+	file := p.parser.ParseSourceAST(path, source)
+	file.Diagnostics = p.refineInlineSOSLDiagnostics(path, source, file.Diagnostics)
+	return file
 }
 
 func convertFile(file external.File) File {

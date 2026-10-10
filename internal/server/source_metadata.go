@@ -12,6 +12,9 @@ import (
 
 	"github.com/glade-sh/glade/internal/codeintel"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/resource"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sobject"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -41,6 +44,9 @@ type listViewMetadata struct {
 	Columns       []string
 	FilterScope   string
 	FileName      string
+	Filters       []listViewFilterXML
+	Visibility    string
+	Preferences   map[string]any
 }
 
 type layoutMetadata struct {
@@ -52,11 +58,13 @@ type layoutMetadata struct {
 }
 
 type layoutSectionMetadata struct {
-	ID         string
-	Label      string
-	Style      string
-	UseHeading bool
-	Columns    []layoutColumnMetadata
+	ID            string
+	Label         string
+	Style         string
+	UseHeading    bool
+	EditHeading   bool
+	DetailHeading bool
+	Columns       []layoutColumnMetadata
 }
 
 type layoutColumnMetadata struct {
@@ -64,8 +72,9 @@ type layoutColumnMetadata struct {
 }
 
 type layoutItemMetadata struct {
-	Field    string
-	Behavior string
+	Field      string
+	Behavior   string
+	EmptySpace bool
 }
 
 type compactLayoutMetadata struct {
@@ -78,9 +87,16 @@ type compactLayoutMetadata struct {
 }
 
 type listViewXML struct {
-	Label       string   `xml:"label"`
-	Columns     []string `xml:"columns"`
-	FilterScope string   `xml:"filterScope"`
+	Label       string              `xml:"label"`
+	Columns     []string            `xml:"columns"`
+	FilterScope string              `xml:"filterScope"`
+	Filters     []listViewFilterXML `xml:"filters"`
+}
+
+type listViewFilterXML struct {
+	Field     string `xml:"field"`
+	Operation string `xml:"operation"`
+	Value     string `xml:"value"`
 }
 
 type compactLayoutXML struct {
@@ -93,9 +109,11 @@ type layoutXML struct {
 }
 
 type layoutSectionXML struct {
-	Label   string            `xml:"label"`
-	Style   string            `xml:"style"`
-	Columns []layoutColumnXML `xml:"layoutColumns"`
+	Label         string            `xml:"label"`
+	Style         string            `xml:"style"`
+	EditHeading   bool              `xml:"editHeading"`
+	DetailHeading bool              `xml:"detailHeading"`
+	Columns       []layoutColumnXML `xml:"layoutColumns"`
 }
 
 type layoutColumnXML struct {
@@ -103,8 +121,9 @@ type layoutColumnXML struct {
 }
 
 type layoutItemXML struct {
-	Field    string `xml:"field"`
-	Behavior string `xml:"behavior"`
+	Field      string `xml:"field"`
+	Behavior   string `xml:"behavior"`
+	EmptySpace bool   `xml:"emptySpace"`
 }
 
 type customObjectXML struct {
@@ -283,8 +302,9 @@ func (m *SourceMetadata) loadToolingObjects() error {
 
 func (m *SourceMetadata) addSourceComponents(objectName, prefix string, paths []string, suffix string) error {
 	filtered := make([]string, 0, len(paths))
+	visualforce := objectName == "ApexPage" || objectName == "ApexComponent"
 	for _, path := range paths {
-		if strings.EqualFold(filepath.Ext(path), suffix) || strings.HasSuffix(strings.ToLower(path), strings.ToLower(suffix)) {
+		if strings.EqualFold(filepath.Ext(path), suffix) || strings.HasSuffix(strings.ToLower(path), strings.ToLower(suffix)) || (visualforce && strings.HasSuffix(strings.ToLower(path), strings.ToLower(suffix)+"-meta.xml")) {
 			filtered = append(filtered, path)
 		}
 	}
@@ -296,12 +316,23 @@ func (m *SourceMetadata) addSourceComponents(objectName, prefix string, paths []
 		}
 		body := string(bodyBytes)
 		name := trimKnownSuffix(filepath.Base(path), suffix)
+		if visualforce && strings.HasSuffix(strings.ToLower(path), strings.ToLower(suffix)+"-meta.xml") {
+			body = ""
+			name = trimKnownSuffix(filepath.Base(path), suffix+"-meta.xml")
+		}
 		id := sequenceID(prefix, i+1)
+		apiVersion := sourceAPIVersion(m.Project.SourceAPIVersion)
+		if visualforce {
+			apiVersion, err = resource.EffectiveVisualforceAPIVersion(path, m.Project.SourceAPIVersion)
+			if err != nil {
+				return fmt.Errorf("load %s API version for %s: %w", objectName, path, err)
+			}
+		}
 		fields := map[string]storage.Value{
 			"Name":                  storage.StringValue(name),
 			"Body":                  storage.StringValue(body),
 			"BodyCrc":               storage.IntegerValue(int64(crc32.ChecksumIEEE(bodyBytes))),
-			"ApiVersion":            storage.DecimalValue(sourceAPIVersion(m.Project.SourceAPIVersion)),
+			"ApiVersion":            storage.DecimalValue(apiVersion),
 			"Status":                storage.StringValue("Active"),
 			"IsValid":               storage.BooleanValue(true),
 			"LengthWithoutComments": storage.IntegerValue(int64(len(body))),
@@ -314,7 +345,7 @@ func (m *SourceMetadata) addSourceComponents(objectName, prefix string, paths []
 			fields = map[string]storage.Value{
 				"Name":        storage.StringValue(name),
 				"Markup":      storage.StringValue(body),
-				"ApiVersion":  storage.DecimalValue(sourceAPIVersion(m.Project.SourceAPIVersion)),
+				"ApiVersion":  storage.DecimalValue(apiVersion),
 				"MasterLabel": storage.StringValue(name),
 			}
 		}
@@ -326,10 +357,33 @@ func (m *SourceMetadata) addSourceComponents(objectName, prefix string, paths []
 }
 
 func (m *SourceMetadata) loadObjectMetadata() error {
+	definitions := map[string]storage.ObjectDefinition{}
+	if len(m.Project.ListViewFiles) > 0 {
+		loaded, err := schema.LoadProject(m.Project)
+		if err != nil {
+			return err
+		}
+		for name, descriptor := range sobject.BuildDescribeRegistry(loaded).Objects {
+			definitions[name] = sobject.ToObjectDefinition(descriptor)
+		}
+	}
 	for i, path := range m.Project.ListViewFiles {
 		view, err := loadListView(path, i+1)
 		if err != nil {
 			return err
+		}
+		if definition, ok := definitions[view.ObjectName]; ok {
+			for _, column := range view.Columns {
+				// Relationship selectors retain their existing traversal. Plain
+				// columns resolve through schema, including inline and managed
+				// fields; a filename or suffix does not establish existence.
+				if strings.Contains(column, ".") {
+					continue
+				}
+				if _, found := storage.ResolveFieldName(definition, m.Project.Namespace, column); !found {
+					return fmt.Errorf("In field: columns - no CustomField named %s.%s found", view.ObjectName, column)
+				}
+			}
 		}
 		m.ListViews[view.ObjectName] = append(m.ListViews[view.ObjectName], view)
 		m.Components = append(m.Components, metadataComponent{Type: "ListView", FullName: view.ObjectName + "." + view.DeveloperName, FileName: path, ID: storage.ID(view.ID)})
@@ -368,11 +422,25 @@ func loadListView(path string, ordinal int) (listViewMetadata, error) {
 	if err := xml.Unmarshal(data, &raw); err != nil {
 		return listViewMetadata{}, err
 	}
+	if raw.FilterScope != "" {
+		switch raw.FilterScope {
+		case "Everything", "Mine", "Queue", "Delegated", "MyTerritory", "MyTeamTerritory", "Team", "SalesTeam", "AssignedToMe", "MineAndMyGroups", "ScopingRule":
+		default:
+			return listViewMetadata{}, fmt.Errorf("Error parsing file: '%s' is not a valid value for the enum 'FilterScope'", raw.FilterScope)
+		}
+	}
+	for _, filter := range raw.Filters {
+		switch filter.Operation {
+		case "equals", "notEqual", "lessThan", "greaterThan", "lessOrEqual", "greaterOrEqual", "contains", "notContain", "startsWith", "includes", "excludes", "within":
+		default:
+			return listViewMetadata{}, fmt.Errorf("Error parsing file: '%s' is not a valid value for the enum 'FilterOperation'", filter.Operation)
+		}
+	}
 	objectName := objectNameFromNestedMetadata(path, "listViews")
 	name := trimKnownSuffix(filepath.Base(path), ".listView-meta.xml")
 	label := strings.TrimSpace(raw.Label)
 	if label == "" {
-		label = name
+		return listViewMetadata{}, fmt.Errorf("Required field is missing: label")
 	}
 	return listViewMetadata{
 		ID:            string(sequenceID("00B", ordinal)),
@@ -382,6 +450,7 @@ func loadListView(path string, ordinal int) (listViewMetadata, error) {
 		Columns:       trimStringList(raw.Columns),
 		FilterScope:   strings.TrimSpace(raw.FilterScope),
 		FileName:      path,
+		Filters:       raw.Filters,
 	}, nil
 }
 
@@ -435,22 +504,25 @@ func loadLayout(path string, ordinal int) (layoutMetadata, error) {
 			items := make([]layoutItemMetadata, 0, len(column.Items))
 			for _, item := range column.Items {
 				field := strings.TrimSpace(item.Field)
-				if field == "" {
+				if field == "" && !item.EmptySpace {
 					continue
 				}
 				items = append(items, layoutItemMetadata{
-					Field:    field,
-					Behavior: strings.TrimSpace(item.Behavior),
+					Field:      field,
+					Behavior:   strings.TrimSpace(item.Behavior),
+					EmptySpace: item.EmptySpace,
 				})
 			}
 			columns = append(columns, layoutColumnMetadata{Items: items})
 		}
 		sections = append(sections, layoutSectionMetadata{
-			ID:         fmt.Sprintf("section-%d", i+1),
-			Label:      label,
-			Style:      strings.TrimSpace(section.Style),
-			UseHeading: label != "",
-			Columns:    columns,
+			ID:            fmt.Sprintf("section-%d", i+1),
+			Label:         label,
+			Style:         strings.TrimSpace(section.Style),
+			UseHeading:    label != "",
+			EditHeading:   section.EditHeading,
+			DetailHeading: section.DetailHeading,
+			Columns:       columns,
 		})
 	}
 	return layoutMetadata{ID: string(sequenceID("00h", ordinal)), ObjectName: objectName, Name: name, FileName: path, Sections: sections}, nil

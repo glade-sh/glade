@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -66,50 +65,8 @@ func (vm *VM) callDataWeaveScriptMember(receiver Value, method string, args []Va
 	default:
 		return Null, receiver, false, true, fmt.Errorf("DataWeave.Script.execute expects optional Map<String,Object>")
 	}
-	if !apexversion.AtLeast(vm.currentMethod.APIVersion, 66) && vm.dataWeaveInputHasChildQuery(inputs) {
-		return Null, receiver, false, true, newExceptionError("DataWeaveScriptException", "Nested SOQL query results require API version 66.0 or later")
-	}
-	scriptName := dataWeaveScriptName(receiver)
-	if scriptName == "" {
-		scriptName = "anonymous"
-	}
-	lower := strings.ToLower(scriptName)
-	if lower == "exceloutputerror" {
-		return Null, receiver, false, true, newExceptionError("DataWeaveScriptException", "Unknown content type `application/xlsx`")
-	}
-	if lower == "error" || strings.Contains(lower, "error") {
-		return Null, receiver, false, true, newExceptionError("DataWeaveScriptException", "Division by zero")
-	}
-	return newDataWeaveResult(scriptName, inputs), receiver, false, true, nil
-}
-
-func (vm *VM) dataWeaveInputHasChildQuery(inputs Value) bool {
-	for _, input := range inputs.Map {
-		if inlineSOQLQueryText(input) == "" {
-			continue
-		}
-		for _, record := range input.List {
-			if vm.sObjectHasChildQueryResult(record) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (vm *VM) sObjectHasChildQueryResult(record Value) bool {
-	if record.Kind != ValueObject || !vm.isSObjectLikeType(record.Type) {
-		return false
-	}
-	for _, field := range record.Fields {
-		if field.Kind == ValueList {
-			return true
-		}
-		if vm.sObjectHasChildQueryResult(field) {
-			return true
-		}
-	}
-	return false
+	value, err := vm.executeDataWeaveSource(receiver, inputs)
+	return value, receiver, false, true, err
 }
 
 func callDataWeaveResultMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -122,8 +79,20 @@ func callDataWeaveResultMember(receiver Value, method string, args []Value) (Val
 		if _, value, ok := objectFieldValue(receiver, "value"); ok {
 			return value, receiver, false, true, nil
 		}
+		if receiver.Fields["__gladeSourceDriven"].Bool {
+			return Null, receiver, false, true, unsupportedCallError("DataWeave.Result.getValue output format " + receiver.Fields["mimeType"].Text)
+		}
 		return Null, receiver, false, true, nil
 	case "getValueAsString":
+		if receiver.Fields["__gladeTypedResult"].Bool {
+			value := receiver.Fields["value"]
+			switch value.Kind {
+			case ValueString, ValueInt, ValueDecimal, ValueList:
+				return String(apexCollectionString(value)), receiver, false, true, nil
+			default:
+				return Null, receiver, false, true, unsupportedCallError("DataWeave application/apex getValueAsString " + valueShape(value))
+			}
+		}
 		if _, value, ok := objectFieldValue(receiver, "valueAsString"); ok {
 			return value, receiver, false, true, nil
 		}
@@ -241,9 +210,17 @@ func callLocationMember(receiver Value, method string, args []Value) (Value, Val
 		if _, value, ok := objectFieldValue(receiver, field); ok {
 			return value, receiver, false, true, nil
 		}
-		return decimalAsDouble(Decimal(0)), receiver, false, true, nil
+		return Null, receiver, false, true, nil
 	case "getDistance":
-		if len(args) != 2 || args[0].Kind != ValueObject || args[1].Kind != ValueString {
+		if len(args) != 2 {
+			return Null, receiver, false, true, fmt.Errorf("Location.getDistance expects Location and unit String")
+		}
+		for i, arg := range args {
+			if arg.Kind == ValueNull {
+				return Null, receiver, false, true, newExceptionError("NullPointerException", fmt.Sprintf("Argument %d cannot be null", i+1))
+			}
+		}
+		if args[0].Kind != ValueObject || args[1].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("Location.getDistance expects Location and unit String")
 		}
 		value, err := locationDistance(receiver, args[0], args[1].Text)
@@ -252,12 +229,28 @@ func callLocationMember(receiver Value, method string, args []Value) (Value, Val
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Location.toString expects 0 arguments")
 		}
-		lat, _ := locationCoordinate(receiver, "latitude")
-		lon, _ := locationCoordinate(receiver, "longitude")
-		return String(fmt.Sprintf("Location[%g,%g]", lat, lon)), receiver, false, true, nil
+		return String(locationString(receiver)), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+// Native capacity counts payload bytes,
+// independently of the quoted/underscore-separated display representation.
+func queueableDuplicateSignatureSize(parts Value) int64 {
+	var size int64
+	for _, part := range parts.List {
+		kind, text, _ := strings.Cut(scalarText(part), ":")
+		switch kind {
+		case "Integer":
+			size += 4
+		case "Id":
+			size += 15
+		case "String":
+			size += int64(len(text))
+		}
+	}
+	return size
 }
 
 func callQueueableDuplicateSignatureBuilderMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -267,12 +260,28 @@ func callQueueableDuplicateSignatureBuilderMember(receiver Value, method string,
 		if len(args) != 1 {
 			return Null, receiver, false, true, fmt.Errorf("QueueableDuplicateSignature.Builder.%s expects 1 argument", method)
 		}
+		// T008/T013-T015: invalid additions fail before mutating the Builder.
+		if args[0].Kind == ValueNull {
+			return Null, receiver, false, true, newExceptionError("InvalidParameterValueException", "Cannot add null to a deduplication signature")
+		}
+		text := args[0].String()
+		if method == "addString" && text == "" {
+			return Null, receiver, false, true, newExceptionError("InvalidParameterValueException", "Cannot add an empty string to a deduplication signature")
+		}
+		if method == "addId" && len(text) == 18 {
+			text = text[:15]
+		}
 		parts, ok := receiver.Fields["parts"]
 		if !ok || parts.Kind != ValueList {
 			parts = typedList("List<String>")
 		}
 		kind := strings.TrimPrefix(method, "add")
-		parts.List = append(parts.List, String(kind+":"+args[0].String()))
+		// Copy before appending so a rejected addition cannot modify an aliased list.
+		parts.List = append(append([]Value(nil), parts.List...), String(kind+":"+text))
+		// T016/T017/T028/T034/T035: the addition, not build(), enforces capacity.
+		if queueableDuplicateSignatureSize(parts) > 32 {
+			return Null, receiver, false, true, newExceptionError("DuplicateMessageException", "Deduplication signature exceeds the maximum length of 32 bytes")
+		}
 		receiver.Fields["parts"] = parts
 		return receiver, receiver, true, true, nil
 	case "build":
@@ -281,32 +290,28 @@ func callQueueableDuplicateSignatureBuilderMember(receiver Value, method string,
 		}
 		parts, _ := receiver.Fields["parts"]
 		textParts := make([]string, 0, len(parts.List))
-		if parts.Kind == ValueList {
-			for _, part := range parts.List {
-				textParts = append(textParts, scalarText(part))
+		for _, part := range parts.List {
+			kind, text, _ := strings.Cut(scalarText(part), ":")
+			if kind == "String" {
+				// T007/T012/T024-T027: only string components are quoted and escaped.
+				text = "'" + strings.NewReplacer("\\", "\\\\", "'", "\\'").Replace(text) + "'"
 			}
+			textParts = append(textParts, text)
 		}
 		signature := Object("QueueableDuplicateSignature")
-		signature.Fields["value"] = String(strings.Join(textParts, "|"))
+		signature.Fields["value"] = String(strings.Join(textParts, "_"))
 		return signature, receiver, false, true, nil
 	case "getMaxSize", "getRemainingSize", "getSize":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("QueueableDuplicateSignature.Builder.%s expects 0 arguments", method)
 		}
 		parts, _ := receiver.Fields["parts"]
-		size := int64(0)
-		if parts.Kind == ValueList {
-			size = int64(len(parts.List))
-		}
+		size := queueableDuplicateSignatureSize(parts)
 		switch method {
 		case "getMaxSize":
-			return Int(10), receiver, false, true, nil
+			return Int(32), receiver, false, true, nil
 		case "getRemainingSize":
-			remaining := int64(10) - size
-			if remaining < 0 {
-				remaining = 0
-			}
-			return Int(remaining), receiver, false, true, nil
+			return Int(32 - size), receiver, false, true, nil
 		default:
 			return Int(size), receiver, false, true, nil
 		}
@@ -349,9 +354,15 @@ func callSearchSuggestionOptionMember(receiver Value, method string, args []Valu
 		if len(args) != 1 {
 			return Null, receiver, false, true, fmt.Errorf("Search.SuggestionOption.setFilter expects filter")
 		}
+		if args[0].Kind == ValueNull {
+			return Null, receiver, false, true, newExceptionError("NullPointerException", "Argument 1 cannot be null")
+		}
 		receiver.Fields["filter"] = args[0]
 		return Null, receiver, true, true, nil
 	case "setlimit":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, receiver, false, true, newExceptionError("NullPointerException", "Argument 1 cannot be null")
+		}
 		if len(args) != 1 || args[0].Kind != ValueInt {
 			return Null, receiver, false, true, fmt.Errorf("Search.SuggestionOption.setLimit expects Integer")
 		}
@@ -425,6 +436,7 @@ func (vm *VM) callCartExtensionMockBackedSplitShipment(receiver Value, method st
 func queueableDuplicateSignaturePlatformObjectType(typeName string) bool {
 	return strings.EqualFold(typeName, "QueueableDuplicateSignature") ||
 		strings.EqualFold(typeName, "QueueableDuplicateSignature.Builder") ||
+		strings.EqualFold(typeName, "System.QueueableDuplicateSignature.Builder") ||
 		strings.EqualFold(typeName, "Builder")
 }
 
@@ -504,11 +516,13 @@ func callSearchResultsMember(receiver Value, method string, args []Value) (Value
 		return Null, receiver, false, true, fmt.Errorf("Search.SearchResults.get expects sObjectType String")
 	}
 	if _, results, ok := objectFieldValue(receiver, "results"); ok && results.Kind == ValueMap {
-		if value, ok := results.Map[mapKey(args[0])]; ok && value.Kind == ValueList {
-			return value, receiver, false, true, nil
+		for key, value := range results.Map {
+			if name, ok := results.MapKeys[key]; ok && strings.EqualFold(name.Text, args[0].Text) && value.Kind == ValueList {
+				return value, receiver, false, true, nil
+			}
 		}
 	}
-	return typedList("List<Search.SearchResult>"), receiver, false, true, nil
+	return Null, receiver, false, true, newExceptionError("NoDataFoundException", "You are trying to retrieve a SObject type that was not part of the search query ["+args[0].Text+"]")
 }
 
 func callSearchSuggestionResultMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -552,11 +566,7 @@ func callRestRequestMember(receiver Value, method string, args []Value) (Value, 
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	switch method {
 	case "addHeader":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
-			return Null, receiver, false, true, fmt.Errorf("RestRequest.addHeader expects name and value Strings")
-		}
-		restMapPut(&receiver, "headers", args[0].Text, args[1], true)
-		return Null, receiver, true, true, nil
+		return restAddHeader(receiver, args)
 	case "getHeader":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("RestRequest.getHeader expects name String")
@@ -568,10 +578,17 @@ func callRestRequestMember(receiver Value, method string, args []Value) (Value, 
 		}
 		return restMapKeys(receiver, "headers"), receiver, false, true, nil
 	case "addParameter", "addParam":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+		if len(args) != 2 || (args[0].Kind != ValueString && args[0].Kind != ValueNull) || (args[1].Kind != ValueString && args[1].Kind != ValueNull) {
 			return Null, receiver, false, true, fmt.Errorf("RestRequest.%s expects name and value Strings", method)
 		}
-		restMapPut(&receiver, "params", args[0].Text, args[1], false)
+		params := receiver.Fields["params"]
+		if params.Kind != ValueMap {
+			params = typedMap("Map<String,String>")
+		}
+		key := mapKey(args[0])
+		params.Map[key] = args[1]
+		params.MapKeys[key] = args[0]
+		receiver.Fields["params"] = params
 		return Null, receiver, true, true, nil
 	case "getParameter", "getParam":
 		if len(args) != 1 || args[0].Kind != ValueString {
@@ -705,11 +722,12 @@ func httpMockRequiresResolvedEndpoint(mock Value) bool {
 
 func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Value) (Value, Value, error) {
 	name, ok := receiver.Fields["name"]
-	if !ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "" {
-		name = String("default")
+	if !ok || name.Kind != ValueString || name.Text == "" {
+		name = String(vm.cacheDefaultName())
 		receiver.Fields["name"] = name
 	}
 	partitionName := cachePartitionKey(receiver.Type, name.Text)
+	scope := cacheScope(receiver.Type)
 	method = strings.ToLower(method)
 	switch method {
 	case "clone":
@@ -726,82 +744,69 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 		if len(args) == 1 && args[0].Kind == ValueSet {
 			out := typedMap("Map<String,Object>")
 			for _, key := range args[0].Set {
-				if key.Kind != ValueString {
-					return Null, receiver, fmt.Errorf("%s.get keys expects Set<String>", receiver.Type)
+				partition, text, err := vm.cacheOperationKey(scope+".get", key, name.Text)
+				if err != nil {
+					return Null, receiver, err
 				}
-				if value, ok := vm.cacheGet(partitionName, key.Text); ok {
+				if value, found := vm.cacheGet(partition, text); found {
 					out.Map[mapKey(key)] = value
 					out.MapKeys[mapKey(key)] = key
 				}
 			}
 			return out, receiver, nil
 		}
-		keyArg := args[0]
-		if len(args) == 2 {
-			keyArg = args[1]
-		}
-		key, hasKey, ok := cacheStringKeyArg(keyArg)
-		if !ok {
-			return Null, receiver, fmt.Errorf("%s.get key expects String", receiver.Type)
-		}
-		if !hasKey {
-			return Null, receiver, nil
-		}
-		value, err := vm.cacheGetOrLoad(partitionName, cacheKeyForArgs(args, key), cacheBuilderArg(args), key)
+		value, err := vm.cacheGetValue(scope+".get", args, name.Text)
 		return value, receiver, err
 	case "put":
-		if len(args) < 2 || len(args) > 5 || args[0].Kind != ValueString {
+		if len(args) < 2 || len(args) > 5 {
 			return Null, receiver, fmt.Errorf("%s.put expects String key, value[, ttlSeconds[, visibility[, immutable]]]", receiver.Type)
 		}
-		ttl, err := cachePutTTL(receiver.Type+".put", args)
+		partition, key, err := vm.cacheOperationKey(scope+".put", args[0], name.Text)
 		if err != nil {
 			return Null, receiver, err
 		}
-		vm.cachePut(partitionName, args[0].Text, args[1], ttl)
-		return Null, receiver, nil
+		return Null, receiver, vm.cachePutValue(scope+".put", partition, key, args)
 	case "remove":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, receiver, fmt.Errorf("%s.remove expects key or CacheBuilder type and key", receiver.Type)
 		}
-		keyArg := args[0]
-		if len(args) == 2 {
-			keyArg = args[1]
+		keyArg := args[len(args)-1]
+		partition, key, err := vm.cacheOperationKey(scope+".remove", keyArg, name.Text)
+		if err != nil {
+			return Null, receiver, err
 		}
-		key, hasKey, ok := cacheStringKeyArg(keyArg)
-		if !ok {
-			return Null, receiver, fmt.Errorf("%s.remove key expects String", receiver.Type)
-		}
-		if !hasKey {
-			return Null, receiver, nil
-		}
-		_, removed := vm.cacheRemove(partitionName, cacheKeyForArgs(args, key))
-		return Bool(removed), receiver, nil
+		value, err := vm.cacheRemoveValue(scope+".remove", partition, cacheKeyForArgs(args, key), keyArg.Text)
+		return value, receiver, err
 	case "contains":
-		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueSet) {
+		if len(args) != 1 {
 			return Null, receiver, fmt.Errorf("%s.contains expects String key or Set<String>", receiver.Type)
 		}
 		if args[0].Kind == ValueSet {
 			out := typedMap("Map<String,Boolean>")
 			for _, key := range args[0].Set {
-				if key.Kind != ValueString {
-					return Null, receiver, fmt.Errorf("%s.contains keys expects Set<String>", receiver.Type)
+				partition, text, err := vm.cacheOperationKey(scope+".contains", key, name.Text)
+				if err != nil {
+					return Null, receiver, err
 				}
-				_, ok := vm.cacheGet(partitionName, key.Text)
-				out.Map[mapKey(key)] = Bool(ok)
+				_, found := vm.cacheGet(partition, text)
+				out.Map[mapKey(key)] = Bool(found)
 				out.MapKeys[mapKey(key)] = key
 			}
 			return out, receiver, nil
 		}
-		_, ok := vm.cacheGet(partitionName, args[0].Text)
-		return Bool(ok), receiver, nil
+		partition, key, err := vm.cacheOperationKey(scope+".contains", args[0], name.Text)
+		if err != nil {
+			return Null, receiver, err
+		}
+		_, found := vm.cacheGet(partition, key)
+		return Bool(found), receiver, nil
 	case "getkeys":
 		if len(args) != 0 {
 			return Null, receiver, fmt.Errorf("%s.getKeys expects no arguments", receiver.Type)
 		}
-		keys := vm.cacheKeys(partitionName)
 		out := Set()
 		out.Type = "Set<String>"
-		for _, key := range keys {
+		for _, key := range vm.cacheKeys(partitionName) {
 			out.Set = append(out.Set, String(key))
 		}
 		return out, receiver, nil
@@ -848,6 +853,13 @@ func cachePartitionPlatformObjectType(typeName string) bool {
 
 func generatedPlatformObjectMemberReceiver(typeName string) bool {
 	return isExceptionType(typeName) ||
+		(queueableDuplicateSignaturePlatformObjectType(typeName) && !strings.EqualFold(typeName, "Builder")) ||
+		strings.EqualFold(typeName, "compression.ZipWriter") ||
+		strings.EqualFold(typeName, "compression.ZipReader") ||
+		strings.EqualFold(typeName, "compression.ZipEntry") ||
+		strings.EqualFold(typeName, "DataWeave.Result") ||
+		strings.EqualFold(typeName, "FormulaEval.FormulaBuilder") ||
+		strings.EqualFold(typeName, "FormulaEval.FormulaInstance") ||
 		cachePartitionPlatformObjectType(typeName) ||
 		strings.EqualFold(typeName, "UserProvisioning.FlowProvisionBase") ||
 		strings.EqualFold(typeName, "UserProvisioning.UserProvisioningPlugin") ||
@@ -946,100 +958,91 @@ func (vm *VM) callCachePartitionStaticDefault(callee string, args []Value) (Valu
 }
 
 func (vm *VM) cacheStaticDefaultGet(callee string, args []Value) (Value, error) {
-	partition := cacheDefaultPartitionKey(callee)
 	if len(args) != 1 && len(args) != 2 {
 		return Null, fmt.Errorf("%s expects key or CacheBuilder type and key", callee)
 	}
-	if len(args) == 1 {
-		switch args[0].Kind {
-		case ValueList:
-			out := List()
-			out.Type = "List<Object>"
-			for _, key := range args[0].List {
-				if key.Kind != ValueString {
-					return Null, fmt.Errorf("%s keys expects List<String>", callee)
-				}
-				if value, ok := vm.cacheGet(partition, key.Text); ok {
-					out.List = append(out.List, value)
-				} else {
-					out.List = append(out.List, Null)
-				}
+	if len(args) == 1 && args[0].Kind == ValueList {
+		out := List()
+		out.Type = "List<Object>"
+		for _, key := range args[0].List {
+			if key.Kind != ValueString {
+				return Null, fmt.Errorf("%s keys expects List<String>", callee)
 			}
-			return out, nil
-		case ValueSet:
-			out := typedMap("Map<String,Object>")
-			for _, key := range args[0].Set {
-				if key.Kind != ValueString {
-					return Null, fmt.Errorf("%s keys expects Set<String>", callee)
-				}
-				if value, ok := vm.cacheGet(partition, key.Text); ok {
-					encoded := mapKey(key)
-					out.Map[encoded] = value
-					out.MapKeys[encoded] = key
-					out.MapOrder = append(out.MapOrder, encoded)
-				}
+			if value, ok := vm.cacheGet(cacheDefaultPartitionKey(callee), key.Text); ok {
+				out.List = append(out.List, value)
+			} else {
+				out.List = append(out.List, Null)
 			}
-			return out, nil
 		}
+		return out, nil
 	}
-	keyArg := args[0]
-	if len(args) == 2 {
-		keyArg = args[1]
+	if len(args) == 1 && args[0].Kind == ValueSet {
+		out := typedMap("Map<String,Object>")
+		for _, key := range args[0].Set {
+			partition, text, err := vm.cacheOperationKey(callee, key, "")
+			if err != nil {
+				return Null, err
+			}
+			if value, found := vm.cacheGet(partition, text); found {
+				encoded := mapKey(key)
+				out.Map[encoded], out.MapKeys[encoded] = value, key
+				out.MapOrder = append(out.MapOrder, encoded)
+			}
+		}
+		return out, nil
 	}
-	key, hasKey, ok := cacheStringKeyArg(keyArg)
-	if !ok {
-		return Null, fmt.Errorf("%s key expects String", callee)
-	}
-	if !hasKey {
-		return Null, nil
-	}
-	return vm.cacheGetOrLoad(partition, cacheKeyForArgs(args, key), cacheBuilderArg(args), key)
+	return vm.cacheGetValue(callee, args, "")
 }
 
-func (vm *VM) cacheStaticDefaultPut(callee string, args []Value) (Value, error) {
-	if len(args) < 2 || len(args) > 5 || args[0].Kind != ValueString {
-		return Null, fmt.Errorf("%s expects String key, value[, ttlSeconds[, visibility[, immutable]]]", callee)
-	}
-	ttl, err := cachePutTTL(callee, args)
+func (vm *VM) cacheGetValue(callee string, args []Value, receiverPartition string) (Value, error) {
+	keyArg := args[len(args)-1]
+	partition, key, err := vm.cacheOperationKey(callee, keyArg, receiverPartition)
 	if err != nil {
 		return Null, err
 	}
-	vm.cachePut(cacheDefaultPartitionKey(callee), args[0].Text, args[1], ttl)
-	return Null, nil
+	if len(args) == 2 && args[0].Kind == ValueNull {
+		return Null, newNullDereferenceError(callee)
+	}
+	return vm.cacheGetOrLoad(callee, keyArg.Text, partition, cacheKeyForArgs(args, key), cacheBuilderArg(args), key)
+}
+
+func (vm *VM) cacheStaticDefaultPut(callee string, args []Value) (Value, error) {
+	if len(args) < 2 || len(args) > 5 {
+		return Null, fmt.Errorf("%s expects String key, value[, ttlSeconds[, visibility[, immutable]]]", callee)
+	}
+	partition, key, err := vm.cacheOperationKey(callee, args[0], "")
+	if err != nil {
+		return Null, err
+	}
+	return Null, vm.cachePutValue(callee, partition, key, args)
 }
 
 func cachePutTTL(callee string, args []Value) (int64, error) {
-	if len(args) < 3 {
+	if len(args) < 3 || args[2].Kind == ValueNull {
 		return 0, nil
 	}
 	if args[2].Kind == ValueInt {
-		if args[2].Int > 0 && args[2].Int < 300 {
-			return 0, fmt.Errorf("%s TTL must be at least 300 seconds", callee)
+		ttl := args[2].Int
+		maximum, label := int64(172800), "Organization"
+		if cacheScope(callee) == "Cache.Session" {
+			maximum, label = 28800, "Session"
 		}
-		return args[2].Int, nil
+		var message string
+		if ttl > 0 && ttl < 300 {
+			message = fmt.Sprintf("%s Cache TTL, %d, below minimum allowed: 300 secs", label, ttl)
+		}
+		if ttl > maximum {
+			message = fmt.Sprintf("%s Cache TTL, %d, above maximum allowed: %d secs", label, ttl, maximum)
+		}
+		if message != "" {
+			return 0, newExceptionError("cache.Org.OrgCacheException", fmt.Sprintf("Failed %s.put() for key '%s': %s", cacheScope(callee), args[0].Text, message))
+		}
+		return ttl, nil
 	}
 	if len(args) == 3 && cacheVisibilityValue(args[2]) {
 		return 0, nil
 	}
 	return 0, fmt.Errorf("%s ttl expects Integer seconds", callee)
-}
-
-func validCachePartitionName(name string) bool {
-	parts := strings.Split(name, ".")
-	if len(parts) == 0 || name == "" {
-		return false
-	}
-	for _, part := range parts {
-		if part == "" {
-			return false
-		}
-		for _, r := range part {
-			if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') {
-				return false
-			}
-		}
-	}
-	return true
 }
 
 func cacheVisibilityValue(value Value) bool {
@@ -1062,29 +1065,27 @@ func (vm *VM) cacheStaticDefaultRemove(callee string, args []Value) (Value, erro
 		}
 		return out, nil
 	}
-	keyArg := args[0]
-	if len(args) == 2 {
-		keyArg = args[1]
+	keyArg := args[len(args)-1]
+	partition, key, err := vm.cacheOperationKey(callee, keyArg, "")
+	if err != nil {
+		return Null, err
 	}
-	key, hasKey, ok := cacheStringKeyArg(keyArg)
-	if !ok {
-		return Null, fmt.Errorf("%s key expects String", callee)
-	}
-	if !hasKey {
-		return Null, nil
-	}
-	_, removed := vm.cacheRemove(cacheDefaultPartitionKey(callee), cacheKeyForArgs(args, key))
-	return Bool(removed), nil
+	return vm.cacheRemoveValue(callee, partition, cacheKeyForArgs(args, key), keyArg.Text)
 }
 
 func (vm *VM) cacheStaticDefaultContains(callee string, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Null, fmt.Errorf("%s expects String key", callee)
 	}
+	contains := func(key Value) (Value, error) {
+		partition, text, err := vm.cacheOperationKey(callee, key, "")
+		if err != nil {
+			return Null, err
+		}
+		_, found := vm.cacheGet(partition, text)
+		return Bool(found), nil
+	}
 	switch args[0].Kind {
-	case ValueString:
-		_, ok := vm.cacheGet(cacheDefaultPartitionKey(callee), args[0].Text)
-		return Bool(ok), nil
 	case ValueList:
 		out := List()
 		out.Type = "List<Boolean>"
@@ -1099,18 +1100,17 @@ func (vm *VM) cacheStaticDefaultContains(callee string, args []Value) (Value, er
 	case ValueSet:
 		out := typedMap("Map<String,Boolean>")
 		for _, key := range args[0].Set {
-			if key.Kind != ValueString {
-				return Null, fmt.Errorf("%s keys expects Set<String>", callee)
+			value, err := contains(key)
+			if err != nil {
+				return Null, err
 			}
-			_, ok := vm.cacheGet(cacheDefaultPartitionKey(callee), key.Text)
 			encoded := mapKey(key)
-			out.Map[encoded] = Bool(ok)
-			out.MapKeys[encoded] = key
+			out.Map[encoded], out.MapKeys[encoded] = value, key
 			out.MapOrder = append(out.MapOrder, encoded)
 		}
 		return out, nil
 	default:
-		return Null, fmt.Errorf("%s expects String key", callee)
+		return contains(args[0])
 	}
 }
 
@@ -1120,7 +1120,7 @@ func (vm *VM) cacheStaticDefaultKeys(callee string, args []Value) (Value, error)
 	}
 	out := Set()
 	out.Type = "Set<String>"
-	for _, key := range vm.cacheKeys(cacheDefaultPartitionKey(callee)) {
+	for _, key := range vm.cacheKeys(cachePartitionKey(cachePartitionTypeFromCallee(callee), vm.cacheDefaultName())) {
 		out.Set = append(out.Set, String(key))
 	}
 	return out, nil
@@ -1130,7 +1130,7 @@ func (vm *VM) cacheStaticDefaultNumKeys(callee string, args []Value) (Value, err
 	if len(args) != 0 {
 		return Null, fmt.Errorf("%s expects 0 arguments", callee)
 	}
-	return Int(int64(len(vm.cacheKeys(cacheDefaultPartitionKey(callee))))), nil
+	return Int(int64(len(vm.cacheKeys(cachePartitionKey(cachePartitionTypeFromCallee(callee), vm.cacheDefaultName()))))), nil
 }
 
 func cacheBuilderArg(args []Value) Value {
@@ -1138,17 +1138,6 @@ func cacheBuilderArg(args []Value) Value {
 		return args[0]
 	}
 	return Null
-}
-
-func cacheStringKeyArg(value Value) (string, bool, bool) {
-	switch value.Kind {
-	case ValueString:
-		return value.Text, true, true
-	case ValueNull:
-		return "", false, true
-	default:
-		return "", false, false
-	}
 }
 
 func cacheKeyForArgs(args []Value, key string) string {
@@ -1159,7 +1148,7 @@ func cacheKeyForArgs(args []Value, key string) string {
 	return key
 }
 
-func (vm *VM) cacheGetOrLoad(partition, cacheKey string, builderType Value, loadKey string) (Value, error) {
+func (vm *VM) cacheGetOrLoad(callee, rawKey, partition, cacheKey string, builderType Value, loadKey string) (Value, error) {
 	if value, ok := vm.cacheGet(partition, cacheKey); ok {
 		return value, nil
 	}
@@ -1171,12 +1160,12 @@ func (vm *VM) cacheGetOrLoad(partition, cacheKey string, builderType Value, load
 	}
 	if builderType.Kind != ValueObject || builderType.Type != "Type" || typeName == "" {
 		if builderType.Kind == ValueObject && builderType.Type == "Type" {
-			return Null, fmt.Errorf("%s does not implement CacheBuilder", typeName)
+			return Null, newExceptionError("cache.InvalidCacheBuilderException", fmt.Sprintf("%s does not implement CacheBuilder", typeName))
 		}
 		return Null, nil
 	}
 	if !vm.typeMatches(typeName, "Cache.CacheBuilder", make(map[string]bool)) {
-		return Null, fmt.Errorf("%s does not implement CacheBuilder", typeName)
+		return Null, newExceptionError("cache.InvalidCacheBuilderException", fmt.Sprintf("%s does not implement CacheBuilder", typeName))
 	}
 	builder, err := vm.constructValue(typeName, nil, nil, &Result{})
 	if err != nil {
@@ -1191,18 +1180,18 @@ func (vm *VM) cacheGetOrLoad(partition, cacheKey string, builderType Value, load
 	}
 	value, err := vm.callMethodWithReceiver(method, builder, []Value{String(loadKey)}, &Result{})
 	if err != nil {
-		return Null, err
+		return Null, vm.cacheBuilderExecutionError(callee, rawKey, err)
 	}
-	vm.cachePut(partition, cacheKey, value, 0)
+	if value.Kind != ValueNull && vm.cacheHasCapacity(partition) {
+		vm.cachePut(partition, cacheKey, value, 0)
+	}
 	return value, nil
 }
 
+// List overloads retain their legacy storage path; they were removed after
+// source API 54, before the supported API floor (controls N019/N021).
 func cacheDefaultPartitionKey(callee string) string {
-	return cachePartitionKey(cachePartitionTypeFromCallee(callee), cacheDefaultPartitionName(callee))
-}
-
-func cacheDefaultPartitionName(callee string) string {
-	return "local.default"
+	return cachePartitionKey(cachePartitionTypeFromCallee(callee), "local.default")
 }
 
 func cachePartitionTypeFromCallee(callee string) string {
@@ -1224,6 +1213,8 @@ func cacheNormalizePartitionName(name string) string {
 	return name
 }
 
+// Cache put/get retain shared references within a transaction (PC001-PC006,
+// PC101-PC106). Multi-get, builder and scan paths use the same store.
 func (vm *VM) cacheGet(partition, key string) (Value, bool) {
 	entries := vm.platformCache[partition]
 	if entries == nil {
@@ -1234,7 +1225,7 @@ func (vm *VM) cacheGet(partition, key string) (Value, bool) {
 		return Null, false
 	}
 	if !entry.ExpireAt.IsZero() && !entry.ExpireAt.After(vm.fakeNow) {
-		delete(entries, key)
+		vm.cacheDelete(partition, key)
 		return Null, false
 	}
 	return entry.Value, true
@@ -1248,7 +1239,7 @@ func (vm *VM) cacheKeys(partition string) []string {
 	keys := make([]string, 0, len(entries))
 	for key, entry := range entries {
 		if !entry.ExpireAt.IsZero() && !entry.ExpireAt.After(vm.fakeNow) {
-			delete(entries, key)
+			vm.cacheDelete(partition, key)
 			continue
 		}
 		keys = append(keys, key)
@@ -1266,11 +1257,13 @@ func (vm *VM) cachePut(partition, key string, value Value, ttlSeconds int64) {
 		entries = make(map[string]cacheEntry)
 		vm.platformCache[partition] = entries
 	}
+	// Retain the caller's reference, including collection slice headers.
 	entry := cacheEntry{Value: value}
 	if ttlSeconds > 0 {
 		entry.ExpireAt = vm.fakeNow.Add(time.Duration(ttlSeconds) * time.Second)
 	}
 	entries[key] = entry
+	vm.rememberCacheValueRefs(partition, key, value)
 }
 
 func (vm *VM) cacheRemove(partition, key string) (Value, bool) {
@@ -1278,7 +1271,7 @@ func (vm *VM) cacheRemove(partition, key string) (Value, bool) {
 	if !ok {
 		return Null, false
 	}
-	delete(vm.platformCache[partition], key)
+	vm.cacheDelete(partition, key)
 	return value, true
 }
 
@@ -1300,6 +1293,7 @@ func (vm *VM) cachePutSecondary(partition, key string, value Value, secondaryKey
 		vm.platformCache[partition] = entries
 	}
 	entries[key] = cacheEntry{Value: value, SecondaryKey: secondaryKey}
+	vm.rememberCacheValueRefs(partition, key, value)
 }
 
 func (vm *VM) cacheSecondaryScan(partition, startKey, endKey string) []cacheScanItem {
@@ -1310,7 +1304,7 @@ func (vm *VM) cacheSecondaryScan(partition, startKey, endKey string) []cacheScan
 	items := make([]cacheScanItem, 0, len(entries))
 	for key, entry := range entries {
 		if !entry.ExpireAt.IsZero() && !entry.ExpireAt.After(vm.fakeNow) {
-			delete(entries, key)
+			vm.cacheDelete(partition, key)
 			continue
 		}
 		secondary := entry.SecondaryKey
@@ -1421,19 +1415,17 @@ func (vm *VM) lookupLabel(name string) (Value, bool) {
 		label = after
 	}
 	if vm.Org != nil {
+		registry := labelRegistryForNamespace(vm.Org.Metadata, namespace)
 		if language := strings.TrimSpace(vm.currentUserInfoField("LanguageLocaleKey", "")); language != "" {
-			filtered := vm.Org.Metadata
+			filtered := registry
 			filtered.Labels = labelsForLanguage(filtered.Labels, language)
 			if value, status := resource.ResolveLabel(filtered, vm.Org.Namespace, namespace, label); status != resource.LabelLookupMissing {
 				return String(value), true
 			}
 		}
-		if value, status := resource.ResolveLabel(vm.Org.Metadata, vm.Org.Namespace, namespace, label); status != resource.LabelLookupMissing {
+		if value, status := resource.ResolveLabel(registry, vm.Org.Namespace, namespace, label); status != resource.LabelLookupMissing {
 			return String(value), true
 		}
-	}
-	if namespace == "" && !strings.Contains(label, ".") {
-		return String(label), true
 	}
 	return Null, false
 }
@@ -1486,4 +1478,96 @@ func staticResourceBodyValue(value storage.Value) (string, bool) {
 	default:
 		return "", false
 	}
+}
+
+// Cache partition identifiers contain a colon, which cannot occur in an Apex
+// class name. Reuse static root locations without allocating a second index.
+func (vm *VM) rememberCacheValueRefs(partition, key string, value Value) {
+	vm.markCollectionRefsEscaped(value)
+	vm.registerSObjectAliasRecord(value)
+	vm.advanceAliasContainmentMutation()
+	vm.rememberStaticValueRefsInField(value, staticFieldRef{ClassName: partition, FieldName: key})
+}
+
+func (vm *VM) cacheDelete(partition, key string) {
+	delete(vm.platformCache[partition], key)
+	vm.forgetStaticValueRefsInField(staticFieldRef{ClassName: partition, FieldName: key})
+	vm.advanceAliasContainmentMutation()
+	if len(vm.platformCache[partition]) == 0 {
+		delete(vm.platformCache, partition)
+	}
+}
+
+func (vm *VM) cacheAliasRoot(location staticFieldRef) (Value, bool) {
+	if entry, ok := vm.platformCache[location.ClassName][location.FieldName]; ok {
+		return entry.Value, true
+	}
+	return Null, false
+}
+
+func (vm *VM) storeCacheAliasRoot(location staticFieldRef, value Value) {
+	if entry, ok := vm.platformCache[location.ClassName][location.FieldName]; ok {
+		entry.Value = value
+		vm.platformCache[location.ClassName][location.FieldName] = entry
+	}
+}
+
+// Called only for indexed cache roots. Empty cache maps add no walk or
+// allocation to ordinary mutations; the existing static-root index rejects them.
+func (vm *VM) propagateAliasSnapshotToCacheEntry(location staticFieldRef, previous aliasSnapshot, updated Value) bool {
+	old, ok := vm.cacheAliasRoot(location)
+	if !ok {
+		return false
+	}
+	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+	seen := *seenPtr
+	clear(seen)
+	replaced, changed := replaceCacheAliasSnapshot(old, previous, updated, seen)
+	aliasRefSetPool.Put(seenPtr)
+	if changed {
+		vm.storeCacheAliasRoot(location, replaced)
+		if old.Ref == previous.ref && old.Kind == previous.kind {
+			vm.rememberAdditionalStaticValueRefsInField(old, replaced, location)
+		} else {
+			vm.rememberStaticAliasUpdateRefs(previous, updated, location)
+		}
+	} else {
+		vm.forgetStaticValueRefInField(previous.ref, location)
+	}
+	return true
+}
+
+// Indexed cache graphs can contain nested collections of the same kind. Walk
+// those roots conservatively rather than using scope's flat-list exclusions.
+// This keeps cache slice headers current without changing other alias routes.
+func replaceCacheAliasSnapshot(value Value, previous aliasSnapshot, updated Value, seen map[uint64]bool) (Value, bool) {
+	if value.Ref != 0 {
+		if value.Ref == previous.ref && value.Kind == previous.kind {
+			return updated, true
+		}
+		if seen[value.Ref] {
+			return value, false
+		}
+		seen[value.Ref] = true
+	}
+	changed := false
+	for _, children := range []map[string]Value{value.Fields, value.Map, value.MapKeys} {
+		for key, child := range children {
+			replaced, ok := replaceCacheAliasSnapshot(child, previous, updated, seen)
+			if ok {
+				children[key] = replaced
+				changed = true
+			}
+		}
+	}
+	for _, children := range [][]Value{value.List, value.Set} {
+		for i, child := range children {
+			replaced, ok := replaceCacheAliasSnapshot(child, previous, updated, seen)
+			if ok {
+				children[i] = replaced
+				changed = true
+			}
+		}
+	}
+	return value, changed
 }

@@ -80,9 +80,6 @@ function ensureState() {
   const shell = context();
   const utilities = Array.isArray(shell.workspace?.utilities) ? shell.workspace.utilities : [];
   localState.utilities = utilities.map(normalizeUtility);
-  if (!localState.utilities.length) {
-    localState.utilities = [normalizeUtility({ id: "local-utility", label: "Local Utility" })];
-  }
   localState.enclosingUtilityId = String(shell.workspace?.enclosingUtilityId || localState.utilities[0]?.id || "");
   localState.initialized = true;
   reportDiagnostic("Using simulated local lightning/platformUtilityBarApi state.");
@@ -108,12 +105,13 @@ function utilityIdFrom(value) {
 function findUtility(value) {
   const state = ensureState();
   const id = utilityIdFrom(value);
-  let utility = state.utilities.find((item) => item.id === id || item.utilityId === id);
-  if (!utility) {
-    utility = normalizeUtility({ id: id || "local-utility", label: id || "Local Utility" }, state.utilities.length);
-    state.utilities.push(utility);
+  return state.utilities.find((item) => item.id === id || item.utilityId === id) || null;
+}
+
+function validateUtilityId(value) {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error("Expected a non-empty string value, instead received " + String(value));
   }
-  return utility;
 }
 
 function notifyUtilityClick(utility) {
@@ -181,19 +179,18 @@ export function getInfo(utilityId) {
   return Promise.resolve(cloneUtility(findUtility(utilityId)));
 }
 
-export function getUtilityInfo(configOrId = {}) {
-  return getInfo(utilityIdFrom(configOrId));
-}
-
-export function open(utilityId, options = {}) {
+export async function open(utilityId, options = {}) {
+  validateUtilityId(utilityId);
   const utility = findUtility(utilityId);
-  utility.panelVisible = true;
-  utility.minimized = false;
-  if (options?.autoFocus) {
-    utility.focused = true;
+  if (utility) {
+    utility.panelVisible = true;
+    utility.minimized = false;
+    if (options?.autoFocus) {
+      utility.focused = true;
+    }
+    notifyUtilityClick(utility);
   }
-  notifyUtilityClick(utility);
-  return Promise.resolve(true);
+  return true;
 }
 
 export function openUtility(config = {}) {
@@ -202,13 +199,16 @@ export function openUtility(config = {}) {
 
 export function closeUtility(config = {}) {
   const utility = findUtility(config);
-  utility.panelVisible = false;
-  utility.minimized = true;
-  utility.focused = false;
+  if (utility) {
+    utility.panelVisible = false;
+    utility.minimized = true;
+    utility.focused = false;
+  }
   return Promise.resolve(true);
 }
 
-export function minimize(utilityId) {
+export async function minimize(utilityId) {
+  validateUtilityId(utilityId);
   return closeUtility({ utilityId });
 }
 
@@ -219,13 +219,16 @@ export function minimizeUtility(config = {}) {
 export function focusUtility(configOrId = {}) {
   const state = ensureState();
   const utility = findUtility(configOrId);
-  for (const item of state.utilities) {
-    item.focused = item.id === utility.id;
+  if (utility) {
+    for (const item of state.utilities) {
+      item.focused = item.id === utility.id;
+    }
   }
   return Promise.resolve(true);
 }
 
-export function onUtilityClick(utilityId, eventHandler) {
+export async function onUtilityClick(utilityId, eventHandler) {
+  validateUtilityId(utilityId);
   const id = utilityIdFrom(utilityId);
   const handler = typeof utilityId === "object" && typeof utilityId?.eventHandler === "function"
     ? utilityId.eventHandler
@@ -234,19 +237,32 @@ export function onUtilityClick(utilityId, eventHandler) {
     return Promise.resolve(true);
   }
   const utility = findUtility(id);
+  if (!utility) {
+    return true;
+  }
   const callbacks = ensureState().callbacks.get(utility.id) || new Set();
   callbacks.add(handler);
   ensureState().callbacks.set(utility.id, callbacks);
   return Promise.resolve(true);
 }
 
-export function updateUtility(utilityId, attrs = {}) {
-  updateUtilityFields(findUtility(utilityId), attrs);
-  return Promise.resolve(true);
+export async function updateUtility(utilityId, attrs = {}) {
+  validateUtilityId(utilityId);
+  const utility = findUtility(utilityId);
+  if (!utility) {
+    // The captured Standard-app request has no utility to acknowledge it.
+    // A pending request expresses that boundary without inventing completion.
+    return new Promise(() => {});
+  }
+  updateUtilityFields(utility, attrs);
+  return true;
 }
 
 export function updatePanel(utilityId, attrs = {}) {
-  updatePanelFields(findUtility(utilityId), attrs);
+  const utility = findUtility(utilityId);
+  if (utility) {
+    updatePanelFields(utility, attrs);
+  }
   return Promise.resolve(true);
 }
 
@@ -279,7 +295,10 @@ export function setPanelWidth(config = {}) {
 }
 
 export function enableModal(utilityId, enabled) {
-  findUtility(utilityId).modalMode = Boolean(enabled);
+  const utility = findUtility(utilityId);
+  if (utility) {
+    utility.modalMode = Boolean(enabled);
+  }
   return Promise.resolve(true);
 }
 
@@ -289,29 +308,25 @@ export function toggleModalMode(config = {}) {
 
 export function enablePopout(utilityId, enabled, options = {}) {
   const utility = findUtility(utilityId);
-  utility.popoutEnabled = Boolean(enabled);
-  utility.disabledText = String(options.disabledText || "");
+  if (utility) {
+    utility.popoutEnabled = Boolean(enabled);
+    utility.disabledText = String(options.disabledText || "");
+  }
   return Promise.resolve(true);
 }
 
-export function disableUtilityPopOut(config = {}) {
-  return enablePopout(utilityIdFrom(config), !config.disabled, { disabledText: config.disabledText });
-}
-
 export function isUtilityPoppedOut(utilityId) {
-  return Promise.resolve(Boolean(findUtility(utilityId).poppedOut));
+  return Promise.resolve(Boolean(findUtility(utilityId)?.poppedOut));
 }
 
 export default {
   EnclosingUtilityId,
   closeUtility,
-  disableUtilityPopOut,
   enableModal,
   enablePopout,
   focusUtility,
   getAllUtilityInfo,
   getInfo,
-  getUtilityInfo,
   isUtilityPoppedOut,
   minimize,
   minimizeUtility,

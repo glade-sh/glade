@@ -31,6 +31,19 @@ func TestSalesforceOracleAcceptsCustomExceptionGetMessageOverride(t *testing.T) 
 	}
 }
 
+func TestSalesforceOracleAcceptsCustomExceptionGetStackTraceStringOverride(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"StackTraceException.cls": `public class StackTraceException extends Exception {
+  public override String getStackTraceString() {
+    return 'stack trace';
+  }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("Salesforce accepts a custom Exception getStackTraceString override: %#v", result.Diagnostics)
+	}
+}
+
 func TestSalesforceOracleRejectsAuraEnabledOverloads(t *testing.T) {
 	result := analyzeDeclarationProject(t, map[string]string{
 		"AuraEnabledOverloads.cls": `public class AuraEnabledOverloads {

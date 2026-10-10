@@ -15,7 +15,7 @@ import (
 func TestBuildAppliesInstalledNamespaceToCustomSchema(t *testing.T) {
 	artifact, err := Build("pkg", "1.0", project.Project{Root: t.TempDir(), SourceAPIVersion: "65.0"}, schema.Schema{Objects: []schema.Object{
 		{
-			Name: "CartItemLine__c",
+			Name: "BasketLine__c",
 			Fields: []schema.Field{
 				{Name: "Product__c", Type: "reference", ReferenceTo: []string{"Membership__c"}},
 				{Name: "Name", Type: "string"},
@@ -29,7 +29,7 @@ func TestBuildAppliesInstalledNamespaceToCustomSchema(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if artifact.Objects[0].Name != "pkg__CartItemLine__c" {
+	if artifact.Objects[0].Name != "pkg__BasketLine__c" {
 		t.Fatalf("object name = %q", artifact.Objects[0].Name)
 	}
 	if artifact.Objects[0].Fields[0].Name != "pkg__Product__c" {

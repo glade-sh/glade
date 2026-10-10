@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -130,6 +131,7 @@ func TestPublicRunTimeoutReturnsActionableResponse(t *testing.T) {
 }
 
 func TestServerWorkspaceAndRunRoutes(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
 	if err != nil {
@@ -193,6 +195,7 @@ func TestServerResetReportsResultCacheFailure(t *testing.T) {
 }
 
 func TestServeWorkspaceSymlinkReturnsNotFound(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
 		t.Fatal(err)
@@ -214,6 +217,7 @@ func TestServeWorkspaceSymlinkReturnsNotFound(t *testing.T) {
 }
 
 func TestSeedSymlinkDoesNotReadOutsideFile(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
 		t.Fatal(err)
@@ -237,6 +241,7 @@ func TestSeedSymlinkDoesNotReadOutsideFile(t *testing.T) {
 }
 
 func TestServerWorkspaceIncludesConfiguredDBPath(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	dataRoot := t.TempDir()
 	dbPath := filepath.Join(t.TempDir(), "org.sqlite")
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
@@ -261,6 +266,7 @@ func TestServerWorkspaceIncludesConfiguredDBPath(t *testing.T) {
 }
 
 func TestPublicServerWorkspaceOmitsConfiguredDBPath(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	dataRoot := t.TempDir()
 	dbPath := filepath.Join(t.TempDir(), "org.sqlite")
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
@@ -285,6 +291,7 @@ func TestPublicServerWorkspaceOmitsConfiguredDBPath(t *testing.T) {
 }
 
 func TestServerDatabaseRouteShowsLatestScratchRunRows(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
 	if err != nil {
@@ -328,6 +335,7 @@ func TestServerDatabaseRouteShowsLatestScratchRunRows(t *testing.T) {
 }
 
 func TestServerDatabaseRouteReexecutesWhenCachedResultHasNoOrgSnapshot(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
 	if err != nil {
@@ -411,6 +419,7 @@ func TestWorkspaceMetadataIgnoresDotFilesAndDirectories(t *testing.T) {
 }
 
 func TestServerServesEmbeddedPlaygroundUI(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
 	if err != nil {
@@ -443,6 +452,7 @@ func TestServerServesEmbeddedPlaygroundUI(t *testing.T) {
 }
 
 func TestServerFileSaveRejectsStaleVersion(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
 	if err != nil {
@@ -470,6 +480,7 @@ func TestServerFileSaveRejectsStaleVersion(t *testing.T) {
 }
 
 func TestServerSaveSourceInvalidatesProjectRuntime(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
 	if err != nil {
@@ -508,6 +519,7 @@ func TestServerSaveSourceInvalidatesProjectRuntime(t *testing.T) {
 }
 
 func TestServerDeleteSourceInvalidatesProjectRuntime(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
 	if err != nil {
@@ -539,6 +551,7 @@ func TestServerDeleteSourceInvalidatesProjectRuntime(t *testing.T) {
 }
 
 func TestServerLoadExampleInvalidatesProjectRuntime(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
 	if err != nil {
@@ -564,6 +577,7 @@ func TestServerLoadExampleInvalidatesProjectRuntime(t *testing.T) {
 }
 
 func TestServerListsLoadsAndRunsExampleProject(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
 	if err != nil {
@@ -632,6 +646,7 @@ func TestServerListsLoadsAndRunsExampleProject(t *testing.T) {
 }
 
 func TestServerHidesBuiltInExamplesUnlessEnabled(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
 	if err != nil {
@@ -660,6 +675,7 @@ func TestServerHidesBuiltInExamplesUnlessEnabled(t *testing.T) {
 }
 
 func TestServerListsLoadsAndRunsLocalProjectReference(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	projectRoot := t.TempDir()
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-ref","namespace":"","sourceApiVersion":"65.0"}`)
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/LocalProbe.cls"), `public class LocalProbe {
@@ -811,6 +827,7 @@ func TestServerListsLoadsAndRunsLocalProjectReference(t *testing.T) {
 }
 
 func TestPublicProjectReferenceRespectsWorkspaceLimits(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	projectRoot := t.TempDir()
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), sfdxProjectJSON)
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/One.cls"), "public class One {}")
@@ -861,6 +878,7 @@ func TestPublicProjectReferenceRespectsWorkspaceLimits(t *testing.T) {
 }
 
 func TestServerLoadsProjectReferenceAsLocalSource(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	projectRoot := t.TempDir()
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-ref","namespace":"samplepkg","sourceApiVersion":"65.0"}`)
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/NextGenSettingService.cls"), `public class NextGenSettingService {
@@ -940,6 +958,7 @@ func writePlaygroundTestFile(t *testing.T, path, content string) {
 }
 
 func TestPublicServerRateLimitsMutatingEndpointsByForwardedIP(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
 	if err != nil {
@@ -962,6 +981,7 @@ func TestPublicServerRateLimitsMutatingEndpointsByForwardedIP(t *testing.T) {
 }
 
 func TestPublicServerForcesScratchStrictRun(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	dataRoot := t.TempDir()
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
 	if err != nil {

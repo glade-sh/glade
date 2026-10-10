@@ -1,0 +1,297 @@
+{
+  "schema_version": 1,
+  "api_versions": [
+    "59.0",
+    "67.0"
+  ],
+  "transport": "exception",
+  "capture_each_case_individually": true,
+  "fixture_paths": [
+    "l17_fixtures/staticresources/FamilyL17Assets.resource",
+    "l17_fixtures/staticresources/FamilyL17Assets.resource-meta.xml"
+  ],
+  "cases": [
+    {
+      "id": "control_resource_import_default_static",
+      "source_row": "compile_resource_import_default",
+      "kind": "compile",
+      "group": "resource-reference-controls",
+      "category": "native-control",
+      "basis": "org",
+      "js": "import { LightningElement } from 'lwc'; import assets from '@salesforce/resourceUrl/FamilyL17Assets'; export default class FamilyResources extends LightningElement { value=assets; }",
+      "template": "<template><span class=\"owned-target\">owned</span></template>",
+      "meta_fragment": "<isExposed>false</isExposed>",
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "native_bundle": "familyL17ResourceControl000",
+      "diagnostic_expected": {},
+      "native_diagnostics": {
+        "59.0": [],
+        "67.0": []
+      }
+    },
+    {
+      "id": "control_resource_import_default_bound",
+      "source_row": "compile_resource_import_default",
+      "kind": "compile",
+      "group": "resource-reference-controls",
+      "category": "native-control",
+      "basis": "org",
+      "js": "import { LightningElement } from 'lwc'; import assets from '@salesforce/resourceUrl/FamilyL17Assets'; export default class FamilyResources extends LightningElement { value=assets; }",
+      "template": "<template><span class=\"owned-target\">{value}</span></template>",
+      "meta_fragment": "<isExposed>false</isExposed>",
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "native_bundle": "familyL17ResourceControl001",
+      "diagnostic_expected": {},
+      "native_diagnostics": {
+        "59.0": [],
+        "67.0": []
+      }
+    },
+    {
+      "id": "control_resource_import_missing_static",
+      "source_row": "compile_resource_import_missing",
+      "kind": "compile",
+      "group": "resource-reference-controls",
+      "category": "native-control",
+      "basis": "org",
+      "js": "import { LightningElement } from 'lwc'; import assets from '@salesforce/resourceUrl/FamilyL17OwnedMissing'; export default class FamilyResources extends LightningElement { value=assets; }",
+      "template": "<template><span class=\"owned-target\">owned</span></template>",
+      "meta_fragment": "<isExposed>false</isExposed>",
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "native_bundle": "familyL17ResourceControl002",
+      "diagnostic_expected": {
+        "59.0": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl002.js",
+        "67.0": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl002.js"
+      },
+      "native_diagnostics": {
+        "59.0": [
+          {
+            "id": "control_resource_import_missing_static",
+            "message": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl002.js",
+            "type": "Error",
+            "line": null,
+            "column": null
+          }
+        ],
+        "67.0": [
+          {
+            "id": "control_resource_import_missing_static",
+            "message": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl002.js",
+            "type": "Error",
+            "line": null,
+            "column": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "control_resource_import_missing_bound",
+      "source_row": "compile_resource_import_missing",
+      "kind": "compile",
+      "group": "resource-reference-controls",
+      "category": "native-control",
+      "basis": "org",
+      "js": "import { LightningElement } from 'lwc'; import assets from '@salesforce/resourceUrl/FamilyL17OwnedMissing'; export default class FamilyResources extends LightningElement { value=assets; }",
+      "template": "<template><span class=\"owned-target\">{value}</span></template>",
+      "meta_fragment": "<isExposed>false</isExposed>",
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "native_bundle": "familyL17ResourceControl003",
+      "diagnostic_expected": {
+        "59.0": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl003.js",
+        "67.0": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl003.js"
+      },
+      "native_diagnostics": {
+        "59.0": [
+          {
+            "id": "control_resource_import_missing_bound",
+            "message": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl003.js",
+            "type": "Error",
+            "line": null,
+            "column": null
+          }
+        ],
+        "67.0": [
+          {
+            "id": "control_resource_import_missing_bound",
+            "message": "Invalid reference FamilyL17OwnedMissing of type resourceUrl in file familyL17ResourceControl003.js",
+            "type": "Error",
+            "line": null,
+            "column": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "control_resource_import_subpath_in_import_static",
+      "source_row": "compile_resource_import_subpath_in_import",
+      "kind": "compile",
+      "group": "resource-reference-controls",
+      "category": "native-control",
+      "basis": "org",
+      "js": "import { LightningElement } from 'lwc'; import assets from '@salesforce/resourceUrl/FamilyL17Assets/ok.js'; export default class FamilyResources extends LightningElement { value=assets; }",
+      "template": "<template><span class=\"owned-target\">owned</span></template>",
+      "meta_fragment": "<isExposed>false</isExposed>",
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "native_bundle": "familyL17ResourceControl004",
+      "diagnostic_expected": {
+        "59.0": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl004.js",
+        "67.0": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl004.js"
+      },
+      "native_diagnostics": {
+        "59.0": [
+          {
+            "id": "control_resource_import_subpath_in_import_static",
+            "message": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl004.js",
+            "type": "Error",
+            "line": null,
+            "column": null
+          }
+        ],
+        "67.0": [
+          {
+            "id": "control_resource_import_subpath_in_import_static",
+            "message": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl004.js",
+            "type": "Error",
+            "line": null,
+            "column": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "control_resource_import_subpath_in_import_bound",
+      "source_row": "compile_resource_import_subpath_in_import",
+      "kind": "compile",
+      "group": "resource-reference-controls",
+      "category": "native-control",
+      "basis": "org",
+      "js": "import { LightningElement } from 'lwc'; import assets from '@salesforce/resourceUrl/FamilyL17Assets/ok.js'; export default class FamilyResources extends LightningElement { value=assets; }",
+      "template": "<template><span class=\"owned-target\">{value}</span></template>",
+      "meta_fragment": "<isExposed>false</isExposed>",
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "native_bundle": "familyL17ResourceControl005",
+      "diagnostic_expected": {
+        "59.0": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl005.js",
+        "67.0": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl005.js"
+      },
+      "native_diagnostics": {
+        "59.0": [
+          {
+            "id": "control_resource_import_subpath_in_import_bound",
+            "message": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl005.js",
+            "type": "Error",
+            "line": null,
+            "column": null
+          }
+        ],
+        "67.0": [
+          {
+            "id": "control_resource_import_subpath_in_import_bound",
+            "message": "Invalid reference FamilyL17Assets/ok.js of type resourceUrl in file familyL17ResourceControl005.js",
+            "type": "Error",
+            "line": null,
+            "column": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "control_resource_import_extension_static",
+      "source_row": "compile_resource_import_extension",
+      "kind": "compile",
+      "group": "resource-reference-controls",
+      "category": "native-control",
+      "basis": "org",
+      "js": "import { LightningElement } from 'lwc'; import assets from '@salesforce/resourceUrl/FamilyL17Assets.zip'; export default class FamilyResources extends LightningElement { value=assets; }",
+      "template": "<template><span class=\"owned-target\">owned</span></template>",
+      "meta_fragment": "<isExposed>false</isExposed>",
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "native_bundle": "familyL17ResourceControl006",
+      "diagnostic_expected": {
+        "59.0": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl006.js",
+        "67.0": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl006.js"
+      },
+      "native_diagnostics": {
+        "59.0": [
+          {
+            "id": "control_resource_import_extension_static",
+            "message": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl006.js",
+            "type": "Error",
+            "line": null,
+            "column": null
+          }
+        ],
+        "67.0": [
+          {
+            "id": "control_resource_import_extension_static",
+            "message": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl006.js",
+            "type": "Error",
+            "line": null,
+            "column": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "control_resource_import_extension_bound",
+      "source_row": "compile_resource_import_extension",
+      "kind": "compile",
+      "group": "resource-reference-controls",
+      "category": "native-control",
+      "basis": "org",
+      "js": "import { LightningElement } from 'lwc'; import assets from '@salesforce/resourceUrl/FamilyL17Assets.zip'; export default class FamilyResources extends LightningElement { value=assets; }",
+      "template": "<template><span class=\"owned-target\">{value}</span></template>",
+      "meta_fragment": "<isExposed>false</isExposed>",
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "native_bundle": "familyL17ResourceControl007",
+      "diagnostic_expected": {
+        "59.0": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl007.js",
+        "67.0": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl007.js"
+      },
+      "native_diagnostics": {
+        "59.0": [
+          {
+            "id": "control_resource_import_extension_bound",
+            "message": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl007.js",
+            "type": "Error",
+            "line": null,
+            "column": null
+          }
+        ],
+        "67.0": [
+          {
+            "id": "control_resource_import_extension_bound",
+            "message": "Invalid reference FamilyL17Assets.zip of type resourceUrl in file familyL17ResourceControl007.js",
+            "type": "Error",
+            "line": null,
+            "column": null
+          }
+        ]
+      }
+    }
+  ]
+}

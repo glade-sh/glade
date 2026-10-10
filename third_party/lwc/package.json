@@ -2,11 +2,14 @@
   "name": "glade-lwc-toolchain",
   "private": true,
   "type": "module",
+  "scripts": {
+    "postinstall": "node ./scripts/apply-lwc-shared-api67.mjs"
+  },
   "dependencies": {
     "@babel/parser": "7.29.7",
-    "@lwc/compiler": "8.20.4",
-    "@lwc/engine-dom": "8.20.4",
-    "@lwc/synthetic-shadow": "8.20.4"
+    "@lwc/compiler": "9.4.3",
+    "@lwc/engine-dom": "9.4.3",
+    "@lwc/synthetic-shadow": "9.4.3"
   },
   "overrides": {
     "@babel/core": "7.29.7"

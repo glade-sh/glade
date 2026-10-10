@@ -14,91 +14,24 @@ test("uiAppsApi exports conservative local app menu helpers", async () => {
   });
 });
 
-test("uiListsApi exports conservative local list helpers", async () => {
-  const module = await import("../src/lightning/uiListsApi.mjs");
-
-  assert.equal(typeof module.getListInfosByObjectName, "function");
-  assert.equal(typeof module.getListInfoByName, "function");
-  assert.equal(typeof module.getListRecordsByName, "function");
-  assert.equal(typeof module.getListPreferences, "function");
-  assert.equal(typeof module.updateListInfoByName, "function");
-  assert.deepEqual(await module.getListInfosByObjectName({ objectApiName: "Account" }), {
-    count: 1,
-    currentPageToken: null,
-    listInfos: [{
-      displayColumns: [],
-      filteredByInfo: [],
-      label: "All",
-      listReference: { objectApiName: "Account", listViewApiName: "All" },
-      orderBy: [],
-      scope: null,
-      visibility: "Public",
-    }],
-    nextPageToken: null,
-    previousPageToken: null,
-  });
-  const listAdapter = new module.getListInfosByObjectName((payload) => {
-    listAdapter.payload = payload;
-  });
-  listAdapter.update({ objectApiName: "Contact" });
-  assert.equal(listAdapter.payload.error, undefined);
-  assert.deepEqual(listAdapter.payload.data.listInfos[0].listReference, {
-    objectApiName: "Contact",
-    listViewApiName: "All",
-  });
-  for (const [name, expected] of [
-    ["getListInfoByName", {
-      displayColumns: [],
-      filteredByInfo: [],
-      label: "AllContacts",
-      listReference: { objectApiName: "Contact", listViewApiName: "AllContacts" },
-      orderBy: [],
-      scope: null,
-      visibility: "Public",
-    }],
-    ["getListRecordsByName", {
-      count: 0,
-      currentPageToken: null,
-      nextPageToken: null,
-      previousPageToken: null,
-      records: [],
-    }],
-    ["getListPreferences", {
-      columnWidths: {},
-      wrapText: false,
-    }],
-  ]) {
-    const adapter = new module[name]((payload) => {
-      adapter.payload = payload;
-    });
-    adapter.update({ objectApiName: "Contact", listViewApiName: "AllContacts" });
-    assert.equal(adapter.payload.error, undefined, name);
-    assert.deepEqual(adapter.payload.data, expected, name);
+test("uiListsApi exposes captured wire and mutation exports", async () => {
+  // Native c_*_wire/reference rows back this surface. Runtime data DTOs are
+  // asserted by TestL11SalesforceConformance, through the product server.
+  const { readFile } = await import("node:fs/promises");
+  const source = (await readFile(new URL("../src/lightning/uiListsApi.mjs", import.meta.url), "utf8"))
+    .replace('"/lightning/shims/core/wire-adapter.js"',
+      JSON.stringify(new URL("../src/shims/wire-adapter.mjs", import.meta.url).href));
+  const module = await import("data:text/javascript;base64," + Buffer.from(source).toString("base64"));
+  for (const name of ["getListInfoByName", "getListInfosByName", "getListInfosByObjectName",
+    "getListRecordsByName", "getListPreferences", "createListInfo", "updateListInfoByName",
+    "deleteListInfo", "updateListPreferences"]) {
+    assert.equal(typeof module[name], "function", name);
   }
-  assert.deepEqual(await module.getListInfoByName({ objectApiName: "Account", listViewApiName: "AllAccounts" }), {
-    displayColumns: [],
-    filteredByInfo: [],
-    label: "AllAccounts",
-    listReference: { objectApiName: "Account", listViewApiName: "AllAccounts" },
-    orderBy: [],
-    scope: null,
-    visibility: "Public",
-  });
-  assert.deepEqual(await module.getListRecordsByName({ objectApiName: "Account", listViewApiName: "AllAccounts" }), {
-    count: 0,
-    currentPageToken: null,
-    nextPageToken: null,
-    previousPageToken: null,
-    records: [],
-  });
-  assert.deepEqual(await module.getListPreferences({ objectApiName: "Account", listViewApiName: "AllAccounts" }), {
-    columnWidths: {},
-    wrapText: false,
-  });
-  await assert.rejects(
-    module.updateListInfoByName({ objectApiName: "Account", listViewApiName: "AllAccounts" }),
-    (err) => err?.body?.errorCode === "GLADELWC091",
-  );
+  // Exact native r_*_null errors for the four captured mutation exports.
+  for (const operation of ["createListInfo", "updateListInfoByName", "deleteListInfo", "updateListPreferences"]) {
+    await assert.rejects(module[operation](null), error =>
+      error.name === "Error" && error.message === `Invalid config for "${operation}"`);
+  }
 });
 
 test("graphql modules export tag helpers and empty local query results", async () => {

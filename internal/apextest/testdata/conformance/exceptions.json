@@ -1,0 +1,3376 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "orgObjects": [
+    "Account"
+  ],
+  "Declarations": {
+    "ExProbeException": "public class ExProbeException extends Exception {}",
+    "ExOtherException": "public class ExOtherException extends Exception {}",
+    "ExFlow": "public class ExFlow {\n public List<String> trail=new List<String>();\n public Integer choose(Integer mode){\n  try {trail.add('try'); if(mode==1){throw new ExProbeException('flow');} if(mode==2){return 2;} return 1;}\n  catch(ExProbeException e){trail.add('catch');return 3;}\n  finally {trail.add('finally');}\n }\n public void raise(String message){throw new ExProbeException(message);}\n public void throwNull(){ExProbeException e;throw e;}\n public void leaf(){throw new ExProbeException('leaf');}\n public void middle(){leaf();}\n public void rethrow(){try {leaf();}catch(ExProbeException e){throw e;}}\n public void wrap(){try {leaf();}catch(ExProbeException e){throw new ExOtherException('wrapped',e);}}\n public void nullLeaf(){String s; s.length();}\n public void conversionLeaf(){Integer.valueOf('not-an-integer');}\n}",
+    "ExFieldsException": "public class ExFieldsException extends Exception {public Integer extra=7;public String text;}",
+    "ExPlain": "public class ExPlain {public Integer extra=7;}",
+    "ExDisplayEmpty": "public class ExDisplayEmpty {}",
+    "ExDisplayFields": "public class ExDisplayFields {public String text; public Integer extra=7; public Boolean flag=false;}",
+    "ExDisplayValue": "public class ExDisplayValue {public String value='value-text';}",
+    "ExDisplayMessage": "public class ExDisplayMessage {public String message='message-text';}",
+    "ExDisplayOverride": "public class ExDisplayOverride {public Integer extra=7; public override String toString(){return 'override-text';}}",
+    "A06DisplayOuter": "public class A06DisplayOuter {\n public class Empty {}\n public class WithValue {public String value='x';}\n}\n",
+    "Plain": "public class Plain {}",
+    "Named": "public class Named {public override String toString(){return 'custom';}}",
+    "A06DependencyBaseException": "public virtual class A06DependencyBaseException extends Exception {}\n",
+    "A06DependencyMidException": "public virtual class A06DependencyMidException extends A06DependencyBaseException {}\n"
+  },
+  "Cases": [
+    {
+      "ID": "R001",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException(); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "ExProbeException|Script-thrown exception|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R002",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException('message'); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "ExProbeException|message|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R003",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException(''); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "ExProbeException||true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R004",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "COMPILE_ERROR\tline 28: Ambiguous method signature: void <init>(NULL)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 28,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R004",
+          "Source": "@IsTest private class A06Native62R004 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ExProbeException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "67.0": {
+          "Name": "A06Native67R004",
+          "Source": "@IsTest private class A06Native67R004 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ExProbeException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        }
+      }
+    },
+    {
+      "ID": "R005",
+      "Group": "custom-exception-declaration",
+      "Code": "try {throw new ExProbeException('thrown');}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "ExProbeException|thrown",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R006",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExOtherException(); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "ExOtherException|Script-thrown exception|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R007",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExOtherException('message'); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "ExOtherException|message|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R008",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExOtherException(''); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "ExOtherException||true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R009",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExOtherException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "COMPILE_ERROR\tline 32: Ambiguous method signature: void <init>(NULL)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 32,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R009",
+          "Source": "@IsTest private class A06Native62R009 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ExOtherException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "67.0": {
+          "Name": "A06Native67R009",
+          "Source": "@IsTest private class A06Native67R009 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ExOtherException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        }
+      }
+    },
+    {
+      "ID": "R010",
+      "Group": "custom-exception-declaration",
+      "Code": "try {throw new ExOtherException('thrown');}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "ExOtherException|thrown",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R011",
+      "Group": "exception-methods",
+      "Code": "Exception e=new NullPointerException(); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.NullPointerException|Script-thrown exception|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R012",
+      "Group": "exception-methods",
+      "Code": "Exception e=new NullPointerException('message'); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "COMPILE_ERROR\tline 34: Constructor not defined: [System.NullPointerException].<Constructor>(String)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 34,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R012",
+          "Source": "@IsTest private class A06Native62R012 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException('message'); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        },
+        "67.0": {
+          "Name": "A06Native67R012",
+          "Source": "@IsTest private class A06Native67R012 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException('message'); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        }
+      }
+    },
+    {
+      "ID": "R013",
+      "Group": "exception-methods",
+      "Code": "Exception e=new NullPointerException(''); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "COMPILE_ERROR\tline 34: Constructor not defined: [System.NullPointerException].<Constructor>(String)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 34,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R013",
+          "Source": "@IsTest private class A06Native62R013 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException(''); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        },
+        "67.0": {
+          "Name": "A06Native67R013",
+          "Source": "@IsTest private class A06Native67R013 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException(''); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        }
+      }
+    },
+    {
+      "ID": "R014",
+      "Group": "exception-methods",
+      "Code": "Exception e=new NullPointerException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "COMPILE_ERROR\tline 34: Constructor not defined: [System.NullPointerException].<Constructor>(NULL)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 34,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R014",
+          "Source": "@IsTest private class A06Native62R014 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(NULL)"
+        },
+        "67.0": {
+          "Name": "A06Native67R014",
+          "Source": "@IsTest private class A06Native67R014 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(NULL)"
+        }
+      }
+    },
+    {
+      "ID": "R015",
+      "Group": "exception-methods",
+      "Code": "try {throw new NullPointerException('thrown');}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "COMPILE_ERROR\tline 34: Constructor not defined: [System.NullPointerException].<Constructor>(String)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 34,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R015",
+          "Source": "@IsTest private class A06Native62R015 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry {throw new NullPointerException('thrown');}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        },
+        "67.0": {
+          "Name": "A06Native67R015",
+          "Source": "@IsTest private class A06Native67R015 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry {throw new NullPointerException('thrown');}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        }
+      }
+    },
+    {
+      "ID": "R016",
+      "Group": "exception-methods",
+      "Code": "Exception e=new IllegalArgumentException(); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.IllegalArgumentException|Script-thrown exception|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R017",
+      "Group": "exception-methods",
+      "Code": "Exception e=new IllegalArgumentException('message'); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.IllegalArgumentException|message|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R018",
+      "Group": "exception-methods",
+      "Code": "Exception e=new IllegalArgumentException(''); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.IllegalArgumentException||true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R019",
+      "Group": "exception-methods",
+      "Code": "Exception e=new IllegalArgumentException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "COMPILE_ERROR\tline 37: Ambiguous method signature: void <init>(NULL)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 37,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R019",
+          "Source": "@IsTest private class A06Native62R019 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new IllegalArgumentException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "67.0": {
+          "Name": "A06Native67R019",
+          "Source": "@IsTest private class A06Native67R019 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new IllegalArgumentException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        }
+      }
+    },
+    {
+      "ID": "R020",
+      "Group": "exception-methods",
+      "Code": "try {throw new IllegalArgumentException('thrown');}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "System.IllegalArgumentException|thrown",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R021",
+      "Group": "exception-methods",
+      "Code": "Exception e=new TypeException(); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.TypeException|Script-thrown exception|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R022",
+      "Group": "exception-methods",
+      "Code": "Exception e=new TypeException('message'); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.TypeException|message|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R023",
+      "Group": "exception-methods",
+      "Code": "Exception e=new TypeException(''); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.TypeException||true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R024",
+      "Group": "exception-methods",
+      "Code": "Exception e=new TypeException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "COMPILE_ERROR\tline 41: Ambiguous method signature: void <init>(NULL)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 41,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R024",
+          "Source": "@IsTest private class A06Native62R024 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new TypeException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "67.0": {
+          "Name": "A06Native67R024",
+          "Source": "@IsTest private class A06Native67R024 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new TypeException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        }
+      }
+    },
+    {
+      "ID": "R025",
+      "Group": "exception-methods",
+      "Code": "try {throw new TypeException('thrown');}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "System.TypeException|thrown",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R026",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ListException(); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.ListException|Script-thrown exception|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R027",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ListException('message'); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.ListException|message|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R028",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ListException(''); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.ListException||true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R029",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ListException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "COMPILE_ERROR\tline 45: Ambiguous method signature: void <init>(NULL)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 45,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R029",
+          "Source": "@IsTest private class A06Native62R029 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ListException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "67.0": {
+          "Name": "A06Native67R029",
+          "Source": "@IsTest private class A06Native67R029 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ListException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        }
+      }
+    },
+    {
+      "ID": "R030",
+      "Group": "exception-methods",
+      "Code": "try {throw new ListException('thrown');}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "System.ListException|thrown",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R031",
+      "Group": "exception-methods",
+      "Code": "Exception e=new StringException(); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.StringException|Script-thrown exception|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R032",
+      "Group": "exception-methods",
+      "Code": "Exception e=new StringException('message'); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.StringException|message|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R033",
+      "Group": "exception-methods",
+      "Code": "Exception e=new StringException(''); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.StringException||true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R034",
+      "Group": "exception-methods",
+      "Code": "Exception e=new StringException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "COMPILE_ERROR\tline 49: Ambiguous method signature: void <init>(NULL)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 49,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R034",
+          "Source": "@IsTest private class A06Native62R034 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new StringException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "67.0": {
+          "Name": "A06Native67R034",
+          "Source": "@IsTest private class A06Native67R034 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new StringException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        }
+      }
+    },
+    {
+      "ID": "R035",
+      "Group": "exception-methods",
+      "Code": "try {throw new StringException('thrown');}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "System.StringException|thrown",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R036",
+      "Group": "exception-methods",
+      "Code": "Exception e=new QueryException(); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.QueryException|Script-thrown exception|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R037",
+      "Group": "exception-methods",
+      "Code": "Exception e=new QueryException('message'); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.QueryException|message|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R038",
+      "Group": "exception-methods",
+      "Code": "Exception e=new QueryException(''); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.QueryException||true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R039",
+      "Group": "exception-methods",
+      "Code": "Exception e=new QueryException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "COMPILE_ERROR\tline 53: Ambiguous method signature: void <init>(NULL)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 53,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R039",
+          "Source": "@IsTest private class A06Native62R039 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new QueryException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "67.0": {
+          "Name": "A06Native67R039",
+          "Source": "@IsTest private class A06Native67R039 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new QueryException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        }
+      }
+    },
+    {
+      "ID": "R040",
+      "Group": "exception-methods",
+      "Code": "try {throw new QueryException('thrown');}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "System.QueryException|thrown",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R041",
+      "Group": "exception-methods",
+      "Code": "Exception e=new MathException(); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.MathException|Script-thrown exception|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R042",
+      "Group": "exception-methods",
+      "Code": "Exception e=new MathException('message'); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.MathException|message|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R043",
+      "Group": "exception-methods",
+      "Code": "Exception e=new MathException(''); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.MathException||true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R044",
+      "Group": "exception-methods",
+      "Code": "Exception e=new MathException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "COMPILE_ERROR\tline 57: Ambiguous method signature: void <init>(NULL)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 57,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R044",
+          "Source": "@IsTest private class A06Native62R044 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new MathException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "67.0": {
+          "Name": "A06Native67R044",
+          "Source": "@IsTest private class A06Native67R044 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new MathException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        }
+      }
+    },
+    {
+      "ID": "R045",
+      "Group": "exception-methods",
+      "Code": "try {throw new MathException('thrown');}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "System.MathException|thrown",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R046",
+      "Group": "exception-methods",
+      "Code": "Exception e=new JSONException(); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.JSONException|Script-thrown exception|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R047",
+      "Group": "exception-methods",
+      "Code": "Exception e=new JSONException('message'); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.JSONException|message|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R048",
+      "Group": "exception-methods",
+      "Code": "Exception e=new JSONException(''); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "System.JSONException||true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R049",
+      "Group": "exception-methods",
+      "Code": "Exception e=new JSONException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);",
+      "Expected": "COMPILE_ERROR\tline 61: Ambiguous method signature: void <init>(NULL)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 61,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R049",
+          "Source": "@IsTest private class A06Native62R049 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new JSONException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "67.0": {
+          "Name": "A06Native67R049",
+          "Source": "@IsTest private class A06Native67R049 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new JSONException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        }
+      }
+    },
+    {
+      "ID": "R050",
+      "Group": "exception-methods",
+      "Code": "try {throw new JSONException('thrown');}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "System.JSONException|thrown",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R051",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException();e.setMessage('message');r=e.getMessage();",
+      "Expected": "message",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R052",
+      "Group": "uncaught-output-shape",
+      "Code": "new ExFlow().raise('message'); r='no-error';",
+      "Expected": "EXC|ExProbeException|message",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R053",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException();e.setMessage('');r=e.getMessage();",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R054",
+      "Group": "uncaught-output-shape",
+      "Code": "new ExFlow().raise(''); r='no-error';",
+      "Expected": "EXC|ExProbeException|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R055",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException();e.setMessage('null');r=e.getMessage();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R056",
+      "Group": "uncaught-output-shape",
+      "Code": "new ExFlow().raise('null'); r='no-error';",
+      "Expected": "EXC|ExProbeException|null",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R057",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException();e.setMessage('line\\nbreak');r=e.getMessage();",
+      "Expected": "line\\nbreak",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R058",
+      "Group": "uncaught-output-shape",
+      "Code": "new ExFlow().raise('line\\nbreak'); r='no-error';",
+      "Expected": "EXC|ExProbeException|line\\nbreak",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R059",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException();e.setMessage('carriage\\rreturn');r=e.getMessage();",
+      "Expected": "carriage\\rreturn",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R060",
+      "Group": "uncaught-output-shape",
+      "Code": "new ExFlow().raise('carriage\\rreturn'); r='no-error';",
+      "Expected": "EXC|ExProbeException|carriage\\rreturn",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R061",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException();e.setMessage('tab\\tvalue');r=e.getMessage();",
+      "Expected": "tab\tvalue",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R062",
+      "Group": "uncaught-output-shape",
+      "Code": "new ExFlow().raise('tab\\tvalue'); r='no-error';",
+      "Expected": "EXC|ExProbeException|tab\tvalue",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R063",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException();e.setMessage('quote\\'pipe|');r=e.getMessage();",
+      "Expected": "quote'pipe|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R064",
+      "Group": "uncaught-output-shape",
+      "Code": "new ExFlow().raise('quote\\'pipe|'); r='no-error';",
+      "Expected": "EXC|ExProbeException|quote'pipe|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R065",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException();e.setMessage('<>&');r=e.getMessage();",
+      "Expected": "<>&",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R066",
+      "Group": "uncaught-output-shape",
+      "Code": "new ExFlow().raise('<>&'); r='no-error';",
+      "Expected": "EXC|ExProbeException|<>&",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R067",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException();e.setMessage('snowman \u2603');r=e.getMessage();",
+      "Expected": "snowman \u2603",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R068",
+      "Group": "uncaught-output-shape",
+      "Code": "new ExFlow().raise('snowman \u2603'); r='no-error';",
+      "Expected": "EXC|ExProbeException|snowman \u2603",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R069",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException('before');e.setMessage(null);r=e.getMessage();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R070",
+      "Group": "uncaught-output-shape",
+      "Code": "new ExFlow().throwNull();r='no-error';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R071",
+      "Group": "exception-methods",
+      "Code": "Exception cause=new ExProbeException('inner'); Exception e=new ExProbeException(cause); Exception c=e.getCause();r=e.getMessage()+'|'+String.valueOf(c==null)+'|'+String.valueOf(c===cause);",
+      "Expected": "Script-thrown exception|false|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R072",
+      "Group": "exception-methods",
+      "Code": "Exception cause=new ExProbeException('inner'); Exception e=new ExProbeException('outer',cause); Exception c=e.getCause();r=e.getMessage()+'|'+String.valueOf(c==null)+'|'+String.valueOf(c===cause);",
+      "Expected": "outer|false|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R073",
+      "Group": "exception-methods",
+      "Code": "Exception cause=new ExProbeException('inner'); Exception e=new ExProbeException('outer',null); Exception c=e.getCause();r=e.getMessage()+'|'+String.valueOf(c==null)+'|'+String.valueOf(c===cause);",
+      "Expected": "outer|true|false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R074",
+      "Group": "exception-methods",
+      "Code": "Exception cause=new ExProbeException('inner'); Exception e=new ExOtherException(cause); Exception c=e.getCause();r=e.getMessage()+'|'+String.valueOf(c==null)+'|'+String.valueOf(c===cause);",
+      "Expected": "Script-thrown exception|false|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R075",
+      "Group": "exception-methods",
+      "Code": "Exception cause=new ExProbeException('inner'); Exception e=new ExOtherException('outer',cause); Exception c=e.getCause();r=e.getMessage()+'|'+String.valueOf(c==null)+'|'+String.valueOf(c===cause);",
+      "Expected": "outer|false|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R076",
+      "Group": "exception-methods",
+      "Code": "Exception cause=new ExProbeException('inner'); Exception e=new ExOtherException('outer',null); Exception c=e.getCause();r=e.getMessage()+'|'+String.valueOf(c==null)+'|'+String.valueOf(c===cause);",
+      "Expected": "outer|true|false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R077",
+      "Group": "exception-methods",
+      "Code": "Exception cause=new ExProbeException('inner'); Exception e=new IllegalArgumentException(cause); Exception c=e.getCause();r=e.getMessage()+'|'+String.valueOf(c==null)+'|'+String.valueOf(c===cause);",
+      "Expected": "Script-thrown exception|false|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R078",
+      "Group": "exception-methods",
+      "Code": "Exception cause=new ExProbeException('inner'); Exception e=new IllegalArgumentException('outer',cause); Exception c=e.getCause();r=e.getMessage()+'|'+String.valueOf(c==null)+'|'+String.valueOf(c===cause);",
+      "Expected": "outer|false|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R079",
+      "Group": "exception-methods",
+      "Code": "Exception cause=new ExProbeException('inner'); Exception e=new IllegalArgumentException('outer',null); Exception c=e.getCause();r=e.getMessage()+'|'+String.valueOf(c==null)+'|'+String.valueOf(c===cause);",
+      "Expected": "outer|true|false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R080",
+      "Group": "exception-methods",
+      "Code": "Exception cause=new ExProbeException('inner'); Exception e=new TypeException(cause); Exception c=e.getCause();r=e.getMessage()+'|'+String.valueOf(c==null)+'|'+String.valueOf(c===cause);",
+      "Expected": "Script-thrown exception|false|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R081",
+      "Group": "exception-methods",
+      "Code": "Exception cause=new ExProbeException('inner'); Exception e=new TypeException('outer',cause); Exception c=e.getCause();r=e.getMessage()+'|'+String.valueOf(c==null)+'|'+String.valueOf(c===cause);",
+      "Expected": "outer|false|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R082",
+      "Group": "exception-methods",
+      "Code": "Exception cause=new ExProbeException('inner'); Exception e=new TypeException('outer',null); Exception c=e.getCause();r=e.getMessage()+'|'+String.valueOf(c==null)+'|'+String.valueOf(c===cause);",
+      "Expected": "outer|true|false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R083",
+      "Group": "exception-methods",
+      "Code": "Exception a=new ExProbeException('a');Exception b=new ExOtherException('b',a);Exception c=new ExProbeException('c',b);r=c.getCause().getCause()===a;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R084",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException('m');r=e instanceof Exception;",
+      "Expected": "COMPILE_ERROR\tline 58: Operation instanceof is always true since an instance of Exception is always an instance of Exception",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 58,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R084",
+          "Source": "@IsTest private class A06Native62R084 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ExProbeException('m');r=e instanceof Exception;\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tOperation instanceof is always true since an instance of Exception is always an instance of Exception"
+        },
+        "67.0": {
+          "Name": "A06Native67R084",
+          "Source": "@IsTest private class A06Native67R084 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ExProbeException('m');r=e instanceof Exception;\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tOperation instanceof is always true since an instance of Exception is always an instance of Exception"
+        }
+      }
+    },
+    {
+      "ID": "R085",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException('m');r=e instanceof ExProbeException;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R086",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException('m');r=e instanceof ExOtherException;",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R087",
+      "Group": "exception-methods",
+      "Code": "Object e=new ExProbeException('m');r=((Exception)e).getMessage();",
+      "Expected": "m",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R088",
+      "Group": "exception-methods",
+      "Code": "Exception e; r=e?.getMessage();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R089",
+      "Group": "exception-methods",
+      "Code": "Exception e; r=e.getMessage();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R090",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException('m');r=e.getCause()?.getMessage();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R091",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException('m');r=e.getCause().getMessage();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R092",
+      "Group": "uncaught-output-shape",
+      "Code": "String x; x.length(); r='no-error';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R093",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {String x; x.length(); r='no-error';}catch(NullPointerException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R094",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {String x; x.length(); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.NullPointerException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R095",
+      "Group": "uncaught-output-shape",
+      "Code": "List<Integer> x; x.size(); r='no-error';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R096",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {List<Integer> x; x.size(); r='no-error';}catch(NullPointerException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R097",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {List<Integer> x; x.size(); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.NullPointerException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R098",
+      "Group": "uncaught-output-shape",
+      "Code": "Map<String,Integer> x; x.get('a'); r='no-error';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R099",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {Map<String,Integer> x; x.get('a'); r='no-error';}catch(NullPointerException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R100",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {Map<String,Integer> x; x.get('a'); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.NullPointerException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R101",
+      "Group": "uncaught-output-shape",
+      "Code": "Account x; String y=x.Name; r='no-error';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R102",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {Account x; String y=x.Name; r='no-error';}catch(NullPointerException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R103",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {Account x; String y=x.Name; trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.NullPointerException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R104",
+      "Group": "uncaught-output-shape",
+      "Code": "List<Integer> x=new List<Integer>();Integer y=x.get(0); r='no-error';",
+      "Expected": "EXC|System.ListException|List index out of bounds: 0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R105",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {List<Integer> x=new List<Integer>();Integer y=x.get(0); r='no-error';}catch(ListException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R106",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {List<Integer> x=new List<Integer>();Integer y=x.get(0); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.ListException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R107",
+      "Group": "uncaught-output-shape",
+      "Code": "List<Integer> x=new List<Integer>{1};Integer y=x.get(-1); r='no-error';",
+      "Expected": "EXC|System.ListException|List index out of bounds: -1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R108",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {List<Integer> x=new List<Integer>{1};Integer y=x.get(-1); r='no-error';}catch(ListException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R109",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {List<Integer> x=new List<Integer>{1};Integer y=x.get(-1); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.ListException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R110",
+      "Group": "uncaught-output-shape",
+      "Code": "List<Integer> x=new List<Integer>{1};Integer y=x.get(1); r='no-error';",
+      "Expected": "EXC|System.ListException|List index out of bounds: 1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R111",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {List<Integer> x=new List<Integer>{1};Integer y=x.get(1); r='no-error';}catch(ListException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R112",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {List<Integer> x=new List<Integer>{1};Integer y=x.get(1); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.ListException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R113",
+      "Group": "uncaught-output-shape",
+      "Code": "Integer x=Integer.valueOf('bad'); r='no-error';",
+      "Expected": "EXC|System.TypeException|Invalid integer: bad",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R114",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {Integer x=Integer.valueOf('bad'); r='no-error';}catch(TypeException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.TypeException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R115",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {Integer x=Integer.valueOf('bad'); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.TypeException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R116",
+      "Group": "uncaught-output-shape",
+      "Code": "Long x=Long.valueOf('bad'); r='no-error';",
+      "Expected": "EXC|System.TypeException|Invalid long: bad",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R117",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {Long x=Long.valueOf('bad'); r='no-error';}catch(TypeException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.TypeException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R118",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {Long x=Long.valueOf('bad'); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.TypeException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R119",
+      "Group": "uncaught-output-shape",
+      "Code": "Decimal x=Decimal.valueOf('bad'); r='no-error';",
+      "Expected": "EXC|System.TypeException|Invalid decimal: bad",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R120",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {Decimal x=Decimal.valueOf('bad'); r='no-error';}catch(TypeException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.TypeException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R121",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {Decimal x=Decimal.valueOf('bad'); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.TypeException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R122",
+      "Group": "uncaught-output-shape",
+      "Code": "Date x=Date.valueOf('bad'); r='no-error';",
+      "Expected": "EXC|System.TypeException|Invalid date: bad",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R123",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {Date x=Date.valueOf('bad'); r='no-error';}catch(TypeException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.TypeException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R124",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {Date x=Date.valueOf('bad'); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.TypeException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R125",
+      "Group": "uncaught-output-shape",
+      "Code": "Id x=Id.valueOf('bad'); r='no-error';",
+      "Expected": "EXC|System.StringException|Invalid id: bad",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R126",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {Id x=Id.valueOf('bad'); r='no-error';}catch(TypeException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "base|System.StringException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R127",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {Id x=Id.valueOf('bad'); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.StringException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R128",
+      "Group": "uncaught-output-shape",
+      "Code": "Object x='text';Integer y=(Integer)x; r='no-error';",
+      "Expected": "EXC|System.TypeException|Invalid conversion from runtime type String to Integer",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R129",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {Object x='text';Integer y=(Integer)x; r='no-error';}catch(TypeException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.TypeException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R130",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {Object x='text';Integer y=(Integer)x; trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.TypeException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R131",
+      "Group": "uncaught-output-shape",
+      "Code": "Integer zero=0;Integer x=1/zero; r='no-error';",
+      "Expected": "EXC|System.MathException|Divide by 0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R132",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {Integer zero=0;Integer x=1/zero; r='no-error';}catch(MathException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.MathException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R133",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {Integer zero=0;Integer x=1/zero; trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.MathException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R134",
+      "Group": "uncaught-output-shape",
+      "Code": "Decimal zero=0;Decimal x=1/zero; r='no-error';",
+      "Expected": "EXC|System.MathException|Divide by 0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R135",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {Decimal zero=0;Decimal x=1/zero; r='no-error';}catch(MathException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.MathException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R136",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {Decimal zero=0;Decimal x=1/zero; trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.MathException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R137",
+      "Group": "uncaught-output-shape",
+      "Code": "Object x=JSON.deserializeUntyped('{'); r='no-error';",
+      "Expected": "EXC|System.JSONException|Unexpected end-of-input: expected close marker for OBJECT (from [line:1, column:3]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R138",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {Object x=JSON.deserializeUntyped('{'); r='no-error';}catch(JSONException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.JSONException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R139",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {Object x=JSON.deserializeUntyped('{'); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.JSONException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R140",
+      "Group": "uncaught-output-shape",
+      "Code": "String x='a';String y=x.substring(2); r='no-error';",
+      "Expected": "EXC|System.StringException|Starting position out of bounds: 2",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R141",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {String x='a';String y=x.substring(2); r='no-error';}catch(StringException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.StringException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R142",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {String x='a';String y=x.substring(2); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.StringException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R143",
+      "Group": "uncaught-output-shape",
+      "Code": "Account x=[SELECT Id FROM Account WHERE Id=null]; r='no-error';",
+      "Expected": "EXC|System.QueryException|List has no rows for assignment to SObject",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R144",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {Account x=[SELECT Id FROM Account WHERE Id=null]; r='no-error';}catch(QueryException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.QueryException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R145",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {Account x=[SELECT Id FROM Account WHERE Id=null]; trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.QueryException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R146",
+      "Group": "uncaught-output-shape",
+      "Code": "Account x=new Account();Object y=x.get('NotAField__c'); r='no-error';",
+      "Expected": "EXC|System.SObjectException|Invalid field NotAField__c for Account",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R147",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {Account x=new Account();Object y=x.get('NotAField__c'); r='no-error';}catch(SObjectException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.SObjectException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R148",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {Account x=new Account();Object y=x.get('NotAField__c'); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.SObjectException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R149",
+      "Group": "uncaught-output-shape",
+      "Code": "Datetime x=Datetime.valueOf('bad'); r='no-error';",
+      "Expected": "EXC|System.TypeException|Invalid date/time: bad",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R150",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try {Datetime x=Datetime.valueOf('bad'); r='no-error';}catch(TypeException e){r='specific|'+e.getTypeName();}catch(Exception e){r='base|'+e.getTypeName();}",
+      "Expected": "specific|System.TypeException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R151",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String trace='';try {Datetime x=Datetime.valueOf('bad'); trace+='normal';}catch(Exception e){trace+='catch|'+e.getTypeName();}finally{trace+='|finally';}r=trace;",
+      "Expected": "catch|System.TypeException|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R152",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String t='';try{t+='try|';throw new ExProbeException('x');}catch(ExProbeException e){t+='custom|';}catch(NullPointerException e){t+='null|';}catch(Exception e){t+='base|';}finally{t+='finally';}r=t;",
+      "Expected": "try|custom|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R153",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try{try{throw new ExProbeException('x');}catch(ExProbeException e){throw e;}}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "ExProbeException|x",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R154",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String t='';try{t+='try|';throw new ExOtherException('x');}catch(ExProbeException e){t+='custom|';}catch(NullPointerException e){t+='null|';}catch(Exception e){t+='base|';}finally{t+='finally';}r=t;",
+      "Expected": "try|base|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R155",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try{try{throw new ExOtherException('x');}catch(ExProbeException e){throw e;}}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "ExOtherException|x",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R156",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String t='';try{t+='try|';throw new NullPointerException('x');}catch(ExProbeException e){t+='custom|';}catch(NullPointerException e){t+='null|';}catch(Exception e){t+='base|';}finally{t+='finally';}r=t;",
+      "Expected": "COMPILE_ERROR\tline 30: Constructor not defined: [System.NullPointerException].<Constructor>(String)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 30,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R156",
+          "Source": "@IsTest private class A06Native62R156 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nString t='';try{t+='try|';throw new NullPointerException('x');}catch(ExProbeException e){t+='custom|';}catch(NullPointerException e){t+='null|';}catch(Exception e){t+='base|';}finally{t+='finally';}r=t;\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        },
+        "67.0": {
+          "Name": "A06Native67R156",
+          "Source": "@IsTest private class A06Native67R156 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nString t='';try{t+='try|';throw new NullPointerException('x');}catch(ExProbeException e){t+='custom|';}catch(NullPointerException e){t+='null|';}catch(Exception e){t+='base|';}finally{t+='finally';}r=t;\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        }
+      }
+    },
+    {
+      "ID": "R157",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try{try{throw new NullPointerException('x');}catch(ExProbeException e){throw e;}}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "COMPILE_ERROR\tline 30: Constructor not defined: [System.NullPointerException].<Constructor>(String)",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 30,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R157",
+          "Source": "@IsTest private class A06Native62R157 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{try{throw new NullPointerException('x');}catch(ExProbeException e){throw e;}}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        },
+        "67.0": {
+          "Name": "A06Native67R157",
+          "Source": "@IsTest private class A06Native67R157 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{try{throw new NullPointerException('x');}catch(ExProbeException e){throw e;}}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        }
+      }
+    },
+    {
+      "ID": "R158",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String t='';try{t+='try|';throw new TypeException('x');}catch(ExProbeException e){t+='custom|';}catch(NullPointerException e){t+='null|';}catch(Exception e){t+='base|';}finally{t+='finally';}r=t;",
+      "Expected": "try|base|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R159",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try{try{throw new TypeException('x');}catch(ExProbeException e){throw e;}}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "System.TypeException|x",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R160",
+      "Group": "catch-ordering-and-finally",
+      "Code": "ExFlow x=new ExFlow();Integer v=x.choose(0);r=v+'|'+String.join(x.trail,'|');",
+      "Expected": "1|try|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R161",
+      "Group": "catch-ordering-and-finally",
+      "Code": "ExFlow x=new ExFlow();Integer v=x.choose(1);r=v+'|'+String.join(x.trail,'|');",
+      "Expected": "3|try|catch|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R162",
+      "Group": "catch-ordering-and-finally",
+      "Code": "ExFlow x=new ExFlow();Integer v=x.choose(2);r=v+'|'+String.join(x.trail,'|');",
+      "Expected": "2|try|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R163",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String t='';for(Integer i=0;i<2;i++){try{break;}catch(Exception e){t+='catch|';}finally{t+='finally|';}t+='after|';}r=t;",
+      "Expected": "finally|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R164",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String t='';for(Integer i=0;i<2;i++){try{continue;}catch(Exception e){t+='catch|';}finally{t+='finally|';}t+='after|';}r=t;",
+      "Expected": "finally|finally|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R165",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String t='';for(Integer i=0;i<2;i++){try{throw new ExProbeException('loop');}catch(Exception e){t+='catch|';}finally{t+='finally|';}t+='after|';}r=t;",
+      "Expected": "catch|finally|after|catch|finally|after|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R166",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String t='';for(Integer i=0;i<2;i++){try{t+='body|';}catch(Exception e){t+='catch|';}finally{t+='finally|';}t+='after|';}r=t;",
+      "Expected": "body|finally|after|body|finally|after|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R167",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String t='';try{t+='try|';}finally{t+='finally';}r=t;",
+      "Expected": "try|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R168",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String t='';try{try{throw new ExProbeException('x');}finally{t+='inner|';}}catch(Exception e){t+='catch|';}finally{t+='outer';}r=t;",
+      "Expected": "inner|catch|outer",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R169",
+      "Group": "catch-ordering-and-finally",
+      "Code": "String t='';try{try{throw new ExProbeException('first');}catch(Exception e){t+='catch|';throw new ExOtherException('second');}finally{t+='finally|';}}catch(Exception e){t+=e.getMessage();}r=t;",
+      "Expected": "catch|finally|second",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R170",
+      "Group": "catch-ordering-and-finally",
+      "Code": "try{try{throw new ExProbeException('first');}finally{throw new ExOtherException('last');}}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "ExOtherException|last",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R171",
+      "Group": "catch-ordering-and-finally",
+      "Code": "ExProbeException original=new ExProbeException('same');try{try{throw original;}catch(Exception e){throw e;}}catch(Exception e){r=e===original;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R172",
+      "Group": "catch-ordering-and-finally",
+      "Code": "Exception saved;try{throw new ExProbeException('x');}catch(Exception e){saved=e;}finally{saved.setMessage('final');}r=saved.getMessage();",
+      "Expected": "final",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R173",
+      "Group": "catch-ordering-and-finally",
+      "Code": "Integer n=0;try{throw new ExProbeException('x');}catch(ExProbeException e){n++;}catch(Exception e){n+=10;}r=n;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R174",
+      "Group": "catch-ordering-and-finally",
+      "Code": "Integer n=0;try{throw new ExProbeException('x');}catch(Exception e){n++;}catch(ExProbeException e){n+=10;}r=n;",
+      "Expected": "COMPILE_ERROR\tline 46: Exception type already caught: ExProbeException",
+      "Compile": false,
+      "NativeNull": false,
+      "SourceLine": 46,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62R174",
+          "Source": "@IsTest private class A06Native62R174 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nInteger n=0;try{throw new ExProbeException('x');}catch(Exception e){n++;}catch(ExProbeException e){n+=10;}r=n;\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException type already caught: A06Native62R174.ExProbeException"
+        },
+        "67.0": {
+          "Name": "A06Native67R174",
+          "Source": "@IsTest private class A06Native67R174 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nInteger n=0;try{throw new ExProbeException('x');}catch(Exception e){n++;}catch(ExProbeException e){n+=10;}r=n;\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException type already caught: A06Native67R174.ExProbeException"
+        }
+      }
+    },
+    {
+      "ID": "R175",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().leaf();}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "ExProbeException|leaf",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R176",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().leaf();}catch(Exception e){r=e.getLineNumber()>0;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R177",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().leaf();}catch(Exception e){r=e.getStackTraceString()!=null;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R178",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().leaf();}catch(Exception e){r=e.getStackTraceString().contains('ExFlow');}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R179",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().middle();}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "ExProbeException|leaf",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R180",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().middle();}catch(Exception e){r=e.getLineNumber()>0;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R181",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().middle();}catch(Exception e){r=e.getStackTraceString()!=null;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R182",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().middle();}catch(Exception e){r=e.getStackTraceString().contains('ExFlow');}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R183",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().rethrow();}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "ExProbeException|leaf",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R184",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().rethrow();}catch(Exception e){r=e.getLineNumber()>0;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R185",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().rethrow();}catch(Exception e){r=e.getStackTraceString()!=null;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R186",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().rethrow();}catch(Exception e){r=e.getStackTraceString().contains('ExFlow');}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R187",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().wrap();}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "ExOtherException|wrapped",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R188",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().wrap();}catch(Exception e){r=e.getLineNumber()>0;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R189",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().wrap();}catch(Exception e){r=e.getStackTraceString()!=null;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R190",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().wrap();}catch(Exception e){r=e.getStackTraceString().contains('ExFlow');}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R191",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().nullLeaf();}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R192",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().nullLeaf();}catch(Exception e){r=e.getLineNumber()>0;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R193",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().nullLeaf();}catch(Exception e){r=e.getStackTraceString()!=null;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R194",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().nullLeaf();}catch(Exception e){r=e.getStackTraceString().contains('ExFlow');}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R195",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().conversionLeaf();}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "Expected": "System.TypeException|Invalid integer: not-an-integer",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R196",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().conversionLeaf();}catch(Exception e){r=e.getLineNumber()>0;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R197",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().conversionLeaf();}catch(Exception e){r=e.getStackTraceString()!=null;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R198",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().conversionLeaf();}catch(Exception e){r=e.getStackTraceString().contains('ExFlow');}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R199",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().wrap();}catch(Exception e){r=e.getCause().getTypeName()+'|'+e.getCause().getMessage();}",
+      "Expected": "ExProbeException|leaf",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R200",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().wrap();}catch(Exception e){r=e.getCause().getLineNumber()>0;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R201",
+      "Group": "exception-methods",
+      "Code": "try{new ExFlow().middle();}catch(Exception e){r=e.getStackTraceString().contains('leaf') && e.getStackTraceString().contains('middle');}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R202",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException();r=e.getLineNumber()>0;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R203",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException();r=e.getStackTraceString()!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R204",
+      "Group": "exception-methods",
+      "Code": "Exception e=new ExProbeException();r=String.valueOf(e);",
+      "Expected": "ExProbeException:[]: Script-thrown exception",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R205",
+      "Group": "uncatchable-exceptions-boundary",
+      "Code": "LimitException e; r=e==null;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R206",
+      "Group": "uncatchable-exceptions-boundary",
+      "Code": "Exception e; r=e instanceof LimitException;",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R207",
+      "Group": "uncatchable-exceptions-boundary",
+      "Code": "try{r='normal';}catch(LimitException e){r=e.getTypeName();}finally{r=String.valueOf(r)+'|finally';}",
+      "Expected": "normal|finally",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R208",
+      "Group": "uncatchable-exceptions-boundary",
+      "Code": "Exception e=new ExProbeException('control');try{throw e;}catch(LimitException x){r='limit';}catch(Exception x){r=x.getTypeName();}",
+      "Expected": "ExProbeException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R209",
+      "Group": "uncatchable-exceptions-boundary",
+      "Code": "LimitException e=new LimitException('manual');r=e.getTypeName();",
+      "Expected": "System.LimitException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R210",
+      "Group": "uncatchable-exceptions-boundary",
+      "Code": "try{if(false){throw new LimitException('manual');}r='guarded';}catch(LimitException e){r=e.getTypeName();}finally{}",
+      "Expected": "guarded",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R211",
+      "Group": "uncatchable-exceptions-boundary",
+      "Code": "try{System.assert(true,'A06-assert');r='normal';}catch(AssertException e){r=e.getTypeName();}",
+      "Expected": "normal",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R212",
+      "Group": "uncatchable-exceptions-boundary",
+      "Code": "AssertException e=new AssertException();r=e.getTypeName();",
+      "Expected": "System.AssertException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R213",
+      "Group": "uncatchable-exceptions-boundary",
+      "Code": "if(false){System.assert(false,'A06-assert');}r='guarded';",
+      "Expected": "guarded",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "C001",
+      "Group": "custom-exception-declaration",
+      "Code": "class ValidException extends Exception {} Exception e=new ValidException(); pq.out('C001','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C001",
+          "Source": "@IsTest private class A06Native62C001 {\nclass ValidException extends Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                          Exception e=new ValidException(); pq.out('C001','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06Native67C001",
+          "Source": "@IsTest private class A06Native67C001 {\nclass ValidException extends Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                          Exception e=new ValidException(); pq.out('C001','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    },
+    {
+      "ID": "C002",
+      "Group": "custom-exception-declaration",
+      "Code": "class ValidException extends Exception {public Integer extra=7;} ValidException e=new ValidException(); pq.out('C002','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C002",
+          "Source": "@IsTest private class A06Native62C002 {\nclass ValidException extends Exception {public Integer extra=7;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                 ValidException e=new ValidException(); pq.out('C002','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06Native67C002",
+          "Source": "@IsTest private class A06Native67C002 {\nclass ValidException extends Exception {public Integer extra=7;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                 ValidException e=new ValidException(); pq.out('C002','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    },
+    {
+      "ID": "C003",
+      "Group": "custom-exception-declaration",
+      "Code": "class ValidException extends System.Exception {} Exception e=new ValidException('x'); pq.out('C003','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C003",
+          "Source": "@IsTest private class A06Native62C003 {\nclass ValidException extends System.Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                 Exception e=new ValidException('x'); pq.out('C003','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06Native67C003",
+          "Source": "@IsTest private class A06Native67C003 {\nclass ValidException extends System.Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                 Exception e=new ValidException('x'); pq.out('C003','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    },
+    {
+      "ID": "C004",
+      "Group": "custom-exception-declaration",
+      "Code": "class BadName extends Exception {} pq.out('C004','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Classes extending Exception must have a name ending in Exception: BadName",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C004",
+          "Source": "@IsTest private class A06Native62C004 {\nclass BadName extends Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                   pq.out('C004','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06Native62C004.BadName"
+        },
+        "67.0": {
+          "Name": "A06Native67C004",
+          "Source": "@IsTest private class A06Native67C004 {\nclass BadName extends Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                   pq.out('C004','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06Native67C004.BadName"
+        }
+      }
+    },
+    {
+      "ID": "C005",
+      "Group": "custom-exception-declaration",
+      "Code": "class ExceptionChild extends Exception {} pq.out('C005','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Classes extending Exception must have a name ending in Exception: ExceptionChild",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C005",
+          "Source": "@IsTest private class A06Native62C005 {\nclass ExceptionChild extends Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                          pq.out('C005','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06Native62C005.ExceptionChild"
+        },
+        "67.0": {
+          "Name": "A06Native67C005",
+          "Source": "@IsTest private class A06Native67C005 {\nclass ExceptionChild extends Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                          pq.out('C005','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06Native67C005.ExceptionChild"
+        }
+      }
+    },
+    {
+      "ID": "C006",
+      "Group": "custom-exception-declaration",
+      "Code": "class ValidException {} throw new ValidException(); pq.out('C006','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Exception class must extend another Exception class: ValidException",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C006",
+          "Source": "@IsTest private class A06Native62C006 {\nclass ValidException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                        throw new ValidException(); pq.out('C006','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: A06Native62C006.ValidException"
+        },
+        "67.0": {
+          "Name": "A06Native67C006",
+          "Source": "@IsTest private class A06Native67C006 {\nclass ValidException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                        throw new ValidException(); pq.out('C006','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: A06Native67C006.ValidException"
+        }
+      }
+    },
+    {
+      "ID": "C007",
+      "Group": "custom-exception-declaration",
+      "Code": "class ValidException extends Object {} pq.out('C007','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Exception class must extend another Exception class: Object",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C007",
+          "Source": "@IsTest private class A06Native62C007 {\nclass ValidException extends Object {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                       pq.out('C007','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: Object"
+        },
+        "67.0": {
+          "Name": "A06Native67C007",
+          "Source": "@IsTest private class A06Native67C007 {\nclass ValidException extends Object {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                       pq.out('C007','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: Object"
+        }
+      }
+    },
+    {
+      "ID": "C008",
+      "Group": "custom-exception-declaration",
+      "Code": "class ValidException extends Exception {public ValidException(String s){}} pq.out('C008','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: System exception constructor already defined: void <init>(String)",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C008",
+          "Source": "@IsTest private class A06Native62C008 {\nclass ValidException extends Exception {public ValidException(String s){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                           pq.out('C008','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>(String)"
+        },
+        "67.0": {
+          "Name": "A06Native67C008",
+          "Source": "@IsTest private class A06Native67C008 {\nclass ValidException extends Exception {public ValidException(String s){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                           pq.out('C008','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>(String)"
+        }
+      }
+    },
+    {
+      "ID": "C009",
+      "Group": "custom-exception-declaration",
+      "Code": "virtual class BaseException extends Exception {} class ChildException extends BaseException {} pq.out('C009','accepted');",
+      "Expected": "COMPILE_ERROR\tline 1: classes are by default virtual",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 1,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C009",
+          "Source": "@IsTest private class A06Native62C009 {\nvirtual class BaseException extends Exception {}\nclass ChildException extends BaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                               pq.out('C009','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06Native67C009",
+          "Source": "@IsTest private class A06Native67C009 {\nvirtual class BaseException extends Exception {}\nclass ChildException extends BaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                               pq.out('C009','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    },
+    {
+      "ID": "C010",
+      "Group": "custom-exception-declaration",
+      "Code": "class BaseException extends Exception {} class ChildException extends BaseException {} pq.out('C010','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C010",
+          "Source": "@IsTest private class A06Native62C010 {\nclass BaseException extends Exception {}\nclass ChildException extends BaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                       pq.out('C010','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: A06Native62C010.BaseException"
+        },
+        "67.0": {
+          "Name": "A06Native67C010",
+          "Source": "@IsTest private class A06Native67C010 {\nclass BaseException extends Exception {}\nclass ChildException extends BaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                       pq.out('C010','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: A06Native67C010.BaseException"
+        }
+      }
+    },
+    {
+      "ID": "C011",
+      "Group": "custom-exception-declaration",
+      "Code": "class ValidException extends Exception {public override String getMessage(){return 'x';}} pq.out('C011','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C011",
+          "Source": "@IsTest private class A06Native62C011 {\nclass ValidException extends Exception {public override String getMessage(){return 'x';}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                          pq.out('C011','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06Native67C011",
+          "Source": "@IsTest private class A06Native67C011 {\nclass ValidException extends Exception {public override String getMessage(){return 'x';}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                          pq.out('C011','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    },
+    {
+      "ID": "C012",
+      "Group": "custom-exception-declaration",
+      "Code": "class ValidException extends Exception {public String customName(){return getTypeName();}} pq.out('C012','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C012",
+          "Source": "@IsTest private class A06Native62C012 {\nclass ValidException extends Exception {public String customName(){return getTypeName();}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                           pq.out('C012','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06Native67C012",
+          "Source": "@IsTest private class A06Native67C012 {\nclass ValidException extends Exception {public String customName(){return getTypeName();}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                           pq.out('C012','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    },
+    {
+      "ID": "C013",
+      "Group": "invalid-catch-throw",
+      "Code": "Exception e=new Exception(); pq.out('C013','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Exception",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C013",
+          "Source": "@IsTest private class A06Native62C013 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new Exception(); pq.out('C013','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tType cannot be constructed: Exception"
+        },
+        "67.0": {
+          "Name": "A06Native67C013",
+          "Source": "@IsTest private class A06Native67C013 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new Exception(); pq.out('C013','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tType cannot be constructed: Exception"
+        }
+      }
+    },
+    {
+      "ID": "C014",
+      "Group": "invalid-catch-throw",
+      "Code": "Exception e=new System.Exception('x'); pq.out('C014','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Exception",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C014",
+          "Source": "@IsTest private class A06Native62C014 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new System.Exception('x'); pq.out('C014','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tType cannot be constructed: Exception"
+        },
+        "67.0": {
+          "Name": "A06Native67C014",
+          "Source": "@IsTest private class A06Native67C014 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new System.Exception('x'); pq.out('C014','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tType cannot be constructed: Exception"
+        }
+      }
+    },
+    {
+      "ID": "C015",
+      "Group": "invalid-catch-throw",
+      "Code": "Exception e=new NullPointerException(1); pq.out('C015','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.NullPointerException].<Constructor>(Integer)",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C015",
+          "Source": "@IsTest private class A06Native62C015 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException(1); pq.out('C015','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(Integer)"
+        },
+        "67.0": {
+          "Name": "A06Native67C015",
+          "Source": "@IsTest private class A06Native67C015 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException(1); pq.out('C015','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(Integer)"
+        }
+      }
+    },
+    {
+      "ID": "C016",
+      "Group": "invalid-catch-throw",
+      "Code": "throw 1; pq.out('C016','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Throw expression must be of type exception: Integer",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C016",
+          "Source": "@IsTest private class A06Native62C016 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow 1; pq.out('C016','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: Integer"
+        },
+        "67.0": {
+          "Name": "A06Native67C016",
+          "Source": "@IsTest private class A06Native67C016 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow 1; pq.out('C016','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: Integer"
+        }
+      }
+    },
+    {
+      "ID": "C017",
+      "Group": "invalid-catch-throw",
+      "Code": "throw 'text'; pq.out('C017','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Throw expression must be of type exception: String",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C017",
+          "Source": "@IsTest private class A06Native62C017 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow 'text'; pq.out('C017','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: String"
+        },
+        "67.0": {
+          "Name": "A06Native67C017",
+          "Source": "@IsTest private class A06Native67C017 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow 'text'; pq.out('C017','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: String"
+        }
+      }
+    },
+    {
+      "ID": "C018",
+      "Group": "invalid-catch-throw",
+      "Code": "throw new Account(); pq.out('C018','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Throw expression must be of type exception: Account",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C018",
+          "Source": "@IsTest private class A06Native62C018 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow new Account(); pq.out('C018','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: Account"
+        },
+        "67.0": {
+          "Name": "A06Native67C018",
+          "Source": "@IsTest private class A06Native67C018 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow new Account(); pq.out('C018','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: Account"
+        }
+      }
+    },
+    {
+      "ID": "C019",
+      "Group": "invalid-catch-throw",
+      "Code": "Object e=new NullPointerException();throw e; pq.out('C019','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Throw expression must be of type exception: Object",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C019",
+          "Source": "@IsTest private class A06Native62C019 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nObject e=new NullPointerException();throw e; pq.out('C019','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: Object"
+        },
+        "67.0": {
+          "Name": "A06Native67C019",
+          "Source": "@IsTest private class A06Native67C019 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nObject e=new NullPointerException();throw e; pq.out('C019','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: Object"
+        }
+      }
+    },
+    {
+      "ID": "C020",
+      "Group": "invalid-catch-throw",
+      "Code": "throw; pq.out('C020','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Unexpected token ';'.",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C020",
+          "Source": "@IsTest private class A06Native62C020 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow; pq.out('C020','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tUnexpected token ';'."
+        },
+        "67.0": {
+          "Name": "A06Native67C020",
+          "Source": "@IsTest private class A06Native67C020 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow; pq.out('C020','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tUnexpected token ';'."
+        }
+      }
+    },
+    {
+      "ID": "C021",
+      "Group": "invalid-catch-throw",
+      "Code": "try{}catch(String e){} pq.out('C021','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Catch block variable must be of type exception: String",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C021",
+          "Source": "@IsTest private class A06Native62C021 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(String e){} pq.out('C021','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tCatch block variable must be of type exception: String"
+        },
+        "67.0": {
+          "Name": "A06Native67C021",
+          "Source": "@IsTest private class A06Native67C021 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(String e){} pq.out('C021','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tCatch block variable must be of type exception: String"
+        }
+      }
+    },
+    {
+      "ID": "C022",
+      "Group": "invalid-catch-throw",
+      "Code": "try{}catch(Object e){} pq.out('C022','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Catch block variable must be of type exception: Object",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C022",
+          "Source": "@IsTest private class A06Native62C022 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Object e){} pq.out('C022','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tCatch block variable must be of type exception: Object"
+        },
+        "67.0": {
+          "Name": "A06Native67C022",
+          "Source": "@IsTest private class A06Native67C022 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Object e){} pq.out('C022','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tCatch block variable must be of type exception: Object"
+        }
+      }
+    },
+    {
+      "ID": "C023",
+      "Group": "invalid-catch-throw",
+      "Code": "try{}catch(Account e){} pq.out('C023','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Catch block variable must be of type exception: Account",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C023",
+          "Source": "@IsTest private class A06Native62C023 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Account e){} pq.out('C023','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tCatch block variable must be of type exception: Account"
+        },
+        "67.0": {
+          "Name": "A06Native67C023",
+          "Source": "@IsTest private class A06Native67C023 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Account e){} pq.out('C023','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tCatch block variable must be of type exception: Account"
+        }
+      }
+    },
+    {
+      "ID": "C024",
+      "Group": "invalid-catch-throw",
+      "Code": "try{}catch(Exception){} pq.out('C024','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Unexpected token ')'.",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C024",
+          "Source": "@IsTest private class A06Native62C024 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception){} pq.out('C024','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tUnexpected token ')'."
+        },
+        "67.0": {
+          "Name": "A06Native67C024",
+          "Source": "@IsTest private class A06Native67C024 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception){} pq.out('C024','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tUnexpected token ')'."
+        }
+      }
+    },
+    {
+      "ID": "C025",
+      "Group": "invalid-catch-throw",
+      "Code": "try{}catch(e){} pq.out('C025','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Unexpected token ')'.",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C025",
+          "Source": "@IsTest private class A06Native62C025 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(e){} pq.out('C025','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tUnexpected token ')'."
+        },
+        "67.0": {
+          "Name": "A06Native67C025",
+          "Source": "@IsTest private class A06Native67C025 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(e){} pq.out('C025','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tUnexpected token ')'."
+        }
+      }
+    },
+    {
+      "ID": "C026",
+      "Group": "invalid-catch-throw",
+      "Code": "try{}catch(Exception e,Exception f){} pq.out('C026','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Expecting ')' but was: ','",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C026",
+          "Source": "@IsTest private class A06Native62C026 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e,Exception f){} pq.out('C026','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting ')' but was: ','"
+        },
+        "67.0": {
+          "Name": "A06Native67C026",
+          "Source": "@IsTest private class A06Native67C026 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e,Exception f){} pq.out('C026','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting ')' but was: ','"
+        }
+      }
+    },
+    {
+      "ID": "C027",
+      "Group": "invalid-catch-throw",
+      "Code": "try{}catch(Exception e){}catch(Exception e){} pq.out('C027','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Exception type already caught: Exception",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C027",
+          "Source": "@IsTest private class A06Native62C027 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e){}catch(Exception e){} pq.out('C027','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException type already caught: Exception"
+        },
+        "67.0": {
+          "Name": "A06Native67C027",
+          "Source": "@IsTest private class A06Native67C027 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e){}catch(Exception e){} pq.out('C027','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException type already caught: Exception"
+        }
+      }
+    },
+    {
+      "ID": "C028",
+      "Group": "invalid-catch-throw",
+      "Code": "try{}catch(Exception e){}catch(NullPointerException e){} pq.out('C028','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Exception type already caught: System.NullPointerException",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C028",
+          "Source": "@IsTest private class A06Native62C028 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e){}catch(NullPointerException e){} pq.out('C028','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException type already caught: System.NullPointerException"
+        },
+        "67.0": {
+          "Name": "A06Native67C028",
+          "Source": "@IsTest private class A06Native67C028 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e){}catch(NullPointerException e){} pq.out('C028','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException type already caught: System.NullPointerException"
+        }
+      }
+    },
+    {
+      "ID": "C029",
+      "Group": "invalid-catch-throw",
+      "Code": "try{}finally{}catch(Exception e){} pq.out('C029','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Missing '<EOF>' at 'catch'",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C029",
+          "Source": "@IsTest private class A06Native62C029 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}finally{}catch(Exception e){} pq.out('C029','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'catch'"
+        },
+        "67.0": {
+          "Name": "A06Native67C029",
+          "Source": "@IsTest private class A06Native67C029 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}finally{}catch(Exception e){} pq.out('C029','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'catch'"
+        }
+      }
+    },
+    {
+      "ID": "C030",
+      "Group": "invalid-catch-throw",
+      "Code": "try{}finally{}finally{} pq.out('C030','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Missing '<EOF>' at 'finally'",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C030",
+          "Source": "@IsTest private class A06Native62C030 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}finally{}finally{} pq.out('C030','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'finally'"
+        },
+        "67.0": {
+          "Name": "A06Native67C030",
+          "Source": "@IsTest private class A06Native67C030 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}finally{}finally{} pq.out('C030','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'finally'"
+        }
+      }
+    },
+    {
+      "ID": "C031",
+      "Group": "invalid-catch-throw",
+      "Code": "try{} pq.out('C031','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Try block must have at least one catch block or a finally block",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C031",
+          "Source": "@IsTest private class A06Native62C031 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{} pq.out('C031','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tTry block must have at least one catch block or a finally block"
+        },
+        "67.0": {
+          "Name": "A06Native67C031",
+          "Source": "@IsTest private class A06Native67C031 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{} pq.out('C031','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tTry block must have at least one catch block or a finally block"
+        }
+      }
+    },
+    {
+      "ID": "C032",
+      "Group": "invalid-catch-throw",
+      "Code": "catch(Exception e){} pq.out('C032','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Missing '<EOF>' at 'catch'",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C032",
+          "Source": "@IsTest private class A06Native62C032 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ncatch(Exception e){} pq.out('C032','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'catch'"
+        },
+        "67.0": {
+          "Name": "A06Native67C032",
+          "Source": "@IsTest private class A06Native67C032 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ncatch(Exception e){} pq.out('C032','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'catch'"
+        }
+      }
+    },
+    {
+      "ID": "C033",
+      "Group": "invalid-catch-throw",
+      "Code": "finally{} pq.out('C033','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Missing '<EOF>' at 'finally'",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C033",
+          "Source": "@IsTest private class A06Native62C033 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nfinally{} pq.out('C033','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'finally'"
+        },
+        "67.0": {
+          "Name": "A06Native67C033",
+          "Source": "@IsTest private class A06Native67C033 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nfinally{} pq.out('C033','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'finally'"
+        }
+      }
+    },
+    {
+      "ID": "C034",
+      "Group": "invalid-catch-throw",
+      "Code": "try{}catch(Exception e){}e.getMessage(); pq.out('C034','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Variable does not exist: e",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C034",
+          "Source": "@IsTest private class A06Native62C034 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e){}e.getMessage(); pq.out('C034','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tVariable does not exist: e"
+        },
+        "67.0": {
+          "Name": "A06Native67C034",
+          "Source": "@IsTest private class A06Native67C034 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e){}e.getMessage(); pq.out('C034','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tVariable does not exist: e"
+        }
+      }
+    },
+    {
+      "ID": "C035",
+      "Group": "invalid-catch-throw",
+      "Code": "try{}catch(NullPointerException e){String x=e.getMessage();} pq.out('C035','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C035",
+          "Source": "@IsTest private class A06Native62C035 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(NullPointerException e){String x=e.getMessage();} pq.out('C035','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06Native67C035",
+          "Source": "@IsTest private class A06Native67C035 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(NullPointerException e){String x=e.getMessage();} pq.out('C035','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    },
+    {
+      "ID": "C036",
+      "Group": "uncatchable-exceptions-boundary",
+      "Code": "try{}catch(LimitException e){} pq.out('C036','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C036",
+          "Source": "@IsTest private class A06Native62C036 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(LimitException e){} pq.out('C036','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06Native67C036",
+          "Source": "@IsTest private class A06Native67C036 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(LimitException e){} pq.out('C036','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    },
+    {
+      "ID": "C037",
+      "Group": "uncatchable-exceptions-boundary",
+      "Code": "LimitException e=new LimitException(); pq.out('C037','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C037",
+          "Source": "@IsTest private class A06Native62C037 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nLimitException e=new LimitException(); pq.out('C037','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06Native67C037",
+          "Source": "@IsTest private class A06Native67C037 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nLimitException e=new LimitException(); pq.out('C037','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    },
+    {
+      "ID": "C038",
+      "Group": "uncatchable-exceptions-boundary",
+      "Code": "if(false){throw new LimitException('manual');} pq.out('C038','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C038",
+          "Source": "@IsTest private class A06Native62C038 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nif(false){throw new LimitException('manual');} pq.out('C038','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06Native67C038",
+          "Source": "@IsTest private class A06Native67C038 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nif(false){throw new LimitException('manual');} pq.out('C038','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    },
+    {
+      "ID": "C039",
+      "Group": "uncatchable-exceptions-boundary",
+      "Code": "class ValidException extends LimitException {} pq.out('C039','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Non-virtual and non-abstract type cannot be extended: System.LimitException",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C039",
+          "Source": "@IsTest private class A06Native62C039 {\nclass ValidException extends LimitException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                               pq.out('C039','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: System.LimitException"
+        },
+        "67.0": {
+          "Name": "A06Native67C039",
+          "Source": "@IsTest private class A06Native67C039 {\nclass ValidException extends LimitException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                               pq.out('C039','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: System.LimitException"
+        }
+      }
+    },
+    {
+      "ID": "C040",
+      "Group": "invalid-catch-throw",
+      "Code": "Exception e=new NullPointerException();e.setMessage(1); pq.out('C040','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setMessage(Integer) from the type Exception",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C040",
+          "Source": "@IsTest private class A06Native62C040 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.setMessage(1); pq.out('C040','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void setMessage(Integer) from the type Exception"
+        },
+        "67.0": {
+          "Name": "A06Native67C040",
+          "Source": "@IsTest private class A06Native67C040 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.setMessage(1); pq.out('C040','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void setMessage(Integer) from the type Exception"
+        }
+      }
+    },
+    {
+      "ID": "C041",
+      "Group": "invalid-catch-throw",
+      "Code": "Exception e=new NullPointerException();e.getMessage(1); pq.out('C041','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getMessage(Integer) from the type Exception",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C041",
+          "Source": "@IsTest private class A06Native62C041 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.getMessage(1); pq.out('C041','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getMessage(Integer) from the type Exception"
+        },
+        "67.0": {
+          "Name": "A06Native67C041",
+          "Source": "@IsTest private class A06Native67C041 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.getMessage(1); pq.out('C041','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getMessage(Integer) from the type Exception"
+        }
+      }
+    },
+    {
+      "ID": "C042",
+      "Group": "invalid-catch-throw",
+      "Code": "Exception e=new NullPointerException();e.setCause(new NullPointerException()); pq.out('C042','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setCause(System.NullPointerException) from the type Exception",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C042",
+          "Source": "@IsTest private class A06Native62C042 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.setCause(new NullPointerException()); pq.out('C042','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void setCause(System.NullPointerException) from the type Exception"
+        },
+        "67.0": {
+          "Name": "A06Native67C042",
+          "Source": "@IsTest private class A06Native67C042 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.setCause(new NullPointerException()); pq.out('C042','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void setCause(System.NullPointerException) from the type Exception"
+        }
+      }
+    },
+    {
+      "ID": "C043",
+      "Group": "invalid-catch-throw",
+      "Code": "Exception e=new NullPointerException();e.getLineNumber();e.getStackTraceString();e.getCause(); pq.out('C043','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62C043",
+          "Source": "@IsTest private class A06Native62C043 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.getLineNumber();e.getStackTraceString();e.getCause(); pq.out('C043','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06Native67C043",
+          "Source": "@IsTest private class A06Native67C043 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.getLineNumber();e.getStackTraceString();e.getCause(); pq.out('C043','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    }
+  ],
+  "Controls": [
+    {
+      "ID": "X001",
+      "Group": "exception-neighbours",
+      "Code": "r=String.valueOf(new ExProbeException());",
+      "Expected": "ExProbeException:[]: Script-thrown exception",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "X002",
+      "Group": "exception-neighbours",
+      "Code": "r=String.valueOf(new ExProbeException('message'));",
+      "Expected": "ExProbeException:[]: message",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "X003",
+      "Group": "exception-neighbours",
+      "Code": "r=String.valueOf(new ExProbeException(''));",
+      "Expected": "ExProbeException:[]: ",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "X004",
+      "Group": "exception-neighbours",
+      "Code": "Exception e=new ExProbeException();e.setMessage(null);r=String.valueOf(e);",
+      "Expected": "ExProbeException:[]: null",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "X005",
+      "Group": "exception-neighbours",
+      "Code": "r=String.valueOf(new ExFieldsException());",
+      "Expected": "ExFieldsException:[extra=7, text=null]: Script-thrown exception",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "X006",
+      "Group": "exception-neighbours",
+      "Code": "r=String.valueOf(new ExProbeException('outer',new ExProbeException('inner')));",
+      "Expected": "ExProbeException:[]: outer",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "X007",
+      "Group": "exception-neighbours",
+      "Code": "r=String.valueOf(new TypeException());",
+      "Expected": "System.TypeException: Script-thrown exception",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "X008",
+      "Group": "exception-neighbours",
+      "Code": "r=String.valueOf(new TypeException('message'));",
+      "Expected": "System.TypeException: message",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "X009",
+      "Group": "exception-neighbours",
+      "Code": "r=String.valueOf(new ExPlain());",
+      "Expected": "ExPlain:[extra=7]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "X010",
+      "Group": "exception-neighbours",
+      "Code": "Exception e=new ExProbeException();r=e.getLineNumber()>0;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "X011",
+      "Group": "exception-neighbours",
+      "Code": "Exception e=new TypeException();r=e.getLineNumber()>0;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "X012",
+      "Group": "exception-neighbours",
+      "Code": "ExProbeException e;try{throw e;}catch(Exception x){r=x.getTypeName()+'|'+x.getMessage();}",
+      "Expected": "System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "X013",
+      "Group": "exception-neighbours",
+      "Code": "Exception e=new ExProbeException('message');try{throw e;}catch(Exception x){r=x===e;}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "X014",
+      "Group": "exception-neighbours",
+      "Code": "try{throw new ExProbeException();}catch(Exception e){r=String.valueOf(e);}",
+      "Expected": "ExProbeException:[]: Script-thrown exception",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "X015",
+      "Group": "exception-neighbours",
+      "Code": "ExFieldsException e=new ExFieldsException('message');e.text='text';r=String.valueOf(e);",
+      "Expected": "ExFieldsException:[extra=7, text=text]: message",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "K001",
+      "Group": "exception-neighbours",
+      "Code": "class CustomException extends Exception {public CustomException(){}} pq.out('K001','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: System exception constructor already defined: void <init>()",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62K001",
+          "Source": "@IsTest private class A06Native62K001 {\nclass CustomException extends Exception {public CustomException(){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                     pq.out('K001','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>()"
+        },
+        "67.0": {
+          "Name": "A06Native67K001",
+          "Source": "@IsTest private class A06Native67K001 {\nclass CustomException extends Exception {public CustomException(){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                     pq.out('K001','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>()"
+        }
+      }
+    },
+    {
+      "ID": "K002",
+      "Group": "exception-neighbours",
+      "Code": "class CustomException extends Exception {public CustomException(Exception cause){}} pq.out('K002','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: System exception constructor already defined: void <init>(Exception)",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62K002",
+          "Source": "@IsTest private class A06Native62K002 {\nclass CustomException extends Exception {public CustomException(Exception cause){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                    pq.out('K002','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>(Exception)"
+        },
+        "67.0": {
+          "Name": "A06Native67K002",
+          "Source": "@IsTest private class A06Native67K002 {\nclass CustomException extends Exception {public CustomException(Exception cause){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                    pq.out('K002','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>(Exception)"
+        }
+      }
+    },
+    {
+      "ID": "K003",
+      "Group": "exception-neighbours",
+      "Code": "class CustomException extends Exception {public CustomException(String message,Exception cause){}} pq.out('K003','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: System exception constructor already defined: void <init>(String, Exception)",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62K003",
+          "Source": "@IsTest private class A06Native62K003 {\nclass CustomException extends Exception {public CustomException(String message,Exception cause){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                   pq.out('K003','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>(String, Exception)"
+        },
+        "67.0": {
+          "Name": "A06Native67K003",
+          "Source": "@IsTest private class A06Native67K003 {\nclass CustomException extends Exception {public CustomException(String message,Exception cause){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                   pq.out('K003','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>(String, Exception)"
+        }
+      }
+    },
+    {
+      "ID": "K004",
+      "Group": "exception-neighbours",
+      "Code": "class CustomException extends Exception {public CustomException(Integer code){setMessage(String.valueOf(code));}} Exception e=new CustomException(7); pq.out('K004','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62K004",
+          "Source": "@IsTest private class A06Native62K004 {\nclass CustomException extends Exception {public CustomException(Integer code){setMessage(String.valueOf(code));}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                                  Exception e=new CustomException(7); pq.out('K004','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06Native67K004",
+          "Source": "@IsTest private class A06Native67K004 {\nclass CustomException extends Exception {public CustomException(Integer code){setMessage(String.valueOf(code));}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                                  Exception e=new CustomException(7); pq.out('K004','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    },
+    {
+      "ID": "K005",
+      "Group": "exception-neighbours",
+      "Code": "class CustomException extends Exception {public CustomException(Boolean flag){}} pq.out('K005','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62K005",
+          "Source": "@IsTest private class A06Native62K005 {\nclass CustomException extends Exception {public CustomException(Boolean flag){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                 pq.out('K005','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06Native67K005",
+          "Source": "@IsTest private class A06Native67K005 {\nclass CustomException extends Exception {public CustomException(Boolean flag){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                 pq.out('K005','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    },
+    {
+      "ID": "K006",
+      "Group": "exception-neighbours",
+      "Code": "class BaseException extends Exception {} class BadName extends BaseException {} pq.out('K006','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Classes extending Exception must have a name ending in Exception: BadName",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62K006",
+          "Source": "@IsTest private class A06Native62K006 {\nclass BaseException extends Exception {}\nclass BadName extends BaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                pq.out('K006','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06Native62K006.BadName"
+        },
+        "67.0": {
+          "Name": "A06Native67K006",
+          "Source": "@IsTest private class A06Native67K006 {\nclass BaseException extends Exception {}\nclass BadName extends BaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                pq.out('K006','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06Native67K006.BadName"
+        }
+      }
+    },
+    {
+      "ID": "K007",
+      "Group": "exception-neighbours",
+      "Code": "class OtherBase {} class WrongException extends OtherBase {} pq.out('K007','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Exception class must extend another Exception class: OtherBase",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62K007",
+          "Source": "@IsTest private class A06Native62K007 {\nclass OtherBase {}\nclass WrongException extends OtherBase {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                             pq.out('K007','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: A06Native62K007.OtherBase"
+        },
+        "67.0": {
+          "Name": "A06Native67K007",
+          "Source": "@IsTest private class A06Native67K007 {\nclass OtherBase {}\nclass WrongException extends OtherBase {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                             pq.out('K007','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: A06Native67K007.OtherBase"
+        }
+      }
+    },
+    {
+      "ID": "K008",
+      "Group": "exception-neighbours",
+      "Code": "class ValidException extends System.LimitException {} pq.out('K008','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Non-virtual and non-abstract type cannot be extended: System.LimitException",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06Native62K008",
+          "Source": "@IsTest private class A06Native62K008 {\nclass ValidException extends System.LimitException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                      pq.out('K008','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: System.LimitException"
+        },
+        "67.0": {
+          "Name": "A06Native67K008",
+          "Source": "@IsTest private class A06Native67K008 {\nclass ValidException extends System.LimitException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                      pq.out('K008','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: System.LimitException"
+        }
+      }
+    },
+    {
+      "ID": "Y001",
+      "Group": "ordinary-display-neighbours",
+      "Code": "r=String.valueOf(new ExDisplayEmpty());",
+      "Expected": "ExDisplayEmpty:[]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y002",
+      "Group": "ordinary-display-neighbours",
+      "Code": "r=String.valueOf(new ExDisplayFields());",
+      "Expected": "ExDisplayFields:[extra=7, flag=false, text=null]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y003",
+      "Group": "ordinary-display-neighbours",
+      "Code": "ExDisplayFields x=new ExDisplayFields();x.extra=null;x.text='';r=String.valueOf(x);",
+      "Expected": "ExDisplayFields:[extra=null, flag=false, text=]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y004",
+      "Group": "ordinary-display-neighbours",
+      "Code": "ExDisplayFields x=new ExDisplayFields();x.extra=-3;x.flag=true;x.text='text';r=String.valueOf(x);",
+      "Expected": "ExDisplayFields:[extra=-3, flag=true, text=text]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y005",
+      "Group": "ordinary-display-neighbours",
+      "Code": "r=String.valueOf(new ExDisplayValue());",
+      "Expected": "ExDisplayValue:[value=value-text]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y006",
+      "Group": "ordinary-display-neighbours",
+      "Code": "r=String.valueOf(new ExDisplayMessage());",
+      "Expected": "ExDisplayMessage:[message=message-text]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y007",
+      "Group": "ordinary-display-neighbours",
+      "Code": "r=String.valueOf(new ExDisplayOverride());",
+      "Expected": "override-text",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y008",
+      "Group": "ordinary-display-neighbours",
+      "Code": "r=String.valueOf(new Account());",
+      "Expected": "Account:{}",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y009",
+      "Group": "ordinary-display-neighbours",
+      "Code": "r=String.valueOf(new List<Integer>{1,2});",
+      "Expected": "(1, 2)",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y010",
+      "Group": "ordinary-display-neighbours",
+      "Code": "Object x='text';r=String.valueOf(x);",
+      "Expected": "text",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y011",
+      "Group": "ordinary-display-neighbours",
+      "Code": "r=String.valueOf(new A06DisplayOuter.Empty());",
+      "Expected": "Empty:[]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y012",
+      "Group": "ordinary-display-neighbours",
+      "Code": "A06DisplayOuter.Empty x=new A06DisplayOuter.Empty();r=x.toString();",
+      "Expected": "Empty:[]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y013",
+      "Group": "ordinary-display-neighbours",
+      "Code": "r=String.valueOf(new A06DisplayOuter.WithValue());",
+      "Expected": "WithValue:[value=x]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y014",
+      "Group": "ordinary-display-neighbours",
+      "Code": "A06DisplayOuter.WithValue x=new A06DisplayOuter.WithValue();x.value='Outer.Inner:x';r=String.valueOf(x);",
+      "Expected": "WithValue:[value=Outer.Inner:x]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y015",
+      "Group": "ordinary-display-neighbours",
+      "Code": "A06DisplayOuter.WithValue x=new A06DisplayOuter.WithValue();r=x.toString();",
+      "Expected": "WithValue:[value=x]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y016",
+      "Group": "ordinary-display-neighbours",
+      "Code": "A06DisplayOuter.WithValue x=new A06DisplayOuter.WithValue();x.value='Outer.Inner:x';r=x.toString();",
+      "Expected": "WithValue:[value=Outer.Inner:x]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y017",
+      "Group": "ordinary-display-neighbours",
+      "Code": "ExDisplayValue x=new ExDisplayValue();r=x.toString();",
+      "Expected": "ExDisplayValue:[value=value-text]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y018",
+      "Group": "ordinary-display-neighbours",
+      "Code": "ExDisplayMessage x=new ExDisplayMessage();r=x.toString();",
+      "Expected": "ExDisplayMessage:[message=message-text]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y019",
+      "Group": "ordinary-display-neighbours",
+      "Code": "ExDisplayOverride x=new ExDisplayOverride();r=x.toString();",
+      "Expected": "override-text",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y020",
+      "Group": "ordinary-display-neighbours",
+      "Code": "Account x=new Account();r=x.toString();",
+      "Expected": "Account:{}",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y021",
+      "Group": "ordinary-display-neighbours",
+      "Code": "Plain plain=new Plain();r=plain.toString();",
+      "Expected": "Plain:[]",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "Y022",
+      "Group": "ordinary-display-neighbours",
+      "Code": "Named named=new Named();r=named.toString();",
+      "Expected": "custom",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "D001",
+      "Group": "dependency-exception-ancestry",
+      "Code": "class A06DependencyChildException extends A06DependencyBaseException {} pq.out('D001','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06DependencyNative62D001",
+          "Source": "@IsTest private class A06DependencyNative62D001 {\nclass A06DependencyChildException extends A06DependencyBaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                        pq.out('D001','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06DependencyNative67D001",
+          "Source": "@IsTest private class A06DependencyNative67D001 {\nclass A06DependencyChildException extends A06DependencyBaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                        pq.out('D001','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    },
+    {
+      "ID": "D002",
+      "Group": "dependency-exception-ancestry",
+      "Code": "class A06DependencyBadName extends A06DependencyBaseException {} pq.out('D002','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Classes extending Exception must have a name ending in Exception: A06DependencyBadName",
+      "Compile": true,
+      "NativeNull": false,
+      "SourceLine": 6,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06DependencyNative62D002",
+          "Source": "@IsTest private class A06DependencyNative62D002 {\nclass A06DependencyBadName extends A06DependencyBaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                 pq.out('D002','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06DependencyNative62D002.A06DependencyBadName"
+        },
+        "67.0": {
+          "Name": "A06DependencyNative67D002",
+          "Source": "@IsTest private class A06DependencyNative67D002 {\nclass A06DependencyBadName extends A06DependencyBaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                 pq.out('D002','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06DependencyNative67D002.A06DependencyBadName"
+        }
+      }
+    },
+    {
+      "ID": "D003",
+      "Group": "dependency-exception-ancestry",
+      "Code": "class A06DependencyChildException extends A06DependencyMidException {} pq.out('D003','accepted');",
+      "Expected": "accepted",
+      "Compile": true,
+      "NativeNull": false,
+      "NamedCompilations": {
+        "62.0": {
+          "Name": "A06DependencyNative62D003",
+          "Source": "@IsTest private class A06DependencyNative62D003 {\nclass A06DependencyChildException extends A06DependencyMidException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                       pq.out('D003','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "67.0": {
+          "Name": "A06DependencyNative67D003",
+          "Source": "@IsTest private class A06DependencyNative67D003 {\nclass A06DependencyChildException extends A06DependencyMidException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                       pq.out('D003','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        }
+      }
+    }
+  ],
+  "Remaining": [],
+  "TicketRows": {},
+  "DependencyDeclarations": [
+    "A06DependencyBaseException",
+    "A06DependencyMidException"
+  ]
+}

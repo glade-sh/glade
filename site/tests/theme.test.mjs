@@ -257,7 +257,7 @@ test("launch docs identify the published v0.2.15 release and retain historical n
 
 test("release docs publish the sealed private-corpus assurance snapshot", () => {
   const assuranceJSON = privateCorpusAssuranceExplorer.match(/<script id="assurance-data" type="application\/json">([\s\S]*?)<\/script>/)?.[1];
-  assert.ok(assuranceJSON, "the styled explorer must retain the sealed evidence payload");
+  assert.ok(assuranceJSON, "the styled explorer must embed the redacted evidence payload");
   const assuranceSha256 = createHash("sha256").update(assuranceJSON).digest("hex");
   for (const page of [releaseNotes, repoPrivateCorpusAssurance, supportMap]) {
     assert.match(page, /184 required surfaces/);
@@ -274,10 +274,27 @@ test("release docs publish the sealed private-corpus assurance snapshot", () => 
   assert.match(privateCorpusAssuranceExplorer, /private-corpus-002/);
   assert.match(privateCorpusAssuranceExplorer, /All namespaces/);
   assert.match(privateCorpusAssuranceExplorer, /All repositories/);
-  assert.equal(assuranceSha256, "921bbc27c8fdc62e3e340138c26e1ea34b8137f206d251c66244bb63642aae04");
-  assert.match(repoPrivateCorpusAssurance, new RegExp(assuranceSha256));
+  assert.equal(assuranceSha256, "754284ac05ac8dd434b55d6ee49ba8cdeb5a568d06382e5f3b1b1ec685667aca");
+  assert.match(repoPrivateCorpusAssurance, new RegExp(`Published explorer payload SHA-256.*${assuranceSha256}`));
+  assert.match(repoPrivateCorpusAssurance, /Sealed assurance JSON SHA-256.*921bbc27c8fdc62e3e340138c26e1ea34b8137f206d251c66244bb63642aae04/);
   assert.match(repoPrivateCorpusAssurance, /Original explorer export SHA-256.*5bad30dfb04858f39d11c33a82e1290181d376ea58205a80ce47467eaff21625/);
+  assert.doesNotMatch(repoPrivateCorpusAssurance, /37c2bf878133cef2879124e4f47d20ba51d5bcfd|exact assurance\s+JSON bytes/);
   assert.doesNotMatch(privateCorpusAssuranceExplorer, /https?:\/\/|\/Users\/|@agentforce\.com|00D[A-Za-z0-9]{12,}/);
+
+  // The published payload is the redacted schema 2 projection: no org-defined
+  // API names, private reference counts, or fixture tags.
+  assert.doesNotMatch(privateCorpusAssuranceExplorer, /__|privateProdRefs|privateTestRefs|fixtureIds/i);
+  const assurance = JSON.parse(assuranceJSON);
+  assert.equal(assurance.schemaVersion, 2);
+  assert.equal(assurance.rows.length, 184);
+  for (const row of [...assurance.rows, ...assurance.repositorySurfaceRows]) {
+    for (const field of ["privateProdRefs", "privateTestRefs", "fixtureIds"]) {
+      assert.ok(!(field in row), `${row.surfaceId} must not carry ${field}`);
+    }
+    for (const usageKey of row.usageKeys) {
+      assert.doesNotMatch(usageKey, /__/, `${row.surfaceId} usage keys must not name an org-defined API name`);
+    }
+  }
 });
 
 test("release docs distinguish tagged v0.2.12 validation from the v0.2.11 snapshot", () => {
@@ -725,7 +742,8 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(securityWorkflow, /golang\.org\/x\/vuln\/cmd\/govulncheck@v1\.6\.0/);
   assert.match(securityWorkflow, /github\/codeql-action\/init@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /- uses: security-extended/);
-  assert.match(securityWorkflow, /timeout-minutes: 15/);
+  assert.match(securityWorkflow, /timeout-minutes: 45/);
+  assert.match(securityWorkflow, /codeql:\n    name: CodeQL\n    runs-on: ubuntu-latest/);
   assert.match(securityWorkflow, /- go\/allocation-size-overflow/);
   assert.match(securityWorkflow, /- go\/incorrect-integer-conversion/);
   assert.match(securityWorkflow, /github\/codeql-action\/analyze@[0-9a-f]{40}/);
@@ -738,8 +756,8 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(securityWorkflow, /ossf\/scorecard-action@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /publish_results: true/);
 
-  assert.match(ciWorkflow, /go-version: "1\.26\.6"/);
-  assert.match(releaseWorkflow, /go-version: "1\.26\.6"/);
+  assert.match(ciWorkflow, /go-version: "1\.26\.9"/);
+  assert.match(releaseWorkflow, /go-version: "1\.26\.9"/);
   assert.match(releaseWorkflow, /cyclonedx-gomod/);
   assert.match(releaseWorkflow, /tar -xzf "\$archive" -C "\$extract_dir" glade/);
   assert.match(releaseWorkflow, /cyclonedx-gomod bin -json -version "\$VERSION" -output "\$sbom" "\$extract_dir\/glade"/);

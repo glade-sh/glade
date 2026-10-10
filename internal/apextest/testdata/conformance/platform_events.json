@@ -1,0 +1,2244 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "oracle": "Owned platform event observations and controls at API 62.0 and 67.0, including server-publish control S001.",
+  "files": {
+    "force-app/main/default/classes/A39Callback.cls": "public class A39Callback implements EventBus.EventPublishSuccessCallback,EventBus.EventPublishFailureCallback {\n public void onSuccess(EventBus.SuccessResult result){}\n public void onFailure(EventBus.FailureResult result){}\n}\n",
+    "force-app/main/default/classes/A39Callback.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+    "force-app/main/default/classes/A39CapacityBoundary.cls": "@IsTest private class A39CapacityBoundary {\n public class ObservationException extends Exception {}\n private static List<SObject> records(Integer n,Boolean valid){\n  List<SObject> es=new List<SObject>();\n  for(Integer i=0;i<n;i++){SObject e=A39Immediate__e.SObjectType.newSObject(null,false); if(valid)e.put('Payload__c','native'); es.add(e);} return es;\n }\n private static String summary(List<Database.SaveResult> results){\n  Integer successes=0; Integer failures=0; List<String> firstError=new List<String>();\n  for(Database.SaveResult s:results){if(s.isSuccess())successes++;else{failures++;if(firstError.isEmpty()){Database.Error e=s.getErrors()[0];firstError.add(String.valueOf(e.getStatusCode()));firstError.add(e.getMessage());firstError.add(String.join(e.getFields(),','));firstError.add(String.valueOf(s.getId()==null));}}}\n  return successes+'|'+failures+'|'+JSON.serialize(firstError);\n }\n @IsTest static void publish499(){throw new ObservationException('V001|'+summary(EventBus.publish(records(499,true))));}\n @IsTest static void publish250Then250(){String first=summary(EventBus.publish(records(250,true)));String second=summary(EventBus.publish(records(250,true)));throw new ObservationException('V002|'+first+'|'+second);}\n @IsTest static void publish300Then201(){String first=summary(EventBus.publish(records(300,true)));String second=summary(EventBus.publish(records(201,true)));throw new ObservationException('V003|'+first+'|'+second);}\n @IsTest static void invalid250Then250(){String first=summary(EventBus.publish(records(250,false)));String second=summary(EventBus.publish(records(250,true)));throw new ObservationException('V004|'+first+'|'+second);}\n @IsTest static void immediate2000Success(){throw new ObservationException('V005|'+A39Oracle.publishMany('A39Immediate__e',2000,'success-count'));}\n @IsTest static void immediate2000Id(){throw new ObservationException('V006|'+A39Oracle.publishMany('A39Immediate__e',2000,'id-type-count'));}\n @IsTest static void afterCommit2000Success(){throw new ObservationException('V007|'+A39Oracle.publishMany('A39AfterCommit__e',2000,'success-count'));}\n @IsTest static void afterCommit2000Id(){throw new ObservationException('V008|'+A39Oracle.publishMany('A39AfterCommit__e',2000,'id-type-count'));}\n}\n",
+    "force-app/main/default/classes/A39CapacityBoundary.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+    "force-app/main/default/classes/A39CapacityControls.cls": "@IsTest private class A39CapacityControls {\n public class ObservationException extends Exception {}\n private static void observe(String id,Integer n){\n  Test.startTest(); List<SObject> events=new List<SObject>();\n  for(Integer i=0;i<n;i++){SObject e=A39Immediate__e.SObjectType.newSObject(); e.put('Payload__c','native'); e.put('Mode__c','capacity'); e.put('Ordinal__c',i); events.add(e);}\n  Integer successes=0; Integer failures=0; String failedCode='';\n  for(Database.SaveResult s:EventBus.publish(events)){\n   if(s.isSuccess()) successes++; else {failures++; if(failedCode=='') failedCode=String.valueOf(s.getErrors()[0].getStatusCode());}\n  }\n  Test.getEventBus().deliver(); Test.stopTest();\n  List<String> rows=new List<String>();\n  for(Account a:[SELECT Description,NumberOfEmployees FROM Account WHERE Name='A39-oracle-20261005' ORDER BY AnnualRevenue]) rows.add(a.Description+'|'+a.NumberOfEmployees);\n  throw new ObservationException(id+'|'+successes+'|'+failures+'|'+failedCode+'|'+JSON.serialize(rows));\n }\n @IsTest static void runningTest(){throw new ObservationException('T001|'+Test.isRunningTest());}\n @IsTest static void publish399(){observe('T002',399);}\n @IsTest static void publish400(){observe('T003',400);}\n @IsTest static void publish401(){observe('T004',401);}\n @IsTest static void publish500(){observe('T005',500);}\n @IsTest static void publish2000(){observe('T006',2000);}\n}\n",
+    "force-app/main/default/classes/A39CapacityControls.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+    "force-app/main/default/classes/A39CapacityDetails.cls": "@IsTest private class A39CapacityDetails {\n public class ObservationException extends Exception {}\n private static void observe(String id,Integer n,Boolean defaults){\n  Test.startTest(); List<SObject> events=new List<SObject>();\n  for(Integer i=0;i<n;i++){SObject e=A39Immediate__e.SObjectType.newSObject(null,defaults); e.put('Payload__c','native'); e.put('Mode__c','capacity-detail'); e.put('Ordinal__c',i); events.add(e);}\n  Integer successes=0; Integer failures=0; List<String> firstError=new List<String>();\n  for(Database.SaveResult s:EventBus.publish(events)){\n   if(s.isSuccess()) successes++; else {failures++; if(firstError.isEmpty()){Database.Error e=s.getErrors()[0]; firstError.add(String.valueOf(e.getStatusCode())); firstError.add(e.getMessage()); firstError.add(String.join(e.getFields(),','));}}\n  }\n  throw new ObservationException(id+'|'+successes+'|'+failures+'|'+JSON.serialize(firstError));\n }\n @IsTest static void defaultsTrue500(){observe('U001',500,true);}\n @IsTest static void defaultsFalse500(){observe('U002',500,false);}\n @IsTest static void defaultsFalse2000(){observe('U003',2000,false);}\n @IsTest static void defaultsTrue401(){observe('U004',401,true);}\n}\n",
+    "force-app/main/default/classes/A39CapacityDetails.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+    "force-app/main/default/classes/A39DeliveryControls.cls": "@IsTest private class A39DeliveryControls {\n public class ObservationException extends Exception {}\n private static void observe(String id,String typeName,Integer n,String mode,Integer deliveries){\n  Test.startTest();\n  Schema.SObjectType eventType=Schema.getGlobalDescribe().get(typeName);\n  List<SObject> events=new List<SObject>();\n  for(Integer i=0;i<n;i++){\n   SObject e=eventType.newSObject(); e.put('Payload__c','native'); e.put('Mode__c',mode); e.put('Ordinal__c',i); events.add(e);\n  }\n  EventBus.publish(events);\n  for(Integer i=0;i<deliveries;i++) Test.getEventBus().deliver();\n  Test.stopTest();\n  List<String> rows=new List<String>();\n  for(Account a:[SELECT Description,NumberOfEmployees,AnnualRevenue FROM Account WHERE Name='A39-oracle-20261005' ORDER BY AnnualRevenue])\n   rows.add(a.Description+'|'+a.NumberOfEmployees+'|'+a.AnnualRevenue);\n  throw new ObservationException(id+'|'+JSON.serialize(rows));\n }\n @IsTest static void batch0(){observe('N001','A39Immediate__e',0,'batch',1);}\n @IsTest static void batch1(){observe('N002','A39Immediate__e',1,'batch',1);}\n @IsTest static void batch200(){observe('N003','A39Immediate__e',200,'batch',1);}\n @IsTest static void batch201(){observe('N004','A39Immediate__e',201,'batch',1);}\n @IsTest static void batch2000(){observe('N005','A39Immediate__e',2000,'batch',1);}\n @IsTest static void batch2001(){observe('N006','A39Immediate__e',2001,'batch',1);}\n @IsTest static void retry1(){observe('N007','A39Immediate__e',2,'retry1',12);}\n @IsTest static void retry2(){observe('N008','A39Immediate__e',2,'retry2',12);}\n @IsTest static void retry9(){observe('N009','A39Immediate__e',2,'retry9',12);}\n @IsTest static void retry10(){observe('N010','A39Immediate__e',2,'retry10',12);}\n @IsTest static void checkpoint(){observe('N011','A39Immediate__e',3,'checkpoint',3);}\n @IsTest static void checkpointFailure(){observe('N012','A39Immediate__e',3,'checkpoint-failure',3);}\n @IsTest static void afterCommit(){observe('N013','A39AfterCommit__e',2,'afterCommit',2);}\n}\n",
+    "force-app/main/default/classes/A39DeliveryControls.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+    "force-app/main/default/classes/A39NamedObservations.cls": "@IsTest private class A39NamedObservations {\n public class ObservationException extends Exception {}\n @IsTest static void observedR043(){Object r; r=A39Oracle.publishMany('A39Immediate__e',2000,'success-count'); throw new ObservationException('R043|'+String.valueOf(r));}\n @IsTest static void observedR044(){Object r; r=A39Oracle.publishMany('A39Immediate__e',2000,'id-type-count'); throw new ObservationException('R044|'+String.valueOf(r));}\n @IsTest static void observedR046(){Object r; r=A39Oracle.publishMany('A39Immediate__e',2001,'success-count'); throw new ObservationException('R046|'+String.valueOf(r));}\n @IsTest static void observedR047(){Object r; r=A39Oracle.publishMany('A39Immediate__e',2001,'id-type-count'); throw new ObservationException('R047|'+String.valueOf(r));}\n @IsTest static void observedR126(){Object r; r=A39Oracle.publishMany('A39AfterCommit__e',2000,'success-count'); throw new ObservationException('R126|'+String.valueOf(r));}\n @IsTest static void observedR127(){Object r; r=A39Oracle.publishMany('A39AfterCommit__e',2000,'id-type-count'); throw new ObservationException('R127|'+String.valueOf(r));}\n @IsTest static void observedR129(){Object r; r=A39Oracle.publishMany('A39AfterCommit__e',2001,'success-count'); throw new ObservationException('R129|'+String.valueOf(r));}\n @IsTest static void observedR130(){Object r; r=A39Oracle.publishMany('A39AfterCommit__e',2001,'id-type-count'); throw new ObservationException('R130|'+String.valueOf(r));}\n @IsTest static void observedR216(){Object r; r=Test.isRunningTest(); throw new ObservationException('R216|'+String.valueOf(r));}\n}\n",
+    "force-app/main/default/classes/A39NamedObservations.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+    "force-app/main/default/classes/A39NativeTest.cls": "@IsTest private class A39NativeTest {\n private static void send(String typeName,Integer n,String mode){\n  Schema.SObjectType eventType=Schema.getGlobalDescribe().get(typeName);\n  List<SObject> es=new List<SObject>();\n  for(Integer i=0;i<n;i++){\n   SObject e=eventType.newSObject();\n   e.put('Payload__c','native'); e.put('Mode__c',mode); e.put('Ordinal__c',i); es.add(e);\n  }\n  List<Database.SaveResult> observed=EventBus.publish(es);\n }\n private static void read(){\n  Account observed=[SELECT Description,NumberOfEmployees,AnnualRevenue FROM Account WHERE Name='A39-oracle-20261005' LIMIT 1];\n }\n private static void batch(Integer n){\n  Test.startTest(); send('A39Immediate__e',n,'batch'); Test.getEventBus().deliver();\n  List<Account> observed=[SELECT Description,NumberOfEmployees,AnnualRevenue FROM Account WHERE Name='A39-oracle-20261005'];\n  if(n>0) read(); Test.stopTest();\n }\n @IsTest static void nullEvent(){SObject event=null; Object observed=A39Oracle.publishSingle(event);}\n @IsTest static void nullList(){List<SObject> events=null; Object observed=A39Oracle.publishList(events,'count');}\n @IsTest static void nullListElement(){Object observed=A39Oracle.publishList(new List<SObject>{null},'first');}\n @IsTest static void mixedNullElement(){Object observed=A39Oracle.publishList(new List<SObject>{new A39Immediate__e(Payload__c='ok'),null},'count');}\n @IsTest static void wrongTypeList(){Object observed=A39Oracle.publishList(new List<SObject>{new Account(Name='A39')},'first');}\n @IsTest static void mixedWrongType(){Object observed=A39Oracle.publishList(new List<SObject>{new A39Immediate__e(Payload__c='ok'),new Account(Name='A39')},'count');}\n @IsTest static void immediate(){Test.startTest(); send('A39Immediate__e',1,'immediate'); Test.getEventBus().deliver(); read(); Test.stopTest();}\n @IsTest static void afterCommit(){Test.startTest(); send('A39AfterCommit__e',1,'afterCommit'); Test.getEventBus().deliver(); read(); Test.stopTest();}\n @IsTest static void mixed(){Test.startTest(); send('A39Immediate__e',1,'mixed'); send('A39AfterCommit__e',1,'mixed'); Test.getEventBus().deliver(); read(); Test.stopTest();}\n @IsTest static void batch0(){batch(0);}\n @IsTest static void batch1(){batch(1);}\n @IsTest static void batch2(){batch(2);}\n @IsTest static void batch199(){batch(199);}\n @IsTest static void batch200(){batch(200);}\n @IsTest static void batch201(){batch(201);}\n @IsTest static void batch2000(){batch(2000);}\n @IsTest static void batch2001(){batch(2001);}\n private static void retry(Integer n){\n  Test.startTest(); send('A39Immediate__e',2,'retry'+n);\n  for(Integer i=0;i<=n;i++) Test.getEventBus().deliver(); read(); Test.stopTest();\n }\n @IsTest static void retry1(){retry(1);}\n @IsTest static void retry2(){retry(2);}\n @IsTest static void retryExhausted(){retry(10);}\n @IsTest static void checkpoint(){Test.startTest(); send('A39Immediate__e',3,'checkpoint'); Test.getEventBus().deliver(); read(); Test.stopTest();}\n @IsTest static void checkpointFailure(){\n  Test.startTest(); send('A39Immediate__e',3,'checkpoint-failure');\n  Test.getEventBus().deliver(); Test.getEventBus().deliver(); Test.getEventBus().deliver(); read(); Test.stopTest();\n }\n @IsTest static void deliverEmpty(){Test.startTest(); Test.getEventBus().deliver(); Test.stopTest();}\n @IsTest static void deliverTwice(){Test.startTest(); send('A39Immediate__e',2,'twice'); Test.getEventBus().deliver(); Test.getEventBus().deliver(); read(); Test.stopTest();}\n @IsTest static void deliverBetweenPublishes(){Test.startTest(); send('A39Immediate__e',1,'between'); Test.getEventBus().deliver(); send('A39Immediate__e',1,'between'); Test.getEventBus().deliver(); read(); Test.stopTest();}\n @IsTest static void stopTestDelivery(){Test.startTest(); send('A39Immediate__e',1,'stop'); Test.stopTest(); read();}\n @IsTest static void deliverAfterCommit(){Test.startTest(); send('A39AfterCommit__e',2,'after'); Test.getEventBus().deliver(); Test.getEventBus().deliver(); read(); Test.stopTest();}\n}\n",
+    "force-app/main/default/classes/A39NativeTest.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+    "force-app/main/default/classes/A39Oracle.cls": "public class A39Oracle {\n public static Object publishOne(String typeName,String payload,String metric){\n  SObject e=Schema.getGlobalDescribe().get(typeName).newSObject(null,false);\n  e.put('Payload__c',payload);\n  Database.SaveResult s=EventBus.publish(e);\n  if(metric=='success') return s.isSuccess();\n  if(metric=='id-null') return s.getId()==null;\n  if(metric=='errors') return s.getErrors().size();\n  if(metric=='id-type') return s.getId()==null?'null':s.getId().getSObjectType().getDescribe().getName();\n  if(metric=='uuid-present') return e.get('EventUuid')!=null;\n  if(metric=='replay-null') return e.get('ReplayId')==null;\n  if(metric=='payload') return e.get('Payload__c');\n  if(metric=='type') return e.getSObjectType().getDescribe().getName();\n  if(metric=='result-type') {Object value=s; return value instanceof Database.SaveResult;}\n  List<String> errors=new List<String>();\n  for(Database.Error err:s.getErrors()) errors.add(String.valueOf(err.getStatusCode())+':'+err.getMessage()+':'+String.join(err.getFields(),','));\n  return s.isSuccess()+'|'+s.getErrors().size()+'|'+String.join(errors,';');\n }\n public static Object publishSingle(SObject event){\n  return EventBus.publish(event).isSuccess();\n }\n public static Object publishList(List<SObject> events,String metric){\n  List<Database.SaveResult> results=EventBus.publish(events);\n  if(metric=='count') return results.size();\n  if(metric=='first') return results[0].isSuccess();\n  List<String> statuses=new List<String>();\n  for(Database.SaveResult result:results) statuses.add(String.valueOf(result.isSuccess()));\n  return String.join(statuses,'|');\n }\n public static Object publishMany(String typeName,Integer n,String metric){\n  Schema.SObjectType eventType=Schema.getGlobalDescribe().get(typeName);\n  List<SObject> es=new List<SObject>();\n  for(Integer i=0;i<n;i++){\n   SObject e=eventType.newSObject(null,false);\n   e.put('Payload__c','normal'); e.put('Ordinal__c',i); es.add(e);\n  }\n  List<Database.SaveResult> ss=EventBus.publish(es);\n  if(metric=='count') return ss.size();\n  Integer count=0;\n  for(Database.SaveResult s:ss){\n   if(metric=='success-count' && s.isSuccess()) count++;\n   if(metric=='id-type-count' && s.getId()!=null && s.getId().getSObjectType()==eventType) count++;\n  }\n  return count;\n }\n}\n",
+    "force-app/main/default/classes/A39Oracle.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+    "force-app/main/default/classes/A39Subscriber.cls": "public class A39Subscriber {\n public class CheckpointFailureException extends Exception {}\n public static void receive(List<SObject> events){\n  // Immediate publishes may outlive anonymous transport rollback. No live\n  // records or observable hosted delivery are created by this fixture.\n  if(!Test.isRunningTest() || events.isEmpty()) return;\n  EventBus.TriggerContext ctx=EventBus.TriggerContext.currentContext();\n  String mode=(String)events[0].get('Mode__c');\n  if(mode!=null && mode.startsWith('retry')){\n   Integer maximum=Integer.valueOf(mode.substring(5));\n   if(ctx.retries<maximum) throw new EventBus.RetryableException('A39-owned retry');\n  }\n  List<Account> observations=new List<Account>();\n  if(mode=='checkpoint' || mode=='checkpoint-failure'){\n   for(SObject e:events){\n    if(mode=='checkpoint-failure' && ((Decimal)e.get('Ordinal__c'))==1 && ((Decimal)events[0].get('Ordinal__c'))==0)\n     throw new CheckpointFailureException('A39-owned checkpoint failure');\n    insert new Account(Name='A39-oracle-20261005',AccountNumber=mode,NumberOfEmployees=events.size(),\n     Description=ctx.retries+'|'+(e.get('ReplayId')!=null)+'|'+(e.get('EventUuid')!=null),AnnualRevenue=(Decimal)e.get('Ordinal__c'));\n    ctx.setResumeCheckpoint(String.valueOf(e.get('ReplayId')));\n   }\n  }else{\n   // One observation per delivered batch avoids 2000 unrelated Account\n   // trigger executions obscuring the event-batch observation with CPU limits.\n   SObject e=events[0];\n   observations.add(new Account(Name='A39-oracle-20261005',AccountNumber=mode,\n    NumberOfEmployees=events.size(),Description=ctx.retries+'|'+Trigger.isExecuting+'|'+Trigger.isAfter+'|'+Trigger.isInsert+'|'+Trigger.size+'|'+(Trigger.old==null)+'|'+(e.get('ReplayId')!=null)+'|'+(e.get('EventUuid')!=null),\n    AnnualRevenue=(Decimal)e.get('Ordinal__c')));\n  }\n  insert observations;\n }\n}\n",
+    "force-app/main/default/classes/A39Subscriber.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+    "force-app/main/default/objects/A39AfterCommit__e/A39AfterCommit__e.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><label>A39AfterCommit__e</label><pluralLabel>A39AfterCommit__e</pluralLabel><publishBehavior>PublishAfterCommit</publishBehavior></CustomObject>\n",
+    "force-app/main/default/objects/A39AfterCommit__e/fields/Mode__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Mode__c</fullName><label>Mode</label><length>40</length><required>false</required><type>Text</type></CustomField>\n",
+    "force-app/main/default/objects/A39AfterCommit__e/fields/Ordinal__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Ordinal__c</fullName><label>Ordinal</label><precision>6</precision><scale>2</scale><required>false</required><type>Number</type></CustomField>\n",
+    "force-app/main/default/objects/A39AfterCommit__e/fields/Payload__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Payload__c</fullName><label>Payload</label><length>80</length><required>true</required><type>Text</type></CustomField>\n",
+    "force-app/main/default/objects/A39Immediate__e/A39Immediate__e.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><label>A39Immediate__e</label><pluralLabel>A39Immediate__e</pluralLabel><publishBehavior>PublishImmediately</publishBehavior></CustomObject>\n",
+    "force-app/main/default/objects/A39Immediate__e/fields/Mode__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Mode__c</fullName><label>Mode</label><length>40</length><required>false</required><type>Text</type></CustomField>\n",
+    "force-app/main/default/objects/A39Immediate__e/fields/Ordinal__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Ordinal__c</fullName><label>Ordinal</label><precision>6</precision><scale>2</scale><required>false</required><type>Number</type></CustomField>\n",
+    "force-app/main/default/objects/A39Immediate__e/fields/Payload__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Payload__c</fullName><label>Payload</label><length>80</length><required>true</required><type>Text</type></CustomField>\n",
+    "force-app/main/default/triggers/A39AfterCommitSubscriber.trigger": "trigger A39AfterCommitSubscriber on A39AfterCommit__e (after insert) { A39Subscriber.receive(Trigger.new); }\n",
+    "force-app/main/default/triggers/A39AfterCommitSubscriber.trigger-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexTrigger>\n",
+    "force-app/main/default/triggers/A39ImmediateSubscriber.trigger": "trigger A39ImmediateSubscriber on A39Immediate__e (after insert) { A39Subscriber.receive(Trigger.new); }\n",
+    "force-app/main/default/triggers/A39ImmediateSubscriber.trigger-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexTrigger>\n"
+  },
+  "cases": [
+    {
+      "id": "R001",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','normal','success');",
+      "expected": "true"
+    },
+    {
+      "id": "R002",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','normal','id-null');",
+      "expected": "false"
+    },
+    {
+      "id": "R003",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','normal','errors');",
+      "expected": "1"
+    },
+    {
+      "id": "R004",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','normal','id-type');",
+      "expected": "A39Immediate__e"
+    },
+    {
+      "id": "R005",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','normal','uuid-present');",
+      "expected": "true"
+    },
+    {
+      "id": "R006",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','normal','replay-null');",
+      "expected": "true"
+    },
+    {
+      "id": "R007",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','normal','payload');",
+      "expected": "normal"
+    },
+    {
+      "id": "R008",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','normal','type');",
+      "expected": "A39Immediate__e"
+    },
+    {
+      "id": "R009",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','normal','result-type');",
+      "expected": "true"
+    },
+    {
+      "id": "R010",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e',null,'summary');",
+      "expected": "false|1|REQUIRED_FIELD_MISSING:You must enter a value: Payload__c:Payload__c"
+    },
+    {
+      "id": "R011",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','','summary');",
+      "expected": "false|1|REQUIRED_FIELD_MISSING:You must enter a value: Payload__c:Payload__c"
+    },
+    {
+      "id": "R012",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e',' ','summary');",
+      "expected": "false|1|REQUIRED_FIELD_MISSING:You must enter a value: Payload__c:Payload__c"
+    },
+    {
+      "id": "R016",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','\\n','summary');",
+      "expected": "false|1|REQUIRED_FIELD_MISSING:You must enter a value: Payload__c:Payload__c"
+    },
+    {
+      "id": "R017",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','\\r','summary');",
+      "expected": "false|1|REQUIRED_FIELD_MISSING:You must enter a value: Payload__c:Payload__c"
+    },
+    {
+      "id": "R020",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx','summary');",
+      "expected": "false|1|STRING_TOO_LONG:Value too long for field:Payload__c"
+    },
+    {
+      "id": "R021",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',0,'count');",
+      "expected": "0"
+    },
+    {
+      "id": "R022",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',0,'success-count');",
+      "expected": "0"
+    },
+    {
+      "id": "R023",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',0,'id-type-count');",
+      "expected": "0"
+    },
+    {
+      "id": "R024",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',1,'count');",
+      "expected": "1"
+    },
+    {
+      "id": "R025",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',1,'success-count');",
+      "expected": "1"
+    },
+    {
+      "id": "R026",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',1,'id-type-count');",
+      "expected": "1"
+    },
+    {
+      "id": "R027",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',2,'count');",
+      "expected": "2"
+    },
+    {
+      "id": "R028",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',2,'success-count');",
+      "expected": "2"
+    },
+    {
+      "id": "R029",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',2,'id-type-count');",
+      "expected": "2"
+    },
+    {
+      "id": "R030",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',10,'count');",
+      "expected": "10"
+    },
+    {
+      "id": "R031",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',10,'success-count');",
+      "expected": "10"
+    },
+    {
+      "id": "R032",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',10,'id-type-count');",
+      "expected": "10"
+    },
+    {
+      "id": "R033",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',199,'count');",
+      "expected": "199"
+    },
+    {
+      "id": "R034",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',199,'success-count');",
+      "expected": "199"
+    },
+    {
+      "id": "R035",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',199,'id-type-count');",
+      "expected": "199"
+    },
+    {
+      "id": "R036",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',200,'count');",
+      "expected": "200"
+    },
+    {
+      "id": "R037",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',200,'success-count');",
+      "expected": "200"
+    },
+    {
+      "id": "R038",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',200,'id-type-count');",
+      "expected": "200"
+    },
+    {
+      "id": "R039",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',201,'count');",
+      "expected": "201"
+    },
+    {
+      "id": "R040",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',201,'success-count');",
+      "expected": "201"
+    },
+    {
+      "id": "R041",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',201,'id-type-count');",
+      "expected": "201"
+    },
+    {
+      "id": "R042",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',2000,'count');",
+      "expected": "2000"
+    },
+    {
+      "id": "R043",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',2000,'success-count');",
+      "expected": "2000"
+    },
+    {
+      "id": "R044",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',2000,'id-type-count');",
+      "expected": "2000"
+    },
+    {
+      "id": "R045",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',2001,'count');",
+      "expected": "2001"
+    },
+    {
+      "id": "R046",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',2001,'success-count');",
+      "expected": "2001"
+    },
+    {
+      "id": "R047",
+      "code": "r=A39Oracle.publishMany('A39Immediate__e',2001,'id-type-count');",
+      "expected": "2001"
+    },
+    {
+      "id": "R048",
+      "code": "A39Immediate__e e=new A39Immediate__e();  r=e.Id==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R049",
+      "code": "A39Immediate__e e=new A39Immediate__e();  r=e.EventUuid==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R050",
+      "code": "A39Immediate__e e=new A39Immediate__e();  r=e.ReplayId==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R051",
+      "code": "A39Immediate__e e=new A39Immediate__e();  r=e.CreatedDate==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R052",
+      "code": "A39Immediate__e e=new A39Immediate__e();  r=e.CreatedById==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R053",
+      "code": "A39Immediate__e e=new A39Immediate__e(); e.Payload__c='identity'; r=e.get('Payload__c');",
+      "expected": "identity"
+    },
+    {
+      "id": "R054",
+      "code": "A39Immediate__e e=new A39Immediate__e();  r=e.getSObjectType().getDescribe().getName();",
+      "expected": "A39Immediate__e"
+    },
+    {
+      "id": "R055",
+      "code": "A39Immediate__e e=new A39Immediate__e();  r=e.clone(false,false,false,false).EventUuid==e.EventUuid;",
+      "expected": "true"
+    },
+    {
+      "id": "R056",
+      "code": "A39Immediate__e e=new A39Immediate__e();  r=e.clone(true,true,true,true).EventUuid==e.EventUuid;",
+      "expected": "true"
+    },
+    {
+      "id": "R057",
+      "code": "A39Immediate__e e=new A39Immediate__e();  r=e.getPopulatedFieldsAsMap().containsKey('EventUuid');",
+      "expected": "false"
+    },
+    {
+      "id": "R058",
+      "code": "A39Immediate__e e=new A39Immediate__e();  r=e.getPopulatedFieldsAsMap().containsKey('ReplayId');",
+      "expected": "false"
+    },
+    {
+      "id": "R059",
+      "code": "A39Immediate__e e=new A39Immediate__e();  r=e instanceof SObject;",
+      "expected": "COMPILE_ERROR\tline 7: Operation instanceof is always true since an instance of A39Immediate__e is always an instance of SObject",
+      "nativeLine": 7
+    },
+    {
+      "id": "R060",
+      "code": "A39Immediate__e e=(A39Immediate__e)A39Immediate__e.SObjectType.newSObject(null,true); r=e.EventUuid==null;",
+      "expected": "false"
+    },
+    {
+      "id": "R061",
+      "code": "A39Immediate__e e=(A39Immediate__e)A39Immediate__e.SObjectType.newSObject(null,true); r=e.EventUuid==null?0:e.EventUuid.length();",
+      "expected": "36"
+    },
+    {
+      "id": "R062",
+      "code": "A39Immediate__e e=(A39Immediate__e)A39Immediate__e.SObjectType.newSObject(null,true); r=e.EventUuid==null?false:Pattern.matches('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',e.EventUuid);",
+      "expected": "true"
+    },
+    {
+      "id": "R063",
+      "code": "A39Immediate__e e=(A39Immediate__e)A39Immediate__e.SObjectType.newSObject(null,true); r=e.ReplayId==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R064",
+      "code": "A39Immediate__e e=(A39Immediate__e)A39Immediate__e.SObjectType.newSObject(null,true); r=e.Payload__c==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R065",
+      "code": "A39Immediate__e e=(A39Immediate__e)A39Immediate__e.SObjectType.newSObject(null,true); r=e.clone(false,false,false,false).EventUuid==e.EventUuid;",
+      "expected": "true"
+    },
+    {
+      "id": "R066",
+      "code": "A39Immediate__e e=(A39Immediate__e)A39Immediate__e.SObjectType.newSObject(null,false); r=e.EventUuid==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R067",
+      "code": "A39Immediate__e e=(A39Immediate__e)A39Immediate__e.SObjectType.newSObject(null,false); r=e.EventUuid==null?0:e.EventUuid.length();",
+      "expected": "0"
+    },
+    {
+      "id": "R068",
+      "code": "A39Immediate__e e=(A39Immediate__e)A39Immediate__e.SObjectType.newSObject(null,false); r=e.EventUuid==null?false:Pattern.matches('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',e.EventUuid);",
+      "expected": "false"
+    },
+    {
+      "id": "R069",
+      "code": "A39Immediate__e e=(A39Immediate__e)A39Immediate__e.SObjectType.newSObject(null,false); r=e.ReplayId==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R070",
+      "code": "A39Immediate__e e=(A39Immediate__e)A39Immediate__e.SObjectType.newSObject(null,false); r=e.Payload__c==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R071",
+      "code": "A39Immediate__e e=(A39Immediate__e)A39Immediate__e.SObjectType.newSObject(null,false); r=e.clone(false,false,false,false).EventUuid==e.EventUuid;",
+      "expected": "true"
+    },
+    {
+      "id": "R072",
+      "code": "A39Immediate__e e=new A39Immediate__e(); e.put('Payload__c',null); r=e.Payload__c;",
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R073",
+      "code": "A39Immediate__e e=new A39Immediate__e(); e.put('Payload__c',123); r=e.Payload__c;",
+      "expected": "EXC|System.SObjectException|Illegal assignment from Integer to String"
+    },
+    {
+      "id": "R074",
+      "code": "A39Immediate__e e=new A39Immediate__e(); e.put('Ordinal__c','2'); r=e.Ordinal__c;",
+      "expected": "EXC|System.SObjectException|Illegal assignment from String to Decimal"
+    },
+    {
+      "id": "R075",
+      "code": "A39Immediate__e e=new A39Immediate__e(); e.put('Ordinal__c',2); r=e.Ordinal__c;",
+      "expected": "2"
+    },
+    {
+      "id": "R076",
+      "code": "A39Immediate__e e=new A39Immediate__e(); e.Ordinal__c=1.25; r=e.Ordinal__c;",
+      "expected": "1.25"
+    },
+    {
+      "id": "R077",
+      "code": "A39Immediate__e e=new A39Immediate__e(); e.put('ReplayId',1); r=e.ReplayId;",
+      "expected": "EXC|System.SObjectException|Field ReplayId is not editable"
+    },
+    {
+      "id": "R078",
+      "code": "A39Immediate__e e=new A39Immediate__e(); e.put('EventUuid','not-a-uuid'); r=e.EventUuid;",
+      "expected": "EXC|System.SObjectException|Field EventUuid is not editable"
+    },
+    {
+      "id": "R079",
+      "code": "A39Immediate__e e=new A39Immediate__e(); e.put('Missing__c','x'); r=e.get('Missing__c');",
+      "expected": "EXC|System.SObjectException|Invalid field Missing__c for A39Immediate__e"
+    },
+    {
+      "id": "R080",
+      "code": "A39Immediate__e e=new A39Immediate__e(); r=e.get('Missing__c');",
+      "expected": "EXC|System.SObjectException|Invalid field Missing__c for A39Immediate__e"
+    },
+    {
+      "id": "R081",
+      "code": "A39Immediate__e e=new A39Immediate__e(); SObject x=e; r=x.getSObjectType()==A39Immediate__e.SObjectType;",
+      "expected": "true"
+    },
+    {
+      "id": "R082",
+      "code": "A39Immediate__e e=new A39Immediate__e(); Object x=e; r=x instanceof A39Immediate__e;",
+      "expected": "true"
+    },
+    {
+      "id": "R083",
+      "code": "A39Immediate__e e=new A39Immediate__e(); SObject x=e; Account a=(Account)x; r=a;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type A39Immediate__e to Account"
+    },
+    {
+      "id": "R084",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','normal','success');",
+      "expected": "true"
+    },
+    {
+      "id": "R085",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','normal','id-null');",
+      "expected": "false"
+    },
+    {
+      "id": "R086",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','normal','errors');",
+      "expected": "1"
+    },
+    {
+      "id": "R087",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','normal','id-type');",
+      "expected": "A39AfterCommit__e"
+    },
+    {
+      "id": "R088",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','normal','uuid-present');",
+      "expected": "true"
+    },
+    {
+      "id": "R089",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','normal','replay-null');",
+      "expected": "true"
+    },
+    {
+      "id": "R090",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','normal','payload');",
+      "expected": "normal"
+    },
+    {
+      "id": "R091",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','normal','type');",
+      "expected": "A39AfterCommit__e"
+    },
+    {
+      "id": "R092",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','normal','result-type');",
+      "expected": "true"
+    },
+    {
+      "id": "R093",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e',null,'summary');",
+      "expected": "false|1|REQUIRED_FIELD_MISSING:You must enter a value: Payload__c:Payload__c"
+    },
+    {
+      "id": "R094",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','','summary');",
+      "expected": "false|1|REQUIRED_FIELD_MISSING:You must enter a value: Payload__c:Payload__c"
+    },
+    {
+      "id": "R095",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e',' ','summary');",
+      "expected": "false|1|REQUIRED_FIELD_MISSING:You must enter a value: Payload__c:Payload__c"
+    },
+    {
+      "id": "R099",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','\\n','summary');",
+      "expected": "false|1|REQUIRED_FIELD_MISSING:You must enter a value: Payload__c:Payload__c"
+    },
+    {
+      "id": "R100",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','\\r','summary');",
+      "expected": "false|1|REQUIRED_FIELD_MISSING:You must enter a value: Payload__c:Payload__c"
+    },
+    {
+      "id": "R103",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx','summary');",
+      "expected": "false|1|STRING_TOO_LONG:Value too long for field:Payload__c"
+    },
+    {
+      "id": "R104",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',0,'count');",
+      "expected": "0"
+    },
+    {
+      "id": "R105",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',0,'success-count');",
+      "expected": "0"
+    },
+    {
+      "id": "R106",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',0,'id-type-count');",
+      "expected": "0"
+    },
+    {
+      "id": "R107",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',1,'count');",
+      "expected": "1"
+    },
+    {
+      "id": "R108",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',1,'success-count');",
+      "expected": "1"
+    },
+    {
+      "id": "R109",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',1,'id-type-count');",
+      "expected": "1"
+    },
+    {
+      "id": "R110",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',2,'count');",
+      "expected": "2"
+    },
+    {
+      "id": "R111",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',2,'success-count');",
+      "expected": "2"
+    },
+    {
+      "id": "R112",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',2,'id-type-count');",
+      "expected": "2"
+    },
+    {
+      "id": "R113",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',10,'count');",
+      "expected": "10"
+    },
+    {
+      "id": "R114",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',10,'success-count');",
+      "expected": "10"
+    },
+    {
+      "id": "R115",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',10,'id-type-count');",
+      "expected": "10"
+    },
+    {
+      "id": "R116",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',199,'count');",
+      "expected": "199"
+    },
+    {
+      "id": "R117",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',199,'success-count');",
+      "expected": "199"
+    },
+    {
+      "id": "R118",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',199,'id-type-count');",
+      "expected": "199"
+    },
+    {
+      "id": "R119",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',200,'count');",
+      "expected": "200"
+    },
+    {
+      "id": "R120",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',200,'success-count');",
+      "expected": "200"
+    },
+    {
+      "id": "R121",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',200,'id-type-count');",
+      "expected": "200"
+    },
+    {
+      "id": "R122",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',201,'count');",
+      "expected": "201"
+    },
+    {
+      "id": "R123",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',201,'success-count');",
+      "expected": "201"
+    },
+    {
+      "id": "R124",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',201,'id-type-count');",
+      "expected": "201"
+    },
+    {
+      "id": "R125",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',2000,'count');",
+      "expected": "2000"
+    },
+    {
+      "id": "R126",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',2000,'success-count');",
+      "expected": "2000"
+    },
+    {
+      "id": "R127",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',2000,'id-type-count');",
+      "expected": "2000"
+    },
+    {
+      "id": "R128",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',2001,'count');",
+      "expected": "2001"
+    },
+    {
+      "id": "R129",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',2001,'success-count');",
+      "expected": "2001"
+    },
+    {
+      "id": "R130",
+      "code": "r=A39Oracle.publishMany('A39AfterCommit__e',2001,'id-type-count');",
+      "expected": "2001"
+    },
+    {
+      "id": "R131",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e();  r=e.Id==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R132",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e();  r=e.EventUuid==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R133",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e();  r=e.ReplayId==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R134",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e();  r=e.CreatedDate==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R135",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e();  r=e.CreatedById==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R136",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e(); e.Payload__c='identity'; r=e.get('Payload__c');",
+      "expected": "identity"
+    },
+    {
+      "id": "R137",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e();  r=e.getSObjectType().getDescribe().getName();",
+      "expected": "A39AfterCommit__e"
+    },
+    {
+      "id": "R138",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e();  r=e.clone(false,false,false,false).EventUuid==e.EventUuid;",
+      "expected": "true"
+    },
+    {
+      "id": "R139",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e();  r=e.clone(true,true,true,true).EventUuid==e.EventUuid;",
+      "expected": "true"
+    },
+    {
+      "id": "R140",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e();  r=e.getPopulatedFieldsAsMap().containsKey('EventUuid');",
+      "expected": "false"
+    },
+    {
+      "id": "R141",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e();  r=e.getPopulatedFieldsAsMap().containsKey('ReplayId');",
+      "expected": "false"
+    },
+    {
+      "id": "R142",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e();  r=e instanceof SObject;",
+      "expected": "COMPILE_ERROR\tline 13: Operation instanceof is always true since an instance of A39AfterCommit__e is always an instance of SObject",
+      "nativeLine": 13
+    },
+    {
+      "id": "R143",
+      "code": "A39AfterCommit__e e=(A39AfterCommit__e)A39AfterCommit__e.SObjectType.newSObject(null,true); r=e.EventUuid==null;",
+      "expected": "false"
+    },
+    {
+      "id": "R144",
+      "code": "A39AfterCommit__e e=(A39AfterCommit__e)A39AfterCommit__e.SObjectType.newSObject(null,true); r=e.EventUuid==null?0:e.EventUuid.length();",
+      "expected": "36"
+    },
+    {
+      "id": "R145",
+      "code": "A39AfterCommit__e e=(A39AfterCommit__e)A39AfterCommit__e.SObjectType.newSObject(null,true); r=e.EventUuid==null?false:Pattern.matches('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',e.EventUuid);",
+      "expected": "true"
+    },
+    {
+      "id": "R146",
+      "code": "A39AfterCommit__e e=(A39AfterCommit__e)A39AfterCommit__e.SObjectType.newSObject(null,true); r=e.ReplayId==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R147",
+      "code": "A39AfterCommit__e e=(A39AfterCommit__e)A39AfterCommit__e.SObjectType.newSObject(null,true); r=e.Payload__c==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R148",
+      "code": "A39AfterCommit__e e=(A39AfterCommit__e)A39AfterCommit__e.SObjectType.newSObject(null,true); r=e.clone(false,false,false,false).EventUuid==e.EventUuid;",
+      "expected": "true"
+    },
+    {
+      "id": "R149",
+      "code": "A39AfterCommit__e e=(A39AfterCommit__e)A39AfterCommit__e.SObjectType.newSObject(null,false); r=e.EventUuid==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R150",
+      "code": "A39AfterCommit__e e=(A39AfterCommit__e)A39AfterCommit__e.SObjectType.newSObject(null,false); r=e.EventUuid==null?0:e.EventUuid.length();",
+      "expected": "0"
+    },
+    {
+      "id": "R151",
+      "code": "A39AfterCommit__e e=(A39AfterCommit__e)A39AfterCommit__e.SObjectType.newSObject(null,false); r=e.EventUuid==null?false:Pattern.matches('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',e.EventUuid);",
+      "expected": "false"
+    },
+    {
+      "id": "R152",
+      "code": "A39AfterCommit__e e=(A39AfterCommit__e)A39AfterCommit__e.SObjectType.newSObject(null,false); r=e.ReplayId==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R153",
+      "code": "A39AfterCommit__e e=(A39AfterCommit__e)A39AfterCommit__e.SObjectType.newSObject(null,false); r=e.Payload__c==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R154",
+      "code": "A39AfterCommit__e e=(A39AfterCommit__e)A39AfterCommit__e.SObjectType.newSObject(null,false); r=e.clone(false,false,false,false).EventUuid==e.EventUuid;",
+      "expected": "true"
+    },
+    {
+      "id": "R155",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e(); e.put('Payload__c',null); r=e.Payload__c;",
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R156",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e(); e.put('Payload__c',123); r=e.Payload__c;",
+      "expected": "EXC|System.SObjectException|Illegal assignment from Integer to String"
+    },
+    {
+      "id": "R157",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e(); e.put('Ordinal__c','2'); r=e.Ordinal__c;",
+      "expected": "EXC|System.SObjectException|Illegal assignment from String to Decimal"
+    },
+    {
+      "id": "R158",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e(); e.put('Ordinal__c',2); r=e.Ordinal__c;",
+      "expected": "2"
+    },
+    {
+      "id": "R159",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e(); e.Ordinal__c=1.25; r=e.Ordinal__c;",
+      "expected": "1.25"
+    },
+    {
+      "id": "R160",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e(); e.put('ReplayId',1); r=e.ReplayId;",
+      "expected": "EXC|System.SObjectException|Field ReplayId is not editable"
+    },
+    {
+      "id": "R161",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e(); e.put('EventUuid','not-a-uuid'); r=e.EventUuid;",
+      "expected": "EXC|System.SObjectException|Field EventUuid is not editable"
+    },
+    {
+      "id": "R162",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e(); e.put('Missing__c','x'); r=e.get('Missing__c');",
+      "expected": "EXC|System.SObjectException|Invalid field Missing__c for A39AfterCommit__e"
+    },
+    {
+      "id": "R163",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e(); r=e.get('Missing__c');",
+      "expected": "EXC|System.SObjectException|Invalid field Missing__c for A39AfterCommit__e"
+    },
+    {
+      "id": "R164",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e(); SObject x=e; r=x.getSObjectType()==A39AfterCommit__e.SObjectType;",
+      "expected": "true"
+    },
+    {
+      "id": "R165",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e(); Object x=e; r=x instanceof A39AfterCommit__e;",
+      "expected": "true"
+    },
+    {
+      "id": "R166",
+      "code": "A39AfterCommit__e e=new A39AfterCommit__e(); SObject x=e; Account a=(Account)x; r=a;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type A39AfterCommit__e to Account"
+    },
+    {
+      "id": "R169",
+      "code": "r=EventBus.publish(new List<SObject>()).size();",
+      "expected": "0"
+    },
+    {
+      "id": "R170",
+      "code": "r=EventBus.publish(new Account(Name='A39')).isSuccess();",
+      "expected": "COMPILE_ERROR\tline 7: Argument must be a Platform Event sObject type.",
+      "nativeLine": 7
+    },
+    {
+      "id": "R175",
+      "code": "List<Database.SaveResult> ss=EventBus.publish(new List<SObject>{new A39Immediate__e(Payload__c='i'),new A39AfterCommit__e(Payload__c='c')}); r=ss[0].isSuccess()+'|'+ss[1].isSuccess();",
+      "expected": "true|true"
+    },
+    {
+      "id": "R176",
+      "code": "A39Immediate__e e=new A39Immediate__e(Payload__c='duplicate'); r=EventBus.publish(new List<A39Immediate__e>{e,e}).size();",
+      "expected": "EXC|System.ListException|Before Insert or Upsert list must not have two identically equal elements"
+    },
+    {
+      "id": "R177",
+      "code": "A39Immediate__e e=new A39Immediate__e(Payload__c='republish'); EventBus.publish(e); r=EventBus.publish(e).isSuccess();",
+      "expected": "false"
+    },
+    {
+      "id": "R178",
+      "code": "A39Immediate__e e=new A39Immediate__e(Payload__c='normal'); insert e; r=e.Id!=null;",
+      "expected": "EXC|System.DmlException|Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead"
+    },
+    {
+      "id": "R179",
+      "code": "r=Database.insert(new A39Immediate__e(Payload__c='normal'),false).isSuccess();",
+      "expected": "COMPILE_ERROR\tline 11: Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead",
+      "nativeLine": 11
+    },
+    {
+      "id": "R180",
+      "code": "A39Immediate__e e=new A39Immediate__e(Payload__c='normal'); update e; r=e.Id;",
+      "expected": "COMPILE_ERROR\tline 11: DML operation Update not allowed on A39Immediate__e",
+      "nativeLine": 11
+    },
+    {
+      "id": "R181",
+      "code": "A39Immediate__e e=new A39Immediate__e(Payload__c='normal'); delete e; r=e.Id;",
+      "expected": "COMPILE_ERROR\tline 11: DML operation Delete not allowed on A39Immediate__e",
+      "nativeLine": 11
+    },
+    {
+      "id": "R182",
+      "code": "r=EventBus.TriggerContext.currentContext()==null;",
+      "expected": "false"
+    },
+    {
+      "id": "R183",
+      "code": "r=EventBus.TriggerContext.currentContext().retries;",
+      "expected": "0"
+    },
+    {
+      "id": "R184",
+      "code": "r=EventBus.TriggerContext.currentContext().getResumeCheckpoint();",
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R185",
+      "code": "r=Trigger.isExecuting;",
+      "expected": "false"
+    },
+    {
+      "id": "R186",
+      "code": "r=Trigger.isAfter;",
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R187",
+      "code": "r=Trigger.isInsert;",
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R188",
+      "code": "r=Trigger.size;",
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R189",
+      "code": "r=Trigger.new==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R190",
+      "code": "r=Trigger.old==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R191",
+      "code": "r=Trigger.newMap==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R192",
+      "code": "r=Trigger.oldMap==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R193",
+      "code": "EventBus.TriggerContext.currentContext().setResumeCheckpoint(null); r=1;",
+      "expected": "EXC|eventbus.InvalidReplayIdException|null"
+    },
+    {
+      "id": "R194",
+      "code": "EventBus.TriggerContext.currentContext().setResumeCheckpoint(''); r=1;",
+      "expected": "EXC|eventbus.InvalidReplayIdException|"
+    },
+    {
+      "id": "R195",
+      "code": "EventBus.TriggerContext.currentContext().setResumeCheckpoint('0'); r=1;",
+      "expected": "EXC|eventbus.InvalidReplayIdException|0"
+    },
+    {
+      "id": "R196",
+      "code": "EventBus.TriggerContext.currentContext().setResumeCheckpoint('1'); r=1;",
+      "expected": "EXC|eventbus.InvalidReplayIdException|1"
+    },
+    {
+      "id": "R197",
+      "code": "EventBus.TriggerContext.currentContext().setResumeCheckpoint('invalid'); r=1;",
+      "expected": "EXC|eventbus.InvalidReplayIdException|invalid"
+    },
+    {
+      "id": "R198",
+      "code": "EventBus.TriggerContext.currentContext().setResumeCheckpoint(-1); r=1;",
+      "expected": "COMPILE_ERROR\tline 11: Method does not exist or incorrect signature: void setResumeCheckpoint(Integer) from the type eventbus.TriggerContext",
+      "nativeLine": 11
+    },
+    {
+      "id": "R199",
+      "code": "EventBus.TriggerContext.currentContext().setResumeCheckpoint(0); r=1;",
+      "expected": "COMPILE_ERROR\tline 11: Method does not exist or incorrect signature: void setResumeCheckpoint(Integer) from the type eventbus.TriggerContext",
+      "nativeLine": 11
+    },
+    {
+      "id": "R200",
+      "code": "EventBus.TriggerContext.currentContext().setResumeCheckpoint(1); r=1;",
+      "expected": "COMPILE_ERROR\tline 11: Method does not exist or incorrect signature: void setResumeCheckpoint(Integer) from the type eventbus.TriggerContext",
+      "nativeLine": 11
+    },
+    {
+      "id": "R201",
+      "code": "EventBus.TriggerContext.currentContext().setResumeCheckpoint(2147483647); r=1;",
+      "expected": "COMPILE_ERROR\tline 11: Method does not exist or incorrect signature: void setResumeCheckpoint(Integer) from the type eventbus.TriggerContext",
+      "nativeLine": 11
+    },
+    {
+      "id": "R202",
+      "code": "EventBus.TriggerContext.currentContext().setResumeCheckpoint(2147483648L); r=1;",
+      "expected": "COMPILE_ERROR\tline 11: Method does not exist or incorrect signature: void setResumeCheckpoint(Long) from the type eventbus.TriggerContext",
+      "nativeLine": 11
+    },
+    {
+      "id": "R203",
+      "code": "String message=null; Boolean shouldThrow=new List<Integer>{1}.size()==1; if(shouldThrow){throw new EventBus.RetryableException(message);} r=0;",
+      "expected": "EXC|eventbus.RetryableException|null"
+    },
+    {
+      "id": "R204",
+      "code": "String message=''; Boolean shouldThrow=new List<Integer>{1}.size()==1; if(shouldThrow){throw new EventBus.RetryableException(message);} r=0;",
+      "expected": "EXC|eventbus.RetryableException|"
+    },
+    {
+      "id": "R205",
+      "code": "String message='A39 retry'; Boolean shouldThrow=new List<Integer>{1}.size()==1; if(shouldThrow){throw new EventBus.RetryableException(message);} r=0;",
+      "expected": "EXC|eventbus.RetryableException|A39 retry"
+    },
+    {
+      "id": "R206",
+      "code": "String message='a\\nb'; Boolean shouldThrow=new List<Integer>{1}.size()==1; if(shouldThrow){throw new EventBus.RetryableException(message);} r=0;",
+      "expected": "EXC|eventbus.RetryableException|a\\nb"
+    },
+    {
+      "id": "R207",
+      "code": "r=new EventBus.RetryableException('A39').getTypeName();",
+      "expected": "eventbus.RetryableException"
+    },
+    {
+      "id": "R208",
+      "code": "r=new EventBus.RetryableException('A39').getMessage();",
+      "expected": "A39"
+    },
+    {
+      "id": "R209",
+      "code": "r=((Object)new EventBus.RetryableException('A39')) instanceof Exception;",
+      "expected": "true"
+    },
+    {
+      "id": "R210",
+      "code": "EventBus.TestBroker b=null; r=b==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R211",
+      "code": "EventBus.TestBroker b=null; b.deliver(); r=1;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R212",
+      "code": "List<EventBus.TestBroker> bs=new List<EventBus.TestBroker>{null}; r=bs.size();",
+      "expected": "1"
+    },
+    {
+      "id": "R213",
+      "code": "EventBus.publish(new A39Immediate__e(Payload__c='test-boundary')); EventBus.TestBroker b=null; b.deliver(); r=1;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R214",
+      "code": "EventBus.publish(new A39AfterCommit__e(Payload__c='test-boundary')); EventBus.TestBroker b=null; b.deliver(); r=1;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R215",
+      "code": "Object x=null; EventBus.TestBroker b=(EventBus.TestBroker)x; b.deliver(); r=1;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R216",
+      "code": "r=Test.isRunningTest();",
+      "expected": "false"
+    },
+    {
+      "id": "R217",
+      "code": "Object b=new List<EventBus.TestBroker>(); r=b instanceof List<EventBus.TestBroker>;",
+      "expected": "true"
+    },
+    {
+      "id": "R218",
+      "code": "List<Database.SaveResult> ss=EventBus.publish(new List<SObject>{new A39Immediate__e(Payload__c='boundary')},new A39Callback()); r=ss.size();",
+      "expected": "1"
+    },
+    {
+      "id": "R219",
+      "code": "List<Database.SaveResult> ss=EventBus.publish(new List<SObject>{new A39AfterCommit__e(Payload__c='boundary')},new A39Callback()); r=ss.size();",
+      "expected": "1"
+    },
+    {
+      "id": "C001",
+      "code": "class CB implements EventBus.EventPublishSuccessCallback { public void onSuccess(EventBus.SuccessResult x){} } Object cb=new CB(); Object r=cb instanceof EventBus.EventPublishSuccessCallback; pq.out('C001',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C002",
+      "code": "class CB implements EventBus.EventPublishFailureCallback { public void onFailure(EventBus.FailureResult x){} } Object cb=new CB(); Object r=cb instanceof EventBus.EventPublishFailureCallback; pq.out('C002',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C003",
+      "code": "class CB implements EventBus.EventPublishSuccessCallback,EventBus.EventPublishFailureCallback { public void onSuccess(EventBus.SuccessResult x){} public void onFailure(EventBus.FailureResult x){} } Object cb=new CB(); Object r=cb instanceof EventBus.EventPublishFailureCallback; pq.out('C003',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C004",
+      "code": "EventBus.SuccessResult x=null; Object r=x==null; pq.out('C004',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C005",
+      "code": "EventBus.FailureResult x=null; Object r=x==null; pq.out('C005',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C006",
+      "code": "class CB implements EventBus.EventPublishSuccessCallback { public void onSuccess(EventBus.SuccessResult x){List<String> ids=x.getEventUuids();} } Object r=true; pq.out('C006',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C007",
+      "code": "class CB implements EventBus.EventPublishFailureCallback { public void onFailure(EventBus.FailureResult x){List<String> ids=x.getEventUuids();} } Object r=true; pq.out('C007',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C008",
+      "code": "Object r=new EventBus.TriggerContext(); pq.out('C008',r);",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [eventbus.TriggerContext].<Constructor>()",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C009",
+      "code": "Object r=new EventBus.TestBroker(); pq.out('C009',r);",
+      "expected": "TestBroker:[]",
+      "compile": true
+    },
+    {
+      "id": "C010",
+      "code": "Object r=new EventBus.SuccessResult(); pq.out('C010',r);",
+      "expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: eventbus.SuccessResult",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C011",
+      "code": "Object r=new EventBus.FailureResult(); pq.out('C011',r);",
+      "expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: eventbus.FailureResult",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C012",
+      "code": "Object r=new Database.SaveResult(); pq.out('C012',r);",
+      "expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Database.SaveResult",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C013",
+      "code": "Object r=EventBus.publish(); pq.out('C013',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void publish() from the type EventBus",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C014",
+      "code": "Object r=EventBus.publish('x'); pq.out('C014',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void publish(String) from the type EventBus",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C015",
+      "code": "Object r=EventBus.publish(1); pq.out('C015',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void publish(Integer) from the type EventBus",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C016",
+      "code": "Object r=EventBus.publish(new List<String>()); pq.out('C016',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void publish(List<String>) from the type EventBus",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C017",
+      "code": "Boolean r=EventBus.publish(new A39Immediate__e()); pq.out('C017',r);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Database.SaveResult to Boolean",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C018",
+      "code": "List<Database.SaveResult> r=EventBus.publish(new A39Immediate__e()); pq.out('C018',r);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Database.SaveResult to List<Database.SaveResult>",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C019",
+      "code": "Database.SaveResult r=EventBus.publish(new List<A39Immediate__e>()); pq.out('C019',r);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from List<Database.SaveResult> to Database.SaveResult",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C020",
+      "code": "EventBus.TriggerContext x=EventBus.TriggerContext.currentContext(); if(x!=null) x.retries=1; Object r=x; pq.out('C020',r);",
+      "expected": "COMPILE_ERROR\tline 6: Variable is not visible: eventbus.TriggerContext.retries",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C021",
+      "code": "EventBus.TriggerContext x=null; x.setResumeCheckpoint(); Object r=x; pq.out('C021',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setResumeCheckpoint() from the type eventbus.TriggerContext",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C022",
+      "code": "EventBus.TriggerContext x=null; if(x!=null) x.setResumeCheckpoint('x'); Object r=x; pq.out('C022',r);",
+      "expected": "null",
+      "compile": true,
+      "nativeNull": true
+    },
+    {
+      "id": "C023",
+      "code": "EventBus.TestBroker x=null; x.deliver(1); Object r=x; pq.out('C023',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void deliver(Integer) from the type eventbus.TestBroker",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C024",
+      "code": "Object r=EventBus.TestBroker.deliver(); pq.out('C024',r);",
+      "expected": "COMPILE_ERROR\tline 6: Non static method cannot be referenced from a static context: void eventbus.TestBroker.deliver()",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C025",
+      "code": "A39Immediate__e x=new A39Immediate__e(); x.EventUuid='x'; Object r=x; pq.out('C025',r);",
+      "expected": "COMPILE_ERROR\tline 6: Field is not writeable: A39Immediate__e.EventUuid",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C026",
+      "code": "A39Immediate__e x=new A39Immediate__e(); x.ReplayId=1; Object r=x; pq.out('C026',r);",
+      "expected": "COMPILE_ERROR\tline 6: Field is not writeable: A39Immediate__e.ReplayId",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C027",
+      "code": "A39Immediate__e x=new A39Immediate__e(); x.CreatedDate=Datetime.newInstanceGMT(2000,1,1,0,0,0); Object r=x; pq.out('C027',r);",
+      "expected": "COMPILE_ERROR\tline 6: Field is not writeable: A39Immediate__e.CreatedDate",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C028",
+      "code": "Object r=new EventBus.RetryableException(1); pq.out('C028',r);",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [eventbus.RetryableException].<Constructor>(Integer)",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C029",
+      "code": "class CB implements EventBus.EventPublishSuccessCallback {} Object r=null; pq.out('C029',r);",
+      "expected": "COMPILE_ERROR\tline 6: Class CB must implement the method: void eventbus.EventPublishSuccessCallback.onSuccess(eventbus.SuccessResult)",
+      "compile": true,
+      "nativeLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "PlatformEventsCompileC029",
+          "source": "@IsTest private class PlatformEventsCompileC029 {\n\n\n\n\nclass CB implements EventBus.EventPublishSuccessCallback {}\n@IsTest static void observed(){\nP pq=new P();\n                                                            Object r=null; pq.out('C029',r);\n}\nprivate class P {public void out(String id,Object v){}}\n}\n",
+          "expected": "COMPILE_ERROR\tClass PlatformEventsCompileC029.CB must implement the method: void eventbus.EventPublishSuccessCallback.onSuccess(eventbus.SuccessResult)"
+        },
+        "67.0": {
+          "name": "PlatformEventsCompileC029",
+          "source": "@IsTest private class PlatformEventsCompileC029 {\n\n\n\n\nclass CB implements EventBus.EventPublishSuccessCallback {}\n@IsTest static void observed(){\nP pq=new P();\n                                                            Object r=null; pq.out('C029',r);\n}\nprivate class P {public void out(String id,Object v){}}\n}\n",
+          "expected": "COMPILE_ERROR\tClass PlatformEventsCompileC029.CB must implement the method: void eventbus.EventPublishSuccessCallback.onSuccess(eventbus.SuccessResult)"
+        }
+      }
+    },
+    {
+      "id": "C030",
+      "code": "class CB implements EventBus.EventPublishFailureCallback {} Object r=null; pq.out('C030',r);",
+      "expected": "COMPILE_ERROR\tline 6: Class CB must implement the method: void eventbus.EventPublishFailureCallback.onFailure(eventbus.FailureResult)",
+      "compile": true,
+      "nativeLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "PlatformEventsCompileC030",
+          "source": "@IsTest private class PlatformEventsCompileC030 {\n\n\n\n\nclass CB implements EventBus.EventPublishFailureCallback {}\n@IsTest static void observed(){\nP pq=new P();\n                                                            Object r=null; pq.out('C030',r);\n}\nprivate class P {public void out(String id,Object v){}}\n}\n",
+          "expected": "COMPILE_ERROR\tClass PlatformEventsCompileC030.CB must implement the method: void eventbus.EventPublishFailureCallback.onFailure(eventbus.FailureResult)"
+        },
+        "67.0": {
+          "name": "PlatformEventsCompileC030",
+          "source": "@IsTest private class PlatformEventsCompileC030 {\n\n\n\n\nclass CB implements EventBus.EventPublishFailureCallback {}\n@IsTest static void observed(){\nP pq=new P();\n                                                            Object r=null; pq.out('C030',r);\n}\nprivate class P {public void out(String id,Object v){}}\n}\n",
+          "expected": "COMPILE_ERROR\tClass PlatformEventsCompileC030.CB must implement the method: void eventbus.EventPublishFailureCallback.onFailure(eventbus.FailureResult)"
+        }
+      }
+    },
+    {
+      "id": "C031",
+      "code": "EventBus.SuccessResult x=null; List<Id> r=x==null?null:x.getEventUuids(); pq.out('C031',r);",
+      "expected": "null",
+      "compile": true,
+      "nativeNull": true
+    },
+    {
+      "id": "C032",
+      "code": "EventBus.FailureResult x=null; Object r=x.isSuccess(); pq.out('C032',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void isSuccess() from the type eventbus.FailureResult",
+      "compile": true,
+      "nativeLine": 6
+    },
+    {
+      "id": "C033",
+      "code": "class BrokerShape { public void run(){EventBus.TestBroker b=Test.getEventBus(); b.deliver();} } Object r=true; pq.out('C033',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C034",
+      "code": "class BrokerShape { public void run(){Test.startTest(); Test.getEventBus().deliver(); Test.stopTest();} } Object r=true; pq.out('C034',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C035",
+      "code": "class NullPublishShape { public void run(){Object r; SObject e=null; r=A39Oracle.publishSingle(e);} } Object r=true; pq.out('C035',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C036",
+      "code": "class NullPublishShape { public void run(){Object r; List<SObject> es=null; r=A39Oracle.publishList(es,'count');} } Object r=true; pq.out('C036',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C037",
+      "code": "class NullPublishShape { public void run(){Object r; r=EventBus.publish(new List<SObject>{new Account(Name='A39')})[0].isSuccess();} } Object r=true; pq.out('C037',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C038",
+      "code": "class NullPublishShape { public void run(){Object r; r=A39Oracle.publishList(new List<SObject>{null},'first');} } Object r=true; pq.out('C038',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C039",
+      "code": "class NullPublishShape { public void run(){Object r; r=A39Oracle.publishList(new List<SObject>{new A39Immediate__e(Payload__c='ok'),null},'count');} } Object r=true; pq.out('C039',r);",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C040",
+      "code": "class NullPublishShape { public void run(){Object r; r=A39Oracle.publishList(new List<SObject>{new A39Immediate__e(Payload__c='ok'),new Account(Name='A39')},'count');} } Object r=true; pq.out('C040',r);",
+      "expected": "true",
+      "compile": true
+    }
+  ],
+  "controls": [
+    {
+      "id": "K001",
+      "code": "SObject e=A39Immediate__e.SObjectType.newSObject(null,false); e.put('Payload__c','A39'); Database.SaveResult s=EventBus.publish(e); Database.Error err=s.getErrors()[0]; r=s.isSuccess()+'|'+s.getErrors().size()+'|'+err.getStatusCode()+'|'+Pattern.matches('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',err.getMessage())+'|'+err.getFields().size();",
+      "expected": "true|1|OPERATION_ENQUEUED|true|0"
+    },
+    {
+      "id": "K002",
+      "code": "SObject e=A39Immediate__e.SObjectType.newSObject(null,false); e.put('Payload__c','a\\'b'); Database.SaveResult s=EventBus.publish(e); Database.Error err=s.getErrors()[0]; r=s.isSuccess()+'|'+s.getErrors().size()+'|'+err.getStatusCode()+'|'+Pattern.matches('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',err.getMessage())+'|'+err.getFields().size();",
+      "expected": "true|1|OPERATION_ENQUEUED|true|0"
+    },
+    {
+      "id": "K003",
+      "code": "SObject e=A39Immediate__e.SObjectType.newSObject(null,false); e.put('Payload__c','a\\\\b'); Database.SaveResult s=EventBus.publish(e); Database.Error err=s.getErrors()[0]; r=s.isSuccess()+'|'+s.getErrors().size()+'|'+err.getStatusCode()+'|'+Pattern.matches('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',err.getMessage())+'|'+err.getFields().size();",
+      "expected": "true|1|OPERATION_ENQUEUED|true|0"
+    },
+    {
+      "id": "K004",
+      "code": "SObject e=A39Immediate__e.SObjectType.newSObject(null,false); e.put('Payload__c','é'); Database.SaveResult s=EventBus.publish(e); Database.Error err=s.getErrors()[0]; r=s.isSuccess()+'|'+s.getErrors().size()+'|'+err.getStatusCode()+'|'+Pattern.matches('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',err.getMessage())+'|'+err.getFields().size();",
+      "expected": "true|1|OPERATION_ENQUEUED|true|0"
+    },
+    {
+      "id": "K005",
+      "code": "SObject e=A39Immediate__e.SObjectType.newSObject(null,false); e.put('Payload__c','xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'); Database.SaveResult s=EventBus.publish(e); Database.Error err=s.getErrors()[0]; r=s.isSuccess()+'|'+s.getErrors().size()+'|'+err.getStatusCode()+'|'+Pattern.matches('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',err.getMessage())+'|'+err.getFields().size();",
+      "expected": "true|1|OPERATION_ENQUEUED|true|0"
+    },
+    {
+      "id": "K006",
+      "code": "SObject e=A39Immediate__e.SObjectType.newSObject(null,false); e.put('Payload__c','identity'); Database.SaveResult s=EventBus.publish(e); r=(s.getId()!=null)+'|'+(e.Id!=null)+'|'+(e.Id==s.getId())+'|'+(e.get('ReplayId')==null)+'|'+(e.get('EventUuid')==null);",
+      "expected": "EXC|System.SObjectException|Invalid field Id"
+    },
+    {
+      "id": "K007",
+      "code": "SObject e=A39Immediate__e.SObjectType.newSObject(null,false); e.put('Payload__c','republish'); EventBus.publish(e); Database.SaveResult s=EventBus.publish(e); Database.Error err=s.getErrors()[0]; r=s.isSuccess()+'|'+(s.getId()==null)+'|'+err.getStatusCode()+'|'+err.getMessage()+'|'+String.join(err.getFields(),',');",
+      "expected": "false|false|INVALID_FIELD_FOR_INSERT_UPDATE|The event can't be published because it contains an ID value.|"
+    },
+    {
+      "id": "K008",
+      "code": "SObject e=A39AfterCommit__e.SObjectType.newSObject(null,false); e.put('Payload__c','A39'); Database.SaveResult s=EventBus.publish(e); Database.Error err=s.getErrors()[0]; r=s.isSuccess()+'|'+s.getErrors().size()+'|'+err.getStatusCode()+'|'+Pattern.matches('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',err.getMessage())+'|'+err.getFields().size();",
+      "expected": "true|1|OPERATION_ENQUEUED|true|0"
+    },
+    {
+      "id": "K009",
+      "code": "SObject e=A39AfterCommit__e.SObjectType.newSObject(null,false); e.put('Payload__c','a\\'b'); Database.SaveResult s=EventBus.publish(e); Database.Error err=s.getErrors()[0]; r=s.isSuccess()+'|'+s.getErrors().size()+'|'+err.getStatusCode()+'|'+Pattern.matches('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',err.getMessage())+'|'+err.getFields().size();",
+      "expected": "true|1|OPERATION_ENQUEUED|true|0"
+    },
+    {
+      "id": "K010",
+      "code": "SObject e=A39AfterCommit__e.SObjectType.newSObject(null,false); e.put('Payload__c','a\\\\b'); Database.SaveResult s=EventBus.publish(e); Database.Error err=s.getErrors()[0]; r=s.isSuccess()+'|'+s.getErrors().size()+'|'+err.getStatusCode()+'|'+Pattern.matches('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',err.getMessage())+'|'+err.getFields().size();",
+      "expected": "true|1|OPERATION_ENQUEUED|true|0"
+    },
+    {
+      "id": "K011",
+      "code": "SObject e=A39AfterCommit__e.SObjectType.newSObject(null,false); e.put('Payload__c','é'); Database.SaveResult s=EventBus.publish(e); Database.Error err=s.getErrors()[0]; r=s.isSuccess()+'|'+s.getErrors().size()+'|'+err.getStatusCode()+'|'+Pattern.matches('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',err.getMessage())+'|'+err.getFields().size();",
+      "expected": "true|1|OPERATION_ENQUEUED|true|0"
+    },
+    {
+      "id": "K012",
+      "code": "SObject e=A39AfterCommit__e.SObjectType.newSObject(null,false); e.put('Payload__c','xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'); Database.SaveResult s=EventBus.publish(e); Database.Error err=s.getErrors()[0]; r=s.isSuccess()+'|'+s.getErrors().size()+'|'+err.getStatusCode()+'|'+Pattern.matches('[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',err.getMessage())+'|'+err.getFields().size();",
+      "expected": "true|1|OPERATION_ENQUEUED|true|0"
+    },
+    {
+      "id": "K013",
+      "code": "SObject e=A39AfterCommit__e.SObjectType.newSObject(null,false); e.put('Payload__c','identity'); Database.SaveResult s=EventBus.publish(e); r=(s.getId()!=null)+'|'+(e.Id!=null)+'|'+(e.Id==s.getId())+'|'+(e.get('ReplayId')==null)+'|'+(e.get('EventUuid')==null);",
+      "expected": "EXC|System.SObjectException|Invalid field Id"
+    },
+    {
+      "id": "K014",
+      "code": "SObject e=A39AfterCommit__e.SObjectType.newSObject(null,false); e.put('Payload__c','republish'); EventBus.publish(e); Database.SaveResult s=EventBus.publish(e); Database.Error err=s.getErrors()[0]; r=s.isSuccess()+'|'+(s.getId()==null)+'|'+err.getStatusCode()+'|'+err.getMessage()+'|'+String.join(err.getFields(),',');",
+      "expected": "false|false|INVALID_FIELD_FOR_INSERT_UPDATE|The event can't be published because it contains an ID value.|"
+    },
+    {
+      "id": "K015",
+      "code": "EventBus.InvalidReplayIdException e=new EventBus.InvalidReplayIdException(); r=e.getMessage()+'|'+(e.getCause()!=null);",
+      "expected": "Script-thrown exception|false"
+    },
+    {
+      "id": "K016",
+      "code": "EventBus.InvalidReplayIdException e=new EventBus.InvalidReplayIdException('message'); r=e.getMessage()+'|'+(e.getCause()!=null);",
+      "expected": "message|false"
+    },
+    {
+      "id": "K017",
+      "code": "EventBus.InvalidReplayIdException e=new EventBus.InvalidReplayIdException(null); r=e.getMessage()+'|'+(e.getCause()!=null);",
+      "expected": "COMPILE_ERROR\tline 22: Ambiguous method signature: void <init>(NULL)",
+      "nativeLine": 22
+    },
+    {
+      "id": "K018",
+      "code": "EventBus.InvalidReplayIdException e=new EventBus.InvalidReplayIdException(new IllegalArgumentException('cause')); r=e.getMessage()+'|'+(e.getCause()!=null);",
+      "expected": "Script-thrown exception|true"
+    },
+    {
+      "id": "K019",
+      "code": "EventBus.InvalidReplayIdException e=new EventBus.InvalidReplayIdException('wrapped',new IllegalArgumentException('cause')); r=e.getMessage()+'|'+(e.getCause()!=null);",
+      "expected": "wrapped|true"
+    },
+    {
+      "id": "K020",
+      "code": "EventBus.RetryableException e=new EventBus.RetryableException(); r=e.getMessage()+'|'+(e.getCause()!=null);",
+      "expected": "Script-thrown exception|false"
+    },
+    {
+      "id": "K021",
+      "code": "EventBus.RetryableException e=new EventBus.RetryableException('message'); r=e.getMessage()+'|'+(e.getCause()!=null);",
+      "expected": "message|false"
+    },
+    {
+      "id": "K022",
+      "code": "EventBus.RetryableException e=new EventBus.RetryableException(null); r=e.getMessage()+'|'+(e.getCause()!=null);",
+      "expected": "COMPILE_ERROR\tline 7: Ambiguous method signature: void <init>(NULL)",
+      "nativeLine": 7
+    },
+    {
+      "id": "K023",
+      "code": "EventBus.RetryableException e=new EventBus.RetryableException(new IllegalArgumentException('cause')); r=e.getMessage()+'|'+(e.getCause()!=null);",
+      "expected": "Script-thrown exception|true"
+    },
+    {
+      "id": "K024",
+      "code": "EventBus.RetryableException e=new EventBus.RetryableException('wrapped',new IllegalArgumentException('cause')); r=e.getMessage()+'|'+(e.getCause()!=null);",
+      "expected": "wrapped|true"
+    },
+    {
+      "id": "K025",
+      "code": "SObject e=A39Immediate__e.SObjectType.newSObject(null,false); e.put('Payload__c','uuid-case'); Database.Error error=EventBus.publish(e).getErrors()[0]; r=Pattern.matches('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',error.getMessage());",
+      "expected": "true"
+    },
+    {
+      "id": "K026",
+      "code": "SObject e=A39AfterCommit__e.SObjectType.newSObject(null,false); e.put('Payload__c','uuid-case'); Database.Error error=EventBus.publish(e).getErrors()[0]; r=Pattern.matches('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',error.getMessage());",
+      "expected": "true"
+    },
+    {
+      "id": "K027",
+      "code": "String payload='😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀'; SObject e=A39Immediate__e.SObjectType.newSObject(null,false); e.put('Payload__c',payload); Database.SaveResult s=EventBus.publish(e); Database.Error error=s.getErrors()[0]; r=payload.length()+'|'+s.isSuccess()+'|'+error.getStatusCode()+'|'+String.join(error.getFields(),',');",
+      "expected": "80|true|OPERATION_ENQUEUED|"
+    },
+    {
+      "id": "K028",
+      "code": "String payload='😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀'; SObject e=A39Immediate__e.SObjectType.newSObject(null,false); e.put('Payload__c',payload); Database.SaveResult s=EventBus.publish(e); Database.Error error=s.getErrors()[0]; r=payload.length()+'|'+s.isSuccess()+'|'+error.getStatusCode()+'|'+String.join(error.getFields(),',');",
+      "expected": "82|false|STRING_TOO_LONG|Payload__c"
+    },
+    {
+      "id": "K029",
+      "code": "String payload='éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé'; SObject e=A39Immediate__e.SObjectType.newSObject(null,false); e.put('Payload__c',payload); Database.SaveResult s=EventBus.publish(e); Database.Error error=s.getErrors()[0]; r=payload.length()+'|'+s.isSuccess()+'|'+error.getStatusCode()+'|'+String.join(error.getFields(),',');",
+      "expected": "80|true|OPERATION_ENQUEUED|"
+    },
+    {
+      "id": "K030",
+      "code": "String payload='ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé'; SObject e=A39Immediate__e.SObjectType.newSObject(null,false); e.put('Payload__c',payload); Database.SaveResult s=EventBus.publish(e); Database.Error error=s.getErrors()[0]; r=payload.length()+'|'+s.isSuccess()+'|'+error.getStatusCode()+'|'+String.join(error.getFields(),',');",
+      "expected": "81|false|STRING_TOO_LONG|Payload__c"
+    },
+    {
+      "id": "I001",
+      "code": "SObject e=new A39Immediate__e(Payload__c='native'); r=e.Id;",
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "I002",
+      "code": "A39Immediate__e e=new A39Immediate__e(Payload__c='native'); EventBus.publish(e); r=e.Id==null;",
+      "expected": "EXC|System.SObjectException|Invalid field Id"
+    },
+    {
+      "id": "I003",
+      "code": "SObject e=new A39Immediate__e(Payload__c='native'); EventBus.publish(e); r=e.get('Id');",
+      "expected": "EXC|System.SObjectException|Invalid field Id for A39Immediate__e"
+    },
+    {
+      "id": "I004",
+      "code": "A39Immediate__e e=new A39Immediate__e(Payload__c='native'); EventBus.publish(e); r=e.getPopulatedFieldsAsMap().containsKey('Id');",
+      "expected": "false"
+    },
+    {
+      "id": "I005",
+      "code": "A39Immediate__e e=new A39Immediate__e(Payload__c='native'); EventBus.publish(e); r=e.getPopulatedFieldsAsMap().get('Id')!=null;",
+      "expected": "false"
+    },
+    {
+      "id": "I006",
+      "code": "A39Immediate__e e=new A39Immediate__e(Payload__c='clone'); EventBus.publish(e); A39Immediate__e copy=e.clone(false,false,false,false); Database.SaveResult s=EventBus.publish(copy); r=s.isSuccess();",
+      "expected": "true"
+    },
+    {
+      "id": "I007",
+      "code": "A39Immediate__e e=new A39Immediate__e(Payload__c='clone'); EventBus.publish(e); A39Immediate__e copy=e.clone(true,true,false,false); Database.SaveResult s=EventBus.publish(copy); r=s.isSuccess();",
+      "expected": "false"
+    },
+    {
+      "id": "W001",
+      "code": "List<A39Immediate__e> events=new List<A39Immediate__e>{new A39Immediate__e(Payload__c='native')}; update events; r=true;",
+      "expected": "COMPILE_ERROR\tline 6: DML operation Update not allowed on List<A39Immediate__e>",
+      "nativeLine": 6
+    },
+    {
+      "id": "W002",
+      "code": "List<A39Immediate__e> events=new List<A39Immediate__e>{new A39Immediate__e(Payload__c='native')}; delete events; r=true;",
+      "expected": "COMPILE_ERROR\tline 6: DML operation Delete not allowed on List<A39Immediate__e>",
+      "nativeLine": 6
+    },
+    {
+      "id": "W003",
+      "code": "List<A39Immediate__e> events=new List<A39Immediate__e>{new A39Immediate__e(Payload__c='native')}; Database.insert(events,false); r=true;",
+      "expected": "COMPILE_ERROR\tline 6: Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead",
+      "nativeLine": 6
+    },
+    {
+      "id": "W004",
+      "code": "SObject event=new A39Immediate__e(Payload__c='native'); insert event; r=true;",
+      "expected": "EXC|System.DmlException|Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead"
+    },
+    {
+      "id": "W005",
+      "code": "SObject event=new A39Immediate__e(Payload__c='native'); Database.insert(event,false); r=true;",
+      "expected": "true"
+    },
+    {
+      "id": "W006",
+      "code": "List<SObject> events=new List<SObject>{new A39Immediate__e(Payload__c='native'),new Account(Name='A39-native-DML')}; Database.insert(events,false); r=true;",
+      "expected": "true"
+    },
+    {
+      "id": "W007",
+      "code": "Database.insertAsync(new A39Immediate__e(Payload__c='native')); r=true;",
+      "expected": "COMPILE_ERROR\tline 9: Argument must be of virtual sObject type.",
+      "nativeLine": 9
+    },
+    {
+      "id": "W008",
+      "code": "Database.insertImmediate(new A39Immediate__e(Payload__c='native')); r=true;",
+      "expected": "COMPILE_ERROR\tline 9: Argument must be of virtual sObject type.",
+      "nativeLine": 9
+    },
+    {
+      "id": "W009",
+      "code": "Database.insert(new List<A39Immediate__e>(),false); r=true;",
+      "expected": "COMPILE_ERROR\tline 9: Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead",
+      "nativeLine": 9
+    },
+    {
+      "id": "W010",
+      "code": "r=Database.insert(new List<SObject>(),false).size();",
+      "expected": "0"
+    },
+    {
+      "id": "W011",
+      "code": "r=Account.AnnualRevenue.getDescribe().getScale();",
+      "expected": "0"
+    },
+    {
+      "id": "W012",
+      "code": "r=Account.AnnualRevenue.getDescribe().getPrecision();",
+      "expected": "18"
+    },
+    {
+      "id": "W013",
+      "code": "r=Opportunity.Amount.getDescribe().getScale();",
+      "expected": "2"
+    },
+    {
+      "id": "W014",
+      "code": "Account a=new Account(Name='A39-native-currency',AnnualRevenue=0); insert a; Account found=[SELECT AnnualRevenue FROM Account WHERE Id=:a.Id]; r=String.valueOf(found.AnnualRevenue);",
+      "expected": "0"
+    },
+    {
+      "id": "W015",
+      "code": "Account a=new Account(Name='A39-native-currency',AnnualRevenue=1); insert a; Account found=[SELECT AnnualRevenue FROM Account WHERE Id=:a.Id]; r=String.valueOf(found.AnnualRevenue);",
+      "expected": "1"
+    },
+    {
+      "id": "W016",
+      "code": "Account a=new Account(Name='A39-native-currency',AnnualRevenue=1.25); insert a; Account found=[SELECT AnnualRevenue FROM Account WHERE Id=:a.Id]; r=String.valueOf(found.AnnualRevenue);",
+      "expected": "1.25"
+    },
+    {
+      "id": "W017",
+      "code": "Account a=new Account(Name='A39-native-currency',AnnualRevenue=Decimal.valueOf('1.00')); insert a; Account found=[SELECT AnnualRevenue FROM Account WHERE Id=:a.Id]; r=String.valueOf(found.AnnualRevenue);",
+      "expected": "1"
+    },
+    {
+      "id": "W018",
+      "code": "List<A39Immediate__e> events=new List<A39Immediate__e>{new A39Immediate__e(Payload__c='native')}; insert events; r=true;",
+      "expected": "EXC|System.DmlException|Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead"
+    },
+    {
+      "id": "W019",
+      "code": "List<SObject> events=new List<SObject>{new A39Immediate__e(Payload__c='native')}; insert events; r=true;",
+      "expected": "true"
+    },
+    {
+      "id": "W020",
+      "code": "Account a=new Account(Name='A39-native-statement'); insert a; r=a.Id!=null;",
+      "expected": "true"
+    },
+    {
+      "id": "W021",
+      "code": "Opportunity o=new Opportunity(Name='A39-native-currency',StageName='Prospecting',CloseDate=Date.today(),Amount=1); insert o; Opportunity found=[SELECT Amount FROM Opportunity WHERE Id=:o.Id]; r=String.valueOf(found.Amount);",
+      "expected": "1.00"
+    },
+    {
+      "id": "W022",
+      "code": "Account a=new Account(AnnualRevenue=Decimal.valueOf('1.00')); r=String.valueOf(a.AnnualRevenue);",
+      "expected": "1.00"
+    },
+    {
+      "id": "W023",
+      "code": "Account a=new Account(Name='A39-native-caller',AnnualRevenue=Decimal.valueOf('1.00')); insert a; r=String.valueOf(a.AnnualRevenue);",
+      "expected": "1.00"
+    },
+    {
+      "id": "W024",
+      "code": "List<SObject> events=new List<A39Immediate__e>{new A39Immediate__e(Payload__c='native')}; insert events; r=true;",
+      "expected": "EXC|System.DmlException|Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead"
+    },
+    {
+      "id": "W025",
+      "code": "List<A39Immediate__e> events=new List<A39Immediate__e>(); insert events; r=true;",
+      "expected": "EXC|System.DmlException|Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead"
+    },
+    {
+      "id": "W026",
+      "code": "A39Immediate__e event=null; insert event; r=true;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "W027",
+      "code": "List<A39Immediate__e> events=null; insert events; r=true;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "E001",
+      "code": "String message=null; EventBus.InvalidReplayIdException e=new EventBus.InvalidReplayIdException(message); r=(e.getMessage()==null)+'|'+(e.getMessage()=='null')+'|'+(e.getCause()==null);",
+      "expected": "true|false|true"
+    },
+    {
+      "id": "E002",
+      "code": "String message=null; EventBus.InvalidReplayIdException e=new EventBus.InvalidReplayIdException(message,new IllegalArgumentException('cause')); r=(e.getMessage()==null)+'|'+(e.getMessage()=='null')+'|'+(e.getCause()!=null);",
+      "expected": "true|false|true"
+    },
+    {
+      "id": "E003",
+      "code": "Exception cause=null; EventBus.InvalidReplayIdException e=new EventBus.InvalidReplayIdException(cause); r=(e.getMessage()==null)+'|'+(e.getMessage()=='Script-thrown exception')+'|'+(e.getCause()==null);",
+      "expected": "false|true|true"
+    },
+    {
+      "id": "E004",
+      "code": "String message=null; EventBus.RetryableException e=new EventBus.RetryableException(message); r=(e.getMessage()==null)+'|'+(e.getMessage()=='null')+'|'+(e.getCause()==null);",
+      "expected": "true|false|true"
+    },
+    {
+      "id": "E005",
+      "code": "String message=null; EventBus.RetryableException e=new EventBus.RetryableException(message,new IllegalArgumentException('cause')); r=(e.getMessage()==null)+'|'+(e.getMessage()=='null')+'|'+(e.getCause()!=null);",
+      "expected": "true|false|true"
+    },
+    {
+      "id": "E006",
+      "code": "Exception cause=null; EventBus.RetryableException e=new EventBus.RetryableException(cause); r=(e.getMessage()==null)+'|'+(e.getMessage()=='Script-thrown exception')+'|'+(e.getCause()==null);",
+      "expected": "false|true|true"
+    },
+    {
+      "id": "E007",
+      "code": "try { EventBus.TriggerContext.currentContext().setResumeCheckpoint(null); r='accepted'; } catch(Exception e) { r=(e.getMessage()==null)+'|'+(e.getMessage()=='null'); }",
+      "expected": "true|false"
+    },
+    {
+      "id": "E008",
+      "code": "String message=null; try { throw new EventBus.RetryableException(message); } catch(Exception e) { r=(e.getMessage()==null)+'|'+(e.getMessage()=='null'); }",
+      "expected": "true|false"
+    },
+    {
+      "id": "P001",
+      "code": "r=EventBus.publish(new BatchApexErrorEvent())!=null;",
+      "expected": "COMPILE_ERROR\tline 6: DML operation Insert not allowed on BatchApexErrorEvent",
+      "nativeLine": 6
+    },
+    {
+      "id": "P002",
+      "code": "r=System.EventBus.publish(new BatchApexErrorEvent())!=null;",
+      "expected": "COMPILE_ERROR\tline 6: DML operation Insert not allowed on BatchApexErrorEvent",
+      "nativeLine": 6
+    },
+    {
+      "id": "P003",
+      "code": "r=EventBus.publish(new List<BatchApexErrorEvent>{new BatchApexErrorEvent()})!=null;",
+      "expected": "COMPILE_ERROR\tline 6: DML operation Insert not allowed on BatchApexErrorEvent",
+      "nativeLine": 6
+    },
+    {
+      "id": "P004",
+      "code": "SObject e=new BatchApexErrorEvent(); r=EventBus.publish(e)!=null;",
+      "expected": "EXC|System.TypeException|DML operation INSERT not allowed on BatchApexErrorEvent"
+    },
+    {
+      "id": "P005",
+      "code": "List<SObject> events=new List<SObject>{new BatchApexErrorEvent()}; r=EventBus.publish(events)!=null;",
+      "expected": "true"
+    },
+    {
+      "id": "P006",
+      "code": "List<SObject> events=new List<SObject>{new BatchApexErrorEvent()}; Database.SaveResult s=EventBus.publish(events)[0]; r=s.isSuccess()+'|'+(s.getId()==null)+'|'+s.getErrors().size(); if(!s.isSuccess()){Database.Error e=s.getErrors()[0]; r+='|'+e.getStatusCode()+'|'+e.getMessage()+'|'+String.join(e.getFields(),',');}",
+      "expected": "false|true|1|CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|DML operation INSERT not allowed on BatchApexErrorEvent|"
+    },
+    {
+      "id": "P007",
+      "code": "List<SObject> events=new List<BatchApexErrorEvent>{new BatchApexErrorEvent()}; r=EventBus.publish(events)!=null;",
+      "expected": "EXC|System.TypeException|DML operation INSERT not allowed on BatchApexErrorEvent"
+    },
+    {
+      "id": "P008",
+      "code": "List<SObject> events=new List<SObject>{new A39Immediate__e(Payload__c='native'),new BatchApexErrorEvent()}; List<Database.SaveResult> results=EventBus.publish(events); r=results.size()+'|'+results[0].isSuccess()+'|'+results[1].isSuccess();",
+      "expected": "2|true|false"
+    },
+    {
+      "id": "P009",
+      "code": "SObject e=new BatchApexErrorEvent(); r=System.EventBus.publish(e)!=null;",
+      "expected": "EXC|System.TypeException|DML operation INSERT not allowed on BatchApexErrorEvent"
+    },
+    {
+      "id": "P010",
+      "code": "r=EventBus.publish(new BatchApexErrorEvent(),null)!=null;",
+      "expected": "COMPILE_ERROR\tline 12: DML operation Insert not allowed on BatchApexErrorEvent",
+      "nativeLine": 12
+    },
+    {
+      "id": "S001",
+      "code": "EventBus.publish(new Account(Name = 'Local Event'));",
+      "expected": "COMPILE_ERROR\tline 6: Argument must be a Platform Event sObject type.",
+      "compile": true,
+      "nativeLine": 6
+    }
+  ],
+  "namedObservations": {
+    "R043": "400",
+    "R044": "400",
+    "R046": "400",
+    "R047": "400",
+    "R126": "400",
+    "R127": "400",
+    "R129": "400",
+    "R130": "400",
+    "R216": "true"
+  },
+  "nativeTests": [
+    {
+      "class": "A39NativeTest",
+      "method": "afterCommit",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "batch0",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "batch1",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "batch199",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "batch2",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "batch200",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "batch2000",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "batch2001",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "batch201",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "checkpoint",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "checkpointFailure",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "deliverAfterCommit",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "deliverBetweenPublishes",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "deliverEmpty",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "deliverTwice",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "immediate",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "mixed",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "retry1",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "retry2",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "stopTestDelivery",
+      "outcome": "Pass",
+      "message": ""
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "mixedWrongType",
+      "outcome": "Fail",
+      "message": "System.UnexpectedException: The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event."
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "nullEvent",
+      "outcome": "Fail",
+      "message": "System.NullPointerException: Attempt to de-reference a null object"
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "nullList",
+      "outcome": "Fail",
+      "message": "System.NullPointerException: Attempt to de-reference a null object"
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "retryExhausted",
+      "outcome": "Fail",
+      "message": "System.QueryException: List has no rows for assignment to SObject"
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "wrongTypeList",
+      "outcome": "Fail",
+      "message": "System.UnexpectedException: The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event."
+    },
+    {
+      "class": "A39DeliveryControls",
+      "method": "afterCommit",
+      "outcome": "Fail",
+      "message": "A39DeliveryControls.ObservationException: N013|[\"0|true|true|true|2|true|true|true|2|0\"]"
+    },
+    {
+      "class": "A39DeliveryControls",
+      "method": "batch0",
+      "outcome": "Fail",
+      "message": "A39DeliveryControls.ObservationException: N001|[]"
+    },
+    {
+      "class": "A39DeliveryControls",
+      "method": "batch1",
+      "outcome": "Fail",
+      "message": "A39DeliveryControls.ObservationException: N002|[\"0|true|true|true|1|true|true|true|1|0\"]"
+    },
+    {
+      "class": "A39DeliveryControls",
+      "method": "batch200",
+      "outcome": "Fail",
+      "message": "A39DeliveryControls.ObservationException: N003|[\"0|true|true|true|200|true|true|true|200|0\"]"
+    },
+    {
+      "class": "A39DeliveryControls",
+      "method": "batch2000",
+      "outcome": "Fail",
+      "message": "A39DeliveryControls.ObservationException: N005|[\"0|true|true|true|400|true|true|true|400|0\"]"
+    },
+    {
+      "class": "A39DeliveryControls",
+      "method": "batch2001",
+      "outcome": "Fail",
+      "message": "A39DeliveryControls.ObservationException: N006|[\"0|true|true|true|400|true|true|true|400|0\"]"
+    },
+    {
+      "class": "A39DeliveryControls",
+      "method": "batch201",
+      "outcome": "Fail",
+      "message": "A39DeliveryControls.ObservationException: N004|[\"0|true|true|true|201|true|true|true|201|0\"]"
+    },
+    {
+      "class": "A39DeliveryControls",
+      "method": "checkpoint",
+      "outcome": "Fail",
+      "message": "A39DeliveryControls.ObservationException: N011|[\"0|true|true|3|0\",\"0|true|true|3|1\",\"0|true|true|3|2\"]"
+    },
+    {
+      "class": "A39DeliveryControls",
+      "method": "checkpointFailure",
+      "outcome": "Fail",
+      "message": "A39DeliveryControls.ObservationException: N012|[\"0|true|true|3|0\",\"0|true|true|2|1\",\"0|true|true|2|2\"]"
+    },
+    {
+      "class": "A39DeliveryControls",
+      "method": "retry1",
+      "outcome": "Fail",
+      "message": "A39DeliveryControls.ObservationException: N007|[\"1|true|true|true|2|true|true|true|2|0\"]"
+    },
+    {
+      "class": "A39DeliveryControls",
+      "method": "retry10",
+      "outcome": "Fail",
+      "message": "A39DeliveryControls.ObservationException: N010|[]"
+    },
+    {
+      "class": "A39DeliveryControls",
+      "method": "retry2",
+      "outcome": "Fail",
+      "message": "A39DeliveryControls.ObservationException: N008|[\"2|true|true|true|2|true|true|true|2|0\"]"
+    },
+    {
+      "class": "A39DeliveryControls",
+      "method": "retry9",
+      "outcome": "Fail",
+      "message": "A39DeliveryControls.ObservationException: N009|[\"9|true|true|true|2|true|true|true|2|0\"]"
+    },
+    {
+      "class": "A39CapacityControls",
+      "method": "publish2000",
+      "outcome": "Fail",
+      "message": "A39CapacityControls.ObservationException: T006|400|1600|LIMIT_EXCEEDED|[\"0|true|true|true|400|true|true|true|400\"]"
+    },
+    {
+      "class": "A39CapacityControls",
+      "method": "publish399",
+      "outcome": "Fail",
+      "message": "A39CapacityControls.ObservationException: T002|399|0||[\"0|true|true|true|399|true|true|true|399\"]"
+    },
+    {
+      "class": "A39CapacityControls",
+      "method": "publish400",
+      "outcome": "Fail",
+      "message": "A39CapacityControls.ObservationException: T003|400|0||[\"0|true|true|true|400|true|true|true|400\"]"
+    },
+    {
+      "class": "A39CapacityControls",
+      "method": "publish401",
+      "outcome": "Fail",
+      "message": "A39CapacityControls.ObservationException: T004|401|0||[\"0|true|true|true|401|true|true|true|401\"]"
+    },
+    {
+      "class": "A39CapacityControls",
+      "method": "publish500",
+      "outcome": "Fail",
+      "message": "A39CapacityControls.ObservationException: T005|400|100|LIMIT_EXCEEDED|[\"0|true|true|true|400|true|true|true|400\"]"
+    },
+    {
+      "class": "A39CapacityControls",
+      "method": "runningTest",
+      "outcome": "Fail",
+      "message": "A39CapacityControls.ObservationException: T001|true"
+    },
+    {
+      "class": "A39CapacityDetails",
+      "method": "defaultsFalse2000",
+      "outcome": "Fail",
+      "message": "A39CapacityDetails.ObservationException: U003|400|1600|[\"LIMIT_EXCEEDED\",\"The number of platform event messages published from an Apex test context exceeded the limit of 500.\",\"\"]"
+    },
+    {
+      "class": "A39CapacityDetails",
+      "method": "defaultsFalse500",
+      "outcome": "Fail",
+      "message": "A39CapacityDetails.ObservationException: U002|400|100|[\"LIMIT_EXCEEDED\",\"The number of platform event messages published from an Apex test context exceeded the limit of 500.\",\"\"]"
+    },
+    {
+      "class": "A39CapacityDetails",
+      "method": "defaultsTrue401",
+      "outcome": "Fail",
+      "message": "A39CapacityDetails.ObservationException: U004|401|0|[]"
+    },
+    {
+      "class": "A39CapacityDetails",
+      "method": "defaultsTrue500",
+      "outcome": "Fail",
+      "message": "A39CapacityDetails.ObservationException: U001|400|100|[\"LIMIT_EXCEEDED\",\"The number of platform event messages published from an Apex test context exceeded the limit of 500.\",\"\"]"
+    },
+    {
+      "class": "A39CapacityBoundary",
+      "method": "afterCommit2000Id",
+      "outcome": "Fail",
+      "message": "A39CapacityBoundary.ObservationException: V008|400"
+    },
+    {
+      "class": "A39CapacityBoundary",
+      "method": "afterCommit2000Success",
+      "outcome": "Fail",
+      "message": "A39CapacityBoundary.ObservationException: V007|400"
+    },
+    {
+      "class": "A39CapacityBoundary",
+      "method": "immediate2000Id",
+      "outcome": "Fail",
+      "message": "A39CapacityBoundary.ObservationException: V006|400"
+    },
+    {
+      "class": "A39CapacityBoundary",
+      "method": "immediate2000Success",
+      "outcome": "Fail",
+      "message": "A39CapacityBoundary.ObservationException: V005|400"
+    },
+    {
+      "class": "A39CapacityBoundary",
+      "method": "invalid250Then250",
+      "outcome": "Fail",
+      "message": "A39CapacityBoundary.ObservationException: V004|0|250|[\"REQUIRED_FIELD_MISSING\",\"You must enter a value: Payload__c\",\"Payload__c\",\"true\"]|250|0|[]"
+    },
+    {
+      "class": "A39CapacityBoundary",
+      "method": "publish250Then250",
+      "outcome": "Fail",
+      "message": "A39CapacityBoundary.ObservationException: V002|250|0|[]|200|50|[\"LIMIT_EXCEEDED\",\"The number of platform event messages published from an Apex test context exceeded the limit of 500.\",\"\",\"true\"]"
+    },
+    {
+      "class": "A39CapacityBoundary",
+      "method": "publish300Then201",
+      "outcome": "Fail",
+      "message": "A39CapacityBoundary.ObservationException: V003|300|0|[]|0|201|[\"LIMIT_EXCEEDED\",\"The number of platform event messages published from an Apex test context exceeded the limit of 500.\",\"\",\"true\"]"
+    },
+    {
+      "class": "A39CapacityBoundary",
+      "method": "publish499",
+      "outcome": "Fail",
+      "message": "A39CapacityBoundary.ObservationException: V001|499|0|[]"
+    }
+  ],
+  "remaining": [],
+  "excluded": [
+    {
+      "id": "R013",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','A39','summary');",
+      "expected": "true|1|OPERATION_ENQUEUED:22f0a322-1f0f-46c0-bc4e-0d31df72f330:",
+      "owner": "nonrepeatable native UUID cell",
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+    },
+    {
+      "id": "R014",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','a\\'b','summary');",
+      "expected": "true|1|OPERATION_ENQUEUED:f601c388-c3bb-4b6c-b096-8022211f2a63:",
+      "owner": "nonrepeatable native UUID cell",
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+    },
+    {
+      "id": "R015",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','a\\\\b','summary');",
+      "expected": "true|1|OPERATION_ENQUEUED:55e948e5-a421-4a67-b8df-5dafb2b4ed89:",
+      "owner": "nonrepeatable native UUID cell",
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+    },
+    {
+      "id": "R018",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','é','summary');",
+      "expected": "true|1|OPERATION_ENQUEUED:7526a14c-824b-4ac6-b6ce-8ee57ce1aac2:",
+      "owner": "nonrepeatable native UUID cell",
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+    },
+    {
+      "id": "R019",
+      "code": "r=A39Oracle.publishOne('A39Immediate__e','xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx','summary');",
+      "expected": "true|1|OPERATION_ENQUEUED:01fc2780-36d0-4cad-a4ba-a43eb4b435e1:",
+      "owner": "nonrepeatable native UUID cell",
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+    },
+    {
+      "id": "R096",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','A39','summary');",
+      "expected": "true|1|OPERATION_ENQUEUED:b4cf41ec-2919-4556-a404-af9f42c1869f:",
+      "owner": "nonrepeatable native UUID cell",
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+    },
+    {
+      "id": "R097",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','a\\'b','summary');",
+      "expected": "true|1|OPERATION_ENQUEUED:3f8b11d1-1cf9-497c-a1bb-8e943c826d04:",
+      "owner": "nonrepeatable native UUID cell",
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+    },
+    {
+      "id": "R098",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','a\\\\b','summary');",
+      "expected": "true|1|OPERATION_ENQUEUED:82fdba59-e043-444e-b2e4-3212828e21b3:",
+      "owner": "nonrepeatable native UUID cell",
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+    },
+    {
+      "id": "R101",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','é','summary');",
+      "expected": "true|1|OPERATION_ENQUEUED:b5af63ed-61db-4cdc-8593-17011c451949:",
+      "owner": "nonrepeatable native UUID cell",
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+    },
+    {
+      "id": "R102",
+      "code": "r=A39Oracle.publishOne('A39AfterCommit__e','xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx','summary');",
+      "expected": "true|1|OPERATION_ENQUEUED:83880b5e-b128-47dc-b0d9-0d8231206e07:",
+      "owner": "nonrepeatable native UUID cell",
+      "reason": "Native OPERATION_ENQUEUED embeds a fresh UUID per publish; K001-K005/K008-K012/K025-K026 assert its exact repeatable contract, including lowercase format."
+    },
+    {
+      "id": "P011",
+      "code": "SObject e=new BatchApexErrorEvent(); r=EventBus.publish(e,null)!=null;",
+      "reason": "native test-context observation hosted callback boundary: both Tooling endpoints abort outside Apex catch with System.UnexpectedException: Something went wrong while attempting to publish events with a callback. Try again later. Raw native observations were captured at API 62 and 67; local explicit boundary error, no hosted parity claim."
+    },
+    {
+      "id": "P012",
+      "code": "List<SObject> events=new List<SObject>{new BatchApexErrorEvent()}; Database.SaveResult s=EventBus.publish(events,null)[0]; r=s.isSuccess()+'|'+(s.getId()==null)+'|'+s.getErrors().size(); if(!s.isSuccess()){Database.Error e=s.getErrors()[0]; r+='|'+e.getStatusCode()+'|'+e.getMessage()+'|'+String.join(e.getFields(),',');}",
+      "reason": "native test-context observation hosted callback boundary: both Tooling endpoints abort outside Apex catch with System.UnexpectedException: Something went wrong while attempting to publish events with a callback. Try again later. Raw native observations were captured at API 62 and 67; local explicit boundary error, no hosted parity claim."
+    }
+  ],
+  "nativeExcluded": [
+    {
+      "class": "A39NativeTest",
+      "method": "mixedNullElement",
+      "outcome": "Fail",
+      "message": "Internal Salesforce Error: 391726778-185084 (-980166568) (-980166568)",
+      "owner": "excluded hosted internal failure",
+      "reason": "Native Salesforce Internal Error includes an unstable server error ID; no local hosted outcome is fabricated."
+    },
+    {
+      "class": "A39NativeTest",
+      "method": "nullListElement",
+      "outcome": "Fail",
+      "message": "Internal Salesforce Error: 391726778-185085 (-980166568) (-980166568)",
+      "owner": "excluded hosted internal failure",
+      "reason": "Native Salesforce Internal Error includes an unstable server error ID; no local hosted outcome is fabricated."
+    }
+  ],
+  "absorbedTicketRows": {}
+}

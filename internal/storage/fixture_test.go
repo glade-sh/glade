@@ -287,7 +287,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 			want = 2
 		}
 		if objectName == "RecordType" {
-			want = 5
+			want = 0
 		}
 		if len(org.Objects[objectName].Records) != want {
 			t.Fatalf("%s records = %#v", objectName, InspectOrg("", org))
@@ -306,19 +306,14 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if len(org.Objects["Opportunity"].Definition.RecordTypes) == 0 {
 		t.Fatalf("Opportunity record types = %#v", org.Objects["Opportunity"].Definition.RecordTypes)
 	}
-	opportunityRecordTypeID := org.Objects["Opportunity"].Definition.RecordTypes[0].ID
-	if opportunityRecordTypeID == "" {
-		t.Fatalf("missing Opportunity record type ID")
-	}
-	if _, ok := org.Objects["RecordType"].Records[opportunityRecordTypeID]; !ok {
-		t.Fatalf("missing Opportunity RecordType record %s: %#v", opportunityRecordTypeID, org.Objects["RecordType"].Records)
-	}
-	recordTypeID := org.Objects["Account"].Definition.RecordTypes[0].ID
-	if recordTypeID == "" {
-		t.Fatalf("missing Account record type ID")
-	}
-	if _, ok := org.Objects["RecordType"].Records[recordTypeID]; !ok {
-		t.Fatalf("missing RecordType record %s: %#v", recordTypeID, org.Objects["RecordType"].Records)
+	for _, objectName := range []string{"Account", "Opportunity"} {
+		id := org.Objects[objectName].Definition.RecordTypes[0].ID
+		if id != "012000000000000AAA" {
+			t.Fatalf("%s Master mapping ID = %s", objectName, id)
+		}
+		if _, exists := org.Objects["RecordType"].Records[id]; exists {
+			t.Fatalf("describe-only Master was seeded as a record for %s", objectName)
+		}
 	}
 	if len(org.Objects["User"].Records) != 2 || len(org.Objects["UserLogin"].Records) != 2 || len(org.Objects["Profile"].Records) != 8 || len(org.Objects["UserLicense"].Records) != 2 {
 		t.Fatalf("platform records = %#v", InspectOrg("", org))
@@ -361,6 +356,10 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	}
 	if refs := org.Objects["Document"].Definition.Fields["FolderId"].ReferenceTo; !containsStringFold(refs, "User") {
 		t.Fatalf("Document.FolderId references = %#v, want User", refs)
+	}
+	EnsureStandardObject(&org, "FeedItem")
+	if refs := org.Objects["FeedItem"].Definition.Fields["ParentId"].ReferenceTo; !containsStringFold(refs, "User") || !containsStringFold(refs, "CollaborationGroup") {
+		t.Fatalf("FeedItem.ParentId references = %#v, want User and CollaborationGroup", refs)
 	}
 	if org.Objects["ContentVersion"].Definition.Fields["ContentDocumentId"].Required {
 		t.Fatalf("ContentVersion.ContentDocumentId should be optional for first-version inserts")
@@ -408,7 +407,7 @@ func TestEnsureDeterministicPlatformDataSkipsUsedRecordTypeIDs(t *testing.T) {
 		},
 	}
 	org.Objects["Account"] = ObjectState{
-		Definition: ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]Field{"Name": {APIName: "Name", Type: FieldString}}},
+		Definition: ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]Field{"Name": {APIName: "Name", Type: FieldString}}, RecordTypes: []RecordTypeInfo{{DeveloperName: "Business", Name: "Business", Active: true}}},
 		Records:    make(map[ID]Record),
 	}
 	EnsureDeterministicPlatformData(&org)
@@ -564,4 +563,99 @@ func findRecordByStringField(records map[ID]Record, fieldName, want string) (Rec
 		}
 	}
 	return Record{}, false
+}
+
+func TestNormalizeOrgDomainURL(t *testing.T) {
+	valid := []struct {
+		raw  string
+		want string
+	}{
+		{"", ""},
+		{"   ", ""},
+		{"https://org.example.test", "https://org.example.test"},
+		{"  HTTPS://org.example.test/  ", "https://org.example.test"},
+		{"http://127.0.0.1:8080/", "http://127.0.0.1:8080"},
+		{"https://[::1]:8443/", "https://[::1]:8443"},
+	}
+	for _, tc := range valid {
+		t.Run("valid/"+tc.raw, func(t *testing.T) {
+			got, err := NormalizeOrgDomainURL(tc.raw)
+			if err != nil || got != tc.want {
+				t.Fatalf("NormalizeOrgDomainURL(%q) = %q, %v; want %q, nil", tc.raw, got, err, tc.want)
+			}
+		})
+	}
+	for _, raw := range []string{
+		"/relative", "https:", "https:///missing-host", "ftp://org.example.test",
+		"https://user:secret@org.example.test", "https://org.example.test/path",
+		"https://org.example.test//", "https://org.example.test/%2f",
+		"https://org.example.test/%2e", "https://org.example.test?x=1",
+		"https://org.example.test?", "https://org.example.test#anchor",
+		"https://org.example.test#", "https://org.example.test:",
+		"https://org.example.test:65536",
+	} {
+		t.Run("invalid/"+raw, func(t *testing.T) {
+			if got, err := NormalizeOrgDomainURL(raw); err == nil || got != "" {
+				t.Fatalf("NormalizeOrgDomainURL(%q) = %q, %v; want empty value and error", raw, got, err)
+			}
+		})
+	}
+}
+
+func TestFixtureOrgDomainURLRoundTripAndPrecedence(t *testing.T) {
+	org := NewOrgState()
+	org.DomainURL = "https://stored.example.test"
+	fixture, err := ReadFixture(strings.NewReader(`{"org":{"domainUrl":" https://fixture.example.test/ "}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := ApplyFixture(&org, fixture); err != nil {
+		t.Fatal(err)
+	}
+	if org.DomainURL != "https://fixture.example.test" {
+		t.Fatalf("fixture origin = %q", org.DomainURL)
+	}
+	var encoded strings.Builder
+	if err := WriteFixture(&encoded, FixtureFromOrg(org)); err != nil {
+		t.Fatal(err)
+	}
+	roundTrip, err := ReadFixture(strings.NewReader(encoded.String()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if roundTrip.Org.DomainURL != org.DomainURL {
+		t.Fatalf("round-trip origin = %q, want %q", roundTrip.Org.DomainURL, org.DomainURL)
+	}
+	if err := ApplyFixture(&org, Fixture{Org: FixtureOrg{DomainURL: "  "}}); err != nil {
+		t.Fatal(err)
+	}
+	if org.DomainURL != "https://fixture.example.test" {
+		t.Fatalf("empty fixture cleared origin: %q", org.DomainURL)
+	}
+	unset := NewOrgState()
+	if err := ApplyFixture(&unset, NewFixture()); err != nil {
+		t.Fatal(err)
+	}
+	if unset.DomainURL != "" {
+		t.Fatalf("unset fixture materialized a default: %q", unset.DomainURL)
+	}
+}
+
+func TestApplyFixtureRejectsInvalidOrgDomainBeforeMutation(t *testing.T) {
+	org := NewOrgState()
+	org.OrgID = "original-org"
+	org.APIVersion = "65.0"
+	org.Namespace = "original"
+	org.DomainURL = "https://stored.example.test"
+	err := ApplyFixture(&org, Fixture{Org: FixtureOrg{
+		OrgID: "replacement-org", APIVersion: "67.0", Namespace: "replacement",
+		DomainURL: "https://invalid.example.test/path",
+	}})
+	if err == nil {
+		t.Fatal("ApplyFixture accepted an origin with a path")
+	}
+	if org.OrgID != "original-org" || org.APIVersion != "65.0" ||
+		org.Namespace != "original" || org.DomainURL != "https://stored.example.test" {
+		t.Fatalf("invalid fixture mutated org metadata: %#v", org)
+	}
 }

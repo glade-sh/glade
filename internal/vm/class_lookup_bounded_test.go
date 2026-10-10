@@ -34,6 +34,10 @@ func TestFrozenClassLookupUsesBoundedResultOverlay(t *testing.T) {
 }
 
 func TestClassLookupPerfCountersUseDistinctRuntimeShards(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	template := New(nil)
 	if err := template.RegisterClass(Class{Name: "Worker"}); err != nil {
 		t.Fatal(err)
@@ -65,6 +69,10 @@ func TestClassLookupPerfCountersUseDistinctRuntimeShards(t *testing.T) {
 }
 
 func TestClassLookupPerfShardPoolIsBounded(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	template := New(nil)
 	if err := template.RegisterClass(Class{Name: "Worker"}); err != nil {
 		t.Fatal(err)
@@ -263,5 +271,144 @@ func BenchmarkFrozenClassLookupCache(b *testing.B) {
 		if _, ok := machine.lookupClass("class1500"); !ok {
 			b.Fatal("class lookup miss")
 		}
+	}
+}
+
+func TestFrozenNamespaceClassLookupMatchesUnsharedBuild(t *testing.T) {
+	classes := []Class{
+		{Name: "Worker", Namespace: "pkg", Dependency: true},
+		{Name: "Worker", Namespace: "other", Dependency: true},
+		{Name: "Worker"},
+		{Name: "Outer"},
+		{Name: "Outer.Inner"},
+		{Name: "Shell"},
+		{Name: "Shell.Inner"},
+		{Name: "Registry", Namespace: "pkg", Dependency: true},
+		{Name: "Registry.Entry", Namespace: "pkg", Dependency: true},
+	}
+	template := New(nil)
+	for _, class := range classes {
+		if err := template.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	template.FreezeClassLookup()
+	first := template.CloneRuntimeFrozenShared(nil)
+	second := template.CloneRuntimeFrozenShared(nil)
+	// The reference clone drops the frozen generation and builds its
+	// namespace tables through the unshared path.
+	unshared := template.CloneRuntimeFrozenShared(nil)
+	unshared.frozenClassLookup = nil
+	if unshared.frozenClassLookup != nil || first.frozenClassLookup == nil || first.frozenClassLookup != second.frozenClassLookup {
+		t.Fatalf("unexpected frozen lookup sharing")
+	}
+	for _, namespace := range []string{"", "pkg", "PKG", "other", "missing"} {
+		for _, name := range []string{"Worker", "Inner", "Entry", "Registry", "Outer.Inner", "Missing"} {
+			wantClass, wantOK := unshared.lookupClassInNamespace(namespace, name)
+			for _, clone := range []*VM{first, second} {
+				gotClass, gotOK := clone.lookupClassInNamespace(namespace, name)
+				if gotOK != wantOK || !reflect.DeepEqual(gotClass, wantClass) {
+					t.Fatalf("lookupClassInNamespace(%q, %q) = %+v, %v; want %+v, %v", namespace, name, gotClass, gotOK, wantClass, wantOK)
+				}
+			}
+		}
+		key := strings.ToLower(namespace)
+		if !reflect.DeepEqual(first.namespaceClassLookup[key], unshared.namespaceClassLookup[key]) {
+			t.Fatalf("namespace %q table = %+v, want %+v", namespace, first.namespaceClassLookup[key], unshared.namespaceClassLookup[key])
+		}
+	}
+	if len(first.frozenClassLookup.namespaceAliases) == 0 {
+		t.Fatalf("frozen namespace aliases were not shared")
+	}
+
+	// Registration on a clone drops the shared generation; the clone must see
+	// its new class and the other clone must not.
+	if err := second.RegisterClass(Class{Name: "Late", Namespace: "pkg", Dependency: true}); err != nil {
+		t.Fatal(err)
+	}
+	if second.frozenClassLookup != nil {
+		t.Fatalf("registration kept the frozen lookup")
+	}
+	if _, ok := second.lookupClassInNamespace("pkg", "Late"); !ok {
+		t.Fatalf("registered class missing from namespace lookup")
+	}
+	third := template.CloneRuntimeFrozenShared(nil)
+	if _, ok := third.lookupClassInNamespace("pkg", "Late"); ok {
+		t.Fatalf("clone registration leaked into the shared namespace table")
+	}
+}
+
+func TestFrozenNamespaceClassLookupCloneRegistrationKeepsBaseTable(t *testing.T) {
+	base := New(nil)
+	for _, class := range []Class{
+		{Name: "Worker", Namespace: "pkg", Dependency: true},
+		{Name: "Worker"},
+	} {
+		if err := base.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	base.FreezeClassLookup()
+	frozen := base.frozenClassLookup
+
+	resolve := func(machine *VM, namespace string) Class {
+		t.Helper()
+		class, ok := machine.lookupClassInNamespace(namespace, "Worker")
+		if !ok {
+			t.Fatalf("lookupClassInNamespace(%q, Worker) not found", namespace)
+		}
+		return class
+	}
+	clone := base.CloneRuntimeFrozenShared(nil)
+	if got := resolve(clone, "pkg"); got.Namespace != "pkg" || !got.Dependency {
+		t.Fatalf("pkg Worker = %+v, want the dependency class", got)
+	}
+	if got := resolve(clone, ""); got.Namespace != "" || got.Dependency {
+		t.Fatalf("unqualified Worker = %+v, want the project class", got)
+	}
+	frozen.namespaceMu.RLock()
+	before := make(map[string]map[string]namespaceClassAlias, len(frozen.namespaceAliases))
+	for namespace, aliases := range frozen.namespaceAliases {
+		copied := make(map[string]namespaceClassAlias, len(aliases))
+		for key, alias := range aliases {
+			copied[key] = alias
+		}
+		before[namespace] = copied
+	}
+	frozen.namespaceMu.RUnlock()
+	if len(before["pkg"]) == 0 || len(before[""]) == 0 {
+		t.Fatalf("shared namespace tables = %+v, want pkg and default", before)
+	}
+
+	if err := clone.RegisterClass(Class{Name: "Helper", Namespace: "pkg", Dependency: true}); err != nil {
+		t.Fatal(err)
+	}
+	if clone.frozenClassLookup != nil {
+		t.Fatal("registration kept the shared frozen lookup")
+	}
+	if _, ok := clone.lookupClassInNamespace("pkg", "Helper"); !ok {
+		t.Fatal("clone does not resolve its registered class")
+	}
+	if got := resolve(clone, "pkg"); got.Namespace != "pkg" || !got.Dependency {
+		t.Fatalf("pkg Worker after registration = %+v", got)
+	}
+	if got := resolve(clone, ""); got.Namespace != "" || got.Dependency {
+		t.Fatalf("unqualified Worker after registration = %+v", got)
+	}
+
+	if base.frozenClassLookup != frozen {
+		t.Fatal("clone registration replaced the base's frozen lookup")
+	}
+	frozen.namespaceMu.RLock()
+	after := frozen.namespaceAliases
+	frozen.namespaceMu.RUnlock()
+	if !reflect.DeepEqual(after, before) {
+		t.Fatalf("base namespace tables changed: %+v, want %+v", after, before)
+	}
+	if _, ok := base.lookupClassInNamespace("pkg", "Helper"); ok {
+		t.Fatal("clone registration leaked into the base")
+	}
+	if _, ok := base.CloneRuntimeFrozenShared(nil).lookupClassInNamespace("pkg", "Helper"); ok {
+		t.Fatal("clone registration leaked into a later clone")
 	}
 }

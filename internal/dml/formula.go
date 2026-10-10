@@ -91,20 +91,70 @@ func evaluateRecordFormulaValue(formula string, field storage.Field, record stor
 	if calculatedStringFormulaBlankValue(field, value) {
 		return storage.NullValue(), true, true
 	}
-	return workflowLiteralValue(field, value.asString())
+	return materializedFormulaFieldValue(field, value)
 }
 
 func EvaluateRecordFormulaValueInOrg(formula string, field storage.Field, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record) (storage.Value, bool, bool) {
+	return EvaluateRecordFormulaValueInOrgWithOptions(formula, field, org, definition, record, FormulaEvaluationOptions{})
+}
+
+// FormulaEvaluationOptions carries per-instance options without changing the
+// defaults used by stored formulas, validation rules and workflow evaluation.
+type FormulaEvaluationOptions struct {
+	PreserveNumericNull bool
+	Template            bool
+	// FormulaSurface selects FormulaEval/recalculateFormulas result semantics.
+	// Validation rules and workflow formulas retain their existing defaults.
+	FormulaSurface bool
+	Error          *FormulaError
+}
+
+func EvaluateRecordFormulaValueInOrgWithOptions(formula string, field storage.Field, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, options FormulaEvaluationOptions) (storage.Value, bool, bool) {
+	if options.Template {
+		options.Template = false
+		var out strings.Builder
+		for {
+			start := strings.Index(formula, "{!")
+			if start < 0 {
+				out.WriteString(formula)
+				return storage.StringValue(out.String()), false, true
+			}
+			out.WriteString(formula[:start])
+			formula = formula[start+2:]
+			end := formulaTemplateExpressionEnd(formula)
+			if end < 0 {
+				return storage.Value{}, false, false
+			}
+			textField := field
+			textField.Type = storage.FieldString
+			value, isNull, ok := EvaluateRecordFormulaValueInOrgWithOptions(formula[:end], textField, org, definition, record, options)
+			if !ok {
+				return storage.Value{}, false, false
+			}
+			if !isNull {
+				out.WriteString(value.String)
+			}
+			formula = formula[end+1:]
+		}
+	}
 	parser := formulaParser{
-		tokens:     tokenizeFormula(html.UnescapeString(formula)),
-		record:     record,
-		org:        org,
-		definition: definition,
-		evaluating: make(map[string]bool),
-		namespace:  formulaFieldSourceNamespace("", definition, field),
+		tokens:              tokenizeFormula(html.UnescapeString(formula)),
+		record:              record,
+		org:                 org,
+		definition:          definition,
+		evaluating:          make(map[string]bool),
+		namespace:           formulaFieldSourceNamespace("", definition, field),
+		preserveNumericNull: options.PreserveNumericNull,
+		blankNumericAsZero:  currencyFormulaBlankAsZero(field) && !options.PreserveNumericNull,
+		formulaSurface:      options.FormulaSurface,
+		failure:             options.Error,
+		storedFormula:       options.FormulaSurface && field.Type == storage.FieldCalculated,
+	}
+	if options.FormulaSurface {
+		parser.blankNumericAsZero = !options.PreserveNumericNull
 	}
 	value, ok := parser.parseExpression()
-	if !ok || parser.peek().typ != formulaTokenEOF {
+	if !ok || parser.peek().typ != formulaTokenEOF || (options.Error != nil && options.Error.Type != "") {
 		return storage.Value{}, false, false
 	}
 	if value.kind == formulaNull {
@@ -113,7 +163,153 @@ func EvaluateRecordFormulaValueInOrg(formula string, field storage.Field, org *s
 	if calculatedStringFormulaBlankValue(field, value) {
 		return storage.NullValue(), true, true
 	}
-	return workflowLiteralValue(field, value.asString())
+	if options.FormulaSurface {
+		return materializedFormulaSurfaceValue(field, value)
+	}
+	return materializedFormulaFieldValue(field, value)
+}
+
+// FormulaReferencedFields uses the same tokens and template boundaries as evaluation.
+func FormulaReferencedFields(formula string, template bool) []string {
+	expressions := []string{formula}
+	if template {
+		expressions = nil
+		for {
+			start := strings.Index(formula, "{!")
+			if start < 0 {
+				break
+			}
+			formula = formula[start+2:]
+			end := formulaTemplateExpressionEnd(formula)
+			if end < 0 {
+				break
+			}
+			expressions = append(expressions, formula[:end])
+			formula = formula[end+1:]
+		}
+	}
+	seen := make(map[string]bool)
+	var fields []string
+	for _, expression := range expressions {
+		tokens := tokenizeFormula(html.UnescapeString(expression))
+		for i, token := range tokens {
+			if token.typ != formulaTokenIdent {
+				continue
+			}
+			if i+1 < len(tokens) && tokens[i+1].text == "(" {
+				continue
+			}
+			key := strings.ToLower(token.text)
+			switch key {
+			case "null", "true", "false", "and", "or", "not":
+				continue
+			}
+			if !seen[key] {
+				seen[key] = true
+				fields = append(fields, token.text)
+			}
+		}
+	}
+	sort.Strings(fields)
+	return fields
+}
+
+// FormulaHasHTMLFunction identifies HTML-producing calls without evaluating the formula.
+// The shared lexer keeps quoted text and comments separate from function identifiers.
+func FormulaHasHTMLFunction(formula string) bool {
+	tokens := tokenizeFormula(html.UnescapeString(formula))
+	for i, token := range tokens {
+		if token.typ == formulaTokenIdent && i+1 < len(tokens) && tokens[i+1].text == "(" &&
+			(strings.EqualFold(token.text, "HYPERLINK") || strings.EqualFold(token.text, "IMAGE")) {
+			return true
+		}
+	}
+	return false
+}
+
+// ValidateFormula checks formula syntax without requiring a concrete record or
+// org schema. Field references evaluate as null during this syntax-only pass;
+// the parser result and end-of-input check still catch malformed expressions.
+func ValidateFormula(formula string) bool {
+	parser := formulaParser{tokens: tokenizeFormula(html.UnescapeString(formula)), record: storage.Record{}}
+	_, ok := parser.parseExpression()
+	return ok && parser.peek().typ == formulaTokenEOF
+}
+
+// ValidateFormulaTemplate validates the formula expressions embedded in a
+// template while allowing literal text outside those expressions.
+func ValidateFormulaTemplate(formula string) bool {
+	if formula == "" {
+		return false
+	}
+	for {
+		start := strings.Index(formula, "{!")
+		if start < 0 {
+			return true
+		}
+		formula = formula[start+2:]
+		end := formulaTemplateExpressionEnd(formula)
+		if end < 0 || !ValidateFormula(formula[:end]) {
+			return false
+		}
+		formula = formula[end+1:]
+	}
+}
+
+// ValidateFormulaForDefinition applies schema checks to direct field
+// references while retaining ValidateFormula's syntax-only contract for
+// callers that do not have a concrete SObject context. Relationship paths are
+// left to the evaluator, which resolves their intermediate relationship names
+// against the complete object graph.
+func ValidateFormulaForDefinition(formula string, definition storage.ObjectDefinition) bool {
+	return validateFormulaForDefinition(formula, definition, false)
+}
+
+// ValidateFormulaTemplateForDefinition applies schema checks to expressions
+// embedded in a template while allowing its surrounding literal text.
+func ValidateFormulaTemplateForDefinition(formula string, definition storage.ObjectDefinition) bool {
+	return validateFormulaForDefinition(formula, definition, true)
+}
+
+func validateFormulaForDefinition(formula string, definition storage.ObjectDefinition, template bool) bool {
+	if template {
+		if !ValidateFormulaTemplate(formula) {
+			return false
+		}
+	} else if !ValidateFormula(formula) {
+		return false
+	}
+	for _, field := range FormulaReferencedFields(formula, template) {
+		if strings.HasPrefix(field, "$") || strings.Contains(field, ".") {
+			continue
+		}
+		if _, ok := storage.ResolveFieldName(definition, "", field); !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func formulaTemplateExpressionEnd(text string) int {
+	var quote byte
+	for i := 0; i < len(text); i++ {
+		if quote != 0 {
+			if text[i] == '\\' {
+				i++
+				continue
+			}
+			if text[i] == quote {
+				quote = 0
+			}
+			continue
+		}
+		if text[i] == '\'' || text[i] == '"' {
+			quote = text[i]
+		} else if text[i] == '}' {
+			return i
+		}
+	}
+	return -1
 }
 
 func calculatedStringFormulaBlankValue(field storage.Field, value formulaValue) bool {
@@ -229,15 +425,22 @@ func isFormulaIdentPart(ch byte) bool {
 }
 
 type formulaParser struct {
-	tokens     []formulaToken
-	pos        int
-	record     storage.Record
-	org        *storage.OrgState
-	definition storage.ObjectDefinition
-	namespace  string
-	evaluating map[string]bool
-	prior      *storage.Record
-	isNew      bool
+	tokens              []formulaToken
+	pos                 int
+	record              storage.Record
+	org                 *storage.OrgState
+	definition          storage.ObjectDefinition
+	namespace           string
+	evaluating          map[string]bool
+	prior               *storage.Record
+	isNew               bool
+	preserveNumericNull bool
+	blankNumericAsZero  bool
+	formulaSurface      bool
+	validating          bool
+	validationMessage   string
+	failure             *FormulaError
+	storedFormula       bool
 }
 
 func (p *formulaParser) resolutionNamespace(definition storage.ObjectDefinition) string {
@@ -350,8 +553,21 @@ func (p *formulaParser) parseAdditive() (formulaValue, bool) {
 		if !ok {
 			return formulaValue{}, false
 		}
+		if p.validating {
+			left, ok = p.formulaOperatorType(op, left, right)
+			if !ok {
+				return formulaValue{}, false
+			}
+			continue
+		}
 		leftNumber, leftOK := left.asNumber()
 		rightNumber, rightOK := right.asNumber()
+		// A missing Date stays null when adding days. Numeric blank-as-zero
+		// coercion must not manufacture an invalid Date from the day count.
+		if op == "+" && left.kind == formulaNull && rightOK &&
+			(left.fieldType == storage.FieldDate || left.display == "DATE") {
+			continue
+		}
 		if op == "-" && left.kind == formulaDate && right.kind == formulaDate {
 			if days, ok := formulaDateDiffDays(left.asString(), right.asString()); ok {
 				left = formulaValue{kind: formulaNumber, number: days}
@@ -368,10 +584,14 @@ func (p *formulaParser) parseAdditive() (formulaValue, bool) {
 			left = formulaValue{kind: formulaString, text: left.asString() + right.asString()}
 			continue
 		}
+		if p.preserveNumericNull && (left.kind == formulaNull || right.kind == formulaNull) {
+			left = formulaValue{kind: formulaNull}
+			continue
+		}
 		if !leftOK || !rightOK {
 			return formulaValue{}, false
 		}
-		if exact, ok := preciseFormulaNumberBinary(op, left, right); ok {
+		if exact, ok := p.preciseNumberBinary(op, left, right); ok {
 			left = exact
 		} else if op == "+" {
 			left = formulaNumberValue(leftNumber + rightNumber)
@@ -396,13 +616,24 @@ func (p *formulaParser) parseMultiplicative() (formulaValue, bool) {
 		if !ok {
 			return formulaValue{}, false
 		}
+		if p.validating {
+			left, ok = p.formulaOperatorType(op, left, right)
+			if !ok {
+				return formulaValue{}, false
+			}
+			continue
+		}
+		if p.preserveNumericNull && (left.kind == formulaNull || right.kind == formulaNull) {
+			left = formulaValue{kind: formulaNull}
+			continue
+		}
 		leftNumber, leftOK := left.asNumber()
 		rightNumber, rightOK := right.asNumber()
 		if !leftOK || !rightOK {
 			return formulaValue{}, false
 		}
 		if op == "*" {
-			if exact, ok := preciseFormulaNumberBinary(op, left, right); ok {
+			if exact, ok := p.preciseNumberBinary(op, left, right); ok {
 				left = exact
 			} else {
 				left = formulaNumberValue(leftNumber * rightNumber)
@@ -410,6 +641,13 @@ func (p *formulaParser) parseMultiplicative() (formulaValue, bool) {
 			continue
 		}
 		if rightNumber == 0 {
+			if p.formulaSurface {
+				message := "Division by zero"
+				if leftNumber == 0 {
+					message = "Division undefined"
+				}
+				p.formulaFailure("FormulaEvaluationException", message)
+			}
 			return formulaValue{kind: formulaNull}, true
 		}
 		left = formulaNumberValue(leftNumber / rightNumber)
@@ -417,6 +655,34 @@ func (p *formulaParser) parseMultiplicative() (formulaValue, bool) {
 }
 
 func (p *formulaParser) parseUnary() (formulaValue, bool) {
+	if p.matchSymbol("+") {
+		return p.parseUnary()
+	}
+	if p.matchSymbol("-") {
+		value, ok := p.parseUnary()
+		if !ok {
+			return formulaValue{}, false
+		}
+		if p.validating {
+			return value, value.kind == formulaNumber
+		}
+		if p.preserveNumericNull && value.kind == formulaNull {
+			return value, true
+		}
+		number, ok := value.asNumber()
+		if !ok {
+			return formulaValue{}, false
+		}
+		value.number = -number
+		if value.numberText != "" {
+			if strings.HasPrefix(value.numberText, "-") {
+				value.numberText = value.numberText[1:]
+			} else {
+				value.numberText = "-" + value.numberText
+			}
+		}
+		return value, true
+	}
 	if p.matchSymbol("!") {
 		value, ok := p.parseUnary()
 		if !ok {
@@ -424,7 +690,38 @@ func (p *formulaParser) parseUnary() (formulaValue, bool) {
 		}
 		return formulaValue{kind: formulaBool, bool: !value.truthy()}, true
 	}
-	return p.parsePrimary()
+	return p.parsePower()
+}
+
+func (p *formulaParser) parsePower() (formulaValue, bool) {
+	left, ok := p.parsePrimary()
+	if !ok {
+		return formulaValue{}, false
+	}
+	for p.matchSymbol("^") {
+		right, ok := p.parsePrimary()
+		if !ok {
+			return formulaValue{}, false
+		}
+		if p.validating {
+			left, ok = p.formulaOperatorType("^", left, right)
+			if !ok {
+				return formulaValue{}, false
+			}
+			continue
+		}
+		if p.preserveNumericNull && (left.kind == formulaNull || right.kind == formulaNull) {
+			left = formulaValue{kind: formulaNull}
+			continue
+		}
+		a, aOK := left.asNumber()
+		b, bOK := right.asNumber()
+		if !aOK || !bOK {
+			return formulaValue{}, false
+		}
+		left = formulaNumberValue(math.Pow(a, b))
+	}
+	return left, true
 }
 
 func (p *formulaParser) parsePrimary() (formulaValue, bool) {
@@ -439,10 +736,21 @@ func (p *formulaParser) parsePrimary() (formulaValue, bool) {
 		if err != nil {
 			return formulaValue{}, false
 		}
-		return formulaValue{kind: formulaNumber, number: number, numberText: normalizeFormulaNumberText(token.text)}, true
+		text := normalizeFormulaNumberText(token.text)
+		if p.formulaSurface {
+			text = token.text
+		}
+		return formulaValue{kind: formulaNumber, number: number, numberText: text}, true
 	case formulaTokenIdent:
 		p.pos++
 		if p.matchSymbol("(") {
+			if p.validating {
+				args, ok := p.parseArguments()
+				if !ok {
+					return formulaValue{}, false
+				}
+				return p.formulaFunctionType(token.text, args)
+			}
 			if strings.EqualFold(token.text, "IF") {
 				return p.parseIfFunction()
 			}
@@ -603,6 +911,9 @@ func (p *formulaParser) matchSymbol(symbol string) bool {
 }
 
 func (p *formulaParser) fieldValue(field string) formulaValue {
+	if p.validating {
+		return p.formulaFieldType(field)
+	}
 	return p.valueForRecordField(p.record, field)
 }
 
@@ -619,7 +930,7 @@ func (p *formulaParser) valueForRecordField(record storage.Record, field string)
 	}
 	if strings.Contains(field, ".") {
 		if value, ok := formulaRelationshipFieldValue(p.org, p.definition, record, field, namespace, p.evaluating); ok {
-			return value
+			return p.formulaSurfaceFieldValue(value)
 		}
 	}
 	if resolved, ok := storage.ResolveFieldName(p.definition, namespace, field); ok {
@@ -642,14 +953,15 @@ func (p *formulaParser) valueForRecordField(record storage.Record, field string)
 				}
 				p.evaluating[field] = true
 				nested := formulaParser{
-					tokens:     tokenizeFormula(html.UnescapeString(fieldDef.Formula)),
-					record:     record,
-					org:        p.org,
-					definition: p.definition,
-					namespace:  formulaFieldSourceNamespace(p.namespace, p.definition, fieldDef),
-					evaluating: p.evaluating,
-					prior:      p.prior,
-					isNew:      p.isNew,
+					tokens:             tokenizeFormula(html.UnescapeString(fieldDef.Formula)),
+					record:             record,
+					org:                p.org,
+					definition:         p.definition,
+					namespace:          formulaFieldSourceNamespace(p.namespace, p.definition, fieldDef),
+					evaluating:         p.evaluating,
+					prior:              p.prior,
+					isNew:              p.isNew,
+					blankNumericAsZero: currencyFormulaBlankAsZero(fieldDef),
 				}
 				value, ok := nested.parseExpression()
 				delete(p.evaluating, field)
@@ -661,7 +973,15 @@ func (p *formulaParser) valueForRecordField(record storage.Record, field string)
 	}
 	if p.definition.APIName != "" {
 		if fieldDef, ok := p.definition.Fields[field]; ok {
-			return formulaFieldValueForDefinition(record, field, fieldDef)
+			value := formulaFieldValueForDefinition(record, field, fieldDef)
+			if p.storedFormula && value.kind == formulaString && strings.TrimSpace(value.text) == "" {
+				value = formulaValue{kind: formulaNull, fieldType: fieldDef.Type}
+			}
+			value = p.formulaSurfaceFieldValue(value)
+			if p.blankNumericAsZero && value.kind == formulaNull && (fieldDef.Type == storage.FieldDecimal || fieldDef.Type == storage.FieldInteger) {
+				return formulaValue{kind: formulaNumber, numberText: "0"}
+			}
+			return value
 		}
 	}
 	return formulaFieldValue(record, field)
@@ -753,6 +1073,9 @@ func formulaRecordTypeValue(definition storage.ObjectDefinition, record storage.
 }
 
 func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue) (formulaValue, bool) {
+	if value, handled, ok := p.evaluateExtendedFormulaFunction(name, args); handled {
+		return value, ok
+	}
 	switch strings.ToUpper(name) {
 	case "AND":
 		for _, arg := range args {
@@ -782,12 +1105,20 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		if len(args) != 1 {
 			return formulaValue{}, false
 		}
-		return formulaValue{kind: formulaBool, bool: args[0].blank()}, true
+		blank := args[0].blank()
+		if p.formulaSurface && args[0].kind == formulaString && args[0].fieldType == storage.FieldString {
+			blank = false
+		}
+		return formulaValue{kind: formulaBool, bool: blank}, true
 	case "BLANKVALUE":
 		if len(args) != 2 {
 			return formulaValue{}, false
 		}
-		if args[0].blank() {
+		blank := args[0].blank()
+		if p.formulaSurface && args[0].kind == formulaString {
+			blank = false
+		}
+		if blank {
 			return args[1], true
 		}
 		return args[0], true
@@ -796,6 +1127,14 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaBool, bool: args[0].isNull()}, true
+	case "NULLVALUE":
+		if len(args) != 2 {
+			return formulaValue{}, false
+		}
+		if args[0].isNull() {
+			return args[1], true
+		}
+		return args[0], true
 	case "CONTAINS":
 		if len(args) != 2 {
 			return formulaValue{}, false
@@ -944,6 +1283,15 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 			now = p.org.Now().UTC()
 		}
 		return formulaValue{kind: formulaDate, text: now.Format("2006-01-02")}, true
+	case "NOW":
+		if len(args) != 0 {
+			return formulaValue{}, false
+		}
+		now := time.Now().UTC()
+		if p.org != nil && p.org.Now != nil {
+			now = p.org.Now().UTC()
+		}
+		return formulaValue{kind: formulaDate, text: now.Format(time.RFC3339Nano)}, true
 	case "DATE":
 		if len(args) != 3 {
 			return formulaValue{}, false
@@ -986,6 +1334,9 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		if !ok {
 			return formulaValue{}, false
 		}
+		if p.formulaSurface {
+			return formulaNumberValue(math.Trunc(number)), true
+		}
 		return formulaValue{kind: formulaNumber, number: math.Floor(number)}, true
 	case "ROUND":
 		if len(args) != 2 {
@@ -1026,6 +1377,9 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 			return formulaValue{}, false
 		}
 		if divisor == 0 {
+			if p.formulaSurface {
+				p.formulaFailure("FormulaEvaluationException", "Division by zero")
+			}
 			return formulaValue{kind: formulaNull}, true
 		}
 		return formulaValue{kind: formulaNumber, number: math.Mod(dividend, divisor)}, true
@@ -1068,7 +1422,7 @@ func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.Obj
 	}
 	currentDefinition := definition
 	currentRecord := record
-	for _, relationship := range parts[:len(parts)-1] {
+	for index, relationship := range parts[:len(parts)-1] {
 		resolutionNamespace := formulaSourceNamespace(namespace, currentDefinition)
 		lookupField, ok := relationshipLookupField(currentDefinition, resolutionNamespace, relationship)
 		if !ok {
@@ -1078,7 +1432,7 @@ func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.Obj
 		if ok && value.Kind != storage.ValueNull {
 			parentID := idFromStorageValue(value)
 			if parentID == "" {
-				return formulaValue{kind: formulaNull}, true
+				return formulaMissingRelationshipValue(*org, lookupField, parts[index+1:], namespace), true
 			}
 			if parentRecord, parentDefinition, ok := formulaParentRecord(*org, lookupField, parentID); ok {
 				currentRecord = parentRecord
@@ -1091,10 +1445,7 @@ func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.Obj
 			currentDefinition = parentDefinition
 			continue
 		}
-		if !ok || value.Kind == storage.ValueNull {
-			return formulaValue{kind: formulaNull}, true
-		}
-		return formulaValue{kind: formulaNull}, true
+		return formulaMissingRelationshipValue(*org, lookupField, parts[index+1:], namespace), true
 	}
 	last := parts[len(parts)-1]
 	resolutionNamespace := formulaSourceNamespace(namespace, currentDefinition)
@@ -1146,6 +1497,38 @@ func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.Obj
 		return formulaFieldValueForDefinition(currentRecord, last, fieldDef), true
 	}
 	return formulaFieldValue(currentRecord, last), true
+}
+
+// A missing related record is null, but its field still has a schema type.
+// Do not evaluate defaults or formulas on that nonexistent record.
+func formulaMissingRelationshipValue(org storage.OrgState, lookup storage.Field, remaining []string, namespace string) formulaValue {
+	if field, name, ok := formulaRelationshipFieldDefinition(org, lookup, remaining, namespace); ok {
+		return formulaFieldValueForDefinition(storage.Record{}, name, field)
+	}
+	return formulaValue{kind: formulaNull}
+}
+
+// Resolve the terminal schema field without evaluating a related record. Both
+// missing-record evaluation and FormulaBuilder validation use this same walk.
+func formulaRelationshipFieldDefinition(org storage.OrgState, lookup storage.Field, remaining []string, namespace string) (storage.Field, string, bool) {
+	for index, part := range remaining {
+		definition, ok := formulaRelationshipRecordDefinition(org, lookup, storage.Record{})
+		if !ok {
+			break
+		}
+		resolutionNamespace := formulaSourceNamespace(namespace, definition)
+		if index == len(remaining)-1 {
+			if canonical, ok := storage.ResolveFieldName(definition, resolutionNamespace, part); ok {
+				return definition.Fields[canonical], canonical, true
+			}
+			break
+		}
+		lookup, ok = relationshipLookupField(definition, resolutionNamespace, part)
+		if !ok {
+			break
+		}
+	}
+	return storage.Field{}, "", false
 }
 
 func relationshipLookupField(definition storage.ObjectDefinition, namespace, relationship string) (storage.Field, bool) {
@@ -1389,6 +1772,14 @@ func validationFieldEquals(record storage.Record, field, want string) bool {
 }
 
 func compareFormulaValues(left, right formulaValue, op string) bool {
+	// A blank text field compares as empty text while retaining its null
+	// representation for field projection and NULLVALUE/ISNULL semantics.
+	if left.kind == formulaNull && left.fieldType == storage.FieldString {
+		left.kind = formulaString
+	}
+	if right.kind == formulaNull && right.fieldType == storage.FieldString {
+		right.kind = formulaString
+	}
 	if left.kind == formulaNull || right.kind == formulaNull {
 		switch op {
 		case "=":
@@ -1722,4 +2113,27 @@ func formulaDateTextIncludesTime(text string) bool {
 func looksLikeFormulaDate(text string) bool {
 	_, ok := parseFormulaDate(text)
 	return ok
+}
+
+// materializedFormulaFieldValue applies declared currency formula scale only at
+// the field-result boundary. Formula inputs and Decimal arithmetic retain their
+// original precision and rounding behavior.
+func materializedFormulaFieldValue(field storage.Field, value formulaValue) (storage.Value, bool, bool) {
+	if field.Type == storage.FieldCalculated &&
+		strings.TrimSpace(field.Formula) != "" &&
+		strings.EqualFold(strings.TrimSpace(field.DisplayType), "CURRENCY") &&
+		value.kind == formulaNumber && field.Scale >= 0 && (field.ScaleSpecified || field.Scale > 0) {
+		if rational, ok := formulaNumberRat(value); ok {
+			return storage.DecimalValue(rational.FloatString(field.Scale)), false, true
+		}
+	}
+	return workflowLiteralValue(field, value.asString())
+}
+
+// Only an explicitly declared Currency formula policy changes typed numeric
+// operands. Literal NULL, missing text and unknown fields remain null.
+func currencyFormulaBlankAsZero(field storage.Field) bool {
+	return field.Type == storage.FieldCalculated && strings.TrimSpace(field.Formula) != "" &&
+		strings.EqualFold(strings.TrimSpace(field.DisplayType), "CURRENCY") &&
+		strings.EqualFold(strings.TrimSpace(field.FormulaTreatBlanksAs), "BlankAsZero")
 }

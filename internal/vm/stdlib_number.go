@@ -22,7 +22,7 @@ func callIntegerMember(receiver Value, method string, args []Value) (Value, Valu
 		if method == "longValue" {
 			return longIntValue(receiver.Int), receiver, false, true, nil
 		}
-		return Int(receiver.Int), receiver, false, true, nil
+		return Int(int64(int32(receiver.Int))), receiver, false, true, nil
 	case "decimalValue":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Integer.%s expects 0 arguments", method)
@@ -66,6 +66,9 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		value.ExplicitScale = true
 		return value, receiver, false, true, nil
 	case "round":
+		if isFloatBackedDecimal(receiver) && len(args) == 0 {
+			return longIntValue(doubleToLong(math.Floor(receiver.Decimal + 0.5))), receiver, false, true, nil
+		}
 		if len(args) > 1 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.round expects optional RoundingMode")
 		}
@@ -84,7 +87,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		rounded, err := strconv.ParseInt(decimalPlainText(roundedDecimal), 10, 64)
+		rounded, err := int64FromDecimalValue("Decimal.round", roundedDecimal)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -122,10 +125,10 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if err := ensureFiniteDecimal("Decimal.pow", receiver.Decimal); err != nil {
 			return Null, receiver, false, true, err
 		}
+		if args[0].Int < 0 || args[0].Int > 32767 {
+			return Null, receiver, false, true, newExceptionError("MathException", "Exponent is out of range")
+		}
 		if rat, ok := valueDecimalRat(receiver); ok {
-			if args[0].Int < 0 {
-				return Null, receiver, false, true, unsupportedCallError("Decimal.pow negative exponent exact semantics are deferred")
-			}
 			exponent := big.NewInt(args[0].Int)
 			numerator := new(big.Int).Exp(rat.Num(), exponent, nil)
 			denominator := new(big.Int).Exp(rat.Denom(), exponent, nil)
@@ -210,6 +213,27 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 				text = strings.TrimRight(text, "0")
 				text = strings.TrimRight(text, ".")
 			}
+			// A plain integer may still have insignificant trailing zeroes.
+			// Preserve the scale change by representing those zeroes as a
+			// positive exponent (for example, 100 becomes 1E+2).
+			sign := ""
+			digits := text
+			if strings.HasPrefix(digits, "-") || strings.HasPrefix(digits, "+") {
+				if strings.HasPrefix(digits, "-") {
+					sign = "-"
+				}
+				digits = digits[1:]
+			}
+			significant := strings.TrimLeft(digits, "0")
+			if significant == "" {
+				text = "0"
+			} else if normalized := strings.TrimRight(significant, "0"); normalized != significant {
+				mantissa := normalized[:1]
+				if len(normalized) > 1 {
+					mantissa += "." + normalized[1:]
+				}
+				text = sign + mantissa + "E+" + strconv.Itoa(len(significant)-1)
+			}
 		}
 		if text == "" || text == "-" {
 			text = "0"
@@ -256,6 +280,41 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func (vm *VM) callLocaleNumberFormatMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if !strings.EqualFold(method, "format") {
+		return Null, false, nil
+	}
+	var value Value
+	var handled bool
+	var err error
+	switch receiver.Kind {
+	case ValueInt:
+		value, _, _, handled, err = callIntegerMember(receiver, "format", args)
+	case ValueDecimal:
+		value, _, _, handled, err = callDecimalMember(receiver, "format", args)
+	default:
+		return Null, false, nil
+	}
+	if err != nil || !handled {
+		return value, handled, err
+	}
+	if receiver.Kind == ValueDecimal && isFloatBackedDecimal(receiver) {
+		// R103/R113: Double.format retains signed zero and rounds to the
+		// locale formatter's maximum of three fractional digits.
+		text := strconv.FormatFloat(receiver.Decimal, 'f', 3, 64)
+		text = strings.TrimSuffix(strings.TrimRight(text, "0"), ".")
+		value = String(formatDecimalTextWithGrouping(text))
+	}
+	// These supported ICU locales use dot grouping and a decimal comma.
+	switch vm.currentUserInfoField("LocaleSidKey", "en_US") {
+	case "de_DE", "it_IT", "es_ES", "pt_BR":
+		value = String(strings.NewReplacer(",", ".", ".", ",").Replace(value.Text))
+	case "en_IN", "gu_IN", "hi_IN", "ml_IN", "pa_IN", "ta_IN", "ta_LK", "te_IN":
+		value = String(formatIndianGroupedNumberText(value.Text))
+	}
+	return value, true, nil
 }
 
 func isDoubleUnsupportedMember(method string) bool {
@@ -311,10 +370,11 @@ func decimalAbsValue(value Value) (Value, error) {
 func int32FromDecimalValue(name string, value Value) (int32, error) {
 	if rat, ok := valueDecimalRat(value); ok {
 		integer := new(big.Int).Quo(rat.Num(), rat.Denom())
-		if integer.Cmp(big.NewInt(-2147483648)) < 0 || integer.Cmp(big.NewInt(2147483648)) >= 0 {
-			return 0, fmt.Errorf("%s value out of Integer range", name)
-		}
-		return int32(integer.Int64()), nil // #nosec G115 -- integer is range-checked above before narrowing.
+		integer.Mod(integer, new(big.Int).Lsh(big.NewInt(1), 32))
+		return int32(integer.Int64()), nil // #nosec G115 -- Apex narrowing deliberately wraps to 32 bits.
+	}
+	if isFloatBackedDecimal(value) {
+		return doubleToInteger(value.Decimal), nil
 	}
 	return int32FromFloat(name, value.Decimal)
 }
@@ -322,10 +382,11 @@ func int32FromDecimalValue(name string, value Value) (int32, error) {
 func int64FromDecimalValue(name string, value Value) (int64, error) {
 	if rat, ok := valueDecimalRat(value); ok {
 		integer := new(big.Int).Quo(rat.Num(), rat.Denom())
-		if !integer.IsInt64() {
-			return 0, fmt.Errorf("%s value out of 64-bit integer range", name)
-		}
-		return integer.Int64(), nil
+		integer.Mod(integer, new(big.Int).Lsh(big.NewInt(1), 64))
+		return int64(integer.Uint64()), nil // #nosec G115 -- Apex narrowing deliberately wraps to 64 bits.
+	}
+	if isFloatBackedDecimal(value) {
+		return doubleToLong(value.Decimal), nil
 	}
 	return int64FromFloat(name, value.Decimal)
 }
@@ -343,4 +404,36 @@ func formatDecimalTextWithGrouping(text string) string {
 		fraction = text[dot:]
 	}
 	return sign + addThousandsSeparators(whole) + fraction
+}
+
+func formatIndianGroupedNumberText(text string) string {
+	sign := ""
+	if strings.HasPrefix(text, "-") || strings.HasPrefix(text, "+") {
+		sign = text[:1]
+		text = text[1:]
+	}
+	whole := text
+	fraction := ""
+	if dot := strings.IndexByte(text, '.'); dot >= 0 {
+		whole = text[:dot]
+		fraction = text[dot:]
+	}
+	whole = strings.ReplaceAll(whole, ",", "")
+	if len(whole) <= 3 {
+		return sign + whole + fraction
+	}
+	firstGroupLength := (len(whole) - 3) % 2
+	if firstGroupLength == 0 {
+		firstGroupLength = 2
+	}
+	grouped := strings.Builder{}
+	grouped.Grow(len(whole) + len(whole)/2)
+	grouped.WriteString(whole[:firstGroupLength])
+	for i := firstGroupLength; i < len(whole)-3; i += 2 {
+		grouped.WriteByte(',')
+		grouped.WriteString(whole[i : i+2])
+	}
+	grouped.WriteByte(',')
+	grouped.WriteString(whole[len(whole)-3:])
+	return sign + grouped.String() + fraction
 }

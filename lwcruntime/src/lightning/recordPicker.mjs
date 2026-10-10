@@ -5,9 +5,20 @@ import {
   registerDecorators,
   registerTemplate,
 } from "lwc";
-import { __gladeRecordPickerSearch } from "lightning/uiRecordApi";
+import { __gladeRecordPickerSearch, getRecord } from "lightning/uiRecordApi";
 
 const DEFAULT_FIELDS = ["Name"];
+const CONFIGURATION_ERROR = "This field can't load because of a configuration problem. Ask your Salesforce admin for help.";
+const FILTER_OPERATORS = new Set(["eq", "ne", "lt", "gt", "lte", "gte", "like", "in", "nin", "includes", "excludes"]);
+
+function validConfiguration(component) {
+  for (const info of [component.displayInfo, component.matchingInfo]) {
+    if (info != null && !fieldPath(info.primaryField)) return false;
+  }
+  const filter = component.filter;
+  return filter == null || (Array.isArray(filter.criteria) && filter.criteria.length > 0 &&
+    filter.criteria.every(criterion => fieldPath(criterion) && FILTER_OPERATORS.has(criterion.operator)));
+}
 
 function fieldPath(value) {
   if (!value) {
@@ -117,29 +128,35 @@ function renderRecordPicker($api, $cmp) {
     ]);
   });
   const hasRows = rows.length > 0;
-  const status = $cmp.searching ? "Searching..." : ($cmp.errorMessage || "");
+  const clearLabel = "Clear " + ($cmp.label || "") + " Selection";
+  const status = $cmp.validationMessage ? ($cmp.label || "") + "\n" + $cmp.validationMessage : "";
   return [h("div", { classMap: { "slds-form-element": true }, key: 0 }, [
     h("label", { classMap: { "slds-form-element__label": true }, attrs: { for: "record-picker-input" }, key: 1 }, [t($cmp.label || "")]),
-    h("div", { classMap: { "slds-form-element__control": true }, key: 2 }, [
+    h("div", { classMap: { "slds-form-element__control": true }, key: 2 }, $api.f([
       h("input", {
         classMap: { "slds-input": true },
         attrs: {
           id: "record-picker-input",
-          placeholder: $cmp.placeholder || "Search records",
-          disabled: $cmp.disabled ? "" : null,
+          type: "text",
+          placeholder: $cmp.loadingRecord ? "Loading..." : ($cmp.placeholder || ""),
+          "aria-invalid": status ? "true" : null,
           role: $cmp.objectApiName ? "combobox" : null,
           "aria-expanded": $cmp.objectApiName ? String(hasRows) : null,
           "aria-autocomplete": $cmp.objectApiName ? "list" : null,
         },
-        props: { value: $cmp.inputValue },
+        props: { value: $cmp.inputValue, disabled: Boolean($cmp.disabled || $cmp.configurationError || $cmp.loadingRecord),
+          required: Boolean($cmp.required), readOnly: Boolean($cmp.selectedRecord) },
         key: 3,
-        on: { change: b($cmp.handleInput), input: b($cmp.handleInput) },
+        on: { change: b($cmp.handleTextChange), input: b($cmp.handleInput), focus: b($cmp.handleFocus), blur: b($cmp.handleBlur) },
       }),
-      status ? h("div", { classMap: { "slds-form-element__help": true }, key: 4 }, [t(status)]) : null,
+      $cmp.selectedRecord ? h("button", { attrs: { type: "button", title: clearLabel },
+        props: { disabled: Boolean($cmp.disabled) }, key: 7 }, [t(clearLabel)]) : null,
+      h("div", { classMap: { "slds-form-element__help": true }, attrs: { style: "white-space: pre-line" }, key: 4 }, [t(status)]),
+      $cmp.configurationError ? h("div", { attrs: { role: "alert" }, key: 8 }, [t(CONFIGURATION_ERROR)]) : null,
       hasRows ? h("div", { classMap: { "slds-dropdown": true, "slds-dropdown_fluid": true, "slds-dropdown_length-5": true }, key: 5 }, [
         h("ul", { classMap: { "slds-listbox": true, "slds-listbox_vertical": true }, attrs: { role: "listbox" }, key: 6 }, rows),
       ]) : null,
-    ]),
+    ].filter(Boolean))),
   ])];
 }
 
@@ -149,8 +166,11 @@ class GladeRecordPicker extends LightningElement {
     this.label = "";
     this.objectApiName = "";
     this.placeholder = "";
-    this.value = "";
+    this.value = undefined;
     this.disabled = false;
+    this.required = false;
+    this.variant = "standard";
+    this.filter = null;
     this.matchingInfo = null;
     this.displayInfo = null;
     this.recordPickerRecords = [];
@@ -158,11 +178,94 @@ class GladeRecordPicker extends LightningElement {
     this.searchTerm = "";
     this.searching = false;
     this.errorMessage = "";
+    this.loadingRecord = false;
+    this.selectedRecord = undefined;
+    this.validationMessage = "";
+    this.__customValidity = "";
     this.__searchToken = 0;
   }
 
+  renderedCallback() {
+    const configuration = JSON.stringify([this.objectApiName, this.label, this.value, this.displayInfo, this.matchingInfo, this.filter]);
+    if (configuration === this.__configuration) return;
+    this.__configuration = configuration;
+    this.__recordAdapter?.disconnect();
+    this.__recordAdapter = undefined;
+    this.selectedRecord = undefined;
+    this.loadingRecord = Boolean(this.value);
+    if (this.configurationError) {
+      this.loadingRecord = false;
+      // Missing labels fail both the required public input and the picker
+      // configuration, as captured separately from invalid search settings.
+      if (!this.label) this.dispatchEvent(new CustomEvent("error"));
+      this.dispatchEvent(new CustomEvent("error"));
+      return;
+    }
+    if (!this.value) {
+      this.dispatchReady();
+      return;
+    }
+    // Non-string selections retain their public value and a pending control;
+    // they do not become an ID or an invented record-read failure.
+    if (typeof this.value !== "string") return;
+    const recordId = this.value;
+    this.__recordAdapter = new getRecord(({ data }) => {
+      if (this.__configuration !== configuration) return;
+      if (data) {
+        this.selectedRecord = data;
+        this.loadingRecord = false;
+        this.dispatchReady();
+      }
+    });
+    this.__recordAdapter.connect();
+    this.__recordAdapter.update({ recordId, fields: displayFields(this.displayInfo, DEFAULT_FIELDS).map(name => `${this.objectApiName}.${name}`) });
+  }
+
+  disconnectedCallback() {
+    this.__recordAdapter?.disconnect();
+    this.__configuration = undefined;
+    this.__searchToken += 1;
+  }
+
   get inputValue() {
-    return this.searchTerm || this.value || "";
+    return this.value && this.selectedRecord ? fieldDisplay(this.selectedRecord, fieldPath(this.displayInfo?.primaryField) || "Name") : this.searchTerm;
+  }
+
+  get configurationError() {
+    return !this.label || !validConfiguration(this);
+  }
+
+  dispatchReady() {
+    this.dispatchEvent(new CustomEvent("ready"));
+  }
+
+  handleFocus(event) {
+    event.stopPropagation();
+    this.dispatchEvent(new CustomEvent("focus"));
+  }
+
+  handleBlur(event) {
+    event.stopPropagation();
+    this.dispatchEvent(new CustomEvent("blur"));
+  }
+
+  focus() {
+    this.template.querySelector("input")?.focus();
+  }
+
+  setCustomValidity(message) {
+    this.__customValidity = String(message || "");
+  }
+
+  reportValidity() {
+    this.validationMessage = this.__customValidity || (this.required && !this.value ? "Complete this field." : "");
+    return !this.validationMessage;
+  }
+
+  handleTextChange(event) {
+    event.stopPropagation();
+    // Committing search text is not a record selection. The input event owns
+    // the request; its results remain available for selecting a suggestion.
   }
 
   handleInput(event) {
@@ -187,7 +290,8 @@ class GladeRecordPicker extends LightningElement {
     }
     const record = this.recordPickerRecords.find((entry) => entry.id === recordId);
     this.value = recordId;
-    this.searchTerm = recordTitle(record);
+    this.selectedRecord = record;
+    this.searchTerm = "";
     this.recordPickerRecords = [];
     this.dispatchChange(recordId);
   }
@@ -224,7 +328,9 @@ class GladeRecordPicker extends LightningElement {
         return;
       }
       this.recordPickerRecords = [];
-      this.errorMessage = err?.message || "Record picker search failed";
+      this.errorMessage = "Something went wrong. Try again.";
+      this.validationMessage = this.errorMessage;
+      this.dispatchEvent(new CustomEvent("error"));
     } finally {
       if (token === this.__searchToken) {
         this.searching = false;
@@ -240,15 +346,22 @@ registerDecorators(GladeRecordPicker, {
     placeholder: { config: 0 },
     value: { config: 0 },
     disabled: { config: 0 },
+    required: { config: 0 },
+    variant: { config: 0 },
+    filter: { config: 0 },
     matchingInfo: { config: 0 },
     displayInfo: { config: 0 },
   },
+  publicMethods: ["focus", "setCustomValidity", "reportValidity"],
   track: {
     recordPickerRecords: 1,
     displayFieldNames: 1,
     searchTerm: 1,
     searching: 1,
     errorMessage: 1,
+    loadingRecord: 1,
+    selectedRecord: 1,
+    validationMessage: 1,
   },
 });
 

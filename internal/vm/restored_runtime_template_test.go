@@ -81,6 +81,10 @@ func TestRestoredRuntimeTemplateClonesOwnedRuntime(t *testing.T) {
 }
 
 func TestRestoredRuntimeTemplateConcurrentClonesAreIndependent(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	template := NewRestoredRuntimeTemplate(restoredRuntimeTestOrg(), restoredRuntimeTestMachine(t))
 	const cloneCount = 16
 	orgs := make([]storage.OrgState, cloneCount)

@@ -13,9 +13,12 @@
                 record-id={recordId}
                 fields={fields}>
             </lightning-record-form>
-            <lightning-tabset>
+            <lightning-tabset active-tab-value="overview">
                 <lightning-tab label="Details" value="details" onactive={handleTabActive}>
                     <p class="tab-status">{activeTab}</p>
+                </lightning-tab>
+                <lightning-tab label="Overview" value="overview">
+                    <p>Overview body</p>
                 </lightning-tab>
             </lightning-tabset>
         </lightning-card>

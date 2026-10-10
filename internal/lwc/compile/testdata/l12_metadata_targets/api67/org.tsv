@@ -1,0 +1,3 @@
+c_control_metadata_target_owned_missing	COMPILE_ERROR
+c_control_metadata_target_bogus	COMPILE_ERROR
+c_control_metadata_target_tab	COMPILE_OK

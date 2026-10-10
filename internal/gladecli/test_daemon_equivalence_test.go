@@ -15,12 +15,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/watch"
 )
 
 func TestDaemonEquivalenceMatrix(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	scenarios := []daemonEquivalenceScenario{
 		{
 			name: "baseline_cache",
@@ -33,9 +38,10 @@ func TestDaemonEquivalenceMatrix(t *testing.T) {
   @isTest static void passes() { System.assertEquals(3, 1 + 2); }
 }`,
 			},
-			wantExit:  0,
-			wantTotal: 3,
-			wantPass:  3,
+			wantExit:           0,
+			wantTotal:          3,
+			wantPass:           3,
+			wantEnvelopeStatus: "passed",
 		},
 		{
 			name: "selector_exact_method",
@@ -48,11 +54,49 @@ func TestDaemonEquivalenceMatrix(t *testing.T) {
   @isTest static void unselected() { System.assert(false); }
 }`,
 			},
-			args:      []string{"--class", "AlphaTest", "--method", "passes"},
-			wantExit:  0,
-			wantTotal: 1,
-			wantPass:  1,
-			wantCase:  "AlphaTest.passes",
+			args:               []string{"--class", "AlphaTest", "--method", "passes"},
+			wantExit:           0,
+			wantTotal:          1,
+			wantPass:           1,
+			wantCase:           "AlphaTest.passes",
+			wantEnvelopeStatus: "passed",
+		},
+		{
+			name: "class_file_missing_entry",
+			classes: map[string]string{
+				"AlphaTest": `@isTest private class AlphaTest { @isTest static void passes() { System.assert(true); } }`,
+			},
+			clientInputs:       true,
+			classFileEntries:   []string{"AlphaTest", "MissingTest"},
+			wantExit:           1,
+			wantTotal:          1,
+			wantEnvelopeStatus: "failed",
+			wantCaseStatus:     testreport.StatusRuntimeError,
+			wantProblemType:    "Selector",
+			wantProblemMessage: `no test class matched --class-file entry "MissingTest"`,
+		},
+		{
+			name: "class_file_filter_empty",
+			classes: map[string]string{
+				"AlphaTest": `@isTest private class AlphaTest { @isTest static void passes() { System.assert(true); } }`,
+				"BetaTest":  `@isTest private class BetaTest { @isTest static void passes() { System.assert(true); } }`,
+			},
+			args:               []string{"--filter", "NoSuch"},
+			clientInputs:       true,
+			classFileEntries:   []string{"AlphaTest", "BetaTest"},
+			wantExit:           0,
+			wantTotal:          0,
+			wantEnvelopeStatus: "empty",
+		},
+		{
+			name: "class_filter_empty",
+			classes: map[string]string{
+				"AlphaTest": `@isTest private class AlphaTest { @isTest static void passes() { System.assert(true); } }`,
+			},
+			args:               []string{"--class", "AlphaTest", "--filter", "NoSuch"},
+			wantExit:           0,
+			wantTotal:          0,
+			wantEnvelopeStatus: "empty",
 		},
 		{
 			name: "timeout",
@@ -135,6 +179,7 @@ func TestDaemonEquivalenceMatrix(t *testing.T) {
 			wantCaseStatus:     testreport.StatusUnsupported,
 			wantProblemType:    "Canceled",
 			wantProblemMessage: context.DeadlineExceeded.Error(),
+			wantEnvelopeStatus: "failed",
 		},
 		{
 			name: "strict_limit",
@@ -153,6 +198,7 @@ func TestDaemonEquivalenceMatrix(t *testing.T) {
 			wantCaseStatus:     testreport.StatusFail,
 			wantProblemType:    "System.LimitException",
 			wantProblemMessage: "Too many queries: 2 out of 1",
+			wantEnvelopeStatus: "failed",
 		},
 		{
 			name: "parallel",
@@ -162,11 +208,12 @@ func TestDaemonEquivalenceMatrix(t *testing.T) {
 				"GammaTest": `@isTest private class GammaTest { @isTest static void passes() { System.assert(true); } }`,
 				"DeltaTest": `@isTest private class DeltaTest { @isTest static void passes() { System.assert(true); } }`,
 			},
-			clientInputs: true,
-			args:         []string{"--parallelism", "4", "--parallel-methods"},
-			wantExit:     0,
-			wantTotal:    4,
-			wantPass:     4,
+			clientInputs:       true,
+			args:               []string{"--parallelism", "4", "--parallel-methods"},
+			wantExit:           0,
+			wantTotal:          4,
+			wantPass:           4,
+			wantEnvelopeStatus: "passed",
 		},
 	}
 	modes := []daemonEquivalenceMode{
@@ -175,25 +222,39 @@ func TestDaemonEquivalenceMatrix(t *testing.T) {
 		{name: "auto_connect", realServer: true},
 		{name: "explicit_connect", args: []string{"--connect"}, realServer: true},
 	}
-	if len(scenarios) != 5 {
-		t.Fatalf("scenario count = %d, want exactly 5", len(scenarios))
+	if len(scenarios) != 8 {
+		t.Fatalf("scenario count = %d, want exactly 8", len(scenarios))
 	}
 	if len(modes) != 4 {
 		t.Fatalf("mode count = %d, want exactly 4", len(modes))
 	}
 
 	for _, scenario := range scenarios {
+		scenario := scenario
 		t.Run(scenario.name, func(t *testing.T) {
 			var oracle daemonEquivalenceSnapshot
+			oracleReady := false
 			for modeIndex, mode := range modes {
-				got := runDaemonEquivalenceInvocation(t, scenario, mode)
-				assertDaemonEquivalenceScenario(t, scenario, mode, got)
-				if modeIndex == 0 {
-					oracle = got
-					continue
-				}
-				if !reflect.DeepEqual(got, oracle) {
-					t.Errorf("%s diverged from local oracle (-want +got):\nwant %s\n got %s", mode.name, formatDaemonEquivalenceSnapshot(oracle), formatDaemonEquivalenceSnapshot(got))
+				mode := mode
+				started := false
+				completed := false
+				t.Run(mode.name, func(t *testing.T) {
+					started = true
+					if modeIndex != 0 && !oracleReady {
+						t.Fatalf("%s requires the local mode as its oracle; include /local in the -run selector", mode.name)
+					}
+					got := runDaemonEquivalenceInvocation(t, scenario, mode)
+					assertDaemonEquivalenceScenario(t, scenario, mode, got)
+					if modeIndex == 0 {
+						oracle = got
+						oracleReady = true
+					} else if !reflect.DeepEqual(got, oracle) {
+						t.Errorf("%s diverged from local oracle (-want +got):\nwant %s\n got %s", mode.name, formatDaemonEquivalenceSnapshot(oracle), formatDaemonEquivalenceSnapshot(got))
+					}
+					completed = true
+				})
+				if started && !completed {
+					t.FailNow()
 				}
 			}
 		})
@@ -366,9 +427,11 @@ type daemonEquivalenceScenario struct {
 	classes            map[string]string
 	args               []string
 	clientInputs       bool
+	classFileEntries   []string
 	wantExit           int
 	wantTotal          int
 	wantPass           int
+	wantEnvelopeStatus string
 	wantCase           string
 	wantCaseStatus     testreport.Status
 	wantProblemType    string
@@ -450,7 +513,10 @@ func assertDaemonEquivalenceScenario(t *testing.T, scenario daemonEquivalenceSce
 	if got.Exit != scenario.wantExit || got.Summary.Total != scenario.wantTotal || got.Summary.Passed != scenario.wantPass {
 		t.Errorf("%s/%s exit/summary = %d/%#v", scenario.name, mode.name, got.Exit, got.Summary)
 	}
-	if len(got.Run.Dependencies) == 0 {
+	if scenario.wantEnvelopeStatus != "" && got.Status != scenario.wantEnvelopeStatus {
+		t.Errorf("%s/%s envelope status = %q, want %q", scenario.name, mode.name, got.Status, scenario.wantEnvelopeStatus)
+	}
+	if len(got.Run.Dependencies) == 0 && scenario.wantTotal > 0 && scenario.wantProblemType != "Selector" {
 		t.Errorf("%s/%s omitted the fixture dependency", scenario.name, mode.name)
 	}
 	if scenario.wantCase != "" {
@@ -489,15 +555,10 @@ type daemonEquivalenceFixture struct {
 
 func newDaemonEquivalenceFixture(t *testing.T, scenario daemonEquivalenceScenario) daemonEquivalenceFixture {
 	t.Helper()
-	baseRoot, err := os.MkdirTemp("/tmp", "glade-28c-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := os.RemoveAll(baseRoot); err != nil {
-			t.Errorf("remove daemon equivalence fixture %s: %v", baseRoot, err)
-		}
-	})
+	// Each fixture has its own project path, so the runtimes cached for it are
+	// dead weight once the test that owns the fixture ends.
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
+	baseRoot := t.TempDir()
 	projectRoot := filepath.Join(baseRoot, "project")
 	dependencyRoot := filepath.Join(baseRoot, "dependency")
 	writeDaemonEquivalenceFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -511,7 +572,11 @@ func newDaemonEquivalenceFixture(t *testing.T, scenario daemonEquivalenceScenari
 	if scenario.clientInputs {
 		fixture.classFile = filepath.Join(baseRoot, "client", "classes.txt")
 		fixture.durationHistory = filepath.Join(baseRoot, "client", "durations.json")
-		writeDaemonEquivalenceFile(t, fixture.classFile, "DeltaTest\nAlphaTest\nGammaTest\nBetaTest\n")
+		classFileEntries := scenario.classFileEntries
+		if len(classFileEntries) == 0 {
+			classFileEntries = []string{"DeltaTest", "AlphaTest", "GammaTest", "BetaTest"}
+		}
+		writeDaemonEquivalenceFile(t, fixture.classFile, strings.Join(classFileEntries, "\n")+"\n")
 		writeDaemonEquivalenceFile(t, fixture.durationHistory, `{
   "classDurations": {"AlphaTest": 40, "BetaTest": 30, "GammaTest": 20, "DeltaTest": 10},
   "methodDurations": {"AlphaTest.passes": 4, "BetaTest.passes": 3, "GammaTest.passes": 2, "DeltaTest.passes": 1}
@@ -711,6 +776,7 @@ func runDaemonEquivalenceShardPlan(t *testing.T, mode daemonEquivalenceMode) []d
 
 func writeDaemonEquivalenceFile(t *testing.T, path, content string) {
 	t.Helper()
+	releaseStaleRuntimeCaches(t)
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatal(err)
 	}

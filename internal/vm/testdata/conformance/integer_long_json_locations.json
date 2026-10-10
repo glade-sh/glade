@@ -1,0 +1,77 @@
+[
+  {
+    "id": "Y01",
+    "code": "try { Object r; r = JSON.deserialize('2147483648', Integer.class); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (2147483648) out of range of int at [line:1, column:21]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at [line:1, column:21]"
+  },
+  {
+    "id": "Y02",
+    "code": "try { Object r; JSONParser jp = JSON.createParser('2147483648'); jp.nextToken(); r = jp.getIntegerValue(); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (2147483648) out of range of int at input location [1,21]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at input location [1,21]"
+  },
+  {
+    "id": "Y03",
+    "code": "try { Object r; r = JSON.deserialize('-2147483649', Integer.class); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (-2147483649) out of range of int at [line:1, column:23]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (-2147483649) out of range of int at [line:1, column:23]"
+  },
+  {
+    "id": "Y04",
+    "code": "try { Object r; JSONParser jp = JSON.createParser('-2147483649'); jp.nextToken(); r = jp.getIntegerValue(); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (-2147483649) out of range of int at input location [1,23]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (-2147483649) out of range of int at input location [1,23]"
+  },
+  {
+    "id": "Y05",
+    "code": "try { Object r; r = JSON.deserialize('9999999999', Integer.class); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (9999999999) out of range of int at [line:1, column:21]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (9999999999) out of range of int at [line:1, column:21]"
+  },
+  {
+    "id": "Y06",
+    "code": "try { Object r; JSONParser jp = JSON.createParser('9999999999'); jp.nextToken(); r = jp.getIntegerValue(); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (9999999999) out of range of int at input location [1,21]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (9999999999) out of range of int at input location [1,21]"
+  },
+  {
+    "id": "Y07",
+    "code": "try { Object r; r = JSON.deserialize('1234567890123', Integer.class); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (1234567890123) out of range of int at [line:1, column:27]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (1234567890123) out of range of int at [line:1, column:27]"
+  },
+  {
+    "id": "Y08",
+    "code": "try { Object r; JSONParser jp = JSON.createParser('1234567890123'); jp.nextToken(); r = jp.getIntegerValue(); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (1234567890123) out of range of int at input location [1,27]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (1234567890123) out of range of int at input location [1,27]"
+  },
+  {
+    "id": "Y09",
+    "code": "try { Object r; r = JSON.deserialize(' 2147483648', Integer.class); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (2147483648) out of range of int at [line:1, column:23]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at [line:1, column:23]"
+  },
+  {
+    "id": "Y10",
+    "code": "try { Object r; JSONParser jp = JSON.createParser(' 2147483648'); jp.nextToken(); r = jp.getIntegerValue(); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (2147483648) out of range of int at input location [1,23]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at input location [1,23]"
+  },
+  {
+    "id": "Y11",
+    "code": "try { Object r; r = JSON.deserialize('\\n2147483648', Integer.class); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (2147483648) out of range of int at [line:2, column:22]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at [line:2, column:22]"
+  },
+  {
+    "id": "Y12",
+    "code": "try { Object r; JSONParser jp = JSON.createParser('\\n2147483648'); jp.nextToken(); r = jp.getIntegerValue(); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (2147483648) out of range of int at input location [2,22]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at input location [2,22]"
+  },
+  {
+    "id": "Y13",
+    "code": "try { Object r; r = JSON.deserialize('2147483648 ', Integer.class); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (2147483648) out of range of int at [line:1, column:11]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at [line:1, column:11]"
+  },
+  {
+    "id": "Y14",
+    "code": "try { Object r; JSONParser jp = JSON.createParser('2147483648 '); jp.nextToken(); r = jp.getIntegerValue(); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (2147483648) out of range of int at input location [1,11]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at input location [1,11]"
+  },
+  {
+    "id": "Y15",
+    "code": "try { Object r; JSONParser jp = JSON.createParser('[2147483648]'); jp.nextToken(); jp.nextToken(); r = jp.getIntegerValue(); System.assert(false, 'Expected overflow'); } catch (Exception e) { System.assertEquals('EXC|System.JSONException|Numeric value (2147483648) out of range of int at input location [1,12]', 'EXC|' + e.getTypeName() + '|' + e.getMessage()); }",
+    "expected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at input location [1,12]"
+  }
+]

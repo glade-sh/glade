@@ -1,9 +1,6 @@
 package storage
 
-import (
-	"reflect"
-	"sync"
-)
+import "reflect"
 
 type RuntimeTemplate struct {
 	Org                OrgState
@@ -18,13 +15,13 @@ func (t RuntimeTemplate) CloneRuntimeOrg() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := t.Org
 	out.RuntimeSchemaStamp = t.RuntimeSchemaStamp
-	out.objectNameCache = &sync.Map{}
 	if t.Org.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(t.Org.Objects))
 		for name, object := range t.Org.Objects {
 			out.Objects[name] = object.CloneRuntimeFrozenDefinition()
 		}
 	}
+	out.objectNameCache = newObjectNameCacheFrom(t.Org.objectNameCache, t.Org.Objects, out.Objects)
 	if t.Org.IDSequences != nil {
 		out.IDSequences = make(map[string]uint64, len(t.Org.IDSequences))
 		for object, sequence := range t.Org.IDSequences {

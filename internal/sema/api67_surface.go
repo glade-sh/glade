@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexversion"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 // These are authoritative Salesforce API 67 negative contracts. Generated
@@ -24,6 +25,9 @@ var semaAPI67PatternFlags = map[string]struct{}{
 }
 
 var semaAPI67ReadOnlyPlatformFields = map[string]struct{}{
+	// The maps can be mutated, but cannot be replaced.
+	"restrequest.headers":                       {},
+	"restrequest.params":                        {},
 	"messaging.emailfileattachment.id":          {},
 	"messaging.singleemailmessage.templatename": {},
 	"messaging.singleemailmessage.usermail":     {},
@@ -46,6 +50,12 @@ func semaAPI67ReadOnlyPlatformField(path string) bool {
 }
 
 var semaAPI67RejectedPlatformConstructors = map[string]struct{}{
+	// At API 62 and 67, CacheBuilder is an interface.
+	"cache.cachebuilder": {},
+	// These describe types reject construction at API 62 and 67.
+	"schema.fieldset":              {},
+	"schema.describesobjectresult": {},
+	"schema.describefieldresult":   {},
 	// Apex exposes these names as scalar value types, but Salesforce rejects
 	// `new` construction for them. Keep the local compiler aligned with the
 	// platform's "Type cannot be constructed" contract; use the documented
@@ -74,6 +84,10 @@ var semaAPI67RejectedPlatformConstructors = map[string]struct{}{
 
 func semaAPI67RejectedPlatformConstructor(typeName string) bool {
 	typeName = semaCanonicalPlatformAlias(strings.TrimSpace(typeName))
+	// Compression C006: entries are obtained from a writer or reader.
+	if strings.EqualFold(typeName, "compression.ZipEntry") {
+		return true
+	}
 	_, rejected := semaAPI67RejectedPlatformConstructors[normalizeName(typeName)]
 	return rejected
 }
@@ -96,6 +110,10 @@ func semaAPI67RejectedPlatformType(typeName string) bool {
 	}
 	normalized := normalizeName(typeName)
 	switch normalized {
+	// At API 62/67,
+	// generated provider shapes are not visible to user Apex in the captured cases.
+	case "commercetax.taxenginecontext", "functions.function":
+		return true
 	case "messaging.sendemailoptions",
 		"system.messaging.sendemailoptions",
 		"system.messaging.singleemailmessage",
@@ -136,10 +154,33 @@ func semaAPI67RejectedPlatformCallAtVersion(version, receiverType, method, recei
 	base, _ := semaGenericBaseAndArgs(receiverType)
 	base = normalizeName(base)
 	switch base {
+	case "httprequest":
+		return method == "getheaderkeys" || method == "gettimeout"
+	case "restrequest":
+		return method == "getheader" || method == "getparameter"
+	case "schema.describetabsetresult":
+		return method == "getname"
+	case "schema.recordtypeinfo":
+		return method == "getnamespace"
+	case "location":
+		// API62/API67 T001: the coordinate surface has no altitude getter.
+		// Reject it before permissive fluent/dependency call fallbacks.
+		return method == "getaltitude"
+	case "compression.zipwriter":
+		return method == "getentriesmap" // Compression C020.
+	case "compression.zipentry":
+		return method == "setname" // Compression C023.
+	case "url":
+		return method == "getsalesforcebaseurl" && apexversion.AtLeast(version, 59)
+	case "dataweave.result":
+		return method == "getmimetype"
+	case "date":
+		// Native C006 (API62/67) rejects Date.toEndOfMonth.
+		return method == "toendofmonth"
 	case "id":
 		return method == "to18"
 	case "integer":
-		return method == "doublevalue"
+		return method == "doublevalue" || method == "intvalue" || method == "longvalue" || method == "decimalvalue"
 	case "map":
 		return method == "containsvalue"
 	case "string":
@@ -219,6 +260,20 @@ func semaAPI67RejectedPlatformCallAtVersion(version, receiverType, method, recei
 
 func semaAPI67RejectedPlatformCallArgs(version, receiverType, method string, argTypes []string) bool {
 	receiverBase, _ := semaGenericBaseAndArgs(semaCanonicalPlatformAlias(receiverType))
+	// The Org List<String> get/remove overloads were
+	// removed after API 54. Keep the Set overloads and legacy sources intact.
+	if strings.EqualFold(receiverBase, "Cache.Org") && (strings.EqualFold(method, "get") || strings.EqualFold(method, "remove")) && len(argTypes) == 1 && !apexversion.Enabled(version, apexversion.LegacyCacheValidateKeys) {
+		base, args := semaGenericBaseAndArgs(argTypes[0])
+		if strings.EqualFold(base, "List") && len(args) == 1 && strings.EqualFold(semaCanonicalPlatformAlias(args[0]), "String") {
+			return true
+		}
+	}
+	// Permissive platform fallback must not accept send(String).
+	// Keep null and unresolved expressions available to normal overload checks.
+	if strings.EqualFold(receiverBase, "Http") && strings.EqualFold(method, "send") && len(argTypes) == 1 {
+		argType := semaCanonicalPlatformAlias(argTypes[0])
+		return argType != "" && !strings.EqualFold(argType, "null") && !strings.EqualFold(argType, "HttpRequest")
+	}
 	if apexversion.AtLeast(version, 67) && strings.EqualFold(receiverBase, "Database") && strings.EqualFold(method, "emptyRecycleBin") && len(argTypes) == 1 {
 		return strings.EqualFold(semaCanonicalAssignableType(argTypes[0]), "Id")
 	}
@@ -264,6 +319,13 @@ func semaAPI67RejectedPlatformField(path string) bool {
 	}
 	receiver := strings.TrimSpace(path[:dot])
 	field := normalizeName(path[dot+1:])
+	// Compression C003/C004 and C012/C013 define the complete enum surface.
+	if strings.EqualFold(receiver, "compression.Level") {
+		return field != "default_level" && field != "no_compression" && field != "best_speed" && field != "best_compression"
+	}
+	if strings.EqualFold(receiver, "compression.Method") {
+		return field != "stored" && field != "deflated"
+	}
 	if strings.EqualFold(semaCanonicalPlatformAlias(receiver), "UninstallContext") {
 		return field == "organizationid"
 	}
@@ -281,4 +343,38 @@ func semaAPI67RejectedPlatformField(path string) bool {
 	}
 	_, rejected := semaAPI67PatternFlags[field]
 	return rejected
+}
+
+// These two Result members were rejected by exact API65 Salesforce controls.
+// Keep the supported getValue/getValueAsString carrier shape open to its
+// existing type and overload checks.
+func semaRejectedDataWeaveResultField(receiver, field string) bool {
+	return strings.EqualFold(semaCanonicalPlatformAlias(receiver), "DataWeave.Result") && strings.EqualFold(field, "valueAsString")
+}
+
+func semaStandardFieldAssignmentReadOnly(model *semaTypeMemberView, receiver, field string) bool {
+	// Location's readonly coordinates belong to the System class. Resolve the
+	// receiver through the member model so Schema.Location and project classes
+	// retain their own field rules, including when a member owner is Location.
+	if strings.EqualFold(semaCanonicalPlatformAlias(receiver), "Location") &&
+		(strings.EqualFold(field, "latitude") || strings.EqualFold(field, "longitude")) {
+		// API62/API67 X001-X002 also reject the unqualified System type.
+		// A standard Schema.Location entry can mask its platform members.
+		if strings.EqualFold(receiver, "Location") && !semaProjectTypeShadowsPlatform(model, receiver) {
+			return true
+		}
+		if members, _, found := semaLookupTypeMembers(model, receiver); found && members.platform && !members.sobject {
+			return true
+		}
+	}
+	// Address's getter-equivalent city property belongs to the System class.
+	if strings.EqualFold(semaCanonicalPlatformAlias(receiver), "Address") && strings.EqualFold(field, "city") {
+		if members, _, found := semaLookupTypeMembers(model, receiver); found && members.platform && !members.sobject {
+			return true
+		}
+	}
+	if members, found := model.lookup(normalizeName(receiver)); found && !members.sobject && !members.platform {
+		return false
+	}
+	return storage.StandardFieldAssignmentReadOnly(receiver, field)
 }

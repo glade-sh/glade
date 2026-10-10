@@ -1,0 +1,22 @@
+# Glade API 67 identity compatibility patch for MIT-licensed @lwc/shared 9.4.3.
+# Salesforce copyright and MIT headers in the patched package files are retained.
+# This adds version identity only; it does not claim full API 67 engine parity.
+--- a/node_modules/@lwc/shared/dist/index.js
++++ b/node_modules/@lwc/shared/dist/index.js
+@@ -275,2 +275,3 @@
+     66 /* APIVersion.V66_260_SPRING_26 */,
++    67 /* APIVersion.V67_262_SUMMER_26 */,
+ ];
+--- a/node_modules/@lwc/shared/dist/index.cjs
++++ b/node_modules/@lwc/shared/dist/index.cjs
+@@ -279,2 +279,3 @@
+     66 /* APIVersion.V66_260_SPRING_26 */,
++    67 /* APIVersion.V67_262_SUMMER_26 */,
+ ];
+--- a/node_modules/@lwc/shared/dist/api-version.d.ts
++++ b/node_modules/@lwc/shared/dist/api-version.d.ts
+@@ -10,2 +10,3 @@
+-    V66_260_SPRING_26 = 66
++    V66_260_SPRING_26 = 66,
++    V67_262_SUMMER_26 = 67
+ }

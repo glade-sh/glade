@@ -113,7 +113,10 @@ export async function mountComponent(qualified, attrs, locator) {
     console.warn("[glade] missing mount locator", locator);
     return null;
   }
-  host.replaceChildren(el);
+  while (host.firstChild) {
+    host.removeChild(host.firstChild);
+  }
+  host.appendChild(el);
   return el;
 }
 

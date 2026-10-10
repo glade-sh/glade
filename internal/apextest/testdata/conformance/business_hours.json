@@ -1,0 +1,1776 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "declarations": {
+    "BHF": "public class BHF {\n public Datetime dt(String value) { return Datetime.valueOfGmt(value); }\n public String stamp(Datetime value) { return value == null ? 'null' : value.formatGmt('yyyy-MM-dd HH:mm:ss.SSS'); }\n}"
+  },
+  "prelude": "BHF bf = new BHF();\nMap<String, Id> bhIds = new Map<String, Id>();\nfor (BusinessHours bh : [SELECT Id, Name FROM BusinessHours WHERE Name IN ('A27_UTC','A27_Holiday','A27_Pacific','A27_Kathmandu','A27_Pacific24')]) {\n bhIds.put(bh.Name, bh.Id);\n}\nif (bhIds.size() != 5) { throw new IllegalArgumentException('A27 fixture calendars missing'); }",
+  "cases": [
+    {
+      "id": "R001",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),bf.dt('2026-10-05 08:59:59'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R002",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_UTC'),bf.dt('2026-10-05 08:59:59')));",
+      "expected": "2026-10-05 09:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R003",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),bf.dt('2026-10-05 09:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R004",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_UTC'),bf.dt('2026-10-05 09:00:00')));",
+      "expected": "2026-10-05 09:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R005",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),bf.dt('2026-10-05 12:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R006",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_UTC'),bf.dt('2026-10-05 12:00:00')));",
+      "expected": "2026-10-05 12:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R007",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),bf.dt('2026-10-05 16:59:59'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R008",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_UTC'),bf.dt('2026-10-05 16:59:59')));",
+      "expected": "2026-10-05 16:59:00.000",
+      "compile": false
+    },
+    {
+      "id": "R009",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),bf.dt('2026-10-05 17:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R010",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_UTC'),bf.dt('2026-10-05 17:00:00')));",
+      "expected": "2026-10-06 09:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R011",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),bf.dt('2026-10-09 16:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R012",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_UTC'),bf.dt('2026-10-09 16:00:00')));",
+      "expected": "2026-10-09 16:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R013",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),bf.dt('2026-10-10 12:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R014",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_UTC'),bf.dt('2026-10-10 12:00:00')));",
+      "expected": "2026-10-12 09:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R015",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),bf.dt('2026-10-11 23:59:59'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R016",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_UTC'),bf.dt('2026-10-11 23:59:59')));",
+      "expected": "2026-10-12 09:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R017",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_UTC'),bf.dt('2026-10-05 08:00:00'),0L));",
+      "expected": "2026-10-05 08:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R018",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-05 08:00:00'),0L));",
+      "expected": "2026-10-05 08:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R019",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_UTC'),bf.dt('2026-10-05 09:00:00'),1L));",
+      "expected": "2026-10-05 09:00:00.001",
+      "compile": false
+    },
+    {
+      "id": "R020",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-05 09:00:00'),1L));",
+      "expected": "2026-10-05 09:00:00.001",
+      "compile": false
+    },
+    {
+      "id": "R021",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_UTC'),bf.dt('2026-10-05 16:00:00'),3600000L));",
+      "expected": "2026-10-05 17:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R022",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-05 16:00:00'),3600000L));",
+      "expected": "2026-10-05 17:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R023",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_UTC'),bf.dt('2026-10-09 16:00:00'),7200000L));",
+      "expected": "2026-10-12 10:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R024",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-09 16:00:00'),7200000L));",
+      "expected": "2026-10-12 10:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R025",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_UTC'),bf.dt('2026-10-10 12:00:00'),28800000L));",
+      "expected": "2026-10-12 17:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R026",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-10 12:00:00'),28800000L));",
+      "expected": "2026-10-12 17:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R027",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_UTC'),bf.dt('2026-10-05 12:00:00'),-3600000L));",
+      "expected": "2026-10-05 11:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R028",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-05 12:00:00'),-3600000L));",
+      "expected": "2026-10-05 11:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R029",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_UTC'),bf.dt('2026-10-05 09:00:00'),bf.dt('2026-10-05 09:00:00'));",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R030",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_UTC'),bf.dt('2026-10-05 08:00:00'),bf.dt('2026-10-05 18:00:00'));",
+      "expected": "28800000",
+      "compile": false
+    },
+    {
+      "id": "R031",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_UTC'),bf.dt('2026-10-05 18:00:00'),bf.dt('2026-10-05 08:00:00'));",
+      "expected": "-28800000",
+      "compile": false
+    },
+    {
+      "id": "R032",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_UTC'),bf.dt('2026-10-09 16:00:00'),bf.dt('2026-10-12 10:00:00'));",
+      "expected": "7200000",
+      "compile": false
+    },
+    {
+      "id": "R033",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_UTC'),bf.dt('2026-10-10 00:00:00'),bf.dt('2026-10-12 00:00:00'));",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R034",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_UTC'),bf.dt('2026-10-05 00:00:00'),bf.dt('2026-10-12 00:00:00'));",
+      "expected": "144000000",
+      "compile": false
+    },
+    {
+      "id": "R035",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 08:59:59'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R036",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 08:59:59')));",
+      "expected": "2026-10-05 09:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R037",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 09:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R038",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 09:00:00')));",
+      "expected": "2026-10-05 09:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R039",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 12:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R040",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 12:00:00')));",
+      "expected": "2026-10-05 12:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R041",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 16:59:59'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R042",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 16:59:59')));",
+      "expected": "2026-10-05 16:59:00.000",
+      "compile": false
+    },
+    {
+      "id": "R043",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 17:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R044",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 17:00:00')));",
+      "expected": "2026-10-06 09:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R045",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Holiday'),bf.dt('2026-10-09 16:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R046",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Holiday'),bf.dt('2026-10-09 16:00:00')));",
+      "expected": "2026-10-09 16:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R047",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Holiday'),bf.dt('2026-10-10 12:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R048",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Holiday'),bf.dt('2026-10-10 12:00:00')));",
+      "expected": "2026-10-13 09:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R049",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Holiday'),bf.dt('2026-10-11 23:59:59'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R050",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Holiday'),bf.dt('2026-10-11 23:59:59')));",
+      "expected": "2026-10-13 09:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R051",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 08:00:00'),0L));",
+      "expected": "2026-10-05 08:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R052",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 08:00:00'),0L));",
+      "expected": "2026-10-05 08:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R053",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 09:00:00'),1L));",
+      "expected": "2026-10-05 09:00:00.001",
+      "compile": false
+    },
+    {
+      "id": "R054",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 09:00:00'),1L));",
+      "expected": "2026-10-05 09:00:00.001",
+      "compile": false
+    },
+    {
+      "id": "R055",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 16:00:00'),3600000L));",
+      "expected": "2026-10-05 17:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R056",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 16:00:00'),3600000L));",
+      "expected": "2026-10-05 17:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R057",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Holiday'),bf.dt('2026-10-09 16:00:00'),7200000L));",
+      "expected": "2026-10-13 10:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R058",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Holiday'),bf.dt('2026-10-09 16:00:00'),7200000L));",
+      "expected": "2026-10-13 10:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R059",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Holiday'),bf.dt('2026-10-10 12:00:00'),28800000L));",
+      "expected": "2026-10-14 11:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R060",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Holiday'),bf.dt('2026-10-10 12:00:00'),28800000L));",
+      "expected": "2026-10-14 11:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R061",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 12:00:00'),-3600000L));",
+      "expected": "2026-10-05 11:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R062",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 12:00:00'),-3600000L));",
+      "expected": "2026-10-05 11:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R063",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 09:00:00'),bf.dt('2026-10-05 09:00:00'));",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R064",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 08:00:00'),bf.dt('2026-10-05 18:00:00'));",
+      "expected": "28800000",
+      "compile": false
+    },
+    {
+      "id": "R065",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 18:00:00'),bf.dt('2026-10-05 08:00:00'));",
+      "expected": "-28800000",
+      "compile": false
+    },
+    {
+      "id": "R066",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Holiday'),bf.dt('2026-10-09 16:00:00'),bf.dt('2026-10-12 10:00:00'));",
+      "expected": "3600000",
+      "compile": false
+    },
+    {
+      "id": "R067",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Holiday'),bf.dt('2026-10-10 00:00:00'),bf.dt('2026-10-12 00:00:00'));",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R068",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Holiday'),bf.dt('2026-10-05 00:00:00'),bf.dt('2026-10-12 00:00:00'));",
+      "expected": "144000000",
+      "compile": false
+    },
+    {
+      "id": "R069",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 08:59:59'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R070",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 08:59:59')));",
+      "expected": "2026-10-05 16:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R071",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 09:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R072",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 09:00:00')));",
+      "expected": "2026-10-05 16:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R073",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 12:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R074",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 12:00:00')));",
+      "expected": "2026-10-05 16:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R075",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 16:59:59'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R076",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 16:59:59')));",
+      "expected": "2026-10-05 16:59:00.000",
+      "compile": false
+    },
+    {
+      "id": "R077",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 17:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R078",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 17:00:00')));",
+      "expected": "2026-10-05 17:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R079",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific'),bf.dt('2026-10-09 16:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R080",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific'),bf.dt('2026-10-09 16:00:00')));",
+      "expected": "2026-10-09 16:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R081",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific'),bf.dt('2026-10-10 12:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R082",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific'),bf.dt('2026-10-10 12:00:00')));",
+      "expected": "2026-10-12 16:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R083",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific'),bf.dt('2026-10-11 23:59:59'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R084",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific'),bf.dt('2026-10-11 23:59:59')));",
+      "expected": "2026-10-12 16:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R085",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 08:00:00'),0L));",
+      "expected": "2026-10-05 08:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R086",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 08:00:00'),0L));",
+      "expected": "2026-10-05 08:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R087",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 09:00:00'),1L));",
+      "expected": "2026-10-05 16:00:00.001",
+      "compile": false
+    },
+    {
+      "id": "R088",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 09:00:00'),1L));",
+      "expected": "2026-10-05 16:00:00.001",
+      "compile": false
+    },
+    {
+      "id": "R089",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 16:00:00'),3600000L));",
+      "expected": "2026-10-05 17:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R090",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 16:00:00'),3600000L));",
+      "expected": "2026-10-05 17:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R091",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific'),bf.dt('2026-10-09 16:00:00'),7200000L));",
+      "expected": "2026-10-09 18:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R092",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific'),bf.dt('2026-10-09 16:00:00'),7200000L));",
+      "expected": "2026-10-09 18:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R093",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific'),bf.dt('2026-10-10 12:00:00'),28800000L));",
+      "expected": "2026-10-13 00:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R094",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific'),bf.dt('2026-10-10 12:00:00'),28800000L));",
+      "expected": "2026-10-13 00:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R095",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 12:00:00'),-3600000L));",
+      "expected": "2026-10-02 23:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R096",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 12:00:00'),-3600000L));",
+      "expected": "2026-10-02 23:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R097",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 09:00:00'),bf.dt('2026-10-05 09:00:00'));",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R098",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 08:00:00'),bf.dt('2026-10-05 18:00:00'));",
+      "expected": "7200000",
+      "compile": false
+    },
+    {
+      "id": "R099",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 18:00:00'),bf.dt('2026-10-05 08:00:00'));",
+      "expected": "-7200000",
+      "compile": false
+    },
+    {
+      "id": "R100",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific'),bf.dt('2026-10-09 16:00:00'),bf.dt('2026-10-12 10:00:00'));",
+      "expected": "28800000",
+      "compile": false
+    },
+    {
+      "id": "R101",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific'),bf.dt('2026-10-10 00:00:00'),bf.dt('2026-10-12 00:00:00'));",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R102",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 00:00:00'),bf.dt('2026-10-12 00:00:00'));",
+      "expected": "144000000",
+      "compile": false
+    },
+    {
+      "id": "R103",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 08:59:59'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R104",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 08:59:59')));",
+      "expected": "2026-10-05 08:59:00.000",
+      "compile": false
+    },
+    {
+      "id": "R105",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 09:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R106",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 09:00:00')));",
+      "expected": "2026-10-05 09:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R107",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 12:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R108",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 12:00:00')));",
+      "expected": "2026-10-06 03:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R109",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 16:59:59'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R110",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 16:59:59')));",
+      "expected": "2026-10-06 03:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R111",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 17:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R112",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 17:00:00')));",
+      "expected": "2026-10-06 03:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R113",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-09 16:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R114",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-09 16:00:00')));",
+      "expected": "2026-10-12 03:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R115",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-10 12:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R116",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-10 12:00:00')));",
+      "expected": "2026-10-12 03:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R117",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-11 23:59:59'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R118",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-11 23:59:59')));",
+      "expected": "2026-10-12 03:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R119",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 08:00:00'),0L));",
+      "expected": "2026-10-05 08:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R120",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 08:00:00'),0L));",
+      "expected": "2026-10-05 08:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R121",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 09:00:00'),1L));",
+      "expected": "2026-10-05 09:00:00.001",
+      "compile": false
+    },
+    {
+      "id": "R122",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 09:00:00'),1L));",
+      "expected": "2026-10-05 09:00:00.001",
+      "compile": false
+    },
+    {
+      "id": "R123",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 16:00:00'),3600000L));",
+      "expected": "2026-10-06 04:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R124",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 16:00:00'),3600000L));",
+      "expected": "2026-10-06 04:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R125",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-09 16:00:00'),7200000L));",
+      "expected": "2026-10-12 05:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R126",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-09 16:00:00'),7200000L));",
+      "expected": "2026-10-12 05:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R127",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-10 12:00:00'),28800000L));",
+      "expected": "2026-10-12 11:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R128",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-10 12:00:00'),28800000L));",
+      "expected": "2026-10-12 11:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R129",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 12:00:00'),-3600000L));",
+      "expected": "2026-10-05 10:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R130",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 12:00:00'),-3600000L));",
+      "expected": "2026-10-05 10:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R131",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 09:00:00'),bf.dt('2026-10-05 09:00:00'));",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R132",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 08:00:00'),bf.dt('2026-10-05 18:00:00'));",
+      "expected": "11700000",
+      "compile": false
+    },
+    {
+      "id": "R133",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 18:00:00'),bf.dt('2026-10-05 08:00:00'));",
+      "expected": "-11700000",
+      "compile": false
+    },
+    {
+      "id": "R134",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-09 16:00:00'),bf.dt('2026-10-12 10:00:00'));",
+      "expected": "24300000",
+      "compile": false
+    },
+    {
+      "id": "R135",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-10 00:00:00'),bf.dt('2026-10-12 00:00:00'));",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R136",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 00:00:00'),bf.dt('2026-10-12 00:00:00'));",
+      "expected": "144000000",
+      "compile": false
+    },
+    {
+      "id": "R137",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 08:59:59'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R138",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 08:59:59')));",
+      "expected": "2026-10-05 08:59:00.000",
+      "compile": false
+    },
+    {
+      "id": "R139",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 09:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R140",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 09:00:00')));",
+      "expected": "2026-10-05 09:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R141",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 12:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R142",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 12:00:00')));",
+      "expected": "2026-10-05 12:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R143",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 16:59:59'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R144",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 16:59:59')));",
+      "expected": "2026-10-05 16:59:00.000",
+      "compile": false
+    },
+    {
+      "id": "R145",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 17:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R146",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 17:00:00')));",
+      "expected": "2026-10-05 17:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R147",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific24'),bf.dt('2026-10-09 16:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R148",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific24'),bf.dt('2026-10-09 16:00:00')));",
+      "expected": "2026-10-09 16:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R149",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific24'),bf.dt('2026-10-10 12:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R150",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific24'),bf.dt('2026-10-10 12:00:00')));",
+      "expected": "2026-10-10 12:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R151",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific24'),bf.dt('2026-10-11 23:59:59'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R152",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific24'),bf.dt('2026-10-11 23:59:59')));",
+      "expected": "2026-10-11 23:59:00.000",
+      "compile": false
+    },
+    {
+      "id": "R153",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 08:00:00'),0L));",
+      "expected": "2026-10-05 08:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R154",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 08:00:00'),0L));",
+      "expected": "2026-10-05 08:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R155",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 09:00:00'),1L));",
+      "expected": "2026-10-05 09:00:00.001",
+      "compile": false
+    },
+    {
+      "id": "R156",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 09:00:00'),1L));",
+      "expected": "2026-10-05 09:00:00.001",
+      "compile": false
+    },
+    {
+      "id": "R157",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 16:00:00'),3600000L));",
+      "expected": "2026-10-05 17:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R158",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 16:00:00'),3600000L));",
+      "expected": "2026-10-05 17:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R159",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific24'),bf.dt('2026-10-09 16:00:00'),7200000L));",
+      "expected": "2026-10-09 18:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R160",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific24'),bf.dt('2026-10-09 16:00:00'),7200000L));",
+      "expected": "2026-10-09 18:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R161",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific24'),bf.dt('2026-10-10 12:00:00'),28800000L));",
+      "expected": "2026-10-10 20:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R162",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific24'),bf.dt('2026-10-10 12:00:00'),28800000L));",
+      "expected": "2026-10-10 20:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R163",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 12:00:00'),-3600000L));",
+      "expected": "2026-10-05 11:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R164",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 12:00:00'),-3600000L));",
+      "expected": "2026-10-05 11:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R165",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 09:00:00'),bf.dt('2026-10-05 09:00:00'));",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R166",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 08:00:00'),bf.dt('2026-10-05 18:00:00'));",
+      "expected": "36000000",
+      "compile": false
+    },
+    {
+      "id": "R167",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 18:00:00'),bf.dt('2026-10-05 08:00:00'));",
+      "expected": "-36000000",
+      "compile": false
+    },
+    {
+      "id": "R168",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific24'),bf.dt('2026-10-09 16:00:00'),bf.dt('2026-10-12 10:00:00'));",
+      "expected": "237600000",
+      "compile": false
+    },
+    {
+      "id": "R169",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific24'),bf.dt('2026-10-10 00:00:00'),bf.dt('2026-10-12 00:00:00'));",
+      "expected": "172800000",
+      "compile": false
+    },
+    {
+      "id": "R170",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific24'),bf.dt('2026-10-05 00:00:00'),bf.dt('2026-10-12 00:00:00'));",
+      "expected": "604800000",
+      "compile": false
+    },
+    {
+      "id": "R171",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Holiday'),bf.dt('2026-10-12 09:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R172",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Holiday'),bf.dt('2026-10-12 16:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R173",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Holiday'),bf.dt('2026-10-13 11:59:59'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R174",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Holiday'),bf.dt('2026-10-13 12:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R175",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Holiday'),bf.dt('2026-10-13 13:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R176",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Holiday'),bf.dt('2026-10-13 14:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R177",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Holiday'),bf.dt('2026-10-12 09:00:00'),3600000L));",
+      "expected": "2026-10-13 10:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R178",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Holiday'),bf.dt('2026-10-12 09:00:00'),3600000L));",
+      "expected": "2026-10-13 10:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R179",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Holiday'),bf.dt('2026-10-12 09:00:00')));",
+      "expected": "2026-10-13 09:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R180",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Holiday'),bf.dt('2026-10-12 09:00:00'),bf.dt('2026-10-13 17:00:00'));",
+      "expected": "21600000",
+      "compile": false
+    },
+    {
+      "id": "R181",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Holiday'),bf.dt('2026-10-13 12:00:00'),3600000L));",
+      "expected": "2026-10-13 15:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R182",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Holiday'),bf.dt('2026-10-13 12:00:00'),3600000L));",
+      "expected": "2026-10-13 15:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R183",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Holiday'),bf.dt('2026-10-13 12:00:00')));",
+      "expected": "2026-10-13 14:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R184",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),bf.dt('2026-10-12 09:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R185",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),bf.dt('2026-10-12 16:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R186",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),bf.dt('2026-10-13 11:59:59'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R187",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),bf.dt('2026-10-13 12:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R188",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),bf.dt('2026-10-13 13:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R189",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),bf.dt('2026-10-13 14:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R190",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_UTC'),bf.dt('2026-10-12 09:00:00'),3600000L));",
+      "expected": "2026-10-12 10:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R191",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-12 09:00:00'),3600000L));",
+      "expected": "2026-10-12 10:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R192",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_UTC'),bf.dt('2026-10-12 09:00:00')));",
+      "expected": "2026-10-12 09:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R193",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_UTC'),bf.dt('2026-10-12 09:00:00'),bf.dt('2026-10-13 17:00:00'));",
+      "expected": "57600000",
+      "compile": false
+    },
+    {
+      "id": "R194",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_UTC'),bf.dt('2026-10-13 12:00:00'),3600000L));",
+      "expected": "2026-10-13 13:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R195",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-13 12:00:00'),3600000L));",
+      "expected": "2026-10-13 13:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R196",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_UTC'),bf.dt('2026-10-13 12:00:00')));",
+      "expected": "2026-10-13 12:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R197",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific'),bf.dt('2026-03-07 08:00:00'),bf.dt('2026-03-09 07:00:00'));",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R198",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific'),bf.dt('2026-03-07 08:00:00'),86400000L));",
+      "expected": "2026-03-12 00:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R199",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific'),bf.dt('2026-03-07 08:00:00'),86400000L));",
+      "expected": "2026-03-12 00:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R200",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific'),bf.dt('2026-03-07 08:00:00')));",
+      "expected": "2026-03-09 16:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R201",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific'),bf.dt('2026-03-07 08:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R202",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific'),bf.dt('2026-10-31 07:00:00'),bf.dt('2026-11-02 08:00:00'));",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R203",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific'),bf.dt('2026-10-31 07:00:00'),86400000L));",
+      "expected": "2026-11-05 01:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R204",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific'),bf.dt('2026-10-31 07:00:00'),86400000L));",
+      "expected": "2026-11-05 01:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R205",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific'),bf.dt('2026-10-31 07:00:00')));",
+      "expected": "2026-11-02 17:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R206",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific'),bf.dt('2026-10-31 07:00:00'));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R207",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific24'),bf.dt('2026-03-07 08:00:00'),bf.dt('2026-03-09 07:00:00'));",
+      "expected": "169200000",
+      "compile": false
+    },
+    {
+      "id": "R208",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific24'),bf.dt('2026-03-07 08:00:00'),86400000L));",
+      "expected": "2026-03-08 08:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R209",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific24'),bf.dt('2026-03-07 08:00:00'),86400000L));",
+      "expected": "2026-03-08 08:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R210",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific24'),bf.dt('2026-03-07 08:00:00')));",
+      "expected": "2026-03-07 08:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R211",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific24'),bf.dt('2026-03-07 08:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R212",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_Pacific24'),bf.dt('2026-10-31 07:00:00'),bf.dt('2026-11-02 08:00:00'));",
+      "expected": "176400000",
+      "compile": false
+    },
+    {
+      "id": "R213",
+      "code": "r=bf.stamp(BusinessHours.add(bhIds.get('A27_Pacific24'),bf.dt('2026-10-31 07:00:00'),86400000L));",
+      "expected": "2026-11-01 07:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R214",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_Pacific24'),bf.dt('2026-10-31 07:00:00'),86400000L));",
+      "expected": "2026-11-01 07:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R215",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific24'),bf.dt('2026-10-31 07:00:00')));",
+      "expected": "2026-10-31 07:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R216",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific24'),bf.dt('2026-10-31 07:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R217",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 16:00:00').addSeconds(-1));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R218",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 16:00:00').addSeconds(-1)));",
+      "expected": "2026-10-05 16:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R219",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 16:00:00').addSeconds(0));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R220",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 16:00:00').addSeconds(0)));",
+      "expected": "2026-10-05 16:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R221",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 16:00:00').addSeconds(1));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R222",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Pacific'),bf.dt('2026-10-05 16:00:00').addSeconds(1)));",
+      "expected": "2026-10-05 16:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R223",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 03:15:00').addSeconds(-1));",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R224",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 03:15:00').addSeconds(-1)));",
+      "expected": "2026-10-05 03:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R225",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 03:15:00').addSeconds(0));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R226",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 03:15:00').addSeconds(0)));",
+      "expected": "2026-10-05 03:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R227",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 03:15:00').addSeconds(1));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R228",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(bhIds.get('A27_Kathmandu'),bf.dt('2026-10-05 03:15:00').addSeconds(1)));",
+      "expected": "2026-10-05 03:15:00.000",
+      "compile": false
+    },
+    {
+      "id": "R229",
+      "code": "Datetime x=bf.dt('2026-10-05 09:00:00'); Datetime y=Datetime.newInstance(x.getTime()+1L); r=BusinessHours.diff(bhIds.get('A27_UTC'),x,y);",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R230",
+      "code": "Datetime x=bf.dt('2026-10-05 12:00:00'); r=BusinessHours.add(bhIds.get('A27_UTC'),x,3600000L).getTime()==BusinessHours.addGmt(bhIds.get('A27_UTC'),x,3600000L).getTime();",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R231",
+      "code": "Datetime x=bf.dt('2026-10-05 09:00:00'); Datetime y=Datetime.newInstance(x.getTime()+1L); r=BusinessHours.diff(bhIds.get('A27_Pacific24'),x,y);",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R232",
+      "code": "Datetime x=bf.dt('2026-10-05 12:00:00'); r=BusinessHours.add(bhIds.get('A27_Pacific24'),x,3600000L).getTime()==BusinessHours.addGmt(bhIds.get('A27_Pacific24'),x,3600000L).getTime();",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R233",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-10 12:00:00'),0L));",
+      "expected": "2026-10-10 12:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R234",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-10 12:00:00'),-1L));",
+      "expected": "2026-10-09 16:59:59.999",
+      "compile": false
+    },
+    {
+      "id": "R235",
+      "code": "r=BusinessHours.add(null,bf.dt('2026-10-05 12:00:00'),3600000L);",
+      "expected": "EXC|System.NullPointerException|Business Hours Id cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R236",
+      "code": "r=BusinessHours.add(bhIds.get('A27_UTC'),null,3600000L);",
+      "expected": "EXC|System.NullPointerException|Start date cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R237",
+      "code": "r=BusinessHours.add(bhIds.get('A27_UTC'),bf.dt('2026-10-05 12:00:00'),null);",
+      "expected": "EXC|System.NullPointerException|Interval cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R238",
+      "code": "r=BusinessHours.add(null,null,null);",
+      "expected": "EXC|System.NullPointerException|Business Hours Id cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R239",
+      "code": "r=BusinessHours.add('',bf.dt('2026-10-05 12:00:00'),3600000L);",
+      "expected": "EXC|System.StringException|Invalid id: ",
+      "compile": false
+    },
+    {
+      "id": "R240",
+      "code": "r=BusinessHours.add('001000000000001',bf.dt('2026-10-05 12:00:00'),3600000L);",
+      "expected": "EXC|System.MathException|BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup.",
+      "compile": false
+    },
+    {
+      "id": "R241",
+      "code": "r=BusinessHours.add(String.valueOf(bhIds.get('A27_UTC')).substring(0,3)+'000000000000',bf.dt('2026-10-05 12:00:00'),3600000L);",
+      "expected": "EXC|System.MathException|BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup.",
+      "compile": false
+    },
+    {
+      "id": "R242",
+      "code": "r=BusinessHours.addGmt(null,bf.dt('2026-10-05 12:00:00'),3600000L);",
+      "expected": "EXC|System.MathException|BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup.",
+      "compile": false
+    },
+    {
+      "id": "R243",
+      "code": "r=BusinessHours.addGmt(bhIds.get('A27_UTC'),null,3600000L);",
+      "expected": "EXC|System.MathException|Cannot invoke \"java.util.Calendar.clone()\" because \"startDateCal\" is null",
+      "compile": false
+    },
+    {
+      "id": "R244",
+      "code": "r=BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-05 12:00:00'),null);",
+      "expected": "EXC|System.MathException|Cannot invoke \"java.lang.Long.longValue()\" because \"interval\" is null",
+      "compile": false
+    },
+    {
+      "id": "R245",
+      "code": "r=BusinessHours.addGmt(null,null,null);",
+      "expected": "EXC|System.MathException|BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup.",
+      "compile": false
+    },
+    {
+      "id": "R246",
+      "code": "r=BusinessHours.addGmt('',bf.dt('2026-10-05 12:00:00'),3600000L);",
+      "expected": "EXC|System.StringException|Invalid id: ",
+      "compile": false
+    },
+    {
+      "id": "R247",
+      "code": "r=BusinessHours.addGmt('001000000000001',bf.dt('2026-10-05 12:00:00'),3600000L);",
+      "expected": "EXC|System.MathException|BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup.",
+      "compile": false
+    },
+    {
+      "id": "R248",
+      "code": "r=BusinessHours.addGmt(String.valueOf(bhIds.get('A27_UTC')).substring(0,3)+'000000000000',bf.dt('2026-10-05 12:00:00'),3600000L);",
+      "expected": "EXC|System.MathException|BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup.",
+      "compile": false
+    },
+    {
+      "id": "R249",
+      "code": "r=BusinessHours.diff(null,bf.dt('2026-10-05 12:00:00'),bf.dt('2026-10-05 13:00:00'));",
+      "expected": "EXC|System.NullPointerException|Business Hours Id cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R250",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_UTC'),null,bf.dt('2026-10-05 13:00:00'));",
+      "expected": "EXC|System.NullPointerException|Start date cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R251",
+      "code": "r=BusinessHours.diff(bhIds.get('A27_UTC'),bf.dt('2026-10-05 12:00:00'),null);",
+      "expected": "EXC|System.NullPointerException|End date cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R252",
+      "code": "r=BusinessHours.diff(null,null,null);",
+      "expected": "EXC|System.NullPointerException|Business Hours Id cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R253",
+      "code": "r=BusinessHours.diff('',bf.dt('2026-10-05 12:00:00'),bf.dt('2026-10-05 13:00:00'));",
+      "expected": "EXC|System.MathException|BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup.",
+      "compile": false
+    },
+    {
+      "id": "R254",
+      "code": "r=BusinessHours.diff('001000000000001',bf.dt('2026-10-05 12:00:00'),bf.dt('2026-10-05 13:00:00'));",
+      "expected": "EXC|System.MathException|BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup.",
+      "compile": false
+    },
+    {
+      "id": "R255",
+      "code": "r=BusinessHours.diff(String.valueOf(bhIds.get('A27_UTC')).substring(0,3)+'000000000000',bf.dt('2026-10-05 12:00:00'),bf.dt('2026-10-05 13:00:00'));",
+      "expected": "EXC|System.MathException|BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup.",
+      "compile": false
+    },
+    {
+      "id": "R256",
+      "code": "r=BusinessHours.isWithin(null,bf.dt('2026-10-05 12:00:00'));",
+      "expected": "EXC|System.NullPointerException|Business Hours Id cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R257",
+      "code": "r=BusinessHours.isWithin(bhIds.get('A27_UTC'),null);",
+      "expected": "EXC|System.NullPointerException|Target date cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R258",
+      "code": "r=BusinessHours.isWithin(null,null);",
+      "expected": "EXC|System.NullPointerException|Business Hours Id cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R259",
+      "code": "r=BusinessHours.isWithin('',bf.dt('2026-10-05 12:00:00'));",
+      "expected": "EXC|System.MathException|BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup.",
+      "compile": false
+    },
+    {
+      "id": "R260",
+      "code": "r=BusinessHours.isWithin('001000000000001',bf.dt('2026-10-05 12:00:00'));",
+      "expected": "EXC|System.MathException|BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup.",
+      "compile": false
+    },
+    {
+      "id": "R261",
+      "code": "r=BusinessHours.isWithin(String.valueOf(bhIds.get('A27_UTC')).substring(0,3)+'000000000000',bf.dt('2026-10-05 12:00:00'));",
+      "expected": "EXC|System.MathException|BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup.",
+      "compile": false
+    },
+    {
+      "id": "R262",
+      "code": "r=BusinessHours.nextStartDate(null,bf.dt('2026-10-05 12:00:00'));",
+      "expected": "EXC|System.NullPointerException|Business Hours Id cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R263",
+      "code": "r=BusinessHours.nextStartDate(bhIds.get('A27_UTC'),null);",
+      "expected": "EXC|System.NullPointerException|Target date cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R264",
+      "code": "r=BusinessHours.nextStartDate(null,null);",
+      "expected": "EXC|System.NullPointerException|Business Hours Id cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R265",
+      "code": "r=BusinessHours.nextStartDate('',bf.dt('2026-10-05 12:00:00'));",
+      "expected": "EXC|System.StringException|Invalid id: ",
+      "compile": false
+    },
+    {
+      "id": "R266",
+      "code": "r=BusinessHours.nextStartDate('001000000000001',bf.dt('2026-10-05 12:00:00'));",
+      "expected": "EXC|System.MathException|BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup.",
+      "compile": false
+    },
+    {
+      "id": "R267",
+      "code": "r=BusinessHours.nextStartDate(String.valueOf(bhIds.get('A27_UTC')).substring(0,3)+'000000000000',bf.dt('2026-10-05 12:00:00'));",
+      "expected": "EXC|System.MathException|BusinessHours record not found.This may indicate: 1) Invalid BusinessHours ID, 2) Data corruption, or 3) Missing setup.",
+      "compile": false
+    },
+    {
+      "id": "R268",
+      "code": "r=bf.stamp(BusinessHours.add(String.valueOf(bhIds.get('A27_UTC')),bf.dt('2026-10-05 12:00:00'),Integer.valueOf('3600000')));",
+      "expected": "2026-10-05 13:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R269",
+      "code": "r=bf.stamp(BusinessHours.addGmt(String.valueOf(bhIds.get('A27_UTC')),bf.dt('2026-10-05 12:00:00'),Integer.valueOf('3600000')));",
+      "expected": "2026-10-05 13:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R270",
+      "code": "r=BusinessHours.diff(String.valueOf(bhIds.get('A27_UTC')),bf.dt('2026-10-05 12:00:00'),bf.dt('2026-10-05 13:00:00'));",
+      "expected": "3600000",
+      "compile": false
+    },
+    {
+      "id": "R271",
+      "code": "r=BusinessHours.isWithin(String.valueOf(bhIds.get('A27_UTC')),bf.dt('2026-10-05 12:00:00'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R272",
+      "code": "r=bf.stamp(BusinessHours.nextStartDate(String.valueOf(bhIds.get('A27_UTC')),bf.dt('2026-10-05 12:00:00')));",
+      "expected": "2026-10-05 12:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R273",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-05 12:00:00'),Long.valueOf('3600000')));",
+      "expected": "2026-10-05 13:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R274",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-05 12:00:00'),(Long)Decimal.valueOf('3600000.9')));",
+      "expected": "2026-10-05 13:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R275",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-05 12:00:00'),0L));",
+      "expected": "2026-10-05 12:00:00.000",
+      "compile": false
+    },
+    {
+      "id": "R276",
+      "code": "r=bf.stamp(BusinessHours.addGmt(bhIds.get('A27_UTC'),bf.dt('2026-10-05 12:00:00'),-1L));",
+      "expected": "2026-10-05 11:59:59.999",
+      "compile": false
+    },
+    {
+      "id": "C001",
+      "code": "try { Object r; Decimal x=1.5; r=BusinessHours.add(null,Datetime.newInstanceGmt(2026,10,5,12,0,0),x); pq.out('C001',r); } catch(Exception e) { pq.err('C001',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void add(NULL, Datetime, Decimal) from the type System.BusinessHours",
+      "compile": true
+    },
+    {
+      "id": "C002",
+      "code": "try { Object r; Double x=1.5; r=BusinessHours.add(null,Datetime.newInstanceGmt(2026,10,5,12,0,0),x); pq.out('C002',r); } catch(Exception e) { pq.err('C002',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void add(NULL, Datetime, Double) from the type System.BusinessHours",
+      "compile": true
+    },
+    {
+      "id": "C003",
+      "code": "try { Object r; Object x=1L; r=BusinessHours.add(null,Datetime.newInstanceGmt(2026,10,5,12,0,0),x); pq.out('C003',r); } catch(Exception e) { pq.err('C003',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void add(NULL, Datetime, Object) from the type System.BusinessHours",
+      "compile": true
+    },
+    {
+      "id": "C004",
+      "code": "try { Object r; String x='1'; r=BusinessHours.add(null,Datetime.newInstanceGmt(2026,10,5,12,0,0),x); pq.out('C004',r); } catch(Exception e) { pq.err('C004',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void add(NULL, Datetime, String) from the type System.BusinessHours",
+      "compile": true
+    },
+    {
+      "id": "C005",
+      "code": "try { Object r; Decimal x=1.5; r=BusinessHours.addGmt(null,Datetime.newInstanceGmt(2026,10,5,12,0,0),x); pq.out('C005',r); } catch(Exception e) { pq.err('C005',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void addGmt(NULL, Datetime, Decimal) from the type System.BusinessHours",
+      "compile": true
+    },
+    {
+      "id": "C006",
+      "code": "try { Object r; Double x=1.5; r=BusinessHours.addGmt(null,Datetime.newInstanceGmt(2026,10,5,12,0,0),x); pq.out('C006',r); } catch(Exception e) { pq.err('C006',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void addGmt(NULL, Datetime, Double) from the type System.BusinessHours",
+      "compile": true
+    },
+    {
+      "id": "C007",
+      "code": "try { Object r; Object x=1L; r=BusinessHours.addGmt(null,Datetime.newInstanceGmt(2026,10,5,12,0,0),x); pq.out('C007',r); } catch(Exception e) { pq.err('C007',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void addGmt(NULL, Datetime, Object) from the type System.BusinessHours",
+      "compile": true
+    },
+    {
+      "id": "C008",
+      "code": "try { Object r; String x='1'; r=BusinessHours.addGmt(null,Datetime.newInstanceGmt(2026,10,5,12,0,0),x); pq.out('C008',r); } catch(Exception e) { pq.err('C008',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void addGmt(NULL, Datetime, String) from the type System.BusinessHours",
+      "compile": true
+    },
+    {
+      "id": "C009",
+      "code": "try { Object r; r=BusinessHours.add(null,Date.newInstance(2026,10,5),1L); pq.out('C009',r); } catch(Exception e) { pq.err('C009',e); }",
+      "expected": "EXC|System.NullPointerException|Business Hours Id cannot be null",
+      "compile": true
+    },
+    {
+      "id": "C010",
+      "code": "try { Object r; r=BusinessHours.addGmt(null,Time.newInstance(9,0,0,0),1L); pq.out('C010',r); } catch(Exception e) { pq.err('C010',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void addGmt(NULL, Time, Long) from the type System.BusinessHours",
+      "compile": true
+    },
+    {
+      "id": "C011",
+      "code": "try { Object r; r=BusinessHours.diff(null,Date.newInstance(2026,10,5),Date.newInstance(2026,10,6)); pq.out('C011',r); } catch(Exception e) { pq.err('C011',e); }",
+      "expected": "EXC|System.NullPointerException|Business Hours Id cannot be null",
+      "compile": true
+    },
+    {
+      "id": "C012",
+      "code": "try { Object r; r=BusinessHours.isWithin(null,Date.newInstance(2026,10,5)); pq.out('C012',r); } catch(Exception e) { pq.err('C012',e); }",
+      "expected": "EXC|System.NullPointerException|Business Hours Id cannot be null",
+      "compile": true
+    },
+    {
+      "id": "C013",
+      "code": "try { Object r; r=BusinessHours.nextStartDate(null,Date.newInstance(2026,10,5)); pq.out('C013',r); } catch(Exception e) { pq.err('C013',e); }",
+      "expected": "EXC|System.NullPointerException|Business Hours Id cannot be null",
+      "compile": true
+    },
+    {
+      "id": "C014",
+      "code": "try { Object r; r=BusinessHours.add(null,null); pq.out('C014',r); } catch(Exception e) { pq.err('C014',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void add(NULL, NULL) from the type System.BusinessHours",
+      "compile": true
+    },
+    {
+      "id": "C015",
+      "code": "try { Object r; r=BusinessHours.addGmt(null,null,null,null); pq.out('C015',r); } catch(Exception e) { pq.err('C015',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void addGmt(NULL, NULL, NULL, NULL) from the type System.BusinessHours",
+      "compile": true
+    },
+    {
+      "id": "C016",
+      "code": "try { Object r; r=BusinessHours.diff(null,null); pq.out('C016',r); } catch(Exception e) { pq.err('C016',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void diff(NULL, NULL) from the type System.BusinessHours",
+      "compile": true
+    },
+    {
+      "id": "C017",
+      "code": "try { Object r; r=BusinessHours.isWithin(null,null,null); pq.out('C017',r); } catch(Exception e) { pq.err('C017',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void isWithin(NULL, NULL, NULL) from the type System.BusinessHours",
+      "compile": true
+    },
+    {
+      "id": "C018",
+      "code": "try { Object r; r=BusinessHours.nextStartDate(null); pq.out('C018',r); } catch(Exception e) { pq.err('C018',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void nextStartDate(NULL) from the type System.BusinessHours",
+      "compile": true
+    }
+  ]
+}

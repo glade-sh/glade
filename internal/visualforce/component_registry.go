@@ -149,20 +149,16 @@ func cloneComponentSpecs(specs map[string]ComponentSpec) map[string]ComponentSpe
 
 func currentStandardComponentSpecs() map[string]ComponentSpec {
 	return map[string]ComponentSpec{
-		"apex:page":         {Status: ComponentPartial, Render: renderApexPage},
-		"apex:outputText":   {Status: ComponentPartial, Render: func(n *MarkupNode, c *RenderContext) (string, error) { return renderApexOutput(n, c, false) }},
-		"apex:outputField":  {Status: ComponentPartial, Render: func(n *MarkupNode, c *RenderContext) (string, error) { return renderApexOutput(n, c, true) }},
-		"apex:outputFormat": {Status: ComponentPartial, Render: renderApexOutputFormat},
-		"apex:outputPanel": {Status: ComponentPartial, Render: func(n *MarkupNode, c *RenderContext) (string, error) {
-			return renderApexContainer(n, "div", "outputPanel", c)
-		}},
-		"apex:outputLabel": {Status: ComponentPartial, Render: renderApexOutputLabel},
-		"apex:pageBlock": {Status: ComponentPartial, Render: func(n *MarkupNode, c *RenderContext) (string, error) {
-			return renderApexContainer(n, "div", "bPageBlock", c)
-		}},
-		"apex:pageBlockSection": {Status: ComponentPartial, Render: func(n *MarkupNode, c *RenderContext) (string, error) {
-			return renderApexContainer(n, "div", "pbSubsection", c)
-		}},
+		"apex:page": {Status: ComponentPartial, Render: renderApexPage},
+		"apex:chart": {Status: ComponentPartial, Render: renderApexChart,
+			Reason: "partial: local charting runtime renders one default two-point numeric pie (optional right legend), vertical bar or line chart per page; other chart configurations and interactions remain unsupported"},
+		"apex:outputText":       {Status: ComponentPartial, Render: func(n *MarkupNode, c *RenderContext) (string, error) { return renderApexOutput(n, c, false) }},
+		"apex:outputField":      {Status: ComponentPartial, Render: func(n *MarkupNode, c *RenderContext) (string, error) { return renderApexOutput(n, c, true) }},
+		"apex:outputFormat":     {Status: ComponentPartial, Render: renderApexOutputFormat},
+		"apex:outputPanel":      {Status: ComponentPartial, Render: renderApexOutputPanel},
+		"apex:outputLabel":      {Status: ComponentPartial, Render: renderApexOutputLabel},
+		"apex:pageBlock":        {Status: ComponentPartial, Render: renderApexPageBlock},
+		"apex:pageBlockSection": {Status: ComponentPartial, Render: renderApexPageBlockSection},
 		"apex:pageBlockSectionItem": {Status: ComponentPartial, Render: func(n *MarkupNode, c *RenderContext) (string, error) {
 			return renderApexContainer(n, "div", "pbSectionItem", c)
 		}},
@@ -330,7 +326,16 @@ func renderApexPanelGroup(node *MarkupNode, ctx *RenderContext) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	return "<" + tag + componentIDAttr(node) + visualforceClassAttr(node, "") + visualforceStyleAttr(node) + ">" + children + "</" + tag + ">", nil
+	if tag == "div" {
+		// The current native bundle captures panelGroup's default span only.
+		// Keep the existing block-layout path until it has a rendered control.
+		return "<" + tag + componentIDAttr(node, ctx) + visualforceClassAttr(node, "") + visualforceStyleAttr(node) + ">" + children + "</" + tag + ">", nil
+	}
+	attrs, err := presentationAttributes(node, ctx, false, false, "styleClass", "style")
+	if err != nil {
+		return "", err
+	}
+	return "<" + tag + attrs + ">" + children + "</" + tag + ">", nil
 }
 
 func renderApexSectionHeader(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -349,7 +354,7 @@ func renderApexSectionHeader(node *MarkupNode, ctx *RenderContext) (string, erro
 	escape := !strings.EqualFold(strings.TrimSpace(node.Attribute("escape")), "false")
 	builder := strings.Builder{}
 	builder.WriteString(`<div`)
-	builder.WriteString(componentIDAttr(node))
+	builder.WriteString(componentIDAttr(node, ctx))
 	builder.WriteString(` class="sectionHeader">`)
 	if title != "" {
 		builder.WriteString(`<h1>`)
@@ -375,7 +380,7 @@ func renderApexToolbar(node *MarkupNode, ctx *RenderContext) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return `<div` + componentIDAttr(node) + visualforceClassAttr(node, "toolbar") + visualforceStyleAttr(node) + `>` + children + `</div>`, nil
+	return `<div` + componentIDAttr(node, ctx) + visualforceClassAttr(node, "toolbar") + visualforceStyleAttr(node) + `>` + children + `</div>`, nil
 }
 
 func renderApexToolbarGroup(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -387,7 +392,7 @@ func renderApexToolbarGroup(node *MarkupNode, ctx *RenderContext) (string, error
 	if location == "" {
 		location = "left"
 	}
-	return `<span` + componentIDAttr(node) + visualforceClassAttr(node, "toolbarGroup") + ` data-location="` + html.EscapeString(location) + `"` + visualforceStyleAttr(node) + `>` + children + `</span>`, nil
+	return `<span` + componentIDAttr(node, ctx) + visualforceClassAttr(node, "toolbarGroup") + ` data-location="` + html.EscapeString(location) + `"` + visualforceStyleAttr(node) + `>` + children + `</span>`, nil
 }
 
 func renderApexTabPanel(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -398,7 +403,7 @@ func renderApexTabPanel(node *MarkupNode, ctx *RenderContext) (string, error) {
 	}
 	builder := strings.Builder{}
 	builder.WriteString(`<div`)
-	builder.WriteString(componentIDAttr(node))
+	builder.WriteString(componentIDAttr(node, ctx))
 	builder.WriteString(visualforceClassAttr(node, "tabPanel"))
 	builder.WriteString(visualforceStyleAttr(node))
 	builder.WriteString(`><div class="tabHeaders">`)
@@ -441,7 +446,7 @@ func renderApexPanelBar(node *MarkupNode, ctx *RenderContext) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return `<div` + componentIDAttr(node) + visualforceClassAttr(node, "panelBar") + visualforceStyleAttr(node) + `>` + children + `</div>`, nil
+	return `<div` + componentIDAttr(node, ctx) + visualforceClassAttr(node, "panelBar") + visualforceStyleAttr(node) + `>` + children + `</div>`, nil
 }
 
 func renderApexPanelBarItem(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -457,7 +462,7 @@ func renderApexPanelBarItem(node *MarkupNode, ctx *RenderContext) (string, error
 	if isTruthyExpression(node.Attribute("expanded"), ctx) {
 		className += " active"
 	}
-	return `<section` + componentIDAttr(node) + ` class="` + className + `"><h3>` + html.EscapeString(label) + `</h3><div class="panelBarContent">` + children + `</div></section>`, nil
+	return `<section` + componentIDAttr(node, ctx) + ` class="` + className + `"><h3>` + html.EscapeString(label) + `</h3><div class="panelBarContent">` + children + `</div></section>`, nil
 }
 
 func visualforceClassAttr(node *MarkupNode, base string) string {

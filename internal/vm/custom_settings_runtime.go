@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -14,7 +15,7 @@ func customDataArgsCacheKey(args []Value) string {
 	}
 	parts := make([]string, 0, len(args))
 	for _, arg := range args {
-		parts = append(parts, strings.ToLower(arg.String()))
+		parts = append(parts, string(arg.Kind)+":"+arg.Type+":"+arg.String())
 	}
 	return strings.Join(parts, "|")
 }
@@ -70,6 +71,74 @@ func (vm *VM) hierarchyCustomSettingOrgDefaults(objectName, kind string) Value {
 	}
 	return vm.readOnlyCustomDataDefaultValue(objectName, kind)
 }
+
+// getInstance merges non-null fields from organization, profile and user rows;
+// getValues deliberately bypasses this merge (R226-R242 at APIs 62 and 67).
+func (vm *VM) hierarchyCustomSettingInstance(objectName, kind string, args []Value) (Value, error) {
+	ownerID := vm.currentUserID()
+	if ownerID == "" && vm.Org != nil {
+		// R227: use the same offline identity exposed by UserInfo.getUserId
+		// when anonymous execution has no explicit execution user.
+		ownerID = vm.currentUserInfoField("Id", "005000000000001")
+	}
+	if len(args) == 1 && args[0].Kind != ValueNull {
+		var ok bool
+		var err error
+		ownerID, ok, err = customSettingOwnerIDArg(args[0])
+		if err != nil {
+			return Null, err
+		}
+		if !ok {
+			return Null, fmt.Errorf("%s.getInstance expects optional setup owner Id", objectName)
+		}
+		if err := validateCustomSettingOwnerID(ownerID); err != nil {
+			return Null, err
+		}
+	}
+	owners := []string{vm.orgID()}
+	if strings.HasPrefix(ownerID, "005") {
+		profileID := ""
+		if storage.IDsEqual(storage.ID(ownerID), storage.ID(vm.currentUserID())) {
+			profileID = vm.currentUserInfoField("ProfileId", "")
+		} else if vm.Org != nil {
+			for id, user := range vm.Org.Objects["User"].Records {
+				if storage.IDsEqual(id, storage.ID(ownerID)) {
+					profileID = firstStringField(user, "ProfileId")
+					break
+				}
+			}
+		}
+		if profileID != "" {
+			owners = append(owners, profileID)
+		}
+	}
+	if !storage.IDsEqual(storage.ID(ownerID), storage.ID(vm.orgID())) {
+		owners = append(owners, ownerID)
+	}
+	merged := storage.Record{Object: objectName, Fields: make(map[string]storage.Value)}
+	for _, owner := range owners {
+		if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, owner); found {
+			for name, value := range record.Fields {
+				if value.Kind != storage.ValueNull {
+					merged.Fields[name] = value
+				}
+			}
+			if storage.IDsEqual(storage.ID(owner), storage.ID(ownerID)) {
+				merged.ID, merged.System = record.ID, record.System
+			}
+		}
+	}
+	merged.Fields["SetupOwnerId"] = storage.IDValue(storage.ID(ownerID))
+	return vm.readOnlyCustomDataValue(merged, kind), nil
+}
+
+func validateCustomSettingOwnerID(ownerID string) error {
+	if validateApexIDShape(ownerID) != nil ||
+		!(strings.HasPrefix(ownerID, "005") || strings.HasPrefix(ownerID, "00e") || strings.HasPrefix(ownerID, "00D")) {
+		return newExceptionError("InvalidParameterValueException", "Invalid SetupOwner for Custom Settings: "+ownerID)
+	}
+	return nil
+}
 func (vm *VM) hierarchyCustomSettingRecordForOwner(objectName, ownerID string) (storage.Record, bool) {
 	if vm.Org == nil || ownerID == "" {
 		return storage.Record{}, false
@@ -80,14 +149,46 @@ func (vm *VM) hierarchyCustomSettingRecordForOwner(objectName, ownerID string) (
 			continue
 		}
 		value, ok := record.GetField("SetupOwnerId")
-		if ok && value.Kind == storage.ValueString && value.String == ownerID {
-			return record, true
+		if ok {
+			var storedOwnerID string
+			switch value.Kind {
+			case storage.ValueID:
+				storedOwnerID = string(value.ID)
+			case storage.ValueString:
+				storedOwnerID = value.String
+			}
+			if storage.IDsEqual(storage.ID(storedOwnerID), storage.ID(ownerID)) {
+				return record, true
+			}
 		}
 		if !ok {
 			name, hasName := record.GetField("Name")
 			if hasName && name.Kind == storage.ValueString && name.String == ownerID {
 				return record, true
 			}
+		}
+	}
+	return storage.Record{}, false
+}
+
+// hierarchyCustomSettingRecordForCurrentContext follows Salesforce hierarchy
+// custom-setting precedence for the no-argument getInstance accessor. A
+// current-user row wins over a profile row, which wins over the organization
+// row; an ownerless row is the final fallback for sparse local fixtures.
+func (vm *VM) hierarchyCustomSettingRecordForCurrentContext(objectName string) (storage.Record, bool) {
+	ownerIDs := make([]string, 0, 3)
+	if userID := vm.currentUserID(); userID != "" && userID != "__run_as_user_without_id__" {
+		ownerIDs = append(ownerIDs, userID)
+	}
+	if profileID := vm.currentUserInfoField("ProfileId", ""); profileID != "" {
+		ownerIDs = append(ownerIDs, profileID)
+	}
+	if organizationID := vm.orgID(); organizationID != "" {
+		ownerIDs = append(ownerIDs, organizationID)
+	}
+	for _, ownerID := range ownerIDs {
+		if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, ownerID); found {
+			return record, true
 		}
 	}
 	return storage.Record{}, false
@@ -176,7 +277,7 @@ func (vm *VM) customDataGetInstance(objectName string, definition storage.Object
 			return storage.Record{}, false, fmt.Errorf("%s.getInstance expects record name", objectName)
 		}
 		if strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
-			if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, vm.orgID()); found {
+			if record, found := vm.hierarchyCustomSettingRecordForCurrentContext(objectName); found {
 				return record, true, nil
 			}
 			for _, record := range sortedCustomDataRecords(object.Records, definition, kind, vm.Org.Namespace) {
@@ -195,6 +296,24 @@ func (vm *VM) customDataGetInstance(objectName string, definition storage.Object
 		return storage.Record{}, false, nil
 	}
 	if len(args) == 1 && args[0].Kind == ValueNull {
+		if kind == "custom setting" && strings.EqualFold(definition.Metadata["customSettingsType"], "List") {
+			// R263 returns raw null at the supported API floor and ceiling.
+			// Retain the accepted API-37 first-inserted behavior below that floor.
+			major, known := apexversion.Major(vm.currentMethod.APIVersion)
+			if !known || major >= 62 {
+				return storage.Record{}, false, nil
+			}
+			// Generated IDs retain the per-object insertion sequence. Names and
+			// CreatedDate can change after insertion and cannot order this lookup.
+			var first storage.Record
+			found := false
+			for _, record := range object.Records {
+				if !record.System.IsDeleted && (!found || record.ID < first.ID) {
+					first, found = record, true
+				}
+			}
+			return first, found, nil
+		}
 		return storage.Record{}, false, nil
 	}
 	if len(args) != 1 || (args[0].Kind != ValueString && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {
@@ -253,11 +372,13 @@ func customDataRecordLess(definition storage.ObjectDefinition, kind string, left
 	return string(left.ID) < string(right.ID)
 }
 func customDataRecordMatches(definition storage.ObjectDefinition, kind string, record storage.Record, wanted, namespace string) bool {
-	if string(record.ID) == wanted {
+	// R253: getInstance(String.valueOf(queried.Id)) accepts the display ID,
+	// while installed source-backed records can store its 15-character form.
+	if record.ID != "" && validateApexIDShape(wanted) == nil && storage.IDsEqual(record.ID, storage.ID(wanted)) {
 		return true
 	}
 	for _, candidate := range customDataRecordNames(definition, kind, record, namespace) {
-		if strings.EqualFold(candidate, wanted) {
+		if candidate == wanted {
 			return true
 		}
 	}
@@ -295,6 +416,25 @@ func customDataRecordNames(definition storage.ObjectDefinition, kind string, rec
 }
 func (vm *VM) readOnlyCustomDataValue(record storage.Record, kind string) Value {
 	value := vm.vmValueFromRecord(record)
+	// Cached accessors discard declared Number scale; SOQL retains it
+	// (R216/R224, R245/R254). An integral cached Decimal still has scale one.
+	for name, fieldValue := range value.Fields {
+		if fieldValue.Kind != ValueDecimal {
+			continue
+		}
+		if rational, ok := valueDecimalRat(fieldValue); ok {
+			text := rational.FloatString(decimalScale(fieldValue))
+			if strings.Contains(text, ".") {
+				text = strings.TrimRight(strings.TrimRight(text, "0"), ".")
+			}
+			if !strings.Contains(text, ".") {
+				text += ".0"
+			}
+			if normalized, err := decimalFromText(text); err == nil {
+				value.Fields[name] = normalized
+			}
+		}
+	}
 	if kind == "custom setting" && vm.Org != nil {
 		if object, ok := vm.Org.Objects[record.Object]; ok {
 			for name, field := range object.Definition.Fields {

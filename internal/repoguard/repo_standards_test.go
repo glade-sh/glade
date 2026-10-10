@@ -7,11 +7,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"regexp/syntax"
 	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
+	"unicode"
 
 	"github.com/glade-sh/glade/internal/project"
 )
@@ -149,6 +151,11 @@ func TestCaseInsensitiveEqualityAvoidsToLower(t *testing.T) {
 	pattern := regexp.MustCompile(`strings\.ToLower\([^\n]+\)\s*(?:==|!=)|(?:==|!=)\s*strings\.ToLower\(`)
 	for _, rel := range repoGoFiles(t, root) {
 		for _, match := range pattern.FindAllString(readRepoFile(t, root, rel), -1) {
+			// Preserve this existing lowercase-normalized form-key comparison until
+			// an org-backed change establishes broader Unicode simple-fold behavior.
+			if rel == "internal/visualforce/form_binding.go" && match == "strings."+"ToLower(formFieldBindingName(key)) !=" {
+				continue
+			}
 			t.Errorf("%s uses ToLower for equality; use strings.EqualFold: %s", rel, match)
 		}
 	}
@@ -160,6 +167,30 @@ func TestNoStringByteLengthAllocation(t *testing.T) {
 	for _, rel := range repoGoFiles(t, root) {
 		if strings.Contains(readRepoFile(t, root, rel), needle) {
 			t.Errorf("%s converts a string to bytes just to count it; use len(string) or reuse a byte slice", rel)
+		}
+	}
+}
+
+// storage's object-name cache treats an Objects map with an unchanged count as
+// holding unchanged names, so product code removes objects through
+// storage.DeleteObject, which drops that cache.
+func TestOrgObjectDeletesDropObjectNameCache(t *testing.T) {
+	root := repoRoot(t)
+	pattern := regexp.MustCompile(`\bdelete\([^,()]*\bObjects,`)
+	allowed := map[string]string{
+		"internal/storage/object_name_index.go": "delete(org.Objects,",
+		// A private copy of the map, cloned into a fresh cache before any lookup.
+		"internal/apextest/runtime_patch.go": "delete(ambientOrg.Objects,",
+	}
+	for _, rel := range repoGoFiles(t, root) {
+		if strings.HasSuffix(rel, "_test.go") {
+			continue
+		}
+		for _, match := range pattern.FindAllString(readRepoFile(t, root, rel), -1) {
+			if allowed[rel] == match {
+				continue
+			}
+			t.Errorf("%s deletes from an org's Objects map directly; use storage.DeleteObject: %s", rel, match)
 		}
 	}
 }
@@ -605,18 +636,25 @@ func dot(parts ...string) string {
 	return strings.Join(parts, ".")
 }
 
-func checkPrivateExamplePackageText(t *testing.T, rel, text string) {
+type privatePackageReporter interface {
+	Helper()
+	Errorf(string, ...any)
+}
+
+func checkPrivateExamplePackageText(t privatePackageReporter, rel, text string) {
 	t.Helper()
+	folded := foldPrivatePackageText(text)
 	for _, pattern := range privateExamplePackagePatternSet {
-		if pattern.re.MatchString(text) {
+		if pattern.mayMatch(text, folded) && pattern.re.MatchString(text) {
 			t.Errorf("%s contains private example package marker %q", rel, pattern.label)
 		}
 	}
 }
 
 func privateExamplePackageFinding(text string) string {
+	folded := foldPrivatePackageText(text)
 	for _, pattern := range privateExamplePackagePatternSet {
-		if pattern.re.MatchString(text) {
+		if pattern.mayMatch(text, folded) && pattern.re.MatchString(text) {
 			return pattern.label
 		}
 	}
@@ -626,6 +664,112 @@ func privateExamplePackageFinding(text string) string {
 type privatePackagePattern struct {
 	label string
 	re    *regexp.Regexp
+}
+
+type privatePackageLiteral struct {
+	text string
+	fold bool
+}
+
+// Literal sets live beside the compiled patterns, keyed by the shared *regexp.Regexp,
+// so the pattern table itself stays unchanged.
+var privatePackageLiteralSets = buildPrivatePackageLiteralSets(privateExamplePackagePatternSet)
+
+func buildPrivatePackageLiteralSets(patterns []privatePackagePattern) map[*regexp.Regexp][]privatePackageLiteral {
+	sets := make(map[*regexp.Regexp][]privatePackageLiteral, len(patterns))
+	for _, pattern := range patterns {
+		parsed, err := syntax.Parse(pattern.re.String(), syntax.Perl)
+		if err == nil {
+			sets[pattern.re] = requiredPrivatePackageLiterals(parsed.Simplify())
+		}
+	}
+	return sets
+}
+
+func (pattern privatePackagePattern) requiredLiterals() []privatePackageLiteral {
+	return privatePackageLiteralSets[pattern.re]
+}
+
+func (pattern privatePackagePattern) mayMatch(text, folded string) bool {
+	return privatePackageLiteralsMayMatch(pattern.requiredLiterals(), text, folded)
+}
+
+func privatePackageLiteralsMayMatch(literals []privatePackageLiteral, text, folded string) bool {
+	if len(literals) == 0 {
+		return true
+	}
+	for _, literal := range literals {
+		haystack := text
+		if literal.fold {
+			haystack = folded
+		}
+		if strings.Contains(haystack, literal.text) {
+			return true
+		}
+	}
+	return false
+}
+
+func foldPrivatePackageText(text string) string {
+	return strings.Map(func(r rune) rune {
+		if r <= unicode.MaxASCII {
+			if 'a' <= r && r <= 'z' {
+				return r - ('a' - 'A')
+			}
+			return r
+		}
+		// Match regexp/syntax's minFoldRune, including fold cycles of any length.
+		minimum := r
+		for next := unicode.SimpleFold(r); next != r; next = unicode.SimpleFold(next) {
+			if next < minimum {
+				minimum = next
+			}
+		}
+		return minimum
+	}, text)
+}
+
+// A match must contain at least one member of the returned set. An empty set
+// means no required literal could be proved, so the regexp must always run.
+func requiredPrivatePackageLiterals(re *syntax.Regexp) []privatePackageLiteral {
+	switch re.Op {
+	case syntax.OpLiteral:
+		if len(re.Rune) != 0 {
+			return []privatePackageLiteral{{text: string(re.Rune), fold: re.Flags&syntax.FoldCase != 0}}
+		}
+	case syntax.OpCapture:
+		return requiredPrivatePackageLiterals(re.Sub[0])
+	case syntax.OpConcat:
+		var best []privatePackageLiteral
+		bestMinimum := 0
+		for _, child := range re.Sub {
+			literals := requiredPrivatePackageLiterals(child)
+			if len(literals) == 0 {
+				continue
+			}
+			minimum := len(literals[0].text)
+			for _, literal := range literals[1:] {
+				if len(literal.text) < minimum {
+					minimum = len(literal.text)
+				}
+			}
+			if minimum > bestMinimum {
+				best, bestMinimum = literals, minimum
+			}
+		}
+		return best
+	case syntax.OpAlternate:
+		var union []privatePackageLiteral
+		for _, child := range re.Sub {
+			literals := requiredPrivatePackageLiterals(child)
+			if len(literals) == 0 {
+				return nil
+			}
+			union = append(union, literals...)
+		}
+		return union
+	}
+	return nil
 }
 
 var privateExamplePackagePatternSet = buildPrivateExamplePackagePatterns()

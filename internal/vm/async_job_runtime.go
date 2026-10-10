@@ -17,7 +17,7 @@ func (vm *VM) testStart() (Value, error) {
 		return Null, fmt.Errorf("Test.startTest is only available in test context")
 	}
 	if vm.testContext.Started {
-		return Null, fmt.Errorf("Test.startTest cannot be called more than once")
+		return Null, &RuntimeError{Type: "System.FinalException", Message: "Testing already started", Stack: vm.stackFrames()}
 	}
 	vm.testContext.Started = true
 	vm.testContext.Stopped = false
@@ -35,17 +35,54 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 		return Null, fmt.Errorf("Test.stopTest is only available in test context")
 	}
 	if !vm.testContext.Started {
-		return Null, fmt.Errorf("Test.stopTest called before Test.startTest")
+		return Null, &RuntimeError{Type: "System.FinalException", Message: "Testing has not started", Stack: vm.stackFrames()}
 	}
 	if vm.testContext.Stopped {
-		return Null, fmt.Errorf("Test.stopTest cannot be called more than once")
+		return Null, &RuntimeError{Type: "System.FinalException", Message: "Testing already stopped", Stack: vm.stackFrames()}
 	}
 	vm.testContext.Stopped = true
+	vm.prepareTestStopAsyncJobs()
 	err := vm.drainTestWork(result)
 	vm.limits = vm.testContext.ParentLimits
 	vm.limitViolations = append([]LimitViolation(nil), vm.testContext.ParentViolations...)
 	return Null, err
 }
+
+// Queueables, futures and scheduled Apex submitted before startTest execute at
+// stopTest. Scheduled batches expose their queued job then, but
+// pre-start scheduled batch payloads do not run.
+func (vm *VM) prepareTestStopAsyncJobs() {
+	jobs := vm.testContext.AsyncJobs
+	boundary := min(max(vm.testContext.AsyncStartIndex, 0), len(jobs))
+	prior := make([]AsyncJob, 0, boundary)
+	ready := make([]AsyncJob, 0, len(jobs))
+	for i, job := range jobs {
+		reused := vm.activeTestScheduledReuse(job)
+		if job.ScheduledAborted && !reused {
+			prior = append(prior, job)
+			continue
+		}
+		if reused && job.Kind == "ScheduledBatch" {
+			// stopTest creates both queued BatchApex projections; neither
+			// retained scheduled payload runs start/execute/finish here.
+			vm.recordAsyncJob(job, "Queued", "")
+			job.Deferred = true
+			prior = append(prior, job)
+			continue
+		}
+		if job.Kind == "ScheduledBatch" {
+			vm.recordAsyncJob(job, "Queued", "")
+		}
+		if i < boundary && job.Kind != "Queueable" && job.Kind != "Future" && job.Kind != "ScheduledApex" && !reused {
+			prior = append(prior, job)
+		} else {
+			ready = append(ready, job)
+		}
+	}
+	vm.testContext.AsyncJobs = append(prior, ready...)
+	vm.testContext.AsyncStartIndex = len(prior)
+}
+
 func (vm *VM) drainTestWork(result *Result) error {
 	if vm.testContext == nil {
 		return nil
@@ -96,12 +133,18 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return Null, fmt.Errorf("System.enqueueJob expects Queueable[, Integer|AsyncOptions]")
 	}
+	// Validate submission arguments, not AsyncOptions writes.
+	if args[0].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+	}
 	if args[0].Kind != ValueObject {
 		return Null, fmt.Errorf("System.enqueueJob expects Queueable object")
 	}
 	delayMinutes := 0
 	if len(args) == 2 {
 		switch {
+		case args[1].Kind == ValueNull:
+			return Null, newExceptionError("System.NullPointerException", "Argument 2 cannot be null")
 		case args[1].Kind == ValueInt:
 			delayMinutes = int(args[1].Int)
 		case args[1].Kind == ValueObject && strings.EqualFold(args[1].Type, "AsyncOptions"):
@@ -110,6 +153,26 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 			}
 		default:
 			return Null, fmt.Errorf("System.enqueueJob options expects Integer or AsyncOptions")
+		}
+	}
+	if delayMinutes < 0 {
+		return Null, newExceptionError("System.InvalidParameterValueException", "Delay must be greater than or equal to 0 minutes")
+	}
+	if delayMinutes > 10 {
+		return Null, newExceptionError("System.InvalidParameterValueException", "Delay must be less than or equal to 10 minutes")
+	}
+	maxDepth, hasMaxDepth := 0, false
+	if len(args) == 2 && args[1].Kind == ValueObject {
+		maxDepth, hasMaxDepth = asyncOptionsInt(args[1], "maximumQueueableStackDepth")
+		if hasMaxDepth && maxDepth < 0 {
+			return Null, newExceptionError("System.InvalidParameterValueException", "System.InvalidParameterValueException: Stack depth must be greater than 0")
+		}
+		depth := 1
+		if vm.currentAsyncKind == "Queueable" {
+			depth = vm.currentQueueableDepth + 1
+		}
+		if hasMaxDepth && depth > maxDepth {
+			return Null, newExceptionError("System.AsyncException", "Maximum stack depth has been reached.")
 		}
 	}
 	duplicateSignature := ""
@@ -132,7 +195,11 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 		return Null, fmt.Errorf("Queueable chaining limit exceeded")
 	}
 	vm.markAsyncChainEnqueued()
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: cloneValue(args[0]), QueueableDelayMinutes: delayMinutes, QueueableDuplicateSignature: duplicateSignature}
+	// Detach the queued object from the caller while preserving aliases inside
+	// its object graph. A Queueable may attach a Finalizer that is also stored
+	// in one of its fields; both references must observe the Queueable's
+	// mutations when the finalizer runs after the async body.
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: cloneValueDetachedPreserveRefs(args[0]), QueueableDelayMinutes: delayMinutes, QueueableDuplicateSignature: duplicateSignature}
 	if delayMinutes > 0 {
 		job.NotBefore = vm.fakeNow.Add(time.Duration(delayMinutes) * time.Minute)
 	}
@@ -142,10 +209,8 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 	} else {
 		job.QueueableDepth = 1
 	}
-	if len(args) == 2 && args[1].Kind == ValueObject {
-		if maxDepth, ok := asyncOptionsInt(args[1], "maximumQueueableStackDepth"); ok {
-			job.QueueableMaxDepth = maxDepth
-		}
+	if hasMaxDepth {
+		job.QueueableMaxDepth = maxDepth
 	}
 	if job.QueueableMaxDepth > 0 && job.QueueableDepth > job.QueueableMaxDepth {
 		return Null, fmt.Errorf("MaximumQueueableStackDepth exceeded")
@@ -166,20 +231,32 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return Null, fmt.Errorf("Database.executeBatch expects batch instance[, scopeSize]")
 	}
+	if args[0].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "Argument 'batchable' cannot be null")
+	}
 	if args[0].Kind != ValueObject {
 		return Null, fmt.Errorf("Database.executeBatch expects Batchable object")
 	}
 	batchSize := 200
 	if len(args) == 2 {
+		if args[1].Kind == ValueNull {
+			return Null, newExceptionError("System.InvalidParameterValueException", "batchSize must not be null")
+		}
 		if args[1].Kind != ValueInt {
 			return Null, fmt.Errorf("Database.executeBatch scope size expects Integer")
 		}
 		batchSize = int(args[1].Int)
 		if batchSize <= 0 {
-			return Null, fmt.Errorf("Database.executeBatch scope size must be positive")
+			return Null, newExceptionError("System.InvalidParameterValueException", "batchSize must be greater than or equal to one")
 		}
 		if batchSize > 2000 {
-			return Null, fmt.Errorf("Database.executeBatch scope size must be at most 2000")
+			// R151 uses an Iterable start result. Preserve the existing
+			// QueryLocator path until its upper-bound behavior is captured.
+			start, ok, _ := vm.resolveInstanceMethodForArgs(args[0].Type, "start", []Value{asyncContext("Database.BatchableContext", "")})
+			base, generic := genericBaseName(start.ReturnType)
+			if !ok || !generic || (!strings.EqualFold(base, "Iterable") && !strings.EqualFold(base, "System.Iterable")) {
+				return Null, fmt.Errorf("Database.executeBatch scope size must be at most 2000")
+			}
 		}
 	}
 	if !vm.isBatchableObject(args[0]) {
@@ -230,8 +307,22 @@ func batchableInterfaceName(name string) bool {
 }
 
 func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
+	if len(args) == 3 {
+		if args[2].Kind == ValueNull {
+			return Null, newExceptionError("System.NullPointerException", "schedulable object cannot be null")
+		}
+		if args[1].Kind == ValueNull {
+			return Null, newExceptionError("System.StringException", "cron expression cannot be 'null'")
+		}
+	}
 	if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueObject {
 		return Null, fmt.Errorf("System.schedule expects name, cron, and Schedulable object")
+	}
+	if err := validateScheduleCron(args[1].Text); err != nil {
+		return Null, err
+	}
+	if vm.hasWaitingScheduledJob(args[0].Text) {
+		return Null, newExceptionError("System.AsyncException", fmt.Sprintf("The Apex job named \"%s\" is already scheduled for execution.", args[0].Text))
 	}
 	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
@@ -245,9 +336,10 @@ func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
 			job.NotBefore = nextFire
 		}
 	}
+	vm.bindTestScheduledReuse(&job)
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
-	vm.recordCronTrigger(job, "Waiting")
+	vm.recordCronTrigger(job, "WAITING")
 	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
 		"kind":  job.Kind,
 		"jobId": job.ID,
@@ -285,6 +377,12 @@ func (vm *VM) scheduleBatch(args []Value, result *Result) (Value, error) {
 			return Null, fmt.Errorf("System.scheduleBatch scope size must be at most 2000")
 		}
 	}
+	if vm.currentAsyncKind == "BatchApex" {
+		return Null, newExceptionError("System.AsyncException", "System.scheduleBatch cannot be called from a batch start, batch execute, or future method.")
+	}
+	if vm.hasWaitingScheduledJob(args[1].Text) {
+		return Null, newExceptionError("System.AsyncException", fmt.Sprintf("The Apex job named \"%s\" is already scheduled for execution.", args[1].Text))
+	}
 	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
@@ -295,9 +393,12 @@ func (vm *VM) scheduleBatch(args []Value, result *Result) (Value, error) {
 		return Null, err
 	}
 	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "ScheduledBatch", Object: cloneValue(args[0]), BatchSize: batchSize, Name: args[1].Text, Cron: fmt.Sprintf("after %d minutes", args[2].Int), SuppressWorkerRecords: true}
+	vm.bindTestScheduledReuse(&job)
 	vm.enqueueAsyncJob(job)
-	vm.recordAsyncJob(job, "Queued", "")
-	vm.recordCronTrigger(job, "Waiting")
+	if vm.testContext != nil && vm.testContext.Stopped {
+		vm.recordAsyncJob(job, "Queued", "")
+	}
+	vm.recordCronTrigger(job, "WAITING")
 	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
 		"kind":      job.Kind,
 		"jobId":     job.ID,
@@ -307,25 +408,53 @@ func (vm *VM) scheduleBatch(args []Value, result *Result) (Value, error) {
 	})
 	return String(cronTriggerID(job.ID)), nil
 }
+func (vm *VM) hasWaitingScheduledJob(name string) bool {
+	if vm.Org == nil {
+		return false
+	}
+	for _, record := range vm.Org.Objects["CronTrigger"].Records {
+		if record.System.IsDeleted || !strings.EqualFold(record.Fields["State"].String, "WAITING") {
+			continue
+		}
+		detail := vm.Org.Objects["CronJobDetail"].Records[record.Fields["CronJobDetailId"].ID]
+		if !detail.System.IsDeleted && detail.Fields["Name"].String == name {
+			return true
+		}
+	}
+	return false
+}
+
 func (vm *VM) abortJob(args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Null, fmt.Errorf("System.abortJob expects job Id")
 	}
-	if vm.testContext == nil {
-		return Null, unsupportedCallError("System.abortJob local async scheduling surface")
+	if args[0].Kind == ValueNull {
+		return Null, newExceptionError("System.StringException", "jobId expression cannot be 'null'")
 	}
 	jobID, ok := valueIDString(args[0])
 	if !ok {
 		return Null, fmt.Errorf("System.abortJob expects String job Id")
 	}
+	if vm.testContext == nil {
+		if vm.asyncJobRecordStatus(jobID) != "" {
+			return Null, unsupportedCallError("System.abortJob local async scheduling surface")
+		}
+		return Null, newExceptionError("System.StringException", "Job does not exist or is already aborted.")
+	}
 	for i, job := range vm.testContext.AsyncJobs {
 		if !asyncJobIDTextEqual(job.ID, jobID) && !asyncJobIDTextEqual(cronTriggerID(job.ID), jobID) {
 			continue
 		}
-		vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs[:i], vm.testContext.AsyncJobs[i+1:]...)
-		vm.recordAsyncJob(job, "Aborted", "")
-		if job.Kind == "ScheduledApex" {
-			vm.recordCronTrigger(job, "Deleted")
+		if job.Kind == "ScheduledApex" || job.Kind == "ScheduledBatch" {
+			vm.testContext.AsyncJobs[i].ScheduledAborted = true
+		} else {
+			vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs[:i], vm.testContext.AsyncJobs[i+1:]...)
+		}
+		if job.Kind != "ScheduledBatch" || vm.asyncJobRecordStatus(job.ID) != "" {
+			vm.recordAsyncJob(job, "Aborted", "")
+		}
+		if job.Kind == "ScheduledApex" || job.Kind == "ScheduledBatch" {
+			vm.releaseScheduledCron(cronTriggerID(job.ID))
 		}
 		return Null, nil
 	}
@@ -333,11 +462,102 @@ func (vm *VM) abortJob(args []Value) (Value, error) {
 		vm.abortRecordedAsyncJob(jobID)
 		return Null, nil
 	}
-	return Null, unsupportedCallError("System.abortJob unknown local async records")
+	return Null, newExceptionError("System.StringException", "Job does not exist or is already aborted.")
 }
 
 func asyncJobIDTextEqual(left, right string) bool {
 	return storage.IDsEqual(storage.ID(left), storage.ID(right))
+}
+
+// The native test helper keeps the first five jobs active;
+// only the remaining mock jobs appear in the flex queue.
+func (vm *VM) enqueueTestBatchJobs(args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("Test.enqueueBatchJobs expects Integer")
+	}
+	if err := vm.requireTestContext("Test.enqueueBatchJobs"); err != nil {
+		return Null, err
+	}
+	if args[0].Kind == ValueNull || args[0].Kind == ValueInt && args[0].Int < 1 {
+		return Null, newExceptionError("System.InvalidParameterValueException", "Number of Jobs must not be null or less than 1")
+	}
+	if args[0].Kind != ValueInt {
+		return Null, fmt.Errorf("Test.enqueueBatchJobs expects Integer")
+	}
+	ids := typedList("List<Id>")
+	ids.nativeListMembership = true
+	for i := int64(0); i < args[0].Int; i++ {
+		id := vm.nextAsyncJobID()
+		mockID := platformScalar("Id", id)
+		mockID.nativeListElement = true
+		ids.List = append(ids.List, mockID)
+		if i >= 5 {
+			heldID := platformScalar("Id", apexIDTo18(id))
+			heldID.nativeListElement = true
+			vm.testContext.FlexQueueJobs = append(vm.testContext.FlexQueueJobs, heldID)
+		}
+	}
+	return ids, nil
+}
+
+func (vm *VM) moveFlexQueueJob(callee string, args []Value) (Value, error) {
+	relative := strings.HasSuffix(callee, "moveAfterJob") || strings.HasSuffix(callee, "moveBeforeJob")
+	want := 1
+	if relative {
+		want = 2
+	}
+	if len(args) != want {
+		return Null, fmt.Errorf("%s expects %d job Id argument(s)", callee, want)
+	}
+	indices := make([]int, len(args))
+	for i, arg := range args {
+		if arg.Kind == ValueNull {
+			return Null, newExceptionError("System.NullPointerException", fmt.Sprintf("Argument %d cannot be null", i+1))
+		}
+		id, ok := valueIDString(arg)
+		if !ok {
+			return Null, fmt.Errorf("%s expects job Id", callee)
+		}
+		indices[i] = -1
+		if vm.testContext != nil {
+			for j, job := range vm.testContext.FlexQueueJobs {
+				queuedID, _ := valueIDString(job)
+				if asyncJobIDTextEqual(queuedID, id) {
+					indices[i] = j
+					break
+				}
+			}
+		}
+		if indices[i] < 0 {
+			return Null, newExceptionError("System.NoSuchElementException", "Job with id "+apexIDTo18(id)+" not found in the queue")
+		}
+	}
+	from := indices[0]
+	jobs := vm.testContext.FlexQueueJobs
+	to := 0
+	if strings.HasSuffix(callee, "moveJobToEnd") {
+		to = len(jobs) - 1
+	} else if relative {
+		to = indices[1]
+		if from == to {
+			return Bool(true), nil
+		}
+		if from < to {
+			to--
+		}
+		if strings.HasSuffix(callee, "moveAfterJob") {
+			to++
+		}
+	}
+	// Keep previously returned order snapshots independent of a later move.
+	moved := jobs[from]
+	order := append([]Value(nil), jobs[:from]...)
+	order = append(order, jobs[from+1:]...)
+	order = append(order, Null)
+	copy(order[to+1:], order[to:len(order)-1])
+	order[to] = moved
+	vm.testContext.FlexQueueJobs = order
+	return Bool(true), nil
 }
 
 func (vm *VM) abortRecordedAsyncJob(jobID string) {
@@ -364,6 +584,13 @@ func (vm *VM) abortRecordedAsyncJob(jobID string) {
 	if strings.HasPrefix(cronID, "707") {
 		cronID = strings.Replace(cronID, "707", "08e", 1)
 	}
+	vm.releaseScheduledCron(cronID)
+}
+
+func (vm *VM) releaseScheduledCron(cronID string) {
+	if vm == nil || vm.Org == nil {
+		return
+	}
 	if object, ok := vm.Org.Objects["CronTrigger"]; ok {
 		if storedID, record, found := storage.LookupRecordByID(object.Records, storage.ID(cronID)); found {
 			vm.recordIsolationJournalMutation("CronTrigger", storedID, record, true)
@@ -371,6 +598,7 @@ func (vm *VM) abortRecordedAsyncJob(jobID string) {
 				record.Fields = make(map[string]storage.Value)
 			}
 			record.Fields["State"] = storage.StringValue("Deleted")
+			record.System.IsDeleted = true
 			delete(record.Fields, "NextFireTime")
 			object.Records[record.ID] = record
 			vm.Org.Objects["CronTrigger"] = object
@@ -467,7 +695,12 @@ func (vm *VM) drainTestPlatformEventsFrom(result *Result, startIndex int, stopTi
 			}
 			grouped[record.Object] = append(grouped[record.Object], record)
 		}
-		for _, objectName := range order {
+		for groupIndex, objectName := range order {
+			preserveLaterGroups := func() {
+				for _, later := range order[groupIndex+1:] {
+					vm.testContext.PlatformEvents = append(vm.testContext.PlatformEvents, grouped[later]...)
+				}
+			}
 			if stopTimeDelivery {
 				wasDraining := vm.testContext.Draining
 				previousUser := vm.testContext.CurrentUser
@@ -482,13 +715,19 @@ func (vm *VM) drainTestPlatformEventsFrom(result *Result, startIndex int, stopTi
 				vm.testContext.Draining = wasDraining
 				vm.testContext.CurrentUser = previousUser
 				if err != nil {
-					vm.requeueEventBusRetry(err)
+					if vm.requeueEventBusRetry(err) {
+						preserveLaterGroups()
+						return nil
+					}
 					return err
 				}
 				continue
 			}
 			if _, err := vm.runTriggers(triggerTimingAfter, "insert", grouped[objectName], nil, result); err != nil {
-				vm.requeueEventBusRetry(err)
+				if vm.requeueEventBusRetry(err) {
+					preserveLaterGroups()
+					return nil
+				}
 				return err
 			}
 		}
@@ -496,15 +735,28 @@ func (vm *VM) drainTestPlatformEventsFrom(result *Result, startIndex int, stopTi
 	return nil
 }
 
-func (vm *VM) requeueEventBusRetry(err error) {
+func (vm *VM) requeueEventBusRetry(err error) bool {
 	if vm == nil || vm.testContext == nil {
-		return
+		return false
 	}
 	var retry *eventBusTriggerRetryError
-	if !errors.As(err, &retry) || len(retry.records) == 0 {
-		return
+	if !errors.As(err, &retry) {
+		return false
+	}
+	// Attempts 0 through 9, then discard the exhausted batch.
+	if retry.retryable && retry.retries >= 9 {
+		return true
+	}
+	if retry.retryable {
+		if vm.testContext.PlatformEventRetries == nil {
+			vm.testContext.PlatformEventRetries = make(map[string]int)
+		}
+		for _, record := range retry.records {
+			vm.testContext.PlatformEventRetries[recordFieldString(record, "ReplayId")] = retry.retries + 1
+		}
 	}
 	vm.testContext.PlatformEvents = append(vm.testContext.PlatformEvents, retry.records...)
+	return retry.handled
 }
 func (vm *VM) automatedProcessUser() Value {
 	if vm == nil || vm.Org == nil {
@@ -581,7 +833,10 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 		processed++
 		var asyncStaticSnapshot map[string]map[string]Value
 		var asyncStaticInitSnapshot map[string]staticInitState
-		if vm.testContext != nil {
+		// stopTest runs collected work with the caller's static state, including
+		// collection caches and deduplication sets. Other drain paths retain
+		// their existing transaction reset policy.
+		if vm.testContext != nil && !vm.testContext.PreserveAsyncStatics {
 			asyncStaticSnapshot = vm.testAsyncStaticFieldSnapshot()
 			asyncStaticInitSnapshot = copyStaticInitStateMap(vm.staticInitState)
 			if err := vm.ResetTestAsyncStaticCollections(); err != nil {
@@ -589,13 +844,15 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 				vm.staticInitState = copyStaticInitStateMap(asyncStaticInitSnapshot)
 				return err
 			}
-		} else {
+		} else if vm.testContext == nil {
 			if err := vm.ResetStatics(); err != nil {
 				return err
 			}
 		}
 		*chainEnqueued = false
-		vm.recordAsyncJob(job, "Processing", "")
+		if !job.ScheduledAborted {
+			vm.recordAsyncJob(job, "Processing", "")
+		}
 		appendTrace(result, "apex.async.run", "apex.async", map[string]any{
 			"kind":  job.Kind,
 			"jobId": job.ID,
@@ -606,8 +863,14 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 			vm.staticInitState = copyStaticInitStateMap(asyncStaticInitSnapshot)
 		}
 		if err != nil {
-			vm.recordAsyncJob(job, "Failed", err.Error())
+			if !job.ScheduledAborted {
+				vm.recordAsyncJob(job, "Failed", err.Error())
+			}
 			return err
+		}
+		if job.ScheduledAborted {
+			// Retained callback execution does not resurrect its aborted job row.
+			continue
 		}
 		if vm.testContext != nil && job.Kind == "BatchApex" {
 			vm.recordAsyncJob(job, "Completed", "")
@@ -650,8 +913,16 @@ func (vm *VM) nextDrainableAsyncJobIndex(jobs []AsyncJob, startIndex int) int {
 	return -1
 }
 func (vm *VM) asyncJobDue(job AsyncJob) bool {
+	if job.ScheduledAborted && !vm.activeTestScheduledReuse(job) {
+		return false
+	}
+	if vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining &&
+		job.Kind == "ScheduledApex" && vm.activeTestScheduledReuse(job) {
+		return true
+	}
 	if vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining {
-		if job.Kind == "Queueable" || (job.Kind == "ScheduledApex" && !job.NotBefore.IsZero() && job.NotBefore.UTC().Year() == vm.fakeNow.UTC().Year()) {
+		// stopTest runs collected schedules even in a future year.
+		if job.Kind == "Queueable" || job.Kind == "ScheduledApex" {
 			return true
 		}
 	}
@@ -724,13 +995,13 @@ func (vm *VM) markAsyncChainEnqueued() {
 func (vm *VM) enqueueAsyncJob(job AsyncJob) {
 	if vm.testContext != nil {
 		vm.recordApexClass(asyncClassName(job))
-		if vm.testContext.Draining && job.Kind != "Queueable" && job.Kind != "BatchApex" {
+		if vm.testContext.Draining && job.Kind == "ScheduledBatch" {
+			job.Deferred = true
+		}
+		if vm.testContext.Draining && job.Kind != "Queueable" && job.Kind != "BatchApex" && job.Kind != "ScheduledBatch" {
 			return
 		}
 		if vm.testContext.Draining && job.Kind == "Queueable" && !vm.canDrainQueueableJob(job) {
-			job.Deferred = true
-		}
-		if vm.testContext.Draining && job.Kind == "BatchApex" && vm.currentAsyncKind == "Queueable" {
 			job.Deferred = true
 		}
 		if vm.testContext.Draining && job.Kind == "BatchApex" && vm.currentAsyncKind != "" {
@@ -785,6 +1056,14 @@ func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
 	if vm.currentAsyncKind != "Queueable" {
 		return false
 	}
+	// A finalizer runs as Queueable work after the parent Queueable body has
+	// restored its depth state. Salesforce drains its immediate child at
+	// Test.stopTest even though the child has no explicit max-stack option.
+	// Ordinary Queueable bodies retain a positive current depth and continue to
+	// require their explicit max-stack allowance below.
+	if vm.currentQueueableDepth == 0 && job.QueueableDepth == 1 {
+		return true
+	}
 	if job.QueueableMaxDepth <= 0 {
 		return false
 	}
@@ -800,8 +1079,10 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result) error {
 	switch job.Kind {
 	case "Future":
-		_, err := vm.withAsyncKind("Future", func() (Value, error) {
-			return vm.callMethod(job.Method, job.Args, result)
+		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
+			return vm.withAsyncKind("Future", func() (Value, error) {
+				return vm.callMethod(job.Method, job.Args, result)
+			})
 		})
 		return err
 	case "Queueable":
@@ -837,11 +1118,13 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result) error {
 		}
 		previousFinalizer := vm.currentFinalizer
 		vm.currentFinalizer = Value{}
-		_, err := vm.withQueueableJob(job, func() (Value, error) {
-			if staticExecute {
-				return vm.callMethod(target, args, result)
-			}
-			return vm.callMethodWithReceiver(target, job.Object, args, result)
+		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
+			return vm.withQueueableJob(job, func() (Value, error) {
+				if staticExecute {
+					return vm.callMethod(target, args, result)
+				}
+				return vm.callMethodWithReceiver(target, job.Object, args, result)
+			})
 		})
 		finalizer := vm.currentFinalizer
 		vm.currentFinalizer = previousFinalizer
@@ -861,10 +1144,18 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result) error {
 		_, err := vm.withAsyncKind("BatchApex", func() (Value, error) {
 			return Null, vm.runBatchJob(job, result)
 		})
-		vm.recordCronTrigger(job, "Complete")
+		// stopTest leaves the scheduled batch's cron WAITING.
+		testStop := vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining
+		if !testStop {
+			vm.recordCronTrigger(job, "Complete")
+		}
 		return err
 	case "ScheduledApex":
-		args := []Value{schedulableContext(job.ID)}
+		contextJobID := job.ID
+		if job.ScheduledReusedBy != "" {
+			contextJobID = job.ScheduledReusedBy
+		}
+		args := []Value{schedulableContext(contextJobID)}
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(job.Object.Type, "execute", args)
 		if ambiguous {
 			return vm.ambiguousOverloadError(job.Object.Type+".execute", args)
@@ -881,10 +1172,16 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result) error {
 		if len(target.Params) == 0 {
 			args = nil
 		}
-		_, err := vm.withAsyncKind("ScheduledApex", func() (Value, error) {
-			return vm.callMethodWithReceiver(target, job.Object, args, result)
+		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
+			return vm.withAsyncKind("ScheduledApex", func() (Value, error) {
+				return vm.callMethodWithReceiver(target, job.Object, args, result)
+			})
 		})
-		vm.recordCronTrigger(job, "Complete")
+		// The synchronous test callback leaves its cron row WAITING.
+		testStop := vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining
+		if job.ScheduledReusedBy == "" && !testStop {
+			vm.recordCronTrigger(job, "Complete")
+		}
 		return err
 	default:
 		return fmt.Errorf("unsupported async job kind %s", job.Kind)
@@ -1341,11 +1638,35 @@ func (vm *VM) rollbackBatchChunkTransaction(mark storage.IsolationMark) error {
 
 func (vm *VM) withAsyncLimitWindow(run func() (Value, error)) (Value, error) {
 	parentLimits := vm.limits
+	parentCaps := vm.limitCaps
 	parentViolations := append([]LimitViolation(nil), vm.limitViolations...)
+	parentCPUBudget := vm.cpuBudgetUsed
+	parentCPUStartedAt := vm.cpuStartedAt
+	parentCPURunning := vm.cpuRunning
+	if asyncCaps, ok := LimitCapsForProfile("strict-async"); ok {
+		// Async Apex has a larger query, heap, and CPU budget. Preserve
+		// explicitly narrowed counters so local limit profiles remain useful.
+		defaults := defaultLimitCaps()
+		if vm.limitCaps.Queries == defaults.Queries {
+			vm.limitCaps.Queries = asyncCaps.Queries
+		}
+		if vm.limitCaps.HeapSize == defaults.HeapSize {
+			vm.limitCaps.HeapSize = asyncCaps.HeapSize
+		}
+		if vm.limitCaps.CPUTimeMS == defaults.CPUTimeMS {
+			vm.limitCaps.CPUTimeMS = asyncCaps.CPUTimeMS
+		}
+	}
 	vm.ResetLimits()
+	defer func() {
+		vm.limits = parentLimits
+		vm.limitCaps = parentCaps
+		vm.limitViolations = parentViolations
+		vm.cpuBudgetUsed = parentCPUBudget
+		vm.cpuStartedAt = parentCPUStartedAt
+		vm.cpuRunning = parentCPURunning
+	}()
 	value, err := run()
-	vm.limits = parentLimits
-	vm.limitViolations = parentViolations
 	return value, err
 }
 
@@ -1577,7 +1898,7 @@ func parentJobResultValue(name string) Value {
 func schedulableContext(jobID string) Value {
 	ctx := Object("SchedulableContext")
 	if jobID != "" {
-		ctx.Fields["TriggerId"] = String(cronTriggerID(jobID))
+		ctx.Fields["TriggerId"] = platformScalar("Id", cronTriggerID(jobID))
 	}
 	return ctx
 }
@@ -1645,7 +1966,12 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 	} else {
 		delete(record.Fields, "NotBefore")
 	}
-	if existing, ok := record.Fields["TotalJobItems"]; ok && existing.Kind == storage.ValueInteger && existing.Integer > 0 && asyncJobType(job) == "BatchApex" {
+	for _, field := range []string{"JobItemsProcessed", "NumberOfErrors"} {
+		if _, exists := record.Fields[field]; !exists {
+			record.Fields[field] = storage.IntegerValue(0)
+		}
+	}
+	if existing, ok := record.Fields["TotalJobItems"]; ok && existing.Kind == storage.ValueInteger && asyncJobType(job) == "BatchApex" {
 		record.Fields["TotalJobItems"] = existing
 	} else {
 		record.Fields["TotalJobItems"] = storage.IntegerValue(int64(asyncTotalItems(job)))
@@ -1763,7 +2089,6 @@ func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
 	vm.recordIsolationJournalMutation("CronTrigger", id, record, exists)
 	record.Fields["State"] = storage.StringValue(state)
 	record.Fields["CronExpression"] = storage.StringValue(job.Cron)
-	record.Fields["CronJobDetail"] = storage.StringValue(job.Name)
 	record.Fields["CronJobDetailId"] = storage.IDValue(storage.ID(cronJobDetailID(job.Name)))
 	record.Fields["TimesTriggered"] = storage.IntegerValue(0)
 	if nextFireTime, ok := cronNextFireTime(job.Cron, vm.fakeNow); ok {
@@ -1787,6 +2112,49 @@ func cronNextFireTime(expr string, now time.Time) (string, bool) {
 func cronHasExplicitYear(expr string) bool {
 	parts := strings.Fields(expr)
 	return len(parts) == 7 && parts[6] != "*" && parts[6] != "?"
+}
+
+// Reject malformed schedules before recording a local job.
+func validateScheduleCron(expr string) error {
+	parts := strings.Fields(strings.ToUpper(expr))
+	stringError := func(message string) error {
+		return newExceptionError("System.StringException", message)
+	}
+	for i := 0; i < min(3, len(parts)); i++ {
+		part := parts[i]
+		if value, err := strconv.Atoi(part); err == nil {
+			if i < 2 && (value < 0 || value > 59) {
+				return stringError("Minute and Second values must be between 0 and 59")
+			}
+			if i == 2 && (value < 0 || value > 23) {
+				return stringError("Hour values must be between 0 and 23")
+			}
+		} else if strings.IndexFunc(part, func(r rune) bool { return r >= 'A' && r <= 'Z' }) >= 0 {
+			return stringError("Illegal characters for this position: '" + part + "'")
+		}
+	}
+	if len(parts) < 6 {
+		return stringError("Unexpected end of expression.")
+	}
+	if parts[3] == "?" && parts[5] == "?" {
+		return stringError("'?' can only be specified for Day-of-Month -OR- Day-of-Week.")
+	}
+	if parts[3] != "?" && parts[5] != "?" {
+		return stringError("Support for specifying both a day-of-week AND a day-of-month parameter is not implemented.")
+	}
+	// time.Date normalizes impossible dates; registration must reject them.
+	day, dayErr := strconv.Atoi(parts[3])
+	month, monthErr := strconv.Atoi(parts[4])
+	if dayErr == nil && monthErr == nil && len(parts) == 7 {
+		year, yearErr := strconv.Atoi(parts[6])
+		if yearErr == nil {
+			date := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+			if date.Year() != year || int(date.Month()) != month || date.Day() != day {
+				return newExceptionError("System.AsyncException", "Based on configured schedule, the given trigger 'SCHEDULED_APEX_JOB_TYPE.000000000000000' will never fire.")
+			}
+		}
+	}
+	return nil
 }
 
 func cronNextFireDate(expr string, now time.Time) (time.Time, bool) {
@@ -1931,8 +2299,49 @@ func asyncMethodName(job AsyncJob) string {
 	return name
 }
 func asyncTotalItems(job AsyncJob) int {
-	if asyncJobType(job) != "BatchApex" || job.BatchSize <= 0 {
-		return 1
+	if asyncJobType(job) == "BatchApex" || job.Kind == "Queueable" || job.Kind == "ScheduledApex" {
+		return 0
 	}
 	return 1
+}
+
+// bindTestScheduledReuse retains the already-collected payload separately from
+// its cancelled Cron/AsyncApexJob rows. Only the proved one-predecessor,
+// same-kind/same-class replacement is bound here.
+func (vm *VM) bindTestScheduledReuse(job *AsyncJob) {
+	if vm.testContext == nil || vm.testContext.Stopped || vm.testContext.Draining {
+		return
+	}
+	found := -1
+	for i, prior := range vm.testContext.AsyncJobs {
+		if prior.Name != job.Name || prior.Kind != job.Kind || !strings.EqualFold(prior.Object.Type, job.Object.Type) {
+			continue
+		}
+		if !prior.ScheduledAborted || prior.ScheduledReusedBy != "" {
+			continue
+		}
+		if found >= 0 {
+			return
+		}
+		found = i
+	}
+	if found < 0 {
+		return
+	}
+	vm.testContext.AsyncJobs[found].ScheduledReusedBy = job.ID
+	job.ScheduledReusedBy = job.ID
+}
+
+func (vm *VM) activeTestScheduledReuse(job AsyncJob) bool {
+	if job.ScheduledReusedBy == "" || vm.testContext == nil {
+		return false
+	}
+	for _, target := range vm.testContext.AsyncJobs {
+		if target.ID == job.ScheduledReusedBy && !target.ScheduledAborted &&
+			target.Kind == job.Kind && target.Name == job.Name &&
+			strings.EqualFold(target.Object.Type, job.Object.Type) {
+			return true
+		}
+	}
+	return false
 }

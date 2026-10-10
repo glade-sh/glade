@@ -48,6 +48,9 @@ func (vm *VM) executeApprovalProcessList(requests Value, allOrNone bool) (Value,
 }
 
 func (vm *VM) executeApprovalProcessRequest(request Value, allOrNone bool) (Value, error) {
+	if request.Kind == ValueNull {
+		return Null, newExceptionError("System.ListException", "DML statement found null SObject at position 0")
+	}
 	if request.Kind != ValueObject {
 		return Null, unsupportedCallError("Approval.process request type " + runtimeValueTypeName(request))
 	}
@@ -80,10 +83,9 @@ func (vm *VM) approvalProcessSubmitRequest(request Value, allOrNone bool) (Value
 	definition, ok := vm.approvalProcessDefinitionForRequest(request, objectName)
 	if !ok {
 		if !vm.approvalHasProcessDefinitionObject() {
-			result := approvalProcessResult(true, objectID, nil)
-			result.Fields["instanceId"] = platformScalar("Id", "04g000000000001AAA")
-			result.Fields["newWorkitemIds"] = List(platformScalar("Id", "04i000000000001AAA"))
-			return result, nil
+			if approvalRequestString(request, "ProcessDefinitionNameOrId") == "" {
+				return Null, unsupportedCallError("Approval.process hosted approval engine routing")
+			}
 		}
 		return approvalProcessFailureResult(allOrNone, objectID, "INVALID_CROSS_REFERENCE_KEY", "ProcessDefinition is required", []string{"ProcessDefinitionId"})
 	}
@@ -157,7 +159,8 @@ func approvalRequestBool(request Value, field string) (bool, bool) {
 func approvalProcessMissingIDResult(allOrNone bool, field string) (Value, error) {
 	errValue := databaseErrorValue(dml.Error{StatusCode: "REQUIRED_FIELD_MISSING", Message: field + " is required", Fields: []string{field}})
 	if allOrNone {
-		return Null, newExceptionError("DmlException", field+" is required")
+		nativeField := strings.ToLower(field[:1]) + field[1:]
+		return Null, newExceptionError("System.DmlException", "Process failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, missing required field: ["+nativeField+"]: ["+nativeField+"]")
 	}
 	return approvalProcessResult(false, Null, []Value{errValue}), nil
 }

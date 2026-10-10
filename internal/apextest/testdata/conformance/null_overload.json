@@ -1,0 +1,1382 @@
+{
+  "family": "type system",
+  "apiVersions": [
+    "61.0",
+    "62.0",
+    "67.0"
+  ],
+  "declarations": {
+    "A02W2Widget": "public class A02W2Widget {}",
+    "A02W2Base": "public virtual class A02W2Base {public static String pick(A02W2Widget value){return 'base-widget';} public static String pick(Id value){return 'base-id';}}",
+    "A02W2Child": "public class A02W2Child extends A02W2Base {public static String pick(A02W2Widget value){return 'child-widget';}}",
+    "A02W2Inherited": "public class A02W2Inherited extends A02W2Base {}",
+    "A02W2CollectionBase": "public virtual class A02W2CollectionBase {public static String pick(Set<Id> value){return 'base-set';} public static String pick(List<SObject> value){return 'base-list';}}",
+    "A02W2CollectionChild": "public class A02W2CollectionChild extends A02W2CollectionBase {public static String pick(Set<Id> value){return 'child-set';}}",
+    "A02W2Batch": "public class A02W2Batch implements Database.Batchable<SObject> {public Database.QueryLocator start(Database.BatchableContext context){return null;} public void execute(Database.BatchableContext context,List<Account> records){} public void finish(Database.BatchableContext context){}}",
+    "A02W2Left": "public class A02W2Left {public class Token {}}",
+    "A02W2Right": "public class A02W2Right {public class Token {}}",
+    "A02W2Contract": "public interface A02W2Contract {void pick(A02W2Left.Token value);}",
+    "A02W2ListContract": "public interface A02W2ListContract {void pick(List<A02W2Left.Token> value);}",
+    "A02W2IntegerBase": "public virtual class A02W2IntegerBase {public static String pick(Integer value){return 'base-integer';}}",
+    "A02W2StringChild": "public class A02W2StringChild extends A02W2IntegerBase {public static String pick(String value){return 'child-string';}}",
+    "A02W2Middle": "public virtual class A02W2Middle extends A02W2IntegerBase {}",
+    "A02W2DeepChild": "public class A02W2DeepChild extends A02W2Middle {public static String pick(String value){return 'deep-string';}}",
+    "A02W2PrivateChild": "public class A02W2PrivateChild extends A02W2IntegerBase {private static String pick(String value){return 'private-string';}}"
+  },
+  "schemaFixture": {
+    "A02W2Widget__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n<deploymentStatus>Deployed</deploymentStatus><label>Widget</label>\n<nameField><label>Widget Name</label><type>Text</type></nameField>\n<pluralLabel>Widgets</pluralLabel><sharingModel>ReadWrite</sharingModel>\n</CustomObject>\n"
+  },
+  "named": [
+    {
+      "id": "R001",
+      "group": "static/local-null",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61R001",
+          "source": "public class A02W2Native61R001 {public void observed(){Object r; r=A02W2Child.pick(null);}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62R001",
+          "source": "public class A02W2Native62R001 {public void observed(){Object r; r=A02W2Child.pick(null);}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67R001",
+          "source": "public class A02W2Native67R001 {public void observed(){Object r; r=A02W2Child.pick(null);}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "C002",
+      "group": "static/ancestor-id-twin",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61C002",
+          "source": "public class A02W2Native61C002 {public void observed(){Object r; r=A02W2Child.pick((Id)null);}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62C002",
+          "source": "public class A02W2Native62C002 {public void observed(){Object r; r=A02W2Child.pick((Id)null);}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67C002",
+          "source": "public class A02W2Native67C002 {public void observed(){Object r; r=A02W2Child.pick((Id)null);}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "R002",
+      "group": "static/collection-null",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61R002",
+          "source": "public class A02W2Native61R002 {public void observed(){Object r; r=A02W2CollectionChild.pick(null);}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62R002",
+          "source": "public class A02W2Native62R002 {public void observed(){Object r; r=A02W2CollectionChild.pick(null);}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67R002",
+          "source": "public class A02W2Native67R002 {public void observed(){Object r; r=A02W2CollectionChild.pick(null);}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "R003",
+      "group": "batch/narrower-null-null",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61R003",
+          "source": "public class A02W2Native61R003 {public void observed(){Object r; new A02W2Batch().execute(null,null); r='batch-compiled';}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62R003",
+          "source": "public class A02W2Native62R003 {public void observed(){Object r; new A02W2Batch().execute(null,null); r='batch-compiled';}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67R003",
+          "source": "public class A02W2Native67R003 {public void observed(){Object r; new A02W2Batch().execute(null,null); r='batch-compiled';}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "R004",
+      "group": "static/local-typed-widget",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61R004",
+          "source": "public class A02W2Native61R004 {public void observed(){Object r; r=A02W2Child.pick((A02W2Widget)null);}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62R004",
+          "source": "public class A02W2Native62R004 {public void observed(){Object r; r=A02W2Child.pick((A02W2Widget)null);}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67R004",
+          "source": "public class A02W2Native67R004 {public void observed(){Object r; r=A02W2Child.pick((A02W2Widget)null);}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "R005",
+      "group": "static/parent-typed-id",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61R005",
+          "source": "public class A02W2Native61R005 {public void observed(){Object r; r=A02W2Base.pick((Id)null);}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62R005",
+          "source": "public class A02W2Native62R005 {public void observed(){Object r; r=A02W2Base.pick((Id)null);}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67R005",
+          "source": "public class A02W2Native67R005 {public void observed(){Object r; r=A02W2Base.pick((Id)null);}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "R006",
+      "group": "static/inherited-typed-widget",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61R006",
+          "source": "public class A02W2Native61R006 {public void observed(){Object r; r=A02W2Inherited.pick((A02W2Widget)null);}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62R006",
+          "source": "public class A02W2Native62R006 {public void observed(){Object r; r=A02W2Inherited.pick((A02W2Widget)null);}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67R006",
+          "source": "public class A02W2Native67R006 {public void observed(){Object r; r=A02W2Inherited.pick((A02W2Widget)null);}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "C004",
+      "group": "batch/wrong-records-twin",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61C004",
+          "source": "public class A02W2Native61C004 {public void observed(){Object r; new A02W2Batch().execute(null,'invalid'); r='compiled';}}\n",
+          "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void execute(NULL, String) from the type A02W2Batch"
+        },
+        "62.0": {
+          "name": "A02W2Native62C004",
+          "source": "public class A02W2Native62C004 {public void observed(){Object r; new A02W2Batch().execute(null,'invalid'); r='compiled';}}\n",
+          "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void execute(NULL, String) from the type A02W2Batch"
+        },
+        "67.0": {
+          "name": "A02W2Native67C004",
+          "source": "public class A02W2Native67C004 {public void observed(){Object r; new A02W2Batch().execute(null,'invalid'); r='compiled';}}\n",
+          "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void execute(NULL, String) from the type A02W2Batch"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "C006",
+      "group": "static/collection-ancestor-list-twin",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61C006",
+          "source": "public class A02W2Native61C006 {public void observed(){Object r; r=A02W2CollectionChild.pick((List<SObject>)null);}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62C006",
+          "source": "public class A02W2Native62C006 {public void observed(){Object r; r=A02W2CollectionChild.pick((List<SObject>)null);}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67C006",
+          "source": "public class A02W2Native67C006 {public void observed(){Object r; r=A02W2CollectionChild.pick((List<SObject>)null);}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "R007",
+      "group": "qualified/positive",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61R007",
+          "source": "public class A02W2Native61R007 implements A02W2Contract {public void pick(A02W2Left.Token value){} public void observed(){pick(null);}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62R007",
+          "source": "public class A02W2Native62R007 implements A02W2Contract {public void pick(A02W2Left.Token value){} public void observed(){pick(null);}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67R007",
+          "source": "public class A02W2Native67R007 implements A02W2Contract {public void pick(A02W2Left.Token value){} public void observed(){pick(null);}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "R008",
+      "group": "qualified-generic/positive",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61R008",
+          "source": "public class A02W2Native61R008 implements A02W2ListContract {public void pick(List<A02W2Left.Token> value){} public void observed(){pick(null);}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62R008",
+          "source": "public class A02W2Native62R008 implements A02W2ListContract {public void pick(List<A02W2Left.Token> value){} public void observed(){pick(null);}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67R008",
+          "source": "public class A02W2Native67R008 implements A02W2ListContract {public void pick(List<A02W2Left.Token> value){} public void observed(){pick(null);}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "C008",
+      "group": "qualified-generic/rejection-twin",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61C008",
+          "source": "public class A02W2Native61C008 implements A02W2ListContract {public void pick(List<A02W2Right.Token> value){} public void observed(){pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tClass A02W2Native61C008 must implement the method: void A02W2ListContract.pick(List<A02W2Left.Token>)"
+        },
+        "62.0": {
+          "name": "A02W2Native62C008",
+          "source": "public class A02W2Native62C008 implements A02W2ListContract {public void pick(List<A02W2Right.Token> value){} public void observed(){pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tClass A02W2Native62C008 must implement the method: void A02W2ListContract.pick(List<A02W2Left.Token>)"
+        },
+        "67.0": {
+          "name": "A02W2Native67C008",
+          "source": "public class A02W2Native67C008 implements A02W2ListContract {public void pick(List<A02W2Right.Token> value){} public void observed(){pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tClass A02W2Native67C008 must implement the method: void A02W2ListContract.pick(List<A02W2Left.Token>)"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "R009",
+      "group": "static/public-disjoint/typed-integer",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61R009",
+          "source": "public class A02W2Native61R009 {public void observed(){Object r; r=A02W2StringChild.pick(1);}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62R009",
+          "source": "public class A02W2Native62R009 {public void observed(){Object r; r=A02W2StringChild.pick(1);}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67R009",
+          "source": "public class A02W2Native67R009 {public void observed(){Object r; r=A02W2StringChild.pick(1);}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "C009",
+      "group": "static/public-disjoint/null-twin",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61C009",
+          "source": "public class A02W2Native61C009 {public void observed(){Object r; r=A02W2StringChild.pick(null);}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62C009",
+          "source": "public class A02W2Native62C009 {public void observed(){Object r; r=A02W2StringChild.pick(null);}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67C009",
+          "source": "public class A02W2Native67C009 {public void observed(){Object r; r=A02W2StringChild.pick(null);}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "R010",
+      "group": "static/deep-disjoint/typed-integer",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61R010",
+          "source": "public class A02W2Native61R010 {public void observed(){Object r; r=A02W2DeepChild.pick(1);}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62R010",
+          "source": "public class A02W2Native62R010 {public void observed(){Object r; r=A02W2DeepChild.pick(1);}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67R010",
+          "source": "public class A02W2Native67R010 {public void observed(){Object r; r=A02W2DeepChild.pick(1);}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "C010",
+      "group": "static/deep-disjoint/null-twin",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61C010",
+          "source": "public class A02W2Native61C010 {public void observed(){Object r; r=A02W2DeepChild.pick(null);}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62C010",
+          "source": "public class A02W2Native62C010 {public void observed(){Object r; r=A02W2DeepChild.pick(null);}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67C010",
+          "source": "public class A02W2Native67C010 {public void observed(){Object r; r=A02W2DeepChild.pick(null);}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "R011",
+      "group": "static/private-disjoint/typed-integer",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61R011",
+          "source": "public class A02W2Native61R011 {public void observed(){Object r; r=A02W2PrivateChild.pick(1);}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62R011",
+          "source": "public class A02W2Native62R011 {public void observed(){Object r; r=A02W2PrivateChild.pick(1);}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67R011",
+          "source": "public class A02W2Native67R011 {public void observed(){Object r; r=A02W2PrivateChild.pick(1);}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "R013",
+      "group": "static/public-string-positive",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61R013",
+          "source": "public class A02W2Native61R013 {public void observed(){Object r; r=A02W2StringChild.pick('value');}}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62R013",
+          "source": "public class A02W2Native62R013 {public void observed(){Object r; r=A02W2StringChild.pick('value');}}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67R013",
+          "source": "public class A02W2Native67R013 {public void observed(){Object r; r=A02W2StringChild.pick('value');}}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "R014",
+      "group": "batch/narrowed-sobject-schedulable-null-null",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61R014",
+          "source": "@IsTest private class A02W2Native61R014 implements Database.Batchable<SObject>, Schedulable {\n public Database.QueryLocator start(Database.BatchableContext ctx){return null;}\n public void execute(Database.BatchableContext ctx,List<A02W2Widget__c> scope){}\n public void execute(SchedulableContext ctx){}\n public void finish(Database.BatchableContext ctx){}\n @IsTest static void observed(){A02W2Native61R014 job=new A02W2Native61R014(); job.execute(null,null);}\n}\n",
+          "expected": "compiled"
+        },
+        "62.0": {
+          "name": "A02W2Native62R014",
+          "source": "@IsTest private class A02W2Native62R014 implements Database.Batchable<SObject>, Schedulable {\n public Database.QueryLocator start(Database.BatchableContext ctx){return null;}\n public void execute(Database.BatchableContext ctx,List<A02W2Widget__c> scope){}\n public void execute(SchedulableContext ctx){}\n public void finish(Database.BatchableContext ctx){}\n @IsTest static void observed(){A02W2Native62R014 job=new A02W2Native62R014(); job.execute(null,null);}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A02W2Native67R014",
+          "source": "@IsTest private class A02W2Native67R014 implements Database.Batchable<SObject>, Schedulable {\n public Database.QueryLocator start(Database.BatchableContext ctx){return null;}\n public void execute(Database.BatchableContext ctx,List<A02W2Widget__c> scope){}\n public void execute(SchedulableContext ctx){}\n public void finish(Database.BatchableContext ctx){}\n @IsTest static void observed(){A02W2Native67R014 job=new A02W2Native67R014(); job.execute(null,null);}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "route": "named-compiler"
+    },
+    {
+      "id": "C015",
+      "group": "batch/narrowed-sobject-wrong-scope-twin",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61C015",
+          "source": "@IsTest private class A02W2Native61C015 implements Database.Batchable<SObject>, Schedulable {\n public Database.QueryLocator start(Database.BatchableContext ctx){return null;}\n public void execute(Database.BatchableContext ctx,List<A02W2Widget__c> scope){}\n public void execute(SchedulableContext ctx){}\n public void finish(Database.BatchableContext ctx){}\n @IsTest static void observed(){A02W2Native61C015 job=new A02W2Native61C015(); job.execute(null,'invalid');}\n}\n",
+          "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void execute(NULL, String) from the type A02W2Native61C015"
+        },
+        "62.0": {
+          "name": "A02W2Native62C015",
+          "source": "@IsTest private class A02W2Native62C015 implements Database.Batchable<SObject>, Schedulable {\n public Database.QueryLocator start(Database.BatchableContext ctx){return null;}\n public void execute(Database.BatchableContext ctx,List<A02W2Widget__c> scope){}\n public void execute(SchedulableContext ctx){}\n public void finish(Database.BatchableContext ctx){}\n @IsTest static void observed(){A02W2Native62C015 job=new A02W2Native62C015(); job.execute(null,'invalid');}\n}\n",
+          "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void execute(NULL, String) from the type A02W2Native62C015"
+        },
+        "67.0": {
+          "name": "A02W2Native67C015",
+          "source": "@IsTest private class A02W2Native67C015 implements Database.Batchable<SObject>, Schedulable {\n public Database.QueryLocator start(Database.BatchableContext ctx){return null;}\n public void execute(Database.BatchableContext ctx,List<A02W2Widget__c> scope){}\n public void execute(SchedulableContext ctx){}\n public void finish(Database.BatchableContext ctx){}\n @IsTest static void observed(){A02W2Native67C015 job=new A02W2Native67C015(); job.execute(null,'invalid');}\n}\n",
+          "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void execute(NULL, String) from the type A02W2Native67C015"
+        }
+      },
+      "route": "named-compiler"
+    }
+  ],
+  "runtime": [
+    {
+      "id": "R001",
+      "code": "r=A02W2Child.pick(null);",
+      "expected": {
+        "61.0": "child-widget",
+        "62.0": "child-widget",
+        "67.0": "child-widget"
+      },
+      "route": "execute-anonymous"
+    },
+    {
+      "id": "R002",
+      "code": "r=A02W2CollectionChild.pick(null);",
+      "expected": {
+        "61.0": "child-set",
+        "62.0": "child-set",
+        "67.0": "child-set"
+      },
+      "route": "execute-anonymous"
+    },
+    {
+      "id": "R003",
+      "code": "new A02W2Batch().execute(null,null); r='batch-compiled';",
+      "expected": {
+        "61.0": "batch-compiled",
+        "62.0": "batch-compiled",
+        "67.0": "batch-compiled"
+      },
+      "route": "execute-anonymous"
+    },
+    {
+      "id": "R004",
+      "code": "r=A02W2Child.pick((A02W2Widget)null);",
+      "expected": {
+        "61.0": "child-widget",
+        "62.0": "child-widget",
+        "67.0": "child-widget"
+      },
+      "route": "execute-anonymous"
+    },
+    {
+      "id": "R005",
+      "code": "r=A02W2Base.pick((Id)null);",
+      "expected": {
+        "61.0": "base-id",
+        "62.0": "base-id",
+        "67.0": "base-id"
+      },
+      "route": "execute-anonymous"
+    },
+    {
+      "id": "R006",
+      "code": "r=A02W2Inherited.pick((A02W2Widget)null);",
+      "expected": {
+        "61.0": "base-widget",
+        "62.0": "base-widget",
+        "67.0": "base-widget"
+      },
+      "route": "execute-anonymous"
+    },
+    {
+      "id": "R009",
+      "code": "r=A02W2StringChild.pick(1);",
+      "expected": {
+        "61.0": "base-integer",
+        "62.0": "base-integer",
+        "67.0": "base-integer"
+      },
+      "route": "execute-anonymous"
+    },
+    {
+      "id": "R010",
+      "code": "r=A02W2DeepChild.pick(1);",
+      "expected": {
+        "61.0": "base-integer",
+        "62.0": "base-integer",
+        "67.0": "base-integer"
+      },
+      "route": "execute-anonymous"
+    },
+    {
+      "id": "R011",
+      "code": "r=A02W2PrivateChild.pick(1);",
+      "expected": {
+        "61.0": "base-integer",
+        "62.0": "base-integer",
+        "67.0": "base-integer"
+      },
+      "route": "execute-anonymous"
+    },
+    {
+      "id": "R013",
+      "code": "r=A02W2StringChild.pick('value');",
+      "expected": {
+        "61.0": "child-string",
+        "62.0": "child-string",
+        "67.0": "child-string"
+      },
+      "route": "execute-anonymous"
+    }
+  ],
+  "remaining": [
+    {
+      "id": "C001",
+      "group": "static/parent-null-twin",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61C001",
+          "source": "public class A02W2Native61C001 {public void observed(){Object r; r=A02W2Base.pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        },
+        "62.0": {
+          "name": "A02W2Native62C001",
+          "source": "public class A02W2Native62C001 {public void observed(){Object r; r=A02W2Base.pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        },
+        "67.0": {
+          "name": "A02W2Native67C001",
+          "source": "public class A02W2Native67C001 {public void observed(){Object r; r=A02W2Base.pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        }
+      },
+      "owner": "source syntax",
+      "reason": "Ambiguous-call diagnostic wording differs from the compiler; compile rejection matches.",
+      "route": "named-compiler"
+    },
+    {
+      "id": "C003",
+      "group": "static/inherited-null-twin",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61C003",
+          "source": "public class A02W2Native61C003 {public void observed(){Object r; r=A02W2Inherited.pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        },
+        "62.0": {
+          "name": "A02W2Native62C003",
+          "source": "public class A02W2Native62C003 {public void observed(){Object r; r=A02W2Inherited.pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        },
+        "67.0": {
+          "name": "A02W2Native67C003",
+          "source": "public class A02W2Native67C003 {public void observed(){Object r; r=A02W2Inherited.pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        }
+      },
+      "owner": "source syntax",
+      "reason": "Ambiguous-call diagnostic wording differs from the compiler; compile rejection matches.",
+      "route": "named-compiler"
+    },
+    {
+      "id": "C005",
+      "group": "static/collection-parent-null-twin",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61C005",
+          "source": "public class A02W2Native61C005 {public void observed(){Object r; r=A02W2CollectionBase.pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        },
+        "62.0": {
+          "name": "A02W2Native62C005",
+          "source": "public class A02W2Native62C005 {public void observed(){Object r; r=A02W2CollectionBase.pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        },
+        "67.0": {
+          "name": "A02W2Native67C005",
+          "source": "public class A02W2Native67C005 {public void observed(){Object r; r=A02W2CollectionBase.pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        }
+      },
+      "owner": "source syntax",
+      "reason": "Ambiguous-call diagnostic wording differs from the compiler; compile rejection matches.",
+      "route": "named-compiler"
+    },
+    {
+      "id": "C007",
+      "group": "qualified/rejection-twin",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61C007",
+          "source": "public class A02W2Native61C007 implements A02W2Contract {public void pick(A02W2Right.Token value){} public void observed(){pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tClass A02W2Native61C007 must implement the method: void A02W2Contract.pick(A02W2Left.Token)"
+        },
+        "62.0": {
+          "name": "A02W2Native62C007",
+          "source": "public class A02W2Native62C007 implements A02W2Contract {public void pick(A02W2Right.Token value){} public void observed(){pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tClass A02W2Native62C007 must implement the method: void A02W2Contract.pick(A02W2Left.Token)"
+        },
+        "67.0": {
+          "name": "A02W2Native67C007",
+          "source": "public class A02W2Native67C007 implements A02W2Contract {public void pick(A02W2Right.Token value){} public void observed(){pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tClass A02W2Native67C007 must implement the method: void A02W2Contract.pick(A02W2Left.Token)"
+        }
+      },
+      "owner": "source syntax",
+      "reason": "Missing implementation is rejected with the native contract message plus a body-call ambiguity; the complete diagnostic result differs.",
+      "route": "named-compiler"
+    },
+    {
+      "id": "C011",
+      "group": "static/private-disjoint/null-twin",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61C011",
+          "source": "public class A02W2Native61C011 {public void observed(){Object r; r=A02W2PrivateChild.pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tMethod is not visible: String A02W2PrivateChild.pick(String)"
+        },
+        "62.0": {
+          "name": "A02W2Native62C011",
+          "source": "public class A02W2Native62C011 {public void observed(){Object r; r=A02W2PrivateChild.pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tMethod is not visible: String A02W2PrivateChild.pick(String)"
+        },
+        "67.0": {
+          "name": "A02W2Native67C011",
+          "source": "public class A02W2Native67C011 {public void observed(){Object r; r=A02W2PrivateChild.pick(null);}}\n",
+          "expected": "COMPILE_ERROR\tMethod is not visible: String A02W2PrivateChild.pick(String)"
+        }
+      },
+      "owner": "source syntax",
+      "reason": "Private-method visibility wording differs from the compiler; compile rejection matches.",
+      "route": "named-compiler"
+    },
+    {
+      "id": "C013",
+      "group": "static/private-string-twin",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61C013",
+          "source": "public class A02W2Native61C013 {public void observed(){Object r; r=A02W2PrivateChild.pick('value');}}\n",
+          "expected": "COMPILE_ERROR\tMethod is not visible: String A02W2PrivateChild.pick(String)"
+        },
+        "62.0": {
+          "name": "A02W2Native62C013",
+          "source": "public class A02W2Native62C013 {public void observed(){Object r; r=A02W2PrivateChild.pick('value');}}\n",
+          "expected": "COMPILE_ERROR\tMethod is not visible: String A02W2PrivateChild.pick(String)"
+        },
+        "67.0": {
+          "name": "A02W2Native67C013",
+          "source": "public class A02W2Native67C013 {public void observed(){Object r; r=A02W2PrivateChild.pick('value');}}\n",
+          "expected": "COMPILE_ERROR\tMethod is not visible: String A02W2PrivateChild.pick(String)"
+        }
+      },
+      "owner": "source syntax",
+      "reason": "Private-method visibility wording differs from the compiler; compile rejection matches.",
+      "route": "named-compiler"
+    },
+    {
+      "id": "C014",
+      "group": "static/protected-declaration-control",
+      "compilations": {
+        "61.0": {
+          "name": "A02W2Native61C014",
+          "source": "public class A02W2Native61C014 extends A02W2IntegerBase {protected static String pick(String value){return 'protected';}}\n",
+          "expected": "COMPILE_ERROR\tprotected methods cannot be static"
+        },
+        "62.0": {
+          "name": "A02W2Native62C014",
+          "source": "public class A02W2Native62C014 extends A02W2IntegerBase {protected static String pick(String value){return 'protected';}}\n",
+          "expected": "COMPILE_ERROR\tprotected methods cannot be static"
+        },
+        "67.0": {
+          "name": "A02W2Native67C014",
+          "source": "public class A02W2Native67C014 extends A02W2IntegerBase {protected static String pick(String value){return 'protected';}}\n",
+          "expected": "COMPILE_ERROR\tprotected methods cannot be static"
+        }
+      },
+      "owner": "source syntax",
+      "reason": "Protected-static declaration wording differs from the compiler; compile rejection matches.",
+      "route": "named-compiler"
+    }
+  ],
+  "observedRoutes": [
+    "named-compiler",
+    "execute-anonymous",
+    "is-test"
+  ],
+  "isTestEvidenceSHA": "b154dbbd039ff783edea1698345941b87d7bc45e",
+  "isTest": [
+    {
+      "id": "R001",
+      "group": "static/local-null",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61R001",
+          "source": "@IsTest private class A02W2Test61R001 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Child.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R001|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R001|child-widget",
+          "value": "child-widget"
+        },
+        "62.0": {
+          "name": "A02W2Test62R001",
+          "source": "@IsTest private class A02W2Test62R001 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Child.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R001|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R001|child-widget",
+          "value": "child-widget"
+        },
+        "67.0": {
+          "name": "A02W2Test67R001",
+          "source": "@IsTest private class A02W2Test67R001 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Child.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R001|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R001|child-widget",
+          "value": "child-widget"
+        }
+      }
+    },
+    {
+      "id": "C002",
+      "group": "static/ancestor-id-twin",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61C002",
+          "source": "@IsTest private class A02W2Test61C002 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Child.pick((Id)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C002|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|C002|base-id",
+          "value": "base-id"
+        },
+        "62.0": {
+          "name": "A02W2Test62C002",
+          "source": "@IsTest private class A02W2Test62C002 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Child.pick((Id)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C002|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|C002|base-id",
+          "value": "base-id"
+        },
+        "67.0": {
+          "name": "A02W2Test67C002",
+          "source": "@IsTest private class A02W2Test67C002 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Child.pick((Id)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C002|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|C002|base-id",
+          "value": "base-id"
+        }
+      }
+    },
+    {
+      "id": "R002",
+      "group": "static/collection-null",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61R002",
+          "source": "@IsTest private class A02W2Test61R002 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2CollectionChild.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R002|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R002|child-set",
+          "value": "child-set"
+        },
+        "62.0": {
+          "name": "A02W2Test62R002",
+          "source": "@IsTest private class A02W2Test62R002 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2CollectionChild.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R002|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R002|child-set",
+          "value": "child-set"
+        },
+        "67.0": {
+          "name": "A02W2Test67R002",
+          "source": "@IsTest private class A02W2Test67R002 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2CollectionChild.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R002|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R002|child-set",
+          "value": "child-set"
+        }
+      }
+    },
+    {
+      "id": "R003",
+      "group": "batch/narrower-null-null",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61R003",
+          "source": "@IsTest private class A02W2Test61R003 {\n @IsTest static void observed(){String captured; try{Object r; new A02W2Batch().execute(null,null); r='batch-compiled'; captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R003|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R003|batch-compiled",
+          "value": "batch-compiled"
+        },
+        "62.0": {
+          "name": "A02W2Test62R003",
+          "source": "@IsTest private class A02W2Test62R003 {\n @IsTest static void observed(){String captured; try{Object r; new A02W2Batch().execute(null,null); r='batch-compiled'; captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R003|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R003|batch-compiled",
+          "value": "batch-compiled"
+        },
+        "67.0": {
+          "name": "A02W2Test67R003",
+          "source": "@IsTest private class A02W2Test67R003 {\n @IsTest static void observed(){String captured; try{Object r; new A02W2Batch().execute(null,null); r='batch-compiled'; captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R003|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R003|batch-compiled",
+          "value": "batch-compiled"
+        }
+      }
+    },
+    {
+      "id": "R004",
+      "group": "static/local-typed-widget",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61R004",
+          "source": "@IsTest private class A02W2Test61R004 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Child.pick((A02W2Widget)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R004|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R004|child-widget",
+          "value": "child-widget"
+        },
+        "62.0": {
+          "name": "A02W2Test62R004",
+          "source": "@IsTest private class A02W2Test62R004 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Child.pick((A02W2Widget)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R004|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R004|child-widget",
+          "value": "child-widget"
+        },
+        "67.0": {
+          "name": "A02W2Test67R004",
+          "source": "@IsTest private class A02W2Test67R004 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Child.pick((A02W2Widget)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R004|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R004|child-widget",
+          "value": "child-widget"
+        }
+      }
+    },
+    {
+      "id": "R005",
+      "group": "static/parent-typed-id",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61R005",
+          "source": "@IsTest private class A02W2Test61R005 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Base.pick((Id)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R005|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R005|base-id",
+          "value": "base-id"
+        },
+        "62.0": {
+          "name": "A02W2Test62R005",
+          "source": "@IsTest private class A02W2Test62R005 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Base.pick((Id)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R005|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R005|base-id",
+          "value": "base-id"
+        },
+        "67.0": {
+          "name": "A02W2Test67R005",
+          "source": "@IsTest private class A02W2Test67R005 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Base.pick((Id)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R005|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R005|base-id",
+          "value": "base-id"
+        }
+      }
+    },
+    {
+      "id": "R006",
+      "group": "static/inherited-typed-widget",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61R006",
+          "source": "@IsTest private class A02W2Test61R006 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Inherited.pick((A02W2Widget)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R006|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R006|base-widget",
+          "value": "base-widget"
+        },
+        "62.0": {
+          "name": "A02W2Test62R006",
+          "source": "@IsTest private class A02W2Test62R006 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Inherited.pick((A02W2Widget)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R006|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R006|base-widget",
+          "value": "base-widget"
+        },
+        "67.0": {
+          "name": "A02W2Test67R006",
+          "source": "@IsTest private class A02W2Test67R006 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Inherited.pick((A02W2Widget)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R006|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R006|base-widget",
+          "value": "base-widget"
+        }
+      }
+    },
+    {
+      "id": "C004",
+      "group": "batch/wrong-records-twin",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61C004",
+          "source": "@IsTest private class A02W2Test61C004 {\n @IsTest static void observed(){String captured; try{Object r; new A02W2Batch().execute(null,'invalid'); r='compiled'; captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C004|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void execute(NULL, String) from the type A02W2Batch"
+        },
+        "62.0": {
+          "name": "A02W2Test62C004",
+          "source": "@IsTest private class A02W2Test62C004 {\n @IsTest static void observed(){String captured; try{Object r; new A02W2Batch().execute(null,'invalid'); r='compiled'; captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C004|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void execute(NULL, String) from the type A02W2Batch"
+        },
+        "67.0": {
+          "name": "A02W2Test67C004",
+          "source": "@IsTest private class A02W2Test67C004 {\n @IsTest static void observed(){String captured; try{Object r; new A02W2Batch().execute(null,'invalid'); r='compiled'; captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C004|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void execute(NULL, String) from the type A02W2Batch"
+        }
+      }
+    },
+    {
+      "id": "C006",
+      "group": "static/collection-ancestor-list-twin",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61C006",
+          "source": "@IsTest private class A02W2Test61C006 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2CollectionChild.pick((List<SObject>)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C006|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|C006|base-list",
+          "value": "base-list"
+        },
+        "62.0": {
+          "name": "A02W2Test62C006",
+          "source": "@IsTest private class A02W2Test62C006 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2CollectionChild.pick((List<SObject>)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C006|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|C006|base-list",
+          "value": "base-list"
+        },
+        "67.0": {
+          "name": "A02W2Test67C006",
+          "source": "@IsTest private class A02W2Test67C006 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2CollectionChild.pick((List<SObject>)null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C006|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|C006|base-list",
+          "value": "base-list"
+        }
+      }
+    },
+    {
+      "id": "R009",
+      "group": "static/public-disjoint/typed-integer",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61R009",
+          "source": "@IsTest private class A02W2Test61R009 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2StringChild.pick(1); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R009|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R009|base-integer",
+          "value": "base-integer"
+        },
+        "62.0": {
+          "name": "A02W2Test62R009",
+          "source": "@IsTest private class A02W2Test62R009 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2StringChild.pick(1); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R009|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R009|base-integer",
+          "value": "base-integer"
+        },
+        "67.0": {
+          "name": "A02W2Test67R009",
+          "source": "@IsTest private class A02W2Test67R009 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2StringChild.pick(1); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R009|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R009|base-integer",
+          "value": "base-integer"
+        }
+      }
+    },
+    {
+      "id": "C009",
+      "group": "static/public-disjoint/null-twin",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61C009",
+          "source": "@IsTest private class A02W2Test61C009 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2StringChild.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C009|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|C009|child-string",
+          "value": "child-string"
+        },
+        "62.0": {
+          "name": "A02W2Test62C009",
+          "source": "@IsTest private class A02W2Test62C009 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2StringChild.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C009|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|C009|child-string",
+          "value": "child-string"
+        },
+        "67.0": {
+          "name": "A02W2Test67C009",
+          "source": "@IsTest private class A02W2Test67C009 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2StringChild.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C009|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|C009|child-string",
+          "value": "child-string"
+        }
+      }
+    },
+    {
+      "id": "R010",
+      "group": "static/deep-disjoint/typed-integer",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61R010",
+          "source": "@IsTest private class A02W2Test61R010 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2DeepChild.pick(1); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R010|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R010|base-integer",
+          "value": "base-integer"
+        },
+        "62.0": {
+          "name": "A02W2Test62R010",
+          "source": "@IsTest private class A02W2Test62R010 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2DeepChild.pick(1); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R010|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R010|base-integer",
+          "value": "base-integer"
+        },
+        "67.0": {
+          "name": "A02W2Test67R010",
+          "source": "@IsTest private class A02W2Test67R010 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2DeepChild.pick(1); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R010|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R010|base-integer",
+          "value": "base-integer"
+        }
+      }
+    },
+    {
+      "id": "C010",
+      "group": "static/deep-disjoint/null-twin",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61C010",
+          "source": "@IsTest private class A02W2Test61C010 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2DeepChild.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C010|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|C010|deep-string",
+          "value": "deep-string"
+        },
+        "62.0": {
+          "name": "A02W2Test62C010",
+          "source": "@IsTest private class A02W2Test62C010 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2DeepChild.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C010|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|C010|deep-string",
+          "value": "deep-string"
+        },
+        "67.0": {
+          "name": "A02W2Test67C010",
+          "source": "@IsTest private class A02W2Test67C010 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2DeepChild.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C010|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|C010|deep-string",
+          "value": "deep-string"
+        }
+      }
+    },
+    {
+      "id": "R011",
+      "group": "static/private-disjoint/typed-integer",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61R011",
+          "source": "@IsTest private class A02W2Test61R011 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2PrivateChild.pick(1); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R011|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R011|base-integer",
+          "value": "base-integer"
+        },
+        "62.0": {
+          "name": "A02W2Test62R011",
+          "source": "@IsTest private class A02W2Test62R011 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2PrivateChild.pick(1); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R011|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R011|base-integer",
+          "value": "base-integer"
+        },
+        "67.0": {
+          "name": "A02W2Test67R011",
+          "source": "@IsTest private class A02W2Test67R011 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2PrivateChild.pick(1); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R011|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R011|base-integer",
+          "value": "base-integer"
+        }
+      }
+    },
+    {
+      "id": "R013",
+      "group": "static/public-string-positive",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61R013",
+          "source": "@IsTest private class A02W2Test61R013 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2StringChild.pick('value'); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R013|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R013|child-string",
+          "value": "child-string"
+        },
+        "62.0": {
+          "name": "A02W2Test62R013",
+          "source": "@IsTest private class A02W2Test62R013 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2StringChild.pick('value'); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R013|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R013|child-string",
+          "value": "child-string"
+        },
+        "67.0": {
+          "name": "A02W2Test67R013",
+          "source": "@IsTest private class A02W2Test67R013 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2StringChild.pick('value'); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R013|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R013|child-string",
+          "value": "child-string"
+        }
+      }
+    },
+    {
+      "id": "R014",
+      "group": "batch/narrowed-sobject-schedulable-null-null",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61R014",
+          "source": "@IsTest private class A02W2Test61R014 implements Database.Batchable<SObject>, Schedulable {\n public Database.QueryLocator start(Database.BatchableContext ctx){return null;}\n public void execute(Database.BatchableContext ctx,List<A02W2Widget__c> scope){}\n public void execute(SchedulableContext ctx){}\n public void finish(Database.BatchableContext ctx){}\n @IsTest static void observed(){String captured; try{Object r; A02W2Test61R014 job=new A02W2Test61R014(); job.execute(null,null); r='batch-compiled'; captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R014|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R014|batch-compiled",
+          "value": "batch-compiled"
+        },
+        "62.0": {
+          "name": "A02W2Test62R014",
+          "source": "@IsTest private class A02W2Test62R014 implements Database.Batchable<SObject>, Schedulable {\n public Database.QueryLocator start(Database.BatchableContext ctx){return null;}\n public void execute(Database.BatchableContext ctx,List<A02W2Widget__c> scope){}\n public void execute(SchedulableContext ctx){}\n public void finish(Database.BatchableContext ctx){}\n @IsTest static void observed(){String captured; try{Object r; A02W2Test62R014 job=new A02W2Test62R014(); job.execute(null,null); r='batch-compiled'; captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R014|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R014|batch-compiled",
+          "value": "batch-compiled"
+        },
+        "67.0": {
+          "name": "A02W2Test67R014",
+          "source": "@IsTest private class A02W2Test67R014 implements Database.Batchable<SObject>, Schedulable {\n public Database.QueryLocator start(Database.BatchableContext ctx){return null;}\n public void execute(Database.BatchableContext ctx,List<A02W2Widget__c> scope){}\n public void execute(SchedulableContext ctx){}\n public void finish(Database.BatchableContext ctx){}\n @IsTest static void observed(){String captured; try{Object r; A02W2Test67R014 job=new A02W2Test67R014(); job.execute(null,null); r='batch-compiled'; captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|R014|'+captured);}\n}\n",
+          "compilation": "compiled",
+          "outcome": "Fail",
+          "message": "System.AssertException: Assertion Failed: P|R014|batch-compiled",
+          "value": "batch-compiled"
+        }
+      }
+    },
+    {
+      "id": "C015",
+      "group": "batch/narrowed-sobject-wrong-scope-twin",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61C015",
+          "source": "@IsTest private class A02W2Test61C015 implements Database.Batchable<SObject>, Schedulable {\n public Database.QueryLocator start(Database.BatchableContext ctx){return null;}\n public void execute(Database.BatchableContext ctx,List<A02W2Widget__c> scope){}\n public void execute(SchedulableContext ctx){}\n public void finish(Database.BatchableContext ctx){}\n @IsTest static void observed(){String captured; try{Object r; A02W2Test61C015 job=new A02W2Test61C015(); job.execute(null,'invalid'); r='batch-compiled'; captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C015|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void execute(NULL, String) from the type A02W2Test61C015"
+        },
+        "62.0": {
+          "name": "A02W2Test62C015",
+          "source": "@IsTest private class A02W2Test62C015 implements Database.Batchable<SObject>, Schedulable {\n public Database.QueryLocator start(Database.BatchableContext ctx){return null;}\n public void execute(Database.BatchableContext ctx,List<A02W2Widget__c> scope){}\n public void execute(SchedulableContext ctx){}\n public void finish(Database.BatchableContext ctx){}\n @IsTest static void observed(){String captured; try{Object r; A02W2Test62C015 job=new A02W2Test62C015(); job.execute(null,'invalid'); r='batch-compiled'; captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C015|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void execute(NULL, String) from the type A02W2Test62C015"
+        },
+        "67.0": {
+          "name": "A02W2Test67C015",
+          "source": "@IsTest private class A02W2Test67C015 implements Database.Batchable<SObject>, Schedulable {\n public Database.QueryLocator start(Database.BatchableContext ctx){return null;}\n public void execute(Database.BatchableContext ctx,List<A02W2Widget__c> scope){}\n public void execute(SchedulableContext ctx){}\n public void finish(Database.BatchableContext ctx){}\n @IsTest static void observed(){String captured; try{Object r; A02W2Test67C015 job=new A02W2Test67C015(); job.execute(null,'invalid'); r='batch-compiled'; captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C015|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void execute(NULL, String) from the type A02W2Test67C015"
+        }
+      }
+    }
+  ],
+  "isTestRemaining": [
+    {
+      "id": "C001",
+      "group": "static/parent-null-twin",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61C001",
+          "source": "@IsTest private class A02W2Test61C001 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Base.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C001|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        },
+        "62.0": {
+          "name": "A02W2Test62C001",
+          "source": "@IsTest private class A02W2Test62C001 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Base.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C001|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        },
+        "67.0": {
+          "name": "A02W2Test67C001",
+          "source": "@IsTest private class A02W2Test67C001 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Base.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C001|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        }
+      },
+      "owner": "source syntax",
+      "reason": "Captured @IsTest compiler rejection has different local diagnostic text; retained as an source syntax diagnostic-only difference without category-only assertions."
+    },
+    {
+      "id": "C003",
+      "group": "static/inherited-null-twin",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61C003",
+          "source": "@IsTest private class A02W2Test61C003 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Inherited.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C003|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        },
+        "62.0": {
+          "name": "A02W2Test62C003",
+          "source": "@IsTest private class A02W2Test62C003 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Inherited.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C003|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        },
+        "67.0": {
+          "name": "A02W2Test67C003",
+          "source": "@IsTest private class A02W2Test67C003 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2Inherited.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C003|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        }
+      },
+      "owner": "source syntax",
+      "reason": "Captured @IsTest compiler rejection has different local diagnostic text; retained as an source syntax diagnostic-only difference without category-only assertions."
+    },
+    {
+      "id": "C005",
+      "group": "static/collection-parent-null-twin",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61C005",
+          "source": "@IsTest private class A02W2Test61C005 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2CollectionBase.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C005|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        },
+        "62.0": {
+          "name": "A02W2Test62C005",
+          "source": "@IsTest private class A02W2Test62C005 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2CollectionBase.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C005|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        },
+        "67.0": {
+          "name": "A02W2Test67C005",
+          "source": "@IsTest private class A02W2Test67C005 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2CollectionBase.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C005|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tAmbiguous method signature: void pick(NULL)"
+        }
+      },
+      "owner": "source syntax",
+      "reason": "Captured @IsTest compiler rejection has different local diagnostic text; retained as an source syntax diagnostic-only difference without category-only assertions."
+    },
+    {
+      "id": "C011",
+      "group": "static/private-disjoint/null-twin",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61C011",
+          "source": "@IsTest private class A02W2Test61C011 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2PrivateChild.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C011|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tMethod is not visible: String A02W2PrivateChild.pick(String)"
+        },
+        "62.0": {
+          "name": "A02W2Test62C011",
+          "source": "@IsTest private class A02W2Test62C011 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2PrivateChild.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C011|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tMethod is not visible: String A02W2PrivateChild.pick(String)"
+        },
+        "67.0": {
+          "name": "A02W2Test67C011",
+          "source": "@IsTest private class A02W2Test67C011 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2PrivateChild.pick(null); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C011|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tMethod is not visible: String A02W2PrivateChild.pick(String)"
+        }
+      },
+      "owner": "source syntax",
+      "reason": "Captured @IsTest compiler rejection has different local diagnostic text; retained as an source syntax diagnostic-only difference without category-only assertions."
+    },
+    {
+      "id": "C013",
+      "group": "static/private-string-twin",
+      "route": "is-test",
+      "observations": {
+        "61.0": {
+          "name": "A02W2Test61C013",
+          "source": "@IsTest private class A02W2Test61C013 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2PrivateChild.pick('value'); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C013|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tMethod is not visible: String A02W2PrivateChild.pick(String)"
+        },
+        "62.0": {
+          "name": "A02W2Test62C013",
+          "source": "@IsTest private class A02W2Test62C013 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2PrivateChild.pick('value'); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C013|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tMethod is not visible: String A02W2PrivateChild.pick(String)"
+        },
+        "67.0": {
+          "name": "A02W2Test67C013",
+          "source": "@IsTest private class A02W2Test67C013 {\n @IsTest static void observed(){String captured; try{Object r; r=A02W2PrivateChild.pick('value'); captured=String.valueOf(r);}catch(Exception e){captured='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C013|'+captured);}\n}\n",
+          "compilation": "COMPILE_ERROR\tMethod is not visible: String A02W2PrivateChild.pick(String)"
+        }
+      },
+      "owner": "source syntax",
+      "reason": "Captured @IsTest compiler rejection has different local diagnostic text; retained as an source syntax diagnostic-only difference without category-only assertions."
+    }
+  ]
+}

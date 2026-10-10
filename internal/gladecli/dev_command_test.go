@@ -319,6 +319,10 @@ func TestPrepareDaemonWatchRunKeepsSelectionPairedWithSnapshot(t *testing.T) {
 }
 
 func TestRunWatchTestsInitialRunRebuildsAfterWatcherBaseline(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := t.TempDir()
 	manifestPath := filepath.Join(root, "sfdx-project.json")
 	classPath := filepath.Join(root, "force-app/main/default/classes/InitialTest.cls")
@@ -349,6 +353,10 @@ func TestRunWatchTestsInitialRunRebuildsAfterWatcherBaseline(t *testing.T) {
 }
 
 func TestRunWatchTestsDaemonInitialRunRebuildsAfterWatcherBaseline(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := t.TempDir()
 	manifestPath := filepath.Join(root, "sfdx-project.json")
 	classPath := filepath.Join(root, "force-app/main/default/classes/InitialTest.cls")
@@ -547,6 +555,10 @@ func TestScopedWatchBackendReplacementSwitchesExternalDependencyRoots(t *testing
 }
 
 func TestSymlinkedDirectDependencyWatchMatchesFreshLoad(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	workspace := t.TempDir()
 	root := filepath.Join(workspace, "project")
 	physicalDependency := filepath.Join(workspace, "physical-dependency")
@@ -612,6 +624,10 @@ func TestSymlinkedDirectDependencyWatchMatchesFreshLoad(t *testing.T) {
 }
 
 func TestNativeWatchRegistrationGapReconcilesToFreshLoad(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	p, index, err := loadProjectIndex(root)
@@ -663,6 +679,10 @@ func TestNativeWatchRegistrationGapReconcilesToFreshLoad(t *testing.T) {
 }
 
 func TestDirectPackageShimWatchMatchesFreshLoad(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	workspace := t.TempDir()
 	root := filepath.Join(workspace, "project")
 	shimRoot := filepath.Join(workspace, "shim")
@@ -1055,6 +1075,10 @@ func waitForWatchChanges(t *testing.T, watcher watch.BackendWatcher, path string
 }
 
 func TestWatchIndexStateLifecycleMatchesFreshLoad(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := t.TempDir()
 	manifestPath := filepath.Join(root, "sfdx-project.json")
 	configPath := filepath.Join(root, "glade.yml")
@@ -1398,6 +1422,10 @@ func TestWatchIndexStateLifecycleMatchesFreshLoad(t *testing.T) {
 	}
 	for _, step := range steps {
 		t.Run(step.name, func(t *testing.T) {
+			// Each step compiles a runtime for content no later step reuses.
+			// Dropping it keeps the in-memory runtime cache from growing by
+			// one project runtime per step.
+			t.Cleanup(apextest.InvalidateRuntimeCaches)
 			changes := step.mutate(t)
 			index, graph, err = updateWatchIndexState(root, index, graph, changes)
 			if err != nil {

@@ -92,6 +92,9 @@ System.assertEquals(true, setting.Enabled__c);
 	org.Objects["Fixture_Setting__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "Fixture_Setting__c",
+			// A24 R216/R217 use a deployed List Custom Setting, not a
+			// metadata-light ordinary custom object.
+			Metadata: map[string]string{"kind": "customSetting", "customSettingsType": "List"},
 			Fields: map[string]storage.Field{
 				"Name":       {APIName: "Name", Type: storage.FieldString},
 				"Enabled__c": {APIName: "Enabled__c", Type: storage.FieldBoolean},

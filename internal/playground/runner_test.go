@@ -14,6 +14,7 @@ import (
 )
 
 func TestRunnerExecutesAnonymousAgainstWorkspaceClass(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
 		t.Fatalf("OpenWorkspace() error = %v", err)
@@ -41,6 +42,7 @@ func TestRunnerExecutesAnonymousAgainstWorkspaceClass(t *testing.T) {
 }
 
 func TestRunnerReturnsDBBootstrapError(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
 		t.Fatalf("OpenWorkspace() error = %v", err)
@@ -66,6 +68,7 @@ func TestRunnerReturnsDBBootstrapError(t *testing.T) {
 }
 
 func TestRunnerResetReturnsDBSaveError(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
 		t.Fatalf("OpenWorkspace() error = %v", err)
@@ -89,6 +92,7 @@ func TestRunnerResetReturnsDBSaveError(t *testing.T) {
 }
 
 func TestRunnerBaselineOrgSupportsAccountCompoundAddress(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
 		t.Fatalf("OpenWorkspace() error = %v", err)
@@ -118,6 +122,7 @@ System.debug(queried.BillingAddress.street + ' / ' + queried.BillingAddress.city
 }
 
 func TestRunnerTreatsNamespacedProjectAsLocalSource(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	projectRoot := t.TempDir()
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-project","namespace":"samplepkg","sourceApiVersion":"65.0"}`)
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/NextGenSettingService.cls"), `public class NextGenSettingService {
@@ -150,6 +155,7 @@ func TestRunnerTreatsNamespacedProjectAsLocalSource(t *testing.T) {
 }
 
 func TestRunnerLoadsProjectReferenceCustomObjectSchema(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	projectRoot := t.TempDir()
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-project","namespace":"samplepkg","sourceApiVersion":"65.0"}`)
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/NextGenSettingService.cls"), `public class NextGenSettingService {
@@ -197,6 +203,7 @@ func TestRunnerLoadsProjectReferenceCustomObjectSchema(t *testing.T) {
 }
 
 func TestRunnerUsesCacheForRepeatedRun(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
 		t.Fatalf("OpenWorkspace() error = %v", err)
@@ -221,6 +228,7 @@ func TestRunnerUsesCacheForRepeatedRun(t *testing.T) {
 }
 
 func TestRunnerSourceErrorCannotReusePassingCache(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
 		t.Fatalf("OpenWorkspace() error = %v", err)
@@ -269,6 +277,7 @@ func TestRunnerSourceErrorCannotReusePassingCache(t *testing.T) {
 }
 
 func TestRunnerSchemaErrorsDoNotMutateAcrossColdAndWarmCaches(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	for _, mode := range []RunMode{RunModeScratch, RunModePersist} {
 		for _, cacheState := range []string{"cold", "warm"} {
 			t.Run(string(mode)+"/"+cacheState, func(t *testing.T) {
@@ -312,6 +321,7 @@ func TestRunnerSchemaErrorsDoNotMutateAcrossColdAndWarmCaches(t *testing.T) {
 }
 
 func TestRunnerSourceParseErrorsDoNotMutateAndRecover(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	for _, mode := range []RunMode{RunModeScratch, RunModePersist} {
 		t.Run(string(mode), func(t *testing.T) {
 			dataRoot := t.TempDir()
@@ -420,6 +430,7 @@ func samePlaygroundOrg(t *testing.T, left, right storage.OrgState) bool {
 }
 
 func TestRunnerWarningDiagnosticsStillExecute(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
 		t.Fatalf("OpenWorkspace() error = %v", err)
@@ -440,6 +451,7 @@ func TestRunnerWarningDiagnosticsStillExecute(t *testing.T) {
 }
 
 func TestRunnerRecompilesWorkspaceClassAfterSourceChange(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
 		t.Fatalf("OpenWorkspace() error = %v", err)
@@ -493,6 +505,7 @@ func TestRunnerRecompilesWorkspaceClassAfterSourceChange(t *testing.T) {
 }
 
 func TestRunnerCachesProjectRuntimeBetweenAnonymousRuns(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
 		t.Fatalf("OpenWorkspace() error = %v", err)
@@ -524,6 +537,7 @@ func TestRunnerCachesProjectRuntimeBetweenAnonymousRuns(t *testing.T) {
 }
 
 func TestRunnerKeepsProjectRuntimeAfterAnonymousFileSave(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
 		t.Fatalf("OpenWorkspace() error = %v", err)
@@ -644,6 +658,7 @@ func TestExampleProjectExecutionPlanCoversEveryProjectOnce(t *testing.T) {
 }
 
 func TestRefinementServiceExampleRunsNamedTest(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
 		t.Fatalf("OpenWorkspace() error = %v", err)
@@ -742,6 +757,9 @@ func runExampleProjectExecutionGroup(t *testing.T, group int) {
 	executed := make(map[string]int, len(plan))
 	for _, testCase := range plan {
 		t.Run(testCase.example.ID, func(t *testing.T) {
+			// Each example runs in its own workspace, so its cached runtime is
+			// never read by the next example.
+			t.Cleanup(apextest.InvalidateRuntimeCaches)
 			executed[testCase.example.ID]++
 			ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 			if err != nil {
@@ -810,6 +828,7 @@ func hasErrorDiagnostic(diagnostics []Diagnostic) bool {
 }
 
 func TestRunnerReportsCompileErrorWithoutCommit(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 	if err != nil {
 		t.Fatalf("OpenWorkspace() error = %v", err)

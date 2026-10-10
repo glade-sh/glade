@@ -35,16 +35,19 @@ System.assertEquals(false, longText.isGroupable());
 System.assertEquals(false, longText.isAggregatable());
 
 Schema.DescribeFieldResult email = Probe__c.Email__c.getDescribe();
-System.assertEquals('EMAIL', email.getType());
+// A30 X098: verify the enum text through explicit String conversion.
+System.assertEquals('EMAIL', String.valueOf(email.getType()));
 System.assertEquals(80, email.getLength());
 System.assertEquals(240, email.getByteLength());
 Schema.DescribeFieldResult url = Probe__c.Url__c.getDescribe();
-System.assertEquals('URL', url.getType());
+// A30 X099: verify the enum text through explicit String conversion.
+System.assertEquals('URL', String.valueOf(url.getType()));
 System.assertEquals(255, url.getLength());
 System.assertEquals(765, url.getByteLength());
 
 Schema.DescribeFieldResult autoNumber = Probe__c.Auto__c.getDescribe();
-System.assertEquals('STRING', autoNumber.getType());
+// A30 J085: compare the native enum value.
+System.assertEquals(Schema.DisplayType.STRING, autoNumber.getType());
 System.assertEquals(true, autoNumber.isAutoNumber());
 System.assertEquals(30, autoNumber.getLength());
 System.assertEquals(90, autoNumber.getByteLength());
@@ -74,7 +77,8 @@ System.assertEquals(false, Probe__c.Multi__c.getDescribe().isAggregatable());
 System.assertEquals(false, Probe__c.Checkbox__c.getDescribe().isNillable());
 System.assertEquals(false, Probe__c.Checkbox__c.getDescribe().isAggregatable());
 System.assertEquals(null, Probe__c.Checkbox__c.getDescribe().getDefaultValueFormula());
-System.assertEquals(12, Probe__c.Number__c.getDescribe().getDigits());
+// Schema describe R124 (API 62/67).
+System.assertEquals(0, Probe__c.Number__c.getDescribe().getDigits());
 System.assertEquals(false, Probe__c.Number__c.getDescribe().isGroupable());
 System.assertEquals(false, Probe__c.DateTime__c.getDescribe().isGroupable());
 System.assertEquals(null, Probe__c.Text__c.getDescribe().getDataTranslationEnabled());

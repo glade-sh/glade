@@ -21,7 +21,23 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 	case ValueSet:
 		return vm.displaySet(value.Set, result)
 	case ValueMap:
-		return value.String(), nil
+		// Direct ordinary class values use native
+		// short names or custom toString; other map shapes retain their text.
+		parts := make([]string, 0, len(value.Map))
+		for _, key := range sortedMapKeys(value.Map) {
+			item := value.Map[key]
+			text := apexCollectionString(item)
+			class, source := vm.lookupClass(item.Type)
+			if item.Kind == ValueObject && item.projectClass && source && !class.Dependency && len(class.EnumValues) == 0 && !vm.isSubclass(item.Type, "Exception") {
+				var err error
+				text, err = vm.displayString(item, result)
+				if err != nil {
+					return "", err
+				}
+			}
+			parts = append(parts, mapStoredKey(value, key).String()+"="+text)
+		}
+		return "{" + strings.Join(parts, ", ") + "}", nil
 	case ValueObject:
 	default:
 		return value.String(), nil
@@ -104,15 +120,61 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 }
 
 func (vm *VM) defaultObjectDisplayString(value Value) string {
+	// TestBroker's passive public display is independent of fields.
+	if value.Kind == ValueObject && !value.projectClass && strings.EqualFold(value.Type, "eventbus.TestBroker") {
+		return "TestBroker:[]"
+	}
+	// Automation DTOs already have their native
+	// short name, including when a generated platform class is registered.
+	if text, ok := automationDTOString(value, make(map[uint64]bool)); ok {
+		return text
+	}
 	text := value.String()
-	if value.Kind != ValueObject || !strings.Contains(value.Type, ".") || vm == nil {
+	if value.Kind != ValueObject || vm == nil {
 		return text
 	}
 	if _, ok := vm.Classes[value.Type]; !ok {
 		return text
 	}
+	// Ordinary classes expose declared fields in
+	// brackets, even when a field has a platform scalar's value/message name.
+	// Synthetic objects with undeclared payload fields retain their scalar path.
+	if vm.hasDeclaredOrdinaryClassFields(value) {
+		fields := make([]string, 0, len(value.Fields))
+		for name := range value.Fields {
+			fields = append(fields, name)
+		}
+		sort.Strings(fields)
+		parts := make([]string, 0, len(fields))
+		for _, name := range fields {
+			parts = append(parts, name+"="+valueStringWithSeen(value.Fields[name], map[uint64]bool{value.Ref: true}))
+		}
+		text = value.Type + ":[" + strings.Join(parts, ", ") + "]"
+	}
+	if !strings.Contains(value.Type, ".") {
+		return text
+	}
+	// C025/K013-K024: ZipEntry names remain raw even when they resemble type names.
+	if strings.EqualFold(value.Type, "compression.ZipEntry") {
+		return text
+	}
 	shortName := value.Type[strings.LastIndex(value.Type, ".")+1:]
 	return shortName + strings.TrimPrefix(text, value.Type)
+}
+
+func (vm *VM) hasDeclaredOrdinaryClassFields(value Value) bool {
+	if value.Kind != ValueObject || vm == nil {
+		return false
+	}
+	if _, ok := vm.Classes[value.Type]; !ok || generatedPlatformTypeName(value.Type) || sObjectValueType(value.Type) {
+		return false
+	}
+	for name := range value.Fields {
+		if _, _, declared := vm.lookupField(value.Type, name); !declared {
+			return false
+		}
+	}
+	return true
 }
 
 func stringValueOfDate(value Value) (string, error) {
@@ -215,8 +277,10 @@ func (vm *VM) displaySet(values []Value, result *Result) (string, error) {
 }
 
 const (
-	sobjectErrorsField                       = "__glade_errors"
-	sobjectReadOnlyField                     = "__glade_readonly"
+	sobjectErrorsField   = "__glade_errors"
+	sobjectReadOnlyField = "__glade_readonly"
+	// Reserved internal field name; authored JSON values never grant loaded-reference authority.
+	sobjectLoadedReferencesField             = "__glade_loaded_references"
 	sobjectQueriedFieldsField                = "__glade_queried_fields"
 	sobjectExplicitFieldsField               = "__glade_explicit_fields"
 	sobjectSetFieldsField                    = "__glade_set_fields"
@@ -231,10 +295,14 @@ const (
 	sobjectCloneMarkerField                  = "__glade_clone"
 	sobjectCloneSourceIDField                = "__glade_clone_source_id"
 	sobjectEventOperationIDField             = "__glade_event_operation_id"
+	sobjectPublishedEventIDField             = "__glade_published_event_id"
 )
 
 func isInternalSObjectField(field string) bool {
-	return field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDefaultedFieldsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField || field == sobjectStrippedChildRelationshipsField || field == sobjectCloneMarkerField || field == sobjectCloneSourceIDField || field == sobjectEventOperationIDField
+	if field == sobjectPublishedEventIDField {
+		return true
+	}
+	return field == sobjectLoadedReferencesField || field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDefaultedFieldsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField || field == sobjectStrippedChildRelationshipsField || field == sobjectCloneMarkerField || field == sobjectCloneSourceIDField || field == sobjectEventOperationIDField
 }
 
 func vmImplicitDMLField(field storage.Field) bool {
@@ -306,19 +374,16 @@ func markExplicitSObjectField(value *Value, field string) {
 	}
 	keyValue := String(strings.ToLower(field))
 	encoded := mapKey(keyValue)
+	_, alreadyExplicit := selected.Map[encoded]
 	selected.Map[encoded] = Bool(true)
 	if selected.MapKeys == nil {
 		selected.MapKeys = make(map[string]Value)
 	}
 	selected.MapKeys[encoded] = keyValue
-	filteredOrder := selected.MapOrder[:0]
-	for _, key := range selected.MapOrder {
-		if key == encoded {
-			continue
-		}
-		filteredOrder = append(filteredOrder, key)
+	// JSON preserves the first assignment position on update.
+	if !alreadyExplicit {
+		selected.MapOrder = append(selected.MapOrder, encoded)
 	}
-	selected.MapOrder = append([]string{encoded}, filteredOrder...)
 	value.Fields[sobjectExplicitFieldsField] = selected
 }
 
@@ -352,6 +417,28 @@ func explicitSObjectFieldNames(value Value) []string {
 		if strings.HasPrefix(key, "string:") {
 			fields = append(fields, strings.TrimPrefix(key, "string:"))
 		}
+	}
+	return fields
+}
+
+// explicitSObjectFieldNamesInInsertionOrder is the serialization counterpart
+// to markExplicitSObjectField for custom metadata. Its marker preserves the
+// first explicit assignment of each field and does not move it on update.
+func explicitSObjectFieldNamesInInsertionOrder(value Value) []string {
+	if value.Fields == nil {
+		return nil
+	}
+	selected, ok := value.Fields[sobjectExplicitFieldsField]
+	if !ok || selected.Kind != ValueMap {
+		return nil
+	}
+	fields := make([]string, 0, len(selected.Map))
+	for _, key := range selected.MapOrder {
+		flag := selected.Map[key]
+		if flag.Kind != ValueBool || !flag.Bool || !strings.HasPrefix(key, "string:") {
+			continue
+		}
+		fields = append(fields, strings.TrimPrefix(key, "string:"))
 	}
 	return fields
 }
@@ -690,10 +777,21 @@ func (vm *VM) unqueriedSObjectFieldError(receiver Value, field string, enforceDM
 		return nil
 	}
 	if marker, ok := receiver.Fields[sobjectDMLAccessibleField]; ok && marker.Kind == ValueBool && marker.Bool {
-		if _, _, exists := objectFieldValue(receiver, field); !exists {
+		// Direct property reads on a caller-owned DML value may expose fields
+		// already present on that value. The stricter "queried field" contract
+		// applies to SObject.get()/getSObjects(), which pass enforceDML=true.
+		if !enforceDML {
 			return nil
 		}
 		if isDefaultedSObjectField(receiver, field) {
+			return nil
+		}
+		// A caller-owned DML value has a deliberately narrow projection: ordinary
+		// fields that were not assigned by the caller read as null, and calculated
+		// or summary fields are not materialized until a query/trigger view. They
+		// must not be mistaken for SOQL omissions. Platform-maintained fields are
+		// the exception; their omission remains observable through get().
+		if !isSObjectSystemField(field) {
 			return nil
 		}
 	}
@@ -713,6 +811,21 @@ func (vm *VM) unqueriedSObjectFieldError(receiver Value, field string, enforceDM
 	if vm.loadedParentRelationshipForField(receiver, field) {
 		return nil
 	}
+	// Omitted lookups and parents remain unavailable even when the stored
+	// relationship is null. DML and trigger views retain their separate rules.
+	if !isTriggerSObject(receiver) && !isParentProjectionSObject(receiver) {
+		if _, definition, exists := vm.sObjectFieldDefinition(receiver.Type, field); exists && definition.Type == storage.FieldReference {
+			return newExceptionError("SObjectException", fmt.Sprintf("SObject row was retrieved via SOQL without querying the requested field: %s.%s", receiver.Type, field))
+		}
+		if relation, exists := vm.parentRelationshipForName(receiver, field); exists {
+			// Named metadata references use the existing metadata resolver rather
+			// than an ordinary record projection (EntityDefinition/FieldDefinition).
+			_, reference, known := vm.sObjectFieldDefinition(receiver.Type, relation.Field)
+			if !known || !fieldReferencesNamedMetadata(reference) {
+				return newExceptionError("SObjectException", fmt.Sprintf("SObject row was retrieved via SOQL without querying the requested field: %s.%s", receiver.Type, field))
+			}
+		}
+	}
 	if vm.unqueriedLookupFieldCanDefaultNull(receiver, field) {
 		return nil
 	}
@@ -729,7 +842,7 @@ func (vm *VM) unqueriedSObjectFieldError(receiver Value, field string, enforceDM
 		return nil
 	}
 	if !enforceDML {
-		if _, ok := vm.lazyChildRelationshipValue(receiver, field); ok {
+		if _, ok := vm.jsonSObjectChildRelationshipType(receiver.Type, field); ok {
 			return nil
 		}
 	}
@@ -760,6 +873,11 @@ func (vm *VM) unqueriedStoredDefaultFieldValue(receiver Value, field string) (Va
 		return Null, false
 	}
 	if unqueriedStoredDefaultFieldMustRemainHidden(canonical) {
+		return Null, false
+	}
+	// A stored, read-only derived value is not made selected by matching its
+	// schema default. Its query projection remains authoritative.
+	if !storage.FieldFlagValue(fieldDef.Createable, true) && !storage.FieldFlagValue(fieldDef.Updateable, true) {
 		return Null, false
 	}
 	if strings.TrimSpace(fieldDef.DefaultValue) == "" {
@@ -863,6 +981,10 @@ func (vm *VM) lazyChildRelationshipValue(receiver Value, field string) (Value, b
 	if vm == nil || vm.Org == nil || receiver.Kind != ValueObject || receiver.Fields == nil || strings.TrimSpace(receiver.Type) == "" || strings.TrimSpace(field) == "" {
 		return Null, false
 	}
+	parentID := sObjectIDFromFields(receiver.Fields)
+	if parentID == "" {
+		return Null, false
+	}
 	parentObject, ok := vm.resolveObjectName(receiver.Type)
 	if !ok {
 		parentObject = receiver.Type
@@ -871,7 +993,6 @@ func (vm *VM) lazyChildRelationshipValue(receiver Value, field string) (Value, b
 	if !lookup.OK {
 		return Null, false
 	}
-	parentID := sObjectIDFromFields(receiver.Fields)
 	children := []Value(nil)
 	seen := map[storage.ID]bool{}
 	for _, target := range lookup.Targets {
@@ -1094,7 +1215,18 @@ func (vm *VM) unqueriedParentRelationshipCanDefaultNull(receiver Value, field st
 			apiName = name
 		}
 		if fieldDef.Type == storage.FieldReference && vmParentRelationshipNameMatches(vm.Org.Namespace, apiName, field) {
-			return true
+			// Metadata relationships retain their metadata resolver; they do not
+			// follow the ordinary record-lookup projection rule.
+			if storage.IsCustomMetadataDefinition(object.Definition) || fieldReferencesNamedMetadata(fieldDef) {
+				return true
+			}
+			// A populated ordinary lookup does not select its parent relationship.
+			// Only a missing parent can default to null for an omitted projection.
+			_, lookupValue, exists := objectFieldValue(receiver, apiName)
+			if !exists {
+				lookupValue, exists = vm.storedSObjectFieldValueIgnoringProjection(receiver, apiName)
+			}
+			return !exists || lookupValue.Kind == ValueNull
 		}
 	}
 	return false
@@ -1120,6 +1252,15 @@ func (vm *VM) unqueriedLookupFieldCanDefaultNull(receiver Value, field string) b
 func (vm *VM) loadedParentRelationshipForField(receiver Value, field string) bool {
 	if vm == nil || vm.Org == nil || receiver.Kind != ValueObject || strings.TrimSpace(receiver.Type) == "" {
 		return false
+	}
+	// A materialized parent is a loaded relationship even when the selection
+	// marker omits it, as with TYPEOF. A lookup Id alone is not a loaded parent.
+	if relation, ok := vm.parentRelationshipForName(receiver, field); ok {
+		for _, alias := range parentRelationshipFieldAliases(relation, field) {
+			if _, value, exists := objectFieldValue(receiver, alias); exists && value.Kind == ValueObject {
+				return true
+			}
+		}
 	}
 	objectName, ok := vm.resolveObjectName(receiver.Type)
 	if !ok {
@@ -1414,8 +1555,26 @@ func dmlAccessibleSObject(value Value) bool {
 	return ok && marker.Kind == ValueBool && marker.Bool
 }
 
+// Currency formula values are materialized for trigger/query views. Reading a
+// caller-owned DML input must not evaluate missing values from persisted state.
+func isCurrencyFormulaField(field storage.Field) bool {
+	return field.Type == storage.FieldCalculated &&
+		strings.TrimSpace(field.Formula) != "" &&
+		strings.EqualFold(strings.TrimSpace(field.DisplayType), "CURRENCY")
+}
+
+// Missing caller text formulas, like currency formulas, are materialized only
+// by query/trigger views or explicit recalculation, not an ordinary field read.
+func isTextFormulaField(field storage.Field) bool {
+	return field.Type == storage.FieldCalculated && strings.TrimSpace(field.Formula) != "" &&
+		(strings.EqualFold(field.DisplayType, "STRING") || strings.EqualFold(field.DisplayType, "TEXT"))
+}
+
 func shouldEvaluateSObjectFormulaField(value Value, field storage.Field) bool {
 	if strings.TrimSpace(field.Formula) == "" {
+		return false
+	}
+	if (isCurrencyFormulaField(field) || isTextFormulaField(field)) && !isTriggerSObject(value) {
 		return false
 	}
 	if !dmlAccessibleSObject(value) {
@@ -1435,11 +1594,25 @@ func (vm *VM) sObjectFieldDefinition(typeName, field string) (storage.ObjectDefi
 	}
 	objectName, ok := vm.resolveObjectName(typeName)
 	if !ok {
-		return storage.ObjectDefinition{}, storage.Field{}, false
+		// Change-event sObjects are standard platform types without ordinary
+		// object-describe entries. Keep their known header field available to
+		// the shared SObject member dispatcher.
+		if strings.HasSuffix(strings.ToLower(strings.TrimSpace(typeName)), "changeevent") {
+			objectName = typeName
+		} else {
+			return storage.ObjectDefinition{}, storage.Field{}, false
+		}
 	}
 	definition := vm.describePreparedDefinition(objectName, vm.Org.Objects[objectName].Definition)
 	fieldName, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field)
-	if !ok {
+	fieldDefinition, defined := definition.Fields[fieldName]
+	if ok && !defined {
+		fieldName, fieldDefinition, defined = storage.ResolveFieldDefinition(definition, vm.Org.Namespace, field)
+	}
+	if !defined && strings.EqualFold(field, "ChangeEventHeader") && strings.HasSuffix(strings.ToLower(objectName), "changeevent") {
+		return definition, storage.Field{APIName: "ChangeEventHeader", Label: "Change Event Header", Type: storage.FieldString, DisplayType: "STRING"}, true
+	}
+	if !ok || !defined {
 		if systemField, systemOK := syntheticSObjectSystemField(field); systemOK {
 			return definition, systemField, true
 		}
@@ -1450,7 +1623,7 @@ func (vm *VM) sObjectFieldDefinition(typeName, field string) (storage.ObjectDefi
 		}
 		return storage.ObjectDefinition{}, storage.Field{}, false
 	}
-	return definition, definition.Fields[fieldName], true
+	return definition, fieldDefinition, true
 }
 
 func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, bool) {
@@ -1473,11 +1646,6 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 		return value, true
 	}
 	_, hasQueriedFields := receiver.Fields[sobjectQueriedFieldsField]
-	if hasQueriedFields {
-		if value, ok := vm.lazyChildRelationshipValue(receiver, field); ok {
-			return value, true
-		}
-	}
 	if relationshipType, ok := vm.jsonSObjectChildRelationshipType(receiver.Type, field); ok {
 		children := List()
 		children.Type = relationshipType
@@ -1499,6 +1667,9 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 		return Null, false
 	}
 	if fieldDef.Type == storage.FieldCalculated {
+		if (isCurrencyFormulaField(fieldDef) || isTextFormulaField(fieldDef)) && !isTriggerSObject(receiver) {
+			return storageFieldNullValue(fieldDef), true
+		}
 		if shouldEvaluateSObjectFormulaField(receiver, fieldDef) {
 			if record, ok := vm.formulaRecordFromSObject(receiver); ok {
 				if value, _, ok := dml.EvaluateRecordFormulaValueInOrg(fieldDef.Formula, fieldDef, vm.Org, definition, record); ok {
@@ -1522,6 +1693,9 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 		}
 	}
 	if fieldDef.Type == storage.FieldSummary {
+		if !isTriggerSObject(receiver) {
+			return storageFieldNullValue(fieldDef), true
+		}
 		if dmlAccessibleSObject(receiver) {
 			if value, ok := emptySummaryStorageValue(fieldDef); ok {
 				return vmValueFromStorage(value), true
@@ -1559,7 +1733,7 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 		}
 	}
 	if fieldDef.Type == storage.FieldBoolean {
-		if storage.IsCustomMetadataDefinition(definition) || storage.IsCustomSettingDefinition(definition) {
+		if strings.EqualFold(fieldDef.APIName, "IsDeleted") || storage.IsCustomMetadataDefinition(definition) || storage.IsCustomSettingDefinition(definition) {
 			return Value{Kind: ValueNull, Type: "Boolean"}, true
 		}
 		return Bool(false), true
@@ -1579,10 +1753,15 @@ func (vm *VM) unknownSObjectFieldError(receiver Value, field string) error {
 	if _, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field); ok {
 		return nil
 	}
+	// Event metadata omits the platform's
+	// ReplayId field, which remains readable and has a separate write guard.
+	if vm.hasPlatformEventMetadata(objectName) && strings.EqualFold(field, "ReplayId") {
+		return nil
+	}
 	if _, ok := syntheticSObjectSystemField(field); ok {
 		return nil
 	}
-	if isCustomObjectLikeName(objectName) {
+	if _, queried := receiver.Fields[sobjectQueriedFieldsField]; !queried && isCustomObjectLikeName(objectName) && !vm.hasPlatformEventMetadata(objectName) {
 		if synthetic := syntheticSchemaField(field); synthetic.APIName != "" {
 			return nil
 		}
@@ -2004,6 +2183,13 @@ func (vm *VM) hydrateQueriedRecordTypeRelationships(value Value) {
 			continue
 		}
 		if recordType, ok := vm.recordTypeRelationshipValue(object.Definition, lookupID); ok {
+			if _, projected, exists := objectFieldValue(value, relation.ParentRelationship); exists && projected.Kind == ValueObject {
+				for field, selected := range projected.Fields {
+					if _, _, hydrated := objectFieldValue(recordType, field); !hydrated {
+						recordType.Fields[field] = selected
+					}
+				}
+			}
 			value.Fields[relation.ParentRelationship] = recordType
 		}
 	}
@@ -2106,6 +2292,14 @@ func parentRelationshipFieldAliases(relation storage.Relationship, relationshipN
 }
 
 func (vm *VM) syntheticParentRelationship(definition storage.ObjectDefinition, relationshipName string) (storage.Relationship, bool) {
+	if storage.IsCustomSettingDefinition(definition) && strings.EqualFold(relationshipName, "SetupOwner") {
+		return storage.Relationship{
+			Field:              "SetupOwnerId",
+			ParentObjects:      []string{"Organization", "Profile", "User"},
+			ParentRelationship: "SetupOwner",
+			Polymorphic:        true,
+		}, true
+	}
 	if strings.EqualFold(definition.APIName, "RelationshipDomain") {
 		switch strings.ToLower(strings.TrimSpace(relationshipName)) {
 		case "childsobject":
@@ -2327,6 +2521,15 @@ func (vm *VM) findOrgRecord(objectName string, id storage.ID) (storage.Record, b
 }
 
 func (vm *VM) formulaRecordFromSObject(value Value) (storage.Record, bool) {
+	if isTriggerSObject(value) {
+		if _, readOnly := sobjectReadOnlyReason(value); readOnly {
+			// Formula reads must not inherit DML's write restriction. Keep the
+			// original Trigger record readonly while
+			// preserving the admitted Decimal lifecycle's after-trigger reads.
+			value = cloneValuePreserveRefs(value)
+			delete(value.Fields, sobjectReadOnlyField)
+		}
+	}
 	record, err := vm.recordFromValue(&value)
 	if err != nil {
 		return storage.Record{}, false
@@ -2489,6 +2692,15 @@ func summaryFilterMatches(value storage.Value, filter storage.SummaryFilterItem)
 }
 
 func storageValueMatchesText(value storage.Value, text string) bool {
+	for _, candidate := range strings.Split(text, ",") {
+		if storageValueMatchesSingleText(value, candidate) {
+			return true
+		}
+	}
+	return false
+}
+
+func storageValueMatchesSingleText(value storage.Value, text string) bool {
 	text = strings.TrimSpace(text)
 	switch value.Kind {
 	case storage.ValueBoolean:
@@ -2591,4 +2803,94 @@ var errSObjectFieldTokenNull = errors.New("field token is null")
 
 func isSObjectFieldTokenType(typeName string) bool {
 	return strings.EqualFold(typeName, "Schema.SObjectField") || strings.EqualFold(typeName, "SObjectField")
+}
+
+// Equal SObjects hash their visible field values, not the record map's address.
+// Internal selection/error/clone markers do not participate in value equality.
+func sObjectHashCode(value Value, seen map[uint64]bool) int32 {
+	if value.Ref != 0 {
+		if seen[value.Ref] {
+			return 0
+		}
+		seen[value.Ref] = true
+		defer delete(seen, value.Ref)
+	}
+	hash := javaStringHashCode(strings.ToLower(stripSObjectNamespacePrefix(canonicalRuntimePlatformType(value.Type))))
+	for field, child := range value.Fields {
+		if !sObjectEqualityFieldIncluded(value, field, child) {
+			continue
+		}
+		hash += javaStringHashCode(strings.ToLower(field)) ^ sObjectFieldHashCode(child, seen)
+	}
+	return hash
+}
+
+func sObjectFieldHashCode(value Value, seen map[uint64]bool) int32 {
+	if id, ok := sObjectIDFromValue(value); ok {
+		return javaStringHashCode(canonicalIDMapKey(string(id)))
+	}
+	if isRelationshipNull(value) || sObjectHashMissingRelationship(value, seen) {
+		return 0
+	}
+	if value.Kind == ValueObject && sObjectValueType(value.Type) {
+		return sObjectHashCode(value, seen)
+	}
+	if value.Kind != ValueList && value.Kind != ValueSet && value.Kind != ValueMap {
+		return valueHashCode(value)
+	}
+	if value.Ref != 0 {
+		if seen[value.Ref] {
+			return 0
+		}
+		seen[value.Ref] = true
+		defer delete(seen, value.Ref)
+	}
+	var hash int32
+	switch value.Kind {
+	case ValueList:
+		hash = 1
+		for _, item := range value.List {
+			hash = 31*hash + sObjectFieldHashCode(item, seen)
+		}
+	case ValueSet:
+		for _, item := range value.Set {
+			hash += sObjectFieldHashCode(item, seen)
+		}
+	case ValueMap:
+		for key, item := range value.Map {
+			hash += javaStringHashCode(key) ^ sObjectFieldHashCode(item, seen)
+		}
+	}
+	return hash
+}
+
+// Mirror the null-projection equality rule while bounding cyclic relationships.
+func sObjectHashMissingRelationship(value Value, seen map[uint64]bool) bool {
+	if value.Kind != ValueObject || value.Fields == nil {
+		return false
+	}
+	if value.Ref != 0 {
+		if seen[value.Ref] {
+			return false
+		}
+		seen[value.Ref] = true
+		defer delete(seen, value.Ref)
+	}
+	if _, id, ok := objectFieldValue(value, "Id"); ok && id.Kind != ValueNull {
+		return false
+	}
+	seenField := false
+	for field, child := range value.Fields {
+		if isInternalSObjectField(field) {
+			continue
+		}
+		seenField = true
+		if isExplicitSObjectField(value, field) {
+			return false
+		}
+		if child.Kind != ValueNull && !sObjectHashMissingRelationship(child, seen) {
+			return false
+		}
+	}
+	return seenField
 }

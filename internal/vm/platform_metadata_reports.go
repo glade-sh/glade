@@ -61,8 +61,97 @@ func metadataMetadataTypeStaticValue(name string) (Value, bool) {
 	return namedEnumStaticValue("Metadata.MetadataType", metadataMetadataTypeNames, name)
 }
 
+// Metadata enum declaration order differs from stub member order.
+func metadataEnumSpec(typeName string) (string, []string, bool) {
+	var canonical, names string
+	switch strings.ToLower(typeName) {
+	case "metadata.deploystatus":
+		return "Metadata.DeployStatus", metadataDeployStatusNames, true
+	case "metadata.metadatatype":
+		return "Metadata.MetadataType", metadataMetadataTypeNames, true
+	case "metadata.deployproblemtype":
+		canonical, names = "Metadata.DeployProblemType", "Warning|Error|Info"
+	case "metadata.uibehavior":
+		canonical, names = "Metadata.UiBehavior", "Edit|Required|Readonly"
+	case "metadata.layoutsectionstyle":
+		canonical, names = "Metadata.LayoutSectionStyle", "TwoColumnsTopToBottom|TwoColumnsLeftToRight|OneColumn|CustomLinks"
+	case "metadata.sortorder":
+		canonical, names = "Metadata.SortOrder", "Asc_x|Desc_x"
+	case "metadata.reportchartcomponentsize":
+		canonical, names = "Metadata.ReportChartComponentSize", "SMALL|MEDIUM|LARGE"
+	case "metadata.summarylayoutstyleenum":
+		canonical, names = "Metadata.SummaryLayoutStyleEnum", "Default_x|QuoteTemplate|DefaultQuoteTemplate|ServiceReportTemplate|ChildServiceReportTemplateStyle|DefaultServiceReportTemplate|CaseInteraction|QuickActionLayoutLeftRight|QuickActionLayoutTopDown|PathAssistant"
+	case "metadata.feedlayoutcomponenttype":
+		canonical, names = "Metadata.FeedLayoutComponentType", "HelpAndToolLinks|CustomButtons|Following|Followers|CustomLinks|Milestones|SimilarCases|CaseExperts|Topics|CaseUnifiedFiles|Visualforce"
+	case "metadata.feedlayoutfilterposition":
+		canonical, names = "Metadata.FeedLayoutFilterPosition", "CenterDropDown|LeftFixed|LeftFloat"
+	case "metadata.feedlayoutfiltertype":
+		canonical, names = "Metadata.FeedLayoutFilterType", "AllUpdates|FeedItemType|Custom"
+	case "metadata.feeditemtypeenum":
+		canonical, names = "Metadata.FeedItemTypeEnum", "TrackedChange|UserStatus|TextPost|AdvancedTextPost|LinkPost|ContentPost|DashboardComponentAlert|PollPost|RypplePost|ProfileSkillPost|DashboardComponentSnapshot|TestItem|ApprovalPost|CaseCommentPost|ReplyPost|EmailMessageEvent|CallLogPost|ChangeStatusPost|AttachArticleEvent|MilestoneEvent|ActivityEvent|ChatTranscriptPost|CollaborationGroupCreated|AttachExternalDocumentEvent|CollaborationGroupUnarchived|SocialPost|QuestionPost|Undefined|FacebookPost|BasicTemplateFeedItem|CreateRecordEvent|CanvasPost|AnnouncementPost"
+	case "metadata.layoutheader":
+		canonical, names = "Metadata.LayoutHeader", "PersonalTagging|PublicTagging"
+	default:
+		return "", nil, false
+	}
+	return canonical, strings.Split(names, "|"), true
+}
+
+// E001-E006/E011-E034 capture every admitted DTO below. Keep the defaults
+// of neighbouring local-only Metadata mocks outside this measured set.
+func metadataCapturedDTOType(typeName string) bool {
+	switch strings.ToLower(typeName) {
+	case "metadata.custommetadata", "metadata.custommetadatavalue",
+		"metadata.layout", "metadata.layoutcolumn", "metadata.layoutitem", "metadata.layoutsection",
+		"metadata.minilayout", "metadata.quickactionlist", "metadata.quickactionlistitem",
+		"metadata.relatedcontent", "metadata.relatedcontentitem", "metadata.relatedlist", "metadata.relatedlistitem",
+		"metadata.reportchartcomponentlayoutitem", "metadata.analyticscloudcomponentlayoutitem",
+		"metadata.sidebarcomponent", "metadata.container", "metadata.customconsolecomponents",
+		"metadata.primarytabcomponents", "metadata.subtabcomponents", "metadata.summarylayout", "metadata.summarylayoutitem",
+		"metadata.feedlayout", "metadata.feedlayoutfilter", "metadata.feedlayoutcomponent",
+		"metadata.platformactionlist", "metadata.platformactionlistitem",
+		"metadata.deploymessage", "metadata.deploydetails", "metadata.deployresult":
+		return true
+	default:
+		return false
+	}
+}
+
+// Collection members are initialized;
+// scalar and nested DTO members remain raw null rather than synthetic values.
+func metadataDTOFieldDefault(typeName string) Value {
+	switch collectionBase(typeName) {
+	case "List":
+		return typedList(typeName)
+	case "Set":
+		value := Set()
+		value.Type = typeName
+		return value
+	}
+	if isMapType(typeName) {
+		return typedMap(typeName)
+	}
+	return Null
+}
+
+// Only the DTO is copied; collection and child identities survive.
+func cloneMetadataDTO(receiver Value) Value {
+	copy := receiver
+	copy.Ref = newValueRef()
+	copy.Fields = make(map[string]Value, len(receiver.Fields))
+	for name, value := range receiver.Fields {
+		copy.Fields[name] = value
+	}
+	return copy
+}
+
 func soapTypeForStorageField(field storage.Field) string {
+	if strings.EqualFold(field.DisplayType, "ADDRESS") {
+		return "ADDRESS"
+	}
 	switch field.Type {
+	case storage.FieldAddress:
+		return "ADDRESS"
 	case storage.FieldID, storage.FieldReference:
 		return "ID"
 	case storage.FieldBoolean:
@@ -75,6 +164,8 @@ func soapTypeForStorageField(field storage.Field) string {
 		return "DATE"
 	case storage.FieldDateTime:
 		return "DATETIME"
+	case storage.FieldTime:
+		return "TIME"
 	case storage.FieldBlob:
 		return "BASE64BINARY"
 	default:
@@ -82,7 +173,7 @@ func soapTypeForStorageField(field storage.Field) string {
 	}
 }
 
-var schemaSOAPTypeNames = []string{"ID", "STRING", "BOOLEAN", "INTEGER", "DOUBLE", "DATE", "DATETIME", "TIME", "BASE64BINARY", "ANYTYPE"}
+var schemaSOAPTypeNames = []string{"ID", "STRING", "BOOLEAN", "INTEGER", "DOUBLE", "DATE", "DATETIME", "TIME", "BASE64BINARY", "ANYTYPE", "ADDRESS"}
 
 var schemaDisplayTypeNames = []string{"STRING", "BOOLEAN", "DOUBLE", "INTEGER", "PERCENT", "CURRENCY", "DATE", "DATETIME", "TIME", "PICKLIST", "MULTIPICKLIST", "DATACATEGORYGROUPREFERENCE", "BASE64", "ID", "REFERENCE", "TEXTAREA", "PHONE", "COMBOBOX", "URL", "EMAIL", "ANYTYPE", "LOCATION", "ENCRYPTEDSTRING", "COMPLEXVALUE", "ADDRESS", "SOBJECT", "LONG", "JSON", "FLOATARRAY", "TEXTARRAY"}
 
@@ -110,6 +201,12 @@ func schemaDisplayTypeStaticValue(name string) (Value, bool) {
 }
 
 func schemaDisplayTypeValue(name string) Value {
+	// Salesforce exposes Blob fields through Schema.DisplayType.BASE64. The
+	// storage catalog uses BLOB as its internal field type, so normalize that
+	// spelling at the platform boundary.
+	if strings.EqualFold(strings.TrimSpace(name), "BLOB") {
+		name = "BASE64"
+	}
 	value, ok := namedEnumStaticValue("Schema.DisplayType", schemaDisplayTypeNames, "Schema.DisplayType."+name)
 	if ok {
 		return value
@@ -144,15 +241,20 @@ func metadataMetadataTypeValues(args []Value) (Value, error) {
 	return namedEnumValues("Metadata.MetadataType", metadataMetadataTypeNames, args)
 }
 
+// R223-R244: invalid inputs fail before the hosted Reports service boundary.
+// Valid report/instance identifiers cannot manufacture local service results.
+func reportsReportBoundary(callee string, reportID Value) error {
+	if reportID.Kind == ValueNull || !strings.HasPrefix(scalarText(reportID), "00O") {
+		return newExceptionError("System.NoDataFoundException", "The data you’re trying to access is unavailable.")
+	}
+	return newExceptionError("System.UnsupportedOperationException", callee+" requires the hosted Reports service")
+}
+
 func (vm *VM) reportsDescribeReport(args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Null, fmt.Errorf("reports.ReportManager.describeReport expects report Id")
 	}
-	describe := Object("reports.ReportDescribeResult")
-	describe.Fields["reportMetadata"] = vm.reportsReportMetadata(args[0], Null)
-	describe.Fields["reportExtendedMetadata"] = vm.reportsReportExtendedMetadata()
-	describe.Fields["reportTypeMetadata"] = vm.reportsReportTypeMetadata()
-	return describe, nil
+	return Null, reportsReportBoundary("reports.ReportManager.describeReport", args[0])
 }
 
 func (vm *VM) reportsDatatypeFilterOperatorMap(args []Value) (Value, error) {
@@ -166,50 +268,36 @@ func (vm *VM) reportsGetReportInstance(args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Null, fmt.Errorf("reports.ReportManager.getReportInstance expects instance Id")
 	}
-	instanceID := scalarText(args[0])
-	if vm.reportInstances != nil {
-		if value, ok := vm.reportInstances[instanceID]; ok {
-			return cloneValue(value), nil
-		}
+	if args[0].Kind == ValueNull {
+		return Null, newExceptionError("reports.ReportRunException", "We ran into an error when running this report. Try to re-submit your query.")
 	}
-	return vm.reportsReportInstance(args[0], Null, vm.reportsReportResults(Null, Null, false)), nil
+	if !strings.HasPrefix(scalarText(args[0]), "0LG") {
+		return Null, newExceptionError("System.NoDataFoundException", "The instance you requested does not exist.")
+	}
+	return Null, newExceptionError("System.UnsupportedOperationException", "reports.ReportManager.getReportInstance requires the hosted Reports service")
 }
 
 func (vm *VM) reportsGetReportInstances(args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Null, fmt.Errorf("reports.ReportManager.getReportInstances expects report Id")
 	}
-	out := typedList("List<reports.ReportInstance>")
-	reportID := scalarText(args[0])
-	for _, instance := range vm.reportInstances {
-		if _, value, found := objectFieldValue(instance, "reportId"); found && scalarText(value) == reportID {
-			out.List = append(out.List, cloneValue(instance))
-		}
-	}
-	return out, nil
+	return Null, reportsReportBoundary("reports.ReportManager.getReportInstances", args[0])
 }
 
 func (vm *VM) reportsRunAsyncReport(args []Value) (Value, error) {
-	reportID, metadata, includeDetails, err := vm.reportsReportArgs(args, "reports.ReportManager.runAsyncReport")
+	reportID, _, _, err := vm.reportsReportArgs(args, "reports.ReportManager.runAsyncReport")
 	if err != nil {
 		return Null, err
 	}
-	results := vm.reportsReportResults(reportID, metadata, includeDetails)
-	instanceID := platformScalar("Id", vm.nextReportInstanceID())
-	instance := vm.reportsReportInstance(instanceID, reportID, results)
-	if vm.reportInstances == nil {
-		vm.reportInstances = make(map[string]Value)
-	}
-	vm.reportInstances[scalarText(instanceID)] = cloneValue(instance)
-	return instance, nil
+	return Null, reportsReportBoundary("reports.ReportManager.runAsyncReport", reportID)
 }
 
 func (vm *VM) reportsRunReport(args []Value) (Value, error) {
-	reportID, metadata, includeDetails, err := vm.reportsReportArgs(args, "reports.ReportManager.runReport")
+	reportID, _, _, err := vm.reportsReportArgs(args, "reports.ReportManager.runReport")
 	if err != nil {
 		return Null, err
 	}
-	return vm.reportsReportResults(reportID, metadata, includeDetails), nil
+	return Null, reportsReportBoundary("reports.ReportManager.runReport", reportID)
 }
 
 func (vm *VM) reportsReportArgs(args []Value, callee string) (Value, Value, bool, error) {
@@ -223,90 +311,13 @@ func (vm *VM) reportsReportArgs(args []Value, callee string) (Value, Value, bool
 		switch {
 		case arg.Kind == ValueBool:
 			includeDetails = arg.Bool
-		case arg.Kind == ValueObject && strings.EqualFold(arg.Type, "reports.ReportMetadata"):
+		case arg.Kind == ValueNull, arg.Kind == ValueObject && strings.EqualFold(arg.Type, "reports.ReportMetadata"):
 			metadata = arg
 		default:
 			return Null, Null, false, fmt.Errorf("%s expects report Id[, ReportMetadata][, includeDetails]", callee)
 		}
 	}
 	return reportID, metadata, includeDetails, nil
-}
-
-func (vm *VM) reportsReportResults(reportID, metadata Value, includeDetails bool) Value {
-	results := Object("reports.ReportResults")
-	results.Fields["allData"] = Bool(false)
-	results.Fields["factMap"] = typedMap("Map<String,reports.ReportFact>")
-	results.Fields["groupingsAcross"] = Object("reports.Dimension")
-	results.Fields["groupingsDown"] = Object("reports.Dimension")
-	results.Fields["hasDetailRows"] = Bool(includeDetails)
-	results.Fields["reportExtendedMetadata"] = vm.reportsReportExtendedMetadata()
-	results.Fields["reportMetadata"] = vm.reportsReportMetadata(reportID, metadata)
-	return results
-}
-
-func (vm *VM) reportsReportMetadata(reportID, override Value) Value {
-	if override.Kind == ValueObject && strings.EqualFold(override.Type, "reports.ReportMetadata") {
-		metadata := cloneValue(override)
-		if _, _, ok := objectFieldValue(metadata, "id"); !ok && reportID.Kind != ValueNull {
-			metadata.Fields["id"] = reportID
-		}
-		return metadata
-	}
-	metadata := Object("reports.ReportMetadata")
-	if reportID.Kind != ValueNull {
-		metadata.Fields["id"] = reportID
-	}
-	metadata.Fields["name"] = String("Local Report")
-	metadata.Fields["developerName"] = String("Local_Report")
-	metadata.Fields["groupingsAcross"] = typedList("List<reports.GroupingInfo>")
-	metadata.Fields["groupingsDown"] = typedList("List<reports.GroupingInfo>")
-	metadata.Fields["aggregates"] = typedList("List<String>")
-	metadata.Fields["buckets"] = typedList("List<reports.BucketField>")
-	metadata.Fields["detailColumns"] = typedList("List<String>")
-	metadata.Fields["reportFilters"] = typedList("List<reports.ReportFilter>")
-	metadata.Fields["historicalSnapshotDates"] = typedList("List<String>")
-	metadata.Fields["sortBy"] = typedList("List<reports.SortColumn>")
-	metadata.Fields["standardFilters"] = typedList("List<reports.StandardFilter>")
-	metadata.Fields["customSummaryFormula"] = typedMap("Map<String,reports.ReportCsf>")
-	metadata.Fields["crossFilters"] = typedList("List<reports.CrossFilter>")
-	metadata.Fields["hasDetailRows"] = Bool(false)
-	metadata.Fields["hasRecordCount"] = Bool(false)
-	metadata.Fields["showSubtotals"] = Bool(false)
-	metadata.Fields["showGrandTotal"] = Bool(false)
-	return metadata
-}
-
-func (vm *VM) reportsReportExtendedMetadata() Value {
-	metadata := Object("reports.ReportExtendedMetadata")
-	metadata.Fields["aggregateColumnInfo"] = typedMap("Map<String,reports.AggregateColumn>")
-	metadata.Fields["detailColumnInfo"] = typedMap("Map<String,reports.DetailColumn>")
-	metadata.Fields["groupingColumnInfo"] = typedMap("Map<String,reports.GroupingColumn>")
-	return metadata
-}
-
-func (vm *VM) reportsReportTypeMetadata() Value {
-	metadata := Object("reports.ReportTypeMetadata")
-	metadata.Fields["categories"] = typedList("List<reports.ReportTypeColumnCategory>")
-	metadata.Fields["standardDateFilterDurationGroups"] = typedList("List<reports.StandardDateFilterDurationGroup>")
-	metadata.Fields["standardFilterInfos"] = typedMap("Map<String,reports.StandardFilterInfo>")
-	return metadata
-}
-
-func (vm *VM) reportsReportInstance(instanceID, reportID, results Value) Value {
-	instance := Object("reports.ReportInstance")
-	instance.Fields["id"] = instanceID
-	instance.Fields["reportId"] = reportID
-	instance.Fields["reportResults"] = results
-	instance.Fields["status"] = String("Success")
-	instance.Fields["ownerId"] = platformScalar("Id", vm.currentUserInfoField("Id", "005000000000001"))
-	now := platformScalar("Datetime", formatPlatformDatetime(vm.fakeNow))
-	instance.Fields["requestDate"] = now
-	instance.Fields["completionDate"] = now
-	return instance
-}
-
-func (vm *VM) nextReportInstanceID() string {
-	return fmt.Sprintf("0LG000000%06d", len(vm.reportInstances)+1)
 }
 
 func prefCenterGenerateToken(args []Value) (Value, error) {
@@ -389,19 +400,32 @@ func waveTemplatesStaticDefault(callee string, args []Value) (Value, error) {
 	return out, nil
 }
 
-func flowInterviewCreate(args []Value) (Value, error) {
+func (vm *VM) flowInterviewCreate(args []Value) (Value, error) {
 	if len(args) != 2 && len(args) != 3 {
 		return Null, fmt.Errorf("Flow.Interview.createInterview expects flow name and input variables")
 	}
 	offset := 0
 	if len(args) == 3 {
-		if args[0].Kind != ValueString {
+		if args[0].Kind != ValueString && args[0].Kind != ValueNull {
 			return Null, fmt.Errorf("Flow.Interview.createInterview expects namespace String")
 		}
 		offset = 1
 	}
+	if args[offset].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "Argument flowName cannot be null")
+	}
+	if args[offset+1].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "Argument initialValues cannot be null")
+	}
 	if args[offset].Kind != ValueString || args[offset+1].Kind != ValueMap {
 		return Null, fmt.Errorf("Flow.Interview.createInterview expects flow name and input variables")
+	}
+	name := args[offset].Text
+	if offset == 1 && args[0].Kind == ValueString && args[0].Text != "" {
+		name = args[0].Text + "." + name
+	}
+	if _, found := vm.autolaunchedFlowRule(name); !found {
+		return Null, newExceptionError("System.TypeException", "Invalid type: "+name)
 	}
 	interview := Object("Flow.Interview")
 	if offset == 1 {
@@ -415,7 +439,21 @@ func flowInterviewCreate(args []Value) (Value, error) {
 	return interview, nil
 }
 
+func (vm *VM) metadataDeploymentTestRestriction() error {
+	if vm.testContext != nil {
+		return newExceptionError("System.AsyncException", "Metadata cannot be deployed from within a test")
+	}
+	return nil
+}
+
 func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, error) {
+	if err := vm.metadataDeploymentTestRestriction(); err != nil {
+		return Null, err
+	}
+	if len(args) == 2 && args[0].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "Deploy container is null")
+	}
+
 	if len(args) != 2 || args[0].Kind != ValueObject || args[0].Type != "Metadata.DeployContainer" {
 		return Null, fmt.Errorf("Metadata.Operations.enqueueDeployment expects DeployContainer and DeployCallback")
 	}
@@ -828,10 +866,19 @@ func (vm *VM) metadataRetrieve(args []Value) (Value, error) {
 	if len(args) < 2 || len(args) > 3 {
 		return Null, fmt.Errorf("Metadata.Operations.retrieve expects metadata type and full names")
 	}
+	// Malformed requests fail before reaching the hosted boundary.
+	if args[0].Kind == ValueNull || args[1].Kind == ValueNull {
+		typeName := "null"
+		if args[0].Kind != ValueNull {
+			typeName = args[0].Text
+		}
+		return Null, newExceptionError("System.TypeException", "Error retrieving metadata for entities of type: "+typeName+". Error message: type and fullNames must be specified for items to read")
+	}
 	if args[0].Kind != ValueObject || args[0].Type != "Metadata.MetadataType" {
 		return Null, fmt.Errorf("Metadata.Operations.retrieve expects metadata type")
 	}
-	if !strings.EqualFold(args[0].Text, "CustomMetadata") {
+	metadataType := strings.TrimSpace(args[0].Text)
+	if !strings.EqualFold(metadataType, "CustomMetadata") && !strings.EqualFold(metadataType, "Layout") {
 		return Null, unsupportedCallError("Metadata.Operations.retrieve " + args[0].Text)
 	}
 	names, err := metadataStringList(args[1])
@@ -843,6 +890,12 @@ func (vm *VM) metadataRetrieve(args []Value) (Value, error) {
 	}
 	out := make([]Value, 0, len(names))
 	for _, fullName := range names {
+		if strings.EqualFold(metadataType, "Layout") {
+			if layout := vm.metadataLayoutObject(fullName); layout.Kind == ValueObject {
+				out = append(out, layout)
+			}
+			continue
+		}
 		objectName, developerName := metadataCustomMetadataNames(fullName)
 		objectName, ok := vm.resolveObjectName(objectName)
 		if !ok {
@@ -863,7 +916,50 @@ func (vm *VM) metadataRetrieve(args []Value) (Value, error) {
 			}
 		}
 	}
-	return List(out...), nil
+	result := List(out...)
+	result.Type = "List<Metadata.Metadata>"
+	return result, nil
+}
+
+// metadataLayoutObject provides the local shape returned by Metadata.retrieve
+// for a layout. The runner has schema fields but no deployable layout store, so
+// expose a deterministic single-section layout derived from the target object.
+func (vm *VM) metadataLayoutObject(fullName string) Value {
+	objectName, _, ok := strings.Cut(strings.TrimSpace(fullName), "-")
+	if !ok || strings.TrimSpace(objectName) == "" || vm == nil || vm.Org == nil {
+		return Null
+	}
+	resolved, ok := vm.resolveObjectName(strings.TrimSpace(objectName))
+	if !ok {
+		return Null
+	}
+	state, ok := vm.Org.Objects[resolved]
+	if !ok {
+		return Null
+	}
+	fieldNames := make([]string, 0, len(state.Definition.Fields))
+	for name, field := range state.Definition.Fields {
+		if strings.TrimSpace(field.APIName) != "" {
+			name = field.APIName
+		}
+		if strings.TrimSpace(name) != "" {
+			fieldNames = append(fieldNames, name)
+		}
+	}
+	sort.Strings(fieldNames)
+	items := make([]Value, 0, len(fieldNames))
+	for _, fieldName := range fieldNames {
+		item := Object("Metadata.LayoutItem")
+		item.Fields["field"] = String(fieldName)
+		items = append(items, item)
+	}
+	column := Object("Metadata.LayoutColumn")
+	column.Fields["layoutItems"] = List(items...)
+	section := Object("Metadata.LayoutSection")
+	section.Fields["layoutColumns"] = List(column)
+	layout := Object("Metadata.Layout")
+	layout.Fields["layoutSections"] = List(section)
+	return layout
 }
 
 func metadataCustomMetadataObject(definition storage.ObjectDefinition, record storage.Record) Value {
@@ -1078,12 +1174,26 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 	if method != "values" && method != "valueOf" {
 		return Null, false, nil
 	}
+	// R018: values() on an unqualified top-level project enum shadows a
+	// platform enum of that name. Only values() is captured; valueOf() keeps
+	// the platform-first order. Nested and dependency enums are unchanged.
+	if method == "values" && !strings.Contains(typeName, ".") {
+		if class, ok := vm.resolveEnumClass(typeName); ok && !class.Dependency && strings.EqualFold(class.Name, typeName) {
+			return vm.callProjectEnumStaticMember(class, typeName, method, args)
+		}
+	}
 	if canonical, names, ok := coreEnumSpec(typeName); ok {
+		if canonical == "AccessType" && method == "valueOf" && len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, true, newExceptionError("NoSuchElementException", "No enum value found called null")
+		}
 		value, err := callNamedEnumStaticMember(canonical, names, method, args)
 		return value, true, err
 	}
-	if typeName == "Metadata.DeployStatus" {
-		value, err := callNamedEnumStaticMember(typeName, metadataDeployStatusNames, method, args)
+	if canonical, names, ok := metadataEnumSpec(typeName); ok {
+		if canonical == "Metadata.DeployStatus" && method == "valueOf" && len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, true, newExceptionError("System.NoSuchElementException", "No enum value found called null")
+		}
+		value, err := callNamedEnumStaticMember(canonical, names, method, args)
 		return value, true, err
 	}
 	if value, handled, err := vm.callGeneratedPlatformEnumStaticMember(typeName, method, args); handled || err != nil {
@@ -1130,6 +1240,10 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 	if !ok || len(class.EnumValues) == 0 {
 		return Null, false, nil
 	}
+	return vm.callProjectEnumStaticMember(class, typeName, method, args)
+}
+
+func (vm *VM) callProjectEnumStaticMember(class Class, typeName, method string, args []Value) (Value, bool, error) {
 	if err := vm.ensureClassInitialized(class.Name); err != nil {
 		return Null, true, err
 	}
@@ -1145,10 +1259,16 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 			value.Fields = map[string]Value{"ordinal": Int(int64(i))}
 			values = append(values, value)
 		}
-		return List(values...), true, nil
+		// The values() result is read-only; copies remain ordinary lists.
+		list := List(values...)
+		list.Fields = map[string]Value{"__enum_values_readonly": Bool(true)}
+		return list, true, nil
 	case "valueOf":
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("%s.valueOf expects String", typeName)
+		}
+		if args[0].Kind == ValueNull {
+			return Null, true, newExceptionError("NoSuchElementException", "No enum value found called null")
 		}
 		argText, ok := stringLikeValueText(args[0])
 		if !ok {
@@ -1168,12 +1288,20 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 }
 
 func callNamedEnumStaticMember(typeName string, names []string, method string, args []Value) (Value, error) {
+	// Other enums retain their own null conversion behavior.
+	if typeName == "TriggerOperation" && method == "valueOf" && len(args) == 1 && args[0].Kind == ValueNull {
+		return Null, newExceptionError("NoSuchElementException", "No enum value found called null")
+	}
 	switch method {
 	case "values":
 		return namedEnumValues(typeName, names, args)
 	case "valueOf":
 		if len(args) != 1 {
 			return Null, fmt.Errorf("%s.valueOf expects String", typeName)
+		}
+		// Leave other enums' null conversion unchanged.
+		if typeName == "LoggingLevel" && args[0].Kind == ValueNull {
+			return Null, newExceptionError("NoSuchElementException", "No enum value found called null")
 		}
 		argText, ok := stringLikeValueText(args[0])
 		if !ok {
@@ -1231,6 +1359,10 @@ func (vm *VM) callGeneratedPlatformEnumStaticMember(typeName, method string, arg
 }
 
 func generatedPlatformEnumNames(generated generatedPlatformType) []string {
+	// Captured native order differs from the alphabetized stubs.
+	if strings.EqualFold(generated.Name, "Messaging.AttachmentRetrievalOption") {
+		return []string{"NONE", "METADATA_ONLY", "METADATA_WITH_BODY"}
+	}
 	names := make([]string, 0, len(generated.StaticFields))
 	seen := make(map[string]bool, len(generated.StaticFields))
 	for _, name := range generated.StaticFieldOrder {
@@ -1316,8 +1448,8 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	if canonical, names, ok := coreEnumSpec(receiverType); ok {
 		return callNamedEnumMember(canonical, names, receiver, method, args)
 	}
-	if receiverType == "Metadata.DeployStatus" {
-		return callNamedEnumMember(receiverType, metadataDeployStatusNames, receiver, method, args)
+	if canonical, names, ok := metadataEnumSpec(receiverType); ok {
+		return callNamedEnumMember(canonical, names, receiver, method, args)
 	}
 	if receiverType == "JSONToken" {
 		if method == "equals" {
@@ -1496,42 +1628,35 @@ func metadataDeployDetailsObject() Value {
 	details := Object("Metadata.DeployDetails")
 	details.Fields["componentFailures"] = typedList("List<Metadata.DeployMessage>")
 	details.Fields["componentSuccesses"] = typedList("List<Metadata.DeployMessage>")
-	details.Fields["runTestResult"] = Null
+	// runTestResult is not an admitted Apex DTO member.
 	return details
 }
 
 func metadataDeployMessageObject() Value {
 	message := Object("Metadata.DeployMessage")
-	message.Fields["changed"] = Bool(false)
-	message.Fields["columnNumber"] = Int(0)
+	message.Fields["changed"] = Null
+	message.Fields["columnNumber"] = Null
 	message.Fields["componentType"] = Null
-	message.Fields["created"] = Bool(false)
+	message.Fields["created"] = Null
 	message.Fields["createdDate"] = Null
-	message.Fields["deleted"] = Bool(false)
+	message.Fields["deleted"] = Null
 	message.Fields["fileName"] = Null
 	message.Fields["fullName"] = Null
 	message.Fields["id"] = Null
-	message.Fields["lineNumber"] = Int(0)
+	message.Fields["lineNumber"] = Null
 	message.Fields["problem"] = Null
 	message.Fields["problemType"] = Null
-	message.Fields["success"] = Bool(false)
+	message.Fields["success"] = Null
 	return message
 }
 
 func metadataDeployResultConstructorObject() Value {
 	result := Object("Metadata.DeployResult")
-	result.Fields["id"] = Null
-	result.Fields["status"] = metadataDeployStatusValue("Succeeded")
-	result.Fields["success"] = Bool(true)
-	result.Fields["done"] = Bool(true)
-	result.Fields["numberComponentErrors"] = Int(0)
-	result.Fields["numberComponentsDeployed"] = Int(0)
-	result.Fields["numberComponentsTotal"] = Int(0)
-	result.Fields["numberTestErrors"] = Int(0)
-	result.Fields["numberTestsCompleted"] = Int(0)
-	result.Fields["checkOnly"] = Bool(false)
+	// E002 captures every admitted field, including the raw-null details member.
+	for name := range generatedPlatformTypes()["metadata.deployresult"].Fields {
+		result.Fields[name] = Null
+	}
 	result.Fields["messages"] = List()
-	result.Fields["details"] = metadataDeployDetailsObject()
 	return result
 }
 

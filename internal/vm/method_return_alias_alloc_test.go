@@ -30,6 +30,7 @@ func TestMethodReturnAliasBookkeepingAvoidsEagerSliceAllocation(t *testing.T) {
 		Params:     []Param{{Name: "value", Type: "Map<String,String>"}},
 		Program:    oneTargetProgram,
 	}
+	resultKey := mapKey(String("result"))
 	oneTargetAllocs := testing.AllocsPerRun(100, func() {
 		machine := New(nil)
 		value := Map()
@@ -37,6 +38,16 @@ func TestMethodReturnAliasBookkeepingAvoidsEagerSliceAllocation(t *testing.T) {
 		machine.Globals["alias"] = value
 		if _, err := machine.callMethodWithReceiver(oneTargetMethod, Null, []Value{value}, &Result{}); err != nil {
 			panic(err)
+		}
+		alias := machine.Globals["alias"]
+		if alias.Ref != value.Ref || alias.Kind != ValueMap || alias.Type != value.Type {
+			t.Fatal("method return lost the caller's map alias identity or type")
+		}
+		if item := alias.Map[resultKey]; item.Kind != ValueString || item.Text != "same-reference" {
+			t.Fatal("method return lost the caller's map mutation")
+		}
+		if len(alias.MapOrder) != 1 || alias.MapOrder[0] != resultKey {
+			t.Fatal("method return did not refresh the caller's map insertion order")
 		}
 	})
 	if oneTargetAllocs > 115 {

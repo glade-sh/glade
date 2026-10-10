@@ -130,6 +130,11 @@ func (vm *VM) generatedUnsupportedFamilyExplicitMethodDefault(method Method, rec
 	if className == "" && receiver.Kind == ValueObject {
 		className = receiver.Type
 	}
+	// Linked calls use the same local query DTO as the
+	// unlinked builder; execute is handled by the hosted boundary below.
+	if passiveGeneratedMethod(method) && method.IsStatic && strings.EqualFold(className, "wave.QueryBuilder") && strings.EqualFold(apexMethodMemberName(method.Name), "load") {
+		return callWaveQueryBuilderStaticDefault("load", args)
+	}
 	if strings.EqualFold(className, "CartExtension.CartTestUtil") {
 		return vm.callCartExtensionCartTestUtilStaticDefault(apexMethodMemberName(method.Name), args)
 	}
@@ -168,6 +173,18 @@ func (vm *VM) generatedUnsupportedFamilyExplicitMethodError(method Method, recei
 	}
 	key := generatedUnsupportedFamilyKey(className, apexMethodMemberName(method.Name))
 	switch key {
+	case "wave.querynode.execute":
+		if passiveGeneratedMethod(method) && receiver.Kind == ValueObject && strings.EqualFold(receiver.Type, "wave.QueryNode") {
+			_, _, _, handled, err := callWaveQueryNodeMember(receiver, "execute", args)
+			return err, handled
+		}
+		return nil, false
+	case "metadata.operations.enqueuedeployment":
+		if err := vm.metadataDeploymentTestRestriction(); err != nil {
+			return err, true
+		}
+		return nil, false
+
 	case "cartextension.checkoutcreateorder.createorder",
 		"lxscheduler.schedulerresources.getappointmentcandidates",
 		"lxscheduler.schedulerresources.getappointmentslots",
@@ -242,7 +259,22 @@ func (vm *VM) generatedPassiveUnsupportedStaticCallee(callee string, args []Valu
 func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value, receiver Value) Value {
 	returnType := vm.resolveTypeNameInClass(method.ClassName, method.ReturnType)
 	methodName := apexMethodMemberName(method.Name)
+	if receiver.Kind == ValueObject && hasQualifiedPrefixFold(receiver.Type, "reports") {
+		args := make([]Value, 0, len(method.Params))
+		for _, param := range method.Params {
+			args = append(args, frame[param.Name])
+		}
+		if value, updated, mutated, handled := vm.reportsDTOAccessor(receiver, methodName, args); handled {
+			if mutated {
+				frame["this"] = updated
+			}
+			return value
+		}
+	}
 	if receiver.Kind == ValueObject && strings.EqualFold(methodName, "clone") {
+		if metadataCapturedDTOType(receiver.Type) || strings.EqualFold(receiver.Type, "Metadata.Metadata") {
+			return cloneMetadataDTO(receiver)
+		}
 		cloned := cloneValue(receiver)
 		cloned.Ref = newValueRef()
 		return cloned
@@ -281,12 +313,18 @@ func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value
 		if receiver.Kind == ValueObject && len(method.Params) == 1 {
 			if suffix, ok := passiveAccessorSuffix(methodName, "set"); ok {
 				if value, found := frame[method.Params[0].Name]; found {
-					receiver.Fields[passiveAccessorFieldName(receiver, suffix)] = value
+					field := passiveAccessorFieldName(receiver, suffix)
+					if !vm.assignSingleEmailRecipientField(&receiver, field, value) {
+						receiver.Fields[field] = value
+					}
 					frame["this"] = receiver
 				}
 			} else if field, ok := passivePropertyAccessorField(method.Name, "set"); ok {
 				if value, found := frame[method.Params[0].Name]; found {
-					receiver.Fields[passiveAccessorFieldName(receiver, field)] = value
+					field = passiveAccessorFieldName(receiver, field)
+					if !vm.assignSingleEmailRecipientField(&receiver, field, value) {
+						receiver.Fields[field] = value
+					}
 					frame["this"] = receiver
 				}
 			}
@@ -393,6 +431,15 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 		}
 		object := vm.newGeneratedPlatformObject(generated)
 		initializeGeneratedPlatformValue(&object)
+		if isExceptionType(object.Type) {
+			handled, err := applyExceptionConstructorArgs(&object, ctorArgs)
+			if err != nil {
+				return Null, true, err
+			}
+			if handled {
+				return object, true, nil
+			}
+		}
 		bindPassiveConstructorArgs(&object, ctor, ctorArgs)
 		if err := vm.bindGeneratedPlatformNamedFields(&object, namedArgs); err != nil {
 			return Null, true, err
@@ -516,13 +563,26 @@ func (vm *VM) newGeneratedPlatformObjectSeen(generated generatedPlatformType, se
 	if generated.SuperClass != "" {
 		if parent, ok := generatedPlatformTypes()[strings.ToLower(generated.SuperClass)]; ok {
 			for name, field := range parent.Fields {
-				object.Fields[name] = vm.generatedPlatformDefaultValueSeen(field.Type, Null, seen)
+				if metadataCapturedDTOType(generated.Name) {
+					object.Fields[name] = metadataDTOFieldDefault(field.Type)
+				} else {
+					object.Fields[name] = vm.generatedPlatformDefaultValueSeen(field.Type, Null, seen)
+				}
 			}
 		}
 	}
 	for _, name := range generated.FieldOrder {
 		field := generated.Fields[name]
-		object.Fields[name] = vm.generatedPlatformDefaultValueSeen(field.Type, field.InitialValue, seen)
+		if metadataCapturedDTOType(generated.Name) {
+			object.Fields[name] = metadataDTOFieldDefault(field.Type)
+		} else {
+			object.Fields[name] = vm.generatedPlatformDefaultValueSeen(field.Type, field.InitialValue, seen)
+		}
+	}
+	if strings.EqualFold(generated.Name, "Approval.ProcessSubmitRequest") || strings.EqualFold(generated.Name, "Approval.ProcessWorkitemRequest") {
+		// Approval R002/R023: the inherited approver list is nullable before
+		// setters run, including when constructing through generated symbols.
+		object.Fields[passiveAccessorFieldName(object, "NextApproverIds")] = defaultValue("List<Id>", Null)
 	}
 	if strings.EqualFold(generated.Name, "CartExtension.CartDeliveryGroup") {
 		object.Fields["isDefault"] = Bool(false)
@@ -590,11 +650,17 @@ func (vm *VM) generatedPlatformInstanceField(receiver Value, fieldName string) (
 		if relationship, isRelationship := vm.typedParentRelationshipFieldValue(receiver, field.Name, value); isRelationship {
 			return relationship, true
 		}
+		if value.Kind == ValueNull && value.Type == "" && field.Type != "" {
+			value.Type = field.Type
+		}
 		return value, true
 	}
 	if _, value, ok := objectFieldValue(receiver, fieldName); ok {
 		if relationship, isRelationship := vm.typedParentRelationshipFieldValue(receiver, fieldName, value); isRelationship {
 			return relationship, true
+		}
+		if value.Kind == ValueNull && value.Type == "" && field.Type != "" {
+			value.Type = field.Type
 		}
 		return value, true
 	}

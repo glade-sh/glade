@@ -1,0 +1,1727 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "declarations": {
+    "ECMode": "public enum ECMode { A, B, C }",
+    "EC": "public class EC {\n public Integer calls=0;\n public String value;\n public EC child;\n public Boolean mark(Boolean result){calls++; return result;}\n public Integer number(Integer result){calls++; return result;}\n public String text(String result){calls++; return result;}\n public EC link(){calls++; return child;}\n}",
+    "ECIterator": "public class ECIterator implements Iterator<Integer> {\n public Integer pos=0;\n public Integer stopAt;\n public ECIterator(Integer n){stopAt=n;}\n public Boolean hasNext(){return pos<stopAt;}\n public Integer next(){return pos++;}\n}",
+    "ECIterable": "public class ECIterable implements Iterable<Integer> {\n public Integer stopAt;\n public ECIterable(Integer n){stopAt=n;}\n public Iterator<Integer> iterator(){return new ECIterator(stopAt);}\n}",
+    "ECKey": "public class ECKey {\n public Integer value;\n public ECKey(Integer n){value=n;}\n public Boolean equals(Object other){return other instanceof ECKey && value==((ECKey)other).value;}\n public Integer hashCode(){return value==null ? 0 : value;}\n}"
+  },
+  "cases": [
+    {
+      "id": "R001",
+      "code": "Boolean a=true; Boolean b=true; r=a && b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R002",
+      "code": "Boolean a=true; Boolean b=true; r=a || b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R003",
+      "code": "Boolean a=true; Boolean b=true; r=a & b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R004",
+      "code": "Boolean a=true; Boolean b=true; r=a | b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R005",
+      "code": "Boolean a=true; Boolean b=true; r=a ^ b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R006",
+      "code": "Boolean a=true; Boolean b=true; r=a == b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R007",
+      "code": "Boolean a=true; Boolean b=true; r=a != b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R008",
+      "code": "Boolean a=true; Boolean b=true; r=a === b;",
+      "expected": "COMPILE_ERROR\tline 42: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R009",
+      "code": "Boolean a=true; Boolean b=true; r=a !== b;",
+      "expected": "COMPILE_ERROR\tline 42: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R010",
+      "code": "Boolean a=true; Boolean b=false; r=a && b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R011",
+      "code": "Boolean a=true; Boolean b=false; r=a || b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R012",
+      "code": "Boolean a=true; Boolean b=false; r=a & b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R013",
+      "code": "Boolean a=true; Boolean b=false; r=a | b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R014",
+      "code": "Boolean a=true; Boolean b=false; r=a ^ b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R015",
+      "code": "Boolean a=true; Boolean b=false; r=a == b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R016",
+      "code": "Boolean a=true; Boolean b=false; r=a != b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R017",
+      "code": "Boolean a=true; Boolean b=false; r=a === b;",
+      "expected": "COMPILE_ERROR\tline 49: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R018",
+      "code": "Boolean a=true; Boolean b=false; r=a !== b;",
+      "expected": "COMPILE_ERROR\tline 49: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R019",
+      "code": "Boolean a=true; Boolean b=null; r=a && b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R020",
+      "code": "Boolean a=true; Boolean b=null; r=a || b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R021",
+      "code": "Boolean a=true; Boolean b=null; r=a & b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R022",
+      "code": "Boolean a=true; Boolean b=null; r=a | b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R023",
+      "code": "Boolean a=true; Boolean b=null; r=a ^ b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R024",
+      "code": "Boolean a=true; Boolean b=null; r=a == b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R025",
+      "code": "Boolean a=true; Boolean b=null; r=a != b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R026",
+      "code": "Boolean a=true; Boolean b=null; r=a === b;",
+      "expected": "COMPILE_ERROR\tline 56: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R027",
+      "code": "Boolean a=true; Boolean b=null; r=a !== b;",
+      "expected": "COMPILE_ERROR\tline 56: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R028",
+      "code": "Boolean a=true; r=!a;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R029",
+      "code": "Boolean a=true; r=a==null;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R030",
+      "code": "Boolean a=true; r=a.equals(true);",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R031",
+      "code": "Boolean a=true; if(a){r=1;}else{r=2;}",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R032",
+      "code": "Boolean a=true; r=a?1:2;",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R033",
+      "code": "Boolean a=false; Boolean b=true; r=a && b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R034",
+      "code": "Boolean a=false; Boolean b=true; r=a || b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R035",
+      "code": "Boolean a=false; Boolean b=true; r=a & b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R036",
+      "code": "Boolean a=false; Boolean b=true; r=a | b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R037",
+      "code": "Boolean a=false; Boolean b=true; r=a ^ b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R038",
+      "code": "Boolean a=false; Boolean b=true; r=a == b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R039",
+      "code": "Boolean a=false; Boolean b=true; r=a != b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R040",
+      "code": "Boolean a=false; Boolean b=true; r=a === b;",
+      "expected": "COMPILE_ERROR\tline 68: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R041",
+      "code": "Boolean a=false; Boolean b=true; r=a !== b;",
+      "expected": "COMPILE_ERROR\tline 68: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R042",
+      "code": "Boolean a=false; Boolean b=false; r=a && b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R043",
+      "code": "Boolean a=false; Boolean b=false; r=a || b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R044",
+      "code": "Boolean a=false; Boolean b=false; r=a & b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R045",
+      "code": "Boolean a=false; Boolean b=false; r=a | b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R046",
+      "code": "Boolean a=false; Boolean b=false; r=a ^ b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R047",
+      "code": "Boolean a=false; Boolean b=false; r=a == b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R048",
+      "code": "Boolean a=false; Boolean b=false; r=a != b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R049",
+      "code": "Boolean a=false; Boolean b=false; r=a === b;",
+      "expected": "COMPILE_ERROR\tline 75: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R050",
+      "code": "Boolean a=false; Boolean b=false; r=a !== b;",
+      "expected": "COMPILE_ERROR\tline 75: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R051",
+      "code": "Boolean a=false; Boolean b=null; r=a && b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R052",
+      "code": "Boolean a=false; Boolean b=null; r=a || b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R053",
+      "code": "Boolean a=false; Boolean b=null; r=a & b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R054",
+      "code": "Boolean a=false; Boolean b=null; r=a | b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R055",
+      "code": "Boolean a=false; Boolean b=null; r=a ^ b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R056",
+      "code": "Boolean a=false; Boolean b=null; r=a == b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R057",
+      "code": "Boolean a=false; Boolean b=null; r=a != b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R058",
+      "code": "Boolean a=false; Boolean b=null; r=a === b;",
+      "expected": "COMPILE_ERROR\tline 42: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R059",
+      "code": "Boolean a=false; Boolean b=null; r=a !== b;",
+      "expected": "COMPILE_ERROR\tline 42: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R060",
+      "code": "Boolean a=false; r=!a;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R061",
+      "code": "Boolean a=false; r=a==null;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R062",
+      "code": "Boolean a=false; r=a.equals(true);",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R063",
+      "code": "Boolean a=false; if(a){r=1;}else{r=2;}",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R064",
+      "code": "Boolean a=false; r=a?1:2;",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R065",
+      "code": "Boolean a=null; Boolean b=true; r=a && b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R066",
+      "code": "Boolean a=null; Boolean b=true; r=a || b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R067",
+      "code": "Boolean a=null; Boolean b=true; r=a & b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R068",
+      "code": "Boolean a=null; Boolean b=true; r=a | b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R069",
+      "code": "Boolean a=null; Boolean b=true; r=a ^ b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R070",
+      "code": "Boolean a=null; Boolean b=true; r=a == b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R071",
+      "code": "Boolean a=null; Boolean b=true; r=a != b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R072",
+      "code": "Boolean a=null; Boolean b=true; r=a === b;",
+      "expected": "COMPILE_ERROR\tline 54: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R073",
+      "code": "Boolean a=null; Boolean b=true; r=a !== b;",
+      "expected": "COMPILE_ERROR\tline 54: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R074",
+      "code": "Boolean a=null; Boolean b=false; r=a && b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R075",
+      "code": "Boolean a=null; Boolean b=false; r=a || b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R076",
+      "code": "Boolean a=null; Boolean b=false; r=a & b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R077",
+      "code": "Boolean a=null; Boolean b=false; r=a | b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R078",
+      "code": "Boolean a=null; Boolean b=false; r=a ^ b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R079",
+      "code": "Boolean a=null; Boolean b=false; r=a == b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R080",
+      "code": "Boolean a=null; Boolean b=false; r=a != b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R081",
+      "code": "Boolean a=null; Boolean b=false; r=a === b;",
+      "expected": "COMPILE_ERROR\tline 61: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R082",
+      "code": "Boolean a=null; Boolean b=false; r=a !== b;",
+      "expected": "COMPILE_ERROR\tline 61: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R083",
+      "code": "Boolean a=null; Boolean b=null; r=a && b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R084",
+      "code": "Boolean a=null; Boolean b=null; r=a || b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R085",
+      "code": "Boolean a=null; Boolean b=null; r=a & b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R086",
+      "code": "Boolean a=null; Boolean b=null; r=a | b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R087",
+      "code": "Boolean a=null; Boolean b=null; r=a ^ b;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R088",
+      "code": "Boolean a=null; Boolean b=null; r=a == b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R089",
+      "code": "Boolean a=null; Boolean b=null; r=a != b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R090",
+      "code": "Boolean a=null; Boolean b=null; r=a === b;",
+      "expected": "COMPILE_ERROR\tline 68: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R091",
+      "code": "Boolean a=null; Boolean b=null; r=a !== b;",
+      "expected": "COMPILE_ERROR\tline 68: Exact equality operator only allowed for reference types: Boolean",
+      "compile": false
+    },
+    {
+      "id": "R092",
+      "code": "Boolean a=null; r=!a;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R093",
+      "code": "Boolean a=null; r=a==null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R094",
+      "code": "Boolean a=null; r=a.equals(true);",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R095",
+      "code": "Boolean a=null; if(a){r=1;}else{r=2;}",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R096",
+      "code": "Boolean a=null; r=a?1:2;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R097",
+      "code": "EC x=new EC(); Boolean a=true; Boolean v=a && x.mark(true); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "true|1",
+      "compile": false
+    },
+    {
+      "id": "R098",
+      "code": "EC x=new EC(); Boolean a=true; Boolean v=a || x.mark(true); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "true|0",
+      "compile": false
+    },
+    {
+      "id": "R099",
+      "code": "EC x=new EC(); Boolean a=true; Boolean v=a && x.mark(false); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "false|1",
+      "compile": false
+    },
+    {
+      "id": "R100",
+      "code": "EC x=new EC(); Boolean a=true; Boolean v=a || x.mark(false); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "true|0",
+      "compile": false
+    },
+    {
+      "id": "R101",
+      "code": "EC x=new EC(); Boolean a=true; Boolean v=a && x.mark(null); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R102",
+      "code": "EC x=new EC(); Boolean a=true; Boolean v=a || x.mark(null); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "true|0",
+      "compile": false
+    },
+    {
+      "id": "R103",
+      "code": "EC x=new EC(); Boolean a=false; Boolean v=a && x.mark(true); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "false|0",
+      "compile": false
+    },
+    {
+      "id": "R104",
+      "code": "EC x=new EC(); Boolean a=false; Boolean v=a || x.mark(true); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "true|1",
+      "compile": false
+    },
+    {
+      "id": "R105",
+      "code": "EC x=new EC(); Boolean a=false; Boolean v=a && x.mark(false); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "false|0",
+      "compile": false
+    },
+    {
+      "id": "R106",
+      "code": "EC x=new EC(); Boolean a=false; Boolean v=a || x.mark(false); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "false|1",
+      "compile": false
+    },
+    {
+      "id": "R107",
+      "code": "EC x=new EC(); Boolean a=false; Boolean v=a && x.mark(null); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "false|0",
+      "compile": false
+    },
+    {
+      "id": "R108",
+      "code": "EC x=new EC(); Boolean a=false; Boolean v=a || x.mark(null); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R109",
+      "code": "EC x=new EC(); Boolean a=null; Boolean v=a && x.mark(true); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R110",
+      "code": "EC x=new EC(); Boolean a=null; Boolean v=a || x.mark(true); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R111",
+      "code": "EC x=new EC(); Boolean a=null; Boolean v=a && x.mark(false); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R112",
+      "code": "EC x=new EC(); Boolean a=null; Boolean v=a || x.mark(false); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R113",
+      "code": "EC x=new EC(); Boolean a=null; Boolean v=a && x.mark(null); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R114",
+      "code": "EC x=new EC(); Boolean a=null; Boolean v=a || x.mark(null); r=String.valueOf(v)+'|'+x.calls;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R115",
+      "code": "String a='abc'; String b='ABC'; r=a==b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R116",
+      "code": "String a='abc'; String b='ABC'; r=a!=b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R117",
+      "code": "String a='abc'; String b='ABC'; r=a===b;",
+      "expected": "COMPILE_ERROR\tline 51: Exact equality operator only allowed for reference types: String",
+      "compile": false
+    },
+    {
+      "id": "R118",
+      "code": "String a='abc'; String b='ABC'; r=a!==b;",
+      "expected": "COMPILE_ERROR\tline 51: Exact equality operator only allowed for reference types: String",
+      "compile": false
+    },
+    {
+      "id": "R119",
+      "code": "String a='abc'; String b='ABC'; r=a.equals(b);",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R120",
+      "code": "List<Integer> a=new List<Integer>{1}; List<Integer> b=new List<Integer>{1}; r=a==b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R121",
+      "code": "List<Integer> a=new List<Integer>{1}; List<Integer> b=new List<Integer>{1}; r=a!=b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R122",
+      "code": "List<Integer> a=new List<Integer>{1}; List<Integer> b=new List<Integer>{1}; r=a===b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R123",
+      "code": "List<Integer> a=new List<Integer>{1}; List<Integer> b=new List<Integer>{1}; r=a!==b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R124",
+      "code": "List<Integer> a=new List<Integer>{1}; List<Integer> b=new List<Integer>{1}; r=a.equals(b);",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R125",
+      "code": "ECKey a=new ECKey(3); ECKey b=new ECKey(3); r=a==b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R126",
+      "code": "ECKey a=new ECKey(3); ECKey b=new ECKey(3); r=a!=b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R127",
+      "code": "ECKey a=new ECKey(3); ECKey b=new ECKey(3); r=a===b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R128",
+      "code": "ECKey a=new ECKey(3); ECKey b=new ECKey(3); r=a!==b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R129",
+      "code": "ECKey a=new ECKey(3); ECKey b=new ECKey(3); r=a.equals(b);",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R130",
+      "code": "ECKey a=new ECKey(null); ECKey b=new ECKey(null); r=a==b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R131",
+      "code": "ECKey a=new ECKey(null); ECKey b=new ECKey(null); r=a!=b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R132",
+      "code": "ECKey a=new ECKey(null); ECKey b=new ECKey(null); r=a===b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R133",
+      "code": "ECKey a=new ECKey(null); ECKey b=new ECKey(null); r=a!==b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R134",
+      "code": "ECKey a=new ECKey(null); ECKey b=new ECKey(null); r=a.equals(b);",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R135",
+      "code": "ECKey a=new ECKey(3); ECKey b=a; r=a==b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R136",
+      "code": "ECKey a=new ECKey(3); ECKey b=a; r=a!=b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R137",
+      "code": "ECKey a=new ECKey(3); ECKey b=a; r=a===b;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R138",
+      "code": "ECKey a=new ECKey(3); ECKey b=a; r=a!==b;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R139",
+      "code": "ECKey a=new ECKey(3); ECKey b=a; r=a.equals(b);",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R140",
+      "code": "ECKey a=new ECKey(3); r=a.equals(null);",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R141",
+      "code": "ECKey a=new ECKey(3); r=a.hashCode();",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "R142",
+      "code": "ECKey a=new ECKey(null); r=a.hashCode();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R143",
+      "code": "ECKey a=new ECKey(3); ECKey b=new ECKey(3); r=a.hashCode()==b.hashCode();",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R144",
+      "code": "EC x; r=x?.value;",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R145",
+      "code": "EC x; r=x?.child?.value;",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R146",
+      "code": "EC x; r=x?.link()?.value;",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R147",
+      "code": "EC x; r=x?.link()?.text('ok');",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R148",
+      "code": "EC x; r=x?.calls;",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R149",
+      "code": "EC x=new EC(); r=x?.value;",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R150",
+      "code": "EC x=new EC(); r=x?.child?.value;",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R151",
+      "code": "EC x=new EC(); r=x?.link()?.value;",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R152",
+      "code": "EC x=new EC(); r=x?.link()?.text('ok');",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R153",
+      "code": "EC x=new EC(); r=x?.calls;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R154",
+      "code": "EC x=new EC(); x.child=new EC(); x.child.value='leaf'; r=x?.value;",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R155",
+      "code": "EC x=new EC(); x.child=new EC(); x.child.value='leaf'; r=x?.child?.value;",
+      "expected": "leaf",
+      "compile": false
+    },
+    {
+      "id": "R156",
+      "code": "EC x=new EC(); x.child=new EC(); x.child.value='leaf'; r=x?.link()?.value;",
+      "expected": "leaf",
+      "compile": false
+    },
+    {
+      "id": "R157",
+      "code": "EC x=new EC(); x.child=new EC(); x.child.value='leaf'; r=x?.link()?.text('ok');",
+      "expected": "ok",
+      "compile": false
+    },
+    {
+      "id": "R158",
+      "code": "EC x=new EC(); x.child=new EC(); x.child.value='leaf'; r=x?.calls;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R159",
+      "code": "List<Integer> x; r=x?.size();",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R160",
+      "code": "List<Integer> x; r=x?.get(0);",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R161",
+      "code": "List<Integer> x; r=x?.isEmpty();",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R162",
+      "code": "List<Integer> x=new List<Integer>{4,5}; r=x?.size();",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R163",
+      "code": "List<Integer> x=new List<Integer>{4,5}; r=x?.get(0);",
+      "expected": "4",
+      "compile": false
+    },
+    {
+      "id": "R164",
+      "code": "List<Integer> x=new List<Integer>{4,5}; r=x?.isEmpty();",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R165",
+      "code": "Integer a=null; r=a ?? 9;",
+      "expected": "9",
+      "compile": false
+    },
+    {
+      "id": "R166",
+      "code": "Integer a=null; Integer b=null; r=a ?? b ?? 9;",
+      "expected": "9",
+      "compile": false
+    },
+    {
+      "id": "R167",
+      "code": "Integer a=0; r=a ?? 9;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R168",
+      "code": "Integer a=0; Integer b=null; r=a ?? b ?? 9;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R169",
+      "code": "Integer a=7; r=a ?? 9;",
+      "expected": "7",
+      "compile": false
+    },
+    {
+      "id": "R170",
+      "code": "Integer a=7; Integer b=null; r=a ?? b ?? 9;",
+      "expected": "7",
+      "compile": false
+    },
+    {
+      "id": "R171",
+      "code": "Boolean a=null; r=a ?? true;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R172",
+      "code": "Boolean a=null; Boolean b=null; r=a ?? b ?? true;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R173",
+      "code": "Boolean a=false; r=a ?? true;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R174",
+      "code": "Boolean a=false; Boolean b=null; r=a ?? b ?? true;",
+      "expected": "false",
+      "compile": false
+    },
+    {
+      "id": "R175",
+      "code": "Boolean a=true; r=a ?? true;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R176",
+      "code": "Boolean a=true; Boolean b=null; r=a ?? b ?? true;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R177",
+      "code": "String a=null; r=a ?? 'right';",
+      "expected": "right",
+      "compile": false
+    },
+    {
+      "id": "R178",
+      "code": "String a=null; String b=null; r=a ?? b ?? 'right';",
+      "expected": "right",
+      "compile": false
+    },
+    {
+      "id": "R179",
+      "code": "String a=''; r=a ?? 'right';",
+      "expected": "",
+      "compile": false
+    },
+    {
+      "id": "R180",
+      "code": "String a=''; String b=null; r=a ?? b ?? 'right';",
+      "expected": "",
+      "compile": false
+    },
+    {
+      "id": "R181",
+      "code": "String a='left'; r=a ?? 'right';",
+      "expected": "left",
+      "compile": false
+    },
+    {
+      "id": "R182",
+      "code": "String a='left'; String b=null; r=a ?? b ?? 'right';",
+      "expected": "left",
+      "compile": false
+    },
+    {
+      "id": "R183",
+      "code": "EC x=new EC(); Integer a=null; Integer n=a ?? x.number(9); r=String.valueOf(n)+'|'+x.calls;",
+      "expected": "9|1",
+      "compile": false
+    },
+    {
+      "id": "R184",
+      "code": "EC x=new EC(); Integer a=0; Integer n=a ?? x.number(9); r=String.valueOf(n)+'|'+x.calls;",
+      "expected": "0|0",
+      "compile": false
+    },
+    {
+      "id": "R185",
+      "code": "EC x=new EC(); Integer a=7; Integer n=a ?? x.number(9); r=String.valueOf(n)+'|'+x.calls;",
+      "expected": "7|0",
+      "compile": false
+    },
+    {
+      "id": "R186",
+      "code": "Boolean a=true; EC x=new EC(); Integer n=a?x.number(4):x.number(7); r=String.valueOf(n)+'|'+x.calls;",
+      "expected": "4|1",
+      "compile": false
+    },
+    {
+      "id": "R187",
+      "code": "Boolean a=false; EC x=new EC(); Integer n=a?x.number(4):x.number(7); r=String.valueOf(n)+'|'+x.calls;",
+      "expected": "7|1",
+      "compile": false
+    },
+    {
+      "id": "R188",
+      "code": "Boolean a=null; EC x=new EC(); Integer n=a?x.number(4):x.number(7); r=String.valueOf(n)+'|'+x.calls;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R189",
+      "code": "r=true?null:4;",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R190",
+      "code": "r=false?null:4;",
+      "expected": "4",
+      "compile": false
+    },
+    {
+      "id": "R191",
+      "code": "r=true?4:null;",
+      "expected": "4",
+      "compile": false
+    },
+    {
+      "id": "R192",
+      "code": "r=false?4:null;",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R193",
+      "code": "r=true?'a':'b';",
+      "expected": "a",
+      "compile": false
+    },
+    {
+      "id": "R194",
+      "code": "r=true?1:2L;",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R195",
+      "code": "r=false?1L:2;",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R196",
+      "code": "r=true?1:2.5;",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R197",
+      "code": "r=false?1:2.5;",
+      "expected": "2.5",
+      "compile": false
+    },
+    {
+      "id": "R198",
+      "code": "r=true?(false?1:2):3;",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R199",
+      "code": "r=false?1:(true?2:3);",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R200",
+      "code": "Integer s=0; for(Integer i=0;i<0;i++){s+=i;} r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R201",
+      "code": "Integer s=0; for(Integer i=0;i<0;i++){if(i==2){break;} s+=i;} r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R202",
+      "code": "Integer s=0; for(Integer i=0;i<0;i++){if(i==2){continue;} s+=i;} r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R203",
+      "code": "Integer s=0; Integer i=0; while(i<0){s+=i; i++;} r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R204",
+      "code": "Integer s=0; Integer i=0; do{s+=i; i++;}while(i<0); r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R205",
+      "code": "Integer s=0; Integer i=0; while(i<0){i++; if(i==2){break;} s+=i;} r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R206",
+      "code": "Integer s=0; Integer i=0; do{i++; if(i==2){break;} s+=i;}while(i<0); r=s;",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R207",
+      "code": "Integer s=0; Integer i=0; while(i<0){i++; if(i==2){continue;} s+=i;} r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R208",
+      "code": "Integer s=0; Integer i=0; do{i++; if(i==2){continue;} s+=i;}while(i<0); r=s;",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R209",
+      "code": "Integer s=0; for(Integer i=0;i<1;i++){s+=i;} r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R210",
+      "code": "Integer s=0; for(Integer i=0;i<1;i++){if(i==2){break;} s+=i;} r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R211",
+      "code": "Integer s=0; for(Integer i=0;i<1;i++){if(i==2){continue;} s+=i;} r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R212",
+      "code": "Integer s=0; Integer i=0; while(i<1){s+=i; i++;} r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R213",
+      "code": "Integer s=0; Integer i=0; do{s+=i; i++;}while(i<1); r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R214",
+      "code": "Integer s=0; Integer i=0; while(i<1){i++; if(i==2){break;} s+=i;} r=s;",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R215",
+      "code": "Integer s=0; Integer i=0; do{i++; if(i==2){break;} s+=i;}while(i<1); r=s;",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R216",
+      "code": "Integer s=0; Integer i=0; while(i<1){i++; if(i==2){continue;} s+=i;} r=s;",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R217",
+      "code": "Integer s=0; Integer i=0; do{i++; if(i==2){continue;} s+=i;}while(i<1); r=s;",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R218",
+      "code": "Integer s=0; for(Integer i=0;i<4;i++){s+=i;} r=s;",
+      "expected": "6",
+      "compile": false
+    },
+    {
+      "id": "R219",
+      "code": "Integer s=0; for(Integer i=0;i<4;i++){if(i==2){break;} s+=i;} r=s;",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R220",
+      "code": "Integer s=0; for(Integer i=0;i<4;i++){if(i==2){continue;} s+=i;} r=s;",
+      "expected": "4",
+      "compile": false
+    },
+    {
+      "id": "R221",
+      "code": "Integer s=0; Integer i=0; while(i<4){s+=i; i++;} r=s;",
+      "expected": "6",
+      "compile": false
+    },
+    {
+      "id": "R222",
+      "code": "Integer s=0; Integer i=0; do{s+=i; i++;}while(i<4); r=s;",
+      "expected": "6",
+      "compile": false
+    },
+    {
+      "id": "R223",
+      "code": "Integer s=0; Integer i=0; while(i<4){i++; if(i==2){break;} s+=i;} r=s;",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R224",
+      "code": "Integer s=0; Integer i=0; do{i++; if(i==2){break;} s+=i;}while(i<4); r=s;",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R225",
+      "code": "Integer s=0; Integer i=0; while(i<4){i++; if(i==2){continue;} s+=i;} r=s;",
+      "expected": "8",
+      "compile": false
+    },
+    {
+      "id": "R226",
+      "code": "Integer s=0; Integer i=0; do{i++; if(i==2){continue;} s+=i;}while(i<4); r=s;",
+      "expected": "8",
+      "compile": false
+    },
+    {
+      "id": "R227",
+      "code": "Integer s=0; for(Integer i=0,j=3;i<3;i++,j--){s+=i+j;} r=s;",
+      "expected": "COMPILE_ERROR\tline 61: Expecting ')' but was: ','",
+      "compile": false
+    },
+    {
+      "id": "R228",
+      "code": "Integer s=0; for(Integer i=0;i<3;i++){for(Integer j=0;j<3;j++){if(j==1){break;}s++;}}r=s;",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "R229",
+      "code": "Integer s=0; for(Integer i=0;i<3;i++){for(Integer j=0;j<3;j++){if(j==1){continue;}s++;}}r=s;",
+      "expected": "6",
+      "compile": false
+    },
+    {
+      "id": "R230",
+      "code": "Integer i=0; for(;;){i++;if(i==3){break;}}r=i;",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "R231",
+      "code": "List<Integer> xs; Integer s=0;for(Integer x:xs){s++;}r=s;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R232",
+      "code": "Integer s=0;for(Integer x:new List<Integer>{null,2,3}){if(x==null){continue;}s+=x;}r=s;",
+      "expected": "5",
+      "compile": false
+    },
+    {
+      "id": "R233",
+      "code": "Integer x=null; switch on x {when 1,2 {r=10;} when 3 {r=20;} when null {r=30;} when else {r=40;}}",
+      "expected": "30",
+      "compile": false
+    },
+    {
+      "id": "R234",
+      "code": "Integer x=0; switch on x {when 1,2 {r=10;} when 3 {r=20;} when null {r=30;} when else {r=40;}}",
+      "expected": "40",
+      "compile": false
+    },
+    {
+      "id": "R235",
+      "code": "Integer x=1; switch on x {when 1,2 {r=10;} when 3 {r=20;} when null {r=30;} when else {r=40;}}",
+      "expected": "10",
+      "compile": false
+    },
+    {
+      "id": "R236",
+      "code": "Integer x=2; switch on x {when 1,2 {r=10;} when 3 {r=20;} when null {r=30;} when else {r=40;}}",
+      "expected": "10",
+      "compile": false
+    },
+    {
+      "id": "R237",
+      "code": "Integer x=3; switch on x {when 1,2 {r=10;} when 3 {r=20;} when null {r=30;} when else {r=40;}}",
+      "expected": "20",
+      "compile": false
+    },
+    {
+      "id": "R238",
+      "code": "String x=null; switch on x {when 'a','b' {r=10;} when null {r=30;} when else {r=40;}}",
+      "expected": "30",
+      "compile": false
+    },
+    {
+      "id": "R239",
+      "code": "String x='a'; switch on x {when 'a','b' {r=10;} when null {r=30;} when else {r=40;}}",
+      "expected": "10",
+      "compile": false
+    },
+    {
+      "id": "R240",
+      "code": "String x='A'; switch on x {when 'a','b' {r=10;} when null {r=30;} when else {r=40;}}",
+      "expected": "40",
+      "compile": false
+    },
+    {
+      "id": "R241",
+      "code": "String x='b'; switch on x {when 'a','b' {r=10;} when null {r=30;} when else {r=40;}}",
+      "expected": "10",
+      "compile": false
+    },
+    {
+      "id": "R242",
+      "code": "String x=''; switch on x {when 'a','b' {r=10;} when null {r=30;} when else {r=40;}}",
+      "expected": "40",
+      "compile": false
+    },
+    {
+      "id": "R243",
+      "code": "ECMode x=null; switch on x {when A {r=10;} when B {r=20;} when null {r=30;} when else {r=40;}}",
+      "expected": "30",
+      "compile": false
+    },
+    {
+      "id": "R244",
+      "code": "ECMode x=ECMode.A; switch on x {when A {r=10;} when B {r=20;} when null {r=30;} when else {r=40;}}",
+      "expected": "10",
+      "compile": false
+    },
+    {
+      "id": "R245",
+      "code": "ECMode x=ECMode.B; switch on x {when A {r=10;} when B {r=20;} when null {r=30;} when else {r=40;}}",
+      "expected": "20",
+      "compile": false
+    },
+    {
+      "id": "R246",
+      "code": "ECMode x=ECMode.C; switch on x {when A {r=10;} when B {r=20;} when null {r=30;} when else {r=40;}}",
+      "expected": "40",
+      "compile": false
+    },
+    {
+      "id": "R247",
+      "code": "SObject x=null; switch on x {when Account a {r=a.Name;} when Contact c {r=c.LastName;} when null {r='nil';} when else {r='else';}}",
+      "expected": "nil",
+      "compile": false
+    },
+    {
+      "id": "R248",
+      "code": "SObject x=new Account(Name='a'); switch on x {when Account a {r=a.Name;} when Contact c {r=c.LastName;} when null {r='nil';} when else {r='else';}}",
+      "expected": "a",
+      "compile": false
+    },
+    {
+      "id": "R249",
+      "code": "SObject x=new Contact(LastName='c'); switch on x {when Account a {r=a.Name;} when Contact c {r=c.LastName;} when null {r='nil';} when else {r='else';}}",
+      "expected": "c",
+      "compile": false
+    },
+    {
+      "id": "R250",
+      "code": "SObject x=new Lead(LastName='l',Company='co'); switch on x {when Account a {r=a.Name;} when Contact c {r=c.LastName;} when null {r='nil';} when else {r='else';}}",
+      "expected": "else",
+      "compile": false
+    },
+    {
+      "id": "R251",
+      "code": "Integer s=0; for(Integer v:new ECIterable(0)){s+=v;}r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R252",
+      "code": "Integer s=0; for(Integer v:new ECIterable(0)){if(v==2){break;}s+=v;}r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R253",
+      "code": "Integer s=0; for(Integer v:new ECIterable(0)){if(v==2){continue;}s+=v;}r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R254",
+      "code": "Iterator<Integer> it=new ECIterator(0); Integer s=0;while(it.hasNext()){s+=it.next();}r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R255",
+      "code": "Integer s=0; for(Integer v:new ECIterable(1)){s+=v;}r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R256",
+      "code": "Integer s=0; for(Integer v:new ECIterable(1)){if(v==2){break;}s+=v;}r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R257",
+      "code": "Integer s=0; for(Integer v:new ECIterable(1)){if(v==2){continue;}s+=v;}r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R258",
+      "code": "Iterator<Integer> it=new ECIterator(1); Integer s=0;while(it.hasNext()){s+=it.next();}r=s;",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R259",
+      "code": "Integer s=0; for(Integer v:new ECIterable(4)){s+=v;}r=s;",
+      "expected": "6",
+      "compile": false
+    },
+    {
+      "id": "R260",
+      "code": "Integer s=0; for(Integer v:new ECIterable(4)){if(v==2){break;}s+=v;}r=s;",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R261",
+      "code": "Integer s=0; for(Integer v:new ECIterable(4)){if(v==2){continue;}s+=v;}r=s;",
+      "expected": "4",
+      "compile": false
+    },
+    {
+      "id": "R262",
+      "code": "Iterator<Integer> it=new ECIterator(4); Integer s=0;while(it.hasNext()){s+=it.next();}r=s;",
+      "expected": "6",
+      "compile": false
+    },
+    {
+      "id": "R263",
+      "code": "Iterable<Integer> x=new ECIterable(3);Integer s=0;for(Integer v:x){s+=v;}r=s;",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "R264",
+      "code": "ECIterable x;Integer s=0;for(Integer v:x){s++;}r=s;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R265",
+      "code": "Integer s=0;for(Integer a:new ECIterable(3)){for(Integer b:new ECIterable(2)){s+=a+b;}}r=s;",
+      "expected": "9",
+      "compile": false
+    },
+    {
+      "id": "R266",
+      "code": "Iterator<Integer> x=new ECIterator(0);r=x.next();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R267",
+      "code": "Iterator<Integer> x=new ECIterator(2);r=String.valueOf(x.hasNext())+'|'+x.next()+'|'+x.hasNext();",
+      "expected": "true|0|true",
+      "compile": false
+    },
+    {
+      "id": "C001",
+      "code": "Boolean x=1;",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to Boolean",
+      "compile": true
+    },
+    {
+      "id": "C002",
+      "code": "Boolean x='true';",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to Boolean",
+      "compile": true
+    },
+    {
+      "id": "C003",
+      "code": "Boolean x=true+false;",
+      "expected": "COMPILE_ERROR\tline 6: Arithmetic expressions must use numeric arguments",
+      "compile": true
+    },
+    {
+      "id": "C004",
+      "code": "Integer x=true?1:'a';",
+      "expected": "COMPILE_ERROR\tline 6: Incompatible types in ternary operator: String, Integer",
+      "compile": true
+    },
+    {
+      "id": "C005",
+      "code": "Integer x=null ?? 'a';",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to Integer",
+      "compile": true
+    },
+    {
+      "id": "C006",
+      "code": "break;",
+      "expected": "COMPILE_ERROR\tline 6: Break statement must be in loop",
+      "compile": true
+    },
+    {
+      "id": "C007",
+      "code": "continue;",
+      "expected": "COMPILE_ERROR\tline 6: Continue statement must be in loop",
+      "compile": true
+    },
+    {
+      "id": "C008",
+      "code": "outer: for(Integer i=0;i<2;i++){break outer;}",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token ':'.",
+      "compile": true
+    },
+    {
+      "id": "C009",
+      "code": "outer: while(false){continue outer;}",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token ':'.",
+      "compile": true
+    },
+    {
+      "id": "C010",
+      "code": "switch on true {when true {}}",
+      "expected": "COMPILE_ERROR\tline 6: Boolean is not a valid switch expression type",
+      "compile": true
+    },
+    {
+      "id": "C011",
+      "code": "switch on 1.0 {when 1.0 {}}",
+      "expected": "COMPILE_ERROR\tline 6: Decimal is not a valid switch expression type",
+      "compile": true
+    },
+    {
+      "id": "C012",
+      "code": "switch on 1 {when 1 {} when 1 {}}",
+      "expected": "COMPILE_ERROR\tline 6: 1 occurs as more than one when branch for this switch statement",
+      "compile": true
+    },
+    {
+      "id": "C013",
+      "code": "switch on 'a' {when else {} when 'a' {}}",
+      "expected": "COMPILE_ERROR\tline 6: 'when else' must be the last when block",
+      "compile": true
+    },
+    {
+      "id": "C014",
+      "code": "Integer x=1; Integer y=x?.intValue();",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void intValue() from the type Integer",
+      "compile": true
+    }
+  ],
+  "controls": [
+    {
+      "id": "E001",
+      "code": "Integer s=0; for(Integer i=0,j=3;i<3;i++){s+=i+j;}r=s;",
+      "expected": "12",
+      "compile": false
+    },
+    {
+      "id": "E002",
+      "code": "Integer s=0; Integer j=3; for(Integer i=0;i<3;i++,j--){s+=i+j;}r=s;",
+      "expected": "COMPILE_ERROR\tline 7: Expecting ')' but was: ','",
+      "compile": false
+    },
+    {
+      "id": "E003",
+      "code": "Integer s=0; Integer i=0,j=3; for(;i<3;i++,j--){s+=i+j;}r=s;",
+      "expected": "COMPILE_ERROR\tline 7: Expecting ')' but was: ','",
+      "compile": false
+    },
+    {
+      "id": "E004",
+      "code": "Integer s=0; for(Integer i=0,j=3;i<3;i=i+1){s+=i+j;}r=s;",
+      "expected": "12",
+      "compile": false
+    }
+  ]
+}

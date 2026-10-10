@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/storage"
@@ -238,6 +239,11 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, 
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, err.Error(), nil))
 		return
 	}
+	apiVersion, err = apexversion.ResolveSource(apiVersion)
+	if err != nil {
+		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, err.Error(), nil))
+		return
+	}
 	index := typesys.Index{Project: typesys.ProjectInfo{
 		Root:             s.Source.Project.Root,
 		Namespace:        s.Source.Project.Namespace,
@@ -251,7 +257,8 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, 
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, analysis.Diagnostics[0].Message, nil))
 		return
 	}
-	program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: apiVersion})
+	approved := sema.ApprovedAnonymousPrefixStatements(index, source, apiVersion)
+	program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: apiVersion, ApprovedPrefixStatements: approved})
 	if err != nil {
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, err.Error(), nil))
 		return

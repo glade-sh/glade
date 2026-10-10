@@ -1,0 +1,3606 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "oracle": "Owned class lifecycle observations at API 62.0 and 67.0, including namespace, identifier and static-property controls. Named and static-property controls use the Tooling compiler.",
+  "anonymousDeclarations": {
+    "CLInit": "class CLInit {\n public String trace='field';\n public String second=mark('second');\n public Integer amount;\n public String text;\n public List<String> items=new List<String>();\n public String mark(String s){trace+='>'+s;return s;}\n public CLInit(){this(7);trace+='>default';}\n public CLInit(Integer n){amount=n;trace+='>integer';}\n public CLInit(String s){text=s;trace+='>string';}\n public CLInit(Integer n,String s){this(n);text=s;trace+='>pair';}\n public CLInit(CLInit other){amount=other.amount;items=other.items;trace+='>copy';}\n public String choose(Integer n){return 'integer:'+String.valueOf(n);}\n public String choose(String s){return 'string:'+s;}\n public CLInit self(){return this;}\n}",
+    "CLBase": "class CLBase {\n public String trace='base-field';\n public Integer value=2;\n protected String protectedValue='protected';\n private String secret='secret';\n public CLBase(){trace+='>base-default';}\n public CLBase(Integer n){value=n;trace+='>base-arg';}\n public virtual String tag(){return 'base';}\n public virtual Integer measure(){return value;}\n public String dispatch(){return tag();}\n public String readSecret(){return secret;}\n}",
+    "CLChild": "class CLChild extends CLBase implements System.Callable {\n public String childField=stamp();\n public String stamp(){trace+='>child-field';return 'child';}\n public CLChild(){super();trace+='>child-default';}\n public CLChild(Integer n){super(n);trace+='>child-arg';}\n public override String tag(){return 'child';}\n public override Integer measure(){return super.measure()+1;}\n public String baseTag(){return super.tag();}\n public String readProtected(){return protectedValue;}\n public Object call(String action,Map<String,Object> args){\n  if(action=='tag'){return tag();}\n  if(action=='base'){return baseTag();}\n  if(action=='value'){return measure();}\n  if(action=='echo'){return args.get('value');}\n  throw new IllegalArgumentException('lifecycle action');\n }\n}",
+    "CLSibling": "class CLSibling extends CLBase {\n public override String tag(){return 'sibling';}\n}",
+    "CLAbstract": "abstract class CLAbstract {\n public abstract String tag();\n public String dispatch(){return tag();}\n}",
+    "CLConcrete": "class CLConcrete extends CLAbstract {\n public override String tag(){return 'concrete';}\n}",
+    "CLSequence": "class CLSequence implements Iterable<Integer>,Iterator<Integer> {\n public Integer pos=0;\n public Integer count;\n public CLSequence(Integer n){count=n;}\n public Iterator<Integer> iterator(){return this;}\n public Boolean hasNext(){return pos<count;}\n public Integer next(){return pos++;}\n}",
+    "CLMode": "enum CLMode { FIRST, MIDDLE, LAST }",
+    "CLProps": "class CLProps {\n public Integer autoValue {get;set;}\n public String text {get;set;}\n public CLInit child {get;set;}\n private Integer storage=3;\n public Integer gets=0;\n public Integer sets=0;\n public Integer tracked {\n  get {gets++;return storage;}\n  set {sets++;storage=value;}\n }\n public Integer readOnly {get {return storage;}}\n public Integer writeOnly {set {storage=value;}}\n public Integer limited {get;private set;}\n public CLProps(){limited=11;}\n public void setLimited(Integer n){limited=n;}\n}",
+    "CLAccess": "class CLAccess {\n private Integer hidden=5;\n public Integer visible=6;\n public Integer readHidden(){return hidden;}\n private Integer privateMethod(){return 7;}\n public Integer callPrivate(){return privateMethod();}\n public CLAccess(){}\n}",
+    "CLCBase": "class CLCBase {\n public String trace='base-field';\n public Integer amount=7;\n public String baseMarker=mark('base-init');\n public String mark(String s){trace=String.valueOf(trace)+'>'+s;return s;}\n public CLCBase(){trace+='>base-ctor';}\n}",
+    "CLCChild": "class CLCChild extends CLCBase {\n public String childMarker=mark('child-init:'+String.valueOf(amount));\n public CLCChild(){super();trace+='>child-ctor';}\n}",
+    "CLCMode": "enum CLCMode { A,B }"
+  },
+  "declarations": {
+    "CLInit": "public class CLInit {\n public String trace='field';\n public String second=mark('second');\n public Integer amount;\n public String text;\n public List<String> items=new List<String>();\n public String mark(String s){trace+='>'+s;return s;}\n public CLInit(){this(7);trace+='>default';}\n public CLInit(Integer n){amount=n;trace+='>integer';}\n public CLInit(String s){text=s;trace+='>string';}\n public CLInit(Integer n,String s){this(n);text=s;trace+='>pair';}\n public CLInit(CLInit other){amount=other.amount;items=other.items;trace+='>copy';}\n public String choose(Integer n){return 'integer:'+String.valueOf(n);}\n public String choose(String s){return 'string:'+s;}\n public CLInit self(){return this;}\n}",
+    "CLBase": "public virtual class CLBase {\n public String trace='base-field';\n public Integer value=2;\n protected String protectedValue='protected';\n private String secret='secret';\n public CLBase(){trace+='>base-default';}\n public CLBase(Integer n){value=n;trace+='>base-arg';}\n public virtual String tag(){return 'base';}\n public virtual Integer measure(){return value;}\n public String dispatch(){return tag();}\n public String readSecret(){return secret;}\n}",
+    "CLChild": "public class CLChild extends CLBase implements System.Callable {\n public String childField=stamp();\n public String stamp(){trace+='>child-field';return 'child';}\n public CLChild(){super();trace+='>child-default';}\n public CLChild(Integer n){super(n);trace+='>child-arg';}\n public override String tag(){return 'child';}\n public override Integer measure(){return super.measure()+1;}\n public String baseTag(){return super.tag();}\n public String readProtected(){return protectedValue;}\n public Object call(String action,Map<String,Object> args){\n  if(action=='tag'){return tag();}\n  if(action=='base'){return baseTag();}\n  if(action=='value'){return measure();}\n  if(action=='echo'){return args.get('value');}\n  throw new IllegalArgumentException('lifecycle action');\n }\n}",
+    "CLSibling": "public class CLSibling extends CLBase {\n public override String tag(){return 'sibling';}\n}",
+    "CLAbstract": "public abstract class CLAbstract {\n public abstract String tag();\n public String dispatch(){return tag();}\n}",
+    "CLConcrete": "public class CLConcrete extends CLAbstract {\n public override String tag(){return 'concrete';}\n}",
+    "CLSequence": "public class CLSequence implements Iterable<Integer>,Iterator<Integer> {\n public Integer pos=0;\n public Integer count;\n public CLSequence(Integer n){count=n;}\n public Iterator<Integer> iterator(){return this;}\n public Boolean hasNext(){return pos<count;}\n public Integer next(){return pos++;}\n}",
+    "CLMode": "public enum CLMode { FIRST, MIDDLE, LAST }",
+    "CLProps": "public class CLProps {\n public Integer autoValue {get;set;}\n public String text {get;set;}\n public CLInit child {get;set;}\n private Integer storage=3;\n public Integer gets=0;\n public Integer sets=0;\n public Integer tracked {\n  get {gets++;return storage;}\n  set {sets++;storage=value;}\n }\n public Integer readOnly {get {return storage;}}\n public Integer writeOnly {set {storage=value;}}\n public Integer limited {get;private set;}\n public CLProps(){limited=11;}\n public void setLimited(Integer n){limited=n;}\n}",
+    "CLAccess": "public class CLAccess {\n private Integer hidden=5;\n public Integer visible=6;\n public Integer readHidden(){return hidden;}\n private Integer privateMethod(){return 7;}\n public Integer callPrivate(){return privateMethod();}\n public CLAccess(){}\n}",
+    "CLCBase": "public virtual class CLCBase {\n public String trace='base-field';\n public Integer amount=7;\n public String baseMarker=mark('base-init');\n public String mark(String s){trace=String.valueOf(trace)+'>'+s;return s;}\n public CLCBase(){trace+='>base-ctor';}\n}",
+    "CLCChild": "public class CLCChild extends CLCBase {\n public String childMarker=mark('child-init:'+String.valueOf(amount));\n public CLCChild(){super();trace+='>child-ctor';}\n}",
+    "CLCMode": "public enum CLCMode { A,B }"
+  },
+  "cases": [
+    {
+      "id": "R001",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(); r=x.trace;",
+      "compile": false,
+      "expected": "field>second>integer>default",
+      "nativeNull": false
+    },
+    {
+      "id": "R002",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(); r=x.amount;",
+      "compile": false,
+      "expected": "7",
+      "nativeNull": false
+    },
+    {
+      "id": "R003",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(); r=x.text;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R004",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(); r=x.items.size();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R005",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(0); r=x.trace;",
+      "compile": false,
+      "expected": "field>second>integer",
+      "nativeNull": false
+    },
+    {
+      "id": "R006",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(0); r=x.amount;",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R007",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(0); r=x.text;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R008",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(0); r=x.items.size();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R009",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(-1); r=x.trace;",
+      "compile": false,
+      "expected": "field>second>integer",
+      "nativeNull": false
+    },
+    {
+      "id": "R010",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(-1); r=x.amount;",
+      "compile": false,
+      "expected": "-1",
+      "nativeNull": false
+    },
+    {
+      "id": "R011",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(-1); r=x.text;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R012",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(-1); r=x.items.size();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R013",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(2147483647); r=x.trace;",
+      "compile": false,
+      "expected": "field>second>integer",
+      "nativeNull": false
+    },
+    {
+      "id": "R014",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(2147483647); r=x.amount;",
+      "compile": false,
+      "expected": "2147483647",
+      "nativeNull": false
+    },
+    {
+      "id": "R015",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(2147483647); r=x.text;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R016",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(2147483647); r=x.items.size();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R017",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(-2147483647); r=x.trace;",
+      "compile": false,
+      "expected": "field>second>integer",
+      "nativeNull": false
+    },
+    {
+      "id": "R018",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(-2147483647); r=x.amount;",
+      "compile": false,
+      "expected": "-2147483647",
+      "nativeNull": false
+    },
+    {
+      "id": "R019",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(-2147483647); r=x.text;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R020",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(-2147483647); r=x.items.size();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R021",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit((Integer)null); r=x.trace;",
+      "compile": false,
+      "expected": "field>second>integer",
+      "nativeNull": false
+    },
+    {
+      "id": "R022",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit((Integer)null); r=x.amount;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R023",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit((Integer)null); r=x.text;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R024",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit((Integer)null); r=x.items.size();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R025",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(''); r=x.trace;",
+      "compile": false,
+      "expected": "field>second>string",
+      "nativeNull": false
+    },
+    {
+      "id": "R026",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(''); r=x.amount;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R027",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(''); r=x.text;",
+      "compile": false,
+      "expected": "",
+      "nativeNull": false
+    },
+    {
+      "id": "R028",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(''); r=x.items.size();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R029",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit('text'); r=x.trace;",
+      "compile": false,
+      "expected": "field>second>string",
+      "nativeNull": false
+    },
+    {
+      "id": "R030",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit('text'); r=x.amount;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R031",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit('text'); r=x.text;",
+      "compile": false,
+      "expected": "text",
+      "nativeNull": false
+    },
+    {
+      "id": "R032",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit('text'); r=x.items.size();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R033",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit((String)null); r=x.trace;",
+      "compile": false,
+      "expected": "field>second>string",
+      "nativeNull": false
+    },
+    {
+      "id": "R034",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit((String)null); r=x.amount;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R035",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit((String)null); r=x.text;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R036",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit((String)null); r=x.items.size();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R037",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(0,'pair'); r=x.trace;",
+      "compile": false,
+      "expected": "field>second>integer>pair",
+      "nativeNull": false
+    },
+    {
+      "id": "R038",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(0,'pair'); r=x.amount;",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R039",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(0,'pair'); r=x.text;",
+      "compile": false,
+      "expected": "pair",
+      "nativeNull": false
+    },
+    {
+      "id": "R040",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(0,'pair'); r=x.items.size();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R041",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(null,null); r=x.trace;",
+      "compile": false,
+      "expected": "field>second>integer>pair",
+      "nativeNull": false
+    },
+    {
+      "id": "R042",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(null,null); r=x.amount;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R043",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(null,null); r=x.text;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R044",
+      "group": "constructors-and-initialization/overloads",
+      "code": "CLInit x=new CLInit(null,null); r=x.items.size();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R045",
+      "group": "constructors-and-initialization/alias-null-conversion",
+      "code": "CLInit a=new CLInit(3); CLInit b=new CLInit(a); r=b.amount;",
+      "compile": false,
+      "expected": "3",
+      "nativeNull": false
+    },
+    {
+      "id": "R046",
+      "group": "constructors-and-initialization/alias-null-conversion",
+      "code": "CLInit a=new CLInit(3); CLInit b=new CLInit(a); b.items.add('b'); r=a.items.size();",
+      "compile": false,
+      "expected": "1",
+      "nativeNull": false
+    },
+    {
+      "id": "R047",
+      "group": "constructors-and-initialization/alias-null-conversion",
+      "code": "CLInit a=new CLInit(); CLInit b=new CLInit(); a.items.add('a'); r=b.items.size();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R048",
+      "group": "constructors-and-initialization/alias-null-conversion",
+      "code": "CLInit a=new CLInit(); CLInit b=a; b.amount=8; r=a.amount;",
+      "compile": false,
+      "expected": "8",
+      "nativeNull": false
+    },
+    {
+      "id": "R049",
+      "group": "constructors-and-initialization/alias-null-conversion",
+      "code": "CLInit a=new CLInit((CLInit)null); r=a.amount;",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R050",
+      "group": "constructors-and-initialization/alias-null-conversion",
+      "code": "CLInit a=null; r=a.self();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R051",
+      "group": "constructors-and-initialization/alias-null-conversion",
+      "code": "CLInit a=new CLInit(); r=a===a.self();",
+      "compile": false,
+      "expected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R052",
+      "group": "constructors-and-initialization/alias-null-conversion",
+      "code": "CLInit a=new CLInit(); Object b=a; r=((CLInit)b).trace;",
+      "compile": false,
+      "expected": "field>second>integer>default",
+      "nativeNull": false
+    },
+    {
+      "id": "R053",
+      "group": "constructors-and-initialization/alias-null-conversion",
+      "code": "CLInit a=new CLInit(); r=a.choose((Integer)null);",
+      "compile": false,
+      "expected": "integer:null",
+      "nativeNull": false
+    },
+    {
+      "id": "R054",
+      "group": "constructors-and-initialization/alias-null-conversion",
+      "code": "CLInit a=new CLInit(); r=a.choose((String)null);",
+      "compile": false,
+      "expected": "string:null",
+      "nativeNull": false
+    },
+    {
+      "id": "R055",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(); r=x.trace;",
+      "compile": false,
+      "expected": "base-field>base-default>child-default",
+      "nativeNull": false
+    },
+    {
+      "id": "R056",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(); r=x.childField;",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R057",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(); r=x.value;",
+      "compile": false,
+      "expected": "2",
+      "nativeNull": false
+    },
+    {
+      "id": "R058",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(); r=x.tag();",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R059",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(); r=x.baseTag();",
+      "compile": false,
+      "expected": "base",
+      "nativeNull": false
+    },
+    {
+      "id": "R060",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(); r=x.dispatch();",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R061",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(); r=x.readProtected();",
+      "compile": false,
+      "expected": "protected",
+      "nativeNull": false
+    },
+    {
+      "id": "R062",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(0); r=x.trace;",
+      "compile": false,
+      "expected": "base-field>base-arg>child-arg",
+      "nativeNull": false
+    },
+    {
+      "id": "R063",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(0); r=x.childField;",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R064",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(0); r=x.value;",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R065",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(0); r=x.tag();",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R066",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(0); r=x.baseTag();",
+      "compile": false,
+      "expected": "base",
+      "nativeNull": false
+    },
+    {
+      "id": "R067",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(0); r=x.dispatch();",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R068",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(0); r=x.readProtected();",
+      "compile": false,
+      "expected": "protected",
+      "nativeNull": false
+    },
+    {
+      "id": "R069",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(-1); r=x.trace;",
+      "compile": false,
+      "expected": "base-field>base-arg>child-arg",
+      "nativeNull": false
+    },
+    {
+      "id": "R070",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(-1); r=x.childField;",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R071",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(-1); r=x.value;",
+      "compile": false,
+      "expected": "-1",
+      "nativeNull": false
+    },
+    {
+      "id": "R072",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(-1); r=x.tag();",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R073",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(-1); r=x.baseTag();",
+      "compile": false,
+      "expected": "base",
+      "nativeNull": false
+    },
+    {
+      "id": "R074",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(-1); r=x.dispatch();",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R075",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(-1); r=x.readProtected();",
+      "compile": false,
+      "expected": "protected",
+      "nativeNull": false
+    },
+    {
+      "id": "R076",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(2147483647); r=x.trace;",
+      "compile": false,
+      "expected": "base-field>base-arg>child-arg",
+      "nativeNull": false
+    },
+    {
+      "id": "R077",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(2147483647); r=x.childField;",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R078",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(2147483647); r=x.value;",
+      "compile": false,
+      "expected": "2147483647",
+      "nativeNull": false
+    },
+    {
+      "id": "R079",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(2147483647); r=x.tag();",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R080",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(2147483647); r=x.baseTag();",
+      "compile": false,
+      "expected": "base",
+      "nativeNull": false
+    },
+    {
+      "id": "R081",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(2147483647); r=x.dispatch();",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R082",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild(2147483647); r=x.readProtected();",
+      "compile": false,
+      "expected": "protected",
+      "nativeNull": false
+    },
+    {
+      "id": "R083",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild((Integer)null); r=x.trace;",
+      "compile": false,
+      "expected": "base-field>base-arg>child-arg",
+      "nativeNull": false
+    },
+    {
+      "id": "R084",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild((Integer)null); r=x.childField;",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R085",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild((Integer)null); r=x.value;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R086",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild((Integer)null); r=x.tag();",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R087",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild((Integer)null); r=x.baseTag();",
+      "compile": false,
+      "expected": "base",
+      "nativeNull": false
+    },
+    {
+      "id": "R088",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild((Integer)null); r=x.dispatch();",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R089",
+      "group": "inheritance-and-interfaces/initialization-super",
+      "code": "CLChild x=new CLChild((Integer)null); r=x.readProtected();",
+      "compile": false,
+      "expected": "protected",
+      "nativeNull": false
+    },
+    {
+      "id": "R090",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=new CLBase(); r=x.tag();",
+      "compile": false,
+      "expected": "base",
+      "nativeNull": false
+    },
+    {
+      "id": "R091",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=new CLBase(); r=x.dispatch();",
+      "compile": false,
+      "expected": "base",
+      "nativeNull": false
+    },
+    {
+      "id": "R092",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=new CLBase(); r=x.readSecret();",
+      "compile": false,
+      "expected": "secret",
+      "nativeNull": false
+    },
+    {
+      "id": "R093",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=new CLBase(); r=x.measure();",
+      "compile": false,
+      "expected": "2",
+      "nativeNull": false
+    },
+    {
+      "id": "R094",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=new CLChild(); r=x.tag();",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R095",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=new CLChild(); r=x.dispatch();",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R096",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=new CLChild(); r=x.readSecret();",
+      "compile": false,
+      "expected": "secret",
+      "nativeNull": false
+    },
+    {
+      "id": "R097",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=new CLChild(); r=x.measure();",
+      "compile": false,
+      "expected": "3",
+      "nativeNull": false
+    },
+    {
+      "id": "R098",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=new CLSibling(); r=x.tag();",
+      "compile": false,
+      "expected": "sibling",
+      "nativeNull": false
+    },
+    {
+      "id": "R099",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=new CLSibling(); r=x.dispatch();",
+      "compile": false,
+      "expected": "sibling",
+      "nativeNull": false
+    },
+    {
+      "id": "R100",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=new CLSibling(); r=x.readSecret();",
+      "compile": false,
+      "expected": "secret",
+      "nativeNull": false
+    },
+    {
+      "id": "R101",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=new CLSibling(); r=x.measure();",
+      "compile": false,
+      "expected": "2",
+      "nativeNull": false
+    },
+    {
+      "id": "R102",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=null; r=x.tag();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R103",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=null; r=x.dispatch();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R104",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=null; r=x.readSecret();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R105",
+      "group": "inheritance-and-interfaces/virtual-receiver",
+      "code": "CLBase x=null; r=x.measure();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R106",
+      "group": "inheritance-and-interfaces/abstract-conversion-null",
+      "code": "CLAbstract x=new CLConcrete(); r=x.tag();",
+      "compile": false,
+      "expected": "concrete",
+      "nativeNull": false
+    },
+    {
+      "id": "R107",
+      "group": "inheritance-and-interfaces/abstract-conversion-null",
+      "code": "CLAbstract x=new CLConcrete(); r=x.dispatch();",
+      "compile": false,
+      "expected": "concrete",
+      "nativeNull": false
+    },
+    {
+      "id": "R108",
+      "group": "inheritance-and-interfaces/abstract-conversion-null",
+      "code": "CLAbstract x=null; r=x.dispatch();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R109",
+      "group": "inheritance-and-interfaces/abstract-conversion-null",
+      "code": "CLBase x=new CLChild(4); r=((CLChild)x).measure();",
+      "compile": false,
+      "expected": "5",
+      "nativeNull": false
+    },
+    {
+      "id": "R110",
+      "group": "inheritance-and-interfaces/abstract-conversion-null",
+      "code": "CLBase x=new CLSibling(); r=((CLChild)x).tag();",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type CLSibling to CLChild",
+      "nativeNull": false
+    },
+    {
+      "id": "R111",
+      "group": "inheritance-and-interfaces/abstract-conversion-null",
+      "code": "Object x=new CLChild(); System.Callable y=(System.Callable)x; r=y.call('tag',null);",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R112",
+      "group": "inheritance-and-interfaces/abstract-conversion-null",
+      "code": "Object x=new CLBase(); System.Callable y=(System.Callable)x; r=y;",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type CLBase to System.Callable",
+      "nativeNull": false
+    },
+    {
+      "id": "R113",
+      "group": "inheritance-and-interfaces/abstract-conversion-null",
+      "code": "CLBase x=null; CLChild y=(CLChild)x; r=y;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R114",
+      "group": "inheritance-and-interfaces/callable",
+      "code": "System.Callable x=new CLChild(4); r=x.call('tag',new Map<String,Object>{'value'=>'echo'});",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R115",
+      "group": "inheritance-and-interfaces/callable",
+      "code": "System.Callable x=new CLChild(4); r=x.call('base',new Map<String,Object>{'value'=>'echo'});",
+      "compile": false,
+      "expected": "base",
+      "nativeNull": false
+    },
+    {
+      "id": "R116",
+      "group": "inheritance-and-interfaces/callable",
+      "code": "System.Callable x=new CLChild(4); r=x.call('value',new Map<String,Object>{'value'=>'echo'});",
+      "compile": false,
+      "expected": "5",
+      "nativeNull": false
+    },
+    {
+      "id": "R117",
+      "group": "inheritance-and-interfaces/callable",
+      "code": "System.Callable x=new CLChild(4); r=x.call('echo',new Map<String,Object>{'value'=>'echo'});",
+      "compile": false,
+      "expected": "echo",
+      "nativeNull": false
+    },
+    {
+      "id": "R118",
+      "group": "inheritance-and-interfaces/callable",
+      "code": "System.Callable x=new CLChild(4); r=x.call('bad',new Map<String,Object>{'value'=>'echo'});",
+      "compile": false,
+      "expected": "EXC|System.IllegalArgumentException|lifecycle action",
+      "nativeNull": false
+    },
+    {
+      "id": "R119",
+      "group": "inheritance-and-interfaces/callable-null",
+      "code": "System.Callable x=new CLChild(); r=x.call('echo',null);",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R120",
+      "group": "inheritance-and-interfaces/callable-null",
+      "code": "System.Callable x=null; r=x.call('tag',null);",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R121",
+      "group": "inheritance-and-interfaces/callable-null",
+      "code": "System.Callable x=new CLChild(); r=((CLChild)x).tag();",
+      "compile": false,
+      "expected": "child",
+      "nativeNull": false
+    },
+    {
+      "id": "R122",
+      "group": "inheritance-and-interfaces/multiple-interfaces",
+      "code": "Iterable<Integer> x=new CLSequence(0); Integer total=0; for(Integer y:x){total+=y;} r=total;",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R123",
+      "group": "inheritance-and-interfaces/iterator",
+      "code": "Iterator<Integer> x=new CLSequence(0); r=x.hasNext();",
+      "compile": false,
+      "expected": "false",
+      "nativeNull": false
+    },
+    {
+      "id": "R124",
+      "group": "inheritance-and-interfaces/multiple-interfaces",
+      "code": "Iterable<Integer> x=new CLSequence(1); Integer total=0; for(Integer y:x){total+=y;} r=total;",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R125",
+      "group": "inheritance-and-interfaces/iterator",
+      "code": "Iterator<Integer> x=new CLSequence(1); r=x.hasNext();",
+      "compile": false,
+      "expected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R126",
+      "group": "inheritance-and-interfaces/multiple-interfaces",
+      "code": "Iterable<Integer> x=new CLSequence(3); Integer total=0; for(Integer y:x){total+=y;} r=total;",
+      "compile": false,
+      "expected": "3",
+      "nativeNull": false
+    },
+    {
+      "id": "R127",
+      "group": "inheritance-and-interfaces/iterator",
+      "code": "Iterator<Integer> x=new CLSequence(3); r=x.hasNext();",
+      "compile": false,
+      "expected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R128",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.FIRST; r=x.name();",
+      "compile": false,
+      "expected": "FIRST",
+      "nativeNull": false
+    },
+    {
+      "id": "R129",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.FIRST; r=x.ordinal();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R130",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.FIRST; r=String.valueOf(x);",
+      "compile": false,
+      "expected": "FIRST",
+      "nativeNull": false
+    },
+    {
+      "id": "R131",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.FIRST; r=CLMode.valueOf(x.name())==x;",
+      "compile": false,
+      "expected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R132",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.FIRST; r=CLMode.values()[x.ordinal()]==x;",
+      "compile": false,
+      "expected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R133",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.MIDDLE; r=x.name();",
+      "compile": false,
+      "expected": "MIDDLE",
+      "nativeNull": false
+    },
+    {
+      "id": "R134",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.MIDDLE; r=x.ordinal();",
+      "compile": false,
+      "expected": "1",
+      "nativeNull": false
+    },
+    {
+      "id": "R135",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.MIDDLE; r=String.valueOf(x);",
+      "compile": false,
+      "expected": "MIDDLE",
+      "nativeNull": false
+    },
+    {
+      "id": "R136",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.MIDDLE; r=CLMode.valueOf(x.name())==x;",
+      "compile": false,
+      "expected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R137",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.MIDDLE; r=CLMode.values()[x.ordinal()]==x;",
+      "compile": false,
+      "expected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R138",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.LAST; r=x.name();",
+      "compile": false,
+      "expected": "LAST",
+      "nativeNull": false
+    },
+    {
+      "id": "R139",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.LAST; r=x.ordinal();",
+      "compile": false,
+      "expected": "2",
+      "nativeNull": false
+    },
+    {
+      "id": "R140",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.LAST; r=String.valueOf(x);",
+      "compile": false,
+      "expected": "LAST",
+      "nativeNull": false
+    },
+    {
+      "id": "R141",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.LAST; r=CLMode.valueOf(x.name())==x;",
+      "compile": false,
+      "expected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R142",
+      "group": "enums/member-apis",
+      "code": "CLMode x=CLMode.LAST; r=CLMode.values()[x.ordinal()]==x;",
+      "compile": false,
+      "expected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R143",
+      "group": "enums/valueOf-boundary",
+      "code": "r=CLMode.valueOf('FIRST');",
+      "compile": false,
+      "expected": "FIRST",
+      "nativeNull": false
+    },
+    {
+      "id": "R144",
+      "group": "enums/valueOf-boundary",
+      "code": "r=CLMode.valueOf('first');",
+      "compile": false,
+      "expected": "FIRST",
+      "nativeNull": false
+    },
+    {
+      "id": "R145",
+      "group": "enums/valueOf-boundary",
+      "code": "r=CLMode.valueOf('First');",
+      "compile": false,
+      "expected": "FIRST",
+      "nativeNull": false
+    },
+    {
+      "id": "R146",
+      "group": "enums/valueOf-boundary",
+      "code": "r=CLMode.valueOf('LAST');",
+      "compile": false,
+      "expected": "LAST",
+      "nativeNull": false
+    },
+    {
+      "id": "R147",
+      "group": "enums/valueOf-boundary",
+      "code": "r=CLMode.valueOf('');",
+      "compile": false,
+      "expected": "EXC|System.NoSuchElementException|No enum value found called ",
+      "nativeNull": false
+    },
+    {
+      "id": "R148",
+      "group": "enums/valueOf-boundary",
+      "code": "r=CLMode.valueOf('NO_SUCH');",
+      "compile": false,
+      "expected": "EXC|System.NoSuchElementException|No enum value found called NO_SUCH",
+      "nativeNull": false
+    },
+    {
+      "id": "R149",
+      "group": "enums/valueOf-boundary",
+      "code": "r=CLMode.valueOf(null);",
+      "compile": false,
+      "expected": "EXC|System.NoSuchElementException|No enum value found called null",
+      "nativeNull": false
+    },
+    {
+      "id": "R150",
+      "group": "enums/valueOf-boundary",
+      "code": "r=CLMode.valueOf(' FIRST ');",
+      "compile": false,
+      "expected": "EXC|System.NoSuchElementException|No enum value found called  FIRST ",
+      "nativeNull": false
+    },
+    {
+      "id": "R151",
+      "group": "enums/values-null-conversion-exception",
+      "code": "r=CLMode.values().size();",
+      "compile": false,
+      "expected": "3",
+      "nativeNull": false
+    },
+    {
+      "id": "R152",
+      "group": "enums/values-null-conversion-exception",
+      "code": "List<String> names=new List<String>(); for(CLMode x:CLMode.values()){names.add(x.name());} r=String.join(names,',');",
+      "compile": false,
+      "expected": "FIRST,MIDDLE,LAST",
+      "nativeNull": false
+    },
+    {
+      "id": "R153",
+      "group": "enums/values-null-conversion-exception",
+      "code": "List<CLMode> a=CLMode.values(); a.clear(); r=CLMode.values().size();",
+      "compile": false,
+      "expected": "UNCAUGHT|System.FinalException: Collection is read-only",
+      "nativeNull": false
+    },
+    {
+      "id": "R154",
+      "group": "enums/values-null-conversion-exception",
+      "code": "CLMode x=null; r=x.name();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R155",
+      "group": "enums/values-null-conversion-exception",
+      "code": "CLMode x=null; r=x.ordinal();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R156",
+      "group": "enums/values-null-conversion-exception",
+      "code": "CLMode x=null; r=String.valueOf(x);",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": false
+    },
+    {
+      "id": "R157",
+      "group": "enums/values-null-conversion-exception",
+      "code": "Object x=CLMode.MIDDLE; r=((CLMode)x).name();",
+      "compile": false,
+      "expected": "MIDDLE",
+      "nativeNull": false
+    },
+    {
+      "id": "R158",
+      "group": "enums/values-null-conversion-exception",
+      "code": "Object x='FIRST'; r=((CLMode)x).name();",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type String to CLMode",
+      "nativeNull": false
+    },
+    {
+      "id": "R159",
+      "group": "enums/values-null-conversion-exception",
+      "code": "Object x=0; r=((CLMode)x).ordinal();",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Integer to CLMode",
+      "nativeNull": false
+    },
+    {
+      "id": "R160",
+      "group": "enums/values-null-conversion-exception",
+      "code": "Object x=null; r=(CLMode)x;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R161",
+      "group": "enums/values-null-conversion-exception",
+      "code": "r=CLMode.values()[0];",
+      "compile": false,
+      "expected": "FIRST",
+      "nativeNull": false
+    },
+    {
+      "id": "R162",
+      "group": "enums/values-null-conversion-exception",
+      "code": "r=CLMode.values()[2];",
+      "compile": false,
+      "expected": "LAST",
+      "nativeNull": false
+    },
+    {
+      "id": "R163",
+      "group": "enums/values-null-conversion-exception",
+      "code": "r=CLMode.values()[3];",
+      "compile": false,
+      "expected": "EXC|System.ListException|List index out of bounds: 3",
+      "nativeNull": false
+    },
+    {
+      "id": "R164",
+      "group": "enums/values-null-conversion-exception",
+      "code": "r=CLMode.values()[-1];",
+      "compile": false,
+      "expected": "EXC|System.ListException|List index out of bounds: -1",
+      "nativeNull": false
+    },
+    {
+      "id": "R165",
+      "group": "properties/auto-boundary",
+      "code": "CLProps x=new CLProps(); x.autoValue=null; r=x.autoValue;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R166",
+      "group": "properties/custom-boundary",
+      "code": "CLProps x=new CLProps(); x.tracked=null; Integer y=x.tracked; r=String.valueOf(y)+'|'+x.gets+'|'+x.sets;",
+      "compile": false,
+      "expected": "null|1|1",
+      "nativeNull": false
+    },
+    {
+      "id": "R167",
+      "group": "properties/auto-boundary",
+      "code": "CLProps x=new CLProps(); x.autoValue=0; r=x.autoValue;",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R168",
+      "group": "properties/custom-boundary",
+      "code": "CLProps x=new CLProps(); x.tracked=0; Integer y=x.tracked; r=String.valueOf(y)+'|'+x.gets+'|'+x.sets;",
+      "compile": false,
+      "expected": "0|1|1",
+      "nativeNull": false
+    },
+    {
+      "id": "R169",
+      "group": "properties/auto-boundary",
+      "code": "CLProps x=new CLProps(); x.autoValue=-1; r=x.autoValue;",
+      "compile": false,
+      "expected": "-1",
+      "nativeNull": false
+    },
+    {
+      "id": "R170",
+      "group": "properties/custom-boundary",
+      "code": "CLProps x=new CLProps(); x.tracked=-1; Integer y=x.tracked; r=String.valueOf(y)+'|'+x.gets+'|'+x.sets;",
+      "compile": false,
+      "expected": "-1|1|1",
+      "nativeNull": false
+    },
+    {
+      "id": "R171",
+      "group": "properties/auto-boundary",
+      "code": "CLProps x=new CLProps(); x.autoValue=2147483647; r=x.autoValue;",
+      "compile": false,
+      "expected": "2147483647",
+      "nativeNull": false
+    },
+    {
+      "id": "R172",
+      "group": "properties/custom-boundary",
+      "code": "CLProps x=new CLProps(); x.tracked=2147483647; Integer y=x.tracked; r=String.valueOf(y)+'|'+x.gets+'|'+x.sets;",
+      "compile": false,
+      "expected": "2147483647|1|1",
+      "nativeNull": false
+    },
+    {
+      "id": "R173",
+      "group": "properties/text-null",
+      "code": "CLProps x=new CLProps(); x.text=null; r=x.text;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R174",
+      "group": "properties/text-null",
+      "code": "CLProps x=new CLProps(); x.text=''; r=x.text;",
+      "compile": false,
+      "expected": "",
+      "nativeNull": false
+    },
+    {
+      "id": "R175",
+      "group": "properties/text-null",
+      "code": "CLProps x=new CLProps(); x.text='text'; r=x.text;",
+      "compile": false,
+      "expected": "text",
+      "nativeNull": false
+    },
+    {
+      "id": "R176",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=new CLProps(); r=x.autoValue;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R177",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=new CLProps(); r=x.text;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R178",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=new CLProps(); r=x.child;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R179",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=new CLProps(); r=x.readOnly;",
+      "compile": false,
+      "expected": "3",
+      "nativeNull": false
+    },
+    {
+      "id": "R180",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=new CLProps(); x.writeOnly=9; r=x.readOnly;",
+      "compile": false,
+      "expected": "9",
+      "nativeNull": false
+    },
+    {
+      "id": "R181",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=new CLProps(); x.writeOnly=null; r=x.readOnly;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R182",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=new CLProps(); r=x.limited;",
+      "compile": false,
+      "expected": "11",
+      "nativeNull": false
+    },
+    {
+      "id": "R183",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=new CLProps(); x.setLimited(null); r=x.limited;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R184",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=new CLProps(); x.setLimited(19); r=x.limited;",
+      "compile": false,
+      "expected": "19",
+      "nativeNull": false
+    },
+    {
+      "id": "R185",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=new CLProps(); x.tracked+=2; r=String.valueOf(x.readOnly)+'|'+x.gets+'|'+x.sets;",
+      "compile": false,
+      "expected": "5|1|1",
+      "nativeNull": false
+    },
+    {
+      "id": "R186",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=new CLProps(); Integer y=x.tracked++; r=String.valueOf(y)+'|'+x.readOnly+'|'+x.gets+'|'+x.sets;",
+      "compile": false,
+      "expected": "3|4|1|1",
+      "nativeNull": false
+    },
+    {
+      "id": "R187",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=new CLProps(); Integer y=++x.tracked; r=String.valueOf(y)+'|'+x.readOnly+'|'+x.gets+'|'+x.sets;",
+      "compile": false,
+      "expected": "4|4|1|1",
+      "nativeNull": false
+    },
+    {
+      "id": "R188",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=new CLProps(); x.child=new CLInit(4); CLInit y=x.child; y.amount=9; r=x.child.amount;",
+      "compile": false,
+      "expected": "9",
+      "nativeNull": false
+    },
+    {
+      "id": "R189",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=null; r=x.autoValue;",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R190",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=null; x.autoValue=1; r=x;",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R191",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=null; r=x?.autoValue;",
+      "compile": false,
+      "expected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R192",
+      "group": "properties/accessor-evaluation-null-conversion",
+      "code": "CLProps x=new CLProps(); Object y=x; r=((CLProps)y).readOnly;",
+      "compile": false,
+      "expected": "3",
+      "nativeNull": false
+    },
+    {
+      "id": "R193",
+      "group": "access-modifiers-and-namespaces/normal-null-resolution",
+      "code": "CLAccess x=new CLAccess(); r=x.visible;",
+      "compile": false,
+      "expected": "6",
+      "nativeNull": false
+    },
+    {
+      "id": "R194",
+      "group": "access-modifiers-and-namespaces/normal-null-resolution",
+      "code": "CLAccess x=new CLAccess(); r=x.readHidden();",
+      "compile": false,
+      "expected": "5",
+      "nativeNull": false
+    },
+    {
+      "id": "R195",
+      "group": "access-modifiers-and-namespaces/normal-null-resolution",
+      "code": "CLAccess x=new CLAccess(); r=x.callPrivate();",
+      "compile": false,
+      "expected": "7",
+      "nativeNull": false
+    },
+    {
+      "id": "R196",
+      "group": "access-modifiers-and-namespaces/normal-null-resolution",
+      "code": "CLAccess x=new CLAccess(); x.visible=0; r=x.visible;",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R197",
+      "group": "access-modifiers-and-namespaces/normal-null-resolution",
+      "code": "CLAccess x=null; r=x.readHidden();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R198",
+      "group": "access-modifiers-and-namespaces/normal-null-resolution",
+      "code": "System.Type x=System.Type.forName('System','String'); r=x==String.class;",
+      "compile": false,
+      "expected": "false",
+      "nativeNull": false
+    },
+    {
+      "id": "R199",
+      "group": "access-modifiers-and-namespaces/normal-null-resolution",
+      "code": "System.Type x=System.Type.forName(null,'String'); r=x==String.class;",
+      "compile": false,
+      "expected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R200",
+      "group": "access-modifiers-and-namespaces/normal-null-resolution",
+      "code": "System.Type x=System.Type.forName('DefinitelyMissingA04Namespace','String'); r=x==null;",
+      "compile": false,
+      "expected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R201",
+      "group": "access-modifiers-and-namespaces/normal-null-resolution",
+      "code": "System.String x='qualified'; r=x.length();",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 96: Invalid type: System.String",
+      "sourceLine": 96,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62R201",
+          "source": "@IsTest private class A04Native62R201 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.String x='qualified'; r=x.length();\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: System.String"
+        },
+        "67.0": {
+          "name": "A04Native67R201",
+          "source": "@IsTest private class A04Native67R201 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.String x='qualified'; r=x.length();\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: System.String"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "R202",
+      "group": "access-modifiers-and-namespaces/normal-null-resolution",
+      "code": "r=System.Math.abs(-2);",
+      "compile": false,
+      "expected": "2",
+      "nativeNull": false
+    },
+    {
+      "id": "C001",
+      "group": "compile/constructors-and-initialization",
+      "code": "class Probe {public Probe(){this(1);} public Probe(Integer n){}} Probe x=new Probe();\npq.out('C001','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C001",
+          "source": "@IsTest private class A04Native62C001 {\nclass Probe {public Probe(){this(1);} public Probe(Integer n){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                 Probe x=new Probe();\npq.out('C001','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C001",
+          "source": "@IsTest private class A04Native67C001 {\nclass Probe {public Probe(){this(1);} public Probe(Integer n){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                 Probe x=new Probe();\npq.out('C001','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C002",
+      "group": "compile/constructors-and-initialization",
+      "code": "class Probe {public Probe(Integer n){}} Probe x=new Probe();\npq.out('C002','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [Probe].<Constructor>()",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C002",
+          "source": "@IsTest private class A04Native62C002 {\nclass Probe {public Probe(Integer n){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                        Probe x=new Probe();\npq.out('C002','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tConstructor not defined: [A04Native62C002.Probe].<Constructor>()"
+        },
+        "67.0": {
+          "name": "A04Native67C002",
+          "source": "@IsTest private class A04Native67C002 {\nclass Probe {public Probe(Integer n){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                        Probe x=new Probe();\npq.out('C002','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tConstructor not defined: [A04Native67C002.Probe].<Constructor>()"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C003",
+      "group": "compile/constructors-and-initialization",
+      "code": "class Probe {public Probe(){this();}} Probe x=new Probe();\npq.out('C003','compiled');",
+      "compile": true,
+      "expected": "UNCAUGHT|System.LimitException: Maximum stack depth reached: 1001",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C003",
+          "source": "@IsTest private class A04Native62C003 {\nclass Probe {public Probe(){this();}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                      Probe x=new Probe();\npq.out('C003','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C003",
+          "source": "@IsTest private class A04Native67C003 {\nclass Probe {public Probe(){this();}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                      Probe x=new Probe();\npq.out('C003','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C004",
+      "group": "compile/constructors-and-initialization",
+      "code": "class Probe {public Probe(){Integer n=1;this(n);} public Probe(Integer n){}}\npq.out('C004','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Call to 'this()' must be the first statement in a constructor method",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C004",
+          "source": "@IsTest private class A04Native62C004 {\nclass Probe {public Probe(){Integer n=1;this(n);} public Probe(Integer n){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                            \npq.out('C004','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tCall to 'this()' must be the first statement in a constructor method"
+        },
+        "67.0": {
+          "name": "A04Native67C004",
+          "source": "@IsTest private class A04Native67C004 {\nclass Probe {public Probe(){Integer n=1;this(n);} public Probe(Integer n){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                            \npq.out('C004','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tCall to 'this()' must be the first statement in a constructor method"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C005",
+      "group": "compile/constructors-and-initialization",
+      "code": "class Probe {public Integer Probe(){return 1;}} Probe x=new Probe();\npq.out('C005','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C005",
+          "source": "@IsTest private class A04Native62C005 {\nclass Probe {public Integer Probe(){return 1;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                Probe x=new Probe();\npq.out('C005','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C005",
+          "source": "@IsTest private class A04Native67C005 {\nclass Probe {public Integer Probe(){return 1;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                Probe x=new Probe();\npq.out('C005','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C006",
+      "group": "compile/constructors-and-initialization",
+      "code": "class Probe {public Probe(String s){}} Probe x=new Probe(1);\npq.out('C006','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [Probe].<Constructor>(Integer)",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C006",
+          "source": "@IsTest private class A04Native62C006 {\nclass Probe {public Probe(String s){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                       Probe x=new Probe(1);\npq.out('C006','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tConstructor not defined: [A04Native62C006.Probe].<Constructor>(Integer)"
+        },
+        "67.0": {
+          "name": "A04Native67C006",
+          "source": "@IsTest private class A04Native67C006 {\nclass Probe {public Probe(String s){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                       Probe x=new Probe(1);\npq.out('C006','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tConstructor not defined: [A04Native67C006.Probe].<Constructor>(Integer)"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C007",
+      "group": "compile/constructors-and-initialization",
+      "code": "class Probe {public Probe(Integer n){} public Probe(String s){}} Probe x=new Probe(null);\npq.out('C007','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Ambiguous method signature: void <init>(NULL)",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C007",
+          "source": "@IsTest private class A04Native62C007 {\nclass Probe {public Probe(Integer n){} public Probe(String s){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                 Probe x=new Probe(null);\npq.out('C007','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "67.0": {
+          "name": "A04Native67C007",
+          "source": "@IsTest private class A04Native67C007 {\nclass Probe {public Probe(Integer n){} public Probe(String s){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                 Probe x=new Probe(null);\npq.out('C007','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C008",
+      "group": "compile/constructors-and-initialization",
+      "code": "class Probe {public Integer x=1; {x=2;} public Probe(){x=3;}} Probe x=new Probe();\npq.out('C008','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C008",
+          "source": "@IsTest private class A04Native62C008 {\nclass Probe {public Integer x=1; {x=2;} public Probe(){x=3;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                              Probe x=new Probe();\npq.out('C008','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C008",
+          "source": "@IsTest private class A04Native67C008 {\nclass Probe {public Integer x=1; {x=2;} public Probe(){x=3;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                              Probe x=new Probe();\npq.out('C008','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C009",
+      "group": "compile/constructors-and-initialization",
+      "code": "class Probe {public static Integer x=1;}\npq.out('C009','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: static can only be used on fields of a top level type",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C009",
+          "source": "@IsTest private class A04Native62C009 {\nclass Probe {public static Integer x=1;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                        \npq.out('C009','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tstatic can only be used on fields of a top level type"
+        },
+        "67.0": {
+          "name": "A04Native67C009",
+          "source": "@IsTest private class A04Native67C009 {\nclass Probe {public static Integer x=1;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                        \npq.out('C009','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tstatic can only be used on fields of a top level type"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C010",
+      "group": "compile/constructors-and-initialization",
+      "code": "class Probe {static {Integer x=1;}}\npq.out('C010','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Inner types are not allowed to have static blocks",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C010",
+          "source": "@IsTest private class A04Native62C010 {\nclass Probe {static {Integer x=1;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                   \npq.out('C010','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInner types are not allowed to have static blocks"
+        },
+        "67.0": {
+          "name": "A04Native67C010",
+          "source": "@IsTest private class A04Native67C010 {\nclass Probe {static {Integer x=1;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                   \npq.out('C010','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInner types are not allowed to have static blocks"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C011",
+      "group": "compile/constructors-and-initialization",
+      "code": "class Probe {public static final Integer x=1;}\npq.out('C011','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: static can only be used on fields of a top level type",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C011",
+          "source": "@IsTest private class A04Native62C011 {\nclass Probe {public static final Integer x=1;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                              \npq.out('C011','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tstatic can only be used on fields of a top level type"
+        },
+        "67.0": {
+          "name": "A04Native67C011",
+          "source": "@IsTest private class A04Native67C011 {\nclass Probe {public static final Integer x=1;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                              \npq.out('C011','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tstatic can only be used on fields of a top level type"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C012",
+      "group": "compile/constructors-and-initialization",
+      "code": "class Probe {public static Integer x=1; public static Integer y=x+1;}\npq.out('C012','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: static can only be used on fields of a top level type",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C012",
+          "source": "@IsTest private class A04Native62C012 {\nclass Probe {public static Integer x=1; public static Integer y=x+1;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                     \npq.out('C012','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tstatic can only be used on fields of a top level type"
+        },
+        "67.0": {
+          "name": "A04Native67C012",
+          "source": "@IsTest private class A04Native67C012 {\nclass Probe {public static Integer x=1; public static Integer y=x+1;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                     \npq.out('C012','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tstatic can only be used on fields of a top level type"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C013",
+      "group": "compile/inheritance-and-interfaces",
+      "code": "virtual class B {} class D extends B {} D x=new D();\npq.out('C013','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 1: classes are by default virtual",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C013",
+          "source": "@IsTest private class A04Native62C013 {\nvirtual class B {}\nclass D extends B {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                        D x=new D();\npq.out('C013','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C013",
+          "source": "@IsTest private class A04Native67C013 {\nvirtual class B {}\nclass D extends B {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                        D x=new D();\npq.out('C013','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C014",
+      "group": "compile/inheritance-and-interfaces",
+      "code": "abstract class B {public abstract String tag();} B x=new B();\npq.out('C014','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Abstract classes cannot be constructed: B",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C014",
+          "source": "@IsTest private class A04Native62C014 {\nabstract class B {public abstract String tag();}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                 B x=new B();\npq.out('C014','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tAbstract classes cannot be constructed: A04Native62C014.B"
+        },
+        "67.0": {
+          "name": "A04Native67C014",
+          "source": "@IsTest private class A04Native67C014 {\nabstract class B {public abstract String tag();}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                 B x=new B();\npq.out('C014','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tAbstract classes cannot be constructed: A04Native67C014.B"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C015",
+      "group": "compile/inheritance-and-interfaces",
+      "code": "abstract class B {public abstract String tag();} class D extends B {}\npq.out('C015','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Class D must implement the abstract method: String B.tag()",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C015",
+          "source": "@IsTest private class A04Native62C015 {\nabstract class B {public abstract String tag();}\nclass D extends B {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                     \npq.out('C015','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tClass A04Native62C015.D must implement the abstract method: String A04Native62C015.B.tag()"
+        },
+        "67.0": {
+          "name": "A04Native67C015",
+          "source": "@IsTest private class A04Native67C015 {\nabstract class B {public abstract String tag();}\nclass D extends B {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                     \npq.out('C015','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tClass A04Native67C015.D must implement the abstract method: String A04Native67C015.B.tag()"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C016",
+      "group": "compile/inheritance-and-interfaces",
+      "code": "virtual class B {public virtual String tag(){return 'b';}} class D extends B {public override String tag(){return 'd';}}\npq.out('C016','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 1: classes are by default virtual",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C016",
+          "source": "@IsTest private class A04Native62C016 {\nvirtual class B {public virtual String tag(){return 'b';}}\nclass D extends B {public override String tag(){return 'd';}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                                        \npq.out('C016','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C016",
+          "source": "@IsTest private class A04Native67C016 {\nvirtual class B {public virtual String tag(){return 'b';}}\nclass D extends B {public override String tag(){return 'd';}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                                        \npq.out('C016','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C017",
+      "group": "compile/inheritance-and-interfaces",
+      "code": "class B {public String tag(){return 'b';}} class D extends B {public override String tag(){return 'd';}}\npq.out('C017','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Non-virtual, non-abstract methods cannot be overridden: String D.tag()",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C017",
+          "source": "@IsTest private class A04Native62C017 {\nclass B {public String tag(){return 'b';}}\nclass D extends B {public override String tag(){return 'd';}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                        \npq.out('C017','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: A04Native62C017.B"
+        },
+        "67.0": {
+          "name": "A04Native67C017",
+          "source": "@IsTest private class A04Native67C017 {\nclass B {public String tag(){return 'b';}}\nclass D extends B {public override String tag(){return 'd';}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                        \npq.out('C017','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: A04Native67C017.B"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C018",
+      "group": "compile/inheritance-and-interfaces",
+      "code": "class B {} class D extends B {public override String tag(){return 'd';}}\npq.out('C018','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: @Override specified for non-overriding method: String D.tag()",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C018",
+          "source": "@IsTest private class A04Native62C018 {\nclass B {}\nclass D extends B {public override String tag(){return 'd';}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                        \npq.out('C018','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: A04Native62C018.B"
+        },
+        "67.0": {
+          "name": "A04Native67C018",
+          "source": "@IsTest private class A04Native67C018 {\nclass B {}\nclass D extends B {public override String tag(){return 'd';}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                        \npq.out('C018','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: A04Native67C018.B"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C019",
+      "group": "compile/inheritance-and-interfaces",
+      "code": "virtual class B {public B(Integer n){}} class D extends B {public D(){super(1);}} D x=new D();\npq.out('C019','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 1: classes are by default virtual",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C019",
+          "source": "@IsTest private class A04Native62C019 {\nvirtual class B {public B(Integer n){}}\nclass D extends B {public D(){super(1);}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                  D x=new D();\npq.out('C019','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C019",
+          "source": "@IsTest private class A04Native67C019 {\nvirtual class B {public B(Integer n){}}\nclass D extends B {public D(){super(1);}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                  D x=new D();\npq.out('C019','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C020",
+      "group": "compile/inheritance-and-interfaces",
+      "code": "virtual class B {public B(Integer n){}} class D extends B {public D(){}} D x=new D();\npq.out('C020','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 1: classes are by default virtual",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C020",
+          "source": "@IsTest private class A04Native62C020 {\nvirtual class B {public B(Integer n){}}\nclass D extends B {public D(){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                         D x=new D();\npq.out('C020','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tNo default constructor available in super type: A04Native62C020.B"
+        },
+        "67.0": {
+          "name": "A04Native67C020",
+          "source": "@IsTest private class A04Native67C020 {\nvirtual class B {public B(Integer n){}}\nclass D extends B {public D(){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                         D x=new D();\npq.out('C020','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tNo default constructor available in super type: A04Native67C020.B"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C021",
+      "group": "compile/inheritance-and-interfaces",
+      "code": "interface I {String tag();} class D implements I {public String tag(){return 'd';}} I x=new D();\npq.out('C021','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C021",
+          "source": "@IsTest private class A04Native62C021 {\ninterface I {String tag();}\nclass D implements I {public String tag(){return 'd';}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                    I x=new D();\npq.out('C021','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C021",
+          "source": "@IsTest private class A04Native67C021 {\ninterface I {String tag();}\nclass D implements I {public String tag(){return 'd';}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                    I x=new D();\npq.out('C021','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C022",
+      "group": "compile/inheritance-and-interfaces",
+      "code": "interface I {String tag();} class D implements I {}\npq.out('C022','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Class D must implement the method: String I.tag()",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C022",
+          "source": "@IsTest private class A04Native62C022 {\ninterface I {String tag();}\nclass D implements I {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                   \npq.out('C022','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tClass A04Native62C022.D must implement the method: String A04Native62C022.I.tag()"
+        },
+        "67.0": {
+          "name": "A04Native67C022",
+          "source": "@IsTest private class A04Native67C022 {\ninterface I {String tag();}\nclass D implements I {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                   \npq.out('C022','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tClass A04Native67C022.D must implement the method: String A04Native67C022.I.tag()"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C023",
+      "group": "compile/inheritance-and-interfaces",
+      "code": "interface I {String tag();} class D implements I {private String tag(){return 'd';}}\npq.out('C023','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: D: Overriding implementations of global or public interface methods must be global or public: String I.tag()",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C023",
+          "source": "@IsTest private class A04Native62C023 {\ninterface I {String tag();}\nclass D implements I {private String tag(){return 'd';}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                    \npq.out('C023','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tA04Native62C023.D: Overriding implementations of global or public interface methods must be global or public: String A04Native62C023.I.tag()"
+        },
+        "67.0": {
+          "name": "A04Native67C023",
+          "source": "@IsTest private class A04Native67C023 {\ninterface I {String tag();}\nclass D implements I {private String tag(){return 'd';}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                    \npq.out('C023','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tA04Native67C023.D: Overriding implementations of global or public interface methods must be global or public: String A04Native67C023.I.tag()"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C024",
+      "group": "compile/inheritance-and-interfaces",
+      "code": "interface I {String tag();} interface J extends I {Integer count();} class D implements J {public String tag(){return 'd';} public Integer count(){return 1;}}\npq.out('C024','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C024",
+          "source": "@IsTest private class A04Native62C024 {\ninterface I {String tag();}\ninterface J extends I {Integer count();}\nclass D implements J {public String tag(){return 'd';} public Integer count(){return 1;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                                                                              \npq.out('C024','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C024",
+          "source": "@IsTest private class A04Native67C024 {\ninterface I {String tag();}\ninterface J extends I {Integer count();}\nclass D implements J {public String tag(){return 'd';} public Integer count(){return 1;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                                                                              \npq.out('C024','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C025",
+      "group": "compile/inheritance-and-interfaces",
+      "code": "interface I {String tag();} interface J {Integer count();} class D implements I,J {public String tag(){return 'd';} public Integer count(){return 1;}}\npq.out('C025','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C025",
+          "source": "@IsTest private class A04Native62C025 {\ninterface I {String tag();}\ninterface J {Integer count();}\nclass D implements I,J {public String tag(){return 'd';} public Integer count(){return 1;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                                                                      \npq.out('C025','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C025",
+          "source": "@IsTest private class A04Native67C025 {\ninterface I {String tag();}\ninterface J {Integer count();}\nclass D implements I,J {public String tag(){return 'd';} public Integer count(){return 1;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                                                                      \npq.out('C025','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C026",
+      "group": "compile/inheritance-and-interfaces",
+      "code": "class D implements System.Callable {public Object call(String a,Map<String,Object> b){return null;}}\npq.out('C026','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C026",
+          "source": "@IsTest private class A04Native62C026 {\nclass D implements System.Callable {public Object call(String a,Map<String,Object> b){return null;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                    \npq.out('C026','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C026",
+          "source": "@IsTest private class A04Native67C026 {\nclass D implements System.Callable {public Object call(String a,Map<String,Object> b){return null;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                    \npq.out('C026','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C027",
+      "group": "compile/enums",
+      "code": "enum Mode {A,B} Mode x=Mode.A;\npq.out('C027','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C027",
+          "source": "@IsTest private class A04Native62C027 {\nenum Mode {A,B}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                Mode x=Mode.A;\npq.out('C027','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C027",
+          "source": "@IsTest private class A04Native67C027 {\nenum Mode {A,B}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                Mode x=Mode.A;\npq.out('C027','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C028",
+      "group": "compile/enums",
+      "code": "enum Mode {A,A}\npq.out('C028','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Duplicate field: A",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C028",
+          "source": "@IsTest private class A04Native62C028 {\nenum Mode {A,A}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n               \npq.out('C028','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tDuplicate field: A"
+        },
+        "67.0": {
+          "name": "A04Native67C028",
+          "source": "@IsTest private class A04Native67C028 {\nenum Mode {A,A}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n               \npq.out('C028','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tDuplicate field: A"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C029",
+      "group": "compile/enums",
+      "code": "enum Mode {}\npq.out('C029','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C029",
+          "source": "@IsTest private class A04Native62C029 {\nenum Mode {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n            \npq.out('C029','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C029",
+          "source": "@IsTest private class A04Native67C029 {\nenum Mode {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n            \npq.out('C029','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C030",
+      "group": "compile/enums",
+      "code": "enum Mode {A,B} Mode x=Mode.C;\npq.out('C030','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: C",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C030",
+          "source": "@IsTest private class A04Native62C030 {\nenum Mode {A,B}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                Mode x=Mode.C;\npq.out('C030','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tVariable does not exist: C"
+        },
+        "67.0": {
+          "name": "A04Native67C030",
+          "source": "@IsTest private class A04Native67C030 {\nenum Mode {A,B}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                Mode x=Mode.C;\npq.out('C030','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tVariable does not exist: C"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C031",
+      "group": "compile/enums",
+      "code": "enum Mode {A,B} Mode x=new Mode();\npq.out('C031','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Mode",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C031",
+          "source": "@IsTest private class A04Native62C031 {\nenum Mode {A,B}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                Mode x=new Mode();\npq.out('C031','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tType cannot be constructed: A04Native62C031.Mode"
+        },
+        "67.0": {
+          "name": "A04Native67C031",
+          "source": "@IsTest private class A04Native67C031 {\nenum Mode {A,B}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                Mode x=new Mode();\npq.out('C031','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tType cannot be constructed: A04Native67C031.Mode"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C032",
+      "group": "compile/enums",
+      "code": "enum Mode {A,B} Mode x=0;\npq.out('C032','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to Mode",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C032",
+          "source": "@IsTest private class A04Native62C032 {\nenum Mode {A,B}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                Mode x=0;\npq.out('C032','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tIllegal assignment from Integer to A04Native62C032.Mode"
+        },
+        "67.0": {
+          "name": "A04Native67C032",
+          "source": "@IsTest private class A04Native67C032 {\nenum Mode {A,B}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                Mode x=0;\npq.out('C032','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tIllegal assignment from Integer to A04Native67C032.Mode"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C033",
+      "group": "compile/enums",
+      "code": "enum Mode {A,B} Mode x='A';\npq.out('C033','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to Mode",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C033",
+          "source": "@IsTest private class A04Native62C033 {\nenum Mode {A,B}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                Mode x='A';\npq.out('C033','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tIllegal assignment from String to A04Native62C033.Mode"
+        },
+        "67.0": {
+          "name": "A04Native67C033",
+          "source": "@IsTest private class A04Native67C033 {\nenum Mode {A,B}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                Mode x='A';\npq.out('C033','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tIllegal assignment from String to A04Native67C033.Mode"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C034",
+      "group": "compile/enums",
+      "code": "enum Mode {A,B} Mode x=Mode.valueOf(0);\npq.out('C034','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void valueOf(Integer) from the type Mode",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C034",
+          "source": "@IsTest private class A04Native62C034 {\nenum Mode {A,B}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                Mode x=Mode.valueOf(0);\npq.out('C034','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void valueOf(Integer) from the type A04Native62C034.Mode"
+        },
+        "67.0": {
+          "name": "A04Native67C034",
+          "source": "@IsTest private class A04Native67C034 {\nenum Mode {A,B}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                Mode x=Mode.valueOf(0);\npq.out('C034','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void valueOf(Integer) from the type A04Native67C034.Mode"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C035",
+      "group": "compile/properties",
+      "code": "class Probe {public Integer x {get;set;}} Probe x=new Probe();\npq.out('C035','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C035",
+          "source": "@IsTest private class A04Native62C035 {\nclass Probe {public Integer x {get;set;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                          Probe x=new Probe();\npq.out('C035','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C035",
+          "source": "@IsTest private class A04Native67C035 {\nclass Probe {public Integer x {get;set;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                          Probe x=new Probe();\npq.out('C035','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C036",
+      "group": "compile/properties",
+      "code": "class Probe {public Integer x {get {return 1;}}} Probe x=new Probe(); x.x=2;\npq.out('C036','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Variable is not visible: Probe.x",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C036",
+          "source": "@IsTest private class A04Native62C036 {\nclass Probe {public Integer x {get {return 1;}}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                 Probe x=new Probe(); x.x=2;\npq.out('C036','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tVariable is not visible: A04Native62C036.Probe.x"
+        },
+        "67.0": {
+          "name": "A04Native67C036",
+          "source": "@IsTest private class A04Native67C036 {\nclass Probe {public Integer x {get {return 1;}}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                 Probe x=new Probe(); x.x=2;\npq.out('C036','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tVariable is not visible: A04Native67C036.Probe.x"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C037",
+      "group": "compile/properties",
+      "code": "class Probe {public Integer x {set {Integer y=value;}}} Probe x=new Probe(); Integer y=x.x;\npq.out('C037','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Variable is not visible: Probe.x",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C037",
+          "source": "@IsTest private class A04Native62C037 {\nclass Probe {public Integer x {set {Integer y=value;}}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                        Probe x=new Probe(); Integer y=x.x;\npq.out('C037','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tVariable is not visible: A04Native62C037.Probe.x"
+        },
+        "67.0": {
+          "name": "A04Native67C037",
+          "source": "@IsTest private class A04Native67C037 {\nclass Probe {public Integer x {set {Integer y=value;}}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                        Probe x=new Probe(); Integer y=x.x;\npq.out('C037','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tVariable is not visible: A04Native67C037.Probe.x"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C038",
+      "group": "compile/properties",
+      "code": "class Probe {public Integer x {get;private set;}} Probe x=new Probe(); x.x=2;\npq.out('C038','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C038",
+          "source": "@IsTest private class A04Native62C038 {\nclass Probe {public Integer x {get;private set;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                  Probe x=new Probe(); x.x=2;\npq.out('C038','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C038",
+          "source": "@IsTest private class A04Native67C038 {\nclass Probe {public Integer x {get;private set;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                  Probe x=new Probe(); x.x=2;\npq.out('C038','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C039",
+      "group": "compile/properties",
+      "code": "class Probe {private Integer x {public get;set;}}\npq.out('C039','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Cannot declare public accessor on private property",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C039",
+          "source": "@IsTest private class A04Native62C039 {\nclass Probe {private Integer x {public get;set;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                 \npq.out('C039','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tCannot declare public accessor on private property"
+        },
+        "67.0": {
+          "name": "A04Native67C039",
+          "source": "@IsTest private class A04Native67C039 {\nclass Probe {private Integer x {public get;set;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                 \npq.out('C039','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tCannot declare public accessor on private property"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C040",
+      "group": "compile/properties",
+      "code": "class Probe {public Integer x {get {return 'bad';} set;}}\npq.out('C040','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Illegal conversion from String to Integer",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C040",
+          "source": "@IsTest private class A04Native62C040 {\nclass Probe {public Integer x {get {return 'bad';} set;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                         \npq.out('C040','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tIllegal conversion from String to Integer"
+        },
+        "67.0": {
+          "name": "A04Native67C040",
+          "source": "@IsTest private class A04Native67C040 {\nclass Probe {public Integer x {get {return 'bad';} set;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                         \npq.out('C040','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tIllegal conversion from String to Integer"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C041",
+      "group": "compile/properties",
+      "code": "class Probe {public Integer x {get;set;} public Integer x;}\npq.out('C041','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Duplicate field: x",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C041",
+          "source": "@IsTest private class A04Native62C041 {\nclass Probe {public Integer x {get;set;} public Integer x;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                           \npq.out('C041','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tDuplicate field: x"
+        },
+        "67.0": {
+          "name": "A04Native67C041",
+          "source": "@IsTest private class A04Native67C041 {\nclass Probe {public Integer x {get;set;} public Integer x;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                           \npq.out('C041','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tDuplicate field: x"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C042",
+      "group": "compile/properties",
+      "code": "class Probe {public Integer x {get;get;}}\npq.out('C042','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'class'.",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C042",
+          "source": "@IsTest private class A04Native62C042 {\nclass Probe {public Integer x {get;get;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                         \npq.out('C042','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tMissing '}' at 'get'"
+        },
+        "67.0": {
+          "name": "A04Native67C042",
+          "source": "@IsTest private class A04Native67C042 {\nclass Probe {public Integer x {get;get;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                         \npq.out('C042','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tMissing '}' at 'get'"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C043",
+      "group": "compile/properties",
+      "code": "class Probe {public static Integer x {get;set;}}\npq.out('C043','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline -1: static can only be used on fields of a top level type",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C043",
+          "source": "@IsTest private class A04Native62C043 {\nclass Probe {public static Integer x {get;set;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                \npq.out('C043','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tstatic can only be used on fields of a top level type"
+        },
+        "67.0": {
+          "name": "A04Native67C043",
+          "source": "@IsTest private class A04Native67C043 {\nclass Probe {public static Integer x {get;set;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                \npq.out('C043','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tstatic can only be used on fields of a top level type"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C044",
+      "group": "compile/access-modifiers-and-namespaces",
+      "code": "class Probe {private Integer x=1;} Probe p=new Probe(); Integer y=p.x;\npq.out('C044','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C044",
+          "source": "@IsTest private class A04Native62C044 {\nclass Probe {private Integer x=1;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                   Probe p=new Probe(); Integer y=p.x;\npq.out('C044','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C044Retry",
+          "source": "@IsTest private class A04Native67C044Retry {\nclass Probe {private Integer x=1;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                   Probe p=new Probe(); Integer y=p.x;\npq.out('C044','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C045",
+      "group": "compile/access-modifiers-and-namespaces",
+      "code": "class Probe {private Integer x(){return 1;}} Probe p=new Probe(); Integer y=p.x();\npq.out('C045','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C045",
+          "source": "@IsTest private class A04Native62C045 {\nclass Probe {private Integer x(){return 1;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                             Probe p=new Probe(); Integer y=p.x();\npq.out('C045','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C045",
+          "source": "@IsTest private class A04Native67C045 {\nclass Probe {private Integer x(){return 1;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                             Probe p=new Probe(); Integer y=p.x();\npq.out('C045','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C046",
+      "group": "compile/access-modifiers-and-namespaces",
+      "code": "class Probe {protected Integer x=1;} Probe p=new Probe(); Integer y=p.x;\npq.out('C046','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C046",
+          "source": "@IsTest private class A04Native62C046 {\nclass Probe {protected Integer x=1;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                     Probe p=new Probe(); Integer y=p.x;\npq.out('C046','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C046",
+          "source": "@IsTest private class A04Native67C046 {\nclass Probe {protected Integer x=1;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                     Probe p=new Probe(); Integer y=p.x;\npq.out('C046','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C047",
+      "group": "compile/access-modifiers-and-namespaces",
+      "code": "class Probe {private Probe(){}} Probe p=new Probe();\npq.out('C047','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C047",
+          "source": "@IsTest private class A04Native62C047 {\nclass Probe {private Probe(){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                Probe p=new Probe();\npq.out('C047','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C047",
+          "source": "@IsTest private class A04Native67C047 {\nclass Probe {private Probe(){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                Probe p=new Probe();\npq.out('C047','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C048",
+      "group": "compile/access-modifiers-and-namespaces",
+      "code": "global class Probe {global Integer x=1;} Probe p=new Probe();\npq.out('C048','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 1: Enclosing type for global fields in apex classes must be declared as global",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C048",
+          "source": "@IsTest private class A04Native62C048 {\nglobal class Probe {global Integer x=1;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                         Probe p=new Probe();\npq.out('C048','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tEnclosing type for global fields in apex classes must be declared as global"
+        },
+        "67.0": {
+          "name": "A04Native67C048",
+          "source": "@IsTest private class A04Native67C048 {\nglobal class Probe {global Integer x=1;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                         Probe p=new Probe();\npq.out('C048','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tEnclosing type for global fields in apex classes must be declared as global"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C049",
+      "group": "compile/access-modifiers-and-namespaces",
+      "code": "private class Probe {}\npq.out('C049','compiled');",
+      "compile": true,
+      "expected": "compiled",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C049",
+          "source": "@IsTest private class A04Native62C049 {\nprivate class Probe {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                      \npq.out('C049','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Native67C049",
+          "source": "@IsTest private class A04Native67C049 {\nprivate class Probe {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                      \npq.out('C049','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "compiled"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C050",
+      "group": "compile/access-modifiers-and-namespaces",
+      "code": "protected class Probe {}\npq.out('C050','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: protected is not allowed on classes",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C050",
+          "source": "@IsTest private class A04Native62C050 {\nprotected class Probe {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                        \npq.out('C050','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tprotected is not allowed on classes"
+        },
+        "67.0": {
+          "name": "A04Native67C050",
+          "source": "@IsTest private class A04Native67C050 {\nprotected class Probe {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                        \npq.out('C050','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tprotected is not allowed on classes"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C051",
+      "group": "compile/access-modifiers-and-namespaces",
+      "code": "class Outer {public class Inner {public Integer x=1;}} Outer.Inner x=new Outer.Inner();\npq.out('C051','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Inner types are not allowed to have inner types",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C051",
+          "source": "@IsTest private class A04Native62C051 {\nclass Outer {public class Inner {public Integer x=1;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                       Outer.Inner x=new Outer.Inner();\npq.out('C051','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "name": "A04Native67C051",
+          "source": "@IsTest private class A04Native67C051 {\nclass Outer {public class Inner {public Integer x=1;}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                       Outer.Inner x=new Outer.Inner();\npq.out('C051','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C052",
+      "group": "compile/access-modifiers-and-namespaces",
+      "code": "class Outer {private class Inner {}} Outer.Inner x=new Outer.Inner();\npq.out('C052','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Inner types are not allowed to have inner types",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C052",
+          "source": "@IsTest private class A04Native62C052 {\nclass Outer {private class Inner {}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                     Outer.Inner x=new Outer.Inner();\npq.out('C052','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "name": "A04Native67C052",
+          "source": "@IsTest private class A04Native67C052 {\nclass Outer {private class Inner {}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                     Outer.Inner x=new Outer.Inner();\npq.out('C052','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C053",
+      "group": "compile/access-modifiers-and-namespaces",
+      "code": "class Outer {public enum Mode {A,B}}\npq.out('C053','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Inner types are not allowed to have inner types",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C053",
+          "source": "@IsTest private class A04Native62C053 {\nclass Outer {public enum Mode {A,B}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                    \npq.out('C053','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "name": "A04Native67C053",
+          "source": "@IsTest private class A04Native67C053 {\nclass Outer {public enum Mode {A,B}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                    \npq.out('C053','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C054",
+      "group": "compile/access-modifiers-and-namespaces",
+      "code": "class Outer {public interface I {Integer count();}}\npq.out('C054','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Inner types are not allowed to have inner types",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C054",
+          "source": "@IsTest private class A04Native62C054 {\nclass Outer {public interface I {Integer count();}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                   \npq.out('C054','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "name": "A04Native67C054",
+          "source": "@IsTest private class A04Native67C054 {\nclass Outer {public interface I {Integer count();}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                   \npq.out('C054','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C055",
+      "group": "compile/access-modifiers-and-namespaces",
+      "code": "DefinitelyMissingA04Namespace.Probe x;\npq.out('C055','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: DefinitelyMissingA04Namespace.Probe",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C055",
+          "source": "@IsTest private class A04Native62C055 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nDefinitelyMissingA04Namespace.Probe x;\npq.out('C055','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: DefinitelyMissingA04Namespace.Probe"
+        },
+        "67.0": {
+          "name": "A04Native67C055",
+          "source": "@IsTest private class A04Native67C055 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nDefinitelyMissingA04Namespace.Probe x;\npq.out('C055','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: DefinitelyMissingA04Namespace.Probe"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "C056",
+      "group": "compile/access-modifiers-and-namespaces",
+      "code": "System.String x='a'; Integer n=x.length();\npq.out('C056','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: System.String",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62C056",
+          "source": "@IsTest private class A04Native62C056 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.String x='a'; Integer n=x.length();\npq.out('C056','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: System.String"
+        },
+        "67.0": {
+          "name": "A04Native67C056",
+          "source": "@IsTest private class A04Native67C056 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.String x='a'; Integer n=x.length();\npq.out('C056','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: System.String"
+        }
+      },
+      "nativeNull": false
+    }
+  ],
+  "controls": [
+    {
+      "id": "K001",
+      "group": "controls/lifecycle-enums",
+      "code": "CLCChild x=new CLCChild(); r=x.trace;",
+      "compile": false,
+      "expected": "base-field>base-init>base-ctor>child-ctor",
+      "nativeNull": false
+    },
+    {
+      "id": "K002",
+      "group": "controls/lifecycle-enums",
+      "code": "CLCChild x=new CLCChild(); r=x.childMarker;",
+      "compile": false,
+      "expected": "child-init:null",
+      "nativeNull": false
+    },
+    {
+      "id": "K003",
+      "group": "controls/lifecycle-enums",
+      "code": "CLCChild x=new CLCChild(); r=x.baseMarker;",
+      "compile": false,
+      "expected": "base-init",
+      "nativeNull": false
+    },
+    {
+      "id": "K004",
+      "group": "controls/lifecycle-enums",
+      "code": "CLCBase x=new CLCBase(); r=x.trace;",
+      "compile": false,
+      "expected": "base-field>base-init>base-ctor",
+      "nativeNull": false
+    },
+    {
+      "id": "K005",
+      "group": "controls/lifecycle-enums",
+      "code": "CLCMode.valueOf(null)",
+      "compile": false,
+      "expected": "EXC|System.NoSuchElementException|No enum value found called null",
+      "nativeNull": false
+    },
+    {
+      "id": "K006",
+      "group": "controls/lifecycle-enums",
+      "code": "Object x='A'; r=(CLCMode)x;",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type String to CLCMode",
+      "nativeNull": false
+    },
+    {
+      "id": "K007",
+      "group": "controls/lifecycle-enums",
+      "code": "Object x=CLCMode.B; r=((CLCMode)x).ordinal();",
+      "compile": false,
+      "expected": "1",
+      "nativeNull": false
+    },
+    {
+      "id": "K008",
+      "group": "controls/lifecycle-enums",
+      "code": "List<CLCMode> x=new List<CLCMode>(CLCMode.values()); x.clear(); r=x.size();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "K009",
+      "group": "controls/lifecycle-enums",
+      "code": "List<CLCMode> x=CLCMode.values().clone(); x.clear(); r=x.size();",
+      "compile": false,
+      "expected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "M001",
+      "group": "controls/lifecycle-enums",
+      "code": "enum CLCMode {A,B} List<CLCMode> a=CLCMode.values(); a.add(CLCMode.A); pq.out('M001','compiled');",
+      "compile": true,
+      "expected": "UNCAUGHT|System.FinalException: Collection is read-only",
+      "nativeNull": false
+    },
+    {
+      "id": "M002",
+      "group": "controls/lifecycle-enums",
+      "code": "enum CLCMode {A,B} List<CLCMode> a=CLCMode.values(); a.addAll(new List<CLCMode>{CLCMode.A}); pq.out('M002','compiled');",
+      "compile": true,
+      "expected": "UNCAUGHT|System.FinalException: Collection is read-only",
+      "nativeNull": false
+    },
+    {
+      "id": "M003",
+      "group": "controls/lifecycle-enums",
+      "code": "enum CLCMode {A,B} List<CLCMode> a=CLCMode.values(); a.set(0,CLCMode.B); pq.out('M003','compiled');",
+      "compile": true,
+      "expected": "UNCAUGHT|System.FinalException: Collection is read-only",
+      "nativeNull": false
+    },
+    {
+      "id": "M004",
+      "group": "controls/lifecycle-enums",
+      "code": "enum CLCMode {A,B} List<CLCMode> a=CLCMode.values(); a[0]=CLCMode.B; pq.out('M004','compiled');",
+      "compile": true,
+      "expected": "UNCAUGHT|System.FinalException: Collection is read-only",
+      "nativeNull": false
+    },
+    {
+      "id": "M005",
+      "group": "controls/lifecycle-enums",
+      "code": "enum CLCMode {A,B} List<CLCMode> a=CLCMode.values(); a.remove(0); pq.out('M005','compiled');",
+      "compile": true,
+      "expected": "UNCAUGHT|System.FinalException: Collection is read-only",
+      "nativeNull": false
+    },
+    {
+      "id": "M006",
+      "group": "controls/lifecycle-enums",
+      "code": "enum CLCMode {A,B} List<CLCMode> a=CLCMode.values(); a.sort(); pq.out('M006','compiled');",
+      "compile": true,
+      "expected": "UNCAUGHT|System.FinalException: Collection is read-only",
+      "nativeNull": false
+    },
+    {
+      "id": "N001",
+      "group": "controls/namespace-type-references",
+      "code": "String x='a'; r=x.length();",
+      "compile": false,
+      "expected": "1",
+      "nativeNull": false
+    },
+    {
+      "id": "N002",
+      "group": "controls/namespace-type-references",
+      "code": "System.Type x=String.class; r=x.getName();",
+      "compile": false,
+      "expected": "String",
+      "nativeNull": false
+    },
+    {
+      "id": "N003",
+      "group": "controls/namespace-type-references",
+      "code": "System.Exception x=new TypeException('x'); r=x.getMessage();",
+      "compile": false,
+      "expected": "x",
+      "nativeNull": false
+    },
+    {
+      "id": "N004",
+      "group": "controls/namespace-type-references",
+      "code": "r=System.String.valueOf(1);",
+      "compile": false,
+      "expected": "1",
+      "nativeNull": false
+    },
+    {
+      "id": "N005",
+      "group": "controls/namespace-type-references",
+      "code": "System.String x='a'; pq.out('N005','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: System.String",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62N005",
+          "source": "@IsTest private class A04Native62N005 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.String x='a'; pq.out('N005','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: System.String"
+        },
+        "67.0": {
+          "name": "A04Native67N005",
+          "source": "@IsTest private class A04Native67N005 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.String x='a'; pq.out('N005','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: System.String"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "N006",
+      "group": "controls/namespace-type-references",
+      "code": "System.String x; pq.out('N006','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: System.String",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62N006",
+          "source": "@IsTest private class A04Native62N006 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.String x; pq.out('N006','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: System.String"
+        },
+        "67.0": {
+          "name": "A04Native67N006",
+          "source": "@IsTest private class A04Native67N006 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.String x; pq.out('N006','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: System.String"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "N007",
+      "group": "controls/namespace-type-references",
+      "code": "System.Integer x=1; pq.out('N007','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: System.Integer",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62N007",
+          "source": "@IsTest private class A04Native62N007 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.Integer x=1; pq.out('N007','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: System.Integer"
+        },
+        "67.0": {
+          "name": "A04Native67N007",
+          "source": "@IsTest private class A04Native67N007 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.Integer x=1; pq.out('N007','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: System.Integer"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "N008",
+      "group": "controls/namespace-type-references",
+      "code": "System.List<String> x=new List<String>(); pq.out('N008','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: System.List",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62N008",
+          "source": "@IsTest private class A04Native62N008 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.List<String> x=new List<String>(); pq.out('N008','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: System.List"
+        },
+        "67.0": {
+          "name": "A04Native67N008",
+          "source": "@IsTest private class A04Native67N008 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nSystem.List<String> x=new List<String>(); pq.out('N008','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: System.List"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "N010",
+      "group": "controls/namespace-type-references",
+      "code": "DefinitelyMissingA04Namespace.Probe x; pq.out('N010','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: DefinitelyMissingA04Namespace.Probe",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62N010",
+          "source": "@IsTest private class A04Native62N010 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nDefinitelyMissingA04Namespace.Probe x; pq.out('N010','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: DefinitelyMissingA04Namespace.Probe"
+        },
+        "67.0": {
+          "name": "A04Native67N010",
+          "source": "@IsTest private class A04Native67N010 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nDefinitelyMissingA04Namespace.Probe x; pq.out('N010','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: DefinitelyMissingA04Namespace.Probe"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "N011",
+      "group": "controls/namespace-type-references",
+      "code": "DefinitelyMissingA04Namespace.probe x; pq.out('N011','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: DefinitelyMissingA04Namespace.probe",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62N011",
+          "source": "@IsTest private class A04Native62N011 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nDefinitelyMissingA04Namespace.probe x; pq.out('N011','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: DefinitelyMissingA04Namespace.probe"
+        },
+        "67.0": {
+          "name": "A04Native67N011",
+          "source": "@IsTest private class A04Native67N011 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nDefinitelyMissingA04Namespace.probe x; pq.out('N011','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInvalid type: DefinitelyMissingA04Namespace.probe"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "N009",
+      "group": "controls/namespace-type-references",
+      "code": "class CLCNSOuter {public class Inner {}} CLCNSOuter.Inner x; pq.out('N009','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Inner types are not allowed to have inner types",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62N009",
+          "source": "@IsTest private class A04Native62N009 {\nclass CLCNSOuter {public class Inner {}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                         CLCNSOuter.Inner x; pq.out('N009','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "name": "A04Native67N009",
+          "source": "@IsTest private class A04Native67N009 {\nclass CLCNSOuter {public class Inner {}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                         CLCNSOuter.Inner x; pq.out('N009','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "N012",
+      "group": "controls/namespace-type-references",
+      "code": "class CLCNSOuter {public class Inner {}} CLCNSOuter.Missing x; pq.out('N012','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Inner types are not allowed to have inner types",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62N012",
+          "source": "@IsTest private class A04Native62N012 {\nclass CLCNSOuter {public class Inner {}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                         CLCNSOuter.Missing x; pq.out('N012','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+        },
+        "67.0": {
+          "name": "A04Native67N012",
+          "source": "@IsTest private class A04Native67N012 {\nclass CLCNSOuter {public class Inner {}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                         CLCNSOuter.Missing x; pq.out('N012','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "Q001",
+      "group": "inner-types/reserved-name-controls",
+      "code": "class Outer {} pq.out('Q001','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Identifier name is reserved: Outer",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62Q001",
+          "source": "@IsTest private class A04Native62Q001 {\nclass Outer {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n               pq.out('Q001','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tIdentifier name is reserved: Outer"
+        },
+        "67.0": {
+          "name": "A04Native67Q001",
+          "source": "@IsTest private class A04Native67Q001 {\nclass Outer {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n               pq.out('Q001','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tIdentifier name is reserved: Outer"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "Q002",
+      "group": "inner-types/reserved-name-controls",
+      "code": "class Inner {} pq.out('Q002','compiled');",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Identifier name is reserved: Inner",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62Q002",
+          "source": "@IsTest private class A04Native62Q002 {\nclass Inner {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n               pq.out('Q002','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tIdentifier name is reserved: Inner"
+        },
+        "67.0": {
+          "name": "A04Native67Q002",
+          "source": "@IsTest private class A04Native67Q002 {\nclass Inner {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n               pq.out('Q002','compiled');\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tIdentifier name is reserved: Inner"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "Q003",
+      "group": "inner-types/reserved-name-controls",
+      "code": "Integer outer=1; pq.out('Q003',outer);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Identifier name is reserved: outer",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62Q003",
+          "source": "@IsTest private class A04Native62Q003 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nInteger outer=1; pq.out('Q003',outer);\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tIdentifier name is reserved: outer"
+        },
+        "67.0": {
+          "name": "A04Native67Q003",
+          "source": "@IsTest private class A04Native67Q003 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nInteger outer=1; pq.out('Q003',outer);\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tIdentifier name is reserved: outer"
+        }
+      },
+      "nativeNull": false
+    },
+    {
+      "id": "Q004",
+      "group": "inner-types/reserved-name-controls",
+      "code": "Integer inner=1; pq.out('Q004',inner);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Identifier name is reserved: inner",
+      "sourceLine": 6,
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Native62Q004",
+          "source": "@IsTest private class A04Native62Q004 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nInteger inner=1; pq.out('Q004',inner);\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tIdentifier name is reserved: inner"
+        },
+        "67.0": {
+          "name": "A04Native67Q004",
+          "source": "@IsTest private class A04Native67Q004 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nInteger inner=1; pq.out('Q004',inner);\n}\nprivate class P {public void out(String id,Object v){System.assert('compiled'.equals(String.valueOf(v)),id);} public void err(String id,Exception e){System.assert(false,id+e.getMessage());}}\n}\n",
+          "expected": "COMPILE_ERROR\tIdentifier name is reserved: inner"
+        }
+      },
+      "nativeNull": false
+    }
+  ],
+  "remaining": [],
+  "caseRows": {
+    "access-modifiers-and-namespaces": [
+      "R193",
+      "R194",
+      "R195",
+      "R196",
+      "R197",
+      "C044",
+      "C045",
+      "C046",
+      "C047",
+      "C048",
+      "C049",
+      "C050"
+    ],
+    "all": [
+      "R001",
+      "R002",
+      "R003",
+      "R004",
+      "R005",
+      "R006",
+      "R007",
+      "R008",
+      "R009",
+      "R010",
+      "R011",
+      "R012",
+      "R013",
+      "R014",
+      "R015",
+      "R016",
+      "R017",
+      "R018",
+      "R019",
+      "R020",
+      "R021",
+      "R022",
+      "R023",
+      "R024",
+      "R025",
+      "R026",
+      "R027",
+      "R028",
+      "R029",
+      "R030",
+      "R031",
+      "R032",
+      "R033",
+      "R034",
+      "R035",
+      "R036",
+      "R037",
+      "R038",
+      "R039",
+      "R040",
+      "R041",
+      "R042",
+      "R043",
+      "R044",
+      "R045",
+      "R046",
+      "R047",
+      "R048",
+      "R049",
+      "R050",
+      "R051",
+      "R052",
+      "R053",
+      "R054",
+      "R055",
+      "R056",
+      "R057",
+      "R058",
+      "R059",
+      "R060",
+      "R061",
+      "R062",
+      "R063",
+      "R064",
+      "R065",
+      "R066",
+      "R067",
+      "R068",
+      "R069",
+      "R070",
+      "R071",
+      "R072",
+      "R073",
+      "R074",
+      "R075",
+      "R076",
+      "R077",
+      "R078",
+      "R079",
+      "R080",
+      "R081",
+      "R082",
+      "R083",
+      "R084",
+      "R085",
+      "R086",
+      "R087",
+      "R088",
+      "R089",
+      "R090",
+      "R091",
+      "R092",
+      "R093",
+      "R094",
+      "R095",
+      "R096",
+      "R097",
+      "R098",
+      "R099",
+      "R100",
+      "R101",
+      "R102",
+      "R103",
+      "R104",
+      "R105",
+      "R106",
+      "R107",
+      "R108",
+      "R109",
+      "R110",
+      "R111",
+      "R112",
+      "R113",
+      "R114",
+      "R115",
+      "R116",
+      "R117",
+      "R118",
+      "R119",
+      "R120",
+      "R121",
+      "R122",
+      "R123",
+      "R124",
+      "R125",
+      "R126",
+      "R127",
+      "R128",
+      "R129",
+      "R130",
+      "R131",
+      "R132",
+      "R133",
+      "R134",
+      "R135",
+      "R136",
+      "R137",
+      "R138",
+      "R139",
+      "R140",
+      "R141",
+      "R142",
+      "R143",
+      "R144",
+      "R145",
+      "R146",
+      "R147",
+      "R148",
+      "R149",
+      "R150",
+      "R151",
+      "R152",
+      "R153",
+      "R154",
+      "R155",
+      "R156",
+      "R157",
+      "R158",
+      "R159",
+      "R160",
+      "R161",
+      "R162",
+      "R163",
+      "R164",
+      "R165",
+      "R166",
+      "R167",
+      "R168",
+      "R169",
+      "R170",
+      "R171",
+      "R172",
+      "R173",
+      "R174",
+      "R175",
+      "R176",
+      "R177",
+      "R178",
+      "R179",
+      "R180",
+      "R181",
+      "R182",
+      "R183",
+      "R184",
+      "R185",
+      "R186",
+      "R187",
+      "R188",
+      "R189",
+      "R190",
+      "R191",
+      "R192",
+      "R193",
+      "R194",
+      "R195",
+      "R196",
+      "R197",
+      "R198",
+      "R199",
+      "R200",
+      "R201",
+      "R202",
+      "C001",
+      "C002",
+      "C003",
+      "C004",
+      "C005",
+      "C006",
+      "C007",
+      "C008",
+      "C009",
+      "C010",
+      "C011",
+      "C012",
+      "C013",
+      "C014",
+      "C015",
+      "C016",
+      "C017",
+      "C018",
+      "C019",
+      "C020",
+      "C021",
+      "C022",
+      "C023",
+      "C024",
+      "C025",
+      "C026",
+      "C027",
+      "C028",
+      "C029",
+      "C030",
+      "C031",
+      "C032",
+      "C033",
+      "C034",
+      "C035",
+      "C036",
+      "C037",
+      "C038",
+      "C039",
+      "C040",
+      "C041",
+      "C042",
+      "C043",
+      "C044",
+      "C045",
+      "C046",
+      "C047",
+      "C048",
+      "C049",
+      "C050",
+      "C051",
+      "C052",
+      "C053",
+      "C054",
+      "C055",
+      "C056"
+    ]
+  },
+  "namedCompilerControls": [
+    {
+      "id": "S001",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Static62S001",
+          "source": "@IsTest private class A04Static62S001 {\npublic class Root { public Map<String, Bucket> buckets; }\npublic class Bucket { public List<Item> items; }\npublic class Item { public Boolean enabled; }\npublic class Cache {\npublic static Cache Instance { get; private set; }\npublic Root getRoot() { return null; }\n}\n@IsTest static void observed() {\nRoot result = Cache.Instance.getRoot();\nAssert.isFalse(result.buckets.get('key').items[0].enabled, 'enabled');\n}\n}\n",
+          "expected": "COMPILE_ERROR\tstatic can only be used on fields of a top level type"
+        },
+        "67.0": {
+          "name": "A04Static67S001",
+          "source": "@IsTest private class A04Static67S001 {\npublic class Root { public Map<String, Bucket> buckets; }\npublic class Bucket { public List<Item> items; }\npublic class Item { public Boolean enabled; }\npublic class Cache {\npublic static Cache Instance { get; private set; }\npublic Root getRoot() { return null; }\n}\n@IsTest static void observed() {\nRoot result = Cache.Instance.getRoot();\nAssert.isFalse(result.buckets.get('key').items[0].enabled, 'enabled');\n}\n}\n",
+          "expected": "COMPILE_ERROR\tstatic can only be used on fields of a top level type"
+        }
+      }
+    },
+    {
+      "id": "S002",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Static62S002",
+          "source": "@IsTest private class A04Static62S002 {\npublic class Root { public Map<String, Bucket> buckets; }\npublic class Bucket { public List<Item> items; }\npublic class Item { public Boolean enabled; }\npublic static Cache Instance { get; private set; }\npublic class Cache {\npublic Root getRoot() { return null; }\n}\n@IsTest static void observed() {\nRoot result = A04Static62S002.Instance.getRoot();\nAssert.isFalse(result.buckets.get('key').items[0].enabled, 'enabled');\n}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Static67S002",
+          "source": "@IsTest private class A04Static67S002 {\npublic class Root { public Map<String, Bucket> buckets; }\npublic class Bucket { public List<Item> items; }\npublic class Item { public Boolean enabled; }\npublic static Cache Instance { get; private set; }\npublic class Cache {\npublic Root getRoot() { return null; }\n}\n@IsTest static void observed() {\nRoot result = A04Static67S002.Instance.getRoot();\nAssert.isFalse(result.buckets.get('key').items[0].enabled, 'enabled');\n}\n}\n",
+          "expected": "compiled"
+        }
+      }
+    },
+    {
+      "id": "P001",
+      "group": "controls/named-property-compiler",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Property62P001",
+          "source": "@IsTest private class A04Property62P001 {\nclass Probe {public Integer x {set {Integer ignored=value;}} public Integer read(){return x;}}\n@IsTest static void observed(){\nProbe p=new Probe(); p.x=3;\n}\n}\n",
+          "expected": "COMPILE_ERROR\tVariable is not visible: A04Property62P001.Probe.x"
+        },
+        "67.0": {
+          "name": "A04Property67P001",
+          "source": "@IsTest private class A04Property67P001 {\nclass Probe {public Integer x {set {Integer ignored=value;}} public Integer read(){return x;}}\n@IsTest static void observed(){\nProbe p=new Probe(); p.x=3;\n}\n}\n",
+          "expected": "COMPILE_ERROR\tVariable is not visible: A04Property67P001.Probe.x"
+        }
+      }
+    },
+    {
+      "id": "P002",
+      "group": "controls/named-property-compiler",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Property62P002",
+          "source": "@IsTest private class A04Property62P002 {\nclass Probe {public Integer x {set {Integer ignored=value;}}}\n@IsTest static void observed(){\nProbe p=new Probe(); p.x=3;\n}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Property67P002",
+          "source": "@IsTest private class A04Property67P002 {\nclass Probe {public Integer x {set {Integer ignored=value;}}}\n@IsTest static void observed(){\nProbe p=new Probe(); p.x=3;\n}\n}\n",
+          "expected": "compiled"
+        }
+      }
+    },
+    {
+      "id": "P003",
+      "group": "controls/named-property-compiler",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Property62P003",
+          "source": "@IsTest private class A04Property62P003 {\nclass Probe {public Integer x {get;set;}}\n@IsTest static void observed(){\nProbe p=new Probe(); p.x=3; Integer observed=p.x;\n}\n}\n",
+          "expected": "compiled"
+        },
+        "67.0": {
+          "name": "A04Property67P003",
+          "source": "@IsTest private class A04Property67P003 {\nclass Probe {public Integer x {get;set;}}\n@IsTest static void observed(){\nProbe p=new Probe(); p.x=3; Integer observed=p.x;\n}\n}\n",
+          "expected": "compiled"
+        }
+      }
+    },
+    {
+      "id": "P004",
+      "group": "controls/named-property-compiler",
+      "namedCompilations": {
+        "62.0": {
+          "name": "A04Property62P004",
+          "source": "@IsTest private class A04Property62P004 {\nclass Probe {public Integer x {set {Integer ignored=value;}}}\nclass Reader {public Integer read(){Probe p=new Probe(); return p.x;}}\n@IsTest static void observed(){\nReader r=new Reader();\n}\n}\n",
+          "expected": "COMPILE_ERROR\tVariable is not visible: A04Property62P004.Probe.x"
+        },
+        "67.0": {
+          "name": "A04Property67P004",
+          "source": "@IsTest private class A04Property67P004 {\nclass Probe {public Integer x {set {Integer ignored=value;}}}\nclass Reader {public Integer read(){Probe p=new Probe(); return p.x;}}\n@IsTest static void observed(){\nReader r=new Reader();\n}\n}\n",
+          "expected": "COMPILE_ERROR\tVariable is not visible: A04Property67P004.Probe.x"
+        }
+      }
+    }
+  ]
+}

@@ -31,6 +31,27 @@ type standardDescribeObject struct {
 
 var standardObjectTriggerableCache sync.Map
 
+// VisitStandardChildRelationships reads the parent-side describe catalog without
+// materializing unrelated objects. UI metadata must include unloaded children.
+func VisitStandardChildRelationships(objectName string, visit func(string, Relationship)) bool {
+	canonical, ok := standardDescribeCatalogCanonicalName(objectName)
+	if !ok {
+		return false
+	}
+	describe, found, err := lookupStandardDescribeCatalogV2(canonical)
+	if err != nil || !found {
+		return false
+	}
+	for _, child := range describe.ChildRelationships {
+		visit(child.ChildSObject, Relationship{
+			Field: child.Field, ChildRelationship: child.RelationshipName,
+			ParentObjects: []string{canonical}, CascadeDelete: child.CascadeDelete,
+			RestrictedDelete: child.RestrictedDelete,
+		})
+	}
+	return true
+}
+
 // StandardObjectTriggerable reports the describe-provided `triggerable` flag for
 // a standard object. The second result is false when the embedded describe
 // catalog does not cover objectName, so callers can distinguish "known but not
@@ -177,7 +198,18 @@ func standardDescribeCatalogCanonicalName(objectName string) (string, bool) {
 		standardObjectCatalogLookupCache.describeNameByLC = byLC
 	})
 	canonical, ok := standardObjectCatalogLookupCache.describeNameByLC[standardObjectLookupKey(objectName)]
-	return canonical, ok
+	if ok {
+		return canonical, true
+	}
+	// The V2 pack is the authoritative describe catalog used by runtime
+	// metadata. Keep names-only resolution aligned with it so newly added
+	// standard objects do not fail sema reference checks before a field lookup
+	// has a chance to decode the V2 member.
+	entry, ok := lookupStandardDescribeCatalogV2Index(standardDescribeCatalogV2Index, objectName)
+	if !ok {
+		return "", false
+	}
+	return entry.Name, true
 }
 
 func loadEmbeddedStandardDescribeCatalog() map[string]standardObjectCatalogEntry {
@@ -317,6 +349,8 @@ func describeFieldType(field standardDescribeField) FieldType {
 		return FieldDate
 	case "datetime":
 		return FieldDateTime
+	case "time":
+		return FieldTime
 	case "reference":
 		return FieldReference
 	case "base64":
@@ -362,6 +396,8 @@ func describeDisplayType(fieldType string) string {
 		return "DATE"
 	case "datetime":
 		return "DATETIME"
+	case "time":
+		return "TIME"
 	case "reference":
 		return "REFERENCE"
 	case "base64":

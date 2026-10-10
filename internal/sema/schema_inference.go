@@ -90,6 +90,9 @@ func semaMergeSchemaObjectDefinitions(existing, incoming schema.Object) schema.O
 	if primary.NameField.DisplayFormat == "" {
 		primary.NameField.DisplayFormat = supplemental.NameField.DisplayFormat
 	}
+	if primary.NameField.Length == 0 {
+		primary.NameField.Length = supplemental.NameField.Length
+	}
 	primary.Fields = semaMergeSchemaObjectFields(primary.Fields, supplemental.Fields)
 	primary.RecordTypes = semaMergeSchemaRecordTypes(primary.RecordTypes, supplemental.RecordTypes)
 	primary.ValidationRules = semaMergeSchemaValidationRules(primary.ValidationRules, supplemental.ValidationRules)

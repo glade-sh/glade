@@ -9,7 +9,8 @@ import (
 func TestExecCB339SystemLocalRuntimeBatch(t *testing.T) {
 	program, err := CompileAnonymous(`
 Date d = Date.newInstance(2024, 2, 12);
-System.assertEquals(Date.newInstance(2024, 2, 29), d.toEndOfMonth());
+// Native C006 (API62/67) rejects Date.toEndOfMonth; use supported calendar members.
+System.assertEquals(Date.newInstance(2024, 2, 29), d.toStartOfMonth().addMonths(1).addDays(-1));
 Datetime dt = Datetime.valueOfGmt('2024-02-12 12:34:56');
 System.assertEquals('2024-02-12 12:34:56', dt.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals(12.5, Decimal.valueOf('12.5'));

@@ -1,0 +1,170 @@
+[
+  {
+    "id": "control_plain_lightning__Tab_true",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyNavigation extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__Tab</target></targets>"
+  },
+  {
+    "id": "control_plain_lightning__Bogus_true",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyNavigation extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__Bogus</target></targets>"
+  },
+  {
+    "id": "control_plain_lightning__OwnedMissing_true",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyNavigation extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__OwnedMissing</target></targets>"
+  },
+  {
+    "id": "control_plain_lightning__isUrlAddressable_true",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyNavigation extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__isUrlAddressable</target></targets>"
+  },
+  {
+    "id": "control_nav_lightning__Tab_true",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { NavigationMixin, CurrentPageReference } from 'lightning/navigation'; export default class FamilyNavigation extends NavigationMixin(LightningElement) { @api label; value; current; handle() {} }",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__Tab</target></targets>"
+  },
+  {
+    "id": "control_nav_lightning__Bogus_true",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { NavigationMixin, CurrentPageReference } from 'lightning/navigation'; export default class FamilyNavigation extends NavigationMixin(LightningElement) { @api label; value; current; handle() {} }",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__Bogus</target></targets>"
+  },
+  {
+    "id": "control_nav_lightning__OwnedMissing_true",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { NavigationMixin, CurrentPageReference } from 'lightning/navigation'; export default class FamilyNavigation extends NavigationMixin(LightningElement) { @api label; value; current; handle() {} }",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__OwnedMissing</target></targets>"
+  },
+  {
+    "id": "control_nav_lightning__isUrlAddressable_true",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { NavigationMixin, CurrentPageReference } from 'lightning/navigation'; export default class FamilyNavigation extends NavigationMixin(LightningElement) { @api label; value; current; handle() {} }",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__isUrlAddressable</target></targets>"
+  },
+  {
+    "id": "control_nav_wire_lightning__Tab_true",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { NavigationMixin, CurrentPageReference } from 'lightning/navigation'; export default class FamilyNavigation extends NavigationMixin(LightningElement) { @api label; value; @wire(CurrentPageReference) current; handle() {} }",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__Tab</target></targets>"
+  },
+  {
+    "id": "control_nav_wire_lightning__Bogus_true",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { NavigationMixin, CurrentPageReference } from 'lightning/navigation'; export default class FamilyNavigation extends NavigationMixin(LightningElement) { @api label; value; @wire(CurrentPageReference) current; handle() {} }",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__Bogus</target></targets>"
+  },
+  {
+    "id": "control_nav_wire_lightning__Bogus_false",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { NavigationMixin, CurrentPageReference } from 'lightning/navigation'; export default class FamilyNavigation extends NavigationMixin(LightningElement) { @api label; value; @wire(CurrentPageReference) current; handle() {} }",
+    "meta_fragment": "<isExposed>false</isExposed><targets><target>lightning__Bogus</target></targets>"
+  },
+  {
+    "id": "control_nav_wire_lightning__OwnedMissing_true",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { NavigationMixin, CurrentPageReference } from 'lightning/navigation'; export default class FamilyNavigation extends NavigationMixin(LightningElement) { @api label; value; @wire(CurrentPageReference) current; handle() {} }",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__OwnedMissing</target></targets>"
+  },
+  {
+    "id": "control_nav_wire_lightning__OwnedMissing_false",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { NavigationMixin, CurrentPageReference } from 'lightning/navigation'; export default class FamilyNavigation extends NavigationMixin(LightningElement) { @api label; value; @wire(CurrentPageReference) current; handle() {} }",
+    "meta_fragment": "<isExposed>false</isExposed><targets><target>lightning__OwnedMissing</target></targets>"
+  },
+  {
+    "id": "control_nav_wire_lightning__isUrlAddressable_true",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { NavigationMixin, CurrentPageReference } from 'lightning/navigation'; export default class FamilyNavigation extends NavigationMixin(LightningElement) { @api label; value; @wire(CurrentPageReference) current; handle() {} }",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__isUrlAddressable</target></targets>"
+  },
+  {
+    "id": "control_nav_wire_lightning__isUrlAddressable_false",
+    "group": "component-targets",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { NavigationMixin, CurrentPageReference } from 'lightning/navigation'; export default class FamilyNavigation extends NavigationMixin(LightningElement) { @api label; value; @wire(CurrentPageReference) current; handle() {} }",
+    "meta_fragment": "<isExposed>false</isExposed><targets><target>lightning__isUrlAddressable</target></targets>"
+  },
+  {
+    "id": "control_compile_current_api_wire",
+    "group": "CurrentPageReference",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { NavigationMixin, CurrentPageReference } from 'lightning/navigation'; export default class FamilyNavigation extends NavigationMixin(LightningElement) { @api label; value; @api @wire(CurrentPageReference) current; handle() {} }"
+  },
+  {
+    "id": "control_compile_current_duplicate_wire",
+    "group": "CurrentPageReference",
+    "kind": "compile",
+    "expect": "?",
+    "basis": "org",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement, wire, api } from 'lwc'; import { NavigationMixin, CurrentPageReference } from 'lightning/navigation'; export default class FamilyNavigation extends NavigationMixin(LightningElement) { @api label; value; @wire(CurrentPageReference) @wire(CurrentPageReference) current; handle() {} }"
+  }
+]

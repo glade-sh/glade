@@ -5,13 +5,10 @@ import path from "node:path";
 import test from "node:test";
 import { chromium } from "playwright";
 import { defaultSLDSHref, repoRoot, requireLWCToolchain } from "./helpers.mjs";
+import { l19RuntimeImports, serveL19RuntimeModule } from "./l19-runtime-modules.mjs";
 
 function serveRuntimeFile(urlPath, res) {
-  if (urlPath === "/lightning/shims/lightning/uiRecordApi.js") {
-    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
-    res.end("export async function __gladeRecordPickerSearch() { return { records: [] }; }\n");
-    return;
-  }
+  if (serveL19RuntimeModule(urlPath, res)) return;
   const routes = {
     "/lightning/vendor/lwc.js": path.join(repoRoot, "third_party/lwc/node_modules/@lwc/engine-dom/dist/index.js"),
     "/lightning/vendor/synthetic-shadow.js": path.join(repoRoot, "third_party/lwc/node_modules/@lwc/synthetic-shadow/dist/index.js"),
@@ -19,6 +16,9 @@ function serveRuntimeFile(urlPath, res) {
     "/lightning/runtime/shell/diagnostics.js": path.join(repoRoot, "lwcruntime/src/shell/diagnostics.mjs"),
   };
   let filePath = routes[urlPath];
+  if (!filePath && urlPath.startsWith("/assets/icons/")) {
+    filePath = path.join(repoRoot, "lwcruntime/src/slds/design-system/assets/icons", urlPath.slice("/assets/icons/".length));
+  }
   if (!filePath && urlPath.startsWith("/lightning/runtime/slds/")) {
     filePath = path.normalize(path.join(repoRoot, "lwcruntime/src/slds", urlPath.slice("/lightning/runtime/slds/".length)));
   }
@@ -27,6 +27,9 @@ function serveRuntimeFile(urlPath, res) {
   }
   if (!filePath && urlPath.startsWith("/lightning/shims/shell/")) {
     filePath = path.normalize(path.join(repoRoot, "lwcruntime/src/shell", urlPath.slice("/lightning/shims/shell/".length)));
+  }
+  if (!filePath && urlPath.startsWith("/lightning/shims/lightning/source/")) {
+    filePath = path.join(repoRoot, "lwcruntime/src/lightning/source", urlPath.slice("/lightning/shims/lightning/source/".length));
   }
   if (!filePath && urlPath.startsWith("/lightning/shims/lightning/")) {
     const name = urlPath.slice("/lightning/shims/lightning/".length).replace(/\.(js|mjs)$/, "");
@@ -37,7 +40,9 @@ function serveRuntimeFile(urlPath, res) {
     res.end("missing " + urlPath);
     return;
   }
-  const contentType = filePath.endsWith(".css") ? "text/css; charset=utf-8" : "application/javascript; charset=utf-8";
+  const contentType = filePath.endsWith(".css") ? "text/css; charset=utf-8"
+    : filePath.endsWith(".svg") ? "image/svg+xml; charset=utf-8"
+    : "application/javascript; charset=utf-8";
   res.writeHead(200, { "Content-Type": contentType });
   res.end(fs.readFileSync(filePath));
 }
@@ -46,6 +51,35 @@ function startBaseComponentServer() {
   const wireRequests = [];
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, "http://localhost");
+    if (url.pathname === "/favicon.ico") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    if (url.pathname === "/lightning/wire/getRecordUi" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk) => { body += String(chunk); });
+      req.on("end", () => {
+        const payload = JSON.parse(body || "{}");
+        const record = {
+          id: "001000000000001AAA", apiName: "Account",
+          fields: {
+            Name: { value: "Local Shell Account", displayValue: "Local Shell Account" },
+            Phone: { value: "415-555-0100", displayValue: "415-555-0100" },
+          },
+        };
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ data: {
+          records: Object.fromEntries(payload.recordIds.map((id) => [id, record])),
+          objectInfos: { Account: { apiName: "Account", fields: {
+            Name: { apiName: "Name", label: "Account Name", dataType: "String", required: true, updateable: true },
+            Phone: { apiName: "Phone", label: "Phone", dataType: "Phone", updateable: true },
+          } } },
+          layouts: {}, layoutUserStates: {}, picklistValues: {},
+        } }));
+      });
+      return;
+    }
     if (url.pathname === "/lightning/wire/getRecord" && req.method === "POST") {
       req.resume();
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
@@ -204,7 +238,7 @@ function startBaseComponentServer() {
     "lightning/quickActionPanel": "/lightning/shims/lightning/quickActionPanel.js",
     "lightning/radioGroup": "/lightning/shims/lightning/radioGroup.js",
     "lightning/recordPicker": "/lightning/shims/lightning/recordPicker.js",
-    "lightning/uiRecordApi": "/lightning/shims/lightning/uiRecordApi.js",
+    ...l19RuntimeImports,
     "lightning/verticalNavigation": "/lightning/shims/lightning/verticalNavigation.js",
     "lightning/verticalNavigationItem": "/lightning/shims/lightning/verticalNavigationItem.js"
   } })}</script>
@@ -337,7 +371,10 @@ Object.assign(datatable, {
 datatable.addEventListener("rowaction", (event) => {
   window.__baseRowAction = event.detail;
 });
-datatable.setAttribute("hide-checkbox-column", "true");
+datatable.hideCheckboxColumn = true;
+// Preserved local diagnostic fixture; this unsupported-attribute warning is
+// not backed by dt_render_wrap (which sets column.wrapText only).
+datatable.setAttribute("wrap-text-max-lines", "2");
 host.appendChild(datatable);
 append("lightning-record-form", RecordForm, {
   objectApiName: "Account",
@@ -347,9 +384,13 @@ append("lightning-record-form", RecordForm, {
 const editForm = append("lightning-record-edit-form", RecordEditForm, {
   objectApiName: "Account",
   recordId: "001000000000001AAA",
-  fields: ["Name"],
-  mode: "edit"
 });
+// Native r_submit_button_update: edit-form consumes owned slotted fields/button.
+const editName = createElement("lightning-input-field", { is: InputField });
+editName.fieldName = "Name";
+const editSave = createElement("lightning-button", { is: Button });
+Object.assign(editSave, { label: "Save", type: "submit" });
+editForm.append(editName, editSave);
 editForm.addEventListener("success", (event) => {
   window.__baseFormSuccess = event.detail;
 });
@@ -361,9 +402,20 @@ const tab = createElement("lightning-tab", { is: Tab });
 tab.label = "Details";
 tab.value = "details";
 tab.addEventListener("active", (event) => {
-  window.__baseActiveTab = event.detail;
+  window.__baseActiveTab = {
+    value: event.target.value,
+    label: event.target.label,
+    detail: event.detail || {},
+    bubbles: event.bubbles,
+    composed: event.composed,
+  };
 });
 tabset.appendChild(tab);
+const overviewTab = createElement("lightning-tab", { is: Tab });
+overviewTab.label = "Overview";
+overviewTab.value = "overview";
+tabset.appendChild(overviewTab);
+tabset.activeTabValue = "overview";
 append("lightning-icon", Icon, { iconName: "utility:check", alternativeText: "checked" });
 append("lightning-modal", Modal, { label: "Local Modal" });
 const accordion = append("lightning-accordion", Accordion);
@@ -375,8 +427,13 @@ append("lightning-badge", Badge, { label: "Verified" });
 const menu = append("lightning-button-menu", ButtonMenu, { label: "Package Actions" });
 const menuItem = createElement("lightning-menu-item", { is: MenuItem });
 menuItem.label = "Open";
-menuItem.addEventListener("active", (event) => {
-  window.__baseMenuActive = event.detail;
+menuItem.value = "Open";
+menu.addEventListener("select", (event) => {
+  window.__baseMenuSelect = {
+    detail: event.detail,
+    bubbles: event.bubbles,
+    composed: event.composed,
+  };
 });
 menu.appendChild(menuItem);
 append("lightning-checkbox-group", CheckboxGroup, { label: "Checks", value: ["a"], options: [{ label: "A", value: "a" }] });
@@ -392,7 +449,7 @@ append("lightning-helptext", Helptext, { content: "Package help" });
 append("lightning-pill", Pill, { label: "Package Pill" });
 append("lightning-quick-action-panel", QuickActionPanel, { header: "Quick Action" });
 append("lightning-radio-group", RadioGroup, { label: "Choice", value: "yes", options: [{ label: "Yes", value: "yes" }] });
-const recordPicker = append("lightning-record-picker", RecordPicker, { label: "Provider", value: "001000000000001AAA" });
+const recordPicker = append("lightning-record-picker", RecordPicker, { label: "Provider", objectApiName: "Account", value: "001000000000001AAA" });
 recordPicker.addEventListener("change", (event) => {
   window.__baseRecordPicker = event.detail;
 });
@@ -401,7 +458,7 @@ const navItem = createElement("lightning-vertical-navigation-item", { is: Vertic
 navItem.label = "Credentials";
 nav.appendChild(navItem);
 window.__baseDiagnostics = diagnostics;
-window.__modalOpen = Modal.open({ label: "Local Modal", result: "done" });
+window.__openModal = () => Modal.open({ label: "Local Modal" });
 `);
       return;
     }
@@ -432,26 +489,33 @@ test("base components render practical SLDS 2 DOM", async (t) => {
     page.on("pageerror", (err) => pageErrors.push(err.message));
     page.on("console", (msg) => {
       if (msg.type() === "error") {
-        consoleErrors.push(msg.text());
+        consoleErrors.push({ text: msg.text(), url: msg.location().url });
       }
     });
     await page.goto(`${server.baseURL}/base.html`, { waitUntil: "networkidle" });
-    const mounted = await page.locator("lightning-button").count();
+    // The record forms edit form also owns a slotted Save button. Keep the original
+    // base-button contract scoped to its direct fixture child.
+    const baseButton = page.locator("#host > lightning-button");
+    const mounted = await baseButton.count();
     assert.equal(mounted, 1, `button did not mount; pageErrors=${JSON.stringify(pageErrors)} consoleErrors=${JSON.stringify(consoleErrors)}`);
 
-    assert.match(await page.locator("lightning-button").innerText(), /Save/);
-    assert.equal(await page.locator("lightning-button button").isEnabled(), true);
-    const buttonClass = await page.locator("lightning-button button").getAttribute("class");
+    assert.match(await baseButton.innerText(), /Save/);
+    assert.equal(await baseButton.locator("button").isEnabled(), true);
+    const buttonClass = await baseButton.locator("button").getAttribute("class");
     assert.match(buttonClass, /slds-button_brand/);
-    assert.equal(await page.locator("lightning-button button").getAttribute("name"), "saveButton");
-    assert.equal(await page.locator("lightning-button button").getAttribute("value"), "save");
-    await page.locator("lightning-button button", { hasText: "Save" }).click();
+    assert.equal(await baseButton.locator("button").getAttribute("name"), "saveButton");
+    assert.equal(await baseButton.locator("button").getAttribute("value"), "save");
+    await baseButton.locator("button", { hasText: "Save" }).click();
     assert.equal(await page.evaluate(() => window.__baseClickCount), 1);
-    const iconButtonClass = await page.locator("lightning-button-icon button").getAttribute("class");
+    // r_button_icon_normal: title and assistive text, with no aria-label.
+    const iconButton = page.locator("#host > lightning-button-icon button");
+    const iconButtonClass = await iconButton.getAttribute("class");
     assert.match(iconButtonClass, /slds-button_icon-border-filled/);
     assert.match(iconButtonClass, /slds-button_icon-small/);
-    assert.equal(await page.locator("lightning-button-icon button").getAttribute("aria-label"), "Add Account");
-    assert.equal(await page.locator("lightning-button-icon button").getAttribute("name"), "addAccount");
+    assert.equal(await iconButton.getAttribute("aria-label"), null);
+    assert.equal(await iconButton.getAttribute("title"), "Add Account");
+    assert.equal(await iconButton.locator(".slds-assistive-text").innerText(), "Add Account");
+    assert.equal(await iconButton.getAttribute("name"), "addAccount");
     const nameInput = page.locator("lightning-input").filter({ hasText: "Name" });
     assert.match(await nameInput.innerText(), /Name/);
     assert.equal(await nameInput.locator("input").isEnabled(), true);
@@ -478,66 +542,94 @@ test("base components render practical SLDS 2 DOM", async (t) => {
     assert.match(await page.locator("lightning-card article").getAttribute("class"), /slds-card_narrow/);
     assert.equal(await page.locator("lightning-card .slds-no-flex").count(), 1);
     assert.equal(await page.locator("lightning-card .slds-card__footer").count(), 1);
-    const layoutClass = await page.locator("lightning-layout div.slds-grid").getAttribute("class");
+    // r_layout_normal and r_layout_item_normal: classes are on the hosts.
+    const layoutClass = await page.locator("lightning-layout").getAttribute("class");
     assert.match(layoutClass, /slds-grid_align-spread/);
     assert.match(layoutClass, /slds-grid_vertical-align-center/);
     assert.match(layoutClass, /slds-wrap/);
-    const layoutItemClass = await page.locator("lightning-layout-item div.slds-col").getAttribute("class");
+    const layoutItemClass = await page.locator("lightning-layout-item").getAttribute("class");
     assert.match(layoutItemClass, /slds-size_6-of-12/);
     assert.match(layoutItemClass, /slds-small-size_12-of-12/);
     assert.match(layoutItemClass, /slds-medium-size_6-of-12/);
     assert.match(layoutItemClass, /slds-large-size_4-of-12/);
     assert.match(layoutItemClass, /slds-p-around_small/);
     assert.match(await page.locator("lightning-datatable").innerText(), /Local Shell Account/);
-    await page.locator("lightning-datatable button", { hasText: "View" }).click();
+    await page.locator("lightning-datatable button", { hasText: "Show actions" }).nth(0).click();
+    await page.locator("lightning-datatable").getByRole("menuitem", { name: "View", exact: true }).click();
     assert.deepEqual(await page.evaluate(() => window.__baseRowAction), {
       action: { label: "View", name: "view" },
       row: { id: "1", name: "Local Shell Account" },
     });
-    await page.locator("lightning-datatable button", { hasText: "Edit" }).click();
+    await page.locator("lightning-datatable button", { hasText: "Show actions" }).nth(1).click();
+    await page.locator("lightning-datatable").getByRole("menuitem", { name: "Edit", exact: true }).click();
     assert.deepEqual(await page.evaluate(() => window.__baseRowAction), {
       action: { label: "Edit", name: "edit" },
       row: { id: "1", name: "Local Shell Account" },
     });
-    assert.match(await page.locator("lightning-record-form").innerText(), /001000000000001AAA/);
+    // Native r_form_view_existing_auto displays hydrated field values, not IDs.
+    assert.match(await page.locator("lightning-record-form").innerText(), /Account Name/);
     assert.match(await page.locator("lightning-record-form").innerText(), /Local Shell Account/);
     await page.locator("lightning-record-edit-form input").fill("Edited Local Account");
     await page.locator("lightning-record-edit-form button", { hasText: "Save" }).click();
     await page.waitForFunction(() => window.__baseFormSuccess);
     assert.deepEqual(await page.evaluate(() => window.__baseFormSuccess), {
       id: "001000000000001AAA",
-      fields: { Name: "Edited Local Account" },
+      apiName: "Account",
+      fields: { Name: { value: "Edited Local Account", displayValue: "Edited Local Account" } },
     });
     assert.equal(await page.evaluate(() => window.__baseFormError), undefined);
     assert.match(await page.locator("lightning-tabset").innerText(), /Details/);
-    await page.locator("lightning-tab h3", { hasText: "Details" }).click();
-    assert.deepEqual(await page.evaluate(() => window.__baseActiveTab), { value: "details", label: "Details" });
+    // r_tab_normal / r_tabset_activate: select a native tab header anchor.
+    const detailsTab = page.locator('lightning-tabset a[role="tab"]', { hasText: "Details" });
+    assert.equal(await detailsTab.getAttribute("aria-selected"), "false");
+    await detailsTab.click();
+    assert.equal(await detailsTab.getAttribute("aria-selected"), "true");
+    assert.equal(await page.locator("lightning-tabset").evaluate((el) => el.activeTabValue), "details");
+    assert.deepEqual(await page.evaluate(() => window.__baseActiveTab), {
+      value: "details", label: "Details", detail: {}, bubbles: false, composed: false,
+    });
     assert.match(await page.locator("lightning-icon").innerText(), /check/);
     assert.match(await page.locator("lightning-modal").innerText(), /Local Modal/);
     assert.match(await page.locator("lightning-accordion").innerText(), /Package Section/);
     assert.match(await page.locator("lightning-avatar").innerText(), /LV/);
     assert.match(await page.locator("lightning-badge").innerText(), /Verified/);
-    assert.match(await page.locator("lightning-button-menu").innerText(), /Package Actions/);
-    await page.locator("lightning-menu-item button", { hasText: "Open" }).click();
-    assert.deepEqual(await page.evaluate(() => window.__baseMenuActive), { value: "Open", label: "Open" });
+    // r_button_menu_activate: open the menu, select its anchor, observe value only.
+    const actionsMenu = page.locator("#host > lightning-button-menu");
+    assert.match(await actionsMenu.innerText(), /Package Actions/);
+    assert.equal(await actionsMenu.locator("button").getAttribute("aria-expanded"), "false");
+    await actionsMenu.locator("button").click();
+    assert.equal(await actionsMenu.locator("button").getAttribute("aria-expanded"), "true");
+    await actionsMenu.locator('[role="menuitem"]', { hasText: "Open" }).click();
+    assert.deepEqual(await page.evaluate(() => window.__baseMenuSelect), {
+      detail: { value: "Open" }, bubbles: false, composed: false,
+    });
+    assert.equal(await actionsMenu.locator("button").getAttribute("aria-expanded"), "false");
     assert.match(await page.locator("lightning-checkbox-group").innerText(), /Checks/);
     assert.match(await page.locator("lightning-flow").innerText(), /Package_Flow/);
-    assert.match(await page.locator("lightning-formatted-date-time").innerText(), /2026-06-17/);
+    // control_legacy_default_date: exact native text without format options.
+    assert.equal(await page.locator("lightning-formatted-date-time").innerText(), "Jun 17, 2026");
     assert.match(await page.locator("lightning-formatted-number").innerText(), /^42%$/);
     assert.match(await page.locator("lightning-formatted-rich-text").innerText(), /Rich Text/);
-    assert.match(await page.locator("lightning-helptext").innerText(), /Package help/);
+    // r_helptext_normal: content is a public property; resting DOM says Help.
+    assert.equal(await page.locator("lightning-helptext").evaluate((el) => el.content), "Package help");
+    assert.equal(await page.locator("lightning-helptext .slds-assistive-text").innerText(), "Help");
+    assert.equal(await page.locator("lightning-helptext").innerText(), "Help");
     assert.match(await page.locator("lightning-pill").innerText(), /Package Pill/);
     assert.match(await page.locator("lightning-quick-action-panel").innerText(), /Quick Action/);
     assert.match(await page.locator("lightning-radio-group").innerText(), /Choice/);
-    await page.locator("lightning-record-picker input").evaluate((input) => {
-      input.value = "001000000000002AAA";
-      input.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
-    });
-    assert.deepEqual(await page.evaluate(() => window.__baseRecordPicker), {
-      recordId: "001000000000002AAA",
-      value: "001000000000002AAA",
-    });
+    // Native r_picker_preselected (59/67), using this server's owned record.
+    assert.equal(await page.locator("lightning-record-picker input").inputValue(), "Local Shell Account");
+    assert.equal(await page.locator("lightning-record-picker input").evaluate((input) => input.readOnly), true);
+    assert.equal(await page.locator("lightning-record-picker").evaluate((picker) => picker.value), "001000000000001AAA");
+    assert.equal(await page.evaluate(() => window.__baseRecordPicker), undefined);
     assert.match(await page.locator("lightning-vertical-navigation").innerText(), /Credentials/);
+    await page.evaluate(() => {
+      window.__modalSettled = false;
+      window.__modalOpen = window.__openModal();
+      window.__modalOpen.then(() => { window.__modalSettled = true; });
+    });
+    assert.equal(await page.evaluate(() => window.__modalSettled), false);
+    await page.locator(".glade-modal-overlay lightning-modal").evaluate(modal => modal.close("done"));
     assert.equal(await page.evaluate(() => window.__modalOpen), "done");
     assert.equal(await page.locator(`link[href="${defaultSLDSHref}"]`).count(), 1);
     assert.deepEqual(pageErrors, []);
@@ -626,6 +718,7 @@ test("datatable supports local row actions, selection, sorting, drafts, and valu
         Status__c: "Ready",
       }];
       datatable.selectedRows = ["001"];
+      datatable.enableInfiniteLoading = true;
       datatable.addEventListener("rowaction", (event) => events.push(["rowaction", event.detail]));
       datatable.addEventListener("sort", (event) => events.push(["sort", event.detail]));
       datatable.addEventListener("rowselection", (event) => events.push(["rowselection", event.detail]));
@@ -643,7 +736,7 @@ test("datatable supports local row actions, selection, sorting, drafts, and valu
     assert.match(await table.innerText(), /\$42\.50/);
     assert.match(await table.innerText(), /Ready/);
     assert.equal(await table.locator('a[href="https://example.com"]').innerText(), "Example");
-    assert.equal(await table.locator('a[href="mailto:hello@example.com"]').innerText(), "hello@example.com");
+    assert.equal(await table.locator('a[href="mailto:hello@example.com"]').innerText(), "Email hello@example.com");
     assert.equal(await table.locator('a[href="tel:415-555-0100"]').innerText(), "415-555-0100");
     assert.deepEqual(await page.evaluate(() => window.__datatableSelected), [{
       Id: "001",
@@ -657,25 +750,30 @@ test("datatable supports local row actions, selection, sorting, drafts, and valu
       Status__c: "Ready",
     }]);
 
-    await table.locator("button", { hasText: "Name" }).click();
-    await table.locator("input[type=\"checkbox\"]").first().setChecked(false);
+    await table.getByRole("link", { name: "Sort by: Name", exact: true }).click();
+    await table.locator("tbody input[type=\"checkbox\"]").first().setChecked(false);
+    await table.getByRole("button", { name: "Edit Name", exact: true }).click();
     await table.locator("input[data-field-name=\"Name\"]").fill("Acme West");
-    await table.locator("input[data-field-name=\"Name\"]").dispatchEvent("change");
+    await table.locator("input[data-field-name=\"Name\"]").press("Enter");
     await table.locator("button", { hasText: "Save" }).click();
+    await table.evaluate((element) => { element.draftValues = [{ Id: "001", Name: "Discard" }]; });
     await table.locator("button", { hasText: "Cancel" }).click();
-    await table.locator("button", { hasText: "View" }).click();
+    await table.getByRole("button", { name: "Show actions", exact: true }).click();
+    await table.getByRole("menuitem", { name: "View", exact: true }).click();
     await table.locator("button", { hasText: "Open" }).click();
     await table.locator("button", { hasText: "Load More" }).click();
 
     const events = await page.evaluate(() => window.__datatableEvents);
     assert.deepEqual(events.find(([name]) => name === "sort"), ["sort", {
       fieldName: "Name",
-      sortedBy: "Name",
       sortDirection: "asc",
+      fieldNames: ["Name"],
+      sortDirections: ["asc"],
+      isMultiColumnSort: false,
     }]);
-    assert.deepEqual(events.find(([name]) => name === "rowselection"), ["rowselection", {
+    assert.deepEqual(events.filter(([name]) => name === "rowselection").at(-1), ["rowselection", {
       selectedRows: [],
-      selectedRowKeys: [],
+      config: { action: "rowDeselect", value: "001" },
     }]);
     assert.deepEqual(events.find(([name]) => name === "cellchange"), ["cellchange", {
       draftValues: [{ Id: "001", Name: "Acme West" }],
@@ -714,10 +812,17 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
       const { default: RecordEditForm } = await import("/lightning/shims/lightning/recordEditForm.js");
       const { default: RecordViewForm } = await import("/lightning/shims/lightning/recordViewForm.js");
       const { default: Messages } = await import("/lightning/shims/lightning/messages.js");
+      const { default: Button } = await import("/lightning/shims/lightning/button.js");
       const host = document.getElementById("host");
       host.innerHTML = "";
       const events = [];
 
+      // Hydrated native fields (IsDeleted, Industry, AnnualRevenue and
+      // Birthdate) render from metadata, not standalone type attributes.
+      const hydrateField = (field, dataType) => field.wireRecordUi({
+        record: { fields: { [field.fieldName]: { value: field.value } } },
+        objectInfo: { fields: { [field.fieldName]: { dataType, updateable: true } } },
+      });
       const input = createElement("lightning-input-field", { is: InputField });
       Object.assign(input, {
         fieldName: "Type",
@@ -727,17 +832,20 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
         options: [{ label: "Customer", value: "Customer" }, { label: "Partner", value: "Partner" }],
       });
       host.appendChild(input);
+      hydrateField(input, "Picklist");
       const emptyRequired = createElement("lightning-input-field", { is: InputField });
       Object.assign(emptyRequired, { fieldName: "Name", label: "Account Name", value: "", required: true });
       host.appendChild(emptyRequired);
+      hydrateField(emptyRequired, "String");
 
       const output = createElement("lightning-output-field", { is: OutputField });
       Object.assign(output, { fieldName: "Name", value: "Local Shell Account" });
       host.appendChild(output);
+      hydrateField(output, "String");
 
       const recordForm = createElement("lightning-record-form", { is: RecordForm });
       Object.assign(recordForm, { objectApiName: "Account", recordId: "001000000000001AAA", fields: ["Name", "Phone"] });
-      recordForm.addEventListener("load", (event) => events.push(["recordformload", event.detail.record.id]));
+      recordForm.addEventListener("load", (event) => events.push(["recordformload", event.detail.records[recordForm.recordId].id]));
       host.appendChild(recordForm);
 
       const viewForm = createElement("lightning-record-view-form", { is: RecordViewForm });
@@ -752,13 +860,15 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
       const nameField = createElement("lightning-input-field", { is: InputField });
       Object.assign(nameField, { fieldName: "Name", required: true });
       editForm.appendChild(nameField);
+      const editSave = createElement("lightning-button", { is: Button });
+      Object.assign(editSave, { label: "Save", type: "submit" });
+      editForm.appendChild(editSave);
       const formMessages = createElement("lightning-messages", { is: Messages });
       editForm.appendChild(formMessages);
-      editForm.addEventListener("load", (event) => events.push(["load", event.detail.record.id]));
+      editForm.addEventListener("load", (event) => events.push(["load", event.detail.records[editForm.recordId].id]));
       editForm.addEventListener("submit", (event) => events.push(["submit", event.detail.fields]));
       editForm.addEventListener("success", (event) => events.push(["success", event.detail.id]));
       editForm.addEventListener("error", (event) => events.push(["error", event.detail.message]));
-      editForm.addEventListener("cancel", (event) => events.push(["cancel", event.detail.fields]));
       host.appendChild(editForm);
 
       const createForm = createElement("lightning-record-edit-form", { is: RecordEditForm });
@@ -800,6 +910,7 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
       const checkboxField = createElement("lightning-input-field", { is: InputField });
       Object.assign(checkboxField, { fieldName: "Active__c", type: "checkbox", value: true, required: true });
       host.appendChild(checkboxField);
+      hydrateField(checkboxField, "Boolean");
       checkboxField.value = false;
       const checkboxValidWhenUncheckedRequired = checkboxField.reportValidity();
       checkboxField.reset();
@@ -807,6 +918,7 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
       const numberField = createElement("lightning-input-field", { is: InputField });
       Object.assign(numberField, { fieldName: "Amount__c", type: "number", value: 42.5, required: true });
       host.appendChild(numberField);
+      hydrateField(numberField, "Double");
       numberField.value = "";
       const numberValidWhenEmpty = numberField.checkValidity();
       numberField.value = "17.25";
@@ -815,8 +927,9 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
       numberField.reset();
 
       const dateField = createElement("lightning-input-field", { is: InputField });
-      Object.assign(dateField, { fieldName: "CloseDate__c", type: "date", value: "2026-06-18", required: true });
+      Object.assign(dateField, { fieldName: "Birthdate", type: "date", value: "2001-02-03", required: true });
       host.appendChild(dateField);
+      hydrateField(dateField, "Date");
       dateField.value = "";
       const dateValidWhenEmpty = dateField.checkValidity();
       dateField.value = "2026-07-04";
@@ -883,7 +996,7 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
     await page.waitForFunction(() => window.__recordFormEvents.some(([name]) => name === "createload"));
     assert.match(await page.locator("lightning-output-field").first().innerText(), /Local Shell Account/);
     assert.match(await page.locator("lightning-record-view-form lightning-output-field").innerText(), /Local Shell Account/);
-    assert.equal(await page.locator("lightning-input-field").first().locator("select").inputValue(), "Customer");
+    assert.equal(await page.locator("lightning-input-field").first().locator("button").innerText(), "Customer");
     assert.deepEqual(await page.evaluate(() => window.__fieldContracts), {
       customInvalid: false,
       customReported: false,
@@ -907,8 +1020,8 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
         validWhenEmpty: false,
         validAfterSet: true,
         setValue: "2026-07-04",
-        resetValue: "2026-06-18",
-        domValue: "2026-06-18",
+        resetValue: "2001-02-03",
+        domValue: "Feb 3, 2001",
       },
       recordUiField: {
         value: "415-555-0100",
@@ -923,7 +1036,6 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
     await existingEditForm.locator("lightning-input-field input").fill("Edited Local Account");
     await existingEditForm.locator("button", { hasText: "Save" }).click();
     await page.waitForFunction(() => window.__recordFormEvents.some(([name]) => name === "success"));
-    await existingEditForm.locator("button", { hasText: "Cancel" }).click();
 
     const events = await page.evaluate(() => window.__recordFormEvents);
     assert.ok(events.some(([name, value]) => name === "recordformload" && value === "001000000000001AAA"), JSON.stringify(events));
@@ -944,8 +1056,57 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
     ]);
     assert.deepEqual(events.find(([name]) => name === "submit"), ["submit", { Name: "Edited Local Account" }]);
     assert.deepEqual(events.find(([name]) => name === "success"), ["success", "001000000000001AAA"]);
-    assert.deepEqual(events.find(([name]) => name === "cancel"), ["cancel", { Name: "Edited Local Account" }]);
     assert.equal(events.some(([name]) => name === "error"), false, JSON.stringify(events));
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+// Native isolated Alert controls at both API floors/ceilings. The family Go
+// adapter compares their complete rows; this guards the second shipped module's
+// public promise behavior independently of hosted Lightning chrome.
+test("alert promise lifetime follows isolated native Escape controls", async (t) => {
+  if (!requireLWCToolchain(t)) return;
+  const controls = JSON.parse(fs.readFileSync(path.join(repoRoot,
+    "internal/lwc/compile/testdata/l22_native_controls.json"), "utf8"))
+    .filter(row => row.kind === "runtime");
+  const server = await startBaseComponentServer();
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    for (const control of controls) {
+      await page.goto(`${server.baseURL}/base.html`, { waitUntil: "networkidle" });
+      const native = Object.fromEntries(["59.0", "67.0"].map(api =>
+        [api, JSON.parse(control.expected[api].slice("BROWSER|".length)).observation]));
+      assert.equal(JSON.stringify(native["59.0"].promises), JSON.stringify(native["67.0"].promises),
+        `${control.id}: API-specific native result needs a gate`);
+      const states = await page.evaluate(async options => {
+        const { default: Alert } = await import("/lightning/shims/lightning/alert.js");
+        const promise = Alert.open(options);
+        const record = { index: 0, returnValue: { thenable: typeof promise.then === "function", type: typeof promise }, state: "pending" };
+        window.__l22AlertRecord = record;
+        window.__l22AlertPromise = promise;
+        promise.then(value => {
+          record.state = "fulfilled";
+          record.value = value === undefined ? { type: "undefined" } : { type: typeof value, value };
+        });
+        const states = [record.state];
+        await Promise.resolve();
+        states.push(record.state);
+        return states;
+      }, control.options);
+      assert.equal(JSON.stringify(states), JSON.stringify(native["67.0"].sequence.slice(0, 2).map(row => row.states[0])), control.id);
+      await page.keyboard.press("Escape");
+      // Preserve the native declared settlement window, including pending rows.
+      await page.evaluate(ms => new Promise(resolve => setTimeout(resolve, ms)), native["67.0"].settlementWindowMs);
+      const actual = await page.evaluate(() => JSON.stringify([window.__l22AlertRecord]));
+      assert.equal(actual, JSON.stringify(native["67.0"].promises), control.id);
+      if (native["67.0"].promises[0].state === "pending") {
+        await page.getByRole("alertdialog").last().getByRole("button", { name: "OK", exact: true }).click();
+        await page.evaluate(() => window.__l22AlertPromise);
+      }
+    }
   } finally {
     await browser.close();
     await server.close();

@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { chromium } from "playwright";
-import { harnessHTML, requireLWCToolchain, repoRoot, startLightningServer } from "./helpers.mjs";
+import { harnessHTML, requireLWCToolchain, repoRoot, startLightningServer, testTempDir } from "./helpers.mjs";
 
 const gladeOutJS = path.join(repoRoot, "internal/lwcruntime/embed/glade.out.js");
 
@@ -59,7 +57,7 @@ test("Lightning Out runtime reports dependency, module, name, and service diagno
   `;
 
   const server = await startLightningServer({
-    compiledDir: fs.mkdtempSync(path.join(os.tmpdir(), "glade-lwc-lightningout-")),
+    compiledDir: testTempDir(t, "glade-lwc-lightningout-"),
     gladeOutJS,
     pages: {},
   });

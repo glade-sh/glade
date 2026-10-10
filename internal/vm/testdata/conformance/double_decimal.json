@@ -1,0 +1,2194 @@
+{
+  "api_version": "67.0",
+  "oracle": "Owned Salesforce observations at API 67.0.",
+  "cases": [
+    {
+      "id": "L01",
+      "code": "Decimal d = 0; r = d;",
+      "compile": false,
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "L02",
+      "code": "Decimal d = -0.0; r = d;",
+      "compile": false,
+      "expected": "0.0",
+      "floorExpected": "0.0"
+    },
+    {
+      "id": "L03",
+      "code": "Decimal d = 1; r = d;",
+      "compile": false,
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "L04",
+      "code": "Decimal d = 1.0; r = d;",
+      "compile": false,
+      "expected": "1.0",
+      "floorExpected": "1.0"
+    },
+    {
+      "id": "L05",
+      "code": "Decimal d = 1.2300; r = d;",
+      "compile": false,
+      "expected": "1.2300",
+      "floorExpected": "1.2300"
+    },
+    {
+      "id": "L06",
+      "code": "Decimal d = -1.2300; r = d;",
+      "compile": false,
+      "expected": "-1.2300",
+      "floorExpected": "-1.2300"
+    },
+    {
+      "id": "L07",
+      "code": "Decimal d = 0.000001; r = d;",
+      "compile": false,
+      "expected": "0.000001",
+      "floorExpected": "0.000001"
+    },
+    {
+      "id": "L08",
+      "code": "Decimal d = 10000000.0; r = d;",
+      "compile": false,
+      "expected": "10000000.0",
+      "floorExpected": "10000000.0"
+    },
+    {
+      "id": "L09",
+      "code": "Decimal d = 12345678901234567890.1234; r = d;",
+      "compile": false,
+      "expected": "12345678901234567890.1234",
+      "floorExpected": "12345678901234567890.1234"
+    },
+    {
+      "id": "L10",
+      "code": "Decimal d = 0.1; r = d;",
+      "compile": false,
+      "expected": "0.1",
+      "floorExpected": "0.1"
+    },
+    {
+      "id": "T01",
+      "code": "Decimal d = 1.0; Object o = d; r = (o instanceof Decimal);",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "T02",
+      "code": "Decimal d = 1; Object o = d; r = (o instanceof Decimal);",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "T03",
+      "code": "Decimal d = 1L; Object o = d; r = (o instanceof Decimal);",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "T04",
+      "code": "Decimal d = 1.0 + 2; Object o = d; r = (o instanceof Decimal);",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "T05",
+      "code": "Decimal d = 1.0 + 2L; Object o = d; r = (o instanceof Decimal);",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "L11",
+      "code": "Double d = 0; r = d;",
+      "compile": false,
+      "expected": "0.0",
+      "floorExpected": "0.0"
+    },
+    {
+      "id": "L12",
+      "code": "Double d = -0.0; r = d;",
+      "compile": false,
+      "expected": "0.0",
+      "floorExpected": "0.0"
+    },
+    {
+      "id": "L13",
+      "code": "Double d = 1; r = d;",
+      "compile": false,
+      "expected": "1.0",
+      "floorExpected": "1.0"
+    },
+    {
+      "id": "L14",
+      "code": "Double d = 1.0; r = d;",
+      "compile": false,
+      "expected": "1.0",
+      "floorExpected": "1.0"
+    },
+    {
+      "id": "L15",
+      "code": "Double d = 1.2300; r = d;",
+      "compile": false,
+      "expected": "1.23",
+      "floorExpected": "1.23"
+    },
+    {
+      "id": "L16",
+      "code": "Double d = -1.2300; r = d;",
+      "compile": false,
+      "expected": "-1.23",
+      "floorExpected": "-1.23"
+    },
+    {
+      "id": "L17",
+      "code": "Double d = 0.000001; r = d;",
+      "compile": false,
+      "expected": "1.0E-6",
+      "floorExpected": "1.0E-6"
+    },
+    {
+      "id": "L18",
+      "code": "Double d = 10000000.0; r = d;",
+      "compile": false,
+      "expected": "1.0E7",
+      "floorExpected": "1.0E7"
+    },
+    {
+      "id": "L19",
+      "code": "Double d = 12345678901234567890.1234; r = d;",
+      "compile": false,
+      "expected": "1.2345678901234567E19",
+      "floorExpected": "1.2345678901234567E19"
+    },
+    {
+      "id": "L20",
+      "code": "Double d = 0.1; r = d;",
+      "compile": false,
+      "expected": "0.1",
+      "floorExpected": "0.1"
+    },
+    {
+      "id": "T06",
+      "code": "Double d = 1.0; Object o = d; r = (o instanceof Double);",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "T07",
+      "code": "Double d = 1; Object o = d; r = (o instanceof Double);",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "T08",
+      "code": "Double d = 1L; Object o = d; r = (o instanceof Double);",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "T09",
+      "code": "Double d = 1.0 + 2; Object o = d; r = (o instanceof Double);",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "T10",
+      "code": "Double d = 1.0 + 2L; Object o = d; r = (o instanceof Double);",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "A01",
+      "code": "Decimal a = 0.1; Decimal b = 0.2; r = a + b;",
+      "compile": false,
+      "expected": "0.3",
+      "floorExpected": "0.3"
+    },
+    {
+      "id": "A02",
+      "code": "Decimal a = 1.2300; Decimal b = 2.00; r = a + b;",
+      "compile": false,
+      "expected": "3.2300",
+      "floorExpected": "3.2300"
+    },
+    {
+      "id": "A03",
+      "code": "Decimal a = 1.2300; Decimal b = 2.00; r = a - b;",
+      "compile": false,
+      "expected": "-0.7700",
+      "floorExpected": "-0.7700"
+    },
+    {
+      "id": "A04",
+      "code": "Decimal a = 1.2300; Decimal b = 2.00; r = a * b;",
+      "compile": false,
+      "expected": "2.460000",
+      "floorExpected": "2.460000"
+    },
+    {
+      "id": "A05",
+      "code": "Decimal a = 1.00; Decimal b = 2.0; r = a / b;",
+      "compile": false,
+      "expected": "0.5",
+      "floorExpected": "0.5"
+    },
+    {
+      "id": "A06",
+      "code": "Decimal a = 1; Decimal b = 3; r = a / b;",
+      "compile": false,
+      "expected": "0.333333333333333333333333333333333",
+      "floorExpected": "0.333333333333333333333333333333333"
+    },
+    {
+      "id": "A07",
+      "code": "Decimal a = 2; Decimal b = 3; r = a / b;",
+      "compile": false,
+      "expected": "0.666666666666666666666666666666667",
+      "floorExpected": "0.666666666666666666666666666666667"
+    },
+    {
+      "id": "A08",
+      "code": "Decimal a = -1; Decimal b = 3; r = a / b;",
+      "compile": false,
+      "expected": "-0.333333333333333333333333333333333",
+      "floorExpected": "-0.333333333333333333333333333333333"
+    },
+    {
+      "id": "A09",
+      "code": "Decimal a = 7; Decimal b = 2; r = a / b;",
+      "compile": false,
+      "expected": "3.5",
+      "floorExpected": "3.5"
+    },
+    {
+      "id": "A10",
+      "code": "Decimal a = 1; Decimal b = 0; r = a / b;",
+      "compile": false,
+      "expected": "EXC|System.MathException|Divide by 0",
+      "floorExpected": "EXC|System.MathException|Divide by 0"
+    },
+    {
+      "id": "A11",
+      "code": "Decimal a = 0; Decimal b = 0; r = a / b;",
+      "compile": false,
+      "expected": "EXC|System.MathException|Divide by 0",
+      "floorExpected": "EXC|System.MathException|Divide by 0"
+    },
+    {
+      "id": "A12",
+      "code": "Decimal a = 1; Decimal b = 0; r = a * b;",
+      "compile": false,
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "A13",
+      "code": "Decimal a = -0.0; Decimal b = 0.0; r = a + b;",
+      "compile": false,
+      "expected": "0.0",
+      "floorExpected": "0.0"
+    },
+    {
+      "id": "A14",
+      "code": "Decimal a = 10000000000000000.0; Decimal b = 1.0; r = a + b;",
+      "compile": false,
+      "expected": "10000000000000001.0",
+      "floorExpected": "10000000000000001.0"
+    },
+    {
+      "id": "A15",
+      "code": "Decimal a = 0.0000000001; Decimal b = 0.0000000001; r = a * b;",
+      "compile": false,
+      "expected": "1E-20",
+      "floorExpected": "1E-20"
+    },
+    {
+      "id": "A16",
+      "code": "Decimal a = 9.99; Decimal b = 9.98; r = a - b;",
+      "compile": false,
+      "expected": "0.01",
+      "floorExpected": "0.01"
+    },
+    {
+      "id": "A17",
+      "code": "Decimal a = 12345678901234567890.1; Decimal b = 0.2; r = a + b;",
+      "compile": false,
+      "expected": "12345678901234567890.3",
+      "floorExpected": "12345678901234567890.3"
+    },
+    {
+      "id": "P01",
+      "code": "Decimal a = 1.50; Integer b = 2; Object o = a + b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.50|true|true",
+      "floorExpected": "3.50|true|true"
+    },
+    {
+      "id": "P02",
+      "code": "Decimal a = 1.50; Long b = 2L; Object o = a + b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.50|true|true",
+      "floorExpected": "3.50|true|true"
+    },
+    {
+      "id": "P03",
+      "code": "Decimal a = 1.50; Decimal b = 2.00; Object o = a + b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.50|true|true",
+      "floorExpected": "3.50|true|true"
+    },
+    {
+      "id": "P04",
+      "code": "Decimal a = 1.50; Double b = 2.00; Object o = a + b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.50|true|true",
+      "floorExpected": "3.50|true|true"
+    },
+    {
+      "id": "P05",
+      "code": "Decimal a = 1.50; Integer b = 2; Object o = a - b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "-0.50|true|true",
+      "floorExpected": "-0.50|true|true"
+    },
+    {
+      "id": "P06",
+      "code": "Decimal a = 1.50; Long b = 2L; Object o = a - b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "-0.50|true|true",
+      "floorExpected": "-0.50|true|true"
+    },
+    {
+      "id": "P07",
+      "code": "Decimal a = 1.50; Decimal b = 2.00; Object o = a - b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "-0.50|true|true",
+      "floorExpected": "-0.50|true|true"
+    },
+    {
+      "id": "P08",
+      "code": "Decimal a = 1.50; Double b = 2.00; Object o = a - b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "-0.50|true|true",
+      "floorExpected": "-0.50|true|true"
+    },
+    {
+      "id": "P09",
+      "code": "Decimal a = 1.50; Integer b = 2; Object o = a * b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.00|true|true",
+      "floorExpected": "3.00|true|true"
+    },
+    {
+      "id": "P10",
+      "code": "Decimal a = 1.50; Long b = 2L; Object o = a * b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.00|true|true",
+      "floorExpected": "3.00|true|true"
+    },
+    {
+      "id": "P11",
+      "code": "Decimal a = 1.50; Decimal b = 2.00; Object o = a * b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.0000|true|true",
+      "floorExpected": "3.0000|true|true"
+    },
+    {
+      "id": "P12",
+      "code": "Decimal a = 1.50; Double b = 2.00; Object o = a * b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.000|true|true",
+      "floorExpected": "3.000|true|true"
+    },
+    {
+      "id": "P13",
+      "code": "Decimal a = 1.50; Integer b = 2; Object o = a / b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "0.75|true|true",
+      "floorExpected": "0.75|true|true"
+    },
+    {
+      "id": "P14",
+      "code": "Decimal a = 1.50; Long b = 2L; Object o = a / b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "0.75|true|true",
+      "floorExpected": "0.75|true|true"
+    },
+    {
+      "id": "P15",
+      "code": "Decimal a = 1.50; Decimal b = 2.00; Object o = a / b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "0.75|true|true",
+      "floorExpected": "0.75|true|true"
+    },
+    {
+      "id": "P16",
+      "code": "Decimal a = 1.50; Double b = 2.00; Object o = a / b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "0.75|true|true",
+      "floorExpected": "0.75|true|true"
+    },
+    {
+      "id": "U01",
+      "code": "Decimal d = 1.50; d++; r = d;",
+      "compile": false,
+      "expected": "2.50",
+      "floorExpected": "2.50"
+    },
+    {
+      "id": "U02",
+      "code": "Decimal d = 1.50; ++d; r = d;",
+      "compile": false,
+      "expected": "2.50",
+      "floorExpected": "2.50"
+    },
+    {
+      "id": "U03",
+      "code": "Decimal d = 1.50; d--; r = d;",
+      "compile": false,
+      "expected": "0.50",
+      "floorExpected": "0.50"
+    },
+    {
+      "id": "U04",
+      "code": "Decimal d = 1.50; --d; r = d;",
+      "compile": false,
+      "expected": "0.50",
+      "floorExpected": "0.50"
+    },
+    {
+      "id": "U05",
+      "code": "Decimal d = 1.50; d += 0.2; r = d;",
+      "compile": false,
+      "expected": "1.70",
+      "floorExpected": "1.70"
+    },
+    {
+      "id": "U06",
+      "code": "Decimal d = 1.50; d *= 3; r = d;",
+      "compile": false,
+      "expected": "4.50",
+      "floorExpected": "4.50"
+    },
+    {
+      "id": "U07",
+      "code": "Decimal d = 1.50; d /= 3; r = d;",
+      "compile": false,
+      "expected": "0.50",
+      "floorExpected": "0.50"
+    },
+    {
+      "id": "U08",
+      "code": "Decimal d = 1.50; d = -d; r = d;",
+      "compile": false,
+      "expected": "-1.50",
+      "floorExpected": "-1.50"
+    },
+    {
+      "id": "A18",
+      "code": "Double a = 0.1; Double b = 0.2; r = a + b;",
+      "compile": false,
+      "expected": "0.30000000000000004",
+      "floorExpected": "0.30000000000000004"
+    },
+    {
+      "id": "A19",
+      "code": "Double a = 1.2300; Double b = 2.00; r = a + b;",
+      "compile": false,
+      "expected": "3.23",
+      "floorExpected": "3.23"
+    },
+    {
+      "id": "A20",
+      "code": "Double a = 1.2300; Double b = 2.00; r = a - b;",
+      "compile": false,
+      "expected": "-0.77",
+      "floorExpected": "-0.77"
+    },
+    {
+      "id": "A21",
+      "code": "Double a = 1.2300; Double b = 2.00; r = a * b;",
+      "compile": false,
+      "expected": "2.46",
+      "floorExpected": "2.46"
+    },
+    {
+      "id": "A22",
+      "code": "Double a = 1.00; Double b = 2.0; r = a / b;",
+      "compile": false,
+      "expected": "0.5",
+      "floorExpected": "0.5"
+    },
+    {
+      "id": "A23",
+      "code": "Double a = 1; Double b = 3; r = a / b;",
+      "compile": false,
+      "expected": "0.3333333333333333",
+      "floorExpected": "0.3333333333333333"
+    },
+    {
+      "id": "A24",
+      "code": "Double a = 2; Double b = 3; r = a / b;",
+      "compile": false,
+      "expected": "0.6666666666666666",
+      "floorExpected": "0.6666666666666666"
+    },
+    {
+      "id": "A25",
+      "code": "Double a = -1; Double b = 3; r = a / b;",
+      "compile": false,
+      "expected": "-0.3333333333333333",
+      "floorExpected": "-0.3333333333333333"
+    },
+    {
+      "id": "A26",
+      "code": "Double a = 7; Double b = 2; r = a / b;",
+      "compile": false,
+      "expected": "3.5",
+      "floorExpected": "3.5"
+    },
+    {
+      "id": "A27",
+      "code": "Double a = 1; Double b = 0; r = a / b;",
+      "compile": false,
+      "expected": "EXC|System.MathException|Divide by 0",
+      "floorExpected": "EXC|System.MathException|Divide by 0"
+    },
+    {
+      "id": "A28",
+      "code": "Double a = 0; Double b = 0; r = a / b;",
+      "compile": false,
+      "expected": "EXC|System.MathException|Divide by 0",
+      "floorExpected": "EXC|System.MathException|Divide by 0"
+    },
+    {
+      "id": "A29",
+      "code": "Double a = 1; Double b = 0; r = a * b;",
+      "compile": false,
+      "expected": "0.0",
+      "floorExpected": "0.0"
+    },
+    {
+      "id": "A30",
+      "code": "Double a = -0.0; Double b = 0.0; r = a + b;",
+      "compile": false,
+      "expected": "0.0",
+      "floorExpected": "0.0"
+    },
+    {
+      "id": "A31",
+      "code": "Double a = 10000000000000000.0; Double b = 1.0; r = a + b;",
+      "compile": false,
+      "expected": "1.0E16",
+      "floorExpected": "1.0E16"
+    },
+    {
+      "id": "A32",
+      "code": "Double a = 0.0000000001; Double b = 0.0000000001; r = a * b;",
+      "compile": false,
+      "expected": "1.0000000000000001E-20",
+      "floorExpected": "1.0000000000000001E-20"
+    },
+    {
+      "id": "A33",
+      "code": "Double a = 9.99; Double b = 9.98; r = a - b;",
+      "compile": false,
+      "expected": "0.009999999999999787",
+      "floorExpected": "0.009999999999999787"
+    },
+    {
+      "id": "A34",
+      "code": "Double a = 12345678901234567890.1; Double b = 0.2; r = a + b;",
+      "compile": false,
+      "expected": "1.2345678901234567E19",
+      "floorExpected": "1.2345678901234567E19"
+    },
+    {
+      "id": "P17",
+      "code": "Double a = 1.50; Integer b = 2; Object o = a + b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.5|true|true",
+      "floorExpected": "3.5|true|true"
+    },
+    {
+      "id": "P18",
+      "code": "Double a = 1.50; Long b = 2L; Object o = a + b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.5|true|true",
+      "floorExpected": "3.5|true|true"
+    },
+    {
+      "id": "P19",
+      "code": "Double a = 1.50; Decimal b = 2.00; Object o = a + b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.50|true|true",
+      "floorExpected": "3.50|true|true"
+    },
+    {
+      "id": "P20",
+      "code": "Double a = 1.50; Double b = 2.00; Object o = a + b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.5|true|true",
+      "floorExpected": "3.5|true|true"
+    },
+    {
+      "id": "P21",
+      "code": "Double a = 1.50; Integer b = 2; Object o = a - b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "-0.5|true|true",
+      "floorExpected": "-0.5|true|true"
+    },
+    {
+      "id": "P22",
+      "code": "Double a = 1.50; Long b = 2L; Object o = a - b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "-0.5|true|true",
+      "floorExpected": "-0.5|true|true"
+    },
+    {
+      "id": "P23",
+      "code": "Double a = 1.50; Decimal b = 2.00; Object o = a - b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "-0.50|true|true",
+      "floorExpected": "-0.50|true|true"
+    },
+    {
+      "id": "P24",
+      "code": "Double a = 1.50; Double b = 2.00; Object o = a - b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "-0.5|true|true",
+      "floorExpected": "-0.5|true|true"
+    },
+    {
+      "id": "P25",
+      "code": "Double a = 1.50; Integer b = 2; Object o = a * b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.0|true|true",
+      "floorExpected": "3.0|true|true"
+    },
+    {
+      "id": "P26",
+      "code": "Double a = 1.50; Long b = 2L; Object o = a * b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.0|true|true",
+      "floorExpected": "3.0|true|true"
+    },
+    {
+      "id": "P27",
+      "code": "Double a = 1.50; Decimal b = 2.00; Object o = a * b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.000|true|true",
+      "floorExpected": "3.000|true|true"
+    },
+    {
+      "id": "P28",
+      "code": "Double a = 1.50; Double b = 2.00; Object o = a * b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "3.0|true|true",
+      "floorExpected": "3.0|true|true"
+    },
+    {
+      "id": "P29",
+      "code": "Double a = 1.50; Integer b = 2; Object o = a / b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "0.75|true|true",
+      "floorExpected": "0.75|true|true"
+    },
+    {
+      "id": "P30",
+      "code": "Double a = 1.50; Long b = 2L; Object o = a / b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "0.75|true|true",
+      "floorExpected": "0.75|true|true"
+    },
+    {
+      "id": "P31",
+      "code": "Double a = 1.50; Decimal b = 2.00; Object o = a / b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "0.75|true|true",
+      "floorExpected": "0.75|true|true"
+    },
+    {
+      "id": "P32",
+      "code": "Double a = 1.50; Double b = 2.00; Object o = a / b; r = String.valueOf(o) + '|' + (o instanceof Double) + '|' + (o instanceof Decimal);",
+      "compile": false,
+      "expected": "0.75|true|true",
+      "floorExpected": "0.75|true|true"
+    },
+    {
+      "id": "U09",
+      "code": "Double d = 1.50; d++; r = d;",
+      "compile": false,
+      "expected": "2.5",
+      "floorExpected": "2.5"
+    },
+    {
+      "id": "U10",
+      "code": "Double d = 1.50; ++d; r = d;",
+      "compile": false,
+      "expected": "2.5",
+      "floorExpected": "2.5"
+    },
+    {
+      "id": "U11",
+      "code": "Double d = 1.50; d--; r = d;",
+      "compile": false,
+      "expected": "0.5",
+      "floorExpected": "0.5"
+    },
+    {
+      "id": "U12",
+      "code": "Double d = 1.50; --d; r = d;",
+      "compile": false,
+      "expected": "0.5",
+      "floorExpected": "0.5"
+    },
+    {
+      "id": "U13",
+      "code": "Double d = 1.50; d += 0.2; r = d;",
+      "compile": false,
+      "expected": "1.7",
+      "floorExpected": "1.7"
+    },
+    {
+      "id": "U14",
+      "code": "Double d = 1.50; d *= 3; r = d;",
+      "compile": false,
+      "expected": "4.5",
+      "floorExpected": "4.5"
+    },
+    {
+      "id": "U15",
+      "code": "Double d = 1.50; d /= 3; r = d;",
+      "compile": false,
+      "expected": "0.5",
+      "floorExpected": "0.5"
+    },
+    {
+      "id": "U16",
+      "code": "Double d = 1.50; d = -d; r = d;",
+      "compile": false,
+      "expected": "-1.5",
+      "floorExpected": "-1.5"
+    },
+    {
+      "id": "V01",
+      "code": "Decimal.valueOf('0')",
+      "compile": false,
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "V02",
+      "code": "Decimal.valueOf('1.2300')",
+      "compile": false,
+      "expected": "1.2300",
+      "floorExpected": "1.2300"
+    },
+    {
+      "id": "V03",
+      "code": "Decimal.valueOf('-0.0')",
+      "compile": false,
+      "expected": "0.0",
+      "floorExpected": "0.0"
+    },
+    {
+      "id": "V04",
+      "code": "Decimal.valueOf('+12.50')",
+      "compile": false,
+      "expected": "12.50",
+      "floorExpected": "12.50"
+    },
+    {
+      "id": "V05",
+      "code": "Decimal.valueOf(' 12.5 ')",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid decimal:  12.5 ",
+      "floorExpected": "EXC|System.TypeException|Invalid decimal:  12.5 "
+    },
+    {
+      "id": "V06",
+      "code": "Decimal.valueOf('')",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid decimal: ",
+      "floorExpected": "EXC|System.TypeException|Invalid decimal: "
+    },
+    {
+      "id": "V07",
+      "code": "Decimal.valueOf(' ')",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid decimal:  ",
+      "floorExpected": "EXC|System.TypeException|Invalid decimal:  "
+    },
+    {
+      "id": "V08",
+      "code": "Decimal.valueOf('1e3')",
+      "compile": false,
+      "expected": "1E+3",
+      "floorExpected": "1E+3"
+    },
+    {
+      "id": "V09",
+      "code": "Decimal.valueOf('1E-3')",
+      "compile": false,
+      "expected": "0.001",
+      "floorExpected": "0.001"
+    },
+    {
+      "id": "V10",
+      "code": "Decimal.valueOf('1.')",
+      "compile": false,
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "V11",
+      "code": "Decimal.valueOf('.5')",
+      "compile": false,
+      "expected": "0.5",
+      "floorExpected": "0.5"
+    },
+    {
+      "id": "V12",
+      "code": "Decimal.valueOf('NaN')",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid decimal: NaN",
+      "floorExpected": "EXC|System.TypeException|Invalid decimal: NaN"
+    },
+    {
+      "id": "V13",
+      "code": "Decimal.valueOf('Infinity')",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid decimal: Infinity",
+      "floorExpected": "EXC|System.TypeException|Invalid decimal: Infinity"
+    },
+    {
+      "id": "V14",
+      "code": "Decimal.valueOf('-Infinity')",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid decimal: -Infinity",
+      "floorExpected": "EXC|System.TypeException|Invalid decimal: -Infinity"
+    },
+    {
+      "id": "V15",
+      "code": "Decimal.valueOf('1,000')",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid decimal: 1,000",
+      "floorExpected": "EXC|System.TypeException|Invalid decimal: 1,000"
+    },
+    {
+      "id": "V16",
+      "code": "Decimal.valueOf('12x')",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid decimal: 12x",
+      "floorExpected": "EXC|System.TypeException|Invalid decimal: 12x"
+    },
+    {
+      "id": "V17",
+      "code": "Decimal.valueOf(null)",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 34: Ambiguous method signature: void valueOf(NULL)",
+      "floorExpected": "COMPILE_ERROR\tline 34: Ambiguous method signature: void valueOf(NULL)"
+    },
+    {
+      "id": "V18",
+      "code": "Double.valueOf('0')",
+      "compile": false,
+      "expected": "0.0",
+      "floorExpected": "0.0"
+    },
+    {
+      "id": "V19",
+      "code": "Double.valueOf('1.2300')",
+      "compile": false,
+      "expected": "1.23",
+      "floorExpected": "1.23"
+    },
+    {
+      "id": "V20",
+      "code": "Double.valueOf('-0.0')",
+      "compile": false,
+      "expected": "-0.0",
+      "floorExpected": "-0.0"
+    },
+    {
+      "id": "V21",
+      "code": "Double.valueOf('+12.50')",
+      "compile": false,
+      "expected": "12.5",
+      "floorExpected": "12.5"
+    },
+    {
+      "id": "V22",
+      "code": "Double.valueOf(' 12.5 ')",
+      "compile": false,
+      "expected": "12.5",
+      "floorExpected": "12.5"
+    },
+    {
+      "id": "V23",
+      "code": "Double.valueOf('')",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid double: ",
+      "floorExpected": "EXC|System.TypeException|Invalid double: "
+    },
+    {
+      "id": "V24",
+      "code": "Double.valueOf(' ')",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid double:  ",
+      "floorExpected": "EXC|System.TypeException|Invalid double:  "
+    },
+    {
+      "id": "V25",
+      "code": "Double.valueOf('1e3')",
+      "compile": false,
+      "expected": "1000.0",
+      "floorExpected": "1000.0"
+    },
+    {
+      "id": "V26",
+      "code": "Double.valueOf('1E-3')",
+      "compile": false,
+      "expected": "0.001",
+      "floorExpected": "0.001"
+    },
+    {
+      "id": "V27",
+      "code": "Double.valueOf('1.')",
+      "compile": false,
+      "expected": "1.0",
+      "floorExpected": "1.0"
+    },
+    {
+      "id": "V28",
+      "code": "Double.valueOf('.5')",
+      "compile": false,
+      "expected": "0.5",
+      "floorExpected": "0.5"
+    },
+    {
+      "id": "V29",
+      "code": "Double.valueOf('NaN')",
+      "compile": false,
+      "expected": "NaN",
+      "floorExpected": "NaN"
+    },
+    {
+      "id": "V30",
+      "code": "Double.valueOf('Infinity')",
+      "compile": false,
+      "expected": "Infinity",
+      "floorExpected": "Infinity"
+    },
+    {
+      "id": "V31",
+      "code": "Double.valueOf('-Infinity')",
+      "compile": false,
+      "expected": "-Infinity",
+      "floorExpected": "-Infinity"
+    },
+    {
+      "id": "V32",
+      "code": "Double.valueOf('1,000')",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid double: 1,000",
+      "floorExpected": "EXC|System.TypeException|Invalid double: 1,000"
+    },
+    {
+      "id": "V33",
+      "code": "Double.valueOf('12x')",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid double: 12x",
+      "floorExpected": "EXC|System.TypeException|Invalid double: 12x"
+    },
+    {
+      "id": "V34",
+      "code": "Double.valueOf(null)",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 50: Ambiguous method signature: void valueOf(NULL)",
+      "floorExpected": "COMPILE_ERROR\tline 50: Ambiguous method signature: void valueOf(NULL)"
+    },
+    {
+      "id": "C01",
+      "code": "Decimal d = 1.99; r = d.intValue();",
+      "compile": false,
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "C02",
+      "code": "Decimal d = 1.99; r = d.longValue();",
+      "compile": false,
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "C03",
+      "code": "Decimal d = -1.99; r = d.intValue();",
+      "compile": false,
+      "expected": "-1",
+      "floorExpected": "-1"
+    },
+    {
+      "id": "C04",
+      "code": "Decimal d = -1.99; r = d.longValue();",
+      "compile": false,
+      "expected": "-1",
+      "floorExpected": "-1"
+    },
+    {
+      "id": "C05",
+      "code": "Decimal d = 2147483648.0; r = d.intValue();",
+      "compile": false,
+      "expected": "-2147483648",
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "C06",
+      "code": "Decimal d = 2147483648.0; r = d.longValue();",
+      "compile": false,
+      "expected": "2147483648",
+      "floorExpected": "2147483648"
+    },
+    {
+      "id": "C07",
+      "code": "Decimal d = -2147483649.0; r = d.intValue();",
+      "compile": false,
+      "expected": "2147483647",
+      "floorExpected": "2147483647"
+    },
+    {
+      "id": "C08",
+      "code": "Decimal d = -2147483649.0; r = d.longValue();",
+      "compile": false,
+      "expected": "-2147483649",
+      "floorExpected": "-2147483649"
+    },
+    {
+      "id": "C09",
+      "code": "Decimal d = 9223372036854775808.0; r = d.intValue();",
+      "compile": false,
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "C10",
+      "code": "Decimal d = 9223372036854775808.0; r = d.longValue();",
+      "compile": false,
+      "expected": "-9223372036854775808",
+      "floorExpected": "-9223372036854775808"
+    },
+    {
+      "id": "C11",
+      "code": "Decimal d = 0.0001; r = d.intValue();",
+      "compile": false,
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "C12",
+      "code": "Decimal d = 0.0001; r = d.longValue();",
+      "compile": false,
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "C13",
+      "code": "Decimal d = 1.99; Integer x = (Integer) d; r = x;",
+      "compile": false,
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "C14",
+      "code": "Decimal d = 1.99; Long x = (Long) d; r = x;",
+      "compile": false,
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "C15",
+      "code": "Decimal d = 1.99; Decimal x = (Decimal) d; r = x;",
+      "compile": false,
+      "expected": "1.99",
+      "floorExpected": "1.99"
+    },
+    {
+      "id": "C16",
+      "code": "Decimal d = 1.99; Double x = (Double) d; r = x;",
+      "compile": false,
+      "expected": "1.99",
+      "floorExpected": "1.99"
+    },
+    {
+      "id": "C17",
+      "code": "Double d = 1.99; r = d.intValue();",
+      "compile": false,
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "C18",
+      "code": "Double d = 1.99; r = d.longValue();",
+      "compile": false,
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "C19",
+      "code": "Double d = -1.99; r = d.intValue();",
+      "compile": false,
+      "expected": "-1",
+      "floorExpected": "-1"
+    },
+    {
+      "id": "C20",
+      "code": "Double d = -1.99; r = d.longValue();",
+      "compile": false,
+      "expected": "-1",
+      "floorExpected": "-1"
+    },
+    {
+      "id": "C21",
+      "code": "Double d = 2147483648.0; r = d.intValue();",
+      "compile": false,
+      "expected": "2147483647",
+      "floorExpected": "2147483647"
+    },
+    {
+      "id": "C22",
+      "code": "Double d = 2147483648.0; r = d.longValue();",
+      "compile": false,
+      "expected": "2147483648",
+      "floorExpected": "2147483648"
+    },
+    {
+      "id": "C23",
+      "code": "Double d = -2147483649.0; r = d.intValue();",
+      "compile": false,
+      "expected": "-2147483648",
+      "floorExpected": "-2147483648"
+    },
+    {
+      "id": "C24",
+      "code": "Double d = -2147483649.0; r = d.longValue();",
+      "compile": false,
+      "expected": "-2147483649",
+      "floorExpected": "-2147483649"
+    },
+    {
+      "id": "C25",
+      "code": "Double d = 9223372036854775808.0; r = d.intValue();",
+      "compile": false,
+      "expected": "2147483647",
+      "floorExpected": "2147483647"
+    },
+    {
+      "id": "C26",
+      "code": "Double d = 9223372036854775808.0; r = d.longValue();",
+      "compile": false,
+      "expected": "9223372036854775807",
+      "floorExpected": "9223372036854775807"
+    },
+    {
+      "id": "C27",
+      "code": "Double d = 0.0001; r = d.intValue();",
+      "compile": false,
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "C28",
+      "code": "Double d = 0.0001; r = d.longValue();",
+      "compile": false,
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "C29",
+      "code": "Double d = 1.99; Integer x = (Integer) d; r = x;",
+      "compile": false,
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "C30",
+      "code": "Double d = 1.99; Long x = (Long) d; r = x;",
+      "compile": false,
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "C31",
+      "code": "Double d = 1.99; Decimal x = (Decimal) d; r = x;",
+      "compile": false,
+      "expected": "1.99",
+      "floorExpected": "1.99"
+    },
+    {
+      "id": "C32",
+      "code": "Double d = 1.99; Double x = (Double) d; r = x;",
+      "compile": false,
+      "expected": "1.99",
+      "floorExpected": "1.99"
+    },
+    {
+      "id": "S01",
+      "code": "Decimal d = 0.00; r = d.scale();",
+      "compile": false,
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "S02",
+      "code": "Decimal d = 0.00; r = d.precision();",
+      "compile": false,
+      "expected": "1",
+      "floorExpected": "1"
+    },
+    {
+      "id": "S03",
+      "code": "Decimal d = 0.00; r = d.toPlainString();",
+      "compile": false,
+      "expected": "0.00",
+      "floorExpected": "0.00"
+    },
+    {
+      "id": "S04",
+      "code": "Decimal d = 0.00; r = d.stripTrailingZeros();",
+      "compile": false,
+      "expected": "0",
+      "floorExpected": "0"
+    },
+    {
+      "id": "S05",
+      "code": "Decimal d = 0.00; r = d.doubleValue();",
+      "compile": false,
+      "expected": "0.0",
+      "floorExpected": "0.0"
+    },
+    {
+      "id": "S06",
+      "code": "Decimal d = 1.2300; r = d.scale();",
+      "compile": false,
+      "expected": "4",
+      "floorExpected": "4"
+    },
+    {
+      "id": "S07",
+      "code": "Decimal d = 1.2300; r = d.precision();",
+      "compile": false,
+      "expected": "5",
+      "floorExpected": "5"
+    },
+    {
+      "id": "S08",
+      "code": "Decimal d = 1.2300; r = d.toPlainString();",
+      "compile": false,
+      "expected": "1.2300",
+      "floorExpected": "1.2300"
+    },
+    {
+      "id": "S09",
+      "code": "Decimal d = 1.2300; r = d.stripTrailingZeros();",
+      "compile": false,
+      "expected": "1.23",
+      "floorExpected": "1.23"
+    },
+    {
+      "id": "S10",
+      "code": "Decimal d = 1.2300; r = d.doubleValue();",
+      "compile": false,
+      "expected": "1.23",
+      "floorExpected": "1.23"
+    },
+    {
+      "id": "S11",
+      "code": "Decimal d = 12345678901234567890.1234; r = d.scale();",
+      "compile": false,
+      "expected": "4",
+      "floorExpected": "4"
+    },
+    {
+      "id": "S12",
+      "code": "Decimal d = 12345678901234567890.1234; r = d.precision();",
+      "compile": false,
+      "expected": "24",
+      "floorExpected": "24"
+    },
+    {
+      "id": "S13",
+      "code": "Decimal d = 12345678901234567890.1234; r = d.toPlainString();",
+      "compile": false,
+      "expected": "12345678901234567890.1234",
+      "floorExpected": "12345678901234567890.1234"
+    },
+    {
+      "id": "S14",
+      "code": "Decimal d = 12345678901234567890.1234; r = d.stripTrailingZeros();",
+      "compile": false,
+      "expected": "12345678901234567890.1234",
+      "floorExpected": "12345678901234567890.1234"
+    },
+    {
+      "id": "S15",
+      "code": "Decimal d = 12345678901234567890.1234; r = d.doubleValue();",
+      "compile": false,
+      "expected": "1.2345678901234567E19",
+      "floorExpected": "1.2345678901234567E19"
+    },
+    {
+      "id": "S16",
+      "code": "Decimal d = 0.0000100; r = d.scale();",
+      "compile": false,
+      "expected": "7",
+      "floorExpected": "7"
+    },
+    {
+      "id": "S17",
+      "code": "Decimal d = 0.0000100; r = d.precision();",
+      "compile": false,
+      "expected": "3",
+      "floorExpected": "3"
+    },
+    {
+      "id": "S18",
+      "code": "Decimal d = 0.0000100; r = d.toPlainString();",
+      "compile": false,
+      "expected": "0.0000100",
+      "floorExpected": "0.0000100"
+    },
+    {
+      "id": "S19",
+      "code": "Decimal d = 0.0000100; r = d.stripTrailingZeros();",
+      "compile": false,
+      "expected": "0.00001",
+      "floorExpected": "0.00001"
+    },
+    {
+      "id": "S20",
+      "code": "Decimal d = 0.0000100; r = d.doubleValue();",
+      "compile": false,
+      "expected": "1.0E-5",
+      "floorExpected": "1.0E-5"
+    },
+    {
+      "id": "S21",
+      "code": "Decimal d = -12.300; r = d.scale();",
+      "compile": false,
+      "expected": "3",
+      "floorExpected": "3"
+    },
+    {
+      "id": "S22",
+      "code": "Decimal d = -12.300; r = d.precision();",
+      "compile": false,
+      "expected": "5",
+      "floorExpected": "5"
+    },
+    {
+      "id": "S23",
+      "code": "Decimal d = -12.300; r = d.toPlainString();",
+      "compile": false,
+      "expected": "-12.300",
+      "floorExpected": "-12.300"
+    },
+    {
+      "id": "S24",
+      "code": "Decimal d = -12.300; r = d.stripTrailingZeros();",
+      "compile": false,
+      "expected": "-12.3",
+      "floorExpected": "-12.3"
+    },
+    {
+      "id": "S25",
+      "code": "Decimal d = -12.300; r = d.doubleValue();",
+      "compile": false,
+      "expected": "-12.3",
+      "floorExpected": "-12.3"
+    },
+    {
+      "id": "R01",
+      "code": "Decimal d = 1.25; r = d.setScale(1, RoundingMode.UP);",
+      "compile": false,
+      "expected": "1.3",
+      "floorExpected": "1.3"
+    },
+    {
+      "id": "R02",
+      "code": "Decimal d = -1.25; r = d.setScale(1, RoundingMode.UP);",
+      "compile": false,
+      "expected": "-1.3",
+      "floorExpected": "-1.3"
+    },
+    {
+      "id": "R03",
+      "code": "Decimal d = 1.35; r = d.setScale(1, RoundingMode.UP);",
+      "compile": false,
+      "expected": "1.4",
+      "floorExpected": "1.4"
+    },
+    {
+      "id": "R04",
+      "code": "Decimal d = 1.25; r = d.setScale(1, RoundingMode.DOWN);",
+      "compile": false,
+      "expected": "1.2",
+      "floorExpected": "1.2"
+    },
+    {
+      "id": "R05",
+      "code": "Decimal d = -1.25; r = d.setScale(1, RoundingMode.DOWN);",
+      "compile": false,
+      "expected": "-1.2",
+      "floorExpected": "-1.2"
+    },
+    {
+      "id": "R06",
+      "code": "Decimal d = 1.35; r = d.setScale(1, RoundingMode.DOWN);",
+      "compile": false,
+      "expected": "1.3",
+      "floorExpected": "1.3"
+    },
+    {
+      "id": "R07",
+      "code": "Decimal d = 1.25; r = d.setScale(1, RoundingMode.CEILING);",
+      "compile": false,
+      "expected": "1.3",
+      "floorExpected": "1.3"
+    },
+    {
+      "id": "R08",
+      "code": "Decimal d = -1.25; r = d.setScale(1, RoundingMode.CEILING);",
+      "compile": false,
+      "expected": "-1.2",
+      "floorExpected": "-1.2"
+    },
+    {
+      "id": "R09",
+      "code": "Decimal d = 1.35; r = d.setScale(1, RoundingMode.CEILING);",
+      "compile": false,
+      "expected": "1.4",
+      "floorExpected": "1.4"
+    },
+    {
+      "id": "R10",
+      "code": "Decimal d = 1.25; r = d.setScale(1, RoundingMode.FLOOR);",
+      "compile": false,
+      "expected": "1.2",
+      "floorExpected": "1.2"
+    },
+    {
+      "id": "R11",
+      "code": "Decimal d = -1.25; r = d.setScale(1, RoundingMode.FLOOR);",
+      "compile": false,
+      "expected": "-1.3",
+      "floorExpected": "-1.3"
+    },
+    {
+      "id": "R12",
+      "code": "Decimal d = 1.35; r = d.setScale(1, RoundingMode.FLOOR);",
+      "compile": false,
+      "expected": "1.3",
+      "floorExpected": "1.3"
+    },
+    {
+      "id": "R13",
+      "code": "Decimal d = 1.25; r = d.setScale(1, RoundingMode.HALF_UP);",
+      "compile": false,
+      "expected": "1.3",
+      "floorExpected": "1.3"
+    },
+    {
+      "id": "R14",
+      "code": "Decimal d = -1.25; r = d.setScale(1, RoundingMode.HALF_UP);",
+      "compile": false,
+      "expected": "-1.3",
+      "floorExpected": "-1.3"
+    },
+    {
+      "id": "R15",
+      "code": "Decimal d = 1.35; r = d.setScale(1, RoundingMode.HALF_UP);",
+      "compile": false,
+      "expected": "1.4",
+      "floorExpected": "1.4"
+    },
+    {
+      "id": "R16",
+      "code": "Decimal d = 1.25; r = d.setScale(1, RoundingMode.HALF_DOWN);",
+      "compile": false,
+      "expected": "1.2",
+      "floorExpected": "1.2"
+    },
+    {
+      "id": "R17",
+      "code": "Decimal d = -1.25; r = d.setScale(1, RoundingMode.HALF_DOWN);",
+      "compile": false,
+      "expected": "-1.2",
+      "floorExpected": "-1.2"
+    },
+    {
+      "id": "R18",
+      "code": "Decimal d = 1.35; r = d.setScale(1, RoundingMode.HALF_DOWN);",
+      "compile": false,
+      "expected": "1.3",
+      "floorExpected": "1.3"
+    },
+    {
+      "id": "R19",
+      "code": "Decimal d = 1.25; r = d.setScale(1, RoundingMode.HALF_EVEN);",
+      "compile": false,
+      "expected": "1.2",
+      "floorExpected": "1.2"
+    },
+    {
+      "id": "R20",
+      "code": "Decimal d = -1.25; r = d.setScale(1, RoundingMode.HALF_EVEN);",
+      "compile": false,
+      "expected": "-1.2",
+      "floorExpected": "-1.2"
+    },
+    {
+      "id": "R21",
+      "code": "Decimal d = 1.35; r = d.setScale(1, RoundingMode.HALF_EVEN);",
+      "compile": false,
+      "expected": "1.4",
+      "floorExpected": "1.4"
+    },
+    {
+      "id": "R22",
+      "code": "Decimal d = 1.25; r = d.setScale(1, RoundingMode.UNNECESSARY);",
+      "compile": false,
+      "expected": "EXC|System.MathException|Scale insufficient",
+      "floorExpected": "EXC|System.MathException|Scale insufficient"
+    },
+    {
+      "id": "R23",
+      "code": "Decimal d = -1.25; r = d.setScale(1, RoundingMode.UNNECESSARY);",
+      "compile": false,
+      "expected": "EXC|System.MathException|Scale insufficient",
+      "floorExpected": "EXC|System.MathException|Scale insufficient"
+    },
+    {
+      "id": "R24",
+      "code": "Decimal d = 1.35; r = d.setScale(1, RoundingMode.UNNECESSARY);",
+      "compile": false,
+      "expected": "EXC|System.MathException|Scale insufficient",
+      "floorExpected": "EXC|System.MathException|Scale insufficient"
+    },
+    {
+      "id": "R25",
+      "code": "Decimal d = 123.4500; r = d.setScale(-3);",
+      "compile": false,
+      "expected": "0E+3",
+      "floorExpected": "0E+3"
+    },
+    {
+      "id": "R26",
+      "code": "Decimal d = 123.4500; r = d.setScale(-1);",
+      "compile": false,
+      "expected": "1.2E+2",
+      "floorExpected": "1.2E+2"
+    },
+    {
+      "id": "R27",
+      "code": "Decimal d = 123.4500; r = d.setScale(0);",
+      "compile": false,
+      "expected": "123",
+      "floorExpected": "123"
+    },
+    {
+      "id": "R28",
+      "code": "Decimal d = 123.4500; r = d.setScale(2);",
+      "compile": false,
+      "expected": "123.45",
+      "floorExpected": "123.45"
+    },
+    {
+      "id": "R29",
+      "code": "Decimal d = 123.4500; r = d.setScale(5);",
+      "compile": false,
+      "expected": "123.45000",
+      "floorExpected": "123.45000"
+    },
+    {
+      "id": "R30",
+      "code": "Decimal d = 1.5; r = d.round();",
+      "compile": false,
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R31",
+      "code": "Decimal d = 2.5; r = d.round();",
+      "compile": false,
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R32",
+      "code": "Decimal d = -1.5; r = d.round();",
+      "compile": false,
+      "expected": "-2",
+      "floorExpected": "-2"
+    },
+    {
+      "id": "R33",
+      "code": "Decimal d = -2.5; r = d.round();",
+      "compile": false,
+      "expected": "-2",
+      "floorExpected": "-2"
+    },
+    {
+      "id": "R34",
+      "code": "Double d = 1.5; r = d.round();",
+      "compile": false,
+      "expected": "2",
+      "floorExpected": "2"
+    },
+    {
+      "id": "R35",
+      "code": "Double d = 2.5; r = d.round();",
+      "compile": false,
+      "expected": "3",
+      "floorExpected": "3"
+    },
+    {
+      "id": "R36",
+      "code": "Double d = -1.5; r = d.round();",
+      "compile": false,
+      "expected": "-1",
+      "floorExpected": "-1"
+    },
+    {
+      "id": "R37",
+      "code": "Double d = -2.5; r = d.round();",
+      "compile": false,
+      "expected": "-2",
+      "floorExpected": "-2"
+    },
+    {
+      "id": "N01",
+      "code": "Decimal n; r = n + 1;",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N02",
+      "code": "Decimal n; r = 1 + n;",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "id": "N03",
+      "code": "Decimal n; r = -n;",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N04",
+      "code": "Decimal n; r = n * 0;",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N05",
+      "code": "Decimal n; r = n / 1;",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N06",
+      "code": "Decimal n; r = n > 0;",
+      "compile": false,
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "N07",
+      "code": "Decimal n; r = n == 0;",
+      "compile": false,
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "N08",
+      "code": "Decimal n; r = n == null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "N09",
+      "code": "Decimal n; r = n.intValue();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N10",
+      "code": "Decimal n; r = String.valueOf(n);",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "N11",
+      "code": "Decimal n; r = n ?? 1.5;",
+      "compile": false,
+      "expected": "1.5",
+      "floorExpected": "1.5"
+    },
+    {
+      "id": "F01",
+      "code": "Decimal d = -1234.567; r = d.abs();",
+      "compile": false,
+      "expected": "1234.567",
+      "floorExpected": "1234.567"
+    },
+    {
+      "id": "F02",
+      "code": "Decimal d = -1234.567; r = d.format();",
+      "compile": false,
+      "expected": "-1,234.567",
+      "floorExpected": "-1,234.567"
+    },
+    {
+      "id": "F03",
+      "code": "Decimal d = 1.50; r = JSON.serialize(d);",
+      "compile": false,
+      "expected": "1.50",
+      "floorExpected": "1.50"
+    },
+    {
+      "id": "N12",
+      "code": "Double n; r = n + 1;",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N13",
+      "code": "Double n; r = 1 + n;",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N14",
+      "code": "Double n; r = -n;",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N15",
+      "code": "Double n; r = n * 0;",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N16",
+      "code": "Double n; r = n / 1;",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "N17",
+      "code": "Double n; r = n > 0;",
+      "compile": false,
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "N18",
+      "code": "Double n; r = n == 0;",
+      "compile": false,
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "N19",
+      "code": "Double n; r = n == null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "N20",
+      "code": "Double n; r = n.intValue();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "id": "N21",
+      "code": "Double n; r = String.valueOf(n);",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "N22",
+      "code": "Double n; r = n ?? 1.5;",
+      "compile": false,
+      "expected": "1.5",
+      "floorExpected": "1.5"
+    },
+    {
+      "id": "F04",
+      "code": "Double d = -1234.567; r = d.abs();",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 21: Method does not exist or incorrect signature: void abs() from the type Double",
+      "floorExpected": "COMPILE_ERROR\tline 21: Method does not exist or incorrect signature: void abs() from the type Double"
+    },
+    {
+      "id": "F05",
+      "code": "Double d = -1234.567; r = d.format();",
+      "compile": false,
+      "expected": "-1,234.567",
+      "floorExpected": "-1,234.567"
+    },
+    {
+      "id": "F06",
+      "code": "Double d = 1.50; r = JSON.serialize(d);",
+      "compile": false,
+      "expected": "1.5",
+      "floorExpected": "1.5"
+    },
+    {
+      "id": "E01",
+      "code": "Decimal d = 1.0; Double f = 1.0; r = d == f;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "E02",
+      "code": "Decimal d = 1.0; r = d.equals(1.00);",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "E03",
+      "code": "Double d = 1.0; r = d.equals(1.00);",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "E04",
+      "code": "Decimal d = 1.0; r = d.compareTo(2.0);",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 26: Method is not visible: Integer Decimal.compareTo(Decimal)",
+      "floorExpected": "COMPILE_ERROR\tline 26: Method is not visible: Integer Decimal.compareTo(Decimal)"
+    },
+    {
+      "id": "E05",
+      "code": "Double d = 1.0; r = d.compareTo(2.0);",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 26: Method does not exist or incorrect signature: void compareTo(Decimal) from the type Double",
+      "floorExpected": "COMPILE_ERROR\tline 26: Method does not exist or incorrect signature: void compareTo(Decimal) from the type Double"
+    },
+    {
+      "id": "E06",
+      "code": "Decimal d = 0.1; r = d + d + d == 0.3;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true"
+    },
+    {
+      "id": "E07",
+      "code": "Double d = 0.1; r = d + d + d == 0.3;",
+      "compile": false,
+      "expected": "false",
+      "floorExpected": "false"
+    },
+    {
+      "id": "E08",
+      "code": "Decimal d = 2; r = d.pow(3);",
+      "compile": false,
+      "expected": "8",
+      "floorExpected": "8"
+    },
+    {
+      "id": "E09",
+      "code": "Decimal d = 2; r = d.pow(-1);",
+      "compile": false,
+      "expected": "EXC|System.MathException|Exponent is out of range",
+      "floorExpected": "EXC|System.MathException|Exponent is out of range"
+    },
+    {
+      "id": "E10",
+      "code": "Decimal d = 1; r = d.divide(3, 4);",
+      "compile": false,
+      "expected": "0.3333",
+      "floorExpected": "0.3333"
+    },
+    {
+      "id": "E11",
+      "code": "Decimal d = 1; r = d.divide(0, 2);",
+      "compile": false,
+      "expected": "EXC|System.MathException|Divide by 0",
+      "floorExpected": "EXC|System.MathException|Divide by 0"
+    },
+    {
+      "id": "E12",
+      "code": "Decimal d = 1; r = d.divide(3, 2, RoundingMode.DOWN);",
+      "compile": false,
+      "expected": "0.33",
+      "floorExpected": "0.33"
+    },
+    {
+      "id": "E13",
+      "code": "r = JSON.deserialize('1.2300', Decimal.class);",
+      "compile": false,
+      "expected": "1.2300",
+      "floorExpected": "1.2300"
+    },
+    {
+      "id": "E14",
+      "code": "r = JSON.deserialize('1.2300', Double.class);",
+      "compile": false,
+      "expected": "1.23",
+      "floorExpected": "1.23"
+    },
+    {
+      "id": "E15",
+      "code": "Decimal d = 1.00; r = '' + d;",
+      "compile": false,
+      "expected": "1.00",
+      "floorExpected": "1.00"
+    },
+    {
+      "id": "E16",
+      "code": "Double d = 1; r = '' + d;",
+      "compile": false,
+      "expected": "1.0",
+      "floorExpected": "1.0"
+    },
+    {
+      "id": "E17",
+      "code": "Double d = 1; Decimal x = d; r = x;",
+      "compile": false,
+      "expected": "1.0",
+      "floorExpected": "1.0"
+    },
+    {
+      "id": "E18",
+      "code": "Decimal d = 1.00; Double x = d; r = x;",
+      "compile": false,
+      "expected": "1.0",
+      "floorExpected": "1.0"
+    },
+    {
+      "id": "E19",
+      "code": "Decimal d = 1.50; Decimal x = d / 3; r = x;",
+      "compile": false,
+      "expected": "0.50",
+      "floorExpected": "0.50"
+    },
+    {
+      "id": "E20",
+      "code": "Decimal d = 0.00; r = d * 2.0;",
+      "compile": false,
+      "expected": "0.000",
+      "floorExpected": "0.000"
+    },
+    {
+      "id": "K01",
+      "code": "Object r; Decimal d = 1.0; Double f = d; pq.out('K01', r);",
+      "compile": true,
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "K02",
+      "code": "Object r; Double f = 1.0; Decimal d = f; pq.out('K02', r);",
+      "compile": true,
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "K03",
+      "code": "Object r; Integer i = 1.0; pq.out('K03', r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Integer",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Integer"
+    },
+    {
+      "id": "K04",
+      "code": "Object r; Long i = 1.0; pq.out('K04', r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Long",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Long"
+    },
+    {
+      "id": "K05",
+      "code": "Object r; Double d = 1e20; pq.out('K05', r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'd'.",
+      "floorExpected": "COMPILE_ERROR\tline 6: Unexpected token 'd'."
+    },
+    {
+      "id": "K06",
+      "code": "Object r; Decimal d = 1e20; pq.out('K06', r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'd'.",
+      "floorExpected": "COMPILE_ERROR\tline 6: Unexpected token 'd'."
+    },
+    {
+      "id": "K07",
+      "code": "Object r; Double d = 1.0d; pq.out('K07', r);",
+      "compile": true,
+      "expected": "null",
+      "floorExpected": "null"
+    },
+    {
+      "id": "K08",
+      "code": "Object r; Decimal d = 1.0; r = d % 2; pq.out('K08', r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Found punctuation symbol or operator '%' that isn't valid in Apex.",
+      "floorExpected": "COMPILE_ERROR\tline 6: Found punctuation symbol or operator '%' that isn't valid in Apex."
+    },
+    {
+      "id": "K09",
+      "code": "Object r; Double d = 1.0; r = d & 2; pq.out('K09', r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: & operator can only be applied to Boolean expressions or to Integer or Long expressions",
+      "floorExpected": "COMPILE_ERROR\tline 6: & operator can only be applied to Boolean expressions or to Integer or Long expressions"
+    },
+    {
+      "id": "K10",
+      "code": "Object r; Double d = 1.0; r = d.setScale(2); pq.out('K10', r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setScale(Integer) from the type Double",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setScale(Integer) from the type Double"
+    },
+    {
+      "id": "K11",
+      "code": "Object r; Double d = 1.0; r = d.doubleValue(); pq.out('K11', r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void doubleValue() from the type Double",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void doubleValue() from the type Double"
+    },
+    {
+      "id": "K12",
+      "code": "Object r; Decimal d = 1.0; r = d.floatValue(); pq.out('K12', r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void floatValue() from the type Decimal",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void floatValue() from the type Decimal"
+    }
+  ],
+  "preservation": [
+    {
+      "id": "Z01",
+      "code": "'' + 12.0",
+      "compile": false,
+      "expected": "12.0"
+    },
+    {
+      "id": "Z02",
+      "code": "'' + 12.3400",
+      "compile": false,
+      "expected": "12.3400"
+    },
+    {
+      "id": "Z03",
+      "code": "30.00 + ''",
+      "compile": false,
+      "expected": "30.00"
+    },
+    {
+      "id": "Z04",
+      "code": "Decimal d = Decimal.valueOf('9999999999999999999999999999999999') / 3; r = d.toPlainString() + '|' + d.scale() + '|' + d.precision();",
+      "compile": false,
+      "expected": "3333333333333333333333333333333330|-1|33"
+    },
+    {
+      "id": "X01",
+      "code": "Double d = Double.valueOf('NaN'); r = d.intValue();",
+      "compile": false,
+      "expected": "0"
+    },
+    {
+      "id": "X02",
+      "code": "Double d = Double.valueOf('Infinity'); r = d.longValue();",
+      "compile": false,
+      "expected": "9223372036854775807"
+    },
+    {
+      "id": "X03",
+      "code": "Double d = Double.valueOf('-Infinity'); r = d.intValue();",
+      "compile": false,
+      "expected": "-2147483648"
+    },
+    {
+      "id": "X04",
+      "code": "Double d = Double.valueOf('NaN'); r = d.round();",
+      "compile": false,
+      "expected": "0"
+    },
+    {
+      "id": "X05",
+      "code": "Double d = Double.valueOf('Infinity'); r = d.round();",
+      "compile": false,
+      "expected": "9223372036854775807"
+    },
+    {
+      "id": "X06",
+      "code": "Double d = Double.valueOf('NaN'); r = d + 1;",
+      "compile": false,
+      "expected": "NaN"
+    },
+    {
+      "id": "X07",
+      "code": "Double d = Double.valueOf('Infinity'); r = d * 2;",
+      "compile": false,
+      "expected": "Infinity"
+    },
+    {
+      "id": "Y01",
+      "code": "Decimal d = Decimal.valueOf('99999999999999999999999.5'); r = d.round();",
+      "compile": false,
+      "expected": "200376420520689664"
+    },
+    {
+      "id": "Y02",
+      "code": "Decimal d = Decimal.valueOf('99999999999999999999999.5'); r = Math.roundToLong(d);",
+      "compile": false,
+      "expected": "200376420520689664"
+    }
+  ],
+  "floorOracle": {
+    "apiVersion": "62.0",
+    "rows": 300,
+    "missingResults": 0,
+    "transport": "exception",
+    "capturedAt": "2026-10-04T23:58:29.139925+00:00",
+    "route": "anonymous"
+  }
+}

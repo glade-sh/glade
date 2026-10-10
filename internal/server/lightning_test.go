@@ -23,6 +23,15 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
+func newLightningTestServer(t *testing.T, org *storage.OrgState, source SourceMetadata) *Server {
+	t.Helper()
+	tmpDir := t.TempDir()
+	for _, key := range []string{"TMPDIR", "TMP", "TEMP"} {
+		t.Setenv(key, tmpDir)
+	}
+	return NewWithSource(org, source)
+}
+
 func TestVFPageBootstrapsLightningOut(t *testing.T) {
 	if _, err := os.Stat(filepath.Join("..", "..", "third_party", "lwc", "node_modules")); err != nil {
 		t.Skip("npm install required in third_party/lwc")
@@ -41,7 +50,7 @@ func TestVFPageBootstrapsLightningOut(t *testing.T) {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	handler := NewWithSource(&org, source)
+	handler := newVisualforceHTMLTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/apex/WidgetHost", nil))
@@ -82,7 +91,7 @@ func TestVFPageBootstrapsMultiWidgetLightningOut(t *testing.T) {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	handler := NewWithSource(&org, source)
+	handler := newVisualforceHTMLTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/apex/MultiWidgetHost", nil))
@@ -128,7 +137,7 @@ func TestLightningModulesServesCompiledJS(t *testing.T) {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/modules/c/counter/counter.js", nil))
@@ -225,7 +234,7 @@ func TestReloadProjectStateUpdatesRuntimeAndClearsLightningCache(t *testing.T) {
 	org := storage.NewOrgState()
 	oldRoot := filepath.Join(t.TempDir(), "old")
 	newRoot := filepath.Join(t.TempDir(), "new")
-	handler := NewWithSource(&org, SourceMetadata{Project: project.Project{Root: oldRoot}})
+	handler := newLightningTestServer(t, &org, SourceMetadata{Project: project.Project{Root: oldRoot}})
 	cacheRoot := filepath.Join(t.TempDir(), "cache")
 	writeLightningFixtureFile(t, filepath.Join(cacheRoot, "lwc", "c", "widget", "widget.js"), "stale")
 	handler.lightning = lightningState{
@@ -275,7 +284,7 @@ func TestVisualforceIncludeLightningWithoutToolchainShowsLocalNotice(t *testing.
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	handler := NewWithSource(&org, source)
+	handler := newVisualforceHTMLTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/apex/WidgetHost", nil))
@@ -316,7 +325,7 @@ export default class Widget extends LightningElement { label = labels; }`)
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/modules/c/widget/labels", nil))
@@ -353,7 +362,7 @@ func TestStaticResourceServesDirectorySubpathFromPackageRoot(t *testing.T) {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Fixture_Assets/css/main.css", nil))
 	if rec.Code != http.StatusOK || rec.Body.String() != ".fixture{}" {
@@ -384,7 +393,7 @@ func TestStaticResourceServesZipSubpathFromPackageRoot(t *testing.T) {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Bundle/css/site.css", nil))
 	if rec.Code != http.StatusOK || rec.Body.String() != "body { color: steelblue; }" {
@@ -408,7 +417,7 @@ func TestStaticResourceRejectsEncodedResourceNameTraversal(t *testing.T) {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 
 	for _, requestPath := range []string{"/resource/..%2fprivate", "/resource/Bundle/..%2fprivate"} {
 		rec := httptest.NewRecorder()
@@ -493,7 +502,7 @@ func TestStaticResourceReportsDiscoveredUnsafeBundleAsUnreadable(t *testing.T) {
 	}
 	org := storage.NewOrgState()
 	source := SourceMetadata{Project: project.Project{StaticResourceFiles: []string{resourcePath}}}
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Bundle/css/site.css", nil))
 	if rec.Code == http.StatusOK || !strings.Contains(rec.Body.String(), "static resource not readable") {
@@ -572,7 +581,7 @@ func TestLightningLabelShimResolvesPackageCPrefix(t *testing.T) {
 	if err := resource.ApplyProject(&org, p); err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/shims/label/c.Greeting.js", nil))
@@ -599,7 +608,7 @@ func TestLightningLabelShim(t *testing.T) {
 	if err := resource.ApplyProject(&org, p); err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/shims/label/c.Greeting.js", nil))
@@ -647,7 +656,7 @@ func TestLightningLabelShimUsesSourceLabelsWhenOrgMissingLabel(t *testing.T) {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/shims/label/c.lightning_LightningRecordForm_save", nil))
@@ -671,7 +680,8 @@ func TestLightningUserShimResolvesCurrentUser(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
 	}
-	if !strings.Contains(rec.Body.String(), `export default "005000000000123"`) {
+	// L13 r_user_Id_shape captures the 18-character user module ID at 59/67.
+	if !strings.Contains(rec.Body.String(), `export default "005000000000123AAA"`) {
 		t.Fatalf("body = %q", rec.Body.String())
 	}
 }
@@ -739,12 +749,12 @@ func TestLightningPackageCorpusShimsServeLocalContracts(t *testing.T) {
 		want []string
 	}{
 		{"/lightning/shims/client/formFactor.js", []string{"readFormFactor", "export default"}},
-		{"/lightning/shims/customPermission/LocalAuditLogs.js", []string{"LocalAuditLogs", "export default true"}},
+		{"/lightning/shims/customPermission/LocalAuditLogs.js", []string{"LocalAuditLogs", "readCustomPermission(permissionName)"}},
 		{"/lightning/shims/lightning/configProvider.js", []string{"getPathPrefix", "getToken", "getIconSvgTemplates", "getLocalizationService", "getOneConfig"}},
 		{"/lightning/shims/lightning/pageReferenceUtils.js", []string{"encodeDefaultFieldValues", "decodeDefaultFieldValues"}},
-		{"/lightning/shims/lightning/alert.js", []string{"LightningAlert", "static open", "gladealert"}},
-		{"/lightning/shims/lightning/confirm.js", []string{"LightningConfirm", "Promise.resolve(true)"}},
-		{"/lightning/shims/lightning/prompt.js", []string{"LightningPrompt", "static open", "gladeprompt"}},
+		{"/lightning/shims/lightning/alert.js", []string{"LightningAlert", "static open", `openFeedback("alert"`, "/lightning/runtime/shell/overlay.js"}},
+		{"/lightning/shims/lightning/confirm.js", []string{"LightningConfirm", "static open", `openFeedback("confirm"`, "/lightning/runtime/shell/overlay.js"}},
+		{"/lightning/shims/lightning/prompt.js", []string{"LightningPrompt", "static open", `openFeedback("prompt"`, "/lightning/runtime/shell/overlay.js"}},
 		{"/lightning/shims/lightning/showToastEvent.js", []string{"SHOW_TOAST_EVENT_NAME", "ShowToastEvent", "lightning__showtoast"}},
 		{"/lightning/shims/lightning/toast.js", []string{"LightningToast", "static show", "lightning__showtoast"}},
 	}
@@ -777,7 +787,7 @@ func TestLightningResourceURLShimFetchesStaticResourceBytes(t *testing.T) {
 	if err := resource.ApplyProject(&org, p); err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 
 	shimRec := httptest.NewRecorder()
 	handler.ServeHTTP(shimRec, httptest.NewRequest(http.MethodGet, "/lightning/shims/resourceUrl/WidgetAssets.js", nil))
@@ -877,7 +887,7 @@ func TestLightningBaseComponentShimPrefersSourceBackedRuntimeWrapper(t *testing.
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
 	}
-	for _, want := range []string{`export { default }`, `/lightning/runtime/lightning/source/badge/badge.js`} {
+	for _, want := range []string{`export { default }`, `/lightning/runtime/lightning/badge.js`} {
 		if !strings.Contains(rec.Body.String(), want) {
 			t.Fatalf("missing %q in body = %q", want, rec.Body.String())
 		}
@@ -917,7 +927,7 @@ func TestLightningWireApexReturnsData(t *testing.T) {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 	handler.SetProjectIndex(typesys.Build(p, schema))
 
 	body := `{"className":"ItemCtrl","method":"getItems","params":{"recordId":"001XX0000000001"}}`
@@ -964,7 +974,7 @@ func TestLightningApexRouteInvokesImperativeController(t *testing.T) {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 	handler.SetProjectIndex(typesys.Build(p, schema))
 
 	body := `{"recordId":"001XX0000000001"}`
@@ -992,6 +1002,289 @@ func TestLightningApexRouteInvokesImperativeController(t *testing.T) {
 	}
 }
 
+func TestLightningApexRouteCommitsOnlySuccessfulMutation(t *testing.T) {
+	root := t.TempDir()
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/MutationCtrl.cls"), `public class MutationCtrl {
+    @AuraEnabled
+    public static String save(String name) {
+        insert new Account(Name = name);
+        return 'saved';
+    }
+
+    @AuraEnabled
+    public static String failAfterSave(String name) {
+        insert new Account(Name = name);
+        System.assert(false, 'forced failure');
+        return 'unreachable';
+    }
+
+    @AuraEnabled
+    public static String enqueue() {
+        System.enqueueJob(new QueueWorker());
+        return 'queued';
+    }
+
+    @AuraEnabled
+    public static String swallowConvert() {
+        insert new Account(Name = 'marker');
+        Lead lead = new Lead(FirstName = 'Boundary', LastName = 'Guard', Company = 'Boundary Co', Status = 'Open');
+        insert lead;
+        Database.LeadConvert convert = new Database.LeadConvert();
+        convert.setLeadId(lead.Id);
+        convert.setConvertedStatus('Qualified');
+        convert.setDoNotCreateOpportunity(true);
+        Database.LeadConvertResult ignored = Database.convertLead(convert, false);
+        return 'swallowed';
+    }
+
+    @AuraEnabled
+    public static String asyncDML(String name) {
+        insert new Account(Name = 'marker');
+        Database.insertAsync(new Account(Name = name));
+        return 'async';
+    }
+}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/MutationCtrl.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/QueueWorker.cls"), `public class QueueWorker implements Queueable {
+    public void execute(QueueableContext context) {}
+}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/QueueWorker.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/FutureWorker.cls"), `public class FutureWorker {
+    @future
+    public static void run() {}
+}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/FutureWorker.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/triggers/LeadGuard.trigger"), `trigger LeadGuard on Lead (after update) {
+    FutureWorker.run();
+}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/triggers/LeadGuard.trigger-meta.xml"), `<ApexTrigger xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><status>Active</status></ApexTrigger>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema, err := gladeschema.LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testOrg()
+	storage.EnsureStandardObject(&org, "Lead")
+	storage.EnsureStandardObject(&org, "Contact")
+	store := &memoryStore{}
+	handler := NewWithStoreAndSource(&org, store, source)
+	handler.SetProjectIndex(typesys.Build(p, schema))
+
+	invoke := func(method, name string) lwcbrowser.WireResponse {
+		t.Helper()
+		body := `{}`
+		if name != "" {
+			body = fmt.Sprintf(`{"name":%q}`, name)
+		}
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPost, "/lightning/apex/MutationCtrl/"+method, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		handler.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s status = %d body = %s", method, rec.Code, rec.Body.String())
+		}
+		var out lwcbrowser.WireResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatal(err)
+		}
+		return out
+	}
+
+	saved := invoke("save", "Committed by LWC")
+	if saved.Error != nil || saved.Data != "saved" {
+		t.Fatalf("saved response = %#v", saved)
+	}
+	if store.saves != 1 || len(store.last.Objects["Account"].Records) != 1 {
+		t.Fatalf("successful mutation saves = %d records = %#v", store.saves, store.last.Objects["Account"].Records)
+	}
+
+	failed := invoke("failAfterSave", "Must roll back")
+	if failed.Error == nil || strings.TrimSpace(failed.Error.Type) == "" {
+		t.Fatalf("failed response = %#v", failed)
+	}
+	if store.saves != 1 || len(org.Objects["Account"].Records) != 1 || len(store.last.Objects["Account"].Records) != 1 {
+		t.Fatalf("failed mutation committed: saves=%d org=%#v store=%#v", store.saves, org.Objects["Account"].Records, store.last.Objects["Account"].Records)
+	}
+
+	queued := invoke("enqueue", "")
+	if queued.Error == nil || queued.Error.Type != "UnsupportedFeature" || !strings.Contains(queued.Error.Message, "asynchronous Apex work") {
+		t.Fatalf("queued response = %#v error=%+v", queued, queued.Error)
+	}
+	if store.saves != 1 || len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("queued mutation committed: saves=%d org=%#v", store.saves, org.Objects["Account"].Records)
+	}
+
+	swallowed := invoke("swallowConvert", "")
+	if swallowed.Error == nil || swallowed.Error.Type != "UnsupportedFeature" || !strings.Contains(swallowed.Error.Message, "asynchronous Apex work") {
+		t.Fatalf("swallowed response = %#v error=%+v", swallowed, swallowed.Error)
+	}
+	if store.saves != 1 || len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("caught async mutation committed: saves=%d org=%#v", store.saves, org.Objects["Account"].Records)
+	}
+
+	asyncDML := invoke("asyncDML", "Must not run async DML")
+	if asyncDML.Error == nil || asyncDML.Error.Type != "UnsupportedFeature" || !strings.Contains(asyncDML.Error.Message, "Database.insertAsync") {
+		t.Fatalf("async DML response = %#v error=%+v", asyncDML, asyncDML.Error)
+	}
+	if store.saves != 1 || len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("async DML mutation committed: saves=%d org=%#v", store.saves, org.Objects["Account"].Records)
+	}
+}
+
+func TestLightningApexRouteDoesNotPublishStoreFailure(t *testing.T) {
+	root := t.TempDir()
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/MutationCtrl.cls"), `public class MutationCtrl {
+    @AuraEnabled
+    public static String save(String name) {
+        insert new Account(Name = name);
+        return 'saved';
+    }
+}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/MutationCtrl.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema, err := gladeschema.LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testOrg()
+	handler := NewWithStoreAndSource(&org, &failingStore{}, source)
+	handler.SetProjectIndex(typesys.Build(p, schema))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/lightning/apex/MutationCtrl/save", strings.NewReader(`{"name":"Must not publish"}`))
+	req.Header.Set("Content-Type", "application/json")
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error == nil || out.Error.Type != "StoreFailure" {
+		t.Fatalf("response = %#v", out)
+	}
+	if len(org.Objects["Account"].Records) != 0 {
+		t.Fatalf("store failure published records = %#v", org.Objects["Account"].Records)
+	}
+}
+
+func TestLightningApexRouteDoesNotPersistReadOnlyResult(t *testing.T) {
+	root := lightningFixtureRoot(t)
+	fixture := filepath.Join(root, "testdata", "local-tests", "lightning-out-vf")
+	p, err := project.Load(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema, err := gladeschema.LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	handler := NewWithStoreAndSource(&org, &failingStore{}, source)
+	handler.SetProjectIndex(typesys.Build(p, schema))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/lightning/apex/ItemCtrl/getItems", strings.NewReader(`{"recordId":"001XX0000000001"}`))
+	req.Header.Set("Content-Type", "application/json")
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error != nil {
+		t.Fatalf("read-only response = %#v", out.Error)
+	}
+	rows, ok := out.Data.([]any)
+	if !ok || len(rows) != 1 {
+		t.Fatalf("read-only data = %#v", out.Data)
+	}
+}
+
+func TestLightningApexRoutePersistsMutationAcrossSQLiteRestart(t *testing.T) {
+	root := t.TempDir()
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/MutationCtrl.cls"), `public class MutationCtrl {
+    @AuraEnabled
+    public static String save(String name) {
+        insert new Account(Name = name);
+        return 'saved';
+    }
+}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/classes/MutationCtrl.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema, err := gladeschema.LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dbPath := filepath.Join(t.TempDir(), "glade.db")
+	store, err := storage.OpenSQLite(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testOrg()
+	handler := NewWithStoreAndSource(&org, store, source)
+	handler.SetProjectIndex(typesys.Build(p, schema))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/lightning/apex/MutationCtrl/save", strings.NewReader(`{"name":"SQLite LWC Account"}`))
+	req.Header.Set("Content-Type", "application/json")
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"data":"saved"`) {
+		_ = store.Close()
+		t.Fatalf("save status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	restartedStore, err := storage.OpenSQLite(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer restartedStore.Close()
+	restartedOrg, err := restartedStore.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	account := restartedOrg.Objects["Account"]
+	if len(account.Records) != 1 {
+		t.Fatalf("restarted Account records = %#v", account.Records)
+	}
+	for _, record := range account.Records {
+		if got := record.Fields["Name"].String; got != "SQLite LWC Account" {
+			t.Fatalf("restarted Account name = %q", got)
+		}
+	}
+}
+
 func TestLightningWireApexUsesRequestCurrentUser(t *testing.T) {
 	root := lightningFixtureRoot(t)
 	fixture := filepath.Join(root, "testdata", "local-tests", "lightning-out-vf")
@@ -1009,7 +1302,7 @@ func TestLightningWireApexUsesRequestCurrentUser(t *testing.T) {
 	}
 	org := storage.NewOrgState()
 	addUser(&org, "005000000000777AAA", "lwc@example.test", "lwc@example.test", "LWC User")
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 	handler.SetProjectIndex(typesys.Build(p, schema))
 
 	body := `{"className":"ItemCtrl","method":"currentUserId","params":{}}`
@@ -1093,7 +1386,7 @@ func TestLightningWireApexRejectsNonObjectParamsWithSalesforceError(t *testing.T
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 	handler.SetProjectIndex(typesys.Build(p, schema))
 
 	body := `{"className":"ItemCtrl","method":"getItems","params":["bad"]}`
@@ -1272,8 +1565,8 @@ func TestLightningWireGetRecordReturnsStoredName(t *testing.T) {
 	if !ok || nameField["value"] != "Acme" {
 		t.Fatalf("Name field = %#v", fields["Name"])
 	}
-	if nameField["label"] != "Account Name" {
-		t.Fatalf("Name label = %#v", nameField)
+	if nameField["displayValue"] != nil || len(nameField) != 2 {
+		t.Fatalf("Name field wrapper = %#v", nameField)
 	}
 }
 
@@ -1372,16 +1665,12 @@ func TestLightningWireGetRecordIncludesOptionalRelationshipAndDisplayValues(t *t
 	}
 	fields := payload["fields"].(map[string]any)
 	name := fields["Name"].(map[string]any)
-	if name["displayValue"] != "Acme" || name["dataType"] != "String" {
+	if name["value"] != "Acme" || name["displayValue"] != nil || len(name) != 2 {
 		t.Fatalf("Name field = %#v", name)
 	}
 	owner := fields["OwnerId"].(map[string]any)
-	if owner["relationshipName"] != "Owner" || owner["dataType"] != "Reference" {
+	if owner["value"] != "005XX0000000001" || len(owner) != 2 {
 		t.Fatalf("OwnerId field = %#v", owner)
-	}
-	refs, ok := owner["referenceToInfos"].([]any)
-	if !ok || len(refs) != 1 || refs[0].(map[string]any)["apiName"] != "User" {
-		t.Fatalf("referenceToInfos = %#v", owner["referenceToInfos"])
 	}
 }
 
@@ -1988,7 +2277,7 @@ func TestLightningWireGetRecordCreateDefaultsUsesSourceLayoutFields(t *testing.T
 	account.Definition.Fields["Description"] = storage.Field{APIName: "Description", Label: "Description", Type: storage.FieldString, Createable: storage.BoolFlag(true), Updateable: storage.BoolFlag(true)}
 	account.Definition.Fields["Internal__c"] = storage.Field{APIName: "Internal__c", Label: "Internal", Type: storage.FieldString, Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false)}
 	org.Objects["Account"] = account
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/lightning/wire/getRecordCreateDefaults", strings.NewReader(`{"objectApiName":"Account"}`)))
@@ -2020,7 +2309,8 @@ func TestLightningWireGetRecordCreateDefaultsUsesSourceLayoutFields(t *testing.T
 	for _, rawRow := range section["layoutRows"].([]any) {
 		for _, rawItem := range rawRow.(map[string]any)["layoutItems"].([]any) {
 			item := rawItem.(map[string]any)
-			layoutFields[item["fieldApiName"].(string)] = item
+			components := item["layoutComponents"].([]any)
+			layoutFields[components[0].(map[string]any)["apiName"].(string)] = item
 		}
 	}
 	if layoutFields["Name"]["uiBehavior"] != "Required" || layoutFields["Name"]["required"] != true {
@@ -2082,7 +2372,7 @@ func TestLightningWireGetLayoutReturnsSourceLayout(t *testing.T) {
 	account.Definition.Fields["Name"] = storage.Field{APIName: "Name", Label: "Account Name", Type: storage.FieldString, Required: true, Createable: storage.BoolFlag(true), Updateable: storage.BoolFlag(true)}
 	account.Definition.Fields["Description"] = storage.Field{APIName: "Description", Label: "Description", Type: storage.FieldString, Createable: storage.BoolFlag(true), Updateable: storage.BoolFlag(true)}
 	org.Objects["Account"] = account
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/lightning/wire/getLayout", strings.NewReader(`{"objectApiName":"Account","layoutType":"Full","mode":"Create","formFactor":"Small"}`)))
@@ -2110,7 +2400,8 @@ func TestLightningWireGetLayoutReturnsSourceLayout(t *testing.T) {
 		t.Fatalf("items = %#v", items)
 	}
 	nameItem := items[0].(map[string]any)
-	if nameItem["fieldApiName"] != "Name" || nameItem["uiBehavior"] != "Required" {
+	components := nameItem["layoutComponents"].([]any)
+	if components[0].(map[string]any)["apiName"] != "Name" || nameItem["uiBehavior"] != "Required" {
 		t.Fatalf("Name item = %#v", nameItem)
 	}
 }
@@ -2362,7 +2653,7 @@ func TestLightningWireCreateUpdateDeleteRecordMutatesLocalStorage(t *testing.T) 
 	if err := json.Unmarshal(readDeleted.Body.Bytes(), &readDeletedOut); err != nil {
 		t.Fatal(err)
 	}
-	if readDeletedOut.Error == nil || !strings.Contains(readDeletedOut.Error.Message, "record not found") {
+	if readDeletedOut.Error == nil || readDeletedOut.Error.Status != http.StatusNotFound || readDeletedOut.Error.Body == nil || readDeletedOut.Error.Body.Message != "The requested resource does not exist" {
 		t.Fatalf("read deleted response = %#v", readDeletedOut)
 	}
 }
@@ -2428,13 +2719,20 @@ func TestLightningWireGetRecordDistinguishesRequiredAndOptionalMissingFields(t *
 	if err := json.Unmarshal(required.Body.Bytes(), &requiredOut); err != nil {
 		t.Fatal(err)
 	}
-	if requiredOut.Error == nil || !strings.Contains(requiredOut.Error.Message, "DoesNotExist__c") {
+	if requiredOut.Error == nil || requiredOut.Error.Body == nil || !strings.Contains(requiredOut.Error.Body.Message, "DoesNotExist__c") {
 		t.Fatalf("required missing field response = %#v", requiredOut)
 	}
 }
 
 func TestLightningWireCreateRecordUsesDMLSequencesAndValidation(t *testing.T) {
 	org := testOrg()
+	// r_createRecord_name_null / ctrl_createRequired_original capture this label
+	// and the complete fieldErrors.Name detail at both source API floors.
+	account := org.Objects["Account"]
+	nameField := account.Definition.Fields["Name"]
+	nameField.Label = "Account Name"
+	account.Definition.Fields["Name"] = nameField
+	org.Objects["Account"] = account
 	handler := New(&org)
 
 	createAccount := func(name string) lwcbrowser.WireResponse {
@@ -2489,8 +2787,26 @@ func TestLightningWireCreateRecordUsesDMLSequencesAndValidation(t *testing.T) {
 	if err := json.Unmarshal(missingName.Body.Bytes(), &missingOut); err != nil {
 		t.Fatal(err)
 	}
-	if missingOut.Error == nil || !strings.Contains(missingOut.Error.Message, "Name") {
+	if missingOut.Error == nil || missingOut.Error.Status != http.StatusBadRequest || missingOut.Error.Body == nil || missingOut.Error.Body.Message != "An error occurred while trying to update the record. Please try again." {
 		t.Fatalf("missing name response = %#v", missingOut)
+	}
+	var details struct {
+		Error struct {
+			Body struct {
+				Output map[string]any `json:"output"`
+			} `json:"body"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(missingName.Body.Bytes(), &details); err != nil {
+		t.Fatal(err)
+	}
+	output, err := json.Marshal(details.Error.Body.Output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantOutput := `{"errors":[],"fieldErrors":{"Name":[{"constituentField":"Name","duplicateRecordError":null,"errorCode":"REQUIRED_FIELD_MISSING","field":"Name","fieldLabel":"Account Name","message":"Required fields are missing: [Name]"}]}}`
+	if string(output) != wantOutput {
+		t.Fatalf("required-field output expected <%s> actual <%s>", wantOutput, output)
 	}
 	if len(org.Objects["Account"].Records) != 2 {
 		t.Fatalf("missing-name create mutated records: %#v", org.Objects["Account"].Records)

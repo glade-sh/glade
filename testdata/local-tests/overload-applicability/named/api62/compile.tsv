@@ -1,0 +1,15 @@
+R001	compiled
+R002	compiled
+R003	compiled
+R004	compiled
+R005	compiled
+R006	compiled
+R007	compiled
+R008	compiled
+C001	COMPILE_ERROR	Ambiguous method signature: void choose(CRT625d2c7ff4c537C001.NarrowValue, CRT625d2c7ff4c537C001.LeafValue)
+C002	COMPILE_ERROR	Ambiguous method signature: void choose(String, String)
+C003	COMPILE_ERROR	Ambiguous method signature: void choose(NULL, NULL)
+C004	COMPILE_ERROR	Ambiguous method signature: void choose(Integer, String)
+C005	COMPILE_ERROR	Ambiguous method signature: void nullOnly(NULL)
+C006	COMPILE_ERROR	Method does not exist or incorrect signature: void stringOnly(Object) from the type CRT625d2c7ff4c537C006.OverloadProbe
+C007	COMPILE_ERROR	Ambiguous method signature: void sequence(NULL)

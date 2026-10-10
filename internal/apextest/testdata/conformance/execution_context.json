@@ -1,0 +1,2009 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "assertedCases": 257,
+  "assertedAnonymousCases": 256,
+  "metadataFiles": {
+    "force-app/main/default/customPermissions/A26ExecutionContextPermission.customPermission-meta.xml": "<CustomPermission xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>A26 Execution Context Permission</label><isLicensed>false</isLicensed></CustomPermission>\n",
+    "force-app/main/default/labels/CustomLabels.labels-meta.xml": "<CustomLabels xmlns=\"http://soap.sforce.com/2006/04/metadata\"><labels><fullName>A26ExecutionContextLabel</fullName><language>en_US</language><protected>false</protected><shortDescription>A26 controlled oracle label</shortDescription><value>A26 &amp; locale</value></labels></CustomLabels>\n",
+    "force-app/main/default/staticresources/A26ExecutionContextResource.resource": "A26 oracle resource",
+    "force-app/main/default/staticresources/A26ExecutionContextResource.resource-meta.xml": "<StaticResource xmlns=\"http://soap.sforce.com/2006/04/metadata\"><cacheControl>Private</cacheControl><contentType>text/plain</contentType></StaticResource>\n"
+  },
+  "declarations": {
+    "A26RunAsShapeC020": "public class A26RunAsShapeC020 { public String f(User u){String s; System.runAs(u){Double x=1234567.567; s=x.format();} return s;} }",
+    "A26ShapeC021": "public class A26ShapeC021 { public void f() {FeatureManagement.setPackageBooleanValue('A26Missing',true); FeatureManagement.setPackageDateValue('A26Missing',Date.newInstance(2024,1,1)); FeatureManagement.setPackageIntegerValue('A26Missing',1);} }",
+    "A26ShapeC022": "public class A26ShapeC022 { public void f() {FeatureManagement.changeProtection('A26Missing','CustomPermission','Unprotected');} }",
+    "A26ShapeC023": "public class A26ShapeC023 { public PageReference f() {return Site.login(null,null,'/start');} }",
+    "A26ShapeC024": "public class A26ShapeC024 { public Id f() {return Site.createExternalUser(new User(),null);} }",
+    "A26ShapeC025": "public class A26ShapeC025 { public PageReference f() {return Site.passwordlessLogin(null,new List<Auth.VerificationMethod>{Auth.VerificationMethod.EMAIL},'/start');} }",
+    "A26ShapeC026": "public class A26ShapeC026 { public String f() {return Network.createExternalUserAsync(new User(),new Contact(),new Account());} }",
+    "A26ShapeC027": "public class A26ShapeC027 { public PageReference f() {return Network.forwardToAuthPage('/start');} }",
+    "A26ShapeC028": "public class A26ShapeC028 { public String f() {return Auth.AuthToken.getAccessToken(null,null);} }",
+    "A26ShapeC029": "public class A26ShapeC029 { public Map<String,String> f() {return Auth.AuthToken.getAccessTokenMap(null,null);} }",
+    "A26ShapeC030": "public class A26ShapeC030 { public Map<String,String> f() {return Auth.AuthToken.refreshAccessToken(null,null,null);} }",
+    "A26ShapeC031": "public class A26ShapeC031 { public Boolean f() {return Auth.AuthToken.revokeAccess(null,null,null,null);} }",
+    "A26ShapeC032": "public class A26ShapeC032 { public void f() {Auth.SessionManagement.setSessionLevel(Auth.SessionLevel.HIGH_ASSURANCE);} }",
+    "A26ShapeC033": "public class A26ShapeC033 { public Auth.AuthConfiguration f() {return new Auth.AuthConfiguration('https://a26.example.invalid','/start');} }",
+    "A26RegistrationC034": "public class A26RegistrationC034 implements Auth.RegistrationHandler { public User createUser(Id portalId,Auth.UserData data){return null;} public void updateUser(Id userId,Id portalId,Auth.UserData data){} }"
+  },
+  "namedObservations": {
+    "62.0": {
+      "R007": "null",
+      "R025": "present",
+      "R041": "RUNTEST_SYNC",
+      "R042": "false",
+      "R046": "RUNTEST_SYNC",
+      "R229": "1,234,567.567",
+      "SC001": "TS"
+    },
+    "67.0": {
+      "R007": "null",
+      "R025": "present",
+      "R041": "RUNTEST_SYNC",
+      "R042": "false",
+      "R046": "RUNTEST_SYNC",
+      "R229": "1,234,567.567",
+      "SC001": "TS"
+    }
+  },
+  "cases": [
+    {
+      "id": "R001",
+      "code": "String x=UserInfo.getFirstName(); r=x==null?'null':(x.length()==0?'empty':'present');",
+      "expected": "present",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R002",
+      "code": "String x=UserInfo.getLastName(); r=x==null?'null':(x.length()==0?'empty':'present');",
+      "expected": "present",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R003",
+      "code": "String x=UserInfo.getName(); r=x==null?'null':(x.length()==0?'empty':'present');",
+      "expected": "present",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R004",
+      "code": "String x=UserInfo.getOrganizationName(); r=x==null?'null':(x.length()==0?'empty':'present');",
+      "expected": "present",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R005",
+      "code": "String x=UserInfo.getUserEmail(); r=x==null?'null':(x.length()==0?'empty':'present');",
+      "expected": "present",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R006",
+      "code": "String x=UserInfo.getUserName(); r=x==null?'null':(x.length()==0?'empty':'present');",
+      "expected": "present",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R007",
+      "code": "String x=UserInfo.getCurrentUvid(); r=x==null?'null':(x.length()==0?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R008",
+      "code": "String x=UserInfo.getUserId(); r=x==null?'null':String.valueOf(x.length());",
+      "expected": "18",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R009",
+      "code": "String x=UserInfo.getUserId(); r=x==null?null:((Id)x).getSObjectType().getDescribe().getName();",
+      "expected": "User",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R010",
+      "code": "String x=UserInfo.getOrganizationId(); r=x==null?'null':String.valueOf(x.length());",
+      "expected": "18",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R011",
+      "code": "String x=UserInfo.getOrganizationId(); r=x==null?null:((Id)x).getSObjectType().getDescribe().getName();",
+      "expected": "Organization",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R012",
+      "code": "String x=UserInfo.getProfileId(); r=x==null?'null':String.valueOf(x.length());",
+      "expected": "18",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R013",
+      "code": "String x=UserInfo.getProfileId(); r=x==null?null:((Id)x).getSObjectType().getDescribe().getName();",
+      "expected": "Profile",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R014",
+      "code": "String x=UserInfo.getUserRoleId(); r=x==null?'null':String.valueOf(x.length());",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R015",
+      "code": "String x=UserInfo.getUserRoleId(); r=x==null?null:((Id)x).getSObjectType().getDescribe().getName();",
+      "expected": "null",
+      "compile": false,
+      "rawNull": true
+    },
+    {
+      "id": "R016",
+      "code": "r=UserInfo.getLanguage();",
+      "expected": "en_US",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R017",
+      "code": "r=UserInfo.getLocale();",
+      "expected": "en_US",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R018",
+      "code": "r=UserInfo.getDefaultCurrency();",
+      "expected": "USD",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R019",
+      "code": "r=UserInfo.getUserType();",
+      "expected": "Standard",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R020",
+      "code": "r=UserInfo.getUiTheme();",
+      "expected": "Theme3",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R021",
+      "code": "r=UserInfo.getUiThemeDisplayed();",
+      "expected": "Theme3",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R022",
+      "code": "r=UserInfo.isMultiCurrencyOrganization();",
+      "expected": "false",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R023",
+      "code": "r=UserInfo.getTimeZone().getID();",
+      "expected": "America/Los_Angeles",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R024",
+      "code": "r=UserInfo.getTimeZone().getOffset(Datetime.newInstanceGmt(2024,1,15,12,0,0));",
+      "expected": "-28800000",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R025",
+      "code": "String x=UserInfo.getSessionId(); r=x==null?'null':(x.length()>0?'present':'empty');",
+      "expected": "present",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R026",
+      "code": "User u=[SELECT LocaleSidKey FROM User WHERE Id=:UserInfo.getUserId()]; r=u.LocaleSidKey==UserInfo.getLocale();",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R027",
+      "code": "User u=[SELECT LanguageLocaleKey FROM User WHERE Id=:UserInfo.getUserId()]; r=u.LanguageLocaleKey==UserInfo.getLanguage();",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R028",
+      "code": "User u=[SELECT TimeZoneSidKey FROM User WHERE Id=:UserInfo.getUserId()]; r=u.TimeZoneSidKey==UserInfo.getTimeZone().getID();",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R029",
+      "code": "User u=[SELECT ProfileId FROM User WHERE Id=:UserInfo.getUserId()]; r=u.ProfileId==UserInfo.getProfileId();",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R030",
+      "code": "User u=[SELECT UserRoleId FROM User WHERE Id=:UserInfo.getUserId()]; r=u.UserRoleId==UserInfo.getUserRoleId();",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R031",
+      "code": "User u=[SELECT Username FROM User WHERE Id=:UserInfo.getUserId()]; r=u.Username==UserInfo.getUserName();",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R032",
+      "code": "User u=[SELECT Email FROM User WHERE Id=:UserInfo.getUserId()]; r=u.Email==UserInfo.getUserEmail();",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R033",
+      "code": "User u=[SELECT FirstName FROM User WHERE Id=:UserInfo.getUserId()]; r=u.FirstName==UserInfo.getFirstName();",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R034",
+      "code": "User u=[SELECT LastName FROM User WHERE Id=:UserInfo.getUserId()]; r=u.LastName==UserInfo.getLastName();",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R035",
+      "code": "r=UserInfo.isCurrentUserLicensed(null);",
+      "expected": "EXC|System.TypeException|Managed Package corresponding to namespace prefix not found",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R036",
+      "code": "r=UserInfo.isCurrentUserLicensed('');",
+      "expected": "EXC|System.TypeException|Managed Package corresponding to namespace prefix not found",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R037",
+      "code": "r=UserInfo.isCurrentUserLicensed('A26MissingPackage');",
+      "expected": "EXC|System.TypeException|Managed Package corresponding to namespace prefix not found",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R038",
+      "code": "Id x=null; r=UserInfo.hasPackageLicense(x);",
+      "expected": "EXC|System.TypeException|Package Not Found",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R039",
+      "code": "Id x=null; r=UserInfo.isCurrentUserLicensedForPackage(x);",
+      "expected": "EXC|System.TypeException|Package Not Found",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R040",
+      "code": "r=Request.getCurrent()!=null;",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R041",
+      "code": "r=Request.getCurrent().getQuiddity();",
+      "expected": "ANONYMOUS",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R042",
+      "code": "r=Request.getCurrent().getQuiddity()==Quiddity.ANONYMOUS;",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R043",
+      "code": "r=Request.getCurrent().getRequestId()!=null;",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R044",
+      "code": "r=Request.getCurrent().getRequestId().length()>0;",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R045",
+      "code": "r=Request.getCurrent().getRequestId()==Request.getCurrent().getRequestId();",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R046",
+      "code": "r=Request.getCurrent().getQuiddity().name();",
+      "expected": "ANONYMOUS",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R047",
+      "code": "r=Request.getCurrent().getQuiddity().ordinal()>=0;",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R048",
+      "code": "r=Quiddity.valueOf('ANONYMOUS');",
+      "expected": "ANONYMOUS",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R049",
+      "code": "r=Quiddity.valueOf('BATCH_APEX');",
+      "expected": "BATCH_APEX",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R050",
+      "code": "r=Quiddity.valueOf('FUTURE');",
+      "expected": "FUTURE",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R051",
+      "code": "r=Quiddity.valueOf('QUEUEABLE');",
+      "expected": "QUEUEABLE",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R052",
+      "code": "r=Quiddity.valueOf('REST');",
+      "expected": "REST",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R053",
+      "code": "r=Quiddity.valueOf('SCHEDULED');",
+      "expected": "SCHEDULED",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R054",
+      "code": "r=Quiddity.valueOf('RUN_TESTS');",
+      "expected": "EXC|System.NoSuchElementException|No enum value found called RUN_TESTS",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R055",
+      "code": "r=Quiddity.valueOf('anonymous');",
+      "expected": "ANONYMOUS",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R056",
+      "code": "r=Quiddity.valueOf('');",
+      "expected": "EXC|System.NoSuchElementException|No enum value found called ",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R057",
+      "code": "r=Quiddity.valueOf('A26_MISSING');",
+      "expected": "EXC|System.NoSuchElementException|No enum value found called A26_MISSING",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R058",
+      "code": "r=Quiddity.valueOf(null);",
+      "expected": "EXC|System.NoSuchElementException|No enum value found called null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R059",
+      "code": "List<String> xs=new List<String>(); for(Quiddity q:Quiddity.values()){xs.add(q.name());} xs.sort(); r=String.join(xs,',');",
+      "expected": "ANONYMOUS,AURA,BATCH_ACS,BATCH_APEX,BATCH_CHUNK_PARALLEL,BATCH_CHUNK_SERIAL,BULK_API,COMMERCE_INTEGRATION,DISCOVERABLE_LOGIN,EXTERNAL_SERVICE_CALLBACK,FUNCTION_CALLBACK,FUTURE,INBOUND_EMAIL_SERVICE,INVOCABLE_ACTION,IOT,PLATFORM_EVENT_PUBLISH_CALLBACK,POST_INSTALL_SCRIPT,QUEUEABLE,QUICK_ACTION,REMOTE_ACTION,REST,RUNTEST_ASYNC,RUNTEST_DEPLOY,RUNTEST_SYNC,RUN_INTEGRATION_TESTS,SCHEDULED,SOAP,SYNCHRONOUS,TRANSACTION_FINALIZER_QUEUEABLE,TRANSACTION_SECURITY_POLICY,UNDEFINED,VF",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R060",
+      "code": "Request x=null; r=x.getQuiddity();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R061",
+      "code": "Request x=null; r=x?.getRequestId();",
+      "expected": "null",
+      "compile": false,
+      "rawNull": true
+    },
+    {
+      "id": "R062",
+      "code": "r=System.Label.A26ExecutionContextLabel;",
+      "expected": "A26 & locale",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R063",
+      "code": "r=System.Label.get('','A26ExecutionContextLabel');",
+      "expected": "A26 & locale",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R064",
+      "code": "r=System.Label.get(null,'A26ExecutionContextLabel');",
+      "expected": "A26 & locale",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R065",
+      "code": "r=System.Label.get('A26MissingNamespace','A26ExecutionContextLabel');",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid or non-existent label: A26ExecutionContextLabel",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R066",
+      "code": "r=System.Label.get('','A26ExecutionContextLabel','en_US');",
+      "expected": "A26 & locale",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R067",
+      "code": "r=System.Label.translationExists('','A26ExecutionContextLabel','en_US');",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R068",
+      "code": "r=System.Label.get('','A26ExecutionContextLabel','en');",
+      "expected": "A26 & locale",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R069",
+      "code": "r=System.Label.translationExists('','A26ExecutionContextLabel','en');",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R070",
+      "code": "r=System.Label.get('','A26ExecutionContextLabel','de');",
+      "expected": "A26 & locale",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R071",
+      "code": "r=System.Label.translationExists('','A26ExecutionContextLabel','de');",
+      "expected": "false",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R072",
+      "code": "r=System.Label.get('','A26ExecutionContextLabel','fr');",
+      "expected": "A26 & locale",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R073",
+      "code": "r=System.Label.translationExists('','A26ExecutionContextLabel','fr');",
+      "expected": "false",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R074",
+      "code": "r=System.Label.get('','A26ExecutionContextLabel','');",
+      "expected": "A26 & locale",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R075",
+      "code": "r=System.Label.translationExists('','A26ExecutionContextLabel','');",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R076",
+      "code": "r=System.Label.get('','A26ExecutionContextLabel',null);",
+      "expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R077",
+      "code": "r=System.Label.translationExists('','A26ExecutionContextLabel',null);",
+      "expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R078",
+      "code": "r=System.Label.get('','A26ExecutionContextLabel','zz_A26');",
+      "expected": "A26 & locale",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R079",
+      "code": "r=System.Label.translationExists('','A26ExecutionContextLabel','zz_A26');",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R080",
+      "code": "r=System.Label.get('',null);",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R081",
+      "code": "r=System.Label.translationExists('',null,'en_US');",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R082",
+      "code": "r=System.Label.get('','');",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid or non-existent label: ",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R083",
+      "code": "r=System.Label.translationExists('','','en_US');",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid or non-existent label: ",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R084",
+      "code": "r=System.Label.get('','A26MissingLabel');",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid or non-existent label: A26MissingLabel",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R085",
+      "code": "r=System.Label.translationExists('','A26MissingLabel','en_US');",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid or non-existent label: A26MissingLabel",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R086",
+      "code": "r=System.Label.A26ExecutionContextLabel==System.Label.get('','A26ExecutionContextLabel');",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R087",
+      "code": "r=FeatureManagement.checkPermission('A26ExecutionContextPermission');",
+      "expected": "false",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R088",
+      "code": "r=FeatureManagement.checkPermission('A26MissingPermission');",
+      "expected": "false",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R089",
+      "code": "r=FeatureManagement.checkPermission('');",
+      "expected": "UNCAUGHT|System.UnexpectedException: Salesforce System Error",
+      "compile": false,
+      "rawNull": false,
+      "remainingReason": "A26: uncaught Salesforce internal error with generated diagnostics is an explicit hosted-system boundary; not simulated as deterministic behavior."
+    },
+    {
+      "id": "R090",
+      "code": "r=FeatureManagement.checkPermission(null);",
+      "expected": "false",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R091",
+      "code": "r=FeatureManagement.checkPermission('a26missingpermission');",
+      "expected": "false",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R092",
+      "code": "r=FeatureManagement.checkPermission('A26MissingNamespace__Permission');",
+      "expected": "false",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R093",
+      "code": "r=FeatureManagement.checkPackageBooleanValue('A26MissingFeature');",
+      "expected": "EXC|System.NoDataFoundException|Unable to retrieve feature parameter A26MissingFeature. No results found.",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R094",
+      "code": "r=FeatureManagement.checkPackageBooleanValue('');",
+      "expected": "EXC|System.NoDataFoundException|Unable to retrieve feature parameter . No results found.",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R095",
+      "code": "r=FeatureManagement.checkPackageBooleanValue(null);",
+      "expected": "false",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R096",
+      "code": "r=FeatureManagement.checkPackageDateValue('A26MissingFeature');",
+      "expected": "EXC|System.NoDataFoundException|Unable to retrieve feature parameter A26MissingFeature. No results found.",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R097",
+      "code": "r=FeatureManagement.checkPackageDateValue('');",
+      "expected": "EXC|System.NoDataFoundException|Unable to retrieve feature parameter . No results found.",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R098",
+      "code": "r=FeatureManagement.checkPackageDateValue(null);",
+      "expected": "null",
+      "compile": false,
+      "rawNull": true
+    },
+    {
+      "id": "R099",
+      "code": "r=FeatureManagement.checkPackageIntegerValue('A26MissingFeature');",
+      "expected": "EXC|System.NoDataFoundException|Unable to retrieve feature parameter A26MissingFeature. No results found.",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R100",
+      "code": "r=FeatureManagement.checkPackageIntegerValue('');",
+      "expected": "EXC|System.NoDataFoundException|Unable to retrieve feature parameter . No results found.",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R101",
+      "code": "r=FeatureManagement.checkPackageIntegerValue(null);",
+      "expected": "null",
+      "compile": false,
+      "rawNull": true
+    },
+    {
+      "id": "R102",
+      "code": "Double x=Double.valueOf('0'); r=UserInfo.getLocale()+'|'+UserInfo.getLanguage()+'|'+x.format();",
+      "expected": "en_US|en_US|0",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R103",
+      "code": "Double x=Double.valueOf('-0.0'); r=UserInfo.getLocale()+'|'+UserInfo.getLanguage()+'|'+x.format();",
+      "expected": "en_US|en_US|-0",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R104",
+      "code": "Double x=Double.valueOf('1'); r=UserInfo.getLocale()+'|'+UserInfo.getLanguage()+'|'+x.format();",
+      "expected": "en_US|en_US|1",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R105",
+      "code": "Double x=Double.valueOf('-1'); r=UserInfo.getLocale()+'|'+UserInfo.getLanguage()+'|'+x.format();",
+      "expected": "en_US|en_US|-1",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R106",
+      "code": "Double x=Double.valueOf('12.5'); r=UserInfo.getLocale()+'|'+UserInfo.getLanguage()+'|'+x.format();",
+      "expected": "en_US|en_US|12.5",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R107",
+      "code": "Double x=Double.valueOf('-12.5'); r=UserInfo.getLocale()+'|'+UserInfo.getLanguage()+'|'+x.format();",
+      "expected": "en_US|en_US|-12.5",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R108",
+      "code": "Double x=Double.valueOf('1234.5'); r=UserInfo.getLocale()+'|'+UserInfo.getLanguage()+'|'+x.format();",
+      "expected": "en_US|en_US|1,234.5",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R109",
+      "code": "Double x=Double.valueOf('-1234.5'); r=UserInfo.getLocale()+'|'+UserInfo.getLanguage()+'|'+x.format();",
+      "expected": "en_US|en_US|-1,234.5",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R110",
+      "code": "Double x=Double.valueOf('1234567.567'); r=UserInfo.getLocale()+'|'+UserInfo.getLanguage()+'|'+x.format();",
+      "expected": "en_US|en_US|1,234,567.567",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R111",
+      "code": "Double x=Double.valueOf('-1234567.567'); r=UserInfo.getLocale()+'|'+UserInfo.getLanguage()+'|'+x.format();",
+      "expected": "en_US|en_US|-1,234,567.567",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R112",
+      "code": "Double x=Double.valueOf('999.999'); r=UserInfo.getLocale()+'|'+UserInfo.getLanguage()+'|'+x.format();",
+      "expected": "en_US|en_US|999.999",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R113",
+      "code": "Double x=Double.valueOf('0.0001'); r=UserInfo.getLocale()+'|'+UserInfo.getLanguage()+'|'+x.format();",
+      "expected": "en_US|en_US|0",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R114",
+      "code": "Double x=null; r=x.format();",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R115",
+      "code": "Decimal x=null; r=x.format();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R116",
+      "code": "Integer x=null; r=x.format();",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R117",
+      "code": "Long x=null; r=x.format();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "rawNull": false,
+      "remainingReason": "A07: Long.format null-receiver exception text is owned by numeric null dispatch outside A26 locale formatting."
+    },
+    {
+      "id": "R118",
+      "code": "Decimal x=Decimal.valueOf('0'); r=UserInfo.getLocale()+'|'+x.format();",
+      "expected": "en_US|0",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R119",
+      "code": "Decimal x=Decimal.valueOf('-1'); r=UserInfo.getLocale()+'|'+x.format();",
+      "expected": "en_US|-1",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R120",
+      "code": "Decimal x=Decimal.valueOf('12.50'); r=UserInfo.getLocale()+'|'+x.format();",
+      "expected": "en_US|12.5",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R121",
+      "code": "Decimal x=Decimal.valueOf('1234567.567'); r=UserInfo.getLocale()+'|'+x.format();",
+      "expected": "en_US|1,234,567.567",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R122",
+      "code": "Decimal x=Decimal.valueOf('-1234567.567'); r=UserInfo.getLocale()+'|'+x.format();",
+      "expected": "en_US|-1,234,567.567",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R123",
+      "code": "r=Double.valueOf('1,234.5');",
+      "expected": "EXC|System.TypeException|Invalid double: 1,234.5",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R124",
+      "code": "r=Double.valueOf('1.234,5');",
+      "expected": "EXC|System.TypeException|Invalid double: 1.234,5",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R125",
+      "code": "r=Double.valueOf('');",
+      "expected": "EXC|System.TypeException|Invalid double: ",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R126",
+      "code": "r=Double.valueOf(null);",
+      "expected": "COMPILE_ERROR\tline 8: Ambiguous method signature: void valueOf(NULL)",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R127",
+      "code": "r=Decimal.valueOf('1,234.5');",
+      "expected": "EXC|System.TypeException|Invalid decimal: 1,234.5",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R128",
+      "code": "r=Decimal.valueOf('1.234,5');",
+      "expected": "EXC|System.TypeException|Invalid decimal: 1.234,5",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R129",
+      "code": "r=Decimal.valueOf('');",
+      "expected": "EXC|System.TypeException|Invalid decimal: ",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R130",
+      "code": "r=Decimal.valueOf(null);",
+      "expected": "COMPILE_ERROR\tline 8: Ambiguous method signature: void valueOf(NULL)",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R131",
+      "code": "Date x=Date.valueOf('2024-01-01'); r=UserInfo.getLocale()+'|'+x.format();",
+      "expected": "en_US|1/1/2024",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R132",
+      "code": "Date x=Date.valueOf('2024-01-01'); r=UserInfo.getLocale()+'|'+String.valueOf(x.toStartOfWeek());",
+      "expected": "en_US|2023-12-31",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R133",
+      "code": "Date x=Date.valueOf('2024-01-07'); r=UserInfo.getLocale()+'|'+x.format();",
+      "expected": "en_US|1/7/2024",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R134",
+      "code": "Date x=Date.valueOf('2024-01-07'); r=UserInfo.getLocale()+'|'+String.valueOf(x.toStartOfWeek());",
+      "expected": "en_US|2024-01-07",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R135",
+      "code": "Date x=Date.valueOf('2024-01-08'); r=UserInfo.getLocale()+'|'+x.format();",
+      "expected": "en_US|1/8/2024",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R136",
+      "code": "Date x=Date.valueOf('2024-01-08'); r=UserInfo.getLocale()+'|'+String.valueOf(x.toStartOfWeek());",
+      "expected": "en_US|2024-01-07",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R137",
+      "code": "Date x=Date.valueOf('2024-02-29'); r=UserInfo.getLocale()+'|'+x.format();",
+      "expected": "en_US|2/29/2024",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R138",
+      "code": "Date x=Date.valueOf('2024-02-29'); r=UserInfo.getLocale()+'|'+String.valueOf(x.toStartOfWeek());",
+      "expected": "en_US|2024-02-25",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R139",
+      "code": "Date x=Date.valueOf('2024-12-31'); r=UserInfo.getLocale()+'|'+x.format();",
+      "expected": "en_US|12/31/2024",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R140",
+      "code": "Date x=Date.valueOf('2024-12-31'); r=UserInfo.getLocale()+'|'+String.valueOf(x.toStartOfWeek());",
+      "expected": "en_US|2024-12-29",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R141",
+      "code": "Date x=Date.parse('1/28/2008'); r=String.valueOf(x);",
+      "expected": "2008-01-28",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R142",
+      "code": "Date x=Date.parse('28/01/2008'); r=String.valueOf(x);",
+      "expected": "EXC|System.TypeException|Invalid date: 28/01/2008",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R143",
+      "code": "Date x=Date.parse('28.01.2008'); r=String.valueOf(x);",
+      "expected": "EXC|System.TypeException|Invalid date: 28.01.2008",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R144",
+      "code": "Date x=Date.parse('2008-01-28'); r=String.valueOf(x);",
+      "expected": "EXC|System.TypeException|Invalid date: 2008-01-28",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R145",
+      "code": "Date x=Date.parse(''); r=String.valueOf(x);",
+      "expected": "EXC|System.TypeException|Invalid date: ",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R146",
+      "code": "Date x=Date.parse(null); r=String.valueOf(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R147",
+      "code": "Datetime x=Datetime.parse('1/28/2008, 4:30 PM'); r=x==null?null:x.formatGmt('yyyy-MM-dd HH:mm:ss');",
+      "expected": "2008-01-29 00:30:00",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R148",
+      "code": "Datetime x=Datetime.parse('28/01/2008, 16:30'); r=x==null?null:x.formatGmt('yyyy-MM-dd HH:mm:ss');",
+      "expected": "EXC|System.TypeException|Invalid date/time: 28/01/2008, 16:30",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R149",
+      "code": "Datetime x=Datetime.parse('28.01.2008, 16:30'); r=x==null?null:x.formatGmt('yyyy-MM-dd HH:mm:ss');",
+      "expected": "EXC|System.TypeException|Invalid date/time: 28.01.2008, 16:30",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R150",
+      "code": "Datetime x=Datetime.parse(''); r=x==null?null:x.formatGmt('yyyy-MM-dd HH:mm:ss');",
+      "expected": "EXC|System.TypeException|Invalid date/time: ",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R151",
+      "code": "Datetime x=Datetime.parse(null); r=x==null?null:x.formatGmt('yyyy-MM-dd HH:mm:ss');",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R152",
+      "code": "Datetime x=Datetime.newInstanceGmt(2008,1,28,16,30,0); r=x.format('yyyy-MM-dd HH:mm:ss');",
+      "expected": "2008-01-28 08:30:00",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R153",
+      "code": "Datetime x=Datetime.newInstanceGmt(2008,1,28,16,30,0); r=x.format('EEEE, MMMM d, yyyy');",
+      "expected": "Monday, January 28, 2008",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R154",
+      "code": "Datetime x=Datetime.newInstanceGmt(2008,1,28,16,30,0); r=x.format('z Z');",
+      "expected": "PST -0800",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R155",
+      "code": "Datetime x=Datetime.newInstanceGmt(2008,1,28,16,30,0); r=x.format('');",
+      "expected": "",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R156",
+      "code": "Datetime x=Datetime.newInstanceGmt(2008,1,28,16,30,0); r=x.format(null);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "rawNull": false,
+      "remainingReason": "A12: Datetime.format(null) pattern argument validation still emits an uncaught local error; temporal member section is outside A26."
+    },
+    {
+      "id": "R157",
+      "code": "Datetime x=Datetime.newInstanceGmt(2008,1,28,16,30,0); r=x.format('invalid[');",
+      "expected": "EXC|System.StringException|Unrecognized format: invalid[",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R158",
+      "code": "Datetime x=Datetime.newInstanceGmt(2008,1,28,16,30,0); r=x.format('yyyy-MM-dd HH:mm:ss z','GMT');",
+      "expected": "2008-01-28 16:30:00 GMT",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R159",
+      "code": "Datetime x=Datetime.newInstanceGmt(2008,1,28,16,30,0); r=x.format('yyyy-MM-dd HH:mm:ss z','America/Los_Angeles');",
+      "expected": "2008-01-28 08:30:00 PST",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R160",
+      "code": "Datetime x=Datetime.newInstanceGmt(2008,1,28,16,30,0); r=x.format('yyyy-MM-dd HH:mm:ss z','Europe/Berlin');",
+      "expected": "2008-01-28 17:30:00 CET",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R161",
+      "code": "Datetime x=Datetime.newInstanceGmt(2008,1,28,16,30,0); r=x.format('yyyy-MM-dd HH:mm:ss z','A26InvalidZone');",
+      "expected": "2008-01-28 16:30:00 GMT",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R162",
+      "code": "Datetime x=Datetime.newInstanceGmt(2008,1,28,16,30,0); r=x.format('yyyy-MM-dd HH:mm:ss z','');",
+      "expected": "2008-01-28 16:30:00 GMT",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R163",
+      "code": "Datetime x=Datetime.newInstanceGmt(2008,1,28,16,30,0); r=x.format('yyyy-MM-dd HH:mm:ss z',null);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "rawNull": false,
+      "remainingReason": "A12: Datetime.format(pattern,null) zone argument validation still uses the context zone; temporal member section is outside A26."
+    },
+    {
+      "id": "R164",
+      "code": "Date x=null; r=x.format();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R165",
+      "code": "Datetime x=null; r=x.format();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R166",
+      "code": "r=Datetime.newInstanceGmt(2008,1,28,16,30,0).formatGmt('yyyy-MM-dd HH:mm:ss');",
+      "expected": "2008-01-28 16:30:00",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R167",
+      "code": "Object x=Site.getAdminEmail(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R168",
+      "code": "Object x=Site.getAdminId(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R169",
+      "code": "Object x=Site.getAnalyticsTrackingCode(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R170",
+      "code": "Object x=Site.getBaseCustomUrl(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "empty",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R171",
+      "code": "Object x=Site.getBaseInsecureUrl(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "COMPILE_ERROR\tline 8: Method was removed after version 51.0: getBaseInsecureUrl",
+      "compile": false,
+      "rawNull": false,
+      "remainingReason": "A26: source API removal of Site.getBaseInsecureUrl needs compiler/sema ownership; compiler.go belongs to A03."
+    },
+    {
+      "id": "R172",
+      "code": "Object x=Site.getBaseRequestUrl(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "empty",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R173",
+      "code": "Object x=Site.getBaseSecureUrl(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "empty",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R174",
+      "code": "Object x=Site.getBaseUrl(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "empty",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R175",
+      "code": "Object x=Site.getCurrentSiteUrl(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "COMPILE_ERROR\tline 8: Method was removed after version 29.0: getCurrentSiteUrl",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R176",
+      "code": "Object x=Site.getCustomWebAddress(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "COMPILE_ERROR\tline 8: Method was removed after version 29.0: getCustomWebAddress",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R177",
+      "code": "Object x=Site.getDomain(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R178",
+      "code": "Object x=Site.getErrorDescription(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "empty",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R179",
+      "code": "Object x=Site.getErrorMessage(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "empty",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R180",
+      "code": "Object x=Site.getExperienceId(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "EXC|System.RequiredFeatureMissingException|This method can be invoked only from within a community.",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R181",
+      "code": "Object x=Site.getMasterLabel(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R182",
+      "code": "Object x=Site.getName(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R183",
+      "code": "Object x=Site.getOriginalUrl(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R184",
+      "code": "Object x=Site.getPasswordPolicyStatement(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "present",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R185",
+      "code": "Object x=Site.getPathPrefix(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "empty",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R186",
+      "code": "Object x=Site.getPrefix(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "COMPILE_ERROR\tline 8: Method was removed after version 29.0: getPrefix",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R187",
+      "code": "Object x=Site.getSiteId(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R188",
+      "code": "Object x=Site.getSiteType(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R189",
+      "code": "Object x=Site.getSiteTypeLabel(); String s=String.valueOf(x); r=x==null?'null':(s==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R190",
+      "code": "r=Site.isLoginEnabled();",
+      "expected": "false",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R191",
+      "code": "r=Site.isPasswordExpired();",
+      "expected": "false",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R192",
+      "code": "r=Site.isRegistrationEnabled();",
+      "expected": "false",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R193",
+      "code": "PageReference x=Site.getTemplate(); r=x==null?'null':'PageReference';",
+      "expected": "PageReference",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R194",
+      "code": "String x=Network.getNetworkId(); r=x==null?'null':(x==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R195",
+      "code": "String x=Network.communitiesLanding(); r=x==null?'null':(x==''?'empty':'present');",
+      "expected": "COMPILE_ERROR\tline 8: Illegal assignment from System.PageReference to String",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R196",
+      "code": "String x=Network.getLoginUrl(null); r=x==null?'null':(x==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R197",
+      "code": "String x=Network.getLoginUrl(''); r=x==null?'null':(x==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R198",
+      "code": "String x=Network.getLogoutUrl(null); r=x==null?'null':(x==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R199",
+      "code": "String x=Network.getLogoutUrl(''); r=x==null?'null':(x==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R200",
+      "code": "String x=Network.getSelfRegUrl(null); r=x==null?'null':(x==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R201",
+      "code": "String x=Network.getSelfRegUrl(''); r=x==null?'null':(x==''?'empty':'present');",
+      "expected": "null",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R202",
+      "code": "Map<String,String> x=Auth.SessionManagement.getCurrentSession(); r=x==null?'null':'Map<String,String>';",
+      "expected": "Map<String,String>",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R203",
+      "code": "r=Auth.SessionManagement.getRequiredSessionLevelForProfile(null);",
+      "expected": "null",
+      "compile": false,
+      "rawNull": true
+    },
+    {
+      "id": "R204",
+      "code": "r=Auth.SessionManagement.inOrgNetworkRange(null);",
+      "expected": "EXC|System.InvalidParameterValueException|IP address expected",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R205",
+      "code": "Auth.UserData x=new Auth.UserData('id','first','last','full','a26@example.invalid','link','user','en_US','provider','/start',new Map<String,String>{'k'=>'v'}); r=x.identifier;",
+      "expected": "id",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R206",
+      "code": "Auth.UserData x=new Auth.UserData('id','first','last','full','a26@example.invalid','link','user','en_US','provider','/start',new Map<String,String>{'k'=>'v'}); r=x.firstName;",
+      "expected": "first",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R207",
+      "code": "Auth.UserData x=new Auth.UserData('id','first','last','full','a26@example.invalid','link','user','en_US','provider','/start',new Map<String,String>{'k'=>'v'}); r=x.lastName;",
+      "expected": "last",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R208",
+      "code": "Auth.UserData x=new Auth.UserData('id','first','last','full','a26@example.invalid','link','user','en_US','provider','/start',new Map<String,String>{'k'=>'v'}); r=x.fullName;",
+      "expected": "full",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R209",
+      "code": "Auth.UserData x=new Auth.UserData('id','first','last','full','a26@example.invalid','link','user','en_US','provider','/start',new Map<String,String>{'k'=>'v'}); r=x.email;",
+      "expected": "a26@example.invalid",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R210",
+      "code": "Auth.UserData x=new Auth.UserData('id','first','last','full','a26@example.invalid','link','user','en_US','provider','/start',new Map<String,String>{'k'=>'v'}); r=x.link;",
+      "expected": "link",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R211",
+      "code": "Auth.UserData x=new Auth.UserData('id','first','last','full','a26@example.invalid','link','user','en_US','provider','/start',new Map<String,String>{'k'=>'v'}); r=x.username;",
+      "expected": "user",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R212",
+      "code": "Auth.UserData x=new Auth.UserData('id','first','last','full','a26@example.invalid','link','user','en_US','provider','/start',new Map<String,String>{'k'=>'v'}); r=x.locale;",
+      "expected": "en_US",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R213",
+      "code": "Auth.UserData x=new Auth.UserData('id','first','last','full','a26@example.invalid','link','user','en_US','provider','/start',new Map<String,String>{'k'=>'v'}); r=x.provider;",
+      "expected": "provider",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R214",
+      "code": "Auth.UserData x=new Auth.UserData('id','first','last','full','a26@example.invalid','link','user','en_US','provider','/start',new Map<String,String>{'k'=>'v'}); r=x.siteLoginUrl;",
+      "expected": "/start",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R215",
+      "code": "Auth.UserData x=new Auth.UserData('id','first','last','full','a26@example.invalid','link','user','en_US','provider','/start',new Map<String,String>{'k'=>'v'}); r=x.attributeMap.get('k');",
+      "expected": "v",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R216",
+      "code": "Auth.UserData x=null; r=x.identifier;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R217",
+      "code": "Auth.VerificationResult x=new Auth.VerificationResult(new PageReference('/a26'),true,'a26'); r=x.success;",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R218",
+      "code": "Auth.VerificationResult x=new Auth.VerificationResult(new PageReference('/a26'),true,'a26'); r=x.message;",
+      "expected": "a26",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R219",
+      "code": "Auth.VerificationResult x=new Auth.VerificationResult(new PageReference('/a26'),true,'a26'); r=x.redirect.getUrl();",
+      "expected": "/a26",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R220",
+      "code": "Auth.TokenValidationResult x=new Auth.TokenValidationResult(true); r=x.isValid;",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R221",
+      "code": "Auth.TokenValidationResult x=new Auth.TokenValidationResult(false); r=x.isValid;",
+      "expected": "false",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R222",
+      "code": "Auth.TokenValidationResult x=new Auth.TokenValidationResult(null); r=x.isValid;",
+      "expected": "null",
+      "compile": false,
+      "rawNull": true
+    },
+    {
+      "id": "R223",
+      "code": "StaticResource x=[SELECT Name,ContentType,CacheControl,Body,BodyLength,NamespacePrefix FROM StaticResource WHERE Name='A26ExecutionContextResource']; r=x.Name;",
+      "expected": "A26ExecutionContextResource",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R224",
+      "code": "StaticResource x=[SELECT Name,ContentType,CacheControl,Body,BodyLength,NamespacePrefix FROM StaticResource WHERE Name='A26ExecutionContextResource']; r=x.ContentType;",
+      "expected": "text/plain",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R225",
+      "code": "StaticResource x=[SELECT Name,ContentType,CacheControl,Body,BodyLength,NamespacePrefix FROM StaticResource WHERE Name='A26ExecutionContextResource']; r=x.CacheControl;",
+      "expected": "Private",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R226",
+      "code": "StaticResource x=[SELECT Name,ContentType,CacheControl,Body,BodyLength,NamespacePrefix FROM StaticResource WHERE Name='A26ExecutionContextResource']; r=x.Body.toString();",
+      "expected": "A26 oracle resource",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R227",
+      "code": "StaticResource x=[SELECT Name,ContentType,CacheControl,Body,BodyLength,NamespacePrefix FROM StaticResource WHERE Name='A26ExecutionContextResource']; r=x.BodyLength==x.Body.size();",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R228",
+      "code": "StaticResource x=[SELECT Name,ContentType,CacheControl,Body,BodyLength,NamespacePrefix FROM StaticResource WHERE Name='A26ExecutionContextResource']; r=x.NamespacePrefix==null;",
+      "expected": "true",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "R229",
+      "code": "User u=new User(Id=UserInfo.getUserId()); System.runAs(u){Double x=1234567.567; r=x.format();}",
+      "expected": "EXC|System.TypeException|System.runAs can only be used within a test method: ",
+      "compile": false,
+      "rawNull": false,
+      "anonymousRemainingReason": "A03: anonymous System.runAs boundary needs control_flow.go exception-type/message correction; the captured matching @IsTest route is asserted."
+    },
+    {
+      "id": "C001",
+      "code": "Object r; r=UserInfo.getLocale('en_US');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getLocale(String) from the type System.UserInfo",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C002",
+      "code": "Object r; Integer x=UserInfo.getLanguage(); r=x;",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to Integer",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C003",
+      "code": "Object r; UserInfo.setLocale('de_DE');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setLocale(String) from the type System.UserInfo",
+      "compile": true,
+      "rawNull": false,
+      "remainingReason": "A26: UserInfo setter rejection needs a semantic API-surface guard outside the declared runtime sections."
+    },
+    {
+      "id": "C004",
+      "code": "Object r; r=UserInfo.hasPackageLicense(1);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void hasPackageLicense(Integer) from the type System.UserInfo",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C005",
+      "code": "Object r; Request x=new Request(); r=x!=null;",
+      "expected": "COMPILE_ERROR\tline 6: Abstract classes cannot be constructed: System.Request",
+      "compile": true,
+      "rawNull": false,
+      "remainingReason": "A03: Request abstract-constructor rejection needs compiler/declaration validation outside A26."
+    },
+    {
+      "id": "C006",
+      "code": "Object r; String x=Request.getCurrent().getQuiddity(); r=x;",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from System.Quiddity to String",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C007",
+      "code": "Object r; r=Quiddity.A26_MISSING;",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: A26_MISSING",
+      "compile": true,
+      "rawNull": false,
+      "remainingReason": "A03: unknown Quiddity enum constant rejection needs generic enum-field compile validation outside A26."
+    },
+    {
+      "id": "C008",
+      "code": "Object r; r=Request.getCurrent(1);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getCurrent(Integer) from the type System.Request",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C009",
+      "code": "Object r; r=System.Label.A26MissingLabel;",
+      "expected": "COMPILE_ERROR\tline 6: External string does not exist: A26MissingLabel",
+      "compile": true,
+      "rawNull": false,
+      "remainingReason": "A26: missing static label rejection needs metadata-aware semantic lookup outside the declared runtime sections."
+    },
+    {
+      "id": "C010",
+      "code": "Object r; r=System.Label.get('x');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void get(String) from the type System.Label",
+      "compile": true,
+      "rawNull": false,
+      "remainingReason": "A26: Label.get arity rejection needs a semantic API-surface guard outside the declared runtime sections."
+    },
+    {
+      "id": "C011",
+      "code": "Object r; r=System.Label.get(1,'x');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void get(Integer, String) from the type System.Label",
+      "compile": true,
+      "rawNull": false,
+      "remainingReason": "A26: Label.get argument type rejection needs a semantic API-surface guard outside the declared runtime sections."
+    },
+    {
+      "id": "C012",
+      "code": "Object r; Boolean x=System.Label.get('','A26ExecutionContextLabel'); r=x;",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to Boolean",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C013",
+      "code": "Object r; r=FeatureManagement.checkPermission();",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void checkPermission() from the type System.FeatureManagement",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C014",
+      "code": "Object r; r=FeatureManagement.checkPermission(1);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void checkPermission(Integer) from the type System.FeatureManagement",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C015",
+      "code": "Object r; String x=FeatureManagement.checkPermission('x'); r=x;",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Boolean to String",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C016",
+      "code": "Object r; Double x=1; r=x.format('de_DE');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void format(String) from the type Double",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C017",
+      "code": "Object r; Date x=Date.newInstance(2024,1,1); r=x.format('yyyy');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void format(String) from the type Date",
+      "compile": true,
+      "rawNull": false,
+      "remainingReason": "A12: Date.format(pattern) signature rejection belongs to temporal source contracts outside A26."
+    },
+    {
+      "id": "C018",
+      "code": "Object r; r=Site.getSiteId(1);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getSiteId(Integer) from the type System.Site",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C019",
+      "code": "Object r; r=Network.getLoginUrl(1);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getLoginUrl(Integer) from the type System.Network",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C020",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C021",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C022",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C023",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C024",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C025",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C026",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C027",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C028",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C029",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C030",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C031",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C032",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C033",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C034",
+      "code": "Object r;  r='native-shape';",
+      "expected": "native-shape",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C035",
+      "code": "Object r; Auth.UserData x=new Auth.UserData(); r=x;",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [Auth.UserData].<Constructor>()",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C036",
+      "code": "Object r; Auth.SessionManagement.setSessionLevel('HIGH_ASSURANCE');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setSessionLevel(String) from the type Auth.SessionManagement",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C037",
+      "code": "Object r; r=Auth.AuthToken.getAccessToken(1,2);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getAccessToken(Integer, Integer) from the type Auth.AuthToken",
+      "compile": true,
+      "rawNull": false
+    },
+    {
+      "id": "C038",
+      "code": "Object r; Auth.VerificationResult x=new Auth.VerificationResult('/a26',true,'a26'); r=x;",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [Auth.VerificationResult].<Constructor>(String, Boolean, String)",
+      "compile": true,
+      "rawNull": false
+    }
+  ],
+  "controls": [
+    {
+      "id": "SC001",
+      "code": "r=System.getQuiddityShortCode(Request.getCurrent().getQuiddity());",
+      "expected": "X",
+      "compile": false,
+      "rawNull": false
+    },
+    {
+      "id": "N001",
+      "code": "r=Auth.SessionManagement.inOrgNetworkRange('');",
+      "expected": "EXC|System.InvalidParameterValueException|IP address expected",
+      "compile": false,
+      "rawNull": false
+    }
+  ],
+  "carriedContextRows": [
+    {
+      "id": "T058",
+      "remainingReason": "A26: fixed VM clock May 2 differs from the native October 4 Sydney DST season; explicit capture-time clock context is required outside these owned runtime sections."
+    }
+  ],
+  "pendingNativeGroups": [
+    "native @IsTest German/English locale, independent language, nested runAs and restored-context Double.format",
+    "A12 native switched-user locale parsing/start-of-week remainder matrix",
+    "granted versus ungranted custom-permission user contexts",
+    "translated-label language overrides with an installed translation fixture"
+  ],
+  "absorbedRows": {
+    "test-context-locale": [
+      "R102",
+      "R103",
+      "R104",
+      "R105",
+      "R106",
+      "R107",
+      "R108",
+      "R109",
+      "R110",
+      "R111",
+      "R112",
+      "R113",
+      "R114",
+      "R229",
+      "C016",
+      "C020"
+    ]
+  },
+  "probeFixtureRemainders": {
+    "R014": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R015": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R062": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R063": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R064": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R066": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R067": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R068": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R069": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R070": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R072": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R074": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R075": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R078": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R079": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R223": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R224": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R225": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R226": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R227": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R228": "A26: shared validation fixture has no installed A26 label/resource or has the deterministic user role; conformance uses the exported native fixture.",
+    "R071": "A26: shared validation fixture has no installed A26 label; conformance uses the exported native fixture.",
+    "R073": "A26: shared validation fixture has no installed A26 label; conformance uses the exported native fixture.",
+    "R086": "A26: shared validation fixture has no installed A26 label; conformance uses the exported native fixture."
+  }
+}

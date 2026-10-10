@@ -1,0 +1,2028 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "oracle": "Owned observations at API 62.0 and 67.0; raw org.tsv text retained.",
+  "declarations": {
+    "SS": "public class SS {\n public String names(List<SObject> rows) {\n  List<String> values=new List<String>();\n  for(SObject row:rows) values.add(String.valueOf(row.get('Name')));\n  return String.join(values,'|');\n }\n}"
+  },
+  "prelude": "SS ss=new SS();\nString marker='A31-oracle-20261004';\ndelete [SELECT Id FROM Contact WHERE Department=:marker];\ndelete [SELECT Id FROM Account WHERE AccountNumber=:marker];\nList<Account> seed=new List<Account>{\n new Account(Name='Alpha',AccountNumber=marker,Description=marker,AnnualRevenue=null,NumberOfEmployees=null,Phone=null),\n new Account(Name='Beta',AccountNumber=marker,Description=marker,AnnualRevenue=0,NumberOfEmployees=0,Phone='100'),\n new Account(Name='Gamma',AccountNumber=marker,Description=marker,AnnualRevenue=10.5,NumberOfEmployees=1,Phone='200'),\n new Account(Name='Bob\\'s Shop',AccountNumber=marker,Description=marker,AnnualRevenue=20,NumberOfEmployees=2,Phone=null),\n new Account(Name='C:\\\\Trail',AccountNumber=marker,Description=marker,AnnualRevenue=20,NumberOfEmployees=2,Phone='200'),\n new Account(Name='A_%trail',AccountNumber=marker,Description=marker,AnnualRevenue=40,NumberOfEmployees=4,Phone='300'),\n new Account(Name='Zero',AccountNumber=marker,Description=marker,AnnualRevenue=0,NumberOfEmployees=0,Phone=null)\n};\ninsert seed;\nSet<Id> sids=new Map<Id,Account>(seed).keySet();\nId selectedId=seed[0].Id;\nList<Contact> children=new List<Contact>{\n new Contact(LastName='A31-A',Department=marker,Description=marker,AccountId=seed[0].Id,Birthdate=Date.newInstance(2000,1,1)),\n new Contact(LastName='A31-B',Department=marker,Description=marker,AccountId=seed[1].Id,Birthdate=Date.newInstance(2001,2,3)),\n new Contact(LastName='A31-C',Department=marker,Description=marker,Birthdate=null)\n};\ninsert children;\nSet<Id> cids=new Map<Id,Contact>(children).keySet();",
+  "cases": [
+    {
+      "id": "R001",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids'); r=rows.size();",
+      "expected": "7",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R002",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids LIMIT 1'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R003",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids LIMIT 0'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R004",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids OFFSET 0'); r=rows.size();",
+      "expected": "7",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R005",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids LIMIT 2 OFFSET 1'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R006",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids FOR UPDATE'); r=rows.size();",
+      "expected": "7",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R007",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids LIMIT 1 FOR UPDATE'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R008",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids FOR UPDATE LIMIT 1'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'LIMIT'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R009",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 2 OFFSET 1'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R010",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids OFFSET 1 LIMIT 2'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'LIMIT'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R011",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name FOR UPDATE'); r=rows.size();",
+      "expected": "EXC|System.QueryException|Explicit ORDER BY not allowed when locking rows (Id order is implied)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R012",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids LIMIT 1 FOR VIEW'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R013",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids LIMIT 1 FOR REFERENCE'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R014",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids FOR VIEW LIMIT 1'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'LIMIT'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R015",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids FOR REFERENCE LIMIT 1'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'LIMIT'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R016",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids FOR VIEW FOR REFERENCE'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'REFERENCE'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R017",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids FOR REFERENCE FOR VIEW'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'VIEW'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R018",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids FOR UPDATE FOR VIEW'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'FOR'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R019",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids FOR UPDATE FOR REFERENCE'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'FOR'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R020",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids LIMIT 1 FOR UPDATE OFFSET 0'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'OFFSET'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R021",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids LIMIT 1 OFFSET 0 FOR UPDATE'); r=rows.size();",
+      "expected": "EXC|System.QueryException|FOR UPDATE cannot be used in conjunction with the OFFSET clause",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R022",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids LIMIT 1 WHERE Name = \\'Alpha\\''); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'WHERE'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R023",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name WHERE Name = \\'Alpha\\''); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'WHERE'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R024",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids LIMIT 1 LIMIT 2'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'LIMIT'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R025",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name ORDER BY Id'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'ORDER'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R026",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids FOR UPDATE FOR UPDATE'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'FOR'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R027",
+      "code": " List<SObject> rows=Database.query('select id, name from account where id in :sids'); r=rows.size();",
+      "expected": "7",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R028",
+      "code": " List<SObject> rows=Database.query('SELECT a.Id,a.Name FROM Account a WHERE a.Id IN :sids'); r=rows.size();",
+      "expected": "7",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R029",
+      "code": " List<SObject> rows=Database.query('SELECT Id Name FROM Account WHERE Id IN :sids'); r=rows.size();",
+      "expected": "EXC|System.QueryException|only aggregate expressions use field aliasing",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R030",
+      "code": " List<SObject> rows=Database.query('SELECT Name n FROM Account WHERE Id IN :sids'); r=rows.size();",
+      "expected": "EXC|System.QueryException|only aggregate expressions use field aliasing",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R031",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ALL ROWS'); r=rows.size();",
+      "expected": "7",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R032",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Id IN :sids LIMIT 1 ALL ROWS'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R033",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = \\'Alpha\\''); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R034",
+      "code": "String value='Alpha'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = :value'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R035",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = \\'alpha\\''); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R036",
+      "code": "String value='alpha'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = :value'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R037",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = \\'Bob\\\\\\'s Shop\\''); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R038",
+      "code": "String value='Bob\\'s Shop'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = :value'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R039",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = \\'C:\\\\\\\\Trail\\''); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R040",
+      "code": "String value='C:\\\\Trail'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = :value'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R041",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = \\'A_%trail\\''); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R042",
+      "code": "String value='A_%trail'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = :value'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R043",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = \\'\\''); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R044",
+      "code": "String value=''; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = :value'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R045",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = \\'\\\\t\\''); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R046",
+      "code": "String value='\\t'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = :value'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R047",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = \\'\\\\n\\''); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R048",
+      "code": "String value='\\n'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = :value'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R049",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE \\'A%\\''); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R050",
+      "code": "String pattern='A%'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE :pattern'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R051",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE \\'%a%\\''); r=rows.size();",
+      "expected": "5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R052",
+      "code": "String pattern='%a%'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE :pattern'); r=rows.size();",
+      "expected": "5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R053",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE \\'_eta\\''); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R054",
+      "code": "String pattern='_eta'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE :pattern'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R055",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE \\'A_%\\''); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R056",
+      "code": "String pattern='A_%'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE :pattern'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R057",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE \\'A\\\\\\\\_\\\\\\\\%trail\\''); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R058",
+      "code": "String pattern='A\\\\_\\\\%trail'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE :pattern'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R059",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE \\'C:%\\''); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R060",
+      "code": "String pattern='C:%'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE :pattern'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R061",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE \\'Bob\\\\\\'s%\\''); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R062",
+      "code": "String pattern='Bob\\'s%'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE :pattern'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R063",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE \\'\\''); r=rows.size();",
+      "expected": "EXC|System.QueryException|invalid LIKE value: ",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R064",
+      "code": "String pattern=''; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE :pattern'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R065",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE \\'%\\''); r=rows.size();",
+      "expected": "7",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R066",
+      "code": "String pattern='%'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE :pattern'); r=rows.size();",
+      "expected": "7",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R067",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE \\'alpha\\''); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R068",
+      "code": "String pattern='alpha'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE :pattern'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R069",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue = 0'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R070",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue = 10.5'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R071",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue = 20'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R072",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue = -1'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R073",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue = 1e1'); r=rows.size();",
+      "expected": "EXC|System.QueryException|missing value at '<EOF>'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R074",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue = +20'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R075",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue = null'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R076",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Contact WHERE Id IN :cids AND Birthdate = 2000-01-01'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R077",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Contact WHERE Id IN :cids AND Birthdate < 2001-02-03'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R078",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Contact WHERE Id IN :cids AND Birthdate = null'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R079",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Contact WHERE Id IN :cids AND Birthdate != null'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R080",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Contact WHERE Id IN :cids AND IsDeleted = true'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R081",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Contact WHERE Id IN :cids AND IsDeleted = false'); r=rows.size();",
+      "expected": "3",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R082",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Contact WHERE Id IN :cids AND Birthdate = TODAY'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R083",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Contact WHERE Id IN :cids AND Birthdate = LAST_N_DAYS:30'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R084",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Contact WHERE Id IN :cids AND CreatedDate = TODAY'); r=rows.size();",
+      "expected": "3",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R085",
+      "code": "String value=null; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = :value'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R086",
+      "code": "Decimal value=null; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue = :value'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R087",
+      "code": "Integer value=20; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue = :value'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R088",
+      "code": "Long value=20L; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue = :value'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R089",
+      "code": "String value='20'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue = :value'); r=rows.size();",
+      "expected": "EXC|System.QueryException|Invalid bind expression type of String for column of type Decimal",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R090",
+      "code": "Double value=20.0; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue = :value'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R091",
+      "code": "Date value=Date.newInstance(2000,1,1); List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND CreatedDate = :value'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R092",
+      "code": "Datetime value=Datetime.newInstanceGMT(2000,1,1,0,0,0); List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND CreatedDate > :value'); r=rows.size();",
+      "expected": "7",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R093",
+      "code": "Set<Id> value=new Set<Id>{selectedId}; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id IN :value'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R094",
+      "code": "Set<Id> value=new Set<Id>(); List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id IN :value'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R095",
+      "code": "Set<Id> value=null; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id IN :value'); r=rows.size();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R096",
+      "code": "List<String> value=new List<String>{'Alpha','Beta'}; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name IN :value'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R097",
+      "code": "List<String> value=new List<String>{null,'Alpha','Alpha'}; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name IN :value'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R098",
+      "code": "List<String> value=null; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name IN :value'); r=rows.size();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R099",
+      "code": "List<Account> value=new List<Account>{seed[0]}; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id IN :value'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R100",
+      "code": "String value=String.valueOf(selectedId); List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id = :value'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R101",
+      "code": "String value='invalid'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id = :value'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R102",
+      "code": "Boolean value=true; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = :value'); r=rows.size();",
+      "expected": "EXC|System.QueryException|Invalid bind expression type of Boolean for column of type String",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R103",
+      "code": "Id value=null; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id = :value'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R104",
+      "code": "String value='Alpha'; List<Account> rows=[SELECT Id FROM Account WHERE Id IN :sids AND Name = :value]; r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R105",
+      "code": "String value=null; List<Account> rows=[SELECT Id FROM Account WHERE Id IN :sids AND Name = :value]; r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R106",
+      "code": "Decimal value=20; List<Account> rows=[SELECT Id FROM Account WHERE Id IN :sids AND AnnualRevenue = :value]; r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R107",
+      "code": "Set<Id> value=new Set<Id>(); List<Account> rows=[SELECT Id FROM Account WHERE Id IN :sids AND Id IN :value]; r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R108",
+      "code": "Set<Id> value=null; List<Account> rows=[SELECT Id FROM Account WHERE Id IN :sids AND Id IN :value]; r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R109",
+      "code": " List<Account> rows=[SELECT Id FROM Account WHERE Id IN :sids AND Id = :seed[0].Id]; r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R110",
+      "code": " List<Account> rows=[SELECT Id FROM Account WHERE Id IN :sids AND Id IN :sids]; r=rows.size();",
+      "expected": "7",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R117",
+      "code": "Map<String,Object> bindings=null; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND Name = :value',bindings,AccessLevel.SYSTEM_MODE); r=rows.size();",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R119",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue = 20'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R120",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue != 20'); r=rows.size();",
+      "expected": "5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R121",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue < 20'); r=rows.size();",
+      "expected": "3",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R122",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue <= 20'); r=rows.size();",
+      "expected": "5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R123",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue > 20'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R124",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue >= 20'); r=rows.size();",
+      "expected": "3",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R125",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND NumberOfEmployees = 2'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R126",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND NumberOfEmployees != 2'); r=rows.size();",
+      "expected": "5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R127",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND NumberOfEmployees < 2'); r=rows.size();",
+      "expected": "3",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R128",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND NumberOfEmployees <= 2'); r=rows.size();",
+      "expected": "5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R129",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND NumberOfEmployees > 2'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R130",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND NumberOfEmployees >= 2'); r=rows.size();",
+      "expected": "3",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R131",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name = \\'Gamma\\''); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R132",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name != \\'Gamma\\''); r=rows.size();",
+      "expected": "6",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R133",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name < \\'Gamma\\''); r=rows.size();",
+      "expected": "5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R134",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name <= \\'Gamma\\''); r=rows.size();",
+      "expected": "6",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R135",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name > \\'Gamma\\''); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R136",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name >= \\'Gamma\\''); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R137",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue = null'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R138",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue != null'); r=rows.size();",
+      "expected": "6",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R139",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Phone = null'); r=rows.size();",
+      "expected": "3",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R140",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Phone != null'); r=rows.size();",
+      "expected": "4",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R141",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name IN (\\'Alpha\\',\\'Beta\\')'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R142",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name NOT IN (\\'Alpha\\',\\'Beta\\')'); r=rows.size();",
+      "expected": "5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R143",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue IN (0,20,null)'); r=rows.size();",
+      "expected": "5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R144",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND AnnualRevenue NOT IN (0,20,null)'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R145",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name IN (\\'alpha\\',\\'ALPHA\\')'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R146",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND NumberOfEmployees IN (0,1,2)'); r=rows.size();",
+      "expected": "5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R147",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND (Name=\\'Alpha\\' OR Name=\\'Beta\\')'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R148",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND NOT (Name=\\'Alpha\\' OR Name=\\'Beta\\')'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'NOT'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R149",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND (Name=\\'Alpha\\' OR Name=\\'Beta\\') AND Phone!=null'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R150",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name=\\'Alpha\\' OR Name=\\'Beta\\' AND Phone!=null'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'OR'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R151",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND NOT Name=\\'Alpha\\''); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'NOT'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R152",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND (AnnualRevenue>=10 AND AnnualRevenue<=20)'); r=rows.size();",
+      "expected": "3",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R153",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name LIKE \\'A%\\' AND AnnualRevenue=null'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R154",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Name!=\\'Alpha\\' AND Phone=null'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R155",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id IN (SELECT AccountId FROM Contact WHERE Id IN :cids)'); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R156",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id NOT IN (SELECT AccountId FROM Contact WHERE Id IN :cids)'); r=rows.size();",
+      "expected": "5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R157",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id IN (SELECT AccountId FROM Contact WHERE Id IN :cids AND IsDeleted=true)'); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R158",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id NOT IN (SELECT AccountId FROM Contact WHERE Id IN :cids AND AccountId!=null)'); r=rows.size();",
+      "expected": "5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R159",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id IN (SELECT Id FROM Account WHERE Id IN :sids)'); r=rows.size();",
+      "expected": "EXC|System.QueryException|The inner and outer selects should not be on the same object type",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R160",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id IN (SELECT AccountId FROM Contact WHERE Id IN :cids) OR Name=\\'Gamma\\''); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'OR'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R161",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id IN (SELECT AccountId FROM Contact WHERE Id IN :cids ORDER BY LastName)'); r=rows.size();",
+      "expected": "EXC|System.QueryException|missing value at 'ORDER'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R162",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids AND Id IN (SELECT AccountId FROM Contact WHERE Id IN :cids LIMIT 1)'); r=rows.size();",
+      "expected": "EXC|System.QueryException|missing value at 'LIMIT'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R163",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name'); r=ss.names(rows);",
+      "expected": "A_%trail|Alpha|Beta|Bob's Shop|C:\\Trail|Gamma|Zero",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R164",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name ASC'); r=ss.names(rows);",
+      "expected": "A_%trail|Alpha|Beta|Bob's Shop|C:\\Trail|Gamma|Zero",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R165",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name DESC'); r=ss.names(rows);",
+      "expected": "Zero|Gamma|C:\\Trail|Bob's Shop|Beta|Alpha|A_%trail",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R166",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY AnnualRevenue ASC NULLS FIRST,Name ASC'); r=ss.names(rows);",
+      "expected": "Alpha|Beta|Zero|Gamma|Bob's Shop|C:\\Trail|A_%trail",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R167",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY AnnualRevenue ASC NULLS LAST,Name ASC'); r=ss.names(rows);",
+      "expected": "Beta|Zero|Gamma|Bob's Shop|C:\\Trail|A_%trail|Alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R168",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY AnnualRevenue DESC NULLS FIRST,Name ASC'); r=ss.names(rows);",
+      "expected": "Alpha|A_%trail|Bob's Shop|C:\\Trail|Gamma|Beta|Zero",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R169",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY AnnualRevenue DESC NULLS LAST,Name ASC'); r=ss.names(rows);",
+      "expected": "A_%trail|Bob's Shop|C:\\Trail|Gamma|Beta|Zero|Alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R170",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY NumberOfEmployees,Name DESC'); r=ss.names(rows);",
+      "expected": "Alpha|Zero|Beta|Gamma|C:\\Trail|Bob's Shop|A_%trail",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R171",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Phone ASC NULLS FIRST,Name'); r=ss.names(rows);",
+      "expected": "Alpha|Bob's Shop|Zero|Beta|C:\\Trail|Gamma|A_%trail",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R172",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Phone DESC NULLS LAST,Name'); r=ss.names(rows);",
+      "expected": "A_%trail|C:\\Trail|Gamma|Beta|Alpha|Bob's Shop|Zero",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R173",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name DESC,AnnualRevenue ASC'); r=ss.names(rows);",
+      "expected": "Zero|Gamma|C:\\Trail|Bob's Shop|Beta|Alpha|A_%trail",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R174",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Description,Name'); r=ss.names(rows);",
+      "expected": "UNCAUGHT|System.UnexpectedException: field 'Description' can not be sorted in a query call",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R175",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 0'); r=ss.names(rows);",
+      "expected": "",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R176",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 1'); r=ss.names(rows);",
+      "expected": "A_%trail",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R177",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 2'); r=ss.names(rows);",
+      "expected": "A_%trail|Alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R178",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 7'); r=ss.names(rows);",
+      "expected": "A_%trail|Alpha|Beta|Bob's Shop|C:\\Trail|Gamma|Zero",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R179",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 8'); r=ss.names(rows);",
+      "expected": "A_%trail|Alpha|Beta|Bob's Shop|C:\\Trail|Gamma|Zero",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R180",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 200'); r=ss.names(rows);",
+      "expected": "A_%trail|Alpha|Beta|Bob's Shop|C:\\Trail|Gamma|Zero",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R181",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 2 OFFSET 0'); r=ss.names(rows);",
+      "expected": "A_%trail|Alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R182",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 2 OFFSET 1'); r=ss.names(rows);",
+      "expected": "Alpha|Beta",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R183",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 2 OFFSET 6'); r=ss.names(rows);",
+      "expected": "Zero",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R184",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 2 OFFSET 7'); r=ss.names(rows);",
+      "expected": "",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R185",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 2 OFFSET 8'); r=ss.names(rows);",
+      "expected": "",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R186",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 2 OFFSET 2000'); r=ss.names(rows);",
+      "expected": "",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R187",
+      "code": " List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 2 OFFSET 2001'); r=ss.names(rows);",
+      "expected": "EXC|System.QueryException|Maximum SOQL offset allowed for apiName Account is 2000",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R188",
+      "code": "Integer n=2; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT :n'); r=ss.names(rows);",
+      "expected": "A_%trail|Alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R189",
+      "code": "Integer n=0; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT :n'); r=ss.names(rows);",
+      "expected": "",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R190",
+      "code": "Integer n=-1; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT :n'); r=ss.names(rows);",
+      "expected": "EXC|System.QueryException|Limit must be a non-negative value",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R191",
+      "code": "Integer n=null; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT :n'); r=ss.names(rows);",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R192",
+      "code": "String n='2'; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT :n'); r=ss.names(rows);",
+      "expected": "EXC|System.QueryException|Limit expression must be of type Integer",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R193",
+      "code": "Integer n=1; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name LIMIT 2 OFFSET :n'); r=ss.names(rows);",
+      "expected": "Alpha|Beta",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R194",
+      "code": "Integer n=-1; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name OFFSET :n'); r=ss.names(rows);",
+      "expected": "EXC|System.QueryException|SOQL offset must be a non-negative value",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R195",
+      "code": "Integer n=null; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name OFFSET :n'); r=ss.names(rows);",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R196",
+      "code": "Integer n=2001; List<SObject> rows=Database.query('SELECT Id,Name FROM Account WHERE Id IN :sids ORDER BY Name OFFSET :n'); r=ss.names(rows);",
+      "expected": "EXC|System.QueryException|Maximum SOQL offset allowed for apiName Account is 2000",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R197",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(STANDARD) FROM Account WHERE Id=:selectedId'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R198",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(STANDARD) FROM Account WHERE Id=:selectedId LIMIT 1'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R199",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(ALL) FROM Account WHERE Id=:selectedId'); r=rows.size();",
+      "expected": "EXC|System.QueryException|The SOQL FIELDS function is not supported with an unbounded set of fields in this API.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R200",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(ALL) FROM Account WHERE Id=:selectedId LIMIT 1'); r=rows.size();",
+      "expected": "EXC|System.QueryException|The SOQL FIELDS function is not supported with an unbounded set of fields in this API.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R201",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(CUSTOM) FROM Account WHERE Id=:selectedId'); r=rows.size();",
+      "expected": "EXC|System.QueryException|The SOQL FIELDS function is not supported with an unbounded set of fields in this API.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R202",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(CUSTOM) FROM Account WHERE Id=:selectedId LIMIT 1'); r=rows.size();",
+      "expected": "EXC|System.QueryException|The SOQL FIELDS function is not supported with an unbounded set of fields in this API.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R203",
+      "code": " List<SObject> rows=Database.query('SELECT Id,FIELDS(STANDARD) FROM Account WHERE Id=:selectedId'); r=rows.size();",
+      "expected": "EXC|System.QueryException|duplicate field selected: Id",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R204",
+      "code": " List<SObject> rows=Database.query('SELECT Id,FIELDS(STANDARD) FROM Account WHERE Id=:selectedId LIMIT 1'); r=rows.size();",
+      "expected": "EXC|System.QueryException|duplicate field selected: Id",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R205",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(STANDARD),Name FROM Account WHERE Id=:selectedId'); r=rows.size();",
+      "expected": "EXC|System.QueryException|duplicate field selected: Name",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R206",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(STANDARD),Name FROM Account WHERE Id=:selectedId LIMIT 1'); r=rows.size();",
+      "expected": "EXC|System.QueryException|duplicate field selected: Name",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R210",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(STANDARD) FROM Account WHERE Id=:selectedId ORDER BY Name LIMIT 1'); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R211",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(ALL) FROM Account WHERE Id=:selectedId LIMIT 200'); r=rows.size();",
+      "expected": "EXC|System.QueryException|The SOQL FIELDS function is not supported with an unbounded set of fields in this API.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R212",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(ALL) FROM Account WHERE Id=:selectedId LIMIT 201'); r=rows.size();",
+      "expected": "EXC|System.QueryException|The SOQL FIELDS function is not supported with an unbounded set of fields in this API.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R213",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(CUSTOM) FROM Account WHERE Id=:selectedId LIMIT 200'); r=rows.size();",
+      "expected": "EXC|System.QueryException|The SOQL FIELDS function is not supported with an unbounded set of fields in this API.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R214",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(BOGUS) FROM Account WHERE Id=:selectedId LIMIT 1'); r=rows.size();",
+      "expected": "EXC|System.QueryException|The SOQL FIELDS function only supports arguments of (all), (custom), (standard); (BOGUS) is not supported.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R215",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(STANDARD),FIELDS(STANDARD) FROM Account WHERE Id=:selectedId LIMIT 1'); r=rows.size();",
+      "expected": "EXC|System.QueryException|Invalid field: 'STANDARD'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R216",
+      "code": "List<SObject> rows=Database.query('SELECT FIELDS(STANDARD) FROM Account WHERE Id=:selectedId'); Account a=(Account)rows[0]; r=a.Name+'|'+String.valueOf(a.AnnualRevenue)+'|'+(a.Id==selectedId);",
+      "expected": "Alpha|null|true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R217",
+      "code": " List<SObject> rows=Database.query('SELECT FROM'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'SELECT FROM'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R218",
+      "code": " List<SObject> rows=Database.query('SELECT FROM Account'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'SELECT FROM'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R219",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: '<EOF>'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R220",
+      "code": " List<SObject> rows=Database.query('SELECT Id, FROM Account'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'FROM'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R221",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: '<EOF>'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R222",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Name ='); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: '<EOF>'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R223",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Name = \\'unterminated'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: '<EOF>'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R224",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Id IN ()'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'Id IN ()'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R225",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Id IN :missing'); r=rows.size();",
+      "expected": "EXC|System.QueryException|Variable does not exist: missing",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R226",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Id IN :sids LIMIT -1'); r=rows.size();",
+      "expected": "EXC|System.QueryException|Limit must be a non-negative value",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R227",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Id IN :sids LIMIT 1.5'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: '1.5'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R228",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Id IN :sids OFFSET -1'); r=rows.size();",
+      "expected": "EXC|System.QueryException|SOQL offset must be a non-negative value",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R229",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Id IN :sids ORDER BY'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: '<EOF>'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R230",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Id IN :sids ORDER BY Name NULLS MIDDLE'); r=rows.size();",
+      "expected": "EXC|System.QueryException|missing value at 'MIDDLE'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R231",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Id IN :sids AND Name === \\'Alpha\\''); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: '='",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R232",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Id IN :sids AND AnnualRevenue = \\'abc\\''); r=rows.size();",
+      "expected": "EXC|System.QueryException|value of filter criterion for field 'AnnualRevenue' must be of type double and should not be enclosed in quotes",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R233",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Id IN :sids AND Id = \\'invalid\\''); r=rows.size();",
+      "expected": "EXC|System.QueryException|invalid ID field: invalid",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R234",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Contact WHERE Id IN :cids AND Birthdate = 2000-13-01'); r=rows.size();",
+      "expected": "EXC|System.QueryException|Invalid date: 2000-13-01",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R235",
+      "code": " List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Id IN :sids; SELECT Id FROM Account'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: ';'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R236",
+      "code": " List<SObject> rows=Database.query('SELECT * FROM Account'); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: 'SELECT *'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R237",
+      "code": " List<SObject> rows=Database.query(''); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: '<EOF>'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R238",
+      "code": " List<SObject> rows=Database.query('   '); r=rows.size();",
+      "expected": "EXC|System.QueryException|unexpected token: '<EOF>'",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R239",
+      "code": "String text=null; r=Database.query(text).size();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R240",
+      "code": "Id target=null; Account a=[SELECT Id FROM Account WHERE Id=:target]; r=a.Id;",
+      "expected": "EXC|System.QueryException|List has no rows for assignment to SObject",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R241",
+      "code": "Account a=[SELECT Id FROM Account WHERE Id IN :sids]; r=a.Id==selectedId;",
+      "expected": "EXC|System.QueryException|List has more than 1 row for assignment to SObject",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R242",
+      "code": "Account a=[SELECT Id FROM Account WHERE Id=:selectedId]; r=a.Id==selectedId;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R243",
+      "code": "Account a=Database.query('SELECT Id,Name FROM Account WHERE Id=:selectedId'); r=a.Name;",
+      "expected": "Alpha",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R244",
+      "code": "Contact c=(Contact)Database.query('SELECT Id FROM Account WHERE Id=:selectedId')[0]; r=c.Id;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Account to Contact",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R245",
+      "code": "List<Account> rows=[SELECT Id FROM Account WHERE Id IN :sids AND Name='Alpha']; r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R246",
+      "code": "List<Account> rows=[SELECT Id FROM Account WHERE Id IN :sids AND Name='Bob\\'s Shop']; r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R247",
+      "code": "List<Account> rows=[SELECT Id FROM Account WHERE Id IN :sids AND Name='C:\\\\Trail']; r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R248",
+      "code": "List<Account> rows=[SELECT Id FROM Account WHERE Id IN :sids AND Name='A_%trail']; r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R249",
+      "code": "Map<String,Object> bindings=new Map<String,Object>{'owned'=>sids,'value'=>'Alpha'}; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND Name = :value',bindings,AccessLevel.USER_MODE); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R250",
+      "code": "Map<String,Object> bindings=new Map<String,Object>{'owned'=>sids,'value'=>null}; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND Name = :value',bindings,AccessLevel.USER_MODE); r=rows.size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R251",
+      "code": "Map<String,Object> bindings=new Map<String,Object>{'owned'=>sids,'value'=>20}; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND AnnualRevenue = :value',bindings,AccessLevel.USER_MODE); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R252",
+      "code": "Map<String,Object> bindings=new Map<String,Object>{'owned'=>sids,'value'=>new List<String>{'Alpha','Beta'}}; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND Name IN :value',bindings,AccessLevel.USER_MODE); r=rows.size();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R253",
+      "code": "Map<String,Object> bindings=new Map<String,Object>{'owned'=>sids,'VALUE'=>'Alpha'}; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND Name = :value',bindings,AccessLevel.USER_MODE); r=rows.size();",
+      "expected": "1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R254",
+      "code": "Map<String,Object> bindings=new Map<String,Object>{'owned'=>sids}; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND Name = :missing',bindings,AccessLevel.USER_MODE); r=rows.size();",
+      "expected": "EXC|System.QueryException|Key 'missing' does not exist in the bindMap",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R255",
+      "code": "Map<String,Object> bindings=null; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND Name = :value',bindings,AccessLevel.USER_MODE); r=rows.size();",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R256",
+      "code": "Map<String,Object> bindings=new Map<String,Object>{'owned'=>sids,'value'=>true}; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND AnnualRevenue = :value',bindings,AccessLevel.USER_MODE); r=rows.size();",
+      "expected": "EXC|System.QueryException|Invalid bind expression type of Boolean for column of type Decimal",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "C001",
+      "code": "Object r=[SELECT Id FROM Account WHERE Id=null LIMIT 1 FOR UPDATE].size(); pq.out('C001',r);",
+      "expected": "0",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C005",
+      "code": "Object r=[SELECT Id FROM Account WHERE Id=null LIMIT 1 FOR VIEW].size(); pq.out('C005',r);",
+      "expected": "0",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C006",
+      "code": "Object r=[SELECT Id FROM Account WHERE Id=null LIMIT 1 FOR REFERENCE].size(); pq.out('C006',r);",
+      "expected": "0",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C007",
+      "code": "Object r=[SELECT FIELDS(STANDARD) FROM Account WHERE Id=null LIMIT 1].size(); pq.out('C007',r);",
+      "expected": "0",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C015",
+      "code": "Object r=[SELECT Id FROM Account WHERE Id=null AND Name='Bob\\'s Shop'].size(); pq.out('C015',r);",
+      "expected": "0",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C016",
+      "code": "Object r=[SELECT Id FROM Account WHERE Id=null AND Name='C:\\\\Trail'].size(); pq.out('C016',r);",
+      "expected": "0",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "Q001",
+      "code": "r=Database.query('SELECT toLabel(Rating) DisplayName FROM Account WHERE Id=null').size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "Q002",
+      "code": "r=Database.query('SELECT FORMAT(AnnualRevenue) formattedRevenue FROM Account WHERE Id=null').size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "Q003",
+      "code": "r=Database.query('SELECT COUNT(Id) total,Rating ratingKey FROM Account WHERE Id=null GROUP BY Rating').size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "Q004",
+      "code": "r=Database.query('SELECT CALENDAR_YEAR(Birthdate) yearPart,COUNT(Id) total FROM Contact WHERE Id=null GROUP BY CALENDAR_YEAR(Birthdate)').size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "Q005",
+      "code": "r=Database.query('SELECT Name groupName,COUNT(Id) total FROM Account WHERE Id=null GROUP BY Name').size();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "Q006",
+      "code": "r=Database.query('SELECT Id,,Name FROM Account WHERE Id=null').size();",
+      "expected": "EXC|System.QueryException|unexpected token: ','",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "Q007",
+      "code": "r=Database.query('SELECT Id,(SELECT Id,,LastName FROM Contacts) FROM Account WHERE Id=null').size();",
+      "expected": "EXC|System.QueryException|unexpected token: ','",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "C003",
+      "code": "Object r=[SELECT Id FROM Account WHERE Id=null ORDER BY Name FOR UPDATE].size(); pq.out('C003',r);",
+      "expected": "COMPILE_ERROR\tline 6: Explicit ORDER BY not allowed when locking rows (Id order is implied)",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C008",
+      "code": "Object r=[SELECT FIELDS(ALL) FROM Account WHERE Id=null LIMIT 1].size(); pq.out('C008',r);",
+      "expected": "COMPILE_ERROR\tline 6: The SOQL FIELDS function is not supported with an unbounded set of fields in this API.",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C009",
+      "code": "Object r=[SELECT FIELDS(CUSTOM) FROM Account WHERE Id=null LIMIT 1].size(); pq.out('C009',r);",
+      "expected": "COMPILE_ERROR\tline 6: The SOQL FIELDS function is not supported with an unbounded set of fields in this API.",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C013",
+      "code": "Object r=[SELECT Id FROM Account WHERE Id=:notDeclared].size(); pq.out('C013',r);",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: notDeclared",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C014",
+      "code": "Boolean b=true; Object r=[SELECT Id FROM Account WHERE AnnualRevenue=:b].size(); pq.out('C014',r);",
+      "expected": "COMPILE_ERROR\tline 6: Invalid bind expression type of Boolean for column of type Decimal",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C017",
+      "code": "Object r=[SELECT Id FROM Account WHERE Id IN (SELECT AccountId FROM Contact ORDER BY LastName)].size(); pq.out('C017',r);",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'r'.",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "Q008",
+      "code": "r=Database.query('SELECT Id FROM Contact WHERE LastName=\\'X\\' OR Birthdate NOT IN (TODAY,YESTERDAY)').size()>=0;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "Q009",
+      "code": "r=Database.query('SELECT Id FROM Contact WHERE LastName=\\'X\\' AND Birthdate NOT IN (TODAY,YESTERDAY)').size()>=0;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "E002",
+      "code": "Object result=[SELECT Id FROM Account WHERE Id IN (SELECT AccountId FROM Contact ORDER BY LastName)].size(); pq.out('E002',result);",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'result'.",
+      "compile": true,
+      "nativeNull": false
+    }
+  ],
+  "remaining": [
+    {
+      "id": "R111",
+      "owner": "security access",
+      "reason": "Explicit SYSTEM_MODE restriction is specific to anonymous Apex; named-route access modes need separate native observations.",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "code": "Map<String,Object> bindings=new Map<String,Object>{'owned'=>sids,'value'=>'Alpha'}; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND Name = :value',bindings,AccessLevel.SYSTEM_MODE); r=rows.size();",
+      "compile": false
+    },
+    {
+      "id": "R112",
+      "owner": "security access",
+      "reason": "Explicit SYSTEM_MODE restriction is specific to anonymous Apex; named-route access modes need separate native observations.",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "code": "Map<String,Object> bindings=new Map<String,Object>{'owned'=>sids,'value'=>null}; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND Name = :value',bindings,AccessLevel.SYSTEM_MODE); r=rows.size();",
+      "compile": false
+    },
+    {
+      "id": "R113",
+      "owner": "security access",
+      "reason": "Explicit SYSTEM_MODE restriction is specific to anonymous Apex; named-route access modes need separate native observations.",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "code": "Map<String,Object> bindings=new Map<String,Object>{'owned'=>sids,'value'=>20}; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND AnnualRevenue = :value',bindings,AccessLevel.SYSTEM_MODE); r=rows.size();",
+      "compile": false
+    },
+    {
+      "id": "R114",
+      "owner": "security access",
+      "reason": "Explicit SYSTEM_MODE restriction is specific to anonymous Apex; named-route access modes need separate native observations.",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "code": "Map<String,Object> bindings=new Map<String,Object>{'owned'=>sids,'value'=>new List<String>{'Alpha','Beta'}}; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND Name IN :value',bindings,AccessLevel.SYSTEM_MODE); r=rows.size();",
+      "compile": false
+    },
+    {
+      "id": "R115",
+      "owner": "security access",
+      "reason": "Explicit SYSTEM_MODE restriction is specific to anonymous Apex; named-route access modes need separate native observations.",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "code": "Map<String,Object> bindings=new Map<String,Object>{'owned'=>sids,'VALUE'=>'Alpha'}; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND Name = :value',bindings,AccessLevel.SYSTEM_MODE); r=rows.size();",
+      "compile": false
+    },
+    {
+      "id": "R116",
+      "owner": "security access",
+      "reason": "Explicit SYSTEM_MODE restriction is specific to anonymous Apex; named-route access modes need separate native observations.",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "code": "Map<String,Object> bindings=new Map<String,Object>{'owned'=>sids}; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND Name = :missing',bindings,AccessLevel.SYSTEM_MODE); r=rows.size();",
+      "compile": false
+    },
+    {
+      "id": "R118",
+      "owner": "security access",
+      "reason": "Explicit SYSTEM_MODE restriction is specific to anonymous Apex; named-route access modes need separate native observations.",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "code": "Map<String,Object> bindings=new Map<String,Object>{'owned'=>sids,'value'=>true}; List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Id IN :owned AND AnnualRevenue = :value',bindings,AccessLevel.SYSTEM_MODE); r=rows.size();",
+      "compile": false
+    },
+    {
+      "id": "R207",
+      "owner": "SOQL aggregation",
+      "reason": "Grouped/global FIELDS expansion reports native uncatchable aggregation diagnostics; aggregation owns the result contract.",
+      "expected": "UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: IsDeleted",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(STANDARD) FROM Account WHERE Id=:selectedId GROUP BY Id'); r=rows.size();",
+      "compile": false
+    },
+    {
+      "id": "R208",
+      "owner": "SOQL aggregation",
+      "reason": "Grouped/global FIELDS expansion reports native uncatchable aggregation diagnostics; aggregation owns the result contract.",
+      "expected": "UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Id",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(STANDARD),COUNT(Id) total FROM Account WHERE Id=:selectedId'); r=rows.size();",
+      "compile": false
+    },
+    {
+      "id": "R209",
+      "owner": "SOQL aggregation",
+      "reason": "Grouped/global FIELDS expansion reports native uncatchable aggregation diagnostics; aggregation owns the result contract.",
+      "expected": "UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Id",
+      "code": " List<SObject> rows=Database.query('SELECT FIELDS(STANDARD),MIN(AnnualRevenue) total FROM Account WHERE Id=:selectedId'); r=rows.size();",
+      "compile": false
+    },
+    {
+      "id": "C002",
+      "owner": "SOQL selection",
+      "reason": "Apex source parser rejects LIMIT after FOR UPDATE before SOQL semantics, emitting generic syntax error without the native assignment-token diagnostic.",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'r'.",
+      "code": "Object r=[SELECT Id FROM Account WHERE Id=null FOR UPDATE LIMIT 1].size(); pq.out('C002',r);",
+      "compile": true
+    },
+    {
+      "id": "C004",
+      "owner": "SOQL selection",
+      "reason": "Apex source parser rejects LIMIT after OFFSET before SOQL semantics, emitting generic syntax error without the native assignment-token diagnostic.",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'r'.",
+      "code": "Object r=[SELECT Id FROM Account WHERE Id=null OFFSET 0 LIMIT 1].size(); pq.out('C004',r);",
+      "compile": true
+    },
+    {
+      "id": "C010",
+      "owner": "SOQL aggregation",
+      "reason": "Grouped/global FIELDS expansion reports native uncatchable aggregation diagnostics; aggregation owns the result contract.",
+      "expected": "UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: IsDeleted",
+      "code": "Object r=[SELECT FIELDS(STANDARD) FROM Account WHERE Id=null GROUP BY Id].size(); pq.out('C010',r);",
+      "compile": true
+    },
+    {
+      "id": "C011",
+      "owner": "SOQL selection",
+      "reason": "Apex source parser rejects the empty SELECT list before SOQL semantics, emitting generic syntax error without the native assignment-token diagnostic.",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'r'.",
+      "code": "Object r=[SELECT FROM Account].size(); pq.out('C011',r);",
+      "compile": true
+    },
+    {
+      "id": "C012",
+      "owner": "SOQL selection",
+      "reason": "Apex source parser rejects missing FROM before SOQL semantics, emitting generic syntax error without the native assignment-token diagnostic.",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'r'.",
+      "code": "Object r=[SELECT Id Account].size(); pq.out('C012',r);",
+      "compile": true
+    },
+    {
+      "id": "C018",
+      "owner": "SOQL selection",
+      "reason": "Apex source parser rejects negative inline LIMIT before SOQL semantics, emitting generic syntax error instead of the native non-negative-limit diagnostic.",
+      "expected": "COMPILE_ERROR\tline 6: Limit must be a non-negative value",
+      "code": "Object r=[SELECT Id FROM Account WHERE Id=null LIMIT -1].size(); pq.out('C018',r);",
+      "compile": true
+    },
+    {
+      "id": "E001",
+      "code": "Object result=[SELECT Id FROM Account WHERE Id=null FOR UPDATE LIMIT 1].size(); pq.out('E001',result);",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'result'.",
+      "compile": true,
+      "nativeNull": false,
+      "owner": "SOQL selection",
+      "reason": "Renamed-target control for C002: Apex source parser rejects the clause order before SOQL semantics; generic syntax error still lacks native assignment-token recovery."
+    }
+  ]
+}

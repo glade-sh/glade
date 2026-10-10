@@ -29,7 +29,7 @@ case "${MODE}" in
 		;;
 esac
 
-workdir="$(mktemp -d)"
+workdir="$(mktemp -d "${TMPDIR:-/tmp}/glade-release-build.XXXXXX")"
 cleanup() {
 	rm -rf "${workdir}"
 }
@@ -118,6 +118,8 @@ prepare_shared_payload() {
 		if [[ ! -d node_modules ]]; then
 			npm ci
 		fi
+		# Reused dependencies must satisfy the same pinned preparation as npm ci.
+		node scripts/apply-lwc-shared-api67.mjs
 	)
 
 	local vscode_extension_package="not present"
@@ -286,7 +288,13 @@ if not root.is_dir() or not manifest_path.is_file() or manifest_path.is_symlink(
     raise SystemExit("ERROR: Go notice manifest is missing")
 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 with binary.open("rb") as source:
-    binary_sha256 = hashlib.file_digest(source, "sha256").hexdigest()
+    digest = hashlib.sha256()
+    while True:
+        chunk = source.read(64 * 1024)
+        if not chunk:
+            break
+        digest.update(chunk)
+    binary_sha256 = digest.hexdigest()
 if manifest.get("binarySHA256") != binary_sha256:
     raise SystemExit("ERROR: Go notice manifest binary hash mismatch")
 if manifest.get("goLicense") != "go/LICENSE":

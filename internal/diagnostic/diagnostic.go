@@ -32,6 +32,10 @@ type Diagnostic struct {
 	File     string   `json:"file,omitempty"`
 	Range    *Range   `json:"range,omitempty"`
 	Excerpt  string   `json:"excerpt,omitempty"`
+	// NativeMessage retains a measured Apex compiler diagnostic while Message
+	// keeps the richer local explanation for editors and existing consumers.
+	NativeMessage string `json:"nativeMessage,omitempty"`
+	NativeLine    *int   `json:"nativeLine,omitempty"`
 }
 
 type Report struct {

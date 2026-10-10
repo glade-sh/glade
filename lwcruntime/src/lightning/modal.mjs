@@ -1,15 +1,20 @@
+import { registerDecorators } from "lwc";
 import { createBaseComponent, renderModal } from "./base.mjs";
+import { openModal, updateModalDisabled, closeModal } from "../shell/modal-overlay.mjs";
 
 class LightningModal extends createBaseComponent("lightning-modal", renderModal) {
-  static async open(options = {}) {
-    const detail = { ...options };
-    window.dispatchEvent(new CustomEvent("lightning__modalopen", { detail }));
-    return options.result;
+  static open(options = {}) { return openModal(this, options); }
+  get disableClose() { return this.__disableClose; }
+  set disableClose(value) {
+    this.__disableClose = value;
+    updateModalDisabled(this, value);
   }
-
-  close(result) {
-    this.dispatchEvent(new CustomEvent("close", { bubbles: true, composed: true, detail: { result } }));
-  }
+  close(result) { return closeModal(this, result); }
 }
+
+registerDecorators(LightningModal, {
+  publicProps: { disableClose: { config: 3 } },
+  publicMethods: ["close"],
+});
 
 export default LightningModal;

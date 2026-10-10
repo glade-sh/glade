@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/soql"
 )
 
 func TestCompileDMLAccessModesPreservePrefixAndSuffixSyntax(t *testing.T) {
@@ -129,4 +130,157 @@ func firstLiteralValue(program ir.Program) string {
 		}
 	}
 	return ""
+}
+
+func TestCompileAPI67InlineSOQLPreservesBackslashEscapes(t *testing.T) {
+	program, err := CompileAnonymousWithOptions(`
+String apexPath = 'C:\\Trail';
+List<Account> rows = [SELECT Id FROM Account WHERE Name = 'C:\\Trail'];
+`, CompileOptions{APIVersion: "67.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(program.Instructions) != 2 {
+		t.Fatalf("instructions = %#v, want ordinary string and inline SOQL", program.Instructions)
+	}
+	apexPath, err := parseLiteral(firstLiteralValue(program))
+	if err != nil {
+		t.Fatalf("parse ordinary Apex string literal: %v", err)
+	}
+	if got, want := apexPath.Text, `C:\Trail`; got != want {
+		t.Errorf("ordinary Apex string = %q, want %q", got, want)
+	}
+	if got, want := program.Instructions[1].Expr.Value, `SELECT Id FROM Account WHERE Name = 'C:\\Trail'`; got != want {
+		t.Errorf("inline SOQL = %q, want %q", got, want)
+	}
+}
+
+func TestCompileAPI67InlineSOQLNormalizesEscapedQuote(t *testing.T) {
+	program, err := CompileAnonymousWithOptions(`
+List<Account> rows = [SELECT Id FROM Account WHERE Name = 'Bob\'s Shop'];
+`, CompileOptions{APIVersion: "67.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(program.Instructions) != 1 {
+		t.Fatalf("instructions = %#v, want one inline SOQL declaration", program.Instructions)
+	}
+	if got, want := program.Instructions[0].Expr.Value, `SELECT Id FROM Account WHERE Name = 'Bob''s Shop'`; got != want {
+		t.Fatalf("inline SOQL = %q, want normalized quote text %q", got, want)
+	}
+}
+
+func TestCompileAPI67InlineSOQLNormalizesUnicodeEscapes(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		source string
+		want   string
+	}{
+		{
+			name:   "surrogate pair",
+			source: `List<Account> rows = [SELECT Id FROM Account WHERE Name = '\uD83D\uDE00'];`,
+			want:   `SELECT Id FROM Account WHERE Name = '😀'`,
+		},
+		{
+			name:   "BMP character",
+			source: `List<Account> rows = [SELECT Id FROM Account WHERE Name = '\u0041'];`,
+			want:   `SELECT Id FROM Account WHERE Name = 'A'`,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			program, err := CompileAnonymousWithOptions(test.source, CompileOptions{APIVersion: "67.0"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(program.Instructions) != 1 {
+				t.Fatalf("instructions = %#v, want one inline SOQL declaration", program.Instructions)
+			}
+			if got := program.Instructions[0].Expr.Value; got != test.want {
+				t.Fatalf("inline SOQL = %q, want decoded Unicode %q", got, test.want)
+			}
+		})
+	}
+}
+
+func TestCompileAPI67InlineSOQLPreservesAdjacentBackslashEscapes(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+	}{
+		{
+			name:   "Unicode backslash before Apex escaped backslash",
+			source: `List<Account> rows = [SELECT Id FROM Account WHERE Name = '😀\u005C\\'];`,
+		},
+		{
+			name:   "Apex escaped backslash before Unicode backslash",
+			source: `List<Account> rows = [SELECT Id FROM Account WHERE Name = '😀\\\u005C'];`,
+		},
+	}
+	wantQuery := `SELECT Id FROM Account WHERE Name = '😀\\\\'`
+	wantValue := "😀\\\\"
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			program, err := CompileAnonymousWithOptions(test.source, CompileOptions{APIVersion: "67.0"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(program.Instructions) != 1 {
+				t.Fatalf("instructions = %#v, want one inline SOQL declaration", program.Instructions)
+			}
+			gotQuery := program.Instructions[0].Expr.Value
+			if gotQuery != wantQuery {
+				t.Fatalf("inline SOQL = %q, want %q", gotQuery, wantQuery)
+			}
+			query, err := soql.Parse(gotQuery)
+			if err != nil {
+				t.Fatalf("parse reconstructed SOQL: %v", err)
+			}
+			if query.Where == nil || query.Where.Value.String != wantValue {
+				t.Fatalf("parsed string = %#v, want %q", query.Where, wantValue)
+			}
+		})
+	}
+}
+
+// Only prefix candidates lower as expressions, and only when semantic analysis
+// approved their offset; candidates mode lowers all of them for that analysis.
+// Every other case fails exactly as the name path does.
+func TestCompilePrefixStatementsLowerOnlyApprovedCandidates(t *testing.T) {
+	const locals = "Map<String,Account> m = new Map<String,Account>();\nString key = 'one';\nAccount acc = new Account();\nList<Long> l = new List<Long>{2};\n"
+	for statement, candidate := range map[string]bool{
+		"++l[0];":                                true,
+		"--l[0].AnnualRevenue;":                  true,
+		"++m.get('one').AnnualRevenue;":          true,
+		"--/*c*/m.get('one').AnnualRevenue;":     true,
+		"++m.get(key).AnnualRevenue;":            true,
+		"--m.get(acc.Id).AnnualRevenue;":         true,
+		"++m.get(acc.Owner.Name).AnnualRevenue;": false,
+		"++m.get(key).Owner.Name;":               false,
+		"++m.get(key);":                          false,
+		"++l[0][0];":                             false,
+	} {
+		source := locals + statement
+		_, namePath := CompileAnonymous(source)
+		if namePath == nil {
+			t.Fatalf("%s: the name path lowered it", statement)
+		}
+		at := map[int]bool{len(locals): true}
+		for name, options := range map[string]CompileOptions{
+			"candidates": {PrefixStatementCandidates: true},
+			"approved":   {ApprovedPrefixStatements: at},
+		} {
+			_, err := CompileAnonymousWithOptions(source, options)
+			if candidate && err != nil {
+				t.Fatalf("%s %s: %v", statement, name, err)
+			}
+			if !candidate && (err == nil || err.Error() != namePath.Error()) {
+				t.Fatalf("%s %s: got %v, want the name-path error %v", statement, name, err, namePath)
+			}
+		}
+		// A candidate at an offset nobody approved keeps the name path.
+		_, err := CompileAnonymousWithOptions(source, CompileOptions{ApprovedPrefixStatements: map[int]bool{len(locals) + 1: true}})
+		if err == nil || err.Error() != namePath.Error() {
+			t.Fatalf("%s unapproved: got %v, want the name-path error %v", statement, err, namePath)
+		}
+	}
 }

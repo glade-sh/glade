@@ -26,6 +26,7 @@ type TemplateNode struct {
 var lwcDirectivePrefixes = []string{
 	"if:true", "if:false", "for:each", "for:item", "for:index", "iterator:",
 	"key", "lwc:dom", "lwc:ref",
+	"lwc:if", "lwc:elseif", "lwc:else",
 }
 
 func ParseTemplate(source string) (*TemplateNode, error) {
@@ -44,6 +45,9 @@ func ParseTemplate(source string) (*TemplateNode, error) {
 	node := convertNode(root)
 	if node == nil {
 		return nil, fmt.Errorf("empty template")
+	}
+	if err := validateConditionalDirectives(node); err != nil {
+		return nil, err
 	}
 	return node, nil
 }

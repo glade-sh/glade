@@ -1,0 +1,93 @@
+{
+  "source": "417d543b912d4da510ca0c603f8cd0b36954d597",
+  "rows": {
+    "59.0": [
+      {
+        "id": "c_dispatch_bad_expression",
+        "message": "[Line: 1, Col: 17] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - Invalid expression {handler()} - LWC1210: Template expression doesn't allow CallExpression. The current component API version (59) is insufficient and must be increased to at least 66 for this type of expression.",
+        "type": "Error",
+        "line": null,
+        "column": null
+      },
+      {
+        "id": "c_dispatch_bad_syntax",
+        "message": "[Line: 1, Col: 337] LWC1503: Parsing error: Unexpected token (1:337)",
+        "type": "Error",
+        "line": null,
+        "column": null
+      },
+      {
+        "id": "c_handles_bad_expression",
+        "message": "[Line: 1, Col: 17] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - Invalid expression {handler()} - LWC1210: Template expression doesn't allow CallExpression. The current component API version (59) is insufficient and must be increased to at least 66 for this type of expression.",
+        "type": "Error",
+        "line": null,
+        "column": null
+      },
+      {
+        "id": "c_handles_bad_syntax",
+        "message": "[Line: 1, Col: 337] LWC1503: Parsing error: Unexpected token (1:337)",
+        "type": "Error",
+        "line": null,
+        "column": null
+      },
+      {
+        "id": "c_tree_bad_expression",
+        "message": "[Line: 1, Col: 17] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - Invalid expression {handler()} - LWC1210: Template expression doesn't allow CallExpression. The current component API version (59) is insufficient and must be increased to at least 66 for this type of expression.",
+        "type": "Error",
+        "line": null,
+        "column": null
+      },
+      {
+        "id": "c_tree_bad_syntax",
+        "message": "[Line: 1, Col: 337] LWC1503: Parsing error: Unexpected token (1:337)",
+        "type": "Error",
+        "line": null,
+        "column": null
+      },
+      {
+        "id": "c_completion_bad_expression",
+        "message": "[Line: 1, Col: 17] LWC1535: Unexpected plugin compilation error: Plugin - lwc, Hook - transform, Cause - Invalid expression {handler()} - LWC1210: Template expression doesn't allow CallExpression. The current component API version (59) is insufficient and must be increased to at least 66 for this type of expression.",
+        "type": "Error",
+        "line": null,
+        "column": null
+      },
+      {
+        "id": "c_completion_bad_syntax",
+        "message": "[Line: 1, Col: 337] LWC1503: Parsing error: Unexpected token (1:337)",
+        "type": "Error",
+        "line": null,
+        "column": null
+      }
+    ],
+    "67.0": [
+      {
+        "id": "c_dispatch_bad_syntax",
+        "message": "[Line: 1, Col: 337] LWC1503: Parsing error: Unexpected token (1:337)",
+        "type": "Error",
+        "line": null,
+        "column": null
+      },
+      {
+        "id": "c_handles_bad_syntax",
+        "message": "[Line: 1, Col: 337] LWC1503: Parsing error: Unexpected token (1:337)",
+        "type": "Error",
+        "line": null,
+        "column": null
+      },
+      {
+        "id": "c_tree_bad_syntax",
+        "message": "[Line: 1, Col: 337] LWC1503: Parsing error: Unexpected token (1:337)",
+        "type": "Error",
+        "line": null,
+        "column": null
+      },
+      {
+        "id": "c_completion_bad_syntax",
+        "message": "[Line: 1, Col: 337] LWC1503: Parsing error: Unexpected token (1:337)",
+        "type": "Error",
+        "line": null,
+        "column": null
+      }
+    ]
+  }
+}

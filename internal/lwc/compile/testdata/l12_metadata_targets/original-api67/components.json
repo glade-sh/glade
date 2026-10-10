@@ -1,0 +1,140 @@
+[
+  {
+    "ids": [
+      "c_metadata_bad_target"
+    ],
+    "mapping": {
+      "familyL12033": "c_metadata_bad_target"
+    },
+    "individual": true,
+    "exit": 1,
+    "success": false,
+    "status": "Failed",
+    "cli_status": 1,
+    "errors": [
+      {
+        "fullName": "familyL12033",
+        "fileName": "lwc/familyL12033/familyL12033.js",
+        "problem": "lightning__OwnedMissing is not a valid TARGETS",
+        "problemType": "Error"
+      }
+    ],
+    "components": {
+      "componentSuccesses": [
+        {
+          "fullName": "FamilyL12Record__c.Active__c",
+          "fileName": "objects/FamilyL12Record__c.object",
+          "componentType": "CustomField",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        },
+        {
+          "fullName": "FamilyL12Record__c.Amount__c",
+          "fileName": "objects/FamilyL12Record__c.object",
+          "componentType": "CustomField",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        },
+        {
+          "fullName": "FamilyL12Record__c.Day__c",
+          "fileName": "objects/FamilyL12Record__c.object",
+          "componentType": "CustomField",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        },
+        {
+          "fullName": "FamilyL12Record__c.Key__c",
+          "fileName": "objects/FamilyL12Record__c.object",
+          "componentType": "CustomField",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        },
+        {
+          "fullName": "FamilyL12Record__c.Label__c",
+          "fileName": "objects/FamilyL12Record__c.object",
+          "componentType": "CustomField",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        },
+        {
+          "fullName": "FamilyL12Record__c.Moment__c",
+          "fileName": "objects/FamilyL12Record__c.object",
+          "componentType": "CustomField",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        },
+        {
+          "fullName": "FamilyL12Record__c.Parent__c",
+          "fileName": "objects/FamilyL12Record__c.object",
+          "componentType": "CustomField",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        },
+        {
+          "fullName": "familyL12033",
+          "fileName": "lwc/familyL12033",
+          "componentType": "LightningComponentBundle",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        },
+        {
+          "fullName": "FamilyL12Record__c",
+          "fileName": "objects/FamilyL12Record__c.object",
+          "componentType": "CustomObject",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        },
+        {
+          "fullName": "package.xml",
+          "fileName": "package.xml",
+          "componentType": "",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        }
+      ],
+      "componentFailures": [
+        {
+          "fullName": "familyL12033",
+          "fileName": "lwc/familyL12033/familyL12033.js",
+          "componentType": "LightningComponentBundle",
+          "success": false,
+          "problem": "lightning__OwnedMissing is not a valid TARGETS",
+          "problemType": "Error",
+          "lineNumber": null,
+          "columnNumber": null
+        }
+      ]
+    },
+    "source_sha256": "f59a368346f2a57e4a6fe5c1d203d3ae4e9efebc57b2712bc85b3102e05766ff"
+  }
+]

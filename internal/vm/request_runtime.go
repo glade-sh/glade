@@ -19,6 +19,61 @@ func (vm *VM) salesforceBaseURL() string {
 	return "https://local.glade.example"
 }
 
+// orgDomainURL is org identity, independent of the request/connection base.
+func (vm *VM) orgDomainURL() (string, error) {
+	raw := ""
+	if vm.Org != nil {
+		raw = vm.Org.DomainURL
+	}
+	domainURL, err := storage.NormalizeOrgDomainURL(raw)
+	if err != nil {
+		return "", err
+	}
+	if domainURL == "" {
+		domainURL = "https://local.glade.example"
+	}
+	return domainURL, nil
+}
+
+func (vm *VM) domainHostname(kind, packageName string) (string, error) {
+	origin, err := vm.orgDomainURL()
+	if err != nil {
+		return "", err
+	}
+	return localDomainHostname(hostFromURLText(origin), kind, packageName), nil
+}
+
+// The saved org origin supplies identity even when a request uses another host.
+// Native own-org controls C005-C009 and H014-H023 distinguish ownership from
+// merely having a Salesforce-shaped suffix (D115-D154).
+func (vm *VM) validateDomainHostname(host string) error {
+	host = strings.ToLower(strings.TrimSuffix(strings.TrimSpace(host), "."))
+	validHosted := false
+	for _, suffix := range []string{".my.salesforce.com", ".lightning.force.com", ".vf.force.com", ".my.site.com", ".file.force.com", ".salesforce-experience.com", ".my.salesforce-sites.com", ".my.salesforce-setup.com", ".container.force.com"} {
+		if strings.HasSuffix(host, suffix) && len(host) > len(suffix) {
+			validHosted = true
+			break
+		}
+	}
+	for _, kind := range []string{"OrgMyDomainHostname", "ContentHostname", "ExperienceCloudSitesBuilderHostname", "ExperienceCloudSitesHostname", "ExperienceCloudSitesLivePreviewHostname", "ExperienceCloudSitesPreviewHostname", "LightningHostname", "SalesforceSitesHostname", "SetupHostname", "VisualforceHostname", "LightningContainerComponentHostname"} {
+		ownHost, err := vm.domainHostname(kind, "")
+		if err != nil {
+			return err
+		}
+		if strings.EqualFold(host, ownHost) {
+			return nil
+		}
+		// Local hosted DTOs use the same ownership rule as public suffixes.
+		if dot := strings.IndexByte(ownHost, '.'); dot >= 0 && strings.HasSuffix(host, ownHost[dot:]) && len(host) > len(ownHost[dot:]) {
+			validHosted = true
+		}
+	}
+	if !validHosted {
+		return newExceptionError("System.InvalidParameterValueException", "Hostname must be a valid Salesforce hosted domain")
+	}
+	return newExceptionError("System.InvalidParameterValueException", "Hostname must belong to this org")
+}
+
 func (vm *VM) currentRequestURL() string {
 	page := vm.currentPage
 	if vm.currentPage.Kind == "" {
@@ -61,21 +116,23 @@ func (vm *VM) currentUIRequestValue() Value {
 }
 
 func (vm *VM) currentQuiddityValue() Value {
-	name := "SYNCHRONOUS"
+	name := "ANONYMOUS"
 	if vm.testContext != nil {
 		name = "RUNTEST_SYNC"
 	}
-	value := Value{Kind: ValueObject, Type: "Quiddity", Text: name, Ref: newValueRef()}
-	value.Fields = map[string]Value{"ordinal": Int(0)}
+	_, names, _ := coreEnumSpec("Quiddity")
+	value, _ := namedEnumStaticValue("Quiddity", names, "Quiddity."+name)
 	return value
 }
 
 func quiddityShortCode(name string) string {
 	switch name {
+	case "ANONYMOUS":
+		return "X"
 	case "SYNCHRONOUS":
 		return "R"
 	case "RUNTEST_SYNC":
-		return "RT"
+		return "TS"
 	case "QUEUEABLE":
 		return "QU"
 	case "BATCH_APEX", "BATCHAPEX":
@@ -251,6 +308,9 @@ func (vm *VM) firstOrgRecordValue(objectName, field string) storage.Value {
 }
 
 func (vm *VM) currentUserHasPackageLicense(packageID Value) (bool, error) {
+	if packageID.Kind == ValueNull {
+		return false, newExceptionError("System.TypeException", "Package Not Found")
+	}
 	packageIDText := strings.TrimSpace(packageID.String())
 	if packageIDText == "" || vm.Org == nil {
 		return false, nil
@@ -297,19 +357,22 @@ func formatLocalPhoneNumber(countryCode, phoneNumber string) string {
 	return "+" + country + " " + phone
 }
 
-func (vm *VM) currentUserLicensedForNamespace(namespace Value) bool {
+func (vm *VM) currentUserLicensedForNamespace(namespace Value) (bool, error) {
 	namespaceText := strings.TrimSpace(namespace.String())
-	if namespaceText == "" || vm.Org == nil {
-		return false
+	missing := newExceptionError("System.TypeException", "Managed Package corresponding to namespace prefix not found")
+	if namespace.Kind == ValueNull || namespaceText == "" || vm.Org == nil {
+		return false, missing
 	}
 	licenses, ok := vm.Org.Objects["PackageLicense"]
 	if !ok {
-		return false
+		return false, missing
 	}
+	found := false
 	for id, record := range licenses.Records {
 		if !storageFieldStringEqual(&record, "NamespacePrefix", namespaceText) {
 			continue
 		}
+		found = true
 		if !vm.packageLicenseIsActive(&record) {
 			continue
 		}
@@ -318,10 +381,13 @@ func (vm *VM) currentUserLicensedForNamespace(namespace Value) bool {
 			continue
 		}
 		if licensed {
-			return true
+			return true, nil
 		}
 	}
-	return false
+	if !found {
+		return false, missing
+	}
+	return false, nil
 }
 
 func (vm *VM) packageLicenseIsActive(record *storage.Record) bool {
@@ -396,6 +462,12 @@ func (vm *VM) nextDeterministicCryptoLong() int64 {
 	return int64(z)
 }
 
+func (vm *VM) nextDeterministicRandom() float64 {
+	// Use the VM-local deterministic stream so repeated tests are reproducible
+	// while successive Math.random calls still produce distinct values.
+	return float64(uint64(vm.nextDeterministicCryptoLong())>>11) / float64(uint64(1)<<53)
+}
+
 func (vm *VM) nextDeterministicUUID() string {
 	hi := uint64(vm.nextDeterministicCryptoLong())
 	lo := uint64(vm.nextDeterministicCryptoLong())
@@ -409,22 +481,26 @@ func uuidValue(text string) Value {
 }
 
 func parseUUIDText(text string) (string, error) {
-	if len(text) != 36 {
-		return "", fmt.Errorf("UUID.fromString expects canonical UUID text")
+	if len(text) > 36 {
+		return "", fmt.Errorf("UUID string too large")
 	}
-	for i, r := range text {
-		switch i {
-		case 8, 13, 18, 23:
-			if r != '-' {
-				return "", fmt.Errorf("UUID.fromString expects canonical UUID text")
-			}
-		default:
-			if !((r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')) {
-				return "", fmt.Errorf("UUID.fromString expects canonical UUID text")
+	parts := strings.Split(text, "-")
+	if len(parts) != 5 {
+		return "", fmt.Errorf("Invalid UUID string: %s", text)
+	}
+	widths := []int{8, 4, 4, 4, 12}
+	for i, part := range parts {
+		if part == "" || len(part) > widths[i] {
+			return "", fmt.Errorf("Invalid UUID string: %s", text)
+		}
+		for j, ch := range part {
+			if !((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')) {
+				return "", fmt.Errorf("Error at index %d in: %q", j, part)
 			}
 		}
+		parts[i] = strings.Repeat("0", widths[i]-len(part)) + strings.ToLower(part)
 	}
-	return strings.ToLower(text), nil
+	return strings.Join(parts, "-"), nil
 }
 
 func unsupportedIntegrationSurface(callee string) (string, bool) {
@@ -439,7 +515,9 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 		strings.EqualFold(callee, "Auth.AuthToken.revokeAccess"),
 		strings.EqualFold(callee, "Auth.CommunitiesUtil.isGuestUser"),
 		strings.EqualFold(callee, "Auth.SessionManagement.getCurrentSession"),
-		strings.EqualFold(callee, "Auth.JWTUtil.parseJWTFromStringWithoutValidation"):
+		strings.EqualFold(callee, "Auth.SessionManagement.validateTotpTokenForKey"),
+		strings.EqualFold(callee, "Auth.JWTUtil.parseJWTFromStringWithoutValidation"),
+		strings.EqualFold(callee, "Auth.JWTUtil.validateJWTWithKey"):
 		return "", false
 	}
 	switch callee {
@@ -575,9 +653,12 @@ func (vm *VM) quickActionRetrieveTemplates(args []Value) (Value, error) {
 	return out, nil
 }
 
-func (vm *VM) quickActionPerform(args []Value) (Value, error) {
+func (vm *VM) quickActionPerform(args []Value, executionResult *Result) (Value, error) {
 	if len(args) != 1 && len(args) != 2 {
 		return Null, fmt.Errorf("QuickAction.performQuickAction expects QuickActionRequest and optional Boolean")
+	}
+	if args[0].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "Argument 1 cannot be null")
 	}
 	if args[0].Kind != ValueObject {
 		return Null, fmt.Errorf("QuickAction.performQuickAction expects QuickActionRequest")
@@ -585,10 +666,10 @@ func (vm *VM) quickActionPerform(args []Value) (Value, error) {
 	if len(args) == 2 && args[1].Kind != ValueBool {
 		return Null, fmt.Errorf("QuickAction.performQuickAction expects optional Boolean")
 	}
-	return vm.quickActionResult(args[0]), nil
+	return vm.quickActionResult(args[0], executionResult)
 }
 
-func (vm *VM) quickActionPerformMany(args []Value) (Value, error) {
+func (vm *VM) quickActionPerformMany(args []Value, executionResult *Result) (Value, error) {
 	if len(args) != 1 && len(args) != 2 {
 		return Null, fmt.Errorf("QuickAction.performQuickActions expects List<QuickActionRequest> and optional Boolean")
 	}
@@ -603,22 +684,49 @@ func (vm *VM) quickActionPerformMany(args []Value) (Value, error) {
 		if request.Kind != ValueObject {
 			return Null, fmt.Errorf("QuickAction.performQuickActions expects List<QuickActionRequest>")
 		}
-		out.List = append(out.List, vm.quickActionResult(request))
+		value, err := vm.quickActionResult(request, executionResult)
+		if err != nil {
+			return Null, err
+		}
+		out.List = append(out.List, value)
 	}
 	return out, nil
 }
 
-func (vm *VM) quickActionResult(request Value) Value {
+func (vm *VM) quickActionResult(request Value, executionResult *Result) (Value, error) {
+	_, name, _ := objectFieldValue(request, "quickActionName")
+	if name.Kind != ValueString {
+		return Null, unsupportedCallError("QuickAction.performQuickAction hosted action metadata")
+	}
+	action, found := vm.quickActionByName(name.Text)
+	if !found || !strings.EqualFold(action.Type, "Create") || action.TargetObject == "" {
+		return Null, unsupportedCallError("QuickAction.performQuickAction hosted action " + name.Text)
+	}
+	_, record, found := objectFieldValue(request, "record")
+	if !found || record.Kind != ValueObject || !strings.EqualFold(record.Type, action.TargetObject) {
+		return Null, unsupportedCallError("QuickAction.performQuickAction request record for " + action.TargetObject)
+	}
+	rows, err := vm.applyDMLWithRecordAccess("insert", record, true, "", dml.Options{}, executionResult, false)
+	if err != nil {
+		return Null, err
+	}
+	if hasDMLFailures(rows) {
+		return Null, databaseDMLException("insert", rows, []string{action.TargetObject})
+	}
 	result := Object("QuickAction.QuickActionResult")
 	result.Fields["success"] = Bool(true)
 	result.Fields["created"] = Bool(false)
 	result.Fields["errors"] = typedList("List<Database.Error>")
-	result.Fields["ids"] = typedList("List<Id>")
+	ids := typedList("List<Id>")
+	for _, row := range rows {
+		ids.List = append(ids.List, databaseResultIDValue(row.ID))
+	}
+	result.Fields["ids"] = ids
 	result.Fields["successmessage"] = String("")
 	if _, contextID, ok := objectFieldValue(request, "contextId"); ok {
 		result.Fields["contextid"] = contextID
 	}
-	return result
+	return result, nil
 }
 
 func (vm *VM) testNewSendEmailQuickActionDefaults(args []Value) (Value, error) {
@@ -721,6 +829,20 @@ func firstNonEmptyString(values ...string) string {
 
 func callQuickActionMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	if strings.EqualFold(receiver.Type, "QuickAction.QuickActionRequest") {
+		if strings.EqualFold(method, "setContextId") && len(args) == 1 {
+			value, err := automationID(args[0])
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			receiver.Fields["contextid"] = value
+			return Null, receiver, true, true, nil
+		}
+		if strings.EqualFold(method, "getRecord") && len(args) == 0 {
+			_, value, _ := objectFieldValue(receiver, "record")
+			return value, receiver, false, true, nil
+		}
+	}
 	if strings.HasPrefix(method, "get") || strings.HasPrefix(method, "is") {
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)

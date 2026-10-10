@@ -1,0 +1,927 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "intermediateAPIVersions": [
+    "63.0",
+    "64.0",
+    "65.0",
+    "66.0"
+  ],
+  "oracle": "Native anonymous and @IsTest observations at API 62 and 67; eight unchanged @IsTest controls at API 63 through 66.",
+  "nativeSourceReferences": [
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest"
+    },
+    {
+      "apiVersion": "63.0",
+      "route": "isTest"
+    },
+    {
+      "apiVersion": "64.0",
+      "route": "isTest"
+    },
+    {
+      "apiVersion": "65.0",
+      "route": "isTest"
+    },
+    {
+      "apiVersion": "66.0",
+      "route": "isTest"
+    }
+  ],
+  "cases": [
+    {
+      "id": "D001",
+      "group": "storage/millisecond-roundtrip",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\n\nMap<Id, Event> persisted = new Map<Id, Event>([\n    SELECT Id, StartDateTime FROM Event WHERE Id IN :recordIds\n]);\nr = String.valueOf(persisted.get(records[0].Id).StartDateTime.getTime() - baseEpoch)\n    + '|' + String.valueOf(persisted.get(records[1].Id).StartDateTime.getTime() - baseEpoch)\n    + '|' + String.valueOf(persisted.get(records[2].Id).StartDateTime.getTime() - baseEpoch);\n",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0|0|0",
+          "67.0": "0|0|0"
+        },
+        "isTest": {
+          "62.0": "0|0|0",
+          "67.0": "0|0|0"
+        }
+      }
+    },
+    {
+      "id": "D002",
+      "group": "bind/equal",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = [SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime = :stamp];",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "3",
+          "67.0": "3"
+        },
+        "isTest": {
+          "62.0": "3",
+          "67.0": "3"
+        }
+      }
+    },
+    {
+      "id": "D003",
+      "group": "bind/not-equal",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = [SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime != :stamp];",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      }
+    },
+    {
+      "id": "D004",
+      "group": "bind/less",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = [SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime < :stamp];",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      }
+    },
+    {
+      "id": "D005",
+      "group": "bind/less-equal",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = [SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime <= :stamp];",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "3",
+          "67.0": "3"
+        },
+        "isTest": {
+          "62.0": "3",
+          "67.0": "3"
+        }
+      }
+    },
+    {
+      "id": "D006",
+      "group": "bind/greater",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = [SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime > :stamp];",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      }
+    },
+    {
+      "id": "D007",
+      "group": "bind/greater-equal",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = [SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime >= :stamp];",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "3",
+          "67.0": "3"
+        },
+        "isTest": {
+          "62.0": "3",
+          "67.0": "3"
+        }
+      }
+    },
+    {
+      "id": "D008",
+      "group": "bind/in",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nSet<Datetime> times = new Set<Datetime>{stamp, later}; r = [SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime IN :times];",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "3",
+          "67.0": "3"
+        },
+        "isTest": {
+          "62.0": "3",
+          "67.0": "3"
+        }
+      }
+    },
+    {
+      "id": "D009",
+      "group": "bind/not-in",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nSet<Datetime> times = new Set<Datetime>{stamp, later}; r = [SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime NOT IN :times];",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      }
+    },
+    {
+      "id": "D010",
+      "group": "cleanup/current-row-retained",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\n\nList<Event> obsolete = [SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime != :stamp];\ndelete obsolete;\nList<Event> retained = [SELECT Id FROM Event WHERE Id IN :recordIds];\nr = String.valueOf(obsolete.size()) + '|' + retained.size()\n    + '|' + (retained.size() == 1 && retained[0].Id == records[1].Id);\n",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0|3|false",
+          "67.0": "0|3|false"
+        },
+        "isTest": {
+          "62.0": "0|3|false",
+          "67.0": "0|3|false"
+        }
+      }
+    },
+    {
+      "id": "D011",
+      "group": "ordering/fractional-descending",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\n\nList<Event> ordered = [SELECT Id FROM Event WHERE Id IN :recordIds ORDER BY StartDateTime DESC, Id ASC];\nr = String.valueOf(ordered[0].Id == records[2].Id) + '|'\n    + (ordered[1].Id == records[1].Id) + '|' + (ordered[2].Id == records[0].Id);\n",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "false|true|false",
+          "67.0": "false|true|false"
+        },
+        "isTest": {
+          "62.0": "false|true|false",
+          "67.0": "false|true|false"
+        }
+      }
+    },
+    {
+      "id": "D012",
+      "group": "literal/millisecond",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = Database.countQuery('SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.001Z');",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "3",
+          "67.0": "3"
+        },
+        "isTest": {
+          "62.0": "3",
+          "67.0": "3"
+        }
+      }
+    },
+    {
+      "id": "D013",
+      "group": "literal/hundredth",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = Database.countQuery('SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.01Z');",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "3",
+          "67.0": "3"
+        },
+        "isTest": {
+          "62.0": "3",
+          "67.0": "3"
+        }
+      }
+    },
+    {
+      "id": "D014",
+      "group": "literal/hundredth-padded",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = Database.countQuery('SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.010Z');",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "3",
+          "67.0": "3"
+        },
+        "isTest": {
+          "62.0": "3",
+          "67.0": "3"
+        }
+      }
+    },
+    {
+      "id": "D015",
+      "group": "literal/whole-second",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = Database.countQuery('SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00Z');",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "3",
+          "67.0": "3"
+        },
+        "isTest": {
+          "62.0": "3",
+          "67.0": "3"
+        }
+      }
+    },
+    {
+      "id": "D016",
+      "group": "literal/zero-fraction",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = Database.countQuery('SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.000Z');",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "3",
+          "67.0": "3"
+        },
+        "isTest": {
+          "62.0": "3",
+          "67.0": "3"
+        }
+      }
+    },
+    {
+      "id": "D017",
+      "group": "literal/offset-compact",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = Database.countQuery('SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T01:00:00.001+0100');",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "3",
+          "67.0": "3"
+        },
+        "isTest": {
+          "62.0": "3",
+          "67.0": "3"
+        }
+      }
+    },
+    {
+      "id": "D018",
+      "group": "literal/offset-colon",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = Database.countQuery('SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T01:00:00.001+01:00');",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "3",
+          "67.0": "3"
+        },
+        "isTest": {
+          "62.0": "3",
+          "67.0": "3"
+        }
+      }
+    },
+    {
+      "id": "D019",
+      "group": "literal/in",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = Database.countQuery('SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime IN (2025-01-01T00:00:00.001Z, 2025-01-01T00:00:00.010Z)');",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "3",
+          "67.0": "3"
+        },
+        "isTest": {
+          "62.0": "3",
+          "67.0": "3"
+        }
+      }
+    },
+    {
+      "id": "D020",
+      "group": "literal/not-in",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = Database.countQuery('SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime NOT IN (2025-01-01T00:00:00.001Z, 2025-01-01T00:00:00.010Z)');",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      }
+    },
+    {
+      "id": "D021",
+      "group": "rejection/non-numeric-fraction",
+      "kind": "rejection-hypothesis",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = Database.countQuery('SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.xyzZ');",
+      "compile": false,
+      "twin": "D012",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "EXC|System.QueryException|unexpected token: ':'",
+          "67.0": "EXC|System.QueryException|unexpected token: ':'"
+        },
+        "isTest": {
+          "62.0": "EXC|System.QueryException|unexpected token: ':'",
+          "67.0": "EXC|System.QueryException|line 1:89 required (...)+ loop did not match anything at character 'x'",
+          "63.0": "EXC|System.QueryException|unexpected token: ':'",
+          "64.0": "EXC|System.QueryException|unexpected token: ':'",
+          "65.0": "EXC|System.QueryException|unexpected token: ':'",
+          "66.0": "EXC|System.QueryException|unexpected token: ':'"
+        }
+      }
+    },
+    {
+      "id": "D022",
+      "group": "rejection/invalid-compact-offset",
+      "kind": "rejection-hypothesis",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = Database.countQuery('SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.001+2500');",
+      "compile": false,
+      "twin": "D017",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T00:00:00.001+2500",
+          "67.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T00:00:00.001+2500"
+        },
+        "isTest": {
+          "62.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T00:00:00.001+2500",
+          "67.0": "EXC|System.QueryException|line 1:94 mismatched character '5' expecting set '0'..'3'",
+          "63.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T00:00:00.001+2500",
+          "64.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T00:00:00.001+2500",
+          "65.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T00:00:00.001+2500",
+          "66.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T00:00:00.001+2500"
+        }
+      }
+    },
+    {
+      "id": "D023",
+      "group": "rejection/invalid-colon-offset",
+      "kind": "rejection-hypothesis",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = Database.countQuery('SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.001+25:00');",
+      "compile": false,
+      "twin": "D018",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T00:00:00.001+25:00",
+          "67.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T00:00:00.001+25:00"
+        },
+        "isTest": {
+          "62.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T00:00:00.001+25:00",
+          "67.0": "EXC|System.QueryException|line 1:94 mismatched character '5' expecting set '0'..'3'",
+          "63.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T00:00:00.001+25:00",
+          "64.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T00:00:00.001+25:00",
+          "65.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T00:00:00.001+25:00",
+          "66.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T00:00:00.001+25:00"
+        }
+      }
+    },
+    {
+      "id": "D024",
+      "group": "rejection/comma-fraction",
+      "kind": "rejection-hypothesis",
+      "code": "Long baseEpoch = 1735689600000L;\nDatetime whole = Datetime.newInstance(baseEpoch);\nDatetime stamp = Datetime.newInstance(baseEpoch + 1L);\nDatetime later = Datetime.newInstance(baseEpoch + 10L);\nList<Event> records = new List<Event>{\n    new Event(Subject='Temporal whole', StartDateTime=whole, EndDateTime=whole.addHours(1)),\n    new Event(Subject='Temporal current', StartDateTime=stamp, EndDateTime=stamp.addHours(1)),\n    new Event(Subject='Temporal later', StartDateTime=later, EndDateTime=later.addHours(1))\n};\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nr = Database.countQuery('SELECT COUNT() FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00,001Z');",
+      "compile": false,
+      "twin": "D012",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "EXC|System.QueryException|unexpected token: ':'",
+          "67.0": "EXC|System.QueryException|unexpected token: ':'"
+        },
+        "isTest": {
+          "62.0": "EXC|System.QueryException|unexpected token: ':'",
+          "67.0": "EXC|System.QueryException|line 1:88 no viable alternative at character ','",
+          "63.0": "EXC|System.QueryException|unexpected token: ':'",
+          "64.0": "EXC|System.QueryException|unexpected token: ':'",
+          "65.0": "EXC|System.QueryException|unexpected token: ':'",
+          "66.0": "EXC|System.QueryException|unexpected token: ':'"
+        }
+      }
+    },
+    {
+      "id": "D025",
+      "group": "storage-and-filter/whole-second",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1L),\n    Datetime.newInstance(baseEpoch + 10L), Datetime.newInstance(baseEpoch + 999L),\n    Datetime.newInstance(baseEpoch + 1000L)\n};\nList<String> submittedEpochs = new List<String>();\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    submittedEpochs.add(String.valueOf(value.getTime()));\n    records.add(new Event(Subject='Temporal boundary', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<String> memoryEpochs = new List<String>();\nfor (Event record : records) {\n    memoryEpochs.add(String.valueOf(record.StartDateTime.getTime()));\n}\nMap<Id, Event> persisted = new Map<Id, Event>([\n    SELECT Id, StartDateTime FROM Event WHERE Id IN :recordIds\n]);\nList<String> persistedEpochs = new List<String>();\nfor (Event record : records) {\n    persistedEpochs.add(String.valueOf(persisted.get(record.Id).StartDateTime.getTime()));\n}\n\nDatetime originalBind = submitted[0];\nDatetime persistedBind = persisted.get(records[0].Id).StartDateTime;\nSet<Id> originalEqual = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = :originalBind\n]).keySet();\nSet<Id> originalUnequal = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime != :originalBind\n]).keySet();\nSet<Id> persistedEqual = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = :persistedBind\n]).keySet();\nSet<Id> persistedUnequal = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime != :persistedBind\n]).keySet();\nString originalEqualMask = '';\nString originalUnequalMask = '';\nString persistedEqualMask = '';\nString persistedUnequalMask = '';\nfor (Event record : records) {\n    originalEqualMask += originalEqual.contains(record.Id) ? '1' : '0';\n    originalUnequalMask += originalUnequal.contains(record.Id) ? '1' : '0';\n    persistedEqualMask += persistedEqual.contains(record.Id) ? '1' : '0';\n    persistedUnequalMask += persistedUnequal.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|submitted=' + String.join(submittedEpochs, ',')\n    + '|memory=' + String.join(memoryEpochs, ',')\n    + '|persisted=' + String.join(persistedEpochs, ',')\n    + '|originalBind=' + originalBind.getTime()\n    + '|persistedBind=' + persistedBind.getTime()\n    + '|originalEqual=' + originalEqual.size() + ':' + originalEqualMask\n    + '|originalUnequal=' + originalUnequal.size() + ':' + originalUnequalMask\n    + '|persistedEqual=' + persistedEqual.size() + ':' + persistedEqualMask\n    + '|persistedUnequal=' + persistedUnequal.size() + ':' + persistedUnequalMask;\n",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600000|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001",
+          "67.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600000|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001"
+        },
+        "isTest": {
+          "62.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600000|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001",
+          "67.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600000|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001"
+        }
+      }
+    },
+    {
+      "id": "D026",
+      "group": "storage-and-filter/millisecond",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1L),\n    Datetime.newInstance(baseEpoch + 10L), Datetime.newInstance(baseEpoch + 999L),\n    Datetime.newInstance(baseEpoch + 1000L)\n};\nList<String> submittedEpochs = new List<String>();\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    submittedEpochs.add(String.valueOf(value.getTime()));\n    records.add(new Event(Subject='Temporal boundary', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<String> memoryEpochs = new List<String>();\nfor (Event record : records) {\n    memoryEpochs.add(String.valueOf(record.StartDateTime.getTime()));\n}\nMap<Id, Event> persisted = new Map<Id, Event>([\n    SELECT Id, StartDateTime FROM Event WHERE Id IN :recordIds\n]);\nList<String> persistedEpochs = new List<String>();\nfor (Event record : records) {\n    persistedEpochs.add(String.valueOf(persisted.get(record.Id).StartDateTime.getTime()));\n}\n\nDatetime originalBind = submitted[1];\nDatetime persistedBind = persisted.get(records[1].Id).StartDateTime;\nSet<Id> originalEqual = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = :originalBind\n]).keySet();\nSet<Id> originalUnequal = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime != :originalBind\n]).keySet();\nSet<Id> persistedEqual = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = :persistedBind\n]).keySet();\nSet<Id> persistedUnequal = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime != :persistedBind\n]).keySet();\nString originalEqualMask = '';\nString originalUnequalMask = '';\nString persistedEqualMask = '';\nString persistedUnequalMask = '';\nfor (Event record : records) {\n    originalEqualMask += originalEqual.contains(record.Id) ? '1' : '0';\n    originalUnequalMask += originalUnequal.contains(record.Id) ? '1' : '0';\n    persistedEqualMask += persistedEqual.contains(record.Id) ? '1' : '0';\n    persistedUnequalMask += persistedUnequal.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|submitted=' + String.join(submittedEpochs, ',')\n    + '|memory=' + String.join(memoryEpochs, ',')\n    + '|persisted=' + String.join(persistedEpochs, ',')\n    + '|originalBind=' + originalBind.getTime()\n    + '|persistedBind=' + persistedBind.getTime()\n    + '|originalEqual=' + originalEqual.size() + ':' + originalEqualMask\n    + '|originalUnequal=' + originalUnequal.size() + ':' + originalUnequalMask\n    + '|persistedEqual=' + persistedEqual.size() + ':' + persistedEqualMask\n    + '|persistedUnequal=' + persistedUnequal.size() + ':' + persistedUnequalMask;\n",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600001|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001",
+          "67.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600001|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001"
+        },
+        "isTest": {
+          "62.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600001|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001",
+          "67.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600001|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001"
+        }
+      }
+    },
+    {
+      "id": "D027",
+      "group": "storage-and-filter/hundredth",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1L),\n    Datetime.newInstance(baseEpoch + 10L), Datetime.newInstance(baseEpoch + 999L),\n    Datetime.newInstance(baseEpoch + 1000L)\n};\nList<String> submittedEpochs = new List<String>();\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    submittedEpochs.add(String.valueOf(value.getTime()));\n    records.add(new Event(Subject='Temporal boundary', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<String> memoryEpochs = new List<String>();\nfor (Event record : records) {\n    memoryEpochs.add(String.valueOf(record.StartDateTime.getTime()));\n}\nMap<Id, Event> persisted = new Map<Id, Event>([\n    SELECT Id, StartDateTime FROM Event WHERE Id IN :recordIds\n]);\nList<String> persistedEpochs = new List<String>();\nfor (Event record : records) {\n    persistedEpochs.add(String.valueOf(persisted.get(record.Id).StartDateTime.getTime()));\n}\n\nDatetime originalBind = submitted[2];\nDatetime persistedBind = persisted.get(records[2].Id).StartDateTime;\nSet<Id> originalEqual = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = :originalBind\n]).keySet();\nSet<Id> originalUnequal = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime != :originalBind\n]).keySet();\nSet<Id> persistedEqual = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = :persistedBind\n]).keySet();\nSet<Id> persistedUnequal = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime != :persistedBind\n]).keySet();\nString originalEqualMask = '';\nString originalUnequalMask = '';\nString persistedEqualMask = '';\nString persistedUnequalMask = '';\nfor (Event record : records) {\n    originalEqualMask += originalEqual.contains(record.Id) ? '1' : '0';\n    originalUnequalMask += originalUnequal.contains(record.Id) ? '1' : '0';\n    persistedEqualMask += persistedEqual.contains(record.Id) ? '1' : '0';\n    persistedUnequalMask += persistedUnequal.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|submitted=' + String.join(submittedEpochs, ',')\n    + '|memory=' + String.join(memoryEpochs, ',')\n    + '|persisted=' + String.join(persistedEpochs, ',')\n    + '|originalBind=' + originalBind.getTime()\n    + '|persistedBind=' + persistedBind.getTime()\n    + '|originalEqual=' + originalEqual.size() + ':' + originalEqualMask\n    + '|originalUnequal=' + originalUnequal.size() + ':' + originalUnequalMask\n    + '|persistedEqual=' + persistedEqual.size() + ':' + persistedEqualMask\n    + '|persistedUnequal=' + persistedUnequal.size() + ':' + persistedUnequalMask;\n",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600010|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001",
+          "67.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600010|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001"
+        },
+        "isTest": {
+          "62.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600010|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001",
+          "67.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600010|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001"
+        }
+      }
+    },
+    {
+      "id": "D028",
+      "group": "storage-and-filter/last-millisecond",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1L),\n    Datetime.newInstance(baseEpoch + 10L), Datetime.newInstance(baseEpoch + 999L),\n    Datetime.newInstance(baseEpoch + 1000L)\n};\nList<String> submittedEpochs = new List<String>();\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    submittedEpochs.add(String.valueOf(value.getTime()));\n    records.add(new Event(Subject='Temporal boundary', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<String> memoryEpochs = new List<String>();\nfor (Event record : records) {\n    memoryEpochs.add(String.valueOf(record.StartDateTime.getTime()));\n}\nMap<Id, Event> persisted = new Map<Id, Event>([\n    SELECT Id, StartDateTime FROM Event WHERE Id IN :recordIds\n]);\nList<String> persistedEpochs = new List<String>();\nfor (Event record : records) {\n    persistedEpochs.add(String.valueOf(persisted.get(record.Id).StartDateTime.getTime()));\n}\n\nDatetime originalBind = submitted[3];\nDatetime persistedBind = persisted.get(records[3].Id).StartDateTime;\nSet<Id> originalEqual = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = :originalBind\n]).keySet();\nSet<Id> originalUnequal = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime != :originalBind\n]).keySet();\nSet<Id> persistedEqual = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = :persistedBind\n]).keySet();\nSet<Id> persistedUnequal = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime != :persistedBind\n]).keySet();\nString originalEqualMask = '';\nString originalUnequalMask = '';\nString persistedEqualMask = '';\nString persistedUnequalMask = '';\nfor (Event record : records) {\n    originalEqualMask += originalEqual.contains(record.Id) ? '1' : '0';\n    originalUnequalMask += originalUnequal.contains(record.Id) ? '1' : '0';\n    persistedEqualMask += persistedEqual.contains(record.Id) ? '1' : '0';\n    persistedUnequalMask += persistedUnequal.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|submitted=' + String.join(submittedEpochs, ',')\n    + '|memory=' + String.join(memoryEpochs, ',')\n    + '|persisted=' + String.join(persistedEpochs, ',')\n    + '|originalBind=' + originalBind.getTime()\n    + '|persistedBind=' + persistedBind.getTime()\n    + '|originalEqual=' + originalEqual.size() + ':' + originalEqualMask\n    + '|originalUnequal=' + originalUnequal.size() + ':' + originalUnequalMask\n    + '|persistedEqual=' + persistedEqual.size() + ':' + persistedEqualMask\n    + '|persistedUnequal=' + persistedUnequal.size() + ':' + persistedUnequalMask;\n",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600999|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001",
+          "67.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600999|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001"
+        },
+        "isTest": {
+          "62.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600999|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001",
+          "67.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689600999|persistedBind=1735689600000|originalEqual=4:11110|originalUnequal=1:00001|persistedEqual=4:11110|persistedUnequal=1:00001"
+        }
+      }
+    },
+    {
+      "id": "D029",
+      "group": "storage-and-filter/next-second",
+      "kind": "runtime-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1L),\n    Datetime.newInstance(baseEpoch + 10L), Datetime.newInstance(baseEpoch + 999L),\n    Datetime.newInstance(baseEpoch + 1000L)\n};\nList<String> submittedEpochs = new List<String>();\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    submittedEpochs.add(String.valueOf(value.getTime()));\n    records.add(new Event(Subject='Temporal boundary', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<String> memoryEpochs = new List<String>();\nfor (Event record : records) {\n    memoryEpochs.add(String.valueOf(record.StartDateTime.getTime()));\n}\nMap<Id, Event> persisted = new Map<Id, Event>([\n    SELECT Id, StartDateTime FROM Event WHERE Id IN :recordIds\n]);\nList<String> persistedEpochs = new List<String>();\nfor (Event record : records) {\n    persistedEpochs.add(String.valueOf(persisted.get(record.Id).StartDateTime.getTime()));\n}\n\nDatetime originalBind = submitted[4];\nDatetime persistedBind = persisted.get(records[4].Id).StartDateTime;\nSet<Id> originalEqual = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = :originalBind\n]).keySet();\nSet<Id> originalUnequal = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime != :originalBind\n]).keySet();\nSet<Id> persistedEqual = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = :persistedBind\n]).keySet();\nSet<Id> persistedUnequal = new Map<Id, Event>([\n    SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime != :persistedBind\n]).keySet();\nString originalEqualMask = '';\nString originalUnequalMask = '';\nString persistedEqualMask = '';\nString persistedUnequalMask = '';\nfor (Event record : records) {\n    originalEqualMask += originalEqual.contains(record.Id) ? '1' : '0';\n    originalUnequalMask += originalUnequal.contains(record.Id) ? '1' : '0';\n    persistedEqualMask += persistedEqual.contains(record.Id) ? '1' : '0';\n    persistedUnequalMask += persistedUnequal.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|submitted=' + String.join(submittedEpochs, ',')\n    + '|memory=' + String.join(memoryEpochs, ',')\n    + '|persisted=' + String.join(persistedEpochs, ',')\n    + '|originalBind=' + originalBind.getTime()\n    + '|persistedBind=' + persistedBind.getTime()\n    + '|originalEqual=' + originalEqual.size() + ':' + originalEqualMask\n    + '|originalUnequal=' + originalUnequal.size() + ':' + originalUnequalMask\n    + '|persistedEqual=' + persistedEqual.size() + ':' + persistedEqualMask\n    + '|persistedUnequal=' + persistedUnequal.size() + ':' + persistedUnequalMask;\n",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689601000|persistedBind=1735689601000|originalEqual=1:00001|originalUnequal=4:11110|persistedEqual=1:00001|persistedUnequal=4:11110",
+          "67.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689601000|persistedBind=1735689601000|originalEqual=1:00001|originalUnequal=4:11110|persistedEqual=1:00001|persistedUnequal=4:11110"
+        },
+        "isTest": {
+          "62.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689601000|persistedBind=1735689601000|originalEqual=1:00001|originalUnequal=4:11110|persistedEqual=1:00001|persistedUnequal=4:11110",
+          "67.0": "OK|submitted=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|memory=1735689600000,1735689600001,1735689600010,1735689600999,1735689601000|persisted=1735689600000,1735689600000,1735689600000,1735689600000,1735689601000|originalBind=1735689601000|persistedBind=1735689601000|originalEqual=1:00001|originalUnequal=4:11110|persistedEqual=1:00001|persistedUnequal=4:11110"
+        }
+      }
+    },
+    {
+      "id": "D030",
+      "group": "grammar/whole-second-seed/whole-second",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00Z');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": null,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        },
+        "isTest": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        }
+      }
+    },
+    {
+      "id": "D031",
+      "group": "grammar/whole-second-seed/zero-fraction",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.000Z');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D030",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        },
+        "isTest": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        }
+      }
+    },
+    {
+      "id": "D032",
+      "group": "grammar/whole-second-seed/millisecond",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.001Z');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D031",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        },
+        "isTest": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        }
+      }
+    },
+    {
+      "id": "D033",
+      "group": "grammar/whole-second-seed/hundredth",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.01Z');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D034",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        },
+        "isTest": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        }
+      }
+    },
+    {
+      "id": "D034",
+      "group": "grammar/whole-second-seed/hundredth-padded",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.010Z');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D032",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        },
+        "isTest": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        }
+      }
+    },
+    {
+      "id": "D035",
+      "group": "grammar/whole-second-seed/whole-second-offset",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T01:00:00+01:00');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D030",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        },
+        "isTest": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        }
+      }
+    },
+    {
+      "id": "D036",
+      "group": "grammar/whole-second-seed/millisecond-offset-compact",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T01:00:00.001+0100');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D032",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        },
+        "isTest": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        }
+      }
+    },
+    {
+      "id": "D037",
+      "group": "grammar/whole-second-seed/millisecond-offset-colon",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T01:00:00.001+01:00');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D032",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        },
+        "isTest": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        }
+      }
+    },
+    {
+      "id": "D038",
+      "group": "grammar/whole-second-seed/hundredth-offset-colon",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T01:00:00.01+01:00');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D039",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        },
+        "isTest": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        }
+      }
+    },
+    {
+      "id": "D039",
+      "group": "grammar/whole-second-seed/hundredth-padded-offset-colon",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T01:00:00.010+01:00');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D034",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        },
+        "isTest": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        }
+      }
+    },
+    {
+      "id": "D040",
+      "group": "grammar/whole-second-seed/submillisecond-zero",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.0001Z');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D031",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        },
+        "isTest": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        }
+      }
+    },
+    {
+      "id": "D041",
+      "group": "grammar/whole-second-seed/submillisecond-one",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.0011Z');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D032",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        },
+        "isTest": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        }
+      }
+    },
+    {
+      "id": "D042",
+      "group": "grammar/whole-second-seed/nanosecond",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.000000001Z');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D031",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        },
+        "isTest": {
+          "62.0": "OK|1|100",
+          "67.0": "OK|1|100"
+        }
+      }
+    },
+    {
+      "id": "D043",
+      "group": "grammar/whole-second-seed/invalid-month",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-13-01T00:00:00Z');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D030",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "EXC|System.QueryException|Invalid datetime: 2025-13-01T00:00:00Z",
+          "67.0": "EXC|System.QueryException|Invalid datetime: 2025-13-01T00:00:00Z"
+        },
+        "isTest": {
+          "62.0": "EXC|System.QueryException|Invalid datetime: 2025-13-01T00:00:00Z",
+          "67.0": "EXC|System.QueryException|Invalid datetime: 2025-13-01T00:00:00Z"
+        }
+      }
+    },
+    {
+      "id": "D044",
+      "group": "grammar/whole-second-seed/non-numeric-fraction",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00.xyzZ');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D032",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "EXC|System.QueryException|unexpected token: ':'",
+          "67.0": "EXC|System.QueryException|unexpected token: ':'"
+        },
+        "isTest": {
+          "62.0": "EXC|System.QueryException|unexpected token: ':'",
+          "67.0": "EXC|System.QueryException|unexpected token: ':'",
+          "63.0": "EXC|System.QueryException|unexpected token: ':'",
+          "64.0": "EXC|System.QueryException|unexpected token: ':'",
+          "65.0": "EXC|System.QueryException|unexpected token: ':'",
+          "66.0": "EXC|System.QueryException|unexpected token: ':'"
+        }
+      }
+    },
+    {
+      "id": "D045",
+      "group": "grammar/whole-second-seed/invalid-compact-offset",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T01:00:00.001+2500');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D036",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+2500",
+          "67.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+2500"
+        },
+        "isTest": {
+          "62.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+2500",
+          "67.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+2500",
+          "63.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+2500",
+          "64.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+2500",
+          "65.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+2500",
+          "66.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+2500"
+        }
+      }
+    },
+    {
+      "id": "D046",
+      "group": "grammar/whole-second-seed/invalid-colon-offset",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T01:00:00.001+25:00');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D037",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+25:00",
+          "67.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+25:00"
+        },
+        "isTest": {
+          "62.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+25:00",
+          "67.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+25:00",
+          "63.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+25:00",
+          "64.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+25:00",
+          "65.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+25:00",
+          "66.0": "EXC|System.QueryException|Invalid datetime: 2025-01-01T01:00:00.001+25:00"
+        }
+      }
+    },
+    {
+      "id": "D047",
+      "group": "grammar/whole-second-seed/comma-fraction",
+      "kind": "grammar-observation",
+      "code": "Long baseEpoch = 1735689600000L;\nList<Datetime> submitted = new List<Datetime>{\n    Datetime.newInstance(baseEpoch), Datetime.newInstance(baseEpoch + 1000L),\n    Datetime.newInstance(baseEpoch - 1000L)\n};\nList<Event> records = new List<Event>();\nfor (Datetime value : submitted) {\n    records.add(new Event(Subject='Temporal grammar', StartDateTime=value, EndDateTime=value.addHours(1)));\n}\ninsert records;\nSet<Id> recordIds = new Map<Id, Event>(records).keySet();\nList<Event> matches = Database.query('SELECT Id FROM Event WHERE Id IN :recordIds AND StartDateTime = 2025-01-01T00:00:00,001Z');\nSet<Id> matchedIds = new Map<Id, Event>(matches).keySet();\nString mask = '';\nfor (Event record : records) {\n    mask += matchedIds.contains(record.Id) ? '1' : '0';\n}\nr = 'OK|' + matches.size() + '|' + mask;\n",
+      "compile": false,
+      "twin": "D032",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "EXC|System.QueryException|unexpected token: ':'",
+          "67.0": "EXC|System.QueryException|unexpected token: ':'"
+        },
+        "isTest": {
+          "62.0": "EXC|System.QueryException|unexpected token: ':'",
+          "67.0": "EXC|System.QueryException|unexpected token: ':'",
+          "63.0": "EXC|System.QueryException|unexpected token: ':'",
+          "64.0": "EXC|System.QueryException|unexpected token: ':'",
+          "65.0": "EXC|System.QueryException|unexpected token: ':'",
+          "66.0": "EXC|System.QueryException|unexpected token: ':'"
+        }
+      }
+    }
+  ]
+}

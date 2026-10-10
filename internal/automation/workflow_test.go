@@ -234,6 +234,37 @@ func TestLoadProjectFlowFieldUpdatesAndDiagnostics(t *testing.T) {
 	}
 }
 
+func TestLoadProjectFlowCapturesTextTemplates(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/TextTemplate.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <start><connector><targetReference>Set_Greeting</targetReference></connector></start>
+  <assignments>
+    <name>Set_Greeting</name>
+    <assignmentItems><assignToReference>Greeting</assignToReference><operator>Assign</operator><value><elementReference>GreetingTemplate</elementReference></value></assignmentItems>
+  </assignments>
+  <textTemplates><name>GreetingTemplate</name><text>Hello {!Name}</text></textTemplates>
+  <variables><name>Name</name><dataType>String</dataType><isInput>true</isInput></variables>
+  <variables><name>Greeting</name><dataType>String</dataType><isOutput>true</isOutput></variables>
+</Flow>`)
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Flows) != 1 || len(idx.Flows[0].Rules) != 1 {
+		t.Fatalf("flows = %#v", idx.Flows)
+	}
+	rule := idx.Flows[0].Rules[0]
+	if rule.TextTemplates["greetingtemplate"] != "Hello {!Name}" {
+		t.Fatalf("text templates = %#v", rule.TextTemplates)
+	}
+	if len(rule.Steps) != 1 || rule.Steps[0].Kind != "assignment" || rule.Steps[0].Assignment.SourceField != "GreetingTemplate" {
+		t.Fatalf("steps = %#v", rule.Steps)
+	}
+}
+
 func TestLoadProjectFlowIgnoresNonRecordScreenFlowForSaveOrder(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "force-app/main/default/flows/SetupWizard.flow-meta.xml")
@@ -370,6 +401,51 @@ func TestLoadProjectFlowRoutedDecisionBranches(t *testing.T) {
 	}
 	if !rule.Branches[2].Default || rule.Branches[2].FieldUpdates[0].LiteralValue != "Cold" {
 		t.Fatalf("default branch = %#v", rule.Branches[2])
+	}
+}
+
+func TestLoadProjectFlowRoutedDecisionCycleStopsAtActivePath(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_Decision_Cycle.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <start><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+  <decisions>
+    <name>Route_A</name>
+    <rules>
+      <name>To_B</name>
+      <conditions><leftValueReference>$Record.Name</leftValueReference><operator>EqualTo</operator><rightValue><stringValue>A</stringValue></rightValue></conditions>
+      <connector><targetReference>Route_B</targetReference></connector>
+    </rules>
+    <defaultConnector><targetReference>Set_Default</targetReference></defaultConnector>
+  </decisions>
+  <decisions>
+    <name>Route_B</name>
+    <rules>
+      <name>To_A</name>
+      <conditions><leftValueReference>$Record.Name</leftValueReference><operator>EqualTo</operator><rightValue><stringValue>B</stringValue></rightValue></conditions>
+      <connector><targetReference>Route_A</targetReference></connector>
+    </rules>
+    <defaultConnector><targetReference>Set_Default</targetReference></defaultConnector>
+  </decisions>
+  <assignments>
+    <name>Set_Default</name>
+    <assignmentItems><assignToReference>$Record.Status__c</assignToReference><operator>Assign</operator><value><stringValue>Defaulted</stringValue></value></assignmentItems>
+  </assignments>
+</Flow>`)
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	if len(idx.Flows) != 1 || len(idx.Flows[0].Rules) != 1 {
+		t.Fatalf("cycle flow rules = %#v", idx.Flows)
+	}
+	if len(idx.Flows[0].Rules[0].Branches) == 0 {
+		t.Fatalf("cycle rule has no executable branches: %#v", idx.Flows[0].Rules[0])
 	}
 }
 
@@ -532,6 +608,44 @@ func TestLoadProjectFlowApexActionCalls(t *testing.T) {
 	}
 	if len(idx.Diagnostics) != 0 {
 		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+}
+
+func TestLoadProjectFlowApexActionPreservesCollectionInputReference(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_Collection_Action.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <actionCalls>
+    <name>Invoke_Widget_Action</name>
+    <actionType>apex</actionType>
+    <actionName>WidgetFlowAction.run</actionName>
+    <dataTypeMappings><typeName>T__records</typeName><typeValue>Widget__c</typeValue></dataTypeMappings>
+    <inputParameters><name>records</name><value><elementReference>Records</elementReference></value></inputParameters>
+  </actionCalls>
+  <assignments>
+    <name>Add_Record</name>
+    <assignmentItems><assignToReference>Records</assignToReference><operator>Add</operator><value><elementReference>$Record</elementReference></value></assignmentItems>
+    <connector><targetReference>Invoke_Widget_Action</targetReference></connector>
+  </assignments>
+  <start><connector><targetReference>Add_Record</targetReference></connector><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+  <variables><name>Records</name><dataType>SObject</dataType><isCollection>true</isCollection><isInput>true</isInput><isOutput>false</isOutput><objectType>Widget__c</objectType></variables>
+</Flow>`)
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	steps := idx.Flows[0].Rules[0].Steps
+	if len(steps) != 2 || steps[0].Kind != "assignment" || steps[1].Kind != "action" {
+		t.Fatalf("steps = %#v", steps)
+	}
+	inputs := steps[1].Action.Inputs
+	if len(inputs) != 1 || inputs[0].Name != "records" || inputs[0].SourceField != "Records" {
+		t.Fatalf("action inputs = %#v", inputs)
 	}
 }
 
@@ -983,6 +1097,79 @@ func TestLoadProjectFlowFormulaReferenceInDecisionCondition(t *testing.T) {
 	}
 }
 
+func TestLoadProjectFlowStepDecisionFormulaReference(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_Step_Formula_Cond.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <formulas>
+    <name>NoMoreCapacity</name>
+    <dataType>Boolean</dataType>
+    <expression>{!$Record.Availability__c} = 0</expression>
+  </formulas>
+  <decisions>
+    <name>Gate</name>
+    <rules>
+      <name>Continue</name>
+      <conditions><leftValueReference>$Record.Name</leftValueReference><operator>EqualTo</operator><rightValue><stringValue>Run</stringValue></rightValue></conditions>
+      <connector><targetReference>Has_Capacity</targetReference></connector>
+    </rules>
+    <defaultConnector><targetReference>Set_Available</targetReference></defaultConnector>
+  </decisions>
+  <decisions>
+    <name>Has_Capacity</name>
+    <rules>
+      <name>At_Capacity</name>
+      <conditionLogic>and</conditionLogic>
+      <conditions><leftValueReference>NoMoreCapacity</leftValueReference><operator>EqualTo</operator><rightValue><booleanValue>true</booleanValue></rightValue></conditions>
+      <connector><targetReference>Set_Full</targetReference></connector>
+    </rules>
+    <defaultConnector><targetReference>Set_Available</targetReference></defaultConnector>
+  </decisions>
+  <assignments>
+    <name>Set_Full</name>
+    <assignmentItems><assignToReference>$Record.Status__c</assignToReference><operator>Assign</operator><value><stringValue>Full</stringValue></value></assignmentItems>
+  </assignments>
+  <assignments>
+    <name>Set_Available</name>
+    <assignmentItems><assignToReference>$Record.Status__c</assignToReference><operator>Assign</operator><value><stringValue>Available</stringValue></value></assignmentItems>
+  </assignments>
+  <start><connector><targetReference>Gate</targetReference></connector><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("step formula reference should be supported: %#v", idx.Diagnostics)
+	}
+	if len(idx.Flows) != 1 || len(idx.Flows[0].Rules) != 1 || len(idx.Flows[0].Rules[0].Branches) == 0 {
+		t.Fatalf("flow branches = %#v", idx.Flows)
+	}
+	var outer storage.FlowBranch
+	for _, candidate := range idx.Flows[0].Rules[0].Branches {
+		if candidate.Name == "Continue" {
+			outer = candidate
+			break
+		}
+	}
+	if outer.Name == "" {
+		t.Fatalf("outer routed branch missing: %#v", idx.Flows[0].Rules[0].Branches)
+	}
+	if len(outer.Steps) != 1 {
+		t.Fatalf("outer branch steps = %#v", outer)
+	}
+	outerStep := outer.Steps[0]
+	if outerStep.Kind != "decision" || len(outerStep.Branches) != 2 {
+		t.Fatalf("outer decision = %#v", outerStep)
+	}
+	if got := outerStep.Branches[0].Formula; got != "(Availability__c = 0) = true" || len(outerStep.Branches[0].Criteria) != 0 {
+		t.Fatalf("formula-backed step branch = %#v", outerStep.Branches[0])
+	}
+}
+
 func TestLoadProjectFlowRecordReferenceObjectResolution(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "force-app/main/default/flows/Widget_Ref_Record_Update.flow-meta.xml")
@@ -1108,6 +1295,11 @@ func TestLoadProjectFlowProcessBuilderFormulaAndTypedValues(t *testing.T) {
     <dataType>Boolean</dataType>
     <expression>{!$Record.Name} = "Acme" &amp;&amp; {!$Record.Score__c} &gt;= 10</expression>
   </formulas>
+  <formulas>
+    <name>Default_Record</name>
+    <dataType>String</dataType>
+    <expression>IF(ISBLANK({!$Record.Related_Record_ID__c}), "NO_RECORD_ID", $Record.Related_Record_ID__c)</expression>
+  </formulas>
   <start>
     <object>Widget__c</object>
     <triggerType>RecordAfterSave</triggerType>
@@ -1118,6 +1310,7 @@ func TestLoadProjectFlowProcessBuilderFormulaAndTypedValues(t *testing.T) {
     <assignmentItems><assignToReference>$Record.Status__c</assignToReference><operator>Assign</operator><value><formula>"Process-" &amp; {!$Record.Name}</formula></value></assignmentItems>
     <assignmentItems><assignToReference>$Record.Active__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems>
     <assignmentItems><assignToReference>$Record.Score_Copy__c</assignToReference><operator>Assign</operator><value><elementReference>$Record.Score__c</elementReference></value></assignmentItems>
+    <assignmentItems><assignToReference>$Record.Related_Record_ID__c</assignToReference><operator>Assign</operator><value><elementReference>Default_Record</elementReference></value></assignmentItems>
   </assignments>
   <recordLookups><name>Unsupported_Lookup</name></recordLookups>
 </Flow>`)
@@ -1135,7 +1328,7 @@ func TestLoadProjectFlowProcessBuilderFormulaAndTypedValues(t *testing.T) {
 	if len(rule.Criteria) != 0 {
 		t.Fatalf("criteria should be replaced by formula: %#v", rule.Criteria)
 	}
-	if len(rule.FieldUpdates) != 3 {
+	if len(rule.FieldUpdates) != 4 {
 		t.Fatalf("field updates = %#v", rule.FieldUpdates)
 	}
 	if rule.FieldUpdates[0].Formula != `"Process-" & Name` {
@@ -1146,6 +1339,9 @@ func TestLoadProjectFlowProcessBuilderFormulaAndTypedValues(t *testing.T) {
 	}
 	if rule.FieldUpdates[2].SourceField != "Score__c" {
 		t.Fatalf("source update = %#v", rule.FieldUpdates[2])
+	}
+	if rule.FieldUpdates[3].Formula != `IF(ISBLANK(Related_Record_ID__c), "NO_RECORD_ID", Related_Record_ID__c)` || rule.FieldUpdates[3].SourceField != "" {
+		t.Fatalf("formula resource update = %#v", rule.FieldUpdates[3])
 	}
 	if len(idx.Diagnostics) != 1 || idx.Diagnostics[0].Code != "GLADEAUTO002" || !strings.Contains(idx.Diagnostics[0].Message, "record lookup") {
 		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
@@ -1269,6 +1465,39 @@ func TestLoadProjectFlowRecordCreateCanReferenceLookupOutputField(t *testing.T) 
 	steps := idx.Flows[0].Rules[0].Steps
 	if len(steps) != 2 || steps[0].Kind != "recordLookup" || steps[1].Kind != "recordCreate" {
 		t.Fatalf("steps = %#v", steps)
+	}
+}
+
+func TestLoadProjectFlowLookupCanReferenceInputVariable(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "flows", "Widget_Lookup_By_Input.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <recordLookups>
+    <name>MatchedAccount</name>
+    <object>Account</object>
+    <filters><field>Id</field><operator>EqualTo</operator><value><elementReference>accountId</elementReference></value></filters>
+    <getFirstRecordOnly>true</getFirstRecordOnly>
+    <storeOutputAutomatically>true</storeOutputAutomatically>
+  </recordLookups>
+  <start><connector><targetReference>MatchedAccount</targetReference></connector><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+  <variables><name>accountId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>false</isOutput></variables>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	if len(idx.Flows) != 1 || len(idx.Flows[0].Rules) != 1 || len(idx.Flows[0].Rules[0].RecordLookups) != 1 {
+		t.Fatalf("flows = %#v", idx.Flows)
+	}
+	criteria := idx.Flows[0].Rules[0].RecordLookups[0].Criteria
+	if len(criteria) != 1 || criteria[0].SourceField != "accountId" {
+		t.Fatalf("lookup criteria = %#v", criteria)
 	}
 }
 
@@ -1558,6 +1787,37 @@ func TestApplyToOrgInstallsFlowRules(t *testing.T) {
 	ApplyToOrg(&org, Index{Flows: []Flow{{ObjectName: "Widget__c", Rules: []storage.FlowRule{{Name: "Rule", Active: true}}}}})
 	if got := org.Objects["Widget__c"].Definition.FlowRules; len(got) != 1 || got[0].Name != "Rule" {
 		t.Fatalf("flow rules = %#v", got)
+	}
+}
+
+func TestApplyToOrgRetainsObjectlessAutolaunchedFlowRules(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "flows", "Rollup_Integration_Rollup_Order_Bys.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Draft</status>
+  <assignments>
+    <name>Done</name>
+    <assignmentItems>
+      <assignToReference>Output</assignToReference>
+      <operator>Assign</operator>
+      <value><stringValue>ok</stringValue></value>
+    </assignmentItems>
+  </assignments>
+  <variables><name>Output</name><dataType>String</dataType></variables>
+</Flow>`)
+
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Flows) != 1 || idx.Flows[0].ObjectName != "" || len(idx.Flows[0].Rules) != 1 {
+		t.Fatalf("flows = %#v", idx.Flows)
+	}
+	org := storage.NewOrgState()
+	ApplyToOrg(&org, idx)
+	if len(org.Metadata.Flows) != 1 || org.Metadata.Flows[0].Name != "Rollup_Integration_Rollup_Order_Bys" {
+		t.Fatalf("metadata flows = %#v", org.Metadata.Flows)
 	}
 }
 

@@ -1,1 +1,1 @@
-export { default, gql, graphql, query } from "./graphql.mjs";
+export { default, gql, graphql, query, refreshGraphQL } from "./graphql.mjs";

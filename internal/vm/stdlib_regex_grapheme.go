@@ -23,10 +23,12 @@ type graphemeBoundaryTable struct {
 
 type regexp2Plan struct {
 	source             string
+	matchSource        string
 	re                 *regexp2.Regexp
 	grapheme           *graphemeBoundaryTable
 	internalGroupNames map[string]bool
 	publicGroupNumbers []int
+	endAssertionGroups []regexp2EndAssertion
 }
 
 func buildGraphemeBoundaryTable(input string) *graphemeBoundaryTable {
@@ -56,6 +58,11 @@ func compileRegexp2PlanForInput(callee, source, input string) (*regexp2Plan, err
 }
 
 func compileRegexp2PlanForInputWithException(callee, source, input, exceptionType string) (*regexp2Plan, error) {
+	if exceptionType == "StringException" {
+		if err := validateJavaRegexGroups(source, exceptionType); err != nil {
+			return nil, err
+		}
+	}
 	regexp2Source, err := compileRegexp2Source(callee, source)
 	if err != nil {
 		return nil, err
@@ -67,13 +74,24 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 	if err != nil {
 		return nil, newRegexSyntaxError(exceptionType, source, err)
 	}
+	// Keep original capture numbering, including the private grapheme groups.
+	publicGroups := regexp2PublicGroupNumbers(re, internal)
+	markedSource, endGroups := instrumentRegexp2EndAssertions(regexp2Source, re)
+	if len(endGroups) > 0 {
+		re, err = regexp2.Compile(markedSource, regexp2.None)
+		if err != nil {
+			return nil, newRegexSyntaxError(exceptionType, source, err)
+		}
+	}
 	re.MatchTimeout = regexp2MatchTimeout
 	return &regexp2Plan{
 		source:             regexp2Source,
+		matchSource:        markedSource,
 		re:                 re,
 		grapheme:           table,
 		internalGroupNames: internal,
-		publicGroupNumbers: regexp2PublicGroupNumbers(re, internal),
+		publicGroupNumbers: publicGroups,
+		endAssertionGroups: endGroups,
 	}, nil
 }
 

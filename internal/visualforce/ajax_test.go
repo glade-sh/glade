@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/vm"
+	nethtml "golang.org/x/net/html"
 )
 
 func TestParseAjaxPayloadIdentifiesActionTargetsAndSubmittedFields(t *testing.T) {
@@ -89,10 +90,17 @@ func TestRenderPartialTargetsFindsScopedRerenderID(t *testing.T) {
 	}
 }
 
+func TestRenderPartialTargetsFindsNamespacedClientID(t *testing.T) {
+	targets := RenderPartialTargets(`<html><body><div id="j_id0:f:count" data-rerender="j_id0:f:count"><span>7</span></div></body></html>`, []string{"f:count"})
+	if got := targets["f:count"]; !strings.Contains(got, `id="j_id0:f:count"`) || !strings.Contains(got, ">7<") {
+		t.Fatalf("target = %q", got)
+	}
+}
+
 func TestRenderPartialTargetsPrefersElementIDOverRerenderMetadata(t *testing.T) {
-	html := `<html><body><script data-rerender="count"></script><div id="count" data-rerender="count"><span>5</span></div></body></html>`
-	targets := RenderPartialTargets(html, []string{"count"})
-	if got := targets["count"]; !strings.Contains(got, `<div id="count"`) || !strings.Contains(got, ">5<") {
+	html := `<html><body><script data-action="{!increment}" data-rerender="count"></script><div id="j_id0:f:count" data-rerender="j_id0:f:count"><span>5</span></div></body></html>`
+	targets := RenderPartialTargets(html, []string{"f:count"})
+	if got := targets["f:count"]; !strings.Contains(got, `<div id="j_id0:f:count"`) || !strings.Contains(got, ">5<") {
 		t.Fatalf("target = %q", got)
 	}
 }
@@ -149,6 +157,71 @@ func TestRenderAjaxActionSupportEmitsSubmitHook(t *testing.T) {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("rendered missing %q: %s", want, rendered)
 		}
+	}
+}
+
+func TestRenderActionSupportBindsParentClickForNativeButton(t *testing.T) {
+	rendered := renderAjaxMarkupForTest(t, `<apex:page><apex:form id="rerenderForm">
+		<apex:outputPanel id="targetPanel"><apex:outputText value="Before rerender"/></apex:outputPanel>
+		<apex:outputPanel id="updateTrigger" layout="block">
+			<button type="button">Update value</button>
+			<apex:actionSupport event="onclick" action="{!updateVisibleValue}" reRender="targetPanel"/>
+		</apex:outputPanel>
+	</apex:form></apex:page>`)
+	doc, err := nethtml.Parse(strings.NewReader(rendered))
+	if err != nil {
+		t.Fatalf("parse rendered markup: %v", err)
+	}
+	var button *nethtml.Node
+	var visit func(*nethtml.Node)
+	visit = func(node *nethtml.Node) {
+		if node.Type == nethtml.ElementNode && node.Data == "button" {
+			button = node
+		}
+		for child := node.FirstChild; child != nil; child = child.NextSibling {
+			visit(child)
+		}
+	}
+	visit(doc)
+	if button == nil || button.Parent == nil {
+		t.Fatalf("native Update value button missing: %s", rendered)
+	}
+	parent := button.Parent
+	if parent.Type != nethtml.ElementNode || parent.Data != "div" {
+		t.Fatalf("button parent = %v, want outputPanel div: %s", parent, rendered)
+	}
+	var parentID, clickHandler string
+	for _, attr := range parent.Attr {
+		switch attr.Key {
+		case "id":
+			parentID = attr.Val
+		case "onclick":
+			clickHandler = attr.Val
+		}
+	}
+	if parentID != "j_id0:rerenderForm:updateTrigger" {
+		t.Fatalf("button parent id = %q, want form-qualified updateTrigger: %s", parentID, rendered)
+	}
+	for _, want := range []string{"window.GLADEVF.submit", "updateVisibleValue", "targetPanel"} {
+		if !strings.Contains(clickHandler, want) {
+			t.Fatalf("parent onclick missing %q: %s", want, rendered)
+		}
+	}
+}
+
+func TestRenderActionSupportEscapesMalformedEventAttributeName(t *testing.T) {
+	rendered := renderAjaxMarkupForTest(t, `<apex:page><apex:form>
+		<apex:outputPanel id="eventParent" layout="block">
+			<button type="button">Update value</button>
+			<apex:actionSupport event="on&#34;click" action="{!updateVisibleValue}" reRender="targetPanel"/>
+		</apex:outputPanel>
+		<apex:actionSupport event="on&#34;click" action="{!updateVisibleValue}" reRender="targetPanel"/>
+	</apex:form></apex:page>`)
+	if got := strings.Count(rendered, ` on&#34;click="`); got != 2 {
+		t.Fatalf("escaped event attribute occurrences = %d, want both parent and standalone emissions: %s", got, rendered)
+	}
+	if strings.Contains(rendered, ` on"click=`) {
+		t.Fatalf("event attribute name contains an unescaped quote: %s", rendered)
 	}
 }
 

@@ -124,3 +124,16 @@ func BenchmarkStandardDescribeCatalogV2NamesOnlyCanonicalResolution(b *testing.B
 		}
 	}
 }
+
+// BenchmarkStandardDescribeCatalogV2DecodeAll decodes every catalog member, as
+// a process that builds the full standard org does once.
+func BenchmarkStandardDescribeCatalogV2DecodeAll(b *testing.B) {
+	b.ReportAllocs()
+	for index := 0; index < b.N; index++ {
+		for _, entry := range standardDescribeCatalogV2Index {
+			if _, err := decodeStandardDescribeCatalogV2Member(standardDescribeCatalogV2Pack, entry); err != nil {
+				b.Fatal(err)
+			}
+		}
+	}
+}
