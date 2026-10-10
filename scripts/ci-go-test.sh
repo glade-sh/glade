@@ -264,12 +264,19 @@ run_package_lane() {
 	local kind="$2"
 	local timeout="$3"
 	local skip_regex="${4:-}"
+	local routing="${5:-all}"
 	local -a packages=()
 	local -a visualforce_packages=()
 	local -a args=()
 	load_package_lanes
+	if [[ "${routing}" == "ci-remaining" ]]; then
+		# Remaining toolchain consumers share the user installation directory.
+		args+=(-p=1)
+	fi
 	while IFS= read -r pkg; do
-		if [[ "${lane}" == "remaining-go" && "${kind}" == "test" && "${pkg}" == "./internal/visualforce" ]]; then
+		if [[ "${routing}" == "ci-remaining" && "${pkg}" == "./internal/lwc/compile" ]]; then
+			continue
+		elif [[ "${lane}" == "remaining-go" && "${kind}" == "test" && "${pkg}" == "./internal/visualforce" ]]; then
 			visualforce_packages+=("${pkg}")
 		else
 			packages+=("${pkg}")
@@ -537,7 +544,7 @@ run_ci_package_lane() {
 			run_package_lane "${lane}" test 30m '^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents)$'
 			;;
 		remaining-go)
-			run_package_lane "${lane}" test 20m '^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$'
+			run_package_lane "${lane}" test 20m '^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$' ci-remaining
 			;;
 		sema|repoguard)
 			run_named_package_lane "${lane}"
@@ -890,13 +897,15 @@ select_and_validate_shard() {
 	local index="$3"
 	local selected_path="$4"
 	local package_name="$5"
-	python3 - "${discovery_path}" "${plan_path}" "${index}" "${selected_path}" "${package_name}" <<'PY'
+	local shard_count="${6:-2}"
+	python3 - "${discovery_path}" "${plan_path}" "${index}" "${selected_path}" "${package_name}" "${shard_count}" <<'PY'
 import json
 import re
 import sys
 
-discovery_path, plan_path, index_text, selected_path, package_name = sys.argv[1:]
+discovery_path, plan_path, index_text, selected_path, package_name, shard_count_text = sys.argv[1:]
 index = int(index_text)
+shard_count = int(shard_count_text)
 with open(discovery_path, encoding="utf-8") as source:
     discovered = [line.rstrip("\n") for line in source]
 with open(plan_path, encoding="utf-8") as source:
@@ -904,8 +913,8 @@ with open(plan_path, encoding="utf-8") as source:
 if plan.get("version") != 1 or plan.get("package") != package_name:
     raise SystemExit("planner returned wrong schema or package")
 shards = plan.get("shards")
-if not isinstance(shards, list) or len(shards) != 2:
-    raise SystemExit("planner did not return exactly two shards")
+if not isinstance(shards, list) or len(shards) != shard_count:
+    raise SystemExit(f"planner did not return exactly {shard_count} shards")
 seen = []
 for expected_index, shard in enumerate(shards):
     if not isinstance(shard, dict) or shard.get("index") != expected_index:
@@ -917,9 +926,11 @@ for expected_index, shard in enumerate(shards):
         raise SystemExit("planner returned invalid test name")
     if not isinstance(shard.get("regex"), str) or not shard["regex"]:
         raise SystemExit("planner returned invalid regex")
+    if shard["regex"] != "^(?:" + "|".join(re.escape(name) for name in tests) + ")$":
+        raise SystemExit("planner returned non-canonical exact-test regex")
     seen.extend(tests)
 if len(seen) != len(set(seen)) or sorted(seen) != sorted(discovered):
-    raise SystemExit("planner two-shard union does not match discovery")
+    raise SystemExit("planner shard union does not match discovery")
 with open(selected_path, "w", encoding="utf-8") as target:
     json.dump(shards[index], target, sort_keys=True, indent=2)
     target.write("\n")
@@ -1017,6 +1028,34 @@ if not summary["valid"]:
 PY
 }
 
+filter_lwc_compile_discovery() {
+	local discovery_path="$1"
+	local artifact_dir="$2"
+	local authority_path="${artifact_dir}/node-integration-expected.tsv"
+	write_node_integration_expected "${authority_path}"
+	cp "${discovery_path}" "${artifact_dir}/discovery-full.txt"
+	python3 - "${artifact_dir}/discovery-full.txt" "${authority_path}" "${discovery_path}" <<'PY'
+import sys
+
+full_path, authority_path, discovery_path = sys.argv[1:]
+with open(full_path, encoding="utf-8") as source:
+    discovered = source.read().splitlines()
+with open(authority_path, encoding="utf-8") as source:
+    excluded = [name for package, name in (line.rstrip("\n").split("\t") for line in source)
+                if package == "github.com/glade-sh/glade/internal/lwc/compile"]
+if not excluded or len(excluded) != len(set(excluded)):
+    raise SystemExit("invalid LWC compile Node authority selection")
+missing = sorted(set(excluded) - set(discovered))
+if missing:
+    raise SystemExit("LWC compile Node authority tests missing from discovery: " + ", ".join(missing))
+remaining = sorted(set(discovered) - set(excluded))
+if not remaining or sorted(remaining + excluded) != discovered:
+    raise SystemExit("LWC compile and Node authority union does not match discovery")
+with open(discovery_path, "w", encoding="utf-8") as target:
+    target.write("\n".join(remaining) + "\n")
+PY
+}
+
 run_test_matrix_shard() {
 	local index="${1:-}"
 	local package_name="$2"
@@ -1027,17 +1066,25 @@ run_test_matrix_shard() {
 	local history_path="$7"
 	local strict_discovery="$8"
 	local mode="${9:-test}"
+	local shard_count="${10:-2}"
+	local index_pattern='^[01]$'
+	local index_description='0 or 1'
 	local -a lane_packages=()
 	local -a test_args=(-timeout=30m)
 	local package_summary_path=""
 	if [[ "${mode}" == "local-release" ]]; then
 		test_args=(-count=1 -timeout=90m)
 	fi
-	if [[ "${mode}" == "local-release" || "${lane}" == "apextest" ]]; then
+	if [[ "${mode}" == "lwc-compile" ]]; then
+		test_args=(-count=1 -timeout=90m)
+		index_pattern='^[0-7]$'
+		index_description='between 0 and 7'
+	fi
+	if [[ "${mode}" == "local-release" || "${mode}" == "lwc-compile" || "${lane}" == "apextest" ]]; then
 		package_summary_path="${artifact_dir}/package-summary.json"
 	fi
 	local artifact_suffix="invalid"
-	if [[ "${index}" =~ ^[01]$ ]]; then
+	if [[ "${index}" =~ ${index_pattern} ]]; then
 		artifact_suffix="${index}"
 	fi
 	local discovery_raw="${artifact_dir}/discovery-command.txt"
@@ -1063,19 +1110,25 @@ run_test_matrix_shard() {
 	if [[ -n "${package_summary_path}" ]]; then
 		printf '{"valid": false, "errors": ["shard did not reach result validation"]}\n' >"${package_summary_path}"
 	fi
-	if [[ ! "${index}" =~ ^[01]$ ]]; then
-		echo "shard index must be 0 or 1" >&2
+	if [[ ! "${index}" =~ ${index_pattern} ]]; then
+		echo "shard index must be ${index_description}" >&2
 		return 2
 	fi
 	if [[ -z "${CI_SHARD_PLANNER:-}" ]]; then
 		while IFS= read -r pkg; do
 			lane_packages+=("${pkg}")
 		done < <(package_lane_packages "${lane}")
-		if [[ "${#lane_packages[@]}" -ne 1 ]]; then
+		if [[ "${mode}" == "lwc-compile" ]]; then
+			if [[ "$(printf '%s\n' "${lane_packages[@]}" | awk -v pkg="${package_arg}" '$0 == pkg { n++ } END { print n+0 }')" -ne 1 ]]; then
+				echo "[ci] LWC compile must occur exactly once in the remaining-go package lane" >&2
+				return 1
+			fi
+		elif [[ "${#lane_packages[@]}" -ne 1 ]]; then
 			echo "[ci] ${lane} package lane must contain exactly one package" >&2
 			return 1
+		else
+			package_arg="${lane_packages[0]}"
 		fi
-		package_arg="${lane_packages[0]}"
 	fi
 
 	set +e
@@ -1090,17 +1143,20 @@ run_test_matrix_shard() {
 		return "${discovery_rc}"
 	fi
 	validate_package_discovery "${discovery_raw}" "${discovery}" "${package_name}" "${label}" "${strict_discovery}"
+	if [[ "${mode}" == "lwc-compile" ]]; then
+		filter_lwc_compile_discovery "${discovery}" "${artifact_dir}"
+	fi
 
 	if [[ -n "${CI_SHARD_PLANNER:-}" ]]; then
-		planner=("${CI_SHARD_PLANNER}" --package "${package_name}" --shards 2 --tests "${discovery}")
+		planner=("${CI_SHARD_PLANNER}" --package "${package_name}" --shards "${shard_count}" --tests "${discovery}")
 	else
-		planner=(go run ./scripts/internal/cishard --package "${package_name}" --shards 2 --tests "${discovery}")
+		planner=(go run ./scripts/internal/cishard --package "${package_name}" --shards "${shard_count}" --tests "${discovery}")
 	fi
 	if [[ -s "${history_path}" ]]; then
 		planner+=(--history "${history_path}")
 	fi
 	"${planner[@]}" >"${plan}"
-	select_and_validate_shard "${discovery}" "${plan}" "${index}" "${selected}" "${package_name}"
+	select_and_validate_shard "${discovery}" "${plan}" "${index}" "${selected}" "${package_name}" "${shard_count}"
 	regex="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["regex"])' "${selected}")"
 
 	set +e
@@ -1148,6 +1204,13 @@ run_sema_matrix_shard() {
 	local artifact_suffix="invalid"
 	[[ "${index}" =~ ^[01]$ ]] && artifact_suffix="${index}"
 	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/sema" "./internal/sema" "sema" "sema" "${CI_SEMA_ARTIFACT_DIR:-ci-artifacts/sema-${artifact_suffix}}" "${CI_SEMA_HISTORY_PATH:-}" "1"
+}
+
+run_lwc_compile_matrix_shard() {
+	local index="${1:-}"
+	local artifact_suffix="invalid"
+	[[ "${index}" =~ ^[0-7]$ ]] && artifact_suffix="${index}"
+	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/lwc/compile" "./internal/lwc/compile" "remaining-go" "LWC compile" "${CI_LWC_COMPILE_ARTIFACT_DIR:-ci-artifacts/lwc-compile-${artifact_suffix}}" "" "1" "lwc-compile" "8"
 }
 
 refresh_test_history() {
@@ -1569,6 +1632,10 @@ main() {
 			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh sema-shard 0|1" >&2; return 2; fi
 			run_sema_matrix_shard "${2:-}"
 			;;
+		lwc-compile-shard)
+			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-shard INDEX (0-7)" >&2; return 2; fi
+			run_lwc_compile_matrix_shard "${2:-}"
+			;;
 		sema-history-refresh)
 			if [[ "$#" -ne 4 ]]; then echo "usage: scripts/ci-go-test.sh sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT" >&2; return 2; fi
 			refresh_sema_history "${2:-}" "${3:-}" "${4:-}"
@@ -1582,7 +1649,7 @@ main() {
 			validate_sema_equivalence "${2:-}" "${3:-}" "${4:-}" "${5:-}"
 			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0|1|apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-shard 0|1|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0|1|apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-shard 0|1|lwc-compile-shard 0-7|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac

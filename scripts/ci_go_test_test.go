@@ -134,6 +134,179 @@ func semaPassEvent(name string) string {
 		`{"Action":"pass","Package":"` + semaFixturePackage + `","Elapsed":1}` + "\n"
 }
 
+const lwcCompileFixturePackage = "github.com/glade-sh/glade/internal/lwc/compile"
+
+func lwcCompileFixtureDiscovery() string {
+	names := append([]string{}, nodeIntegrationTests[lwcCompileFixturePackage]...)
+	for index := range 8 {
+		names = append(names, fmt.Sprintf("TestFamily%d", index))
+	}
+	sort.Strings(names)
+	return strings.Join(names, "\n") + "\nok  \t" + lwcCompileFixturePackage + "\n"
+}
+
+func lwcCompileFixturePlan(t *testing.T) string {
+	t.Helper()
+	var shards []map[string]any
+	for index := range 8 {
+		name := fmt.Sprintf("TestFamily%d", index)
+		shards = append(shards, map[string]any{"index": index, "tests": []string{name}, "estimatedDurationMillis": 0, "regex": "^(?:" + name + ")$"})
+	}
+	data, err := json.Marshal(map[string]any{"version": 1, "package": lwcCompileFixturePackage, "historyUsed": false, "shards": shards})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
+}
+
+func lwcCompilePassEvent(name string) string {
+	return strings.ReplaceAll(semaPassEvent(name), semaFixturePackage, lwcCompileFixturePackage)
+}
+
+func runLWCCompileShardFixture(t *testing.T, index, discovery, plan, events string, nativeRC int) (string, error, string) {
+	t.Helper()
+	dir := t.TempDir()
+	artifacts := filepath.Join(dir, "artifacts")
+	for name, contents := range map[string]string{"discovery": discovery, "plan": plan, "events": events} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(contents), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeApexFixtureExecutable(t, filepath.Join(dir, "go"), `#!/usr/bin/env bash
+if [[ "$*" == "test -list ^Test ./internal/lwc/compile" ]]; then cat "$FIXTURE_ROOT/discovery"; exit 0; fi
+if [[ "$1" == "test" && "$2" == "-json" ]]; then
+  printf '%s\n' "$*" >>"$FIXTURE_ROOT/calls"
+  cat "$FIXTURE_ROOT/events"
+  exit "$FIXTURE_NATIVE_RC"
+fi
+exit 97
+`)
+	writeApexFixtureExecutable(t, filepath.Join(dir, "planner"), `#!/usr/bin/env bash
+printf '%s\n' "$*" >"$FIXTURE_ROOT/planner-args"
+cat "$FIXTURE_ROOT/plan"
+`)
+	writeApexFixtureExecutable(t, filepath.Join(dir, "renderer"), "#!/usr/bin/env bash\ncat >/dev/null\n")
+	cmd := exec.Command("bash", "ci-go-test.sh", "lwc-compile-shard", index)
+	cmd.Env = append(os.Environ(), "PATH="+dir+":"+os.Getenv("PATH"), "FIXTURE_ROOT="+dir,
+		"CI_SHARD_PLANNER="+filepath.Join(dir, "planner"), "CI_TESTLOG_RENDERER="+filepath.Join(dir, "renderer"),
+		"CI_LWC_COMPILE_ARTIFACT_DIR="+artifacts, fmt.Sprintf("FIXTURE_NATIVE_RC=%d", nativeRC))
+	out, err := cmd.CombinedOutput()
+	return string(out), err, artifacts
+}
+
+func TestLWCCompileShardsPartitionDiscoveryAndNodeAuthority(t *testing.T) {
+	var union []string
+	for index := range 8 {
+		name := fmt.Sprintf("TestFamily%d", index)
+		out, err, artifacts := runLWCCompileShardFixture(t, strconv.Itoa(index), lwcCompileFixtureDiscovery(), lwcCompileFixturePlan(t), lwcCompilePassEvent(name), 0)
+		if err != nil {
+			t.Fatalf("shard %d failed: %v\n%s", index, err, out)
+		}
+		read := func(name string) string {
+			t.Helper()
+			data, err := os.ReadFile(filepath.Join(artifacts, name))
+			if err != nil {
+				t.Fatal(err)
+			}
+			return string(data)
+		}
+		calls := read("../calls")
+		wantCall := "test -json -vet=off -count=1 -timeout=90m -run ^(?:" + name + ")$ ./internal/lwc/compile\n"
+		if calls != wantCall {
+			t.Errorf("shard %d native call = %q, want %q", index, calls, wantCall)
+		}
+		if args := read("../planner-args"); !strings.Contains(args, "--package "+lwcCompileFixturePackage+" --shards 8 --tests "+filepath.Join(artifacts, "discovery.txt")) {
+			t.Errorf("planner args = %q", args)
+		}
+		full, filtered := strings.Fields(read("discovery-full.txt")), strings.Fields(read("discovery.txt"))
+		if len(full) != 20 || len(filtered) != 8 {
+			t.Fatalf("full/filtered counts = %d/%d, want 20/8", len(full), len(filtered))
+		}
+		for _, authority := range nodeIntegrationTests[lwcCompileFixturePackage] {
+			if !strings.Contains(read("node-integration-expected.tsv"), lwcCompileFixturePackage+"\t"+authority+"\n") {
+				t.Errorf("missing Node authority %s", authority)
+			}
+			for _, discovered := range filtered {
+				if discovered == authority {
+					t.Errorf("Node authority test selected for compile shards: %s", authority)
+				}
+			}
+		}
+		var selected struct {
+			Tests []string `json:"tests"`
+		}
+		if err := json.Unmarshal([]byte(read("selected-shard.json")), &selected); err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(selected.Tests, []string{name}) {
+			t.Fatalf("selected tests = %v, want %s", selected.Tests, name)
+		}
+		union = append(union, selected.Tests...)
+		for _, summaryFile := range []string{"validation-summary.json", "package-summary.json"} {
+			var summary struct {
+				Valid bool `json:"valid"`
+			}
+			if data := read(summaryFile); json.Unmarshal([]byte(data), &summary) != nil || !summary.Valid {
+				t.Errorf("invalid %s: %s", summaryFile, data)
+			}
+		}
+	}
+	var want []string
+	for index := range 8 {
+		want = append(want, fmt.Sprintf("TestFamily%d", index))
+	}
+	if !reflect.DeepEqual(union, want) {
+		t.Fatalf("shard union = %v, want %v", union, want)
+	}
+}
+
+func TestLWCCompileShardRejectsIncompleteCoverageAndPreservesNativeFailure(t *testing.T) {
+	plan, discovery, events := lwcCompileFixturePlan(t), lwcCompileFixtureDiscovery(), lwcCompilePassEvent("TestFamily0")
+	cases := []struct {
+		name, discovery, plan, events string
+		nativeRC, wantRC              int
+		wantNative                    bool
+	}{
+		{"missing Node authority", strings.Replace(discovery, nodeIntegrationTests[lwcCompileFixturePackage][0]+"\n", "", 1), plan, events, 0, 1, false},
+		{"missing family", discovery, strings.ReplaceAll(plan, "TestFamily7", "TestOther"), events, 0, 1, false},
+		{"Node authority in shard", discovery, strings.ReplaceAll(plan, "TestFamily7", nodeIntegrationTests[lwcCompileFixturePackage][0]), events, 0, 1, false},
+		{"broad selector", discovery, strings.Replace(plan, "^(?:TestFamily0)$", "^Test", 1), events, 0, 1, false},
+		{"missing test result", discovery, plan, strings.ReplaceAll(events, "TestFamily0", "TestFamily1"), 0, 1, true},
+		{"nested skip", discovery, plan, `{"Action":"skip","Package":"` + lwcCompileFixturePackage + `","Test":"TestFamily0/BrowserRuntime"}` + "\n" + events, 0, 1, true},
+		{"missing package result", discovery, plan, strings.SplitAfter(events, "\n")[0], 0, 1, true},
+		{"native failure", discovery, plan, strings.ReplaceAll(events, `"pass"`, `"fail"`), 23, 23, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			out, err, artifacts := runLWCCompileShardFixture(t, "0", tc.discovery, tc.plan, tc.events, tc.nativeRC)
+			exitErr, ok := err.(*exec.ExitError)
+			if !ok || exitErr.ExitCode() != tc.wantRC {
+				t.Fatalf("status = %v, want %d\n%s", err, tc.wantRC, out)
+			}
+			_, callErr := os.Stat(filepath.Join(filepath.Dir(artifacts), "calls"))
+			if (callErr == nil) != tc.wantNative {
+				t.Errorf("native execution = %v, want %v", callErr == nil, tc.wantNative)
+			}
+			if tc.wantNative {
+				data, err := os.ReadFile(filepath.Join(artifacts, "events.json"))
+				if err != nil || string(data) != tc.events {
+					t.Errorf("raw events lost: %q %v", data, err)
+				}
+			}
+		})
+	}
+	for _, index := range []string{"", "8", "-1", "01"} {
+		out, err, artifacts := runLWCCompileShardFixture(t, index, discovery, plan, events, 0)
+		exitErr, ok := err.(*exec.ExitError)
+		if !ok || exitErr.ExitCode() != 2 {
+			t.Errorf("index %q status = %v, want 2\n%s", index, err, out)
+		}
+		if _, err := os.Stat(filepath.Join(filepath.Dir(artifacts), "calls")); !os.IsNotExist(err) {
+			t.Errorf("invalid index %q executed tests", index)
+		}
+	}
+}
+
 func realGoCommand(t *testing.T) string {
 	t.Helper()
 	path, err := exec.LookPath("go")
@@ -2904,6 +3077,46 @@ func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
 	}
 }
 
+func TestCILWCCompileMatrixRoutesAllShardsAndPreservesFailureEvidence(t *testing.T) {
+	_, jobs := readCIWorkflow(t)
+	job := jobs["test"]
+	if !strings.Contains(job, "timeout-minutes: 100") || !strings.Contains(job, "fail-fast: false") {
+		t.Error("compile shards need the enclosing timeout and independent failure collection")
+	}
+	if strings.Count(job, "          - lane:") != 9 || !strings.Contains(job, "          - lane: remaining-go\n            name: test\n") {
+		t.Error("test matrix must contain one remaining-go row and eight compile shards")
+	}
+	for index := range 8 {
+		row := fmt.Sprintf("          - lane: lwc-compile-%d\n            name: LWC compile (%d)\n            shard: %d\n", index, index, index)
+		if strings.Count(job, row) != 1 {
+			t.Errorf("matrix must contain shard %d exactly once", index)
+		}
+	}
+	compile := workflowStepBlockText(job, "      - name: Test LWC compile shard")
+	for _, marker := range []string{"if: matrix.lane != 'remaining-go'", `scripts/ci-go-test.sh lwc-compile-shard "${{ matrix.shard }}"`, "ci-artifacts/lwc-compile-${{ matrix.shard }}/resource-usage.json"} {
+		if !strings.Contains(compile, marker) {
+			t.Errorf("compile step missing %q", marker)
+		}
+	}
+	for _, lane := range []string{"repoguard", "remaining-go"} {
+		step := workflowStepBlockText(job, "      - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-"+lane+".json")
+		if !strings.Contains(step, "if: matrix.lane == 'remaining-go'") {
+			t.Errorf("%s must only run in remaining-go matrix row", lane)
+		}
+	}
+	upload := workflowStepBlockText(job, "      - name: Upload LWC compile shard events")
+	for _, marker := range []string{"if: always() && matrix.lane != 'remaining-go'", "name: go-test-lwc-compile-shard-${{ matrix.shard }}", "path: ci-artifacts/lwc-compile-${{ matrix.shard }}/", "if-no-files-found: error"} {
+		if !strings.Contains(upload, marker) {
+			t.Errorf("compile evidence upload missing %q", marker)
+		}
+	}
+	for _, line := range strings.Split(job, "\n") {
+		if strings.Contains(line, "key: ") && strings.Contains(line, "github.run_id") && !strings.Contains(line, "matrix.lane") {
+			t.Errorf("matrix cache writers share a primary key: %s", line)
+		}
+	}
+}
+
 func TestCINestedSourcesWorkflowContract(t *testing.T) {
 	workflow, jobs := readCIWorkflow(t)
 	if got := strings.Count(workflow, "\n  nested-sources:\n"); got != 1 {
@@ -3265,8 +3478,13 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	if !foundNode || !foundEnd {
 		t.Fatal("cannot identify node integration function")
 	}
-	if strings.Contains(beforeNode+afterNode, "-p=") {
-		t.Error("only node integration may override package concurrency for its shared toolchain")
+	remainingScript := beforeNode + afterNode
+	remainingScript = strings.Replace(remainingScript, `if [[ "${routing}" == "ci-remaining" ]]; then
+		# Remaining toolchain consumers share the user installation directory.
+		args+=(-p=1)
+	fi`, "", 1)
+	if strings.Contains(remainingScript, "-p=") {
+		t.Error("only node integration and CI remaining toolchain consumers may override package concurrency")
 	}
 	if strings.Contains(scriptText, `grep '^Test' || true`) {
 		t.Fatal("ci-go-test.sh must not suppress Apex test discovery failures")
@@ -3467,6 +3685,9 @@ exit 23
 			}
 			var wantPackages []string
 			for _, pkg := range manifest.Lanes[tc.lane] {
+				if tc.lane == "remaining-go" && pkg == "github.com/glade-sh/glade/internal/lwc/compile" {
+					continue // Dedicated LWC compile shards own this package in CI.
+				}
 				wantPackages = append(wantPackages, toArgument(pkg))
 			}
 			sort.Strings(gotPackages)
@@ -3479,8 +3700,11 @@ exit 23
 					t.Errorf("lane executed package %s owned by %s", field, owner)
 				}
 			}
-			if strings.Contains(lines[0], "-parallel=") || strings.Contains(lines[0], "-p=") {
+			if strings.Contains(lines[0], "-parallel=") || (tc.lane != "remaining-go" && strings.Contains(lines[0], "-p=")) {
 				t.Errorf("lane call overrides environment concurrency limits: %s", lines[0])
+			}
+			if tc.lane == "remaining-go" && !strings.Contains(lines[0], " -p=1 ") {
+				t.Errorf("remaining toolchain consumers must run serially: %s", lines[0])
 			}
 			if !strings.Contains(lines[0], tc.wantTimeout) {
 				t.Errorf("lane call missing timeout %s: %s", tc.wantTimeout, lines[0])
@@ -3496,6 +3720,8 @@ func TestCIPackageLaneCommandRejectsInvalidArguments(t *testing.T) {
 		{"lane", "apextest"},
 		{"lane", "gladecli", "extra"},
 		{"node-integration", "extra"},
+		{"lwc-compile-shard"},
+		{"lwc-compile-shard", "0", "extra"},
 	}
 	for _, args := range cases {
 		t.Run(strings.Join(args, "_"), func(t *testing.T) {
@@ -3618,7 +3844,7 @@ tee "$output"
 					}
 				}
 			}
-			for _, pkg := range []string{"./internal/gladecli", "./internal/playground", "./internal/sema", "./internal/semanticcache", "./internal/server", "./internal/visualforce", "./cmd/glade"} {
+			for _, pkg := range []string{"./internal/gladecli", "./internal/playground", "./internal/sema", "./internal/semanticcache", "./internal/server", "./internal/visualforce", "./internal/lwc/compile", "./cmd/glade"} {
 				if got := packageExecutions[pkg]; got != 1 {
 					t.Errorf("package lane %s executions = %d, want 1; calls:\n%s", pkg, got, b)
 				}

@@ -524,9 +524,40 @@ jobs:
           if-no-files-found: error
 
   test:
+    name: ${{ matrix.name }}
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-latest
     timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lane: remaining-go
+            name: test
+          - lane: lwc-compile-0
+            name: LWC compile (0)
+            shard: 0
+          - lane: lwc-compile-1
+            name: LWC compile (1)
+            shard: 1
+          - lane: lwc-compile-2
+            name: LWC compile (2)
+            shard: 2
+          - lane: lwc-compile-3
+            name: LWC compile (3)
+            shard: 3
+          - lane: lwc-compile-4
+            name: LWC compile (4)
+            shard: 4
+          - lane: lwc-compile-5
+            name: LWC compile (5)
+            shard: 5
+          - lane: lwc-compile-6
+            name: LWC compile (6)
+            shard: 6
+          - lane: lwc-compile-7
+            name: LWC compile (7)
+            shard: 7
     env:
       GOMAXPROCS: "2"
       GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
@@ -545,7 +576,7 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
           restore-keys: |
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-${{ hashFiles('go.sum') }}-
       - name: Report Go module cache restore
@@ -568,7 +599,7 @@ jobs:
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
           restore-keys: |
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-${{ hashFiles('go.sum') }}-
       - name: Report Go build cache restore
@@ -595,7 +626,12 @@ jobs:
       - name: Install conformance Chromium
         run: ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-repoguard.json repoguard -- scripts/ci-go-test.sh lane repoguard
+        if: matrix.lane == 'remaining-go'
       - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-remaining-go.json remaining-go -- scripts/ci-go-test.sh lane remaining-go
+        if: matrix.lane == 'remaining-go'
+      - name: Test LWC compile shard
+        if: matrix.lane != 'remaining-go'
+        run: scripts/ci-resource-run.sh ci-artifacts/lwc-compile-${{ matrix.shard }}/resource-usage.json lwc-compile-${{ matrix.shard }} -- scripts/ci-go-test.sh lwc-compile-shard "${{ matrix.shard }}"
       - name: Save Go module cache
         if: success()
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -611,7 +647,7 @@ jobs:
           path: ~/.cache/go-build
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
       - name: Upload raw Go test events
-        if: always()
+        if: always() && matrix.lane == 'remaining-go'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: go-test-remaining-go
@@ -621,6 +657,13 @@ jobs:
             ci-artifacts/go-test/test-remaining-go-visualforce.json
             ci-artifacts/go-test/resource-repoguard.json
             ci-artifacts/go-test/resource-remaining-go.json
+          if-no-files-found: error
+      - name: Upload LWC compile shard events
+        if: always() && matrix.lane != 'remaining-go'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: go-test-lwc-compile-shard-${{ matrix.shard }}
+          path: ci-artifacts/lwc-compile-${{ matrix.shard }}/
           if-no-files-found: error
 
   smoke-runtime:

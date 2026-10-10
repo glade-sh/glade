@@ -214,8 +214,8 @@ func TestCIResourceTelemetryCoversAuthoritativeLanes(t *testing.T) {
 			t.Errorf("%s does not use resource wrapper", job)
 		}
 	}
-	if got := strings.Count(workflow, "scripts/ci-resource-run.sh"); got != 8 {
-		t.Fatalf("resource wrapper invocation count = %d, want 8", got)
+	if got := strings.Count(workflow, "scripts/ci-resource-run.sh"); got != 9 {
+		t.Fatalf("resource wrapper invocation count = %d, want 9", got)
 	}
 	for _, forbidden := range []string{"runs-on: ubuntu-latest-", "GOMAXPROCS: \"4\"", "GOMAXPROCS: \"8\""} {
 		if strings.Contains(workflow, forbidden) {
