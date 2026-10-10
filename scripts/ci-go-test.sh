@@ -265,12 +265,17 @@ run_package_lane() {
 	local timeout="$3"
 	local skip_regex="${4:-}"
 	local -a packages=()
+	local -a visualforce_packages=()
 	local -a args=()
 	load_package_lanes
 	while IFS= read -r pkg; do
-		packages+=("${pkg}")
+		if [[ "${lane}" == "remaining-go" && "${kind}" == "test" && "${pkg}" == "./internal/visualforce" ]]; then
+			visualforce_packages+=("${pkg}")
+		else
+			packages+=("${pkg}")
+		fi
 	done < <(awk -F '\t' -v lane="${lane}" '$1 == lane { print $2 }' <<<"${package_lane_rows}")
-	if [[ "${#packages[@]}" -eq 0 ]]; then
+	if [[ "${#packages[@]}" -eq 0 && "${#visualforce_packages[@]}" -eq 0 ]]; then
 		echo "[ci] package lane ${lane} is empty" >&2
 		return 1
 	fi
@@ -281,7 +286,19 @@ run_package_lane() {
 	if [[ -n "${skip_regex}" ]]; then
 		args+=(-skip "${skip_regex}")
 	fi
-	run_json_with_heartbeat "go test ${lane}" "$(testlog_artifact "${kind}" "${lane}")" "${args[@]}" "${packages[@]}"
+	local lane_rc=0 visualforce_rc=0
+	if [[ "${#packages[@]}" -gt 0 ]]; then
+		run_json_with_heartbeat "go test ${lane}" "$(testlog_artifact "${kind}" "${lane}")" "${args[@]}" "${packages[@]}" || lane_rc="$?"
+	fi
+	if [[ "${#visualforce_packages[@]}" -gt 0 ]]; then
+		# Browser conformance makes Visualforce longer than the other packages.
+		# Keep its local-release budget without extending every package's timeout.
+		run_json_with_heartbeat "go test ${lane} Visualforce" "$(testlog_artifact "${kind}" "${lane}-visualforce")" -timeout=70m "${visualforce_packages[@]}" || visualforce_rc="$?"
+	fi
+	if [[ "${lane_rc}" -ne 0 ]]; then
+		return "${lane_rc}"
+	fi
+	return "${visualforce_rc}"
 }
 
 node_integration_run_regex='^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$'
@@ -944,7 +961,7 @@ try:
         with open(package_summary_path, encoding="utf-8") as source:
             package_summary = json.load(source)
         if not package_summary.get("valid"):
-            raise ValueError("local-release package summary is invalid")
+            raise ValueError("package summary is invalid")
         deferred = {row["test"] for row in package_summary["deferred"] if row["package"] == package_name}
     with open(selected_path, encoding="utf-8") as source:
         selected = json.load(source)
@@ -1013,6 +1030,8 @@ run_test_matrix_shard() {
 	local package_summary_path=""
 	if [[ "${mode}" == "local-release" ]]; then
 		test_args=(-count=1 -timeout=90m)
+	fi
+	if [[ "${mode}" == "local-release" || "${lane}" == "apextest" ]]; then
 		package_summary_path="${artifact_dir}/package-summary.json"
 	fi
 	local artifact_suffix="invalid"
@@ -1087,8 +1106,10 @@ run_test_matrix_shard() {
 	native_rc="$?"
 	set -e
 	if [[ -n "${package_summary_path}" ]]; then
-		load_package_lanes
-		validate_local_release_package_summary "${lane}" "${label} shard ${index}" "${events}" "${package_summary_path}" "${package_test_metadata_temp}" "${package_arg}" || validation_rc="$?"
+		# Successful discovery above establishes that this exact package has tests.
+		local shard_metadata="${artifact_dir}/package-test-metadata.tsv"
+		printf '%s\thas-tests\n' "${package_name}" >"${shard_metadata}"
+		validate_local_release_package_summary "${lane}" "${label} shard ${index}" "${events}" "${package_summary_path}" "${shard_metadata}" "${package_arg}" || validation_rc="$?"
 	fi
 	validate_shard_results "${selected}" "${events}" "${summary}" "${package_name}" "${label}" "${package_summary_path}" || validation_rc="$?"
 	if [[ "${native_rc}" -ne 0 || "${validation_rc}" -ne 0 ]]; then
@@ -1139,18 +1160,20 @@ refresh_test_history() {
 		echo "usage: scripts/ci-go-test.sh ${prefix}-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT" >&2
 		return 2
 	fi
-	python3 - "${shard_zero}" "${shard_one}" "${output}" "${package_name}" "${label}" "${prefix}" "${expected_count}" <<'PY'
+	python3 - "${shard_zero}" "${shard_one}" "${output}" "${package_name}" "${label}" "${prefix}" "${expected_count}" "${script_dir}/ci-go-test.sh" <<'PY'
 import json
 import math
 import os
 import re
 import sys
 import tempfile
+import subprocess
 
 PACKAGE = sys.argv[4]
 LABEL = sys.argv[5]
 PREFIX = sys.argv[6]
 EXPECTED_COUNT = int(sys.argv[7])
+SCRIPT = sys.argv[8]
 TEST_NAME = re.compile(r"Test[A-Za-z0-9_]*\Z")
 MAX_MILLIS = (1 << 63) - 1
 
@@ -1241,6 +1264,7 @@ try:
         reject("plan union does not exactly match discovery")
 
     durations = {}
+    all_deferred = []
     total_duration_millis = 0
     shard_elapsed = []
     for index, shard_dir in enumerate(shard_dirs):
@@ -1250,7 +1274,32 @@ try:
             reject(f"selected shard {index} does not match the canonical plan")
         selected_tests = selected["tests"]
         summary = load_json(os.path.join(shard_dir, "validation-summary.json"))
-        require_exact_keys(summary, ("valid", "expected", "passed", "errors"), f"shard {index} validation summary")
+        summary_keys = ("valid", "expected", "passed", "errors")
+        if PACKAGE == "github.com/glade-sh/glade/internal/apextest" and "deferred" in summary:
+            summary_keys += ("deferred",)
+        require_exact_keys(summary, summary_keys, f"shard {index} validation summary")
+        deferred = summary.get("deferred", [])
+        if (not isinstance(deferred, list) or any(not isinstance(name, str) for name in deferred)
+                or deferred != sorted(set(deferred))):
+            reject(f"shard {index} has an invalid deferred test list")
+        if deferred:
+            # Recheck the existing exact prerequisite/reason policy against raw
+            # events, rather than trusting a claimed deferral in the summary.
+            with tempfile.TemporaryDirectory(prefix="glade-apex-history-") as directory:
+                metadata = os.path.join(directory, "metadata.tsv")
+                checked = os.path.join(directory, "package-summary.json")
+                with open(metadata, "w", encoding="utf-8") as target:
+                    target.write(PACKAGE + "\thas-tests\n")
+                result = subprocess.run(["bash", "-c",
+                    'source "$1"; validate_local_release_package_summary apextest history "$2" "$3" "$4" "$5"',
+                    "history", SCRIPT, os.path.join(shard_dir, "events.json"), checked, metadata, PACKAGE],
+                    capture_output=True, text=True)
+                if result.returncode != 0:
+                    reject(f"shard {index} deferred prerequisite validation failed: {result.stderr.strip()}")
+                checked_deferred = sorted(row["test"] for row in load_json(checked)["deferred"])
+                if checked_deferred != deferred:
+                    reject(f"shard {index} deferred tests do not match raw events")
+            all_deferred.extend(deferred)
         if summary["valid"] is not True:
             reject(f"shard {index} validation summary is not valid")
         if (not isinstance(summary["expected"], list) or
@@ -1261,7 +1310,8 @@ try:
                 any(not isinstance(error, str) for error in summary["errors"]) or
                 summary["errors"] != [] or
                 summary["expected"] != selected_tests or
-                summary["passed"] != selected_tests):
+                summary["passed"] != sorted(summary["passed"]) or
+                sorted(summary["passed"] + deferred) != selected_tests):
             reject(f"shard {index} validation summary does not exactly match its selection")
 
         terminal = {}
@@ -1285,8 +1335,11 @@ try:
         elapsed_total = 0.0
         for name in selected_tests:
             events = terminal[name]
-            if len(events) != 1 or events[0].get("Action") != "pass":
-                reject(f"shard {index} test {name} does not have one passing terminal result")
+            expected_action = "skip" if name in deferred else "pass"
+            if len(events) != 1 or events[0].get("Action") != expected_action:
+                reject(f"shard {index} test {name} does not have one {expected_action} terminal result")
+            if expected_action == "skip":
+                continue
             elapsed = events[0].get("Elapsed")
             if isinstance(elapsed, bool) or not isinstance(elapsed, (int, float)) or not math.isfinite(elapsed) or elapsed < 0:
                 reject(f"shard {index} test {name} has an invalid duration")
@@ -1302,8 +1355,8 @@ try:
             reject(f"shard {index} elapsed total is not finite")
         shard_elapsed.append(elapsed_total)
 
-    if len(durations) != len(discovery) or sorted(durations) != discovery:
-        reject("passing terminal union does not exactly match all discovered tests")
+    if len(durations) + len(all_deferred) != len(discovery) or sorted(list(durations) + all_deferred) != discovery:
+        reject("passing and deferred terminal union does not exactly match all discovered tests")
     # With two shards, median is their arithmetic mean. The exact 1.5x
     # boundary is accepted; only a strict excess fails the refresh.
     median = (shard_elapsed[0] + shard_elapsed[1]) / 2.0
@@ -1315,8 +1368,8 @@ try:
     history = {
         "version": 1,
         "package": PACKAGE,
-        "complete": True,
-        "tests": [{"name": name, "durationMillis": durations[name]} for name in discovery],
+        "complete": not all_deferred,
+        "tests": [{"name": name, "durationMillis": durations[name]} for name in sorted(durations)],
     }
     output_dir = os.path.dirname(output_path) or "."
     os.makedirs(output_dir, exist_ok=True)
@@ -1332,6 +1385,8 @@ try:
         except FileNotFoundError:
             pass
         raise
+    if all_deferred:
+        print(f"[ci] {LABEL} duration history incomplete: deferred={all_deferred}; using deterministic scheduling fallback")
     print(f"[ci] {LABEL} duration history refreshed: tests={len(discovery)} shard_elapsed={shard_elapsed} median={median:.6f}s")
 except Exception as error:
     print(f"[ci] {LABEL} duration history refresh rejected: {error}", file=sys.stderr)

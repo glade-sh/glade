@@ -603,7 +603,7 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 		t.Error("Apex duration history input and matrix jobs must be read-only")
 	}
 	for _, want := range []string{
-		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "apextest-duration-history-v1", "runner.os", "runner.arch", "1.26.6", "hashFiles('go.sum')",
+		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "apextest-duration-history-v1", "runner.os", "runner.arch", "1.26.9", "hashFiles('go.sum')",
 		"CI_APEXTEST_HISTORY_PATH", "CI_DURATION_HISTORY_CACHE_REF", "github.event.pull_request.base.sha", "github.event.before",
 		"mkdir -p ci-artifacts/apextest-history-input", "apextest-duration-history.json", "name: apextest-history-input",
 		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0",
@@ -808,7 +808,7 @@ func TestCIGoCacheOwnership(t *testing.T) {
 		}
 		for _, key := range keys {
 			for _, dimension := range []string{
-				"cache-v1", "1.26.6", "runner.os", "runner.arch", sumExpression,
+				"cache-v1", "1.26.9", "runner.os", "runner.arch", sumExpression,
 				"github.sha", "github.run_id", "github.run_attempt",
 			} {
 				if !strings.Contains(key, dimension) {
@@ -842,7 +842,7 @@ func TestCIGoCacheOwnership(t *testing.T) {
 	if got := strings.Count(security, "ci-test-${{ hashFiles('go.sum') }}-"); got != 6 {
 		t.Errorf("security.yml digest-scoped ci-test restore prefixes = %d, want 6", got)
 	}
-	if got := strings.Count(security, "1.26.6-ci-test-"); got != 12 {
+	if got := strings.Count(security, "1.26.9-ci-test-"); got != 12 {
 		t.Errorf("security.yml ci-test restore prefixes = %d, want 12", got)
 	}
 
@@ -1817,7 +1817,7 @@ func browserWorkflowProblem(workflow string) string {
 		"github.event_name != 'pull_request'",
 		"run_expensive=$UNCONDITIONAL",
 		"uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0",
-		"go-version: \"1.26.6\"",
+		"go-version: \"1.26.9\"",
 		"cache: false",
 		"uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
 		"node-version: \"22\"",
@@ -2849,10 +2849,13 @@ func TestCINodeIntegrationValidatorRejectsInvalidEvidence(t *testing.T) {
 
 func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
 	workflow, jobs := readCIWorkflow(t)
+	if !strings.Contains(jobs["test"], "GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright") {
+		t.Error("browser conformance must resolve Playwright from the installed checkout dependencies")
+	}
 	node := jobs["node-integration"]
 	for _, marker := range []string{
 		"runs-on: ubuntu-latest", "timeout-minutes: 30", "GOMAXPROCS: \"2\"",
-		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.6\"", "cache: false",
+		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.9\"", "cache: false",
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", "node-version: \"22\"", "cache: npm",
 		"cache-dependency-path: third_party/lwc/package-lock.json", "npm ci --prefix third_party/lwc",
 		"scripts/ci-go-test.sh node-integration", "ci-node-integration",
@@ -2909,7 +2912,7 @@ func TestCINestedSourcesWorkflowContract(t *testing.T) {
 	for _, marker := range []string{
 		"runs-on: ubuntu-latest", "timeout-minutes: 30",
 		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
-		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.6\"", "cache: false",
+		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.9\"", "cache: false",
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", "node-version: \"22\"",
 		"- name: Test vendored parser", "(cd third_party/glade-apex-parser && go test ./...)",
 		"- name: Test vendored parser without CGO", "(cd third_party/glade-apex-parser && CGO_ENABLED=0 go test ./...)",
@@ -2942,7 +2945,7 @@ func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
 		t.Run(lane, func(t *testing.T) {
 			dir := t.TempDir()
 			calls := filepath.Join(dir, "calls")
-			goScript := "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >\"$FIXTURE_CALLS\"\nexit 0\n"
+			goScript := "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >>\"$FIXTURE_CALLS\"\nexit 0\n"
 			rendererScript := "#!/usr/bin/env bash\ncat >/dev/null\n"
 			for name, contents := range map[string]string{"go": goScript, "testlog": rendererScript} {
 				if err := os.WriteFile(filepath.Join(dir, name), []byte(contents), 0o700); err != nil {
@@ -2962,7 +2965,7 @@ func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			call := strings.TrimSpace(string(data))
+			call := strings.Split(strings.TrimSpace(string(data)), "\n")[0]
 			if skip == "" {
 				if strings.Contains(call, "-skip") {
 					t.Fatalf("repoguard unexpectedly skips tests: %s", call)
@@ -3041,8 +3044,12 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		}
 	}
 	for _, name := range []string{"site", "vet", "gladecli", "node-integration", "nested-sources", "sema", "sema-full", "server-and-playground", "test", "smoke-runtime", "smoke-distribution"} {
-		if !strings.Contains(jobs[name], "timeout-minutes: 30") {
-			t.Errorf("%s timeout is not 30 minutes", name)
+		timeout := "30"
+		if name == "test" {
+			timeout = "100" // 20m remaining packages, 70m Visualforce, and setup.
+		}
+		if !strings.Contains(jobs[name], "timeout-minutes: "+timeout) {
+			t.Errorf("%s timeout is not %s minutes", name, timeout)
 		}
 	}
 	if !strings.Contains(jobs["apextest"], "timeout-minutes: 35") || !strings.Contains(jobs["apextest-history"], "timeout-minutes: 5") {
@@ -3089,6 +3096,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 		"ci-artifacts/go-test/test-server-and-playground.json",
 		"ci-artifacts/go-test/test-repoguard.json",
 		"ci-artifacts/go-test/test-remaining-go.json",
+		"ci-artifacts/go-test/test-remaining-go-visualforce.json",
 	} {
 		if count := strings.Count(workflow, path); count != 1 {
 			t.Errorf("raw event path %q count = %d, want 1", path, count)
@@ -3125,9 +3133,9 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 		job := jobs[jobName]
 		sumPath := "go.sum"
 		for _, marker := range []string{
-			"GOMAXPROCS: \"2\"", "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.6\"", "cache: false",
+			"GOMAXPROCS: \"2\"", "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.9\"", "cache: false",
 			"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "continue-on-error: true", "if: success()",
-			"${{ runner.os }}-${{ runner.arch }}-1.26.6-" + namespace,
+			"${{ runner.os }}-${{ runner.arch }}-1.26.9-" + namespace,
 			"${{ hashFiles('" + sumPath + "') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
 		} {
 			if !strings.Contains(job, marker) {
@@ -3266,7 +3274,7 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	for _, want := range []string{
 		"timeout-minutes: 30",
 		"GOMAXPROCS: \"2\"",
-		"go-version: \"1.26.6\"",
+		"go-version: \"1.26.9\"",
 		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
 		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0",
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
@@ -3276,8 +3284,8 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		"shard: [0, 1]",
 		"cache: false",
 		"ci-apextest-${{ matrix.shard }}",
-		"go-mod-v1-1.26.6-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
-		"go-build-v1-1.26.6-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+		"go-mod-v1-1.26.9-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+		"go-build-v1-1.26.9-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
 		"scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
 		"if: always()",
 		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0",
@@ -3428,10 +3436,17 @@ exit 23
 				t.Fatal(err)
 			}
 			lines := strings.Split(strings.TrimSpace(string(callData)), "\n")
-			if len(lines) != 1 {
-				t.Fatalf("native executions = %d, want 1; calls:\n%s", len(lines), callData)
+			wantCalls := 1
+			if tc.lane == "remaining-go" {
+				wantCalls = 2
+				if len(lines) == 2 && lines[1] != "test -json -vet=off -timeout=70m ./internal/visualforce" {
+					t.Fatalf("Visualforce invocation = %q", lines[1])
+				}
 			}
-			fields := strings.Fields(lines[0])
+			if len(lines) != wantCalls {
+				t.Fatalf("native executions = %d, want %d; calls:\n%s", len(lines), wantCalls, callData)
+			}
+			fields := strings.Fields(string(callData))
 			var gotPackages []string
 			for _, field := range fields {
 				if strings.HasPrefix(field, "./") {
@@ -4457,4 +4472,158 @@ func TestCILocalReleaseDataWeaveDeferralsAreExactAndVisible(t *testing.T) {
 		t.Run(identity[1]+" missing input failure rejected", func(t *testing.T) { check(t, identity, false, "fail", "fail", false, 0) })
 	}
 
+}
+
+func TestCIApexShardDataWeaveDeferrals(t *testing.T) {
+	const deferred = "TestRunDataWeaveSourceSourceNames"
+	const reason = "requires explicitly installed DataWeave toolchain"
+	for _, tc := range []struct {
+		name, test, cause, home string
+		valid                   bool
+	}{
+		{"missing prerequisite", deferred, reason, "", true},
+		{"configured prerequisite", deferred, reason, "/configured", false},
+		{"wrong reason", deferred, "unrelated runtime problem", "", false},
+		{"unrelated test", "TestUnrelated", reason, "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("GLADE_DATAWEAVE_APEX_TEST_HOME", tc.home)
+			events := fmt.Sprintf("{\"Action\":\"output\",\"Package\":%q,\"Test\":%q,\"Output\":%q}\n", fixturePackage, tc.test, "    fixture_test.go:1: "+tc.cause+"\n") +
+				fmt.Sprintf("{\"Action\":\"skip\",\"Package\":%q,\"Test\":%q}\n{\"Action\":\"pass\",\"Package\":%q}\n", fixturePackage, tc.test, fixturePackage)
+			plan := strings.ReplaceAll(validFixturePlan(), "TestAlpha", tc.test)
+			out, err, artifacts := runApexShardFixture(t, "0", tc.test+"\nTestBeta\n", 0, plan, 0, events, 0)
+			if (err == nil) != tc.valid {
+				t.Fatalf("valid=%v err=%v\n%s", tc.valid, err, out)
+			}
+			if !tc.valid {
+				return
+			}
+			var summary struct {
+				Valid            bool
+				Passed, Deferred []string
+			}
+			data, err := os.ReadFile(filepath.Join(artifacts, "validation-summary.json"))
+			if err != nil || json.Unmarshal(data, &summary) != nil || !summary.Valid || len(summary.Passed) != 0 || !reflect.DeepEqual(summary.Deferred, []string{deferred}) {
+				t.Fatalf("deferral must remain separate from passes: %v %s", err, data)
+			}
+			if !strings.Contains(out, "missing explicit prerequisites: GLADE_DATAWEAVE_APEX_TEST_HOME") {
+				t.Fatalf("missing visible deferral reason: %s", out)
+			}
+		})
+	}
+}
+
+func TestCIApexHistoryDeferralsKeepHistoryIncomplete(t *testing.T) {
+	const deferred = "TestRunDataWeaveSourceSourceNames"
+	for _, tc := range []struct {
+		name, test, cause, home string
+		valid                   bool
+	}{
+		{"missing prerequisite", deferred, "requires explicitly installed DataWeave toolchain", "", true},
+		{"configured prerequisite", deferred, "requires explicitly installed DataWeave toolchain", "/configured", false},
+		{"wrong reason", deferred, "unrelated failure", "", false},
+		{"unrelated test", "TestUnrelated", "requires explicitly installed DataWeave toolchain", "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("GLADE_DATAWEAVE_APEX_TEST_HOME", tc.home)
+			fixture := newApexHistoryFixtureWithCount(t, 4, [2]float64{0, 0})
+			// Use the last name to keep discovery and shard order canonical.
+			for _, dir := range fixture.shards {
+				for _, name := range []string{"discovery.txt", "plan.json", "selected-shard.json", "validation-summary.json", "events.json"} {
+					path := filepath.Join(dir, name)
+					data, err := os.ReadFile(path)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if err := os.WriteFile(path, []byte(strings.ReplaceAll(string(data), "TestHistory003", tc.test)), 0o600); err != nil {
+						t.Fatal(err)
+					}
+				}
+			}
+			dir := fixture.shards[1]
+			writeJSONFixture(t, filepath.Join(dir, "validation-summary.json"), map[string]any{
+				"valid": true, "expected": []string{"TestHistory002", tc.test}, "passed": []string{"TestHistory002"}, "deferred": []string{tc.test}, "errors": []string{},
+			})
+			events := fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q,\"Test\":\"TestHistory002\",\"Elapsed\":0}\n", fixturePackage) +
+				fmt.Sprintf("{\"Action\":\"output\",\"Package\":%q,\"Test\":%q,\"Output\":%q}\n", fixturePackage, tc.test, "    fixture_test.go:1: "+tc.cause+"\n") +
+				fmt.Sprintf("{\"Action\":\"skip\",\"Package\":%q,\"Test\":%q}\n{\"Action\":\"pass\",\"Package\":%q}\n", fixturePackage, tc.test, fixturePackage)
+			if err := os.WriteFile(filepath.Join(dir, "events.json"), []byte(events), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			out, err := runApexHistoryRefresh(t, fixture)
+			if (err == nil) != tc.valid {
+				t.Fatalf("valid=%v err=%v\n%s", tc.valid, err, out)
+			}
+			if !tc.valid {
+				if _, err := os.Stat(fixture.output); !os.IsNotExist(err) {
+					t.Fatalf("invalid history survived: %v", err)
+				}
+				return
+			}
+			var history struct {
+				Complete bool
+				Tests    []struct{ Name string }
+			}
+			data, err := os.ReadFile(fixture.output)
+			if err != nil || json.Unmarshal(data, &history) != nil || history.Complete || len(history.Tests) != 3 {
+				t.Fatalf("deferred history must remain incomplete: %v %s", err, data)
+			}
+			for _, test := range history.Tests {
+				if test.Name == deferred {
+					t.Fatalf("deferred test acquired a fabricated duration: %s", data)
+				}
+			}
+			if !strings.Contains(out, "using deterministic scheduling fallback") {
+				t.Fatalf("missing fallback explanation: %s", out)
+			}
+		})
+	}
+}
+
+func TestCIRemainingGoSeparatesVisualforceBudgetAndPreservesFailures(t *testing.T) {
+	for _, tc := range []struct {
+		name                   string
+		remaining, visualforce int
+		want                   int
+	}{
+		{"pass", 0, 0, 0}, {"remaining fails", 23, 0, 23},
+		{"Visualforce fails", 0, 29, 29}, {"both fail", 23, 29, 23},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			goScript := `#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$FIXTURE_CALLS"
+printf '%s\n' '{"Action":"pass","Package":"fixture"}'
+if [[ "$*" == *"./internal/visualforce"* ]]; then exit "$FIXTURE_VISUALFORCE_RC"; fi
+exit "$FIXTURE_REMAINING_RC"
+`
+			for name, body := range map[string]string{"go": goScript, "testlog": "#!/usr/bin/env bash\ncat >/dev/null\n"} {
+				writeApexFixtureExecutable(t, filepath.Join(dir, name), body)
+			}
+			cmd := exec.Command("bash", "-c", `source ./ci-go-test.sh; package_lane_rows=$'remaining-go\t./internal/soql\nremaining-go\t./internal/visualforce'; run_package_lane remaining-go test 20m`)
+			cmd.Env = append(os.Environ(), "PATH="+dir+":"+os.Getenv("PATH"),
+				"CI_TESTLOG_RENDERER="+filepath.Join(dir, "testlog"), "CI_GO_TEST_ARTIFACT_DIR="+dir,
+				"FIXTURE_CALLS="+filepath.Join(dir, "calls"),
+				fmt.Sprintf("FIXTURE_REMAINING_RC=%d", tc.remaining), fmt.Sprintf("FIXTURE_VISUALFORCE_RC=%d", tc.visualforce))
+			out, err := cmd.CombinedOutput()
+			if tc.want == 0 && err != nil {
+				t.Fatalf("lane failed: %v\n%s", err, out)
+			} else if tc.want != 0 {
+				var exitErr *exec.ExitError
+				if !errors.As(err, &exitErr) || exitErr.ExitCode() != tc.want {
+					t.Fatalf("lane status = %v, want %d\n%s", err, tc.want, out)
+				}
+			}
+			calls, err := os.ReadFile(filepath.Join(dir, "calls"))
+			want := "test -json -vet=off -timeout=20m ./internal/soql\ntest -json -vet=off -timeout=70m ./internal/visualforce\n"
+			if err != nil || string(calls) != want {
+				t.Fatalf("package ownership/timeouts changed: %v\n%s", err, calls)
+			}
+			for _, name := range []string{"test-remaining-go.json", "test-remaining-go-visualforce.json"} {
+				if data, err := os.ReadFile(filepath.Join(dir, name)); err != nil || len(data) == 0 {
+					t.Fatalf("raw event artifact %s missing: %v", name, err)
+				}
+			}
+		})
+	}
 }
