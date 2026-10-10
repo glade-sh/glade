@@ -579,6 +579,12 @@ func compressionZipReadContent(entry Value) (Value, error) {
 }
 
 func writeCompressionZipArchive(entries []Value, level Value) (string, error) {
+	// This writer emits classic ZIP records only. Report the local format limit
+	// instead of narrowing a count that requires ZIP64.
+	if len(entries) > 1<<16-1 {
+		return "", unsupportedCallError("compression.ZipWriter.getArchive ZIP64 entry count")
+	}
+	entryCount := uint16(len(entries))
 	compressionLevel := flate.DefaultCompression
 	switch strings.ToUpper(level.Text) {
 	case "NO_COMPRESSION":
@@ -621,6 +627,10 @@ func writeCompressionZipArchive(entries []Value, level Value) (string, error) {
 			header.Comment = header.Comment[:65535] // K003-K006: truncate encoded bytes.
 		}
 		data := []byte(blobText(compressionZipEntryContent(entry)))
+		uncompressedSize, err := compressionZipUint32(int64(len(data)))
+		if err != nil {
+			return "", err
+		}
 		compressed := data
 		if header.Method == zip.Deflate {
 			var err error
@@ -628,6 +638,14 @@ func writeCompressionZipArchive(entries []Value, level Value) (string, error) {
 			if err != nil {
 				return "", err
 			}
+		}
+		compressedSize, err := compressionZipUint32(int64(len(compressed)))
+		if err != nil {
+			return "", err
+		}
+		offset, err := compressionZipUint32(int64(buf.Len()))
+		if err != nil {
+			return "", err
 		}
 		header.SetModTime(header.Modified)
 		// Extended timestamps appear in both headers (R154). Encode the open
@@ -640,7 +658,6 @@ func writeCompressionZipArchive(entries []Value, level Value) (string, error) {
 		if header.Method == zip.Deflate {
 			flags |= 8
 		}
-		offset := uint32(buf.Len())
 		local := make([]byte, 30)
 		binaryencoding.LittleEndian.PutUint32(local[0:], 0x04034b50)
 		binaryencoding.LittleEndian.PutUint16(local[4:], 20)
@@ -650,8 +667,8 @@ func writeCompressionZipArchive(entries []Value, level Value) (string, error) {
 		binaryencoding.LittleEndian.PutUint16(local[12:], header.ModifiedDate)
 		if header.Method == zip.Store {
 			binaryencoding.LittleEndian.PutUint32(local[14:], crc)
-			binaryencoding.LittleEndian.PutUint32(local[18:], uint32(len(compressed)))
-			binaryencoding.LittleEndian.PutUint32(local[22:], uint32(len(data)))
+			binaryencoding.LittleEndian.PutUint32(local[18:], compressedSize)
+			binaryencoding.LittleEndian.PutUint32(local[22:], uncompressedSize)
 		}
 		binaryencoding.LittleEndian.PutUint16(local[26:], uint16(len(name)))
 		binaryencoding.LittleEndian.PutUint16(local[28:], uint16(len(extra)))
@@ -663,8 +680,8 @@ func writeCompressionZipArchive(entries []Value, level Value) (string, error) {
 			descriptor := make([]byte, 16)
 			binaryencoding.LittleEndian.PutUint32(descriptor[0:], 0x08074b50)
 			binaryencoding.LittleEndian.PutUint32(descriptor[4:], crc)
-			binaryencoding.LittleEndian.PutUint32(descriptor[8:], uint32(len(compressed)))
-			binaryencoding.LittleEndian.PutUint32(descriptor[12:], uint32(len(data)))
+			binaryencoding.LittleEndian.PutUint32(descriptor[8:], compressedSize)
+			binaryencoding.LittleEndian.PutUint32(descriptor[12:], uncompressedSize)
 			buf.Write(descriptor)
 		}
 		central := make([]byte, 46)
@@ -672,8 +689,8 @@ func writeCompressionZipArchive(entries []Value, level Value) (string, error) {
 		binaryencoding.LittleEndian.PutUint16(central[4:], 20)
 		copy(central[6:16], local[4:14])
 		binaryencoding.LittleEndian.PutUint32(central[16:], crc)
-		binaryencoding.LittleEndian.PutUint32(central[20:], uint32(len(compressed)))
-		binaryencoding.LittleEndian.PutUint32(central[24:], uint32(len(data)))
+		binaryencoding.LittleEndian.PutUint32(central[20:], compressedSize)
+		binaryencoding.LittleEndian.PutUint32(central[24:], uncompressedSize)
 		binaryencoding.LittleEndian.PutUint16(central[28:], uint16(len(name)))
 		binaryencoding.LittleEndian.PutUint16(central[30:], uint16(len(extra)))
 		binaryencoding.LittleEndian.PutUint16(central[32:], uint16(len(header.Comment)))
@@ -683,15 +700,31 @@ func writeCompressionZipArchive(entries []Value, level Value) (string, error) {
 		directory.Write(extra)
 		directory.WriteString(header.Comment)
 	}
+	directorySize, err := compressionZipUint32(int64(directory.Len()))
+	if err != nil {
+		return "", err
+	}
+	directoryOffset, err := compressionZipUint32(int64(buf.Len()))
+	if err != nil {
+		return "", err
+	}
 	end := make([]byte, 22)
 	binaryencoding.LittleEndian.PutUint32(end[0:], 0x06054b50)
-	binaryencoding.LittleEndian.PutUint16(end[8:], uint16(len(ordered)))
-	binaryencoding.LittleEndian.PutUint16(end[10:], uint16(len(ordered)))
-	binaryencoding.LittleEndian.PutUint32(end[12:], uint32(directory.Len()))
-	binaryencoding.LittleEndian.PutUint32(end[16:], uint32(buf.Len()))
+	binaryencoding.LittleEndian.PutUint16(end[8:], entryCount)
+	binaryencoding.LittleEndian.PutUint16(end[10:], entryCount)
+	binaryencoding.LittleEndian.PutUint32(end[12:], directorySize)
+	binaryencoding.LittleEndian.PutUint32(end[16:], directoryOffset)
 	buf.Write(directory.Bytes())
 	buf.Write(end)
 	return buf.String(), nil
+}
+
+func compressionZipUint32(value int64) (uint32, error) {
+	// 0xffffffff denotes a ZIP64 size or offset, not a classic ZIP value.
+	if value < 0 || value >= 1<<32-1 {
+		return 0, unsupportedCallError("compression.ZipWriter.getArchive ZIP64 size or offset")
+	}
+	return uint32(value), nil
 }
 
 func compressionZipDeflate(data []byte, level int) ([]byte, error) {

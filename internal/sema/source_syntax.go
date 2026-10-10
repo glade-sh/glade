@@ -89,7 +89,7 @@ func sourceSyntaxStatementDiagnostics(typ typesys.TypeSymbol, code string, bodyO
 func sourceSyntaxCodeText(source string) string {
 	code := []byte(source)
 	for i := 0; i < len(source); {
-		end := i
+		var end int
 		switch {
 		case source[i] == '\'':
 			end = min(len(source), skipSemaString(source, i)+1)
