@@ -18,18 +18,18 @@ func TestPrivateExamplePackagePatternSetupReducesAllocations(t *testing.T) {
 		privatePatternSliceSink = privateExamplePackagePatterns()
 	})
 	if cached*5 > legacy {
-		t.Fatalf("compiled pattern setup allocations = %.1f, want at least 80%% below %.1f", cached, legacy)
+		t.Fatalf("cached pattern table allocations = %.1f, want at least 80%% below %.1f", cached, legacy)
 	}
 }
 
 func BenchmarkRepoGuardPatternSetup(b *testing.B) {
-	b.Run("compile-each-time", func(b *testing.B) {
+	b.Run("decode-each-time", func(b *testing.B) {
 		b.ReportAllocs()
 		for iteration := 0; iteration < b.N; iteration++ {
 			privatePatternSliceSink = buildPrivateExamplePackagePatterns()
 		}
 	})
-	b.Run("reuse-compiled-set", func(b *testing.B) {
+	b.Run("reuse-decoded-set", func(b *testing.B) {
 		b.ReportAllocs()
 		for iteration := 0; iteration < b.N; iteration++ {
 			privatePatternSliceSink = privateExamplePackagePatterns()
@@ -57,6 +57,6 @@ func syntheticRepoGuardTexts(count int) []string {
 	for index := range files {
 		files[index] = fmt.Sprintf("docs/example-%d.md macrodata-apex refinement-local", index)
 	}
-	files[count/2] = hyphen("sf", "cred", "pkg", "develop")
+	files[count/2] = `Namespace: "Zq" SetCurrentNamespace("Zq") desk-kit-tools Object.zq__Thing`
 	return files
 }

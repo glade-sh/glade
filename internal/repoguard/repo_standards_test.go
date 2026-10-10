@@ -1,6 +1,8 @@
 package repoguard
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
@@ -9,11 +11,13 @@ import (
 	"regexp"
 	"regexp/syntax"
 	"runtime"
+	"slices"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
-	"unicode"
+	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/project"
 )
@@ -643,133 +647,29 @@ type privatePackageReporter interface {
 
 func checkPrivateExamplePackageText(t privatePackageReporter, rel, text string) {
 	t.Helper()
-	folded := foldPrivatePackageText(text)
-	for _, pattern := range privateExamplePackagePatternSet {
-		if pattern.mayMatch(text, folded) && pattern.re.MatchString(text) {
-			t.Errorf("%s contains private example package marker %q", rel, pattern.label)
+	checkPrivateNameText(t, privateExamplePackagePatternSet, rel, text)
+}
+
+func checkPrivateNameText(t privatePackageReporter, patterns []privatePackagePattern, rel, text string) {
+	t.Helper()
+	for index, matched := range matchPrivateNames(patterns, text, true) {
+		if matched {
+			t.Errorf("%s contains private example package marker %q", rel, patterns[index].label)
 		}
 	}
 }
 
 func privateExamplePackageFinding(text string) string {
-	folded := foldPrivatePackageText(text)
-	for _, pattern := range privateExamplePackagePatternSet {
-		if pattern.mayMatch(text, folded) && pattern.re.MatchString(text) {
-			return pattern.label
+	return privateNameFinding(privateExamplePackagePatternSet, text)
+}
+
+func privateNameFinding(patterns []privatePackagePattern, text string) string {
+	for index, matched := range matchPrivateNames(patterns, text, true) {
+		if matched {
+			return patterns[index].label
 		}
 	}
 	return ""
-}
-
-type privatePackagePattern struct {
-	label string
-	re    *regexp.Regexp
-}
-
-type privatePackageLiteral struct {
-	text string
-	fold bool
-}
-
-// Literal sets live beside the compiled patterns, keyed by the shared *regexp.Regexp,
-// so the pattern table itself stays unchanged.
-var privatePackageLiteralSets = buildPrivatePackageLiteralSets(privateExamplePackagePatternSet)
-
-func buildPrivatePackageLiteralSets(patterns []privatePackagePattern) map[*regexp.Regexp][]privatePackageLiteral {
-	sets := make(map[*regexp.Regexp][]privatePackageLiteral, len(patterns))
-	for _, pattern := range patterns {
-		parsed, err := syntax.Parse(pattern.re.String(), syntax.Perl)
-		if err == nil {
-			sets[pattern.re] = requiredPrivatePackageLiterals(parsed.Simplify())
-		}
-	}
-	return sets
-}
-
-func (pattern privatePackagePattern) requiredLiterals() []privatePackageLiteral {
-	return privatePackageLiteralSets[pattern.re]
-}
-
-func (pattern privatePackagePattern) mayMatch(text, folded string) bool {
-	return privatePackageLiteralsMayMatch(pattern.requiredLiterals(), text, folded)
-}
-
-func privatePackageLiteralsMayMatch(literals []privatePackageLiteral, text, folded string) bool {
-	if len(literals) == 0 {
-		return true
-	}
-	for _, literal := range literals {
-		haystack := text
-		if literal.fold {
-			haystack = folded
-		}
-		if strings.Contains(haystack, literal.text) {
-			return true
-		}
-	}
-	return false
-}
-
-func foldPrivatePackageText(text string) string {
-	return strings.Map(func(r rune) rune {
-		if r <= unicode.MaxASCII {
-			if 'a' <= r && r <= 'z' {
-				return r - ('a' - 'A')
-			}
-			return r
-		}
-		// Match regexp/syntax's minFoldRune, including fold cycles of any length.
-		minimum := r
-		for next := unicode.SimpleFold(r); next != r; next = unicode.SimpleFold(next) {
-			if next < minimum {
-				minimum = next
-			}
-		}
-		return minimum
-	}, text)
-}
-
-// A match must contain at least one member of the returned set. An empty set
-// means no required literal could be proved, so the regexp must always run.
-func requiredPrivatePackageLiterals(re *syntax.Regexp) []privatePackageLiteral {
-	switch re.Op {
-	case syntax.OpLiteral:
-		if len(re.Rune) != 0 {
-			return []privatePackageLiteral{{text: string(re.Rune), fold: re.Flags&syntax.FoldCase != 0}}
-		}
-	case syntax.OpCapture:
-		return requiredPrivatePackageLiterals(re.Sub[0])
-	case syntax.OpConcat:
-		var best []privatePackageLiteral
-		bestMinimum := 0
-		for _, child := range re.Sub {
-			literals := requiredPrivatePackageLiterals(child)
-			if len(literals) == 0 {
-				continue
-			}
-			minimum := len(literals[0].text)
-			for _, literal := range literals[1:] {
-				if len(literal.text) < minimum {
-					minimum = len(literal.text)
-				}
-			}
-			if minimum > bestMinimum {
-				best, bestMinimum = literals, minimum
-			}
-		}
-		return best
-	case syntax.OpAlternate:
-		var union []privatePackageLiteral
-		for _, child := range re.Sub {
-			literals := requiredPrivatePackageLiterals(child)
-			if len(literals) == 0 {
-				return nil
-			}
-			union = append(union, literals...)
-		}
-		return union
-	}
-	return nil
 }
 
 var privateExamplePackagePatternSet = buildPrivateExamplePackagePatterns()
@@ -778,106 +678,502 @@ func privateExamplePackagePatterns() []privatePackagePattern {
 	return append([]privatePackagePattern(nil), privateExamplePackagePatternSet...)
 }
 
+// Private example names are kept only as salted SHA-256 digests of their
+// lower-case form, so this guard finds them without spelling them out. A
+// pattern's kind fixes the syntax around its name; matchPrivateNames finds the
+// spans of a text that the kind allows and compares their digests.
+const privateNameSalt = "glade repoguard private name v1\x00"
+
+type privateNameKind uint8
+
+const (
+	// privateNameHyphenated is (?i)NAME anywhere; NAME is letters joined by
+	// single hyphens.
+	privateNameHyphenated privateNameKind = iota
+	// privateNameWord is (?i)\bNAME\b.
+	privateNameWord
+	// privateNameWordPrefix is (?i)\bNAME[[:alnum:]_]*\b.
+	privateNameWordPrefix
+	// privateNamePackage is (?i)\bNAME(?:__|\b|\.).
+	privateNamePackage
+	// privateNameProduct is (?i)\bNAME\b|NAME__|NAME[:/-]|\bNAME[A-Z_].
+	privateNameProduct
+	// privateNameNamespace is NAME, written in upper case, as a namespace:
+	// (?i:\bNAME__|\bzNAME__|namespace"\s*:\s*"NAME"|Namespace:\s*"NAME"|
+	// Namespace\s*=\s*"NAME"|SetCurrentNamespace\("NAME"\)|Type\.forName\('NAME')
+	// or the case-sensitive \bNAME\.[A-Za-z].
+	privateNameNamespace
+)
+
+// privateNameTable lists the guarded names in finding order: the kind, the
+// name's length in runes, privateNameFingerprint of the lower-case name (a
+// cheap prefilter), and the hex SHA-256 of privateNameSalt and that name.
+// Names of every kind but privateNameHyphenated are ASCII letters.
+var privateNameTable = []struct {
+	kind        privateNameKind
+	length      int
+	fingerprint uint16
+	digest      string
+}{
+	{privateNameHyphenated, 22, 0xa826, "efbeaaec446d00569c25d1f611cb6a9b8523e34f6dff0527e07d1d71792d13da"},
+	{privateNameHyphenated, 25, 0xee64, "d740ea594fcda17f1c029e873c3ddad6f430626866089dcc7b1fead392f903f4"},
+	{privateNameHyphenated, 18, 0x8e86, "a4fbdfbe205df67091c6a474b71d0f86b6c6c2e61fc36d036c6f24476cee73c3"},
+	{privateNameHyphenated, 18, 0xf977, "55786f086c337ee2e2fcabc7ea2ebff2f06ad00e0cd5bd04bb41de5f0f35c0ab"},
+	{privateNameHyphenated, 21, 0xd914, "b9400938d1ef900ef637125fde04a4350007f64a3430bd1159b390dba72149f2"},
+	{privateNameHyphenated, 19, 0x7e04, "61c31d07aeab74d1a63af83db788aea64c35e24ecd1391be66a15559d1707feb"},
+	{privateNameHyphenated, 21, 0x41d4, "3e051b48b277ebe78922fd4036e9391716886ee9a5ed58b822f205df434ad825"},
+	{privateNameHyphenated, 21, 0xde2e, "e1d94ad5a58426fb87da4633109865af4815ac8ee4b85f8307b46a1997b8e974"},
+	{privateNameHyphenated, 19, 0x49be, "976ae88a565535a1321b57f3dc5b513b4ad328622ffe9830d4d51541f4f84067"},
+	{privateNamePackage, 4, 0x405e, "d6f4cf24eb84ac8f7d7e6d6a4f3182b3704a23ed8b57856ffa05a43da305e1d2"},
+	{privateNameNamespace, 2, 0x0f3a, "9cfd1f2d31418a841032bc365dcfb243a351fb245a35854cdfc1b423520eecb6"},
+	{privateNameProduct, 10, 0xf109, "b65da6f09c152e8f69bca11c2ab2d15308c064af16048bfaaef98cec6137af5d"},
+	{privateNameWordPrefix, 6, 0x0948, "da68d32409c8384360ce2f00685673e58aa946de54b892c62d5082c60a4d4c28"},
+	{privateNameWord, 9, 0x6581, "805cef92237b3652b373adf53c284dd57a7ea51fed398a3cb8527632e8f2ea7f"},
+	{privateNameHyphenated, 7, 0xc9bb, "f58ebba1ad45c628dc5ef48064a3f2ed210c93851521d1a4e03e33e6df402f0c"},
+	{privateNameWordPrefix, 13, 0x4c09, "1cbeb634e4e8c9d1874a40e4ff083347909dfdff62294ff97b7fd6ff6ff6416c"},
+	{privateNameWordPrefix, 22, 0xa9a7, "483719d7ce249d9a8a92f0d356d02583023c13589085e11517cf5ea8ff57a10a"},
+	{privateNameWordPrefix, 11, 0x36aa, "8ab70b2b4c792a336e785c569cbae2bfa5d19adab2913ca68dd8e282621145ce"},
+	{privateNameWordPrefix, 10, 0x2ea4, "2f915681f283abe9cd72a23519503a49549cf4ee751c025e21cb416dbfa6d4ce"},
+	{privateNameWordPrefix, 13, 0x48b5, "738f947092646c23753821093b0a711ea47ee27ae49d5971921e0fc75cfa08dc"},
+	{privateNameWordPrefix, 16, 0x6dc9, "308f1ecef2ee1fb50883c7959fbb1660ecee86142308e1416b5955486ab29903"},
+	{privateNameWordPrefix, 24, 0xb497, "8e78b1c099d33b82380e7ac37750710e416b4a0a7df3b159261db78488eda5e7"},
+}
+
+type privatePackagePattern struct {
+	label       string
+	kind        privateNameKind
+	length      int
+	fingerprint uint16
+	digest      [sha256.Size]byte
+}
+
 func buildPrivateExamplePackagePatterns() []privatePackagePattern {
-	ci := func(parts ...string) *regexp.Regexp {
-		return regexp.MustCompile(`(?i)` + strings.Join(parts, ""))
+	patterns := make([]privatePackagePattern, len(privateNameTable))
+	for index, row := range privateNameTable {
+		digest, err := hex.DecodeString(row.digest)
+		if err != nil || len(digest) != sha256.Size || row.length <= 0 {
+			panic(fmt.Sprintf("private name table row %d is malformed", index+1))
+		}
+		patterns[index] = privatePackagePattern{
+			label:       fmt.Sprintf("private-pattern-%02d", index+1),
+			kind:        row.kind,
+			length:      row.length,
+			fingerprint: row.fingerprint,
+		}
+		copy(patterns[index].digest[:], digest)
 	}
-	cs := func(parts ...string) *regexp.Regexp {
-		return regexp.MustCompile(strings.Join(parts, ""))
+	return patterns
+}
+
+// matches reports whether text contains the pattern's name.
+func (pattern privatePackagePattern) matches(text string) bool {
+	return matchPrivateNames([]privatePackagePattern{pattern}, text, true)[0]
+}
+
+func privateNameSum(name []byte) [sha256.Size]byte {
+	var buffer [96]byte
+	return sha256.Sum256(append(append(buffer[:0], privateNameSalt...), name...))
+}
+
+const (
+	privateFNVOffset uint32 = 2166136261
+	privateFNVPrime  uint32 = 16777619
+)
+
+// privateNameFingerprint is FNV-1a over the lower-case name, folded to 16 bits.
+func privateNameFingerprint(name []byte) uint16 {
+	h := privateFNVOffset
+	for _, c := range name {
+		h = privateFNVStep(h, c)
 	}
-	exact := func(parts ...string) *regexp.Regexp {
-		return ci(`\b`, strings.Join(parts, ""), `\b`)
+	return privateFNVFold(h)
+}
+
+func privateFNVStep(h uint32, c byte) uint32 {
+	return (h ^ uint32(c)) * privateFNVPrime
+}
+
+func privateFNVFold(h uint32) uint16 {
+	return uint16(h ^ h>>16)
+}
+
+// A scanned text keeps one byte per rune: the rune when ASCII, or one of these.
+const (
+	privateRuneOther  = 0x80
+	privateRuneKelvin = 0x81 // U+212A KELVIN SIGN, which (?i) matches with k
+	privateRuneLongS  = 0x82 // U+017F LATIN SMALL LETTER LONG S, which (?i) matches with s
+)
+
+// privateRuneFold maps a scanned byte to the lower-case letter that (?i)
+// matches it with, or to itself. privateRuneWord marks the bytes that \b
+// treats as word characters.
+var privateRuneFold, privateRuneWord = buildPrivateRuneTables()
+
+func buildPrivateRuneTables() (fold [256]byte, word [256]bool) {
+	for c := range fold {
+		fold[c] = byte(c)
+		word[c] = c < utf8.RuneSelf && syntax.IsWordChar(rune(c))
 	}
-	return []privatePackagePattern{
-		{hyphen("src", "nbm", "solhub", "develop"), ci(hyphen("src", "nbm", "solhub", "develop"))},
-		{hyphen("src", "nmb", strings.Join([]string{"nam", "z"}, ""), "prog", "develop"), ci(hyphen("src", "nmb", strings.Join([]string{"nam", "z"}, ""), "prog", "develop"))},
-		{hyphen("src", "nmb", "nc", "develop"), ci(hyphen("src", "nmb", "nc", "develop"))},
-		{hyphen("src", "nmb", "nu", "develop"), ci(hyphen("src", "nmb", "nu", "develop"))},
-		{hyphen("src", "nmb", strings.Join([]string{"nu", "dev"}, ""), "develop"), ci(hyphen("src", "nmb", strings.Join([]string{"nu", "dev"}, ""), "develop"))},
-		{hyphen("src", "nmb", strings.Join([]string{"nu", "q"}, ""), "develop"), ci(hyphen("src", "nmb", strings.Join([]string{"nu", "q"}, ""), "develop"))},
-		{hyphen("src", "nmb", strings.Join([]string{"nu", "tpl"}, ""), "develop"), ci(hyphen("src", "nmb", strings.Join([]string{"nu", "tpl"}, ""), "develop"))},
-		{hyphen("src", "nmb", strings.Join([]string{"nu", "tplx"}, ""), "master"), ci(hyphen("src", "nmb", strings.Join([]string{"nu", "tplx"}, ""), "master"))},
-		{hyphen("sf", "cred", "pkg", "develop"), ci(hyphen("sf", "cred", "pkg", "develop"))},
-		{strings.Join([]string{"nam", "z"}, ""), ci(`\bnam`, "z", `(?:__|\b|\.)`)},
-		{strings.Join([]string{"N", "U namespace"}, ""), cs(`(?i:\bN`, "U", `__|\bn`, "u", `__|\bz`, "n", "u", `__|namespace"\s*:\s*"N`, "U", `"|Namespace:\s*"N`, "U", `"|Namespace\s*=\s*"N`, "U", `"|SetCurrentNamespace\("N`, "U", `"\)|Type\.forName\('N`, "U", `')|\bN`, "U", `\.[A-Za-z]`)},
-		{strings.Join([]string{"veri", "fiable"}, ""), ci(`\b`, "veri", "fiable", `\b|`, "veri", "fiable", `__|`, "veri", "fiable", `[:/-]|\b`, "Veri", "fiable", `[A-Z_]`)},
-		{strings.Join([]string{"nim", "ble"}, ""), ci(`\bnim`, "ble", `[[:alnum:]_]*\b`)},
-		{strings.Join([]string{"mo", "mentive"}, ""), exact("mo", "mentive")},
-		{hyphen("sf", "cred"), ci(hyphen("sf", "cred"))},
-		{strings.Join([]string{"creden", "tialing"}, ""), ci(`\bcreden`, "tialing", `[[:alnum:]_]*\b`)},
-		{strings.Join([]string{"V", "fiHospitalAffiliation"}, ""), ci(`\bV`, "fiHospitalAffiliation", `[[:alnum:]_]*\b`)},
-		{strings.Join([]string{"V", "fiProvider"}, ""), ci(`\bV`, "fiProvider", `[[:alnum:]_]*\b`)},
-		{strings.Join([]string{"V", "fiLicense"}, ""), ci(`\bV`, "fiLicense", `[[:alnum:]_]*\b`)},
-		{strings.Join([]string{"Education", "Last"}, ""), ci(`\bEducation`, "Last", `[[:alnum:]_]*\b`)},
-		{strings.Join([]string{"Setup", "DataMapping"}, ""), ci(`\bSetup`, "DataMapping", `[[:alnum:]_]*\b`)},
-		{strings.Join([]string{"Action", "ProcessorQueueable"}, ""), ci(`\bAction`, "ProcessorQueueable", `[[:alnum:]_]*\b`)},
+	for c := 'A'; c <= 'Z'; c++ {
+		fold[c] = byte(c - 'A' + 'a')
+	}
+	fold[privateRuneKelvin], fold[privateRuneLongS] = 'k', 's'
+	return fold, word
+}
+
+func privateRuneByte(r rune) byte {
+	switch {
+	case r < utf8.RuneSelf:
+		return byte(r)
+	case r == '\u212a':
+		return privateRuneKelvin
+	case r == '\u017f':
+		return privateRuneLongS
+	}
+	return privateRuneOther
+}
+
+// privateNameRunes returns text with each rune replaced by privateRuneByte.
+func privateNameRunes(text string) string {
+	for index := 0; index < len(text); index++ {
+		if text[index] >= utf8.RuneSelf {
+			runes := make([]byte, 0, len(text))
+			for _, r := range text {
+				runes = append(runes, privateRuneByte(r))
+			}
+			return string(runes)
+		}
+	}
+	return text
+}
+
+func privateLetter(c byte) bool {
+	return 'a' <= c && c <= 'z'
+}
+
+type privateNameScan struct {
+	text      string // the scanned text
+	runes     string // privateNameRunes(text): rune i is byte i
+	patterns  []privatePackagePattern
+	prefilter bool // false hashes every candidate span, ignoring fingerprints
+	matched   []bool
+	contexts  bool   // a letter run spells namespace or forname
+	name      []byte // the folded candidate span
+}
+
+// matchPrivateNames reports, for each pattern, whether text contains its name
+// in the syntax its kind allows. With prefilter set, the 16-bit fingerprint
+// rejects most candidate spans before their SHA-256 is computed.
+func matchPrivateNames(patterns []privatePackagePattern, text string, prefilter bool) []bool {
+	scan := privateNameScan{
+		text:      text,
+		runes:     privateNameRunes(text),
+		patterns:  patterns,
+		prefilter: prefilter,
+		matched:   make([]bool, len(patterns)),
+	}
+	namespace := privateNameOrder(patterns, privateNameNamespace)
+	scan.scanLetterRuns(
+		privateNameOrder(patterns, privateNameWord, privateNameWordPrefix, privateNamePackage, privateNameProduct, privateNameNamespace),
+		privateNameOrder(patterns, privateNameProduct),
+		namespace)
+	scan.scanHyphenatedRuns(privateNameOrder(patterns, privateNameHyphenated))
+	if scan.contexts {
+		scan.scanNamespaceContexts(namespace)
+	}
+	return scan.matched
+}
+
+// privateNameOrder returns the indexes of the patterns of the given kinds,
+// shortest name first.
+func privateNameOrder(patterns []privatePackagePattern, kinds ...privateNameKind) []int {
+	var order []int
+	for index, pattern := range patterns {
+		if slices.Contains(kinds, pattern.kind) {
+			order = append(order, index)
+		}
+	}
+	sort.SliceStable(order, func(left, right int) bool {
+		return patterns[order[left]].length < patterns[order[right]].length
+	})
+	return order
+}
+
+func (scan *privateNameScan) fold(index int) byte {
+	return privateRuneFold[scan.raw(index)]
+}
+
+// raw returns scanned byte index, or 0 outside the text.
+func (scan *privateNameScan) raw(index int) byte {
+	if index < 0 || index >= len(scan.runes) {
+		return 0
+	}
+	return scan.runes[index]
+}
+
+// boundary reports whether \b holds before rune index.
+func (scan *privateNameScan) boundary(index int) bool {
+	return privateRuneWord[scan.raw(index-1)] != privateRuneWord[scan.raw(index)]
+}
+
+func (scan *privateNameScan) underscores(index int) bool {
+	return scan.raw(index) == '_' && scan.raw(index+1) == '_'
+}
+
+func (scan *privateNameScan) upper(start, end int) bool {
+	for index := start; index < end; index++ {
+		if c := scan.raw(index); c < 'A' || c > 'Z' {
+			return false
+		}
+	}
+	return true
+}
+
+func (scan *privateNameScan) spanFNV(start, end int) uint32 {
+	h := privateFNVOffset
+	for index := start; index < end; index++ {
+		h = privateFNVStep(h, scan.fold(index))
+	}
+	return h
+}
+
+// spells reports whether the folded span [start, end) contains word.
+func (scan *privateNameScan) spells(start, end int, word string) bool {
+	for at := start; at+len(word) <= end; at++ {
+		index := 0
+		for index < len(word) && scan.fold(at+index) == word[index] {
+			index++
+		}
+		if index == len(word) {
+			return true
+		}
+	}
+	return false
+}
+
+// nameAt reports whether the folded span of the pattern's length at start is
+// its name; h is FNV-1a state over that span.
+func (scan *privateNameScan) nameAt(pattern *privatePackagePattern, start int, h uint32) bool {
+	if scan.prefilter && privateFNVFold(h) != pattern.fingerprint {
+		return false
+	}
+	scan.name = scan.name[:0]
+	for index := start; index < start+pattern.length; index++ {
+		scan.name = append(scan.name, scan.fold(index))
+	}
+	return privateNameSum(scan.name) == pattern.digest
+}
+
+// scanLetterRuns visits each maximal run of folded letters. Every name but a
+// hyphenated one is letters, so it lies inside one run.
+func (scan *privateNameScan) scanLetterRuns(wordStart, product, namespace []int) {
+	n := len(scan.runes)
+	for start := 0; start < n; start++ {
+		if !privateLetter(scan.fold(start)) {
+			continue
+		}
+		end := start + 1
+		for end < n && privateLetter(scan.fold(end)) {
+			end++
+		}
+		for at := start; at < end; at++ {
+			if !scan.boundary(at) {
+				continue
+			}
+			scan.tryNames(at, end, wordStart, true)
+			if scan.fold(at) == 'z' {
+				scan.afterZ(at+1, end, namespace)
+			}
+		}
+		scan.atRunEnd(start, end, product)
+		if len(namespace) > 0 && !scan.contexts {
+			scan.contexts = scan.spells(start, end, "namespace") || scan.spells(start, end, "forname")
+		}
+		start = end
 	}
 }
 
-func TestPrivateExamplePackagePatternsReuseCompiledExpressions(t *testing.T) {
+// tryNames checks the names in order, shortest first, that start at start
+// and end by runEnd. After a word boundary, completes checks the text that
+// follows each name.
+func (scan *privateNameScan) tryNames(start, runEnd int, order []int, afterBoundary bool) {
+	h, end := privateFNVOffset, start
+	for _, index := range order {
+		pattern := &scan.patterns[index]
+		if start+pattern.length > runEnd {
+			return
+		}
+		for ; end < start+pattern.length; end++ {
+			h = privateFNVStep(h, scan.fold(end))
+		}
+		if !scan.matched[index] && (!afterBoundary || scan.completes(pattern, start, end)) && scan.nameAt(pattern, start, h) {
+			scan.matched[index] = true
+		}
+	}
+}
+
+// completes reports whether the text after a name that starts at a word
+// boundary completes the pattern.
+func (scan *privateNameScan) completes(pattern *privatePackagePattern, start, end int) bool {
+	next := scan.fold(end)
+	switch pattern.kind {
+	case privateNameWord:
+		return scan.boundary(end)
+	case privateNameWordPrefix:
+		for ; !scan.boundary(end); end++ {
+			if c := scan.fold(end); !privateLetter(c) && (c < '0' || c > '9') && c != '_' {
+				return false
+			}
+		}
+		return true
+	case privateNamePackage:
+		return scan.underscores(end) || scan.boundary(end) || next == '.'
+	case privateNameProduct:
+		// \bNAME\b, \bNAME[A-Z_] (which covers NAME__), and NAME[:/-].
+		return scan.boundary(end) || privateLetter(next) || next == '_' || next == ':' || next == '/' || next == '-'
+	case privateNameNamespace:
+		after := scan.raw(end + 1)
+		return scan.underscores(end) ||
+			scan.upper(start, end) && scan.raw(end) == '.' && ('A' <= after && after <= 'Z' || 'a' <= after && after <= 'z')
+	}
+	return false
+}
+
+// afterZ checks \bzNAME__ for namespace names that start at start.
+func (scan *privateNameScan) afterZ(start, runEnd int, namespace []int) {
+	for _, index := range namespace {
+		pattern := &scan.patterns[index]
+		end := start + pattern.length
+		if !scan.matched[index] && end <= runEnd && scan.underscores(end) && scan.nameAt(pattern, start, scan.spanFNV(start, end)) {
+			scan.matched[index] = true
+		}
+	}
+}
+
+// atRunEnd checks NAME__ and NAME[:/-] for product names that end the run,
+// which need no word boundary before them.
+func (scan *privateNameScan) atRunEnd(runStart, runEnd int, product []int) {
+	if next := scan.fold(runEnd); !scan.underscores(runEnd) && next != ':' && next != '/' && next != '-' {
+		return
+	}
+	for _, index := range product {
+		pattern := &scan.patterns[index]
+		start := runEnd - pattern.length
+		if !scan.matched[index] && start >= runStart && scan.nameAt(pattern, start, scan.spanFNV(start, runEnd)) {
+			scan.matched[index] = true
+		}
+	}
+}
+
+// scanHyphenatedRuns visits each maximal run of folded letters and hyphens
+// that holds a hyphen, and checks each hyphenated name at each letter in it.
+func (scan *privateNameScan) scanHyphenatedRuns(order []int) {
+	if len(order) == 0 {
+		return
+	}
+	n := len(scan.runes)
+	for start := 0; start < n; start++ {
+		if c := scan.fold(start); !privateLetter(c) && c != '-' {
+			continue
+		}
+		end, hyphen := start, false
+		for ; end < n; end++ {
+			c := scan.fold(end)
+			if c == '-' {
+				hyphen = true
+			} else if !privateLetter(c) {
+				break
+			}
+		}
+		if hyphen {
+			for at := start; at < end; at++ {
+				if privateLetter(scan.fold(at)) {
+					scan.tryNames(at, end, order, false)
+				}
+			}
+		}
+		start = end
+	}
+}
+
+// privateNamespaceOpening matches the text before a quoted namespace name.
+// No opening can start inside another, so FindAll returns every one.
+var privateNamespaceOpening = regexp.MustCompile(`(?i)(namespace"\s*:\s*"|Namespace:\s*"|Namespace\s*=\s*")|(SetCurrentNamespace\(")|(Type\.forName\(')`)
+
+func (scan *privateNameScan) scanNamespaceContexts(namespace []int) {
+	for _, opening := range privateNamespaceOpening.FindAllStringSubmatchIndex(scan.text, -1) {
+		closing := `"`
+		if opening[4] >= 0 {
+			closing = `")`
+		} else if opening[6] >= 0 {
+			closing = `'`
+		}
+		for _, index := range namespace {
+			pattern := &scan.patterns[index]
+			if !scan.matched[index] && scan.quotedName(pattern, opening[1], closing) {
+				scan.matched[index] = true
+			}
+		}
+	}
+}
+
+// quotedName reports whether the text at byte offset is the pattern's name
+// followed by closing.
+func (scan *privateNameScan) quotedName(pattern *privatePackagePattern, offset int, closing string) bool {
+	scan.name = scan.name[:0]
+	h := privateFNVOffset
+	for len(scan.name) < pattern.length {
+		r, size := utf8.DecodeRuneInString(scan.text[offset:])
+		c := privateRuneFold[privateRuneByte(r)]
+		if size == 0 || !privateLetter(c) {
+			return false
+		}
+		scan.name = append(scan.name, c)
+		h = privateFNVStep(h, c)
+		offset += size
+	}
+	if !strings.HasPrefix(scan.text[offset:], closing) {
+		return false
+	}
+	if scan.prefilter && privateFNVFold(h) != pattern.fingerprint {
+		return false
+	}
+	return privateNameSum(scan.name) == pattern.digest
+}
+
+func TestPrivateExamplePackagePatternsReuseDecodedSet(t *testing.T) {
 	first := privateExamplePackagePatterns()
 	second := privateExamplePackagePatterns()
 	if len(first) != 22 {
-		t.Fatalf("private pattern count = %d, want 22", len(first))
+		t.Fatalf("private example package pattern count = %d, want 22", len(first))
 	}
-	if len(first) != len(second) {
-		t.Fatalf("private pattern lengths differ: %d and %d", len(first), len(second))
-	}
-	for index := range first {
-		if first[index].label != second[index].label {
-			t.Fatalf("pattern %d label differs: %q and %q", index, first[index].label, second[index].label)
-		}
-		if first[index].re != second[index].re {
-			t.Fatalf("pattern %q was compiled more than once", first[index].label)
-		}
+	if !slices.Equal(first, second) || !slices.Equal(first, buildPrivateExamplePackagePatterns()) {
+		t.Fatal("private example package patterns differ between calls")
 	}
 
 	first[0].label = "mutated"
 	if got := privateExamplePackagePatterns()[0].label; got == "mutated" {
-		t.Fatal("private pattern caller mutated the shared pattern slice")
+		t.Fatal("private example package patterns share the cached slice")
 	}
 }
 
-func TestPrivateExamplePackagePatternsMatchExistingFixtureCases(t *testing.T) {
-	patterns := privateExamplePackagePatterns()
-	tests := []struct {
-		name string
-		text string
-		want string
-	}{
-		{name: "path marker", text: patterns[0].label, want: patterns[0].label},
-		{name: "namespace marker", text: "Object." + patterns[9].label + "__Thing", want: patterns[9].label},
-		{name: "negative", text: "macrodata-apex refinement-local", want: ""},
+func TestPrivateExamplePackageFindingUsesThePatternSet(t *testing.T) {
+	if got := privateExamplePackageFinding("public example package reference"); got != "" {
+		t.Fatalf("finding for public text = %q, want none", got)
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := ""
-			for _, pattern := range privateExamplePackagePatterns() {
-				if pattern.re.MatchString(test.text) {
-					got = pattern.label
-					break
-				}
-			}
-			if got != test.want {
-				t.Fatalf("pattern match for %q = %q, want %q", test.text, got, test.want)
-			}
-		})
+	patterns := privateStandInPatterns()
+	if got, want := privateNameFinding(patterns, "see Desk-Kit docs"), patterns[0].label; got != want {
+		t.Fatalf("stand-in finding = %q, want %q", got, want)
 	}
-}
-
-func TestPrivateExamplePackageFindingUsesTheCompiledPatternSet(t *testing.T) {
-	marker := privateExamplePackagePatterns()[0].label
-	if got, want := privateExamplePackageFinding(marker), marker; got != want {
-		t.Fatalf("private marker finding = %q, want %q", got, want)
-	}
-	if got := privateExamplePackageFinding("macrodata-apex refinement-local"); got != "" {
-		t.Fatalf("safe text finding = %q, want empty", got)
+	if got := privateNameFinding(patterns, "public example package reference"); got != "" {
+		t.Fatalf("stand-in finding for public text = %q, want none", got)
 	}
 }
 
 func TestPrivateExamplePackagePatternChecksAreParallelSafe(t *testing.T) {
 	const workers = 32
-	marker := privateExamplePackagePatterns()[0].label
+	patterns := privateStandInPatterns()
+	marker := `Object.kits__Thing desk-kit Namespace: "KS"`
 	var failures atomic.Int32
 	var group sync.WaitGroup
 	for worker := 0; worker < workers; worker++ {
@@ -885,14 +1181,8 @@ func TestPrivateExamplePackagePatternChecksAreParallelSafe(t *testing.T) {
 		go func() {
 			defer group.Done()
 			for iteration := 0; iteration < 100; iteration++ {
-				matched := false
-				for _, pattern := range privateExamplePackagePatterns() {
-					if pattern.re.MatchString(marker) {
-						matched = true
-						break
-					}
-				}
-				if !matched {
+				matched := matchPrivateNames(patterns, marker, true)
+				if !matched[0] || !matched[5] || !matched[7] || privateExamplePackageFinding(marker) != "" {
 					failures.Add(1)
 				}
 			}
@@ -900,7 +1190,7 @@ func TestPrivateExamplePackagePatternChecksAreParallelSafe(t *testing.T) {
 	}
 	group.Wait()
 	if got := failures.Load(); got != 0 {
-		t.Fatalf("parallel pattern checks lost %d matches", got)
+		t.Fatalf("parallel private pattern checks failed %d times", got)
 	}
 }
 
