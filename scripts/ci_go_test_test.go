@@ -2665,7 +2665,7 @@ func TestCINodeIntegrationCommandExactSelectionAndEvidence(t *testing.T) {
 		t.Fatalf("native executions = %d, want 1; calls:\n%s", len(callLines), calls)
 	}
 	call := callLines[0]
-	for _, marker := range []string{"test -json -vet=off", "-count=1", "-timeout=30m", "./internal/gladecli", "./internal/gladehome", "./internal/lwc/compile", "./internal/lwcbrowser", "./internal/server"} {
+	for _, marker := range []string{"test -json -vet=off", "-p=1", "-count=1", "-timeout=30m", "./internal/gladecli", "./internal/gladehome", "./internal/lwc/compile", "./internal/lwcbrowser", "./internal/server"} {
 		if !strings.Contains(call, marker) {
 			t.Errorf("native command missing %q: %s", marker, call)
 		}
@@ -2693,30 +2693,33 @@ func TestCINodeIntegrationCommandExactSelectionAndEvidence(t *testing.T) {
 	}
 }
 
-func nodeIntegrationCountProblem(script string) string {
-	if !strings.Contains(script, `go test -json -vet=off -count=1 -timeout=30m -run "${node_integration_run_regex}"`) {
-		return "authoritative node integration command lacks -count=1"
+func nodeIntegrationCommandProblem(script string) string {
+	if !strings.Contains(script, `go test -json -vet=off -p=1 -count=1 -timeout=30m -run "${node_integration_run_regex}"`) {
+		return "authoritative node integration command requires -p=1 and -count=1"
 	}
 	return ""
 }
 
-func TestCINodeIntegrationCommandRequiresFreshExecution(t *testing.T) {
+func TestCINodeIntegrationCommandRequiresFreshSerialExecution(t *testing.T) {
 	data, err := os.ReadFile("ci-go-test.sh")
 	if err != nil {
 		t.Fatal(err)
 	}
 	script := string(data)
-	if problem := nodeIntegrationCountProblem(script); problem != "" {
+	if problem := nodeIntegrationCommandProblem(script); problem != "" {
 		t.Fatal(problem)
 	}
-	mutated := strings.Replace(script,
-		`go test -json -vet=off -count=1 -timeout=30m -run "${node_integration_run_regex}"`,
-		`go test -json -vet=off -timeout=30m -run "${node_integration_run_regex}"`, 1)
-	if mutated == script {
-		t.Fatal("fixture did not remove -count=1")
-	}
-	if problem := nodeIntegrationCountProblem(mutated); problem == "" {
-		t.Fatal("node integration command contract accepted removal of -count=1")
+	command := `go test -json -vet=off -p=1 -count=1 -timeout=30m -run "${node_integration_run_regex}"`
+	for _, flag := range []string{"-count=1", "-p=1"} {
+		t.Run(flag, func(t *testing.T) {
+			mutated := strings.Replace(script, command, strings.Replace(command, flag+" ", "", 1), 1)
+			if mutated == script {
+				t.Fatalf("fixture did not remove %s", flag)
+			}
+			if problem := nodeIntegrationCommandProblem(mutated); problem == "" {
+				t.Fatalf("node integration command contract accepted removal of %s", flag)
+			}
+		})
 	}
 }
 
@@ -3251,10 +3254,18 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 			t.Fatalf("ci-go-test.sh missing %q", want)
 		}
 	}
-	for _, forbidden := range []string{"hostname", "export GOMAXPROCS=", "-p=", "-parallel="} {
+	for _, forbidden := range []string{"hostname", "export GOMAXPROCS=", "-parallel="} {
 		if strings.Contains(scriptText, forbidden) {
 			t.Errorf("ci-go-test.sh retains environment-specific execution policy %q", forbidden)
 		}
+	}
+	beforeNode, nodeAndAfter, foundNode := strings.Cut(scriptText, "run_node_integration() {")
+	_, afterNode, foundEnd := strings.Cut(nodeAndAfter, "\n}\n")
+	if !foundNode || !foundEnd {
+		t.Fatal("cannot identify node integration function")
+	}
+	if strings.Contains(beforeNode+afterNode, "-p=") {
+		t.Error("only node integration may override package concurrency for its shared toolchain")
 	}
 	if strings.Contains(scriptText, `grep '^Test' || true`) {
 		t.Fatal("ci-go-test.sh must not suppress Apex test discovery failures")

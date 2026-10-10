@@ -437,10 +437,12 @@ run_node_integration() {
 	testlog_status_files+=("${status_file}")
 	echo "::group::go test node-integration"
 	printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS:-default}"
-	printf '+ go test -json -vet=off -count=1 -timeout=30m -run %q ./internal/gladecli ./internal/gladehome ./internal/lwc/compile ./internal/lwcbrowser ./internal/server | testlog -output %q\n' "${node_integration_run_regex}" "${events_path}"
+	# These packages can install into the same user toolchain directory. Run
+	# their test binaries serially so installation cannot reset another's files.
+	printf '+ go test -json -vet=off -p=1 -count=1 -timeout=30m -run %q ./internal/gladecli ./internal/gladehome ./internal/lwc/compile ./internal/lwcbrowser ./internal/server | testlog -output %q\n' "${node_integration_run_regex}" "${events_path}"
 	(
 		set +e
-		go test -json -vet=off -count=1 -timeout=30m -run "${node_integration_run_regex}" ./internal/gladecli ./internal/gladehome ./internal/lwc/compile ./internal/lwcbrowser ./internal/server | tee "${events_path}" | run_testlog_renderer
+		go test -json -vet=off -p=1 -count=1 -timeout=30m -run "${node_integration_run_regex}" ./internal/gladecli ./internal/gladehome ./internal/lwc/compile ./internal/lwcbrowser ./internal/server | tee "${events_path}" | run_testlog_renderer
 		pipeline_status=("${PIPESTATUS[@]}")
 		printf '%s %s %s\n' "${pipeline_status[0]}" "${pipeline_status[1]}" "${pipeline_status[2]}" >"${status_file}"
 	) &
